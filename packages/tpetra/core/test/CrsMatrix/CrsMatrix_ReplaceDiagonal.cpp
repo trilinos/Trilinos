@@ -168,8 +168,7 @@ namespace { // (anonymous)
 
         vec_type diagCopy (matrix->getRowMap ());
         matrix->getLocalDiagCopy (diagCopy);
-	diagCopy.sync_host ();
-	auto diagCopyData = diagCopy.getLocalViewHost ();
+	auto diagCopyData = diagCopy.getLocalViewHost(Tpetra::Access::ReadOnly);
 
 	using impl_scalar_type = typename vec_type::impl_scalar_type;
 	// If Scalar is std::complex<T>, impl_scalar_type is
@@ -185,8 +184,8 @@ namespace { // (anonymous)
          */
         
         for (size_t i = 0; i < matrix->getRowMap()->getNodeNumElements(); i++) {
-          Teuchos::ArrayView<const LO> lcols;
-          Teuchos::ArrayView<const Scalar> lvals;
+          typename crs_matrix_type::local_inds_host_view_type lcols;
+          typename crs_matrix_type::values_host_view_type lvals;
           matrix->getLocalRowView(static_cast<LO>(i), lcols, lvals);
           GO gI = matrix->getRowMap()->getGlobalElement(i);
           auto j = lcols.size();
@@ -352,9 +351,11 @@ namespace { // (anonymous)
 
       // Create vector with new diagonal values (row GO)
       RCP<vec_type> newDiag = rcp(new vec_type(matrix->getRowMap()));
-      auto newDiagData = newDiag->getLocalViewHost();
-      for (size_t i = 0; i < newDiag->getLocalLength(); i++) 
-        newDiagData(i,0) = newDiag->getMap()->getGlobalElement(i);
+      {
+        auto newDiagData = newDiag->getLocalViewHost(Tpetra::Access::OverwriteAll);
+        for (size_t i = 0; i < newDiag->getLocalLength(); i++) 
+          newDiagData(i,0) = newDiag->getMap()->getGlobalElement(i);
+      }
 
       // Replace the diagonal
       LO numReplacedDiagEntries = 
@@ -372,8 +373,8 @@ namespace { // (anonymous)
         
 	using impl_scalar_type = typename crs_matrix_type::impl_scalar_type;
         for (size_t i = 0; i < matrix->getRowMap()->getNodeNumElements(); i++) {
-          Teuchos::ArrayView<const LO> lcols;
-          Teuchos::ArrayView<const Scalar> lvals;
+          typename crs_matrix_type::local_inds_host_view_type lcols;
+          typename crs_matrix_type::values_host_view_type lvals;
           matrix->getLocalRowView(static_cast<LO>(i), lcols, lvals);
           GO gI = matrix->getRowMap()->getGlobalElement(i);
           auto j = lcols.size();

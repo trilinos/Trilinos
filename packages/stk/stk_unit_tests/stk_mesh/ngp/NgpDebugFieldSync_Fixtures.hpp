@@ -39,6 +39,8 @@
 #include <stk_mesh/base/NgpFieldSyncDebugger.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/Comm.hpp>
 #include <string>
 
 template <typename T> using NgpDebugger = stk::mesh::NgpFieldSyncDebugger<T>;
@@ -62,15 +64,31 @@ void access_for_memory_checking_tool(T valuePtr, unsigned numValues = 1)
   }
 }
 
+struct EntityIdAddRemovePart {
+  stk::mesh::EntityId id;
+  std::string addPart;
+  std::string removePart;
+};
+
 class NgpDebugFieldSyncFixture : public stk::unit_test_util::MeshFixture
 {
 public:
   template <typename T>
   void declare_scalar_field(const std::string & fieldName,
+                            const std::vector<std::string> & partsForField,
+                            unsigned numStates = 1)
+  {
+    stk::mesh::Selector fieldParts = create_parts(partsForField);
+    create_scalar_field<T>(fieldName, stk::topology::ELEM_RANK, fieldParts, numStates);
+  }
+
+  template <typename T>
+  void declare_vector_field(const std::string & fieldName,
+                            unsigned numComponents,
                             const std::vector<std::string> & partsForField)
   {
     stk::mesh::Selector fieldParts = create_parts(partsForField);
-    create_scalar_field<T>(fieldName, stk::topology::ELEM_RANK, fieldParts);
+    create_vector_field<T>(fieldName, stk::topology::ELEM_RANK, numComponents, fieldParts);
   }
 
   stk::mesh::Selector
@@ -86,12 +104,26 @@ public:
   template <typename T>
   stk::mesh::Field<T> & create_scalar_field(const std::string & name,
                                             stk::topology::rank_t rank,
-                                            stk::mesh::Selector & fieldParts)
+                                            stk::mesh::Selector & fieldParts,
+                                            unsigned numStates = 1)
   {
-    unsigned numStates = 1;
     const T init = 1;
     stk::mesh::Field<T> & field = get_meta().declare_field<stk::mesh::Field<T>>(rank, name, numStates);
     stk::mesh::put_field_on_mesh(field, fieldParts, &init);
+    return field;
+  }
+
+  template <typename T>
+  stk::mesh::Field<T,stk::mesh::Cartesian> &
+                        create_vector_field(const std::string & name,
+                                            stk::topology::rank_t rank,
+                                            unsigned numComponents,
+                                            stk::mesh::Selector & fieldParts)
+  {
+    unsigned numStates = 1;
+    const std::vector<T> init(numComponents, 1);
+    stk::mesh::Field<T,stk::mesh::Cartesian> & field = get_meta().declare_field<stk::mesh::Field<T,stk::mesh::Cartesian>>(rank, name, numStates);
+    stk::mesh::put_field_on_mesh(field, fieldParts, numComponents, init.data());
     return field;
   }
 
@@ -138,18 +170,27 @@ public:
   {
     stk::mesh::Field<T> & stkField = *static_cast<stk::mesh::Field<T>*>(get_meta().get_field(stk::topology::ELEM_RANK, fieldName));
     fill_initial_field<T>(stkField);
-    initialize_ngp_field(stkField);
+    initialize_ngp_field<T>(stkField);
     return stkField;
   }
 
   template <typename T>
-  void fill_initial_field(stk::mesh::Field<T> & stkField)
+  stk::mesh::Field<T,stk::mesh::Cartesian> & initialized_vector_field(const std::string & fieldName)
   {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
+    stk::mesh::Field<T,stk::mesh::Cartesian> & stkField = *static_cast<stk::mesh::Field<T,stk::mesh::Cartesian>*>(get_meta().get_field(stk::topology::ELEM_RANK, fieldName));
+    fill_initial_field<T>(stkField);
+    initialize_ngp_field<T>(stkField);
+    return stkField;
+  }
+
+  template <typename T>
+  void fill_initial_field(stk::mesh::FieldBase & stkField)
+  {
+    const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stkField.entity_rank(), stkField);
     for (stk::mesh::Bucket * bucket : buckets) {
       for (const stk::mesh::Entity & entity : *bucket) {
         const stk::mesh::EntityId id = get_bulk().identifier(entity);
-        T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, stk::mesh::EmptyStkFieldSyncDebugger>(stkField, entity);
+        T * fieldData = static_cast<T*>(stk::mesh::field_data<stk::mesh::FieldBase, stk::mesh::EmptyStkFieldSyncDebugger>(stkField, entity));
         const unsigned numComponents = stk::mesh::field_scalars_per_entity(stkField, *bucket);
         for (unsigned component = 0; component < numComponents; ++component) {
           fieldData[component] = 10*id + component;
@@ -165,15 +206,103 @@ public:
   }
 
   template <typename T>
+  void initialize_ngp_field(stk::mesh::FieldBase & stkField)
+  {
+    stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+  }
+
+  template <typename T, typename V = void>
+  void create_element(const std::vector<std::pair<stk::mesh::EntityId, std::string>> & elemParts,
+                      stk::mesh::FieldBase& stkField)
+  {
+    std::vector<size_t> counts;
+    stk::mesh::comm_mesh_counts(get_bulk(), counts);
+
+    get_bulk().modification_begin();
+    for (const auto & elemPart : elemParts) {
+      stk::mesh::PartVector parts {get_meta().get_part(elemPart.second), get_meta().get_part("block_1")};
+      stk::mesh::EntityIdVector nodeIds;
+      stk::mesh::EntityId nodeId = counts[stk::topology::ELEM_RANK] * 4 + 1;
+      for (unsigned i = 0; i < 8; ++i) {
+        nodeIds.push_back(nodeId++);
+      }
+
+      stk::mesh::declare_element(get_bulk(), parts, elemPart.first, nodeIds);
+    }
+    get_bulk().modification_end();
+
+    fill_initial_field<T>(stkField);
+  }
+
+  template <typename T>
+  void create_element(const std::vector<std::pair<stk::mesh::EntityId, std::string>> & elemParts,
+                      stk::mesh::Field<T> & stkField)
+  {
+    create_element<T, void>(elemParts, stkField);
+  }
+
+  void change_element_parts(const std::vector<EntityIdAddRemovePart>& elemAddRemoveParts)
+  {
+    for (const auto & elemAddRemovePart : elemAddRemoveParts) {
+      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
+      get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
+    }
+  }
+
+  void modify_element_part_membership(const std::vector<EntityIdAddRemovePart>& elemAddRemoveParts)
+  {
+    get_bulk().modification_begin();
+    change_element_parts(elemAddRemoveParts);
+    get_bulk().modification_end();
+  }
+
+  template <typename T>
+  void modify_element_part_membership_with_scalar_field_write_using_entity(
+           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
+           stk::mesh::Field<T> & stkField, T value)
+  {
+    get_bulk().modification_begin();
+
+    write_scalar_field_on_host_using_entity(stkField, value);
+
+    change_element_parts(elemAddRemoveParts);
+
+    get_bulk().modification_end();
+  }
+
+  template <typename T>
   void write_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField, T value)
   {
-    const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stkField.entity_rank(), stkField);
+    write_scalar_field_on_host_using_entity(stkField, stkField, value);
+  }
+
+  template <typename T>
+  void write_vector_field_on_host_using_entity(stk::mesh::FieldBase & stkField, const stk::mesh::Selector& selector, T value)
+  {
+    const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stkField.entity_rank(), selector);
     for (stk::mesh::Bucket * bucket : buckets) {
+      unsigned numComponents = stk::mesh::field_scalars_per_entity(stkField, *bucket);
       for (const stk::mesh::Entity & entity : *bucket) {
-        T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        fieldData[0] = value;
+        T * fieldData = static_cast<T*>(stk::mesh::field_data<stk::mesh::FieldBase, StkDebugger<T>>(stkField, entity));
+        for (unsigned d=0; d<numComponents; ++d) {
+          fieldData[d] = value;
+        }
       }
     }
+  }
+
+  template <typename T>
+  void write_vector_field_on_host_using_entity(stk::mesh::FieldBase & stkField, T value)
+  {
+    write_vector_field_on_host_using_entity(stkField, stkField, value);
+  }
+
+  template <typename T>
+  void write_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField, const stk::mesh::Selector& selector, T value)
+  {
+    write_vector_field_on_host_using_entity(stkField, selector, value);
   }
 
   template <typename T>
@@ -236,17 +365,43 @@ public:
   }
 
   template <typename T>
-  void write_scalar_field_on_device(stk::mesh::Field<T> & stkField, T value)
+  void write_scalar_field_on_device(stk::mesh::Field<T> & stkField, const stk::mesh::Selector& selector, T value)
   {
     const int component = 0;
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
-    stk::mesh::Selector fieldSelector(stkField);
 
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, fieldSelector,
-                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                                     ngpField(entity, component) = value;
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
+                                     ngpField(entityIndex, component) = value;
                                    });
+  }
+
+  template <typename T>
+  void write_scalar_field_on_device(stk::mesh::Field<T> & stkField, T value)
+  {
+    write_scalar_field_on_device(stkField, stkField, value);
+  }
+
+  template <typename T>
+  void write_vector_field_on_device(stk::mesh::FieldBase & stkField, const stk::mesh::Selector& selector, T value)
+  {
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
+                                     unsigned numComponents = ngpField.get_num_components_per_entity(entityIndex);
+                                     for (unsigned component=0; component<numComponents; component++) {
+                                       ngpField(entityIndex, component) = value;
+                                     }
+                                   });
+  }
+
+  template <typename T>
+  void write_vector_field_on_device(stk::mesh::FieldBase & stkField, T value)
+  {
+    write_vector_field_on_device(stkField, stkField, value);
   }
 
   template <typename T>
@@ -259,15 +414,40 @@ public:
   }
 
   template <typename T>
-  void read_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField)
+  void read_field_on_host_using_entity(stk::mesh::FieldBase & stkField, const stk::mesh::Selector& selector)
   {
-    const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stkField.entity_rank(), stkField);
+    const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stkField.entity_rank(), selector);
     for (stk::mesh::Bucket * bucket : buckets) {
+      const unsigned numComponents = stk::mesh::field_scalars_per_entity(stkField, *bucket);
       for (const stk::mesh::Entity & entity : *bucket) {
-        const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        access_for_memory_checking_tool(fieldData);
+        const T * fieldData = reinterpret_cast<const T*>(stk::mesh::field_data<stk::mesh::FieldBase, StkDebugger<T>>(stkField, entity));
+        access_for_memory_checking_tool(fieldData, numComponents);
       }
     }
+  }
+
+  template <typename T>
+  void read_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField, const stk::mesh::Selector& selector)
+  {
+    read_field_on_host_using_entity<T>(stkField, selector);
+  }
+
+  template <typename T>
+  void read_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField)
+  {
+    read_scalar_field_on_host_using_entity(stkField, stkField);
+  }
+
+  template <typename T>
+  void read_vector_field_on_host_using_entity(stk::mesh::FieldBase & stkField, const stk::mesh::Selector& selector)
+  {
+    read_field_on_host_using_entity<T>(stkField, selector);
+  }
+
+  template <typename T>
+  void read_vector_field_on_host_using_entity(stk::mesh::FieldBase & stkField)
+  {
+    read_vector_field_on_host_using_entity<T>(stkField, stkField);
   }
 
   template <typename T>
@@ -281,11 +461,61 @@ public:
   }
 
   template <typename T>
-  void read_scalar_field_on_device(stk::mesh::Field<T> & stkField)
+  void read_field_on_device(stk::mesh::FieldBase & stkField, const stk::mesh::Selector& selector)
   {
-    const int component = 0;
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), selector);
+    stk::mesh::EntityRank rank = ngpField.get_rank();
+
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(unsigned ) {
+                           for (unsigned i = 0; i < bucketIds.size(); ++i) {
+                             const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
+                             for (unsigned j = 0; j < bucket.size(); ++j) {
+                               stk::mesh::FastMeshIndex index = ngpMesh.fast_mesh_index(bucket[j]);
+                               unsigned numComponents = ngpField.get_num_components_per_entity(index);
+                               for (unsigned component=0; component<numComponents; ++component) {
+#if defined(DEVICE_USE_LOCATION_BUILTINS)
+                                 access_for_memory_checking_tool(&ngpField(index, component));
+#else
+                                 access_for_memory_checking_tool(&ngpField(index, component, __FILE__, __LINE__));
+#endif
+                               }
+                             }
+                           }
+                         });
+  }
+
+  template <typename T>
+  void read_scalar_field_on_device(stk::mesh::Field<T> & stkField, const stk::mesh::Selector& selector)
+  {
+    read_field_on_device<T>(stkField, selector);
+  }
+
+  template <typename T>
+  void read_scalar_field_on_device(stk::mesh::Field<T> & stkField)
+  {
+    read_scalar_field_on_device(stkField, stkField);
+  }
+
+  template <typename T>
+  void read_vector_field_on_device(stk::mesh::FieldBase & stkField, const stk::mesh::Selector& selector)
+  {
+    read_field_on_device<T>(stkField, selector);
+  }
+
+  template <typename T>
+  void read_vector_field_on_device(stk::mesh::FieldBase & stkField)
+  {
+    read_vector_field_on_device<T>(stkField, stkField);
+  }
+
+  template <typename T, typename NGPFIELD>
+  void read_old_scalar_field_on_device(stk::mesh::Field<T> & stkField, NGPFIELD & ngpField,
+                                       stk::mesh::EntityId maxIdToRead = std::numeric_limits<stk::mesh::EntityId>::max())
+  {
+    const int component = 0;
+    const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stkField.entity_rank(), stkField);
     stk::mesh::EntityRank rank = ngpField.get_rank();
 
@@ -294,11 +524,15 @@ public:
                              const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
                              for (unsigned j = 0; j < bucket.size(); ++j) {
                                stk::mesh::FastMeshIndex index = ngpMesh.fast_mesh_index(bucket[j]);
+                               const stk::mesh::Entity elem = ngpMesh.get_entity(stk::topology::ELEM_RANK, index);
+                               const stk::mesh::EntityId elemId = ngpMesh.identifier(elem);
+                               if (elemId <= maxIdToRead) {
 #if defined(DEVICE_USE_LOCATION_BUILTINS)
-                               access_for_memory_checking_tool(&ngpField(index, component));
+                                 access_for_memory_checking_tool(&ngpField(index, component));
 #else
-                               access_for_memory_checking_tool(&ngpField(index, component, __FILE__, __LINE__));
+                                 access_for_memory_checking_tool(&ngpField(index, component, __FILE__, __LINE__));
 #endif
+                               }
                              }
                            }
                          });

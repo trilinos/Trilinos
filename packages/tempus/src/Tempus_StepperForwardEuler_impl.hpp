@@ -19,6 +19,7 @@ namespace Tempus {
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler()
 {
+  this->setStepperName(        "Forward Euler");
   this->setStepperType(        "Forward Euler");
   this->setUseFSAL(            true);
   this->setICConsistency(      "Consistent");
@@ -34,6 +35,7 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
   bool ICConsistencyCheck,
   const Teuchos::RCP<StepperForwardEulerAppAction<Scalar> >& stepperFEAppAction)
 {
+  this->setStepperName(        "Forward Euler");
   this->setStepperType(        "Forward Euler");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -183,18 +185,24 @@ void StepperForwardEuler<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  out << std::endl;
-  Stepper<Scalar>::describe(out, verbLevel);
-  StepperExplicit<Scalar>::describe(out, verbLevel);
-  out << "  stepperFEAppAction_                = "
-      << stepperFEAppAction_ << std::endl;
-  out << "----------------------------" << std::endl;
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << std::endl;
+  Stepper<Scalar>::describe(*l_out, verbLevel);
+  StepperExplicit<Scalar>::describe(*l_out, verbLevel);
+  *l_out << "  stepperFEAppAction_ = "
+         << stepperFEAppAction_ << std::endl
+         << "----------------------------" << std::endl;
 }
 
 
 template<class Scalar>
 bool StepperForwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
+
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
@@ -204,18 +212,6 @@ bool StepperForwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) cons
     out << "The Forward Euler AppAction is not set!\n";
   }
   return isValidSetup;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-StepperForwardEuler<Scalar>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
-  return pl;
 }
 
 

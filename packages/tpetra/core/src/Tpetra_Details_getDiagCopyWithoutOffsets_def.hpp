@@ -129,9 +129,7 @@ public:
     }
 
     // Side effects start below this point.
-
-    diag.modify_host ();
-    D_lcl_ = diag.getLocalViewHost ();
+    D_lcl_ = diag.getLocalViewHost(Access::OverwriteAll);
     D_lcl_1d_ = Kokkos::subview (D_lcl_, Kokkos::ALL (), 0);
 
     Kokkos::RangePolicy<host_execution_space, LO> range (0, lclNumRows);
@@ -140,7 +138,7 @@ public:
 
     // sync changes back to device, since the user doesn't know that
     // we had to run on host.
-    diag.template sync<typename device_type::memory_space> ();
+    //diag.template sync<typename device_type::memory_space> ();
   }
 
   void operator () (const LO& lclRowInd, LO& errCount) const {
@@ -154,25 +152,20 @@ public:
       errCount++;
     }
     else { // row index is also in the column Map on this process
-      LO numEnt;
-      const LO* lclColInds;
-      const SC* curVals;
-      const LO err = A_.getLocalRowViewRaw (lclRowInd, numEnt, lclColInds, curVals);
-      if (err != 0) {
+      typename row_matrix_type::local_inds_host_view_type lclColInds;
+      typename row_matrix_type::values_host_view_type curVals;
+      A_.getLocalRowView(lclRowInd, lclColInds, curVals);
+      LO numEnt = lclColInds.extent(0);
+      // The search hint is always zero, since we only call this
+      // once per row of the matrix.
+      const LO hint = 0;
+      const LO offset =
+        findRelOffset (lclColInds, numEnt, lclColInd, hint, sorted_);
+      if (offset == numEnt) { // didn't find the diagonal column index
         errCount++;
       }
       else {
-        // The search hint is always zero, since we only call this
-        // once per row of the matrix.
-        const LO hint = 0;
-        const LO offset =
-          findRelOffset (lclColInds, numEnt, lclColInd, hint, sorted_);
-        if (offset == numEnt) { // didn't find the diagonal column index
-          errCount++;
-        }
-        else {
-          D_lcl_1d_(lclRowInd) = curVals[offset];
-        }
+        D_lcl_1d_(lclRowInd) = curVals[offset];
       }
     }
   }

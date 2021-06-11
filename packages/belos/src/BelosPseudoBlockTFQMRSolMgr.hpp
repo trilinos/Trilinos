@@ -90,16 +90,6 @@ namespace Belos {
     PseudoBlockTFQMRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  /** \brief PseudoBlockTFQMRSolMgrOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the initial basis vectors.
-   *
-   * This std::exception is thrown from the PseudoBlockTFQMRSolMgr::solve() method.
-   *
-   */
-  class PseudoBlockTFQMRSolMgrOrthoFailure : public BelosError {public:
-    PseudoBlockTFQMRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
   template<class ScalarType, class MV, class OP>
   class PseudoBlockTFQMRSolMgr : public SolverManager<ScalarType,MV,OP> {
 

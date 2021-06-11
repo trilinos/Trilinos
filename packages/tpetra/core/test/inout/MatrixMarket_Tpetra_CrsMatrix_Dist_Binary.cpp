@@ -100,6 +100,7 @@ public:
   using matrix_t = Tpetra::CrsMatrix<scalar_t>;
   using vector_t = Tpetra::Vector<scalar_t>;
   using reader_t = Tpetra::MatrixMarket::Reader<matrix_t>;
+  using indices_type = typename matrix_t::nonconst_global_inds_host_view_type;
 
   //////////////////////////////
   // Constructor
@@ -429,7 +430,7 @@ private:
     // Get the CrsGraph because we do not need the values
     auto graph = AmatWrite->getCrsGraph();	
     auto rowMap = graph->getRowMap();
-    Teuchos::Array<gno_t> gblColInds;
+    indices_type gblColInds;
     size_t numEntries = 0;
 
     // Write the nonzeros
@@ -442,8 +443,8 @@ private:
       
       // Get the copy of the row with global column indices
       numEntries = graph->getNumEntriesInGlobalRow(gblRow);
-      gblColInds.resize(numEntries);
-      graph->getGlobalRowCopy(gblRow, gblColInds(), numEntries);
+      Kokkos::resize(gblColInds,numEntries);
+      graph->getGlobalRowCopy(gblRow, gblColInds, numEntries);
       
       // Write the entries in the row in COO format (i.e., in "rowId colId" pairs)
       for(size_t c = 0; c < numEntries; c++) {
@@ -575,10 +576,10 @@ private:
     // If norms match, make sure the vector entries match, too 
     // (Norms are indifferent to errors in permutation)
     if (ierr == 0) {
-      y_test->sync_host();
-      yout_baseline->sync_host();
-      auto ytestData = y_test->getLocalViewHost();
-      auto ybaseData = yout_baseline->getLocalViewHost();
+      //y_test->sync_host();
+      //yout_baseline->sync_host();
+      auto ytestData = y_test->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto ybaseData = yout_baseline->getLocalViewHost(Tpetra::Access::ReadOnly);
       for (size_t i = 0; i < y_test->getLocalLength(); i++) {
         if (std::abs(ytestData(i,0) - ybaseData(i,0)) > epsilon) ierr++;
       }

@@ -140,9 +140,11 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   //! The type of local indices in the input MatrixType.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename MatrixType::local_ordinal_type LO;
 
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  typedef typename MatrixType::global_ordinal_type GO;
 
   //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
@@ -173,13 +175,13 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   //! \name Implementation of KK ILU(k).
   //@{
   
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
       <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
       HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
@@ -333,8 +335,15 @@ private:
   typedef Teuchos::ScalarTraits<impl_scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename block_crs_matrix_type::little_block_type little_block_type;
+  typedef typename block_crs_matrix_type::little_block_host_type little_block_host_type;
   typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
-  typedef typename little_vec_type::HostMirror little_host_vec_type;
+  typedef typename block_crs_matrix_type::little_host_vec_type little_host_vec_type;
+  typedef typename block_crs_matrix_type::const_host_little_vec_type const_host_little_vec_type;
+
+  using local_inds_host_view_type = typename block_crs_matrix_type::local_inds_host_view_type;
+  using values_host_view_type     = typename block_crs_matrix_type::values_host_view_type;
+  using local_inds_device_view_type = typename block_crs_matrix_type::local_inds_device_view_type;
+  using values_device_view_type     = typename block_crs_matrix_type::values_device_view_type;
 
   void allocate_L_and_U_blocks();
   void initAllValues (const block_crs_matrix_type& A);

@@ -5,6 +5,9 @@
  *
  * See packages/seacas/LICENSE for details
  */
+#ifndef APR_STATS_H
+#define APR_STATS_H
+
 #include "apr_util.h" // for check_valid_var, new_string, etc
 
 namespace SEAMS {
@@ -24,3 +27,4 @@ namespace SEAMS {
     double StdDev{0.0};
   };
 } // namespace SEAMS
+#endif

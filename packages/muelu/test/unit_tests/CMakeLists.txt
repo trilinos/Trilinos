@@ -29,6 +29,7 @@ APPEND_SET(SOURCES
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
+  ClassicalPFactory.cpp
 # CoupledAggregationFactory.cpp
   FineLevelInputDataFactory.cpp
   GeneralGeometricPFactory.cpp
@@ -57,7 +58,7 @@ APPEND_SET(SOURCES
   TransPFactory.cpp
   UnsmooshFactory.cpp
   UserData/CreateXpetraPreconditioner.cpp
-  Utilities
+  Utilities.cpp
   VariableContainer.cpp
   VariableDofLaplacianFactory.cpp
 )

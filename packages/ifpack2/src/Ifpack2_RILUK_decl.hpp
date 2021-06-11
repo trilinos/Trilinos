@@ -289,19 +289,32 @@ class RILUK:
                             global_ordinal_type,
                             node_type> crs_matrix_type;
 
+  //! Scalar type stored in Kokkos::Views (CrsMatrix and MultiVector)
+  typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
+
   template <class NewMatrixType> friend class RILUK;
+
+  typedef typename crs_matrix_type::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename crs_matrix_type::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename crs_matrix_type::values_host_view_type values_host_view_type;
+
+
+  typedef typename crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
 
   //@}
   //! \name Implementation of Kokkos Kernels ILU(k).
   //@{
 
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
     <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
     HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;

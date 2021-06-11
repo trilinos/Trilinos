@@ -108,7 +108,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -139,8 +139,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -151,9 +151,10 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
     b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
@@ -324,7 +325,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -349,9 +350,9 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
-  const KCRS & Cmat = C.getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Cmat = C.getLocalMatrixDevice();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -362,9 +363,10 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
   c_lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
   // Sizes
@@ -476,7 +478,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
 
   // Lots and lots of typedefs
   typedef typename Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -510,8 +512,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -522,14 +524,16 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
     b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
   // Jacobi-specific inner stuff
-  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
+  auto Dvals = 
+       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -723,7 +727,7 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
 
   // Lots and lots of typedefs
   typedef typename Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -751,9 +755,9 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
-  const KCRS & Cmat = C.getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Cmat = C.getLocalMatrixDevice();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -764,13 +768,15 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
   c_lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
   // Jacobi-specific inner stuff
-  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
+  auto Dvals = 
+       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -1045,7 +1051,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         typedef GlobalOrdinal GO;
         typedef Node          NO;
         typedef Map<LO,GO,NO> map_type;
-        typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_type KCRS;
+        typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_device_type KCRS;
         typedef typename KCRS::StaticCrsGraphType graph_t;
         typedef typename graph_t::row_map_type::non_const_type lno_view_t;
         typedef typename graph_t::row_map_type::const_type c_lno_view_t;
@@ -1069,19 +1075,25 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
         size_t n = Accolmap->getNodeNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views
-        const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
-        const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-        const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
+        const KCRS & Rmat = Rview.origMatrix->getLocalMatrixDevice();
+        const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
+        const KCRS & Pmat = Pview.origMatrix->getLocalMatrixDevice();
 
-        c_lno_view_t Rrowptr = Rmat.graph.row_map, Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map, Irowptr;
-        const lno_nnz_view_t Rcolind = Rmat.graph.entries, Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries;
+        c_lno_view_t Rrowptr = Rmat.graph.row_map, 
+                     Arowptr = Amat.graph.row_map, 
+                     Prowptr = Pmat.graph.row_map, Irowptr;
+        const lno_nnz_view_t Rcolind = Rmat.graph.entries, 
+                             Acolind = Amat.graph.entries, 
+                             Pcolind = Pmat.graph.entries;
         lno_nnz_view_t Icolind;
-        const scalar_view_t Rvals = Rmat.values, Avals = Amat.values, Pvals = Pmat.values;
+        const scalar_view_t Rvals = Rmat.values, 
+                            Avals = Amat.values, 
+                            Pvals = Pmat.values;
         scalar_view_t Ivals;
 
         if (!Pview.importMatrix.is_null())
         {
-          const KCRS& Imat = Pview.importMatrix->getLocalMatrix();
+          const KCRS& Imat = Pview.importMatrix->getLocalMatrixDevice();
           Irowptr = Imat.graph.row_map;
           Icolind = Imat.graph.entries;
           Ivals = Imat.values;
@@ -1308,7 +1320,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         typedef GlobalOrdinal GO;
         typedef Node          NO;
         typedef Map<LO,GO,NO> map_type;
-        typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_type KCRS;
+        typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_device_type KCRS;
         typedef typename KCRS::StaticCrsGraphType graph_t;
         typedef typename graph_t::row_map_type::const_type c_lno_view_t;
         typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -1327,10 +1339,10 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
         size_t n = Accolmap->getNodeNumElements();
 
         // Get raw Kokkos matrices, and the raw CSR views
-        const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
-        const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-        const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
-        const KCRS & Cmat = Ac.getLocalMatrix();
+        const KCRS & Rmat = Rview.origMatrix->getLocalMatrixDevice();
+        const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
+        const KCRS & Pmat = Pview.origMatrix->getLocalMatrixDevice();
+        const KCRS & Cmat = Ac.getLocalMatrixDevice();
 
         c_lno_view_t Rrowptr = Rmat.graph.row_map, Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map, Crowptr = Cmat.graph.row_map, Irowptr;
         const lno_nnz_view_t Rcolind = Rmat.graph.entries, Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -1341,7 +1353,7 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
 
         if (!Pview.importMatrix.is_null())
         {
-          const KCRS& Imat = Pview.importMatrix->getLocalMatrix();
+          const KCRS& Imat = Pview.importMatrix->getLocalMatrixDevice();
           Irowptr = Imat.graph.row_map;
           Icolind = Imat.graph.entries;
           Ivals = Imat.values;

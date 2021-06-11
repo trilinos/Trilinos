@@ -137,6 +137,7 @@ protected:
   //! HostView (the host-space internal representation for Tpetra::Multivector) is the
   //! type of the vector arguments of DoJacobi, DoGaussSeidel, and DoSGS.
   using HostView = typename mv_type::dual_view_type::t_host;
+  using ConstHostView = typename HostView::const_type;
 
 public:
   /// \brief Constructor.
@@ -204,10 +205,10 @@ public:
   /// before calling compute().
   virtual void compute () = 0;
 
-  void DoJacobi(HostView X, HostView Y, SC dampingFactor) const;
-  void DoOverlappingJacobi(HostView X, HostView Y, HostView W, SC dampingFactor) const;
-  void DoGaussSeidel(HostView X, HostView Y, HostView Y2, SC dampingFactor) const;
-  void DoSGS(HostView X, HostView Y, HostView Y2, SC dampingFactor) const;
+  void DoJacobi(ConstHostView X, HostView Y, SC dampingFactor) const;
+  void DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor) const;
+  void DoGaussSeidel(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const;
+  void DoSGS(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const;
 
   //! Set parameters, if any.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
@@ -225,7 +226,7 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  apply(HostView X,
+  apply(ConstHostView X,
         HostView Y,
         int blockIndex,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -234,9 +235,9 @@ public:
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply(HostView X,
+  weightedApply(ConstHostView X,
                 HostView Y,
-                HostView D,
+                ConstHostView D,
                 int blockIndex,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 SC alpha = Teuchos::ScalarTraits<SC>::one(),
@@ -256,10 +257,10 @@ public:
                                    int /* numSweeps = 1 */) const = 0;
 
   //! Wrapper for apply with MultiVector
-  virtual void applyMV (mv_type& X, mv_type& Y) const;
+  virtual void applyMV (const mv_type& X, mv_type& Y) const;
 
   //! Wrapper for weightedApply with MultiVector
-  virtual void weightedApplyMV (mv_type& X,
+  virtual void weightedApplyMV (const mv_type& X,
                         mv_type& Y,
                         vector_type& W) const;
 
@@ -275,7 +276,7 @@ public:
 protected:
 
   //! Do one step of Gauss-Seidel on block i (used by DoGaussSeidel and DoSGS)
-  virtual void DoGSBlock(HostView X, HostView Y, HostView Y2, HostView Resid,
+  virtual void DoGSBlock(ConstHostView X, HostView Y, HostView Y2, HostView Resid,
       SC dampingFactor, LO i) const;
 
   //! The input matrix to the constructor.
@@ -365,8 +366,10 @@ protected:
   using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
 
   using typename Container<MatrixType>::HostView;
+  using typename Container<MatrixType>::ConstHostView;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
   using HostSubviewLocal = Kokkos::View<LISC**, Kokkos::LayoutStride, typename HostViewLocal::memory_space>;
+  using ConstHostSubviewLocal = Kokkos::View<const LISC**, Kokkos::LayoutStride, typename HostViewLocal::memory_space>;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
@@ -435,7 +438,7 @@ public:
   /// Tpetra::Operator's method of the same name.  This might require
   /// subclasses to mark some of their instance data as \c mutable.
   virtual void
-  apply(HostView X,
+  apply(ConstHostView X,
         HostView Y,
         int blockIndex,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -444,9 +447,9 @@ public:
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply(HostView X,
+  weightedApply(ConstHostView X,
                 HostView Y,
-                HostView D,
+                ConstHostView D,
                 int blockIndex,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 SC alpha = Teuchos::ScalarTraits<SC>::one(),
@@ -466,10 +469,10 @@ public:
                                    int /* numSweeps = 1 */) const;
 
   //! Wrapper for apply with MVs, used in unit tests (never called by BlockRelaxation)
-  void applyMV (mv_type& X, mv_type& Y) const;
+  void applyMV (const mv_type& X, mv_type& Y) const;
 
   //! Wrapper for weightedApply with MVs, used in unit tests (never called by BlockRelaxation)
-  void weightedApplyMV (mv_type& X,
+  void weightedApplyMV (const mv_type& X,
                         mv_type& Y,
                         vector_type& W) const;
 
@@ -484,7 +487,7 @@ public:
 
 protected:
   //Do Gauss-Seidel on only block i (this is used by DoGaussSeidel and DoSGS)
-  void DoGSBlock(HostView X, HostView Y, HostView Y2, HostView Resid,
+  void DoGSBlock(ConstHostView X, HostView Y, HostView Y2, HostView Resid,
       SC dampingFactor, LO i) const;
 
   //! Exactly solves the linear system By = x, where B is a diagonal block matrix
@@ -493,7 +496,7 @@ protected:
   //! The Dense, Banded and TriDi containers all implement this and it is used in ContainerImpl::apply().
   //! The Sparse and BlockTriDi containers have their own implementation of apply() and do not use solveBlock.
   virtual void
-  solveBlock(HostSubviewLocal X,
+  solveBlock(ConstHostSubviewLocal X,
              HostSubviewLocal Y,
              int blockIndex,
              Teuchos::ETransp mode,
@@ -534,25 +537,33 @@ namespace Details {
   {
     using SC = Scalar;
     using LO = LocalOrdinal;
+
+    using block_crs_matrix_type = Tpetra::BlockCrsMatrix<SC, LO, GlobalOrdinal, Node>;
+
+    using h_inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+    using h_vals_type = typename block_crs_matrix_type::values_host_view_type;
     //! Constructor for row views (preferred)
-    StridedRowView(const SC* vals_, const LO* inds_, int blockSize_, size_t nnz_);
+    StridedRowView(h_vals_type vals_, h_inds_type inds_, int blockSize_, size_t nnz_);
+
+    //! Constructor for row views 
+    //    StridedRowView(const SC* vals_, const LO* inds_, int blockSize_, size_t nnz_);
 
     //! Constructor for deep copy (fallback, if matrix doesn't support row views)
     StridedRowView(Teuchos::Array<SC>& vals_, Teuchos::Array<LO>& inds_);
-    
+        
     SC val(size_t i) const;
     LO ind(size_t i) const;
 
     size_t size() const;
 
     private:
-      const SC* vals;
-      const LO* inds;
-      int blockSize;
-      size_t nnz;
-      //These arrays are only used if the inputMatrix_ doesn't support row views.
-      Teuchos::Array<SC> valsCopy;
-      Teuchos::Array<LO> indsCopy;
+    h_vals_type vals;
+    h_inds_type inds;
+    int blockSize;
+    size_t nnz;
+    //These arrays are only used if the inputMatrix_ doesn't support row views.
+    Teuchos::Array<SC> valsCopy;
+    Teuchos::Array<LO> indsCopy;
   };
 } // namespace Details
 

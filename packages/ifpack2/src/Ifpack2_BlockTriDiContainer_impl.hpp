@@ -363,7 +363,7 @@ namespace Ifpack2 {
       typedef Tpetra::BlockCrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_crs_matrix_type;
       typedef typename tpetra_block_crs_matrix_type::little_block_type tpetra_block_access_view_type;
       typedef Tpetra::BlockMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_multivector_type;
-      typedef typename tpetra_block_crs_matrix_type::crs_graph_type::local_graph_type local_crs_graph_type;
+      typedef typename tpetra_block_crs_matrix_type::crs_graph_type::local_graph_device_type local_crs_graph_type;
 
       ///
       /// simd vectorization
@@ -1563,10 +1563,10 @@ namespace Ifpack2 {
 
       // construct the D and R graphs in A = D + R.
       {
-        const auto& local_graph = g.getLocalGraph();
-        const auto& local_graph_rowptr = local_graph.row_map;
+        const auto local_graph = g.getLocalGraphHost();
+        const auto local_graph_rowptr = local_graph.row_map;
         TEUCHOS_ASSERT(local_graph_rowptr.size() == static_cast<size_t>(nrows + 1));
-        const auto& local_graph_colidx = local_graph.entries;
+        const auto local_graph_colidx = local_graph.entries;
 
         //assume no overlap.
 
@@ -1783,8 +1783,8 @@ namespace Ifpack2 {
           }
 
           // Allocate or view values.
-          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->
-                               template getValues<node_memory_space>());
+          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->getValuesDeviceNonConst());
+                               
         }
       }
     }
@@ -1914,8 +1914,8 @@ namespace Ifpack2 {
         packptr(interf_.packptr),
         max_partsz(interf_.max_partsz),
         // block crs matrix
-        A_rowptr(A_->getCrsGraph().getLocalGraph().row_map),
-        A_values(const_cast<block_crs_matrix_type*>(A_.get())->template getValues<memory_space>()),
+        A_rowptr(A_->getCrsGraph().getLocalGraphDevice().row_map),
+        A_values(const_cast<block_crs_matrix_type*>(A_.get())->getValuesDeviceNonConst()),
         // block tridiags
         pack_td_ptr(btdm_.pack_td_ptr),
         flat_td_ptr(btdm_.flat_td_ptr),
@@ -2184,6 +2184,7 @@ namespace Ifpack2 {
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using impl_scalar_type_2d_view_tpetra = typename impl_type::impl_scalar_type_2d_view_tpetra;
+      using const_impl_scalar_type_2d_view_tpetra = typename impl_scalar_type_2d_view_tpetra::const_type;
       static constexpr int vector_length = impl_type::vector_length;
 
       using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
@@ -2200,7 +2201,7 @@ namespace Ifpack2 {
 
       // packed multivector output (or input)
       vector_type_3d_view packed_multivector;
-      impl_scalar_type_2d_view_tpetra scalar_multivector;
+      const_impl_scalar_type_2d_view_tpetra scalar_multivector;
 
       template<typename TagType>
       KOKKOS_INLINE_FUNCTION
@@ -2282,7 +2283,7 @@ namespace Ifpack2 {
           });
       }
 
-      void run(const impl_scalar_type_2d_view_tpetra &scalar_multivector_) {
+      void run(const const_impl_scalar_type_2d_view_tpetra &scalar_multivector_) {
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN;
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::MultiVectorConverter");
 
@@ -3810,9 +3811,9 @@ namespace Ifpack2 {
 
       // wrap the workspace with 3d view
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
-      const auto XX = X.template getLocalView<node_memory_space>();
-      const auto YY = Y.template getLocalView<node_memory_space>();
-      const auto ZZ = Z.template getLocalView<node_memory_space>();
+      const auto XX = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      const auto YY = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
+      const auto ZZ = Z.getLocalViewDevice(Tpetra::Access::ReadWrite);
       if (is_y_zero) Kokkos::deep_copy(YY, zero);
 
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);
@@ -3821,7 +3822,7 @@ namespace Ifpack2 {
 
       const local_ordinal_type_1d_view dummy_local_ordinal_type_1d_view;
       ComputeResidualVector<MatrixType>
-        compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf,
+        compute_residual_vector(amd, A->getCrsGraph().getLocalGraphDevice(), blocksize, interf,
                                 is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
 
       // norm manager workspace resize

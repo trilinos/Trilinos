@@ -51,8 +51,7 @@ namespace mesh {
 void fillNumEntitiesPerRankOnThisProc(const BulkData & M, std::vector<size_t>&local, const Selector *selector)
 {
     const MetaData & meta = M.mesh_meta_data();
-    const EntityRank entity_rank_count = static_cast<EntityRank>(meta.entity_rank_count());
-    size_t numEntityRanks = entity_rank_count;
+    const EntityRank numEntityRanks = meta.entity_rank_count();
     local.clear();
     local.resize(numEntityRanks,0);
 

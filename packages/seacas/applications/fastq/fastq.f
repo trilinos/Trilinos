@@ -107,7 +107,7 @@ C     is set to 'GENESIS', write exodusI format
       CALL EXCPUS (TIME1)
       TITLE = ' '
       DEFSCH = 'M'
-      VERSN = 'FASTQ 3.23'
+      VERSN = 'FASTQ 3.24'
       DEFSIZ = 0.
       SNAP = .TRUE.
       TBZOOM = .FALSE.

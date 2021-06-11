@@ -635,9 +635,6 @@ public:
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){
-      if (this->gsHandle->is_owner_of_coloring()){
-        this->destroy_graph_coloring_handle();
-      }
       delete this->gsHandle;
       this->gsHandle = NULL;
     }

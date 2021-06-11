@@ -111,21 +111,6 @@ public:
   }
 
   template <typename T>
-  void write_vector_field_on_host_using_entity(stk::mesh::Field<T> & stkField, T value)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        const stk::mesh::MeshIndex & meshIndex = get_bulk().mesh_index(entity);
-        const unsigned bucketId = meshIndex.bucket->bucket_id();
-        const stk::mesh::Bucket::size_type bucketOrd = meshIndex.bucket_ordinal;
-        T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, bucketId, bucketOrd);
-        fieldData[1] = value;  // Write to second component only
-      }
-    }
-  }
-
-  template <typename T>
   void write_vector_field_on_host_using_bucket_id_and_ordinal(stk::mesh::Field<T> & stkField, T value)
   {
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
@@ -193,18 +178,6 @@ public:
   }
 
   template <typename T>
-  void read_vector_field_on_host_using_entity(stk::mesh::Field<T> & stkField)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        access_for_memory_checking_tool(fieldData, 3);
-      }
-    }
-  }
-
-  template <typename T>
   void read_vector_field_on_host_using_bucket(stk::mesh::Field<T> & stkField)
   {
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
@@ -234,20 +207,6 @@ public:
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
     stk::mesh::NgpField<T> & ngpField = stk::mesh::get_updated_ngp_field<T>(stkField);
-
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
-                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                                     ngpField(entity, component) = value;
-                                   });
-  }
-
-  template <typename T>
-  void write_vector_field_on_device(stk::mesh::Field<T> & stkField, T value)
-  {
-    const int component = 1;  // Just write to the second component
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
@@ -363,7 +322,8 @@ public:
                              const stk::mesh::NgpMesh::BucketType & bucket = ngpMesh.get_bucket(rank, bucketIds.device_get(i));
                              for (unsigned j = 0; j < bucket.size(); ++j) {
                                stk::mesh::FastMeshIndex index = ngpMesh.fast_mesh_index(bucket[j]);
-                               for (int component = 0; component < 3; ++component) {
+                               unsigned numComponents = ngpField.get_num_components_per_entity(index);
+                               for (unsigned component = 0; component < numComponents; ++component) {
 #if defined(DEVICE_USE_LOCATION_BUILTINS)
                                  access_for_memory_checking_tool(&ngpField(index, component));
 #else
@@ -375,72 +335,12 @@ public:
                          });
   }
 
-  struct EntityIdAddRemovePart {
-    stk::mesh::EntityId id;
-    std::string addPart;
-    std::string removePart;
-  };
-
-  void modify_element_part_membership(const std::vector<EntityIdAddRemovePart>& elemAddRemoveParts)
-  {
-    get_bulk().modification_begin();
-    for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
-      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
-      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
-      get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
-    }
-    get_bulk().modification_end();
-  }
-
-  template <typename T>
-  void create_element(const std::vector<std::pair<stk::mesh::EntityId, std::string>> & elemParts,
-                      stk::mesh::Field<T> & stkField)
-  {
-    std::vector<size_t> counts;
-    stk::mesh::comm_mesh_counts(get_bulk(), counts);
-
-    get_bulk().modification_begin();
-    for (const auto & elemPart : elemParts) {
-      stk::mesh::PartVector parts {get_meta().get_part(elemPart.second), get_meta().get_part("block_1")};
-      stk::mesh::EntityIdVector nodeIds;
-      stk::mesh::EntityId nodeId = counts[stk::topology::ELEM_RANK] * 4 + 1;
-      for (unsigned i = 0; i < 8; ++i) {
-        nodeIds.push_back(nodeId++);
-      }
-
-      stk::mesh::declare_element(get_bulk(), parts, elemPart.first, nodeIds);
-    }
-    get_bulk().modification_end();
-
-    fill_initial_field<T>(stkField);
-  }
-
   void delete_element(const std::vector<stk::mesh::EntityId> & elemIds)
   {
     get_bulk().modification_begin();
     for (const stk::mesh::EntityId & elemId : elemIds) {
       get_bulk().destroy_entity(get_bulk().get_entity(stk::topology::ELEM_RANK, elemId));
     }
-    get_bulk().modification_end();
-  }
-
-  template <typename T>
-  void modify_element_part_membership_with_scalar_field_write_using_entity(
-           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
-           stk::mesh::Field<T> & stkField, T value)
-  {
-    get_bulk().modification_begin();
-
-    write_scalar_field_on_host_using_entity(stkField, value);
-
-    for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
-      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
-      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
-      get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
-    }
-
     get_bulk().modification_end();
   }
 
@@ -899,7 +799,7 @@ public:
       get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
     }
 
-    read_vector_field_on_host_using_entity(stkField);
+    read_vector_field_on_host_using_entity<T>(stkField);
 
     get_bulk().modification_end();
   }
@@ -926,7 +826,7 @@ public:
       stk::mesh::declare_element(get_bulk(), parts, elemPart.first, nodeIds);
     }
 
-    read_vector_field_on_host_using_entity(stkField);
+    read_vector_field_on_host_using_entity<T>(stkField);
 
     get_bulk().modification_end();
   }
@@ -941,7 +841,7 @@ public:
       get_bulk().destroy_entity(get_bulk().get_entity(stk::topology::ELEM_RANK, elemId));
     }
 
-    read_vector_field_on_host_using_entity(stkField);
+    read_vector_field_on_host_using_entity<T>(stkField);
 
     get_bulk().modification_end();
   }
@@ -1284,7 +1184,9 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_MissingAllModifySyncCallsToDev
   read_vector_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=10.000000");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=12.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -1315,7 +1217,9 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntityFieldData_MissingAllModifySyncC
   read_field_on_device_using_entity_field_data(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=10.000000");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=12.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -1345,7 +1249,9 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingMeshIndex_MissingAllModifySyncCallsTo
 
   read_field_on_device_using_mesh_index(stkField);
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=10.000000");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=12.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -1407,7 +1313,9 @@ TEST_F(NgpDebugFieldSync, VectorIntAccessUsingEntity_MissingAllModifySyncCallsTo
   read_vector_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field intVectorField[0]=10.000000");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field intVectorField[1]=11.000000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field intVectorField[2]=12.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -1783,7 +1691,7 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_ProperlySyncToHost_NoWarning)
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<double>(stkField);
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
 }
@@ -1796,11 +1704,15 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_MissingAllModifySyncCallsToHos
   testing::internal::CaptureStdout();
   write_vector_field_on_device(stkField, 3.14);
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<double>(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[1]=11");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[2]=12");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[0]=20");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[1]=21");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[2]=22");
   check_no_warnings(stdoutString);
 }
 
@@ -1814,7 +1726,7 @@ TEST_F(NgpDebugFieldSync, DeviceEntityFieldDataAccess_ProperlySyncToHost_NoWarni
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<double>(stkField);
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
 }
@@ -1827,7 +1739,7 @@ TEST_F(NgpDebugFieldSync, DeviceEntityFieldDataAccess_MissingAllModifySyncCallsT
   testing::internal::CaptureStdout();
   write_vector_field_on_device_using_entity_field_data(stkField, 3.14);
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<double>(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[1]=11");
@@ -1845,7 +1757,7 @@ TEST_F(NgpDebugFieldSync, DeviceMeshIndexAccess_ProperlySyncToHost_NoWarning)
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<double>(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
@@ -1859,7 +1771,7 @@ TEST_F(NgpDebugFieldSync, DeviceMeshIndexAccess_MissingAllModifySyncCallsToHost_
   testing::internal::CaptureStdout();
   write_vector_field_on_device_using_mesh_index(stkField, 3.14);
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<double>(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[1]=11");
@@ -1877,7 +1789,7 @@ TEST_F(NgpDebugFieldSync, VectorIntAccessUsingEntity_ProperlySyncToHost_NoWarnin
   stkField.modify_on_device();
   stkField.sync_to_host();
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<double>(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);
@@ -1891,11 +1803,15 @@ TEST_F(NgpDebugFieldSync, VectorIntAccessUsingEntity_MissingAllModifySyncCallsTo
   testing::internal::CaptureStdout();
   write_vector_field_on_device(stkField, 3);
 
-  read_vector_field_on_host_using_entity(stkField);
+  read_vector_field_on_host_using_entity<int>(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[1]=11");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[2]=12");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[0]=20");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[1]=21");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[2]=22");
   check_no_warnings(stdoutString);
 }
 
@@ -1962,8 +1878,12 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingBucket_MissingAllModifySyncCallsToHos
   read_vector_field_on_host_using_bucket(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[1]=11");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[2]=12");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[0]=20");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[1]=21");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleVectorField[2]=22");
   check_no_warnings(stdoutString);
 }
 
@@ -1996,8 +1916,12 @@ TEST_F(NgpDebugFieldSync, VectorIntAccessUsingBucket_MissingAllModifySyncCallsTo
   read_vector_field_on_host_using_bucket(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[1]=11");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[2]=12");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[0]=20");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[1]=21");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field intVectorField[2]=22");
   check_no_warnings(stdoutString);
 }
 
@@ -2488,8 +2412,12 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_MultipleTimestep_MissingAllMod
   }
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=10.000000");
   extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11.000000");
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=12.000000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=20.000000");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=21.000000");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=22.000000");
   check_no_warnings(stdoutString);
 }
 
@@ -3537,7 +3465,9 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_DuringMeshModification_ChangeB
   read_vector_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=3.14");
   extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=3.14");
+  extract_warning(stdoutString, 2, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=3.14");
   check_no_warnings(stdoutString);
 }
 
@@ -3554,8 +3484,12 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_DuringMeshModification_CreateB
   read_vector_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=12");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=20");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=21");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=22");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=3.14");
   check_no_warnings(stdoutString);
 }
@@ -3573,7 +3507,9 @@ TEST_F(NgpDebugFieldSync, VectorAccessUsingEntity_DuringMeshModification_DeleteB
   read_vector_field_on_device(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[1]=11");
+  extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Device for Field doubleVectorField[2]=12");
   check_no_warnings(stdoutString);
 }
 
@@ -3744,9 +3680,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   testing::internal::CaptureStdout();
   modify_element_part_membership({{2, "Part2", "Part1"}});
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
   read_old_scalar_field_on_device(stkField, ngpField);
@@ -3767,9 +3700,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_
   testing::internal::CaptureStdout();
   create_element({{3, "Part1"}}, stkField);
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
   const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
@@ -3791,9 +3721,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_
   testing::internal::CaptureStdout();
   delete_element({2});
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
   read_old_scalar_field_on_device(stkField, ngpField);
@@ -3813,10 +3740,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_DuringMeshModification_ChangeB
   testing::internal::CaptureStdout();
   modify_element_part_membership_with_scalar_field_write_using_entity({{2, "Part2", "Part1"}}, stkField, 3.14);
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
-
   read_old_scalar_field_on_device(stkField, ngpField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -3835,12 +3758,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_DuringMeshModification_CreateB
   testing::internal::CaptureStdout();
   create_element_with_scalar_field_write_using_entity({{3, "Part1"}, {4, "Part1"}}, stkField, 3.14);
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
-
-  const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
-  read_old_scalar_field_on_device(stkField, ngpField, maxIdToRead);
+  const stk::mesh::EntityId maxEntityIdInOldField = 1;
+  read_old_scalar_field_on_device(stkField, ngpField, maxEntityIdInOldField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
@@ -3857,10 +3776,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_DuringMeshModification_DeleteB
 
   testing::internal::CaptureStdout();
   delete_element_with_scalar_field_write_using_entity({2}, stkField, 3.14);
-
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
 
   read_old_scalar_field_on_device(stkField, ngpField);
 
@@ -6574,16 +6489,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_DuringTwoMeshModifications_Del
 }
 
 
-TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_FieldStateRotation_Throw)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
-  build_mesh_with_scalar_multistate_field<double>("doubleScalarField", {{2, "Part1"}});
-
-#if defined(STK_DEBUG_FIELD_SYNC) && defined(STK_USE_DEVICE_MESH)
-  EXPECT_THROW(get_bulk().update_field_data_states(), std::logic_error);
-#endif
-}
-
 #ifndef STK_DEBUG_FIELD_SYNC
 TEST_F(NgpDebugFieldSync, DefaultDebugger_ScalarAccessUsingEntity_ProperlySyncToDevice_NoWarning)
 {
@@ -6694,6 +6599,49 @@ TEST_F(NgpDebugFieldSync, ForcedDebugger_HostField_UsageNotProblematic_UsingBuck
   testing::internal::CaptureStdout();
   write_scalar_host_field_on_device<double, NgpDebugger>(hostField, 3.14);
   read_scalar_field_on_host_using_bucket(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  check_no_warnings(stdoutString);
+}
+
+class NgpDebugFieldSync_SeparateFieldRestrictions : public NgpDebugFieldSyncFixture
+{
+public:
+  void setup_mesh_and_field_with_multiple_restrictions(const std::string& fieldName)
+  {
+    stk::mesh::Part& part1 = get_meta().declare_part_with_topology("Part1", stk::topology::HEX_8);
+    stk::mesh::Part& part2 = get_meta().declare_part_with_topology("Part2", stk::topology::HEX_8);
+
+    const unsigned numStates = 1;
+    stk::mesh::Field<double> & field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, fieldName, numStates);
+
+    double init = 0.0;
+    stk::mesh::put_field_on_mesh(field, part1, &init);
+    stk::mesh::put_field_on_mesh(field, part2, &init);
+
+    const std::vector<PartConfiguration> part1FullPart2Empty = {{"Part1", 2}};
+    build_mesh(part1FullPart2Empty);
+  }
+
+  void force_creation_of_last_mod_location_field()
+  {
+    get_bulk().modification_begin();
+    get_bulk().modification_end();
+  }
+};
+
+TEST_F(NgpDebugFieldSync_SeparateFieldRestrictions, MeshMod_EmptyPart_NoWarning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+  
+  std::string fieldName("doubleScalarField");
+  setup_mesh_and_field_with_multiple_restrictions(fieldName);
+  stk::mesh::Field<double> & stkField = initialized_field<double>(fieldName);
+
+  testing::internal::CaptureStdout();
+  force_creation_of_last_mod_location_field();
+
+  write_scalar_field_on_host_using_entity(stkField, 3.14);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   check_no_warnings(stdoutString);

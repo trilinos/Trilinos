@@ -176,9 +176,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::absImpl(
   if (nonnull(tx)) {
     tpetraVector_.getNonconstObj()->abs(*tx);
   } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host ();
-    tpetraVector_.getNonconstObj()->modify_host ();
     VectorDefaultBase<Scalar>::absImpl(x);
   }
 }
@@ -196,9 +193,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::reciprocalImpl(
   if (nonnull(tx)) {
     tpetraVector_.getNonconstObj()->reciprocal(*tx);
   } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host ();
-    tpetraVector_.getNonconstObj()->modify_host ();
     VectorDefaultBase<Scalar>::reciprocalImpl(x);
   }
 }
@@ -218,9 +212,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::eleWiseScaleImpl(
     tpetraVector_.getNonconstObj()->elementWiseMultiply(
       ST::one(), *tx, *tpetraVector_.getConstObj(), ST::zero());
   } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host ();
-    tpetraVector_.getNonconstObj()->modify_host ();
     VectorDefaultBase<Scalar>::eleWiseScaleImpl(x);
   }
 }
@@ -245,8 +236,6 @@ TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2WeightedImpl(
       ST::one(), *tx, *tpetraVector_.getConstObj(), ST::zero());
     return ST::magnitude(ST::squareroot(tpetraVector_.getConstObj()->dot(*temp)));
   } else {
-    // This version will require the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host ();
     return VectorDefaultBase<Scalar>::norm2WeightedImpl(x);
   }
 }
@@ -261,24 +250,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyOpImpl(
   const Ordinal global_offset
   ) const
 {
-  // Sync any non-target Tpetra vecs to host space
-  for (auto itr = vecs.begin(); itr != vecs.end(); ++itr) {
-    auto tv = this->getConstTpetraVector(Teuchos::rcpFromPtr(*itr));
-    if (nonnull(tv)) {
-      typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
-      Teuchos::rcp_const_cast<TV>(tv)->sync_host ();
-    }
-  }
-
-  // Sync any target Tpetra vecs and mark modified on host
-  for (auto itr = targ_vecs.begin(); itr != targ_vecs.end(); ++itr) {
-    auto tv = this->getTpetraVector(Teuchos::rcpFromPtr(*itr));
-    if (nonnull(tv)) {
-      tv->sync_host ();
-      tv->modify_host ();
-    }
-  }
-
   SpmdVectorDefaultBase<Scalar>::applyOpImpl(op, vecs, targ_vecs, reduct_obj, global_offset);
 }
 
@@ -290,11 +261,6 @@ acquireDetachedVectorViewImpl(
   RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  // Only viewing data, so just sync dual view to host space
-  typedef typename Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
-  Teuchos::rcp_const_cast<TV>(
-    tpetraVector_.getConstObj())->sync_host ();
-
   SpmdVectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(rng, sub_vec);
 }
 
@@ -306,9 +272,6 @@ acquireNonconstDetachedVectorViewImpl(
   RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
-  // Sync to host and mark as modified
-  tpetraVector_.getNonconstObj()->sync_host ();
-  tpetraVector_.getNonconstObj()->modify_host ();
 
   SpmdVectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(rng, sub_vec);
 }
@@ -321,11 +284,6 @@ commitNonconstDetachedVectorViewImpl(
   )
 {
   SpmdVectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(sub_vec);
-
-  // Sync changes from host view to execution space
-  typedef typename Tpetra::Vector<
-    Scalar,LocalOrdinal,GlobalOrdinal,Node>::execution_space execution_space;
-  tpetraVector_.getNonconstObj()->template sync<execution_space>();
 }
 
 
@@ -350,9 +308,6 @@ assignMultiVecImpl(const MultiVectorBase<Scalar>& mv)
   if (nonnull(tmv)) {
     tpetraVector_.getNonconstObj()->assign(*tmv);
   } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host ();
-    tpetraVector_.getNonconstObj()->modify_host ();
     MultiVectorDefaultBase<Scalar>::assignMultiVecImpl(mv);
   }
 }
@@ -379,9 +334,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::updateImpl(
   if (nonnull(tmv)) {
     tpetraVector_.getNonconstObj()->update(alpha, *tmv, ST::one());
   } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host();
-    tpetraVector_.getNonconstObj()->modify_host();
     MultiVectorDefaultBase<Scalar>::updateImpl(alpha, mv);
   }
 }
@@ -458,9 +410,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::linearCombinationImpl
         *alphaIter, *(*tmvIter), *(alphaIter+1), *(*(tmvIter+1)), ST::one());
     }
   } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host ();
-    tpetraVector_.getNonconstObj()->modify_host ();
     MultiVectorDefaultBase<Scalar>::linearCombinationImpl(alpha, mv, beta);
   }
 }
@@ -479,9 +428,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dotsImpl(
   if (nonnull(tmv)) {
     tpetraVector_.getConstObj()->dot(*tmv, prods);
   } else {
-    // This version will require/modify the host view of this vector.
-    tpetraVector_.getNonconstObj()->sync_host ();
-    tpetraVector_.getNonconstObj()->modify_host ();
     MultiVectorDefaultBase<Scalar>::dotsImpl(mv, prods);
   }
 }
@@ -532,12 +478,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
   // If the cast succeeded, call Tpetra directly.
   // Otherwise, fall back to the default implementation.
   if (nonnull(X_tpetra) && nonnull(Y_tpetra)) {
-    // Sync everything to the execution space
-    typedef typename TMV::execution_space execution_space;
-    Teuchos::rcp_const_cast<TMV>(X_tpetra)->template sync<execution_space>();
-    Y_tpetra->template sync<execution_space>();
-    Teuchos::rcp_const_cast<TV>(tpetraVector_.getConstObj())->template sync<execution_space>();
-
     typedef Teuchos::ScalarTraits<Scalar> ST;
     TEUCHOS_TEST_FOR_EXCEPTION(ST::isComplex && (M_trans == CONJ),
       std::logic_error,
@@ -559,10 +499,9 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
         break;
     }
 
-    Y_tpetra->template modify<execution_space>();
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraVector_.getConstObj(), *X_tpetra, beta);
+    Kokkos::fence();
   } else {
-    Teuchos::rcp_const_cast<TV>(tpetraVector_.getConstObj())->sync_host ();
     VectorDefaultBase<Scalar>::applyImpl(M_trans, X, Y, alpha, beta);
   }
 

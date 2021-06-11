@@ -184,6 +184,7 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm() :
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  this->setStepperName(        "Newmark Implicit a-Form");
   this->setStepperType(        "Newmark Implicit a-Form");
   this->setUseFSAL(            true);
   this->setICConsistency(      "Consistent");
@@ -210,6 +211,7 @@ StepperNewmarkImplicitAForm<Scalar>::StepperNewmarkImplicitAForm(
     const Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> >& stepperAppAction)
   : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
+  this->setStepperName(        "Newmark Implicit a-Form");
   this->setStepperType(        "Newmark Implicit a-Form");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -547,6 +549,7 @@ void StepperNewmarkImplicitAForm<Scalar>::describe(
 template<class Scalar>
 bool StepperNewmarkImplicitAForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
   out.setOutputToRootOnly(0);
 
@@ -584,17 +587,13 @@ StepperNewmarkImplicitAForm<Scalar>::getValidParameters() const
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Scheme Name", "Average Acceleration");
-  pl->set<double>     ("Beta" , 0.25);
-  pl->set<double>     ("Gamma", 0.5 );
-  pl->set<bool>       ("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto pl = this->getValidParametersBasicImplicit();
+
+  auto newmarkPL = Teuchos::parameterList("Newmark Parameters");
+  newmarkPL->set<std::string>("Scheme Name", schemeName_);
+  newmarkPL->set<double>     ("Beta",    beta_);
+  newmarkPL->set<double>     ("Gamma",   gamma_ );
+  pl->set("Newmark Parameters", *newmarkPL);
 
   return pl;
 }

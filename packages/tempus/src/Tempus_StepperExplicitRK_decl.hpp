@@ -108,6 +108,10 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// Set model
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
@@ -130,11 +134,12 @@ public:
 
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
 
-    void getValidParametersBasicERK(Teuchos::RCP<Teuchos::ParameterList> pl) const;
     virtual std::string getDescription() const = 0;
   //@}
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicERK() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -160,6 +165,8 @@ protected:
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
 
   virtual void setupTableau() = 0;
+
+  virtual void setEmbeddedMemory();
 
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;

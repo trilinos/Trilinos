@@ -11,7 +11,7 @@
 
 // Tempus
 #include "Tempus_config.hpp"
-#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorBasicOld.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Tempus_StepperStaggeredForwardSensitivity.hpp"
 
@@ -37,14 +37,16 @@ namespace Tempus {
  * </ul>
  *
  * Note that this integrator implements all of the same functions as the
- * IntegratorBasic, but is not derived from IntegratorBasic.  It also provides
+ * IntegratorBasicOld, but is not derived from IntegratorBasicOld.  It also provides
  * functions for setting the sensitivity initial conditions and extracting the
  * sensitivity at the final time.  Also the vectors stored in the solution
  * history store product vectors of the state and sensitivities using
  * Thyra;:DefaultMultiVectorProductVector.
  */
 template<class Scalar>
-class IntegratorForwardSensitivity : virtual public Tempus::Integrator<Scalar>
+class IntegratorForwardSensitivity
+  : virtual public Tempus::Integrator<Scalar>,
+    virtual public Teuchos::ParameterListAcceptor
 {
 public:
 
@@ -134,6 +136,10 @@ public:
   /// Get Status
   virtual Status getStatus() const override
     { return integrator_->getStatus(); }
+  // Set Status
+  virtual void setStatus(const Status st) override {
+    integrator_->setStatus(st);
+  }
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     { return integrator_->getStepper(); }
@@ -162,6 +168,9 @@ public:
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override
     { return integrator_->getSolutionHistory(); }
+  /// Get the SolutionHistory
+  virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override
+    { return integrator_->getNonConstSolutionHistory(); }
   /// Set the SolutionHistory
   virtual void setSolutionHistory(
     Teuchos::RCP<SolutionHistory<Scalar> > sh = Teuchos::null)
@@ -237,7 +246,7 @@ protected:
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
   Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar> > sens_stepper_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > integrator_;
+  Teuchos::RCP<IntegratorBasicOld<Scalar> > integrator_;
   Teuchos::RCP<Teuchos::ParameterList> tempus_pl_;
   Teuchos::RCP<Teuchos::ParameterList> sens_pl_;
   Teuchos::RCP<Teuchos::ParameterList> stepper_pl_;

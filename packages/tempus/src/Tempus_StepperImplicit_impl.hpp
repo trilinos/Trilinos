@@ -212,7 +212,8 @@ template<class Scalar>
 void StepperImplicit<Scalar>::setDefaultSolver()
 {
   solver_ = rcp(new Thyra::NOXNonlinearSolver());
-  auto solverPL = Tempus::defaultSolverParameters();
+  auto solverPL = defaultSolverParameters();
+  this->setSolverName("Default Solver");
   auto subPL = sublist(solverPL, "NOX");
   solver_->setParameterList(subPL);
 
@@ -327,6 +328,7 @@ template<class Scalar>
 void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
                                const Teuchos::EVerbosityLevel verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << "--- StepperImplicit ---\n";
   out << "  wrapperModel_     = " << wrapperModel_ << std::endl;
   out << "  solver_           = " << solver_ << std::endl;
@@ -339,6 +341,7 @@ void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
 template<class Scalar>
 bool StepperImplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if (wrapperModel_->getAppModel() == Teuchos::null) {
@@ -368,6 +371,30 @@ bool StepperImplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 
 
 template<class Scalar>
+Teuchos::RCP<const Teuchos::ParameterList>
+StepperImplicit<Scalar>::getValidParameters() const
+{
+  return this->getValidParametersBasicImplicit();
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList>
+StepperImplicit<Scalar>::getValidParametersBasicImplicit() const
+{
+  auto pl = this->getValidParametersBasic();
+  pl->template set<std::string>("Solver Name", this->getSolverName());
+  pl->template set<bool>("Zero Initial Guess", this->getZeroInitialGuess());
+  auto noxSolverPL = this->getSolver()->getParameterList();
+  auto solverPL = Teuchos::parameterList(this->getSolverName());
+  solverPL->set("NOX", *noxSolverPL);
+  pl->set(this->getSolverName(), *solverPL);
+
+  return pl;
+}
+
+
+template<class Scalar>
 void StepperImplicit<Scalar>::
 setStepperImplicitValues(
   Teuchos::RCP<Teuchos::ParameterList> pl)
@@ -392,6 +419,7 @@ setStepperSolverValues(Teuchos::RCP<Teuchos::ParameterList> pl)
     if ( pl->isSublist(solverName) ) {
       auto solverPL = Teuchos::parameterList();
       solverPL = Teuchos::sublist(pl, solverName);
+      this->setSolverName(solverName);
       Teuchos::RCP<Teuchos::ParameterList> noxPL =
         Teuchos::sublist(solverPL,"NOX",true);
       getSolver()->setParameterList(noxPL);

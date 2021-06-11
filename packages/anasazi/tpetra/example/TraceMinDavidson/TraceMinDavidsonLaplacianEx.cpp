@@ -383,12 +383,10 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
 
   if(weighted)
   {
-    // These vectors hold the actual data
-    // The ArrayView objects just point to them
-    std::vector<GO> colIndices;
-    std::vector<Scalar> values;
-    Teuchos::ArrayView<GO> colIndicesView;
-    Teuchos::ArrayView<Scalar> valuesView;
+    using indices_view = typename CrsMatrix::nonconst_global_inds_host_view_type;
+    using values_view  = typename CrsMatrix::nonconst_values_host_view_type;
+    indices_view colIndices("colIndices");
+    values_view values("values");
 
     // This vector holds the diagonal
     RCP<Vector> diagonal = Teuchos::rcp(new Vector(rowMap));
@@ -406,15 +404,11 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
       {
         // Figure out how many entries are in the row
         size_t numentries = L->getNumEntriesInGlobalRow(i);
-        colIndices.resize(numentries);
-        values.resize(numentries);
-
-        // Point the array views to the vectors
-        colIndicesView = Teuchos::arrayViewFromVector(colIndices);
-        valuesView = Teuchos::arrayViewFromVector(values);
+        Kokkos::resize(colIndices,numentries);
+        Kokkos::resize(values,numentries);
 
         // Get a copy of row i
-        L->getGlobalRowCopy(i,colIndicesView,valuesView,numentries);
+        L->getGlobalRowCopy(i,colIndices,values,numentries);
 
         for(size_t j=0; j<colIndices.size(); j++)
         {
@@ -430,7 +424,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
         }
 
         // Reinsert the updated row
-        L->replaceGlobalValues(i, colIndicesView, valuesView);
+        L->replaceGlobalValues(i, colIndices, values);
       }
     }
 

@@ -41,6 +41,16 @@
 
 namespace {
 
+TEST(UnitTestSyncInfo, string_to_sync_mode)
+{
+  EXPECT_EQ(stk::coupling::Minimum, stk::coupling::string_to_sync_mode("Minimum"));
+  EXPECT_EQ(stk::coupling::Minimum, stk::coupling::string_to_sync_mode("minIMum"));
+  EXPECT_EQ(stk::coupling::Receive, stk::coupling::string_to_sync_mode("Receive"));
+  EXPECT_EQ(stk::coupling::Send, stk::coupling::string_to_sync_mode("Send"));
+  EXPECT_EQ(stk::coupling::Any, stk::coupling::string_to_sync_mode("Any"));
+  EXPECT_ANY_THROW(stk::coupling::string_to_sync_mode("BadInput"));
+}
+
 TEST(UnitTestSyncInfo, defaultConstructorStillWorks)
 {
   stk::coupling::SyncInfo info;
@@ -352,6 +362,7 @@ TEST(UnitTestSyncInfo, choose_value_mine_smaller)
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Send), 0.01);
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Receive), 0.1);
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Minimum), 0.01);
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any), 0.01);
 }
 
 TEST(UnitTestSyncInfo, choose_value_mine_larger)
@@ -368,6 +379,44 @@ TEST(UnitTestSyncInfo, choose_value_mine_larger)
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Send), 0.1);
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Receive), 0.01);
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Minimum), 0.01);
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any), 0.1);
+}
+
+TEST(UnitTestSyncInfo, choose_value_other_specifies)
+{
+  using stk::coupling::SyncMode;
+
+  stk::coupling::SyncInfo myInfo;
+  stk::coupling::SyncInfo otherInfo;
+  const std::string parameterName = "time step";
+
+  myInfo.set_value(parameterName, 0.1);
+  otherInfo.set_value(parameterName, 0.01);
+
+  otherInfo.set_value(stk::coupling::TimeSyncMode, stk::coupling::Send);
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any), 0.01);
+  otherInfo.set_value(stk::coupling::TimeSyncMode, stk::coupling::Receive);
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any), 0.1);
+  otherInfo.set_value(stk::coupling::TimeSyncMode, stk::coupling::Minimum);
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any), 0.01);
+}
+
+TEST(UnitTestSyncInfo, choose_value_other_is_Any)
+{
+  using stk::coupling::SyncMode;
+
+  stk::coupling::SyncInfo myInfo;
+  stk::coupling::SyncInfo otherInfo;
+  const std::string parameterName = "time step";
+
+  myInfo.set_value(parameterName, 0.1);
+  otherInfo.set_value(parameterName, 0.01);
+  otherInfo.set_value(stk::coupling::TimeSyncMode, stk::coupling::Any);
+
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Send), 0.1);
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Receive), 0.01);
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Minimum), 0.01);
+  EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any));
 }
 
 TEST(UnitTestSyncInfo, choose_value_other_missing)
@@ -383,6 +432,7 @@ TEST(UnitTestSyncInfo, choose_value_other_missing)
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Send), 0.1);
   EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Receive));
   EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Minimum));
+  EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any), 0.1);
 }
 
 TEST(UnitTestSyncInfo, choose_value_mine_missing)
@@ -398,6 +448,139 @@ TEST(UnitTestSyncInfo, choose_value_mine_missing)
   EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Send));
   EXPECT_DOUBLE_EQ(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Receive), 0.1);
   EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Minimum));
+  EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any));
+}
+
+TEST(UnitTestSyncInfo, choose_value_both_missing)
+{
+  using stk::coupling::SyncMode;
+
+  stk::coupling::SyncInfo myInfo;
+  stk::coupling::SyncInfo otherInfo;
+  const std::string parameterName = "time step";
+
+  EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Send));
+  EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Receive));
+  EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Minimum));
+  EXPECT_ANY_THROW(stk::coupling::choose_value(myInfo, otherInfo, parameterName, SyncMode::Any));
+}
+
+class TestSyncMode : public ::testing::Test
+{
+public:
+  TestSyncMode()
+  : myColor(stk::parallel_machine_rank(MPI_COMM_WORLD)),
+    otherColor(1 - myColor),
+    splitComms(MPI_COMM_WORLD, myColor)
+  {
+  }
+
+  void setup(stk::coupling::SyncMode myMode)
+  {
+    EXPECT_EQ(1u, splitComms.get_other_colors().size());
+    EXPECT_EQ(otherColor, splitComms.get_other_colors()[0]);
+    myInfo.set_value(stk::coupling::TimeSyncMode, myMode);
+    otherInfo = myInfo.exchange(splitComms, otherColor);
+  }
+
+  void setup_color0_no_mode(stk::coupling::SyncMode color1Mode)
+  {
+    EXPECT_EQ(1u, splitComms.get_other_colors().size());
+    EXPECT_EQ(otherColor, splitComms.get_other_colors()[0]);
+    if (myColor == 1) {
+      myInfo.set_value(stk::coupling::TimeSyncMode, color1Mode);
+    }
+    otherInfo = myInfo.exchange(splitComms, otherColor);
+  }
+
+  int myColor;
+  int otherColor;
+  stk::coupling::SplitComms splitComms;
+  stk::coupling::SyncInfo myInfo;
+  stk::coupling::SyncInfo otherInfo;
+};
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Send_Receive)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(myColor==0 ? stk::coupling::Send : stk::coupling::Receive);
+  EXPECT_NO_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Send_Send)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(stk::coupling::Send);
+  EXPECT_ANY_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Receive_Receive)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(stk::coupling::Receive);
+  EXPECT_ANY_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Minimum)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(stk::coupling::Minimum);
+  EXPECT_NO_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Send_Minimum)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(myColor==0 ? stk::coupling::Send : stk::coupling::Minimum);
+  EXPECT_ANY_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Minimum_Receive)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(myColor==0 ? stk::coupling::Minimum : stk::coupling::Receive);
+  EXPECT_ANY_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Send_Any)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(myColor==0 ? stk::coupling::Send : stk::coupling::Any);
+  EXPECT_NO_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Receive_Any)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(myColor==0 ? stk::coupling::Receive : stk::coupling::Any);
+  EXPECT_NO_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Minimum_Any)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(myColor==0 ? stk::coupling::Minimum : stk::coupling::Any);
+  EXPECT_NO_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_none_Any)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup_color0_no_mode(stk::coupling::Any);
+  EXPECT_NO_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_Any_Any)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  setup(stk::coupling::Any);
+  EXPECT_ANY_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
+}
+
+TEST_F(TestSyncMode, check_sync_mode_consistency_none_none)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  EXPECT_ANY_THROW(stk::coupling::check_sync_mode_consistency(myInfo, otherInfo));
 }
 
 }

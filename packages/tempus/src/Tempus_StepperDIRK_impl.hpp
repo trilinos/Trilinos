@@ -58,45 +58,77 @@ void StepperDIRK<Scalar>::setup(
 
 
 template<class Scalar>
-void StepperDIRK<Scalar>::getValidParametersBasicDIRK(
-  Teuchos::RCP<Teuchos::ParameterList> pl) const
+Teuchos::RCP<Teuchos::ParameterList>
+StepperDIRK<Scalar>::getValidParametersBasicDIRK() const
 {
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use Embedded", false,
+  auto pl = this->getValidParametersBasicImplicit();
+  pl->template set<bool>("Use Embedded", this->getUseEmbedded(),
     "'Whether to use Embedded Stepper (if available) or not\n"
     "  'true' - Stepper will compute embedded solution and is adaptive.\n"
     "  'false' - Stepper is not embedded(adaptive).\n");
-  pl->set<std::string>("Description", this->getDescription());
-  pl->set<std::string>("Solver Name", "Default Solver",
-    "Name of ParameterList containing the solver specifications.");
-  pl->set<bool>("Zero Initial Guess", false);
-  pl->set<bool>("Reset Initial Guess", true);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  pl->template set<std::string>("Description", this->getDescription());
+  pl->template set<bool>("Reset Initial Guess", this->getResetInitialGuess());
+
+  return pl;
 }
 
 
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
-  // Initialize the stage vectors
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->tableau_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the tableau, before calling "
+    "StepperDIRK::initialize()\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->wrapperModel_==Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperDIRK::initialize()\n");
+
+  StepperImplicit<Scalar>::initialize();
+}
+
+
+template<class Scalar>
+void StepperDIRK<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  StepperImplicit<Scalar>::setModel(appModel);
+
+  // Set the stage vectors
   const int numStages = this->tableau_->numStages();
   stageXDot_.resize(numStages);
   for (int i=0; i<numStages; ++i) {
     stageXDot_[i] = Thyra::createMember(this->wrapperModel_->get_f_space());
     assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
   }
-  xTilde_    = Thyra::createMember(this->wrapperModel_->get_x_space());
-  assign(xTilde_.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
+  xTilde_ = Thyra::createMember(this->wrapperModel_->get_x_space());
+  assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
+
+  this->setEmbeddedMemory();
+
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperDIRK<Scalar>::setEmbeddedMemory()
+{
+  if (this->getModel() == Teuchos::null)
+    return;  // Embedded memory will be set when setModel() is called.
 
   if (this->tableau_->isEmbedded() && this->getUseEmbedded()) {
     this->ee_    = Thyra::createMember(this->wrapperModel_->get_f_space());
     this->abs_u0 = Thyra::createMember(this->wrapperModel_->get_f_space());
     this->abs_u  = Thyra::createMember(this->wrapperModel_->get_f_space());
     this->sc     = Thyra::createMember(this->wrapperModel_->get_f_space());
+  } else {
+    this->ee_    = Teuchos::null;
+    this->abs_u0 = Teuchos::null;
+    this->abs_u  = Teuchos::null;
+    this->sc     = Teuchos::null;
   }
-
-  StepperImplicit<Scalar>::initialize();
 }
 
 
@@ -305,6 +337,7 @@ void StepperDIRK<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
@@ -331,6 +364,7 @@ void StepperDIRK<Scalar>::describe(
 template<class Scalar>
 bool StepperDIRK<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
@@ -354,10 +388,7 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  this->getValidParametersBasicDIRK(pl);
-
-  return pl;
+  return this->getValidParametersBasicDIRK();
 }
 
 

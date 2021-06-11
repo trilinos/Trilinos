@@ -411,7 +411,7 @@ public:
   typedef SizeType size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
+  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> HostMirror;
   //! Type of the graph structure of the sparse matrix.
   typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
@@ -473,13 +473,13 @@ public:
   {}
 
   //! Copy constructor (shallow copy).
-  template<typename SType,
-           typename OType,
-           class DType,
-           class MTType,
-           typename IType>
+  template<typename InScalar,
+           typename InOrdinal,
+           class InDevice,
+           class InMemTraits,
+           typename InSizeType>
   KOKKOS_INLINE_FUNCTION
-  CrsMatrix (const CrsMatrix<SType,OType,DType,MTType,IType> & B) :
+  CrsMatrix (const CrsMatrix<InScalar,InOrdinal,InDevice,InMemTraits,InSizeType> & B) :
     graph (B.graph.entries, B.graph.row_map),
     values (B.values),
     dev_config (B.dev_config),
@@ -494,14 +494,36 @@ public:
     //as the constructor of StaticCrsGraph does not allow copy from non const version.
   }
 
+  //! Deep copy constructor (can cross spaces)
+  template<typename InScalar, typename InOrdinal, typename InDevice, typename InMemTraits, typename InSizeType>
+  CrsMatrix (const std::string&,
+      const CrsMatrix<InScalar, InOrdinal, InDevice, InMemTraits, InSizeType>& mat_)
+  {
+    typename row_map_type::non_const_type rowmap(Kokkos::ViewAllocateWithoutInitializing("rowmap"), mat_.graph.row_map.extent(0));
+    index_type cols(Kokkos::ViewAllocateWithoutInitializing("cols"), mat_.nnz());
+    values = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), mat_.nnz());
+    Kokkos::deep_copy(rowmap, mat_.graph.row_map);
+    Kokkos::deep_copy(cols, mat_.graph.entries);
+    Kokkos::deep_copy(values, mat_.values);
+
+    numCols_ = mat_.numCols();
+    graph = StaticCrsGraphType(cols, rowmap);
+
+#ifdef KOKKOS_USE_CUSPARSE
+    cusparseCreate (&cusparse_handle);
+    cusparseCreateMatDescr (&cusparse_descr);
+#endif // KOKKOS_USE_CUSPARSE
+  }
+
   /// \brief Construct with a graph that will be shared.
   ///
   /// Allocate the values array for subsquent fill.
-  CrsMatrix (const std::string& arg_label,
-             const staticcrsgraph_type& arg_graph) :
-    graph (arg_graph),
-    values (arg_label, arg_graph.entries.extent(0)),
-    numCols_ (maximum_entry (arg_graph) + 1)
+  template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
+  CrsMatrix (const std::string& label,
+             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
+    graph (graph_.entries, graph_.row_map),
+    values (label, graph_.entries.extent(0)),
+    numCols_ (maximum_entry (graph_) + 1)
   {}
 
   /// \brief Constructor that copies raw arrays of host data in
@@ -532,7 +554,37 @@ public:
              OrdinalType* rowmap,
              OrdinalType* cols)
   {
-    ctor_impl (label, nrows, ncols, annz, val, rowmap, cols);
+    using Kokkos::Unmanaged;
+    using HostRowmap = Kokkos::View<SizeType*, Kokkos::HostSpace>;
+    using UnmanagedRowmap = Kokkos::View<const SizeType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
+    using UnmanagedEntries = Kokkos::View<const OrdinalType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
+    using UnmanagedValues = Kokkos::View<const ScalarType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
+    //Allocate device rowmap, entries, values views
+    typename row_map_type::non_const_type rowmapDevice(Kokkos::ViewAllocateWithoutInitializing("rowmap"), nrows + 1);
+    index_type entriesDevice(Kokkos::ViewAllocateWithoutInitializing("entries"), annz);
+    //given rowmap in ordinal_type, so may need to convert to size_type explicitly
+    HostRowmap rowmapConverted;
+    UnmanagedRowmap rowmapRaw;
+    if(!std::is_same<OrdinalType, SizeType>::value)
+    {
+      rowmapConverted = HostRowmap(Kokkos::ViewAllocateWithoutInitializing("rowmap raw"), nrows + 1);
+      for(OrdinalType i = 0; i <= nrows; i++)
+        rowmapConverted(i) = rowmap[i];
+      rowmapRaw = rowmapConverted;
+    }
+    else
+    {
+      rowmapRaw = UnmanagedRowmap((const SizeType*) rowmap, nrows + 1);
+    }
+    Kokkos::deep_copy(rowmapDevice, rowmapRaw);
+    UnmanagedEntries entriesRaw(cols, annz);
+    Kokkos::deep_copy(entriesDevice, entriesRaw);
+    //Construct graph and populate all members
+    this->numCols_ = ncols;
+    this->graph = StaticCrsGraphType(entriesDevice, rowmapDevice);
+    this->values = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), annz);
+    UnmanagedValues valuesRaw(val, annz);
+    Kokkos::deep_copy(this->values, valuesRaw);
 
     // FIXME (mfh 09 Aug 2013) Specialize this on the Device type.
     // Only use cuSPARSE for the Cuda Device.
@@ -609,11 +661,12 @@ public:
   /// \param rows [in/out] The row map (containing the offsets to the
   ///   data in each row).
   /// \param cols [in/out] The column indices.
-  CrsMatrix (const std::string& /* label */,
+  template<typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
+  CrsMatrix (const std::string&,
              const OrdinalType& ncols,
              const values_type& vals,
-             const staticcrsgraph_type& graph_) :
-    graph (graph_),
+             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_) :
+    graph (graph_.entries, graph_.row_map),
     values (vals),
     numCols_ (ncols)
   {
@@ -622,15 +675,6 @@ public:
     cusparseCreateMatDescr (&cusparse_descr);
 #endif // KOKKOS_USE_CUSPARSE
   }
-
-  void
-  ctor_impl (const std::string &label,
-          const OrdinalType nrows,
-          const OrdinalType ncols,
-          const size_type annz,
-          ScalarType* val,
-          OrdinalType* rows,
-          OrdinalType* cols);
 
   KOKKOS_INLINE_FUNCTION
   OrdinalType
@@ -860,51 +904,5 @@ private:
   ordinal_type numCols_;
 };
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
-void
-CrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
-ctor_impl (const std::string &label,
-           const OrdinalType nrows,
-           const OrdinalType ncols,
-           const size_type annz,
-           ScalarType* val,
-           OrdinalType* rows,
-           OrdinalType* cols)
-{
-  std::string str = label;
-  values = values_type (str.append (".values"), annz);
-
-  numCols_ = ncols;
-
-  // FIXME (09 Aug 2013) CrsArray only takes std::vector for now.
-  // We'll need to fix that.
-  std::vector<int> row_lengths (nrows, 0);
-
-  // FIXME (mfh 21 Jun 2013) This calls for a parallel_for kernel.
-  for (OrdinalType i = 0; i < nrows; ++i) {
-    row_lengths[i] = rows[i + 1] - rows[i];
-  }
-
-  str = label;
-  graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> (str.append (".graph"), row_lengths);
-  typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
-  typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
-
-  // FIXME (mfh 21 Jun 2013) This needs to be a parallel copy.
-  // Furthermore, why are the arrays copied twice? -- once here, to a
-  // host view, and once below, in the deep copy?
-  for (size_type i = 0; i < annz; ++i) {
-    if (val) {
-      h_values(i) = val[i];
-    }
-    h_entries(i) = cols[i];
-  }
-
-  Kokkos::deep_copy (values, h_values);
-  Kokkos::deep_copy (graph.entries, h_entries);
-}
 }
 #endif

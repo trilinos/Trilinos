@@ -10,7 +10,7 @@
 #define Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorBasicOld.hpp"
 #include "Tempus_AdjointSensitivityModelEvaluator.hpp"
 
 
@@ -49,8 +49,9 @@ namespace Tempus {
  * (since the eigenvalues of df/dx^T are the same as df/dx).
  */
 template<class Scalar>
-class IntegratorPseudoTransientAdjointSensitivity :
-    virtual public Tempus::Integrator<Scalar>
+class IntegratorPseudoTransientAdjointSensitivity
+  : virtual public Tempus::Integrator<Scalar>,
+    virtual public Teuchos::ParameterListAcceptor
 {
 public:
 
@@ -101,6 +102,8 @@ public:
   virtual int getIndex() const override;
   /// Get Status
   virtual Status getStatus() const override;
+  /// Set Status
+  virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
   /// Return a copy of the Tempus ParameterList
@@ -108,6 +111,8 @@ public:
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
+  /// Get the SolutionHistory
+  virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
   virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
@@ -170,8 +175,8 @@ protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> > sens_model_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > sens_integrator_;
+  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
+  Teuchos::RCP<IntegratorBasicOld<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<DMVPV> dgdp_;
 };

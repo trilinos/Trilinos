@@ -19,6 +19,7 @@ namespace Tempus {
 template<class Scalar>
 StepperTrapezoidal<Scalar>::StepperTrapezoidal()
 {
+  this->setStepperName(        "Trapezoidal Method");
   this->setStepperType(        "Trapezoidal Method");
   this->setUseFSAL(            true);
   this->setICConsistency(      "Consistent");
@@ -40,7 +41,8 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> >& stepperTrapAppAction)
 {
-  this->setStepperType(        "Trapezoidal");
+  this->setStepperName(        "Trapezoidal Method");
+  this->setStepperType(        "Trapezoidal Method");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
@@ -186,6 +188,7 @@ void StepperTrapezoidal<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
@@ -199,6 +202,7 @@ void StepperTrapezoidal<Scalar>::describe(
 template<class Scalar>
 bool StepperTrapezoidal<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
@@ -210,24 +214,6 @@ bool StepperTrapezoidal<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
   }
 
   return isValidSetup;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-StepperTrapezoidal<Scalar>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>       ("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
-  pl->set<bool>       ("Initial Condition Consistency Check", false);
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
-
-  return pl;
 }
 
 

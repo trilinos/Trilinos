@@ -135,14 +135,14 @@ private:
 
     // send your end point to the right
     Real coarseTimeEnd = (higherLevel->end()-1)->t[0];
-    if(timeRank!=comm->getTimeSize()-1 and ((myFirstIndex+higherLevel->size()) % 2)==0) {
+    if(timeRank!=comm->getTimeSize()-1 && ((myFirstIndex+higherLevel->size()) % 2)==0) {
       int tag = 0;
       MPI_Send(&coarseTimeEnd,1,MPI_DOUBLE,comm->getTimeRank()+1,tag,comm->getTimeCommunicator());
     }
 
     // recieve the left time node on the coarse grid
     Real coarseTimeStart = 0.0;
-    if(timeRank!=0 and (myFirstIndex % 2)==0) {
+    if(timeRank!=0 && (myFirstIndex % 2)==0) {
       int tag = 0;
       MPI_Recv(&coarseTimeStart,1,MPI_DOUBLE,comm->getTimeRank()-1,tag,comm->getTimeCommunicator(),MPI_STATUS_IGNORE);
     }

@@ -78,9 +78,7 @@ void execute(CommandType& command, Value& value)
     case VECTOR_DOUBLE: command.template execute<std::vector<double>>(value); break;
     case VECTOR_STRING: command.template execute<std::vector<std::string>>(value); break;
     case VECTOR_PAIR_STRING_INT: command.template execute<std::vector<std::pair<std::string,int>>>(value); break;
-    default:
-      ThrowErrorMsg("Found unsupported type: " << value.type << " while executing command '" << command.name() << "'");
-      break;
+    default: ThrowErrorMsg("Found unsupported type: " << value.type << " while executing command '" << command.name() << "'"); break;
   }
 }
 

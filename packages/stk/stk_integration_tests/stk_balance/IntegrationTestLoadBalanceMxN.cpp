@@ -8,13 +8,13 @@
 #include <Ioss_Field.h>
 #include <stk_io/IossBridge.hpp>
 #include <stk_util/environment/perf_util.hpp>
-#include <stk_balance/internal/MxNutils.hpp>
-#include <stk_balance/internal/balanceMtoN.hpp>
+#include <stk_balance/m2n/MxNutils.hpp>
+#include <stk_balance/m2n/balanceMtoN.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
 #include <stk_balance/setup/M2NParser.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_balance/m2n/MtoNRebalancer.hpp>
 
-#include <stk_balance/internal/MtoNRebalancer.hpp>
 namespace
 {
 
@@ -49,7 +49,6 @@ protected:
 
     void setup_initial_mesh_from_last_time_step(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        create_target_decomp_field_on_entire_mesh();
         setup_mesh_from_last_time_step(get_input_mesh_file_name(), auraOption);
     }
 
@@ -144,14 +143,6 @@ TEST_F(TestBalanceMxNRebalanceUsingInputFiles, read4procswrite4procsFilesUsingIo
 
         verify_node_sharing_info(nodeSharingInfo, get_output_filename());
     }
-}
-
-TEST_F(TestBalanceMxNRebalanceUsingInputFiles, MxN_decompositionWithoutAura)
-{
-    set_options();
-    setup_initial_mesh_from_last_time_step(stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
-    stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, parsedOptions, numSteps, maxTime);
 }
 
 class BulkDataForBalance : public stk::mesh::BulkData

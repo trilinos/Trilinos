@@ -109,7 +109,8 @@
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include <Stratimikos_MueLuHelpers.hpp>
+#include <Thyra_MueLuPreconditionerFactory.hpp>
+#include "Teuchos_AbstractFactoryStd.hpp"
 // Ifpack2 includes
 #ifdef HAVE_MUELU_IFPACK2
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
@@ -171,34 +172,6 @@ namespace MueLu {
     FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getData(0),dirichletCols);
   }
 
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
-                            Teuchos::ArrayRCP<bool>& dirichletRows)
-  {
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
-    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
-      size_t nnz = A.getNumEntriesInLocalRow(row);
-      ArrayView<const LocalOrdinal> indices;
-      ArrayView<const Scalar> vals;
-      A.getLocalRowView(row, indices, vals);
-
-      Scalar rowsum = STS::zero();
-      Scalar diagval = STS::zero();
-      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
-        LocalOrdinal col = indices[colID];
-        if (row == col)
-          diagval = vals[colID];
-        rowsum += vals[colID];
-      }
-      if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
-        dirichletRows[row] = true;
-    }
-  }
-
-
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -257,33 +230,6 @@ namespace MueLu {
       globalColsToZero = myColsToZero;
     FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(),dirichletDomain);
     FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(),dirichletCols);
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
-                            Kokkos::View<bool*, typename Node::device_type> & dirichletRows)
-  {
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
-    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
-      size_t nnz = A.getNumEntriesInLocalRow(row);
-      ArrayView<const LocalOrdinal> indices;
-      ArrayView<const Scalar> vals;
-      A.getLocalRowView(row, indices, vals);
-
-      Scalar rowsum = STS::zero();
-      Scalar diagval = STS::zero();
-      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
-        LocalOrdinal col = indices[colID];
-        if (row == col)
-          diagval = vals[colID];
-        rowsum += vals[colID];
-      }
-      if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
-        dirichletRows(row) = true;
-    }
   }
 
 #endif
@@ -416,7 +362,7 @@ namespace MueLu {
       BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
 
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
+        Utilities_kokkos::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
 
       BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getNodeNumElements());
       BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getDomainMap()->getNodeNumElements());
@@ -438,7 +384,7 @@ namespace MueLu {
       BCrows_ = Teuchos::arcp_const_cast<bool>(Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true));
 
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
+        Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
 
       BCcols_.resize(D0_Matrix_->getColMap()->getNodeNumElements());
       BCdomain_.resize(D0_Matrix_->getDomainMap()->getNodeNumElements());
@@ -808,6 +754,8 @@ namespace MueLu {
           coarseLevel.Set("A",AH_);
           coarseLevel.Set("P",P11_);
           coarseLevel.Set("Coordinates",CoordsH_);
+          if (!NullspaceH_.is_null())
+            coarseLevel.Set("Nullspace",NullspaceH_);
           coarseLevel.Set("number of partitions", numProcsAH);
           coarseLevel.Set("repartition: heuristic target rows per process", 1000);
 
@@ -858,8 +806,10 @@ namespace MueLu {
           newPparams.set("type", "Interpolation");
           newPparams.set("repartition: rebalance P and R", precList11_.get<bool>("repartition: rebalance P and R", false));
           newPparams.set("repartition: use subcommunicators", true);
-          newPparams.set("repartition: rebalance Nullspace", false);
+          newPparams.set("repartition: rebalance Nullspace", !NullspaceH_.is_null());
           newP->SetFactory("Coordinates", NoFactory::getRCP());
+          if (!NullspaceH_.is_null())
+            newP->SetFactory("Nullspace", NoFactory::getRCP());
           newP->SetParameterList(newPparams);
           newP->SetFactory("Importer", repartFactory);
 
@@ -873,6 +823,8 @@ namespace MueLu {
           coarseLevel.Request("Importer", repartFactory.get());
           coarseLevel.Request("A", newA.get());
           coarseLevel.Request("Coordinates", newP.get());
+          if (!NullspaceH_.is_null())
+            coarseLevel.Request("Nullspace", newP.get());
           repartFactory->Build(coarseLevel);
 
           if (!precList11_.get<bool>("repartition: rebalance P and R", false))
@@ -880,6 +832,8 @@ namespace MueLu {
           P11_ = coarseLevel.Get< RCP<Matrix> >("P", newP.get());
           AH_ = coarseLevel.Get< RCP<Matrix> >("A", newA.get());
           CoordsH_ = coarseLevel.Get< RCP<RealValuedMultiVector> >("Coordinates", newP.get());
+          if (!NullspaceH_.is_null())
+            NullspaceH_ = coarseLevel.Get< RCP<MultiVector> >("Nullspace", newP.get());
 
           AH_AP_reuse_data_ = Teuchos::null;
           AH_RAP_reuse_data_ = Teuchos::null;
@@ -949,8 +903,12 @@ namespace MueLu {
 
           if (!reuse) {
             dumpCoords(*CoordsH_, "coordsH.m");
+            if (!NullspaceH_.is_null())
+              dump(*NullspaceH_, "NullspaceH.m");
             ParameterList& userParamList = precList11_.sublist("user data");
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+            if (!NullspaceH_.is_null())
+              userParamList.set<RCP<MultiVector> >("Nullspace", NullspaceH_);
             HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
           } else {
             RCP<MueLu::Level> level0 = HierarchyH_->GetLevel(0);
@@ -1555,6 +1513,7 @@ namespace MueLu {
 
     RCP<Matrix> P_nodal;
     RCP<CrsMatrix> P_nodal_imported;
+    RCP<MultiVector> Nullspace_nodal;
     if (skipFirstLevel_) {
       // build prolongator: algorithm 1 in the reference paper
       // First, build nodal unsmoothed prolongator using the matrix A_nodal
@@ -1642,6 +1601,7 @@ namespace MueLu {
           coarseLevel.Request("P", SaPFact.get());
         } else
           coarseLevel.Request("P",TentativePFact.get());
+        coarseLevel.Request("Nullspace",TentativePFact.get());
         coarseLevel.Request("Coordinates",Tfact.get());
 
         RCP<AggregationExportFactory> aggExport;
@@ -1662,12 +1622,15 @@ namespace MueLu {
           coarseLevel.Get("P",P_nodal,SaPFact.get());
         else
           coarseLevel.Get("P",P_nodal,TentativePFact.get());
+        coarseLevel.Get("Nullspace",Nullspace_nodal,TentativePFact.get());
         coarseLevel.Get("Coordinates",CoordsH_,Tfact.get());
+
 
         if (parameterList_.get("aggregation: export visualization data",false))
           aggExport->Build(fineLevel, coarseLevel);
       }
       dump(*P_nodal, "P_nodal.m");
+      dump(*Nullspace_nodal, "Nullspace_nodal.m");
 
 
       RCP<CrsMatrix> D0Crs = rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix();
@@ -1820,6 +1783,18 @@ namespace MueLu {
 
         } else
           TEUCHOS_TEST_FOR_EXCEPTION(false,std::invalid_argument,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
+
+        NullspaceH_ = MultiVectorFactory::Build(P11_->getDomainMap(), dim);
+
+        auto localNullspace_nodal = Nullspace_nodal->getDeviceLocalView();
+        auto localNullspaceH = NullspaceH_->getDeviceLocalView();
+        Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_nullspace", range_type(0,Nullspace_nodal->getLocalLength()),
+                             KOKKOS_LAMBDA(const size_t i) {
+                               Scalar val = localNullspace_nodal(i,0);
+                               for (size_t j = 0; j < dim; j++)
+                                 localNullspaceH(dim*i+j, j) = val;
+                             });
+
       } else { // !skipFirstLevel_
 
         CoordsH_ = Coords_;
@@ -2174,6 +2149,18 @@ namespace MueLu {
             P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(false,std::invalid_argument,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
+
+          NullspaceH_ = MultiVectorFactory::Build(P11_->getDomainMap(), dim);
+
+          ArrayRCP<const Scalar> ns_rcp = Nullspace_nodal->getData(0);
+          ArrayView<const Scalar> ns_view = ns_rcp();
+          for (size_t i = 0; i < Nullspace_nodal->getLocalLength(); i++) {
+            Scalar val = ns_view[i];
+            for (size_t j = 0; j < dim; j++)
+              NullspaceH_->replaceLocalValue(dim*i+j, j, val);
+          }
+
+
         } else { // !skipFirstLevel_
 
           CoordsH_ = Coords_;
@@ -2367,7 +2354,7 @@ namespace MueLu {
             AHBCrows[i*dim+k] = BCdomain_[i];
       magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
+        Utilities::ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
       if (applyBCsToH_)
         Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
     }
@@ -2969,10 +2956,11 @@ namespace MueLu {
     RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-    Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+    typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
+    typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
 #ifdef HAVE_MUELU_IFPACK2
     // Register Ifpack2 as a Stratimikos preconditioner strategy.
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif

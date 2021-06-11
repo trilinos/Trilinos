@@ -255,7 +255,7 @@ inline void ThrowMsgHost(bool expr, const char * exprString, const char * messag
   stk::output_stacktrace(stk_util_internal_throw_require_loc_oss);
   throw std::logic_error(
     std::string("Requirement( ") + exprString + " ) FAILED\n" +
-    "Error occured at: " + stk_util_internal_throw_require_loc_oss.str() + "\n" +
+    "Error occurred at: " + stk_util_internal_throw_require_loc_oss.str() + "\n" +
     "Error: " + message + "\n");
 }
 
@@ -271,7 +271,7 @@ inline void ThrowHost(bool expr, const char * exprString, const std::string & lo
   stk::output_stacktrace(stk_util_internal_throw_require_loc_oss);
   throw std::logic_error(
     std::string("Requirement( ") + exprString + " ) FAILED\n" +
-    "Error occured at: " + stk_util_internal_throw_require_loc_oss.str() + "\n");
+    "Error occurred at: " + stk_util_internal_throw_require_loc_oss.str() + "\n");
 }
 
 inline void ThrowErrorMsgHost(const char * message, const std::string & location)
@@ -280,7 +280,7 @@ inline void ThrowErrorMsgHost(const char * message, const std::string & location
   stk_util_internal_throw_require_loc_oss << stk::source_relative_path(location) << "\n";
   stk::output_stacktrace(stk_util_internal_throw_require_loc_oss);
   throw std::runtime_error(
-    std::string("Error occured at: ") + stk_util_internal_throw_require_loc_oss.str() + "\n" +
+    std::string("Error occurred at: ") + stk_util_internal_throw_require_loc_oss.str() + "\n" +
     "Error: " + message + "\n");
 }
 

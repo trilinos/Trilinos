@@ -43,7 +43,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 // #include "Tpetra_Details_gathervPrint.hpp"
-#include "Tpetra_Details_iallreduce.hpp"
+#include "Tpetra_iallreduce.hpp"
 #ifdef HAVE_TPETRACORE_MPI
 #  include "Tpetra_Details_MpiTypeTraits.hpp"
 #endif // HAVE_TPETRACORE_MPI
@@ -203,7 +203,7 @@ namespace {
 
       Kokkos::deep_copy (recvbuf_h, recvbuf);
       for (LO k = 0; k < lclNumPackets; ++k) {
-        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak(k) * np );
+        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak_h(k) * np );
       }
     }
 
@@ -353,6 +353,23 @@ namespace {
 
     const std::string deviceTypeName ("default");
     testIallreducePackets<device_type> (success, out, deviceTypeName, lclNumPackets, *comm);
+  }
+
+  TEUCHOS_UNIT_TEST( iallreduce, single_int)
+  {
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    //Use iallreduce to compute sum(1 ... nranks)
+    int input = 1 + comm->getRank();
+    int correctOutput = 0;
+    for(int i = 0; i < comm->getSize(); i++)
+      correctOutput += (1 + i);
+    int output = -1;
+    auto req = Tpetra::iallreduce(input, output, Teuchos::REDUCE_SUM, *comm);
+    TEST_ASSERT( req.get () != NULL );
+    if (req.get () != NULL) {
+      TEST_NOTHROW( req->wait () );
+    }
+    TEST_EQUALITY(output, correctOutput);
   }
 
 } // namespace (anonymous)

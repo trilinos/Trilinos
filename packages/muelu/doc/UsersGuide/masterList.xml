@@ -412,6 +412,24 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: classical scheme</name>
+      <type>string</type>
+      <default>"direct"</default>
+      <description>Prolongator formation option for classical coarsening.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: row sum drop tol</name>
+      <type>double</type>
+      <default>-1.0</default>
+      <description>Detection threshold for mass-dominated      rows. Defaults to -1 (meaning disabled)</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: block diagonal: interleaved blocksize</name>
       <type>int</type>
       <default>3</default>
@@ -826,10 +844,9 @@
       <name>aggregation: coarsening order</name>
       <type>int</type>
       <default>0</default>
-      <description>The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.</description>
+      <description>The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory. There, possible values are 0 for piece-wise constant and 1 for piece-wise linear interpolation to transfer values from coarse points to fine points. </description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
-
 
     <parameter>
       <name>aggregation: pairwise: size</name>
@@ -1058,6 +1075,15 @@
     </parameter>
 
     <parameter>
+      <name>semicoarsen: piecewise constant</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>whether or not to use piecewise constant interpolation when semicoarsening.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>true</visible>
+    </parameter>
+
+    <parameter>
       <name>semicoarsen: number of levels</name>
       <type>int</type>
       <default>3</default>
@@ -1166,15 +1192,6 @@ Only used when tentative: calculate qr is set to false.</description>
       <description>If it's determined that a diagonal entry in prolongator smoothing is too small, replace that entry with this value.</description>
       <visible>false</visible>
       <name-ML>not supported by ML</name-ML>
-    </parameter>
-
-    <parameter>
-      <name>interp: interpolation order</name>
-      <type>int</type>
-      <default>1</default>
-      <description>Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.</description>
-      <visible>true</visible>
-      <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
     <parameter>

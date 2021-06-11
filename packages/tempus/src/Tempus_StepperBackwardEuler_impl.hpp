@@ -20,6 +20,7 @@ namespace Tempus {
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler()
 {
+  this->setStepperName(        "Backward Euler");
   this->setStepperType(        "Backward Euler");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -43,6 +44,7 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperBackwardEulerAppAction<Scalar> >& stepperBEAppAction)
 {
+  this->setStepperName(        "Backward Euler");
   this->setStepperType(        "Backward Euler");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -114,6 +116,24 @@ void StepperBackwardEuler<Scalar>::setAppAction(
   } else {
     stepperBEAppAction_ = appAction;
   }
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  StepperImplicit<Scalar>::setModel(appModel);
+
+  if (predictorStepper_ != Teuchos::null) {
+    // If predictor's model is not set, set it to the stepper model.
+    if (predictorStepper_->getModel() == Teuchos::null) {
+      predictorStepper_->setModel(appModel);
+      predictorStepper_->initialize();
+    }
+  }
+
   this->isInitialized_ = false;
 }
 
@@ -245,19 +265,20 @@ void StepperBackwardEuler<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperBackwardEuler ---\n";
+  out << "  predictorStepper_                  = "
+      << predictorStepper_ << std::endl;
   if (predictorStepper_ != Teuchos::null) {
+    out << "  predictorStepper_->isInitialized() = "
+        << Teuchos::toString(predictorStepper_->isInitialized()) << std::endl;
     out << "  predictor stepper type             = "
         << predictorStepper_->description() << std::endl;
   }
-  out << "  predictorStepper_                  = "
-      << predictorStepper_ << std::endl;
-  out << "  predictorStepper_->isInitialized() = "
-      << Teuchos::toString(predictorStepper_->isInitialized()) << std::endl;
   out << "  stepperBEAppAction_                = "
       << stepperBEAppAction_ << std::endl;
   out << "----------------------------" << std::endl;
@@ -267,6 +288,7 @@ void StepperBackwardEuler<Scalar>::describe(
 template<class Scalar>
 bool StepperBackwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
@@ -292,14 +314,11 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperBackwardEuler<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  pl->set<std::string>("Predictor Stepper Type", "None");
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
-
+  auto pl = this->getValidParametersBasicImplicit();
+  if (predictorStepper_ == Teuchos::null)
+    pl->set("Predictor Stepper Type", "None");
+  else
+    pl->set("Predictor Stepper Type", predictorStepper_->getStepperType());
   return pl;
 }
 
@@ -439,14 +458,14 @@ createStepperBackwardEuler(
 
   stepper->setStepperImplicitValues(pl);
 
+  if (pl != Teuchos::null) {
+    std::string predictorName =
+      pl->get<std::string>("Predictor Stepper Type", "None");
+    stepper->setPredictor(predictorName);
+  }
+
   if (model != Teuchos::null) {
     stepper->setModel(model);
-
-    if (pl != Teuchos::null) {
-      std::string predictorName =
-        pl->get<std::string>("Predictor Stepper Type", "None");
-      stepper->setPredictor(predictorName);
-    }
     stepper->initialize();
   }
 

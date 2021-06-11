@@ -247,7 +247,7 @@ int Ifpack_PointRelaxation::Compute()
                                                &Values[0], &Indices[0]));
       double diagonal_boost=0.0;
       for (int k = 0 ; k < NumEntries ; ++k)
-        if(Indices[k] > NumMyRows_)
+        if(Indices[k] >= NumMyRows_)
           diagonal_boost+=std::abs(Values[k]/2.0);
       if ((*Diagonal_)[i] < L1Eta_*diagonal_boost)
         (*Diagonal_)[i]+=diagonal_boost;

@@ -997,36 +997,6 @@ TEST(StkSimd, SimdSpecialFunctionsFloat)
   
   ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
 
-  // multiplysign
-
-  for (int n=0; n < N; n+=stk::simd::nfloats) {
-    for (int i=0; i < stk::simd::nfloats; ++i) {
-      z2[n+i] = x[n+i]*( (0.0 <= y[n+i]) - (y[n+1] < 0.0) );
-      z3[n+i] = stk::math::multiplysign(x[n+i],y[n+i]);
-    }
-    const stk::simd::Float xl = stk::simd::load(&x[n]);
-    const stk::simd::Float yl = stk::simd::load(&y[n]);
-    stk::simd::Float zl = stk::math::multiplysign(xl,yl);
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
-  
-  // copysign
-
-  for (int n=0; n < N; n+=stk::simd::nfloats) {
-    for (int i=0; i < stk::simd::nfloats; ++i) {
-      z2[n+i] = std::abs(x[n+i])*( (0.0 <= y[n+i]) - (y[n+1] < 0.0) );
-      z3[n+i] = stk::math::copysign(x[n+i],y[n+i]);
-    }
-    const stk::simd::Float xl = stk::simd::load(&x[n]);
-    const stk::simd::Float yl = stk::simd::load(&y[n]);
-    stk::simd::Float zl = stk::math::copysign(xl,yl);
-    stk::simd::store(&z1[n],zl);
-  }
-  
-  ASSERT_NEAR( max_error(z1, z2, z3), 0.0, 0.0 );
-
   // max
 
   for (int n=0; n < N; n+=stk::simd::nfloats) {

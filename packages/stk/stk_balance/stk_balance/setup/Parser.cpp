@@ -149,7 +149,7 @@ void Parser::add_options_to_parser()
                            "Use proximity search for contact [on|off]"};
   stk::CommandLineOption decompMethod{m_optionNames.decompMethod, "",
                            "Use this geometric decomposition method [rcb|rib|multijagged] "
-                           "or graph-based decomposition method [parmetis]. "
+                           "or graph-based decomposition method [parmetis|scotch]. "
                            "Note that geometric methods do not use contact search and "
                            "ignore all search-related options, as well as ignoring spider elements."};
   stk::CommandLineOption vertexWeightBlockMultiplier{m_optionNames.vertexWeightBlockMultiplier, "",

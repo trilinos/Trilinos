@@ -42,7 +42,7 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to solve a control problem governed by a semilinear 
+    \brief Shows how to solve a control problem governed by a semilinear
            parabolic equation,
            \f[
               \min_{u,z} \;\sum_{n=1}^N frac{\delta_t}{2} (u_{n-1}-1)^2 (u_n-1)^2 (z_n-1)^2
@@ -66,10 +66,10 @@
 #include "ROL_DynamicObjectiveCheck.hpp"
 
 #include <iostream>
-#include <fenv.h>
+//#include <fenv.h>
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
   using uint  = std::vector<RealT>::size_type;
 

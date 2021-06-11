@@ -51,6 +51,7 @@
 #include <type_traits>
 #include <KokkosKernels_Handle.hpp>
 #include "Ifpack2_Details_GaussSeidel.hpp"
+#include "Ifpack2_Details_InverseDiagonalKernel.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Ifpack2 {
@@ -207,7 +208,7 @@ option.  See the documentation of setParameters() for details.
 Gauss-Seidel / SOR also comes in a symmetric version.  This method
 first does a Forward sweep, then a Backward sweep.  Only the symmetric
 version of this preconditioner is guaranteed to be symmetric (or Hermitian,
-if the matrix's data are complex).
+if the matrix data are complex).
 
 Users may set the relaxation method via the "relaxation: type"
 parameter.  For all relaxation methods, users may specify the number
@@ -270,6 +271,12 @@ public:
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+
+  //! Tpetra::Operator specialization used by this class.
+  typedef Tpetra::Operator<scalar_type,
+                           local_ordinal_type,
+                           global_ordinal_type,
+                           node_type> op_type;
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Relaxation: Please use MatrixType = Tpetra::RowMatrix.  This saves build times, library sizes, and executable sizes.  Don't worry, this class still works with CrsMatrix and BlockCrsMatrix; those are both subclasses of RowMatrix.");
 
@@ -395,6 +402,10 @@ public:
   /// If scalar_type is <tt>std::complex<T></tt> for some type \c T,
   /// then magnitude_type is \c T.
   void setParameters (const Teuchos::ParameterList& params);
+
+  bool supportsZeroStartingSolution() { return true; }
+
+  void setZeroStartingSolution (bool zeroStartingSolution) { ZeroStartingSolution_ = zeroStartingSolution; };
 
   //! Return a list of all the parameters that this class accepts.
   Teuchos::RCP<const Teuchos::ParameterList>
@@ -606,18 +617,22 @@ private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
 
+  typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
+  Teuchos::RCP<Ifpack2::Details::InverseDiagonalKernel<op_type> > invDiagKernel_;
 
   //@}
   //! \name Implementation of multithreaded Gauss-Seidel.
   //@{
 
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type TemporaryWorkSpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type PersistentWorkSpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::execution_space MyExecSpace;
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type TemporaryWorkSpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type PersistentWorkSpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::execution_space MyExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
       <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
       MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
@@ -784,6 +799,8 @@ private:
   bool checkDiagEntries_ = false;
   //! For MTSGS, the cluster size (use point coloring if equal to 1)
   int clusterSize_ = 1;
+  //! For MTSGS, the threshold for long/bulk rows (rows with at least this many nonzeros)
+  int longRowThreshold_ = 0;
 
   //! Number of outer-sweeps for the two-stage Gauss Seidel
   int NumOuterSweeps_ = 1;

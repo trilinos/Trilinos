@@ -48,7 +48,7 @@ createStepper(
 {
   std::string stepperType = "Forward Euler";
   if (stepperPL != Teuchos::null)
-    stepperType = stepperPL->get<std::string>("Stepper Type","Forward Euler");
+    stepperType = stepperPL->get<std::string>("Stepper Type", "Forward Euler");
   return this->createStepper(stepperType, stepperPL, model);
 }
 
@@ -114,7 +114,7 @@ createStepper(
     return createStepperERK_3Stage3rdOrder(model, stepperPL);
   else if (stepperType == "RK Explicit 3 Stage 3rd order TVD" ||
            stepperType == "SSPERK33" || stepperType == "SSPRK3" )
-    return createStepperERK_3Stage3rdOrderTVD(model, stepperPL, stepperType);
+    return createStepperERK_3Stage3rdOrderTVD(model, stepperPL);
   else if (stepperType == "RK Explicit 3 Stage 3rd order by Heun" )
     return createStepperERK_3Stage3rdOrderHeun(model, stepperPL);
   else if (stepperType == "RK Explicit Midpoint" )
@@ -122,9 +122,9 @@ createStepper(
   else if (stepperType == "RK Explicit Trapezoidal" ||
            stepperType == "Heuns Method" || stepperType == "SSPERK22" ||
            stepperType == "SSPRK2" )
-    return createStepperERK_Trapezoidal(model, stepperPL, stepperType);
+    return createStepperERK_Trapezoidal(model, stepperPL);
   else if (stepperType == "RK Explicit Ralston" || stepperType == "RK2" )
-    return createStepperERK_Ralston(model, stepperPL, stepperType);
+    return createStepperERK_Ralston(model, stepperPL);
   else if (stepperType == "SSPERK54" )
     return createStepperERK_SSPERK54(model, stepperPL);
   else if (stepperType == "Bogacki-Shampine 3(2) Pair" )
@@ -198,6 +198,7 @@ createStepper(
   else {
     Teuchos::RCP<Teuchos::FancyOStream> out =
       Teuchos::VerboseObjectBase::getDefaultOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"StepperFactory::createStepper");
     *out
     << "Unknown Stepper Type!  ('"+stepperType+"').\n"

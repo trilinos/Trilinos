@@ -20,6 +20,7 @@ namespace Tempus {
 template<class Scalar>
 StepperBDF2<Scalar>::StepperBDF2()
 {
+  this->setStepperName(        "BDF2");
   this->setStepperType(        "BDF2");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -43,6 +44,7 @@ StepperBDF2<Scalar>::StepperBDF2(
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperBDF2AppAction<Scalar> >& stepperBDF2AppAction)
 {
+  this->setStepperName(        "BDF2");
   this->setStepperType(        "BDF2");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -64,6 +66,7 @@ void StepperBDF2<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   StepperImplicit<Scalar>::setModel(appModel);
+  // If the startUpStepper's model is not set, set it to the stepper model.
   if (startUpStepper_->getModel() == Teuchos::null) {
     startUpStepper_->setModel(appModel);
     startUpStepper_->initialize();
@@ -273,6 +276,7 @@ void StepperBDF2<Scalar>::describe(
   const Teuchos::EVerbosityLevel      verbLevel ) const
 {
   auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
   l_out->setOutputToRootOnly(0);
   *l_out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
@@ -321,15 +325,8 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperBDF2<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Initial Condition Consistency Check", false);
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>("Zero Initial Guess", false);
-  pl->set<std::string>("Start Up Stepper Type", "DIRK 1 Stage Theta Method");
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
-
+  auto pl = this->getValidParametersBasicImplicit();
+  pl->set("Start Up Stepper Type", startUpStepper_->getStepperType());
   return pl;
 }
 
@@ -345,13 +342,13 @@ createStepperBDF2(
   auto stepper = Teuchos::rcp(new StepperBDF2<Scalar>());
   stepper->setStepperImplicitValues(pl);
 
+  std::string startUpStepperName = "DIRK 1 Stage Theta Method";
+  if (pl != Teuchos::null) startUpStepperName =
+    pl->get<std::string>("Start Up Stepper Type", startUpStepperName);
+  stepper->setStartUpStepper(startUpStepperName);
+
   if (model != Teuchos::null) {
     stepper->setModel(model);
-
-    std::string startUpStepperName = "DIRK 1 Stage Theta Method";
-    if (pl != Teuchos::null) startUpStepperName =
-      pl->get<std::string>("Start Up Stepper Type", startUpStepperName);
-    stepper->setStartUpStepper(startUpStepperName);
     stepper->initialize();
   }
 

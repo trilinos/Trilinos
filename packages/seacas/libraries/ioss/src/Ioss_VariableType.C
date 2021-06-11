@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -167,7 +167,7 @@ namespace Ioss {
   {
     size_t size = suffices.size();
     // Maximum suffix size is currently 5.
-    assert(size < 100000);
+    assert(size < 100'000);
     const VariableType *ivt = nullptr;
     if (size <= 1) {
       return nullptr; // All storage types must have at least 2 components.
@@ -297,10 +297,10 @@ namespace Ioss {
 
   std::string VariableType::numeric_label(int which, int ncomp, const std::string &name)
   {
-    if (ncomp >= 100000) {
+    if (ncomp >= 100'000) {
       std::ostringstream errmsg;
       fmt::print(errmsg,
-                 "ERROR: Variable '{}' has {:n} components which is larger than the current maximum"
+                 "ERROR: Variable '{}' has {:L} components which is larger than the current maximum"
                  " of 100,000. Please contact developer.\n",
                  name, ncomp);
       IOSS_ERROR(errmsg);

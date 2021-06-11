@@ -49,6 +49,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, get_cell_topology
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, etc
 #include "stk_mesh/base/FEMHelpers.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology_utils.hpp"    // for topology::num_nodes, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
@@ -58,34 +59,6 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh {
 
 namespace {
-
-void get_common_elements( BulkData const& mesh, EntityVector const& nodes, EntityVector & elements)
-{
-  elements.clear();
-
-  if (nodes.size() >= 1u) {
-    elements.insert(elements.end(), mesh.begin_elements(nodes[0]), mesh.end_elements(nodes[0]));
-    std::sort(elements.begin(), elements.end());
-
-    EntityVector tmp_out, tmp ;
-    tmp_out.reserve(elements.size());
-    tmp.reserve(elements.size());
-
-    for (size_t i=1, ie=nodes.size(); i<ie; ++i) {
-      tmp.insert(tmp.end(), mesh.begin_elements(nodes[i]), mesh.end_elements(nodes[i]));
-      std::sort(tmp.begin(),tmp.end());
-
-      std::set_intersection(  elements.begin(),elements.end()
-                            , tmp.begin(), tmp.end()
-                            , std::back_inserter(tmp_out)
-                           );
-
-      elements.swap(tmp_out);
-      tmp_out.clear();
-      tmp.clear();
-    }
-  }
-}
 
 typedef std::set< std::pair<Entity, unsigned> > Boundary;
 
@@ -111,6 +84,9 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
                                                    const Selector * secondary_selector)
 {
   const EntityRank side_rank = mesh.mesh_meta_data().side_rank();
+  EntityVector side_nodes;
+  EntityVector potential_side_nodes;
+  EntityVector common_elements;
   size_t num_sides_to_create = 0;
   for (size_t i=0, ie=element_buckets.size(); i<ie; ++i) {
     const Bucket & b = *element_buckets[i];
@@ -135,20 +111,17 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
       for (unsigned k=0; k<num_sides; ++k) {
 
         stk::topology side_topology = element_topology.side_topology(k);
-        // get the side nodes
-        EntityVector side_nodes(side_topology.num_nodes());
+        side_nodes.resize(side_topology.num_nodes());
         element_topology.side_nodes(elem_nodes,k, side_nodes.data());
 
-        // find elements that also use the side nodes
-        EntityVector common_elements;
-        get_common_elements(mesh, side_nodes, common_elements);
+        impl::find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEM_RANK, side_nodes.size(), side_nodes.data(), common_elements);
 
         bool found_adjacent_element = false;
         for (size_t l=0, le=common_elements.size(); !found_adjacent_element && l<le; ++l) {
           Entity potential_element = common_elements[l];
+          if (potential_element == elem) continue;              // skip self adjacency
           stk::topology potential_element_topology = mesh.bucket(potential_element).topology();
 
-          if (potential_element == elem) continue;              // skip self adjacency
           if (potential_element_topology.is_shell()) continue;  // skip shells
           if (secondary_selector && !((*secondary_selector)(mesh.bucket(potential_element))))
             continue;  // skip elements not in the secondary selector
@@ -162,7 +135,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
             // the side topologies are different -- not a match
             if (side_topology != potential_side_topology) continue;
 
-            EntityVector potential_side_nodes(potential_side_topology.num_nodes());
+            potential_side_nodes.resize(potential_side_topology.num_nodes());
             potential_element_topology.side_nodes(potential_elem_nodes, m, potential_side_nodes.data());
 
             stk::EquivalentPermutation result = stk::mesh::side_equivalent(mesh, elem, k, potential_side_nodes.data());
@@ -209,10 +182,6 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
                 continue;
             }
             
-//            ThrowErrorMsgIf( (permutation_id < side_topology.num_positive_permutations())
-//                , "Error: Non shell elements cannot be superimposed id of elem1  = " << mesh.identifier(elem) << " and elem2 = " << mesh.identifier(potential_element) );
-
-
             found_adjacent_element = true;
             break;
           }

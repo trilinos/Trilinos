@@ -28,6 +28,7 @@
 #include <io.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#define NOMINMAX
 #include <windows.h>
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
@@ -232,7 +233,7 @@ static void ap_gl_char_init(void) /* turn off input echo */
   new_tty.sg_flags |= RAW;
   new_tty.sg_flags &= ~ECHO;
   ioctl(0, TIOCSETN, &new_tty);
-#else /* SYSV */
+#else                   /* SYSV */
   ioctl(0, TCGETA, &old_termio);
   ap_gl_intrc = old_termio.c_cc[VINTR];
   ap_gl_quitc = old_termio.c_cc[VQUIT];
@@ -254,7 +255,7 @@ static void ap_gl_char_cleanup(void) /* undo effects of ap_gl_char_init */
   tcsetattr(0, TCSANOW, &old_termios);
 #elif defined(TIOCSETN) /* BSD */
   ioctl(0, TIOCSETN, &old_tty);
-#else /* SYSV */
+#else                   /* SYSV */
   ioctl(0, TCSETA, &old_termio);
 #endif
 #endif /* __unix__ */

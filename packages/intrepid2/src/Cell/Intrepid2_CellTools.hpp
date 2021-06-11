@@ -214,7 +214,7 @@ public:
 
         \param  jacobian          [out] - rank-4 array with dimensions (C,P,D,D) with the Jacobians
         \param  points               [in]  - rank-2/3 array with dimensions (P,D)/(C,P,D) with the evaluation points
-        \param  cellWorkset    [in]  - rank-3 container with nominal dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellWorkset    [in]  - rank-3 container with logical dimensions (C,N,D) with the nodes of the cell workset
         \param  basis                 [in]  - HGrad basis for reference to physical cell mapping
         \param  startCell        [in] - first cell index in cellWorkset for which we should compute the Jacobian; corresponds to the 0 index in Jacobian and/or points container.  Default: 0.
         \param  endCell            [in] - first cell index in cellWorkset that we do not process; endCell - startCell must equal the extent of the Jacobian container in dimension 0.  Default: -1, a special value that indicates the extent of the cellWorkset should be used.
@@ -259,7 +259,7 @@ public:
                 or not the points are inside a reference cell.
 
         \param  jacobian          [out] - rank-4 array with dimensions (C,P,D,D) with the Jacobians
-        \param  cellWorkset    [in]  - rank-3 container with nominal dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellWorkset    [in]  - rank-3 container with logical dimensions (C,N,D) with the nodes of the cell workset
         \param  gradients         [in]  - rank-3/4 array with dimensions (N,P,D)/(C,N,P,D) with the gradients of the physical-to-cell mapping
         \param  startCell        [in] - first cell index in cellWorkset for which we should compute the Jacobian; corresponds to the 0 index in Jacobian and/or points container.  Default: 0.
         \param  endCell            [in] - first cell index in cellWorkset that we do not process; endCell - startCell must equal the extent of the Jacobian container in dimension 0.  Default: -1, a special value that indicates the extent of the cellWorkset should be used.
@@ -913,7 +913,7 @@ public:
 
         \param  physPoints        [out] - rank-3 array with dimensions (C,P,D) with the images of the ref. points
         \param  refPoints          [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in reference frame
-        \param  cellWorkset      [in]  - rank-3 container with nominal dimensions (C,N,D) with the nodes of the cell workset
+        \param  cellWorkset      [in]  - rank-3 container with logical dimensions (C,N,D) with the nodes of the cell workset
         \param  basis                   [in]  - pointer to HGrad basis used in reference-to-physical cell mapping
 
     */

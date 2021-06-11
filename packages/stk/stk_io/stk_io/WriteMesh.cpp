@@ -69,6 +69,7 @@ void write_mesh_subset(const std::string &filename,
     stkIo.set_bulk_data(bulkData);
     size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
     stkIo.set_subset_selector(outputFileIndex, subsetSelector);
+    stkIo.set_output_selector(outputFileIndex, stk::topology::ELEM_RANK, subsetSelector);
     stkIo.write_output_mesh(outputFileIndex);
 }
 

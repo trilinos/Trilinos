@@ -145,6 +145,7 @@
 #cmakedefine HAVE_TPETRA_INST_OPENMP
 #cmakedefine HAVE_TPETRA_INST_CUDA
 #cmakedefine HAVE_TPETRA_INST_HIP
+#cmakedefine HAVE_TPETRA_INST_SYCL
 
 #cmakedefine HAVE_TPETRA_INT_INT
 #cmakedefine HAVE_TPETRA_INT_LONG
@@ -165,6 +166,7 @@
 #cmakedefine HAVE_TPETRA_OPENMP
 #cmakedefine HAVE_TPETRA_CUDA
 #cmakedefine HAVE_TPETRA_HIP
+#cmakedefine HAVE_TPETRA_SYCL
 
 #cmakedefine HAVE_TPETRA_THREADED_MKL
 

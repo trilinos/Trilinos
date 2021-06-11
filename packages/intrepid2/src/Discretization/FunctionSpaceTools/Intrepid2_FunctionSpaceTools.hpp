@@ -85,8 +85,8 @@ namespace Intrepid2 {
   public:
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
           reference cell, stored in the user-provided container <var><b>inputVals</b></var>
-          and nominally indexed by (F,P,D).  The returned object contains the transformed gradient field,
-          defined on cells in physical space and nominally indexed by (C,F,P,D).  The transformations are
+          and indexed by (F,P,D).  The returned object contains the transformed gradient field,
+          defined on cells in physical space and indexed by (C,F,P,D).  The transformations are
           computed on entry access; algorithms such as sum factorization rely on having access to the
           reference-space basis values as well as the transformation operator; both are stored in the
           returned TransformedVectorData object.

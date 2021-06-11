@@ -4,4 +4,5 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 KOKKOSKERNELS_ADD_EXECUTABLE(
     KokkosBlas3_perf_test
     SOURCES KokkosBlas3_perf_test.cpp
+    TESTONLYLIBS kokkoskernelsperf_gtest
 )

@@ -9,30 +9,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ForEach
-  SOURCES
-    ForEach
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Transform
-  SOURCES
-    Transform
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  WithLocalAccess
-  SOURCES
-    WithLocalAccess
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Bug7758
   SOURCES
     Bug7758
@@ -57,6 +33,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MultiVector_LocalViewTests
+  SOURCES
+    MultiVector_LocalViewTests
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  ${MAXNP}
   )
 
 # This test requires exactly 2 MPI processes.  It could be rewritten

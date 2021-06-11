@@ -124,19 +124,11 @@ localSolve (Tpetra::MultiVector<
     (mode == Teuchos::TRANS ? "T" : "N");
   const std::string diag = implicitUnitDiag ? "U" : "N";
 
-  auto A_lcl = A.getLocalMatrix ();
-
-  // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
-  // sequential, host-only code.  See
-  // https://github.com/kokkos/kokkos-kernels/issues/48.  This means
-  // that we need to sync to host, then sync back to device when done.
-  X.sync_host ();
-  const_cast<MV&> (Y).sync_host ();
-  X.modify_host (); // we will write to X
+  auto A_lcl = A.getLocalMatrixHost ();
 
   if (X.isConstantStride () && Y.isConstantStride ()) {
-    auto X_lcl = X.getLocalViewHost ();
-    auto Y_lcl = Y.getLocalViewHost ();
+    auto X_lcl = X.getLocalViewHost (Tpetra::Access::OverwriteAll);
+    auto Y_lcl = Y.getLocalViewHost (Tpetra::Access::ReadOnly);
     KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                         A_lcl, Y_lcl, X_lcl);
   }
@@ -144,17 +136,14 @@ localSolve (Tpetra::MultiVector<
     const size_t numVecs =
       std::min (X.getNumVectors (), Y.getNumVectors ());
     for (size_t j = 0; j < numVecs; ++j) {
-      auto X_j = X.getVector (j);
-      auto Y_j = X.getVector (j);
-      auto X_lcl = X_j->getLocalViewHost ();
-      auto Y_lcl = Y_j->getLocalViewHost ();
+      auto X_j = X.getVectorNonConst (j);
+      auto Y_j = Y.getVector (j);
+      auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::OverwriteAll);
+      auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                           diag.c_str (), A_lcl, Y_lcl, X_lcl);
     }
   }
-
-  X.template sync<dev_memory_space> ();
-  const_cast<MV&> (Y).template sync<dev_memory_space> ();
 }
 
 template<class CrsMatrixType, class MultiVectorType>
@@ -218,6 +207,7 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
   typedef GlobalOrdinal GO;
   typedef Tpetra::Map<LO, GO> map_type;
   typedef typename map_type::device_type device_type;
+  typedef Tpetra::CrsGraph<LO, GO> crs_graph_type;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar, LO, GO> row_matrix_type;
   typedef Tpetra::MultiVector<Scalar, LO, GO> mv_type;
@@ -374,10 +364,10 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
       // (it shouldn't).
       RCP<crs_matrix_type> A_copy;
       {
-        typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-        typedef typename crs_matrix_type::local_graph_type local_graph_type;
+        typedef typename crs_matrix_type::local_matrix_device_type local_matrix_type;
+        typedef typename crs_graph_type::local_graph_device_type local_graph_type;
 
-        local_matrix_type A_lcl = A->getLocalMatrix ();
+        local_matrix_type A_lcl = A->getLocalMatrixDevice ();
 
         typename local_matrix_type::row_map_type::non_const_type ptr ("A_copy.ptr", A_lcl.graph.row_map.extent (0));
         Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
@@ -774,64 +764,41 @@ testArrowMatrixWithDense (bool& success, Teuchos::FancyOStream& out, const LO lc
   TEST_EQUALITY( c(lclNumRows-1), c_n_expected );
 }
 
-template<class SC = Tpetra::Vector<>::scalar_type,
-         class LO = Tpetra::Vector<>::local_ordinal_type,
-         class GO = Tpetra::Vector<>::global_ordinal_type>
-void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
+
+template<class crs_matrix_type, class map_type>
+bool
+testArrowMatrixAssembly(const int lclNumRows,
+                        const bool explicitlyStoreUnitDiagonalOfL,
+                        RCP<const map_type> rowMap,
+                        RCP<const map_type> colMap,
+                        RCP<const map_type> domMap,
+                        RCP<const map_type> ranMap,
+                        RCP<crs_matrix_type> & L,
+                        RCP<crs_matrix_type> & U,
+                        Teuchos::FancyOStream& out)
 {
-  typedef Tpetra::Map<LO, GO> map_type;
-  typedef typename map_type::device_type device_type;
-  typedef Tpetra::CrsMatrix<SC, LO, GO> crs_matrix_type;
-  typedef Tpetra::RowMatrix<SC, LO, GO> row_matrix_type;
-  typedef Tpetra::Vector<SC, LO, GO> vec_type;
-  typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
+  int gblSuccess=1, lclSuccess=1;
+  bool success=true;
+  using LO = typename crs_matrix_type::local_ordinal_type;
+  using SC = typename crs_matrix_type::scalar_type;
+
   typedef Kokkos::Details::ArithTraits<SC> KAT;
   typedef typename KAT::val_type IST;
   typedef typename KAT::mag_type mag_type;
-  int lclSuccess = 1;
-  int gblSuccess = 1;
-
-  const bool explicitlyStoreUnitDiagonalOfL = false;
-
-  Teuchos::OSTab tab0 (out);
-  out << "Ifpack2::LocalSparseTriangularSolver: Test with arrow matrix" << endl;
-  Teuchos::OSTab tab1 (out);
-
-  auto comm = Tpetra::getDefaultComm ();
-
-  const LO lclNumRows = 8; // power of two (see above)
-  const LO lclNumCols = lclNumRows;
-  const GO gblNumRows = comm->getSize () * lclNumRows;
-  const GO indexBase = 0;
-  RCP<const map_type> rowMap =
-    rcp (new map_type (static_cast<GST> (gblNumRows),
-                       static_cast<std::size_t> (lclNumRows),
-                       indexBase, comm));
-
-  // At this point, we know Kokkos has been initialized, so test the
-  // dense version of the problem.
-  testArrowMatrixWithDense<SC, LO, device_type> (success, out, lclNumRows);
-
-  // If we construct an upper or lower triangular matrix with an
-  // implicit unit diagonal, then we need to specify the column Map
-  // explicitly.  Otherwise, the matrix will report having the wrong
-  // number of columns.  In this case, the local matrix is square and
-  // every column is populated, so we can set column Map = row Map.
-  RCP<const map_type> colMap = rowMap;
-  RCP<const map_type> domMap = rowMap;
-  RCP<const map_type> ranMap = rowMap;
-
-  typedef typename crs_matrix_type::local_graph_type local_graph_type;
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename crs_matrix_type::local_graph_device_type local_graph_type;
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_type;
   typedef typename local_matrix_type::row_map_type::non_const_type row_offsets_type;
   typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
   typedef typename local_matrix_type::values_type::non_const_type values_type;
 
+  const LO lclNumCols = lclNumRows;
+
+  auto comm = rowMap->getComm();
+
   //
   // The suffix _d here stands for (GPU) "device," and the suffix _h
-  // stands for (CPU) "host."
+  // stands for (CPU) "host."  
   //
-
   row_offsets_type L_ptr_d ("ptr", lclNumRows + 1);
   auto L_ptr_h = Kokkos::create_mirror_view (L_ptr_d);
   row_offsets_type U_ptr_d ("ptr", lclNumRows + 1);
@@ -917,7 +884,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   TEST_EQUALITY( gblSuccess, 1 );
   if (! gblSuccess) {
     out << "Aborting test" << endl;
-    return;
+    return gblSuccess;
   }
 
   Kokkos::deep_copy (L_ptr_d, L_ptr_h);
@@ -929,7 +896,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   Kokkos::deep_copy (U_val_d, U_val_h);
 
   out << "Create the lower triangular Tpetra::CrsMatrix L" << endl;
-  RCP<crs_matrix_type> L;
   TEST_NOTHROW( L = rcp (new crs_matrix_type (rowMap, colMap, L_ptr_d, L_ind_d, L_val_d)) );
   TEST_ASSERT( ! L.is_null () );
   lclSuccess = success ? 1 : 0;
@@ -938,7 +904,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   TEST_EQUALITY( gblSuccess, 1 );
   if (! gblSuccess) {
     out << "Aborting test" << endl;
-    return;
+    return gblSuccess;
   }
   out << "Call fillComplete on the lower triangular matrix L" << endl;
   TEST_NOTHROW( L->fillComplete (domMap, ranMap) );
@@ -948,17 +914,114 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   TEST_EQUALITY( gblSuccess, 1 );
   if (! gblSuccess) {
     out << "Aborting test" << endl;
-    return;
+    return gblSuccess;
   }
+
+  out << "Create the upper triangular Tpetra::CrsMatrix U" << endl;
+  TEST_NOTHROW( U = rcp (new crs_matrix_type (rowMap, colMap, U_ptr_d, U_ind_d, U_val_d)) );
+  TEST_ASSERT( ! U.is_null () );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return gblSuccess;
+  }
+  out << "Call fillComplete on the upper triangular matrix U" << endl;
+  TEST_NOTHROW( U->fillComplete (domMap, ranMap) );
+  lclSuccess = success ? 1 : 0;
+  gblSuccess = 0; // output argument
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY( gblSuccess, 1 );
+  if (! gblSuccess) {
+    out << "Aborting test" << endl;
+    return gblSuccess;
+  }
+  return gblSuccess;
+}
+
+
+template<class SC = Tpetra::Vector<>::scalar_type,
+         class LO = Tpetra::Vector<>::local_ordinal_type,
+         class GO = Tpetra::Vector<>::global_ordinal_type>
+void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
+{
+  typedef Tpetra::Map<LO, GO> map_type;
+  typedef typename map_type::device_type device_type;
+  typedef Tpetra::CrsMatrix<SC, LO, GO> crs_matrix_type;
+  typedef Tpetra::RowMatrix<SC, LO, GO> row_matrix_type;
+  typedef Tpetra::Vector<SC, LO, GO> vec_type;
+  typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
+  typedef Kokkos::Details::ArithTraits<SC> KAT;
+  typedef typename KAT::val_type IST;
+  typedef typename KAT::mag_type mag_type;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
+
+  const bool explicitlyStoreUnitDiagonalOfL = false;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Ifpack2::LocalSparseTriangularSolver: Test with arrow matrix" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  auto comm = Tpetra::getDefaultComm ();
+
+  const LO lclNumRows = 8; // power of two (see above)
+  const LO lclNumCols = lclNumRows;
+  const GO gblNumRows = comm->getSize () * lclNumRows;
+  const GO indexBase = 0;
+  RCP<const map_type> rowMap =
+    rcp (new map_type (static_cast<GST> (gblNumRows),
+                       static_cast<std::size_t> (lclNumRows),
+                       indexBase, comm));
+
+  // At this point, we know Kokkos has been initialized, so test the
+  // dense version of the problem.
+  testArrowMatrixWithDense<SC, LO, device_type> (success, out, lclNumRows);
+
+  // If we construct an upper or lower triangular matrix with an
+  // implicit unit diagonal, then we need to specify the column Map
+  // explicitly.  Otherwise, the matrix will report having the wrong
+  // number of columns.  In this case, the local matrix is square and
+  // every column is populated, so we can set column Map = row Map.
+  RCP<const map_type> colMap = rowMap;
+  RCP<const map_type> domMap = rowMap;
+  RCP<const map_type> ranMap = rowMap;
+
+  // All of the matrix assembly stuff had to get hived off into a different
+  // scope to keep the later accessors from violating the "you can't have a 
+  // host and a device view at the same time" assumption
+  RCP<crs_matrix_type> L, U;
+
+  gblSuccess=testArrowMatrixAssembly(lclNumRows,
+                                     explicitlyStoreUnitDiagonalOfL,
+                                     rowMap,colMap,domMap,ranMap,
+                                     L,U,out);
+  if(!gblSuccess) return;
+
+  typedef typename crs_matrix_type::local_graph_device_type local_graph_type;
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_type;
+  typedef typename local_matrix_type::row_map_type::non_const_type row_offsets_type;
+  typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
+  typedef typename local_matrix_type::values_type::non_const_type values_type;
+
+  typedef typename crs_matrix_type::local_inds_host_view_type const_local_inds_type;
+  typedef typename crs_matrix_type::values_host_view_type const_values_type;
+
+  const IST ONE = KAT::one ();
+  const IST TWO = KAT::one () + KAT::one ();
+  // Don't cast directly from an integer type to IST,
+  // since if IST is complex, that cast may not exist.
+  const IST N = static_cast<IST> (static_cast<mag_type> (lclNumRows));
+  const IST d = TWO * N;
 
   out << "Make sure that the last row of L is correct" << endl;
   {
     Teuchos::OSTab tab2 (out);
 
-    // FIXME (mfh 23 Aug 2016) This may depend on UVM.
-    // We should instead rely on dual view semantics here.
-    Teuchos::ArrayView<const LO> lclColInds;
-    Teuchos::ArrayView<const SC> vals;
+    const_local_inds_type lclColInds;
+    const_values_type vals;
 
     L->getLocalRowView (lclNumRows - 1, lclColInds, vals);
     if (explicitlyStoreUnitDiagonalOfL) {
@@ -994,28 +1057,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
     return;
   }
 
-  out << "Create the upper triangular Tpetra::CrsMatrix U" << endl;
-  RCP<crs_matrix_type> U;
-  TEST_NOTHROW( U = rcp (new crs_matrix_type (rowMap, colMap, U_ptr_d, U_ind_d, U_val_d)) );
-  TEST_ASSERT( ! U.is_null () );
-  lclSuccess = success ? 1 : 0;
-  gblSuccess = 0; // output argument
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_EQUALITY( gblSuccess, 1 );
-  if (! gblSuccess) {
-    out << "Aborting test" << endl;
-    return;
-  }
-  out << "Call fillComplete on the upper triangular matrix U" << endl;
-  TEST_NOTHROW( U->fillComplete (domMap, ranMap) );
-  lclSuccess = success ? 1 : 0;
-  gblSuccess = 0; // output argument
-  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-  TEST_EQUALITY( gblSuccess, 1 );
-  if (! gblSuccess) {
-    out << "Aborting test" << endl;
-    return;
-  }
 
   out << "Create the solver for L" << endl;
   RCP<solver_type> L_solver;
@@ -1077,9 +1118,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   // Set up the right-hand side b.
   vec_type b (ranMap);
   {
-    b.sync_host ();
-    b.modify_host ();
-    auto b_lcl_2d = b.getLocalViewHost ();
+    auto b_lcl_2d = b.getLocalViewHost (Tpetra::Access::OverwriteAll);
     auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i < lclNumRows; ++i) {
@@ -1093,7 +1132,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
         b_lcl_1d(i) = K;
       }
     }
-    b.template sync<typename device_type::memory_space> ();
   }
 
   // We solve Ax=b (with A = LU) by first solving Lc = b, and then
@@ -1149,8 +1187,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    c.sync_host ();
-    auto c_lcl_2d = c.getLocalViewHost ();
+    auto c_lcl_2d = c.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1161,7 +1198,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
       TEST_EQUALITY( c_lcl_1d(i), c_i_expected );
     }
     TEST_EQUALITY( c_lcl_1d(lclNumRows-1), c_n_expected );
-    c.template sync<typename device_type::memory_space> ();
   }
   // lclSuccess = success ? 1 : 0;
   // gblSuccess = 0; // to be revised
@@ -1194,8 +1230,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    x.sync_host ();
-    auto x_lcl_2d = x.getLocalViewHost ();
+    auto x_lcl_2d = x.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1222,8 +1257,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    c.sync_host ();
-    auto c_lcl_2d = c.getLocalViewHost ();
+    auto c_lcl_2d = c.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1234,7 +1268,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
       TEST_EQUALITY( c_lcl_1d(i), c_i_expected );
     }
     TEST_EQUALITY( c_lcl_1d(lclNumRows-1), c_n_expected );
-    c.template sync<typename device_type::memory_space> ();
   }
 
   localSolve (x, *U, c, true, false, Teuchos::NO_TRANS);
@@ -1242,8 +1275,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    x.sync_host ();
-    auto x_lcl_2d = x.getLocalViewHost ();
+    auto x_lcl_2d = x.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {

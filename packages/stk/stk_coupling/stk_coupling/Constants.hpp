@@ -20,7 +20,8 @@ namespace coupling
 enum SyncMode {
   Minimum = 0,
   Receive,
-  Send
+  Send,
+  Any
 };
 
 static const std::string AppName = "Application Name";
@@ -29,6 +30,7 @@ static const std::string InitialTime = "Initial Time";
 static const std::string CurrentTime = "Current Time";
 static const std::string TimeStep = "Time Step";
 static const std::string FinalTime = "Final Time";
+static const std::string IsFinished = "Is Finished";
 
 }
 }

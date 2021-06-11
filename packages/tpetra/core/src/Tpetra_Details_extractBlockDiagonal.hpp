@@ -64,7 +64,7 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
   using local_map_type = typename SparseMatrixType::map_type::local_map_type;
   using SC             = typename MultiVectorType::scalar_type;
   using LO             = typename SparseMatrixType::local_ordinal_type;
-  using KCRS           = typename SparseMatrixType::local_matrix_type;
+  using KCRS           = typename SparseMatrixType::local_matrix_device_type;
   using lno_view_t     = typename KCRS::StaticCrsGraphType::row_map_type::const_type;
   using lno_nnz_view_t = typename KCRS::StaticCrsGraphType::entries_type::const_type;
   using scalar_view_t  = typename KCRS::values_type::const_type;
@@ -84,8 +84,8 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
   // Get Kokkos versions of objects
   local_map_type rowmap  = A.getRowMap()->getLocalMap();
   local_map_type colmap  = A.getRowMap()->getLocalMap();
-  local_mv_type diag     = diagonal.getLocalViewDevice();
-  const KCRS   Amat      = A.getLocalMatrix();
+  local_mv_type diag     = diagonal.getLocalViewDevice(Access::OverwriteAll);
+  const KCRS   Amat      = A.getLocalMatrixDevice();
   lno_view_t Arowptr     = Amat.graph.row_map;
   lno_nnz_view_t Acolind = Amat.graph.entries;
   scalar_view_t Avals    = Amat.values;

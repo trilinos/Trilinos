@@ -28,6 +28,7 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
+  this->setStepperName(        "Subcycling");
   this->setStepperType(        "Subcycling");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -39,7 +40,9 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   scIntegrator_->setObserver(
     Teuchos::rcp(new IntegratorObserverNoOp<Scalar>()));
 
-  RCP<ParameterList> tempusPL = scIntegrator_->getTempusParameterList();
+  RCP<ParameterList> tempusPL =
+    Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+      scIntegrator_->getValidParameters());
 
   { // Set default subcycling Stepper to Forward Euler.
     tempusPL->sublist("Default Integrator")
@@ -85,6 +88,7 @@ StepperSubcycling<Scalar>::StepperSubcycling(
   bool ICConsistencyCheck,
   const Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >& stepperSCAppAction)
 {
+  this->setStepperName(        "Subcycling");
   this->setStepperType(        "Subcycling");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -103,7 +107,7 @@ template<class Scalar>
 void StepperSubcycling<Scalar>::setSubcyclingStepper(
   Teuchos::RCP<Stepper<Scalar> > stepper)
 {
-  scIntegrator_->setStepperWStepper(stepper);
+  scIntegrator_->setStepper(stepper);
   this->isInitialized_ = false;
 }
 
@@ -238,7 +242,7 @@ int StepperSubcycling<Scalar>::getSubcyclingScreenOutputIndexInterval() const
 
 template<class Scalar>
 std::string StepperSubcycling<Scalar>::getSubcyclingScreenOutputIndexList() const
-{ return scIntegrator_->getScreenOutputIndexList(); }
+{ return scIntegrator_->getScreenOutputIndexListString(); }
 
 
 template<class Scalar>
@@ -260,7 +264,7 @@ template<class Scalar>
 void StepperSubcycling<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  scIntegrator_->setStepper(appModel);
+  scIntegrator_->setModel(appModel);
   this->isInitialized_ = false;
 }
 
@@ -380,7 +384,10 @@ void StepperSubcycling<Scalar>::setInitialGuess(
 template<class Scalar>
 void StepperSubcycling<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
-{ scIntegrator_->getStepper()->setInitialConditions(solutionHistory); }
+{
+  scIntegrator_->getStepper()->setInitialConditions(solutionHistory);
+  scIntegrator_->setSolutionHistory(solutionHistory);
+}
 
 
 template<class Scalar>
@@ -501,6 +508,7 @@ void StepperSubcycling<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
 
@@ -520,11 +528,7 @@ StepperSubcycling<Scalar>::getValidParameters() const
     "Error - StepperSubcycling<Scalar>::getValidParameters()\n"
     "  is not implemented yet.\n");
 
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", false);
-  pl->set<std::string>("Initial Condition Consistency", "None");
-  return pl;
+  return this->getValidParametersBasic();
 }
 
 
@@ -544,11 +548,7 @@ createStepperSubcycling(
 
   if (pl != Teuchos::null) {
     stepper->setStepperValues(pl);
-    //stepper->setStepperSubcyclingValues(pl);
   }
-  //else {
-  //  integrator->setTempusParameterList(Teuchos::null);
-  //}
 
   if (model != Teuchos::null) {
     stepper->setModel(model);

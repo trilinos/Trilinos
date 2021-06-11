@@ -175,6 +175,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  this->setStepperName(        "Newmark Implicit d-Form");
   this->setStepperType(        "Newmark Implicit d-Form");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -200,6 +201,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
     const Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> >& stepperAppAction)
   : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
+  this->setStepperName(        "Newmark Implicit d-Form");
   this->setStepperType(        "Newmark Implicit d-Form");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -453,6 +455,7 @@ StepperNewmarkImplicitDForm<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
@@ -468,6 +471,7 @@ StepperNewmarkImplicitDForm<Scalar>::describe(
 template<class Scalar>
 bool StepperNewmarkImplicitDForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
@@ -498,15 +502,13 @@ StepperNewmarkImplicitDForm<Scalar>::getValidParameters() const {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Scheme Name", "Average Acceleration");
-  pl->set<double>     ("Beta" , 0.25);
-  pl->set<double>     ("Gamma", 0.5 );
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto pl = this->getValidParametersBasicImplicit();
+
+  auto newmarkPL = Teuchos::parameterList("Newmark Parameters");
+  newmarkPL->set<std::string>("Scheme Name", schemeName_);
+  newmarkPL->set<double>     ("Beta",    beta_);
+  newmarkPL->set<double>     ("Gamma",   gamma_ );
+  pl->set("Newmark Parameters", *newmarkPL);
 
   return pl;
 }

@@ -171,12 +171,12 @@ deep_copy (Epetra_Vector& X_e,
 
   host_view_type X_e_lcl (X_e_lcl_raw, lclNumRows);
   if (X_t.need_sync_device ()) {
-    auto X_t_lcl_2d = X_t.getLocalViewHost ();
+    auto X_t_lcl_2d = X_t.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_e_lcl, X_t_lcl);
   }
   else {
-    auto X_t_lcl_2d = X_t.getLocalViewDevice ();
+    auto X_t_lcl_2d = X_t.getLocalViewDevice (Tpetra::Access::ReadOnly);
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_e_lcl, X_t_lcl);
   }
@@ -229,14 +229,12 @@ deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
 
   host_view_type X_e_lcl (X_e_lcl_raw, lclNumRows);
   if (X_t.need_sync_device ()) {
-    X_t.modify_host ();
-    auto X_t_lcl_2d = X_t.getLocalViewHost ();
+    auto X_t_lcl_2d = X_t.getLocalViewHost (Tpetra::Access::OverwriteAll);
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_t_lcl, X_e_lcl);
   }
   else {
-    X_t.modify_device ();
-    auto X_t_lcl_2d = X_t.getLocalViewDevice ();
+    auto X_t_lcl_2d = X_t.getLocalViewDevice (Tpetra::Access::OverwriteAll);
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_t_lcl, X_e_lcl);
   }
@@ -546,11 +544,9 @@ typename MV::dot_type accurate_dot (const MV& X, const MV& Y)
   using dot_type = typename MV::dot_type;
 
   const LO lclNumRows = X.getLocalLength ();
-  const_cast<MV&> (X).sync_host ();
-  auto X_lcl_2d = X.getLocalViewHost();
+  auto X_lcl_2d = X.getLocalViewHost(Tpetra::Access::ReadOnly);
   auto X_lcl = Kokkos::subview (X_lcl_2d, Kokkos::ALL (), 0);
-  const_cast<MV&> (Y).sync_host ();
-  auto Y_lcl_2d = Y.getLocalViewHost();
+  auto Y_lcl_2d = Y.getLocalViewHost(Tpetra::Access::ReadOnly);
   auto Y_lcl = Kokkos::subview (Y_lcl_2d, Kokkos::ALL (), 0);
 
   long double sum = 0.0;
@@ -559,9 +555,6 @@ typename MV::dot_type accurate_dot (const MV& X, const MV& Y)
     const long double y_i = Y_lcl (i);
     sum = std::fma (x_i, y_i, sum);
   }
-
-  const_cast<MV&> (X).sync_device ();
-  const_cast<MV&> (Y).sync_device ();
 
   return dot_type (sum);
 }
@@ -920,26 +913,23 @@ densifyGatheredCrsMatrix (LO& errCode,
 {
   const LO numRows = LO (A.getRangeMap ()->getNodeNumElements ());
   const LO numCols = LO (A.getDomainMap ()->getNodeNumElements ());
+  using lids_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::local_inds_host_view_type;
+  using vals_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::values_host_view_type;
 
   using dense_matrix_type = HostDenseMatrix<SC, LO, GO, NT>;
   dense_matrix_type A_dense (label, numRows, numCols);
 
   for (LO lclRow = 0; lclRow < numRows; ++lclRow) {
-    LO numEnt = 0;
-    const LO* lclColInds = nullptr;
-    const SC* vals = nullptr;
-    const LO curErrCode = A.getLocalRowView (lclRow, numEnt, vals, lclColInds);
-    if (errCode != 0) {
-      errCode = curErrCode;
-    }
-    else {
-      for (LO k = 0; k < numEnt; ++k) {
-        const LO lclCol = lclColInds[k];
-        using impl_scalar_type =
-          typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
-        A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
-      }
-    }
+    lids_type lclColInds;
+    vals_type vals;
+    A.getLocalRowView (lclRow, lclColInds, vals);
+    LO numEnt = vals.size();
+    for (LO k = 0; k < numEnt; ++k) {
+      const LO lclCol = lclColInds[k];
+      using impl_scalar_type =
+        typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
+      A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
+    }   
   }
 
   return A_dense;
@@ -952,12 +942,10 @@ copyGatheredMultiVector (Tpetra::MultiVector<SC, LO, GO, NT>& X,
 {
   using dense_matrix_type = HostDenseMatrix<SC, LO, GO, NT>;
 
-  X.sync_host ();
-  auto X_lcl = X.getLocalViewHost ();
+  auto X_lcl = X.getLocalViewHost (Tpetra::Access::ReadOnly);
   dense_matrix_type X_copy (label, X.getLocalLength (), X.getNumVectors ());
   Kokkos::deep_copy (X_copy, X_lcl);
 
-  X.sync_device ();
   return X_copy;
 }
 
@@ -1134,8 +1122,8 @@ deepCopyFillCompleteCrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
     (! A.isFillComplete (), std::invalid_argument,
      "deepCopyFillCompleteCrsMatrix: Input matrix A must be fillComplete.");
   RCP<crs_matrix_type> A_copy (new crs_matrix_type (A.getCrsGraph ()));
-  auto A_copy_lcl = A_copy->getLocalMatrix ();
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_copy_lcl = A_copy->getLocalMatrixDevice ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   Kokkos::deep_copy (A_copy_lcl.values, A_lcl.values);
   A_copy->fillComplete (A.getDomainMap (), A.getRangeMap ());
   return A_copy;
@@ -1324,12 +1312,7 @@ elementWiseMultiplyMultiVector (MultiVectorType& X,
   using index_type = typename MultiVectorType::local_ordinal_type;
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
-  if (X.need_sync_device ()) {
-    X.sync_device ();
-  }
-  X.modify_device ();
-
-  auto X_lcl = X.getLocalViewDevice ();
+  auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadWrite);
   if (static_cast<std::size_t> (X.getNumVectors ()) == std::size_t (1)) {
     using pair_type = Kokkos::pair<index_type, index_type>;
     auto X_lcl_1d = Kokkos::subview (X_lcl, pair_type (0, lclNumRows), 0);
@@ -1527,12 +1510,7 @@ elementWiseDivideMultiVector (MultiVectorType& X,
   using index_type = typename MultiVectorType::local_ordinal_type;
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
-  if (X.need_sync_device ()) {
-    X.sync_device ();
-  }
-  X.modify_device ();
-
-  auto X_lcl = X.getLocalViewDevice ();
+  auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadWrite);
   if (static_cast<std::size_t> (X.getNumVectors ()) == std::size_t (1)) {
     using pair_type = Kokkos::pair<index_type, index_type>;
     auto X_lcl_1d = Kokkos::subview (X_lcl, pair_type (0, lclNumRows), 0);

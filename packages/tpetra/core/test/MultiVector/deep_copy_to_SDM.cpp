@@ -123,7 +123,7 @@ namespace { // (anonymous)
     if (X.need_sync_host ()) { // X was changed on device
       if (X.isConstantStride ()) {
         // Don't actually sync X; we don't want to change its state here.
-        auto X_lcl_d = X.getLocalViewDevice ();
+        auto X_lcl_d = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
         auto X_lcl_h = Kokkos::create_mirror_view (X_lcl_d);
         Kokkos::deep_copy (X_lcl_h, X_lcl_d);
         return view2dSame (X_lcl_h, Y_view);
@@ -131,7 +131,7 @@ namespace { // (anonymous)
       else {
         for (size_t col = 0; col < X.getNumVectors (); ++col) {
           auto X_col = X.getVector (col);
-          auto X_col_lcl_d_2d = X_col->getLocalViewDevice ();
+          auto X_col_lcl_d_2d = X_col->getLocalViewDevice(Tpetra::Access::ReadOnly);
           auto X_col_lcl_d = Kokkos::subview (X_col_lcl_d_2d, Kokkos::ALL (), 0);
           // Don't actually sync X; we don't want to change its state here.
           auto X_col_lcl_h = Kokkos::create_mirror_view (X_col_lcl_d);
@@ -146,13 +146,13 @@ namespace { // (anonymous)
     }
     else { // X is current on host
       if (X.isConstantStride ()) {
-        auto X_lcl_h = X.getLocalViewHost ();
+        auto X_lcl_h = X.getLocalViewHost(Tpetra::Access::ReadOnly);
         return view2dSame (X_lcl_h, Y_view);
       }
       else {
         for (size_t col = 0; col < X.getNumVectors (); ++col) {
           auto X_col = X.getVector (col);
-          auto X_col_lcl_h_2d = X_col->getLocalViewHost ();
+          auto X_col_lcl_h_2d = X_col->getLocalViewHost(Tpetra::Access::ReadOnly);
           auto X_col_lcl_h = Kokkos::subview (X_col_lcl_h_2d, Kokkos::ALL (), 0);
           auto Y_col = Kokkos::subview (Y_view, Kokkos::ALL (), col);
           if (! view1dSame (X_col_lcl_h, Y_col)) {
@@ -221,15 +221,14 @@ namespace { // (anonymous)
     const IST lclNumRowsIST = toValueHost<IST> (X.getLocalLength ());
 
     if (X.need_sync_device ()) { // modify on host
-      X.modify_host ();
       if (X.isConstantStride ()) {
-        view2dIota (X.getLocalViewHost (), startValueIST);
+        view2dIota (X.getLocalViewHost(Tpetra::Access::ReadWrite), startValueIST);
       }
       else {
         const size_t numCols = X.getNumVectors ();
         for (size_t col = 0; col < numCols; ++col) {
           auto X_col = X.getVectorNonConst (col);
-          auto X_col_lcl_h_2d = X_col->getLocalViewHost ();
+          auto X_col_lcl_h_2d = X_col->getLocalViewHost(Tpetra::Access::ReadWrite);
           auto X_col_lcl_h =
             Kokkos::subview (X_col_lcl_h_2d, Kokkos::ALL (), 0);
           view1dIota (X_col_lcl_h, startValueIST +
@@ -238,15 +237,14 @@ namespace { // (anonymous)
       }
     }
     else { // modify on device
-      X.modify_device ();
       if (X.isConstantStride ()) {
-        view2dIota (X.getLocalViewDevice (), startValueIST);
+        view2dIota (X.getLocalViewDevice(Tpetra::Access::ReadWrite), startValueIST);
       }
       else {
         const size_t numCols = X.getNumVectors ();
         for (size_t col = 0; col < numCols; ++col) {
           auto X_col = X.getVectorNonConst (col);
-          auto X_col_lcl_d_2d = X_col->getLocalViewDevice ();
+          auto X_col_lcl_d_2d = X_col->getLocalViewDevice(Tpetra::Access::ReadWrite);
           auto X_col_lcl_d =
             Kokkos::subview (X_col_lcl_d_2d, Kokkos::ALL (), 0);
           view1dIota (X_col_lcl_d, startValueIST +
@@ -283,20 +281,38 @@ namespace { // (anonymous)
       const LO numColsVals[] = {3, 2, 5, 0, 1};
       for (LO lclNumRows : lclNumRowsVals) {
         for (LO numCols : numColsVals) {
-          for (bool modify_MV_on_host : {false, true}) {
-            Teuchos::SerialDenseMatrix<int, ST> Y (lclNumRows, numCols);
-            Y.putScalar (flagValue);
+          for (bool take_subvector : {false, true}) {
+            for (bool modify_MV_on_host : {false, true}) {
 
-            const GO gblNumRows = static_cast<GO> (comm->getSize ()) *
-              static_cast<GO> (lclNumRows);
-            RCP<const map_type> map =
-              rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
-            MV X (map, numCols);
+              const GO gblNumRows = static_cast<GO> (comm->getSize ()) *
+                static_cast<GO> (lclNumRows);
+              RCP<const map_type> map =
+                rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
+              MV entireX (map, numCols);
+              MV X;
 
-            multiVectorIota (X, startValue, modify_MV_on_host);
+              if (take_subvector && lclNumRows > 0) {
+                const LO subLclNumRows = lclNumRows-1;
+                const GO subGblNumRows = static_cast<GO> (comm->getSize ()) *
+                  static_cast<GO> (lclNumRows-1);
+                RCP<const map_type> subMap =
+                  rcp (new map_type (subGblNumRows, subLclNumRows,
+                                     indexBase, comm));
+                 X = *(entireX.offsetView(subMap, 0));
+              }
+              else {
+                X = entireX;
+              }
 
-            Tpetra::deep_copy (Y, X);
-            TEST_ASSERT( serialDenseMatrix_multiVector_same (X, Y) );
+              multiVectorIota (X, startValue, modify_MV_on_host);
+
+              Teuchos::SerialDenseMatrix<int, ST> Y (X.getLocalLength(),
+                                                     numCols);
+              Y.putScalar (flagValue);
+
+              Tpetra::deep_copy (Y, X);
+              TEST_ASSERT( serialDenseMatrix_multiVector_same (X, Y) );
+            }
           }
         }
       }
@@ -324,11 +340,10 @@ namespace { // (anonymous)
         Y.putScalar (flagValue);
 
         if (modify_MV_on_host) {
-          X.sync_host ();
-          Kokkos::deep_copy (X.getLocalViewHost (), flagValue);
+          Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::OverwriteAll), flagValue);
         }
         else {
-          Kokkos::deep_copy (X.getLocalViewDevice (), flagValue);
+          Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::OverwriteAll), flagValue);
         }
 
         multiVectorIota (*X_sub, startValue, modify_MV_on_host);

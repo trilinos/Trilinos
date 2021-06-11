@@ -80,6 +80,8 @@ void graph_explicit_coarsen(
     coarse_entries_t mergedEntries;
     KokkosKernels::Impl::sort_and_merge_graph<exec_space, coarse_rowmap_t, coarse_entries_t>
       (coarseRowmap, coarseEntries, mergedRowmap, mergedEntries);
+    coarseRowmap = mergedRowmap;
+    coarseEntries = mergedEntries;
   }
 }
 
@@ -109,6 +111,8 @@ void graph_explicit_coarsen_with_inverse_map(
     coarse_entries_t mergedEntries;
     KokkosKernels::Impl::sort_and_merge_graph<exec_space, coarse_rowmap_t, coarse_entries_t>
       (coarseRowmap, coarseEntries, mergedRowmap, mergedEntries);
+    coarseRowmap = mergedRowmap;
+    coarseEntries = mergedEntries;
   }
 }
   

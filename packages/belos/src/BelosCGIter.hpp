@@ -399,10 +399,6 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     //
     std::string errstr("Belos::CGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-
     if (newstate.R != Teuchos::null) {
 
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.R) != MVT::GetGlobalLength(*R_),
@@ -413,7 +409,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Copy basis vectors from newstate into V
       if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-	MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
+	MVT::Assign( *newstate.R, *R_ );
       }
 
       // Compute initial direction vectors
@@ -432,7 +428,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       else {
         MVT::Assign( *R_, *Z_ );
       }
-      MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
+      MVT::Assign( *Z_, *P_ );
     }
     else {
 
@@ -484,7 +480,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       rHz[0] = rHs(0,1);
     } else
       MVT::MvDot( *R_, *Z_, rHz );
-    
+
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //

@@ -230,17 +230,14 @@ namespace { // (anonymous)
   /// directly.  Otherwise, we have to copy the input View into the
   /// output View's memory space, before we can use the functor.
   ///
-  /// NOTE (mfh 29 Jan 2016, 26 Jun 2017): See kokkos/kokkos#178 for
-  /// why we use a memory space, rather than an execution space, as
-  /// the first argument of VerifyExecutionCanAccessMemorySpace.
   template<class OutputViewType,
            class InputViewType,
            const bool canUseKokkosDeepCopy =
              CanUseKokkosDeepCopy<OutputViewType, InputViewType>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
-             Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+             Kokkos::Impl::SpaceAccessibility<
                typename OutputViewType::memory_space,
-               typename InputViewType::memory_space>::value>
+               typename InputViewType::memory_space>::accessible>
   struct CopyConvertImpl {
     static void
     run (const OutputViewType& dst,

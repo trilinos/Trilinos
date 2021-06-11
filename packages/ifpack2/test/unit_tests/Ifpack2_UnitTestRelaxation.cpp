@@ -106,20 +106,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test0, Scalar, LocalOrdinal
 
   prec.applyMat (x, y);
 
-  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  {
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
-  //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
-  //y should be full of 2's now.
+    //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
+    //y should be full of 2's now.
 
-  Teuchos::ArrayRCP<Scalar> twos (num_rows_per_proc*2, 2);
-  TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+    Teuchos::ArrayRCP<Scalar> twos (num_rows_per_proc*2, 2);
+    TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 
   prec.apply(x, y);
-  //y should be full of 0.5's now.
-  Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+  {
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
-  y.sync_host();
-  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+    //y should be full of 0.5's now.
+    Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+
+    TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 }
 
 // Test apply() with x == y.
@@ -194,8 +199,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
 
   TEST_INEQUALITY(&x, &y); // vector x and y are different
   // Vectors x and y point to the same data.
-  TEST_EQUALITY(x.getLocalViewHost ().data (),
-                y.getLocalViewHost ().data ());
+  TEST_EQUALITY(x.getLocalViewHost (Tpetra::Access::ReadOnly).data (),
+                y.getLocalViewHost (Tpetra::Access::ReadOnly).data ());
 
   prec.apply(x, y);
 
@@ -909,12 +914,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   using mag_type = typename STS::magnitudeType;
   const auto tol = mag_type(100.0) * STS::eps();
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlockHost(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j], exactSol, tol);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol, tol);
     }
   }
 }
@@ -1026,13 +1029,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
   exactSol[1] = -0.25;
   exactSol[2] = 0.625;
 
-  yBlock.sync_host();
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlockHost(lcl_row, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }
@@ -1079,12 +1080,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   exactSol[1] = -0.25;
   exactSol[2] = 0.5;
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    auto yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlockHost(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }
@@ -1111,6 +1110,64 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, MTSGS, Scalar, LocalOrdinal
   params.set("relaxation: type", "MT Symmetric Gauss-Seidel");
   params.set("relaxation: sweeps", 3);
   prec->setParameters (params);
+  prec->initialize();
+  prec->compute();
+  //Set up linear problem
+  const int numVecs = 10;
+  MV x(A->getDomainMap(), numVecs, true);
+  MV b(rowmap, numVecs, false);
+  b.randomize();
+  Kokkos::View<STM*, Kokkos::HostSpace> initNorms("Initial norms", numVecs);
+  //Residual norms for starting solution of zero
+  b.norm2(initNorms);
+  prec->apply(b, x);
+  //Compute residual vector = b - Ax
+  MV residual(b, Teuchos::Copy);
+  A->apply(x, residual, Teuchos::NO_TRANS, -STS::one(), STS::one());
+  Kokkos::View<STM*, Kokkos::HostSpace> resNorms("Residual norms", numVecs);
+  residual.norm2(resNorms);
+  //Make sure all residual norms are significantly smaller than initial
+  for(int i = 0; i < numVecs; i++)
+  {
+    TEST_COMPARE(resNorms(i), <, 0.5 * initNorms(i));
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, MTSGS_LongRows, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+  using crs_matrix_type = Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using row_matrix_type = Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using MV = Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using map_type = Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>;
+  using prec_type = Ifpack2::Relaxation<row_matrix_type>;
+  using STS = Teuchos::ScalarTraits<Scalar>;
+  using STM = typename STS::magnitudeType;
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+  //Generate banded test matrix
+  RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LocalOrdinal, GlobalOrdinal, Node>(100);
+  RCP<const crs_matrix_type> A = tif_utest::create_banded_matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowmap, 3);
+  RCP<prec_type> prec = rcp(new prec_type(A));
+  ParameterList goodParams;
+  goodParams.set("relaxation: type", "MT Symmetric Gauss-Seidel");
+  goodParams.set("relaxation: sweeps", 3);
+  goodParams.set("relaxation: long row threshold", 3);
+  //Try setting up precondition with incompatible type, and make sure this throws.
+  {
+    ParameterList badParams = goodParams;
+    badParams.set("relaxation: type", "Gauss-Seidel");
+    TEST_THROW (prec->setParameters (badParams), std::invalid_argument);
+  }
+  //Try setting up cluster GS preconditioner with long row algorithm enabled - should also throw.
+  {
+    ParameterList badParams = goodParams;
+    badParams.set("relaxation: mtgs cluster size", 4);
+    TEST_THROW(prec->setParameters (badParams), std::invalid_argument);
+  }
+  prec->setParameters (goodParams);
   prec->initialize();
   prec->compute();
   //Set up linear problem
@@ -1194,6 +1251,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, ClusterMTSGS, Scalar, Local
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestLowerTriangularBlockCrsMatrix, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, TestUpperTriangularBlockCrsMatrix, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, MTSGS, Scalar, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, MTSGS_LongRows, Scalar, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, ClusterMTSGS, Scalar, LO, GO )
 
   //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2Relaxation, SGS_mult_sweeps, Scalar, LO, GO )

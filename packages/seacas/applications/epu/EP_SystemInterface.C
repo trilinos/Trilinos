@@ -81,7 +81,7 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("Part_count", GetLongOption::MandatoryValue,
                   "How many pieces (files) of the model should be joined.", "0");
 
-  options_.enroll("start_part", GetLongOption::MandatoryValue, "Start with piece {n} (file)", "0");
+  options_.enroll("start_part", GetLongOption::MandatoryValue, "Start with piece {L} (file)", "0");
 
   options_.enroll("cycle", GetLongOption::MandatoryValue,
                   "Cycle number. If subcycle # is specified, then only execute\n"
@@ -92,6 +92,13 @@ void Excn::SystemInterface::enroll_options()
                   "If -join_subcycles is specified, then after joining the subcycle files,\n"
                   "\t\tthey are automatically deleted unless -keep_temporary is specified.",
                   nullptr);
+
+  options_.enroll(
+      "verify_valid_file", GetLongOption::NoValue,
+      "Reopen the output file right after closing it to verify that the file is valid.\n"
+      "\t\tThis tries to detect file corruption immediately instead of later. Mainly useful in "
+      "large subcycle runs.",
+      nullptr);
 
   options_.enroll(
       "add_nodal_communication_map", GetLongOption::NoValue,
@@ -328,10 +335,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   sumSharedNodes_ = options_.retrieve("sum_shared_nodes") != nullptr;
   append_         = options_.retrieve("append") != nullptr;
 
-  subcycle_      = options_.get_option_value("subcycle", subcycle_);
-  cycle_         = options_.get_option_value("cycle", cycle_);
-  subcycleJoin_  = options_.retrieve("join_subcycles") != nullptr;
-  keepTemporary_ = options_.retrieve("keep_temporary") != nullptr;
+  subcycle_        = options_.get_option_value("subcycle", subcycle_);
+  cycle_           = options_.get_option_value("cycle", cycle_);
+  subcycleJoin_    = options_.retrieve("join_subcycles") != nullptr;
+  keepTemporary_   = options_.retrieve("keep_temporary") != nullptr;
+  verifyValidFile_ = options_.retrieve("verify_valid_file") != nullptr;
 
   if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;

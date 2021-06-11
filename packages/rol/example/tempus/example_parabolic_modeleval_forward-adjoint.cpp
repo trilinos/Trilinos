@@ -48,7 +48,7 @@
               \min_{u,z} \;\frac{1}{2} \int_0^T\int_0^1 (u(t,x)-\bar{u}(x))^2\,\mathrm{d}x\mathrm{d}t
                          \frac{\alpha}{2} \int_0^T z(t)^2\,\mathrm{d}t
            \f]
-           subject to 
+           subject to
            \f[
                u_t(t,x) - u_{xx}(t,x) + f(u(t,x),x) = z(t,x) \quad t\in (0,T], \; x\in (0,1)
            \f]
@@ -66,7 +66,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorBasicOld.hpp"
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
@@ -78,11 +78,11 @@
 #include "ROL_TempusDynamicConstraint.hpp"
 
 #include <iostream>
-#include <fenv.h>
+//#include <fenv.h>
 #include <ctime>
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
   using uint  = std::vector<RealT>::size_type;
 
@@ -118,11 +118,11 @@ int main(int argc, char *argv[]) {
 
     // Create FORWARD Tempus Integrator from ModelEvaluator.
     ROL::Ptr<Tempus::Integrator<RealT>> forward_integrator =
-      ROL::makePtr<Tempus::IntegratorBasic<RealT>>(ROL::makePtrFromRef(pl_tempus), forward_meval);
+      ROL::makePtr<Tempus::IntegratorBasicOld<RealT>>(ROL::makePtrFromRef(pl_tempus), forward_meval);
 
     // Create ADJOINT Tempus Integrator from ModelEvaluator.
     ROL::Ptr<Tempus::Integrator<RealT>> adjoint_integrator =
-      ROL::makePtr<Tempus::IntegratorBasic<RealT>>(ROL::makePtrFromRef(pl_tempus), adjoint_meval);
+      ROL::makePtr<Tempus::IntegratorBasicOld<RealT>>(ROL::makePtrFromRef(pl_tempus), adjoint_meval);
 
     // Initialize objective function.
     ROL::Ptr<ROL::DynamicObjective<RealT>> dyn_obj =

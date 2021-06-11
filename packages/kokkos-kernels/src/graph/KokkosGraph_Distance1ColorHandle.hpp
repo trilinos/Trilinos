@@ -158,6 +158,10 @@ private:
   nnz_lno_persistent_work_view_t lower_triangle_src;
   nnz_lno_persistent_work_view_t lower_triangle_dst;
 
+  bool use_vtx_list;
+  nnz_lno_temp_work_view_t vertex_list;
+  size_type vertex_list_size;
+
   color_view_t vertex_colors;
   bool is_coloring_called_before;
   nnz_lno_t num_colors;
@@ -189,7 +193,7 @@ private:
     overall_coloring_time_phase5(0),
     coloring_time(0),
     num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),
-    vertex_colors(), is_coloring_called_before(false), num_colors(0)
+    use_vtx_list(false), vertex_colors(), is_coloring_called_before(false), num_colors(0)
   {
     this->choose_default_algorithm();
     this->set_defaults(this->coloring_algorithm_type);
@@ -241,6 +245,13 @@ private:
       this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
       std::cout << "Serial Execution Space, Default Algorithm: COLORING_SERIAL\n";
+#endif
+    }
+    else if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+    {
+      this->coloring_algorithm_type = COLORING_EB;
+#ifdef VERBOSE
+      std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_EB\n";
 #endif
     }
     else if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
@@ -640,7 +651,15 @@ private:
   int get_num_phases() const { return this->num_phases;}
   color_view_t get_vertex_colors() const {return this->vertex_colors;}
   bool is_coloring_called() const {return this->is_coloring_called_before;}
+  bool get_use_vtx_list() const {return this->use_vtx_list;}
+  nnz_lno_temp_work_view_t get_vertex_list() const {return this->vertex_list;}
+  size_type get_vertex_list_size() const {return this->vertex_list_size;}
   //setters
+  void set_vertex_list(nnz_lno_temp_work_view_t vertex_list_, size_type vertex_list_size_){
+    this->vertex_list = vertex_list_;
+    this->vertex_list_size = vertex_list_size_;
+    this->use_vtx_list = true;
+  }
   void set_coloring_algo_type(const ColoringAlgorithm &col_algo){this->coloring_algorithm_type = col_algo;}
   void set_conflict_list_type(const ConflictList &cl){this->conflict_list_type = cl;}
   void set_min_reduction_for_conflictlist(const double &min_reduction){this->min_reduction_for_conflictlist = min_reduction;}

@@ -78,55 +78,31 @@ KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL(SCALAR, LAYOUTA, MEMSPACE)
 #define KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( SCALAR , LAYOUTA, MEMSPACE )
 #endif // KOKKOSKERNELS_ENABLE_TPL_MAGMA
 
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutLeft, Kokkos::HostSpace) 
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( double,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( double,                  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( float,                   Kokkos::LayoutLeft, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( float,                   Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaUVMSpace)
-#endif
 
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutRight, Kokkos::HostSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( double,                  Kokkos::LayoutRight, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( double,                  Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutRight, Kokkos::HostSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( float,                   Kokkos::LayoutRight, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( float,                   Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::HostSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<double>, Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::HostSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::CudaSpace)
  KOKKOSBLAS_TRTRI_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,  Kokkos::LayoutRight, Kokkos::CudaUVMSpace)
-#endif
 
 } // namespace Impl
 } // namespace KokkosBlas

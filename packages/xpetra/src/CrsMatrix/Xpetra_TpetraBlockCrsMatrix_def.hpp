@@ -278,7 +278,17 @@ namespace Xpetra {
                  ArrayRCP<const Scalar>& values) const
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
+    }  
+
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void 
+    TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    getAllValues(ArrayRCP<Scalar>& values) 
+    { 
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
     }
+
 
 
     //@}
@@ -528,6 +538,18 @@ namespace Xpetra {
           Scalar alpha, 
           Scalar beta) const
     { XPETRA_MONITOR("TpetraBlockCrsMatrix::apply"); mtx_->apply(toTpetra(X), toTpetra(Y), mode, alpha, beta); }
+
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+    apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
+          MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
+          Teuchos::ETransp mode,
+          Scalar alpha,
+          Scalar beta,
+          bool sumInterfaceValues,
+          const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+          const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const
+    { }
 
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -928,7 +950,11 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! Gets the 1D pointer arrays of the graph (not implemented)
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
     {}
-
+    
+    
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<Scalar>& values) 
+    {}
 
     //! @name Transformational Methods
 
@@ -1267,6 +1293,11 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
 
     //! Gets the 1D pointer arrays of the graph (not implemented)
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
+    {}
+
+    
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<Scalar>& values) 
     {}
 
 

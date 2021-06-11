@@ -73,7 +73,7 @@ template<class MatrixType, class VectorType>
 void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
                             Teuchos::RCP<MatrixType>& Ln, Teuchos::RCP<MatrixType>& Un, Teuchos::RCP<VectorType>& Dn) {
 
-  typedef typename MatrixType::local_matrix_type local_matrix_type;
+  typedef typename MatrixType::local_matrix_device_type local_matrix_type;
   typedef typename std::remove_const<typename local_matrix_type::size_type>::type    size_type;
   typedef typename std::remove_const<typename local_matrix_type::ordinal_type>::type ordinal_type;
   typedef typename std::remove_const<typename local_matrix_type::value_type>::type   value_type;
@@ -87,11 +87,11 @@ void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename Kokkos::TeamPolicy<execution_space>::member_type member_type;
 
-  auto L_rowmap  = L.getLocalMatrix().graph.row_map;
-  auto L_entries = L.getLocalMatrix().graph.entries;
+  auto L_rowmap  = L.getLocalMatrixDevice().graph.row_map;
+  auto L_entries = L.getLocalMatrixDevice().graph.entries;
   auto L_values  = L.getLocalValuesView();
-  auto U_rowmap  = U.getLocalMatrix().graph.row_map;
-  auto U_entries = U.getLocalMatrix().graph.entries;
+  auto U_rowmap  = U.getLocalMatrixDevice().graph.row_map;
+  auto U_entries = U.getLocalMatrixDevice().graph.entries;
   auto U_values  = U.getLocalValuesView();
 
   rowmap_type  Ln_rowmap ("Ln_rowmap",  L_rowmap.extent(0));
@@ -142,9 +142,8 @@ void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
                                      Ln_rowmap, Ln_entries, Ln_values));
   Un = Teuchos::rcp (new MatrixType (U.getRowMap(), U.getColMap(), 
                                      Un_rowmap, Un_entries, Un_values));
-  auto Dn_view = Dn->getLocalViewDevice();
+  auto Dn_view = Dn->getLocalViewDevice(Tpetra::Access::OverwriteAll);
   Kokkos::deep_copy(subview(Dn_view,Kokkos::ALL(), 0),Dn_values);
-  Dn->sync_host();
 
   Ln->fillComplete();
   Un->fillComplete();
@@ -291,6 +290,23 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
   RCP<const map_type> rowmap =
     tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
 
+  // Matrix
+  // [ 2 .1  0  0  0]
+  // [.1  2  0  0  0]
+  // [ 0 .1  2 .1  0]
+  // [ 0  0 .1  2 .1]
+  // [ 0  0  0 .1  2]
+
+  // Matlab's Factors
+  // L
+  // Diagonal = 1 (implied)
+  // Subdiagonal (approx) = .05, .0501, .0501 .0501
+
+  // U
+  // Diagonal (approx)      = 2 1.995 1.995 1.995 1.995 
+  // Superdiagonal (approx) = .1 .1 .1 .1
+
+
   if (rowmap->getComm ()->getSize () > 1) {
     out << "This test may only be run in serial "
       "or with a single MPI process." << endl;
@@ -300,6 +316,12 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
   out << "Creating matrix" << endl;
   RCP<const crs_matrix_type> crsmatrix =
     tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
+
+  {//CMS
+    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+    *out<<"***** A *****"<<std::endl;
+    crsmatrix->describe(*out,Teuchos::VERB_EXTREME);
+  }
 
   //----------------Default trisolver----------------//
   {
@@ -317,7 +339,18 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     out << "Calling initialize() and compute()" << endl;
     prec.initialize();
     prec.compute();
-    
+   
+  {//CMS
+    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+    *out<<"***** Test L *****"<<std::endl;
+    prec.getL().describe(*out,Teuchos::VERB_EXTREME);
+    *out<<"***** Test U *****"<<std::endl;
+    prec.getU().describe(*out,Teuchos::VERB_EXTREME);
+    *out<<"***** Test D *****"<<std::endl;
+    prec.getD().describe(*out,Teuchos::VERB_EXTREME);
+  }
+
+ 
     out << "Creating test problem" << endl;
     MV x (rowmap, 2);
     MV y (rowmap, 2);
@@ -409,6 +442,8 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
       test_alpha_beta(-0.42, 4.2, mode);
     }
   }
+
+  return;//CMS
   //----------------Kokkos Kernels SPTRSV----------------//
   {
     out << "Creating preconditioner" << endl;
@@ -701,20 +736,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
       //Copy the banded matrix into a new matrix with permuted row map GIDs.
       //This matrix will have the sparsity pattern as the original matrix.
       RCP<crs_matrix_type> permutedMatrix = Teuchos::rcp(new crs_matrix_type(permRowMap, 5));
-      Teuchos::Array<GO> Inds(5);
-      Teuchos::Array<GO> pInds(5);
-      Teuchos::Array<Scalar>        Vals(5);
-      Teuchos::Array<Scalar>        pVals(5);
+      typename crs_matrix_type::nonconst_global_inds_host_view_type Inds("Inds",5), pInds("pInds",5);
+      typename crs_matrix_type::nonconst_values_host_view_type Vals("Vals",5), pVals("pVals",5);
       size_t numEntries;
       for (global_size_t i=0; i<num_rows_per_proc; ++i) {
-        crsmatrix->getGlobalRowCopy(i,Inds(),Vals(),numEntries);
-        pInds.resize(numEntries);
-        pVals.resize(numEntries);
+        crsmatrix->getGlobalRowCopy(i,Inds,Vals,numEntries);
+        Kokkos::resize(pInds,numEntries);
+        Kokkos::resize(pVals,numEntries);
         for (size_t j=0; j<numEntries; ++j) {
           pInds[j] = origToPerm[Inds[j]];
           pVals[j] = Vals[j];
         }
-        permutedMatrix->insertGlobalValues(origToPerm[i],pInds(),pVals());
+        permutedMatrix->insertGlobalValues(origToPerm[i],numEntries,pVals.data(),pInds.data());
       }
       permutedMatrix->fillComplete();
     

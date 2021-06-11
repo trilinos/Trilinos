@@ -194,9 +194,8 @@ public:
     (void)alpha;
     (void)beta;
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
-    const auto& X_view = X.getLocalViewHost ();
-    const auto& Y_view = Y.getLocalViewHost ();
-    Kokkos::fence();
+    const auto& X_view = X.getLocalViewHost (Tpetra::Access::ReadOnly);
+    const auto& Y_view = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
 
     // Only does something if #rhs > current capacity.
     HTST::reset_max_nrhs(Timpl_.get(), X_view.extent(1));
@@ -378,7 +377,7 @@ initialize ()
   using Tpetra::Details::determineLocalTriangularStructure;
   using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type>;
-  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_device_type;
   using LO = local_ordinal_type;
 
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
@@ -412,7 +411,7 @@ initialize ()
   // mfh 30 Apr 2018: See GitHub Issue #2658.
   constexpr bool ignoreMapsForTriStructure = true;
   auto lclTriStructure = [&] {
-    auto lclMatrix = A_crs_->getLocalMatrix ();
+    auto lclMatrix = A_crs_->getLocalMatrixDevice ();
     auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
     auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
     auto lclTriStruct =
@@ -430,7 +429,7 @@ initialize ()
   if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
       htsImpl_.is_null ()) {
     // Reverse the storage for an upper triangular matrix
-    auto Alocal = A_crs_->getLocalMatrix();
+    auto Alocal = A_crs_->getLocalMatrixDevice();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
@@ -564,7 +563,7 @@ compute ()
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_)
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-    auto Alocal = A_crs->getLocalMatrix();
+    auto Alocal = A_crs->getLocalMatrixDevice();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
@@ -725,13 +724,6 @@ localTriangularSolve (const MV& Y,
      "not currently support non-conjugated transposed solve (mode == "
      "Teuchos::TRANS) for complex scalar types.");
 
-  // FIXME (mfh 19 May 2016) This makes some Ifpack2 tests fail.
-  //
-  // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-  //   (Y.template need_sync<device_type> () && !
-  //    Y.template need_sync<Kokkos::HostSpace> (), std::runtime_error,
-  //    "Y must be sync'd to device memory before you may call this method.");
-
   const std::string uplo = this->uplo_;
   const std::string trans = (mode == Teuchos::CONJ_TRANS) ? "C" :
     (mode == Teuchos::TRANS ? "T" : "N");
@@ -739,48 +731,37 @@ localTriangularSolve (const MV& Y,
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_ && trans == "N")
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (this->A_);
-    auto A_lclk = A_crs->getLocalMatrix ();
+    auto A_lclk = A_crs->getLocalMatrixDevice ();
     auto ptr    = A_lclk.graph.row_map;
     auto ind    = A_lclk.graph.entries;
     auto val    = A_lclk.values;
 
-    X.sync_device ();
-    const_cast<MV&> (Y).sync_device ();
-    X.modify_device (); // we will write to X
-
     const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
 
     for (size_t j = 0; j < numVecs; ++j) {
-      auto X_j = X.getVector (j);
+      auto X_j = X.getVectorNonConst (j);
       auto Y_j = Y.getVector (j);
-      auto X_lcl = X_j->getLocalViewDevice ();
-      auto Y_lcl = Y_j->getLocalViewDevice ();
+      auto X_lcl = X_j->getLocalViewDevice (Tpetra::Access::ReadWrite);
+      auto Y_lcl = Y_j->getLocalViewDevice (Tpetra::Access::ReadOnly);
       auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::ALL (), 0);
       auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::ALL (), 0);
       KokkosSparse::Experimental::sptrsv_solve(kh_.getRawPtr(), ptr, ind, val, Y_lcl_1d, X_lcl_1d);
       // TODO is this fence needed...
       typename k_handle::HandleExecSpace().fence();
     }
-    // TODO: This forces a sync on host that may be unnecessary, but unclear where users may need to check for this...
-    X.sync_host ();
-    const_cast<MV&> (Y).sync_host ();
   }
   else
   {
     const std::string diag = this->diag_;
     // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
     // sequential, host-only code.  See
-    // https://github.com/kokkos/kokkos-kernels/issues/48.  This
-    // means that we need to sync to host, then sync back to device
-    // when done.
-    auto A_lcl = this->A_crs_->getLocalMatrix ();
-    X.sync_host ();
-    const_cast<MV&> (Y).sync_host ();
-    X.modify_host (); // we will write to X
+    // https://github.com/kokkos/kokkos-kernels/issues/48. 
+
+    auto A_lcl = this->A_crs_->getLocalMatrixHost ();
 
     if (X.isConstantStride () && Y.isConstantStride ()) {
-      auto X_lcl = X.getLocalViewHost ();
-      auto Y_lcl = Y.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHost (Tpetra::Access::ReadWrite);
+      auto Y_lcl = Y.getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
           A_lcl, Y_lcl, X_lcl);
     }
@@ -788,17 +769,14 @@ localTriangularSolve (const MV& Y,
       const size_t numVecs =
         std::min (X.getNumVectors (), Y.getNumVectors ());
       for (size_t j = 0; j < numVecs; ++j) {
-        auto X_j = X.getVector (j);
-        auto Y_j = X.getVector (j);
-        auto X_lcl = X_j->getLocalViewHost ();
-        auto Y_lcl = Y_j->getLocalViewHost ();
+        auto X_j = X.getVectorNonConst (j);
+        auto Y_j = Y.getVector (j);
+        auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::ReadWrite);
+        auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
         KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
             diag.c_str (), A_lcl, Y_lcl, X_lcl);
       }
     }
-
-    X.sync_device ();
-    const_cast<MV&> (Y).sync_device ();
   }
 }
 
