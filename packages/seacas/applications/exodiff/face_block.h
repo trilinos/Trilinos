@@ -38,7 +38,7 @@ private:
   mutable INT *faceIndex{nullptr};
 
   std::string elmt_type;
-  int         num_faces_per_elmt;
+  int         num_faces_per_elmt{-1};
 
   friend class ExoII_Read<INT>;
 };

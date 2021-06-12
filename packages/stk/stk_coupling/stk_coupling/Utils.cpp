@@ -120,11 +120,13 @@ int string_to_color(const std::string& appString)
 
 SyncMode string_to_sync_mode(const std::string& syncModeString)
 {
-  if (stk::equal_case(syncModeString, "Minimum")) return Minimum;
-  if (stk::equal_case(syncModeString, "Receive")) return Receive;
-  if (stk::equal_case(syncModeString, "Send")) return Send;
-  ThrowErrorMsg("string_to_sync_mode: invalid sync mode: " << syncModeString);
-  return Send;
+  SyncMode returnValue = Any;
+  if (stk::equal_case(syncModeString, "Minimum")) returnValue = Minimum;
+  else if (stk::equal_case(syncModeString, "Receive")) returnValue = Receive;
+  else if (stk::equal_case(syncModeString, "Send")) returnValue = Send;
+  else if (stk::equal_case(syncModeString, "Any")) returnValue = Any;
+  else ThrowErrorMsg("string_to_sync_mode: invalid sync mode: " << syncModeString);
+  return returnValue;
 }
 
 std::ostream& operator<<(std::ostream& os, const SyncMode & mode)

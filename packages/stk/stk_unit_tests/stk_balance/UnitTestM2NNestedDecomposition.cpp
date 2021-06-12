@@ -40,10 +40,10 @@ class M2NDefaultDecomposer : public MeshFixtureM2NDecomposer
 public:
   virtual void setup_m2n_decomposer(int numFinalProcs) override
   {
-    const bool useNestedDecomp = false;
-    m_parsedOptions = stk::balance::M2NParsedOptions{"junk.g", numFinalProcs, useNestedDecomp};
+    m_balanceSettings.set_input_filename("junk.g");
+    m_balanceSettings.set_num_output_processors(numFinalProcs);
 
-    m_decomposer = new stk::balance::internal::M2NDecomposer(get_bulk(), m_balanceSettings, m_parsedOptions);
+    m_decomposer = new stk::balance::m2n::M2NDecomposer(get_bulk(), m_balanceSettings);
   }
 };
 
@@ -99,10 +99,10 @@ class M2NNestedDecomposer : public MeshFixtureM2NDecomposer
 public:
   virtual void setup_m2n_decomposer(int numFinalProcs) override
   {
-    const bool useNestedDecomp = false;
-    m_parsedOptions = stk::balance::M2NParsedOptions{"junk.g", numFinalProcs, useNestedDecomp};
+    m_balanceSettings.set_input_filename("junk.g");
+    m_balanceSettings.set_num_output_processors(numFinalProcs);
 
-    m_decomposer = new stk::balance::internal::M2NDecomposerNested(get_bulk(), m_balanceSettings, m_parsedOptions);
+    m_decomposer = new stk::balance::m2n::M2NDecomposerNested(get_bulk(), m_balanceSettings);
   }
 };
 
@@ -200,11 +200,12 @@ public:
   virtual void rebalance_mesh_m2n(int numFinalProcs) override
   {
     m_numFinalProcs = numFinalProcs;
-    const bool useNestedDecomp = false;
-    stk::balance::M2NParsedOptions parsedOptions{get_output_file_name(), numFinalProcs, useNestedDecomp};
-    testing::internal::CaptureStdout();
-    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, parsedOptions);
-    testing::internal::GetCapturedStdout();
+    stk::balance::M2NBalanceSettings balanceSettings(get_output_file_name(), numFinalProcs);
+    balanceSettings.setDecompMethod("rcb");
+
+    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::balance::m2n::rebalanceMtoN(m_ioBroker, balanceSettings);
+    stk::EnvData::instance().m_outputP0 = &std::cout;
   }
 };
 
@@ -242,11 +243,14 @@ public:
   virtual void rebalance_mesh_m2n(int numFinalProcs) override
   {
     m_numFinalProcs = numFinalProcs;
+
     const bool useNestedDecomp = true;
-    stk::balance::M2NParsedOptions parsedOptions{get_output_file_name(), numFinalProcs, useNestedDecomp};
-    testing::internal::CaptureStdout();
-    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, parsedOptions);
-    testing::internal::GetCapturedStdout();
+    stk::balance::M2NBalanceSettings balanceSettings(get_output_file_name(), numFinalProcs, useNestedDecomp);
+    balanceSettings.setDecompMethod("rcb");
+
+    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    stk::balance::m2n::rebalanceMtoN(m_ioBroker, balanceSettings);
+    stk::EnvData::instance().m_outputP0 = &std::cout;
   }
 };
 

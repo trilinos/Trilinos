@@ -1,5 +1,6 @@
 SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Util            stk_util             PT  OPTIONAL
+  Emend           stk_emend            PT  OPTIONAL
   Coupling        stk_coupling         PT  OPTIONAL
   Math            stk_math             PT  OPTIONAL
   Simd            stk_simd             PT  OPTIONAL

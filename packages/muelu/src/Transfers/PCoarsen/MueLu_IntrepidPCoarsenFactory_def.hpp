@@ -104,7 +104,7 @@ namespace MueLu {
 namespace MueLuIntrepid {
 inline std::string tolower(const std::string & str) {
   std::string data(str);
-  std::transform(data.begin(), data.end(), data.begin(), [](unsigned char c) { return std::tolower(c); });
+  std::transform(data.begin(), data.end(), data.begin(), ::tolower);
   return data;
 }
 

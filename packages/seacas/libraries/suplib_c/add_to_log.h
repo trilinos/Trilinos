@@ -5,6 +5,9 @@
  *
  * See packages/seacas/LICENSE for details
  */
+#ifndef ADD_TO_LOG_H
+#define ADD_TO_LOG_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,4 +16,6 @@ extern void add_to_log(const char *my_name, double elapsed);
 
 #ifdef __cplusplus
 } /* close brackets on extern "C" declaration */
+#endif
+
 #endif

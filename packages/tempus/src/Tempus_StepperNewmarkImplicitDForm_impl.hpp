@@ -455,6 +455,7 @@ StepperNewmarkImplicitDForm<Scalar>::describe(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
@@ -470,6 +471,7 @@ StepperNewmarkImplicitDForm<Scalar>::describe(
 template<class Scalar>
 bool StepperNewmarkImplicitDForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;

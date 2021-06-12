@@ -59,6 +59,12 @@ typedef MueLu::BraessSarazinSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Bra
 #ifdef MUELU_CGSOLVER_SHORT
 typedef MueLu::CGSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> CGSolver;
 #endif
+#ifdef MUELU_CLASSICALMAPFACTORY_SHORT
+typedef MueLu::ClassicalMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ClassicalMapFactory;
+#endif
+#ifdef MUELU_CLASSICALPFACTORY_SHORT
+typedef MueLu::ClassicalPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ClassicalPFactory;
+#endif
 #ifdef MUELU_CLONEREPARTITIONINTERFACE_SHORT
 typedef MueLu::CloneRepartitionInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> CloneRepartitionInterface;
 #endif

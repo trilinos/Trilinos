@@ -15,7 +15,6 @@
 #include <Ioss_Field.h>
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
-#include <Iovs_Utils.h>
 
 #include <algorithm>
 #include <ctime>
@@ -28,6 +27,7 @@
 /** \brief A namespace for the visualization database format.
  */
 namespace Iovs_exodus {
+  class CatalystExodusMeshBase;
 
   typedef std::set<std::pair<int64_t, int64_t>> EntityIdSet;
 

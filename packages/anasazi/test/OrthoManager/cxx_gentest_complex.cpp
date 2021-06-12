@@ -71,20 +71,7 @@ using namespace Teuchos;
 using namespace Anasazi;
 using namespace std;
 
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ST;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
-#else
-  typedef double ST;
-  // no complex. quit with failure.
-int main() {
-  std::cout << "Not compiled with complex support." << std::endl;
-  std::cout << "End Result: TEST FAILED" << std::endl;
-  return -1;
-}
-#endif
-
+typedef std::complex<double>      ST;
 typedef MultiVec<ST>              MV;
 typedef Operator<ST>              OP;
 typedef MultiVecTraits<ST,MV>    MVT;

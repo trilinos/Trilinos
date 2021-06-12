@@ -62,6 +62,8 @@
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
+#include "MueLu_ClassicalMapFactory.hpp"
+#include "MueLu_ClassicalPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -553,7 +555,7 @@ namespace MueLu {
         Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen"}).count(multigridAlgo) == 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical"}).count(multigridAlgo) == 0,
         Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -615,6 +617,10 @@ namespace MueLu {
       // Unsmoothed aggregation
       manager.SetFactory("P", manager.GetFactory("Ptent"));
 
+    } else if (multigridAlgo == "classical") {
+      // Classical AMG
+      manager.SetFactory("P", manager.GetFactory("Ptent"));
+
     } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
       UpdateFactoryManager_SA(paramList, defaultList, manager, levelID, keeps);
@@ -647,7 +653,7 @@ namespace MueLu {
 
     // == BlockNumber Transfer ==
     if(useBlockNumber_)
-      UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber",paramList,defaultList,manager,levelID,keeps);
+      UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber",multigridAlgo,paramList,defaultList,manager,levelID,keeps);
 
     // === Coordinates ===
     UpdateFactoryManager_Coordinates(paramList, defaultList, manager, levelID, keeps);
@@ -1003,6 +1009,7 @@ namespace MueLu {
        ParameterList dropParams;
        dropParams.set("lightweight wrap", true);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: row sum drop tol",        double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
@@ -1020,7 +1027,7 @@ namespace MueLu {
 
     // Aggregation scheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay"}).count(aggType),
+    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay","classical"}).count(aggType),
         Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     #ifndef HAVE_MUELU_MATLAB
     if (aggType == "matlab")
@@ -1078,6 +1085,40 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+    else if (aggType == "classical") {
+      // Map and coloring
+      RCP<Factory> mapFact = rcp(new ClassicalMapFactory());
+      ParameterList mapParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, mapParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, mapParams);
+      mapFact->SetParameterList(mapParams);
+      manager.SetFactory("FC Splitting", mapFact);
+      manager.SetFactory("CoarseMap", mapFact);
+
+      aggFactory = rcp(new ClassicalPFactory());      
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical scheme", std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme", std::string, aggParams);
+      aggFactory->SetParameterList(aggParams);
+      aggFactory->SetFactory("FC Splitting",manager.GetFactory("FC Splitting"));
+      aggFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+      std::string drop_algo = aggParams.get<std::string>("aggregation: drop scheme");
+      if (drop_algo.find("block diagonal") != std::string::npos) 
+        aggFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
+      
+      // Now we short-circuit, because we neither need nor want TentativePFactory here      
+      manager.SetFactory("Ptent",     aggFactory);
+      manager.SetFactory("P Graph",     aggFactory);
+
+      
+      if (reuseType == "tP" && levelID) {
+        //        keeps.push_back(keep_pair("Nullspace", Ptent.get()));
+        keeps.push_back(keep_pair("Ptent",aggFactory.get()));
+      }
+      return;
+    }
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
     else if (aggType == "notay") {
       aggFactory = rcp(new NotayAggregationFactory());
@@ -1099,6 +1140,7 @@ namespace MueLu {
       aggFactory->SetParameterList(aggParams);
     }
 #endif
+
 
 
     manager.SetFactory("Aggregates", aggFactory);
@@ -1307,12 +1349,15 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_LocalOrdinalTransfer(const std::string VarName, ParameterList& paramList, const ParameterList& /* defaultList */,
+  UpdateFactoryManager_LocalOrdinalTransfer(const std::string & VarName, const std::string &multigridAlgo,ParameterList& paramList, const ParameterList& /* defaultList */,
                                             FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const
   {    
     if(levelID >= 1){
-      RCP<Factory> fact = rcp(new LocalOrdinalTransferFactory(VarName));
-      fact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+      RCP<Factory> fact = rcp(new LocalOrdinalTransferFactory(VarName,multigridAlgo));
+      if(multigridAlgo == "classical") 
+        fact->SetFactory("P Graph", manager.GetFactory("P Graph"));
+      else 
+        fact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
       fact->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
       fact->SetFactory(VarName, this->GetFactoryManager(levelID-1)->GetFactory(VarName));
 
@@ -1668,6 +1713,7 @@ namespace MueLu {
       ParameterList linedetectionParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: piecewise constant", bool,      semicoarsenPParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
 

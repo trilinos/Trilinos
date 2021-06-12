@@ -110,35 +110,37 @@ struct KLU_OrdinalTraits<int>
 };
 
 template<>
-struct KLU_OrdinalTraits<long int>
+struct KLU_OrdinalTraits<ptrdiff_t>
 {
-    static inline long int btf_order (long int n, long int *Ap, long int *Ai,
-        double maxwork, double *work, long int *P, long int *Q, long int *R, long int *nmatch,
-        long int *Work)
+// These should all be UF_long, which I presume is resolving to ptrdiff_t
+// ptrdiff_t is ptrdiff_t on Linux64, but just to be safe
+    static inline ptrdiff_t btf_order (ptrdiff_t n, ptrdiff_t *Ap, ptrdiff_t *Ai,
+        double maxwork, double *work, ptrdiff_t *P, ptrdiff_t *Q, ptrdiff_t *R, ptrdiff_t *nmatch,
+        ptrdiff_t *Work)
     {
         return (trilinos_btf_l_order (n, Ap, Ai, maxwork, work, P, Q, R, nmatch,
                     Work));
     }
 
-    static inline long int btf_strongcomp (long int n, long int *Ap, long int *Ai, long int *Q,
-        long int *P, long int *R, long int *Work)
+    static inline ptrdiff_t btf_strongcomp (ptrdiff_t n, ptrdiff_t *Ap, ptrdiff_t *Ai, ptrdiff_t *Q,
+        ptrdiff_t *P, ptrdiff_t *R, ptrdiff_t *Work)
     {
         return(trilinos_btf_l_strongcomp (n, Ap, Ai, Q, P, R, Work)) ;
     }
 
-    static inline long int amd_order (long int n, long int *Ap, long int *Ai, long int *P,
+    static inline ptrdiff_t amd_order (ptrdiff_t n, ptrdiff_t *Ap, ptrdiff_t *Ai, ptrdiff_t *P,
         double *Control, double *Info)
     {
         return (trilinos_amd_l_order(n, Ap, Ai, P, Control, Info)) ;
     }
 
-    static inline long int colamd (long int n_row, long int n_col, long int Alen, long int *A,
-        long int *p, double *knobs, long int *stats)
+    static inline ptrdiff_t colamd (ptrdiff_t n_row, ptrdiff_t n_col, ptrdiff_t Alen, ptrdiff_t *A,
+        ptrdiff_t *p, double *knobs, ptrdiff_t *stats)
     {
         return(trilinos_colamd_l (n_row, n_col, Alen, A, p, knobs, stats));
     }
 
-    static inline long int colamd_recommended (long int nnz, long int n_row, long int n_col)
+    static inline ptrdiff_t colamd_recommended (ptrdiff_t nnz, ptrdiff_t n_row, ptrdiff_t n_col)
     {
         return(trilinos_colamd_l_recommended(nnz, n_row, n_col));
     }

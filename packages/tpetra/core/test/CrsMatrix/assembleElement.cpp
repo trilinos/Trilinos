@@ -608,7 +608,10 @@ namespace { // (anonymous)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+// FIXME_SYCL
+#ifndef KOKKOS_ENABLE_SYCL
   UNIT_TEST_GROUP( double )
+#endif
   //TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)

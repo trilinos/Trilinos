@@ -47,7 +47,7 @@ This will put a file called `TrilinosConfig.cmake` under a subdirectory of
   $ mkdir <app-build-dir>
   $ cd <app-build-dir>/
   $ cmake \
-    CMAKE_PREFIX_PATH=<tril-install-prefix> \
+    -D CMAKE_PREFIX_PATH=<tril-install-prefix> \
     <trilinos-src>/demos/simpleBuildAgainstTrilinos
 ```
 

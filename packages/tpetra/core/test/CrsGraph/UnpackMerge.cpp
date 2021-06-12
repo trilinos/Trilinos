@@ -162,7 +162,7 @@ namespace { // (anonymous)
 
       Kokkos::fence(); // since we're accessing data on host now
 
-      Teuchos::ArrayView<const LO> lclColInds;
+      typename crs_graph_type::local_inds_host_view_type lclColInds;
       const LO lclRowToTest (0);
       A_tgt.getLocalRowView(lclRowToTest, lclColInds);
 
@@ -191,6 +191,7 @@ namespace { // (anonymous)
     using crs_graph_type = Tpetra::CrsGraph<LO, GO, Node>;
     using import_type = Tpetra::Import<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
+    using gids_type = typename crs_graph_type::nonconst_global_inds_host_view_type;
     int lclSuccess = 1;
     int gblSuccess = 0;
 
@@ -321,12 +322,12 @@ namespace { // (anonymous)
     if (myRank == 0) {
       const GO gblRowToTest = tgtRowMap->getMinGlobalIndex();
       size_t numEnt = A_tgt.getNumEntriesInGlobalRow(gblRowToTest);
-      Teuchos::Array<GO> gblColInds(numEnt);
-      A_tgt.getGlobalRowCopy(gblRowToTest, gblColInds(), numEnt);
+      gids_type gblColInds("gids",numEnt);
+      A_tgt.getGlobalRowCopy(gblRowToTest, gblColInds, numEnt);
 
       const LO expectedNumEnt(unionGblColInds.size());
       TEST_EQUALITY( size_t(numEnt), size_t(expectedNumEnt) );
-      TEST_EQUALITY( size_t(gblColInds.size()),
+      TEST_EQUALITY( size_t(gblColInds.extent(0)),
                      size_t(expectedNumEnt) );
 
       if (success) {

@@ -70,6 +70,10 @@
       aggregation. Possible values: "classical", "distance laplacian",
       "unsupported vector smoothing"}
         
+\cbb{aggregation: classical scheme}{string}{"direct"}{Prolongator formation option for classical coarsening.}
+        
+\cbb{aggregation: row sum drop tol}{double}{-1.0}{Detection threshold for mass-dominated      rows. Defaults to -1 (meaning disabled)}
+        
 \cbb{aggregation: block diagonal: interleaved blocksize}{int}{3}{Effective block size to use for
       block-diagonalization.  This assumes the PDE is interleaved}
         
@@ -173,7 +177,7 @@
         
 \cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
         
-\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
+\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory. There, possible values are 0 for piece-wise constant and 1 for piece-wise linear interpolation to transfer values from coarse points to fine points. }
         
 \cbb{aggregation: pairwise: size}{int}{8}{Target size for pairwise aggregation.  The number
       of pairwise steps used will be log base-2 of this number.}
@@ -233,6 +237,8 @@
         
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
         
+\cbb{semicoarsen: piecewise constant}{bool}{false}{whether or not to use piecewise constant interpolation when semicoarsening.}
+        
 \cbb{semicoarsen: number of levels}{int}{3}{Determines the maximum number of times that semicoarsening is applied.}
         
 \cbb{linedetection: orientation}{string}{vertical}{Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'.}
@@ -257,8 +263,6 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{sa: rowsumabs diagonal replacement tolerance}{double}{-1.0}{If not -1, use this value for deciding whether a diagonal value in prolongator smoothing is too small and should be replaced.}
         
 \cbb{sa: rowsumabs diagonal replacement value}{double}{0.0}{If it's determined that a diagonal entry in prolongator smoothing is too small, replace that entry with this value.}
-        
-\cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
         
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         

@@ -473,7 +473,8 @@ public:
     : timer_(0,name,nullptr,false),
       enable_verbose_(false),
       verbose_timestamp_levels_(0), // 0 disables
-      verbose_ostream_(Teuchos::rcpFromRef(std::cout))
+      verbose_ostream_(Teuchos::rcpFromRef(std::cout)),
+      enable_timers_(true)
   {
     top_ = &timer_;
     if (start_base_timer)
@@ -516,15 +517,17 @@ public:
    */
   void start(const std::string name,
              const bool push_kokkos_profiling_region = true) {
-    if (top_ == nullptr)
-      top_ = timer_.start(name.c_str());
-    else
-      top_ = top_->start(name.c_str());
+    if (enable_timers_) {
+      if (top_ == nullptr)
+        top_ = timer_.start(name.c_str());
+      else
+        top_ = top_->start(name.c_str());
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-    if (push_kokkos_profiling_region) {
-      ::Kokkos::Profiling::pushRegion(name);
-    }
+      if (push_kokkos_profiling_region) {
+        ::Kokkos::Profiling::pushRegion(name);
+      }
 #endif
+    }
     if (enable_verbose_) {
       if (!verbose_timestamp_levels_) {
         *verbose_ostream_ << "STARTING: " << name << std::endl;
@@ -553,15 +556,17 @@ public:
    */
   void stop(const std::string &name,
             const bool pop_kokkos_profiling_region = true) {
-    if (top_)
-      top_ = top_->stop(name);
-    else
-      timer_.BaseTimer::stop();
+    if (enable_timers_) {
+      if (top_)
+        top_ = top_->stop(name);
+      else
+        timer_.BaseTimer::stop();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOSCORE)
-    if (pop_kokkos_profiling_region) {
-      ::Kokkos::Profiling::popRegion();
-    }
+      if (pop_kokkos_profiling_region) {
+        ::Kokkos::Profiling::popRegion();
+      }
 #endif
+    }
     if (enable_verbose_) {
       if (!verbose_timestamp_levels_) {
         *verbose_ostream_ << "STOPPING: " << name << std::endl;
@@ -733,14 +738,22 @@ public:
    */
   std::string reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
-  // If set to true, print timer start/stop to verbose ostream.
+  /// If set to true, print timer start/stop to verbose ostream.
   void enableVerbose(const bool enable_verbose);
 
-  // Enable timestamps in verbose mode for the number of levels specified.
+  /// Enable timestamps in verbose mode for the number of levels specified.
   void enableVerboseTimestamps(const unsigned levels);
 
-  // Set the ostream for verbose mode(defaults to std::cout).
+  /// Set the ostream for verbose mode(defaults to std::cout).
   void setVerboseOstream(const Teuchos::RCP<std::ostream>& os);
+
+  /// Once called, the start and stop calls are no-ops. Used to stop
+  /// timers during asynchronous execution.
+  void disableTimers();
+
+  /// Once called, the start and stop calls are reenabled. Used to
+  /// restart timers after a call to disableTimers().
+  void enableTimers();
 
 protected:
   /// Current level running
@@ -794,6 +807,9 @@ protected:
 
   /// For debugging, this is the ostream used for printing.
   Teuchos::RCP<std::ostream> verbose_ostream_;
+
+  /// Used to disable timers for asynchronous work.
+  bool enable_timers_;
 
   /**
     * Flatten the timers into a single array

@@ -88,8 +88,10 @@ namespace { // (anonymous)
     using GST = Tpetra::global_size_t;
     using STS = Teuchos::ScalarTraits<SC>;
     using KAT = Kokkos::ArithTraits<IST>;    
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-    using local_graph_type = typename local_matrix_type::staticcrsgraph_type;
+    using local_matrix_device_type = 
+          typename crs_matrix_type::local_matrix_device_type;
+    using local_graph_device_type = 
+          typename local_matrix_device_type::staticcrsgraph_type;
     using device_type = typename crs_matrix_type::device_type;
     using execution_space = typename crs_matrix_type::execution_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
@@ -111,9 +113,9 @@ namespace { // (anonymous)
     vec2.putScalar (STS::zero ());
 
     using row_offsets_type =
-      typename local_graph_type::row_map_type::non_const_type;
+      typename local_graph_device_type::row_map_type::non_const_type;
     using lcl_col_inds_type =
-      typename local_graph_type::entries_type::non_const_type;
+      typename local_graph_device_type::entries_type::non_const_type;
     row_offsets_type rowOffsets ("rowOffsets", lclNumRows+1);    
     lcl_col_inds_type lclColInds ("lclColInds", lclNumRows);
     Kokkos::View<IST*, device_type> values ("values", lclNumRows);
@@ -145,8 +147,8 @@ namespace { // (anonymous)
 	  values(lclRow) = KAT::one () + KAT::one ();
 	});
       
-      local_graph_type G_lcl (lclColInds, rowOffsets);
-      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      local_graph_device_type G_lcl (lclColInds, rowOffsets);
+      local_matrix_device_type A_lcl ("A_lcl", G_lcl);
       crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
       TEST_ASSERT( eye.isFillComplete () );
 
@@ -169,8 +171,8 @@ namespace { // (anonymous)
 	  values(lclRow) = KAT::one () + KAT::one ();
 	});
       
-      local_graph_type G_lcl (lclColInds, rowOffsets);
-      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      local_graph_device_type G_lcl (lclColInds, rowOffsets);
+      local_matrix_device_type A_lcl ("A_lcl", G_lcl);
       crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
       TEST_ASSERT( eye.isFillComplete () );
 
@@ -194,8 +196,8 @@ namespace { // (anonymous)
 	  values(lclRow) = KAT::one () + KAT::one ();
 	});
       
-      local_graph_type G_lcl (lclColInds, rowOffsets);
-      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      local_graph_device_type G_lcl (lclColInds, rowOffsets);
+      local_matrix_device_type A_lcl ("A_lcl", G_lcl);
       crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
       TEST_ASSERT( eye.isFillComplete () );
 

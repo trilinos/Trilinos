@@ -49,15 +49,16 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
-
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
+#include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+
+// I/O for Harwell-Boeing files
+#include <Trilinos_Util_iohb.h>
 
 using namespace Teuchos;
 using Tpetra::Operator;
@@ -82,9 +83,8 @@ int main(int argc, char *argv[]) {
 
   const ST one  = SCT::one();
 
-  int MyPID = 0;
-
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
+  int MyPID = rank(*comm);
 
   //
   // Get test parameters from command-line processor
@@ -116,19 +116,15 @@ int main(int argc, char *argv[]) {
     frequency = -1;  // reset frequency if test is not verbose
   }
 
-  MyPID = rank(*comm);
   proc_verbose = ( verbose && (MyPID==0) );
 
   if (proc_verbose) {
     std::cout << Belos::Belos_Version() << std::endl << std::endl;
   }
 
-  //
-  // Get the data from the HB file and build the Map,Matrix
-  //
-  RCP<CrsMatrix<ST> > A;
-  Tpetra::Utils::readHBMatrix(filename,comm,A);
-  RCP<const Tpetra::Map<> > map = A->getDomainMap();
+  Belos::Tpetra::HarwellBoeingReader<Tpetra::CrsMatrix<ST> > reader( comm );
+  RCP<Tpetra::CrsMatrix<ST> > A = reader.readFromFile( filename );
+  RCP<const Tpetra::Map<> > map = A->getMap();
 
   // Create initial vectors
   RCP<MV> B, X;

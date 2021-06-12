@@ -537,25 +537,33 @@ namespace Details {
   {
     using SC = Scalar;
     using LO = LocalOrdinal;
+
+    using block_crs_matrix_type = Tpetra::BlockCrsMatrix<SC, LO, GlobalOrdinal, Node>;
+
+    using h_inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+    using h_vals_type = typename block_crs_matrix_type::values_host_view_type;
     //! Constructor for row views (preferred)
-    StridedRowView(const SC* vals_, const LO* inds_, int blockSize_, size_t nnz_);
+    StridedRowView(h_vals_type vals_, h_inds_type inds_, int blockSize_, size_t nnz_);
+
+    //! Constructor for row views 
+    //    StridedRowView(const SC* vals_, const LO* inds_, int blockSize_, size_t nnz_);
 
     //! Constructor for deep copy (fallback, if matrix doesn't support row views)
     StridedRowView(Teuchos::Array<SC>& vals_, Teuchos::Array<LO>& inds_);
-    
+        
     SC val(size_t i) const;
     LO ind(size_t i) const;
 
     size_t size() const;
 
     private:
-      const SC* vals;
-      const LO* inds;
-      int blockSize;
-      size_t nnz;
-      //These arrays are only used if the inputMatrix_ doesn't support row views.
-      Teuchos::Array<SC> valsCopy;
-      Teuchos::Array<LO> indsCopy;
+    h_vals_type vals;
+    h_inds_type inds;
+    int blockSize;
+    size_t nnz;
+    //These arrays are only used if the inputMatrix_ doesn't support row views.
+    Teuchos::Array<SC> valsCopy;
+    Teuchos::Array<LO> indsCopy;
   };
 } // namespace Details
 

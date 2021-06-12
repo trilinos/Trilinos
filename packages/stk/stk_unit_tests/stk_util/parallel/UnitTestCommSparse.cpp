@@ -49,7 +49,7 @@ TEST(ParallelComm, comm_recv_msg_sizes)
   MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(comm);
   if (numProcs == 1) {
-    return;
+    GTEST_SKIP();
   }
   int myProc = stk::parallel_machine_rank(comm);
 
@@ -81,7 +81,7 @@ TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
   MPI_Comm comm = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(comm);
   if (numProcs == 1) {
-    return;
+    GTEST_SKIP();
   }
   int myProc = stk::parallel_machine_rank(comm);
 
@@ -111,7 +111,7 @@ TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
 TEST(ParallelComm, CommSparse_pair_with_string)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
-  if (stk::parallel_machine_size(comm) != 2) { return; }
+  if (stk::parallel_machine_size(comm) != 2) { GTEST_SKIP(); }
   int myRank = stk::parallel_machine_rank(comm);
   int otherRank = 1 - myRank;
 
@@ -141,7 +141,7 @@ TEST(ParallelComm, CommSparse)
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(comm);
   if (numProcs == 1) {
-    return;
+    GTEST_SKIP();
   }
  
   int myProc = stk::parallel_machine_rank(comm);
@@ -193,12 +193,52 @@ TEST(ParallelComm, CommSparse)
   }
 }
 
+TEST(ParallelComm, CommSparse_all_including_self)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  int numProcs = stk::parallel_machine_size(comm);
+  if (numProcs == 1) {
+    GTEST_SKIP();
+  }
+ 
+  stk::CommSparse commSparse(comm);
+  int myProc = stk::parallel_machine_rank(comm);
+  stk::pack_and_communicate(commSparse, [&commSparse, &myProc, &numProcs]() {
+    for(int destProc=0; destProc<numProcs; ++destProc) {
+      commSparse.send_buffer(destProc).pack(myProc);
+    }
+  });
+
+  for(int srcProc=0; srcProc<numProcs; ++srcProc) {
+    stk::CommBuffer& srcBuf = commSparse.recv_buffer(srcProc);
+    EXPECT_EQ(sizeof(int), static_cast<unsigned>(srcBuf.remaining()));
+    int msg;
+    srcBuf.unpack(msg);
+    EXPECT_EQ(msg, srcProc);
+  }
+
+  commSparse.swap_send_recv();
+  commSparse.reset_buffers();
+
+  for(int destProc=0; destProc<numProcs; ++destProc) {
+    commSparse.send_buffer(destProc).pack(destProc);
+  }
+
+  for(int srcProc=0; srcProc<numProcs; ++srcProc) {
+    stk::CommBuffer& srcBuf = commSparse.recv_buffer(srcProc);
+    EXPECT_EQ(sizeof(int), static_cast<unsigned>(srcBuf.remaining()));
+    int msg;
+    srcBuf.unpack(msg);
+    EXPECT_EQ(msg, myProc);
+  }
+}
+
 TEST(ParallelComm, CommSparse_set_procs)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
   int numProcs = stk::parallel_machine_size(comm);
   if (numProcs == 1) {
-    return;
+    GTEST_SKIP();
   }
  
   int myProc = stk::parallel_machine_rank(comm);
@@ -274,6 +314,18 @@ TEST(ParallelComm, CommSparse_pack_and_communicate)
       commSparse.recv_buffer(fromProc).unpack(recvData);
       EXPECT_EQ(srcProc, recvData);
     }
+  });
+}
+
+TEST(ParallelComm, CommSparse_empty)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
+  const int numProcs = commSparse.parallel_size();
+  if (numProcs == 1) { GTEST_SKIP(); }
+  commSparse.allocate_buffers();
+  commSparse.communicate_with_unpack([](int, stk::CommBuffer&) {
+    FAIL() << "expected no messages to unpack";
   });
 }
 

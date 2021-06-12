@@ -1004,8 +1004,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
   //! Returns a pointer to the CrsGraphData instance this CrsGraph uses.
   /*! (Intended for developer use only for testing purposes.) */
   const Epetra_CrsGraphData* DataPtr() const {return(CrsGraphData_);}
+  
 
-        //! Forces FillComplete() to locally order ghostnodes associated with each remote processor in ascending order.
+  //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the local IndexOffsets (CRS rowptr)
+  /*!
+    \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+  */
+  Epetra_IntSerialDenseVector& ExpertExtractIndexOffset(); 
+
+  //! Returns a reference to the Epetra_IntSerialDenseVector used to hold the local All_Indices (CRS colind)
+  /*!
+    \warning This method is intended for experts only, its use may require user code modifications in future versions of Epetra.
+  */
+  Epetra_IntSerialDenseVector& ExpertExtractIndices();
+
+
+    //! Forces FillComplete() to locally order ghostnodes associated with each remote processor in ascending order.
         /*! To be compliant with AztecOO, FillComplete() already locally orders ghostnodes such that
             information received from processor k has a lower local numbering than information received
             from processor j if k is less than j.  SortGhostsAssociatedWithEachProcessor(True) further

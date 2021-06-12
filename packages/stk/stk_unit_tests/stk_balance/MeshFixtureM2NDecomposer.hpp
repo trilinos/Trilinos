@@ -35,12 +35,12 @@
 #define MESHFIXTUREM2NDECOMPOSER_HPP
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_balance/internal/balanceMtoN.hpp>
+#include <stk_balance/m2n/balanceMtoN.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
-#include <stk_balance/internal/M2NDecomposer.hpp>
+#include <stk_balance/m2n/M2NDecomposer.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
+#include <stk_util/environment/EnvData.hpp>
 #include <vector>
 #include <unistd.h>
 
@@ -95,9 +95,9 @@ protected:
     }
 
 
-    testing::internal::CaptureStdout();
+    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
     const stk::mesh::EntityProcVec & decomp = m_decomposer->get_partition();
-    testing::internal::GetCapturedStdout();
+    stk::EnvData::instance().m_outputP0 = &std::cout;
 
     bool isNested = true;
     for (const stk::mesh::EntityProc & entityProc : decomp) {
@@ -111,9 +111,8 @@ protected:
     return stk::is_true_on_all_procs(get_comm(), isNested);
   }
 
-  stk::balance::GraphCreationSettings m_balanceSettings;
-  stk::balance::M2NParsedOptions m_parsedOptions;
-  stk::balance::internal::M2NDecomposer * m_decomposer;
+  stk::balance::m2n::M2NDecomposer * m_decomposer;
+  stk::balance::M2NBalanceSettings m_balanceSettings;
 };
 
 

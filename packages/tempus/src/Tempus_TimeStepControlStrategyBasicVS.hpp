@@ -212,13 +212,21 @@ public:
     void describe(Teuchos::FancyOStream          &out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
-      Teuchos::OSTab ostab(out,2,"describe");
-      out << description() << "::describe:" << std::endl
-          << "StrategyType                      = " << this->getStrategyType()<< std::endl
-          << "Amplification Factor              = " << getAmplFactor()   << std::endl
-          << "Reduction Factor                  = " << getReductFactor() << std::endl
-          << "Minimum Value Monitoring Function = " << getMinEta()       << std::endl
-          << "Maximum Value Monitoring Function = " << getMaxEta()       << std::endl;
+      auto l_out = Teuchos::fancyOStream( out.getOStream() );
+      Teuchos::OSTab ostab(*l_out, 2, this->description());
+      l_out->setOutputToRootOnly(0);
+
+      *l_out << "\n--- " << this->description() << " ---" << std::endl;
+
+      if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+        *l_out << "  StrategyType                      = " << this->getStrategyType()<< std::endl
+               << "  Step Type                         = " << this->getStepType() << std::endl
+               << "  Amplification Factor              = " << getAmplFactor()   << std::endl
+               << "  Reduction Factor                  = " << getReductFactor() << std::endl
+               << "  Minimum Value Monitoring Function = " << getMinEta()       << std::endl
+               << "  Maximum Value Monitoring Function = " << getMaxEta()       << std::endl;
+        *l_out << std::string(this->description().length()+8, '-') <<std::endl;
+      }
     }
   //@}
 

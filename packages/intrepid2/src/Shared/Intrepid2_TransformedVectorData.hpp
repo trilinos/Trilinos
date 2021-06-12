@@ -72,8 +72,8 @@ namespace Intrepid2 {
     
     /**
      \brief Standard constructor.
-     \param [in] transform - the transformation matrix, with nominal shape (C,P,D,D)
-     \param [in] vectorData - the reference-space data to be transformed, with nominal shape (F,P,D)
+     \param [in] transform - the transformation matrix, with logical shape (C,P,D,D)
+     \param [in] vectorData - the reference-space data to be transformed, with logical shape (F,P,D)
     */
     TransformedVectorData(const Data<Scalar,DeviceType> &transform, const VectorData<Scalar,DeviceType> &vectorData)
     :
@@ -85,7 +85,7 @@ namespace Intrepid2 {
     
     /**
      \brief Constructor for the case of an identity transform.
-     \param [in] vectorData - the reference-space data, with nominal shape (F,P,D)
+     \param [in] vectorData - the reference-space data, with logical shape (F,P,D)
     */
     TransformedVectorData(const VectorData<Scalar, DeviceType> &vectorData)
     :
@@ -126,25 +126,25 @@ namespace Intrepid2 {
       return transform_.getVariationTypes()[0];
     }
     
-    //! Returns the nominal extent in the cell dimension, which is the 0 dimension in this container.
+    //! Returns the logical extent in the cell dimension, which is the 0 dimension in this container.
     KOKKOS_INLINE_FUNCTION int numCells() const
     {
       return transform_.extent_int(0);
     }
     
-    //! Returns the nominal extent in the fields dimension, which is the 1 dimension in this container.
+    //! Returns the logical extent in the fields dimension, which is the 1 dimension in this container.
     KOKKOS_INLINE_FUNCTION int numFields() const
     {
       return vectorData_.numFields();
     }
     
-    //! Returns the nominal extent in the points dimension, which is the 2 dimension in this container.
+    //! Returns the logical extent in the points dimension, which is the 2 dimension in this container.
     KOKKOS_INLINE_FUNCTION int numPoints() const
     {
       return vectorData_.numPoints();
     }
     
-    //! Returns the nominal extent in the space dimension, which is the 3 dimension in this container.
+    //! Returns the logical extent in the space dimension, which is the 3 dimension in this container.
     KOKKOS_INLINE_FUNCTION int spaceDim() const
     {
       return vectorData_.spaceDim();

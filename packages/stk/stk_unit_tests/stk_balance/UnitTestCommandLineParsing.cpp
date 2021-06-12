@@ -497,6 +497,13 @@ TEST_F(BalanceCommandLine, decompMethodMultijagged)
   EXPECT_EQ(balanceSettings.getDecompMethod(), "multijagged");
 }
 
+TEST_F(BalanceCommandLine, decompMethodScotch)
+{
+  const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--decomp-method=scotch"});
+
+  EXPECT_EQ(balanceSettings.getDecompMethod(), "scotch");
+}
+
 TEST_F(BalanceCommandLine, decompMethodParmetis)
 {
   const stk::balance::BalanceSettings& balanceSettings = get_stk_balance_settings({"--decomp-method=parmetis"});

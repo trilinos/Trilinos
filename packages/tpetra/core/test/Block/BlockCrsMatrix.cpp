@@ -52,6 +52,7 @@
 
 namespace {
   using Tpetra::TestingUtilities::getDefaultComm;
+  using Tpetra::TestingUtilities::arcp_from_view;
   using Tpetra::Details::gathervPrint;
   using Teuchos::Array;
   using Teuchos::Comm;
@@ -157,10 +158,20 @@ namespace {
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
     typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+
     typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    using lids_type = typename graph_type::nonconst_local_inds_host_view_type;
+    using gids_type = typename graph_type::nonconst_global_inds_host_view_type;
+    using vals_type = typename BCM::nonconst_values_host_view_type;
+    using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
+    using values_host_view_type = typename BCM::values_host_view_type;
+    using impl_scalar_type = typename BCM::impl_scalar_type;
+
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
+    typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 
@@ -200,7 +211,7 @@ namespace {
     graph_type graph (meshRowMapPtr, maxNumEntPerRow, Tpetra::StaticProfile);
 
     // Fill the graph.
-    Teuchos::Array<GO> gblColInds (maxNumEntPerRow);
+    gids_type gblColInds ("gblColIds",maxNumEntPerRow);
     const GO globalNumRows = meshRowMap.getGlobalNumElements ();
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
@@ -211,7 +222,7 @@ namespace {
           static_cast<GO> (globalNumRows);
         gblColInds[k] = gblColInd;
       }
-      graph.insertGlobalIndices (gblRowInd, gblColInds ());
+      graph.insertGlobalIndices (gblRowInd, gblColInds.extent(0),gblColInds.data());
     }
     graph.fillComplete ();
 
@@ -257,48 +268,38 @@ namespace {
 
     out << "Test getLocalRowView, getLocalRowCopy, and replaceLocalValues" << endl;
 
-    blockMat.sync_host ();
-    blockMat.modify_host ();
-    {
-      if (! std::is_same<typename Node::device_type::memory_space, Kokkos::HostSpace>::value) {
-        // This is messed up with HIP using HIPHostPinnedSpace as its memory space
-        #ifndef KOKKOS_ENABLE_HIP
-        TEST_ASSERT( blockMat.template need_sync<typename Node::device_type::memory_space> () );
-        TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
-        #endif
-        TEST_ASSERT( blockMat.need_sync_device () );
-        TEST_ASSERT( ! blockMat.need_sync_host () );
-      }
-      auto val = blockMat.template getValues<Kokkos::HostSpace> ();
-      // "Host" View may live in CudaUVMSpace, but its execution space
-      // had better be host.  We can tell that by getting the
-      // execution space's default memory space.
-      static_assert (std::is_same<typename decltype (val)::execution_space::memory_space,
-                     Kokkos::HostSpace>::value,
-                     "Host View is not actually a host View.");
-      auto val2 = blockMat.getValuesHost ();
-      static_assert (std::is_same<typename decltype (val2)::execution_space::memory_space,
-                     Kokkos::HostSpace>::value,
-                     "Host View is not actually a host View.");
-    }
+    // KK: not meaningfule test
+    // {
+    //   auto val = blockMat.getValuesHost(); 
+    //   static_assert (std::is_same<typename decltype (val)::execution_space::memory_space,
+    //                  Kokkos::HostSpace>::value,
+    //                  "Host View is not actually a host View.");
+    // }
+    // {
+    //   auto val = blockMat.getValuesHostNonConst ();
+    //   static_assert (std::is_same<typename decltype (val)::execution_space::memory_space,
+    //                  Kokkos::HostSpace>::value,
+    //                  "Host View is not actually a host View.");
+    // }
 
     Array<Scalar> tempBlockSpace (maxNumEntPerRow * entriesPerBlock);
 
     // Test that getLocalRowView returns the right column indices.
-    Array<LO> lclColInds (maxNumEntPerRow);
-    Array<LO> myLclColIndsCopy (maxNumEntPerRow);
-    Array<Scalar> myValsCopy (maxNumEntPerRow*entriesPerBlock);
-    Array<LO> myLclColIndsSorted (maxNumEntPerRow);
+
+    lids_type lclColInds ("lclColInds",maxNumEntPerRow);
+    lids_type myLclColIndsCopy ("myLclColIndsCopy",maxNumEntPerRow);
+    vals_type myValsCopy ("myValsCopy",maxNumEntPerRow*entriesPerBlock);
+    lids_type myLclColIndsSorted ("myLclColIndsSorted",maxNumEntPerRow);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      const LO* myLclColInds = NULL;
-      Scalar* myVals = NULL;
+      local_inds_host_view_type myLclColInds;
+      values_host_view_type myVals;
       LO numEnt = 0;
-      LO err = blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
-      TEST_ASSERT( err == 0 );
+      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals); numEnt = myLclColInds.extent(0);
+
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
-      TEST_ASSERT( myLclColInds != NULL );
-      TEST_ASSERT( myVals != NULL );
+      TEST_ASSERT( myLclColInds.data() != NULL );
+      TEST_ASSERT( myVals.data() != NULL );
 
       // Compute what the local column indices in this row _should_ be.
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
@@ -310,27 +311,27 @@ namespace {
       }
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
-      std::sort (lclColInds.begin (), lclColInds.end ());
-      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsSorted.begin ());
-      std::sort (myLclColIndsSorted.begin (), myLclColIndsSorted.end ());
+      Tpetra::sort (lclColInds, lclColInds.extent(0));
+      std::copy (myLclColInds.data(), myLclColInds.data() + 2, arcp_from_view(myLclColIndsSorted).begin());
+      Tpetra::sort (myLclColIndsSorted, myLclColIndsSorted.extent(0));
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
 
       // Test that getLocalRowCopy works.
       size_t numEntries;
-      blockMat.getLocalRowCopy (lclRowInd, myLclColIndsCopy(), myValsCopy(), numEntries);
+      blockMat.getLocalRowCopy (lclRowInd, myLclColIndsCopy, myValsCopy, numEntries);
       numEnt = static_cast<LO>(numEntries);
-      TEST_ASSERT( err == 0 );
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
 
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
-      std::copy (myLclColIndsCopy.getRawPtr(), myLclColIndsCopy.getRawPtr() + 2, myLclColIndsSorted.begin ());
-      std::sort (myLclColIndsSorted.begin (), myLclColIndsSorted.end ());
+      Kokkos::deep_copy(myLclColIndsSorted,Kokkos::subview(myLclColIndsCopy,std::make_pair(0,2)));
+      //      std::copy (myLclColIndsCopy.getRawPtr(), myLclColIndsCopy.getRawPtr() + 2, myLclColIndsSorted.begin ());
+      Tpetra::sort (myLclColIndsSorted, myLclColIndsSorted.extent(0));
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
 
       // Fill the entries in the row with zeros.
       std::fill (tempBlockSpace.begin (), tempBlockSpace.end (), STS::zero ());
-      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.getRawPtr (),
+      int err = blockMat.replaceLocalValues (lclRowInd, lclColInds.data(),
                                          tempBlockSpace.getRawPtr (), numEnt);
       TEST_ASSERT( err == numEnt );
       // Make sure that the input Scalar values didn't change (are
@@ -338,7 +339,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
+        little_block_host_type tempBlock ((typename little_block_host_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             TEST_ASSERT( static_cast<Scalar> (tempBlock(i,j)) == STS::zero () );
@@ -351,29 +352,29 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
+        little_block_host_type tempBlock ((typename little_block_host_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize));
           }
         }
       } // for each entry in the row
-      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.getRawPtr (),
+      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.data(),
                                          tempBlockSpace.getRawPtr (), numEnt);
       TEST_ASSERT( err == numEnt );
 
       // Get a view of the current row again, and test that the
       // entries were modified as expected.  This tests that the
       // method assumes that the input blocks are row major.
-      err = blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
-      TEST_ASSERT( err == 0 );
-      TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
-      TEST_ASSERT( myLclColInds != NULL );
-      TEST_ASSERT( myVals != NULL );
+      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals); numEnt = static_cast<LO>(myLclColInds.extent(0));
 
+
+      TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
+      TEST_ASSERT( myLclColInds.data() != NULL );
+      TEST_ASSERT( myVals.data() != NULL );
       for (LO k = 0; k < numEnt; ++k) {
-        Scalar* curBlkPtr = myVals + k * blockSize * blockSize;
-        little_block_type curBlk ((typename little_block_type::value_type*) curBlkPtr, blockSize, blockSize);
+        impl_scalar_type* curBlkPtr = const_cast<impl_scalar_type*>(reinterpret_cast<const impl_scalar_type*>(myVals.data())) + k * blockSize * blockSize;
+        little_block_host_type curBlk ((typename little_block_host_type::value_type*) curBlkPtr, blockSize, blockSize);
 
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
@@ -384,25 +385,22 @@ namespace {
       } // for each entry in the row
     } // for each local row
 
-    // We're done modifying data on host.
-    blockMat.template sync<typename Node::device_type::memory_space> ();
-    {
-      TEST_ASSERT( ! blockMat.template need_sync<typename Node::device_type::memory_space> () );
-      TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
-      auto val = blockMat.template getValues<typename Node::device_type::memory_space> ();
-      // "Device" View may live in CudaUVMSpace.
-#if defined(KOKKOS_ENABLE_CUDA)
-      constexpr bool testing_cuda =
-        std::is_same<typename Node::device_type::execution_space, Kokkos::Cuda>::value;
-      static_assert (! testing_cuda ||
-                     std::is_same<typename decltype (val)::execution_space, Kokkos::Cuda>::value,
-                     "Device View is not actually a Device View.");
-      auto val2 = blockMat.getValuesDevice ();
-      static_assert (! testing_cuda ||
-                     std::is_same<typename decltype (val2)::execution_space, Kokkos::Cuda>::value,
-                     "Device View is not actually a Device View.");
-#endif // defined(KOKKOS_ENABLE_CUDA)
-    }
+    // KK: not meaningfule test; will be deprecated
+//     {
+//       auto val = blockMat.template getValues<typename Node::device_type::memory_space> ();
+//       // "Device" View may live in CudaUVMSpace.
+// #if defined(KOKKOS_ENABLE_CUDA)
+//       constexpr bool testing_cuda =
+//         std::is_same<typename Node::device_type::execution_space, Kokkos::Cuda>::value;
+//       static_assert (! testing_cuda ||
+//                      std::is_same<typename decltype (val)::execution_space, Kokkos::Cuda>::value,
+//                      "Device View is not actually a Device View.");
+//       auto val2 = blockMat.getValuesDevice ();
+//       static_assert (! testing_cuda ||
+//                      std::is_same<typename decltype (val2)::execution_space, Kokkos::Cuda>::value,
+//                      "Device View is not actually a Device View.");
+// #endif // defined(KOKKOS_ENABLE_CUDA)
+//     }
 
     out << "Test applyBlock for a single vector" << endl;
 
@@ -883,8 +881,12 @@ namespace {
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
+    typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
+
+    using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
+    using values_host_view_type = typename BCM::values_host_view_type;
 
     out << "Testing output of a Tpetra::BlockCrsMatrix" << endl;
     Teuchos::OSTab tab0 (out);
@@ -949,10 +951,11 @@ namespace {
     Array<LO> myLclColIndsCopy (maxNumEntPerRow);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      const LO* myLclColInds = NULL;
-      Scalar* myVals = NULL;
+
+      local_inds_host_view_type myLclColInds;
+      values_host_view_type myVals;
       LO numEnt = 0;
-      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
+      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals); numEnt = myLclColInds.extent(0);
 
       // Compute what the local column indices in this row _should_ be.
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
@@ -965,7 +968,7 @@ namespace {
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
       std::sort (lclColInds.begin (), lclColInds.end ());
-      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsCopy.begin ());
+      std::copy (myLclColInds.data(), myLclColInds.data() + 2, myLclColIndsCopy.begin ());
       std::sort (myLclColIndsCopy.begin (), myLclColIndsCopy.end ());
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsCopy );
 
@@ -979,7 +982,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
+        little_block_host_type tempBlock ((typename little_block_host_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize) + 0.0123);
@@ -1014,7 +1017,12 @@ namespace {
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
+    typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
+    using values_host_view_type = typename BCM::values_host_view_type;
+    using nonconst_values_host_view_type = typename BCM::nonconst_values_host_view_type;
 
     int lclSuccess = 1;
     int gblSuccess = 1;
@@ -1091,6 +1099,7 @@ namespace {
       std::cerr << os.str ();
     }
     Kokkos::fence ();
+    auto diagMeshOffsetsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), diagMeshOffsets);
 
     lclSuccess = success ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1115,7 +1124,7 @@ namespace {
     }
     else {
       TEST_ASSERT( diagMeshOffsets.extent (0) != 0 );
-      auto localGraph = graph.getLocalGraph ();
+      auto localGraph = graph.getLocalGraphDevice ();
       const auto& colMap = * (graph.getColMap ());
 
       TEST_EQUALITY( static_cast<size_t> (numLclMeshPoints + 1),
@@ -1129,13 +1138,12 @@ namespace {
           const GO gblColInd = gblRowInd;
           bool diagOffsetCorrect = false;
 
-          const LO* lclColInds = NULL;
-          Scalar* lclVals = NULL;
+          local_inds_host_view_type lclColInds;
+          values_host_view_type lclVals;
           LO numEnt = 0;
-          LO err = blockMat.getLocalRowView (lclRowInd, lclColInds, lclVals, numEnt);
-          TEST_ASSERT( err == 0 );
-          if (err == 0) {
-            const size_t offset = diagMeshOffsets[lclRowInd];
+          blockMat.getLocalRowView (lclRowInd, lclColInds, lclVals); numEnt = lclColInds.extent(0);
+          {
+            const size_t offset = diagMeshOffsetsHost[lclRowInd];
             if (offset >= static_cast<size_t> (numEnt)) {
               diagOffsetCorrect = false;
             }
@@ -1175,19 +1183,19 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-      const LO* lclColInds = NULL;
-      Scalar* myVals = NULL;
+      local_inds_host_view_type lclColInds;
+      nonconst_values_host_view_type myVals;
       LO numEnt = 0;
-      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals, numEnt);
-
+      blockMat.getLocalRowViewNonConst (lclRowInd, lclColInds, myVals); numEnt = lclColInds.extent(0);
+      
       // Fill the diagonal block D such that D(i,j) = (lclRowInd+1) *
       // (1 + i + j*blockSize).  Fill the off-diagonal block with -1.
       // This ensures that we can tell we got the right blocks, and
       // that we copied them in the correct order.
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
-        little_block_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
-                                    blockSize, blockSize); // row major
+        little_block_host_type curBlock (const_cast<IST*> (myVals.data()) + offset,
+                                         blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block
           IST curVal = STS::one ();
@@ -1212,24 +1220,25 @@ namespace {
     Kokkos::fence ();
     blockMat.getLocalDiagCopy (diagBlocks, diagMeshOffsets);
     Kokkos::fence ();
+    auto diagBlocksHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), diagBlocks);
 
     bool allBlocksGood = true;
     for (LO lclRowInd = 0; lclRowInd < static_cast<LO> (numLclMeshPoints); ++lclRowInd) {
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-      const LO* lclColInds = NULL;
-      Scalar* myVals = NULL;
+      local_inds_host_view_type lclColInds;
+      values_host_view_type myVals;
       LO numEnt = 0;
-      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals, numEnt);
+      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals); numEnt = lclColInds.extent(0);
 
       // Make sure that the diagonal blocks from getLocalDiagCopy
       // match those in the matrix.
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
-        little_block_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
+        little_block_host_type curBlock (const_cast<IST*> (myVals.data()) + offset,
                                     blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block
-          auto diagBlock = subview (diagBlocks, lclRowInd, ALL (), ALL ());
+          auto diagBlock = subview (diagBlocksHost, lclRowInd, ALL (), ALL ());
           for (LO j = 0; j < blockSize; ++j) {
             for (LO i = 0; i < blockSize; ++i) {
               if (curBlock(i,j) != diagBlock(i,j)) {

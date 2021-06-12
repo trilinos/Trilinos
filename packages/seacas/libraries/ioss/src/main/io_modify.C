@@ -396,7 +396,7 @@ namespace {
 
     int64_t num_cell = sb->get_property("cell_count").get_int();
     int64_t num_node = sb->get_property("node_count").get_int();
-    fmt::print("{:14n} cells, {:14n} nodes\n", num_cell, num_node);
+    fmt::print("{:14L} cells, {:14L} nodes\n", num_cell, num_node);
     if (show_property) {
       Ioss::Utils::info_property(sb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
@@ -448,7 +448,7 @@ namespace {
 
     std::string type       = eb->topology()->name();
     int64_t     num_attrib = eb->get_property("attribute_count").get_int();
-    fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} elements, {:3d} attributes.\n", name(eb),
+    fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14L} elements, {:3d} attributes.\n", name(eb),
                id(eb), type, num_elem, num_attrib);
     if (show_property) {
       Ioss::Utils::info_property(eb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
@@ -471,7 +471,7 @@ namespace {
       int64_t count      = fb->entity_count();
       int64_t num_attrib = fb->get_property("attribute_count").get_int();
       int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();
-      fmt::print("\t{}, {:8n} sides, {:3d} attributes, {:8n} distribution factors.\n", name(fb),
+      fmt::print("\t{}, {:8L} sides, {:3d} attributes, {:8L} distribution factors.\n", name(fb),
                  count, num_attrib, num_dist);
     }
     if (show_property) {
@@ -484,7 +484,7 @@ namespace {
     int64_t count      = ns->entity_count();
     int64_t num_attrib = ns->get_property("attribute_count").get_int();
     int64_t num_dist   = ns->get_property("distribution_factor_count").get_int();
-    fmt::print("\n{} id: {:6d}, {:8n} nodes, {:3d} attributes, {:8n} distribution factors.\n",
+    fmt::print("\n{} id: {:6d}, {:8L} nodes, {:3d} attributes, {:8L} distribution factors.\n",
                name(ns), id(ns), count, num_attrib, num_dist);
     if (show_property) {
       Ioss::Utils::info_property(ns, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
@@ -495,7 +495,7 @@ namespace {
   {
     int64_t num_nodes  = nb->entity_count();
     int64_t num_attrib = nb->get_property("attribute_count").get_int();
-    fmt::print("\n{} {:14n} nodes, {:3d} attributes.\n", name(nb), num_nodes, num_attrib);
+    fmt::print("\n{} {:14L} nodes, {:3d} attributes.\n", name(nb), num_nodes, num_attrib);
     if (show_property) {
       Ioss::Utils::info_property(nb, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ", "\t");
     }
@@ -543,11 +543,11 @@ namespace {
       fmt::print("\tASSEMBLY {{name}}\n");
       fmt::print("\t\tCreates an empty assembly named `name` if it does not exist.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} ADD {{name1}} {{name2}} ... {{namen}}\n");
+      fmt::print("\n\tASSEMBLY {{name}} ADD {{name1}} {{name2}} ... {{nameL}}\n");
       fmt::print("\t\tAdds the specified entities to the assembly.  All entities must be the same "
                  "type.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} REMOVE {{name1}} {{name2}} ... {{namen}}\n");
+      fmt::print("\n\tASSEMBLY {{name}} REMOVE {{name1}} {{name2}} ... {{nameL}}\n");
       fmt::print("\t\tRemoves the specified entities from the assembly.\n");
 
       fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} MATCHES {{regex}}\n");
@@ -566,7 +566,7 @@ namespace {
                  "\t\tAll entities whose id matches the specified range will be added.\n"
                  "\t\tNo message will be output for ids not matching an entity.\n");
 
-      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} IDS {{id}}, {{id2}}, ..., {{idn}}\n");
+      fmt::print("\n\tASSEMBLY {{name}} TYPE {{type}} IDS {{id}}, {{id2}}, ..., {{idL}}\n");
       fmt::print(
           "\t\tAdds the entities of the specified type to the assembly.\n"
           "\t\tAll entities whose id matches an id in the list will be added.\n"

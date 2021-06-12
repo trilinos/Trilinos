@@ -98,13 +98,19 @@ namespace Ifpack2 {
     impl_->tpetra_importer = Teuchos::null;
     impl_->async_importer  = Teuchos::null;
     
-    if (importer.is_null()) // there is no given importer, then create one
-      if (useSeqMethod) 
+    if (useSeqMethod)
+    {
+      if (importer.is_null()) // there is no given importer, then create one
         impl_->tpetra_importer = BlockTriDiContainerDetails::createBlockCrsTpetraImporter<MatrixType>(impl_->A);
-      else 
-        impl_->async_importer = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(impl_->A);
-    else 
-      impl_->tpetra_importer = importer; // if there is a given importer, use it
+      else
+        impl_->tpetra_importer = importer; // if there is a given importer, use it
+    }
+    else
+    {
+      //Leave tpetra_importer null even if user provided an importer.
+      //It is not used in the performant codepath (!useSeqMethod)
+      impl_->async_importer = BlockTriDiContainerDetails::createBlockCrsAsyncImporter<MatrixType>(impl_->A);
+    }
 
     // as a result, there are 
     // 1) tpetra_importer is     null , async_importer is     null (no need for importer)

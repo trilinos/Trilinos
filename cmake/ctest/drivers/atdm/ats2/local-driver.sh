@@ -32,6 +32,8 @@ fi
 
 # Allow default setting for TPETRA_ASSUME_CUDA_AWARE_MPI=0 in trilinos_jsrun
 unset TPETRA_ASSUME_CUDA_AWARE_MPI
+atdm_config_ctest_regex_old="$ATDM_CONFIG_CTEST_REGEX"
+export ATDM_CONFIG_CTEST_REGEX="$ATDM_CONFIG_CTEST_REGEX -E Adelus*"
 
 echo
 echo "======================================================================="
@@ -43,6 +45,8 @@ echo
 set -x
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ats2/local-driver-single-build.sh
 set +x
+
+export ATDM_CONFIG_CTEST_REGEX="$atdm_config_ctest_regex_old"
 
 if [[ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]]; then
   echo

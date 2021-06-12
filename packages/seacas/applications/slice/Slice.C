@@ -1558,7 +1558,7 @@ namespace {
     fmt::print(stderr, "Processor count per node histogram:\n");
     for (size_t i = 1; i < proc_histo.size(); i++) {
       if (proc_histo[i] > 0) {
-        fmt::print(stderr, "\tNodes on {:2n} processors = {:12n}\t({:2})%\n", i, proc_histo[i],
+        fmt::print(stderr, "\tNodes on {:2L} processors = {:12L}\t({:2})%\n", i, proc_histo[i],
                    (proc_histo[i] * 100 + node_count / 2) / node_count);
       }
     }
