@@ -122,6 +122,7 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
+IF (Tpetra_INST_LONG_DOUBLE)
 TRIBITS_ADD_TEST(
   tif_belos_longdouble
   NAME gmres_belos_longdouble
@@ -130,7 +131,9 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
+ENDIF() 
 
+IF (Tpetra_ENABLE_quadmath)
 TRIBITS_ADD_TEST(
   tif_belos_float128
   NAME gmres_belos_float128
@@ -139,6 +142,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
+ENDIF()
 
 TRIBITS_ADD_TEST(
   tif_belos
