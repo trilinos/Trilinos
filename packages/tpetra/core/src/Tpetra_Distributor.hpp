@@ -99,6 +99,15 @@ namespace Tpetra {
     };
 
     class DistributorActor {
+
+    public:
+      /// \brief Communication requests associated with nonblocking receives and sends.
+      ///
+      /// \note To implementers: Distributor uses requests_.size() as
+      ///   the number of outstanding nonblocking receives and sends.
+      ///   This means you should always resize to zero after completing
+      ///   receive and send requests.
+      Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
     };
 
   } // namespace Details
@@ -936,14 +945,6 @@ namespace Tpetra {
     /// Distributor's indicesTo_.
     Teuchos::Array<size_t> indicesFrom_;
 
-    /// \brief Communication requests associated with nonblocking receives and sends.
-    ///
-    /// \note To implementers: Distributor uses requests_.size() as
-    ///   the number of outstanding nonblocking receives and sends.
-    ///   This means you should always resize to zero after completing
-    ///   receive and send requests.
-    Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > requests_;
-
     /// \brief The reverse distributor.
     ///
     /// This is created on demand in getReverse() and cached for
@@ -1060,8 +1061,8 @@ namespace Tpetra {
     typedef typename ArrayRCP<const Packet>::size_type size_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << requests_.size () <<
+      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doPostsAndWaits(3 args): There are " << actor_.requests_.size () <<
       " outstanding nonblocking messages pending.  It is incorrect to call "
       "this method with posts outstanding.");
 
@@ -1110,8 +1111,8 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits: There are " << requests_.size () << " outstanding "
+      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doPostsAndWaits: There are " << actor_.requests_.size () << " outstanding "
       "nonblocking messages pending.  It is incorrect to call doPostsAndWaits "
       "with posts outstanding.");
 
@@ -1225,10 +1226,10 @@ namespace Tpetra {
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (requests_.size () != 0,
+        (actor_.requests_.size () != 0,
          std::logic_error,
          "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): Process "
-         << myRank << ": requests_.size() = " << requests_.size () << " != 0.");
+         << myRank << ": requests_.size() = " << actor_.requests_.size () << " != 0.");
     }
 
     // Distributor uses requests_.size() as the number of outstanding
@@ -1246,7 +1247,7 @@ namespace Tpetra {
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
       as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
+    actor_.requests_.resize (0);
 
     if (verbose_) {
       std::ostringstream os;
@@ -1293,7 +1294,7 @@ namespace Tpetra {
             << ").");
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufOffset, curBufLen);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
                                                       tag, *comm_));
         }
         else { // Receiving from myself
@@ -1384,7 +1385,7 @@ namespace Tpetra {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (startsTo_[p] * numPackets,
                                       lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
@@ -1477,7 +1478,7 @@ namespace Tpetra {
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               sendArray.persistingView (0, lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
@@ -1600,10 +1601,10 @@ namespace Tpetra {
 
 #ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size () != 0,
+      (actor_.requests_.size () != 0,
        std::logic_error,
        "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Process "
-       << myProcID << ": requests_.size() = " << requests_.size ()
+       << myProcID << ": requests_.size() = " << actor_.requests_.size ()
        << " != 0.");
 #endif // HAVE_TEUCHOS_DEBUG
     if (verbose_) {
@@ -1628,7 +1629,7 @@ namespace Tpetra {
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
       as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
+    actor_.requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
@@ -1659,7 +1660,7 @@ namespace Tpetra {
           // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
                                                       tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
@@ -1752,7 +1753,7 @@ namespace Tpetra {
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                      tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
@@ -1842,7 +1843,7 @@ namespace Tpetra {
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               ArrayRCP<const Packet> tmpSendBuf =
                 sendArray.persistingView (0, numPacketsTo_p);
-              requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+              actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
                                                        tag, *comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
@@ -1928,8 +1929,8 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doReversePostsAndWaits(4 args): There are " << requests_.size ()
+      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doReversePostsAndWaits(4 args): There are " << actor_.requests_.size ()
       << " outstanding nonblocking messages pending.  It is incorrect to call "
       "this method with posts outstanding.");
 
@@ -2016,8 +2017,8 @@ namespace Tpetra {
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << requests_.size () <<
+      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
+      "doPostsAndWaits(3 args): There are " << actor_.requests_.size () <<
       " outstanding nonblocking messages pending.  It is incorrect to call "
       "this method with posts outstanding.");
 
@@ -2059,9 +2060,9 @@ namespace Tpetra {
       std::cerr << os.str();
     }
     TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size() != 0, std::runtime_error,
+      (actor_.requests_.size() != 0, std::runtime_error,
        "Tpetra::Distributor::" << rawPrefix << ": There is/are "
-      << requests_.size() << " outstanding nonblocking message(s) "
+      << actor_.requests_.size() << " outstanding nonblocking message(s) "
        "pending.  It is incorrect to call this method with posts "
        "outstanding.");
     doPosts(exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
@@ -2147,10 +2148,10 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size () != 0,
+      (actor_.requests_.size () != 0,
        std::logic_error,
        "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
-       << myRank << ": requests_.size() = " << requests_.size () << " != 0.");
+       << myRank << ": requests_.size() = " << actor_.requests_.size () << " != 0.");
 #endif // HAVE_TPETRA_DEBUG
 
     // Distributor uses requests_.size() as the number of outstanding
@@ -2168,7 +2169,7 @@ namespace Tpetra {
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
       as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
+    actor_.requests_.resize (0);
 
     if (verbose_) {
       std::ostringstream os;
@@ -2215,7 +2216,7 @@ namespace Tpetra {
             curBufLen << ").");
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, curBufLen);
-          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
                                               tag, *comm_));
         }
         else { // Receiving from myself
@@ -2311,7 +2312,7 @@ namespace Tpetra {
             exports_view_type tmpSendBuf =
               subview_offset (exports, startsTo_[p] * numPackets,
                               lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                              tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
@@ -2418,7 +2419,7 @@ namespace Tpetra {
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                              tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
@@ -2578,9 +2579,9 @@ namespace Tpetra {
 
 #ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
+      (actor_.requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
        "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
-       << requests_.size () << " != 0.");
+       << actor_.requests_.size () << " != 0.");
 #endif // HAVE_TEUCHOS_DEBUG
     if (verbose_) {
       std::ostringstream os;
@@ -2603,7 +2604,7 @@ namespace Tpetra {
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
       as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
+    actor_.requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
@@ -2634,7 +2635,7 @@ namespace Tpetra {
           // 2. Start the Irecv and save the resulting request.
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
                                               tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
@@ -2726,7 +2727,7 @@ namespace Tpetra {
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                              tag, *comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
@@ -2816,7 +2817,7 @@ namespace Tpetra {
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               exports_view_type tmpSendBuf =
                 subview_offset (sendArray, size_t(0), numPacketsTo_p);
-              requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+              actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
                                                tag, *comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
@@ -2873,9 +2874,9 @@ namespace Tpetra {
                           const ImpView& imports,
                           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(actor_.requests_.size() != 0, std::runtime_error,
       "Tpetra::Distributor::doReversePostsAndWaits(4 args): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It "
+      << actor_.requests_.size() << " outstanding nonblocking messages pending.  It "
       "is incorrect to call this method with posts outstanding.");
 
     doReversePosts (exports, numExportPacketsPerLID, imports,

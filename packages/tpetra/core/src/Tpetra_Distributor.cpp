@@ -574,16 +574,16 @@ namespace Tpetra {
       prefix = createPrefix("doWaits");
       std::ostringstream os;
       os << *prefix << "Start: requests_.size(): "
-         << requests_.size() << endl;
+         << actor_.requests_.size() << endl;
       std::cerr << os.str();
     }
 
-    if (requests_.size() > 0) {
-      waitAll(*comm_, requests_());
+    if (actor_.requests_.size() > 0) {
+      waitAll(*comm_, actor_.requests_());
 
       if (debug) {
         // Make sure that waitAll() nulled out all the requests.
-        for (auto it = requests_.begin(); it != requests_.end(); ++it) {
+        for (auto it = actor_.requests_.begin(); it != actor_.requests_.end(); ++it) {
           TEUCHOS_TEST_FOR_EXCEPTION
             (! is_null(*it), std::runtime_error,
              "Tpetra::Distributor::doWaits: Communication requests "
@@ -593,11 +593,11 @@ namespace Tpetra {
       }
       // Restore the invariant that requests_.size() is the number of
       // outstanding nonblocking communication requests.
-      requests_.resize (0);
+      actor_.requests_.resize (0);
     }
 
     if (debug) {
-      const int localSizeNonzero = (requests_.size () != 0) ? 1 : 0;
+      const int localSizeNonzero = (actor_.requests_.size () != 0) ? 1 : 0;
       int globalSizeNonzero = 0;
       Teuchos::reduceAll<int, int> (*comm_, Teuchos::REDUCE_MAX,
                                     localSizeNonzero,
