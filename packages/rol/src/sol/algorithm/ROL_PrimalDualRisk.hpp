@@ -235,6 +235,7 @@ public:
     iter_ = 0; converged_ = true; lnorm_ = ROL_INF<Real>();
     nfval_ = 0; ncval_ = 0; ngrad_ = 0;
     // Compute initial gnorm and cnorm if using relative tolerances
+    pd_problem_->finalize(false,print_,outStream);
     Real gnorm(1), cnorm(1);
     if (useRelTol_) {
       parlist_.sublist("Status Test").set("Use Relative Tolerances", false);
