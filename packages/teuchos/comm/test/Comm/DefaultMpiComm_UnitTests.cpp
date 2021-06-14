@@ -584,13 +584,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive_isRead
 }
 
 
+template <class Ordinal>
+bool null_request_is_always_ready_if_mpi_available() {
+#ifdef HAVE_TEUCHOS_MPI
+  Teuchos::MpiCommRequestBase<Ordinal> nullRequest;
+  return nullRequest.isReady();
+#else
+  return true;
+#endif
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, Ordinal, Packet )
 {
   using Teuchos::outArg;
 
   RCP<const Comm<Ordinal>> comm = getDefaultComm<Ordinal>();
-  Teuchos::MpiCommRequestBase<Ordinal> nullRequest;
-  TEST_ASSERT(nullRequest.isReady());
+  TEST_ASSERT(null_request_is_always_ready_if_mpi_available<Ordinal>());
 
   // All procs fail if any proc fails
   int globalSuccess_int = -1;
