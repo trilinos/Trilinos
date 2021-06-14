@@ -2524,28 +2524,6 @@ namespace Tpetra {
     const Details::EDistributorSendType sendType = sendType_;
     const bool doBarrier = barrierBetween_;
 
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     // Prepare for verbose output, if applicable.
-//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-//     RCP<Teuchos::FancyOStream> out = this->getOStream ();
-//     const bool doPrint = out.get () && (comm_->getRank () == 0) &&
-//       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-
-//     if (doPrint) {
-//       // Only need one process to print out parameters.
-//       *out << "Distributor::doPosts (4 args)" << endl;
-//     }
-//     // Add one tab level.  We declare this outside the doPrint scopes
-//     // so that the tab persists until the end of this method.
-//     if (doPrint) {
-//       *out << "Parameters:" << endl;
-//       {
-//         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
-//              << endl << "barrierBetween: " << doBarrier << endl;
-//       }
-//     }
-// #endif // HAVE_TEUCHOS_DEBUG
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): Ready-send "
