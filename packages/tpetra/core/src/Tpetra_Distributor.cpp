@@ -88,6 +88,10 @@ namespace Tpetra {
         return "INVALID";
       }
     }
+
+    DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
+      : comm_(comm)
+    { }
   } // namespace Details
 
   Teuchos::Array<std::string>
@@ -115,7 +119,7 @@ namespace Tpetra {
   } // namespace (anonymous)
 
   int Distributor::getTag (const int pathTag) const {
-    return useDistinctTags_ ? pathTag : comm_->getTag ();
+    return useDistinctTags_ ? pathTag : plan_.comm_->getTag ();
   }
 
 
@@ -186,7 +190,7 @@ namespace Tpetra {
   Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
-    : comm_ (comm)
+    : plan_(comm)
     , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
@@ -224,7 +228,7 @@ namespace Tpetra {
 
   Distributor::
   Distributor (const Distributor& distributor)
-    : comm_ (distributor.comm_)
+    : plan_(distributor.plan_)
     , howInitialized_ (Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
@@ -266,7 +270,6 @@ namespace Tpetra {
     using Teuchos::parameterList;
     using Teuchos::RCP;
 
-    std::swap (comm_, rhs.comm_);
     std::swap (howInitialized_, rhs.howInitialized_);
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
@@ -319,7 +322,7 @@ namespace Tpetra {
   createPrefix(const char methodName[]) const
   {
     return Details::createPrefix(
-      comm_.getRawPtr(), "Distributor", methodName);
+      plan_.comm_.getRawPtr(), "Distributor", methodName);
   }
 
   void
@@ -481,7 +484,7 @@ namespace Tpetra {
   void
   Distributor::createReverseDistributor() const
   {
-    reverseDistributor_ = Teuchos::rcp(new Distributor(comm_));
+    reverseDistributor_ = Teuchos::rcp(new Distributor(plan_.comm_));
     reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
     reverseDistributor_->sendType_ = sendType_;
     reverseDistributor_->barrierBetween_ = barrierBetween_;
@@ -497,7 +500,7 @@ namespace Tpetra {
     // We calculate it because it's the maximum length of any of the
     // sends of the reverse Distributor.
     size_t maxReceiveLength = 0;
-    const int myProcID = comm_->getRank();
+    const int myProcID = plan_.comm_->getRank();
     for (size_t i=0; i < numReceives_; ++i) {
       if (procsFrom_[i] != myProcID) {
         // Don't count receives for messages sent by myself to myself.
@@ -579,7 +582,7 @@ namespace Tpetra {
     }
 
     if (actor_.requests_.size() > 0) {
-      waitAll(*comm_, actor_.requests_());
+      waitAll(*plan_.comm_, actor_.requests_());
 
       if (debug) {
         // Make sure that waitAll() nulled out all the requests.
@@ -599,7 +602,7 @@ namespace Tpetra {
     if (debug) {
       const int localSizeNonzero = (actor_.requests_.size () != 0) ? 1 : 0;
       int globalSizeNonzero = 0;
-      Teuchos::reduceAll<int, int> (*comm_, Teuchos::REDUCE_MAX,
+      Teuchos::reduceAll<int, int> (*plan_.comm_, Teuchos::REDUCE_MAX,
                                     localSizeNonzero,
                                     Teuchos::outArg (globalSizeNonzero));
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -655,7 +658,7 @@ namespace Tpetra {
     using std::endl;
 
     // This preserves current behavior of Distributor.
-    if (vl <= Teuchos::VERB_LOW || comm_.is_null ()) {
+    if (vl <= Teuchos::VERB_LOW || plan_.comm_.is_null ()) {
       return std::string ();
     }
 
@@ -663,8 +666,8 @@ namespace Tpetra {
     auto outp = Teuchos::getFancyOStream (outStringP); // returns RCP
     Teuchos::FancyOStream& out = *outp;
 
-    const int myRank = comm_->getRank ();
-    const int numProcs = comm_->getSize ();
+    const int myRank = plan_.comm_->getRank ();
+    const int numProcs = plan_.comm_->getSize ();
     out << "Process " << myRank << " of " << numProcs << ":" << endl;
     Teuchos::OSTab tab1 (out);
 
@@ -714,11 +717,11 @@ namespace Tpetra {
     // operations with the other processes.  In that case, it is not
     // even legal to call this method.  The reasonable thing to do in
     // that case is nothing.
-    if (comm_.is_null ()) {
+    if (plan_.comm_.is_null ()) {
       return;
     }
-    const int myRank = comm_->getRank ();
-    const int numProcs = comm_->getSize ();
+    const int myRank = plan_.comm_->getRank ();
+    const int numProcs = plan_.comm_->getSize ();
 
     // Only Process 0 should touch the output stream, but this method
     // in general may need to do communication.  Thus, we may need to
@@ -763,7 +766,7 @@ namespace Tpetra {
     // This is collective over the Map's communicator.
     if (vl > VERB_LOW) {
       const std::string lclStr = this->localDescribeToString (vl);
-      Tpetra::Details::gathervPrint (out, lclStr, *comm_);
+      Tpetra::Details::gathervPrint (out, lclStr, *plan_.comm_);
     }
 
     out << "Reverse Distributor:";
@@ -796,8 +799,8 @@ namespace Tpetra {
     using Teuchos::waitAll;
     using std::endl;
 
-    const int myRank = comm_->getRank();
-    const int numProcs = comm_->getSize();
+    const int myRank = plan_.comm_->getRank();
+    const int numProcs = plan_.comm_->getSize();
 
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = 2;
@@ -836,7 +839,7 @@ namespace Tpetra {
         "Tpetra::Distributor::computeReceives: There was an error on at least "
         "one process in counting the number of messages send by that process to "
         "the other processs.  Please report this bug to the Tpetra developers.",
-        *comm_);
+        *plan_.comm_);
 #endif // HAVE_TEUCHOS_DEBUG
 
       if (verbose_) {
@@ -905,9 +908,9 @@ namespace Tpetra {
       int numReceivesAsInt = 0; // output
       reduce<int, int> (toProcsFromMe.getRawPtr (),
                         numRecvsOnEachProc.getRawPtr (),
-                        numProcs, REDUCE_SUM, root, *comm_);
+                        numProcs, REDUCE_SUM, root, *plan_.comm_);
       scatter<int, int> (numRecvsOnEachProc.getRawPtr (), 1,
-                         &numReceivesAsInt, 1, root, *comm_);
+                         &numReceivesAsInt, 1, root, *plan_.comm_);
       numReceives_ = static_cast<size_t> (numReceivesAsInt);
     }
 
@@ -965,7 +968,7 @@ namespace Tpetra {
       lengthsFromBuffers[i].resize (1);
       lengthsFromBuffers[i][0] = as<size_t> (0);
       requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc,
-                                           tag, *comm_);
+                                           tag, *plan_.comm_);
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << "Posted any-proc irecv w/ tag " << tag << endl;
@@ -993,7 +996,7 @@ namespace Tpetra {
         // this communication pattern will send that process
         // lengthsTo_[i] blocks of packets.
         const size_t* const lengthsTo_i = &lengthsTo_[i];
-        send<int, size_t> (lengthsTo_i, 1, as<int> (procsTo_[i]), tag, *comm_);
+        send<int, size_t> (lengthsTo_i, 1, as<int> (procsTo_[i]), tag, *plan_.comm_);
         if (verbose_) {
           std::ostringstream os;
           os << *prefix << "Posted send to Proc " << procsTo_[i] << " w/ tag "
@@ -1026,7 +1029,7 @@ namespace Tpetra {
     // request buffers into lengthsFrom_, and set procsFrom_ from the
     // status.
     //
-    waitAll (*comm_, requests (), statuses ());
+    waitAll (*plan_.comm_, requests (), statuses ());
     for (size_t i = 0; i < actualNumReceives; ++i) {
       lengthsFrom_[i] = *lengthsFromBuffers[i];
       procsFrom_[i] = statuses[i]->getSourceRank ();
@@ -1081,8 +1084,8 @@ namespace Tpetra {
     const char rawPrefix[] = "Tpetra::Distributor::createFromSends";
 
     const size_t numExports = exportProcIDs.size();
-    const int myProcID = comm_->getRank();
-    const int numProcs = comm_->getSize();
+    const int myProcID = plan_.comm_->getRank();
+    const int numProcs = plan_.comm_->getSize();
 
     const bool debug = Details::Behavior::debug("Distributor");
     const size_t maxNumToPrint = verbose_ ?
@@ -1187,7 +1190,7 @@ namespace Tpetra {
       // this process' rank.  The max of all badID over all processes
       // is the max rank which has an invalid process ID.
       int gbl_badID;
-      reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
+      reduceAll<int, int> (*plan_.comm_, REDUCE_MAX, badID, outArg (gbl_badID));
       TEUCHOS_TEST_FOR_EXCEPTION
         (gbl_badID >= 0, std::runtime_error, rawPrefix << "Proc "
          << gbl_badID << ", perhaps among other processes, got a bad "
@@ -1210,7 +1213,7 @@ namespace Tpetra {
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
     {
       int global_needSendBuff;
-      reduceAll<int, int> (*comm_, REDUCE_MAX, needSendBuff,
+      reduceAll<int, int> (*plan_.comm_, REDUCE_MAX, needSendBuff,
                             outArg (global_needSendBuff));
       TPETRA_EFFICIENCY_WARNING(
         global_needSendBuff != 0, std::runtime_error,
@@ -1395,10 +1398,10 @@ namespace Tpetra {
     if (debug) {
       SHARED_TEST_FOR_EXCEPTION
         (index_neq_numActive, std::logic_error,
-         rawPrefix << "logic error. Please notify the Tpetra team.", *comm_);
+         rawPrefix << "logic error. Please notify the Tpetra team.", *plan_.comm_);
       SHARED_TEST_FOR_EXCEPTION
         (send_neq_numSends, std::logic_error,
-         rawPrefix << "logic error. Please notify the Tpetra team.", *comm_);
+         rawPrefix << "logic error. Please notify the Tpetra team.", *plan_.comm_);
     }
 
     if (selfMessage_) {
@@ -1450,8 +1453,8 @@ namespace Tpetra {
     howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
 
 
-    int myProcID = comm_->getRank ();
-    int numProcs = comm_->getSize();
+    int myProcID = plan_.comm_->getRank ();
+    int numProcs = plan_.comm_->getSize();
 
     const size_t numExportIDs = exportProcIDs.size();
     Teuchos::Array<size_t> starts (numProcs + 1, 0);

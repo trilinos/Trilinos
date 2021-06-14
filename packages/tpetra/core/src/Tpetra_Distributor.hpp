@@ -96,6 +96,10 @@ namespace Tpetra {
     DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 
     class DistributorPlan {
+    public:
+      DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
+
+      Teuchos::RCP<const Teuchos::Comm<int>> comm_;
     };
 
     class DistributorActor {
@@ -808,9 +812,6 @@ namespace Tpetra {
     Details::DistributorPlan plan_;
     Details::DistributorActor actor_;
 
-    //! The communicator over which to perform distributions.
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
     //! How the Distributor was initialized (if it was).
     Details::EDistributorHowInitialized howInitialized_;
 
@@ -1173,7 +1174,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     const bool debug = Details::Behavior::debug("Distributor");
-    const int myRank = comm_->getRank ();
+    const int myRank = plan_.comm_->getRank ();
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
     const Details::EDistributorSendType sendType = sendType_;
@@ -1295,7 +1296,7 @@ namespace Tpetra {
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufOffset, curBufLen);
           actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
-                                                      tag, *comm_));
+                                                      tag, *plan_.comm_));
         }
         else { // Receiving from myself
           selfReceiveOffset = curBufOffset; // Remember the self-recv offset
@@ -1320,7 +1321,7 @@ namespace Tpetra {
       // ready send requires that its matching receive has already
       // been posted before the send has been posted.  The only way to
       // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
+      plan_.comm_->barrier ();
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -1379,24 +1380,24 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *comm_);
+                               procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (startsTo_[p] * numPackets,
                                       lengthsTo_[p] * numPackets);
             actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                     tag, *comm_));
+                                                     tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *comm_);
+                                    procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *comm_);
+                                procsTo_[p], tag, *plan_.comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -1473,23 +1474,23 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *comm_);
+                               procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               sendArray.persistingView (0, lengthsTo_[p] * numPackets);
             actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                     tag, *comm_));
+                                                     tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *comm_);
+                                    procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *comm_);
+                                procsTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1573,7 +1574,7 @@ namespace Tpetra {
       "ends.  This should have been checked before.  "
       "Please report this bug to the Tpetra developers.");
 
-    const int myProcID = comm_->getRank ();
+    const int myProcID = plan_.comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -1661,7 +1662,7 @@ namespace Tpetra {
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufferOffset, totalPacketsFrom_i);
           actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
-                                                      tag, *comm_));
+                                                      tag, *plan_.comm_));
         }
         else { // Receiving these packet(s) from myself
           selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -1679,7 +1680,7 @@ namespace Tpetra {
       // ready send requires that its matching receive has already
       // been posted before the send has been posted.  The only way to
       // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
+      plan_.comm_->barrier ();
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -1743,23 +1744,23 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *comm_);
+                               procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *comm_);
+                                    procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
             actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                     tag, *comm_));
+                                                     tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *comm_);
+                                procsTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1838,23 +1839,23 @@ namespace Tpetra {
             if (sendType == Details::DISTRIBUTOR_RSEND) {
               readySend<int, Packet> (tmpSend.getRawPtr (),
                                       as<int> (tmpSend.size ()),
-                                      procsTo_[p], tag, *comm_);
+                                      procsTo_[p], tag, *plan_.comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               ArrayRCP<const Packet> tmpSendBuf =
                 sendArray.persistingView (0, numPacketsTo_p);
               actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                       tag, *comm_));
+                                                       tag, *plan_.comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
               ssend<int, Packet> (tmpSend.getRawPtr (),
                                   as<int> (tmpSend.size ()),
-                                  procsTo_[p], tag, *comm_);
+                                  procsTo_[p], tag, *plan_.comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int, Packet> (tmpSend.getRawPtr (),
                                  as<int> (tmpSend.size ()),
-                                 procsTo_[p], tag, *comm_);
+                                 procsTo_[p], tag, *plan_.comm_);
             }
           }
         }
@@ -2114,7 +2115,7 @@ namespace Tpetra {
     Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-    const int myRank = comm_->getRank ();
+    const int myRank = plan_.comm_->getRank ();
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
     const Details::EDistributorSendType sendType = sendType_;
@@ -2217,7 +2218,7 @@ namespace Tpetra {
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, curBufLen);
           actor_.requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
-                                              tag, *comm_));
+                                              tag, *plan_.comm_));
         }
         else { // Receiving from myself
           selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
@@ -2242,7 +2243,7 @@ namespace Tpetra {
       // ready send requires that its matching receive has already
       // been posted before the send has been posted.  The only way to
       // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
+      plan_.comm_->barrier ();
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -2306,24 +2307,24 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
+                       procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (exports, startsTo_[p] * numPackets,
                               lengthsTo_[p] * numPackets);
             actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
+                                             tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
+                            procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
+                        procsTo_[p], tag, *plan_.comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true,
@@ -2414,23 +2415,23 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
+                       procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
             actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
+                                             tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
+                            procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
+                        procsTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2552,7 +2553,7 @@ namespace Tpetra {
       "sends.  This should have been checked before.  "
       "Please report this bug to the Tpetra developers.");
 
-    const int myProcID = comm_->getRank ();
+    const int myProcID = plan_.comm_->getRank ();
     size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -2636,7 +2637,7 @@ namespace Tpetra {
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
           actor_.requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
-                                              tag, *comm_));
+                                              tag, *plan_.comm_));
         }
         else { // Receiving these packet(s) from myself
           selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -2654,7 +2655,7 @@ namespace Tpetra {
       // ready send requires that its matching receive has already
       // been posted before the send has been posted.  The only way to
       // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
+      plan_.comm_->barrier ();
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -2717,23 +2718,23 @@ namespace Tpetra {
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
+                       procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
+                            procsTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
             actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
+                                             tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
+                        procsTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2812,23 +2813,23 @@ namespace Tpetra {
             if (sendType == Details::DISTRIBUTOR_RSEND) {
               readySend<int> (tmpSend,
                               as<int> (tmpSend.size ()),
-                              procsTo_[p], tag, *comm_);
+                              procsTo_[p], tag, *plan_.comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               exports_view_type tmpSendBuf =
                 subview_offset (sendArray, size_t(0), numPacketsTo_p);
               actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                               tag, *comm_));
+                                               tag, *plan_.comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
               ssend<int> (tmpSend,
                           as<int> (tmpSend.size ()),
-                          procsTo_[p], tag, *comm_);
+                          procsTo_[p], tag, *plan_.comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int> (tmpSend,
                          as<int> (tmpSend.size ()),
-                         procsTo_[p], tag, *comm_);
+                         procsTo_[p], tag, *plan_.comm_);
             }
           }
         }
@@ -2944,7 +2945,7 @@ namespace Tpetra {
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
-    const int myRank = comm_->getRank ();
+    const int myRank = plan_.comm_->getRank ();
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
       prefix = createPrefix("computeSends");
@@ -2970,7 +2971,7 @@ namespace Tpetra {
     // Use a temporary Distributor to send the (importGIDs[i], myRank)
     // pairs to importProcIDs[i].
     //
-    Distributor tempPlan(comm_);
+    Distributor tempPlan(plan_.comm_);
     if (verbose_) {
       std::ostringstream os;
       os << *prefix << "Call tempPlan.createFromSends" << endl;
@@ -3048,7 +3049,7 @@ namespace Tpetra {
   {
     using std::endl;
     const char errPrefix[] = "Tpetra::Distributor::createFromRecvs: ";
-    const int myRank = comm_->getRank();
+    const int myRank = plan_.comm_->getRank();
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -3068,7 +3069,7 @@ namespace Tpetra {
       const int errProc =
         (remoteGIDs.size () != remoteProcIDs.size ()) ? myRank : -1;
       int maxErrProc = -1;
-      reduceAll(*comm_, REDUCE_MAX, errProc, outArg(maxErrProc));
+      reduceAll(*plan_.comm_, REDUCE_MAX, errProc, outArg(maxErrProc));
       TEUCHOS_TEST_FOR_EXCEPTION
         (maxErrProc != -1, std::runtime_error, errPrefix << "Lists "
          "of remote IDs and remote process IDs must have the same "
