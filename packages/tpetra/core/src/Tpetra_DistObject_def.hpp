@@ -1234,7 +1234,6 @@ namespace Tpetra {
       }
     }
 
-    const size_t numSameIDs = transfer.getNumSameIDs ();
     Distributor& distor = transfer.getDistributor ();
 
     TEUCHOS_TEST_FOR_EXCEPTION
