@@ -6,7 +6,11 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
+#ifdef _WIN32
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
 #include <algorithm>
 
 #include "Zoltan2_Algorithm.hpp"

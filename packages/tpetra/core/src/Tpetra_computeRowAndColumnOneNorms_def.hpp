@@ -742,7 +742,6 @@ auto getLocalView_1d_writeOnly (
                             Kokkos::ALL (), whichColumn);
   }
   else {
-    using vector_t = Tpetra::Vector<SC, LO, GO, NT>;
     auto X_whichColumn = X.getVectorNonConst (whichColumn);
     return Kokkos::subview(X_whichColumn->getLocalViewDevice(Access::ReadWrite),
                            Kokkos::ALL (), 0);
@@ -756,7 +755,6 @@ copy1DViewIntoMultiVectorColumn (
   const LO whichColumn,
   const Kokkos::View<ViewValueType*, typename NT::device_type>& view)
 {
-  using dev_memory_space = typename NT::device_type::memory_space;
   auto X_lcl = getLocalView_1d_writeOnly (X, whichColumn);
   Tpetra::Details::copyConvert (X_lcl, view);
 }
@@ -768,7 +766,6 @@ copyMultiVectorColumnInto1DView (
   Tpetra::MultiVector<SC, LO, GO, NT>& X,
   const LO whichColumn)
 {
-  using dev_memory_space = typename NT::device_type::memory_space;
   auto X_lcl = getLocalView_1d_readOnly (X, whichColumn);
   Tpetra::Details::copyConvert (view, X_lcl);
 }
