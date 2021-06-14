@@ -311,6 +311,7 @@ namespace MueLu {
     this->numDesiredLevel_  = paramList.get<int> ("max levels",          MasterList::getDefault<int>("max levels"));
     blockSize_              = paramList.get<int> ("number of equations", MasterList::getDefault<int>("number of equations"));
 
+
     (void)MUELU_TEST_AND_SET_VAR(paramList, "debug: graph level", int, this->graphOutputLevel_);
 
     // Save level data
@@ -362,7 +363,9 @@ namespace MueLu {
       useCoordinates_ = true;
       useBlockNumber_ = true;
     } else if(MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal") || 
-              MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal classical")) {
+              MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal classical") ||
+              //MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "signed classical")) 
+      {
       useBlockNumber_ = true;
     } else if(paramList.isSublist("smoother: params")) {
       const auto smooParamList = paramList.sublist("smoother: params");
@@ -1092,8 +1095,10 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, mapParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, mapParams);
       mapFact->SetParameterList(mapParams);
+      mapFact->SetFactory("Graph", manager.GetFactory("Graph"));
       manager.SetFactory("FC Splitting", mapFact);
       manager.SetFactory("CoarseMap", mapFact);
+
 
       aggFactory = rcp(new ClassicalPFactory());      
       ParameterList aggParams;
@@ -1105,7 +1110,7 @@ namespace MueLu {
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
       std::string drop_algo = aggParams.get<std::string>("aggregation: drop scheme");
-      if (drop_algo.find("block diagonal") != std::string::npos) 
+      if (drop_algo.find("block diagonal") != std::string::npos)// || drop_algo == "signed classical") 
         aggFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
       
       // Now we short-circuit, because we neither need nor want TentativePFactory here      
