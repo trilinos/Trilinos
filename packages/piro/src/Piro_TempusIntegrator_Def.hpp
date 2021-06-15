@@ -209,11 +209,9 @@ Piro::TempusIntegrator<Scalar>::setObserver(Teuchos::RCP<Tempus::IntegratorObser
   if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->setObserver(obs); 
   }
-  //IKT, FIXME: adjSensIntegrator_ has no routine setObsever(obs)
-  //Look into.
-  /*if (adjSensIntegrator_ != Teuchos::null) {
+  if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->setObserver(obs); 
-  }*/
+  }
 }
 
 template <typename Scalar>
@@ -226,11 +224,9 @@ Piro::TempusIntegrator<Scalar>::initialize()
   if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->initialize(); 
   }
-  //IKT FIXME: adjSensIntegrator_ has no initialize() routine.
-  //Look into.
-  /*if (adjSensIntegrator_ != Teuchos::null) {
+  if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->initialize(); 
-  }*/
+  }
 }
 
 template <typename Scalar>
