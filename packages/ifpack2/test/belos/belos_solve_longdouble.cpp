@@ -67,17 +67,17 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Core.hpp"
+#include "Tpetra_Details_DefaultTypes.hpp" 
 
 using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
   //
   typedef long double                      scalar_type;
-  typedef long long int                    GO;
   typedef int                              LO;
-  typedef Tpetra::Map<LO, GO>              Tpetra_Map;
-  typedef Tpetra::CrsMatrix<scalar_type, LO, GO>    Tpetra_CrsMatrix;
-  typedef Tpetra::Vector<scalar_type, LO, GO>       Tpetra_Vector;
+  typedef Tpetra::Map<LO, Tpetra::Details::DefaultTypes::global_ordinal_type>              Tpetra_Map;
+  typedef Tpetra::CrsMatrix<scalar_type, LO, Tpetra::Details::DefaultTypes::global_ordinal_type>    Tpetra_CrsMatrix;
+  typedef Tpetra::Vector<scalar_type, LO, Tpetra::Details::DefaultTypes::global_ordinal_type>       Tpetra_Vector;
   typedef Tpetra::Operator<scalar_type>             OP;
   typedef Tpetra::MultiVector<scalar_type>          MV;
   typedef Belos::LinearProblem<scalar_type, MV, OP> problem_type;
@@ -108,20 +108,20 @@ int main(int argc, char *argv[]) {
     const scalar_type two = static_cast<scalar_type> (2.0);
     const scalar_type negOne = static_cast<scalar_type> (-1.0);
     for (LO lclRow = 0; lclRow < static_cast<LO> (numMyElements); ++lclRow) {
-      const GO gblRow = map->getGlobalElement (lclRow);
+      const Tpetra::Details::DefaultTypes::global_ordinal_type gblRow = map->getGlobalElement (lclRow);
       // A(0, 0:1) = [2, -1]
       if (gblRow == 0) {
-        A->insertGlobalValues (gblRow, tuple<GO> (gblRow, gblRow + 1),
+        A->insertGlobalValues (gblRow, tuple<Tpetra::Details::DefaultTypes::global_ordinal_type> (gblRow, gblRow + 1),
              tuple<> (two, negOne));
       }
       // A(N-1, N-2:N-1) = [-1, 2]
       else if (static_cast<Tpetra::global_size_t> (gblRow) == numGblIndices - 1) {
-        A->insertGlobalValues (gblRow, tuple<GO> (gblRow - 1, gblRow),
+        A->insertGlobalValues (gblRow, tuple<Tpetra::Details::DefaultTypes::global_ordinal_type> (gblRow - 1, gblRow),
              tuple<> (negOne, two));
       }
       // A(i, i-1:i+1) = [-1, 2, -1]
       else {
-        A->insertGlobalValues (gblRow, tuple<GO> (gblRow - 1, gblRow, gblRow + 1),
+        A->insertGlobalValues (gblRow, tuple<Tpetra::Details::DefaultTypes::global_ordinal_type> (gblRow - 1, gblRow, gblRow + 1),
              tuple<> (negOne, two, negOne));
       }
     }
