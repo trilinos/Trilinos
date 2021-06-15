@@ -127,6 +127,12 @@ namespace Amesos2 {
 			       const Teuchos::ArrayView<scalar_t>& vals,
 			       size_t& nnz) const;
 
+    template<typename KV_GO, typename KV_S>
+    void getGlobalRowCopy_kokkos_view_impl(global_ordinal_t row,
+                                           KV_GO & indices,
+                                           KV_S & vals,
+                                           size_t& nnz) const;
+
     global_size_t getGlobalNNZ_impl() const;
 
     size_t getLocalNNZ_impl() const;
@@ -175,29 +181,39 @@ namespace Amesos2 {
     // hands off implementation to the adapter for the subclass
     RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
 
-    typename super_t::spmtx_ptr_t  getSparseRowPtr() const;
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    using spmtx_ptr_t = typename super_t::spmtx_ptr_t;
+    using spmtx_idx_t = typename super_t::spmtx_idx_t;
+    using spmtx_val_t = typename super_t::spmtx_vals_t;
+    #else
+    using spmtx_ptr_t = typename MatrixTraits<DerivedMat>::sparse_ptr_type;
+    using spmtx_idx_t = typename MatrixTraits<DerivedMat>::sparse_idx_type;
+    using spmtx_val_t = typename MatrixTraits<DerivedMat>::sparse_values_type;
+    #endif
 
-    typename super_t::spmtx_idx_t  getSparseColInd() const;
+    spmtx_ptr_t  getSparseRowPtr() const;
 
-    typename super_t::spmtx_vals_t getSparseValues() const;
+    spmtx_idx_t  getSparseColInd() const;
+
+    spmtx_val_t getSparseValues() const;
 
     template<class KV>
     void getSparseRowPtr_kokkos_view(KV & view) const {
-      Kokkos::View<typename super_t::spmtx_ptr_t, Kokkos::HostSpace> src(
+      Kokkos::View<spmtx_ptr_t, Kokkos::HostSpace> src(
         getSparseRowPtr(), getGlobalNumRows_impl()+1);
       deep_copy_or_assign_view(view, src);
     }
 
     template<class KV>
     void getSparseColInd_kokkos_view(KV & view) const {
-      Kokkos::View<typename super_t::spmtx_idx_t, Kokkos::HostSpace> src(
+      Kokkos::View<spmtx_idx_t, Kokkos::HostSpace> src(
         getSparseColInd(), getGlobalNNZ_impl());
       deep_copy_or_assign_view(view, src);
     }
 
     template<class KV>
     void getSparseValues_kokkos_view(KV & view) const {
-      Kokkos::View<typename super_t::spmtx_vals_t, Kokkos::HostSpace> src(
+      Kokkos::View<spmtx_val_t, Kokkos::HostSpace> src(
         getSparseValues(), getGlobalNNZ_impl());
       deep_copy_or_assign_view(view, src);
     }
