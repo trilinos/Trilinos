@@ -266,7 +266,7 @@ public:
                              const RowInfo& rowInfo,
                              const GlobalOrdinal inds[],
                              const impl_scalar_type newVals[],
-                             const LocalOrdinal numElts) const;
+                             const LocalOrdinal numElts);
 
     LocalOrdinal
     replaceLocalValuesImpl (impl_scalar_type rowVals[],
@@ -274,7 +274,7 @@ public:
                             const RowInfo& rowInfo,
                             const LocalOrdinal inds[],
                             const impl_scalar_type newVals[],
-                            const LocalOrdinal numElts) const;
+                            const LocalOrdinal numElts);
 
     LocalOrdinal
     sumIntoGlobalValuesImpl (impl_scalar_type rowVals[],
@@ -283,7 +283,7 @@ public:
                              const GlobalOrdinal inds[],
                              const impl_scalar_type newVals[],
                              const LocalOrdinal numElts,
-                             const bool atomic = useAtomicUpdatesByDefault) const;
+                             const bool atomic = useAtomicUpdatesByDefault);
 
     LocalOrdinal
     sumIntoLocalValuesImpl (impl_scalar_type rowVals[],
@@ -292,7 +292,7 @@ public:
                             const LocalOrdinal inds[],
                             const impl_scalar_type newVals[],
                             const LocalOrdinal numElts,
-                            const bool atomic = useAtomicUpdatesByDefault) const;
+                            const bool atomic = useAtomicUpdatesByDefault);
 
     void
     insertGlobalValuesImpl (crs_graph_type& graph,

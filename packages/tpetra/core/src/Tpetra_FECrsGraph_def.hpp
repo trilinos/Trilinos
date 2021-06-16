@@ -340,11 +340,11 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsGraph() {
 }//end switchActiveCrsGraph
 
 
-
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
-  const char tfecfFuncName[] = "FECrsGraph::endFill(): ";
-
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill(
+  const Teuchos::RCP<const map_type>& domainMap,
+  const Teuchos::RCP<const map_type>& rangeMap)
+{
   /* What has to go on here is complicated.
      First off, if we don't really have two graphs (e.g. the rowMaps are the same, because we're in serial or
      doing finite differences, things are easy --- just call fillComplete().
@@ -364,12 +364,12 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
      5) The OWNED_PLUS_SHARED graph has neither an importer nor exporter.  Making these is expensive and we don't need them.
    */
   // Precondition
+  const char tfecfFuncName[] = "FECrsGraph::endFill(domainMap, rangeMap): ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(*activeCrsGraph_ != FE_ACTIVE_OWNED_PLUS_SHARED,std::runtime_error, "must be in owned+shared mode.");
-
   if(ownedRowsImporter_.is_null()) {
     // The easy case: One graph
     switchActiveCrsGraph();
-    crs_graph_type::fillComplete(ownedDomainMap_,ownedRangeMap_);
+    crs_graph_type::fillComplete(domainMap, rangeMap);
   }
   else {
     // The hard case: Two graphs
@@ -382,6 +382,12 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
     switchActiveCrsGraph();
 
   }
+}
+
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endFill() {
+  this->endFill(ownedDomainMap_, ownedRangeMap_);
 }
 
 
@@ -419,6 +425,21 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
   this->endFill();
 }
 
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endAssembly(
+  const Teuchos::RCP<const map_type>& domainMap,
+  const Teuchos::RCP<const map_type>& rangeMap)
+{
+  const char tfecfFuncName[] = "FECrsGraph::endAssembly: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open,
+    std::runtime_error,
+    "Cannot endAssembly, matrix is not open to fill."
+  );
+  *fillState_ = FillState::closed;
+  this->endFill(domainMap, rangeMap);
+}
+
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Teuchos::ParameterList>
 FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::getValidParameters () const
@@ -443,9 +464,7 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl (
     std::runtime_error,
     "Cannot replace global values, matrix is not open to fill."
   );
-  return CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl(
-    lclRow, inputGblColInds, numInputInds
-  );
+  return crs_graph_type::insertGlobalIndicesImpl(lclRow, inputGblColInds, numInputInds);
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -462,9 +481,7 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl (
     std::runtime_error,
     "Cannot replace global values, matrix is not open to fill."
   );
-  return CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl(
-    rowInfo, inputGblColInds, numInputInds, fun
-  );
+  return crs_graph_type::insertGlobalIndicesImpl(rowInfo, inputGblColInds, numInputInds, fun);
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -480,9 +497,7 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertLocalIndicesImpl (
     std::runtime_error,
     "Cannot replace global values, matrix is not open to fill."
   );
-  return CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertLocalIndicesImpl(
-    lclRow, gblColInds, fun
-  );
+  return crs_graph_type::insertLocalIndicesImpl(lclRow, gblColInds, fun);
 }
 
 }  // end namespace Tpetra

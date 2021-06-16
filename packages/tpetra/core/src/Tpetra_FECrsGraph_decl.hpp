@@ -466,6 +466,7 @@ namespace Tpetra {
 
     //! Migrates data to the owned mode
     void endAssembly();
+    void endAssembly(const Teuchos::RCP<const map_type>& domainMap, const Teuchos::RCP<const map_type>& rangeMap);
 
     //! Activates the owned+shared mode for assembly
     void beginAssembly();
@@ -551,6 +552,7 @@ namespace Tpetra {
 
     //! Migrates data to the owned mode
     void endFill();
+    void endFill(const Teuchos::RCP<const map_type>& domainMap, const Teuchos::RCP<const map_type>& rangeMap);
 
     //! Activates the owned+shared mode for assembly.  This can only be called once.
     void beginFill();

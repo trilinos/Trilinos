@@ -154,7 +154,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
     std::runtime_error,
-    "Cannot endAssembly, matrix is not open to fill."
+    "Cannot endAssembly, matrix is not open for assembly."
   );
   *fillState_ = FillState::closed;
   this->endFill();
@@ -192,13 +192,13 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValuesImpl(
   const RowInfo& rowInfo,
   const GlobalOrdinal inds[],
   const impl_scalar_type newVals[],
-  const LocalOrdinal numElts) const
+  const LocalOrdinal numElts)
 {
   const char tfecfFuncName[] = "FECrsMatrix::replaceGlobalValues: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
     std::runtime_error,
-    "Cannot replace global values, matrix is not open to fill."
+    "Cannot replace global values, matrix is not open for assembly."
   );
   return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValuesImpl(
     rowVals, graph, rowInfo, inds, newVals, numElts
@@ -213,7 +213,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceLocalValuesImpl(
   const RowInfo& rowInfo,
   const LocalOrdinal inds[],
   const impl_scalar_type newVals[],
-  const LocalOrdinal numElts) const
+  const LocalOrdinal numElts)
 {
   const char tfecfFuncName[] = "FECrsMatrix::replaceLocalValues: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -235,13 +235,13 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValuesImpl(
   const GlobalOrdinal inds[],
   const impl_scalar_type newVals[],
   const LocalOrdinal numElts,
-  const bool atomic) const
+  const bool atomic)
 {
   const char tfecfFuncName[] = "FECrsMatrix::sumIntoGlobalValues: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
     std::runtime_error,
-    "Cannot sum in to global values, matrix is not open to fill."
+    "Cannot sum in to global values, matrix is not open for assembly."
   );
   return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValuesImpl(
     rowVals, graph, rowInfo, inds, newVals, numElts, atomic
@@ -257,13 +257,13 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoLocalValuesImpl(
   const LocalOrdinal inds[],
   const impl_scalar_type newVals[],
   const LocalOrdinal numElts,
-  const bool atomic) const
+  const bool atomic)
 {
   const char tfecfFuncName[] = "FECrsMatrix::sumIntoLocalValues: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
     std::runtime_error,
-    "Cannot sum in to local values, matrix is not open to fill."
+    "Cannot sum in to local values, matrix is not open for assembly."
   );
   return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoLocalValuesImpl(
     rowVals, graph, rowInfo, inds, newVals, numElts, atomic
@@ -283,7 +283,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValuesImpl(
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
     std::runtime_error,
-    "Cannot sum in to local values, matrix is not open to fill."
+    "Cannot sum in to local values, matrix is not open for assembly."
   );
   return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValuesImpl(
     graph, rowInfo, gblColInds, vals, numInputEnt
