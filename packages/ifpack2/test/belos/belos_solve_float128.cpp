@@ -69,6 +69,8 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Details_DefaultTypes.hpp" 
 
+#include "Teuchos_VerboseObject.hpp"
+
 #include<quadmath.h>
 
 using namespace Teuchos;
@@ -85,10 +87,8 @@ int main(int argc, char *argv[]) {
   typedef Belos::LinearProblem<scalar_type, MV, OP> problem_type;
 
   Teuchos::GlobalMPISession session(&argc, &argv, NULL);
-  int MyPID = session.getRank();
 
   bool success = false;
-  bool verbose = false;
     
   auto comm = Tpetra::getDefaultComm ();
 
