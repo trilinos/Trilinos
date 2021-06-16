@@ -146,6 +146,15 @@
       <description>Pass parameters to the underlying linear algebra</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
+     </parameter>
+
+     <parameter>
+      <name>half precision</name>
+      <type>bool</type>
+      <description>Build half precision preconditioner</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+      <default>false</default>
     </parameter>
 
   </general>
@@ -942,7 +951,7 @@
       both (``both'').</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
-    
+
 
 
   </aggregate_qualities>
