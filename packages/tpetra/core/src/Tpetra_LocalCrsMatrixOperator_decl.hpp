@@ -87,10 +87,12 @@ namespace Tpetra {
                               void,
                               local_ordinal_type>;
     using local_graph_device_type = typename local_matrix_device_type::StaticCrsGraphType;
-    using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
 
   public:
+    using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
+
     LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A);
+    LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A, const ordinal_view_type& A_ordinal_rowptrs);
     ~LocalCrsMatrixOperator () override = default;
 
     void
@@ -118,12 +120,8 @@ namespace Tpetra {
 
   private:
     std::shared_ptr<local_matrix_device_type> A_;
-    //If the number of entries in A_ can be represented as ordinal,
-    //make a copy of the rowptrs as ordinal. This allows the use of cuSPARSE spmv.
-    //If cusparse is not enabled or there would be no benefit from using these,
-    //they are not allocated/initialized.
-    ordinal_view_type A_ordinal_rowptrs;
     local_cusparse_matrix_type A_cusparse;
+    const bool have_A_cusparse;
   };
 
 } // namespace Tpetra

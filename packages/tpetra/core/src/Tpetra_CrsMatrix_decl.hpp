@@ -44,7 +44,7 @@
 /// \brief Declaration of the Tpetra::CrsMatrix class
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
-#include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
+#include "Tpetra_LocalCrsMatrixOperator.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_DistObject.hpp"
@@ -2456,6 +2456,16 @@ protected:
           Details::WrappedDualView<values_dualv_type>;
     values_wdv_type valuesUnpacked_wdv;
     mutable values_wdv_type valuesPacked_wdv;
+
+    using ordinal_rowptrs_type = typename local_multiply_op_type::ordinal_view_type;
+    /// \brief local_ordinal typed version of local matrix's rowptrs.
+    ///   This allows the LocalCrsMatrixOperator to have rowptrs and entries be the same type,
+    ///   so cuSPARSE SpMV (including merge-path) can be used for apply.
+    ///   This is allocated and populated lazily in getLocalMultiplyOperator(), only if all 4 conditions are met:
+    ///     - node_type is KokkosCudaWrapperNode
+    ///     - the cuSPARSE TPL is enabled
+    ///     - local_ordinal_type can represent getNodeNumEntries()
+    mutable ordinal_rowptrs_type ordinalRowptrs;
 
 public:
 
