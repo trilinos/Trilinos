@@ -181,7 +181,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   using values_type = typename local_matrix_device_type::values_type::non_const_type;
   using execution_space = typename local_matrix_device_type::execution_space;
 
-  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrix ();
+  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
   local_matrix_device_type lclTransposeMatrix = KokkosKernels::Impl::transpose_matrix(lclMatrix);
   if (sort)
     KokkosKernels::Impl::sort_crs_matrix(lclTransposeMatrix);
