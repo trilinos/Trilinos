@@ -184,6 +184,7 @@ namespace MueLu {
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
   "<Parameter name=\"hierarchy label\" type=\"string\" value=\"\"/>"
   "<ParameterList name=\"matvec params\"/>"
+  "<Parameter name=\"half precision\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -569,6 +570,8 @@ namespace MueLu {
          ("ML label","hierarchy label")
       
          ("matvec params","matvec params")
+      
+         ("half precision","half precision")
       
          ("smoother: pre or post","smoother: pre or post")
       

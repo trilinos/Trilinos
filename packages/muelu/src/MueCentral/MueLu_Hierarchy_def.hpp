@@ -1301,6 +1301,8 @@ namespace MueLu {
         oss << "\n--------------------------------------------------------------------------------\n";
         oss << "---                            Multigrid Summary "  << std::setw(28) << std::left << label << "---\n";
         oss << "--------------------------------------------------------------------------------" << std::endl;
+        if (verbLevel & Parameters1)
+          oss << "Scalar              = " << Teuchos::ScalarTraits<Scalar>::name() << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
