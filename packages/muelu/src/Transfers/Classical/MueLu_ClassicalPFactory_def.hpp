@@ -72,7 +72,7 @@
 
 
 //#define CMS_DEBUG
-//#define CMS_DUMP
+#define CMS_DUMP
 
 namespace { 
 
@@ -133,7 +133,7 @@ namespace MueLu {
     
     const ParameterList& pL = GetParameterList();
     std::string drop_algo = pL.get<std::string>("aggregation: drop scheme");
-    if (drop_algo.find("block diagonal") != std::string::npos) {
+    if (drop_algo.find("block diagonal") != std::string::npos || drop_algo == "signed classical") {
       Input(fineLevel, "BlockNumber");
     }
 
@@ -247,7 +247,7 @@ namespace MueLu {
     /* Get the block number, if we need it (and ghost it) */
     RCP<LocalOrdinalVector>  BlockNumber;
     std::string drop_algo = pL.get<std::string>("aggregation: drop scheme");
-    if (drop_algo.find("block diagonal") != std::string::npos) {
+    if (drop_algo.find("block diagonal") != std::string::npos || drop_algo == "signed classical") {
       RCP<LocalOrdinalVector> OwnedBlockNumber;
       OwnedBlockNumber = Get<RCP<LocalOrdinalVector> >(fineLevel, "BlockNumber");
       if(Importer.is_null()) 
@@ -270,6 +270,7 @@ namespace MueLu {
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
       graph->print(*fancy,Debug);
       std::string out_fc = std::string("fc_splitting_") + std::to_string(fineLevel.GetLevelID()) +std::string("_") + std::to_string(rank)+ std::string(".dat");
+      std::string out_block = std::string("block_number_") + std::to_string(fineLevel.GetLevelID()) +std::string("_") + std::to_string(rank)+ std::string(".dat");
 
       // We don't support writing LO vectors in Xpetra (boo!) so....
       using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
@@ -278,11 +279,21 @@ namespace MueLu {
  
       RCP<RealValuedMultiVector> mv = RealValuedMultiVectorFactory::Build(fc_splitting->getMap(),1);
       ArrayRCP<real_type> mv_data= mv->getDataNonConst(0);
-      ArrayRCP<const LO> fc_data= fc_splitting->getData(0);
-      
+
+      // FC Splitting
+      ArrayRCP<const LO> fc_data= fc_splitting->getData(0);      
       for(LO i=0; i<(LO)fc_data.size(); i++)
         mv_data[i] = Teuchos::as<real_type>(fc_data[i]);
       Xpetra::IO<real_type,LO,GO,NO>::Write(out_fc,*mv);
+
+      // Block Number
+      if(BlockNumber.is_null()) throw std::runtime_error("No block number!");
+      RCP<RealValuedMultiVector> mv2 = RealValuedMultiVectorFactory::Build(BlockNumber->getMap(),1);
+      ArrayRCP<real_type> mv_data2= mv->getDataNonConst(0);
+      ArrayRCP<const LO> b_data= BlockNumber->getData(0);      
+      for(LO i=0; i<(LO)b_data.size(); i++)
+        mv_data2[i] = Teuchos::as<real_type>(b_data[i]);
+      Xpetra::IO<real_type,LO,GO,NO>::Write(out_block,*mv2);
     }
 
 
@@ -549,6 +560,10 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
         ArrayView<const LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
         ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
         
+        // FIXME: Do we need this?
+        for(LO j=0; j<(LO)P_vals_i.size(); j++)
+          P_vals_i[j] = SC_ZERO;
+
         // Stash the hash:  Flag any strong C-points with their index into P_colind
         // NOTE:  We'll consider any points that are LO_INVALID or less than P_rowptr[i] as not strong C-points
         for(LO j=0; j<(LO)P_indices_i.size(); j++)  { 
@@ -591,11 +606,15 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
           }
           else if (!edgeIsStrong[row_start + k0]) {
             // Case D: Weak non-Dirichlet neighbor (add to first denominator)
-            if(block_id.size() == 0 || block_id[i] == block_id[k]) 
+            if(block_id.size() == 0 || block_id[i] == block_id[k])  {
               first_denominator += a_ik;
 #ifdef CMS_DEBUG
-            printf("- A(%d,%d) is weak\n",i,k);
+              printf("- A(%d,%d) is weak adding to diagonal(%d,%d) (%6.4e)\n",i,k,block_id[i],block_id[k],a_ik);
+            }
+            else {
+              printf("- A(%d,%d) is weak but does not match blocks (%d,%d), discarding\n",i,k,block_id[i],block_id[k]);
 #endif
+            }
             
           }
           else {//Case E
@@ -641,10 +660,16 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                     SC a_kj = A_vals_k[j0];
                     SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
                     P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
+#ifdef CMS_DEBUG
+                    printf("- - Unscaled P(%d,A-%d) += %6.4e = %5.4e\n",i,j,a_ik * sign_akj_val / second_denominator,P_values[Acol_to_Pcol[j]]);
+#endif
                   }                 
                 }//end for A_indices_k
               }//end if second_denominator != 0
               else {
+#ifdef CMS_DEBUG
+                printf("- - A(%d,%d) second denominator is zero\n",i,k);
+#endif
                 if(block_id.size() == 0 || block_id[i] == block_id[k])
                   first_denominator += a_ik;
               }//end else second_denominator != 0
@@ -689,10 +714,17 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                     SC a_kj = A_vals_k[j0];
                     SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
                     P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
+#ifdef CMS_DEBUG
+                    printf("- - Unscaled P(%d,A-%d) += %6.4e\n",i,j,a_ik * sign_akj_val / second_denominator);
+#endif
                   }
+
                 }//end for A_indices_k
               }//end if second_denominator != 0
               else {
+#ifdef CMS_DEBUG
+                printf("- - A(%d,%d) second denominator is zero\n",i,k);
+#endif
                 if(block_id.size() == 0 || block_id[i] == block_id[k]) 
                   first_denominator += a_ik;
               }//end else second_denominator != 0                           

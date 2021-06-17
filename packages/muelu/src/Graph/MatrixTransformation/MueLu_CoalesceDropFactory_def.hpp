@@ -125,7 +125,7 @@ namespace MueLu {
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","signed classical","block diagonal","block diagonal classical","block diagonal distance laplacian","block diagonal signed classical"), "aggregation: drop scheme")));
+      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","signed classical","block diagonal","block diagonal classical","block diagonal distance laplacian","block diagonal signed classical","block diagonal colored signed classical"), "aggregation: drop scheme")));
                                                                         
     }
     SET_VALID_ENTRY("aggregation: distance laplacian algo");
@@ -155,8 +155,7 @@ namespace MueLu {
       if (algo == "distance laplacian" || algo == "block diagonal distance laplacian") {
         Input(currentLevel, "Coordinates");    
       }
-      if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" 
-          || algo == "block diagonal" || algo == "block diagonal signed classical")  {
+      if (algo.find("block diagonal") != std::string::npos || algo.find("signed classical") != std::string::npos)  {
         Input(currentLevel, "BlockNumber");
       }
     }     
@@ -176,7 +175,6 @@ namespace MueLu {
     if (predrop_ != Teuchos::null)
       GetOStream(Parameters0) << predrop_->description();
 
-
     RCP<Matrix> realA = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
     const ParameterList  & pL = GetParameterList();
@@ -191,20 +189,38 @@ namespace MueLu {
     bool use_block_algorithm=false;
     LO interleaved_blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
     bool useSignedClassical = false;
+    bool generateColoringGraph = false;
 
     // NOTE:  If we're doing blockDiagonal, we'll not want to do rowSum twice (we'll do it
     // in the block diagonalizaiton). So we'll clobber the rowSumTol with -1.0 in this case
     typename STS::magnitudeType rowSumTol = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
+    RCP<LocalOrdinalVector> ghostedBlockNumber;
 
     if(algo == "distance laplacian" ) { 
       // Grab the coordinates for distance laplacian
       Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
       A = realA;
     }
-    else if(algo == "signed classical") {
+    else if(algo.find("signed classical") != std::string::npos){
       useSignedClassical = true;
+      //      if(realA->GetFixedBlockSize() > 1) {
+        RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector> >(currentLevel, "BlockNumber");
+        // Ghost the column block numbers if we need to
+        RCP<const Import> importer = realA->getCrsGraph()->getImporter();
+        if(!importer.is_null()) {
+          SubFactoryMonitor m1(*this, "Block Number import", currentLevel);      
+          ghostedBlockNumber= Xpetra::VectorFactory<LO,LO,GO,NO>::Build(importer->getTargetMap());
+          ghostedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
+        } 
+        else {
+        ghostedBlockNumber = BlockNumber;
+        }
+        //      }
+      if(algo == "block diagonal colored signed classical") 
+        generateColoringGraph=true;
       algo = "classical";
       A = realA;
+
     }
     else if(algo == "block diagonal") {
       // Handle the "block diagonal" filtering and then leave
@@ -423,15 +439,22 @@ namespace MueLu {
           ArrayRCP<const SC> ghostedDiagVals;
           ArrayRCP<const MT> negMaxOffDiagonal;
           if(useSignedClassical) {
+            //            if(ghostedBlockNumber.is_null())
             negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A);
+              //            else
+              //              negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A,*ghostedBlockNumber);
           }
           else {
             ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
             ghostedDiagVals = ghostedDiag->getData(0);
           }
           ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
-          if (rowSumTol > 0.)
-            Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);          
+          if (rowSumTol > 0.) {
+            if(ghostedBlockNumber.is_null())
+              Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);          
+            else
+              Utilities::ApplyRowSumCriterion(*A, *ghostedBlockNumber, rowSumTol, boundaryNodes);          
+          }
 
           LO realnnz = 0;
           rows[0] = 0;
@@ -455,7 +478,7 @@ namespace MueLu {
                   LO col = indices[colID];               
                   MT max_neg_aik = realThreshold * STS::real(negMaxOffDiagonal[row]);
                   MT neg_aij    = - STS::real(vals[colID]);
-                  //printf(" - a_ij = %6.4e >? %6.4e * %6.4e = alpha max(-aik)\n",neg_aij,threshold, negMaxOffDiagonal[row]);
+
                   if ((!rowIsDirichlet && neg_aij > max_neg_aik) || row == col) {
                     columns[realnnz++] = col;
                     rownnz++;
@@ -606,6 +629,33 @@ namespace MueLu {
           }
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
+
+          // If we're doing signed classical, we might want to block-diagonalize *after* the dropping
+          if(generateColoringGraph) {
+            RCP<GraphBase> colorGraph;
+            BlockDiagonalizeGraph(graph,ghostedBlockNumber,colorGraph);
+            Set(currentLevel, "Coloring Graph",colorGraph);
+#define CMS_DUMP
+#ifdef CMS_DUMP
+    {
+      int rank = graph->GetDomainMap()->getComm()->getRank();
+      {
+        std::ofstream ofs(std::string("m_color_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
+        RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+        colorGraph->print(*fancy,Debug);
+      }
+      {
+        std::ofstream ofs(std::string("m_regular_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
+        RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+        graph->print(*fancy,Debug);
+      }
+
+    }
+#endif
+
+
+          }
+
 
         } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
           // Case 3:  Multiple DOF/node problem without dropping
@@ -1731,6 +1781,71 @@ namespace MueLu {
     Set(currentLevel, "DofsPerNode", 1);
     return crs_matrix_wrap;
   }
+
+
+ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+ void  CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagonalizeGraph(const RCP<GraphBase> & inputGraph, const RCP<LocalOrdinalVector> & ghostedBlockNumber, RCP<GraphBase> & outputGraph) const {
+typedef Teuchos::ScalarTraits<SC> STS;
+
+ TEUCHOS_TEST_FOR_EXCEPTION(ghostedBlockNumber.is_null(), Exceptions::RuntimeError, "BlockDiagonalizeGraph(): ghostedBlockNumber is null.");
+//    const ParameterList  & pL = GetParameterList();
+
+    GetOStream(Statistics1) << "Using BlockDiagonal Graph after Dropping (with provided blocking)"<<std::endl;      
+
+    // Accessors for block numbers
+    Teuchos::ArrayRCP<const LO> row_block_number = ghostedBlockNumber->getData(0);
+    Teuchos::ArrayRCP<const LO> col_block_number = ghostedBlockNumber->getData(0);
+
+    // allocate space for the local graph
+    ArrayRCP<size_t> rows_mat;   
+    ArrayRCP<LO> rows_graph,columns;
+    
+    rows_graph.resize(inputGraph->GetNodeNumVertices()+1);
+    columns.resize(inputGraph->GetNodeNumEdges());
+      
+    LO realnnz = 0;
+    GO numDropped = 0, numTotal = 0;
+    for (LO row = 0; row < Teuchos::as<LO>(inputGraph->GetDomainMap()->getNodeNumElements()); ++row) {
+      LO row_block = row_block_number[row];
+      ArrayView<const LO> indices = inputGraph->getNeighborVertices(row);
+
+      LO rownnz = 0;
+      for (LO colID = 0; colID < Teuchos::as<LO>(indices.size()); colID++) {
+        LO col = indices[colID];
+        LO col_block = col_block_number[col];
+        
+        if(row_block == col_block) {
+          columns[realnnz++] = col;
+          rownnz++;
+        } else
+          numDropped++;
+      }
+      rows_graph[row+1] = realnnz;
+    }
+    
+    
+    columns.resize(realnnz);
+    numTotal = inputGraph->GetNodeNumEdges();
+
+    if (GetVerbLevel() & Statistics1) {
+      RCP<const Teuchos::Comm<int> > comm = inputGraph->GetDomainMap()->getComm();
+      GO numGlobalTotal, numGlobalDropped;
+      MueLu_sumAll(comm, numTotal,   numGlobalTotal);
+      MueLu_sumAll(comm, numDropped, numGlobalDropped);
+      GetOStream(Statistics1) << "Number of dropped entries in block-diagonalized matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
+      if (numGlobalTotal != 0)
+        GetOStream(Statistics1) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
+      GetOStream(Statistics1) << std::endl;
+    }
+
+    outputGraph =  rcp(new LWGraph(rows_graph, columns, inputGraph->GetDomainMap(), inputGraph->GetImportMap(), "block-diagonalized graph of A"));
+    outputGraph->SetBoundaryNodeMap(inputGraph->GetBoundaryNodeMap());
+
+
+
+ }
+
+
 
 } //namespace MueLu
 

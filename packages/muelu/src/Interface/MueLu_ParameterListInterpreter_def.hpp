@@ -364,7 +364,7 @@ namespace MueLu {
       useBlockNumber_ = true;
     } else if(MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal") || 
               MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "block diagonal classical") ||
-              //MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "signed classical")) 
+              MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "signed classical")) 
       {
       useBlockNumber_ = true;
     } else if(paramList.isSublist("smoother: params")) {
@@ -1024,6 +1024,11 @@ namespace MueLu {
          MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, dropParams);
          MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
        }
+
+       std::string drop_algo = dropParams.get<std::string>("aggregation: drop scheme");
+       if(drop_algo == "block diagonal colored signed classical")
+         manager.SetFactory("Coloring Graph",dropFactory);
+
       dropFactory->SetParameterList(dropParams);
     }
     manager.SetFactory("Graph", dropFactory);
@@ -1094,6 +1099,15 @@ namespace MueLu {
       ParameterList mapParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, mapParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, mapParams);
+      
+      ParameterList tempParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme", std::string, tempParams);
+      std::string drop_algo = tempParams.get<std::string>("aggregation: drop scheme");
+      if(drop_algo == "block diagonal colored signed classical") {
+        mapParams.set("aggregation: coloring: use color graph",true);
+        mapFact->SetFactory("Coloring Graph", manager.GetFactory("Coloring Graph"));
+        
+      }
       mapFact->SetParameterList(mapParams);
       mapFact->SetFactory("Graph", manager.GetFactory("Graph"));
       manager.SetFactory("FC Splitting", mapFact);
@@ -1109,8 +1123,7 @@ namespace MueLu {
       aggFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
-      std::string drop_algo = aggParams.get<std::string>("aggregation: drop scheme");
-      if (drop_algo.find("block diagonal") != std::string::npos)// || drop_algo == "signed classical") 
+      if (drop_algo.find("block diagonal") != std::string::npos || drop_algo == "signed classical") 
         aggFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
       
       // Now we short-circuit, because we neither need nor want TentativePFactory here      
