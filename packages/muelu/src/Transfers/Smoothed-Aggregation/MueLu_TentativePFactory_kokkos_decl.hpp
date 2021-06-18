@@ -106,14 +106,14 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class TentativePFactory_kokkos;
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public PFactory {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  class TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> > : public PFactory {
   public:
     typedef LocalOrdinal                                             local_ordinal_type;
     typedef GlobalOrdinal                                            global_ordinal_type;
-    typedef typename DeviceType::execution_space                     execution_space;
+    typedef ExecSpace                                                execution_space;
     typedef Kokkos::RangePolicy<local_ordinal_type, execution_space> range_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>      node_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType   real_type;
     typedef Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, node_type> RealValuedMultiVector;
 

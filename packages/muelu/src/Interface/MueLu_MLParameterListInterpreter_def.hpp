@@ -213,6 +213,10 @@ namespace MueLu {
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
       useKokkosRefactor = true;
 # endif
+# ifdef HAVE_MUELU_HIP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+      useKokkosRefactor = true;
+# endif
 #endif
     if (paramList.isType<bool>("use kokkos refactor")) {
       useKokkosRefactor = paramList.get<bool>("use kokkos refactor");

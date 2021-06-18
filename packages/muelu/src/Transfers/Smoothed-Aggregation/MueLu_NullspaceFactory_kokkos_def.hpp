@@ -58,8 +58,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  RCP<const ParameterList> NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set< RCP<const FactoryBase> >("A",          Teuchos::null, "Generating factory of the fine level matrix (only needed if default null space is generated)");
@@ -82,8 +82,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::DeclareInput(Level& currentLevel) const {
     const ParameterList& pL = GetParameterList();
     std::string nspName = pL.get<std::string>("Fine level nullspace");
 
@@ -127,8 +127,8 @@ namespace MueLu {
         nullspace(j*numPDEs + i, i) = one;
     }
   };
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& currentLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void NullspaceFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Nullspace factory", currentLevel);
 
     RCP<MultiVector> nullspace;

@@ -127,14 +127,14 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class CoalesceDropFactory_kokkos;
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public SingleLevelFactoryBase {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  class CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> > : public SingleLevelFactoryBase {
   public:
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
-    using execution_space     = typename DeviceType::execution_space;
+    using execution_space     = ExecSpace;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
-    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>;
 
   private:
     // For compatibility

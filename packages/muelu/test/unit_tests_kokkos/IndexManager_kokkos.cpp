@@ -121,19 +121,20 @@ namespace MueLuTests {
 
     typedef typename IndexManager_kokkos::execution_space execution_space;
     typedef typename IndexManager_kokkos::memory_space memory_space;
+    typedef typename IndexManager_kokkos::device_type device_type;
 
     Kokkos::fence();
     std::cout << "Allocate host views before performing checks" << std::endl;
 
-    typename Kokkos::View<const int[3], memory_space>::HostMirror coarseRate_h
+    typename Kokkos::View<const int[3], device_type>::HostMirror coarseRate_h
       = Kokkos::create_mirror_view(myIndexManager->getCoarseningRates());
     Kokkos::deep_copy(coarseRate_h, myIndexManager->getCoarseningRates());
 
-    typename Kokkos::View<LO[3], memory_space>::HostMirror lFineNodesPerDir_h
+    typename Kokkos::View<LO[3], device_type>::HostMirror lFineNodesPerDir_h
       = Kokkos::create_mirror_view(myIndexManager->getLocalFineNodesPerDir());
     Kokkos::deep_copy(lFineNodesPerDir_h, myIndexManager->getLocalFineNodesPerDir());
 
-    typename Kokkos::View<LO[3], memory_space>::HostMirror lCoarseNodesPerDir_h
+    typename Kokkos::View<LO[3], device_type>::HostMirror lCoarseNodesPerDir_h
       = Kokkos::create_mirror_view(myIndexManager->getCoarseNodesPerDir());
     Kokkos::deep_copy(lCoarseNodesPerDir_h, myIndexManager->getCoarseNodesPerDir());
 

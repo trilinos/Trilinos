@@ -84,8 +84,8 @@ namespace MueLu {
 
   }
 
-  template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  template<class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::
   LWGraph_kokkos(const local_graph_type&    graph,
                  const RCP<const map_type>& domainMap,
                  const RCP<const map_type>& importMap,

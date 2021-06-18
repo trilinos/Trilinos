@@ -26,7 +26,7 @@ FUNCTION(KOKKOS_TPL_OPTION PKG DEFAULT)
     AND KOKKOS_ENABLE_${PKG}
     AND NOT PARSED_TRIBITS)
     #this TPL was enabled, but it is not valid to use inside of TriBITS
-    MESSAGE(FATAL_ERROR "Enabled TPL ${PKG} inside TriBITS build, "
+    MESSAGE(WARNING "Enabled TPL ${PKG} inside TriBITS build, "
            "but this can only be enabled in a standalone build")
   ENDIF()
 ENDFUNCTION()

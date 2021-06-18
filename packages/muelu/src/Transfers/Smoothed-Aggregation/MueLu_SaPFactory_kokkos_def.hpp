@@ -71,8 +71,8 @@
 
 namespace MueLu {
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  RCP<const ParameterList> SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -97,8 +97,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
@@ -108,17 +108,17 @@ namespace MueLu {
     coarseLevel.DeclareInput("P", initialPFact.get(), this);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
 
     // Add debugging information
-    DeviceType::execution_space::print_configuration(GetOStream(Runtime1));
+    ExecSpace::print_configuration(GetOStream(Runtime1));
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -362,8 +362,8 @@ struct constraintKernel {
 };
    
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
 
     using Device = typename Matrix::local_matrix_type::device_type;
     LO nPDEs = A->GetFixedBlockSize();

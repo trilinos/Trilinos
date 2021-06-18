@@ -109,13 +109,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class CoarseMapFactory_kokkos;
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class CoarseMapFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> : public SingleLevelFactoryBase {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  class CoarseMapFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace,MemSpace>> : public SingleLevelFactoryBase {
   public:
-    typedef LocalOrdinal                                        local_ordinal_type;
-    typedef GlobalOrdinal                                       global_ordinal_type;
-    typedef typename DeviceType::execution_space                execution_space;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef LocalOrdinal                                                local_ordinal_type;
+    typedef GlobalOrdinal                                               global_ordinal_type;
+    typedef ExecSpace                                                   execution_space;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace,MemSpace> node_type;
 
   private:
     // For compatibility

@@ -445,8 +445,8 @@ namespace MueLu {
 
   } // namespace
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -471,8 +471,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level &currentLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
 
@@ -483,8 +483,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void CoalesceDropFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::
   Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Build", currentLevel);
 
@@ -796,7 +796,7 @@ namespace MueLu {
 
       // get number of local nodes
       LO numNodes = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
-      typedef typename Kokkos::View<LocalOrdinal*, DeviceType> id_translation_type;
+      typedef typename Kokkos::View<LocalOrdinal*, Kokkos::Device<ExecSpace, MemSpace>> id_translation_type;
       id_translation_type rowTranslation("dofId2nodeId",rowTranslationArray.size());
       id_translation_type colTranslation("ov_dofId2nodeId",colTranslationArray.size());
 

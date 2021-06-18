@@ -93,7 +93,7 @@ namespace MueLu {
     };
 
     // local QR decomposition
-    template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
+    template<class LOType, class GOType, class SCType, class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
     class LocalQRDecompFunctor {
     private:
       typedef LOType LO;
@@ -379,8 +379,8 @@ namespace MueLu {
 
   } // namespace anonymous
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  RCP<const ParameterList> TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetValidParameterList() const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  RCP<const ParameterList> TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -404,8 +404,8 @@ namespace MueLu {
     return validParamList;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::DeclareInput(Level& fineLevel, Level& /* coarseLevel */) const {
 
     const ParameterList& pL = GetParameterList();
     // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
@@ -427,13 +427,13 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::Build(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
@@ -562,8 +562,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::
   BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates,
                   RCP<AmalgamationInfo_kokkos> amalgInfo, RCP<MultiVector> fineNullspace,
                   RCP<const Map> coarseMap, RCP<Matrix>& Ptentative,
@@ -681,7 +681,7 @@ namespace MueLu {
 
     // Create Kokkos::View on the device to store mapping
     // between (local) aggregate id and row map ids (LIDs)
-    Kokkos::View<LO*, DeviceType> agg2RowMapLO(Kokkos::ViewAllocateWithoutInitializing("agg2row_map_LO"), numRows);
+    Kokkos::View<LO*, Kokkos::Device<ExecSpace, MemSpace>> agg2RowMapLO(Kokkos::ViewAllocateWithoutInitializing("agg2row_map_LO"), numRows);
     {
       SubFactoryMonitor m2(*this, "Create Agg2RowMap", coarseLevel);
 
@@ -721,7 +721,7 @@ namespace MueLu {
 
 
     // Device View for status (error messages...)
-    typedef Kokkos::View<int[10], DeviceType> status_type;
+    typedef Kokkos::View<int[10], Kokkos::Device<ExecSpace, MemSpace>> status_type;
     status_type status("status");
 
     typename AppendTrait<decltype(fineNS), Kokkos::RandomAccess>::type fineNSRandom = fineNS;
@@ -870,7 +870,7 @@ namespace MueLu {
         // Each team handles a slice of the data associated with one aggregate
         // and performs a local QR decomposition
         const Kokkos::TeamPolicy<execution_space> policy(numAggregates,1); // numAggregates teams a 1 thread
-        LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom),
+        LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, Kokkos::Device<ExecSpace, MemSpace>, decltype(fineNSRandom),
             decltype(aggDofSizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO),
             decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux),
             decltype(valsAux)>
@@ -966,8 +966,8 @@ namespace MueLu {
     }
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::
   BuildPcoupled(RCP<Matrix> /* A */, RCP<Aggregates_kokkos> /* aggregates */,
                 RCP<AmalgamationInfo_kokkos> /* amalgInfo */, RCP<MultiVector> /* fineNullspace */,
                 RCP<const Map> /* coarseMap */, RCP<Matrix>& /* Ptentative */,
@@ -975,8 +975,8 @@ namespace MueLu {
     throw Exceptions::RuntimeError("MueLu: Construction of coupled tentative P is not implemented");
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  bool TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  bool TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::
   isGoodMap(const Map& rowMap, const Map& colMap) const {
     auto rowLocalMap = rowMap.getLocalMap();
     auto colLocalMap = colMap.getLocalMap();
