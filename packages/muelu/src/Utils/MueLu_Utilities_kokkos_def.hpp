@@ -314,7 +314,7 @@ namespace MueLu {
           size_t nnz = tpOp.getNumEntriesInLocalRow(i);
 	  typename Tpetra::CrsMatrix<SC,LO,GO,NO>::nonconst_values_host_view_type scaledVals("scaledVals", nnz);
           for (size_t j = 0; j < nnz; ++j)
-            scaledVals[j] = vals[j]*scalingVector[i];
+            scaledVals[j] = scalingVector[i]*vals[j];
 
           if (nnz > 0) {
             tpOp.replaceLocalValues(i, cols, scaledVals);
@@ -333,7 +333,7 @@ namespace MueLu {
 
           // FIXME FIXME FIXME FIXME FIXME FIXME
           for (size_t j = 0; j < nnz; ++j)
-            scaledVals[j] = vals[j]*scalingVector[i]; //FIXME i or gid?
+            scaledVals[j] = scalingVector[i]*vals[j]; //FIXME i or gid?
 
           if (nnz > 0) {
             tpOp.replaceGlobalValues(gid, cols, scaledVals);
