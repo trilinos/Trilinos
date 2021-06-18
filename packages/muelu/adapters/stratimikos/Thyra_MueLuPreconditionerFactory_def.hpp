@@ -366,7 +366,11 @@ namespace Thyra {
     // rebuild preconditioner if startingOver == true
     // reuse preconditioner if startingOver == false
     const bool startingOver = (thyra_precOp.is_null() || !paramList.isParameter("reuse: type") || paramList.get<std::string>("reuse: type") == "none");
-    const bool useHalfPrecision = paramList.get<bool>("half precision", false);
+    bool useHalfPrecision = false;
+    if (paramList.isParameter("half precision"))
+      useHalfPrecision = paramList.get<bool>("half precision");
+    else if (paramList.isSublist("Hierarchy") && paramList.sublist("Hierarchy").isParameter("half precision"))
+      useHalfPrecision = paramList.sublist("Hierarchy").get<bool>("half precision");
     if (useHalfPrecision)
       TEUCHOS_TEST_FOR_EXCEPTION(!bIsTpetra, MueLu::Exceptions::RuntimeError, "The only scalar type Epetra knows is double, so a half precision preconditioner cannot be constructed.");
 
