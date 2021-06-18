@@ -300,7 +300,7 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
     data_.options.ColPerm = SLU::MY_PERMC;
     data_.options.RowPerm = SLU::MY_PERMR;
     // Turn off Equil not to mess up METIS ordering?
-    data_.options.Equil = SLU::NO;
+    //data_.options.Equil = SLU::NO;
   }
 
   return(0);
