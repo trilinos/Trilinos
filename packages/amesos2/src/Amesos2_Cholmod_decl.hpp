@@ -83,27 +83,27 @@ public:
   /// Name of this solver interface.
   static const char* name;      // declaration. Initialization outside.
 
-  typedef Cholmod<Matrix,Vector>                                       type;
-  typedef SolverCore<Amesos2::Cholmod,Matrix,Vector>             super_type;
+  using type                = Cholmod<Matrix,Vector>;
+  using super_type          = SolverCore<Amesos2::Cholmod,Matrix,Vector>;
 
-  // Since typedef's are not inheritted, go grab them
-  typedef typename super_type::scalar_type                    scalar_type;
-  typedef typename super_type::local_ordinal_type      local_ordinal_type;
-  typedef typename super_type::global_ordinal_type    global_ordinal_type;
-  typedef typename super_type::global_size_type          global_size_type;
-  typedef typename super_type::node_type                        node_type;
+  // Since using's are not inheritted, go grab them
+  using scalar_type         = typename super_type::scalar_type;
+  using local_ordinal_type  = typename super_type::local_ordinal_type;
+  using global_ordinal_type = typename super_type::global_ordinal_type;
+  using global_size_type    = typename super_type::global_size_type;
+  using node_type           = typename super_type::node_type;
 
-  typedef TypeMap<Amesos2::Cholmod,scalar_type>                    type_map;
+  using type_map            = TypeMap<Amesos2::Cholmod,scalar_type>;
 
   /*
-   * The CHOLMOD interface will need two other typedef's, which are:
+   * The CHOLMOD interface will need two other using's, which are:
    * - the CHOLMOD type that corresponds to scalar_type and
    * - the corresponding type to use for magnitude
    */
-  typedef typename type_map::type                                 chol_type;
-  typedef typename type_map::magnitude_type                  magnitude_type;
+  using chol_type           = typename type_map::type;
+  using magnitude_type      = typename type_map::magnitude_type;
 
-  typedef FunctionMap<Amesos2::Cholmod,chol_type>              function_map;
+  using function_map        = FunctionMap<Amesos2::Cholmod,chol_type>;
 
   /// \name Constructor/Destructor methods
   //@{
@@ -261,13 +261,16 @@ private:
 
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_CHOLMOD)
 
-  typedef Kokkos::DefaultExecutionSpace DeviceExecSpaceType;
+  using DeviceExecSpaceType= Kokkos::DefaultExecutionSpace;
 
   #ifdef KOKKOS_ENABLE_CUDA
     // solver will be UVM off even though Tpetra is CudaUVMSpace
-    typedef typename Kokkos::CudaSpace DeviceMemSpaceType;
+    using DeviceMemSpaceType = typename Kokkos::CudaSpace;
+  #elif KOKKOS_ENABLE_HIP
+    // same as above, make the solver UVM off
+    using DeviceMemSpaceType = typename Kokkos::Experimental::HIPSpace;
   #else
-    typedef typename DeviceExecSpaceType::memory_space DeviceMemSpaceType;
+    using DeviceMemSpaceType = typename DeviceExecSpaceType::memory_space;
   #endif
 
   typedef Kokkos::View<chol_type**, Kokkos::LayoutLeft, DeviceMemSpaceType>

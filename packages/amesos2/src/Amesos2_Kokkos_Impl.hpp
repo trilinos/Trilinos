@@ -71,6 +71,15 @@
 #define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(S,LO)
 #endif
 
+// This shows why templating on the execution space might not be the best idea...
+// This block of code should go away once we are using HIPSPACE in Tpetra
+#if defined(KOKKOS_ENABLE_HIP)
+#define AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_HIP_HOST_PINNED(S,LO)                        \
+  template class Amesos2::AMESOS2_KOKKOS_IMPL_SOLVER_NAME<KokkosSparse::CrsMatrix<S, LO,         \
+    Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPHostPinnedSpace>>,         \
+    Kokkos::View<S**, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Experimental::HIP,Kokkos::Experimental::HIPHostPinnedSpace>> >;
+#endif
+
 #if defined(KOKKOS_ENABLE_SERIAL)
 #ifdef HAVE_TPETRA_INST_FLOAT
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Serial)
@@ -135,5 +144,24 @@
     AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_UVM_OFF(Kokkos::complex<double>, int)
 #endif
 #endif // KOKKOS_ENABLE_CUDA
+
+#if defined(KOKKOS_ENABLE_HIP)
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(float, int, Kokkos::Experimental::HIP)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_HIP_HOST_PINNED(float, int)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(double, int, Kokkos::Experimental::HIP)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_HIP_HOST_PINNED(double, int)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<float>, int, Kokkos::Experimental::HIP)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_HIP_HOST_PINNED(Kokkos::complex<float>, int)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER(Kokkos::complex<double>, int, Kokkos::Experimental::HIP)
+    AMESOS2_KOKKOS_LOCAL_INSTANT_KOKKOS_ADAPTER_HIP_HOST_PINNED(Kokkos::complex<double>, int)
+#endif
+#endif // KOKKOS_ENABLE_HIP
 
 #endif // AMESOS2_KOKKOS_IMPL_HPP
