@@ -35,7 +35,11 @@ namespace Kokkos {
 
 #ifdef KOKKOS_ENABLE_HIP
     template<>
-    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>::name() {
+    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>::name() {
+      return std::string("HIP/Wrapper");
+    }
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace> >::name() {
       return std::string("HIP/Wrapper");
     }
 #endif // KOKKOS_ENABLE_HIP
