@@ -178,22 +178,22 @@ EpetraRowMatrix<TpetraMatrixType>::EpetraRowMatrix(
   this->SetMaps (epetraRowMap, epetraColMap);
 }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class TpetraMatrixType>
 int EpetraRowMatrix<TpetraMatrixType>::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
 {
+  using inds_view = typename TpetraMatrixType::nonconst_local_inds_host_view_type;
+  using vals_view = typename TpetraMatrixType::nonconst_values_host_view_type;
   static_assert (std::is_same<typename TpetraMatrixType::scalar_type, double>::value,
                  "This code assumes that Tpetra::CrsMatrix's scalar_type is int.");
   static_assert (std::is_same<typename TpetraMatrixType::local_ordinal_type, int>::value,
                  "This code assumes that Tpetra::CrsMatrix's local_ordinal_type is int.");
-  Teuchos::ArrayView<int> inds(Indices, Length);
-  Teuchos::ArrayView<double> vals(Values, Length);
+  inds_view IndicesView(Indices, Length);
+  vals_view ValuesView(Values, Length);
   size_t num_entries = NumEntries;
-  tpetra_matrix_->getLocalRowCopy(MyRow, inds, vals, num_entries);
+  tpetra_matrix_->getLocalRowCopy(MyRow, IndicesView, ValuesView, num_entries);
   NumEntries = num_entries;
   return 0;
 }
-#endif
 
 template<class TpetraMatrixType>
 int EpetraRowMatrix<TpetraMatrixType>::ExtractMyEntryView(int CurEntry, double * & Value, int & RowIndex, int & ColIndex)
