@@ -18,6 +18,20 @@ IF(Ifpack2_ENABLE_QD)
   )
 ENDIF()
 
+IF (Tpetra_INST_LONG_DOUBLE)
+  TRIBITS_ADD_EXECUTABLE(
+    tif_belos_longdouble
+    SOURCES belos_solve_longdouble.cpp
+    )
+ENDIF()
+
+IF (Tpetra_ENABLE_quadmath)
+  TRIBITS_ADD_EXECUTABLE(
+    tif_belos_float128
+    SOURCES belos_solve_float128.cpp
+    )
+ENDIF()
+
 IF (Tpetra_INST_DOUBLE)
   TRIBITS_ADD_EXECUTABLE(
     tif_tpetra_native
@@ -107,6 +121,28 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
+
+IF (Tpetra_INST_LONG_DOUBLE)
+TRIBITS_ADD_TEST(
+  tif_belos_longdouble
+  NAME gmres_belos_longdouble
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+ENDIF() 
+
+IF (Tpetra_ENABLE_quadmath)
+TRIBITS_ADD_TEST(
+  tif_belos_float128
+  NAME gmres_belos_float128
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+ENDIF()
 
 TRIBITS_ADD_TEST(
   tif_belos
