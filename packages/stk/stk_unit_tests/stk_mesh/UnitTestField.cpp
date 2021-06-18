@@ -746,6 +746,13 @@ TEST_F(FieldFixture, DISABLED_writingDifferentElementFieldsPerSolutionCase)
         test_solution_case_with_rank(stk::topology::ELEM_RANK);
 }
 
+TEST_F(FieldFixture, fenceWithoutNgpField)
+{
+  stk::mesh::Field<double> &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "doubleField");
+
+  EXPECT_NO_THROW(field.fence());
+}
+
 class LateFieldFixtureNoTest : public stk::unit_test_util::MeshFixtureNoTest
 {
 protected:

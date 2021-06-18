@@ -3639,7 +3639,7 @@ void BulkData::internal_change_ghosting(
   OrdinalVector removeParts(1, m_ghost_parts[ghosting.ordinal()]->mesh_meta_data_ordinal());
   OrdinalVector scratchOrdinalVec, scratchSpace;
 
-  std::sort(removeRecvGhosts.begin(), removeRecvGhosts.end(), EntityLess(*this));
+  stk::util::sort_and_unique(removeRecvGhosts, EntityLess(*this));
 
   for (unsigned i=0; i<removeRecvGhosts.size(); ++i) {
     const unsigned reverseIdx = removeRecvGhosts.size() - i - 1;

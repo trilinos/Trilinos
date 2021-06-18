@@ -88,19 +88,22 @@ public:
                       const stk::mesh::impl::SparseGraph &cg,
                       const stk::mesh::ParallelInfoForGraphEdges &p,
                       const stk::mesh::impl::ElementLocalIdMapper & lm)
-    : bulk(b), graph(g), coincidentGraph(cg), parallelGraph(p), localMapper(lm)
+    : bulk(b), graph(g), coincidentGraph(cg), parallelGraph(p), localMapper(lm),
+      m_scratchOrdinals1(), m_scratchOrdinals2(), m_scratchOrdinals3()
     { }
     void connect_side_to_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
 private:
     void connect_side_to_elements_nodes(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
     void connect_side_to_other_elements_nodes(const GraphEdge &edgeWithMinId, stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide);
     stk::mesh::EntityVector get_permuted_side_nodes(stk::mesh::Entity elemEntity, int elemSide, const stk::mesh::EntityVector &sideNodes, int permutation);
+    void declare_relations_to_nodes(stk::mesh::Entity sideEntity, const stk::mesh::EntityVector &sideNodes);
 private:
     stk::mesh::BulkData &bulk;
     const stk::mesh::Graph &graph;
     const stk::mesh::impl::SparseGraph &coincidentGraph;
     const stk::mesh::ParallelInfoForGraphEdges &parallelGraph;
     const stk::mesh::impl::ElementLocalIdMapper &localMapper;
+    OrdinalVector m_scratchOrdinals1, m_scratchOrdinals2, m_scratchOrdinals3;
 };
 
 class SideConnector
@@ -113,7 +116,8 @@ public:
             m_bulk_data(b),
             m_graph(g),
             m_coincidentGraph(cg),
-            m_localMapper(localMapper)
+            m_localMapper(localMapper),
+            m_scratchOrdinals1(), m_scratchOrdinals2(), m_scratchOrdinals3()
     {
     }
 
@@ -143,6 +147,7 @@ private:
     const stk::mesh::Graph &m_graph;
     const stk::mesh::impl::SparseGraph &m_coincidentGraph;
     const stk::mesh::impl::ElementLocalIdMapper & m_localMapper;
+    OrdinalVector m_scratchOrdinals1, m_scratchOrdinals2, m_scratchOrdinals3;
 };
 
 }
