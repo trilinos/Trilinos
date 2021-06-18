@@ -697,14 +697,14 @@ class test_summarize_build_stats_py(unittest.TestCase):
 
   def test_big_small_full_project(self):
     cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
-      " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"
+      " "+g_testBaseDir+"/build_stats.big.small.csv"
     output = GSS.getCmndOutput(cmnd)
     self.assertEqual(GSS.s(output), GSS.s(big_small_summary_full_project_ascii+"\n"))
 
   def test_big_small_by_subdir(self):
     cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
-      " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"+\
-      " --bin-by-subdirs-under-dirs=commonTools,packages"
+      " --bin-by-subdirs-under-dirs=commonTools,packages"+\
+      " "+g_testBaseDir+"/build_stats.big.small.csv"
     output = GSS.getCmndOutput(cmnd)
     self.assertEqual(GSS.s(output), GSS.s(big_small_summary_ascii+"\n"))
 
