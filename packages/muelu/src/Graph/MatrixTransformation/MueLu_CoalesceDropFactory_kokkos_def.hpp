@@ -546,9 +546,10 @@ namespace MueLu {
       typedef typename local_matrix_type::values_type::non_const_type     vals_type;
 
       LO   numRows      = A->getNodeNumRows();
-      auto kokkosMatrix = A->getLocalMatrixDevice();
+      local_matrix_type kokkosMatrix = A->getLocalMatrixDevice();
       auto nnzA  = kokkosMatrix.nnz();
       auto rowsA = kokkosMatrix.graph.row_map;
+      kokkosMatrix = local_matrix_type();
 
       typedef Kokkos::ArithTraits<SC>     ATS;
 
@@ -600,7 +601,7 @@ namespace MueLu {
 
             CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-                scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+	      scalarFunctor(A->getLocalMatrixDevice(), bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
                                     scalarFunctor, nnzFA);
@@ -637,7 +638,7 @@ namespace MueLu {
             localLaplDiag = VectorFactory::Build(uniqueMap);
 
             auto localLaplDiagView = localLaplDiag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
-            auto kokkosGraph = kokkosMatrix.graph;
+            auto kokkosGraph = A->getLocalMatrixDevice().graph;
 
             Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag", range_type(0,numRows),
               KOKKOS_LAMBDA(const LO row) {
