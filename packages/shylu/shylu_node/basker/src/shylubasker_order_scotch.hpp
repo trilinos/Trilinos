@@ -2,8 +2,11 @@
 #define SHYLUBASKER_ORDER_SCOTCH_HPP
 
 #include "shylubasker_types.hpp"
-#include "scotch.h"
-#if 1 // TODO: should we make metis optional and protect this with TPL?
+
+#ifdef HAVE_SHYLU_NODEBASKER_SCOTCH
+  #include "scotch.h"
+#endif
+#ifdef HAVE_SHYLU_NODEBASKER_METIS
  #include "metis.h"
 #endif
 
@@ -140,8 +143,6 @@ namespace BaskerNS
     using scotch_integral_type = int32_t; //NDE: make this depend on the scotch type
     #endif
     Kokkos::Impl::Timer timer_scotch;
-    Kokkos::Impl::Timer timer_metis;
-    double time_metis = 0.0;
 
     Int num_levels = num_domains; 
     Int num_doms   = pow(2.0, (double)(num_levels+1)) - 1;
@@ -166,12 +167,14 @@ namespace BaskerNS
       // root
       sg.treetab[0] = -1;
     } else {
-      //----------------------INIT Scotch Graph------------//
-      sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
-      sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
-
-      #if 1 // TODO: Should METIS be optional and be protect with METIS TPL?
+      #if defined (HAVE_SHYLU_NODEBASKER_METIS) || defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
       if (Options.use_metis == BASKER_TRUE) {
+        #if !defined(HAVE_SHYLU_NODEBASKER_METIS)
+        BASKER_ASSERT(false, ">> BASKER ASSERT: METIS is not enabled <<");
+        #else
+        Kokkos::Impl::Timer timer_metis;
+        double time_metis = 0.0;
+
         //idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
         idx_t  metis_offset = 0; // BTF_A now contains one big block
         idx_t  metis_size = M.nrow - metis_offset;
@@ -317,8 +320,7 @@ namespace BaskerNS
             idx_t metis_size_k = 0;
             idx_t nnz_k=0;
             metis_rowptr[0] = 0;
-            for(Int j = metis_offset; j < M.ncol; j++)
-            {
+            for(Int j = metis_offset; j < M.ncol; j++) {
               Int col = sg.peritab[j]; // j is after ND, col is original
               if (metis_part(col) == sep_id) {
                 for(Int k = M.col_ptr(col); k < M.col_ptr(col+1); k++)
@@ -363,19 +365,80 @@ namespace BaskerNS
               std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
               return BASKER_ERROR; // TODO: what to do here?
             }
+            bool use_metis_kway = false;
             timer_metis.reset();
-            info = METIS_ComputeVertexSeparator(&metis_size_k,
-                                                &(metis_rowptr(0)),
-                                                &(metis_colidx(0)),
-                                                 nullptr,
-                                                 options,
-                                                &sepsize,
-                                                &(metis_part_k(0)));
-            time_metis += timer_metis.seconds();
-            if (METIS_OK != METIS_SetDefaultOptions(options)) {
-              std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
-              return BASKER_ERROR; // TODO: what to do here?
+            if (use_metis_kway) {
+              // compute two-way partition
+              if (Options.verbose == BASKER_TRUE) {
+                std::cout << std::endl << " > calling METIS_PartGraphKway on leaf " << leaf_id
+                          << " at level " << level << " < " << std::endl;
+              }
+              idx_t num_constraints = 1;
+              idx_t num_parts = 2;
+              idx_t objval = -1;
+
+              idx_t *vwgt = nullptr;    // contraints (n * num_constraints)
+              idx_t *vsize = nullptr;   // for total comm vol
+              idx_t *adjwgt = nullptr;  // for reducing cut
+
+              real_t *tpwgts = nullptr; // weights for eachh partition              (num_parts * num_constraints)
+              real_t *ubvec = nullptr;  // imbalance tolerance for each constraints (num_constraints)
+              info = METIS_PartGraphKway(&metis_size_k,
+                                         &num_constraints,
+                                         &(metis_rowptr(0)),
+                                         &(metis_colidx(0)),
+                                          vwgt,
+                                          vsize,
+                                          adjwgt,
+                                         &num_parts,
+                                          tpwgts,
+                                          ubvec,
+                                          options,
+                                         &objval,
+                                         &(metis_part_k(0)));
+              // look for edge separator
+              for(Int i = 0; i < metis_size_k; i++) {
+                Int con1 = 0;
+                Int con2 = 0;
+                for (idx_t k = metis_rowptr(i); k < metis_rowptr(i+1); k++) {
+                  if (metis_part_k(metis_colidx(k)) == 0 || metis_part_k(metis_colidx(k)) == -2) {
+                    con1 ++;
+                  } else {
+                    con2 ++;
+                  }
+                }
+                if (con1 > 0 && con2) {
+                  if (metis_part_k(i) == 0) {
+                    metis_part_k(i) = -2;
+                  } else {
+                    metis_part_k(i) = 2;
+                  }
+                }  
+              }
+              for(Int i = 0; i < metis_size_k; i++) {
+                if (metis_part_k(i) == -2) {
+                  metis_part_k(i) = 2;
+                }
+              }
+            } else {
+              // find vertex separator
+              if (Options.verbose == BASKER_TRUE) {
+                std::cout << std::endl << " > calling METIS_ComputeVertexSeparator on leaf " << leaf_id
+                          << " at level " << level << " < " << std::endl;
+              }
+              info = METIS_ComputeVertexSeparator(&metis_size_k,
+                                                  &(metis_rowptr(0)),
+                                                  &(metis_colidx(0)),
+                                                   nullptr,
+                                                   options,
+                                                  &sepsize,
+                                                  &(metis_part_k(0)));
+              if (info != METIS_OK) {
+                std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
+                return BASKER_ERROR; // TODO: what to do here?
+              }
             }
+            time_metis += timer_metis.seconds();
 
             Int dom1 = 0;
             Int dom2 = 0;
@@ -390,21 +453,18 @@ namespace BaskerNS
                 sep ++;
               }
             }
-            if (dom1 == 0 || dom2 == 0) {
-              if(Options.verbose == BASKER_TRUE) {
-                std::cout << std::endl << " > METIS_ComputeVertexSeparator returned an empty domain  "
-                                       << dom1 << " + " << dom2 << " + " << sep
-                                       << " (n = " << M.nrow << ")"
-                                       << std::endl << std::endl;
-              }
-              //return BASKER_ERROR; // TODO: what to do here?
-            }
             if(Options.verbose == BASKER_TRUE) {
-              std::cout << " METIS_ComputeVertexSeparator: info = " << info << "(okay = " << METIS_OK << ")"
+              std::cout << " METIS: info = " << info << "(okay = " << METIS_OK << ")"
                         << " size = " << metis_size_k << " sepsize = " << sepsize << std::endl;
               std::cout << " dom1=(id=" << dom_id1 << ", size=" << dom1 << "),"
                         << " dom2=(id=" << dom_id2 << ", size=" << dom2 << "),"
                         << "  sep=(id=" << sep_id  << ", size=" << sep  << ")" << std::endl;
+              if (dom1 == 0 || dom2 == 0) {
+                std::cout << std::endl << " > METIS returned an empty domain  "
+                                       << dom1 << " + " << dom2 << " + " << sep
+                                       << " (n = " << M.nrow << ")"
+                                       << std::endl << std::endl;
+              }
             }
 
             // update num doms
@@ -473,9 +533,16 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           std::cout << std::endl << " > Time to call METIS : " << time_metis << std::endl;
         }
+        #endif
       } else
-      #endif
       { // using SCOTCH
+        #if !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+        BASKER_ASSERT(false, ">> BASKER ASSERT: Scotch is not enabled <<");
+        #else
+        //----------------------INIT Scotch Graph------------//
+        sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
+        sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
+
         sg.Ap[0] = 0;
         Int sj;
         Int sptr = 0;
@@ -576,7 +643,11 @@ namespace BaskerNS
 
         SCOTCH_stratExit(&strdat);
         SCOTCH_graphFree(&cgrafptr);
+        #endif
       } // end of SCOTCH
+      #else
+      BASKER_ASSERT(false, ">> BASKER ASSERT: needs Metis or Scotch to run with multiple threasds <<");
+      #endif
     }
     if(Options.verbose == BASKER_TRUE) {
       double time_scotch = timer_scotch.seconds();
@@ -780,10 +851,6 @@ namespace BaskerNS
     //Right now defaulting parts to two
     BT.nparts = 2;
 
-    if (num_levels > 0) {
-      free(sg.Ap);
-      free(sg.Ai);
-    }
     free(sg.permtab);
     free(sg.peritab);
     free(sg.rangtab);

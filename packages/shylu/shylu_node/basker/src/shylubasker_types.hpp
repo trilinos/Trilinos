@@ -263,7 +263,7 @@ enum BASKER_INCOMPLETE_CODE
     if (s > 0) {                         \
       a = THREAD_2DARRAY("thread_2d",s); \
       if(a.data() == NULL)               \
-        throw std::bakd_alloc();         \
+        throw std::bad_alloc();         \
     }                                    \
   }
 //RESIZE (with copy)
