@@ -1082,6 +1082,33 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMultiplyOperator () const
   {
+    auto localMatrix = getLocalMatrixDevice();
+#ifdef HAVE_TPETRACORE_CUDA
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+    if(this->getNodeNumEntries() <= size_t(Teuchos::OrdinalTraits<LocalOrdinal>::max()) &&
+       std::is_same<Node, Kokkos::Compat::KokkosCudaWrapperNode>::value)
+    {
+      if(this->ordinalRowptrs.data() == nullptr)
+      {
+        auto originalRowptrs = localMatrix.graph.row_map;
+        //create LocalOrdinal-typed copy of the local graph's rowptrs.
+        //This enables the LocalCrsMatrixOperator to use cuSPARSE SpMV.
+        this->ordinalRowptrs = ordinal_rowptrs_type(
+            Kokkos::ViewAllocateWithoutInitializing("CrsMatrix::ordinalRowptrs"), originalRowptrs.extent(0));
+        auto ordinalRowptrs_ = this->ordinalRowptrs;  //don't want to capture 'this'
+        Kokkos::parallel_for("CrsMatrix::getLocalMultiplyOperator::convertRowptrs",
+            Kokkos::RangePolicy<execution_space>(0, originalRowptrs.extent(0)),
+            KOKKOS_LAMBDA(LocalOrdinal i)
+            {
+              ordinalRowptrs_(i) = originalRowptrs(i);
+            });
+      }
+      //return local operator using ordinalRowptrs
+      return std::make_shared<local_multiply_op_type>(
+          std::make_shared<local_matrix_device_type>(localMatrix), this->ordinalRowptrs);
+    }
+#endif
+#endif
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
     return std::make_shared<local_multiply_op_type>(
                            std::make_shared<local_matrix_device_type>(

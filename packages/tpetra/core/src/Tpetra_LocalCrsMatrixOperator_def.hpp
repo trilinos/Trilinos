@@ -51,32 +51,26 @@ namespace Tpetra {
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
 LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A)
-  : A_ (A)
+  : A_ (A), have_A_cusparse(false)
 {
   const char tfecfFuncName[] = "LocalCrsMatrixOperator: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (A_.get () == nullptr, std::invalid_argument,
      "Input matrix A is null.");
-#if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-  //Only create A_ordinal_rowptrs if:
-  //  - KokkosKernels cuSPARSE support is enabled (otherwise, no benefit)
-  //  - The execution space is CUDA
-  //  - The local matrix offset and ordinal types are different (otherwise, no reason to enable)
-  //  - The number of entries can be represented by the ordinal type.
-  using kk_offset_t = typename std::remove_const<typename local_matrix_device_type::size_type>::type;
-  using kk_ordinal_t = typename std::remove_const<typename local_matrix_device_type::ordinal_type>::type;
-  using exec_space = typename Device::execution_space;
-  if(std::is_same<exec_space, Kokkos::Cuda>::value &&
-      !std::is_same<kk_offset_t, kk_ordinal_t>::value &&
-      A_->nnz() < static_cast<kk_offset_t>(Teuchos::OrdinalTraits<kk_ordinal_t>::max()))
-  {
-    A_ordinal_rowptrs = ordinal_view_type(Kokkos::ViewAllocateWithoutInitializing("A_ordinal_rowptrs"), A_->numRows() + 1);
-    //This is just like a deep copy, but it implicitly converts each element
-    KokkosKernels::Impl::copy_view<typename local_graph_device_type::row_map_type, ordinal_view_type, exec_space>
-      (A_ordinal_rowptrs.extent(0), A_->graph.row_map, A_ordinal_rowptrs);
-    A_cusparse = local_cusparse_matrix_type("A(cusparse)", A_->numRows(), A_->numCols(), A_->nnz(), A_->values, A_ordinal_rowptrs, A_->graph.entries);
-  }
-#endif
+}
+
+template<class MultiVectorScalar, class MatrixScalar, class Device>
+LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
+LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A, const ordinal_view_type& A_ordinal_rowptrs) :
+  A_ (A),
+  A_cusparse("LocalCrsMatrixOperator_cuSPARSE", A->numRows(), A->numCols(), A->nnz(),
+      A->values, A_ordinal_rowptrs, A->graph.entries),
+  have_A_cusparse(true)
+{
+  const char tfecfFuncName[] = "LocalCrsMatrixOperator: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+    (A_.get () == nullptr, std::invalid_argument,
+     "Input matrix A is null.");
 }
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
@@ -120,7 +114,7 @@ apply (Kokkos::View<const mv_scalar_type**, array_layout,
      KokkosSparse::Transpose) : KokkosSparse::NoTranspose;
   //Currently KK has no cusparse wrapper for rank-2 (SpMM)
   //TODO: whent that is supported, use A_cusparse for that case also
-  if(X.extent(1) == size_t(1) && A_ordinal_rowptrs.extent(0))
+  if(X.extent(1) == size_t(1) && have_A_cusparse)
   {
     KokkosSparse::spmv (op, alpha, A_cusparse, Kokkos::subview(X, Kokkos::ALL(), 0),
                             beta, Kokkos::subview(Y, Kokkos::ALL(), 0));
@@ -169,7 +163,7 @@ applyImbalancedRows (
   //TODO BMK: If/when KokkosKernels gets its own SPMV implementation for imbalanced rows,
   //call that here or select it using Controls.
   //Ideally it supports multivectors from the beginning.
-  if((Details::Behavior::useMergePathMultiVector() || X.extent(1) == size_t(1)) && A_ordinal_rowptrs.extent(0))
+  if((Details::Behavior::useMergePathMultiVector() || X.extent(1) == size_t(1)) && have_A_cusparse)
   {
     KokkosKernels::Experimental::Controls controls;
     controls.setParameter("algorithm", "merge");
