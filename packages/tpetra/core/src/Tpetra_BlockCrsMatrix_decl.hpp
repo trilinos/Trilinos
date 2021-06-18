@@ -265,24 +265,24 @@ public:
   //@{
 
   //! Get the (point) domain Map of this matrix.
-  Teuchos::RCP<const map_type> getDomainMap () const;
+  Teuchos::RCP<const map_type> getDomainMap () const override;
 
   //! Get the (point) range Map of this matrix.
-  Teuchos::RCP<const map_type> getRangeMap () const;
+  Teuchos::RCP<const map_type> getRangeMap () const override;
 
   //! get the (mesh) map for the rows of this block matrix.
-  Teuchos::RCP<const map_type> getRowMap () const;
+  Teuchos::RCP<const map_type> getRowMap () const override;
 
   //! get the (mesh) map for the columns of this block matrix.
-  Teuchos::RCP<const map_type> getColMap () const;
+  Teuchos::RCP<const map_type> getColMap () const override;
 
   //! get the global number of block rows
-  global_size_t getGlobalNumRows() const;
+  global_size_t getGlobalNumRows() const override;
 
   //! get the local number of block rows
-  size_t getNodeNumRows() const;
+  size_t getNodeNumRows() const override;
 
-  size_t getNodeMaxNumRowEntries() const;
+  size_t getNodeMaxNumRowEntries() const override;
 
   /// \brief For this matrix A, compute <tt>Y := beta * Y + alpha * Op(A) * X</tt>.
   ///
@@ -298,11 +298,11 @@ public:
          mv_type& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
          Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
-         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
+         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const override;
 
   /// \brief Whether it is valid to apply the transpose or conjugate
   ///   transpose of this matrix.
-  bool hasTransposeApply () const {
+  bool hasTransposeApply () const override {
     // FIXME (mfh 04 May 2014) Transpose and conjugate transpose modes
     // are not implemented yet.  Fill in applyBlockTrans() to fix this.
     return false;
@@ -316,7 +316,7 @@ public:
   //@{
 
   //! One-line description of this object.
-  std::string description () const;
+  std::string description () const override;
 
   /// \brief Print a description of this object to the given output stream.
   ///
@@ -343,7 +343,7 @@ public:
   /// \endcode
   void
   describe (Teuchos::FancyOStream& out,
-            const Teuchos::EVerbosityLevel verbLevel) const;
+            const Teuchos::EVerbosityLevel verbLevel) const override;
 
   //@}
   //! \name Block operations
@@ -353,7 +353,7 @@ public:
   LO getBlockSize () const { return blockSize_; }
 
   //! Get the (mesh) graph.
-  virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const;
+  virtual Teuchos::RCP<const ::Tpetra::RowGraph<LO,GO,Node> > getGraph () const override;
 
   const crs_graph_type & getCrsGraph () const { return graph_; }
 
@@ -476,7 +476,7 @@ public:
   void
   getLocalRowView (LO LocalRow,
                    Teuchos::ArrayView<const LO> &indices,
-                   Teuchos::ArrayView<const Scalar> &values) const;
+                   Teuchos::ArrayView<const Scalar> &values) const override;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
   /// KK: this is inherited from row matrix interface and it returns const
   ///      this cannot replace the deprecated pointer interface
@@ -498,13 +498,13 @@ public:
   getLocalRowCopy (LO LocalRow,
                    nonconst_local_inds_host_view_type &Indices,
                    nonconst_values_host_view_type &Values,
-                   size_t& NumEntries) const;
+                   size_t& NumEntries) const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void
   getLocalRowCopy (LO LocalRow,
                    const Teuchos::ArrayView<LO> &Indices,
                    const Teuchos::ArrayView<Scalar> &Values,
-                   size_t &NumEntries) const;
+                   size_t &NumEntries) const override;
 #endif
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -582,7 +582,7 @@ public:
   /// If the given local row index is invalid, this method (sensibly)
   /// returns zero, since the calling process trivially does not own
   /// any entries in that row.
-  size_t getNumEntriesInLocalRow (const LO localRowInd) const;
+  size_t getNumEntriesInLocalRow (const LO localRowInd) const override;
 
   /// \brief Whether this object had an error on the calling process.
   ///
@@ -719,7 +719,7 @@ protected:
   using buffer_device_type = typename DistObject<Scalar, LO, GO,
                                                  Node>::buffer_device_type;
 
-  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source);
+  virtual bool checkSizes (const ::Tpetra::SrcDistObject& source) override;
 
   virtual void
   copyAndPermute
@@ -729,7 +729,7 @@ protected:
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const local_ordinal_type*,
      buffer_device_type>& permuteFromLIDs,
-   const CombineMode CM);
+   const CombineMode CM) override;
 
   virtual void
   packAndPrepare
@@ -741,7 +741,7 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    size_t& constantNumPackets,
-   Distributor& /* distor */);
+   Distributor& /* distor */) override;
 
   virtual void
   unpackAndCombine
@@ -753,7 +753,7 @@ protected:
      buffer_device_type> numPacketsPerLID,
    const size_t constantNumPackets,
    Distributor& /* distor */,
-   const CombineMode combineMode);
+   const CombineMode combineMode) override;
   //@}
 
 private:
@@ -1144,21 +1144,21 @@ private:
 
 public:
   //! The communicator over which this matrix is distributed.
-  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
+  virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const override;
 
 
   //! The global number of columns of this matrix.
-  virtual global_size_t getGlobalNumCols() const;
+  virtual global_size_t getGlobalNumCols() const override;
 
-  virtual size_t getNodeNumCols() const;
+  virtual size_t getNodeNumCols() const override;
 
-  virtual GO getIndexBase() const;
+  virtual GO getIndexBase() const override;
 
   //! The global number of stored (structurally nonzero) entries.
-  virtual global_size_t getGlobalNumEntries() const;
+  virtual global_size_t getGlobalNumEntries() const override;
 
   //! The local number of stored (structurally nonzero) entries.
-  virtual size_t getNodeNumEntries() const;
+  virtual size_t getNodeNumEntries() const override;
 
   /// \brief The current number of entries on the calling process in the specified global row.
   ///
@@ -1169,14 +1169,14 @@ public:
   /// \return <tt>Teuchos::OrdinalTraits<size_t>::invalid()</tt> if
   ///   the specified global row does not belong to this graph, else
   ///   the number of entries.
-  virtual size_t getNumEntriesInGlobalRow (GO globalRow) const;
+  virtual size_t getNumEntriesInGlobalRow (GO globalRow) const override;
 
   /// \brief The maximum number of entries in any row over all
   ///   processes in the matrix's communicator.
-  virtual size_t getGlobalMaxNumRowEntries () const;
+  virtual size_t getGlobalMaxNumRowEntries () const override;
 
   //! Whether this matrix has a well-defined column Map.
-  virtual bool hasColMap () const;
+  virtual bool hasColMap () const override;
 
   /// \brief Whether matrix indices are locally indexed.
   ///
@@ -1187,7 +1187,7 @@ public:
   /// switch from global to local indices without extra work.
   /// Furthermore, some operations only work for one or the other
   /// case.
-  virtual bool isLocallyIndexed () const;
+  virtual bool isLocallyIndexed () const override;
 
   /// \brief Whether matrix indices are globally indexed.
   ///
@@ -1198,13 +1198,13 @@ public:
   /// switch from global to local indices without extra work.
   /// Furthermore, some operations only work for one or the other
   /// case.
-  virtual bool isGloballyIndexed () const;
+  virtual bool isGloballyIndexed () const override;
 
   //! Whether fillComplete() has been called.
-  virtual bool isFillComplete () const;
+  virtual bool isFillComplete () const override;
 
   //! Whether this object implements getLocalRowView() and getGlobalRowView().
-  virtual bool supportsRowViews () const;
+  virtual bool supportsRowViews () const override;
 
 
   //@}
@@ -1235,13 +1235,13 @@ public:
   getGlobalRowCopy (GO GlobalRow,
                     nonconst_global_inds_host_view_type &Indices,
                     nonconst_values_host_view_type &Values,
-                    size_t& NumEntries) const;
+                    size_t& NumEntries) const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void
   getGlobalRowCopy (GO GlobalRow,
                     const Teuchos::ArrayView<GO> &Indices,
                     const Teuchos::ArrayView<Scalar> &Values,
-                    size_t& NumEntries) const;
+                    size_t& NumEntries) const override;
 #endif
 
   /// \brief Get a constant, nonpersisting, globally indexed view of
@@ -1272,12 +1272,12 @@ public:
   virtual void
   getGlobalRowView (GO GlobalRow,
                     Teuchos::ArrayView<const GO>& indices,
-                    Teuchos::ArrayView<const Scalar>& values) const;
+                    Teuchos::ArrayView<const Scalar>& values) const override;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
   virtual void
   getGlobalRowView (GO GlobalRow,
                     global_inds_host_view_type & indices,
-                    values_host_view_type & values) const;
+                    values_host_view_type & values) const override;
 
   /// \brief Get a copy of the diagonal entries, distributed by the row Map.
   ///
@@ -1290,7 +1290,7 @@ public:
   /// same diagonal element.  You may combine these overlapping
   /// diagonal elements by doing an Export from the row Map Vector
   /// to a range Map Vector.
-  virtual void getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const;
+  virtual void getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const override;
 
   //@}
   //! \name Mathematical methods
@@ -1301,14 +1301,14 @@ public:
    *
    * On return, for all entries i,j in the matrix, \f$A(i,j) = x(i)*A(i,j)\f$.
    */
-  virtual void leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x);
+  virtual void leftScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x) override;
 
   /**
    * \brief Scale the RowMatrix on the right with the given Vector x.
    *
    * On return, for all entries i,j in the matrix, \f$A(i,j) = x(j)*A(i,j)\f$.
    */
-  virtual void rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x);
+  virtual void rightScale (const ::Tpetra::Vector<Scalar, LO, GO, Node>& x) override;
 
   /// \brief The Frobenius norm of the matrix.
   ///
@@ -1319,7 +1319,7 @@ public:
   /// It has the same value as the Euclidean norm of a vector made
   /// by stacking the columns of \f$A\f$.
   virtual typename ::Tpetra::RowMatrix<Scalar, LO, GO, Node>::mag_type
-  getFrobeniusNorm () const;
+  getFrobeniusNorm () const override;
   //@}
 };
 
