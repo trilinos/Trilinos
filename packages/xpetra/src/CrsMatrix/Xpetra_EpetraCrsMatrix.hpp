@@ -1252,9 +1252,12 @@ local_matrix_type getLocalMatrix () const {
 #endif
 
 local_matrix_type getLocalMatrixDevice () const {
+#if 0
   TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
 			     "Xpetra::EpetraCrsMatrx only available on host for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   TEUCHOS_UNREACHABLE_RETURN((local_matrix_type()));
+#endif
+  return getLocalMatrixHost();
 }
 
 
