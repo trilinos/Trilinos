@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 
 Note:
@@ -17,11 +17,14 @@ from WrapperCommandLineParser import WrapperCommandLineParser
 from WrapperOpTimer import WrapperOpTimer
 
 # given a dict of key/val pairs, write them as a CSV line
-def write_csv_map(filename,csv_map):
+def write_csv_map(filename,csv_map,csv_fields):
   try:
     with open(filename, 'w') as csvfile:
       writer = csv.DictWriter(csvfile,
-                              fieldnames=[ k for k in csv_map ])
+                              fieldnames=csv_fields,
+                              # ignore fields in the csv_map that aren't
+                              # in fieldnames
+                              extrasaction='ignore')
       writer.writeheader()
       writer.writerow(csv_map)
   except IOError:
@@ -38,28 +41,38 @@ def main(cmdline_args):
   # keep a dict of field : value
   # first do the operation
   # this must be first, as it generates the output file
-  (csv_map, returncode) = \
-     WrapperOpTimer.time_op(
-       base_build_dir=wcp.base_build_dir,
-       op=wcp.op,
-       op_output_file=wcp.op_output_file,
-       output_stats_file=wcp.output_stats_file,
-       op_args=wcp.op_args)
+  #
+  # WARNING: Be very careful with stdout before these commands.  If the wrapped command
+  # has shell redirection it can slurp up Python's output... best to require all messages
+  # go after the compiler commnand has completed.
+  if wcp.generate_stats():
+    (csv_map, returncode) = WrapperOpTimer.time_op(wcp)
+    #print("======> Gathering stats...", file=sys.stdout)
+  else:
+    # only run the command and return the return code
+    returncode = 0
+    for cmd in wcp.commands:
+      returncode |= WrapperOpTimer.run_cmd(cmd)
+    #print("##======> NO stats {}".format(wcp.op_output_file), file=sys.stdout)
+    return returncode
 
   if returncode == 0:
-    # test nm
-    # we probably need some to handle the case the .o isn't created
-    # as-us, the following will return empty dicts (we parse/validate) the output
-    # from NM, so we won't return garbage
-    nmp = NMParser.parse_object(wcp.op_output_file)
-    # NMParser.print_counts(nmp)
-    # add NM's output to our csv data
-    # we could move this into the NM parser
-    csv_map.update(NMParser.get_csv_map(nmp))
+    if wcp.parse_nm:
+      # test nm
+      # we probably need some to handle the case the .o isn't created
+      # as-us, the following will return empty dicts (we parse/validate) the output
+      # from NM, so we won't return garbage
+      nmp = NMParser.parse_object(wcp.op_output_file)
+      # NMParser.print_counts(nmp)
+      # add NM's output to our csv data
+      # we could move this into the NM parser
+      csv_map.update(NMParser.get_csv_map(nmp))
 
     # ultimately, print the csv data to a file
     # make sure to quote csv columns
-    write_csv_map(wcp.output_stats_file, csv_map)
+    write_csv_map(wcp.output_stats_file,
+                  csv_map,
+                  csv_fields=wcp.get_output_fields(csv_map))
 
   # NOTE: Above, we don't write the *.timing file if the build failed because
   # the output target file may not exist!  And we don't want a CSV file entry

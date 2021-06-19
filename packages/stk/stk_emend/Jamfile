@@ -60,7 +60,7 @@ import os ;
 
 local stk_emend-root-inc ;
 stk_emend-root-inc = [ ifuserbuild $(sierra-root)/stk/stk_emend/include ]
-                     [ ifdevbuild $(stk_emend-root)/independent_set ] ;
+                     [ ifdevbuild $(stk_emend-root) ] ;
 
 project votd
   : requirements
@@ -92,7 +92,7 @@ install install-user-jamfile
 
 explicit install-user-include ;
 install install-user-include
-  : [ path.glob-tree $(stk_emend-root)/stk_emend/independent_set : *.h *.hpp ]
+  : [ path.glob-tree $(stk_emend-root) : *.h *.hpp ]
   : <location>$(install-root)/stk/stk_emend/include
   ;
 
@@ -130,5 +130,4 @@ alias independent_set_lib
   : # No build requirements
   : # No default build
   :
-    <include>$(stk_emend-root-inc)/..
   ;

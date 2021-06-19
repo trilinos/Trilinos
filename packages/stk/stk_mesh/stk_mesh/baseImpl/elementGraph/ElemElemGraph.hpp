@@ -148,8 +148,8 @@ public:
 
     void fill_from_mesh();
 
-    stk::mesh::SideConnector get_side_connector();
-    stk::mesh::SideNodeConnector get_side_node_connector();
+    stk::mesh::SideConnector& get_side_connector() { return m_sideConnector; }
+    stk::mesh::SideNodeConnector& get_side_node_connector() { return m_sideNodeConnector; }
     stk::mesh::SideIdChooser get_side_id_chooser();
 
     const stk::mesh::BulkData& get_mesh() const;
@@ -312,6 +312,8 @@ protected:
     std::vector<int> m_deleted_elem_pool;
     impl::SparseGraph m_coincidentGraph;
     impl::ElementLocalIdMapper m_idMapper;
+    SideConnector m_sideConnector;
+    SideNodeConnector m_sideNodeConnector;
 private:
     void add_side_for_remote_edge(const GraphEdge & graphEdge,
                                                  int elemSide,
