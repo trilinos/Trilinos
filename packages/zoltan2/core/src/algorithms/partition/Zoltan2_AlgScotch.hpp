@@ -542,7 +542,7 @@ void AlgPTScotch<Adapter>::partition(
   env->memory("Zoltan2-Scotch: After creating solution");
 
   // Clean up copies made due to differing data sizes.
-  TPL_Traits<SCOTCH_Num, lno_t>::DELETE_ARRAY(&vertloctab);
+  TPL_Traits<SCOTCH_Num, const offset_t>::DELETE_ARRAY(&vertloctab);
   TPL_Traits<SCOTCH_Num, gno_t>::DELETE_ARRAY(&edgeloctab);
 
   if (nVwgts) delete [] velotab;
