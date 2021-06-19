@@ -276,8 +276,8 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
       }
 
       // free
-      SUPERLU_FREE(new_col_ptr);
-      SUPERLU_FREE(new_row_ind);
+      SLU::SUPERLU_FREE(new_col_ptr);
+      SLU::SUPERLU_FREE(new_row_ind);
     }
 
     // reorder will convert both graph and perm/iperm to the internal METIS integer type
