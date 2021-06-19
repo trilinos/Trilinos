@@ -337,10 +337,6 @@ private:
   bool sptrsv_use_spmv_;
 #endif
 
-  /* call metis before SuperLU */
-  bool use_metis_;
-  bool symmetrize_metis_;
-
   /* Note: In the above, must use "Amesos2::Superlu" rather than
    * "Superlu" because otherwise the compiler references the
    * specialized type of the class, and not the templated type that is
@@ -375,6 +371,10 @@ private:
   bool use_triangular_solves_;
 
   void triangular_solve_factor();
+
+  /* call metis before SuperLU */
+  bool use_metis_;
+  bool symmetrize_metis_;
 
   public: // for GPU
     void triangular_solve() const; // Only for internal use - public to support kernels
