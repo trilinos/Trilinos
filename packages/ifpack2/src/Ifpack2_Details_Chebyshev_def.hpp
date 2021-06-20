@@ -1043,7 +1043,7 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
       *out_ << "Reusing pre-existing vector for diagonal extraction" << std::endl;
     D_rowMap = Teuchos::rcp_const_cast<V>(D_);
   } else {
-    D_rowMap = Teuchos::rcp(new V (A.getGraph ()->getRowMap ()));
+    D_rowMap = Teuchos::rcp(new V (A.getGraph ()->getRowMap (), /*zeroOut=*/false));
     if (debug_)
       *out_ << "Allocated new vector for diagonal extraction" << std::endl;
   }
@@ -1571,10 +1571,9 @@ makeTempMultiVector (const MV& B)
   // null, but also if the number of columns match, since some multi-RHS
   // solvers (e.g., Belos) may call apply() with different numbers of columns.
 
-  //W must be initialized to zero when it is used as a multigrid smoother.
   const size_t B_numVecs = B.getNumVectors ();
   if (W_.is_null () || W_->getNumVectors () != B_numVecs) {
-    W_ = Teuchos::rcp (new MV (B.getMap (), B_numVecs, true));
+    W_ = Teuchos::rcp (new MV (B.getMap (), B_numVecs, false));
   }
   return W_;
 }

@@ -29,9 +29,11 @@ export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 # Machine specific environment
 #
+. /etc/profile
 
-export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
-export http_proxy="http://sonproxy.sandia.gov:80"
+export TDD_HTTP_PROXY=$http_proxy
+export TDD_HTTPS_PROXY=$https_proxy
+
 export TDD_FORCE_CMAKE_INSTALL=0
 export CUDA_LAUNCH_BLOCKING=1
 export OMP_NUM_THREADS=2

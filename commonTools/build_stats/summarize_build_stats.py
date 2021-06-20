@@ -33,6 +33,8 @@ def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName,
   ):
   buildStatsDOL = readCsvFileIntoDictOfLists(buildStatusCsvFileName,
     getStdBuildStatsColsAndTypesList() )
+  if not buildStatsDOL:
+    return {}
   if computeStdScaledFields:
     addStdScaledBuildStatsFields(buildStatsDOL)
   if normalizeFileName:
@@ -49,6 +51,9 @@ def readCsvFileIntoDictOfLists(csvFileName, colNameAndTypeList):
     # Get the list of col headers and the index to the col headers we want 
     columnHeadersList = \
       CDQAR.getColumnHeadersFromCsvFileReader(csvFileName, csvReader)
+    if len(columnHeadersList) == 0:
+      # File is empty so just return an empty distOfLists!
+      return dictOfLists
     colNameTypeIdxList = \
       getColNameTypeIdxListGivenColNameAndTypeList(csvFileName, columnHeadersList,
         colNameAndTypeList)
@@ -346,6 +351,9 @@ if __name__ == '__main__':
   inOptions = getCmndLineOptions()
 
   buildStatsDOL = readBuildStatsCsvFileIntoDictOfLists(inOptions.buildStatsCsvFile)
+  if not buildStatsDOL:
+    print("No build statistics to summarize!")
+    sys.exit(0)
   addStdScaledBuildStatsFields(buildStatsDOL)
   buildStatsBinnedBySubdirs = binBuildStatsDictOfListsBySubdirUnderDirs(
     buildStatsDOL, inOptions.binBySubdirsUnderDirsStr.split(',') )
