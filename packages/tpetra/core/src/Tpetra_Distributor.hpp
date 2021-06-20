@@ -98,8 +98,10 @@ namespace Tpetra {
     class DistributorPlan {
     public:
       DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
+      DistributorPlan(const DistributorPlan& otherPlan);
 
       Teuchos::RCP<const Teuchos::Comm<int>> comm_;
+      Details::EDistributorHowInitialized howInitialized_;
     };
 
     class DistributorActor {
@@ -424,7 +426,7 @@ namespace Tpetra {
     /// This is an implementation detail of Tpetra.  Please do not
     /// call this method or rely on it existing in your code.
     Details::EDistributorHowInitialized howInitialized () const {
-      return howInitialized_;
+      return plan_.howInitialized_;
     }
 
     //@}
@@ -812,9 +814,6 @@ namespace Tpetra {
     Details::DistributorPlan plan_;
     Details::DistributorActor actor_;
 
-    //! How the Distributor was initialized (if it was).
-    Details::EDistributorHowInitialized howInitialized_;
-
     //! @name Parameters read in from the Teuchos::ParameterList
     //@{
 
@@ -1200,7 +1199,7 @@ namespace Tpetra {
     // mfh 30 Mar 2016: See Github Issue #227 to see why we need to
     // check whether we're doing reverse mode before checking the
     // length of the imports array.
-    if (howInitialized_ != Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE) {
+    if (plan_.howInitialized_ != Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE) {
       // Each message has the same number of packets.
       //
       // FIXME (mfh 18 Jul 2014): Relaxing this test from strict
@@ -3081,7 +3080,7 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
-    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
+    plan_.howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
 
     if (verbose_) {
       std::ostringstream os;

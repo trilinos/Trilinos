@@ -90,7 +90,13 @@ namespace Tpetra {
     }
 
     DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
-      : comm_(comm)
+      : comm_(comm),
+        howInitialized_(Details::DISTRIBUTOR_NOT_INITIALIZED)
+    { }
+
+    DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
+      : comm_(otherPlan.comm_),
+        howInitialized_(Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
     { }
   } // namespace Details
 
@@ -191,7 +197,6 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : plan_(comm)
-    , howInitialized_ (Details::DISTRIBUTOR_NOT_INITIALIZED)
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , selfMessage_ (false)
@@ -229,7 +234,6 @@ namespace Tpetra {
   Distributor::
   Distributor (const Distributor& distributor)
     : plan_(distributor.plan_)
-    , howInitialized_ (Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , verbose_ (distributor.verbose_)
@@ -270,7 +274,8 @@ namespace Tpetra {
     using Teuchos::parameterList;
     using Teuchos::RCP;
 
-    std::swap (howInitialized_, rhs.howInitialized_);
+    std::swap (plan_, rhs.plan_);
+    std::swap (actor_, rhs.actor_);
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (verbose_, rhs.verbose_);
@@ -485,7 +490,7 @@ namespace Tpetra {
   Distributor::createReverseDistributor() const
   {
     reverseDistributor_ = Teuchos::rcp(new Distributor(plan_.comm_));
-    reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+    reverseDistributor_->plan_.howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
     reverseDistributor_->sendType_ = sendType_;
     reverseDistributor_->barrierBetween_ = barrierBetween_;
     reverseDistributor_->verbose_ = verbose_;
@@ -635,7 +640,7 @@ namespace Tpetra {
       out << "Label: " << label << ", ";
     }
     out << "How initialized: "
-        << Details::DistributorHowInitializedEnumToString (howInitialized_)
+        << Details::DistributorHowInitializedEnumToString (plan_.howInitialized_)
         << ", Parameters: {"
         << "Send type: "
         << DistributorSendTypeEnumToString (sendType_)
@@ -748,7 +753,7 @@ namespace Tpetra {
       }
       out << "Number of processes: " << numProcs << endl
           << "How initialized: "
-          << Details::DistributorHowInitializedEnumToString (howInitialized_)
+          << Details::DistributorHowInitializedEnumToString (plan_.howInitialized_)
           << endl;
       {
         out << "Parameters: " << endl;
@@ -1419,7 +1424,7 @@ namespace Tpetra {
 
     // createFromRecvs() calls createFromSends(), but will set
     // howInitialized_ again after calling createFromSends().
-    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
+    plan_.howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
 
     if (verbose_) {
       std::ostringstream os;
@@ -1450,7 +1455,7 @@ namespace Tpetra {
     // for each processor id. A version of this with lengthsTo and lengthsFrom
     // should be made.
 
-    howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
+    plan_.howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
 
 
     int myProcID = plan_.comm_->getRank ();
