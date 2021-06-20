@@ -118,6 +118,7 @@ namespace Tpetra {
         howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
         sendType_(DISTRIBUTOR_SEND),
         barrierBetweenRecvSend_(barrierBetween_default),
+        useDistinctTags_(useDistinctTags_default),
         sendMessageToSelf_(false),
         numSendsToOtherProcs_(0),
         maxSendLength_(0),
@@ -130,6 +131,7 @@ namespace Tpetra {
         howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
         sendType_(otherPlan.sendType_),
         barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_),
+        useDistinctTags_(otherPlan.useDistinctTags_),
         sendMessageToSelf_(otherPlan.sendMessageToSelf_),
         numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_),
         procIdsToSendTo_(otherPlan.procIdsToSendTo_),
@@ -147,7 +149,7 @@ namespace Tpetra {
   } // namespace Details
 
   int Distributor::getTag (const int pathTag) const {
-    return useDistinctTags_ ? pathTag : plan_.comm_->getTag ();
+    return plan_.useDistinctTags_ ? pathTag : plan_.comm_->getTag ();
   }
 
 
@@ -221,7 +223,6 @@ namespace Tpetra {
     : plan_(comm)
     , lastRoundBytesSend_ (0)
     , lastRoundBytesRecv_ (0)
-    , useDistinctTags_ (useDistinctTags_default)
   {
     this->setParameterList(plist);
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS   
@@ -253,7 +254,6 @@ namespace Tpetra {
     , reverseDistributor_ (distributor.reverseDistributor_)
     , lastRoundBytesSend_ (distributor.lastRoundBytesSend_)
     , lastRoundBytesRecv_ (distributor.lastRoundBytesRecv_)
-    , useDistinctTags_ (distributor.useDistinctTags_)
   {
     using Teuchos::ParameterList;
     using Teuchos::RCP;
@@ -280,7 +280,6 @@ namespace Tpetra {
     std::swap (reverseDistributor_, rhs.reverseDistributor_);
     std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
     std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
-    std::swap (useDistinctTags_, rhs.useDistinctTags_);
 
     // Swap parameter lists.  If they are the same object, make a deep
     // copy first, so that modifying one won't modify the other one.
@@ -370,7 +369,7 @@ namespace Tpetra {
       // Now that we've validated the input list, save the results.
       plan_.sendType_ = sendType;
       plan_.barrierBetweenRecvSend_ = barrierBetween;
-      useDistinctTags_ = useDistinctTags;
+      plan_.useDistinctTags_ = useDistinctTags;
 
       // ParameterListAcceptor semantics require pointer identity of the
       // sublist passed to setParameterList(), so we save the pointer.
@@ -528,7 +527,7 @@ namespace Tpetra {
     reverseDistributor_->lastRoundBytesSend_ = 0;
     reverseDistributor_->lastRoundBytesRecv_ = 0;
 
-    reverseDistributor_->useDistinctTags_ = useDistinctTags_;
+    reverseDistributor_->plan_.useDistinctTags_ = plan_.useDistinctTags_;
 
     // I am my reverse Distributor's reverse Distributor.
     // Thus, it would be legit to do the following:
@@ -632,7 +631,7 @@ namespace Tpetra {
         << ", Barrier between receives and sends: "
         << (plan_.barrierBetweenRecvSend_ ? "true" : "false")
         << ", Use distinct tags: "
-        << (useDistinctTags_ ? "true" : "false")
+        << (plan_.useDistinctTags_ ? "true" : "false")
         << ", Debug: " << (verbose_ ? "true" : "false")
         << "}}";
     return out.str ();
@@ -748,7 +747,7 @@ namespace Tpetra {
             << "\"Barrier between receives and sends\": "
             << (plan_.barrierBetweenRecvSend_ ? "true" : "false") << endl
             << "\"Use distinct tags\": "
-            << (useDistinctTags_ ? "true" : "false") << endl
+            << (plan_.useDistinctTags_ ? "true" : "false") << endl
             << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;
       }
     } // if myRank == 0

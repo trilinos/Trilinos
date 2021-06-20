@@ -107,6 +107,19 @@ namespace Tpetra {
       //@{
       Details::EDistributorSendType sendType_;
       bool barrierBetweenRecvSend_;
+
+      /// \brief Whether to use different tags for different code paths.
+      ///
+      /// There are currently three code paths in Distributor that post
+      /// receives and sends:
+      ///
+      /// 1. Three-argument variant of doPosts()
+      /// 2. Four-argument variant of doPosts()
+      /// 3. computeReceives()
+      ///
+      /// If this option is true, Distributor will use a distinct
+      /// message tag for each of these paths.
+      bool useDistinctTags_;
       //@}
 
       bool sendMessageToSelf_;
@@ -969,19 +982,6 @@ namespace Tpetra {
     //! Make the instance's timers.  (Call only in constructor.)
     void makeTimers ();
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    /// \brief Whether to use different tags for different code paths.
-    ///
-    /// There are currently three code paths in Distributor that post
-    /// receives and sends:
-    ///
-    /// 1. Three-argument variant of doPosts()
-    /// 2. Four-argument variant of doPosts()
-    /// 3. computeReceives()
-    ///
-    /// If this option is true, Distributor will use a distinct
-    /// message tag for each of these paths.
-    bool useDistinctTags_;
 
     //! Get the tag to use for receives and sends.
     ///
