@@ -1212,9 +1212,6 @@ unpackCrsMatrixAndCombine(
   static_assert (std::is_same<device_type, typename local_matrix_device_type::device_type>::value,
                  "Node::device_type and LocalMatrix::device_type must be the same.");
 
-  // Execution space.
-  typedef typename device_type::execution_space XS;
-
   // Convert all Teuchos::Array to Kokkos::View.
   device_type outputDevice;
 
@@ -1463,7 +1460,6 @@ unpackAndCombineIntoCrsArrays (
   typedef LocalOrdinal LO;
 
   typedef typename Node::device_type DT;
-  typedef typename DT::execution_space XS;
 
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;

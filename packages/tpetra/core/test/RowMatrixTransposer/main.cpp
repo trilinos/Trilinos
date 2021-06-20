@@ -48,7 +48,6 @@
 
 template<class CrsMatrix_t>
 typename CrsMatrix_t::scalar_type getNorm(CrsMatrix_t& matrix){
-  typedef typename CrsMatrix_t::local_ordinal_type LO;
   typedef typename CrsMatrix_t::scalar_type Scalar;
   Scalar mySum = 0;
 

@@ -79,7 +79,6 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
     block_crs_matrix_type;
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef Kokkos::Details::ArithTraits<IST> KAT;
-  typedef typename block_crs_matrix_type::device_type::memory_space device_memory_space;
   typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
   typedef typename block_crs_matrix_type::little_block_type little_blk_type;
 
@@ -494,7 +493,6 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   using Teuchos::rcp;
   using std::endl;
   typedef Tpetra::BlockCrsMatrix<> matrix_type;
-  typedef matrix_type::device_type device_type;
   typedef matrix_type::impl_scalar_type SC;
   typedef Kokkos::Details::ArithTraits<SC> KAT;
   typedef Tpetra::Map<>::local_ordinal_type LO;

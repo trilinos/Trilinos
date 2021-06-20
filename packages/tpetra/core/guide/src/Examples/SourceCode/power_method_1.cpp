@@ -190,7 +190,6 @@ main (int argc, char *argv[])
   typedef Tpetra::Vector<>::mag_type magnitude_type;
   typedef Tpetra::CrsMatrix<> crs_matrix_type;
   typedef Tpetra::CrsMatrix<>::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
-  typedef Tpetra::CrsMatrix<>::nonconst_local_inds_host_view_type nonconst_locaal_inds_host_view_type;
   typedef Tpetra::CrsMatrix<>::nonconst_values_host_view_type nonconst_values_host_view_type;
 
   Teuchos::oblackholestream blackhole;
