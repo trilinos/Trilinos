@@ -117,14 +117,18 @@ namespace Tpetra {
       : comm_(comm),
         howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
         sendType_(DISTRIBUTOR_SEND),
-        barrierBetweenRecvSend_(barrierBetween_default)
+        barrierBetweenRecvSend_(barrierBetween_default),
+        sendMessageToSelf_(false),
+        numSendsToOtherProcs_(0)
     { }
 
     DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
       : comm_(otherPlan.comm_),
         howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
         sendType_(otherPlan.sendType_),
-        barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_)
+        barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_),
+        sendMessageToSelf_(otherPlan.sendMessageToSelf_),
+        numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_)
     { }
   } // namespace Details
 
@@ -201,8 +205,6 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : plan_(comm)
-    , selfMessage_ (false)
-    , numSends_ (0)
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
@@ -237,8 +239,6 @@ namespace Tpetra {
   Distributor (const Distributor& distributor)
     : plan_(distributor.plan_)
     , verbose_ (distributor.verbose_)
-    , selfMessage_ (distributor.selfMessage_)
-    , numSends_ (distributor.numSends_)
     , procsTo_ (distributor.procsTo_)
     , startsTo_ (distributor.startsTo_)
     , lengthsTo_ (distributor.lengthsTo_)
@@ -277,8 +277,6 @@ namespace Tpetra {
     std::swap (plan_, rhs.plan_);
     std::swap (actor_, rhs.actor_);
     std::swap (verbose_, rhs.verbose_);
-    std::swap (selfMessage_, rhs.selfMessage_);
-    std::swap (numSends_, rhs.numSends_);
     std::swap (procsTo_, rhs.procsTo_);
     std::swap (startsTo_, rhs.startsTo_);
     std::swap (lengthsTo_, rhs.lengthsTo_);
@@ -451,10 +449,10 @@ namespace Tpetra {
   { return numReceives_; }
 
   bool Distributor::hasSelfMessage() const
-  { return selfMessage_; }
+  { return plan_.sendMessageToSelf_; }
 
   size_t Distributor::getNumSends() const
-  { return numSends_; }
+  { return plan_.numSendsToOtherProcs_; }
 
   size_t Distributor::getMaxSendLength() const
   { return maxSendLength_; }
@@ -517,14 +515,14 @@ namespace Tpetra {
     // mainly just involves flipping "send" and "receive," or the
     // equivalent "to" and "from."
 
-    reverseDistributor_->selfMessage_ = selfMessage_;
-    reverseDistributor_->numSends_ = numReceives_;
+    reverseDistributor_->plan_.sendMessageToSelf_ = plan_.sendMessageToSelf_;
+    reverseDistributor_->plan_.numSendsToOtherProcs_ = numReceives_;
     reverseDistributor_->procsTo_ = procsFrom_;
     reverseDistributor_->startsTo_ = startsFrom_;
     reverseDistributor_->lengthsTo_ = lengthsFrom_;
     reverseDistributor_->maxSendLength_ = maxReceiveLength;
     reverseDistributor_->indicesTo_ = indicesFrom_;
-    reverseDistributor_->numReceives_ = numSends_;
+    reverseDistributor_->numReceives_ = plan_.numSendsToOtherProcs_;
     reverseDistributor_->totalReceiveLength_ = totalSendLength;
     reverseDistributor_->lengthsFrom_ = lengthsTo_;
     reverseDistributor_->procsFrom_ = procsTo_;
@@ -814,13 +812,13 @@ namespace Tpetra {
       prefix = createPrefix("computeReceives");
       std::ostringstream os;
       os << *prefix
-         << "selfMessage_: " << (selfMessage_ ? "true" : "false")
+         << "sendMessageToSelf_: " << (plan_.sendMessageToSelf_ ? "true" : "false")
          << ", pathTag: " << pathTag << ", tag: " << tag << endl;
       std::cerr << os.str();
     }
 
     // toProcsFromMe[i] == the number of messages sent by this process
-    // to process i.  The data in numSends_, procsTo_, and lengthsTo_
+    // to process i.  The data in numSendsToOtherProcs_, procsTo_, and lengthsTo_
     // concern the contiguous sends.  Therefore, each process will be
     // listed in procsTo_ at most once, and so toProcsFromMe[i] will
     // either be 0 or 1.
@@ -829,7 +827,7 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
       bool counting_error = false;
 #endif // HAVE_TEUCHOS_DEBUG
-      for (size_t i = 0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
+      for (size_t i = 0; i < (plan_.numSendsToOtherProcs_ + (plan_.sendMessageToSelf_ ? 1 : 0)); ++i) {
 #ifdef HAVE_TEUCHOS_DEBUG
         if (toProcsFromMe[procsTo_[i]] != 0) {
           counting_error = true;
@@ -937,7 +935,7 @@ namespace Tpetra {
     // can just ask ourselves directly.  Thus, the actual number of
     // nonblocking receives we post here does not include the self
     // message.
-    const size_t actualNumReceives = numReceives_ - (selfMessage_ ? 1 : 0);
+    const size_t actualNumReceives = numReceives_ - (plan_.sendMessageToSelf_ ? 1 : 0);
 
     // Teuchos' wrapper for nonblocking receives requires receive
     // buffers that it knows won't go away.  This is why we use RCPs,
@@ -981,8 +979,8 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << "Post " << numSends_ << " send"
-         << (numSends_ != size_t (1) ? "s" : "") << endl;
+      os << *prefix << "Post " << plan_.numSendsToOtherProcs_ << " send"
+         << (plan_.numSendsToOtherProcs_ != size_t (1) ? "s" : "") << endl;
       std::cerr << os.str();
     }
     // Post the sends: Tell each process to which we are sending how
@@ -990,10 +988,10 @@ namespace Tpetra {
     // pattern.  We could use nonblocking sends here, as long as we do
     // a waitAll() on all the sends and receives at once.
     //
-    // We assume that numSends_ and selfMessage_ have already been
-    // set.  The value of numSends_ (my process' number of sends) does
+    // We assume that numSendsToOtherProcs_ and sendMessageToSelf_ have already been
+    // set.  The value of numSendsToOtherProcs_ (my process' number of sends) does
     // not include any message that it might send to itself.
-    for (size_t i = 0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
+    for (size_t i = 0; i < plan_.numSendsToOtherProcs_ + (plan_.sendMessageToSelf_ ? 1 : 0); ++i) {
       if (procsTo_[i] != myRank) {
         // Send a message to procsTo_[i], telling that process that
         // this communication pattern will send that process
@@ -1065,7 +1063,7 @@ namespace Tpetra {
       j += lengthsFrom_[i];
     }
 
-    if (selfMessage_) {
+    if (plan_.sendMessageToSelf_) {
       --numReceives_;
     }
 
@@ -1234,10 +1232,10 @@ namespace Tpetra {
     // Determine from the caller's data whether or not the current
     // process should send (a) message(s) to itself.
     if (starts[myProcID] != 0) {
-      selfMessage_ = true;
+      plan_.sendMessageToSelf_ = true;
     }
     else {
-      selfMessage_ = false;
+      plan_.sendMessageToSelf_ = false;
     }
 
     bool index_neq_numActive = false;
@@ -1250,23 +1248,23 @@ namespace Tpetra {
         std::cerr << os.str();
       }
       // grouped by proc, no send buffer or indicesTo_ needed
-      numSends_ = 0;
+      plan_.numSendsToOtherProcs_ = 0;
       // Count total number of sends, i.e., total number of procs to
       // which we are sending.  This includes myself, if applicable.
       for (int i = 0; i < numProcs; ++i) {
         if (starts[i]) {
-          ++numSends_;
+          ++plan_.numSendsToOtherProcs_;
         }
       }
 
       // Not only do we not need these, but we must clear them, as
       // empty status of indicesTo is a flag used later.
       indicesTo_.resize(0);
-      // Size these to numSends_; note, at the moment, numSends_
+      // Size these to numSendsToOtherProcs_; note, at the moment, numSendsToOtherProcs_
       // includes self sends.  Set their values to zeros.
-      procsTo_.assign(numSends_,0);
-      startsTo_.assign(numSends_,0);
-      lengthsTo_.assign(numSends_,0);
+      procsTo_.assign(plan_.numSendsToOtherProcs_,0);
+      startsTo_.assign(plan_.numSendsToOtherProcs_,0);
+      lengthsTo_.assign(plan_.numSendsToOtherProcs_,0);
 
       // set startsTo to the offset for each send (i.e., each proc ID)
       // set procsTo to the proc ID for each send
@@ -1274,7 +1272,7 @@ namespace Tpetra {
       // that is why index skips through the ranks
       {
         size_t index = 0, procIndex = 0;
-        for (size_t i = 0; i < numSends_; ++i) {
+        for (size_t i = 0; i < plan_.numSendsToOtherProcs_; ++i) {
           while (exportProcIDs[procIndex] < 0) {
             ++procIndex; // skip all negative proc IDs
           }
@@ -1290,12 +1288,12 @@ namespace Tpetra {
       }
       // sort the startsTo and proc IDs together, in ascending order, according
       // to proc IDs
-      if (numSends_ > 0) {
+      if (plan_.numSendsToOtherProcs_ > 0) {
         sort2(procsTo_.begin(), procsTo_.end(), startsTo_.begin());
       }
       // compute the maximum send length
       maxSendLength_ = 0;
-      for (size_t i = 0; i < numSends_; ++i) {
+      for (size_t i = 0; i < plan_.numSendsToOtherProcs_; ++i) {
         int procID = procsTo_[i];
         lengthsTo_[i] = starts[procID];
         if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
@@ -1317,16 +1315,16 @@ namespace Tpetra {
 
       // this loop starts at starts[1], so explicitly check starts[0]
       if (starts[0] == 0 ) {
-        numSends_ = 0;
+        plan_.numSendsToOtherProcs_ = 0;
       }
       else {
-        numSends_ = 1;
+        plan_.numSendsToOtherProcs_ = 1;
       }
       for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
                                             im1=starts.begin();
            i != starts.end(); ++i)
       {
-        if (*i != 0) ++numSends_;
+        if (*i != 0) ++plan_.numSendsToOtherProcs_;
         *i += *im1;
         im1 = i;
       }
@@ -1373,9 +1371,9 @@ namespace Tpetra {
       // i.e., the start of my data in the sendBuffer
 
       // this contains invalid data at procs we don't care about, that is okay
-      procsTo_.resize(numSends_);
-      startsTo_.resize(numSends_);
-      lengthsTo_.resize(numSends_);
+      procsTo_.resize(plan_.numSendsToOtherProcs_);
+      startsTo_.resize(plan_.numSendsToOtherProcs_);
+      lengthsTo_.resize(plan_.numSendsToOtherProcs_);
 
       // for each group of sends/exports, record the destination proc,
       // the length, and the offset for this send into the
@@ -1394,7 +1392,7 @@ namespace Tpetra {
           ++snd;
         }
       }
-      if (snd != numSends_) {
+      if (snd != plan_.numSendsToOtherProcs_) {
         send_neq_numSends = true;
       }
     }
@@ -1407,14 +1405,14 @@ namespace Tpetra {
          rawPrefix << "logic error. Please notify the Tpetra team.", *plan_.comm_);
     }
 
-    if (selfMessage_) {
+    if (plan_.sendMessageToSelf_) {
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << "Sending self message; numSends "
-           << numSends_ << " -> " << (numSends_ - 1) << endl;
+           << plan_.numSendsToOtherProcs_ << " -> " << (plan_.numSendsToOtherProcs_ - 1) << endl;
         std::cerr << os.str();
       }
-      --numSends_;
+      --plan_.numSendsToOtherProcs_;
     }
 
     // Invert map to see what msgs are received and what length
@@ -1476,23 +1474,23 @@ namespace Tpetra {
           }
       }
 
-    selfMessage_ = ( starts[myProcID] != 0 ) ? 1 : 0;
+    plan_.sendMessageToSelf_ = ( starts[myProcID] != 0 ) ? 1 : 0;
 
-    numSends_ = 0;
+    plan_.numSendsToOtherProcs_ = 0;
 
     if( needSendBuff ) //grouped by processor, no send buffer or indicesTo_ needed
       {
         if (starts[0] == 0 ) {
-          numSends_ = 0;
+          plan_.numSendsToOtherProcs_ = 0;
         }
         else {
-          numSends_ = 1;
+          plan_.numSendsToOtherProcs_ = 1;
         }
         for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
                im1=starts.begin();
              i != starts.end(); ++i)
           {
-            if (*i != 0) ++numSends_;
+            if (*i != 0) ++plan_.numSendsToOtherProcs_;
             *i += *im1;
             im1 = i;
           }
@@ -1524,9 +1522,9 @@ namespace Tpetra {
         }
         starts.front() = 0;
         starts[numProcs] = numActive;
-        procsTo_.resize(numSends_);
-        startsTo_.resize(numSends_);
-        lengthsTo_.resize(numSends_);
+        procsTo_.resize(plan_.numSendsToOtherProcs_);
+        startsTo_.resize(plan_.numSendsToOtherProcs_);
+        lengthsTo_.resize(plan_.numSendsToOtherProcs_);
         maxSendLength_ = 0;
         size_t snd = 0;
         for (int proc = 0; proc < numProcs; ++proc ) {
@@ -1544,23 +1542,23 @@ namespace Tpetra {
       }
     else {
       // grouped by proc, no send buffer or indicesTo_ needed
-      numSends_ = 0;
+      plan_.numSendsToOtherProcs_ = 0;
       // Count total number of sends, i.e., total number of procs to
       // which we are sending.  This includes myself, if applicable.
       for (int i = 0; i < numProcs; ++i) {
         if (starts[i]) {
-          ++numSends_;
+          ++plan_.numSendsToOtherProcs_;
         }
       }
 
       // Not only do we not need these, but we must clear them, as
       // empty status of indicesTo is a flag used later.
       indicesTo_.resize(0);
-      // Size these to numSends_; note, at the moment, numSends_
+      // Size these to numSendsToOtherProcs_; note, at the moment, numSendsToOtherProcs_
       // includes self sends.  Set their values to zeros.
-      procsTo_.assign(numSends_,0);
-      startsTo_.assign(numSends_,0);
-      lengthsTo_.assign(numSends_,0);
+      procsTo_.assign(plan_.numSendsToOtherProcs_,0);
+      startsTo_.assign(plan_.numSendsToOtherProcs_,0);
+      lengthsTo_.assign(plan_.numSendsToOtherProcs_,0);
 
       // set startsTo to the offset for each send (i.e., each proc ID)
       // set procsTo to the proc ID for each send
@@ -1568,7 +1566,7 @@ namespace Tpetra {
       // that is why index skips through the ranks
       {
         size_t index = 0, procIndex = 0;
-        for (size_t i = 0; i < numSends_; ++i) {
+        for (size_t i = 0; i < plan_.numSendsToOtherProcs_; ++i) {
           while (exportProcIDs[procIndex] < 0) {
             ++procIndex; // skip all negative proc IDs
           }
@@ -1581,12 +1579,12 @@ namespace Tpetra {
       }
       // sort the startsTo and proc IDs together, in ascending order, according
       // to proc IDs
-      if (numSends_ > 0) {
+      if (plan_.numSendsToOtherProcs_ > 0) {
         sort2(procsTo_.begin(), procsTo_.end(), startsTo_.begin());
       }
       // compute the maximum send length
       maxSendLength_ = 0;
-      for (size_t i = 0; i < numSends_; ++i) {
+      for (size_t i = 0; i < plan_.numSendsToOtherProcs_; ++i) {
         int procID = procsTo_[i];
         lengthsTo_[i] = starts[procID];
         if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
@@ -1596,9 +1594,9 @@ namespace Tpetra {
     }
 
 
-    numSends_ -= selfMessage_;
+    plan_.numSendsToOtherProcs_ -= plan_.sendMessageToSelf_;
     std::vector<int> recv_list;
-    recv_list.reserve(numSends_); //reserve an initial guess for size needed
+    recv_list.reserve(plan_.numSendsToOtherProcs_); //reserve an initial guess for size needed
 
     int last_pid=-2;
     for(int i=0; i<remoteProcIDs.size(); i++) {
@@ -1636,7 +1634,7 @@ namespace Tpetra {
       indicesFrom_.push_back(i);
     }
 #endif // 0
-    numReceives_-=selfMessage_;
+    numReceives_-=plan_.sendMessageToSelf_;
 
     if (verbose_) {
       std::ostringstream os;

@@ -108,6 +108,9 @@ namespace Tpetra {
       Details::EDistributorSendType sendType_;
       bool barrierBetweenRecvSend_;
       //@}
+
+      bool sendMessageToSelf_;
+      size_t numSendsToOtherProcs_;
     };
 
     class DistributorActor {
@@ -837,25 +840,9 @@ namespace Tpetra {
     bool verbose_ = getVerbose();
     //@}
 
-    /// \brief Whether I am supposed to send a message to myself.
-    ///
-    /// This is set in createFromSends or createReverseDistributor.
-    bool selfMessage_;
-
-    /// \brief The number of sends from this process to other process.
-    ///
-    /// This is always less than or equal to the number of processes.
-    /// It does <i>not</i> count self receives (that is, messages from
-    /// the calling process to itself).
-    ///
-    /// This value is computed by the createFromSends() method.  That
-    /// method first includes self receives in the count, but at the
-    /// end subtracts one if selfMessage_ is true.
-    size_t numSends_;
-
     /// \brief List of process IDs to which to send.
     ///
-    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
     /// includes the self message, if there is one).
     Teuchos::Array<int> procsTo_;
 
@@ -865,14 +852,14 @@ namespace Tpetra {
     /// sent by this process, the block of Packets to send to process
     /// p will start at position startsTo_[p].
     ///
-    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
     /// includes the self message, if there is one).
     Teuchos::Array<size_t> startsTo_;
 
     /// \brief Length (in number of Packets) of my process' send to each process.
     ///
     /// lengthsTo_[p] is the length of my process' send to process p.
-    /// This array has length numSends_ + selfMessage_ (that is, it
+    /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
     /// includes the self message, if there is one).
     Teuchos::Array<size_t> lengthsTo_;
 
@@ -900,13 +887,13 @@ namespace Tpetra {
 
     /// \brief The number of messages received by my process from other processes.
     ///
-    /// This does <i>not</i> count self receives.  If selfMessage_ is
+    /// This does <i>not</i> count self receives.  If sendMessageToSelf_ is
     /// true, the actual number of receives is one more (we assume
     /// that we only receive zero or one messages from ourself).
     ///
     /// This value is computed by the \c computeReceives() method.
     /// That method first includes self receives in the count, but at
-    /// the end subtracts one if selfMessage_ is true.
+    /// the end subtracts one if sendMessageToSelf_ is true.
     size_t numReceives_;
 
     /// \brief sum(lengthsFrom_)
@@ -919,7 +906,7 @@ namespace Tpetra {
 
     /// \brief Array of lengths of incoming messages.
     ///
-    /// This array has length numReceives_ + selfMessage_.  Incoming
+    /// This array has length numReceives_ + sendMessageToSelf_.  Incoming
     /// message i from process procsFrom_[i] has length
     /// lengthsFrom_[i].
     Teuchos::Array<size_t> lengthsFrom_;
@@ -927,13 +914,13 @@ namespace Tpetra {
     /// \brief Array of ranks of the process from which the calling
     ///   process will receive a message.
     ///
-    /// This array has length numReceives_ + selfMessage_.  Incoming
+    /// This array has length numReceives_ + sendMessageToSelf_.  Incoming
     /// message i was sent by process procsFrom_[i].
     Teuchos::Array<int> procsFrom_;
 
     /// \brief Array of offsets of incoming messages.
     ///
-    /// This array has length numReceives_ + selfMessage_.  It is an
+    /// This array has length numReceives_ + sendMessageToSelf_.  It is an
     /// exclusive prefix sum of lengthsFrom_.  It is only used for
     /// constructing the reverse Distributor.
     Teuchos::Array<size_t> startsFrom_;
@@ -1246,7 +1233,7 @@ namespace Tpetra {
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
+      as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
     if (verbose_) {
@@ -1332,7 +1319,7 @@ namespace Tpetra {
     //
     // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
     // It doesn't depend on the input at all.
-    size_t numBlocks = numSends_ + selfMessage_;
+    size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
     while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
       ++procIndex;
@@ -1410,7 +1397,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         if (verbose_) {
           std::ostringstream os;
           os << *prefix << "Fast: Self-send" << endl;
@@ -1505,7 +1492,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         if (verbose_) {
           std::ostringstream os;
           os << *prefix << "Slow: Self-send" << endl;
@@ -1628,7 +1615,7 @@ namespace Tpetra {
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
+      as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -1688,10 +1675,10 @@ namespace Tpetra {
 
     // setup arrays containing starting-offsets into exports for each send,
     // and num-packets-to-send for each send.
-    Array<size_t> sendPacketOffsets(numSends_,0), packetsPerSend(numSends_,0);
+    Array<size_t> sendPacketOffsets(plan_.numSendsToOtherProcs_,0), packetsPerSend(plan_.numSendsToOtherProcs_,0);
     size_t maxNumPackets = 0;
     size_t curPKToffset = 0;
-    for (size_t pp=0; pp<numSends_; ++pp) {
+    for (size_t pp=0; pp<plan_.numSendsToOtherProcs_; ++pp) {
       sendPacketOffsets[pp] = curPKToffset;
       size_t numPackets = 0;
       for (size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
@@ -1704,7 +1691,7 @@ namespace Tpetra {
 
     // setup scan through procsTo_ list starting with higher numbered procs
     // (should help balance message traffic)
-    size_t numBlocks = numSends_+ selfMessage_;
+    size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
     while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
       ++procIndex;
@@ -1774,7 +1761,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         std::copy (exports.begin()+sendPacketOffsets[selfNum],
                    exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum],
                    imports.begin()+selfReceiveOffset);
@@ -1864,7 +1851,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
           std::copy (exports.begin()+indicesOffsets[selfIndex],
                      exports.begin()+indicesOffsets[selfIndex]+numExportPacketsPerLID[selfIndex],
@@ -2168,7 +2155,7 @@ namespace Tpetra {
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
+      as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
     if (verbose_) {
@@ -2254,7 +2241,7 @@ namespace Tpetra {
     //
     // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
     // It doesn't depend on the input at all.
-    size_t numBlocks = numSends_ + selfMessage_;
+    size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
     while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
       ++procIndex;
@@ -2338,7 +2325,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         if (verbose_) {
           std::ostringstream os;
           os << *prefix << "fast path: self-send" << endl;
@@ -2447,7 +2434,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         if (verbose_) {
           std::ostringstream os;
           os << *prefix << "slow path: self-send" << endl;
@@ -2581,7 +2568,7 @@ namespace Tpetra {
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
     const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
+      as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
     // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -2641,10 +2628,10 @@ namespace Tpetra {
 
     // setup arrays containing starting-offsets into exports for each send,
     // and num-packets-to-send for each send.
-    Array<size_t> sendPacketOffsets(numSends_,0), packetsPerSend(numSends_,0);
+    Array<size_t> sendPacketOffsets(plan_.numSendsToOtherProcs_,0), packetsPerSend(plan_.numSendsToOtherProcs_,0);
     size_t maxNumPackets = 0;
     size_t curPKToffset = 0;
-    for (size_t pp=0; pp<numSends_; ++pp) {
+    for (size_t pp=0; pp<plan_.numSendsToOtherProcs_; ++pp) {
       sendPacketOffsets[pp] = curPKToffset;
       size_t numPackets = 0;
       for (size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
@@ -2657,7 +2644,7 @@ namespace Tpetra {
 
     // setup scan through procsTo_ list starting with higher numbered procs
     // (should help balance message traffic)
-    size_t numBlocks = numSends_+ selfMessage_;
+    size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
     while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
       ++procIndex;
@@ -2726,7 +2713,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         deep_copy_offset(imports, exports, selfReceiveOffset,
                          sendPacketOffsets[selfNum], packetsPerSend[selfNum]);
       }
@@ -2816,7 +2803,7 @@ namespace Tpetra {
         }
       }
 
-      if (selfMessage_) {
+      if (plan_.sendMessageToSelf_) {
         for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
           deep_copy_offset(imports, exports, selfReceiveOffset,
                            indicesOffsets[selfIndex],
@@ -3070,13 +3057,13 @@ namespace Tpetra {
     if (verbose_) {
       // NOTE (mfh 20 Mar 2014) If remoteProcIDs could contain
       // duplicates, then its length might not be the right check here,
-      // even if we account for selfMessage_.  selfMessage_ is set in
+      // even if we account for sendMessageToSelf_.  sendMessageToSelf_ is set in
       // createFromSends.
       std::ostringstream os;
       os << *prefix << "numProcsSendingToMe: "
          << numProcsSendingToMe << ", remoteProcIDs.size(): "
-         << remoteProcIDs.size () << ", selfMessage_: "
-         << (selfMessage_ ? "true" : "false") << "" << endl;
+         << remoteProcIDs.size () << ", sendMessageToSelf_: "
+         << (plan_.sendMessageToSelf_ ? "true" : "false") << "" << endl;
       std::cerr << os.str();
     }
 
