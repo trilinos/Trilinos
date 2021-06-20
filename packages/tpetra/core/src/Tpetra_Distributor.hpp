@@ -111,6 +111,93 @@ namespace Tpetra {
 
       bool sendMessageToSelf_;
       size_t numSendsToOtherProcs_;
+      Teuchos::Array<int> procIdsToSendTo_;
+
+      /// \brief Starting index of the block of Packets to send to each process.
+      ///
+      /// Given an export buffer that contains all of the data being
+      /// sent by this process, the block of Packets to send to process
+      /// p will start at position startsTo_[p].
+      ///
+      /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
+      /// includes the self message, if there is one).
+      Teuchos::Array<size_t> startsTo_;
+
+      /// \brief Length (in number of Packets) of my process' send to each process.
+      ///
+      /// lengthsTo_[p] is the length of my process' send to process p.
+      /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
+      /// includes the self message, if there is one).
+      Teuchos::Array<size_t> lengthsTo_;
+
+      /// \brief The maximum send length (in number of Packets) to another process.
+      ///
+      /// maxSendLength_ = max(lengthsTo_[p]) for p != my process rank.
+      size_t maxSendLength_;
+
+      /// \brief Offset (by message, not by number of Packets) into exports array.
+      ///
+      /// This array is used by both versions of doPosts().  In that
+      /// method, <tt>indicesTo_[j]*numPackets</tt> is the offset into
+      /// the <tt>exports</tt> array, where <tt>j = startsTo_[p]</tt>
+      /// and p is an index iterating through the sends in reverse order
+      /// (starting with the process rank right before the self message,
+      /// if there is a self message, else the largest process rank to
+      /// which this process sends).
+      ///
+      /// This array is only used if export data are not blocked (laid
+      /// out) by process rank, that is, if we need to use a send
+      /// buffer.  Otherwise, this array has no entries.  (In fact,
+      /// Distributor currently uses this in both overloads of doPosts()
+      /// to test whether data are laid out by process.)
+      Teuchos::Array<size_t> indicesTo_;
+
+      /// \brief The number of messages received by my process from other processes.
+      ///
+      /// This does <i>not</i> count self receives.  If sendMessageToSelf_ is
+      /// true, the actual number of receives is one more (we assume
+      /// that we only receive zero or one messages from ourself).
+      ///
+      /// This value is computed by the \c computeReceives() method.
+      /// That method first includes self receives in the count, but at
+      /// the end subtracts one if sendMessageToSelf_ is true.
+      size_t numReceives_;
+
+      /// \brief sum(lengthsFrom_)
+      ///
+      /// This is computed by \c createFromSends() and is used to
+      /// allocate the receive buffer.  The reverse communicator's total
+      /// receive length is the total send length of the forward
+      /// communicator.
+      size_t totalReceiveLength_;
+
+      /// \brief Array of lengths of incoming messages.
+      ///
+      /// This array has length numReceives_ + sendMessageToSelf_.  Incoming
+      /// message i from process procsFrom_[i] has length
+      /// lengthsFrom_[i].
+      Teuchos::Array<size_t> lengthsFrom_;
+
+      /// \brief Array of ranks of the process from which the calling
+      ///   process will receive a message.
+      ///
+      /// This array has length numReceives_ + sendMessageToSelf_.  Incoming
+      /// message i was sent by process procsFrom_[i].
+      Teuchos::Array<int> procsFrom_;
+
+      /// \brief Array of offsets of incoming messages.
+      ///
+      /// This array has length numReceives_ + sendMessageToSelf_.  It is an
+      /// exclusive prefix sum of lengthsFrom_.  It is only used for
+      /// constructing the reverse Distributor.
+      Teuchos::Array<size_t> startsFrom_;
+
+      /// \brief List that becomes the reverse communicator's indicesTo_.
+      ///
+      /// Array of length totalReceiveLength_.  When creating the
+      /// reverse Distributor, this is assigned to the reverse
+      /// Distributor's indicesTo_.
+      Teuchos::Array<size_t> indicesFrom_;
     };
 
     class DistributorActor {
@@ -840,98 +927,6 @@ namespace Tpetra {
     bool verbose_ = getVerbose();
     //@}
 
-    /// \brief List of process IDs to which to send.
-    ///
-    /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
-    /// includes the self message, if there is one).
-    Teuchos::Array<int> procsTo_;
-
-    /// \brief Starting index of the block of Packets to send to each process.
-    ///
-    /// Given an export buffer that contains all of the data being
-    /// sent by this process, the block of Packets to send to process
-    /// p will start at position startsTo_[p].
-    ///
-    /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
-    /// includes the self message, if there is one).
-    Teuchos::Array<size_t> startsTo_;
-
-    /// \brief Length (in number of Packets) of my process' send to each process.
-    ///
-    /// lengthsTo_[p] is the length of my process' send to process p.
-    /// This array has length numSendsToOtherProcs_ + sendMessageToSelf_ (that is, it
-    /// includes the self message, if there is one).
-    Teuchos::Array<size_t> lengthsTo_;
-
-    /// \brief The maximum send length (in number of Packets) to another process.
-    ///
-    /// maxSendLength_ = max(lengthsTo_[p]) for p != my process rank.
-    size_t maxSendLength_;
-
-    /// \brief Offset (by message, not by number of Packets) into exports array.
-    ///
-    /// This array is used by both versions of doPosts().  In that
-    /// method, <tt>indicesTo_[j]*numPackets</tt> is the offset into
-    /// the <tt>exports</tt> array, where <tt>j = startsTo_[p]</tt>
-    /// and p is an index iterating through the sends in reverse order
-    /// (starting with the process rank right before the self message,
-    /// if there is a self message, else the largest process rank to
-    /// which this process sends).
-    ///
-    /// This array is only used if export data are not blocked (laid
-    /// out) by process rank, that is, if we need to use a send
-    /// buffer.  Otherwise, this array has no entries.  (In fact,
-    /// Distributor currently uses this in both overloads of doPosts()
-    /// to test whether data are laid out by process.)
-    Teuchos::Array<size_t> indicesTo_;
-
-    /// \brief The number of messages received by my process from other processes.
-    ///
-    /// This does <i>not</i> count self receives.  If sendMessageToSelf_ is
-    /// true, the actual number of receives is one more (we assume
-    /// that we only receive zero or one messages from ourself).
-    ///
-    /// This value is computed by the \c computeReceives() method.
-    /// That method first includes self receives in the count, but at
-    /// the end subtracts one if sendMessageToSelf_ is true.
-    size_t numReceives_;
-
-    /// \brief sum(lengthsFrom_)
-    ///
-    /// This is computed by \c createFromSends() and is used to
-    /// allocate the receive buffer.  The reverse communicator's total
-    /// receive length is the total send length of the forward
-    /// communicator.
-    size_t totalReceiveLength_;
-
-    /// \brief Array of lengths of incoming messages.
-    ///
-    /// This array has length numReceives_ + sendMessageToSelf_.  Incoming
-    /// message i from process procsFrom_[i] has length
-    /// lengthsFrom_[i].
-    Teuchos::Array<size_t> lengthsFrom_;
-
-    /// \brief Array of ranks of the process from which the calling
-    ///   process will receive a message.
-    ///
-    /// This array has length numReceives_ + sendMessageToSelf_.  Incoming
-    /// message i was sent by process procsFrom_[i].
-    Teuchos::Array<int> procsFrom_;
-
-    /// \brief Array of offsets of incoming messages.
-    ///
-    /// This array has length numReceives_ + sendMessageToSelf_.  It is an
-    /// exclusive prefix sum of lengthsFrom_.  It is only used for
-    /// constructing the reverse Distributor.
-    Teuchos::Array<size_t> startsFrom_;
-
-    /// \brief List that becomes the reverse communicator's indicesTo_.
-    ///
-    /// Array of length totalReceiveLength_.  When creating the
-    /// reverse Distributor, this is assigned to the reverse
-    /// Distributor's indicesTo_.
-    Teuchos::Array<size_t> indicesFrom_;
-
     /// \brief The reverse distributor.
     ///
     /// This is created on demand in getReverse() and cached for
@@ -1193,7 +1188,7 @@ namespace Tpetra {
       // inequality to a less-than seems to have fixed Bug 6170.  It's
       // OK for the 'imports' array to be longer than it needs to be;
       // I'm just curious why it would be.
-      const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
+      const size_t totalNumImportPackets = plan_.totalReceiveLength_ * numPackets;
       TEUCHOS_TEST_FOR_EXCEPTION
         (static_cast<size_t> (imports.size ()) < totalNumImportPackets,
          std::invalid_argument,
@@ -1232,13 +1227,13 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
+    const size_type actualNumReceives = as<size_type> (plan_.numReceives_) +
       as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
+      os << *prefix << (plan_.indicesTo_.empty () ? "Fast" : "Slow")
          << ": Post receives" << endl;
       std::cerr << os.str();
     }
@@ -1255,12 +1250,12 @@ namespace Tpetra {
 
       size_t curBufOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
-        const size_t curBufLen = lengthsFrom_[i] * numPackets;
-        if (procsFrom_[i] != myRank) {
+        const size_t curBufLen = plan_.lengthsFrom_[i] * numPackets;
+        if (plan_.procsFrom_[i] != myRank) {
           if (verbose_) {
             std::ostringstream os;
-            os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-               << ": Post irecv: {source: " << procsFrom_[i]
+            os << *prefix << (plan_.indicesTo_.empty () ? "Fast" : "Slow")
+               << ": Post irecv: {source: " << plan_.procsFrom_[i]
                << ", tag: " << tag << "}" << endl;
             std::cerr << os.str();
           }
@@ -1281,7 +1276,7 @@ namespace Tpetra {
             << ").");
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufOffset, curBufLen);
-          actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, plan_.procsFrom_[i],
                                                       tag, *plan_.comm_));
         }
         else { // Receiving from myself
@@ -1298,7 +1293,7 @@ namespace Tpetra {
 
       if (verbose_) {
         std::ostringstream os;
-        os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
+        os << *prefix << (plan_.indicesTo_.empty () ? "Fast" : "Slow")
            << ": Barrier" << endl;
         std::cerr << os.str();
       }
@@ -1314,14 +1309,14 @@ namespace Tpetra {
     Teuchos::TimeMonitor timeMonSends (*timer_doPosts3TA_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-    // setup scan through procsTo_ list starting with higher numbered procs
+    // setup scan through procIdsToSendTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     //
     // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
     // It doesn't depend on the input at all.
     size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
+    while ((procIndex < numBlocks) && (plan_.procIdsToSendTo_[procIndex] < myRank)) {
       ++procIndex;
     }
     if (procIndex == numBlocks) {
@@ -1333,12 +1328,12 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
+      os << *prefix << (plan_.indicesTo_.empty () ? "Fast" : "Slow")
          << ": Post sends" << endl;
       std::cerr << os.str();
     }
 
-    if (indicesTo_.empty ()) {
+    if (plan_.indicesTo_.empty ()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3TA_sends_fast_);
@@ -1352,38 +1347,38 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myRank) {
+        if (plan_.procIdsToSendTo_[p] != myRank) {
           if (verbose_) {
             std::ostringstream os;
             os << *prefix << ": Post send: {target: "
-               << procsTo_[p] << ", tag: " << tag << "}" << endl;
+               << plan_.procIdsToSendTo_[p] << ", tag: " << tag << "}" << endl;
             std::cerr << os.str();
           }
 
           ArrayView<const Packet> tmpSend =
-            exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+            exports.view (plan_.startsTo_[p]*numPackets, plan_.lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *plan_.comm_);
+                               plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
-              exports.persistingView (startsTo_[p] * numPackets,
-                                      lengthsTo_[p] * numPackets);
-            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+              exports.persistingView (plan_.startsTo_[p] * numPackets,
+                                      plan_.lengthsTo_[p] * numPackets);
+            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                                      tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *plan_.comm_);
+                                    plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *plan_.comm_);
+                                plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -1410,8 +1405,8 @@ namespace Tpetra {
         // messages correctly.  (To do this right, SerialComm would
         // need internal buffer space for messages, keyed on the
         // message's tag.)
-        std::copy (exports.begin()+startsTo_[selfNum]*numPackets,
-                   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets,
+        std::copy (exports.begin()+plan_.startsTo_[selfNum]*numPackets,
+                   exports.begin()+plan_.startsTo_[selfNum]*numPackets+plan_.lengthsTo_[selfNum]*numPackets,
                    imports.begin()+selfReceiveOffset);
       }
     }
@@ -1423,7 +1418,7 @@ namespace Tpetra {
 
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
       // sends), because the buffer is only long enough for one send.
-      ArrayRCP<Packet> sendArray (maxSendLength_ * numPackets); // send buffer
+      ArrayRCP<Packet> sendArray (plan_.maxSendLength_ * numPackets); // send buffer
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
@@ -1437,46 +1432,46 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myRank) {
+        if (plan_.procIdsToSendTo_[p] != myRank) {
           if (verbose_) {
             std::ostringstream os;
             os << *prefix << "Slow: Post send: "
-              "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
+              "{target: " << plan_.procIdsToSendTo_[p] << ", tag: " << tag << "}" << endl;
             std::cerr << os.str();
           }
 
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
-            srcBegin = exports.begin() + indicesTo_[j]*numPackets;
+          size_t j = plan_.startsTo_[p];
+          for (size_t k = 0; k < plan_.lengthsTo_[p]; ++k, ++j) {
+            srcBegin = exports.begin() + plan_.indicesTo_[j]*numPackets;
             srcEnd   = srcBegin + numPackets;
             std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
             sendArrayOffset += numPackets;
           }
           ArrayView<const Packet> tmpSend =
-            sendArray.view (0, lengthsTo_[p]*numPackets);
+            sendArray.view (0, plan_.lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *plan_.comm_);
+                               plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
-              sendArray.persistingView (0, lengthsTo_[p] * numPackets);
-            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+              sendArray.persistingView (0, plan_.lengthsTo_[p] * numPackets);
+            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                                      tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *plan_.comm_);
+                                    plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *plan_.comm_);
+                                plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1488,7 +1483,7 @@ namespace Tpetra {
         }
         else { // "Sending" the message to myself
           selfNum = p;
-          selfIndex = startsTo_[p];
+          selfIndex = plan_.startsTo_[p];
         }
       }
 
@@ -1498,9 +1493,9 @@ namespace Tpetra {
           os << *prefix << "Slow: Self-send" << endl;
           std::cerr << os.str();
         }
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
-          std::copy (exports.begin()+indicesTo_[selfIndex]*numPackets,
-                     exports.begin()+indicesTo_[selfIndex]*numPackets + numPackets,
+        for (size_t k = 0; k < plan_.lengthsTo_[selfNum]; ++k) {
+          std::copy (exports.begin()+plan_.indicesTo_[selfIndex]*numPackets,
+                     exports.begin()+plan_.indicesTo_[selfIndex]*numPackets + numPackets,
                      imports.begin() + selfReceiveOffset);
           ++selfIndex;
           selfReceiveOffset += numPackets;
@@ -1596,7 +1591,7 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << (indicesTo_.empty () ? "fast" : "slow")
+      os << *prefix << (plan_.indicesTo_.empty () ? "fast" : "slow")
          << " path" << endl;
       std::cerr << os.str();
     }
@@ -1614,7 +1609,7 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
+    const size_type actualNumReceives = as<size_type> (plan_.numReceives_) +
       as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
@@ -1632,11 +1627,11 @@ namespace Tpetra {
       size_t curLIDoffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
         size_t totalPacketsFrom_i = 0;
-        for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
+        for (size_t j = 0; j < plan_.lengthsFrom_[i]; ++j) {
           totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
         }
-        curLIDoffset += lengthsFrom_[i];
-        if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
+        curLIDoffset += plan_.lengthsFrom_[i];
+        if (plan_.procsFrom_[i] != myProcID && totalPacketsFrom_i) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive), and if there is at least
           // one packet to receive:
@@ -1647,7 +1642,7 @@ namespace Tpetra {
           // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufferOffset, totalPacketsFrom_i);
-          actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int, Packet> (recvBuf, plan_.procsFrom_[i],
                                                       tag, *plan_.comm_));
         }
         else { // Receiving these packet(s) from myself
@@ -1681,7 +1676,7 @@ namespace Tpetra {
     for (size_t pp=0; pp<plan_.numSendsToOtherProcs_; ++pp) {
       sendPacketOffsets[pp] = curPKToffset;
       size_t numPackets = 0;
-      for (size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
+      for (size_t j=plan_.startsTo_[pp]; j<plan_.startsTo_[pp]+plan_.lengthsTo_[pp]; ++j) {
         numPackets += numExportPacketsPerLID[j];
       }
       if (numPackets > maxNumPackets) maxNumPackets = numPackets;
@@ -1689,11 +1684,11 @@ namespace Tpetra {
       curPKToffset += numPackets;
     }
 
-    // setup scan through procsTo_ list starting with higher numbered procs
+    // setup scan through procIdsToSendTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
+    while ((procIndex < numBlocks) && (plan_.procIdsToSendTo_[procIndex] < myProcID)) {
       ++procIndex;
     }
     if (procIndex == numBlocks) {
@@ -1703,7 +1698,7 @@ namespace Tpetra {
     size_t selfNum = 0;
     size_t selfIndex = 0;
 
-    if (indicesTo_.empty()) {
+    if (plan_.indicesTo_.empty()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4TA_sends_fast_);
@@ -1723,30 +1718,30 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myProcID && packetsPerSend[p] > 0) {
+        if (plan_.procIdsToSendTo_[p] != myProcID && packetsPerSend[p] > 0) {
           ArrayView<const Packet> tmpSend =
             exports.view (sendPacketOffsets[p], packetsPerSend[p]);
 
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
             send<int, Packet> (tmpSend.getRawPtr (),
                                as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *plan_.comm_);
+                               plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int, Packet> (tmpSend.getRawPtr (),
                                     as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *plan_.comm_);
+                                    plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             ArrayRCP<const Packet> tmpSendBuf =
               exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
-            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                                      tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *plan_.comm_);
+                                plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1806,12 +1801,12 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myProcID) {
+        if (plan_.procIdsToSendTo_[p] != myProcID) {
           typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
           size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
+          size_t j = plan_.startsTo_[p];
           size_t numPacketsTo_p = 0;
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
+          for (size_t k = 0; k < plan_.lengthsTo_[p]; ++k, ++j) {
             srcBegin = exports.begin() + indicesOffsets[j];
             srcEnd   = srcBegin + numExportPacketsPerLID[j];
             numPacketsTo_p += numExportPacketsPerLID[j];
@@ -1825,34 +1820,34 @@ namespace Tpetra {
             if (sendType == Details::DISTRIBUTOR_RSEND) {
               readySend<int, Packet> (tmpSend.getRawPtr (),
                                       as<int> (tmpSend.size ()),
-                                      procsTo_[p], tag, *plan_.comm_);
+                                      plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               ArrayRCP<const Packet> tmpSendBuf =
                 sendArray.persistingView (0, numPacketsTo_p);
-              actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
+              actor_.requests_.push_back (isend<int, Packet> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                                        tag, *plan_.comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
               ssend<int, Packet> (tmpSend.getRawPtr (),
                                   as<int> (tmpSend.size ()),
-                                  procsTo_[p], tag, *plan_.comm_);
+                                  plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int, Packet> (tmpSend.getRawPtr (),
                                  as<int> (tmpSend.size ()),
-                                 procsTo_[p], tag, *plan_.comm_);
+                                 plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
             }
           }
         }
         else { // "Sending" the message to myself
           selfNum = p;
-          selfIndex = startsTo_[p];
+          selfIndex = plan_.startsTo_[p];
         }
       }
 
       if (plan_.sendMessageToSelf_) {
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
+        for (size_t k = 0; k < plan_.lengthsTo_[selfNum]; ++k) {
           std::copy (exports.begin()+indicesOffsets[selfIndex],
                      exports.begin()+indicesOffsets[selfIndex]+numExportPacketsPerLID[selfIndex],
                      imports.begin() + selfReceiveOffset);
@@ -1953,7 +1948,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.indicesTo_.empty (), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -1971,7 +1966,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.indicesTo_.empty (), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -2154,13 +2149,13 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
+    const size_type actualNumReceives = as<size_type> (plan_.numReceives_) +
       as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
+      os << *prefix << (plan_.indicesTo_.empty() ? "fast" : "slow")
          << " path: post receives" << endl;
       std::cerr << os.str();
     }
@@ -2177,13 +2172,13 @@ namespace Tpetra {
 
       size_t curBufferOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
-        const size_t curBufLen = lengthsFrom_[i] * numPackets;
-        if (procsFrom_[i] != myRank) {
+        const size_t curBufLen = plan_.lengthsFrom_[i] * numPackets;
+        if (plan_.procsFrom_[i] != myRank) {
           if (verbose_) {
             std::ostringstream os;
             os << *prefix
-               << (indicesTo_.empty() ? "fast" : "slow") << " path: "
-               << "post irecv: {source: " << procsFrom_[i]
+               << (plan_.indicesTo_.empty() ? "fast" : "slow") << " path: "
+               << "post irecv: {source: " << plan_.procsFrom_[i]
                << ", tag: " << tag << "}" << endl;
             std::cerr << os.str();
           }
@@ -2203,7 +2198,7 @@ namespace Tpetra {
             curBufLen << ").");
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, curBufLen);
-          actor_.requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int> (recvBuf, plan_.procsFrom_[i],
                                               tag, *plan_.comm_));
         }
         else { // Receiving from myself
@@ -2220,7 +2215,7 @@ namespace Tpetra {
 
       if (verbose_) {
         std::ostringstream os;
-        os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
+        os << *prefix << (plan_.indicesTo_.empty() ? "fast" : "slow")
            << " path: barrier" << endl;
         std::cerr << os.str();
       }
@@ -2236,14 +2231,14 @@ namespace Tpetra {
     Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-    // setup scan through procsTo_ list starting with higher numbered procs
+    // setup scan through procIdsToSendTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     //
     // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
     // It doesn't depend on the input at all.
     size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
+    while ((procIndex < numBlocks) && (plan_.procIdsToSendTo_[procIndex] < myRank)) {
       ++procIndex;
     }
     if (procIndex == numBlocks) {
@@ -2255,12 +2250,12 @@ namespace Tpetra {
 
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
+      os << *prefix << (plan_.indicesTo_.empty() ? "fast" : "slow")
          << " path: post sends" << endl;
       std::cerr << os.str();
     }
 
-    if (indicesTo_.empty()) {
+    if (plan_.indicesTo_.empty()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_fast_);
@@ -2280,37 +2275,37 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myRank) {
+        if (plan_.procIdsToSendTo_[p] != myRank) {
           if (verbose_) {
             std::ostringstream os;
             os << *prefix << "fast path: post send: {target: "
-               << procsTo_[p] << ", tag: " << tag << "}" << endl;
+               << plan_.procIdsToSendTo_[p] << ", tag: " << tag << "}" << endl;
             std::cerr << os.str();
           }
           exports_view_type tmpSend = subview_offset(
-            exports, startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
+            exports, plan_.startsTo_[p]*numPackets, plan_.lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *plan_.comm_);
+                       plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
-              subview_offset (exports, startsTo_[p] * numPackets,
-                              lengthsTo_[p] * numPackets);
-            actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+              subview_offset (exports, plan_.startsTo_[p] * numPackets,
+                              plan_.lengthsTo_[p] * numPackets);
+            actor_.requests_.push_back (isend<int> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                              tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *plan_.comm_);
+                            plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *plan_.comm_);
+                        plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true,
@@ -2339,8 +2334,8 @@ namespace Tpetra {
         // need internal buffer space for messages, keyed on the
         // message's tag.)
         deep_copy_offset(imports, exports, selfReceiveOffset,
-                         startsTo_[selfNum]*numPackets,
-                         lengthsTo_[selfNum]*numPackets);
+                         plan_.startsTo_[selfNum]*numPackets,
+                         plan_.lengthsTo_[selfNum]*numPackets);
       }
       if (verbose_) {
         std::ostringstream os;
@@ -2364,7 +2359,7 @@ namespace Tpetra {
       typedef typename ExpView::device_type Device;
       typedef typename ExpView::memory_traits Mem;
       Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
-                                               maxSendLength_ * numPackets);
+                                               plan_.maxSendLength_ * numPackets);
 
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
       // sends), because the buffer is only long enough for one send.
@@ -2380,44 +2375,44 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myRank) {
+        if (plan_.procIdsToSendTo_[p] != myRank) {
           if (verbose_) {
             std::ostringstream os;
             os << *prefix << "slow path: post send: {target: "
-               << procsTo_[p] << ", tag: " << tag << "}" << endl;
+               << plan_.procIdsToSendTo_[p] << ", tag: " << tag << "}" << endl;
             std::cerr << os.str();
           }
 
           size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
+          size_t j = plan_.startsTo_[p];
+          for (size_t k = 0; k < plan_.lengthsTo_[p]; ++k, ++j) {
             deep_copy_offset(sendArray, exports, sendArrayOffset,
-                             indicesTo_[j]*numPackets, numPackets);
+                             plan_.indicesTo_[j]*numPackets, numPackets);
             sendArrayOffset += numPackets;
           }
           ImpView tmpSend =
-            subview_offset(sendArray, size_t(0), lengthsTo_[p]*numPackets);
+            subview_offset(sendArray, size_t(0), plan_.lengthsTo_[p]*numPackets);
 
           if (sendType == Details::DISTRIBUTOR_SEND) {
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *plan_.comm_);
+                       plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
-              subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
-            actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+              subview_offset (sendArray, size_t(0), plan_.lengthsTo_[p] * numPackets);
+            actor_.requests_.push_back (isend<int> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                              tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *plan_.comm_);
+                            plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *plan_.comm_);
+                        plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2430,7 +2425,7 @@ namespace Tpetra {
         }
         else { // "Sending" the message to myself
           selfNum = p;
-          selfIndex = startsTo_[p];
+          selfIndex = plan_.startsTo_[p];
         }
       }
 
@@ -2440,9 +2435,9 @@ namespace Tpetra {
           os << *prefix << "slow path: self-send" << endl;
           std::cerr << os.str();
         }
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
+        for (size_t k = 0; k < plan_.lengthsTo_[selfNum]; ++k) {
           deep_copy_offset(imports, exports, selfReceiveOffset,
-                           indicesTo_[selfIndex]*numPackets, numPackets);
+                           plan_.indicesTo_[selfIndex]*numPackets, numPackets);
           ++selfIndex;
           selfReceiveOffset += numPackets;
         }
@@ -2536,7 +2531,7 @@ namespace Tpetra {
 
     // MPI tag for nonblocking receives and blocking sends in this
     // method.  Some processes might take the "fast" path
-    // (indicesTo_.empty()) and others might take the "slow" path for
+    // (plan_.indicesTo_.empty()) and others might take the "slow" path for
     // the same doPosts() call, so the path tag must be the same for
     // both.
     const int pathTag = 1;
@@ -2550,7 +2545,7 @@ namespace Tpetra {
 #endif // HAVE_TEUCHOS_DEBUG
     if (verbose_) {
       std::ostringstream os;
-      os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
+      os << *prefix << (plan_.indicesTo_.empty() ? "fast" : "slow")
          << " path, tag=" << tag << endl;
       std::cerr << os.str();
     }
@@ -2567,7 +2562,7 @@ namespace Tpetra {
     // doesn't (re)allocate its array of requests.  That happens in
     // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
     // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
+    const size_type actualNumReceives = as<size_type> (plan_.numReceives_) +
       as<size_type> (plan_.sendMessageToSelf_ ? 1 : 0);
     actor_.requests_.resize (0);
 
@@ -2585,11 +2580,11 @@ namespace Tpetra {
       size_t curLIDoffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
         size_t totalPacketsFrom_i = 0;
-        for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
+        for (size_t j = 0; j < plan_.lengthsFrom_[i]; ++j) {
           totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
         }
-        curLIDoffset += lengthsFrom_[i];
-        if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
+        curLIDoffset += plan_.lengthsFrom_[i];
+        if (plan_.procsFrom_[i] != myProcID && totalPacketsFrom_i) {
           // If my process is receiving these packet(s) from another
           // process (not a self-receive), and if there is at least
           // one packet to receive:
@@ -2600,7 +2595,7 @@ namespace Tpetra {
           // 2. Start the Irecv and save the resulting request.
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-          actor_.requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
+          actor_.requests_.push_back (ireceive<int> (recvBuf, plan_.procsFrom_[i],
                                               tag, *plan_.comm_));
         }
         else { // Receiving these packet(s) from myself
@@ -2634,7 +2629,7 @@ namespace Tpetra {
     for (size_t pp=0; pp<plan_.numSendsToOtherProcs_; ++pp) {
       sendPacketOffsets[pp] = curPKToffset;
       size_t numPackets = 0;
-      for (size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
+      for (size_t j=plan_.startsTo_[pp]; j<plan_.startsTo_[pp]+plan_.lengthsTo_[pp]; ++j) {
         numPackets += numExportPacketsPerLID[j];
       }
       if (numPackets > maxNumPackets) maxNumPackets = numPackets;
@@ -2642,11 +2637,11 @@ namespace Tpetra {
       curPKToffset += numPackets;
     }
 
-    // setup scan through procsTo_ list starting with higher numbered procs
+    // setup scan through procIdsToSendTo_ list starting with higher numbered procs
     // (should help balance message traffic)
     size_t numBlocks = plan_.numSendsToOtherProcs_ + plan_.sendMessageToSelf_;
     size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
+    while ((procIndex < numBlocks) && (plan_.procIdsToSendTo_[procIndex] < myProcID)) {
       ++procIndex;
     }
     if (procIndex == numBlocks) {
@@ -2655,7 +2650,7 @@ namespace Tpetra {
 
     size_t selfNum = 0;
     size_t selfIndex = 0;
-    if (indicesTo_.empty()) {
+    if (plan_.indicesTo_.empty()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_fast_);
@@ -2675,30 +2670,30 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myProcID && packetsPerSend[p] > 0) {
+        if (plan_.procIdsToSendTo_[p] != myProcID && packetsPerSend[p] > 0) {
           exports_view_type tmpSend =
             subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
 
           if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
             send<int> (tmpSend,
                        as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *plan_.comm_);
+                       plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                             as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *plan_.comm_);
+                            plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
-            actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+            actor_.requests_.push_back (isend<int> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                              tag, *plan_.comm_));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *plan_.comm_);
+                        plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
           }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2760,11 +2755,11 @@ namespace Tpetra {
           p -= numBlocks;
         }
 
-        if (procsTo_[p] != myProcID) {
+        if (plan_.procIdsToSendTo_[p] != myProcID) {
           size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
+          size_t j = plan_.startsTo_[p];
           size_t numPacketsTo_p = 0;
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
+          for (size_t k = 0; k < plan_.lengthsTo_[p]; ++k, ++j) {
             numPacketsTo_p += numExportPacketsPerLID[j];
             deep_copy_offset(sendArray, exports, sendArrayOffset,
                              indicesOffsets[j], numExportPacketsPerLID[j]);
@@ -2777,34 +2772,34 @@ namespace Tpetra {
             if (sendType == Details::DISTRIBUTOR_RSEND) {
               readySend<int> (tmpSend,
                               as<int> (tmpSend.size ()),
-                              procsTo_[p], tag, *plan_.comm_);
+                              plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
             }
             else if (sendType == Details::DISTRIBUTOR_ISEND) {
               exports_view_type tmpSendBuf =
                 subview_offset (sendArray, size_t(0), numPacketsTo_p);
-              actor_.requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
+              actor_.requests_.push_back (isend<int> (tmpSendBuf, plan_.procIdsToSendTo_[p],
                                                tag, *plan_.comm_));
             }
             else if (sendType == Details::DISTRIBUTOR_SSEND) {
               ssend<int> (tmpSend,
                           as<int> (tmpSend.size ()),
-                          procsTo_[p], tag, *plan_.comm_);
+                          plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
             }
             else { // if (sendType == Details::DISTRIBUTOR_SSEND)
               send<int> (tmpSend,
                          as<int> (tmpSend.size ()),
-                         procsTo_[p], tag, *plan_.comm_);
+                         plan_.procIdsToSendTo_[p], tag, *plan_.comm_);
             }
           }
         }
         else { // "Sending" the message to myself
           selfNum = p;
-          selfIndex = startsTo_[p];
+          selfIndex = plan_.startsTo_[p];
         }
       }
 
       if (plan_.sendMessageToSelf_) {
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
+        for (size_t k = 0; k < plan_.lengthsTo_[selfNum]; ++k) {
           deep_copy_offset(imports, exports, selfReceiveOffset,
                            indicesOffsets[selfIndex],
                            numExportPacketsPerLID[selfIndex]);
@@ -2858,7 +2853,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.indicesTo_.empty (), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -2877,7 +2872,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.indicesTo_.empty (), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
