@@ -46,6 +46,30 @@
 #include <numeric>
 
 namespace Tpetra {
+  // We set default values of Distributor's Boolean parameters here,
+  // in this one place.  That way, if we want to change the default
+  // value of a parameter, we don't have to search the whole file to
+  // ensure a consistent setting.
+  namespace {
+    // Default value of the "Debug" parameter.
+    const bool tpetraDistributorDebugDefault = false;
+    // Default value of the "Barrier between receives and sends" parameter.
+    const bool barrierBetween_default = false;
+    // Default value of the "Use distinct tags" parameter.
+    const bool useDistinctTags_default = true;
+  } // namespace (anonymous)
+
+  Teuchos::Array<std::string>
+  distributorSendTypes ()
+  {
+    Teuchos::Array<std::string> sendTypes;
+    sendTypes.push_back ("Isend");
+    sendTypes.push_back ("Rsend");
+    sendTypes.push_back ("Send");
+    sendTypes.push_back ("Ssend");
+    return sendTypes;
+  }
+
   namespace Details {
     std::string
     DistributorSendTypeEnumToString (EDistributorSendType sendType)
@@ -91,38 +115,18 @@ namespace Tpetra {
 
     DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
       : comm_(comm),
-        howInitialized_(Details::DISTRIBUTOR_NOT_INITIALIZED)
+        howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
+        sendType_(DISTRIBUTOR_SEND),
+        barrierBetweenRecvSend_(barrierBetween_default)
     { }
 
     DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
       : comm_(otherPlan.comm_),
-        howInitialized_(Details::DISTRIBUTOR_INITIALIZED_BY_COPY)
+        howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
+        sendType_(otherPlan.sendType_),
+        barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_)
     { }
   } // namespace Details
-
-  Teuchos::Array<std::string>
-  distributorSendTypes ()
-  {
-    Teuchos::Array<std::string> sendTypes;
-    sendTypes.push_back ("Isend");
-    sendTypes.push_back ("Rsend");
-    sendTypes.push_back ("Send");
-    sendTypes.push_back ("Ssend");
-    return sendTypes;
-  }
-
-  // We set default values of Distributor's Boolean parameters here,
-  // in this one place.  That way, if we want to change the default
-  // value of a parameter, we don't have to search the whole file to
-  // ensure a consistent setting.
-  namespace {
-    // Default value of the "Debug" parameter.
-    const bool tpetraDistributorDebugDefault = false;
-    // Default value of the "Barrier between receives and sends" parameter.
-    const bool barrierBetween_default = false;
-    // Default value of the "Use distinct tags" parameter.
-    const bool useDistinctTags_default = true;
-  } // namespace (anonymous)
 
   int Distributor::getTag (const int pathTag) const {
     return useDistinctTags_ ? pathTag : plan_.comm_->getTag ();
@@ -197,8 +201,6 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
                const Teuchos::RCP<Teuchos::ParameterList>& plist)
     : plan_(comm)
-    , sendType_ (Details::DISTRIBUTOR_SEND)
-    , barrierBetween_ (barrierBetween_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -234,8 +236,6 @@ namespace Tpetra {
   Distributor::
   Distributor (const Distributor& distributor)
     : plan_(distributor.plan_)
-    , sendType_ (distributor.sendType_)
-    , barrierBetween_ (distributor.barrierBetween_)
     , verbose_ (distributor.verbose_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
@@ -276,8 +276,6 @@ namespace Tpetra {
 
     std::swap (plan_, rhs.plan_);
     std::swap (actor_, rhs.actor_);
-    std::swap (sendType_, rhs.sendType_);
-    std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (verbose_, rhs.verbose_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
@@ -383,8 +381,8 @@ namespace Tpetra {
          "and the only way to guarantee that in general is with a barrier.");
 
       // Now that we've validated the input list, save the results.
-      sendType_ = sendType;
-      barrierBetween_ = barrierBetween;
+      plan_.sendType_ = sendType;
+      plan_.barrierBetweenRecvSend_ = barrierBetween;
       useDistinctTags_ = useDistinctTags;
 
       // ParameterListAcceptor semantics require pointer identity of the
@@ -491,8 +489,8 @@ namespace Tpetra {
   {
     reverseDistributor_ = Teuchos::rcp(new Distributor(plan_.comm_));
     reverseDistributor_->plan_.howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
-    reverseDistributor_->sendType_ = sendType_;
-    reverseDistributor_->barrierBetween_ = barrierBetween_;
+    reverseDistributor_->plan_.sendType_ = plan_.sendType_;
+    reverseDistributor_->plan_.barrierBetweenRecvSend_ = plan_.barrierBetweenRecvSend_;
     reverseDistributor_->verbose_ = verbose_;
 
     // The total length of all the sends of this Distributor.  We
@@ -643,9 +641,9 @@ namespace Tpetra {
         << Details::DistributorHowInitializedEnumToString (plan_.howInitialized_)
         << ", Parameters: {"
         << "Send type: "
-        << DistributorSendTypeEnumToString (sendType_)
+        << DistributorSendTypeEnumToString (plan_.sendType_)
         << ", Barrier between receives and sends: "
-        << (barrierBetween_ ? "true" : "false")
+        << (plan_.barrierBetweenRecvSend_ ? "true" : "false")
         << ", Use distinct tags: "
         << (useDistinctTags_ ? "true" : "false")
         << ", Debug: " << (verbose_ ? "true" : "false")
@@ -759,9 +757,9 @@ namespace Tpetra {
         out << "Parameters: " << endl;
         Teuchos::OSTab tab2 (out);
         out << "\"Send type\": "
-            << DistributorSendTypeEnumToString (sendType_) << endl
+            << DistributorSendTypeEnumToString (plan_.sendType_) << endl
             << "\"Barrier between receives and sends\": "
-            << (barrierBetween_ ? "true" : "false") << endl
+            << (plan_.barrierBetweenRecvSend_ ? "true" : "false") << endl
             << "\"Use distinct tags\": "
             << (useDistinctTags_ ? "true" : "false") << endl
             << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;

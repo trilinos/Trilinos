@@ -102,6 +102,12 @@ namespace Tpetra {
 
       Teuchos::RCP<const Teuchos::Comm<int>> comm_;
       Details::EDistributorHowInitialized howInitialized_;
+
+      //! @name Parameters read in from the Teuchos::ParameterList
+      //@{
+      Details::EDistributorSendType sendType_;
+      bool barrierBetweenRecvSend_;
+      //@}
     };
 
     class DistributorActor {
@@ -817,12 +823,6 @@ namespace Tpetra {
     //! @name Parameters read in from the Teuchos::ParameterList
     //@{
 
-    //! The variant of send to use in do[Reverse]Posts().
-    Details::EDistributorSendType sendType_;
-
-    //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
-    bool barrierBetween_;
-
     //! Get default value of verbose_ (see below).
     static bool getVerbose();
 
@@ -1176,8 +1176,8 @@ namespace Tpetra {
     const int myRank = plan_.comm_->getRank ();
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
+    const Details::EDistributorSendType sendType = plan_.sendType_;
+    const bool doBarrier = plan_.barrierBetweenRecvSend_;
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -1562,8 +1562,8 @@ namespace Tpetra {
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
+    const Details::EDistributorSendType sendType = plan_.sendType_;
+    const bool doBarrier = plan_.barrierBetweenRecvSend_;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
@@ -2010,9 +2010,9 @@ namespace Tpetra {
       prefix = createPrefix("doPostsAndWaits(3-arg, Kokkos)");
       std::ostringstream os;
       os << *prefix << "sendType: "
-         << DistributorSendTypeEnumToString(sendType_)
+         << DistributorSendTypeEnumToString(plan_.sendType_)
          << ", barrierBetween: "
-         << (barrierBetween_ ? "true" : "false") << endl;
+         << (plan_.barrierBetweenRecvSend_ ? "true" : "false") << endl;
       std::cerr << os.str();
     }
 
@@ -2117,8 +2117,8 @@ namespace Tpetra {
     const int myRank = plan_.comm_->getRank ();
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
+    const Details::EDistributorSendType sendType = plan_.sendType_;
+    const bool doBarrier = plan_.barrierBetweenRecvSend_;
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -2520,8 +2520,8 @@ namespace Tpetra {
 
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
+    const Details::EDistributorSendType sendType = plan_.sendType_;
+    const bool doBarrier = plan_.barrierBetweenRecvSend_;
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
