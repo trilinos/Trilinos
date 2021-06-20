@@ -96,7 +96,8 @@ cuSOLVER<Matrix,Vector>::preOrdering_impl()
     if(data_.bReorder) {
       Amesos2::Util::reorder(
         device_row_ptr_view_, device_cols_view_,
-        device_perm_, device_peri_, sorted_nnz);
+        device_perm_, device_peri_, sorted_nnz,
+        true);
     }
   }
 
