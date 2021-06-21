@@ -137,7 +137,7 @@ namespace MueLuTests {
     cp_params.set("aggregation: classical scheme","direct");
     RCP<ClassicalPFactory> PFact = rcp(new ClassicalPFactory());
     PFact->SetParameterList(cp_params);
-    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    //    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
     PFact->SetFactory("Graph", dropFact);
     PFact->SetFactory("DofsPerNode", dropFact);
     PFact->SetFactory("FC Splitting", cmFact);
@@ -212,7 +212,7 @@ namespace MueLuTests {
     cp_params.set("aggregation: classical scheme","classical modified");
     RCP<ClassicalPFactory> PFact = rcp(new ClassicalPFactory());
     PFact->SetParameterList(cp_params);
-    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    //PFact->SetFactory("UnAmalgamationInfo", amalgFact);
     PFact->SetFactory("Graph", dropFact);
     PFact->SetFactory("DofsPerNode", dropFact);
     PFact->SetFactory("FC Splitting", cmFact);
@@ -276,7 +276,7 @@ namespace MueLuTests {
     cp_params.set("aggregation: classical scheme","ext+i");
     RCP<ClassicalPFactory> PFact = rcp(new ClassicalPFactory());
     PFact->SetParameterList(cp_params);
-    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    //    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
     PFact->SetFactory("Graph", dropFact);
     PFact->SetFactory("DofsPerNode", dropFact);
     PFact->SetFactory("FC Splitting", cmFact);

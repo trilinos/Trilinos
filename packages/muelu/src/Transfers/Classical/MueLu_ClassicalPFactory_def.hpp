@@ -72,7 +72,7 @@
 
 
 //#define CMS_DEBUG
-#define CMS_DUMP
+//#define CMS_DUMP
 
 namespace { 
 
@@ -110,7 +110,7 @@ namespace MueLu {
 
 #undef SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
+    //    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",         Teuchos::null, "Generating factory of the CoarseMap");
@@ -126,8 +126,7 @@ namespace MueLu {
     Input(fineLevel, "A");
     Input(fineLevel, "Graph");
     Input(fineLevel, "DofsPerNode");    
-    Input(fineLevel, "UnAmalgamationInfo");
-    Input(fineLevel, "DofsPerNode");
+    //    Input(fineLevel, "UnAmalgamationInfo");
     Input(fineLevel, "CoarseMap");
     Input(fineLevel, "FC Splitting");
     
@@ -159,7 +158,7 @@ namespace MueLu {
     RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
     RCP<const GraphBase> graph      = Get< RCP<GraphBase> >(fineLevel, "Graph");
     //    LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
-    RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
+    //    RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
     RCP<const Import>    Importer   = A->getCrsGraph()->getImporter();
     Xpetra::UnderlyingLib lib = ownedCoarseMap->lib();
 
