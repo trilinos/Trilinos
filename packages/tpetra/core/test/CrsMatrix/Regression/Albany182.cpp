@@ -188,7 +188,6 @@ namespace { // (anonymous)
                                  const CrsMatrixType& A)
   {
     using std::endl;
-    typedef typename CrsMatrixType::scalar_type ST;
     typedef typename CrsMatrixType::map_type map_type;
     typedef typename CrsMatrixType::local_ordinal_type LO;
     typedef typename CrsMatrixType::global_ordinal_type GO;

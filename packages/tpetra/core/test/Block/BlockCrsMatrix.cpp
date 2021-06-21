@@ -168,9 +168,6 @@ namespace {
     using values_host_view_type = typename BCM::values_host_view_type;
     using impl_scalar_type = typename BCM::impl_scalar_type;
 
-    // The typedef below is also a test.  BlockCrsMatrix must have
-    // this typedef, or this test won't compile.
-    typedef typename BCM::little_block_type little_block_type;
     typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
@@ -878,9 +875,6 @@ namespace {
     typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
-    // The typedef below is also a test.  BlockCrsMatrix must have
-    // this typedef, or this test won't compile.
-    typedef typename BCM::little_block_type little_block_type;
     typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
@@ -1014,9 +1008,6 @@ namespace {
     typedef typename BCM::impl_scalar_type IST;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
-    // The typedef below is also a test.  BlockCrsMatrix must have
-    // this typedef, or this test won't compile.
-    typedef typename BCM::little_block_type little_block_type;
     typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
