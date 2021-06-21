@@ -2,6 +2,7 @@
 #define KOKKOSCOMPAT_CLASSICNODEAPI_WRAPPER_HPP
 
 #include "Kokkos_Core.hpp"
+#include "TpetraClassic_config.h"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 //
@@ -54,7 +55,11 @@ public:
 #endif
 
 #ifdef KOKKOS_ENABLE_HIP
+#ifdef HAVE_TPETRACLASSIC_KOKKOSHIPHOSTPINNED
   typedef KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace> KokkosHIPWrapperNode;
+#else
+  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::HIP> KokkosHIPWrapperNode;
+#endif
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA

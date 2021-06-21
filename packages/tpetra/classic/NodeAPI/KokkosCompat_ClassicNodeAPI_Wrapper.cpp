@@ -34,14 +34,17 @@ namespace Kokkos {
 #endif // KOKKOS_ENABLE_CUDA
 
 #ifdef KOKKOS_ENABLE_HIP
+#ifdef HAVE_TPETRACLASSIC_KOKKOSHIPHOSTPINNED
     template<>
     std::string KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>::name() {
       return std::string("HIP/Wrapper");
     }
+#else
     template<>
-    std::string KokkosDeviceWrapperNode<Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace> >::name() {
+    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::HIP>::name() {
       return std::string("HIP/Wrapper");
     }
+#endif
 #endif // KOKKOS_ENABLE_HIP
 
 #ifdef KOKKOS_ENABLE_SYCL
