@@ -672,7 +672,7 @@ namespace MueLu {
             CoalesceDrop_Kokkos_Details::DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
                 dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-                scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+                scalarFunctor(A->getLocalMatrixDevice(), bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
                                     scalarFunctor, nnzFA);
@@ -750,7 +750,7 @@ namespace MueLu {
       if (!reuseGraph) {
         SubFactoryMonitor m2(*this, "LocalMatrix+FillComplete", currentLevel);
 
-        local_matrix_type localFA = local_matrix_type("A", numRows, kokkosMatrix.numCols(), nnzFA, vals, rows, cols);
+        local_matrix_type localFA = local_matrix_type("A", numRows, A->getLocalMatrixDevice().numCols(), nnzFA, vals, rows, cols);
 #if 1
         // FIXME: this should be gone once Xpetra propagate "local matrix + 4 maps" constructor
         // FIXME: we don't need to rebuild importers/exporters. We should reuse A's
