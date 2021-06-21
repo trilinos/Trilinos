@@ -795,17 +795,19 @@ namespace MueLu {
       Array<LO> rowTranslationArray = *(amalInfo->getRowTranslation()); // TAW should be transform that into a View?
       Array<LO> colTranslationArray = *(amalInfo->getColTranslation());
 
+      Kokkos::View<LO*, Kokkos::MemoryUnmanaged> 
+	rowTranslationView(rowTranslationArray.getRawPtr(),rowTranslationArray.size() ); 
+      Kokkos::View<LO*, Kokkos::MemoryUnmanaged> 
+	colTranslationView(colTranslationArray.getRawPtr(),colTranslationArray.size() ); 
+
       // get number of local nodes
       LO numNodes = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
       typedef typename Kokkos::View<LocalOrdinal*, DeviceType> id_translation_type;
       id_translation_type rowTranslation("dofId2nodeId",rowTranslationArray.size());
       id_translation_type colTranslation("ov_dofId2nodeId",colTranslationArray.size());
-
-      // TODO change this to lambdas
-      for (decltype(rowTranslationArray.size()) i = 0; i < rowTranslationArray.size(); ++i)
-        rowTranslation(i) = rowTranslationArray[i];
-      for (decltype(colTranslationArray.size()) i = 0; i < colTranslationArray.size(); ++i)
-        colTranslation(i) = colTranslationArray[i];
+      Kokkos::deep_copy(rowTranslation, rowTranslationView);
+      Kokkos::deep_copy(colTranslation, colTranslationView);
+								     
       // extract striding information
       blkSize = A->GetFixedBlockSize();  //< the full block size (number of dofs per node in strided map)
       LocalOrdinal blkId   = -1;         //< the block id within a strided map or -1 if it is a full block map

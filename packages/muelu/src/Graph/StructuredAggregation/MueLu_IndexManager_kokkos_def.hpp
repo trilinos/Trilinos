@@ -151,6 +151,7 @@ namespace MueLu {
     typename Kokkos::View<LO[3], memory_space>::HostMirror lFineNodesPerDir_h = Kokkos::create_mirror_view(lFineNodesPerDir);
     typename Kokkos::View<LO[3], memory_space>::HostMirror coarseNodesPerDir_h = Kokkos::create_mirror_view(coarseNodesPerDir);
     Kokkos::deep_copy(lFineNodesPerDir_h, lFineNodesPerDir);
+    Kokkos::deep_copy(coarseRate_h, coarseRate);
 
     lNumFineNodes10 = lFineNodesPerDir_h(1)*lFineNodesPerDir_h(0);
     lNumFineNodes   = lFineNodesPerDir_h(2)*lNumFineNodes10;
