@@ -831,43 +831,37 @@ namespace MueLu {
     values_type      valuesPt(Kokkos::ViewAllocateWithoutInitializing("Pt values"),
                               intermediateP.nnz());
 
+    Kokkos::deep_copy(rowPtrPt, 0);
+    Kokkos::parallel_for("MueLuAggreation::Count", Kokkos::RangePolicy<typename Node::execution_space, LocalOrdinal>(0,intermediateP.nnz()), 
+			 KOKKOS_LAMBDA(const LocalOrdinal entryIdx) {
+			   rowPtrPt(intermediateP.graph.entries(entryIdx) + 1) += 1;
+			 });
+
     typename row_pointer_type::HostMirror rowPtrPt_h = Kokkos::create_mirror_view(rowPtrPt);
-    Kokkos::deep_copy(rowPtrPt_h, 0);
-    for(size_type entryIdx = 0; entryIdx < intermediateP.nnz(); ++entryIdx) {
-      rowPtrPt_h(intermediateP.graph.entries(entryIdx) + 1) += 1;
-    }
     for(LO rowIdx = 0; rowIdx < intermediateP.numCols(); ++rowIdx) {
       rowPtrPt_h(rowIdx + 1) += rowPtrPt_h(rowIdx);
     }
     Kokkos::deep_copy(rowPtrPt, rowPtrPt_h);
 
-    typename row_pointer_type::HostMirror rowPtrP_h = Kokkos::create_mirror_view(intermediateP.graph.row_map);
-    Kokkos::deep_copy(rowPtrP_h, intermediateP.graph.row_map);
-    typename col_indices_type::HostMirror colIndP_h = Kokkos::create_mirror_view(intermediateP.graph.entries);
-    Kokkos::deep_copy(colIndP_h, intermediateP.graph.entries);
-    typename values_type::HostMirror valuesP_h  = Kokkos::create_mirror_view(intermediateP.values);
-    Kokkos::deep_copy(valuesP_h, intermediateP.values);
-    typename col_indices_type::HostMirror colIndPt_h = Kokkos::create_mirror_view(colIndPt);
-    typename values_type::HostMirror valuesPt_h = Kokkos::create_mirror_view(valuesPt);
-    const col_index_type invalidColumnIndex = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
-    Kokkos::deep_copy(colIndPt_h, invalidColumnIndex);
+    auto rowPtrP = intermediateP.graph.row_map;
+    values_type valuesP  = intermediateP.values;
 
-    col_index_type colIdx = 0;
-    for(LO rowIdx = 0; rowIdx < intermediateP.numRows(); ++rowIdx) {
-      for(size_type entryIdxP = rowPtrP_h(rowIdx); entryIdxP < rowPtrP_h(rowIdx + 1); ++entryIdxP) {
-        colIdx = intermediateP.graph.entries(entryIdxP);
-        for(size_type entryIdxPt = rowPtrPt_h(colIdx); entryIdxPt < rowPtrPt_h(colIdx + 1); ++entryIdxPt) {
-          if(colIndPt_h(entryIdxPt) == invalidColumnIndex) {
-            colIndPt_h(entryIdxPt) = rowIdx;
-            valuesPt_h(entryIdxPt) = valuesP_h(entryIdxP);
+    const col_index_type invalidColumnIndex = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
+    Kokkos::deep_copy(colIndPt, invalidColumnIndex);
+
+    Kokkos::parallel_for("MueLuAggreation::Set", Kokkos::RangePolicy<typename Node::execution_space, LocalOrdinal>(0,intermediateP.numRows()), 
+			 KOKKOS_LAMBDA(const LocalOrdinal rowIdx) {
+      for(size_type entryIdxP = rowPtrP(rowIdx); entryIdxP < rowPtrP(rowIdx + 1); ++entryIdxP) {
+        col_index_type colIdx = intermediateP.graph.entries(entryIdxP);
+        for(size_type entryIdxPt = rowPtrPt(colIdx); entryIdxPt < rowPtrPt(colIdx + 1); ++entryIdxPt) {
+          if(colIndPt(entryIdxPt) == invalidColumnIndex) {
+            colIndPt(entryIdxPt) = rowIdx;
+            valuesPt(entryIdxPt) = valuesP(entryIdxP);
             break;
           }
         } // Loop over entries in row of Pt
       } // Loop over entries in row of P
-    } // Loop over rows of P
-
-    Kokkos::deep_copy(colIndPt, colIndPt_h);
-    Kokkos::deep_copy(valuesPt, valuesPt_h);
+    }); // Loop over rows of P
 
     local_matrix_type intermediatePt("intermediatePt",
                                      intermediateP.numCols(),

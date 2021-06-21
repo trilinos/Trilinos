@@ -151,7 +151,7 @@ namespace MueLuTests {
     {
       // Since this is a scalar problem and no entries are dropped
       // we can simply compare the value from LWGraph with those in A
-      LO numrows=A->getNodeNumRows(), nument=A->getNodeNumEntries();
+      auto numrows=A->getNodeNumRows(), nument=A->getNodeNumEntries();
       int result=0;
       auto lgraph = *graph;
       Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
