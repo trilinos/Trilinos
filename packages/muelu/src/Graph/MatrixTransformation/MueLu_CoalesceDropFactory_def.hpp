@@ -195,13 +195,14 @@ namespace MueLu {
     // in the block diagonalizaiton). So we'll clobber the rowSumTol with -1.0 in this case
     typename STS::magnitudeType rowSumTol = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
     RCP<LocalOrdinalVector> ghostedBlockNumber;
+    ArrayRCP<const LO> g_block_id;
 
     if(algo == "distance laplacian" ) { 
       // Grab the coordinates for distance laplacian
       Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
       A = realA;
     }
-    else if(algo.find("signed classical") != std::string::npos){
+    else if(algo == "signed classical" || algo == "block diagonal colored signed classical" || algo == "block diagonal signed classical") {
       useSignedClassical = true;
       //      if(realA->GetFixedBlockSize() > 1) {
         RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector> >(currentLevel, "BlockNumber");
@@ -210,11 +211,12 @@ namespace MueLu {
         if(!importer.is_null()) {
           SubFactoryMonitor m1(*this, "Block Number import", currentLevel);      
           ghostedBlockNumber= Xpetra::VectorFactory<LO,LO,GO,NO>::Build(importer->getTargetMap());
-          ghostedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
+          ghostedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);          
         } 
         else {
-        ghostedBlockNumber = BlockNumber;
+          ghostedBlockNumber = BlockNumber;
         }
+        g_block_id = ghostedBlockNumber->getData(0);
         //      }
       if(algo == "block diagonal colored signed classical") 
         generateColoringGraph=true;
@@ -227,7 +229,7 @@ namespace MueLu {
       BlockDiagonalize(currentLevel,realA,false);
       return;
     }
-    else if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" || algo == "block diagonal signed classical")  {
+    else if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian")  {
       // Handle the "block diagonal" filtering, and then continue onward
       use_block_algorithm = true;
       RCP<Matrix> filteredMatrix = BlockDiagonalize(currentLevel,realA,true);
@@ -254,10 +256,6 @@ namespace MueLu {
       }
       else if(algo == "block diagonal classical") {
         algo = "classical";
-      }
-      else if(algo == "block diagonal signed classical") {
-        algo = "classical";
-        useSignedClassical = true;
       }
       // All cases
       A = filteredMatrix;
@@ -439,10 +437,16 @@ namespace MueLu {
           ArrayRCP<const SC> ghostedDiagVals;
           ArrayRCP<const MT> negMaxOffDiagonal;
           if(useSignedClassical) {
-            //            if(ghostedBlockNumber.is_null())
-            negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A);
-              //            else
-              //              negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A,*ghostedBlockNumber);
+            if(ghostedBlockNumber.is_null()) {
+              if (GetVerbLevel() & Statistics1)
+                GetOStream(Statistics1) << "Calculating max point off-diagonal"<<std::endl;
+              negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A);
+            }
+            else {
+              if (GetVerbLevel() & Statistics1)
+                GetOStream(Statistics1) << "Calculating max block off-diagonal"<<std::endl;
+              negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A,*ghostedBlockNumber);
+            }
           }
           else {
             ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
@@ -478,8 +482,11 @@ namespace MueLu {
                   LO col = indices[colID];               
                   MT max_neg_aik = realThreshold * STS::real(negMaxOffDiagonal[row]);
                   MT neg_aij    = - STS::real(vals[colID]);
-
-                  if ((!rowIsDirichlet && neg_aij > max_neg_aik) || row == col) {
+                  /*                  if(row==1326) printf("A(%d,%d) = %6.4e, block = (%d,%d) neg_aij = %6.4e max_neg_aik = %6.4e\n",row,col,vals[colID],
+                                       g_block_id.is_null() ? -1 :  g_block_id[row],
+                                       g_block_id.is_null() ? -1 :  g_block_id[col],
+                                       neg_aij, max_neg_aik);*/
+                  if ((!rowIsDirichlet && (g_block_id.is_null() || g_block_id[row] == g_block_id[col]) && neg_aij > max_neg_aik) || row == col) {
                     columns[realnnz++] = col;
                     rownnz++;
                   } else
@@ -635,28 +642,24 @@ namespace MueLu {
             RCP<GraphBase> colorGraph;
             BlockDiagonalizeGraph(graph,ghostedBlockNumber,colorGraph);
             Set(currentLevel, "Coloring Graph",colorGraph);
-#define CMS_DUMP
+            //#define CMS_DUMP
 #ifdef CMS_DUMP
-    {
-      int rank = graph->GetDomainMap()->getComm()->getRank();
-      {
-        std::ofstream ofs(std::string("m_color_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
-        RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
-        colorGraph->print(*fancy,Debug);
-      }
-      {
-        std::ofstream ofs(std::string("m_regular_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
-        RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
-        graph->print(*fancy,Debug);
-      }
-
-    }
+           {
+             int rank = graph->GetDomainMap()->getComm()->getRank();
+             {
+               std::ofstream ofs(std::string("m_color_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
+               RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+               colorGraph->print(*fancy,Debug);
+             }
+             {
+               std::ofstream ofs(std::string("m_regular_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
+               RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+               graph->print(*fancy,Debug);
+             }
+             
+           }
 #endif
-
-
-          }
-
-
+          }//end generateColoringGraph
         } else if (A->GetFixedBlockSize() > 1 && threshold == STS::zero()) {
           // Case 3:  Multiple DOF/node problem without dropping
           const RCP<const Map> rowMap = A->getRowMap();
@@ -1673,7 +1676,7 @@ namespace MueLu {
 
     RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector> >(currentLevel, "BlockNumber");
     RCP<LocalOrdinalVector> ghostedBlockNumber;
-    GetOStream(Statistics1) << "Using BlockDiagonal Graph (with provided blocking)"<<std::endl;      
+    GetOStream(Statistics1) << "Using BlockDiagonal Graph before dropping (with provided blocking)"<<std::endl;      
 
     // Ghost the column block numbers if we need to
     RCP<const Import> importer = A->getCrsGraph()->getImporter();
