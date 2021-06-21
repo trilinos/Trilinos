@@ -302,7 +302,7 @@ public:
 
   /// \brief Whether it is valid to apply the transpose or conjugate
   ///   transpose of this matrix.
-  bool hasTransposeApply () const override{
+  bool hasTransposeApply () const override {
     // FIXME (mfh 04 May 2014) Transpose and conjugate transpose modes
     // are not implemented yet.  Fill in applyBlockTrans() to fix this.
     return false;
@@ -476,7 +476,7 @@ public:
   void
   getLocalRowView (LO LocalRow,
                    Teuchos::ArrayView<const LO> &indices,
-                   Teuchos::ArrayView<const Scalar> &values) const;
+                   Teuchos::ArrayView<const Scalar> &values) const override;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
   /// KK: this is inherited from row matrix interface and it returns const
   ///      this cannot replace the deprecated pointer interface

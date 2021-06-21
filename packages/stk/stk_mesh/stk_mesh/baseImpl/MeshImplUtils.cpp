@@ -60,12 +60,6 @@ bool is_in_list(Entity entity, const Entity* begin, const Entity* end)
     return std::find(begin, end, entity) != end;
 }
 
-void remove_index_from_list(size_t index, std::vector<Entity>& elementsInCommon)
-{
-    std::swap(elementsInCommon[index], elementsInCommon.back());
-    elementsInCommon.resize(elementsInCommon.size() - 1);
-}
-
 void remove_entities_not_in_list(const Entity* begin, const Entity* end, std::vector<Entity>& elementsInCommon)
 {
     int numElemsFound=0;
@@ -83,10 +77,7 @@ void remove_entities_not_in_list(const Entity* begin, const Entity* end, std::ve
 void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
 {
     for(unsigned i = 1; i < numNodes; ++i) {
-        const MeshIndex& meshIndex = mesh.mesh_index(nodes[i]);
-        const Bucket& bucket = *meshIndex.bucket;
-        const unsigned ord = meshIndex.bucket_ordinal;
-        remove_entities_not_in_list(bucket.begin(ord, rank), bucket.end(ord, rank), elementsInCommon);
+        remove_entities_not_in_list(mesh.begin(nodes[i], rank), mesh.end(nodes[i], rank), elementsInCommon);
     }
 }
 
@@ -95,10 +86,7 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
     elementsInCommon.clear();
     if(numNodes > 0)
     {
-        const MeshIndex& meshIndex = mesh.mesh_index(nodes[0]);
-        const Bucket& bucket = *meshIndex.bucket;
-        const unsigned ord = meshIndex.bucket_ordinal;
-        elementsInCommon.assign(bucket.begin(ord, rank), bucket.end(ord, rank));
+        elementsInCommon.assign(mesh.begin(nodes[0], rank), mesh.end(nodes[0], rank));
         remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
     }
 }
@@ -1308,6 +1296,16 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
   }
 }
 
+EntityRank get_highest_upward_connected_rank(const BulkData& mesh, Entity entity)
+{
+  const EntityRank entityRank = mesh.entity_rank(entity);
+  EntityRank highestRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count()-1);
+  while(highestRank > entityRank && mesh.num_connectivity(entity, highestRank) == 0) {
+    highestRank = static_cast<EntityRank>(highestRank-1);
+  }
+  return highestRank;
+}
+
 void insert_upward_relations(const BulkData& bulk_data,
                              const EntityProcMapping& entitySharing,
                              Entity rel_entity,
@@ -1323,22 +1321,16 @@ void insert_upward_relations(const BulkData& bulk_data,
 
     send.addEntityProc(rel_entity,share_proc);
 
-    // There may be even higher-ranking entities that need to be ghosted, so we must recurse
-    EntityRank rel_entity_rank = bucket.entity_rank();
-    ThrowAssert(rel_entity_rank > rank_of_orig_entity);
-
     const unsigned bucketOrd = idx.bucket_ordinal;
-    const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
-    for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
-    {
-      const int num_rels = bucket.num_connectivity(bucketOrd, irank);
-      Entity const* rels     = bucket.begin(bucketOrd, irank);
+    const EntityRank upwardRank = get_highest_upward_connected_rank(bulk_data, rel_entity);
+    const int numRels = bucket.num_connectivity(bucketOrd, upwardRank);
+    Entity const* rels     = bucket.begin(bucketOrd, upwardRank);
 
-      for (int r = 0; r < num_rels; ++r)
-      {
-        Entity const rel_of_rel_entity = rels[r];
-        if (bulk_data.is_valid(rel_of_rel_entity)) {
-          insert_upward_relations(bulk_data, entitySharing, rel_of_rel_entity, rel_entity_rank, share_proc, send);
+    for (int r = 0; r < numRels; ++r) {
+      Entity const upwardEntity = rels[r];
+      if (bulk_data.is_valid(upwardEntity) && bulk_data.bucket(upwardEntity).owned()) {
+        if (!entitySharing.find(upwardEntity, share_proc)) {
+          send.addEntityProc(upwardEntity, share_proc);
         }
       }
     }

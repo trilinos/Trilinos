@@ -6,7 +6,7 @@ exe() {
 }
 
 sierra_proj=${SIERRA_PROJ:-${PWD}}
-output_dir=${OUTPUT_DIR:-${PWD}/../stk-no-stk-io-cmake-testing}
+output_dir=${OUTPUT_DIR:-${PWD}/../stk-cmake-testing}
 trilinos_dir=${output_dir}/Trilinos
 cuda_on_or_off=${CUDA:-OFF}
 build_type=${CMAKE_BUILD_TYPE:-release}
@@ -25,18 +25,19 @@ if [ ! -d ${trilinos_dir} ] ; then
   exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
 else
   exe cd ${trilinos_dir}
-  exe git reset --hard develop
+  exe git checkout develop
+  exe git reset --hard origin/develop
   exe git pull
 fi
 
 trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_${SIERRA_COMPILER}
 exe rm -rf $trilinos_install_dir
 
-stk_build_dir=${output_dir}/stk_build_${build_type}_${SIERRA_COMPILER}
+stk_build_dir=${output_dir}/stk_build_no_stk_io_${build_type}_${SIERRA_COMPILER}
 exe rm -rf $stk_build_dir
 exe mkdir -p $stk_build_dir
 
-stk_cmake_testing=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
 
 printf "\nUsing sierra project: ${sierra_proj}\n";
 printf "Using build-type: ${build_type}\n";
@@ -58,7 +59,7 @@ if [ ! -L ${trilinos_dir}/packages/stk ] ; then
   exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
 fi
 
-exe cp ${stk_cmake_testing}/run_cmake_stk_no_stk_io ${stk_build_dir}
+exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk_no_stk_io ${stk_build_dir}
 exe cd ${stk_build_dir}
 printf "Configuring trilinos/stk (running cmake)...\n";
 exe 'TRILINOS_DIR=${trilinos_dir} \
