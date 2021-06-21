@@ -1025,8 +1025,7 @@ namespace MueLu {
          MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
        }
 
-       std::string drop_algo = dropParams.get<std::string>("aggregation: drop scheme");
-       if(drop_algo == "block diagonal colored signed classical")
+       if(dropParams.isParameter("aggregation: drop scheme") &&  dropParams.get<std::string>("aggregation: drop scheme") == "block diagonal colored signed classical")
          manager.SetFactory("Coloring Graph",dropFactory);
 
       dropFactory->SetParameterList(dropParams);

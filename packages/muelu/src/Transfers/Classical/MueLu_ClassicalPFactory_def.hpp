@@ -72,7 +72,7 @@
 
 
 //#define CMS_DEBUG
-//#define CMS_DUMP
+#define CMS_DUMP
 
 namespace { 
 
@@ -287,14 +287,15 @@ namespace MueLu {
       Xpetra::IO<real_type,LO,GO,NO>::Write(out_fc,*mv);
 
       // Block Number
-      if(BlockNumber.is_null()) throw std::runtime_error("No block number!");
-      RCP<RealValuedMultiVector> mv2 = RealValuedMultiVectorFactory::Build(BlockNumber->getMap(),1);
-      ArrayRCP<real_type> mv_data2= mv2->getDataNonConst(0);
-      ArrayRCP<const LO> b_data= BlockNumber->getData(0);      
-      for(LO i=0; i<(LO)b_data.size(); i++) {
-        mv_data2[i] = Teuchos::as<real_type>(b_data[i]);
+      if(!BlockNumber.is_null()) {
+        RCP<RealValuedMultiVector> mv2 = RealValuedMultiVectorFactory::Build(BlockNumber->getMap(),1);
+        ArrayRCP<real_type> mv_data2= mv2->getDataNonConst(0);
+        ArrayRCP<const LO> b_data= BlockNumber->getData(0);      
+        for(LO i=0; i<(LO)b_data.size(); i++) {
+          mv_data2[i] = Teuchos::as<real_type>(b_data[i]);
+        }
+        Xpetra::IO<real_type,LO,GO,NO>::Write(out_block,*mv2);
       }
-      Xpetra::IO<real_type,LO,GO,NO>::Write(out_block,*mv2);
     }
 
 
@@ -752,7 +753,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     }// end if i < Nrows
 
     // Finish up
-    Pcrs->setAllValues(P_rowptr,P_colind,P_values);
+    //    Pcrs->setAllValues(P_rowptr,P_colind,P_values);
     Pcrs->fillComplete(Pcrs->getDomainMap(),Pcrs->getRangeMap());
     
 }//end Coarsen_ClassicalModified
