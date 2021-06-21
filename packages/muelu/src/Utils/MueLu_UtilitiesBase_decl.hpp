@@ -286,7 +286,7 @@ tol = 0.;
       return maxvec;
     }
 
-    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> &BlockNumber) { //CMSCMS
+    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> &BlockNumber) {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.getColMap()->isSameAs(*BlockNumber.getMap()),std::runtime_error,"GetMatrixMaxMinusOffDiagonal: BlockNumber must match's A's column map.");
       
       Teuchos::ArrayRCP<const LocalOrdinal> block_id = BlockNumber.getData(0);
@@ -304,6 +304,8 @@ tol = 0.;
             mymax = std::max(mymax,-Teuchos::ScalarTraits<Scalar>::real(vals[j]));
           }
         }          
+        //        printf("A(%d,:) row_scale(block) = %6.4e\n",(int)i,mymax); 
+
         maxvec[i] = mymax;
       }
       return maxvec;
@@ -797,6 +799,7 @@ tol = 0.;
             diagval = vals[colID];
           rowsum += vals[colID];
         }
+        //        printf("A(%d,:) row_sum(point) = %6.4e\n",row,rowsum);
         if (rowSumTol < STS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
           //printf("Row %d triggers rowsum\n",(int)row);
           dirichletRows[row] = true;
@@ -826,6 +829,8 @@ tol = 0.;
           if(block_id[row] == block_id[col])
             rowsum += vals[colID];
         }
+
+        //        printf("A(%d,:) row_sum(block) = %6.4e\n",row,rowsum);
         if (rowSumTol < STS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
           //printf("Row %d triggers rowsum\n",(int)row);
           dirichletRows[row] = true;
