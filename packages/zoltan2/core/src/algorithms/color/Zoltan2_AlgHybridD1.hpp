@@ -127,7 +127,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
-      auto femvColors = femv->template getLocalView<MemorySpace>();
+      auto femvColors = femv->template getLocalView<Kokkos::Device<ExecutionSpace, MemorySpace>>();
       auto  sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_graph_coloring_handle()->set_vertex_colors(sv);
       kh.get_graph_coloring_handle()->set_tictoc(verbose);
@@ -750,7 +750,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       //if there is more than a single process, check distributed conflicts and recolor
       if(comm->getSize() > 1){
 	//get the colors from the femv
-        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
+        Kokkos::View<int**, Kokkos::LayoutLeft, device_type> femvColors = femv->template getLocalView<device_type>();
         Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
 	
         if(verbose)std::cout<<comm->getRank()<<": going to communicate\n";

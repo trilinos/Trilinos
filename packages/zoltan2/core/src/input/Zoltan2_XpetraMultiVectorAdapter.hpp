@@ -151,7 +151,7 @@ public:
       // Map such as getMyGlobalIndicesDevice() which could be direct assigned
       // here. Since Tpetra is still UVM dependent that is not going to happen
       // yet so just leaving this as Host to device_type conversion for now.
-      ids = Kokkos::create_mirror_view_and_copy(execution_space(),
+      ids = Kokkos::create_mirror_view_and_copy(typename node_t::device_type(),
         tvector->getTpetra_MultiVector()->getMap()->getMyGlobalIndices());
     }
     else if (map_->lib() == Xpetra::UseEpetra) {

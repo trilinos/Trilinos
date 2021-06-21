@@ -1412,7 +1412,7 @@ int main(int narg, char *arg[])
     bool test_boxes = false;
     bool rectilinear = false;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA)
     // make a new node type so we can run BasicVectorAdapter with UVM off
     // The Tpetra MV will still run with UVM on and we'll compare the results.
     // For Serial/OpenMP the 2nd test will be turned off at the CMake level.
@@ -1421,6 +1421,10 @@ int main(int narg, char *arg[])
     // declared like this.
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<
       Kokkos::Cuda, Kokkos::CudaSpace>  uvm_off_node_t;
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<
+      Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>  uvm_off_node_t;
 #endif
 
     try{
@@ -1471,7 +1475,7 @@ int main(int narg, char *arg[])
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
           }
           else {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
             ierr = testFromDataFile<uvm_off_node_t>(tcomm, numTeams, numParts,
                     imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
@@ -1515,7 +1519,7 @@ int main(int narg, char *arg[])
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
           }
           else {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
             ierr = GeometricGenInterface<uvm_off_node_t>(tcomm, numTeams,
                     numParts, imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
