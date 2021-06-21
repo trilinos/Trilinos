@@ -242,14 +242,15 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-TRIBITS_ADD_TEST(
-  tif_belos
-  NAME Jacobi_bcsstk14_hb_belos
-  ARGS "--xml_file=test_Jacobi_bcsstk14_hb.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 1 
-  STANDARD_PASS_OUTPUT
-)
+# HKT: Commenting out test temporarily because it is causing random failures
+#TRIBITS_ADD_TEST(
+#  tif_belos
+#  NAME Jacobi_bcsstk14_hb_belos
+#  ARGS "--xml_file=test_Jacobi_bcsstk14_hb.xml"
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1 
+#  STANDARD_PASS_OUTPUT
+#)
   
 TRIBITS_ADD_TEST(
   tif_belos
