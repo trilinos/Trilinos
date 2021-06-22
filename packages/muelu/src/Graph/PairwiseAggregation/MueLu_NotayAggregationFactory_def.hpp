@@ -835,7 +835,7 @@ namespace MueLu {
 			 KOKKOS_LAMBDA(const LocalOrdinal entryIdx) {
 			   rowPtrPt(intermediateP.graph.entries(entryIdx) + 1) += 1;
 			 });
-
+    Kokkos::fence();
     typename row_pointer_type::HostMirror rowPtrPt_h = Kokkos::create_mirror_view(rowPtrPt);
     for(LO rowIdx = 0; rowIdx < intermediateP.numCols(); ++rowIdx) {
       rowPtrPt_h(rowIdx + 1) += rowPtrPt_h(rowIdx);
@@ -861,6 +861,7 @@ namespace MueLu {
         } // Loop over entries in row of Pt
       } // Loop over entries in row of P
     }); // Loop over rows of P
+    Kokkos::fence();
 
     local_matrix_type intermediatePt("intermediatePt",
                                      intermediateP.numCols(),
