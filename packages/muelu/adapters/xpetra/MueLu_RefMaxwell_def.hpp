@@ -1695,8 +1695,6 @@ namespace MueLu {
       typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
       typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
-      // Get data out of P_nodal_imported and D0.
-      auto localD0 = D0_Matrix_->getLocalMatrixHost();
 
       // Which algorithm should we use for the construction of the special prolongator?
       // Option "mat-mat":
@@ -1705,6 +1703,8 @@ namespace MueLu {
       std::string algo = parameterList_.get("refmaxwell: prolongator compute algorithm",defaultAlgo);
 
       if (skipFirstLevel_) {
+	// Get data out of P_nodal_imported and D0.
+	auto localD0 = D0_Matrix_->getLocalMatrixHost();
 
         auto localP = P_nodal_imported->getLocalMatrixHost();
 
@@ -1825,6 +1825,8 @@ namespace MueLu {
                              });
 
       } else { // !skipFirstLevel_
+	// Get data out of P_nodal_imported and D0.
+	auto localD0 = D0_Matrix_->getLocalMatrixHost();
 
         CoordsH_ = Coords_;
 
@@ -1928,22 +1930,10 @@ namespace MueLu {
         }
 
         // Get data out of P_nodal_imported and D0.
-        ArrayRCP<const size_t>      D0rowptr_RCP;
-        ArrayRCP<const LO>          D0colind_RCP;
-        ArrayRCP<const SC>          D0vals_RCP;
         ArrayRCP<size_t>            P11rowptr_RCP;
         ArrayRCP<LO>                P11colind_RCP;
         ArrayRCP<SC>                P11vals_RCP;
 
-        rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
-
-        // For efficiency
-        // Refers to an issue where Teuchos::ArrayRCP::operator[] may be
-        // slower than Teuchos::ArrayView::operator[].
-        ArrayView<const size_t>     D0rowptr;
-        ArrayView<const LO>         D0colind;
-        ArrayView<const SC>         D0vals;
-        D0rowptr = D0rowptr_RCP();  D0colind = D0colind_RCP();  D0vals = D0vals_RCP();
 
         // Which algorithm should we use for the construction of the special prolongator?
         // Option "mat-mat":
@@ -1955,20 +1945,33 @@ namespace MueLu {
         std::string algo = parameterList_.get("refmaxwell: prolongator compute algorithm",defaultAlgo);
 
         if (skipFirstLevel_) {
-          // Get data out of P_nodal_imported and D0.
-          ArrayRCP<const size_t>      Prowptr_RCP;
-          ArrayRCP<const LO>          Pcolind_RCP;
-          ArrayRCP<const SC>          Pvals_RCP;
-          P_nodal_imported->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
-
-          ArrayView<const size_t>     Prowptr;
-          ArrayView<const LO>         Pcolind;
-          ArrayView<const SC>         Pvals;
-          Prowptr  = Prowptr_RCP();   Pcolind  = Pcolind_RCP();   Pvals = Pvals_RCP();
 
           if (algo == "mat-mat") {
             RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap());
             Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,false,*P_nodal,false,*D0_P_nodal,true,true);
+
+
+	    ArrayRCP<const size_t>      D0rowptr_RCP;
+	    ArrayRCP<const LO>          D0colind_RCP;
+	    ArrayRCP<const SC>          D0vals_RCP;
+	    rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
+	    // For efficiency
+	    // Refers to an issue where Teuchos::ArrayRCP::operator[] may be
+	    // slower than Teuchos::ArrayView::operator[].
+	    ArrayView<const size_t>     D0rowptr;
+	    ArrayView<const LO>         D0colind;
+	    ArrayView<const SC>         D0vals;
+	    D0rowptr = D0rowptr_RCP();  D0colind = D0colind_RCP();  D0vals = D0vals_RCP();
+
+	    // Get data out of P_nodal_imported and D0.
+	    ArrayRCP<const size_t>      Prowptr_RCP;
+	    ArrayRCP<const LO>          Pcolind_RCP;
+	    ArrayRCP<const SC>          Pvals_RCP;
+	    P_nodal_imported->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
+	    ArrayView<const size_t>     Prowptr;
+	    ArrayView<const LO>         Pcolind;
+	    ArrayView<const SC>         Pvals;
+	    Prowptr  = Prowptr_RCP();   Pcolind  = Pcolind_RCP();   Pvals = Pvals_RCP();
 
             // Get data out of D0*P.
             ArrayRCP<const size_t>      D0Prowptr_RCP;
@@ -2072,6 +2075,27 @@ namespace MueLu {
             P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
 
           } else if (algo == "gustavson") {
+	    ArrayRCP<const size_t>      D0rowptr_RCP;
+	    ArrayRCP<const LO>          D0colind_RCP;
+	    ArrayRCP<const SC>          D0vals_RCP;
+	    rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
+	    // For efficiency
+	    // Refers to an issue where Teuchos::ArrayRCP::operator[] may be
+	    // slower than Teuchos::ArrayView::operator[].
+	    ArrayView<const size_t>     D0rowptr;
+	    ArrayView<const LO>         D0colind;
+	    ArrayView<const SC>         D0vals;
+	    D0rowptr = D0rowptr_RCP();  D0colind = D0colind_RCP();  D0vals = D0vals_RCP();
+
+	    // Get data out of P_nodal_imported and D0.
+	    ArrayRCP<const size_t>      Prowptr_RCP;
+	    ArrayRCP<const LO>          Pcolind_RCP;
+	    ArrayRCP<const SC>          Pvals_RCP;
+	    P_nodal_imported->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
+	    ArrayView<const size_t>     Prowptr;
+	    ArrayView<const LO>         Pcolind;
+	    ArrayView<const SC>         Pvals;
+	    Prowptr  = Prowptr_RCP();   Pcolind  = Pcolind_RCP();   Pvals = Pvals_RCP();
 
             LO maxP11col = dim * P_nodal_imported->getColMap()->getMaxLocalIndex();
             const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -2191,6 +2215,17 @@ namespace MueLu {
 
 
         } else { // !skipFirstLevel_
+	  ArrayRCP<const size_t>      D0rowptr_RCP;
+	  ArrayRCP<const LO>          D0colind_RCP;
+	  ArrayRCP<const SC>          D0vals_RCP;
+	  rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
+	  // For efficiency
+	  // Refers to an issue where Teuchos::ArrayRCP::operator[] may be
+	  // slower than Teuchos::ArrayView::operator[].
+	  ArrayView<const size_t>     D0rowptr;
+	  ArrayView<const LO>         D0colind;
+	  ArrayView<const SC>         D0vals;
+	  D0rowptr = D0rowptr_RCP();  D0colind = D0colind_RCP();  D0vals = D0vals_RCP();
 
           CoordsH_ = Coords_;
           if (algo == "mat-mat") {
@@ -2327,10 +2362,12 @@ namespace MueLu {
           // these are all diagonal entries.
           RCP<Vector> diag = VectorFactory::Build(M0inv_Matrix_->getRowMap());
           M0inv_Matrix_->getLocalDiagCopy(*diag);
-          ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
-          for (size_t j=0; j < diag->getMap()->getNodeNumElements(); j++) {
-            diagVals[j] = Teuchos::ScalarTraits<Scalar>::squareroot(diagVals[j]);
-          }
+	  {
+	    ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
+	    for (size_t j=0; j < diag->getMap()->getNodeNumElements(); j++) {
+	      diagVals[j] = Teuchos::ScalarTraits<Scalar>::squareroot(diagVals[j]);
+	    }
+	  }
           if (Z->getRowMap()->isSameAs(*(diag->getMap())))
             Z->leftScale(*diag);
           else {
