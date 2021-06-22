@@ -57,6 +57,7 @@
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 #include <stdexcept>
 #include <limits> 
@@ -128,6 +129,10 @@ int main(int argc, char *argv[]) {
     }
     // Tell the sparse matrix that we are done adding entries to it.
     A->fillComplete();
+
+    //B = A*A^T
+    Teuchos::RCP<Tpetra_CrsMatrix> B = Teuchos::rcp(new Tpetra_CrsMatrix(map, map->getGlobalNumElements()));
+    Tpetra::MatrixMatrix::Multiply<scalar_type, LO, Tpetra::Details::DefaultTypes::global_ordinal_type>(*A, false, *A, true, *B);
 
     // Create b, the RHS vector
     Teuchos::RCP<Tpetra_Vector> b (new Tpetra_Vector (map, true));
