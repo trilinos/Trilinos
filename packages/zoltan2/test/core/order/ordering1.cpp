@@ -98,7 +98,7 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *iperm)
   // Loop over rows of matrix
   for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
-    for (k=0; k< indices.size(); k++){
+    for (k=0; k< static_cast<z2TestLO>(indices.size()); k++){
       if (indices[k] < n){ // locally owned
         if (iperm){
           i = iperm[ii];

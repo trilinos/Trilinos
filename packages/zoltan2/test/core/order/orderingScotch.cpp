@@ -97,7 +97,7 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
   // Loop over rows of matrix
   for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
-    for (k=0; k< indices.size(); k++){
+    for (k=0; k< static_cast<z2TestLO>(indices.size()); k++){
       if (indices[k] < n){ // locally owned
         if (perm){
           i = perm[ii];
@@ -169,7 +169,7 @@ void tempDebugTest(
     typename SparseMatrix::local_inds_host_view_type  indices;
     typename SparseMatrix::values_host_view_type  wgts;
     origMatrix->getLocalRowView( j, indices, wgts );
-    for (lno_t n = 0; n < indices.size(); ++n) {
+    for (lno_t n = 0; n < static_cast<lno_t>(indices.size()); ++n) {
       lno_t i = indices[n];
       if (i < numRows) { // locally owned
         oldMatrix[i + j*numRows] = 1;

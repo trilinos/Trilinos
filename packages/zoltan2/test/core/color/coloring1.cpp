@@ -95,7 +95,7 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   zlno_t n = A->getNodeNumRows();
   for (zlno_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
-    for (zlno_t j=0; j<indices.size(); j++) {
+    for (zlno_t j=0; j<static_cast<zlno_t>(indices.size()); j++) {
       if ((indices[j]<n) && (indices[j]!=i) && (color[i]==color[indices[j]])){
         nconflicts++;
         //std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
