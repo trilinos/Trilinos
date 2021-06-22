@@ -502,7 +502,7 @@ const RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > vv = Xpetra::
             // WCMCLEN - ETI: but BlockedMultiVector::setMultiVector() does... should this be using bfull.
             full->setMultiVector(block, partial, bThyraMode);
             #else
-            throw std::runtime_error("Xpetra::MultiVector::setMultiVector() doesn't exist.");
+            throw std::runtime_error("Xpetra::MultiVector::setMultiVector() doesn't exist in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
             #endif
         }
     }
