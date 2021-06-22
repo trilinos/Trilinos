@@ -1001,9 +1001,17 @@ namespace MueLu {
 
      MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
 
-     // We'll want to amalgamate
-     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-     manager.SetFactory("UnAmalgamationInfo",amalgFact);
+     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
+     TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay","classical"}).count(aggType),
+                                Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
+     
+
+     // Only doing this for classical because otherwise, the gold tests get broken badly
+     RCP<AmalgamationFactory> amalgFact;
+     if(aggType == "classical") {
+       amalgFact = rcp(new AmalgamationFactory());
+       manager.SetFactory("UnAmalgamationInfo",amalgFact);
+     }
 
      // Aggregation graph
      RCP<Factory> dropFactory;
@@ -1044,7 +1052,8 @@ namespace MueLu {
          MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
        }
 
-       dropFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
+       if(!amalgFact.is_null())
+         dropFactory->SetFactory("UnAmalgamationInfo", manager.GetFactory("UnAmalgamationInfo"));
 
        if(dropParams.isParameter("aggregation: drop scheme")) {
          std::string drop_scheme = dropParams.get<std::string>("aggregation: drop scheme");
@@ -1064,9 +1073,6 @@ namespace MueLu {
 
 
     // Aggregation scheme
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay","classical"}).count(aggType),
-        Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     #ifndef HAVE_MUELU_MATLAB
     if (aggType == "matlab")
         throw std::runtime_error("Cannot use MATLAB aggregation - MueLu was not configured with MATLAB support.");
