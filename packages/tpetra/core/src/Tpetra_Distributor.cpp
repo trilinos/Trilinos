@@ -53,10 +53,6 @@ namespace Tpetra {
   namespace {
     // Default value of the "Debug" parameter.
     const bool tpetraDistributorDebugDefault = false;
-    // Default value of the "Barrier between receives and sends" parameter.
-    const bool barrierBetween_default = false;
-    // Default value of the "Use distinct tags" parameter.
-    const bool useDistinctTags_default = true;
   } // namespace (anonymous)
 
   Teuchos::Array<std::string>
@@ -71,82 +67,6 @@ namespace Tpetra {
   }
 
   namespace Details {
-    std::string
-    DistributorSendTypeEnumToString (EDistributorSendType sendType)
-    {
-      if (sendType == DISTRIBUTOR_ISEND) {
-        return "Isend";
-      }
-      else if (sendType == DISTRIBUTOR_RSEND) {
-        return "Rsend";
-      }
-      else if (sendType == DISTRIBUTOR_SEND) {
-        return "Send";
-      }
-      else if (sendType == DISTRIBUTOR_SSEND) {
-        return "Ssend";
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
-          "EDistributorSendType enum value " << sendType << ".");
-      }
-    }
-
-    std::string
-    DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
-    {
-      switch (how) {
-      case Details::DISTRIBUTOR_NOT_INITIALIZED:
-        return "Not initialized yet";
-      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS:
-        return "By createFromSends";
-      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
-        return "By createFromRecvs";
-      case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS:
-        return "By createFromSendsAndRecvs";
-      case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
-        return "By createReverseDistributor";
-      case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
-        return "By copy constructor";
-      default:
-        return "INVALID";
-      }
-    }
-
-    DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
-      : comm_(comm),
-        howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
-        sendType_(DISTRIBUTOR_SEND),
-        barrierBetweenRecvSend_(barrierBetween_default),
-        useDistinctTags_(useDistinctTags_default),
-        sendMessageToSelf_(false),
-        numSendsToOtherProcs_(0),
-        maxSendLength_(0),
-        numReceives_(0),
-        totalReceiveLength_(0)
-    { }
-
-    DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
-      : comm_(otherPlan.comm_),
-        howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
-        sendType_(otherPlan.sendType_),
-        barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_),
-        useDistinctTags_(otherPlan.useDistinctTags_),
-        sendMessageToSelf_(otherPlan.sendMessageToSelf_),
-        numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_),
-        procIdsToSendTo_(otherPlan.procIdsToSendTo_),
-        startsTo_(otherPlan.startsTo_),
-        lengthsTo_(otherPlan.lengthsTo_),
-        maxSendLength_(otherPlan.maxSendLength_),
-        indicesTo_(otherPlan.indicesTo_),
-        numReceives_(otherPlan.numReceives_),
-        totalReceiveLength_(otherPlan.totalReceiveLength_),
-        lengthsFrom_(otherPlan.lengthsFrom_),
-        procsFrom_(otherPlan.procsFrom_),
-        startsFrom_(otherPlan.startsFrom_),
-        indicesFrom_(otherPlan.indicesFrom_)
-    { }
-
     DistributorActor::DistributorActor() {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       makeTimers ();
@@ -394,8 +314,8 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::setStringToIntegralParameter;
 
-    const bool barrierBetween = barrierBetween_default;
-    const bool useDistinctTags = useDistinctTags_default;
+    const bool barrierBetween = Details::barrierBetween_default;
+    const bool useDistinctTags = Details::useDistinctTags_default;
     const bool debug = tpetraDistributorDebugDefault;
 
     Array<std::string> sendTypes = distributorSendTypes ();
