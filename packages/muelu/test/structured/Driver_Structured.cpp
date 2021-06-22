@@ -294,11 +294,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
   A = Pr->BuildMatrix();
 
-  // Extract the diagonal of A (for RAPShiftFactory testing)
-  RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
-  A->getLocalDiagCopy(*Mdiag);
-
-
   if (matrixType == "Elasticity2D" ||
       matrixType == "Elasticity3D") {
     nullspace = Pr->BuildNullspace();
@@ -326,6 +321,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MUELU_CUDA
   if(profileSetup) cudaProfilerStart();
 #endif
+
+  // Extract the diagonal of A (for RAPShiftFactory testing)
+  RCP<Vector> Mdiag = Xpetra::VectorFactory<SC,LO,GO,NO>::Build(A->getRowMap(),false);
+  A->getLocalDiagCopy(*Mdiag);
 
   for(int run = 0; run < rerun; ++run) {
 
