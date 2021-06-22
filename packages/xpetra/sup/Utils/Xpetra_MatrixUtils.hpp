@@ -522,6 +522,7 @@ public:
 
 #ifdef HAVE_XPETRA_DEBUG // only for debugging
     // check whether Ac has been repaired...
+    diagVal = Teuchos::ArrayRCP< const Scalar >();
     Ac->getLocalDiagCopy(*diagVec);
     diagVal = diagVec->getData(0);
     for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
