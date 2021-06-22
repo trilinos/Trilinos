@@ -784,6 +784,8 @@ tol = 0.;
     */
     static void                                                                  ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude rowSumTol, Teuchos::ArrayRCP<bool>& dirichletRows) {
       typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+      typedef Teuchos::ScalarTraits<MT> MTS;
       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
       for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
         size_t nnz = A.getNumEntriesInLocalRow(row);
@@ -793,6 +795,7 @@ tol = 0.;
         
         Scalar rowsum = STS::zero();
         Scalar diagval = STS::zero();
+
         for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
           LocalOrdinal col = indices[colID];
           if (row == col)
@@ -800,7 +803,7 @@ tol = 0.;
           rowsum += vals[colID];
         }
         //        printf("A(%d,:) row_sum(point) = %6.4e\n",row,rowsum);
-        if (rowSumTol < STS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
+        if (rowSumTol < MTS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
           //printf("Row %d triggers rowsum\n",(int)row);
           dirichletRows[row] = true;
         }
@@ -809,6 +812,8 @@ tol = 0.;
 
     static void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> &BlockNumber, const Magnitude rowSumTol, Teuchos::ArrayRCP<bool>& dirichletRows) {
       typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+      typedef Teuchos::ScalarTraits<MT> MTS;
       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = A.getRowMap();
 
       TEUCHOS_TEST_FOR_EXCEPTION(!A.getColMap()->isSameAs(*BlockNumber.getMap()),std::runtime_error,"ApplyRowSumCriterion: BlockNumber must match's A's column map.");
@@ -831,7 +836,7 @@ tol = 0.;
         }
 
         //        printf("A(%d,:) row_sum(block) = %6.4e\n",row,rowsum);
-        if (rowSumTol < STS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
+        if (rowSumTol < MTS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
           //printf("Row %d triggers rowsum\n",(int)row);
           dirichletRows[row] = true;
         }

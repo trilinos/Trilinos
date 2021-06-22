@@ -409,7 +409,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     /*                                                                     */ 
     /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */ 
   
-    const point_type F_PT = ClassicalMapFactory::F_PT;
+    //    const point_type F_PT = ClassicalMapFactory::F_PT;
     const point_type C_PT = ClassicalMapFactory::C_PT;
     const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
     using STS = typename Teuchos::ScalarTraits<SC>;

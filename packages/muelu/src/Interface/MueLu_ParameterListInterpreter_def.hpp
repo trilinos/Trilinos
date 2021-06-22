@@ -467,8 +467,8 @@ namespace MueLu {
     std::vector<keep_pair> keeps0;
     UpdateFactoryManager(paramList, ParameterList(), *defaultManager, 0/*levelID*/, keeps0);
 
-    std::cout<<"*** Default Manager ***"<<std::endl;
-    defaultManager->Print();
+    //    std::cout<<"*** Default Manager ***"<<std::endl;
+    //    defaultManager->Print();
 
     // Create level specific factory managers
     for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
@@ -494,8 +494,8 @@ namespace MueLu {
       this->keep_[levelID] = keeps;
       this->AddFactoryManager(levelID, 1, levelManager);
 
-      std::cout<<"*** Level "<<levelID<<" Manager ***"<<std::endl;
-      levelManager->Print();
+      //      std::cout<<"*** Level "<<levelID<<" Manager ***"<<std::endl;
+      //      levelManager->Print();
 
     }
 
