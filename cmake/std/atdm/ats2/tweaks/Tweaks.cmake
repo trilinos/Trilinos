@@ -41,3 +41,18 @@ IF (Trilinos_ENABLE_DEBUG)
   ATDM_SET_ENABLE(ROL_example_PDE-OPT_navier-stokes_example_01_MPI_4_DISABLE ON)
 
 ENDIF()
+
+# Turn off tests for Issue #8759
+IF (ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-cuda-10.1.243-gnu-7.3.1-spmpi-rolling_complex_static_opt" OR
+    ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-cuda-10.1.243-gnu-7.3.1-spmpi-rolling_complex_static_opt_cuda-aware-mpi" OR
+    ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-cuda-10.1.243-gnu-7.3.1-spmpi-rolling_static_dbg" OR
+    ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-cuda-10.1.243-gnu-7.3.1-spmpi-rolling_static_dbg_cuda-aware-mpi" OR
+    ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-cuda-10.1.243-gnu-7.3.1-spmpi-rolling_static_opt" OR
+    ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-cuda-10.1.243-gnu-7.3.1-spmpi-rolling_static_opt_cuda-aware-mpi" OR
+    ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-gnu-7.3.1-spmpi-rolling_serial_static_dbg" OR
+    ATDM_BUILD_NAME_KEYS_STR STREQUAL "Trilinos-atdm-ats2-gnu-7.3.1-spmpi-rolling_serial_static_opt")
+
+    ATDM_SET_ENABLE(TeuchosComm_UnitTestHarness_Parallel_UnitTests_MPI_2_DISABLE ON)
+    ATDM_SET_ENABLE(TeuchosComm_UnitTestHarness_Parallel_UnitTests_MPI_4_DISABLE ON)
+
+ENDIF()
