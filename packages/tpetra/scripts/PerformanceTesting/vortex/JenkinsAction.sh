@@ -8,6 +8,7 @@ export TRILINOS_SRC="$WORKSPACE/Trilinos"
 rm -rf VortexPerfScripts
 #Get a fresh copy
 scp -rp jenkins@sherlock.sandia.gov:$DATASTORE/Scripts/vortex VortexPerfScripts || true
+scp -rp jenkins@sherlock.sandia.gov:$DATASTORE/Scripts/timingPercentages VortexPerfScripts || true
 #Copy the newest performance report tarball from data store
 scp -p jenkins@sherlock.sandia.gov:$DATASTORE/VortexData.tar.gz VortexData.tar.gz || true
 #Unpack it, is directory "VortexData"
@@ -19,6 +20,8 @@ tar -xf VortexData.tar.gz
 mkdir -p build
 #Configure and build on a compute node, then run run tests on 4 compute nodes.
 $WORKSPACE/VortexPerfScripts/launch.sh
+#put the time percentages in each xml file
+python $WORKSPACE/VortexPerfScripts/timing_extractor.py -p VortexData
 #Repack the up to date tarball of data, and put back in datastore
 tar -czf VortexData.tar.gz VortexData
 scp -p VortexData.tar.gz jenkins@sherlock.sandia.gov:$DATASTORE/VortexData.tar.gz || true

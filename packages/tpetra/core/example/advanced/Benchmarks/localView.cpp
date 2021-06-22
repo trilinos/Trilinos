@@ -653,7 +653,6 @@ main (int argc, char* argv[])
 
     totalLclNumEnt = 0;
     if (opts.testTpetra) {
-      typedef Tpetra::CrsMatrix<>::scalar_type SC;
       typedef Tpetra::CrsMatrix<>::local_ordinal_type LO;
 
       auto timer = TimeMonitor::getNewCounter ("Tpetra getLocalRowView");
