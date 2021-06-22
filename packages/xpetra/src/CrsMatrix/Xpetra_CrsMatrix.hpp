@@ -312,7 +312,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    typedef typename node_type::execution_space execution_space;
+    typedef typename node_type::device_type execution_space;
 
     // that is the local_graph_type in Tpetra::CrsGraph...
     typedef Kokkos::StaticCrsGraph<LocalOrdinal,

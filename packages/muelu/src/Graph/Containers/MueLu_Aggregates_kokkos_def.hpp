@@ -58,8 +58,8 @@
 
 namespace MueLu {
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::
   Aggregates_kokkos(LWGraph_kokkos graph) {
     numAggregates_  = 0;
 
@@ -69,15 +69,15 @@ namespace MueLu {
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
     procWinner_->putScalar(MUELU_UNASSIGNED);
 
-    isRoot_ = Kokkos::View<bool*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("roots"), graph.GetImportMap()->getNodeNumElements());
+    isRoot_ = Kokkos::View<bool*, Kokkos::Device<ExecSpace, MemSpace>>(Kokkos::ViewAllocateWithoutInitializing("roots"), graph.GetImportMap()->getNodeNumElements());
     Kokkos::deep_copy(isRoot_, false);
 
     // slow but safe, force TentativePFactory to build column map for P itself
     aggregatesIncludeGhosts_ = true;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::
   Aggregates_kokkos(const RCP<const Map>& map) {
     numAggregates_ = 0;
 
@@ -87,16 +87,16 @@ namespace MueLu {
     procWinner_ = LOVectorFactory::Build(map);
     procWinner_->putScalar(MUELU_UNASSIGNED);
 
-    isRoot_ = Kokkos::View<bool*,DeviceType>(Kokkos::ViewAllocateWithoutInitializing("roots"), map->getNodeNumElements());
+    isRoot_ = Kokkos::View<bool*, Kokkos::Device<ExecSpace, MemSpace>>(Kokkos::ViewAllocateWithoutInitializing("roots"), map->getNodeNumElements());
     Kokkos::deep_copy(isRoot_, false);
 
     // slow but safe, force TentativePFactory to build column map for P itself
     aggregatesIncludeGhosts_ = true;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::aggregates_sizes_type::const_type
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeAggregateSizes(bool forceRecompute) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::aggregates_sizes_type::const_type
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::ComputeAggregateSizes(bool forceRecompute) const {
     if (aggregateSizes_.size() && !forceRecompute) {
       return aggregateSizes_;
 
@@ -123,9 +123,9 @@ namespace MueLu {
 
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::local_graph_type
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetGraph() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::local_graph_type
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::GetGraph() const {
     using row_map_type = typename local_graph_type::row_map_type;
     using entries_type = typename local_graph_type::entries_type;
     using size_type    = typename local_graph_type::size_type;
@@ -181,30 +181,30 @@ namespace MueLu {
     return graph_;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  std::string Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::description() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  std::string Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::description() const {
     return BaseClass::description() + "{nGlobalAggregates = " + toString(GetNumGlobalAggregates()) + "}";
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  void Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
     if (verbLevel & Statistics1)
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  GlobalOrdinal Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::GetNumGlobalAggregates() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  GlobalOrdinal Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> >::GetNumGlobalAggregates() const {
     LO nAggregates = GetNumAggregates();
     GO nGlobalAggregates;
     MueLu_sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
     return nGlobalAggregates;
   }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> >
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::GetMap() const {
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>> >
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>>::GetMap() const {
     return vertex2AggId_->getMap();
   }
 

@@ -100,6 +100,12 @@ template class EpetraCrsGraphT<int, default_node_type >;
 template RCP< const CrsGraph<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_CrsGraph &g);
 template const Epetra_CrsGraph & toEpetra<int, default_node_type >(const RCP< const CrsGraph<int, int, default_node_type > > &graph);
 #endif
+#ifdef HAVE_TPETRA_INST_HIP
+typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+template class EpetraCrsGraphT<int, default_node_type >;
+template RCP< const CrsGraph<int, int, default_node_type > > toXpetra<int, default_node_type>(const Epetra_CrsGraph &g);
+template const Epetra_CrsGraph & toEpetra<int, default_node_type >(const RCP< const CrsGraph<int, int, default_node_type > > &graph);
+#endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
 typedef Xpetra::EpetraNode default_node_type;
@@ -135,6 +141,12 @@ template const Epetra_CrsGraph & toEpetra<long long, Kokkos::Compat::KokkosOpenM
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraCrsGraphT<long long, default_node_type >;
+template RCP< const CrsGraph<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_CrsGraph &g);
+template const Epetra_CrsGraph & toEpetra<long long, default_node_type >(const RCP< const CrsGraph<int, long long, default_node_type > > &graph);
+#endif
+#ifdef HAVE_TPETRA_INST_HIP
+typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
 template class EpetraCrsGraphT<long long, default_node_type >;
 template RCP< const CrsGraph<int, long long, default_node_type > > toXpetra<long long, default_node_type>(const Epetra_CrsGraph &g);
 template const Epetra_CrsGraph & toEpetra<long long, default_node_type >(const RCP< const CrsGraph<int, long long, default_node_type > > &graph);

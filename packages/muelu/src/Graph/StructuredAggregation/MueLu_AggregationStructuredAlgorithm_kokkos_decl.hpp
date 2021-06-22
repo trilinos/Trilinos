@@ -88,8 +88,8 @@ namespace MueLu {
     using memory_space           = typename local_graph_type::device_type::memory_space;
 
     using LOVectorView      = decltype(std::declval<LOVector>().getDeviceLocalView());
-    using constIntTupleView = typename Kokkos::View<const int[3], memory_space>;
-    using constLOTupleView  = typename Kokkos::View<const LO[3],  memory_space>;
+    using constIntTupleView = typename Kokkos::View<const int[3], Kokkos::Device<execution_space, memory_space>>;
+    using constLOTupleView  = typename Kokkos::View<const LO[3],  Kokkos::Device<execution_space, memory_space>>;
 
     //! @name Constructors/Destructors.
     //@{

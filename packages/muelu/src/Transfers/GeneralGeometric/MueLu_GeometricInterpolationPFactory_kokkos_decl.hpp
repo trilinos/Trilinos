@@ -74,7 +74,7 @@ namespace MueLu{
     using impl_scalar_type = typename Kokkos::Details::ArithTraits<real_type>::val_type;
     using coord_view_type  = typename Kokkos::View<impl_scalar_type**,
                                                    Kokkos::LayoutLeft,
-                                                   execution_space>;
+                                                   device_type>;
 
     //! @name Constructors/Destructors.
     //@{

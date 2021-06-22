@@ -72,16 +72,16 @@ namespace MueLu {
   class LWGraph_kokkos;
 
   // Partial specialization for DeviceType
-  template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>> {
+  template<class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  class LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace,MemSpace>> {
   public:
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
-    using execution_space     = typename DeviceType::execution_space;
-    using memory_space        = typename DeviceType::memory_space;
+    using execution_space     = ExecSpace;
+    using memory_space        = MemSpace;
     using device_type         = Kokkos::Device<execution_space, memory_space>;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
-    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
+    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>;
     using size_type           = size_t;
 
     using map_type            = Xpetra::Map<LocalOrdinal, GlobalOrdinal, node_type>;

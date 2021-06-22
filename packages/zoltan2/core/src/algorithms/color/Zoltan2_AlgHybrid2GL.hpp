@@ -1531,8 +1531,14 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //
       //First, we need to copy device-only views to host mirrors 
       if(recoloringSize_host(0) > 0 || !done){
+        #if defined(KOKKOS_ENABLE_HIP) && defined(HAVE_TPETRACLASSIC_KOKKOSHIPHOSTPINNED)
+        // This is too iffy to figure out otherwise, since Tpetra does not use HostPinnedSpace for everything, even if its the node type ...
+	ghost_colors_host = Kokkos::create_mirror_view_and_copy(Kokkos::Experimental::HIPHostPinnedSpace(),ghost_colors,"ghost_colors host mirror");
+	boundary_verts_host = Kokkos::create_mirror_view_and_copy(Kokkos::Experimental::HIPHostPinnedSpace(),boundary_verts_dev,"boundary_verts host mirror");
+        #else
 	ghost_colors_host = Kokkos::create_mirror_view_and_copy(host_mem(),ghost_colors,"ghost_colors host mirror");
 	boundary_verts_host = Kokkos::create_mirror_view_and_copy(host_mem(),boundary_verts_dev,"boundary_verts host mirror");
+        #endif
       }
        
       //Now we do a similar coloring loop to before, 

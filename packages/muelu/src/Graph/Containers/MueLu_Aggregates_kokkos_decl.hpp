@@ -103,8 +103,8 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   class Aggregates_kokkos;
 
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  class Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > : public BaseClass {
+  template <class LocalOrdinal, class GlobalOrdinal, class ExecSpace, class MemSpace>
+  class Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace> > : public BaseClass {
   public:
     // For some reason we seem intent on having these declared before pulling the short names in
     // I am not sure why but I will keep things as it is for now
@@ -112,12 +112,12 @@ namespace MueLu {
     // the header has been included!
     using local_ordinal_type  = LocalOrdinal;
     using global_ordinal_type = GlobalOrdinal;
-    using execution_space     = typename DeviceType::execution_space;
-    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>;
-    using device_type         = DeviceType;
+    using execution_space     = ExecSpace;
+    using node_type           = Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace, MemSpace>;
+    using device_type         = Kokkos::Device<ExecSpace, MemSpace>;
     using range_type          = Kokkos::RangePolicy<local_ordinal_type, execution_space>;
 
-    using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, DeviceType>;
+    using aggregates_sizes_type = Kokkos::View<LocalOrdinal*, device_type>;
 
   private:
     // For compatibility
@@ -299,7 +299,7 @@ namespace MueLu {
      */
     LO graphNumColors_;
 
-    Kokkos::View<bool*, DeviceType> isRoot_;
+    Kokkos::View<bool*, device_type> isRoot_;
 
     //! Set to false iff aggregates do not include any DOFs belong to other processes.
     bool aggregatesIncludeGhosts_;

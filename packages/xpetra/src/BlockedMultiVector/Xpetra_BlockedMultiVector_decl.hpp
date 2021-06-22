@@ -330,10 +330,10 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
     typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutStride,
-        typename node_type::execution_space,
+        typename node_type::device_type,
         Kokkos::MemoryUnmanaged> dual_view_type;
     typedef typename dual_view_type::host_mirror_space host_execution_space;
-    typedef typename dual_view_type::t_dev::execution_space dev_execution_space;
+    typedef typename dual_view_type::t_dev::device_type dev_execution_space;
 
     /// \brief Return an unmanaged non-const view of the local data on a specific device.
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.

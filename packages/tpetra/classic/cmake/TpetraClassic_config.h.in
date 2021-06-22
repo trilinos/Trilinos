@@ -27,6 +27,8 @@
 #  define HAVE_KOKKOSCLASSIC_KOKKOSCORE
 #endif // HAVE_TPETRACLASSIC_KOKKOSCORE
 
+#cmakedefine HAVE_TPETRACLASSIC_KOKKOSHIPHOSTPINNED
+
 @TPETRA_DEPRECATED_DECLARATIONS@
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler

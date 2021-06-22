@@ -14,6 +14,14 @@ IF (NOT Tpetra_ENABLE_Kokkos_Refactor)
   MESSAGE(FATAL_ERROR "Tpetra_ENABLE_Kokkos_Refactor MUST be set to ON, if you set it at all.  You don't need to set this variable any more!")
 ENDIF()
 
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_HIPHostPinned
+  HAVE_TPETRACLASSIC_KOKKOSHIPHOSTPINNED
+  "Use HIPHostPinned Memory in the HIP Wrapper node. Used if the node memory space must be host accesible"
+  OFF
+  )
+
 #
 # Decide whether to enable KokkosClassic::DoNotUse::OpenMPNode (which
 # is DEPRECATED and must be enabled explicitly).  This requires that
