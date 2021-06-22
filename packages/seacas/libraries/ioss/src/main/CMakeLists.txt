@@ -607,21 +607,12 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
 ENDIF()
 endif()
 
+if (CGNS_CGNSDIFF_BINARY)
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_assembly_copy
    TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns assemblies-out.cgns
      NUM_MPI_PROCS 1-4
      NOEXEPREFIX NOEXESUFFIX
-   TEST_1 EXEC io_info ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns
-     OUTPUT_FILE gold.info.txt
-     NUM_MPI_PROCS 1
-     NOEXEPREFIX NOEXESUFFIX
-   TEST_2 EXEC io_info ARGS assemblies-out.cgns
-     OUTPUT_FILE created.info.txt
-     NUM_MPI_PROCS 1
-     NOEXEPREFIX NOEXESUFFIX
-   TEST_3 CMND grep ARGS -v Database gold.info.txt OUTPUT_FILE clean.gold.info.txt
-   TEST_4 CMND grep ARGS -v Database created.info.txt OUTPUT_FILE clean.created.info.txt
-   TEST_5 CMND diff ARGS clean.gold.info.txt clean.created.info.txt
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns assemblies-out.cgns
      NUM_MPI_PROCS 1
   COMM mpi
   )
@@ -634,21 +625,12 @@ if (TPL_ENABLE_MPI)
       TEST_1 EXEC io_shell ARGS --external assemblies-fpp-out.cgns assemblies-fpp-join.cgns
         NUM_MPI_PROCS 1-4
         NOEXEPREFIX NOEXESUFFIX
-      TEST_2 EXEC io_info ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns
-        OUTPUT_FILE fpp-gold.info.txt
-        NUM_MPI_PROCS 1
-        NOEXEPREFIX NOEXESUFFIX
-      TEST_3 EXEC io_info ARGS assemblies-fpp-join.cgns
-        OUTPUT_FILE fpp-created.info.txt
-        NUM_MPI_PROCS 1
-        NOEXEPREFIX NOEXESUFFIX
-      TEST_4 CMND grep ARGS -v Database fpp-gold.info.txt OUTPUT_FILE clean.fpp-gold.info.txt
-      TEST_5 CMND grep ARGS -v Database fpp-created.info.txt OUTPUT_FILE clean.fpp-created.info.txt
-      TEST_6 CMND diff ARGS clean.fpp-gold.info.txt clean.fpp-created.info.txt
+      TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns assemblies-fpp-join.cgns
         NUM_MPI_PROCS 1
      COMM mpi
      )
 endif(TPL_ENABLE_MPI)
+endif(CGNS_CGNSDIFF_BINARY)
 
 ENDIF(TPL_ENABLE_CGNS)
 

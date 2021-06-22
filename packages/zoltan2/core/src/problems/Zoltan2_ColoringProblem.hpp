@@ -139,6 +139,7 @@ public:
     pl.set("color_method", "SerialGreedy", "coloring algorithm",
      color_method_Validator);
     pl.set("verbose", false, "print all output", Environment::getBoolValidator());
+    pl.set("timing", false, "print timing data", Environment::getBoolValidator());
     pl.set("serial_threshold",0,"vertices to recolor in serial",Environment::getAnyIntValidator());
     pl.set("recolor_degrees",true,"recolor based on vertex degrees",Environment::getBoolValidator());
   }

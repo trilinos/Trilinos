@@ -5,7 +5,11 @@
 #include <unordered_map>
 #include <iostream>
 #include <queue>
+#ifdef _WIN32
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
 
 #include "Zoltan2_Algorithm.hpp"
 #include "Zoltan2_GraphModel.hpp"
@@ -210,7 +214,9 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
         }
       },recoloringSize(0));
       Kokkos::fence();
-      Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const size_t& i){
+      Kokkos::parallel_for("rebuild verts_to_send and verts_to_recolor",
+		           Kokkos::RangePolicy<ExecutionSpace>(0,femv_colors.size()), 
+			   KOKKOS_LAMBDA (const size_t& i){
         if(femv_colors(i) == 0){
           if(i < n_local){
             verts_to_send_view(verts_to_send_size_atomic(0)++) = i;

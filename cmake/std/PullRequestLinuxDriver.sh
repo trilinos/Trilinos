@@ -68,9 +68,9 @@ function bootstrap_modules() {
 print_banner "PullRequestLinuxDriver.sh"
 
 # Set up Sandia PROXY environment vars
-export https_proxy=http://wwwproxy.sandia.gov:80
-export http_proxy=http://wwwproxy.sandia.gov:80
-export no_proxy='localhost,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
+export https_proxy=http://proxy.sandia.gov:80
+export http_proxy=http://proxy.sandia.gov:80
+export no_proxy='localhost,.sandia.gov,localnets,127.0.0.1,169.254.0.0/16,forge.sandia.gov'
 
 
 # bootstrap the python and git modules for this system

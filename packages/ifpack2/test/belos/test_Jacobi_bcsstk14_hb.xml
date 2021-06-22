@@ -1,7 +1,7 @@
 <ParameterList name="test_params">
   <Parameter name="hb_file" type="string" value="bcsstk14.hb"/>
 
-  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
     <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
     <Parameter name="Num Blocks" type="int" value="50"/>

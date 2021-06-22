@@ -78,7 +78,6 @@ namespace { // (anonymous)
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename MV::mag_type mag_type;
     typedef Teuchos::ScalarTraits<mag_type> STM;
-    typedef typename MV::device_type device_type;
 
     out << "Test Tpetra::MultiVector::get2dView and get2dViewNonConst" << endl;
     Teuchos::OSTab tab1 (out);

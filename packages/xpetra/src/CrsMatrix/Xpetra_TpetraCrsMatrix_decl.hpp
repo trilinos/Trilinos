@@ -61,7 +61,7 @@
 #include "Xpetra_TpetraMap_decl.hpp"
 #include "Xpetra_TpetraMultiVector_decl.hpp"
 #include "Xpetra_TpetraVector_decl.hpp"
-#include "Xpetra_TpetraCrsGraph_decl.hpp"
+#include "Xpetra_TpetraCrsGraph.hpp"
 #include "Xpetra_Exceptions.hpp"
 
 namespace Xpetra {
@@ -424,8 +424,12 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
-    local_matrix_type getLocalMatrix () const {
-      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
+    typename local_matrix_type::HostMirror getLocalMatrixHost () const {
+      return getTpetra_CrsMatrixNonConst()->getLocalMatrixHost();
+    }
+    /// \brief Access the local Kokkos::CrsMatrix data
+    local_matrix_type getLocalMatrixDevice () const {
+      return getTpetra_CrsMatrixNonConst()->getLocalMatrixDevice();
     }
 
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,

@@ -4,6 +4,11 @@ set +x
 # A) Load the env
 #
 
+if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
+  export Trilinos_ENABLE_BUILD_STATS=ON
+fi
+echo "Trilinos_ENABLE_BUILD_STATS='${Trilinos_ENABLE_BUILD_STATS}'"
+
 source ${WORKSPACE}/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 echo
 module list

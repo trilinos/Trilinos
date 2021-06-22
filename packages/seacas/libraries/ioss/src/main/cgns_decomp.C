@@ -22,7 +22,9 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#ifndef _WIN32
 #include <sys/ioctl.h>
+#endif
 #include <unistd.h>
 #include <utility>
 #include <vector>

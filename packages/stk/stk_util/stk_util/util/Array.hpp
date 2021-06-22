@@ -200,7 +200,7 @@ public:
 		 TypeListEnd> Trunc;
 
   //----------------------------------------
-  /** Dimensions defined at contruction */
+  /** Dimensions defined at construction */
 
   const unsigned * dimension() const {
     return BaseType::dimension();

@@ -125,6 +125,10 @@ public:
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Details::TriDiSolver: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
+  typedef typename row_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename row_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename row_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
   //! Specialization of Tpetra::Map used by this class.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 

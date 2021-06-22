@@ -145,6 +145,8 @@ public:
   /// complete the canceled request (as required by the MPI standard).
   virtual ~CommRequest() {}
 
+  virtual bool isReady() = 0;
+
   /// Wait on this request (a blocking operation).
   virtual RCP<CommStatus<OrdinalType> > wait () = 0;
 };

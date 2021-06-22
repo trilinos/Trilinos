@@ -30,7 +30,9 @@
 #include <iostream>
 #include <numeric>
 #include <string>
+#ifndef _WIN32
 #include <sys/select.h>
+#endif
 #include <tokenize.h>
 #include <vector>
 
@@ -44,7 +46,7 @@
 #include "Ioss_SmartAssert.h"
 #include "Ioss_SubSystem.h"
 
-//extern char hdf5_access[64];
+// extern char hdf5_access[64];
 
 namespace {
   size_t global_to_zone_local_idx(size_t i, const Ioss::Map *block_map, const Ioss::Map &nodeMap,
@@ -1250,8 +1252,29 @@ namespace Iocgns {
       for (auto &conn : block->m_zoneConnectivity) {
         if (conn.m_donorZone < 0) {
           auto donor_iter = m_zoneNameMap.find(conn.m_donorName);
-          SMART_ASSERT(donor_iter != m_zoneNameMap.end());
-          conn.m_donorZone = (*donor_iter).second;
+	  if (donor_iter == m_zoneNameMap.end()) {
+	    if (proc_count == 1) {
+	      // This is most likely a parallel decomposed model, but only a single
+	      // part is being accessed.  Do the best we can without being able to
+	      // access the data on the other processor files...
+	      auto zname_proc = Iocgns::Utils::decompose_name(conn.m_donorName, true);
+	      conn.m_donorProcessor = zname_proc.second;
+	      auto donor_block = get_region()->get_structured_block(zname_proc.first);
+	      if (donor_block != nullptr) {
+		conn.m_donorZone = Iocgns::Utils::get_db_zone(donor_block);
+	      }
+	      else {
+		// Since we are only accessing a single file in a decomposed
+		// set of fpp files, we can't access the donor zone on the
+		// other processor(s), so we have to set the ZGC to inactive.
+		conn.m_isActive = false;
+	      }
+	    }
+	  }
+	  else {
+	    SMART_ASSERT(donor_iter != m_zoneNameMap.end());
+	    conn.m_donorZone = (*donor_iter).second;
+	  }
         }
         if (proc_count > 1) {
           int         offset = (conn.m_donorProcessor * blocks.size() + (conn.m_donorZone - 1)) * 3;

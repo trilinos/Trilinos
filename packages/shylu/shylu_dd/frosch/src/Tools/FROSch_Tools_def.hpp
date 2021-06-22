@@ -243,6 +243,191 @@ namespace FROSch {
         matrix_ = rcp_dynamic_cast<Matrix<SC,LO,GO,NO> >(tmpMatrix);
     }
 
+    template <class SC,class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapGaleriStruct2D(RCP<const Matrix<SC,LO,GO,NO> > matrix,int M,int Dim)
+    {
+        Teuchos::ArrayView< const GO> eleList;
+        eleList = matrix->getMap()->getNodeElementList();
+        Teuchos::RCP< const Teuchos::Comm< int > > Comm = matrix->getMap()->getComm();
+
+        int size = Comm->getSize();
+        int rank = Comm->getRank();
+
+        Teuchos::Array<GO> vert;
+        vert.reserve(M*Dim);
+        Teuchos::Array<GO> horz;
+        horz.reserve((M+1)*Dim);
+        int numSubPerRow  = sqrt(size);
+        GO nodesInRow = M*Dim*numSubPerRow;
+        Teuchos::Array<GO> newEle;
+        newEle.reserve(eleList.size()+M*Dim+(M+1)*Dim);
+        int count = 0;
+        for (int i = 0;i<eleList.size();i++) {
+            newEle.push_back(eleList[i]);
+            count++;
+        }
+
+        if (rank%numSubPerRow != numSubPerRow-1) {
+            for (int j = 0;j<M;j++) {
+                for (int i = 0;i<Dim;i++) {
+                    vert.push_back(eleList[Dim*M*(j+1)-1]+(i+1));
+                    newEle.push_back(vert[j*Dim+i]);
+                    count++;
+                }
+            }
+        }
+
+        if (rank<size-numSubPerRow){
+            if (rank%numSubPerRow == numSubPerRow-1) {
+                for (int j=0;j<Dim*M;j++) {
+                    horz.push_back(eleList[eleList.size()-Dim*M]+nodesInRow+j);
+                    newEle.push_back(horz[j]);
+                    count++;
+                }
+            } else {
+                for (int j=0;j<Dim*M+2;j++) {
+                    horz.push_back(eleList[eleList.size()-Dim*M]+nodesInRow+j);
+                    newEle.push_back(horz[j]);
+                    count++;
+                }
+            }
+        }
+
+        return Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getMap()->lib(),matrix->getMap()->getGlobalNumElements(),newEle(),0,Comm);
+
+    }
+
+    template <class SC,class LO,class GO,class NO>
+    RCP<Map<LO,GO,NO> > BuildRepeatedMapGaleriStruct3D(RCP<const Map<LO,GO,NO> > matrix,int M,int Dim)
+    {
+
+        FROSCH_DETAILTIMER_START(Galeri3DMap,"BuildGeometricMap3D");
+
+        Teuchos::ArrayView< const GO> eleList;
+        eleList = matrix->getNodeElementList();
+        Teuchos::RCP< const Teuchos::Comm< int > > Comm = matrix->getComm();
+
+        int size = Comm->getSize();
+        int rank = Comm->getRank();
+
+        Teuchos::Array<GO> vert;
+        vert.reserve(M*Dim);
+        Teuchos::Array<GO> horz;
+        horz.reserve((M+1)*Dim);
+        int numSubPerRow  = std::pow(size,1/3.)+0.7;
+        //int numSubPerRow = numSubPerRow1;
+        //  numSubPerRow = numSubPerRow+1;
+        //if(Comm->getRank() == 0) std::cout<<"Size "<<size<<"\n";
+        //if(Comm->getRank() == 0) std::cout<<"numSubPerRow1 "<<numSubPerRow1<<"  numSubPerRow "<<numSubPerRow<<"\n";
+        int subInLev = numSubPerRow*numSubPerRow;
+        //if(Comm->getRank() == 0) std::cout<<"subInLev "<<subInLev<<"\n";
+        GO nodesInRow = M*numSubPerRow;
+        //if(Comm->getRank() == 0) std::cout<<"nodesInRow "<<nodesInRow<<"\n";
+        GO nodesInLev = nodesInRow*nodesInRow;
+        //if(Comm->getRank() == 0) std::cout<<"nodesInLev "<<nodesInLev<<"\n";
+        int subLevel = rank/(numSubPerRow*numSubPerRow);
+
+
+        Teuchos::Array<GO> newEle;
+        newEle.reserve(eleList.size()+M*Dim+(M+1)*Dim);
+        GO startval = eleList[0]/Dim;
+
+        //Differentiate between locations of the sub
+        //not back
+        if (rank<size-subInLev) {
+            //not right boundary
+            if (rank%numSubPerRow != numSubPerRow-1) {
+                //not top
+                if (subLevel*subInLev <=rank && rank<(subLevel+1)*subInLev-numSubPerRow) {
+                    for (int k = 0;k<M+1;k++) {
+                        for (int j = 0;j<M+1;j++) {
+                            for (int i = 0;i<M+1;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                } else {
+                    //top
+                    for (int k = 0;k<M+1;k++) {
+                        for (int j = 0;j<M;j++) {
+                            for (int i = 0;i<M+1;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                }
+            } else {
+                //rightboundary
+                if(subLevel*subInLev <=rank && rank<(subLevel+1)*subInLev-numSubPerRow){
+                    for (int k = 0;k<M+1;k++) {
+                        for (int j = 0;j<M+1;j++) {
+                            for (int i = 0;i<M;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                } else {
+                    //top
+                    for (int k = 0;k<M+1;k++) {
+                        for (int j = 0;j<M;j++) {
+                            for (int i = 0;i<M;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                }
+            }
+            //#########################################
+        } else{
+            //back
+            if(rank%numSubPerRow != numSubPerRow-1){
+                //not top
+                if (subLevel*subInLev <=rank && rank<(subLevel+1)*subInLev-numSubPerRow){
+                    for (int k = 0;k<M;k++) {
+                        for (int j = 0;j<M+1;j++) {
+                            for (int i = 0;i<M+1;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                } else {
+                    //top
+                    for (int k = 0;k<M;k++) {
+                        for (int j = 0;j<M;j++) {
+                            for (int i = 0;i<M+1;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                }
+            } else {
+                //rightboundary
+                if (subLevel*subInLev <=rank && rank<(subLevel+1)*subInLev-numSubPerRow) {
+                    for (int k = 0;k<M;k++) {
+                        for (int j = 0;j<M+1;j++) {
+                            for (int i = 0;i<M;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                } else {
+                    //top
+                    for (int k = 0;k<M;k++) {
+                        for (int j = 0;j<M;j++) {
+                            for (int i = 0;i<M;i++) {
+                                newEle.push_back(startval+i+j*nodesInRow+nodesInLev*k);
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+
+        return Xpetra::MapFactory<LO,GO,NO>::Build(matrix->getMap()->lib(),matrix->getMap()->getGlobalNumElements(),newEle(),0,Comm);
+
+    }
+
     template <class LO,class GO,class NO>
     RCP<const Map<LO,GO,NO> > BuildUniqueMap(const RCP<const Map<LO,GO,NO> > map,
                                              bool useCreateOneToOneMap,
@@ -1032,8 +1217,8 @@ namespace FROSch {
 
     template <class LO,class GO,class NO>
     ArrayRCP<RCP<const Map<LO,GO,NO> > > BuildNodeMapsFromDofMaps(ArrayRCP<ArrayRCP<RCP<const Map<LO,GO,NO> > > > dofsMapsVecVec,
-                                                            ArrayRCP<unsigned> dofsPerNodeVec,
-                                                            ArrayRCP<DofOrdering> dofOrderingVec)
+                                                                  ArrayRCP<unsigned> dofsPerNodeVec,
+                                                                  ArrayRCP<DofOrdering> dofOrderingVec)
     {
 
         typedef Map<LO,GO,NO> Map;
@@ -1107,8 +1292,7 @@ namespace FROSch {
 
                 }
                 nodeMapsVec[block] = MapFactory<LO,GO,NO>::Build( dofsMapsVecVec[block][0]->lib(), -1,globalIndicesNode(), 0, dofsMapsVecVec[block][0]->getComm() );
-            }
-            else{ //DimensionWise
+            } else { //DimensionWise
                 GO minGID = dofsMapsVecVec[block][0]->getMinAllGlobalIndex();
                 ArrayView< const GO > globalIndices = dofsMapsVecVec[block][0]->getNodeElementList();
                 Array<GO> globalIndicesNode( globalIndices );

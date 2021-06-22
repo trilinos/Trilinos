@@ -874,7 +874,7 @@ unpackAndCombineWithOwningPIDsCount(
   using Kokkos::View;
   using device_type = typename Node::device_type;
   using packet_type = typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packet_type;
-  using local_graph_type = typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_type;
+  using local_graph_device_type = typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::local_graph_device_type;
   using buffer_device_type = typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::buffer_device_type;
   const char prefix[] = "unpackAndCombineWithOwningPIDsCount: ";
 
@@ -893,7 +893,7 @@ unpackAndCombineWithOwningPIDsCount(
      prefix << "importLIDs.size() = " << importLIDs.size() << " != "
      "numPacketsPerLID.size() = " << numPacketsPerLID.size() << ".");
 
-  auto local_graph = sourceGraph.getLocalGraph();
+  auto local_graph = sourceGraph.getLocalGraphDevice();
   auto permute_from_lids_d =
     create_mirror_view_from_raw_host_array(device_type(),
                                            permuteFromLIDs.getRawPtr(),
@@ -911,7 +911,7 @@ unpackAndCombineWithOwningPIDsCount(
                                            "num_packets_per_lid");
 
   return UnpackAndCombineCrsGraphImpl::unpackAndCombineWithOwningPIDsCount<
-    packet_type,local_graph_type,buffer_device_type>(
+    packet_type,local_graph_device_type,buffer_device_type>(
       local_graph, permute_from_lids_d, imports_d, num_packets_per_lid_d, numSameIDs);
 }
 
@@ -958,7 +958,7 @@ unpackAndCombineIntoCrsArrays(
   using GO = GlobalOrdinal;
   using crs_graph_type = CrsGraph<LO, GO, Node>;
   using packet_type = typename crs_graph_type::packet_type;
-  using local_graph_type = typename crs_graph_type::local_graph_type;
+  using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
   using buffer_device_type = typename crs_graph_type::buffer_device_type;
   using device_type = typename Node::device_type;
   using size_type = typename Teuchos::ArrayView<const LO>::size_type;
@@ -988,7 +988,7 @@ unpackAndCombineIntoCrsArrays(
   TargetPids.assign(TargetNumNonzeros, -1);
 
   // Grab pointers for sourceGraph
-  auto local_graph = sourceGraph.getLocalGraph();
+  auto local_graph = sourceGraph.getLocalGraphDevice();
   auto local_col_map = sourceGraph.getColMap()->getLocalMap();
 
   // Convert input arrays to Kokkos::View
@@ -1042,7 +1042,7 @@ unpackAndCombineIntoCrsArrays(
 
   using local_map_type = decltype(local_col_map);
   UnpackAndCombineCrsGraphImpl::unpackAndCombineIntoCrsArrays<
-    packet_type,local_graph_type,local_map_type,buffer_device_type>(
+    packet_type,local_graph_device_type,local_map_type,buffer_device_type>(
       local_graph, local_col_map, import_lids_d, imports_d, num_packets_per_lid_d,
       permute_to_lids_d, permute_from_lids_d, crs_rowptr_d, crs_colind_d, src_pids_d,
       tgt_pids_d, numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID);

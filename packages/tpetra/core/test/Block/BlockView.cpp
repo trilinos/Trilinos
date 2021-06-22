@@ -49,6 +49,9 @@
 #ifdef HAVE_TPETRA_INST_FLOAT128
 #  include "Teuchos_Details_Lapack128.hpp"
 #endif // HAVE_TPETRA_INST_FLOAT128
+#ifdef HAVE_TPETRA_INST_LONG_DOUBLE
+#  include "Teuchos_Details_LapackLongDouble.hpp"
+#endif // HAVE_TPETRA_INST_LONG_DOUBLE
 
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -815,6 +818,10 @@ namespace {
 #ifdef TPETRA_INST_FLOAT128
   UNIT_TEST_GROUP2( __float128 )
 #endif // TPETRA_INST_FLOAT128
+
+#ifdef TPETRA_INST_LONG_DOUBLE
+  UNIT_TEST_GROUP2( long double )
+#endif // TPETRA_INST_LONG_DOUBLE
 
 } // namespace (anonymous)
 

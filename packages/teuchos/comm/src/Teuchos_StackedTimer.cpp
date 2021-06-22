@@ -822,4 +822,10 @@ void StackedTimer::enableVerboseTimestamps(const unsigned levels)
 void StackedTimer::setVerboseOstream(const Teuchos::RCP<std::ostream>& os)
 {verbose_ostream_ = os;}
 
+void StackedTimer::disableTimers()
+{enable_timers_ = false;}
+
+void StackedTimer::enableTimers()
+{enable_timers_ = true;}
+
 } //namespace Teuchos

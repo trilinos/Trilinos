@@ -1,9 +1,9 @@
 #include "mpi.h"
 #include <stk_balance/balance.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/internal/balanceMtoN.hpp>
+#include <stk_balance/m2n/balanceMtoN.hpp>
+#include <stk_balance/m2n/M2NDecomposer.hpp>
 #include <stk_balance/internal/Inputs.hpp>
-#include <stk_balance/internal/M2NDecomposer.hpp>
 #include <stk_balance/setup/M2NParser.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -43,13 +43,10 @@ void rebalance_m_to_n(stk::balance::M2NBalanceSettings &balanceSettings, MPI_Com
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
 
-    stk::mesh::Field<unsigned> &field = meta.declare_field<stk::mesh::Field<unsigned> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
-    stk::mesh::put_field_on_mesh(field, meta.universal_part(), static_cast<unsigned*>(nullptr));
-
     stk::io::StkMeshIoBroker ioBroker;
     stk::io::fill_mesh_preexisting(ioBroker, balanceSettings.get_input_filename(), bulk);
 
-    stk::balance::internal::rebalanceMtoN(ioBroker, field, balanceSettings);
+    stk::balance::m2n::rebalanceMtoN(ioBroker, balanceSettings);
 }
 
 }

@@ -496,7 +496,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, HostToDevice_Scalar_WriteAll_SyncOverlappi
 }
 
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncSelector_ReadAll_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Scalar_WriteAll_SyncSelector_ReadAll_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2"});
@@ -518,7 +518,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncSelector_
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncTwoSelectors_ReadAll_WarnOutsideSelectors)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Scalar_WriteAll_SyncTwoSelectors_ReadAll_WarnOutsideSelectors)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});
@@ -687,7 +687,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteSelector_SyncNoth
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteOutsideSelector_SyncSelector_ReadAll_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Scalar_WriteOutsideSelector_SyncSelector_ReadAll_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2"});
@@ -709,7 +709,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteOutsideSelector_S
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Vector_WriteOutsideSelector_SyncSelector_ReadAll_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Vector_WriteOutsideSelector_SyncSelector_ReadAll_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2"});
@@ -736,7 +736,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Vector_WriteOutsideSelector_S
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_ScalarPartial_WriteOutsideSelector_SyncSelector_ReadAll_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_ScalarPartial_WriteOutsideSelector_SyncSelector_ReadAll_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});
@@ -839,7 +839,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncNothing_R
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncSelector_ReadOutsideSelector_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Scalar_WriteAll_SyncSelector_ReadOutsideSelector_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2"});
@@ -861,7 +861,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncSelector_
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_ScalarPartial_WriteAll_SyncSelector_ReadOutsideSelector_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_ScalarPartial_WriteAll_SyncSelector_ReadOutsideSelector_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});
@@ -883,7 +883,30 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_ScalarPartial_WriteAll_SyncSe
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_ScalarPartial_SyncOutsideSelector_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, HostToDevice_ScalarPartial_SyncOutsideSelector_WarnOutsideSelector)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  create_parts({"Part1", "Part2", "Part3"});
+  declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
+  build_mesh({{"Part1", 2}, {"Part2", 2}, {"Part3", 2}});
+  stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
+  stk::mesh::Selector selector = *get_meta().get_part("Part1")
+                               | *get_meta().get_part("Part2")
+                               | *get_meta().get_part("Part3");
+
+  testing::internal::CaptureStdout();
+  write_scalar_field_on_host_using_entity(stkField, stk::mesh::Selector(stkField), 3.14);
+  stkField.modify_on_host(selector);
+  stkField.sync_to_device();
+
+  read_scalar_field_on_device(stkField);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 1, "*** WARNING: Marked field doubleScalarField modified with selector ((Part1 | Part2) | Part3) that includes buckets outside the subset of the mesh that the field is defined on.");
+  check_no_warnings(stdoutString);
+}
+
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_ScalarPartial_SyncOutsideSelector_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});
@@ -906,7 +929,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_ScalarPartial_SyncOutsideSele
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Vector_WriteAll_SyncSelector_ReadOutsideSelector_WarnOutsideSelector)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Vector_WriteAll_SyncSelector_ReadOutsideSelector_WarnOutsideSelector)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2"});
@@ -933,7 +956,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Vector_WriteAll_SyncSelector_
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncMultipleSelectors_ReadAll_WarnOutsideSelectors)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Scalar_WriteAll_SyncMultipleSelectors_ReadAll_WarnOutsideSelectors)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});
@@ -957,7 +980,7 @@ TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncMultipleS
   check_no_warnings(stdoutString);
 }
 
-TEST_F(NgpDebugFieldSync_PartialSync, DeviceToHost_Scalar_WriteAll_SyncOverlappingSelectors_ReadAll_WarnOutsideSelectors)
+TEST_F(NgpDebugFieldSync_PartialSync, DISABLED_DeviceToHost_Scalar_WriteAll_SyncOverlappingSelectors_ReadAll_WarnOutsideSelectors)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
   create_parts({"Part1", "Part2", "Part3"});

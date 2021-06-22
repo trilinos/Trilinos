@@ -495,6 +495,7 @@ int main( int argc, char* argv[] )
       Calibration,
       Test,
       BestSerial,
+      BestOpenMP_16,
       BestCuda
     };
     Mode mode;
@@ -572,6 +573,10 @@ int main( int argc, char* argv[] )
     else if (modeChoiceString == "BestSerial")
     {
       mode = BestSerial;
+    }
+    else if (modeChoiceString == "BestOpenMP_16")
+    {
+      mode = BestOpenMP_16;
     }
     else if (modeChoiceString == "Test")
     {
@@ -699,8 +704,6 @@ int main( int argc, char* argv[] )
         standardWorksetForPolyOrder[8] = 1;
         
         // Non-Affine Tensor
-        // it turns out 4096 is the best choice for the PointValueCache algorithm for any polyOrder from 1 to 5
-        // this likely means we're not exposing enough parallelism within the cell.
         map<int,int> nonAffineTensorWorksetForPolyOrder;
         nonAffineTensorWorksetForPolyOrder[1] = 256;
         nonAffineTensorWorksetForPolyOrder[2] = 256;
@@ -721,7 +724,73 @@ int main( int argc, char* argv[] )
         affineTensorWorksetForPolyOrder[7] = 1;
         affineTensorWorksetForPolyOrder[8] = 1;
         
-        // for the cases that we have not tried yet, we try to choose sensible guesses for workset size:
+        // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
+        // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
+        int worksetSize = 1;
+        for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
+        {
+          nonAffineTensorWorksetForPolyOrder[polyOrder] = worksetSize;
+          affineTensorWorksetForPolyOrder[polyOrder]    = worksetSize;
+          standardWorksetForPolyOrder[polyOrder]        = worksetSize;
+        }
+        
+        int numCells = 1;
+        for (int d=0; d<spaceDim; d++)
+        {
+          numCells *= meshWidth;
+        }
+        
+        for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
+        {
+          WorksetForAlgorithmChoice worksetForAlgorithmChoice;
+          worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
+          worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
+          worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
+          worksetForAlgorithmChoice[Uniform]         = numCells;
+          
+          polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
+        }
+      }
+        break;
+      
+      case BestOpenMP_16:
+      {
+        // manually calibrated workset sizes on iMac Pro (2.3 GHz Xeon W, 18-core, running with OpenMP, OMP_NUM_THREADS=16)
+        // Calibration for sum factorization cases was run while usePointCacheForRank3Tensor = true.
+        // (these were calibrated without much tuning for the affine tensor case; if/when that happens, will want to recalibrate.)
+        
+        map<int,int> standardWorksetForPolyOrder;
+        standardWorksetForPolyOrder[1] = 1024;
+        standardWorksetForPolyOrder[2] =  128;
+        standardWorksetForPolyOrder[3] =  128;
+        standardWorksetForPolyOrder[4] =  256;
+        standardWorksetForPolyOrder[5] =    8;
+        standardWorksetForPolyOrder[6] =    2;
+        standardWorksetForPolyOrder[7] =    2;
+        standardWorksetForPolyOrder[8] =    1;
+        
+        // Non-Affine Tensor
+        map<int,int> nonAffineTensorWorksetForPolyOrder;
+        nonAffineTensorWorksetForPolyOrder[1] = 512;
+        nonAffineTensorWorksetForPolyOrder[2] = 128;
+        nonAffineTensorWorksetForPolyOrder[3] = 256;
+        nonAffineTensorWorksetForPolyOrder[4] = 128;
+        nonAffineTensorWorksetForPolyOrder[5] =  32;
+        nonAffineTensorWorksetForPolyOrder[6] =  16;
+        nonAffineTensorWorksetForPolyOrder[7] =  16;
+        nonAffineTensorWorksetForPolyOrder[8] =  16;
+        
+        map<int,int> affineTensorWorksetForPolyOrder;
+        affineTensorWorksetForPolyOrder[1] =  4096;
+        affineTensorWorksetForPolyOrder[2] =   256;
+        affineTensorWorksetForPolyOrder[3] =   512;
+        affineTensorWorksetForPolyOrder[4] =   128;
+        affineTensorWorksetForPolyOrder[5] =    64;
+        affineTensorWorksetForPolyOrder[6] =    32;
+        affineTensorWorksetForPolyOrder[7] =    16;
+        affineTensorWorksetForPolyOrder[8] =    64;
+        
+        // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
         // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
         int worksetSize = 1;
         for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
@@ -766,8 +835,8 @@ int main( int argc, char* argv[] )
           standardWorksetForPolyOrder[8] = 1;
           
           // Non-Affine Tensor
-          // it turns out 4096 is the best choice for the PointValueCache algorithm for any polyOrder from 1 to 5
-          // this likely means we're not exposing enough parallelism within the cell.
+          // For CUDA, 4096 is the best choice for the PointValueCache algorithm for any polyOrder from 1 to 5.
+          // This likely means we're not exposing enough parallelism within the cell.
           map<int,int> nonAffineTensorWorksetForPolyOrder;
           nonAffineTensorWorksetForPolyOrder[1] = 4096;
           nonAffineTensorWorksetForPolyOrder[2] = 4096;
@@ -778,7 +847,7 @@ int main( int argc, char* argv[] )
           nonAffineTensorWorksetForPolyOrder[7] = 512;
           nonAffineTensorWorksetForPolyOrder[8] = 512;
           
-          // for the cases that we have not tried yet, we try to choose sensible guesses for workset size:
+          // for the cases that we have not tried yet (polyOrder > 8), we try to choose sensible guesses for workset size:
           int nonAffineWorksetSize = 256; // divide by 2 for each polyOrder beyond 8
           int standardWorksetSize  = 1;  // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
           for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)

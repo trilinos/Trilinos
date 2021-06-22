@@ -6,6 +6,7 @@ Try to by python2 and python3 compliant
 import subprocess # spawning nm
 import re         # re matching
 import os         # line seperator
+import sys
 
 
 from Python2and3 import b, s
@@ -54,9 +55,18 @@ class NMParser:
       The keys are obtained from nm_option_desc_map and enforced inside the regex used
       See nm_re_type_expr, nm_re_str, and nm_re in the static fields of this class
     """
+    FNULL = None
+    if sys.version_info < (3,):
+      FNULL = open(os.devnull, 'w')
+      local_devnull = FNULL
+    else:
+      local_devnull = subprocess.DEVNULL
     p = subprocess.Popen(['nm', '-aS', filename],
-                         stdout=subprocess.PIPE)
+                         stdout=subprocess.PIPE,
+                         stderr=local_devnull)
     output = p.communicate()[0]
+
+    if FNULL: FNULL.close()
 
     nm_counts = dict()
 

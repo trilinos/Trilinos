@@ -197,6 +197,7 @@ int main(int narg, char** arg)
   std::string outputFile = "";           // Output file to write
   std::string colorAlg = "SerialGreedy"; // Default algorithm is the serial greedy
   bool verbose = false;                  // Verbosity of output
+  bool timing = false;                   // If true, report coloring times.
   int testReturn = 0;
   bool recolorDegrees = false;
   std::string prepartition = "";    	 // Call Zoltan2 partitioning to better distribute
@@ -229,6 +230,8 @@ int main(int narg, char** arg)
 		 "number of vertices to recolor in serial");
   cmdp.setOption("recolorDegrees","recolorRandom",&recolorDegrees,
 		 "recolor based on vertex degrees or random numbers");
+  cmdp.setOption("timing", "notimes", &timing,
+		  "report how long coloring takes");
   std::cout << "Starting everything" << std::endl;
 
   //////////////////////////////////
@@ -341,6 +344,7 @@ int main(int narg, char** arg)
   params.set("color_choice", colorMethod);
   params.set("color_method", colorAlg);
   params.set("verbose", verbose);
+  params.set("timing", timing);
   params.set("serial_threshold",serialThreshold);
   params.set("recolor_degrees",recolorDegrees);
   //params.set("balance_colors", balanceColors); // TODO

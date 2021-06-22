@@ -673,6 +673,11 @@ tpetra: sum(file_size_mb) = 0.28 (4 entries)
 tpetra: max(file_size_mb) = 0.16 (packages/tpetra/classic/NodeAPI/CMakeFiles/tpetraclassicnodeapi.dir/Kokkos_DefaultNode.cpp.o)
 """
 
+
+empty_summary_ascii = \
+r"""No build statistics to summarize!"""
+
+
 class test_createAsciiReportOfBuildStatsSummaries(unittest.TestCase):
 
   def test_big_small(self):
@@ -697,16 +702,23 @@ class test_summarize_build_stats_py(unittest.TestCase):
 
   def test_big_small_full_project(self):
     cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
-      " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"
+      " "+g_testBaseDir+"/build_stats.big.small.csv"
     output = GSS.getCmndOutput(cmnd)
     self.assertEqual(GSS.s(output), GSS.s(big_small_summary_full_project_ascii+"\n"))
 
   def test_big_small_by_subdir(self):
     cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
-      " --build-stats-csv-file="+g_testBaseDir+"/build_stats.big.small.csv"+\
-      " --bin-by-subdirs-under-dirs=commonTools,packages"
+      " --bin-by-subdirs-under-dirs=commonTools,packages"+\
+      " "+g_testBaseDir+"/build_stats.big.small.csv"
     output = GSS.getCmndOutput(cmnd)
     self.assertEqual(GSS.s(output), GSS.s(big_small_summary_ascii+"\n"))
+
+  def test_empty_build_stats(self):
+    cmnd = thisScriptsDir+"/../summarize_build_stats.py"+\
+      " --bin-by-subdirs-under-dirs=commonTools,packages"+\
+      " "+g_testBaseDir+"/build_stats.empty.csv"
+    output = GSS.getCmndOutput(cmnd)
+    self.assertEqual(GSS.s(output), GSS.s(empty_summary_ascii+"\n"))
 
 
 #

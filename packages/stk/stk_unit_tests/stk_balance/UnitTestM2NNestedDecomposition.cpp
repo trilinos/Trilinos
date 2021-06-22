@@ -43,7 +43,7 @@ public:
     m_balanceSettings.set_input_filename("junk.g");
     m_balanceSettings.set_num_output_processors(numFinalProcs);
 
-    m_decomposer = new stk::balance::internal::M2NDecomposer(get_bulk(), m_balanceSettings);
+    m_decomposer = new stk::balance::m2n::M2NDecomposer(get_bulk(), m_balanceSettings);
   }
 };
 
@@ -102,7 +102,7 @@ public:
     m_balanceSettings.set_input_filename("junk.g");
     m_balanceSettings.set_num_output_processors(numFinalProcs);
 
-    m_decomposer = new stk::balance::internal::M2NDecomposerNested(get_bulk(), m_balanceSettings);
+    m_decomposer = new stk::balance::m2n::M2NDecomposerNested(get_bulk(), m_balanceSettings);
   }
 };
 
@@ -204,7 +204,7 @@ public:
     balanceSettings.setDecompMethod("rcb");
 
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, balanceSettings);
+    stk::balance::m2n::rebalanceMtoN(m_ioBroker, balanceSettings);
     stk::EnvData::instance().m_outputP0 = &std::cout;
   }
 };
@@ -249,7 +249,7 @@ public:
     balanceSettings.setDecompMethod("rcb");
 
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, balanceSettings);
+    stk::balance::m2n::rebalanceMtoN(m_ioBroker, balanceSettings);
     stk::EnvData::instance().m_outputP0 = &std::cout;
   }
 };

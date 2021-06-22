@@ -1,4 +1,5 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+#! /usr/bin/env bash
+# Copyright(C) 1999-2021 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -17,9 +18,13 @@ SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
 NCDUMP=@NETCDF_NCDUMP@
 DIFF="diff -w"
 
+ret_status=0
 rm -f test.output
 echo "testwt-compress - verify can create compressed netcdf-4 files..."
 echo "begin testwt-compress" >> test.output
 ${PREFIX} ${BINDIR}/testwt-compress${SUFFIX} >> test.output
-echo "end testwt-compress" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -h -s test-compress.exo | grep Deflate | ${DIFF} - ${SRCDIR}/test-compress.dmp | tee test-compress.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testwt-compress, status = $ret_status" >> test.output
+exit $ret_status

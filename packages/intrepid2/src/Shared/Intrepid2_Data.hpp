@@ -8,11 +8,12 @@
 #ifndef Intrepid2_Data_h
 #define Intrepid2_Data_h
 
+#include "Intrepid2_ArgExtractor.hpp"
 #include "Intrepid2_ScalarView.hpp"
 #include "Intrepid2_Utils.hpp"
 
 /** \file  Intrepid2_Data.hpp
-   \brief  Defines the Data class, a wrapper around a Kokkos::View that allows data that is constant or repeating in various notional dimensions to be stored just once, while providing a similar interface to that of View.
+   \brief  Defines the Data class, a wrapper around a Kokkos::View that allows data that is constant or repeating in various logical dimensions to be stored just once, while providing a similar interface to that of View.
    \author Created by N.V. Roberts.
 */
 
@@ -36,24 +37,24 @@ namespace Intrepid2 {
   };
 
 /** \struct  Intrepid2::DimensionInfo
-    \brief Struct expressing all variation information about a Data object in a single dimension, including its nominal extent and storage extent.
+    \brief Struct expressing all variation information about a Data object in a single dimension, including its logical extent and storage extent.
 */
   struct DimensionInfo
   {
-    int nominalExtent;
+    int logicalExtent;
     DataVariationType variationType;
     int dataExtent;
     int variationModulus; // should be equal to dataExtent variationType other than MODULAR and CONSTANT
-    int blockPlusDiagonalFirstNonDiagonal = -1; // only relevant for variationType == BLOCK_PLUS_DIAGONAL
+    int blockPlusDiagonalLastNonDiagonal = -1; // only relevant for variationType == BLOCK_PLUS_DIAGONAL
   };
 
   //! Returns DimensionInfo for a Data container that combines (through multiplication, say, or addition) the two specified DimensionInfo specifications in one of its dimensions.
   KOKKOS_INLINE_FUNCTION
   DimensionInfo combinedDimensionInfo(const DimensionInfo &myData, const DimensionInfo &otherData)
   {
-    const int myNominalExtent    = myData.nominalExtent;
+    const int myNominalExtent    = myData.logicalExtent;
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(myNominalExtent != otherData.nominalExtent, std::invalid_argument, "both Data objects must match in their nominal extent in the specified dimension");
+    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(myNominalExtent != otherData.logicalExtent, std::invalid_argument, "both Data objects must match in their logical extent in the specified dimension");
 #endif
     const DataVariationType & myVariation    = myData.variationType;
     const DataVariationType & otherVariation = otherData.variationType;
@@ -65,7 +66,7 @@ namespace Intrepid2 {
     int otherDataExtent = otherData.dataExtent;
     
     DimensionInfo combinedDimensionInfo;
-    combinedDimensionInfo.nominalExtent = myNominalExtent;
+    combinedDimensionInfo.logicalExtent = myNominalExtent;
     
     switch (myVariation)
     {
@@ -134,8 +135,8 @@ namespace Intrepid2 {
             combinedDimensionInfo.variationType    = GENERAL;
             combinedDimensionInfo.dataExtent       = max(myDataExtent,otherDataExtent);
             combinedDimensionInfo.variationModulus = combinedDimensionInfo.dataExtent;
-            // for this case, we want to take the minimum of the two Data objects' blockPlusDiagonalFirstNonDiagonal as the combined object's blockPlusDiagonalFirstNonDiagonal
-            combinedDimensionInfo.blockPlusDiagonalFirstNonDiagonal = min(myData.blockPlusDiagonalFirstNonDiagonal, otherData.blockPlusDiagonalFirstNonDiagonal);
+            // for this case, we want to take the minimum of the two Data objects' blockPlusDiagonalLastNonDiagonal as the combined object's blockPlusDiagonalLastNonDiagonal
+            combinedDimensionInfo.blockPlusDiagonalLastNonDiagonal = min(myData.blockPlusDiagonalLastNonDiagonal, otherData.blockPlusDiagonalLastNonDiagonal);
         }
         break;
       case GENERAL:
@@ -153,19 +154,19 @@ namespace Intrepid2 {
 
     /**
       \class  Intrepid2::Data
-      \brief  Wrapper around a Kokkos::View that allows data that is constant or repeating in various notional dimensions to be stored just once, while providing a similar interface to that of View.
+      \brief  Wrapper around a Kokkos::View that allows data that is constant or repeating in various logical dimensions to be stored just once, while providing a similar interface to that of View.
      
-      The Data class distinguishes between the notional extent and the data extent.  For example, one could construct a data container corresponding to constant (cell, point) data with 100 cells
+      The Data class distinguishes between the logical extent and the data extent.  For example, one could construct a data container corresponding to constant (cell, point) data with 100 cells
      and 25 points per cell as follows:
           auto cpData = Data(value, Kokkos::Array<int>{100,25});
-     The data extent of the container is 1 in every dimension, while the notional extent is 100 in the first dimension, and 25 in the second.  Similarly, the notional rank of the container is 2, but the rank of the
+     The data extent of the container is 1 in every dimension, while the logical extent is 100 in the first dimension, and 25 in the second.  Similarly, the logical rank of the container is 2, but the rank of the
      underlying View is 1.
      
-     There are four possible variation types in a notional dimension:
-     - GENERAL: the data varies arbitrarily.  The underlying View will have the same extent in its corresponding dimension (which may be distinct from the notional dimension).
+     There are four possible variation types in a logical dimension:
+     - GENERAL: the data varies arbitrarily.  The underlying View will have the same extent in its corresponding dimension (which may be distinct from the logical dimension).
      - CONSTANT: the data does not vary.  The underlying View will not have a dimension corresponding to this dimension.
      - MODULAR: the data varies with a modulus.  The underlying View will have a corresponding dimension with extent corresponding to the modulus.
-     - BLOCK_PLUS_DIAGONAL: the data varies in this notional dimension and one other, corresponding to a square matrix that has some (possibly trivial) full block, with diagonal entries in the remaining dimensions.  The underlying View will have one dimension corresponding to the two notional dimensions, with extent corresponding to the number of nonzeros in the matrix.
+     - BLOCK_PLUS_DIAGONAL: the data varies in this logical dimension and one other, corresponding to a square matrix that has some (possibly trivial) full block, with diagonal entries in the remaining dimensions.  The underlying View will have one dimension corresponding to the two logical dimensions, with extent corresponding to the number of nonzeros in the matrix.
      
   */
   template<class DataScalar,typename DeviceType>
@@ -187,8 +188,8 @@ namespace Intrepid2 {
     Kokkos::Array<int,7> variationModulus_;            // for each dimension, a value by which indices should be modulused (only used when variationType_ is MODULAR)
     int blockPlusDiagonalLastNonDiagonal_ = -1;        // last row/column that is part of the non-diagonal part of the matrix indicated by BLOCK_PLUS_DIAGONAL (if any dimensions are thus marked)
     
-    bool hasNontrivialModulusUNUSED_;  // this is a little nutty, but having this UNUSED member variable improves performance, probably by shifting the alignment of underlyingMatchesNotional_.  This is true with nvcc; it may also be true with Apple clang
-    bool underlyingMatchesNotional_;   // if true, this Data object has the same rank and extent as the underlying view
+    bool hasNontrivialModulusUNUSED_;  // this is a little nutty, but having this UNUSED member variable improves performance, probably by shifting the alignment of underlyingMatchesLogical_.  This is true with nvcc; it may also be true with Apple clang
+    bool underlyingMatchesLogical_;   // if true, this Data object has the same rank and extent as the underlying view
     Kokkos::Array<ordinal_type,7> activeDims_;
     int numActiveDims_; // how many of the 7 entries are actually filled in
     
@@ -253,7 +254,7 @@ namespace Intrepid2 {
       
       numActiveDims_ = 0;
       int blockPlusDiagonalCount = 0;
-      underlyingMatchesNotional_ = true;
+      underlyingMatchesLogical_ = true;
       for (ordinal_type i=0; i<7; i++)
       {
         if (variationType_[i] == GENERAL)
@@ -271,7 +272,7 @@ namespace Intrepid2 {
         }
         else if (variationType_[i] == MODULAR)
         {
-          underlyingMatchesNotional_ = false;
+          underlyingMatchesLogical_ = false;
           if (extents_[i] != getUnderlyingViewExtent(numActiveDims_))
           {
             const int dataExtent = getUnderlyingViewExtent(numActiveDims_);
@@ -291,7 +292,7 @@ namespace Intrepid2 {
         }
         else if (variationType_[i] == BLOCK_PLUS_DIAGONAL)
         {
-          underlyingMatchesNotional_ = false;
+          underlyingMatchesLogical_ = false;
           blockPlusDiagonalCount++;
           if (blockPlusDiagonalCount == 1) // first dimension thus marked --> active
           {
@@ -318,7 +319,7 @@ namespace Intrepid2 {
         {
           if (i < rank_)
           {
-            underlyingMatchesNotional_ = false;
+            underlyingMatchesLogical_ = false;
           }
           variationModulus_[i] = 1; // trivial modulus
         }
@@ -326,13 +327,13 @@ namespace Intrepid2 {
       
       if (rank_ != dataRank_)
       {
-        underlyingMatchesNotional_ = false;
+        underlyingMatchesLogical_ = false;
       }
       
       for (int d=numActiveDims_; d<7; d++)
       {
         // for *inactive* dims, the activeDims_ map just is the identity
-        // (this allows getEntry() to work even when the nominal rank of the Data object is lower than that of the underlying View.  This can happen for gradients in 1D.)
+        // (this allows getEntry() to work even when the logical rank of the Data object is lower than that of the underlying View.  This can happen for gradients in 1D.)
         activeDims_[d] = d;
       }
       for (int d=0; d<7; d++)
@@ -340,75 +341,607 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION(variationModulus_[d] == 0, std::logic_error, "variationModulus should not ever be 0");
       }
     }
-    
+
   public:
-    //! Returns an l-value reference to the specified nominal entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.
-    KOKKOS_INLINE_FUNCTION
-    reference_type getWritableEntry(const int & i0, const int & i1, const int & i2,
-                                    const int & i3, const int & i4, const int & i5,
-                                    const int & i6) const
+    //! For use with Data object into which a value will be stored.
+    struct FullArgExtractorWritableData
     {
-      if (underlyingMatchesNotional_)
+      template<class ViewType, class ...IntArgs>
+      static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
       {
-        switch (dataRank_)
-        {
-          case 1: return data1_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 2: return data2_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 3: return data3_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 4: return data4_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 5: return data5_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 6: return data6_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 7: return data7_.access(i0,i1,i2,i3,i4,i5,i6);;
-          default:
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "invalid dataRank_");
-        }
+        return view.getWritableEntry(intArgs...);
+      }
+    };
+    
+    template<class BinaryOperator, class ThisUnderlyingViewType, class AUnderlyingViewType, class BUnderlyingViewType,
+             class ArgExtractorThis, class ArgExtractorA, class ArgExtractorB, bool includeInnerLoop=false>
+    struct InPlaceCombinationFunctor
+    {
+    private:
+      ThisUnderlyingViewType this_underlying_;
+      AUnderlyingViewType A_underlying_;
+      BUnderlyingViewType B_underlying_;
+      BinaryOperator binaryOperator_;
+      int innerLoopSize_;
+    public:
+      InPlaceCombinationFunctor(ThisUnderlyingViewType this_underlying, AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
+                                BinaryOperator binaryOperator)
+      :
+      this_underlying_(this_underlying),
+      A_underlying_(A_underlying),
+      B_underlying_(B_underlying),
+      binaryOperator_(binaryOperator)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(includeInnerLoop,std::invalid_argument,"If includeInnerLoop is true, must specify the size of the inner loop");
       }
       
-      const Kokkos::Array<int,7> args {i0,i1,i2,i3,i4,i5,i6};
-      Kokkos::Array<int,7> refEntry;
-      
-      for (int d=0; d<7; d++)
+      InPlaceCombinationFunctor(ThisUnderlyingViewType this_underlying, AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
+                                BinaryOperator binaryOperator, int innerLoopSize)
+      :
+      this_underlying_(this_underlying),
+      A_underlying_(A_underlying),
+      B_underlying_(B_underlying),
+      binaryOperator_(binaryOperator),
+      innerLoopSize_(innerLoopSize)
       {
-        if (variationType_[d] == GENERAL)
+        INTREPID2_TEST_FOR_EXCEPTION(includeInnerLoop,std::invalid_argument,"If includeInnerLoop is true, must specify the size of the inner loop");
+      }
+      
+      template<class ...IntArgs, bool M=includeInnerLoop>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<!M, void>
+      operator()(const IntArgs&... args) const
+      {
+        auto      & result = ArgExtractorThis::get( this_underlying_, args... );
+        const auto & A_val =    ArgExtractorA::get(    A_underlying_, args... );
+        const auto & B_val =    ArgExtractorB::get(    B_underlying_, args... );
+        
+        result = binaryOperator_(A_val,B_val);
+      }
+      
+      template<class ...IntArgs, bool M=includeInnerLoop>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M, void>
+      operator()(const IntArgs&... args) const
+      {
+        using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
+        for (int_type iFinal=0; iFinal<static_cast<int_type>(innerLoopSize_); iFinal++)
         {
-          refEntry[d] = args[d];
-        }
-        else if (variationType_[d] == MODULAR)
-        {
-          refEntry[d] = args[d] % variationModulus_[d];
-        }
-        else if (variationType_[d] == BLOCK_PLUS_DIAGONAL)
-        {
-          const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
+          auto      & result = ArgExtractorThis::get( this_underlying_, args..., iFinal );
+          const auto & A_val =    ArgExtractorA::get(    A_underlying_, args..., iFinal );
+          const auto & B_val =    ArgExtractorB::get(    B_underlying_, args..., iFinal );
           
-          const int &i = args[d];
-          const int &j = args[d+1];
-          
-          if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
+          result = binaryOperator_(A_val,B_val);
+        }
+      }
+    };
+    
+    //! storeInPlaceCombination implementation for rank < 7, with compile-time underlying views and argument interpretation.  Intended for internal and expert use.
+    template<class BinaryOperator, class PolicyType, class ThisUnderlyingViewType, class AUnderlyingViewType, class BUnderlyingViewType,
+             class ArgExtractorThis, class ArgExtractorA, class ArgExtractorB>
+    void storeInPlaceCombination(PolicyType &policy, ThisUnderlyingViewType &this_underlying,
+                                 AUnderlyingViewType &A_underlying, BUnderlyingViewType &B_underlying,
+                                 BinaryOperator &binaryOperator, ArgExtractorThis argThis, ArgExtractorA argA, ArgExtractorB argB)
+    {
+      using Functor = InPlaceCombinationFunctor<BinaryOperator, ThisUnderlyingViewType, AUnderlyingViewType, BUnderlyingViewType, ArgExtractorThis, ArgExtractorA, ArgExtractorB>;
+      Functor functor(this_underlying, A_underlying, B_underlying, binaryOperator);
+      Kokkos::parallel_for("compute in-place", policy, functor);
+    }
+    
+    //! storeInPlaceCombination with compile-time rank -- implementation for rank < 7.
+    template<class BinaryOperator, int rank>
+    enable_if_t<rank != 7, void>
+    storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    {
+      auto policy = dataExtentRangePolicy<rank>();
+      
+      // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
+      Data<DataScalar,DeviceType> thisData = *this;
+      
+      const bool A_1D          = A.getUnderlyingViewRank() == 1;
+      const bool B_1D          = B.getUnderlyingViewRank() == 1;
+      const bool this_1D       = this->getUnderlyingViewRank() == 1;
+      const bool A_constant    = A_1D && (A.getUnderlyingViewSize() == 1);
+      const bool B_constant    = B_1D && (B.getUnderlyingViewSize() == 1);
+      const bool this_constant = this_1D && (this->getUnderlyingViewSize() == 1);
+      const bool A_full        = A.underlyingMatchesLogical();
+      const bool B_full        = B.underlyingMatchesLogical();
+      const bool this_full     = this->underlyingMatchesLogical();
+      
+      const ConstantArgExtractor<reference_type> constArg;
+      
+      const FullArgExtractor<reference_type> fullArgs;
+      const FullArgExtractor<const_reference_type> fullArgsConst;
+      const FullArgExtractorWritableData fullArgsWritable;
+      
+      const SingleArgExtractor<reference_type,0> arg0;
+      const SingleArgExtractor<reference_type,1> arg1;
+      const SingleArgExtractor<reference_type,2> arg2;
+      const SingleArgExtractor<reference_type,3> arg3;
+      const SingleArgExtractor<reference_type,4> arg4;
+      const SingleArgExtractor<reference_type,5> arg5;
+      
+      // this lambda returns -1 if there is not a rank-1 underlying view whose data extent matches the logical extent in the corresponding dimension;
+      // otherwise, it returns the logical index of the corresponding dimension.
+      auto get1DArgIndex = [](const Data<DataScalar,DeviceType> &data) -> int
+      {
+        const auto & variationTypes = data.getVariationTypes();
+        for (int d=0; d<rank; d++)
+        {
+          if (variationTypes[d] == GENERAL)
           {
-            if (i != j)
+            return d;
+          }
+        }
+        return -1;
+      };
+      if (this_constant)
+      {
+        // then A, B are constant, too
+        auto thisAE = constArg;
+        auto AAE    = constArg;
+        auto BAE    = constArg;
+        auto & this_underlying = this->getUnderlyingView<1>();
+        auto & A_underlying    = A.getUnderlyingView<1>();
+        auto & B_underlying    = B.getUnderlyingView<1>();
+        storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
+      }
+      else if (this_full && A_full && B_full)
+      {
+        auto thisAE = fullArgs;
+        auto AAE    = fullArgs;
+        auto BAE    = fullArgs;
+        
+        auto & this_underlying = this->getUnderlyingView<rank>();
+        auto & A_underlying    = A.getUnderlyingView<rank>();
+        auto & B_underlying    = B.getUnderlyingView<rank>();
+        
+        storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
+      }
+      else if (A_constant)
+      {
+        auto AAE = constArg;
+        auto & A_underlying = A.getUnderlyingView<1>();
+        if (this_full)
+        {
+          auto thisAE = fullArgs;
+          auto & this_underlying = this->getUnderlyingView<rank>();
+          
+          if (B_full)
+          {
+            auto BAE = fullArgs;
+            auto & B_underlying = B.getUnderlyingView<rank>();
+            storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
+          }
+          else // this_full, not B_full: B may have modular data, etc.
+          {
+            auto BAE = fullArgsConst;
+            storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
+          }
+        }
+        else // this is not full
+        {
+          // below, we optimize for the case of 1D data in B, when A is constant.  Still need to handle other cases…
+          if (B_1D && (get1DArgIndex(B) != -1) )
+          {
+            // since A is constant, that implies that this_1D is true, and has the same 1DArgIndex
+            const int argIndex = get1DArgIndex(B);
+            auto & B_underlying    = B.getUnderlyingView<1>();
+            auto & this_underlying = this->getUnderlyingView<1>();
+            switch (argIndex)
             {
-              // off diagonal: zero
-              return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
-            }
-            else
-            {
-              refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, AAE, arg0); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg1, AAE, arg1); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg2, AAE, arg2); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg3, AAE, arg3); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg4, AAE, arg4); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg5, AAE, arg5); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
             }
           }
           else
           {
-            refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
+            // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
+            auto thisAE = fullArgsWritable;
+            auto BAE    = fullArgsConst;
+            storeInPlaceCombination(policy, thisData, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
           }
-          
-          // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
-          refEntry[d+1] = 0;
-          d++;
         }
-        else if (variationType_[d] == CONSTANT)
+      }
+      else if (B_constant)
+      {
+        auto BAE = constArg;
+        auto & B_underlying = B.getUnderlyingView<1>();
+        if (this_full)
         {
-          refEntry[d] = 0;
+          auto thisAE = fullArgs;
+          auto & this_underlying = this->getUnderlyingView<rank>();
+          if (A_full)
+          {
+            auto AAE = fullArgs;
+            auto & A_underlying = A.getUnderlyingView<rank>();
+            
+            storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
+          }
+          else  // this_full, not A_full: A may have modular data, etc.
+          {
+            // use A (the Data object).  This could be further optimized by using A's underlying View and an appropriately-defined ArgExtractor.
+            auto AAE = fullArgsConst;
+            storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, thisAE, AAE, BAE);
+          }
         }
+        else // this is not full
+        {
+          // below, we optimize for the case of 1D data in A, when B is constant.  Still need to handle other cases…
+          if (A_1D && (get1DArgIndex(A) != -1) )
+          {
+            // since B is constant, that implies that this_1D is true, and has the same 1DArgIndex as A
+            const int argIndex = get1DArgIndex(A);
+            auto & A_underlying    = A.getUnderlyingView<1>();
+            auto & this_underlying = this->getUnderlyingView<1>();
+            switch (argIndex)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, arg0, BAE); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg1, arg1, BAE); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg2, arg2, BAE); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg3, arg3, BAE); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg4, arg4, BAE); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg5, arg5, BAE); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+          else
+          {
+            // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
+            auto thisAE = fullArgsWritable;
+            auto AAE    = fullArgsConst;
+            storeInPlaceCombination(policy, thisData, A, B_underlying, binaryOperator, thisAE, AAE, BAE);
+          }
+        }
+      }
+      else // neither A nor B constant
+      {
+        if (this_1D && (get1DArgIndex(thisData) != -1))
+        {
+          // possible ways that "this" could have full-extent, 1D data
+          // 1. A constant, B 1D
+          // 2. A 1D, B constant
+          // 3. A 1D, B 1D
+          // The constant possibilities are already addressed above, leaving us with (3).  Note that A and B don't have to be full-extent, however
+          const int argThis = get1DArgIndex(thisData);
+          const int argA    = get1DArgIndex(A); // if not full-extent, will be -1
+          const int argB    = get1DArgIndex(B); // ditto
+          
+          auto & A_underlying    = A.getUnderlyingView<1>();
+          auto & B_underlying    = B.getUnderlyingView<1>();
+          auto & this_underlying = this->getUnderlyingView<1>();
+          if ((argA != -1) && (argB != -1))
+          {
+#ifdef INTREPID2_HAVE_DEBUG
+            INTREPID2_TEST_FOR_EXCEPTION(argA != argThis, std::logic_error, "Unexpected 1D arg combination.");
+            INTREPID2_TEST_FOR_EXCEPTION(argB != argThis, std::logic_error, "Unexpected 1D arg combination.");
+#endif
+            switch (argThis)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, arg0, arg0); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg1, arg1, arg1); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg2, arg2, arg2); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg3, arg3, arg3); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg4, arg4, arg4); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg5, arg5, arg5); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+          else if (argA != -1)
+          {
+            // B is not full-extent in dimension argThis; use the Data object
+            switch (argThis)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg0, arg0, fullArgsConst); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg1, arg1, fullArgsConst); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg2, arg2, fullArgsConst); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg3, arg3, fullArgsConst); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg4, arg4, fullArgsConst); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg5, arg5, fullArgsConst); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+          else
+          {
+            // A is not full-extent in dimension argThis; use the Data object
+            switch (argThis)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg0, fullArgsConst, arg0); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg1, fullArgsConst, arg1); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg2, fullArgsConst, arg2); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg3, fullArgsConst, arg3); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg4, fullArgsConst, arg4); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg5, fullArgsConst, arg5); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+        }
+        else if (this_full)
+        {
+          // This case uses A,B Data objects; could be optimized by dividing into subcases and using underlying Views with appropriate ArgExtractors.
+          auto & this_underlying = this->getUnderlyingView<rank>();
+          auto thisAE = fullArgs;
+          
+          if (A_full)
+          {
+            auto & A_underlying = A.getUnderlyingView<rank>();
+            auto AAE = fullArgs;
+            
+            if (B_1D && (get1DArgIndex(B) != -1))
+            {
+              const int argIndex = get1DArgIndex(B);
+              auto & B_underlying = B.getUnderlyingView<1>();
+              switch (argIndex)
+              {
+                case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg0); break;
+                case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg1); break;
+                case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg2); break;
+                case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg3); break;
+                case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg4); break;
+                case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg5); break;
+                default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+              }
+            }
+            else
+            {
+              // A is full; B is not full, but not constant or full-extent 1D
+              // unoptimized in B access:
+              auto BAE = fullArgsConst;
+              storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
+            }
+          }
+          else // A is not full
+          {
+            if (A_1D && (get1DArgIndex(A) != -1))
+            {
+              const int argIndex = get1DArgIndex(A);
+              auto & A_underlying  = A.getUnderlyingView<1>();
+              if (B_full)
+              {
+                auto & B_underlying = B.getUnderlyingView<rank>();
+                auto BAE = fullArgs;
+                switch (argIndex)
+                {
+                  case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg0, BAE); break;
+                  case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg1, BAE); break;
+                  case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg2, BAE); break;
+                  case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg3, BAE); break;
+                  case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg4, BAE); break;
+                  case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg5, BAE); break;
+                  default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+                }
+              }
+              else
+              {
+                auto BAE = fullArgsConst;
+                switch (argIndex)
+                {
+                  case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg0, BAE); break;
+                  case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg1, BAE); break;
+                  case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg2, BAE); break;
+                  case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg3, BAE); break;
+                  case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg4, BAE); break;
+                  case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg5, BAE); break;
+                  default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+                }
+              }
+            }
+            else // A not full, and not full-extent 1D
+            {
+              // unoptimized in A, B accesses.
+              auto AAE    = fullArgsConst;
+              auto BAE    = fullArgsConst;
+              storeInPlaceCombination(policy, this_underlying, A, B, binaryOperator, thisAE, AAE, BAE);
+            }
+          }
+        }
+        else
+        {
+          // completely un-optimized case: we use Data objects for this, A, B.
+          auto thisAE = fullArgsWritable;
+          auto AAE    = fullArgsConst;
+          auto BAE    = fullArgsConst;
+          storeInPlaceCombination(policy, thisData, A, B, binaryOperator, thisAE, AAE, BAE);
+        }
+      }
+    }
+    
+    //! storeInPlaceCombination with compile-time rank -- implementation for rank of 7.  (Not optimized; expectation is this case will be rarely used.)
+    template<class BinaryOperator, int rank>
+    enable_if_t<rank == 7, void>
+    storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    {
+      auto policy = dataExtentRangePolicy<rank>();
+      
+      using DataType = Data<DataScalar,DeviceType>;
+      using ThisAE = FullArgExtractorWritableData;
+      using AAE    = FullArgExtractor<const_reference_type>;
+      using BAE    = FullArgExtractor<const_reference_type>;
+      
+      const ordinal_type dim6 = getDataExtent(6);
+      const bool includeInnerLoop = true;
+      using Functor = InPlaceCombinationFunctor<BinaryOperator, DataType, DataType, DataType, ThisAE, AAE, BAE, includeInnerLoop>;
+      Functor functor(*this, A, B, binaryOperator, dim6);
+      Kokkos::parallel_for("compute in-place", policy, functor);
+    }
+  public:
+    //! applies the specified unary operator to each entry
+    template<class UnaryOperator>
+    void applyOperator(UnaryOperator unaryOperator)
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      
+      switch (dataRank_)
+      {
+        case 1:
+        {
+          const int dataRank = 1;
+          auto view = getUnderlyingView<dataRank>();
+          
+          const int dataExtent = this->getDataExtent(0);
+          Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,dataExtent);
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0) {
+            view(i0) = unaryOperator(view(i0));
+          });
+          
+        }
+        break;
+        case 2:
+        {
+          const int dataRank = 2;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1) {
+            view(i0,i1) = unaryOperator(view(i0,i1));
+          });
+        }
+        break;
+        case 3:
+        {
+          const int dataRank = 3;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2) {
+            view(i0,i1,i2) = unaryOperator(view(i0,i1,i2));
+          });
+        }
+        break;
+        case 4:
+        {
+          const int dataRank = 4;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3) {
+            view(i0,i1,i2,i3) = unaryOperator(view(i0,i1,i2,i3));
+          });
+        }
+        break;
+        case 5:
+        {
+          const int dataRank = 5;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4) {
+            view(i0,i1,i2,i3,i4) = unaryOperator(view(i0,i1,i2,i3,i4));
+          });
+        }
+        break;
+        case 6:
+        {
+          const int dataRank = 6;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
+            view(i0,i1,i2,i3,i4,i5) = unaryOperator(view(i0,i1,i2,i3,i4,i5));
+          });
+        }
+        break;
+        case 7:
+        {
+          const int dataRank = 7;
+          auto policy6 = dataExtentRangePolicy<6>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          const int dim_i6 = view.extent_int(6);
+          
+          Kokkos::parallel_for("apply operator in-place", policy6,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
+            for (int i6=0; i6<dim_i6; i6++)
+            {
+              view(i0,i1,i2,i3,i4,i5,i6) = unaryOperator(view(i0,i1,i2,i3,i4,i5,i6));
+            }
+          });
+        }
+        break;
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unsupported data rank");
+      }
+    }
+    
+    //! Returns an l-value reference to the specified logical entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.
+    template<class ...IntArgs>
+    KOKKOS_INLINE_FUNCTION
+    reference_type getWritableEntry(const IntArgs... intArgs) const
+    {
+#ifdef INTREPID2_HAVE_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numArgs != rank_, std::invalid_argument, "getWritableEntry() should have the same number of arguments as the logical rank.");
+#endif
+      constexpr int numArgs = sizeof...(intArgs);
+      if (underlyingMatchesLogical_)
+      {
+        // in this case, we require that numArgs == dataRank_
+        return getUnderlyingView<numArgs>()(intArgs...);
+      }
+      
+      // extract the type of the first argument; use that for the arrays below
+      using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
+      
+      const Kokkos::Array<int_type, numArgs> args {intArgs...};
+      Kokkos::Array<int_type, 7> refEntry;
+      for (int d=0; d<numArgs; d++)
+      {
+        switch (variationType_[d])
+        {
+          case CONSTANT: refEntry[d] = 0;                              break;
+          case GENERAL:  refEntry[d] = args[d];                        break;
+          case MODULAR:  refEntry[d] = args[d] % variationModulus_[d]; break;
+          case BLOCK_PLUS_DIAGONAL:
+          {
+            const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
+            
+            const int_type &i = args[d];
+            if (d+1 >= numArgs)
+            {
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "BLOCK_PLUS_DIAGONAL must be present for two dimensions; here, encountered only one");
+            }
+            else
+            {
+              const int_type &j = args[d+1];
+              
+              if ((i > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)) || (j > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)))
+              {
+                if (i != j)
+                {
+                  // off diagonal: zero
+                  return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
+                }
+                else
+                {
+                  refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
+                }
+              }
+              else
+              {
+                refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
+              }
+
+              // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
+              refEntry[d+1] = 0;
+            }
+            d++;
+          }
+        }
+      }
+       // refEntry should be zero-filled beyond numArgs, for cases when rank_ < dataRank_ (this only is allowed if the extra dimensions each has extent 1).
+      for (int d=numArgs; d<7; d++)
+      {
+        refEntry[d] = 0;
       }
       
       if (dataRank_ == 1)
@@ -487,6 +1020,57 @@ namespace Intrepid2 {
         case 7: copyContainer(data7_,data); break;
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
+    }
+    
+    //! Constructor in terms of DimensionInfo for each logical dimension; does not require a View to be specified.  Will allocate a View of appropriate rank, zero-filled.
+    Data(std::vector<DimensionInfo> dimInfoVector)
+    :
+    // initialize member variables as if default constructor; if dimInfoVector is empty, we want default constructor behavior.
+    dataRank_(0), extents_({0,0,0,0,0,0,0}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(-1), rank_(dimInfoVector.size())
+    {
+      // If dimInfoVector is empty, the member initialization above is correct; otherwise, we set as below.
+      // Either way, once members are initialized, we must call setActiveDims().
+      if (dimInfoVector.size() != 0)
+      {
+        std::vector<int> dataExtents;
+
+        bool blockPlusDiagonalEncountered = true;
+        for (int d=0; d<rank_; d++)
+        {
+          const DimensionInfo & dimInfo = dimInfoVector[d];
+          extents_[d] = dimInfo.logicalExtent;
+          variationType_[d] = dimInfo.variationType;
+          const bool isBlockPlusDiagonal = (variationType_[d] == BLOCK_PLUS_DIAGONAL);
+          const bool isSecondBlockPlusDiagonal = isBlockPlusDiagonal && blockPlusDiagonalEncountered;
+          if (isBlockPlusDiagonal)
+          {
+            blockPlusDiagonalEncountered = true;
+            blockPlusDiagonalLastNonDiagonal_ = dimInfo.blockPlusDiagonalLastNonDiagonal;
+          }
+          if ((variationType_[d] != CONSTANT) && (!isSecondBlockPlusDiagonal))
+          {
+            dataExtents.push_back(dimInfo.dataExtent);
+          }
+        }
+        if (dataExtents.size() == 0)
+        {
+          // constant data
+          dataExtents.push_back(1);
+        }
+        dataRank_ = dataExtents.size();
+        switch (dataRank_)
+        {
+          case 1: data1_ = Kokkos::View<DataScalar*,       DeviceType>("Intrepid2 Data", dataExtents[0]); break;
+          case 2: data2_ = Kokkos::View<DataScalar**,      DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1]); break;
+          case 3: data3_ = Kokkos::View<DataScalar***,     DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2]); break;
+          case 4: data4_ = Kokkos::View<DataScalar****,    DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3]); break;
+          case 5: data5_ = Kokkos::View<DataScalar*****,   DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3], dataExtents[4]); break;
+          case 6: data6_ = Kokkos::View<DataScalar******,  DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3], dataExtents[4], dataExtents[5]); break;
+          case 7: data7_ = Kokkos::View<DataScalar*******, DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3], dataExtents[4], dataExtents[5], dataExtents[6]); break;
+          default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
+        }
+      }
+      setActiveDims();
     }
     
     //! DynRankView constructor.  Will copy to a View of appropriate rank.
@@ -759,7 +1343,7 @@ namespace Intrepid2 {
       return blockPlusDiagonalLastNonDiagonal_;
     }
     
-    //! Returns an array containing the nominal extents in each dimension.
+    //! Returns an array containing the logical extents in each dimension.
     KOKKOS_INLINE_FUNCTION
     Kokkos::Array<int,7> getExtents() const
     {
@@ -772,21 +1356,21 @@ namespace Intrepid2 {
     {
       DimensionInfo dimInfo;
       
-      dimInfo.nominalExtent = extent_int(dim);
+      dimInfo.logicalExtent = extent_int(dim);
       dimInfo.variationType = variationType_[dim];
       dimInfo.dataExtent    = getDataExtent(dim);
       dimInfo.variationModulus = variationModulus_[dim];
       
       if (dimInfo.variationType == BLOCK_PLUS_DIAGONAL)
       {
-        dimInfo.blockPlusDiagonalFirstNonDiagonal = blockPlusDiagonalLastNonDiagonal_;
+        dimInfo.blockPlusDiagonalLastNonDiagonal = blockPlusDiagonalLastNonDiagonal_;
       }
       return dimInfo;
     }
     
     //! Returns (DataVariationType, data extent) in the specified dimension for a Data container that combines (through multiplication, say, or addition) this container with otherData.
     KOKKOS_INLINE_FUNCTION
-    DimensionInfo combinedDimensionInfo(const Data &otherData, const int &dim) const
+    DimensionInfo combinedDataDimensionInfo(const Data &otherData, const int &dim) const
     {
       const DimensionInfo myDimInfo    = getDimensionInfo(dim);
       const DimensionInfo otherDimInfo = otherData.getDimensionInfo(dim);
@@ -999,7 +1583,7 @@ namespace Intrepid2 {
       return dataRank_;
     }
     
-    //! returns the rank of the View that stores the unique data
+    //! returns the number of entries in the View that stores the unique data
     KOKKOS_INLINE_FUNCTION
     ordinal_type getUnderlyingViewSize() const
     {
@@ -1077,7 +1661,7 @@ namespace Intrepid2 {
       }
     }
     
-    //! returns the true extent of the data corresponding to the notional dimension provided; if the data does not vary in that dimension, returns 1
+    //! returns the true extent of the data corresponding to the logical dimension provided; if the data does not vary in that dimension, returns 1
     KOKKOS_INLINE_FUNCTION int getDataExtent(const ordinal_type &d) const
     {
       for (unsigned i=0; i<activeDims_.size(); i++)
@@ -1095,7 +1679,7 @@ namespace Intrepid2 {
     }
     
     /** \brief  Variation modulus accessor.
-       \param [in] d - the notional dimension whose variation modulus is requested.
+       \param [in] d - the logical dimension whose variation modulus is requested.
        \return the variation modulus.
      
      The variation modulus is defined as the number of unique entries in the specified dimension.
@@ -1103,7 +1687,7 @@ namespace Intrepid2 {
      - for CONSTANT variation, the variation modulus is 1
      - for MODULAR variation, the variation modulus is exactly the modulus by which the data repeats in the specified dimension
      - for GENERAL variation, the variation modulus is the extent in the specified dimension
-     - for BLOCK_PLUS_DIAGONAL, the variation modulus in the first notional dimension of the matrix is the number of nonzeros in the matrix; in the second notional dimension the variation modulus is 1.
+     - for BLOCK_PLUS_DIAGONAL, the variation modulus in the first logical dimension of the matrix is the number of nonzeros in the matrix; in the second logical dimension the variation modulus is 1.
     */
     KOKKOS_INLINE_FUNCTION
     int getVariationModulus(const int &d) const
@@ -1111,217 +1695,47 @@ namespace Intrepid2 {
       return variationModulus_[d];
     }
     
-    //! Returns an array with the variation types in each notional dimension.
+    //! Returns an array with the variation types in each logical dimension.
     KOKKOS_INLINE_FUNCTION
     const Kokkos::Array<DataVariationType,7> & getVariationTypes() const
     {
       return variationType_;
     }
     
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4, typename iType5, typename iType6>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value && std::is_integral<iType5>::value &&
-         std::is_integral<iType6>::value),
-        return_type>::type
-    getEntry(const iType0& i0, const iType1& i1, const iType2& i2,
-             const iType3& i3, const iType4& i4, const iType5& i5,
-             const iType6& i6) const
+    //! Returns a (read-only) value corresponding to the specified logical data location.
+    template<class ...IntArgs>
+    KOKKOS_INLINE_FUNCTION
+    return_type getEntry(const IntArgs&... intArgs) const
     {
-      const Kokkos::Array<int,7> args {static_cast<int>(i0),static_cast<int>(i1),static_cast<int>(i2),
-                                       static_cast<int>(i3),static_cast<int>(i4),static_cast<int>(i5),
-                                       static_cast<int>(i6)};
-      Kokkos::Array<int,7> refEntry;
-      
-      for (int d=0; d<7; d++)
-      {
-        if (variationType_[d] == GENERAL)
-        {
-          refEntry[d] = args[d];
-        }
-        else if (variationType_[d] == MODULAR)
-        {
-          refEntry[d] = args[d] % variationModulus_[d];
-        }
-        else if (variationType_[d] == BLOCK_PLUS_DIAGONAL)
-        {
-          const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
-          
-          const int &i = args[d];
-          const int &j = args[d+1];
-          
-          if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
-          {
-            if (i != j)
-            {
-              // off diagonal: zero
-              return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
-            }
-            else
-            {
-              refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
-            }
-          }
-          else
-          {
-            refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
-          }
-          
-          // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
-          refEntry[d+1] = 0;
-          d++;
-        }
-        else if (variationType_[d] == CONSTANT)
-        {
-          refEntry[d] = 0;
-        }
-      }
-      
-      if (dataRank_ == 1)
-      {
-        return data1_(refEntry[activeDims_[0]]);
-      }
-      else if (dataRank_ == 2)
-      {
-        return data2_(refEntry[activeDims_[0]],refEntry[activeDims_[1]]);
-      }
-      else if (dataRank_ == 3)
-      {
-        return data3_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]]);
-      }
-      else if (dataRank_ == 4)
-      {
-        return data4_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]]);
-      }
-      else if (dataRank_ == 5)
-      {
-        return data5_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]]);
-      }
-      else if (dataRank_ == 6)
-      {
-        return data6_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]],refEntry[activeDims_[5]]);
-      }
-      else // dataRank_ == 7
-      {
-        return data7_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]],refEntry[activeDims_[5]],refEntry[activeDims_[6]]);
-      }
+      return getWritableEntry(intArgs...);
     }
     
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType>::value),
-        return_type>::type
-    operator()(const iType& i0) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data1_(i0);
-      }
-      return getEntry(i0,0,0,0,0,0,0);
-    }
+    template <bool...> struct bool_pack;
+
+    template <bool... v>
+    using all_true = std::is_same<bool_pack<true, v...>, bool_pack<v..., true>>;
     
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data2_(i0,i1);
-      }
-      return getEntry(i0,i1,0,0,0,0,0);
-    }
+    template <class ...IntArgs>
+    using valid_args = all_true<std::is_integral<IntArgs>{}...>;
     
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data3_(i0,i1,i2);
-      }
-      return getEntry(i0,i1,i2,0,0,0,0);
+    static_assert(valid_args<int,long,unsigned>::value, "valid args works");
+
+    //! Returns a value corresponding to the specified logical data location.
+    template <class ...IntArgs>
+    KOKKOS_INLINE_FUNCTION
+#ifndef __INTEL_COMPILER
+    // icc has a bug that prevents compilation with this enable_if_t
+    // (possibly the same as https://community.intel.com/t5/Intel-C-Compiler/Intel-Compiler-bug-while-deducing-template-arguments-inside/m-p/1164358)
+    // so with icc we'll just skip the argument type/count check
+    enable_if_t<valid_args<IntArgs...>::value && (sizeof...(IntArgs) <= 7),return_type>
+#else
+    return_type
+#endif
+    operator()(const IntArgs&... intArgs) const {
+      return getEntry(intArgs...);
     }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data4_(i0,i1,i2,i3);
-      }
-      return getEntry(i0,i1,i2,i3,0,0,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3, const iType4& i4) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data5_(i0,i1,i2,i3,i4);
-      }
-      return getEntry(i0,i1,i2,i3,i4,0,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4, typename iType5>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value && std::is_integral<iType5>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3, const iType4& i4, const iType5& i5) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data6_(i0,i1,i2,i3,i4,i5);
-      }
-      return getEntry(i0,i1,i2,i3,i4,i5,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4, typename iType5, typename iType6>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value && std::is_integral<iType5>::value &&
-         std::is_integral<iType6>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3, const iType4& i4, const iType5& i5,
-               const iType6& i6) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data7_(i0,i1,i2,i3,i4,i5,i6);
-      }
-      return getEntry(i0,i1,i2,i3,i4,i5,i6);
-    }
-    
-    //! Returns the notional extent in the specified dimension.
+
+    //! Returns the logical extent in the specified dimension.
     KOKKOS_INLINE_FUNCTION
     int extent_int(const int& r) const
     {
@@ -1352,15 +1766,34 @@ namespace Intrepid2 {
       return false; // statement should be unreachable; included because compilers don't necessarily recognize that fact...
     }
     
+    //! Constructs a container suitable for storing the result of an in-place combination of the two provided data containers.  The two containers must have the same logical shape.
+    //! \see storeInPlaceCombination()
+    //! \param A  [in] - the first data container.
+    //! \param B  [in] - the second data container.  Must have the same logical shape as A.
+    //! \return A container with the same logical shape as A and B, with underlying View storage sufficient to store the result of A + B (or any other in-place combination).
+    static Data<DataScalar,DeviceType> allocateInPlaceCombinationResult( const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B )
+    {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.rank() != B.rank(), std::invalid_argument, "A and B must have the same logical shape");
+      const int rank = A.rank();
+      std::vector<DimensionInfo> dimInfo(rank);
+      for (int d=0; d<rank; d++)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(d) != B.extent_int(d), std::invalid_argument, "A and B must have the same logical shape");
+        dimInfo[d] = A.combinedDataDimensionInfo(B, d);
+      }
+      Data<DataScalar,DeviceType> result(dimInfo);
+      return result;
+    }
+    
     //! Constructs a container suitable for storing the result of a matrix-vector multiply corresponding to the two provided containers.
     //! \see storeMatMat()
-    //! \param A_MatData                                            [in] - nominally (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
+    //! \param A_MatData                                            [in] - logically (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
     //! \param transposeA                                          [in] - if true, A will be transposed prior to being multiplied by B (or B's transpose).
-    //! \param B_MatData                                            [in] - nominally (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
+    //! \param B_MatData                                            [in] - logically (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
     //! \param transposeB                                          [in] - if true, B will be transposed prior to the multiplication by A (or A's transpose).
     static Data<DataScalar,DeviceType> allocateMatMatResult( const bool transposeA, const Data<DataScalar,DeviceType> &A_MatData, const bool transposeB, const Data<DataScalar,DeviceType> &B_MatData )
     {
-      // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
+      // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A_MatData.rank() != B_MatData.rank(), std::invalid_argument, "AmatData and BmatData have incompatible ranks");
       
       const int D1_DIM = A_MatData.rank() - 2;
@@ -1542,7 +1975,7 @@ namespace Intrepid2 {
     //! \see storeMatVec()
     static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
     {
-      // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
+      // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(matData.rank() != vecData.rank() + 1, std::invalid_argument, "matData and vecData have incompatible ranks");
       const int vecDim  = vecData.extent_int(vecData.rank() - 1);
       const int matRows = matData.extent_int(matData.rank() - 2);
@@ -1664,6 +2097,144 @@ namespace Intrepid2 {
       return Data<DataScalar,DeviceType>(data,resultRank,resultExtents,resultVariationTypes);
     }
     
+    //! returns an MDRangePolicy over the underlying data extents (but with the logical shape).
+    template<int rank>
+    enable_if_t<(rank!=1) && (rank!=7), Kokkos::MDRangePolicy<typename DeviceType::execution_space,Kokkos::Rank<rank>> >
+    dataExtentRangePolicy()
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      Kokkos::Array<int,rank> startingOrdinals;
+      Kokkos::Array<int,rank> extents;
+      
+      for (int d=0; d<rank; d++)
+      {
+        startingOrdinals[d] = 0;
+        extents[d] = getDataExtent(d);
+      }
+      auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<rank>>(startingOrdinals,extents);
+      return policy;
+    }
+    
+    //! returns an MDRangePolicy over the first six underlying data extents (but with the logical shape).
+    template<int rank>
+    enable_if_t<rank==7, Kokkos::MDRangePolicy<typename DeviceType::execution_space,Kokkos::Rank<6>> >
+    dataExtentRangePolicy()
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      Kokkos::Array<int,6> startingOrdinals;
+      Kokkos::Array<int,6> extents;
+      
+      for (int d=0; d<6; d++)
+      {
+        startingOrdinals[d] = 0;
+        extents[d] = getDataExtent(d);
+      }
+      auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<6>>(startingOrdinals,extents);
+      return policy;
+    }
+    
+    template<int rank>
+    inline
+    enable_if_t<rank==1, Kokkos::RangePolicy<typename DeviceType::execution_space> >
+    dataExtentRangePolicy()
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,getDataExtent(0));
+      return policy;
+    }
+    
+    //! Places the result of an in-place combination (e.g., entrywise sum) into this data container.
+    template<class BinaryOperator>
+    void storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+
+#ifdef INTREPID2_HAVE_DEBUG
+      // check logical extents
+      for (int d=0; d<rank_; d++)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(A.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all logical extents");
+        INTREPID2_TEST_FOR_EXCEPTION(B.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all logical extents");
+      }
+      // TODO: add some checks that data extent of this suffices to accept combined A + B data.
+#endif
+      
+      const bool this_constant = (this->getUnderlyingViewRank() == 1) && (this->getUnderlyingViewSize() == 1);
+
+      // we special-case for constant output here; since the constant case is essentially all overhead, we want to avoid as much of the overhead of storeInPlaceCombination() as possible…
+      if (this_constant)
+      {
+        // constant data
+        Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,1); // just 1 entry
+        auto this_underlying = this->getUnderlyingView<1>();
+        auto A_underlying = A.getUnderlyingView<1>();
+        auto B_underlying = B.getUnderlyingView<1>();
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (const int &i0) {
+          auto & result = this_underlying(0);
+          const auto & A_val = A_underlying(0);
+          const auto & B_val = B_underlying(0);
+          
+          result = binaryOperator(A_val,B_val);
+        });
+      }
+      else
+      {
+        switch (rank_)
+        {
+          case 1: storeInPlaceCombination<BinaryOperator, 1>(A, B, binaryOperator); break;
+          case 2: storeInPlaceCombination<BinaryOperator, 2>(A, B, binaryOperator); break;
+          case 3: storeInPlaceCombination<BinaryOperator, 3>(A, B, binaryOperator); break;
+          case 4: storeInPlaceCombination<BinaryOperator, 4>(A, B, binaryOperator); break;
+          case 5: storeInPlaceCombination<BinaryOperator, 5>(A, B, binaryOperator); break;
+          case 6: storeInPlaceCombination<BinaryOperator, 6>(A, B, binaryOperator); break;
+          case 7: storeInPlaceCombination<BinaryOperator, 7>(A, B, binaryOperator); break;
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "unhandled rank in switch");
+        }
+      }
+    }
+    
+    //! stores the in-place (entrywise) sum, A .+ B, into this container.
+    void storeInPlaceSum(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto sum = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a + b;
+      };
+      storeInPlaceCombination(A, B, sum);
+    }
+    
+    //! stores the in-place (entrywise) product, A .* B, into this container.
+    void storeInPlaceProduct(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto product = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a * b;
+      };
+      storeInPlaceCombination(A, B, product);
+    }
+    
+    //! stores the in-place (entrywise) difference, A .- B, into this container.
+    void storeInPlaceDifference(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto difference = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a - b;
+      };
+      storeInPlaceCombination(A, B, difference);
+    }
+    
+    //! stores the in-place (entrywise) quotient, A ./ B, into this container.
+    void storeInPlaceQuotient(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto quotient = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a / b;
+      };
+      storeInPlaceCombination(A, B, quotient);
+    }
+    
     //! Places the result of a matrix-vector multiply corresponding to the two provided containers into this Data container.  This Data container should have been constructed by a call to allocateMatVecResult(), or should match such a container in underlying data extent and variation types.
     void storeMatVec( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
     {
@@ -1684,7 +2255,7 @@ namespace Intrepid2 {
         auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),matRows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &i) {
-          auto & val_i = thisData.getWritableEntry(cellOrdinal, pointOrdinal, i, 0, 0, 0, 0);
+          auto & val_i = thisData.getWritableEntry(cellOrdinal, pointOrdinal, i);
           val_i = 0;
           for (int j=0; j<matCols; j++)
           {
@@ -1698,7 +2269,7 @@ namespace Intrepid2 {
         auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),matRows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &vectorOrdinal, const int &i) {
-          auto & val_i = thisData.getWritableEntry(vectorOrdinal, i, 0, 0, 0, 0, 0);
+          auto & val_i = thisData.getWritableEntry(vectorOrdinal, i);
           val_i = 0;
           for (int j=0; j<matCols; j++)
           {
@@ -1712,7 +2283,7 @@ namespace Intrepid2 {
         Kokkos::RangePolicy<ExecutionSpace> policy(0,matRows);
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &i) {
-          auto & val_i = thisData.getWritableEntry(i, 0, 0, 0, 0, 0, 0);
+          auto & val_i = thisData.getWritableEntry(i);
           val_i = 0;
           for (int j=0; j<matCols; j++)
           {
@@ -1729,16 +2300,16 @@ namespace Intrepid2 {
     
     //! Places the result of a matrix-matrix multiply corresponding to the two provided containers into this Data container.  This Data container should have been constructed by a call to allocateMatMatResult(), or should match such a container in underlying data extent and variation types.
     //! \see allocateMatMat()
-    //! \param A_MatData                                            [in] - nominally (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
+    //! \param A_MatData                                            [in] - logically (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
     //! \param transposeA                                          [in] - if true, A will be transposed prior to being multiplied by B (or B's transpose).
-    //! \param B_MatData                                            [in] - nominally (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
+    //! \param B_MatData                                            [in] - logically (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
     //! \param transposeB                                          [in] - if true, B will be transposed prior to the multiplication by A (or A's transpose).
     void storeMatMat( const bool transposeA, const Data<DataScalar,DeviceType> &A_MatData, const bool transposeB, const Data<DataScalar,DeviceType> &B_MatData )
     {
       // TODO: add a compile-time (SFINAE-type) guard against DataScalar types that do not support arithmetic operations.  (We support Orientation as a DataScalar type; it might suffice just to compare DataScalar to Orientation, and eliminate this method for that case.)
       // TODO: check for invalidly shaped containers.
       
-      // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
+      // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A_MatData.rank() != B_MatData.rank(), std::invalid_argument, "AmatData and BmatData have incompatible ranks");
       
       const int D1_DIM = A_MatData.rank() - 2;
@@ -1775,7 +2346,7 @@ namespace Intrepid2 {
           {
             for (int j=0; j<rightCols; j++)
             {
-              auto & val_ij = thisData.getWritableEntry(matrixOrdinal, i, j, 0, 0, 0, 0);
+              auto & val_ij = thisData.getWritableEntry(matrixOrdinal, i, j);
               val_ij = 0;
               for (int k=0; k<leftCols; k++)
               {
@@ -1787,7 +2358,7 @@ namespace Intrepid2 {
           }
           for (int i=diagonalStart; i<leftRows; i++)
           {
-            auto & val_ii = thisData.getWritableEntry(matrixOrdinal, i, i, 0, 0, 0, 0);
+            auto & val_ii = thisData.getWritableEntry(matrixOrdinal, i, i);
             const auto & left  = A_MatData(matrixOrdinal,i,i);
             const auto & right = B_MatData(matrixOrdinal,i,i);
             val_ii = left * right;
@@ -1798,7 +2369,7 @@ namespace Intrepid2 {
       {
         // (C,P,D,D), perhaps
         auto policy = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<2> >({0,0},{getDataExtent(0),getDataExtent(1)});
-        if (underlyingMatchesNotional_) // receiving data object is completely expanded
+        if (underlyingMatchesLogical_) // receiving data object is completely expanded
         {
           Kokkos::parallel_for("compute mat-mat", policy,
           KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal) {
@@ -1826,7 +2397,7 @@ namespace Intrepid2 {
             {
               for (int j=0; j<rightCols; j++)
               {
-                auto & val_ij = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, j, 0, 0, 0);
+                auto & val_ij = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, j);
                 val_ij = 0;
                 for (int k=0; k<leftCols; k++)
                 {
@@ -1838,7 +2409,7 @@ namespace Intrepid2 {
             }
             for (int i=diagonalStart; i<leftRows; i++)
             {
-              auto & val_ii = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, i, 0, 0, 0);
+              auto & val_ii = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, i);
               const auto & left  = A_MatData(cellOrdinal,pointOrdinal,i,i);
               const auto & right = B_MatData(cellOrdinal,pointOrdinal,i,i);
               val_ii = left * right;
@@ -1859,15 +2430,15 @@ namespace Intrepid2 {
       return extents_[0] > 0;
     }
     
-    //! Returns the notional rank of the Data container.
+    //! Returns the logical rank of the Data container.
     KOKKOS_INLINE_FUNCTION
     unsigned rank() const
     {
       return rank_;
     }
     
- /** \brief sets the notional extent in the specified dimension.  If needed, the underlying data container is resized.
-     \param [in] d - the notional dimension in which the extent is to be changed
+ /** \brief sets the logical extent in the specified dimension.  If needed, the underlying data container is resized.
+     \param [in] d - the logical dimension in which the extent is to be changed
      \param [in] newExtent - the new extent
      \note Not supported for dimensions in which the variation type is BLOCK_PLUS_DIAGONAL.
      \note If the variation type is MODULAR, the existing modulus must evenly divide the new extent; the underlying data structure will not be resized in this case.
@@ -1923,11 +2494,11 @@ namespace Intrepid2 {
       extents_[d] = newExtent;
     }
     
-    //! Returns true if the underlying container has exactly the same rank and extents as the notional container.
+    //! Returns true if the underlying container has exactly the same rank and extents as the logical container.
     KOKKOS_INLINE_FUNCTION
-    bool underlyingMatchesNotional() const
+    bool underlyingMatchesLogical() const
     {
-      return underlyingMatchesNotional_;
+      return underlyingMatchesLogical_;
     }
   };
 }

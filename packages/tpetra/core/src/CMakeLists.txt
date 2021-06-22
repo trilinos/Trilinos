@@ -36,17 +36,23 @@ FUNCTION(TPETRA_SLG_MACRO_NAME NAME_OUT NAME_IN)
       IF(IS_COMPLEX_DOUBLE)
         SET(${NAME_OUT} "COMPLEX_DOUBLE" PARENT_SCOPE)
       ELSE()
-        # Convert to upper case, convert double colons to underscores,
-        # and hope for the best.
-        #
-        # It would be nice if CMake were consistent about where output
-        # arguments go.  Alas, this is not to be.  TOUPPER puts the
-        # output argument last; REPLACE puts it after the search and
-        # substitute strings, before the input string.
-        STRING(TOUPPER "${NAME_IN}" TMP0)
-        STRING(REPLACE "::" "_" TMP1 "${TMP0}")
-        STRING(REPLACE " " "_" TMP2 "${TMP1}")
-        SET(${NAME_OUT} ${TMP2} PARENT_SCOPE)
+	#long double is a special name; add _ to macro name
+        STRING(COMPARE EQUAL "${NAME_IN}" "long double" IS_LONG_DOUBLE)
+	IF(IS_LONG_DOUBLE) 
+	  SET(${NAME_OUT} "LONG_DOUBLE" PARENT_SCOPE)
+        ELSE()
+          # Convert to upper case, convert double colons to underscores,
+          # and hope for the best.
+          #
+          # It would be nice if CMake were consistent about where output
+          # arguments go.  Alas, this is not to be.  TOUPPER puts the
+          # output argument last; REPLACE puts it after the search and
+          # substitute strings, before the input string.
+          STRING(TOUPPER "${NAME_IN}" TMP0)
+          STRING(REPLACE "::" "_" TMP1 "${TMP0}")
+          STRING(REPLACE " " "_" TMP2 "${TMP1}")
+          SET(${NAME_OUT} ${TMP2} PARENT_SCOPE)
+        ENDIF()
       ENDIF()
     ENDIF()
   ENDIF()
@@ -598,34 +604,37 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "replaceDiagonalCrsMatrix" "REPLACEDIAGONALCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)
   LIST(APPEND SOURCES ${REPLACEDIAGONALCRSMATRIX_OUTPUT_FILES})
 
-  # Generate ETI .cpp files for Tpetra::Details::localDeepCopy*RowMatrix.
-  # Do so for the same set of Scalar types as CrsMatrix (see above),
-  # because this function is an implementation detail of CrsMatrix.
-  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES
-    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
-    "Details_localDeepCopyRowMatrix"
-    "DETAILS_LOCALDEEPCOPYROWMATRIX"
-    "${CrsMatrix_ETI_SCALARS}"
-    "${TpetraCore_ETI_LORDS}"
-    "${TpetraCore_ETI_GORDS}"
-    "${TpetraCore_ETI_NODES}"
-    TRUE)
-  LIST(APPEND SOURCES ${LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES})
+  IF (Tpetra_ENABLE_DEPRECATED_CODE)
 
-  # Generate ETI .cpp files for the RowMatrix -> CrsMatrix overload of
-  # Tpetra::createDeepCopy.  Do this only for non-integer Scalar
-  # types, since we really only need this function for linear solvers.
-  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES
-    "Tpetra_ETI_SC_LO_GO_NT.tmpl"
-    "createDeepCopy_CrsMatrix"
-    "CREATEDEEPCOPY_CRSMATRIX"
-    "${TpetraCore_ETI_SCALARS_NO_ORDS}"
-    "${TpetraCore_ETI_LORDS}"
-    "${TpetraCore_ETI_GORDS}"
-    "${TpetraCore_ETI_NODES}"
-    FALSE)
-  LIST(APPEND SOURCES ${CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES})
-
+    # Generate ETI .cpp files for Tpetra::Details::localDeepCopy*RowMatrix.
+    # Do so for the same set of Scalar types as CrsMatrix (see above),
+    # because this function is an implementation detail of CrsMatrix.
+    TPETRA_PROCESS_ALL_SLGN_TEMPLATES(LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES
+      "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+      "Details_localDeepCopyRowMatrix"
+      "DETAILS_LOCALDEEPCOPYROWMATRIX"
+      "${CrsMatrix_ETI_SCALARS}"
+      "${TpetraCore_ETI_LORDS}"
+      "${TpetraCore_ETI_GORDS}"
+      "${TpetraCore_ETI_NODES}"
+      TRUE)
+    LIST(APPEND SOURCES ${LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES})
+  
+    # Generate ETI .cpp files for the RowMatrix -> CrsMatrix overload of
+    # Tpetra::createDeepCopy.  Do this only for non-integer Scalar
+    # types, since we really only need this function for linear solvers.
+    TPETRA_PROCESS_ALL_SLGN_TEMPLATES(CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES
+      "Tpetra_ETI_SC_LO_GO_NT.tmpl"
+      "createDeepCopy_CrsMatrix"
+      "CREATEDEEPCOPY_CRSMATRIX"
+      "${TpetraCore_ETI_SCALARS_NO_ORDS}"
+      "${TpetraCore_ETI_LORDS}"
+      "${TpetraCore_ETI_GORDS}"
+      "${TpetraCore_ETI_NODES}"
+      FALSE)
+    LIST(APPEND SOURCES ${CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES})
+  ENDIF ()
+  
   # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
   TPETRA_PROCESS_ALL_SN_TEMPLATES(LOCALCRSMATRIXOPERATOR_OUTPUT_FILES
     "Tpetra_ETI_SC_NT.tmpl" "LocalCrsMatrixOperator"

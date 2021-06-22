@@ -1632,7 +1632,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
       amgList.remove("user coarse matrix");
       userCoarseA = true;
     }
-    MueLu::ParameterListInterpreter<scalar_type> mueLuFactory(amgList);
+    MueLu::ParameterListInterpreter<scalar_type,local_ordinal_type,global_ordinal_type> mueLuFactory(amgList);
     RCP<MueLu::Hierarchy<scalar_type,local_ordinal_type,global_ordinal_type> > H = mueLuFactory.CreateHierarchy();
     H->setVerbLevel(Teuchos::VERB_HIGH);
     H->GetLevel(0)->Set("A", mueluA);
