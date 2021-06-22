@@ -229,7 +229,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Loop 4
   {
-    auto localMatrix = A->getLocalMatrixHost();
+    auto localMatrix = A->getLocalMatrixDevice();
 
     GO validation = 0;
 
