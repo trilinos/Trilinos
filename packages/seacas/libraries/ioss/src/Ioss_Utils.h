@@ -30,6 +30,7 @@ namespace Ioss {
 } // namespace Ioss
 
 #define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
+using namespace std::string_literals;
 
 namespace {
   // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
@@ -115,6 +116,9 @@ namespace Ioss {
         IOSS_ERROR(errmsg);
       }
     }
+
+    /** \brief guess file type from extension */
+    static std::string get_type_from_file(const std::string &filename);
 
     template <typename T> static void uniquify(std::vector<T> &vec, bool skip_first = false)
     {

@@ -167,6 +167,8 @@ private:
   using InverseGlobalOrdinal = typename InverseType::global_ordinal_type;
   using InverseNode = typename InverseType::node_type;
 
+  using typename ContainerImpl<MatrixType, InverseScalar>::block_crs_matrix_type;
+
   using inverse_mv_type = Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
   using InverseCrs = Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
   using InverseMap = typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;

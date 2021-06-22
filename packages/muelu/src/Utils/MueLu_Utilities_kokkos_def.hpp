@@ -620,6 +620,54 @@ namespace MueLu {
     return MueLu::ZeroDirichletCols<double,int,int,Node>(A, dirichletCols, replaceWith);
   }
 
+  // Applies rowsum criterion 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                            Kokkos::View<bool*, typename Node::device_type> & dirichletRows)
+  {
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
+    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
+      size_t nnz = A.getNumEntriesInLocalRow(row);
+      ArrayView<const LocalOrdinal> indices;
+      ArrayView<const Scalar> vals;
+      A.getLocalRowView(row, indices, vals);
+
+      Scalar rowsum = STS::zero();
+      Scalar diagval = STS::zero();
+      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
+        LocalOrdinal col = indices[colID];
+        if (row == col)
+          diagval = vals[colID];
+        rowsum += vals[colID];
+      }
+      if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
+        dirichletRows(row) = true;
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                       const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                       Kokkos::View<bool*, typename Node::device_type> & dirichletRows)
+  {
+    MueLu::ApplyRowSumCriterion<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A,rowSumTol,dirichletRows);
+  }
+
+
+  template <class Node>
+  void
+  Utilities_kokkos<double,int,int,Node>::
+  ApplyRowSumCriterion(const Xpetra::Matrix<double,int,int,Node>& A,
+                       const typename Teuchos::ScalarTraits<double>::magnitudeType rowSumTol,
+                       Kokkos::View<bool*, typename Node::device_type> & dirichletRows)
+  {
+    MueLu::ApplyRowSumCriterion<double, int, int, Node>(A,rowSumTol,dirichletRows);
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >

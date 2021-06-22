@@ -5,6 +5,10 @@
  *
  * See packages/seacas/LICENSE for details
  */
+
+#ifndef PS_PARIO_H
+#define PS_PARIO_H
+
 #include "ps_pario_const.h"
 
 double PIO_Time_Array[26]; /* Vector for timings */
@@ -12,3 +16,4 @@ double PIO_Time_Array[26]; /* Vector for timings */
 struct Parallel_IO PIO_Info;
 
 std::string Par_Nem_File_Name; /* The par nemesis file name. */
+#endif

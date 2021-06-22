@@ -172,9 +172,17 @@ namespace Ifpack2 {
     ///
     /// cuda specialization
     ///
-    template<typename T> struct is_cuda        { enum : bool { value = false }; };
+    template<typename T> struct is_cuda                 { enum : bool { value = false }; };
 #if defined(KOKKOS_ENABLE_CUDA)
-    template<> struct is_cuda<Kokkos::Cuda>    { enum : bool { value = true  }; };
+    template<> struct is_cuda<Kokkos::Cuda>             { enum : bool { value = true  }; };
+#endif
+
+    ///
+    /// hip specialization
+    ///
+    template<typename T> struct is_hip                  { enum : bool { value = false }; };
+#if defined(KOKKOS_ENABLE_HIP)
+    template<> struct is_hip<Kokkos::Experimental::HIP> { enum : bool { value = true  }; };
 #endif
 
     ///
@@ -204,6 +212,15 @@ namespace Ifpack2 {
     };
 #endif
 
+#if defined(KOKKOS_ENABLE_HIP)
+    template<>
+    struct ExecutionSpaceFactory<Kokkos::Experimental::HIP> {
+      static void createInstance(Kokkos::Experimental::HIP &exec_instance) {
+	exec_instance = Kokkos::Experimental::HIP();
+      }
+    };
+#endif
+    
     ///
     /// utility functions
     ///
@@ -363,7 +380,7 @@ namespace Ifpack2 {
       typedef Tpetra::BlockCrsMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_crs_matrix_type;
       typedef typename tpetra_block_crs_matrix_type::little_block_type tpetra_block_access_view_type;
       typedef Tpetra::BlockMultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> tpetra_block_multivector_type;
-      typedef typename tpetra_block_crs_matrix_type::crs_graph_type::local_graph_type local_crs_graph_type;
+      typedef typename tpetra_block_crs_matrix_type::crs_graph_type::local_graph_device_type local_crs_graph_type;
 
       ///
       /// simd vectorization
@@ -878,8 +895,8 @@ namespace Ifpack2 {
         const local_ordinal_type mv_blocksize = blocksize_*num_vectors;
         const local_ordinal_type idiff = iend_ - ibeg_;
         const auto abase = buffer_.data() + mv_blocksize*ibeg_;
-        if (is_cuda<execution_space>::value) {
-#if defined(KOKKOS_ENABLE_CUDA)
+        if (is_cuda<execution_space>::value || is_hip<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
           using team_policy_type = Kokkos::TeamPolicy<execution_space>;
           local_ordinal_type vector_size(0);
           if      (blocksize_ <=  4) vector_size =  4;
@@ -1440,6 +1457,20 @@ namespace Ifpack2 {
         else                      total_team_size = 160;
         const local_ordinal_type team_size = total_team_size/vector_loop_size;
         const team_policy_type policy(packptr.extent(0)-1, team_size, vector_loop_size);
+#elif defined(KOKKOS_ENABLE_HIP)
+	// FIXME: HIP
+	// These settings might be completely wrong
+	// will have to do some experiments to decide
+	// what makes sense on AMD GPUs
+        local_ordinal_type total_team_size(0);
+        if      (blocksize <=  5) total_team_size =  32;
+        else if (blocksize <=  9) total_team_size =  64;
+        else if (blocksize <= 12) total_team_size =  96;
+        else if (blocksize <= 16) total_team_size = 128;
+        else if (blocksize <= 20) total_team_size = 160;
+        else                      total_team_size = 160;
+        const local_ordinal_type team_size = total_team_size/vector_loop_size;
+        const team_policy_type policy(packptr.extent(0)-1, team_size, vector_loop_size);
 #else // Host architecture: team size is always one
         const team_policy_type policy(packptr.extent(0)-1, 1, 1);
 #endif
@@ -1471,8 +1502,7 @@ namespace Ifpack2 {
       using impl_type = ImplType<MatrixType>;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using size_type_1d_view = typename impl_type::size_type_1d_view;
-      using impl_scalar_type_1d_view_tpetra = typename impl_type::impl_scalar_type_1d_view_tpetra;
-
+      using impl_scalar_type_1d_view_tpetra = Unmanaged<typename impl_type::impl_scalar_type_1d_view_tpetra>;
       // rowptr points to the start of each row of A_colindsub.
       size_type_1d_view rowptr, rowptr_remote;
       // Indices into A's rows giving the blocks to extract. rowptr(i) points to
@@ -1563,10 +1593,10 @@ namespace Ifpack2 {
 
       // construct the D and R graphs in A = D + R.
       {
-        const auto& local_graph = g.getLocalGraph();
-        const auto& local_graph_rowptr = local_graph.row_map;
+        const auto local_graph = g.getLocalGraphHost();
+        const auto local_graph_rowptr = local_graph.row_map;
         TEUCHOS_ASSERT(local_graph_rowptr.size() == static_cast<size_t>(nrows + 1));
-        const auto& local_graph_colidx = local_graph.entries;
+        const auto local_graph_colidx = local_graph.entries;
 
         //assume no overlap.
 
@@ -1783,8 +1813,8 @@ namespace Ifpack2 {
           }
 
           // Allocate or view values.
-          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->
-                               template getValues<node_memory_space>());
+          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->getValuesDeviceNonConst());
+                               
         }
       }
     }
@@ -1844,6 +1874,42 @@ namespace Ifpack2 {
                                        const int vector_length,
                                        const int internal_vector_length) {
         return ExtractAndFactorizeRecommendedCudaTeamSize(blksize, vector_length, internal_vector_length);
+      }
+    };
+#endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+    static inline int ExtractAndFactorizeRecommendedHIPTeamSize(const int blksize,
+								const int vector_length,
+								const int internal_vector_length) {
+      const int vector_size = vector_length/internal_vector_length;
+      int total_team_size(0);
+      if      (blksize <=  5) total_team_size =  32;
+      else if (blksize <=  9) total_team_size =  32; // 64
+      else if (blksize <= 12) total_team_size =  96;
+      else if (blksize <= 16) total_team_size = 128;
+      else if (blksize <= 20) total_team_size = 160;
+      else                    total_team_size = 160;
+      return 2*total_team_size/vector_size;
+    }
+    template<>
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPSpace> {
+      typedef KB::Mode::Team mode_type;
+      typedef KB::Algo::Level3::Unblocked algo_type;
+      static int recommended_team_size(const int blksize,
+                                       const int vector_length,
+                                       const int internal_vector_length) {
+        return ExtractAndFactorizeRecommendedHIPTeamSize(blksize, vector_length, internal_vector_length);
+      }
+    };
+    template<>
+    struct ExtractAndFactorizeTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPHostPinnedSpace> {
+      typedef KB::Mode::Team mode_type;
+      typedef KB::Algo::Level3::Unblocked algo_type;
+      static int recommended_team_size(const int blksize,
+                                       const int vector_length,
+                                       const int internal_vector_length) {
+        return ExtractAndFactorizeRecommendedHIPTeamSize(blksize, vector_length, internal_vector_length);
       }
     };
 #endif
@@ -1914,8 +1980,8 @@ namespace Ifpack2 {
         packptr(interf_.packptr),
         max_partsz(interf_.max_partsz),
         // block crs matrix
-        A_rowptr(A_->getCrsGraph().getLocalGraph().row_map),
-        A_values(const_cast<block_crs_matrix_type*>(A_.get())->template getValues<memory_space>()),
+        A_rowptr(A_->getCrsGraph().getLocalGraphDevice().row_map),
+        A_values(const_cast<block_crs_matrix_type*>(A_.get())->getValuesDeviceNonConst()),
         // block tridiags
         pack_td_ptr(btdm_.pack_td_ptr),
         flat_td_ptr(btdm_.flat_td_ptr),
@@ -2228,7 +2294,8 @@ namespace Ifpack2 {
           packed_multivector(pmv) {}
 
       // TODO:: modify this routine similar to the team level functions
-      inline
+      // inline  ---> FIXME HIP: should not need the KOKKOS_INLINE_FUNCTION below...
+      KOKKOS_INLINE_FUNCTION
       void
       operator() (const local_ordinal_type &packidx) const {
         local_ordinal_type partidx = packptr(packidx);
@@ -2295,9 +2362,16 @@ namespace Ifpack2 {
           Kokkos::parallel_for
             ("MultiVectorConverter::TeamPolicy", policy, *this);
 #endif
+	} else if(is_hip<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_HIP)
+          const local_ordinal_type vl = vector_length;
+          const Kokkos::TeamPolicy<execution_space> policy(packptr.extent(0) - 1, Kokkos::AUTO(), vl);
+          Kokkos::parallel_for
+            ("MultiVectorConverter::TeamPolicy", policy, *this);
+#endif
         } else {
-#if defined(__CUDA_ARCH__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code");
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
 #else
           const Kokkos::RangePolicy<execution_space> policy(0, packptr.extent(0) - 1);
           Kokkos::parallel_for
@@ -2365,6 +2439,45 @@ namespace Ifpack2 {
                                        const int vector_length,
                                        const int internal_vector_length) {
         return SolveTridiagsRecommendedCudaTeamSize(blksize, vector_length, internal_vector_length);
+      }
+    };
+#endif
+
+#if defined(KOKKOS_ENABLE_HIP)
+    static inline int SolveTridiagsRecommendedHIPTeamSize(const int blksize,
+							  const int vector_length,
+							  const int internal_vector_length) {
+      const int vector_size = vector_length/internal_vector_length;
+      int total_team_size(0);
+      if      (blksize <=  5) total_team_size =  32;
+      else if (blksize <=  9) total_team_size =  32; // 64
+      else if (blksize <= 12) total_team_size =  96;
+      else if (blksize <= 16) total_team_size = 128;
+      else if (blksize <= 20) total_team_size = 160;
+      else                    total_team_size = 160;
+      return total_team_size/vector_size;
+    }
+
+    template<>
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPSpace> {
+      typedef KB::Mode::Team mode_type;
+      typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
+      typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
+      static int recommended_team_size(const int blksize,
+                                       const int vector_length,
+                                       const int internal_vector_length) {
+        return SolveTridiagsRecommendedHIPTeamSize(blksize, vector_length, internal_vector_length);
+      }
+    };
+    template<>
+    struct SolveTridiagsDefaultModeAndAlgo<Kokkos::Experimental::HIPHostPinnedSpace> {
+      typedef KB::Mode::Team mode_type;
+      typedef KB::Algo::Level2::Unblocked single_vector_algo_type;
+      typedef KB::Algo::Level3::Unblocked multi_vector_algo_type;
+      static int recommended_team_size(const int blksize,
+                                       const int vector_length,
+                                       const int internal_vector_length) {
+        return SolveTridiagsRecommendedHIPTeamSize(blksize, vector_length, internal_vector_length);
       }
     };
 #endif
@@ -2892,6 +3005,18 @@ namespace Ifpack2 {
       return total_team_size/team_size;
     }
 
+    static inline int ComputeResidualVectorRecommendedHIPVectorSize(const int blksize,
+								    const int team_size) {
+      int total_team_size(0);
+      if      (blksize <=  5) total_team_size =  32;
+      else if (blksize <=  9) total_team_size =  32; // 64
+      else if (blksize <= 12) total_team_size =  96;
+      else if (blksize <= 16) total_team_size = 128;
+      else if (blksize <= 20) total_team_size = 160;
+      else                    total_team_size = 160;
+      return total_team_size/team_size;
+    }
+
     template<typename MatrixType>
     struct ComputeResidualVector {
     public:
@@ -3068,7 +3193,8 @@ namespace Ifpack2 {
 
       struct SeqTag {};
 
-      inline
+      // inline  ---> FIXME HIP: should not need KOKKOS_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void
       operator() (const SeqTag &, const local_ordinal_type& i) const {
         const local_ordinal_type blocksize = blocksize_requested;
@@ -3139,7 +3265,8 @@ namespace Ifpack2 {
       struct AsyncTag {};
 
       template<int B>
-      inline
+      // inline  ---> FIXME HIP: should not need KOKKOS_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void
       operator() (const AsyncTag<B> &, const local_ordinal_type &rowidx) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
@@ -3243,7 +3370,8 @@ namespace Ifpack2 {
       template <int P, int B> struct OverlapTag {};
 
       template<int P, int B>
-      inline
+      // inline  ---> FIXME HIP: should not need KOKKOS_INLINE_FUNCTION
+      KOKKOS_INLINE_FUNCTION
       void
       operator() (const OverlapTag<P,B> &, const local_ordinal_type& rowidx) const {
         const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
@@ -3381,9 +3509,18 @@ namespace Ifpack2 {
           Kokkos::parallel_for
             ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
 #endif
+	} else if(is_hip<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_HIP)
+          const local_ordinal_type blocksize = blocksize_requested;
+          const local_ordinal_type team_size = 8;
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedHIPVectorSize(blocksize, team_size);
+          const Kokkos::TeamPolicy<execution_space,SeqTag> policy(rowptr.extent(0) - 1, team_size, vector_size);
+          Kokkos::parallel_for
+            ("ComputeResidual::TeamPolicy::run<SeqTag>", policy, *this);
+#endif
         } else {
-#if defined(__CUDA_ARCH__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code");
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
 #else
           const Kokkos::RangePolicy<execution_space,SeqTag> policy(0, rowptr.extent(0) - 1);
           Kokkos::parallel_for
@@ -3407,6 +3544,14 @@ namespace Ifpack2 {
         b = b_; x = x_; x_remote = x_remote_;
         if (is_cuda<execution_space>::value) {
 #if defined(KOKKOS_ENABLE_CUDA)
+          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
+                                                     y_packed_.extent(0),
+                                                     y_packed_.extent(1),
+                                                     y_packed_.extent(2),
+                                                     vector_length);
+#endif
+        } else if (is_hip<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_HIP)
           y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
                                                      y_packed_.extent(0),
                                                      y_packed_.extent(1),
@@ -3446,9 +3591,38 @@ namespace Ifpack2 {
           }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
-        } else {
-#if defined(__CUDA_ARCH__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code");
+        } else if (is_hip<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_HIP)
+          const local_ordinal_type blocksize = blocksize_requested;
+          const local_ordinal_type team_size = 8;
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedHIPVectorSize(blocksize, team_size);
+          // local_ordinal_type vl_power_of_two = 1;
+          // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
+          // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
+          // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
+#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
+            const Kokkos::TeamPolicy<execution_space,AsyncTag<B> >      \
+              policy(rowidx2part.extent(0), team_size, vector_size);    \
+            Kokkos::parallel_for                                        \
+              ("ComputeResidual::TeamPolicy::run<AsyncTag>",            \
+               policy, *this); } break
+          switch (blocksize_requested) {
+          case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
+          case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
+          case   7: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 7);
+          case   9: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 9);
+          case  10: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(10);
+          case  11: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(11);
+          case  16: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(16);
+          case  17: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(17);
+          case  18: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(18);
+          default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
+          }
+#undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
+#endif
+	} else {
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
 #else
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B) {                \
             const Kokkos::RangePolicy<execution_space,AsyncTag<B> > policy(0, rowidx2part.extent(0)); \
@@ -3494,6 +3668,14 @@ namespace Ifpack2 {
                                                      y_packed_.extent(2),
                                                      vector_length);
 #endif
+        } else if (is_hip<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_HIP)
+          y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type*)y_packed_.data(),
+                                                     y_packed_.extent(0),
+                                                     y_packed_.extent(1),
+                                                     y_packed_.extent(2),
+                                                     vector_length);
+#endif
         } else {
           y_packed = y_packed_;
         }
@@ -3533,9 +3715,44 @@ namespace Ifpack2 {
           }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
 #endif
+	} else if (is_hip<execution_space>::value) {
+#if defined(KOKKOS_ENABLE_HIP)
+          const local_ordinal_type blocksize = blocksize_requested;
+          const local_ordinal_type team_size = 8;
+          const local_ordinal_type vector_size = ComputeResidualVectorRecommendedHIPVectorSize(blocksize, team_size);
+          // local_ordinal_type vl_power_of_two = 1;
+          // for (;vl_power_of_two<=blocksize_requested;vl_power_of_two*=2);
+          // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
+          // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
+#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
+          if (compute_owned) {                                          \
+            const Kokkos::TeamPolicy<execution_space,OverlapTag<0,B> > \
+              policy(rowidx2part.extent(0), team_size, vector_size);    \
+            Kokkos::parallel_for                                        \
+              ("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, *this); \
+          } else {                                                      \
+            const Kokkos::TeamPolicy<execution_space,OverlapTag<1,B> > \
+              policy(rowidx2part.extent(0), team_size, vector_size);    \
+            Kokkos::parallel_for                                        \
+              ("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, *this); \
+          } break
+          switch (blocksize_requested) {
+          case   3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 3);
+          case   5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 5);
+          case   7: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 7);
+          case   9: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 9);
+          case  10: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(10);
+          case  11: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(11);
+          case  16: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(16);
+          case  17: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(17);
+          case  18: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(18);
+          default : BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL( 0);
+          }
+#undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
+#endif
         } else {
-#if defined(__CUDA_ARCH__)
-          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: CUDA should not see this code");
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+          TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Error: device compiler should not see this code");
 #else
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)  \
           if (compute_owned) {                                          \
@@ -3784,6 +4001,13 @@ namespace Ifpack2 {
                                   "The seq method for applyInverseJacobi, " <<
                                   "which in any case is for developer use only, " <<
                                   "does not support norm-based termination.");
+      const bool device_accessible_from_host = Kokkos::SpaceAccessibility<
+        Kokkos::DefaultHostExecutionSpace, node_memory_space>::accessible;
+      TEUCHOS_TEST_FOR_EXCEPTION(is_seq_method_requested && !device_accessible_from_host,
+                                 std::invalid_argument,
+                                 "The seq method for applyInverseJacobi, " <<
+                                 "which in any case is for developer use only, " <<
+                                 "only supports memory spaces accessible from host.");
 
       // if workspace is needed more, resize it
       const size_type work_span_required = num_blockrows*num_vectors*blocksize;
@@ -3822,7 +4046,7 @@ namespace Ifpack2 {
 
       const local_ordinal_type_1d_view dummy_local_ordinal_type_1d_view;
       ComputeResidualVector<MatrixType>
-        compute_residual_vector(amd, A->getCrsGraph().getLocalGraph(), blocksize, interf,
+        compute_residual_vector(amd, A->getCrsGraph().getLocalGraphDevice(), blocksize, interf,
                                 is_async_importer_active ? async_importer->dm2cm : dummy_local_ordinal_type_1d_view);
 
       // norm manager workspace resize

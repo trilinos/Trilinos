@@ -35,10 +35,18 @@ namespace Kokkos {
 
 #ifdef KOKKOS_ENABLE_HIP
     template<>
-    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>::name() {
+    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>::name() {
       return std::string("HIP/Wrapper");
     }
 #endif // KOKKOS_ENABLE_HIP
+
+#ifdef KOKKOS_ENABLE_SYCL
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>::name() {
+      return std::string("SYCL/Wrapper");
+    }
+#endif // KOKKOS_ENABLE_SYCL
+
 
   } // namespace Compat
 } // namespace Kokkos

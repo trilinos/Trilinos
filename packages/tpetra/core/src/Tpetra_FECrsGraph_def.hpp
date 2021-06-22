@@ -279,7 +279,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     if (debug && checkColGIDsInAtLeastOneOwnedRow) {
       Teuchos::RCP<const map_type> colmap = this->getColMap();
       Teuchos::Array<bool> flag(colmap->getNodeNumElements(),false);
-      Teuchos::Array<LocalOrdinal> indices(this->getNodeMaxNumRowEntries());
+      typename crs_graph_type::nonconst_local_inds_host_view_type indices("indices",this->getNodeMaxNumRowEntries());
+
       for(size_t i=0; i<ownedRowMap->getNodeNumElements(); i++)  {
         size_t NumEntries=0;
         this->getLocalRowCopy(i,indices,NumEntries);
@@ -313,13 +314,7 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     }
 
     // Time to build an owned localGraph via subviews
-    local_graph_type ownedPlusSharedGraph = this->getLocalGraph();
-    size_t numOwnedRows = ownedRowMap->getNodeNumElements();
-    size_t numOwnedNonZeros = Tpetra::Details::getEntryOnHost(ownedPlusSharedGraph.row_map,numOwnedRows);
-    auto row_ptrs = Kokkos::subview(ownedPlusSharedGraph.row_map,Kokkos::pair<size_t,size_t>(0,numOwnedRows+1));
-    auto col_indices = Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros));
-
-    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,this->getColMap(),row_ptrs,col_indices));
+    inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(*this, ownedRowMap));
     inactiveCrsGraph_->fillComplete(ownedDomainMap_,ownedRangeMap_);
   }
 }//end doOverlapToLocal

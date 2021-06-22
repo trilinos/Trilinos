@@ -524,7 +524,7 @@ namespace Tacho {
       track_free(_factorize_mode.span()*sizeof(ordinal_type));
       track_free(_solve_mode.span()*sizeof(ordinal_type));
       track_free(_level_sids.span()*sizeof(ordinal_type));
-      if (verbose || true) {
+      if (verbose) {
         printf("Summary: LevelSetTools-Variant-%d (Release)\n", variant);
         printf("============================================\n");
         print_stat_memory();
@@ -616,7 +616,7 @@ namespace Tacho {
       for (ordinal_type i=0;i<_nstreams;++i) {
         ExecSpaceFactory<exec_space>::createInstance(_cuda_streams[i], _exec_instances[i]);
       }
-      if (verbose || true) {
+      if (verbose) {
         printf("Summary: CreateStream : %3d\n", _nstreams);
         printf("===========================\n");          
       }
@@ -1726,7 +1726,18 @@ namespace Tacho {
         const ordinal_type half_level = _nlevel/2;
         //const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
         //const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
+#if defined (CUDA_VERSION)
+#if (11000 > CUDA_VERSION)
+        /// cuda 11.1 below
+        const ordinal_type team_size_factor[2] = { 32, 64 }, vector_size_factor[2] = { 8, 4};        
+#else 
+        /// cuda 11.1 and higher
         const ordinal_type team_size_factor[2] = { 64, 64 }, vector_size_factor[2] = { 8, 4};
+#endif
+#else
+        /// not cuda ... whatever..
+        const ordinal_type team_size_factor[2] = { 64, 64 }, vector_size_factor[2] = { 8, 4};
+#endif
         const ordinal_type team_size_update[2] = { 16, 8 }, vector_size_update[2] = { 32, 32};
         {
           typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
@@ -1848,7 +1859,18 @@ namespace Tacho {
 #endif
         // this should be considered with average problem sizes in levels
         const ordinal_type half_level = _nlevel/2;
+#if defined (CUDA_VERSION)
+#if (11000 > CUDA_VERSION)
+        /// cuda 11.1 below
+        const ordinal_type team_size_solve[2] = { 32, 16 }, vector_size_solve[2] = { 8, 8};
+#else
+        /// cuda 11.1 and higher
+        const ordinal_type team_size_solve[2] = { 32, 16 }, vector_size_solve[2] = { 8, 8};
+#endif
+#else
+        /// not cuda whatever...
         const ordinal_type team_size_solve[2] = { 64, 16 }, vector_size_solve[2] = { 8, 8};
+#endif
         const ordinal_type team_size_update[2] = { 128, 32}, vector_size_update[2] = { 1, 1};
         {
           typedef TeamFunctor_SolveLowerLDL<supernode_info_type> functor_type;

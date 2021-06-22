@@ -46,6 +46,7 @@
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_CrsPadding.hpp"
+#include "Tpetra_Details_WrappedDualView.hpp"
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -151,8 +152,8 @@ pad_crs_arrays(
   const PadCrsAction action,
   const RowPtr& row_ptr_beg,
   const RowPtr& row_ptr_end,
-  Indices& indices,
-  Values& values,
+  Indices& indices_wdv,
+  Values& values_wdv,
   const Padding& padding,
   const int my_rank,
   const bool verbose)
@@ -187,8 +188,8 @@ pad_crs_arrays(
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end before scan",
                       maxNumToPrint);
-    os << ", indices.extent(0): " << indices.extent(0)
-       << ", values.extent(0): " << values.extent(0)
+    os << ", indices.extent(0): " << indices_wdv.extent(0)
+       << ", values.extent(0): " << values_wdv.extent(0)
        << ", padding: ";
     padding.print(os);
     os << endl;
@@ -215,6 +216,7 @@ pad_crs_arrays(
   }
   size_t increase = 0;
   {
+    // Must do on host because padding uses std::map
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
@@ -268,20 +270,23 @@ pad_crs_arrays(
     Kokkos::deep_copy(newAllocPerRow, newAllocPerRow_h);
   }
 
-  using inds_value_type = typename Indices::non_const_value_type;
-  using vals_value_type = typename Values::non_const_value_type;
+  using inds_value_type = 
+        typename Indices::DeviceViewType::non_const_value_type;
+  using vals_value_type = typename Values::DeviceViewType::non_const_value_type;
 
-  const size_t newIndsSize = size_t(indices.size()) + increase;
-  auto indices_new = make_uninitialized_view<Indices>(
+  auto indices_old = indices_wdv.getDeviceView(Access::ReadOnly);
+  const size_t newIndsSize = size_t(indices_old.size()) + increase;
+  auto indices_new = make_uninitialized_view<typename Indices::DeviceViewType>(
     "Tpetra::CrsGraph column indices", newIndsSize, verbose,
     prefix.get());
 
-  Values values_new;
+  typename Values::DeviceViewType values_new;
+  auto values_old = values_wdv.getDeviceView(Access::ReadOnly);
   if (action == PadCrsAction::INDICES_AND_VALUES) {
     const size_t newValsSize = newIndsSize;
     // NOTE (mfh 10 Feb 2020) If we don't initialize values_new here,
     // then the CrsMatrix tests fail.
-    values_new = make_initialized_view<Values>(
+    values_new = make_initialized_view<typename Values::DeviceViewType>(
       "Tpetra::CrsMatrix values", newValsSize, verbose, prefix.get());
   }
 
@@ -290,11 +295,11 @@ pad_crs_arrays(
     os << *prefix << "Repack" << endl;
     std::cerr << os.str();
   }
-  using execution_space = typename Indices::execution_space;
+  using execution_space = typename Indices::DeviceViewType::execution_space;
   using range_type = Kokkos::RangePolicy<execution_space, size_t>;
   Kokkos::parallel_scan(
     "Tpetra::CrsGraph or CrsMatrix repack",
-    range_type(0, lclNumRows+1),
+    range_type(size_t(0), size_t(lclNumRows+1)),
     KOKKOS_LAMBDA (const size_t lclRow, size_t& newRowBeg,
                    const bool finalPass)
     {
@@ -313,15 +318,16 @@ pad_crs_arrays(
             row_beg, row_beg + numEnt);
           const Kokkos::pair<size_t, size_t> newRange(
             newRowBeg, newRowBeg + numEnt);
-          auto oldColInds = subview(indices, oldRange);
-          auto newColInds = subview(indices_new, newRange);
+          auto oldColInds = Kokkos::subview(indices_old, oldRange);
+          auto newColInds = Kokkos::subview(indices_new, newRange);
           // memcpy works fine on device; the next step is to
           // introduce two-level parallelism and use team copy.
           memcpy(newColInds.data(), oldColInds.data(),
                  numEnt * sizeof(inds_value_type));
           if (action == PadCrsAction::INDICES_AND_VALUES) {
-            auto oldVals = subview(values, oldRange);
-            auto newVals = subview(values_new, newRange);
+            auto oldVals = 
+                 Kokkos::subview(values_old, oldRange);
+            auto newVals = Kokkos::subview(values_new, newRange);
             memcpy(newVals.data(), oldVals.data(),
                    numEnt * sizeof(vals_value_type));
           }
@@ -335,7 +341,8 @@ pad_crs_arrays(
       newRowBeg += newRowAllocSize;
     });
 
-  if (verbose) {
+  if (verbose) 
+  {
     std::ostringstream os;
 
     os << *prefix;
@@ -354,21 +361,15 @@ pad_crs_arrays(
                       maxNumToPrint);
     os << endl;
 
-    std::cerr << os.str();
+    std::cout << os.str();
   }
 
-  assign_to_view(indices, indices_new,
-                 "Tpetra::CrsGraph column indices",
-                 verbose, prefix.get());
-  assign_to_view(values, values_new,
-                 "Tpetra::CrsMatrix values",
-                 verbose, prefix.get());
+  indices_wdv = Indices(indices_new);
+  values_wdv = Values(values_new);
 
   if (verbose) {
-    auto indices_h = Kokkos::create_mirror_view(hostSpace, indices);
-    Kokkos::deep_copy(indices_h, indices);
-    auto values_h = Kokkos::create_mirror_view(hostSpace, values);
-    Kokkos::deep_copy(values_h, values);
+    auto indices_h = indices_wdv.getHostView(Access::ReadOnly);
+    auto values_h = values_wdv.getHostView(Access::ReadOnly);
     std::ostringstream os;
     os << "On output: ";
     verbosePrintArray(os, indices_h, "indices", maxNumToPrint);
@@ -500,7 +501,8 @@ find_crs_indices(
   if (new_indices.size() == 0)
     return 0;
 
-  using ordinal = typename Indices1::value_type;
+  using ordinal = 
+        typename std::remove_const<typename Indices1::value_type>::type;
   auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
 
   const size_t start = static_cast<size_t> (row_ptrs[row]);
@@ -549,17 +551,17 @@ void
 padCrsArrays(
     const RowPtr& rowPtrBeg,
     const RowPtr& rowPtrEnd,
-    Indices& indices,
+    Indices& indices_wdv,
     const Padding& padding,
     const int my_rank,
     const bool verbose)
 {
   using impl::pad_crs_arrays;
   // send empty values array
-  Indices values;
-  pad_crs_arrays<RowPtr, Indices, Indices, Padding>(
+  Indices values_null; 
+  pad_crs_arrays<RowPtr, Indices, Indices, Padding>( 
     impl::PadCrsAction::INDICES_ONLY, rowPtrBeg, rowPtrEnd,
-    indices, values, padding, my_rank, verbose);
+    indices_wdv, values_null, padding, my_rank, verbose);
 }
 
 template<class RowPtr, class Indices, class Values, class Padding>
@@ -567,8 +569,8 @@ void
 padCrsArrays(
     const RowPtr& rowPtrBeg,
     const RowPtr& rowPtrEnd,
-    Indices& indices,
-    Values& values,
+    Indices& indices_wdv,
+    Values& values_wdv,
     const Padding& padding,
     const int my_rank,
     const bool verbose)
@@ -576,7 +578,7 @@ padCrsArrays(
   using impl::pad_crs_arrays;
   pad_crs_arrays<RowPtr, Indices, Values, Padding>(
     impl::PadCrsAction::INDICES_AND_VALUES, rowPtrBeg, rowPtrEnd,
-    indices, values, padding, my_rank, verbose);
+    indices_wdv, values_wdv, padding, my_rank, verbose);
 }
 
 /// \brief Insert new indices in to current list of indices

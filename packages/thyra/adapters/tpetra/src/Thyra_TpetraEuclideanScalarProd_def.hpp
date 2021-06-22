@@ -70,12 +70,6 @@ void TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarPr
     // in EuclideanScalarProd transposes X...
     X_tpetra->dot(*Y_tpetra, scalarProds_out);
   } else {
-    // If one of the casts succeeded, sync that MV to host space
-    if (nonnull(X_tpetra))
-      Teuchos::rcp_const_cast<TMV>(X_tpetra)->sync_host ();
-    if (nonnull(Y_tpetra))
-      Teuchos::rcp_const_cast<TMV>(Y_tpetra)->sync_host ();
-
     EuclideanScalarProd<Scalar>::scalarProdsImpl(X, Y, scalarProds_out);
   }
 }

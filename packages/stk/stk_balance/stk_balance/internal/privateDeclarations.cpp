@@ -3,7 +3,7 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/GeometricVertices.hpp>
 #include <stk_balance/internal/StkGeometricMethodViaZoltan.hpp>
-#include <stk_balance/internal/MxNutils.hpp>
+#include <stk_balance/m2n/MxNutils.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -173,34 +173,6 @@ void addBoxForFace(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Entity face,
 
         addBoxForNodes(stkMeshBulkData, numNodes, nodes, coord, eps, stkMeshBulkData.identifier(*element), faceBoxes);
     }
-}
-
-void addEdgeAndVertexWeightsForSearchResult(stk::mesh::BulkData& stkMeshBulkData,
-                                            const BalanceSettings &balanceSettings,
-                                            stk::mesh::EntityId element1Id,
-                                            stk::mesh::EntityId element2Id,
-                                            unsigned owningProcElement2,
-                                            std::vector<GraphEdge>& graphEdges)
-{
-  stk::mesh::EntityKey entityKeyElement1(stk::topology::ELEMENT_RANK, element1Id);
-  stk::mesh::Entity element1 = stkMeshBulkData.get_entity(entityKeyElement1);
-  ThrowRequireWithSierraHelpMsg(stkMeshBulkData.entity_rank(element1) == stk::topology::ELEMENT_RANK);
-
-  if(stkMeshBulkData.is_valid(element1) && stkMeshBulkData.bucket(element1).owned() && element1Id != element2Id)
-  {
-    stk::mesh::EntityKey entityKeyElement2(stk::topology::ELEMENT_RANK, element2Id);
-    stk::mesh::Entity element2 = stkMeshBulkData.get_entity(entityKeyElement2);
-
-    bool anyIntersections = false;
-    if (stkMeshBulkData.is_valid(element2)) {
-      anyIntersections = stk::balance::internal::has_common_nodes_between_elements(stkMeshBulkData, element1, element2);
-    }
-
-    if (!anyIntersections) {
-      double edge_weight = balanceSettings.getGraphEdgeWeightForSearch();
-      graphEdges.push_back(GraphEdge(element1, element2Id, owningProcElement2, edge_weight, true));
-    }
-  }
 }
 
 void

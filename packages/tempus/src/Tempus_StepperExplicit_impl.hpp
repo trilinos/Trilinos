@@ -319,16 +319,21 @@ template<class Scalar>
 void StepperExplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
                                const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << "--- StepperExplicit ---\n";
-  out << "  appModel_         = " << appModel_ << std::endl;
-  out << "  inArgs_           = " << inArgs_ << std::endl;
-  out << "  outArgs_          = " << outArgs_ << std::endl;
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "--- StepperExplicit ---\n"
+         << "  appModel_         = " << appModel_ << std::endl
+         << "  inArgs_           = " << inArgs_   << std::endl
+         << "  outArgs_          = " << outArgs_  << std::endl;
 }
 
 
 template<class Scalar>
 bool StepperExplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if (appModel_ == Teuchos::null) {

@@ -231,10 +231,11 @@ public:
 
   /// \name Basic implicit stepper methods
   //@{
+    /// Set the model
     virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) override;
 
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const override
     {
       Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
       if (wrapperModel_ != Teuchos::null) model = wrapperModel_->getAppModel();
@@ -248,14 +249,14 @@ public:
 
     /// Set solver.
     virtual void setSolver(
-      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+      Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) override;
 
-    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const override
       { return solver_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
 
     /// Return alpha = d(xDot)/dx.
     virtual Scalar getAlpha(const Scalar dt) const = 0;
@@ -284,7 +285,7 @@ public:
 
     /// Pass initial guess to Newton solver (only relevant for implicit solvers)
     virtual void setInitialGuess(
-      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initialGuess)
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > initialGuess) override
     {
       initialGuess_ = initialGuess;
       this->isInitialized_ = false;
@@ -299,19 +300,19 @@ public:
     virtual bool getZeroInitialGuess() const { return zeroInitialGuess_; }
 
     virtual Scalar getInitTimeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const
+      const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const override
     {return Scalar(1.0e+99);}
   //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
     virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+                          const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
 
-  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicImplicit() const;
 

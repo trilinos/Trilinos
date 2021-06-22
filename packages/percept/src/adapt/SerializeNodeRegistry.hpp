@@ -322,10 +322,10 @@
               {
                 for(YAML::const_iterator iter=doc.begin();iter!=doc.end();++iter)
                   {
-                    const YAML::Node& key = iter->first;
+                    const YAML::Node key = iter->first;
                     PartName part_name = key.as<PartName>();
 
-                    const YAML::Node& valSeq = iter->second;
+                    const YAML::Node valSeq = iter->second;
                     UInt rank_input;
                     TopologyName topo_name;
                     YAML::const_iterator itv=valSeq.begin();
@@ -334,7 +334,7 @@
                     topo_name = itv->as<TopologyName>();
                     ++itv;
                     stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(rank_input);
-                    const YAML::Node& subsetSeq = *itv;
+                    const YAML::Node subsetSeq = *itv;
                     YAML::const_iterator iss;
                     PartSubsets subsets;
                     for (iss = subsetSeq.begin(); iss != subsetSeq.end(); ++iss)
@@ -503,10 +503,10 @@
               {
                 for(YAML::const_iterator iter=doc.begin();iter!=doc.end();++iter)
                   {
-                    const YAML::Node& key = iter->first;
+                    const YAML::Node key = iter->first;
                     stk::mesh::EntityId id = key.as<stk::mesh::EntityId>();
                     NodeMapValue procs;
-                    const YAML::Node& val = iter->second;
+                    const YAML::Node val = iter->second;
                     procs = val.as<NodeMapValue>();
                     //std::cout << "readNodeMap id= " << id << " procs= " << procs << std::endl;
                     if (is_local && procs.size() != 1)
@@ -1645,7 +1645,7 @@
 
                   //if (DEBUG_YAML) std::cout << "it.first().Type() = " << it.first().Type() << " it.first().Tag()= " << it.first().Tag() << std::endl;
                   //if (DEBUG_YAML) std::cout << "it.second().Type() = " << it.second().Type() << " it.second().Tag()= " << it.second().Tag() << std::endl;
-                  const YAML::Node& keySeq = it->first;
+                  const YAML::Node keySeq = it->first;
                   for(YAML::const_iterator itk=keySeq.begin();itk!=keySeq.end();++itk) {
                     key_quantum = itk->as<SDCEntityType_ID>();
                     if (DEBUG_YAML) std::cout << "s_r key_quantum= " << key_quantum << std::endl;
@@ -1667,7 +1667,7 @@
                   }
 
                   int iseq=0;
-                  const YAML::Node& valSeq = it->second;
+                  const YAML::Node valSeq = it->second;
                   stk::mesh::EntityRank rank = stk::topology::INVALID_RANK;
                   size_t id;
                   for(YAML::const_iterator itv=valSeq.begin();itv!=valSeq.end();++itv,++iseq) {

@@ -270,7 +270,12 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
         nerr += ne;
       }
       for (const bool jacobi : {false, true})
-        for (const bool seq_method : {false, true})
+        for (const bool seq_method : {false, true}) {
+          //The sequential method only works when 'device' memory space is host-accessible (aka UVM semantics)
+          if(seq_method && !Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace,
+              typename bcmm::DeviceType::memory_space>::accessible) {
+            continue;
+          }
           for (const bool overlap_comm : {false, true}) { // temporary disabling overlap comm version
             if (seq_method && overlap_comm) continue;
             for (const bool nonuniform_lines : {false, true}) {
@@ -302,6 +307,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
               }
             }
           }
+        }
     }
   }
   return nerr;

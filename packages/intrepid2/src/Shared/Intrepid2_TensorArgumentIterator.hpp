@@ -91,6 +91,32 @@ namespace Intrepid2
       }
     }
     
+    //! Basic constructor in which only the bounds of the tensor components are required.
+    TensorArgumentIterator(const std::vector<ordinal_type> tensorComponentBounds)
+    :
+    numTensorComponents_(tensorComponentBounds.size())
+    {
+      for (ordinal_type r=0; r<numTensorComponents_; r++)
+      {
+        arguments_[r] = 0;
+        bounds_[r]    = tensorComponentBounds[r];
+      }
+    }
+    
+    //! Basic constructor in which only the bounds of the tensor components are required.
+    template<size_t rank>
+    KOKKOS_INLINE_FUNCTION
+    TensorArgumentIterator(const Kokkos::Array<ordinal_type,rank> &tensorComponentBounds)
+    :
+    numTensorComponents_(rank)
+    {
+      for (ordinal_type r=0; r<rank; r++)
+      {
+        arguments_[r] = 0;
+        bounds_[r]    = tensorComponentBounds[r];
+      }
+    }
+    
     //! Proceed to next entry.
     KOKKOS_INLINE_FUNCTION ordinal_type increment()
     {

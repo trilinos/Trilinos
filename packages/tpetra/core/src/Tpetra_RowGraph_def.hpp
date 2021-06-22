@@ -74,7 +74,7 @@ namespace Tpetra {
     // packets (that is, entries) owned by this process in all the
     // rows that the caller wants us to send out.
     size_t totalNumPackets = 0;
-    Array<GO> row;
+    nonconst_global_inds_host_view_type row;
     for (LO i = 0; i < exportLIDs.size (); ++i) {
       const GO GID = srcMap.getGlobalElement (exportLIDs[i]);
       size_t row_length = this->getNumEntriesInGlobalRow (GID);
@@ -90,19 +90,18 @@ namespace Tpetra {
     for (LO i = 0; i < exportLIDs.size (); ++i) {
       const GO GID = srcMap.getGlobalElement (exportLIDs[i]);
       size_t row_length = this->getNumEntriesInGlobalRow (GID);
-      row.resize (row_length);
+      Kokkos::resize(row,row_length);
       size_t check_row_length = 0;
-      this->getGlobalRowCopy (GID, row (), check_row_length);
-      typename Array<GO>::const_iterator row_iter = row.begin();
-      typename Array<GO>::const_iterator row_end = row.end();
-      size_t j = 0;
-      for (; row_iter != row_end; ++row_iter, ++j) {
-        exports[exportsOffset+j] = *row_iter;
+      this->getGlobalRowCopy (GID, row, check_row_length);
+
+      for (size_t j=0; j<row_length; ++j) {
+        exports[exportsOffset+j] = row[j];
       }
-      exportsOffset += row.size ();
+      exportsOffset += row.extent(0);
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   RowGraph<LocalOrdinal,GlobalOrdinal,Node>::
@@ -144,6 +143,8 @@ namespace Tpetra {
        prefix << "This object claims to support row views, "
        "but this method is not implemented.");
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
 } // namespace Tpetra
 
 //

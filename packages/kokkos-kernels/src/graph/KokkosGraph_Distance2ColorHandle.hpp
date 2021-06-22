@@ -122,7 +122,7 @@ class GraphColorDistance2Handle
 
     bool use_vtx_list;
     nnz_lno_temp_work_view_type vertex_list;
-    size_type vertex_list_size;
+    size_type vertex_list_size;    
 
     int num_phases;      // Number of phases used by the coloring algorithm
 
@@ -148,7 +148,7 @@ class GraphColorDistance2Handle
         , overall_coloring_time_phase4(0)
         , overall_coloring_time_phase5(0)
         , coloring_time(0)
-	, use_vtx_list(false)
+        , use_vtx_list(false)
         , num_phases(0)
         , vertex_colors()
         , is_coloring_called_before(false)
@@ -287,9 +287,9 @@ class GraphColorDistance2Handle
 
     bool is_coloring_called() const { return this->is_coloring_called_before; }
 
-    bool get_use_vtx_list() const {return this->use_vtx_list;}
-    nnz_lno_temp_work_view_type get_vertex_list() const {return this->vertex_list;}
-    size_type get_vertex_list_size() const {return this->vertex_list_size;}
+    bool get_use_vtx_list() const { return this->use_vtx_list; }
+    nnz_lno_temp_work_view_type get_vertex_list() const { return this->vertex_list; }
+    size_type get_vertex_list_size() const { return this->vertex_list_size; }
 
     // setters
     void set_vertex_list(nnz_lno_temp_work_view_type vertex_list_, size_type vertex_list_size_){

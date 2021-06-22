@@ -124,7 +124,6 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
   typedef typename CrsMatrixType::scalar_type ST;
   typedef typename CrsMatrixType::local_ordinal_type LO;
   typedef typename CrsMatrixType::global_ordinal_type GO;
-  typedef typename ArrayView<LO>::size_type size_type;
   typedef Tpetra::global_size_t GST;
 
   int ierr = 0;
@@ -140,8 +139,8 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
 
   for (LO i=0; i<static_cast<LO>(my_num_rows); i++) {
     auto gbl_row = map->getGlobalElement(i);
-    ArrayView<const LO> cols;
-    ArrayView<const ST> vals;
+    typename CrsMatrixType::local_inds_host_view_type cols;
+    typename CrsMatrixType::values_host_view_type vals;
     matrix.getLocalRowView(i, cols, vals);
 
     std::map<GO,ST> expected;
@@ -162,7 +161,7 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
       expected[gbl_row+1] = neg_one;
     }
 
-    if (static_cast<size_type>(expected.size()) != cols.size()) {
+    if (expected.size() != cols.size()) {
       ierr++;
       os << " Error: expected row " << gbl_row
          << " to have " << expected.size()
@@ -171,7 +170,7 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
       continue;
     }
 
-    for (typename ArrayView<const ST>::size_type j=0; j<cols.size(); j++) {
+    for (size_t j=0; j<cols.size(); j++) {
       auto gbl_col = matrix.getColMap()->getGlobalElement(cols[j]);
       if (vals[j] != expected[gbl_col]) {
         ierr++;

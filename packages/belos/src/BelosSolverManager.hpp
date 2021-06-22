@@ -308,6 +308,15 @@ namespace Details {
   public:
     const static bool value = true;
   };
+  
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
+  template<>
+  class LapackSupportsScalar<long double> {
+  public:
+    const static bool value = true;
+  };
+#endif
+
 
 #ifdef HAVE_TEUCHOS_COMPLEX
   template<>

@@ -599,3 +599,47 @@ TEUCHOS_UNIT_TEST(StackedTimer, VerboseTimestamps) {
   TEST_ASSERT(os.str().find("L3") == std::string::npos);
 }
 #endif
+
+// Tests that we can turn off timers for regions of asychronous
+// execution.
+TEUCHOS_UNIT_TEST(StackedTimer, DisableTimers)
+{
+  Teuchos::StackedTimer timer("My New Timer");
+  timer.start("Total Time");
+  {
+    for (int i=0; i < 10; ++i) {
+
+      timer.start("Assembly");
+      timer.stop("Assembly");
+
+      // Async execution means the timers will stop out of order. Out
+      // of order timers causes exception to be thrown.
+
+      timer.disableTimers(); // Stop recording timers
+      timer.start("Solve");
+      {
+        timer.start("Prec");
+
+        // This stop() is out of order and would trigger an exception
+        // if we did not disable the timers above.
+        timer.stop("Solve");
+
+        timer.stop("Prec");
+      }
+      timer.enableTimers(); // Start recording timers
+
+      // Make sure the timers are reenabled
+      timer.start("Restarted");
+      timer.stop("Restarted");
+    }
+  }
+  timer.stop("Total Time");
+  timer.stopBaseTimer();
+
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time")).count, 1);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Assembly")).count, 10);
+  TEST_EQUALITY((timer.findTimer("My New Timer@Total Time@Restarted")).count, 10);
+  // Should not exist since we disabled the timers
+  TEST_THROW(timer.findTimer("My New Timer@Total Time@Solve"),std::runtime_error);
+  TEST_THROW(timer.findTimer("My New Timer@Total Time@Solve@Prec"),std::runtime_error);
+}

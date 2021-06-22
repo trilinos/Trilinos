@@ -184,6 +184,7 @@ namespace MueLu {
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
   "<Parameter name=\"hierarchy label\" type=\"string\" value=\"\"/>"
   "<ParameterList name=\"matvec params\"/>"
+  "<Parameter name=\"half precision\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -202,6 +203,8 @@ namespace MueLu {
   "<Parameter name=\"aggregation: mode\" type=\"string\" value=\"uncoupled\"/>"
   "<Parameter name=\"aggregation: ordering\" type=\"string\" value=\"natural\"/>"
   "<Parameter name=\"aggregation: drop scheme\" type=\"string\" value=\"classical\"/>"
+  "<Parameter name=\"aggregation: classical scheme\" type=\"string\" value=\"direct\"/>"
+  "<Parameter name=\"aggregation: row sum drop tol\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"aggregation: block diagonal: interleaved blocksize\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"aggregation: number of random vectors\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
@@ -284,7 +287,6 @@ namespace MueLu {
   "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=\"0.0\"/>"
-  "<Parameter name=\"interp: interpolation order\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"interp: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
@@ -569,6 +571,8 @@ namespace MueLu {
       
          ("matvec params","matvec params")
       
+         ("half precision","half precision")
+      
          ("smoother: pre or post","smoother: pre or post")
       
          ("smoother: type","smoother: type")
@@ -604,6 +608,10 @@ namespace MueLu {
          ("aggregation: ordering","aggregation: ordering")
       
          ("aggregation: drop scheme","aggregation: drop scheme")
+      
+         ("aggregation: classical scheme","aggregation: classical scheme")
+      
+         ("aggregation: row sum drop tol","aggregation: row sum drop tol")
       
          ("aggregation: block diagonal: interleaved blocksize","aggregation: block diagonal: interleaved blocksize")
       
@@ -768,8 +776,6 @@ namespace MueLu {
          ("not supported by ML","sa: rowsumabs diagonal replacement tolerance")
       
          ("not supported by ML","sa: rowsumabs diagonal replacement value")
-      
-         ("interp: interpolation order","interp: interpolation order")
       
          ("interp: build coarse coordinates","interp: build coarse coordinates")
       

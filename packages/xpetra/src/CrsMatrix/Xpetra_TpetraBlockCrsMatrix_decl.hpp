@@ -200,7 +200,9 @@ namespace Xpetra {
                       ArrayRCP<const LocalOrdinal>& colind, 
                       ArrayRCP<const Scalar>& values)  const;
 
-
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<Scalar>& values);                      
+                     
     //! @name Transformational Methods
 
     //!

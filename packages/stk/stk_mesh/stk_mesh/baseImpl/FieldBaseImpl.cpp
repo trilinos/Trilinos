@@ -456,6 +456,14 @@ FieldBaseImpl::set_ngp_field(NgpFieldBase * ngpField) const
   m_ngpField = ngpField;
 }
 
+void
+FieldBaseImpl::fence() const
+{
+  if(m_ngpField != nullptr) {
+    m_ngpField->fence();
+  }
+}
+
 size_t
 FieldBaseImpl::num_syncs_to_host() const
 {

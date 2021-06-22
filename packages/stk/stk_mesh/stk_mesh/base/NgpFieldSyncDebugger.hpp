@@ -233,7 +233,6 @@ public:
     if (data_is_stale_on_device(index, component)) {
       print_stale_data_warning(ngpField, index.bucket_id, index.bucket_ord, component, fileName, lineNumber);
     }
-
   }
 
   template <typename NgpField>

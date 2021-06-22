@@ -109,15 +109,6 @@ TransientFieldTransferById::TransientFieldTransferById(stk::io::StkMeshIoBroker 
   }
 }
 
-TransientFieldTransferById::TransientFieldTransferById(stk::io::StkMeshIoBroker &brokerA,
-                                                       stk::io::StkMeshIoBroker &brokerB,
-                                                       const std::vector<stk::mesh::EntityRank> &entityRanks)
-  : mBrokerA(brokerA),
-    mBrokerB(brokerB)
-{
-  initialize(entityRanks);
-}
-
 TransientFieldTransferById::~TransientFieldTransferById()
 {
   for (unsigned i = 0; i < mTransfers.size(); i++) {

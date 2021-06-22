@@ -130,6 +130,13 @@ getStatus() const
   return PASSED;
 }
 
+template <class Scalar>
+void IntegratorPseudoTransientAdjointSensitivity<Scalar>::setStatus(
+    const Status st) {
+  state_integrator_->setStatus(st);
+  sens_integrator_->setStatus(st);
+}
+
 template<class Scalar>
 Teuchos::RCP<Stepper<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
@@ -159,6 +166,14 @@ template<class Scalar>
 Teuchos::RCP<const SolutionHistory<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getSolutionHistory() const
+{
+  return solutionHistory_;
+}
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getNonConstSolutionHistory()
 {
   return solutionHistory_;
 }
@@ -271,13 +286,16 @@ template<class Scalar>
 void
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &in_out,
+  Teuchos::FancyOStream          &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  auto out = Teuchos::fancyOStream( in_out.getOStream() );
-  *out << description() << "::describe" << std::endl;
-  state_integrator_->describe(*out, verbLevel);
-  sens_integrator_->describe(*out, verbLevel);
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << description() << "::describe" << std::endl;
+  state_integrator_->describe(*l_out, verbLevel);
+  sens_integrator_->describe(*l_out, verbLevel);
 }
 
 template<class Scalar>
