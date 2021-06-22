@@ -161,7 +161,6 @@ namespace MueLu {
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
     RCP<const Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-    local_matrix_type localA = A->getLocalMatrixDevice();
 
     // Setup aggregates & aggStat objects
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
