@@ -602,6 +602,21 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
   }
 }
 
+
+template <class LO, class GO, class NT>
+void
+expertSetRemoteLIDsContiguous(Transfer<LO, GO, NT> transfer, bool contig) {
+  transfer.TransferData_->remoteLIDsContiguous_ = contig;
+}
+
+
+template <class LO, class GO, class NT>
+void
+expertSetExportLIDsContiguous(Transfer<LO, GO, NT> transfer, bool contig) {
+  transfer.TransferData_->exportLIDsContiguous_ = contig;
+}
+
+
 } // namespace Details
 } // namespace Tpetra
 
