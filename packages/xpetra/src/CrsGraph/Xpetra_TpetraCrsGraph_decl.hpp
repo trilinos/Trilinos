@@ -326,8 +326,12 @@ namespace Xpetra {
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const;
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-    /// \brief Access the local KokkosSparse::StaticCrsGraph data
-    local_graph_type getLocalGraph () const;
+    /// \brief Access the local KokkosSparse::StaticCrsGraph data for host use
+    typename local_graph_type::HostMirror getLocalGraphHost () const;
+
+    /// \brief Access the local KokkosSparse::StaticCrsGraph data for device use
+    local_graph_type getLocalGraphDevice () const;
+
 #endif
 
 
