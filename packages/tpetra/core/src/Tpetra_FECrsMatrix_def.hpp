@@ -228,12 +228,13 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceLocalValuesImpl(
   const LocalOrdinal numElts)
 {
   const char tfecfFuncName[] = "FECrsMatrix::replaceLocalValues: ";
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    *fillState_ != FillState::open && *fillState_ != FillState::modify,
-    std::runtime_error,
-    "Cannot replace local values, matrix is not open to fill/modify. "
-    "The matrix is currently closed"
-  );
+  if (*fillState_ != FillState::open && *fillState_ != FillState::modify)
+  {
+    std::ostringstream errmsg;
+    errmsg << "Cannot replace local values, matrix is not open to fill/modify. "
+           << "The matrix is currently closed";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
+  }
   return crs_matrix_type::replaceLocalValuesImpl(rowVals, graph, rowInfo, inds, newVals, numElts);
 }
 
