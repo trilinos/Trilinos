@@ -418,8 +418,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
   const char tfecfFuncName[] = "FECrsGraph::endAssembly: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
-    std::runtime_error,
-    "Cannot endAssembly, matrix is not open to fill."
+    std::logic_error,
+    "Cannot endAssembly, matrix is not open to fill but is closed."
   );
   *fillState_ = FillState::closed;
   this->endFill();
@@ -433,8 +433,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::endAssembly(
   const char tfecfFuncName[] = "FECrsGraph::endAssembly: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
-    std::runtime_error,
-    "Cannot endAssembly, matrix is not open to fill."
+    std::logic_error,
+    "Cannot endAssembly, matrix is not open to fill but is closed."
   );
   *fillState_ = FillState::closed;
   this->endFill(domainMap, rangeMap);
@@ -461,8 +461,8 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl (
   const char tfecfFuncName[] = "FECrsGraph::insertGlobalIndices: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
-    std::runtime_error,
-    "Cannot replace global values, matrix is not open to fill."
+    std::logic_error,
+    "Cannot replace global values, matrix is not open to fill but is closed."
   );
   return crs_graph_type::insertGlobalIndicesImpl(lclRow, inputGblColInds, numInputInds);
 }
@@ -478,8 +478,8 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesImpl (
   const char tfecfFuncName[] = "FECrsGraph::insertGlobalIndices: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
-    std::runtime_error,
-    "Cannot replace global values, matrix is not open to fill."
+    std::logic_error,
+    "Cannot replace global values, matrix is not open to fill but is closed."
   );
   return crs_graph_type::insertGlobalIndicesImpl(rowInfo, inputGblColInds, numInputInds, fun);
 }
@@ -494,8 +494,8 @@ FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertLocalIndicesImpl (
   const char tfecfFuncName[] = "FECrsGraph::insertLocalIndices: ";
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     *fillState_ != FillState::open,
-    std::runtime_error,
-    "Cannot replace global values, matrix is not open to fill."
+    std::logic_error,
+    "Cannot replace global values, matrix is not open to fill but is closed."
   );
   return crs_graph_type::insertLocalIndicesImpl(lclRow, gblColInds, fun);
 }
