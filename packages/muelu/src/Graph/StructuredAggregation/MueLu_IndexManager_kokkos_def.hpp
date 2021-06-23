@@ -220,6 +220,7 @@ namespace MueLu {
   Array<LocalOrdinal> IndexManager_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   getCoarseNodesPerDirArray() const {
     typename LOTupleView::HostMirror coarseNodesPerDir_h = Kokkos::create_mirror_view(coarseNodesPerDir);
+    Kokkos::deep_copy(coarseNodesPerDir_h, coarseNodesPerDir);
     Array<LO> coarseNodesPerDirArray(3);
 
     for(int dim = 0; dim < 3; ++dim) {
