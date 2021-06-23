@@ -506,7 +506,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     // Wrap from CrsMatrix to Matrix and resumeFill
     P = rcp(new CrsMatrixWrap(Pcrs));
     Pcrs->resumeFill();
-    Pcrs->getAllValues(P_values);
+    //    Pcrs->getAllValues(P_values);
 
     // Gustavston-style perfect hashing
     ArrayRCP<LO> Acol_to_Pcol(A.getColMap()->getNodeNumElements(),LO_INVALID);
