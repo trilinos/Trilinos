@@ -185,6 +185,12 @@ namespace Tpetra {
     /// other processes.
     Kokkos::DualView<LocalOrdinal*, device_type> remoteLIDs_;
 
+    //! Whether the remote LIDs are contiguous.
+    bool remoteLIDsContiguous_ = false;
+
+    //! Whether the export LIDs are contiguous.
+    bool exportLIDsContiguous_ = false;
+
     /// \brief "Outgoing" local indices.
     ///
     /// This array holds the LIDs of the GIDs that are owned by the
