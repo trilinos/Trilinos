@@ -86,8 +86,7 @@ public:
     JBlock->fillComplete();
 
     // Make JCyclic:  same matrix with different Domain and Range maps
-    auto lclMatrix = JBlock->getLocalMatrixHost();
-    JCyclic = rcp(new matrix_t(JBlock->getLocalMatrixHost(),
+    JCyclic = rcp(new matrix_t(JBlock->getLocalMatrixDevice(),
                                JBlock->getRowMap(), JBlock->getColMap(),
                                vMapCyclic, wMapCyclic));
   }
