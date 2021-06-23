@@ -260,6 +260,7 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
       int *new_row_ind;
 
       // NOTE: both size_type and ordinal_type are defined as int 
+      //       Consider using "symmetrize_graph" in KokkosKernels, if this becomes significant in time.
       SLU::at_plus_a(n, nz, host_col_ptr_view_.data(), host_rows_view_.data(),
                      &new_nz, &new_col_ptr, &new_row_ind);
 
