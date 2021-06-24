@@ -73,6 +73,7 @@
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 
 namespace MueLu {
 
@@ -214,6 +215,7 @@ namespace MueLu {
     void SetupLineSmoothing   (Level& currentLevel);
     void SetupBlockRelaxation (Level& currentLevel);
     void SetupTopological     (Level& currentLevel);
+    void SetupAggregate       (Level& currentLevel);
     void SetupGeneric         (Level& currentLevel);
 
   private:
