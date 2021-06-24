@@ -1444,7 +1444,7 @@ namespace MueLu {
     boost::put("label", dp, boost_vertex, legend.str());
 #endif
 
-    std::ofstream out(dumpFile_.c_str() +std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
+    std::ofstream out(dumpFile_.c_str()+std::string("_")+std::to_string(dumpLevel_)+std::string("_")+std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
     out.close();
     call_id++;
