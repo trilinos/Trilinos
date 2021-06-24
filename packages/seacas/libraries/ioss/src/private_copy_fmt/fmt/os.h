@@ -8,12 +8,16 @@
 #ifndef FMT_OS_H_
 #define FMT_OS_H_
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+// Workaround MinGW bug https://sourceforge.net/p/mingw/bugs/2024/.
+#  undef __STRICT_ANSI__
+#endif
+
 #include <cerrno>
-#include <clocale>  // locale_t
+#include <clocale>  // for locale_t
 #include <cstddef>
 #include <cstdio>
-#include <cstdlib>       // strtod_l
-#include <system_error>  // std::system_error
+#include <cstdlib>  // for strtod_l
 
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
@@ -70,7 +74,6 @@
 #define FMT_RETRY(result, expression) FMT_RETRY_VAL(result, expression, -1)
 
 FMT_BEGIN_NAMESPACE
-FMT_MODULE_EXPORT_BEGIN
 
 /**
   \rst
@@ -119,28 +122,19 @@ template <typename Char> class basic_cstring_view {
 using cstring_view = basic_cstring_view<char>;
 using wcstring_view = basic_cstring_view<wchar_t>;
 
-template <typename Char> struct formatter<std::error_code, Char> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
+// An error code.
+class error_code {
+ private:
+  int value_;
 
-  template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const std::error_code& ec, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    auto out = ctx.out();
-    out = detail::write_bytes(out, ec.category().name(),
-                              basic_format_specs<Char>());
-    out = detail::write<Char>(out, Char(':'));
-    out = detail::write<Char>(out, ec.value());
-    return out;
-  }
+ public:
+  explicit error_code(int value = 0) FMT_NOEXCEPT : value_(value) {}
+
+  int get() const FMT_NOEXCEPT { return value_; }
 };
 
 #ifdef _WIN32
-FMT_API const std::error_category& system_category() FMT_NOEXCEPT;
-
-FMT_BEGIN_DETAIL_NAMESPACE
+namespace detail {
 // A converter from UTF-16 to UTF-8.
 // It is only provided for Windows since other systems support UTF-8 natively.
 class utf16_to_utf8 {
@@ -149,7 +143,7 @@ class utf16_to_utf8 {
 
  public:
   utf16_to_utf8() {}
-  FMT_API explicit utf16_to_utf8(basic_string_view<wchar_t> s);
+  FMT_API explicit utf16_to_utf8(wstring_view s);
   operator string_view() const { return string_view(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
   const char* c_str() const { return &buffer_[0]; }
@@ -158,67 +152,58 @@ class utf16_to_utf8 {
   // Performs conversion returning a system error code instead of
   // throwing exception on conversion error. This method may still throw
   // in case of memory allocation error.
-  FMT_API int convert(basic_string_view<wchar_t> s);
+  FMT_API int convert(wstring_view s);
 };
 
 FMT_API void format_windows_error(buffer<char>& out, int error_code,
-                                  const char* message) FMT_NOEXCEPT;
-FMT_END_DETAIL_NAMESPACE
+                                  string_view message) FMT_NOEXCEPT;
+}  // namespace detail
 
-FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
-                                         format_args args);
+/** A Windows error. */
+class windows_error : public system_error {
+ private:
+  FMT_API void init(int error_code, string_view format_str, format_args args);
 
-/**
- \rst
- Constructs a :class:`std::system_error` object with the description
- of the form
+ public:
+  /**
+   \rst
+   Constructs a :class:`fmt::windows_error` object with the description
+   of the form
 
- .. parsed-literal::
-   *<message>*: *<system-message>*
+   .. parsed-literal::
+     *<message>*: *<system-message>*
 
- where *<message>* is the formatted message and *<system-message>* is the
- system message corresponding to the error code.
- *error_code* is a Windows error code as given by ``GetLastError``.
- If *error_code* is not a valid error code such as -1, the system message
- will look like "error -1".
+   where *<message>* is the formatted message and *<system-message>* is the
+   system message corresponding to the error code.
+   *error_code* is a Windows error code as given by ``GetLastError``.
+   If *error_code* is not a valid error code such as -1, the system message
+   will look like "error -1".
 
- **Example**::
+   **Example**::
 
-   // This throws a system_error with the description
-   //   cannot open file 'madeup': The system cannot find the file specified.
-   // or similar (system message may vary).
-   const char *filename = "madeup";
-   LPOFSTRUCT of = LPOFSTRUCT();
-   HFILE file = OpenFile(filename, &of, OF_READ);
-   if (file == HFILE_ERROR) {
-     throw fmt::windows_error(GetLastError(),
-                              "cannot open file '{}'", filename);
-   }
- \endrst
-*/
-template <typename... Args>
-std::system_error windows_error(int error_code, string_view message,
-                                const Args&... args) {
-  return vwindows_error(error_code, message, fmt::make_format_args(args...));
-}
+     // This throws a windows_error with the description
+     //   cannot open file 'madeup': The system cannot find the file specified.
+     // or similar (system message may vary).
+     const char *filename = "madeup";
+     LPOFSTRUCT of = LPOFSTRUCT();
+     HFILE file = OpenFile(filename, &of, OF_READ);
+     if (file == HFILE_ERROR) {
+       throw fmt::windows_error(GetLastError(),
+                                "cannot open file '{}'", filename);
+     }
+   \endrst
+  */
+  template <typename... Args>
+  windows_error(int error_code, string_view message, const Args&... args) {
+    init(error_code, message, make_format_args(args...));
+  }
+};
 
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_windows_error(int error_code,
-                                  const char* message) FMT_NOEXCEPT;
-#else
-inline const std::error_category& system_category() FMT_NOEXCEPT {
-  return std::system_category();
-}
+                                  string_view message) FMT_NOEXCEPT;
 #endif  // _WIN32
-
-// std::system is not available on some platforms such as iOS (#2248).
-#ifdef __OSX__
-template <typename S, typename... Args, typename Char = char_t<S>>
-void say(const S& format_str, Args&&... args) {
-  std::system(format("say \"{}\"", format(format_str, args...)).c_str());
-}
-#endif
 
 // A buffered file.
 class buffered_file {
@@ -270,7 +255,7 @@ class buffered_file {
 
   template <typename... Args>
   inline void print(string_view format_str, const Args&... args) {
-    vprint(format_str, fmt::make_format_args(args...));
+    vprint(format_str, make_format_args(args...));
   }
 };
 
@@ -295,8 +280,7 @@ class file {
     WRONLY = FMT_POSIX(O_WRONLY),  // Open for writing only.
     RDWR = FMT_POSIX(O_RDWR),      // Open for reading and writing.
     CREATE = FMT_POSIX(O_CREAT),   // Create if the file doesn't exist.
-    APPEND = FMT_POSIX(O_APPEND),  // Open in append mode.
-    TRUNC = FMT_POSIX(O_TRUNC)     // Truncate the content of the file.
+    APPEND = FMT_POSIX(O_APPEND)   // Open in append mode.
   };
 
   // Constructs a file object which doesn't represent any file.
@@ -311,8 +295,7 @@ class file {
 
   file(file&& other) FMT_NOEXCEPT : fd_(other.fd_) { other.fd_ = -1; }
 
-  // Move assignment is not noexcept because close may throw.
-  file& operator=(file&& other) {
+  file& operator=(file&& other) FMT_NOEXCEPT {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -348,7 +331,7 @@ class file {
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  FMT_API void dup2(int fd, std::error_code& ec) FMT_NOEXCEPT;
+  FMT_API void dup2(int fd, error_code& ec) FMT_NOEXCEPT;
 
   // Creates a pipe setting up read_end and write_end file objects for reading
   // and writing respectively.
@@ -362,10 +345,9 @@ class file {
 // Returns the memory page size.
 long getpagesize();
 
-FMT_BEGIN_DETAIL_NAMESPACE
+namespace detail {
 
 struct buffer_size {
-  buffer_size() = default;
   size_t value = 0;
   buffer_size operator=(size_t val) const {
     auto bs = buffer_size();
@@ -375,14 +357,14 @@ struct buffer_size {
 };
 
 struct ostream_params {
-  int oflag = file::WRONLY | file::CREATE | file::TRUNC;
+  int oflag = file::WRONLY | file::CREATE;
   size_t buffer_size = BUFSIZ > 32768 ? BUFSIZ : 32768;
 
   ostream_params() {}
 
   template <typename... T>
-  ostream_params(T... params, int new_oflag) : ostream_params(params...) {
-    oflag = new_oflag;
+  ostream_params(T... params, int oflag) : ostream_params(params...) {
+    this->oflag = oflag;
   }
 
   template <typename... T>
@@ -391,13 +373,12 @@ struct ostream_params {
     this->buffer_size = bs.value;
   }
 };
-
-FMT_END_DETAIL_NAMESPACE
+}  // namespace detail
 
 static constexpr detail::buffer_size buffer_size;
 
-/** A fast output stream which is not thread-safe. */
-class FMT_API ostream final : private detail::buffer<char> {
+// A fast output stream which is not thread-safe.
+class ostream final : private detail::buffer<char> {
  private:
   file file_;
 
@@ -407,7 +388,7 @@ class FMT_API ostream final : private detail::buffer<char> {
     clear();
   }
 
-  void grow(size_t) override;
+  FMT_API void grow(size_t) override final;
 
   ostream(cstring_view path, const detail::ostream_params& params)
       : file_(path, params.oflag) {
@@ -418,7 +399,6 @@ class FMT_API ostream final : private detail::buffer<char> {
   ostream(ostream&& other)
       : detail::buffer<char>(other.data(), other.size(), other.capacity()),
         file_(std::move(other.file_)) {
-    other.clear();
     other.set(nullptr, 0);
   }
   ~ostream() {
@@ -434,30 +414,16 @@ class FMT_API ostream final : private detail::buffer<char> {
     file_.close();
   }
 
-  /**
-    Formats ``args`` according to specifications in ``fmt`` and writes the
-    output to the file.
-   */
-  template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(detail::buffer_appender<char>(*this), fmt,
-               fmt::make_format_args(args...));
+  template <typename S, typename... Args>
+  void print(const S& format_str, const Args&... args) {
+    format_to(detail::buffer_appender<char>(*this), format_str, args...);
   }
 };
 
 /**
-  \rst
-  Opens a file for writing. Supported parameters passed in *params*:
-
-  * ``<integer>``: Flags passed to `open
-    <https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html>`_
-    (``file::WRONLY | file::CREATE`` by default)
+  Opens a file for writing. Supported parameters passed in `params`:
+  * ``<integer>``: Output flags (``file::WRONLY | file::CREATE`` by default)
   * ``buffer_size=<integer>``: Output buffer size
-
-  **Example**::
-
-    auto out = fmt::output_file("guide.txt");
-    out.print("Don't {}", "Panic");
-  \endrst
  */
 template <typename... T>
 inline ostream output_file(cstring_view path, T... params) {
@@ -509,7 +475,6 @@ class locale {
 };
 using Locale FMT_DEPRECATED_ALIAS = locale;
 #endif  // FMT_LOCALE
-FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_OS_H_
