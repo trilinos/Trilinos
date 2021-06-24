@@ -963,7 +963,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 
 	double recolor_temp = timer();
 	//use KokkosKernels to recolor the conflicting vertices
-	if(verts_to_send_size(0) > 0){
+	if(verts_to_send_size_host(0) > 0){
 	  this->colorInterior<host_exec,
 			      host_mem>
 			      (femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, verts_to_send_host, verts_to_send_size_host(0), true);
