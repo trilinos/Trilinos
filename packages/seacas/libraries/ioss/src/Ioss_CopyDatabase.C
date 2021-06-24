@@ -26,8 +26,6 @@
 
 // For copy_database...
 namespace {
-  auto initial_time = std::chrono::steady_clock::now();
-
   std::vector<int> get_selected_steps(Ioss::Region &region, const Ioss::MeshCopyOptions &options);
   void show_step(int istep, double time, const Ioss::MeshCopyOptions &options, int rank);
   std::vector<Ioss::Face> generate_boundary_faces(Ioss::Region &               region,
