@@ -57,6 +57,7 @@
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
 
 #include <stdexcept>
 #include <limits> 
@@ -129,15 +130,24 @@ int main(int argc, char *argv[]) {
     // Tell the sparse matrix that we are done adding entries to it.
     A->fillComplete();
 
-    // Create b, the RHS vector
+    //B = A*A^T
+    Teuchos::RCP<Tpetra_CrsMatrix> B = Teuchos::rcp(new Tpetra_CrsMatrix(map, map->getGlobalNumElements()));
+    Tpetra::MatrixMatrix::Multiply<scalar_type, LO, Tpetra::Details::DefaultTypes::global_ordinal_type>(*A, false, *A, true, *B);
+
+    // Create vector of ones, b
     Teuchos::RCP<Tpetra_Vector> b (new Tpetra_Vector (map, true));
     b->putScalar(1.0); 
 
+    //Create RHS: c = A*b
+    Teuchos::RCP<Tpetra_Vector> c = Teuchos::rcp(new Tpetra_Vector(map, true));
+    A->apply(*b, *c, Teuchos::NO_TRANS, Teuchos::ScalarTraits<scalar_type>::one (), Teuchos::ScalarTraits<scalar_type>::zero ());
+    
     //Allocate solution vector x 
     Teuchos::RCP<Tpetra_Vector> x (new Tpetra_Vector (map, true));
 
-    //Create linear problem
-    Teuchos::RCP<problem_type> my_problem (new problem_type (A, x, b));
+    //Create linear problem: (A*A^T)*x = A*b.  It should have the same solution as A*x = b 
+    //but executes additional capabilities in Tpetra to form.
+    Teuchos::RCP<problem_type> my_problem (new problem_type (B, x, c));
     my_problem->setProblem();
 
     //Create BlockGmres solver
@@ -156,7 +166,7 @@ int main(int argc, char *argv[]) {
     out->precision(ldbl::max_digits10);
     *out << "cout precision = " << ldbl::max_digits10 << "\n"; 
     *out << "||x|| = " << norm_x << "\n";
-    scalar_type norm_x_gold = 1695.64442027212771791;
+    scalar_type norm_x_gold = 1695.64442027167615379;
     scalar_type diff = std::abs(norm_x-norm_x_gold); 
     *out << "diff = " << diff << "\n"; 
     if (diff < 1.0e-15) {
