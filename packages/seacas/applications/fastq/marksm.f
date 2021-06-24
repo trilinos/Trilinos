@@ -23,7 +23,7 @@ C***********************************************************************
       IF (LXN (1, NODE) .LE. 0) GOTO 120
       CALL GETLXN (MXND, LXN, NODE, L1LIST, NL1, ERR)
       IF (ERR) THEN
-         CALL MESAGE ('** PROBLEMS IN MARKSM FINDING LXN **')
+         CALL MESSAGE('** PROBLEMS IN MARKSM FINDING LXN **')
          GOTO 120
       ENDIF
 
@@ -32,7 +32,7 @@ C***********************************************************************
          NODE2 = NXL (1, L1LIST (I)) + NXL (2, L1LIST (I)) - NODE
          CALL GETLXN (MXND, LXN, NODE2, L2LIST, NL2, ERR)
          IF (ERR) THEN
-            CALL MESAGE ('** PROBLEMS IN MARKSM FINDING LXN **')
+            CALL MESSAGE('** PROBLEMS IN MARKSM FINDING LXN **')
             GOTO 120
          ENDIF
          LNODES (4, NODE2) = - IABS (LNODES (4, NODE2))

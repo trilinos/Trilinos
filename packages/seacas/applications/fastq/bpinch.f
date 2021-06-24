@@ -82,7 +82,7 @@ C  THE BOUNDARY AT N1 MAKES
      &      (LXN (2, N1) .LT. 0) ) THEN
             CALL GETLXN (MXND, LXN, N1, L1LIST, NL, ERR)
             IF (ERR) THEN
-               CALL MESAGE ('** PROBLEMS IN SEW2 FINDING LXN FOR J1 **')
+               CALL MESSAGE('** PROBLEMS IN SEW2 FINDING LXN FOR J1 **')
                GOTO 140
             ENDIF
             DO 100 I = 1, NL
@@ -101,7 +101,7 @@ C  THE BOUNDARY AT N1 MAKES
                   ENDIF
                ENDIF
   100       CONTINUE
-            CALL MESAGE ('** PROBLEMS IN BPINCH FINDING N1 BOUNDARY'//
+            CALL MESSAGE('** PROBLEMS IN BPINCH FINDING N1 BOUNDARY'//
      &         ' ANGLE NODE **')
             GOTO 140
   110       CONTINUE
@@ -134,7 +134,7 @@ C  N1 AND N2 ARE ON THE BOUNDARY
      &      (LXN (2, N2) .LT. 0) ) THEN
             CALL GETLXN (MXND, LXN, N1, L1LIST, NL, ERR)
             IF (ERR) THEN
-               CALL MESAGE ('** PROBLEMS IN SEW2 FINDING LXN FOR J1 **')
+               CALL MESSAGE('** PROBLEMS IN SEW2 FINDING LXN FOR J1 **')
                GOTO 140
             ENDIF
             DO 120 I = 1, NL
@@ -153,7 +153,7 @@ C  N1 AND N2 ARE ON THE BOUNDARY
                   ENDIF
                ENDIF
   120       CONTINUE
-            CALL MESAGE ('** PROBLEMS IN BPINCH FINDING N1 BOUNDARY'//
+            CALL MESSAGE('** PROBLEMS IN BPINCH FINDING N1 BOUNDARY'//
      &         ' ANGLE NODE **')
             GOTO 140
   130       CONTINUE
