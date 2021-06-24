@@ -549,6 +549,21 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_embedded_nodeblock_fields
   COMM mpi serial
   )
 
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_fpp_vertex_cell_fields
+   TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc_fields.cgns sparc_fields.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_shell ARGS --external --compose external sparc_fields.cgns sparc_fields2.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 EXEC io_shell ARGS --external sparc_fields2.cgns sparc_fields_compose.cgns
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_3 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc_fields.cgns sparc_fields_compose.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi
+  )
+
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_append
    TEST_0 EXEC io_shell ARGS --Maximum_Time=0.25 ${CMAKE_CURRENT_SOURCE_DIR}/test/multiple_zones_fields.cgns append_fields-out.cgns
      NUM_MPI_PROCS 1-4
