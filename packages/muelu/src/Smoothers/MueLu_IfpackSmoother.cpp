@@ -55,6 +55,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_Aggregates.hpp"
 
 namespace MueLu {
 
@@ -123,6 +124,12 @@ namespace MueLu {
       this->Input(currentLevel, "CoarseNumZLayers");              // necessary for fallback criterion
       this->Input(currentLevel, "LineDetection_VertLineIds"); // necessary to feed block smoother
     } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
+    else if (type_ == "AGGREGATE")
+    {
+      // Aggregate smoothing needs aggregates
+      this->Input(currentLevel,"Aggregates");
+    }
+
   }
 
   template <class Node>
@@ -234,21 +241,28 @@ namespace MueLu {
 
     } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
 
-    // If we're using a linear partitioner and haven't set the # local parts, set it to match the operator's block size
-    ParameterList precList = this->GetParameterList();
-    if(precList.isParameter("partitioner: type") && precList.get<std::string>("partitioner: type") == "linear" &&
-       !precList.isParameter("partitioner: local parts")) {
-      precList.set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->GetFixedBlockSize());
+    if(type_ == "AGGREGATE") {
+      SetupAggregate(currentLevel);
     }
-       
 
-    RCP<Epetra_CrsMatrix> epA = Utilities::Op2NonConstEpetraCrs(A_);
+    else {
+      // If we're using a linear partitioner and haven't set the # local parts, set it to match the operator's block size
+      ParameterList precList = this->GetParameterList();
+      if(precList.isParameter("partitioner: type") && precList.get<std::string>("partitioner: type") == "linear" &&
+         !precList.isParameter("partitioner: local parts")) {
+        precList.set("partitioner: local parts", (int)A_->getNodeNumRows() / A_->GetFixedBlockSize());
+      }
+      
+      
+      RCP<Epetra_CrsMatrix> epA = Utilities::Op2NonConstEpetraCrs(A_);
+      
+      Ifpack factory;
+      prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
+      TEUCHOS_TEST_FOR_EXCEPTION(prec_.is_null(), Exceptions::RuntimeError, "Could not create an Ifpack preconditioner with type = \"" << type_ << "\"");
+      SetPrecParameters();
+      prec_->Compute();
+    }
 
-    Ifpack factory;
-    prec_ = rcp(factory.Create(type_, &(*epA), overlap_));
-    TEUCHOS_TEST_FOR_EXCEPTION(prec_.is_null(), Exceptions::RuntimeError, "Could not create an Ifpack preconditioner with type = \"" << type_ << "\"");
-    SetPrecParameters();
-    prec_->Compute();
 
     SmootherPrototype::IsSetup(true);
 
@@ -264,6 +278,40 @@ namespace MueLu {
 
     this->GetOStream(Statistics1) << description() << std::endl;
   }
+
+
+  template <class Node>
+  void IfpackSmoother<Node>::SetupAggregate(Level& currentLevel) {
+
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+    if (this->IsSetup() == true) {
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2moother::SetupAggregate(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::IfpackSmoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;    
+    }
+
+    this->GetOStream(Statistics0) << "IfpackSmoother: Using Aggregate Smoothing"<<std::endl;
+
+    RCP<Aggregates> aggregates = Factory::Get<RCP<Aggregates> >(currentLevel,"Aggregates");
+
+    RCP<const LOMultiVector> vertex2AggId = aggregates->GetVertex2AggId();
+    ArrayRCP<LO> aggregate_ids = rcp_const_cast<LOMultiVector>(vertex2AggId)->getDataNonConst(0);
+    
+    paramList.set("partitioner: map", aggregate_ids.getRawPtr());
+    paramList.set("partitioner: type", "user");
+    paramList.set("partitioner: overlap", 0);
+    paramList.set("partitioner: local parts", (int)aggregates->GetNumAggregates());
+
+    RCP<Epetra_CrsMatrix> A = Utilities::Op2NonConstEpetraCrs(A_);
+    type_ = "block relaxation stand-alone";
+
+    Ifpack factory;
+    prec_ = rcp(factory.Create(type_, &(*A), overlap_));
+    TEUCHOS_TEST_FOR_EXCEPTION(prec_.is_null(), Exceptions::RuntimeError, "Could not create an Ifpack preconditioner with type = \"" << type_ << "\"");
+    SetPrecParameters();
+    prec_->Compute();
+  }
+
 
   template <class Node>
   void IfpackSmoother<Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
