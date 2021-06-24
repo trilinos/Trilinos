@@ -97,10 +97,12 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: deterministic");
     SET_VALID_ENTRY("aggregation: coloring algorithm");
+    SET_VALID_ENTRY("aggregation: coloring: use color graph");
 #undef SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
+    validParamList->set< RCP<const FactoryBase> >("Coloring Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
  
     return validParamList;
@@ -112,15 +114,27 @@ namespace MueLu {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
     Input(currentLevel, "Graph");
+    
+    const ParameterList& pL = GetParameterList();
+    bool use_color_graph = pL.get<bool>("aggregation: coloring: use color graph");
+    if(use_color_graph) 
+      Input(currentLevel, "Coloring Graph");
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
   {
     FactoryMonitor m(*this, "Build", currentLevel);
-    RCP<const GraphBase> graph = Get<RCP<GraphBase> >(currentLevel,"Graph");
-    RCP<const Matrix> A = Get<RCP<Matrix> >(currentLevel,"A");
     const ParameterList& pL = GetParameterList();
+    RCP<const Matrix> A = Get<RCP<Matrix> >(currentLevel,"A");
+
+    RCP<const GraphBase> graph;
+    bool use_color_graph = pL.get<bool>("aggregation: coloring: use color graph");
+    if(use_color_graph) graph = Get<RCP<GraphBase> >(currentLevel,"Coloring Graph");
+    else graph = Get<RCP<GraphBase> >(currentLevel,"Graph");
+
+
+
     /* ============================================================= */
     /* Phase 1 : Compute an initial MIS                              */
     /* ============================================================= */
@@ -133,9 +147,28 @@ namespace MueLu {
     // Switch to Zoltan2 if we're parallel and Tpetra (and not file)
 #ifdef HAVE_MUELU_ZOLTAN2
     int numProcs = A->getRowMap()->getComm()->getSize();
-    if(coloringAlgo!="file" && numProcs && graph->GetDomainMap()->lib() == Xpetra::UseTpetra)
+    if(coloringAlgo!="file" && numProcs>1 && graph->GetDomainMap()->lib() == Xpetra::UseTpetra)
       coloringAlgo="Zoltan2";
 #endif
+
+    //#define CMS_DUMP
+#ifdef CMS_DUMP
+    {
+      int rank = graph->GetDomainMap()->getComm()->getRank();
+
+      printf("[%d,%d] graph local size = %dx%d\n",rank,currentLevel.GetLevelID(),(int)graph->GetDomainMap()->getNodeNumElements(),(int)graph->GetImportMap()->getNodeNumElements());
+
+      std::ofstream ofs(std::string("m_dropped_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
+      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+      graph->print(*fancy,Debug);
+    }
+    {
+      A->getRowMap()->getComm()->barrier();
+    }
+
+#endif
+
+
 
     // Switch to MIS if we're in Epetra (and not file)
     if(coloringAlgo!="file" && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
@@ -147,7 +180,7 @@ namespace MueLu {
       // NOTE: For interoperability reasons, this is dependent on the point_type enum not changing
       std::string map_file   = std::string("map_fcsplitting_") + std::to_string(currentLevel.GetLevelID()) + std::string(".m");
       std::string color_file = std::string("fcsplitting_")     + std::to_string(currentLevel.GetLevelID()) + std::string(".m");
-        
+
       FILE * mapfile = fopen(map_file.c_str(),"r");
       using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
       using RealValuedMultiVector = typename Xpetra::MultiVector<real_type,LO,GO,NO>;
@@ -248,7 +281,7 @@ namespace MueLu {
 
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 3, l_counts, g_counts);
-      GetOStream(Statistics1) << "ClassicalMapFactory: C/F/D = "<<g_counts[0]<<"/"<<g_counts[1]<<"/"<<g_counts[2]<<std::endl;
+      GetOStream(Statistics1) << "ClassicalMapFactory("<<coloringAlgo<<"): C/F/D = "<<g_counts[0]<<"/"<<g_counts[1]<<"/"<<g_counts[2]<<std::endl;
     }
 
 

@@ -87,7 +87,7 @@ namespace MueLuTests {
 
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 1.2856486930664495771e-01;
-      TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
+      TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e4*Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::eps());
     }
 
   } // Block CG

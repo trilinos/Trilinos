@@ -787,7 +787,9 @@ namespace Tpetra {
                  size_t constantNumPackets,
                  bool commOnHost,
                  ReverseOption revOp,
-                 std::shared_ptr<std::string> prefix);
+                 std::shared_ptr<std::string> prefix,
+                 const bool canTryAliasing,
+                 const CombineMode CM);
 
     void doWaits(Distributor& distor,
                  ReverseOption revOp);
@@ -997,10 +999,12 @@ namespace Tpetra {
     /// <tt>exports_</tt> always gets passed into packAndPrepare()
     /// by nonconst reference.  Thus, that method can resize the
     /// DualView without needing to call other DistObject methods.
-    bool
+    virtual bool
     reallocImportsIfNeeded (const size_t newSize,
                             const bool verbose,
-                            const std::string* prefix);
+                            const std::string* prefix,
+                            const bool remoteLIDsContiguous=false,
+                            const CombineMode CM=INSERT);
 
     /// \brief Number of packets to receive for each receive operation.
     ///

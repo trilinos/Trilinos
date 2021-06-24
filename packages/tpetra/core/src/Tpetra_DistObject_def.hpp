@@ -679,7 +679,9 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   reallocImportsIfNeeded (const size_t newSize,
                           const bool verbose,
-                          const std::string* prefix)
+                          const std::string* prefix,
+                          const bool /*remoteLIDsContiguous*/,
+                          const CombineMode /*CM*/)
   {
     if (verbose) {
       std::ostringstream os;
@@ -917,6 +919,10 @@ namespace Tpetra {
     const_lo_dv_type exportLIDs = (revOp == DoForward) ?
       transfer.getExportLIDs_dv () :
       transfer.getRemoteLIDs_dv ();
+    const bool canTryAliasing = (revOp == DoForward) ?
+      transfer.areRemoteLIDsContiguous() :
+      transfer.areExportLIDsContiguous();
+    // const bool canTryAliasing = false;
 
     ProfilingRegion region_dTN(funcName);
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -1068,7 +1074,7 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get ());
+        reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
       }
 
       // Do we need to do communication (via doPostsAndWaits)?
@@ -1116,7 +1122,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
-        doPosts(distor, constantNumPackets, commOnHost, revOp, prefix);
+        doPosts(distor, constantNumPackets, commOnHost, revOp, prefix, canTryAliasing, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
   }
@@ -1267,6 +1273,9 @@ namespace Tpetra {
     const_lo_dv_type exportLIDs = (revOp == DoForward) ?
       transfer.getExportLIDs_dv () :
       transfer.getRemoteLIDs_dv ();
+    const bool canTryAliasing = (revOp == DoForward) ?
+      transfer.areRemoteLIDsContiguous() :
+      transfer.areExportLIDsContiguous();
 
     size_t constantNumPackets = this->constantNumberOfPackets ();
 
@@ -1278,7 +1287,7 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, verbose, prefix.get ());
+        reallocImportsIfNeeded (rbufLen, verbose, prefix.get (), canTryAliasing, CM);
       }
 
       // Do we need to do communication (via doPostsAndWaits)?
@@ -1341,7 +1350,9 @@ namespace Tpetra {
           size_t constantNumPackets,
           bool commOnHost,
           ReverseOption revOp,
-          std::shared_ptr<std::string> prefix)
+          std::shared_ptr<std::string> prefix,
+          const bool canTryAliasing,
+          const CombineMode CM)
   {
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::getArrayViewFromDualView;
@@ -1432,7 +1443,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
       this->reallocImportsIfNeeded (totalImportPackets, verbose,
-          prefix.get ());
+                                    prefix.get (), canTryAliasing, CM);
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "7.3. Second comm" << std::endl;
