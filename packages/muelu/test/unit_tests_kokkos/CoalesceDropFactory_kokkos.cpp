@@ -115,7 +115,7 @@ namespace MueLuTests {
 				    correct = true;
 				  
 				} else {
-				  if (graph->getNeighborVertices(0).length == 3)
+				  if (lgraph.getNeighborVertices(0).length == 3)
 				    correct = true;
 				}
 			      }
