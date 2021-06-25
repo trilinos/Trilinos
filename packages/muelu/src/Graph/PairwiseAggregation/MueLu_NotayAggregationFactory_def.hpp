@@ -856,7 +856,7 @@ namespace MueLu {
     col_index_type colIdx = 0;
     for(LO rowIdx = 0; rowIdx < intermediateP.numRows(); ++rowIdx) {
       for(size_type entryIdxP = rowPtrP_h(rowIdx); entryIdxP < rowPtrP_h(rowIdx + 1); ++entryIdxP) {
-        colIdx = intermediateP.graph.entries(entryIdxP);
+        colIdx = entries_h(entryIdxP);
         for(size_type entryIdxPt = rowPtrPt_h(colIdx); entryIdxPt < rowPtrPt_h(colIdx + 1); ++entryIdxPt) {
           if(colIndPt_h(entryIdxPt) == invalidColumnIndex) {
             colIndPt_h(entryIdxPt) = rowIdx;
