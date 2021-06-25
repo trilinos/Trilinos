@@ -1324,6 +1324,15 @@ namespace MueLu {
       throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
 #endif  // defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
     } else {
+
+      Level level;
+      RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+      level.SetFactoryManager(factoryHandler);
+      level.SetLevelID(0);
+      level.setObjectLabel("RefMaxwell (1,1)");
+      level.Set("A",SM_Matrix_);
+      level.setlib(SM_Matrix_->getDomainMap()->lib());
+
       if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
         std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
         std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
@@ -1334,42 +1343,49 @@ namespace MueLu {
         if (parameterList_.isSublist("smoother: post params"))
           postSmootherList = parameterList_.sublist("smoother: post params");
 
-        Level level;
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        level.SetFactoryManager(factoryHandler);
-        level.SetLevelID(0);
-        level.setObjectLabel("RefMaxwell (1,1)");
-        level.Set("A",SM_Matrix_);
-        level.setlib(SM_Matrix_->getDomainMap()->lib());
-
         RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
-        RCP<SmootherFactory> preSmootherFact = rcp(new SmootherFactory(preSmootherPrototype));
-
         RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
-        RCP<SmootherFactory> postSmootherFact = rcp(new SmootherFactory(postSmootherPrototype));
+        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(preSmootherPrototype, postSmootherPrototype));
 
-        level.Request("PreSmoother",preSmootherFact.get());
-        preSmootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",preSmootherFact.get());
-
-        level.Request("PostSmoother",postSmootherFact.get());
-        postSmootherFact->Build(level);
-        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",postSmootherFact.get());
+        level.Request("PreSmoother",smootherFact.get());
+        level.Request("PostSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          ParameterList smootherFactoryParams;
+          smootherFactoryParams.set("keep smoother data", true);
+          smootherFact->SetParameterList(smootherFactoryParams);
+          level.Request("PreSmoother data", smootherFact.get());
+          level.Request("PostSmoother data", smootherFact.get());
+          if (!PreSmootherData_.is_null())
+            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+          if (!PostSmootherData_.is_null())
+            level.Set("PostSmoother data", PostSmootherData_, smootherFact.get());
+        }
+        smootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
+        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
+          PostSmootherData_ = level.Get<RCP<SmootherPrototype> >("PostSmoother data",smootherFact.get());
+        }
       } else {
         std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
-        Level level;
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        level.SetFactoryManager(factoryHandler);
-        level.SetLevelID(0);
-        level.setObjectLabel("RefMaxwell (1,1)");
-        level.Set("A",SM_Matrix_);
-        level.setlib(SM_Matrix_->getDomainMap()->lib());
+
         RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
-        RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
-        level.Request("PreSmoother",SmootherFact.get());
-        SmootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(smootherPrototype));
+        level.Request("PreSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          ParameterList smootherFactoryParams;
+          smootherFactoryParams.set("keep smoother data", true);
+          smootherFact->SetParameterList(smootherFactoryParams);
+          level.Request("PreSmoother data", smootherFact.get());
+          if (!PreSmootherData_.is_null())
+            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+        }
+        smootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
         PostSmoother_ = PreSmoother_;
+        if (enable_reuse_)
+          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
       }
       useHiptmairSmoothing_ = false;
     }
