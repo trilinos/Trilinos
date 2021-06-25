@@ -411,8 +411,23 @@ namespace MueLu {
 
     RCP<const LOMultiVector> vertex2AggId = aggregates->GetVertex2AggId();
     ArrayRCP<LO> aggregate_ids = rcp_const_cast<LOMultiVector>(vertex2AggId)->getDataNonConst(0);
+    ArrayRCP<LO> dof_ids;
+
+    // We need to unamalgamate, if the FixedBlockSize > 1
+    if(A_->GetFixedBlockSize() > 1) {
+      LO blocksize = (LO) A_->GetFixedBlockSize();
+      dof_ids.resize(aggregate_ids.size() * blocksize);
+      for(LO i=0; i<(LO)aggregate_ids.size(); i++) {
+        for(LO j=0; j<(LO)blocksize; j++)
+          dof_ids[i*blocksize+j] = aggregate_ids[i];    
+      }
+    }
+    else {
+      dof_ids = aggregate_ids;
+    }
+        
     
-    paramList.set("partitioner: map", aggregate_ids);
+    paramList.set("partitioner: map", dof_ids);
     paramList.set("partitioner: type", "user");
     paramList.set("partitioner: overlap", 0);
     paramList.set("partitioner: local parts", (int)aggregates->GetNumAggregates());
