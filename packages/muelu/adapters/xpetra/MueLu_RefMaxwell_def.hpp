@@ -2462,15 +2462,18 @@ namespace MueLu {
 
       if (!ImporterH_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
-        P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+        P11resTmp_->beginImport(*P11res_, *ImporterH_, Xpetra::INSERT);
       }
       if (!allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
-        D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
+        D0resTmp_->beginImport(*D0res_, *Importer22_, Xpetra::INSERT);
       }
 
       // iterate on coarse (1, 1) block
       if (!AH_.is_null()) {
+        if (!ImporterH_.is_null() && !implicitTranspose_)
+          P11resTmp_->endImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -2489,6 +2492,9 @@ namespace MueLu {
 
       // iterate on (2, 2) block
       if (!A22_.is_null()) {
+        if (!allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_)
+          D0resTmp_->endImport(*D0res_, *Importer22_, Xpetra::INSERT);
+
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -2505,6 +2511,10 @@ namespace MueLu {
           Hierarchy22_->Iterate(*D0resSubComm_, *D0xSubComm_, numIters22_, true);
       }
 
+      if (AH_.is_null() && !ImporterH_.is_null() && !implicitTranspose_)
+        P11resTmp_->endImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+      if (A22_.is_null() && !allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_)
+        D0resTmp_->endImport(*D0res_, *Importer22_, Xpetra::INSERT);
     }
 
     if (fuseProlongationAndUpdate_) {
