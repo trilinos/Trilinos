@@ -35,13 +35,13 @@ C***********************************************************************
       TWOPI = PI+PI
 
       IF (N .LT. 3) THEN
-         CALL MESAGE ('PERIMETER MUST CONTAIN MORE THAN 3 NODES')
+         CALL MESSAGE('PERIMETER MUST CONTAIN MORE THAN 3 NODES')
          GOTO 110
       ENDIF
 
       SPIRO = 0.0
       IF ( (X (1) .EQ. X (N)) .AND. (Y (1) .EQ. Y (N)) ) THEN
-         CALL MESAGE ('PERIMETER CONTAINS DUPLICATE NODE LOCATIONS')
+         CALL MESSAGE('PERIMETER CONTAINS DUPLICATE NODE LOCATIONS')
          GOTO 110
       ENDIF
       AGOLD = ATAN2 (Y (1) - Y (N), X (1) - X (N))
@@ -49,7 +49,7 @@ C***********************************************************************
          NEXT = I + 1
          IF (NEXT .GT. N)NEXT = 1
          IF ( (X (NEXT) .EQ. X (I)) .AND. (Y (NEXT) .EQ. Y (I)) ) THEN
-            CALL MESAGE ('PERIMETER CONTAINS DUPLICATE NODE LOCATIONS')
+            CALL MESSAGE('PERIMETER CONTAINS DUPLICATE NODE LOCATIONS')
             GOTO 110
          ENDIF
          AGNEW = ATAN2 (Y (NEXT) - Y (I), X (NEXT) - X (I))
@@ -57,7 +57,7 @@ C***********************************************************************
          IF (DIFF .GT. PI) DIFF = DIFF-TWOPI
          IF (DIFF .LT. -PI) DIFF = DIFF+TWOPI
          IF (ABS (ABS (DIFF) - PI) .LT. 1.0E-3) THEN
-            CALL MESAGE ('PERIMETER CONTAINS SWITCHBACKS')
+            CALL MESSAGE('PERIMETER CONTAINS SWITCHBACKS')
             GOTO 110
          ENDIF
          SPIRO = SPIRO + DIFF

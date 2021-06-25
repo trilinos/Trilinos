@@ -54,7 +54,7 @@ C     COMPLETE LXN ARRAYS FOR ANY NEW LINES
             CALL ADDLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, NXL (I, L),
      &         L, NNN, ERR, NOROOM)
             IF (ERR)THEN
-               CALL MESAGE ('ERROR IN FIXLXN - NXL TABLE GENERATION')
+               CALL MESSAGE('ERROR IN FIXLXN - NXL TABLE GENERATION')
                GOTO 140
             ELSEIF (NOROOM) THEN
                GOTO 140

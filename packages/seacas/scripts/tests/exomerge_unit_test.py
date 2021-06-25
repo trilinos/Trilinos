@@ -99,7 +99,7 @@ class OutputSuppression:
     """
 
     def __enter__(self):
-        """Initialzation routine."""
+        """Initialization routine."""
         self.old_stdout = sys.stdout
         sys.stdout = DummyFile()
 
@@ -561,7 +561,7 @@ class ExomergeUnitTester:
 
     def _topology_test(self):
         """
-        Test the topology defitions to ensure they are consistent.
+        Test the topology definitions to ensure they are consistent.
 
         FACE_MAPPING, INVERTED_CONNECTIVITY, DIMENSION
 
@@ -595,7 +595,7 @@ class ExomergeUnitTester:
     # one mapping between the two, warning messages will appear when running
     # this module.
     #
-    # Tests sould return None if successful (no return statement needed)
+    # Tests should return None if successful (no return statement needed)
     # Tests should return False if the test was unable to be run.
     # Tests should raise an exception or exit(1) if unsuccessful.
 

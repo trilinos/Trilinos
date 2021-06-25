@@ -26,8 +26,6 @@
 
 // For copy_database...
 namespace {
-  auto initial_time = std::chrono::steady_clock::now();
-
   std::vector<int> get_selected_steps(Ioss::Region &region, const Ioss::MeshCopyOptions &options);
   void show_step(int istep, double time, const Ioss::MeshCopyOptions &options, int rank);
   std::vector<Ioss::Face> generate_boundary_faces(Ioss::Region &               region,
@@ -1116,15 +1114,6 @@ namespace {
                            Ioss::Field::RoleType role, const Ioss::MeshCopyOptions &options,
                            const std::string &prefix)
   {
-    // !!!! WARNING !!!!  This is a hack.  It assumes that all NodeBlocks that have "_nodes" in
-    // their name belong to a StructuredBlock (m_nodeBlock).  Further, it assumes that the
-    // NodeBlocks that belong to a StructuredBlock have no field data that needs to be transferred.
-    // A permanent and comprehensive fix that handles this issue still needs to be developed.
-    // --sll 21aug20
-    if (ige->type() == Ioss::NODEBLOCK && ige->name().find("_nodes") != std::string::npos) {
-      return;
-    }
-
     // Iterate through the TRANSIENT-role fields of the input
     // database and transfer to output database.
     Ioss::NameList state_fields;

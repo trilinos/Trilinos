@@ -241,8 +241,8 @@ C ... Convert sideset nodes to sideset sides
          call mddel('ISIDES')
       end if
 C     SUCCESSFUL WRITE COMPLETED
-      CALL MESAGE (' ')
-      CALL MESAGE ('ExodusII output file successfully written')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('ExodusII output file successfully written')
 C ... Title is char*72, dbpini and exodusII expect char*80
       HOLD = TITLE
       if (nbcnod .gt. 0) then
@@ -269,8 +269,8 @@ C ... Title is char*72, dbpini and exodusII expect char*80
 
 C     ERROR DURING WRITE PROBLEMS
  110  CONTINUE
-      CALL MESAGE ('ERR DURING WRITE TO OUTPUT FILE')
-      CALL MESAGE ('...File may be incomplete...')
+      CALL MESSAGE('ERR DURING WRITE TO OUTPUT FILE')
+      CALL MESSAGE('...File may be incomplete...')
       RETURN
 
       END

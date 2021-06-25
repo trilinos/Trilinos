@@ -7,14 +7,14 @@ C    See packages/seacas/LICENSE for details
       SUBROUTINE DMESS (DEV1, TEXT)
 C***********************************************************************
 
-C  SUBROUTINE DMESS = PRINTS A ONE LINE MESSAGE AT THE BOTTOM OF THE
+C  SUBROUTINE DMESS = PRINTS A ONE LINE MESSAGEAT THE BOTTOM OF THE
 C                       SCREEN
 
 C***********************************************************************
 
       CHARACTER*(*) TEXT, DEV1*3
 
-      CALL MESAGE (TEXT)
+      CALL MESSAGE(TEXT)
       RETURN
 
       END
