@@ -288,9 +288,11 @@ namespace {
     TEST_EQUALITY(A->isFillComplete(), true);
 
     RCP<VectorClass> s = VectorFactoryClass::Build(map, true);
-    Teuchos::ArrayRCP< Scalar > sd = s->getDataNonConst(0);
-    for(LO i = 0; i < NumMyElements; ++i) {
-      sd[i] = Teuchos::as<Scalar>(map->getGlobalElement(i));
+    {
+      Teuchos::ArrayRCP< Scalar > sd = s->getDataNonConst(0);
+      for(LO i = 0; i < NumMyElements; ++i) {
+        sd[i] = Teuchos::as<Scalar>(map->getGlobalElement(i));
+      }
     }
 
     A->leftScale(*s);
@@ -384,9 +386,11 @@ namespace {
     TEST_EQUALITY(A->isFillComplete(), true);
 
     RCP<VectorClass> s = VectorFactoryClass::Build(map, true);
-    Teuchos::ArrayRCP< Scalar > sd = s->getDataNonConst(0);
-    for(LO i = 0; i < NumMyElements; ++i) {
-      sd[i] = Teuchos::as<Scalar>(map->getGlobalElement(i));
+    {
+      Teuchos::ArrayRCP< Scalar > sd = s->getDataNonConst(0);
+      for(LO i = 0; i < NumMyElements; ++i) {
+	sd[i] = Teuchos::as<Scalar>(map->getGlobalElement(i));
+      }
     }
 
     A->rightScale(*s);
@@ -811,8 +815,10 @@ namespace {
 
     RCP<vec_type> vectest = vec_factory_type::Build (map);
     vectest->putScalar (1.0);
-    Teuchos::ArrayRCP<Scalar> vectestData = vectest->getDataNonConst(0);
-    vectestData[0] = 5.0;
+    {
+      Teuchos::ArrayRCP<Scalar> vectestData = vectest->getDataNonConst(0);
+      vectestData[0] = 5.0;
+    }
 
     vec_sol->update(-1.0,*vectest,1.0);
 
@@ -1271,71 +1277,76 @@ namespace {
 
     A->fillComplete();
 
-    // access data after fill complete!
-    local_matrix_type view2 = A->getLocalMatrix();
-    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
-    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),   A->getNodeNumEntries());
+    {
+      // access data after fill complete!
+      auto view2 = A->getLocalMatrixHost();
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),   A->getNodeNumEntries());
+      
+      // check that the local_matrix_type taken the second time is the same
+      auto view3 = A->getLocalMatrixHost();
+      TEST_EQUALITY(view2.graph.row_map.data(), view3.graph.row_map.data());
 
-    // check that the local_matrix_type taken the second time is the same
-    local_matrix_type view3 = A->getLocalMatrix();
-    TEST_EQUALITY(view2.graph.row_map.data(), view3.graph.row_map.data());
+      for (LO r = 0; r < view2.numRows(); ++r) {
+	// extract data from current row r
+	auto rowview = view2.row (r);
 
-    for (LO r = 0; r < view2.numRows(); ++r) {
-      // extract data from current row r
-      auto rowview = view2.row (r);
-
-      for (LO c = 0; c < rowview.length; ++c) {
-        Scalar   vv  = rowview.value  (c);
-        LO       cc = rowview.colidx (c);
-        TEST_EQUALITY(rowview.length, 1);
-        TEST_EQUALITY(cc, r);
-        TEST_EQUALITY(vv, ONE);
+	for (LO c = 0; c < rowview.length; ++c) {
+	  Scalar   vv  = rowview.value  (c);
+	  LO       cc = rowview.colidx (c);
+	  TEST_EQUALITY(rowview.length, 1);
+	  TEST_EQUALITY(cc, r);
+	  TEST_EQUALITY(vv, ONE);
+	}
       }
+
+      Teuchos::ArrayView< const LO > indices;
+      Teuchos::ArrayView< const Scalar > values;
+      A->getLocalRowView(0, indices, values);
+      TEST_EQUALITY(indices.size(), 1);
+      TEST_EQUALITY(values[0], ONE);
+
+      /////////////////////////////////////////
+
+      // check whether later changes are updated in view!
+      ordinal_type nColIdx = 0;
+      value_type value = 42.0;
+      view2.replaceValues (0, &nColIdx, 1, &value);
+
+      A->getLocalRowView(0, indices, values);
+      TEST_EQUALITY(indices.size(), 1);
+
+      // NOTE (mfh 23 Feb 2020) You can't always convert double to
+      // Scalar directly; e.g., with Scalar=complex<float>.
+      const Scalar FORTY_TWO = Scalar(mag_type(42.0));
+      TEST_EQUALITY(values[0], FORTY_TWO);  // changes in the view also changes matrix values
     }
-
-    Teuchos::ArrayView< const LO > indices;
-    Teuchos::ArrayView< const Scalar > values;
-    A->getLocalRowView(0, indices, values);
-    TEST_EQUALITY(indices.size(), 1);
-    TEST_EQUALITY(values[0], ONE);
-
-    /////////////////////////////////////////
-
-    // check whether later changes are updated in view!
-    ordinal_type nColIdx = 0;
-    value_type value = 42.0;
-    view2.replaceValues (0, &nColIdx, 1, &value);
-
-    A->getLocalRowView(0, indices, values);
-    TEST_EQUALITY(indices.size(), 1);
-
-    // NOTE (mfh 23 Feb 2020) You can't always convert double to
-    // Scalar directly; e.g., with Scalar=complex<float>.
-    const Scalar FORTY_TWO = Scalar(mag_type(42.0));
-    TEST_EQUALITY(values[0], FORTY_TWO);  // changes in the view also changes matrix values
 
     A->resumeFill();
     A->setAllToScalar(-123.4);
     A->fillComplete();
 
-    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
-    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
-    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),     A->getNodeNumEntries());
+    {
+      auto view2 = A->getLocalMatrixHost();
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+      TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()),     A->getNodeNumEntries());
 
-    for (LO r = 0; r < view2.numRows(); ++r) {
-      // extract data from current row r
-      auto rowview = view2.row (r);
+      for (LO r = 0; r < view2.numRows(); ++r) {
+	// extract data from current row r
+	auto rowview = view2.row (r);
 
-      for (LO c = 0; c < rowview.length; ++c) {
-        Scalar   vv  = rowview.value  (c);
-        LO       cc = rowview.colidx (c);
-        TEST_EQUALITY(rowview.length, 1);
-        TEST_EQUALITY(cc, r);
-        // NOTE (mfh 23 Feb 2020) You can't always convert double to
-        // Scalar directly; e.g., with Scalar=complex<float>.
-        const Scalar expected_vv = Scalar(mag_type(-123.4));
-        TEST_EQUALITY(vv, expected_vv);
+	for (LO c = 0; c < rowview.length; ++c) {
+	  Scalar   vv  = rowview.value  (c);
+	  LO       cc = rowview.colidx (c);
+	  TEST_EQUALITY(rowview.length, 1);
+	  TEST_EQUALITY(cc, r);
+	  // NOTE (mfh 23 Feb 2020) You can't always convert double to
+	  // Scalar directly; e.g., with Scalar=complex<float>.
+	  const Scalar expected_vv = Scalar(mag_type(-123.4));
+	  TEST_EQUALITY(vv, expected_vv);
+	}
       }
     }
 #endif
@@ -1387,6 +1398,7 @@ namespace {
       numCols = 5;
       nnz = 9;
     }
+
 
     // Create the output Views.
     ptr_type ptr = ptr_type("ptr", numRows + 1);
@@ -1460,9 +1472,6 @@ namespace {
       Kokkos::deep_copy (val, valIn);
     }
 
-    // create local CrsMatrix
-    local_matrix_type lclMatrix = local_matrix_type("A", numRows, numCols, nnz, val, ptr, ind);
-
     // reconstruct row and column map
     //std::vector<GO> rowMapGids;  // vector for collecting row map GIDs
     //std::vector<GO> colMapGids;  // vector for collecting column map GIDs
@@ -1498,8 +1507,20 @@ namespace {
     Teuchos::RCP<const MapClass > rowMap = MapFactoryClass::Build(lib, INVALID, rowMapGids.view(0,rowMapGids.size()), 0, comm);
     Teuchos::RCP<const MapClass > colMap = MapFactoryClass::Build(lib, INVALID, colMapGids.view(0,colMapGids.size()), 0, comm);
 
-    Teuchos::RCP<CrsMatrixClass> mat = CrsMatrixFactoryClass::Build(rowMap,colMap,lclMatrix);
-    if(mat == Teuchos::null) std::cout << "mat is Teuchos::null..." << std::endl;
+    Teuchos::RCP<CrsMatrixClass> mat;
+    {
+      // create local CrsMatrix
+      local_matrix_type lclMatrix = local_matrix_type("A", numRows, numCols, nnz, val, ptr, ind);
+
+      mat = CrsMatrixFactoryClass::Build(rowMap,colMap,lclMatrix);
+      if(mat == Teuchos::null) std::cout << "mat is Teuchos::null..." << std::endl;
+
+      // Blank out views to reduce ref count
+      ptr = ptr_type();
+      ind = ind_type();
+      val = val_type();
+    }
+
 
     TEST_EQUALITY(mat->isFillComplete(),true);
     TEST_EQUALITY(mat->getGlobalMaxNumRowEntries(),3);
@@ -1524,11 +1545,11 @@ namespace {
         const Scalar ONE = STS::one();
         const Scalar TWO = ONE + ONE;
 
-        if(grid == colMap->getGlobalElement(indices[col])) {
+	if(grid == colMap->getGlobalElement(indices[col])) {
           TEST_EQUALITY(vals[col], TWO);
         } else {
           TEST_EQUALITY(vals[col], -ONE);
-        }
+	}
       }
     }
     //Kokkos::finalize();

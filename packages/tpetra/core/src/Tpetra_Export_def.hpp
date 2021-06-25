@@ -92,6 +92,8 @@ namespace Tpetra {
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_device () );
     TEUCHOS_ASSERT( ! this->TransferData_->exportLIDs_.need_sync_host () );
 
+    this->detectRemoteExportLIDsContiguous();
+
     if (this->verbose ()) {
       std::ostringstream os;
       const int myRank = source->getComm ()->getRank ();

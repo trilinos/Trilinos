@@ -624,6 +624,17 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+
+    <parameter>
+      <name>aggregation: coloring: use color graph</name>
+      <type>bool</type>
+      <default>false</default>
+      <visible>false</visible>
+      <description>Have CoalesceDropFactory generate a seperate graph for SOC and for coloring</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
     <parameter>
       <name>aggregation: enable phase 1</name>
       <type>bool</type>

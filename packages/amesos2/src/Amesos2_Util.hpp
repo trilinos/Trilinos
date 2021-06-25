@@ -1213,7 +1213,8 @@ namespace Amesos2 {
     template<class row_ptr_view_t, class cols_view_t, class per_view_t>
     void
     reorder(row_ptr_view_t & row_ptr, cols_view_t & cols,
-            per_view_t & perm, per_view_t & peri, size_t & nnz)
+            per_view_t & perm, per_view_t & peri, size_t & nnz,
+            bool permute_matrix)
     {
       #ifndef HAVE_AMESOS2_METIS
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -1230,14 +1231,15 @@ namespace Amesos2 {
 
         // strip out the diagonals - metis will just crash with them included.
         // make space for the stripped version
-        typedef Kokkos::View<idx_t*, Kokkos::HostSpace>         host_metis_array;
+        typedef Kokkos::View<idx_t*, Kokkos::HostSpace> host_metis_array;
         const ordinal_type size = row_ptr.size() - 1;
+        size_type max_nnz = host_row_ptr(size);
         host_metis_array host_strip_diag_row_ptr(
           Kokkos::ViewAllocateWithoutInitializing("host_strip_diag_row_ptr"),
-          row_ptr.size());
+          size+1);
         host_metis_array host_strip_diag_cols(
           Kokkos::ViewAllocateWithoutInitializing("host_strip_diag_cols"),
-          cols.size() - size); // dropping diagonals.
+          max_nnz);
 
         size_type new_nnz = 0;
         for(ordinal_type i = 0; i < size; ++i) {
@@ -1278,52 +1280,54 @@ namespace Amesos2 {
         deep_copy_or_assign_view(perm, device_perm);
         deep_copy_or_assign_view(peri, device_peri);
 
-        // we'll permute matrix on device to a new set of arrays
-        row_ptr_view_t new_row_ptr(
-          Kokkos::ViewAllocateWithoutInitializing("new_row_ptr"), row_ptr.size());
-        cols_view_t new_cols(
-          Kokkos::ViewAllocateWithoutInitializing("new_cols"), cols.size() - new_nnz/2);
+        if (permute_matrix) {
+          // we'll permute matrix on device to a new set of arrays
+          row_ptr_view_t new_row_ptr(
+            Kokkos::ViewAllocateWithoutInitializing("new_row_ptr"), row_ptr.size());
+          cols_view_t new_cols(
+            Kokkos::ViewAllocateWithoutInitializing("new_cols"), cols.size() - new_nnz/2);
 
-        // permute row indices
-        Kokkos::RangePolicy<exec_space_t> policy_row(0, row_ptr.size());
-        Kokkos::parallel_scan(policy_row, KOKKOS_LAMBDA(
+          // permute row indices
+          Kokkos::RangePolicy<exec_space_t> policy_row(0, row_ptr.size());
+          Kokkos::parallel_scan(policy_row, KOKKOS_LAMBDA(
           ordinal_type i, size_type & update, const bool &final) {
           if(final) {
             new_row_ptr(i) = update;
           }
           if(i < size) {
-            ordinal_type count = 0;
+              ordinal_type count = 0;
+              const ordinal_type row = device_perm(i);
+              for(ordinal_type k = row_ptr(row); k < row_ptr(row + 1); ++k) {
+                const ordinal_type j = device_peri(cols(k)); /// col in A
+                count += (i >= j); /// lower triangular
+              }
+              update += count;
+            }
+          });
+
+          // permute col indices
+          Kokkos::RangePolicy<exec_space_t> policy_col(0, size);
+          Kokkos::parallel_for(policy_col, KOKKOS_LAMBDA(ordinal_type i) {
+            const ordinal_type kbeg = new_row_ptr(i);
             const ordinal_type row = device_perm(i);
-            for(ordinal_type k = row_ptr(row); k < row_ptr(row + 1); ++k) {
-              const ordinal_type j = device_peri(cols(k)); /// col in A
-              count += (i >= j); /// lower triangular
+            const ordinal_type col_beg = row_ptr(row);
+            const ordinal_type col_end = row_ptr(row + 1);
+            const ordinal_type nk = col_end - col_beg;
+            for(ordinal_type k = 0, t = 0; k < nk; ++k) {
+              const ordinal_type tk = kbeg + t;
+              const ordinal_type sk = col_beg + k;
+              const ordinal_type j = device_peri(cols(sk));
+              if(i >= j) {
+                new_cols(tk) = j;
+                ++t;
+              }
             }
-            update += count;
-          }
-        });
+          });
 
-        // permute col indices
-        Kokkos::RangePolicy<exec_space_t> policy_col(0, size);
-        Kokkos::parallel_for(policy_col, KOKKOS_LAMBDA(ordinal_type i) {
-          const ordinal_type kbeg = new_row_ptr(i);
-          const ordinal_type row = device_perm(i);
-          const ordinal_type col_beg = row_ptr(row);
-          const ordinal_type col_end = row_ptr(row + 1);
-          const ordinal_type nk = col_end - col_beg;
-          for(ordinal_type k = 0, t = 0; k < nk; ++k) {
-            const ordinal_type tk = kbeg + t;
-            const ordinal_type sk = col_beg + k;
-            const ordinal_type j = device_peri(cols(sk));
-            if(i >= j) {
-              new_cols(tk) = j;
-              ++t;
-            }
-          }
-        });
-
-        // finally set the inputs to the new sorted arrays
-        row_ptr = new_row_ptr;
-        cols = new_cols;
+          // finally set the inputs to the new sorted arrays
+          row_ptr = new_row_ptr;
+          cols = new_cols;
+        }
 
         nnz = new_nnz;
       #endif // HAVE_AMESOS2_METIS

@@ -286,6 +286,30 @@ tol = 0.;
       return maxvec;
     }
 
+    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> &BlockNumber) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!A.getColMap()->isSameAs(*BlockNumber.getMap()),std::runtime_error,"GetMatrixMaxMinusOffDiagonal: BlockNumber must match's A's column map.");
+      
+      Teuchos::ArrayRCP<const LocalOrdinal> block_id = BlockNumber.getData(0);
+
+      size_t numRows = A.getRowMap()->getNodeNumElements();
+      Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
+      Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
+      Teuchos::ArrayView<const LocalOrdinal> cols;
+      Teuchos::ArrayView<const Scalar> vals;
+      for (size_t i = 0; i < numRows; ++i) {
+        A.getLocalRowView(i, cols, vals);
+        Magnitude mymax = ZERO;
+        for (LocalOrdinal j=0; j < cols.size(); ++j) {
+          if (Teuchos::as<size_t>(cols[j]) != i && block_id[i] == block_id[cols[j]]) {
+            mymax = std::max(mymax,-Teuchos::ScalarTraits<Scalar>::real(vals[j]));
+          }
+        }          
+        //        printf("A(%d,:) row_scale(block) = %6.4e\n",(int)i,mymax); 
+
+        maxvec[i] = mymax;
+      }
+      return maxvec;
+    }
 
     /*! @brief Return vector containing inverse of input vector
      *
@@ -760,7 +784,41 @@ tol = 0.;
     */
     static void                                                                  ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Magnitude rowSumTol, Teuchos::ArrayRCP<bool>& dirichletRows) {
       typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+      typedef Teuchos::ScalarTraits<MT> MTS;
       RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
+      for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
+        size_t nnz = A.getNumEntriesInLocalRow(row);
+        ArrayView<const LocalOrdinal> indices;
+        ArrayView<const Scalar> vals;
+        A.getLocalRowView(row, indices, vals);
+        
+        Scalar rowsum = STS::zero();
+        Scalar diagval = STS::zero();
+
+        for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
+          LocalOrdinal col = indices[colID];
+          if (row == col)
+            diagval = vals[colID];
+          rowsum += vals[colID];
+        }
+        //        printf("A(%d,:) row_sum(point) = %6.4e\n",row,rowsum);
+        if (rowSumTol < MTS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
+          //printf("Row %d triggers rowsum\n",(int)row);
+          dirichletRows[row] = true;
+        }
+      }
+    }
+
+    static void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, const Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> &BlockNumber, const Magnitude rowSumTol, Teuchos::ArrayRCP<bool>& dirichletRows) {
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+      typedef Teuchos::ScalarTraits<MT> MTS;
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = A.getRowMap();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(!A.getColMap()->isSameAs(*BlockNumber.getMap()),std::runtime_error,"ApplyRowSumCriterion: BlockNumber must match's A's column map.");
+      
+      Teuchos::ArrayRCP<const LocalOrdinal> block_id = BlockNumber.getData(0);
       for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
         size_t nnz = A.getNumEntriesInLocalRow(row);
         ArrayView<const LocalOrdinal> indices;
@@ -773,12 +831,19 @@ tol = 0.;
           LocalOrdinal col = indices[colID];
           if (row == col)
             diagval = vals[colID];
-          rowsum += vals[colID];
+          if(block_id[row] == block_id[col])
+            rowsum += vals[colID];
         }
-        if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
+
+        //        printf("A(%d,:) row_sum(block) = %6.4e\n",row,rowsum);
+        if (rowSumTol < MTS::one() && STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
+          //printf("Row %d triggers rowsum\n",(int)row);
           dirichletRows[row] = true;
+        }
       }
     }
+
+
 
     /*! @brief Detect Dirichlet columns based on Dirichlet rows
 
