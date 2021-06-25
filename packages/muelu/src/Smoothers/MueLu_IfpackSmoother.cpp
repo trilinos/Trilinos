@@ -263,7 +263,6 @@ namespace MueLu {
       prec_->Compute();
     }
 
-
     SmootherPrototype::IsSetup(true);
 
     if (type_ == "Chebyshev" && lambdaMax == -1.0) {
@@ -297,10 +296,13 @@ namespace MueLu {
     RCP<const LOMultiVector> vertex2AggId = aggregates->GetVertex2AggId();
     ArrayRCP<LO> aggregate_ids = rcp_const_cast<LOMultiVector>(vertex2AggId)->getDataNonConst(0);
     
+
     paramList.set("partitioner: map", aggregate_ids.getRawPtr());
     paramList.set("partitioner: type", "user");
     paramList.set("partitioner: overlap", 0);
     paramList.set("partitioner: local parts", (int)aggregates->GetNumAggregates());
+    // In case of Dirichlet nodes
+    paramList.set("partitioner: keep singletons",true);
 
     RCP<Epetra_CrsMatrix> A = Utilities::Op2NonConstEpetraCrs(A_);
     type_ = "block relaxation stand-alone";
@@ -309,13 +311,17 @@ namespace MueLu {
     prec_ = rcp(factory.Create(type_, &(*A), overlap_));
     TEUCHOS_TEST_FOR_EXCEPTION(prec_.is_null(), Exceptions::RuntimeError, "Could not create an Ifpack preconditioner with type = \"" << type_ << "\"");
     SetPrecParameters();
-    prec_->Compute();
+
+    int rv = prec_->Compute();
+    TEUCHOS_TEST_FOR_EXCEPTION(rv, Exceptions::RuntimeError, "Ifpack preconditioner with type = \"" << type_ << "\" Compute() call failed.");
+
   }
 
 
   template <class Node>
   void IfpackSmoother<Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
+
 
     // Forward the InitialGuessIsZero option to Ifpack
     Teuchos::ParameterList paramList;
