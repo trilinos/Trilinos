@@ -727,8 +727,11 @@ namespace {
       // Create CrsMatrix objects.
       RCP<mv_type> src_mv = rcp(new mv_type(src_map, 1));
       RCP<mv_type> tgt_mv = rcp(new mv_type(tgt_map, 1));
-      src_mv->putScalar(Teuchos::ScalarTraits<Scalar>::one ());
+      RCP<mv_type> tgt_mv_reference = rcp(new mv_type(tgt_map, 1));
+
+      src_mv->randomize();
       tgt_mv->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
+      tgt_mv_reference->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
 
       try {
         // Create the importer
@@ -761,17 +764,28 @@ namespace {
           TEUCHOS_ASSERT(!tgt_mv->importsAreAliased());
         }
 
+        // produce a reference solution that uses the classical code path
+        expertSetRemoteLIDsContiguous(importer, false);
+        // Do the import
+        tgt_mv_reference->doImport (*src_mv, importer, INSERT);
+        TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
+        TEUCHOS_ASSERT(!tgt_mv_reference->importsAreAliased());
+
         // Loop through tgt_mv and make sure the import worked.
         if (tgt_num_local_elements != 0) {
           auto data = tgt_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
+          auto data_reference = tgt_mv_reference->getLocalViewHost(Tpetra::Access::ReadOnly);
           for (GO gblRow = tgt_map->getMinGlobalIndex ();
                gblRow <= tgt_map->getMaxGlobalIndex ();
                ++gblRow) {
             const LO lclRow = tgt_map->getLocalElement (gblRow);
 
-            TEST_EQUALITY(data(lclRow,0), Teuchos::ScalarTraits<Scalar>::one ());
+            TEST_EQUALITY(data(lclRow,0), data_reference(lclRow,0));
           }
         }
+
+        tgt_mv_reference->update(-Teuchos::ScalarTraits<Scalar>::one (), *tgt_mv, Teuchos::ScalarTraits<Scalar>::one ());
+        TEUCHOS_ASSERT(tgt_mv_reference->getVector(0)->norm2()<=Teuchos::ScalarTraits<Scalar>::eps());
       }
       catch (std::exception& e) { // end of the first test
         err << "Proc " << myImageID << ": " << e.what () << endl;
@@ -785,6 +799,9 @@ namespace {
         out << "Above test failed; aborting further tests" << endl;
         return;
       }
+
+      tgt_mv->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
+      tgt_mv_reference->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
 
       try{
         // Create the exporter
@@ -817,15 +834,23 @@ namespace {
           TEUCHOS_ASSERT(!tgt_mv->importsAreAliased());
         }
 
+        // produce a reference solution that uses the classical code path
+        expertSetExportLIDsContiguous(exporter, false);
+        // Do the import
+        tgt_mv_reference->doImport (*src_mv, exporter, INSERT);
+        TEUCHOS_ASSERT(!exporter.areExportLIDsContiguous());
+        TEUCHOS_ASSERT(!tgt_mv_reference->importsAreAliased());
+
         // Loop through tgt_mv and make sure the import worked.
         if (tgt_num_local_elements != 0) {
           auto data = tgt_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
+          auto data_reference = tgt_mv_reference->getLocalViewHost(Tpetra::Access::ReadOnly);
           for (GO gblRow = tgt_map->getMinGlobalIndex ();
                gblRow <= tgt_map->getMaxGlobalIndex ();
                ++gblRow) {
             const LO lclRow = tgt_map->getLocalElement (gblRow);
 
-            TEST_EQUALITY(data(lclRow,0), Teuchos::ScalarTraits<Scalar>::one ());
+            TEST_EQUALITY(data(lclRow,0), data_reference(lclRow,0));
           }
         }
 

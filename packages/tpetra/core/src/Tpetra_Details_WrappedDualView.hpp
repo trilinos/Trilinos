@@ -121,7 +121,7 @@ public:
 private:
   static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
   static constexpr bool deviceMemoryIsHostAccessible =
-    Kokkos::SpaceAccessibility<Kokkos::Serial, typename DeviceViewType::memory_space>::accessible;
+    Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename DeviceViewType::memory_space>::accessible;
 
 public:
   WrappedDualView() {}
