@@ -31,43 +31,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-
-#ifndef NGPTYPES_HPP
-#define NGPTYPES_HPP
-
-#include <stk_mesh/base/NgpSpaces.hpp>
-#include "stk_mesh/base/Types.hpp"
-#include <Kokkos_Core.hpp>
+#include "m2nRebalance.hpp"
+#include <stk_balance/m2n/InputMesh.hpp>
+#include <stk_balance/m2n/OutputMesh.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
 namespace stk {
-namespace mesh {
+namespace balance {
+namespace m2n {
 
-using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, MemSpace>;
-using EntityKeyViewType         = Kokkos::View<EntityKey*, MemSpace>;
-using EntityViewType            = Kokkos::View<Entity*, MemSpace>;
-using BucketConnectivityType    = Kokkos::View<Entity**, MemSpace>;
-using UnsignedViewType          = Kokkos::View<unsigned*, MemSpace>;
-using BoolViewType              = Kokkos::View<bool*, MemSpace>;
-using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, MemSpace>;
-using PartOrdinalViewType       = Kokkos::View<PartOrdinal*, MemSpace>;
-using PermutationViewType       = Kokkos::View<Permutation*, MemSpace>;
-using FastSharedCommMapViewType = Kokkos::View<FastMeshIndex*, MemSpace>;
-using HostMeshIndexType         = Kokkos::View<FastMeshIndex*>::HostMirror;
-using MeshIndexType             = Kokkos::View<const FastMeshIndex*, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+void m2nRebalance(stk::io::StkMeshIoBroker& ioBroker, const stk::balance::M2NBalanceSettings& balanceSettings)
+{
+  stk::balance::m2n::InputMesh inputMesh(ioBroker, balanceSettings);
 
-template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, MemSpace>;
-template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, HostPinnedSpace>;
+  const std::vector<std::vector<unsigned>> targetSubdomainsForEachBatch = inputMesh.get_output_subdomains_for_each_batch();
 
-template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-
-#ifdef KOKKOS_ENABLE_CUDA
-#define ORDER_INDICES(i,j) j,i
-#else
-#define ORDER_INDICES(i,j) i,j
-#endif
-
-}
+  for (const std::vector<unsigned>& targetSubdomains : targetSubdomainsForEachBatch) {
+    stk::balance::m2n::OutputMesh outputMesh(inputMesh, targetSubdomains);
+    outputMesh.transfer_and_write();
+  }
 }
 
-#endif // NGPTYPES_HPP
+}}}

@@ -140,42 +140,96 @@ struct CompareEqual {
 } //namespace impl
 
 template<class VECTOR, class COMPARE_LESS>
-bool insert_keep_sorted_and_unique(const VECTOR& sortedItemsToInsert, VECTOR& sortedVec, COMPARE_LESS cmp)
+bool insert_keep_sorted(const VECTOR& sortedNewItems, VECTOR& sortedOldItems, COMPARE_LESS cmp)
 {
-  if (sortedItemsToInsert.empty()) {
+  if (sortedNewItems.empty()) {
     return false;
   }
 
-  ThrowAssertMsg(is_sorted_and_unique(sortedItemsToInsert, cmp), "input items must be sorted and unique");
-  ThrowAssertMsg(is_sorted_and_unique(sortedVec, cmp), "input vector must be sorted and unique");
+  ThrowAssertMsg(is_sorted_and_unique(sortedNewItems, cmp), "input items must be sorted and unique");
+  ThrowAssertMsg(is_sorted_and_unique(sortedOldItems, cmp), "input vector must be sorted and unique");
 
-  const size_t oldLength = sortedVec.size();
+  const size_t oldLength = sortedOldItems.size();
 
   if (oldLength > 0) {
-    typename VECTOR::value_type firstNewItem = sortedItemsToInsert[0];
-    typename VECTOR::value_type lastNewItem = sortedItemsToInsert.back();
+    typename VECTOR::value_type firstNewItem = sortedNewItems.front();
+    typename VECTOR::value_type lastNewItem = sortedNewItems.back();
+    typename VECTOR::value_type lastOldItem = sortedOldItems.back();
 
-    typename VECTOR::iterator startOfNew = std::lower_bound(sortedVec.begin(), sortedVec.end(),
-                                                            firstNewItem, cmp);
-    const unsigned num = startOfNew-sortedVec.begin();
+    typename VECTOR::iterator startOfMerge = std::lower_bound(sortedOldItems.begin(), sortedOldItems.end(), firstNewItem, cmp);
+    typename VECTOR::const_iterator endOfMergeNew = std::lower_bound(sortedNewItems.begin(), sortedNewItems.end(), lastOldItem, cmp);
+    typename VECTOR::iterator endOfMergeOld = std::lower_bound(sortedOldItems.begin(), sortedOldItems.end(), lastNewItem, cmp);
 
-    sortedVec.insert(startOfNew, sortedItemsToInsert.begin(), sortedItemsToInsert.end());
-    startOfNew = sortedVec.begin()+num;
+    const size_t neededSize = sortedOldItems.size() + sortedNewItems.size();
+    if (sortedOldItems.capacity() >= neededSize) {
+      typename VECTOR::iterator oldIter = std::prev(sortedOldItems.end());
+      sortedOldItems.resize(neededSize);
 
-    typename VECTOR::iterator endOfNew = startOfNew+sortedItemsToInsert.size();
-    typename VECTOR::iterator endOfMerge = std::lower_bound(endOfNew, sortedVec.end(), lastNewItem, cmp);
+      typename VECTOR::const_iterator newIter = std::prev(sortedNewItems.end());
+      typename VECTOR::iterator destIter = std::prev(sortedOldItems.end());
 
-    std::inplace_merge(startOfNew, endOfNew, endOfMerge);
+      if (cmp(lastOldItem, lastNewItem)) {
+        while(newIter >= endOfMergeNew) {
+          *destIter = *newIter;
+          --newIter;
+          --destIter;
+        }
+      }
+      else {
+        while(oldIter >= endOfMergeOld) {
+          *destIter = *oldIter;
+          --oldIter;
+          --destIter;
+        }
+      }
 
-    typename VECTOR::iterator iter = std::unique(startOfNew, sortedVec.end(),
-                           impl::CompareEqual<typename VECTOR::value_type,COMPARE_LESS>(cmp));
-    sortedVec.resize(iter - sortedVec.begin());
+      while(oldIter >= startOfMerge && newIter >= sortedNewItems.begin()) {
+        if (cmp(*oldIter, *newIter)) {
+          *destIter = *newIter;
+          --newIter;
+        }
+        else {
+          *destIter = *oldIter;
+          --oldIter;
+        }
+        --destIter;
+      }
+
+      while(newIter >= sortedNewItems.begin()) {
+        *destIter = *newIter;
+        --destIter;
+        --newIter;
+      }
+    }
+    else {
+      VECTOR newVec;
+      newVec.reserve(std::max(neededSize, 2*sortedOldItems.size()));
+      newVec.insert(newVec.end(), sortedOldItems.begin(), startOfMerge);
+      std::merge(startOfMerge, endOfMergeOld, sortedNewItems.begin(), sortedNewItems.end(),
+                 std::back_inserter(newVec), cmp);
+      std::copy(endOfMergeOld, sortedOldItems.end(), std::back_inserter(newVec));
+      sortedOldItems.swap(newVec);
+    }
   }
   else {
-    sortedVec = sortedItemsToInsert;
+    sortedOldItems = sortedNewItems;
   }
 
-  return sortedVec.size() > oldLength;
+  return sortedOldItems.size() > oldLength;
+}
+
+template<class VECTOR, class COMPARE_LESS>
+bool insert_keep_sorted_and_unique(const VECTOR& sortedNewItems, VECTOR& sortedOldItems, COMPARE_LESS cmp)
+{
+  const size_t oldLength = sortedOldItems.size();
+
+  insert_keep_sorted(sortedNewItems, sortedOldItems, cmp);
+
+  typename VECTOR::iterator iter = std::unique(sortedOldItems.begin(), sortedOldItems.end(),
+                                     impl::CompareEqual<typename VECTOR::value_type,COMPARE_LESS>(cmp));
+  sortedOldItems.resize(iter - sortedOldItems.begin());
+
+  return sortedOldItems.size() > oldLength;
 }
 
 template<class VECTOR>

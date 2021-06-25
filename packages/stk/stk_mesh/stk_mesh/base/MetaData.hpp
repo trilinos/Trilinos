@@ -460,6 +460,7 @@ public:
 
   /** \brief  Allow late field registration */
   void enable_late_fields() { m_are_late_fields_enabled = true; }
+  void disable_late_fields() { m_are_late_fields_enabled = false; }
 
   /** \brief  Query if late fields are allowed */
   bool are_late_fields_enabled() const { return m_are_late_fields_enabled; }

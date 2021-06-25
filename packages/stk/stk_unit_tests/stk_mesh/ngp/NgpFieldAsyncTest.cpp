@@ -455,7 +455,7 @@ private:
   template<typename FieldType>
   void check_result_on_host_expect_init_data(FieldType field, stk::mesh::EntityVector& elems)
   {
-    auto expectInitData = [this](int* data, stk::mesh::Entity entity, unsigned component)
+    auto expectInitData = [](int* data, stk::mesh::Entity entity, unsigned component)
                           {
                             int expectedValue = component;
                             EXPECT_EQ(data[component], expectedValue);

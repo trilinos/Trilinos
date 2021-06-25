@@ -30,44 +30,44 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#ifndef NGPTYPES_HPP
-#define NGPTYPES_HPP
-
-#include <stk_mesh/base/NgpSpaces.hpp>
-#include "stk_mesh/base/Types.hpp"
-#include <Kokkos_Core.hpp>
+#include "OutputSerializerBulkData.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 
 namespace stk {
-namespace mesh {
+namespace balance {
+namespace m2n {
 
-using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, MemSpace>;
-using EntityKeyViewType         = Kokkos::View<EntityKey*, MemSpace>;
-using EntityViewType            = Kokkos::View<Entity*, MemSpace>;
-using BucketConnectivityType    = Kokkos::View<Entity**, MemSpace>;
-using UnsignedViewType          = Kokkos::View<unsigned*, MemSpace>;
-using BoolViewType              = Kokkos::View<bool*, MemSpace>;
-using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, MemSpace>;
-using PartOrdinalViewType       = Kokkos::View<PartOrdinal*, MemSpace>;
-using PermutationViewType       = Kokkos::View<Permutation*, MemSpace>;
-using FastSharedCommMapViewType = Kokkos::View<FastMeshIndex*, MemSpace>;
-using HostMeshIndexType         = Kokkos::View<FastMeshIndex*>::HostMirror;
-using MeshIndexType             = Kokkos::View<const FastMeshIndex*, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+OutputSerializerBulkData::OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel)
+  : BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
+{}
 
-template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, MemSpace>;
-template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, HostPinnedSpace>;
+void
+OutputSerializerBulkData::switch_to_serial_mesh() {
 
-template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  modification_begin();
 
-#ifdef KOKKOS_ENABLE_CUDA
-#define ORDER_INDICES(i,j) j,i
-#else
-#define ORDER_INDICES(i,j) i,j
-#endif
+  stk::mesh::EntityVector nodesToUnshare;
+  stk::mesh::get_entities(*this, stk::topology::NODE_RANK, mesh_meta_data().globally_shared_part(), nodesToUnshare);
+
+  for (const stk::mesh::Entity& node : nodesToUnshare) {
+    internal_set_owner(node, 0);
+    remove_entity_comm(node);
+    entity_comm_map_clear(entity_key(node));
+  }
+
+  destroy_all_ghosting();
+
+  stk::mesh::PartVector addParts{&mesh_meta_data().locally_owned_part()};
+  stk::mesh::PartVector removeParts{&mesh_meta_data().globally_shared_part()};
+  internal_verify_and_change_entity_parts(nodesToUnshare, addParts, removeParts);
+
+  m_parallel = Parallel(MPI_COMM_SELF);
+
+  modification_end();
+}
 
 }
 }
-
-#endif // NGPTYPES_HPP
+}

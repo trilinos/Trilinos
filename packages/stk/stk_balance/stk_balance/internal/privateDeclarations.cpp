@@ -3,7 +3,6 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/GeometricVertices.hpp>
 #include <stk_balance/internal/StkGeometricMethodViaZoltan.hpp>
-#include <stk_balance/m2n/MxNutils.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
