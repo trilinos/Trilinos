@@ -171,7 +171,7 @@ void Ioss::SideSet::block_membership(std::vector<std::string> &block_members)
   block_members = blockMembership;
 }
 
-bool Ioss::SideSet::equal_(const SideSet &rhs, const bool quiet) const
+bool Ioss::SideSet::equal_(const SideSet &rhs, const bool /* quiet */) const
 {
   std::vector<SideBlock *> lhs_side_blocks = this->sideBlocks;
   std::vector<SideBlock *> rhs_side_blocks = rhs.sideBlocks;

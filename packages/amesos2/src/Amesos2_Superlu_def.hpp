@@ -81,6 +81,15 @@ Superlu<Matrix,Vector>::Superlu(
   : SolverCore<Amesos2::Superlu,Matrix,Vector>(A, X, B)
   , is_contiguous_(true) // default is set by params
   , use_triangular_solves_(false) // default is set by params
+  , use_metis_(false)
+  , symmetrize_metis_(true)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+  , sptrsv_invert_diag_(true)
+  , sptrsv_invert_offdiag_ (false)
+  , sptrsv_u_in_csr_ (true)
+  , sptrsv_merge_supernodes_ (false)
+  , sptrsv_use_spmv_ (false)
+#endif
 {
   // ilu_set_default_options is called later in set parameter list if required.
   // This is not the ideal way, but the other option to always call
@@ -103,6 +112,8 @@ Superlu<Matrix,Vector>::Superlu(
   data_.panel_size = SLU::sp_ienv(1); // Query optimal panel size
 
   data_.equed = 'N';            // No equilibration
+  data_.rowequ = false;
+  data_.colequ = false;
   data_.A.Store = NULL;
   data_.L.Store = NULL;
   data_.U.Store = NULL;
@@ -232,6 +243,67 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
   same_symbolic_ = false;
   data_.options.Fact = SLU::DOFACT;
 
+  if (use_metis_) {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::RCP< Teuchos::Time > MetisTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for METIS");
+    Teuchos::TimeMonitor numFactTimer(*MetisTimer_);
+#endif
+    size_t n  = this->globalNumRows_;
+    size_t nz = this->globalNumNonZeros_;
+    host_size_type_array    host_rowind_view_ = host_rows_view_;
+    host_ordinal_type_array host_colptr_view_ = host_col_ptr_view_;
+
+    /* symmetrize the matrix (A + A') if needed */
+    if (symmetrize_metis_) {
+      int new_nz = 0;
+      int *new_col_ptr;
+      int *new_row_ind;
+
+      // NOTE: both size_type and ordinal_type are defined as int 
+      //       Consider using "symmetrize_graph" in KokkosKernels, if this becomes significant in time.
+      SLU::at_plus_a(n, nz, host_col_ptr_view_.data(), host_rows_view_.data(),
+                     &new_nz, &new_col_ptr, &new_row_ind);
+
+      // reallocate (so that we won't overwrite the original)
+      // and copy for output
+      nz = new_nz;
+      Kokkos::resize (host_rowind_view_, nz);
+      Kokkos::realloc(host_colptr_view_, n+1);
+      for (size_t i = 0; i <= n; i++) {
+        host_colptr_view_(i) = new_col_ptr[i];
+      }
+      for (size_t i = 0; i < nz; i++) {
+        host_rowind_view_(i) = new_row_ind[i];
+      }
+
+      // free
+      SLU::SUPERLU_FREE(new_col_ptr);
+      SLU::SUPERLU_FREE(new_row_ind);
+    }
+
+    // reorder will convert both graph and perm/iperm to the internal METIS integer type
+    using metis_int_array_type = host_ordinal_type_array;
+    metis_int_array_type metis_perm  = metis_int_array_type(Kokkos::ViewAllocateWithoutInitializing("metis_perm"),  n);
+    metis_int_array_type metis_iperm = metis_int_array_type(Kokkos::ViewAllocateWithoutInitializing("metis_iperm"), n);
+
+    // call METIS
+    size_t new_nnz = 0;
+    Amesos2::Util::reorder(
+      host_colptr_view_, host_rowind_view_, 
+      metis_perm, metis_iperm, new_nnz, false);
+
+    for (size_t i = 0; i < n; i++) {
+      data_.perm_r(i) = metis_iperm(i);
+      data_.perm_c(i) = metis_iperm(i);
+    }
+
+    // SLU will use user-specified METIS ordering
+    data_.options.ColPerm = SLU::MY_PERMC;
+    data_.options.RowPerm = SLU::MY_PERMR;
+    // Turn off Equil not to mess up METIS ordering?
+    //data_.options.Equil = SLU::NO;
+  }
+
   return(0);
 }
 
@@ -307,9 +379,9 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
                           data_.C.data(), rowcnd, colcnd,
                           amax, &(data_.equed));
 
-      // // check what types of equilibration was actually done
-      // data_.rowequ = (data_.equed == 'R') || (data_.equed == 'B');
-      // data_.colequ = (data_.equed == 'C') || (data_.equed == 'B');
+      // check what types of equilibration was actually done
+      data_.rowequ = (data_.equed == 'R') || (data_.equed == 'B');
+      data_.colequ = (data_.equed == 'C') || (data_.equed == 'B');
     }
 
     // Apply the column permutation computed in preOrdering.  Place the
@@ -374,6 +446,10 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   same_symbolic_ = true;
 
   if(use_triangular_solves_) {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::RCP< Teuchos::Time > SpTrsvTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for SpTrsv setup");
+    Teuchos::TimeMonitor numFactTimer(*SpTrsvTimer_);
+#endif
     triangular_solve_factor();
   }
 
@@ -387,6 +463,10 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::RCP< Teuchos::Time > Amesos2SolveTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Amesos2");
+    Teuchos::TimeMonitor solveTimer(*Amesos2SolveTimer_);
+#endif
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
@@ -557,25 +637,23 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
-  if(use_triangular_solves_) { // to device
+    if(use_triangular_solves_) { // to device
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, device_xValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,device_solve_array_t>::do_put(X, device_xValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
 #endif
+    }
+    else {
+      Util::put_1d_data_helper_kokkos_view<
+        MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, host_xValues_,
+            as<size_t>(ld_rhs),
+            (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+            this->rowIndexBase_);
+    }
   }
-  else {
-    Util::put_1d_data_helper_kokkos_view<
-      MultiVecAdapter<Vector>,host_solve_array_t>::do_put(X, host_xValues_,
-          as<size_t>(ld_rhs),
-          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-          this->rowIndexBase_);
-  }
-
-  }
-
 
   return(ierr);
 }
@@ -672,10 +750,24 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
   data_.options.ILU_FillTol = parameterList->get<double>("ILU_FillTol", 0.01);
 
   is_contiguous_ = parameterList->get<bool>("IsContiguous", true);
+
   use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
 
+  use_metis_ = parameterList->get<bool>("UseMetis", false);
+  symmetrize_metis_ = parameterList->get<bool>("SymmetrizeMetis", true);
   if(use_triangular_solves_) {
-#if not defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) || not defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+    // specify whether to invert diagonal blocks
+    sptrsv_invert_diag_ = parameterList->get<bool>("SpTRSV_Invert_Diag", true);
+    // specify whether to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
+    sptrsv_invert_offdiag_ = parameterList->get<bool>("SpTRSV_Invert_OffDiag", false);
+    // specify whether to store U in CSR format
+    sptrsv_u_in_csr_ = parameterList->get<bool>("SpTRSV_U_CSR", true);
+    // specify whether to merge supernodes with similar sparsity structures
+    sptrsv_merge_supernodes_ = parameterList->get<bool>("SpTRSV_Merge_Supernodes", false);
+    // specify whether to use spmv for sptrsv
+    sptrsv_use_spmv_ = parameterList->get<bool>("SpTRSV_Use_SpMV", false);
+#else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
       "Calling for triangular solves but KokkosKernels_ENABLE_SUPERNODAL_SPTRSV and KokkosKernels_ENABLE_TPL_SUPERLU were not configured." );
 #endif
@@ -808,6 +900,18 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
+    // call METIS before SuperLU
+    pl->set("UseMetis", false, "Whether to call METIS before SuperLU");
+    pl->set("SymmetrizeMetis", true, "Whether to symmetrize matrix before METIS");
+
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+    pl->set("SpTRSV_Invert_Diag", true, "specify whether to invert diagonal blocks for supernodal sparse-trianguular solve");
+    pl->set("SpTRSV_Invert_OffDiag", false, "specify whether to apply diagonal-inversion to off-diagonal blocks for supernodal sparse-trianguular solve");
+    pl->set("SpTRSV_U_CSR", true, "specify whether to store U in CSR forma for supernodal sparse-trianguular solve");
+    pl->set("SpTRSV_Merge_Supernodes", false, "specify whether to merge supernodes with similar sparsity structures for supernodal sparse-trianguular solve");
+    pl->set("SpTRSV_Use_SpMV", false, "specify whether to use spmv for supernodal sparse-trianguular solve");
+#endif
+
     valid_params = pl;
   }
 
@@ -913,29 +1017,38 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
 
   deep_copy_or_assign_view(device_trsv_perm_r_, data_.perm_r); // will use device to permute
   deep_copy_or_assign_view(device_trsv_perm_c_, data_.perm_c); // will use device to permute
+  if (data_.options.Equil == SLU::YES) {
+    deep_copy_or_assign_view(device_trsv_R_, data_.R); // will use device to scale
+    deep_copy_or_assign_view(device_trsv_C_, data_.C); // will use device to scale
+  }
 
   // Create handles for U and U^T solves
-  device_khL_.create_sptrsv_handle(
-    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, ld_rhs, true);
-  device_khU_.create_sptrsv_handle(
-    KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_ETREE, ld_rhs, false);
+  if (sptrsv_use_spmv_) {
+    device_khL_.create_sptrsv_handle(
+      KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, ld_rhs, true);
+    device_khU_.create_sptrsv_handle(
+      KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, ld_rhs, false);
+  } else {
+    device_khL_.create_sptrsv_handle(
+      KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG, ld_rhs, true);
+    device_khU_.create_sptrsv_handle(
+      KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_DAG, ld_rhs, false);
+  }
 
-  const bool u_in_csr = true; // TODO: add needed params
-  device_khU_.set_sptrsv_column_major (!u_in_csr);
+  // specify whether to store U in CSR format
+  device_khU_.set_sptrsv_column_major (!sptrsv_u_in_csr_);
 
-  const bool merge = false; // TODO: add needed params
-  device_khL_.set_sptrsv_merge_supernodes (merge);
-  device_khU_.set_sptrsv_merge_supernodes (merge);
+  // specify whether to merge supernodes with similar sparsity structure
+  device_khL_.set_sptrsv_merge_supernodes (sptrsv_merge_supernodes_);
+  device_khU_.set_sptrsv_merge_supernodes (sptrsv_merge_supernodes_);
 
   // specify whether to invert diagonal blocks
-  const bool invert_diag = true; // TODO: add needed params
-  device_khL_.set_sptrsv_invert_diagonal (invert_diag);
-  device_khU_.set_sptrsv_invert_diagonal (invert_diag);
+  device_khL_.set_sptrsv_invert_diagonal (sptrsv_invert_diag_);
+  device_khU_.set_sptrsv_invert_diagonal (sptrsv_invert_diag_);
 
   // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
-  const bool invert_offdiag = false; // TODO: add needed params
-  device_khL_.set_sptrsv_invert_offdiagonal (invert_offdiag);
-  device_khU_.set_sptrsv_invert_offdiagonal (invert_offdiag);
+  device_khL_.set_sptrsv_invert_offdiagonal (sptrsv_invert_offdiag_);
+  device_khU_.set_sptrsv_invert_offdiagonal (sptrsv_invert_offdiag_);
 
   // set etree
   device_khL_.set_sptrsv_etree(data_.parents.data());
@@ -953,12 +1066,24 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
   }
 
   // Do symbolic analysis
-  KokkosSparse::Experimental::sptrsv_symbolic
-    (&device_khL_, &device_khU_, data_.L, data_.U);
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::RCP< Teuchos::Time > SymboTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for SpTrsv symbolic");
+      Teuchos::TimeMonitor numFactTimer(*SymboTimer_);
+#endif
+    KokkosSparse::Experimental::sptrsv_symbolic
+      (&device_khL_, &device_khU_, data_.L, data_.U);
+  }
 
   // Do numerical compute
-  KokkosSparse::Experimental::sptrsv_compute
-    (&device_khL_, &device_khU_, data_.L, data_.U);
+  {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::RCP< Teuchos::Time > NumerTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for SpTrsv numeric");
+      Teuchos::TimeMonitor numFactTimer(*NumerTimer_);
+#endif
+    KokkosSparse::Experimental::sptrsv_compute
+      (&device_khL_, &device_khU_, data_.L, data_.U);
+  }
 #endif // HAVE_AMESOS2_TRIANGULAR_SOLVE
 }
 
@@ -977,33 +1102,65 @@ Superlu<Matrix,Vector>::triangular_solve() const
   auto local_device_bValues = device_bValues_;
   auto local_device_trsv_perm_r = device_trsv_perm_r_;
   auto local_device_trsv_rhs = device_trsv_rhs_;
-  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
-    KOKKOS_LAMBDA(size_t j) {
-    for(size_t k = 0; k < nrhs; ++k) {
-      local_device_trsv_rhs(local_device_trsv_perm_r(j),k) = local_device_bValues(j,k);
-    }
-  });
+
+  if (data_.rowequ) {
+    auto local_device_trsv_R = device_trsv_R_;
+    Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+      KOKKOS_LAMBDA(size_t j) {
+      for(size_t k = 0; k < nrhs; ++k) {
+        local_device_trsv_rhs(local_device_trsv_perm_r(j),k) = local_device_trsv_R(j) * local_device_bValues(j,k);
+      }
+    });
+  } else {
+    Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+      KOKKOS_LAMBDA(size_t j) {
+      for(size_t k = 0; k < nrhs; ++k) {
+        local_device_trsv_rhs(local_device_trsv_perm_r(j),k) = local_device_bValues(j,k);
+      }
+    });
+  }
 
   for(size_t k = 0; k < nrhs; ++k) { // sptrsv_solve does not batch
     auto sub_sol = Kokkos::subview(device_trsv_sol_, Kokkos::ALL, k);
     auto sub_rhs = Kokkos::subview(device_trsv_rhs_, Kokkos::ALL, k);
 
     // do L solve= - numeric (only rhs is modified) on the default device/host space
-    KokkosSparse::Experimental::sptrsv_solve(&device_khL_, sub_sol, sub_rhs);
-
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::RCP< Teuchos::Time > SpLtrsvTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for L solve");
+      Teuchos::TimeMonitor solveTimer(*SpLtrsvTimer_);
+#endif
+      KokkosSparse::Experimental::sptrsv_solve(&device_khL_, sub_sol, sub_rhs);
+    }
     // do L^T solve - numeric (only rhs is modified) on the default device/host space
-    KokkosSparse::Experimental::sptrsv_solve(&device_khU_, sub_rhs, sub_sol);
+    {
+#ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::RCP< Teuchos::Time > SpUtrsvTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for U solve");
+      Teuchos::TimeMonitor solveTimer(*SpUtrsvTimer_);
+#endif
+      KokkosSparse::Experimental::sptrsv_solve(&device_khU_, sub_rhs, sub_sol);
+    }
   } // end loop over rhs vectors
 
   // backward pivot
   auto local_device_xValues = device_xValues_;
   auto local_device_trsv_perm_c = device_trsv_perm_c_;
-  Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
-    KOKKOS_LAMBDA(size_t j) {
-    for(size_t k = 0; k < nrhs; ++k) {
-      local_device_xValues(j,k) = local_device_trsv_rhs(local_device_trsv_perm_c(j),k);
-    }
-  });
+  if (data_.colequ) {
+    auto local_device_trsv_C = device_trsv_C_;
+    Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+      KOKKOS_LAMBDA(size_t j) {
+      for(size_t k = 0; k < nrhs; ++k) {
+        local_device_xValues(j,k) = local_device_trsv_C(j) * local_device_trsv_rhs(local_device_trsv_perm_c(j),k);
+      }
+    });
+  } else {
+    Kokkos::parallel_for(Kokkos::RangePolicy<DeviceExecSpaceType>(0, ld_rhs),
+      KOKKOS_LAMBDA(size_t j) {
+      for(size_t k = 0; k < nrhs; ++k) {
+        local_device_xValues(j,k) = local_device_trsv_rhs(local_device_trsv_perm_c(j),k);
+      }
+    });
+  }
 #endif // HAVE_AMESOS2_TRIANGULAR_SOLVE
 }
 

@@ -62,7 +62,7 @@ C   (LINE1) INDICATES THE APPROPRIATE DIRECTION
      &                  (LINET1 .EQ. LINE1)) THEN
                         CLOSED = .TRUE.
                         IF (NOTIFY) WRITE (*, 10020)NODE, NEWNOD, LINE1
-                        CALL MESAGE ('NOTE - NEITHER 2ND NODE IS ON '//
+                        CALL MESSAGE('NOTE - NEITHER 2ND NODE IS ON '//
      &                     'FIRST LINE')
                      ELSEIF (LINE1 .EQ. LINET1) THEN
                         NODOLD = NEWNOD

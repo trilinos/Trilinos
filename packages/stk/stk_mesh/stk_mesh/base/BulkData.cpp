@@ -4471,18 +4471,13 @@ void BulkData::internal_modification_end_for_change_ghosting()
 {
     internal_resolve_send_ghost_membership();
 
-    m_bucket_repository.internal_default_sort_bucket_entities(should_sort_faces_by_node_ids());
-
     m_modSummary.write_summary(m_meshModification.synchronized_count());
     if(parallel_size() > 1)
     {
         check_mesh_consistency();
     }
 
-    m_bucket_repository.internal_modification_end();
-
-    m_meshModification.set_sync_state_synchronized();
-    notify_finished_mod_end();
+    internal_finish_modification_end(ModEndOptimizationFlag::MOD_END_SORT);
 }
 
 bool BulkData::internal_modification_end_for_change_parts(ModEndOptimizationFlag opt)
@@ -4505,25 +4500,8 @@ bool BulkData::internal_modification_end_for_change_parts(ModEndOptimizationFlag
     }
     m_modSummary.write_summary(m_meshModification.synchronized_count());
 
-    if (opt == ModEndOptimizationFlag::MOD_END_SORT) {
-      m_bucket_repository.internal_default_sort_bucket_entities(should_sort_faces_by_node_ids());
-    }
+    internal_finish_modification_end(opt);
 
-    m_bucket_repository.internal_modification_end();
-
-    for (SelectorBucketMap& selectorBucketMap : m_selector_to_buckets_maps) {
-      for (SelectorBucketMap::iterator itr = selectorBucketMap.begin(), end = selectorBucketMap.end(); itr != end; ++itr) {
-        if (itr->second.empty()) {
-          itr = selectorBucketMap.erase(itr);
-          if (itr == end) {
-            break;
-          }
-        }
-      }
-    }
-
-    m_meshModification.set_sync_state_synchronized();
-    notify_finished_mod_end();
     return true;
 }
 

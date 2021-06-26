@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,6 +35,7 @@
 #include "add_to_log.h" // for add_to_log
 #include "exodusII.h"   // for ex_get_variable_param, etc
 #include "fmt/chrono.h"
+#include "fmt/ostream.h"
 #include "fmt/printf.h"
 #include "matio.h" // for Mat_VarCreate, Mat_VarFree, etc
 #include <cassert> // for assert

@@ -166,8 +166,6 @@ namespace Ioss {
   const VariableType *VariableType::factory(const std::vector<Suffix> &suffices)
   {
     size_t size = suffices.size();
-    // Maximum suffix size is currently 5.
-    assert(size < 100'000);
     const VariableType *ivt = nullptr;
     if (size <= 1) {
       return nullptr; // All storage types must have at least 2 components.
@@ -193,7 +191,7 @@ namespace Ioss {
       size_t width = Ioss::Utils::number_width(size);
       for (size_t i = 0; i < size; i++) {
         std::string digits = fmt::format("{:0{}}", i + 1, width);
-        if (!Ioss::Utils::str_equal(&suffices[i].m_data[0], digits)) {
+        if (!Ioss::Utils::str_equal(suffices[i].m_data, digits)) {
           match = false;
           break;
         }
@@ -219,8 +217,10 @@ namespace Ioss {
     if (static_cast<int>(suffices.size()) == suffix_count()) {
       for (int i = 0; i < suffix_count(); i++) {
         if (suffices[i] != label(i + 1)) {
-          result = false;
-          break;
+          if (!Ioss::Utils::str_equal(suffices[i].m_data, label(i+1))) {
+              result = false;
+              break;
+          }
         }
       }
     }

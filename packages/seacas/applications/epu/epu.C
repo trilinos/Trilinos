@@ -266,8 +266,7 @@ namespace {
                        std::vector<T> &x, std::vector<T> &y, std::vector<T> &z);
 
   template <typename INT>
-  void get_put_nodal_communication_map(Excn::Mesh &global, int start_part, int part_count,
-                                       std::vector<Excn::Mesh> &            local_mesh,
+  void get_put_nodal_communication_map(int part_count,
                                        const std::vector<std::vector<INT>> &local_node_to_global,
                                        const std::vector<int> &processor_map, int output_processor);
 
@@ -285,9 +284,9 @@ namespace {
   void create_output_truth_table(const Excn::Mesh &global, std::vector<U> &global_sets,
                                  Excn::Variables &vars, std::vector<int> &truth_table);
 
-  template <typename T, class U>
+  template <typename T>
   void clear_master_values(Excn::Variables &vars, const Excn::Mesh &global,
-                           std::vector<U> &glob_sets, MasterValueVector<T> &master_values);
+                           MasterValueVector<T> &master_values);
 
   template <typename T, typename U, typename INT>
   void
@@ -974,8 +973,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
     for (int i = 0; i < proc_count; i++) {
       processor_map[i] = i / orig_part_count;
     }
-    get_put_nodal_communication_map(global, start_part, part_count, local_mesh,
-                                    local_node_to_global, processor_map, cycle);
+    get_put_nodal_communication_map(part_count, local_node_to_global, processor_map, cycle);
     LOG("Wrote nodal communication map information...\n");
   }
 
@@ -1373,7 +1371,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
       }
     }
     if (debug_level & 4) {
-      clear_master_values(element_vars, global, glob_blocks, master_element_values);
+      clear_master_values(element_vars, global, master_element_values);
     }
 
     if (element_vars.count(InOut::IN) > 0) {
@@ -1401,7 +1399,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
         }
       }
       if (debug_level & 16) {
-        clear_master_values(sideset_vars, global, glob_ssets, master_sideset_values);
+        clear_master_values(sideset_vars, global, master_sideset_values);
       }
 
       if (sideset_vars.count(InOut::IN) > 0) {
@@ -1423,7 +1421,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
         }
       }
       if (debug_level & 32) {
-        clear_master_values(nodeset_vars, global, glob_nsets, master_nodeset_values);
+        clear_master_values(nodeset_vars, global, master_nodeset_values);
       }
 
       if (nodeset_vars.count(InOut::IN) > 0) {
@@ -1663,8 +1661,7 @@ namespace {
   }
 
   template <typename INT>
-  void get_put_nodal_communication_map(Excn::Mesh &global, int start_part, int part_count,
-                                       std::vector<Excn::Mesh> &            local_mesh,
+  void get_put_nodal_communication_map(int part_count,
                                        const std::vector<std::vector<INT>> &local_node_to_global,
                                        const std::vector<int> &processor_map, int output_processor)
   {
@@ -3570,9 +3567,9 @@ namespace {
     return width + 1;
   }
 
-  template <typename T, typename U>
+  template <typename T>
   void clear_master_values(Excn::Variables &vars, const Excn::Mesh &global,
-                           std::vector<U> &glob_sets, MasterValueVector<T> &master_values)
+                           MasterValueVector<T> &master_values)
   {
     for (int i = 0; i < vars.count(InOut::IN); i++) {
       if (vars.index_[i] > 0) {

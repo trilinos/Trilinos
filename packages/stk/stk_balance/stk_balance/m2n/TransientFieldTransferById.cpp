@@ -31,61 +31,65 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "MtoNTransientFieldTransferById.hpp"
+#include "TransientFieldTransferById.hpp"
+#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
 #include "stk_mesh/base/FieldParallel.hpp"
 #include "stk_mesh/base/Field.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_io/StkIoUtils.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_balance/m2n/SubdomainWriter.hpp"
 #include "Ioss_Region.h"
 
 namespace stk {
-namespace transfer_utils {
+namespace balance {
+namespace m2n {
 
-MtoNTransientFieldTransferById::MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker& inputBroker, unsigned numSubDomain)
+TransientFieldTransferById::TransientFieldTransferById(stk::io::StkMeshIoBroker& inputBroker, unsigned numSubDomain)
   : m_inputBroker(inputBroker),
     m_numSubDomain(numSubDomain)
 {
-  for (const std::string &name : inputBroker.meta_data().entity_rank_names()) {
+  for (const std::string& name : inputBroker.meta_data().entity_rank_names()) {
     stk::mesh::EntityRank rank = inputBroker.meta_data().entity_rank(name);
     m_entityRanks.push_back(rank);
   }
 }
 
-MtoNTransientFieldTransferById::~MtoNTransientFieldTransferById()
+TransientFieldTransferById::~TransientFieldTransferById()
 {
-  for (auto & writerPair : m_subdomainWriters) {
-    SubdomainWriterBase * subdomainWriter = writerPair.second;
+  for (auto& writerPair : m_subdomainWriters) {
+    SubdomainWriterBase* subdomainWriter = writerPair.second;
     delete subdomainWriter;
   }
 
-  for (auto & transferPair : m_subdomainTransfers) {
-    std::vector<TransientTransferByIdForRank *> & subdomainTransfers = transferPair.second;
-    for (TransientTransferByIdForRank * transfer : subdomainTransfers) {
+  for (auto& transferPair : m_subdomainTransfers) {
+    std::vector<stk::transfer_utils::TransientTransferByIdForRank*>& subdomainTransfers = transferPair.second;
+    for (stk::transfer_utils::TransientTransferByIdForRank* transfer : subdomainTransfers) {
       delete transfer;
     }
   }
 }
 
-void MtoNTransientFieldTransferById::initialize_transfer(unsigned subdomain)
+void
+TransientFieldTransferById::initialize_transfer(unsigned subdomain)
 {
   for (stk::mesh::EntityRank rank : m_entityRanks) {
     if (stk::io::get_transient_fields(m_inputBroker.meta_data(), rank).size() > 0) {
       stk::mesh::MetaData& outputMeta = m_subdomainWriters[subdomain]->get_meta_data();
-      TransientTransferByIdForRank *transfer = new TransientTransferByIdForRank(m_inputBroker.meta_data(),
-                                                                                outputMeta,
-                                                                                rank);
+      auto* transfer = new stk::transfer_utils::TransientTransferByIdForRank(m_inputBroker.meta_data(), outputMeta, rank);
       transfer->initialize();
       m_subdomainTransfers[subdomain].push_back(transfer);
     }
   }
 }
 
-void MtoNTransientFieldTransferById::setup_subdomain(M2NOutputSerializerBulkData& outputBulk, const std::string &filename,
-                                                     unsigned subdomain, const stk::io::EntitySharingInfo& nodeSharingInfo,
-                                                     int globalNumNodes, int globalNumElems)
+void
+TransientFieldTransferById::setup_subdomain(OutputSerializerBulkData& outputBulk, const std::string& filename,
+                                            unsigned subdomain, const stk::io::EntitySharingInfo& nodeSharingInfo,
+                                            int globalNumNodes, int globalNumElems)
 {
-  SubdomainWriterBase * subdomainWriter = nullptr;
+  SubdomainWriterBase* subdomainWriter = nullptr;
 
   if (is_valid_subdomain(subdomain)) {
     subdomainWriter = new SubdomainWriter(m_inputBroker, &outputBulk, nodeSharingInfo);
@@ -100,12 +104,13 @@ void MtoNTransientFieldTransferById::setup_subdomain(M2NOutputSerializerBulkData
   initialize_transfer(subdomain);
 }
 
-void MtoNTransientFieldTransferById::transfer_transient_data(unsigned subdomain)
+void
+TransientFieldTransferById::transfer_transient_data(unsigned subdomain)
 {
   stk::mesh::BulkData& bulk = m_subdomainWriters[subdomain]->get_bulk_data();
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 
-  for (TransientTransferByIdForRank *transfer : m_subdomainTransfers[subdomain]) {
+  for (stk::transfer_utils::TransientTransferByIdForRank* transfer : m_subdomainTransfers[subdomain]) {
     transfer->do_transfer();
   }
 
@@ -116,9 +121,10 @@ void MtoNTransientFieldTransferById::transfer_transient_data(unsigned subdomain)
   stk::mesh::copy_owned_to_shared(bulk, transientFields); // FIXME: Do we need this?
 }
 
-void MtoNTransientFieldTransferById::transfer_and_write_transient_data(unsigned subdomain)
+void
+TransientFieldTransferById::transfer_and_write_transient_data(unsigned subdomain)
 {
-  SubdomainWriterBase & subdomainWriter = *m_subdomainWriters.at(subdomain);
+  SubdomainWriterBase& subdomainWriter = *m_subdomainWriters.at(subdomain);
   subdomainWriter.write_mesh();
 
   std::vector<double> inputTimeSteps = m_inputBroker.get_time_steps();
@@ -130,11 +136,12 @@ void MtoNTransientFieldTransferById::transfer_and_write_transient_data(unsigned 
   }
 }
 
-SubdomainWriterBase &
-MtoNTransientFieldTransferById::get_subdomain_writer(unsigned subdomain)
+SubdomainWriterBase&
+TransientFieldTransferById::get_subdomain_writer(unsigned subdomain)
 {
   return *m_subdomainWriters.at(subdomain);
 }
 
+}
 }
 }

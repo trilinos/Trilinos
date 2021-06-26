@@ -618,6 +618,9 @@ namespace {
       else {
         char *name         = names[0];
         name[match_length] = '\0';
+	if (name[match_length-1] == '_') {
+	  name[match_length-1] = '\0';
+	}
         Ioss::Field field(name, Ioss::Field::REAL, type, fld_role, entity_count);
         if (field.is_valid()) {
           fields.push_back(field);

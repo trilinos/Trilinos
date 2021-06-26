@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -57,7 +57,7 @@ C  FIND L1, L2, L3, AND L4
                   GOTO 110
                ENDIF
   100       CONTINUE
-            CALL MESAGE('** PROBLEMS IN LONGEL FINDING L1 **')
+            CALL MESSAGE('** PROBLEMS IN LONGEL FINDING L1 **')
             ERR = .TRUE.
             GOTO 250
   110       CONTINUE
@@ -72,7 +72,7 @@ C  FIND L1, L2, L3, AND L4
                   GOTO 130
                ENDIF
   120       CONTINUE
-            CALL MESAGE('** PROBLEMS IN LONGEL FINDING L2 **')
+            CALL MESSAGE('** PROBLEMS IN LONGEL FINDING L2 **')
             ERR = .TRUE.
             GOTO 250
   130       CONTINUE
@@ -91,7 +91,7 @@ C  FIND L1, L2, L3, AND L4
                   GOTO 150
                ENDIF
   140       CONTINUE
-            CALL MESAGE('** PROBLEMS IN LONGEL FINDING L4/L3 **')
+            CALL MESSAGE('** PROBLEMS IN LONGEL FINDING L4/L3 **')
             ERR = .TRUE.
             GOTO 250
   150       CONTINUE
@@ -110,7 +110,7 @@ C  FIND L1, L2, L3, AND L4
                   GOTO 170
                ENDIF
   160       CONTINUE
-            CALL MESAGE('** PROBLEMS IN LONGEL FINDING L3/L4 **')
+            CALL MESSAGE('** PROBLEMS IN LONGEL FINDING L3/L4 **')
             ERR = .TRUE.
             GOTO 250
   170       CONTINUE
@@ -137,7 +137,7 @@ C  FORMED ELEMENT
                      GOTO 190
                   ENDIF
   180          CONTINUE
-               CALL MESAGE('** PROBLEMS IN LONGEL FINDING NODE3/D11 **')
+               CALL MESSAGE('**PROBLEMS IN LONGEL FINDING NODE3/D11**')
                ERR = .TRUE.
                GOTO 250
   190          CONTINUE
@@ -153,7 +153,7 @@ C  FORMED ELEMENT
                      GOTO 210
                   ENDIF
   200          CONTINUE
-               CALL MESAGE('** PROBLEMS IN LONGEL FINDING NODE3/D11 **')
+               CALL MESSAGE('**PROBLEMS IN LONGEL FINDING NODE3/D11**')
                ERR = .TRUE.
                GOTO 250
   210          CONTINUE
@@ -181,7 +181,7 @@ C  NOW FIND L5
                   ENDIF
                ENDIF
   220       CONTINUE
-            CALL MESAGE('** PROBLEMS IN LONGEL FINDING L5 **')
+            CALL MESSAGE('** PROBLEMS IN LONGEL FINDING L5 **')
             ERR = .TRUE.
             GOTO 250
   230       CONTINUE

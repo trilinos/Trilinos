@@ -551,7 +551,7 @@ C  IF THE LINE HAS NOT BEEN USED BEFORE
   270       CONTINUE
             DO 290 I = IFLB (K), NLPF (K) + IFLB (K) - 1
                IF (LISTLB (1, I) .LE. 0)THEN
-                  CALL MESAGE ('PROBLEMS WITH SIDES IN FLAG LIST'//
+                  CALL MESSAGE('PROBLEMS WITH SIDES IN FLAG LIST'//
      &               ' IN PLINE')
                ELSE
                   IF (LISTLB (1, I) .EQ. KNUM)THEN
@@ -596,7 +596,7 @@ C  NOTE: IT DOES NOT MATTER IF THE LINE HAS BEEN USED BEFORE
   310    CONTINUE
          DO 320 I = IFSB (K), NSPF (K) + IFSB (K) - 1
             IF (LISTSB (1, I) .LT. 0)THEN
-               CALL MESAGE ('PROBLEMS WITH SIDES IN FLAG LIST IN PLINE')
+               CALL MESSAGE('PROBLEMS WITH SIDES IN FLAG LIST IN PLINE')
             ELSE
                IF (LISTSB (1, I) .EQ. KNUM)THEN
                   KSBC = KSBC + ((N - 1) * 3)

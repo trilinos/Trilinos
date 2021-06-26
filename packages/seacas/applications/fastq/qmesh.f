@@ -102,9 +102,9 @@ C  INITIALIZE
 
 C  HEADER
 
-      CALL MESAGE (' ')
-      CALL MESAGE ('MESH PROCESSING BEGUN')
-      CALL MESAGE (' ')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('MESH PROCESSING BEGUN')
+      CALL MESSAGE(' ')
 
 C  FILL IN ANY MISSING INTERVALS ACCORDING TO SIZE AND CHECK THE
 C  VALIDITY OF REGION DATA
@@ -478,8 +478,8 @@ C  SET UP THE LOOP FOR PROCESSING GROUPS
       IF (LGROUP) THEN
   240    CONTINUE
          IF (STEP .AND. (N(22) .GT. 0)) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('STEP PROCESS GROUPS I1 THROUGH I2')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('STEP PROCESS GROUPS I1 THROUGH I2')
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
      &            IIN, RIN)
@@ -521,7 +521,7 @@ C  BEGIN PROCESSING GROUPS
                   IF ((IPNTR2 .GT. 0) .AND. (IREGN(IPNTR2) .LT. 0)) THEN
                      L = IPNTR2
                      NOROOM = .FALSE.
-                     CALL MESAGE (' ')
+                     CALL MESSAGE(' ')
                      WRITE (*, 10080) ABS(IREGN(L))
 
 C  CALCULATE THE PERIMETER OF THE REGION
@@ -647,13 +647,13 @@ C  USE THE PAVING TECHNIQUE TO FILL THE INITIAL REGION
                               CALL MDEROR (6)
                               STOP ' '
                            END IF
-                           CALL MESAGE
+                           CALL MESSAGE
      &                        ('REDIMENSIONING NEEDED - PLEASE WAIT')
                            IF (STEP) THEN
-                              CALL MESAGE
+                              CALL MESSAGE
      &                           ('CURRENT PROCESSING SCHEME IS SAVED')
                            ELSE
-                              CALL MESAGE
+                              CALL MESSAGE
      &                           ('CURRENT SCHEME WILL BE REPEATED')
                            END IF
                            GO TO 260
@@ -675,11 +675,11 @@ C  PROCESS A "NORMAL" REGION
 C  FLAG THE REGION IF AN ERROR HAS OCCURRED
 
                      IF (ERR) THEN
-                        CALL MESAGE ('ERROR IN INITIAL GRID GENERATION')
-                        CALL MESAGE ('** REGION PROCESSING ABORTED **')
+                        CALL MESSAGE('ERROR IN INITIAL GRID GENERATION')
+                        CALL MESSAGE('** REGION PROCESSING ABORTED **')
                         CALL PLTBEL
                         CALL PLTFLU
-                        CALL MESAGE (' ')
+                        CALL MESSAGE(' ')
                         IREGN(L) = ABS(IREGN(L))
                         IF (ISLIST(J) .EQ. IREGN(L)) THEN
                            ADDLNK = .TRUE.
@@ -743,13 +743,13 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP SUB-REGION
                            CALL MDEROR (6)
                            STOP ' '
                         END IF
-                        CALL MESAGE
+                        CALL MESSAGE
      &                     ('REDIMENSIONING NEEDED - PLEASE WAIT')
                         IF (STEP) THEN
-                           CALL MESAGE
+                           CALL MESSAGE
      &                        ('CURRENT PROCESSING SCHEME IS SAVED')
                         ELSE
-                           CALL MESAGE
+                           CALL MESSAGE
      &                        ('CURRENT SCHEME WILL BE REPEATED')
                         END IF
                         GO TO 260
@@ -764,7 +764,7 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP SUB-REGION
                            LLL = LLLOLD
                            IF (IANS) GO TO 260
                         END IF
-                        CALL MESAGE ('REGION PROCESSING ABORTED')
+                        CALL MESSAGE('REGION PROCESSING ABORTED')
                         GO TO 270
                      ELSE IF (ICODE .EQ. IEXIT) THEN
                         FINAL = J .EQ. J2
@@ -785,9 +785,9 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP SUB-REGION
      &                     MXNL, MXND, IA(K(4)), IA(K(9)), IA(K(12)),
      &                     IA(K(13)), IA(K(21)), NOROOM, ERR)
                         IF (ERR) THEN
-                           CALL MESAGE
+                           CALL MESSAGE
      &                        ('GROUP SCHEME PROCESSING NOT POSSIBLE')
-                           CALL MESAGE ('GROUP PROCESSING ABORTED')
+                           CALL MESSAGE('GROUP PROCESSING ABORTED')
                            GO TO 300
                         END IF
                      ELSE IF (ICODE .EQ. IOVER) THEN
@@ -809,8 +809,8 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP REGION
                NNNOLD = 0
                KKKOLD = 0
                RECT = .FALSE.
-               CALL MESAGE (' ')
-               CALL MESAGE ('GROUP SCHEME PROCESSING BEGUN')
+               CALL MESSAGE(' ')
+               CALL MESSAGE('GROUP SCHEME PROCESSING BEGUN')
                CALL LTSORT (MR, LINKSC, ABS(IREGN(IGPNTR)), IPNTR,
      &            ADDLNK)
                CALL RGNSCH (MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN, STEP,
@@ -821,14 +821,14 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP REGION
                IF (ICODE .EQ. IEXIT) THEN
                   CALL CHKKXL (MXND, IA(K(10)), IA(K(11)), LLL, ERR)
                   IF (ERR) THEN
-                     CALL MESAGE ('ERROR IN CHECK OF KXL ARRAY')
+                     CALL MESSAGE('ERROR IN CHECK OF KXL ARRAY')
                      IF (STEP) THEN
                         CALL INTRUP
      &                     ('WOULD YOU LIKE TO REPROCESS GROUP',
      &                     IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                         IF (IANS) GO TO 250
                      END IF
-                     CALL MESAGE ('GROUP PROCESSING ABORTED')
+                     CALL MESSAGE('GROUP PROCESSING ABORTED')
                      GO TO 300
                   END IF
                   BAR = .FALSE.
@@ -839,14 +839,14 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP REGION
      &               IA(K(15)), IA(K(20)), KSBC, LCON, ISBOUN, LINKL,
      &               NSPF, IFSB, LISTSB, LINKSB, LLL, BAR, ERR)
                   IF (ERR) THEN
-                     CALL MESAGE ('ERROR IN SORTING SIDE BOUNDARIES')
+                     CALL MESSAGE('ERROR IN SORTING SIDE BOUNDARIES')
                      IF (STEP) THEN
                         CALL INTRUP
      &                     ('WOULD YOU LIKE TO REPROCESS GROUP',
      &                     IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                         IF (IANS) GO TO 250
                      END IF
-                     CALL MESAGE ('GROUP PROCESSING ABORTED')
+                     CALL MESSAGE('GROUP PROCESSING ABORTED')
                      GO TO 300
                   END IF
                   CALL MKUSED (MXNL, MP, ML, IA(K(4)), IPOINT, NINT,
@@ -927,12 +927,12 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP REGION
                      CALL MDEROR (6)
                      STOP ' '
                   END IF
-                  CALL MESAGE
+                  CALL MESSAGE
      &               ('REDIMENSIONING NEEDED - PLEASE WAIT')
                   IF (STEP) THEN
-                     CALL MESAGE ('CURRENT PROCESSING SCHEME IS SAVED')
+                     CALL MESSAGE('CURRENT PROCESSING SCHEME IS SAVED')
                   ELSE
-                     CALL MESAGE ('CURRENT SCHEME WILL BE REPEATED')
+                     CALL MESSAGE('CURRENT SCHEME WILL BE REPEATED')
                   END IF
                   GO TO 250
                ELSE IF (ERR) THEN
@@ -941,19 +941,19 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP REGION
      &                  IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                      IF (IANS) GO TO 250
                   END IF
-                  CALL MESAGE ('GROUP PROCESSING ABORTED')
+                  CALL MESSAGE('GROUP PROCESSING ABORTED')
                   GO TO 300
                ELSE IF (ICODE .EQ. IEXIT) THEN
                   CALL CHKKXL (MXND, IA(K(10)), IA(K(11)), LLL, ERR)
                   IF (ERR) THEN
-                     CALL MESAGE ('ERROR IN CHECK OF KXL ARRAY')
+                     CALL MESSAGE('ERROR IN CHECK OF KXL ARRAY')
                      IF (STEP) THEN
                         CALL INTRUP
      &                     ('WOULD YOU LIKE TO REPROCESS GROUP',
      &                     IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                         IF (IANS) GO TO 250
                      END IF
-                     CALL MESAGE ('GROUP PROCESSING ABORTED')
+                     CALL MESSAGE('GROUP PROCESSING ABORTED')
                      GO TO 300
                   END IF
                   BAR = .FALSE.
@@ -964,14 +964,14 @@ C  BEGIN FULL SCHEME CONTROL FOR A GROUP REGION
      &               IA(K(15)), IA(K(20)), KSBC, LCON, ISBOUN, LINKL,
      &               NSPF, IFSB, LISTSB, LINKSB, LLL, BAR, ERR)
                   IF (ERR) THEN
-                     CALL MESAGE ('ERROR IN SORTING SIDE BOUNDARIES')
+                     CALL MESSAGE('ERROR IN SORTING SIDE BOUNDARIES')
                      IF (STEP) THEN
                         CALL INTRUP
      &                     ('WOULD YOU LIKE TO REPROCESS GROUP',
      &                     IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                         IF (IANS) GO TO 250
                      END IF
-                     CALL MESAGE ('GROUP PROCESSING ABORTED')
+                     CALL MESSAGE('GROUP PROCESSING ABORTED')
                      GO TO 300
                   END IF
                   CALL MKUSED (MXNL, MP, ML, IA(K(4)), IPOINT, NINT,
@@ -1023,8 +1023,8 @@ C  SET UP THE LOOP FOR PROCESSING REGIONS
 
   320 CONTINUE
       IF (STEP .AND. (N(22) .GT. 0)) THEN
-         CALL MESAGE (' ')
-         CALL MESAGE ('STEP PROCESS REGIONS I1 THROUGH I2')
+         CALL MESSAGE(' ')
+         CALL MESSAGE('STEP PROCESS REGIONS I1 THROUGH I2')
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN, IIN,
      &         RIN)
@@ -1050,7 +1050,7 @@ C  BEGIN PROCESSING REGIONS
          IF (L .GT. 0) THEN
          IF (IREGN(L) .LT. 0) THEN
             NOROOM = .FALSE.
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             WRITE (*, 10090) ABS(IREGN(L))
 
 C  CALCULATE THE PERIMETER OF THE REGION
@@ -1168,13 +1168,13 @@ C  USE THE PAVING TECHNIQUE TO FILL THE INITIAL REGION
                      CALL MDEROR (6)
                      STOP ' '
                   END IF
-                  CALL MESAGE
+                  CALL MESSAGE
      &               ('REDIMENSIONING NEEDED - PLEASE WAIT')
                   IF (STEP) THEN
-                     CALL MESAGE
+                     CALL MESSAGE
      &                  ('CURRENT PROCESSING SCHEME IS SAVED')
                   ELSE
-                     CALL MESAGE
+                     CALL MESSAGE
      &                  ('CURRENT SCHEME WILL BE REPEATED')
                   END IF
                   GO TO 330
@@ -1194,9 +1194,9 @@ C  PROCESS A "NORMAL" REGION
 C  FLAG THE REGION IF AN ERROR HAS OCCURRED
 
             IF (ERR) THEN
-               CALL MESAGE ('ERROR IN INITIAL GRID GENERATION')
-               CALL MESAGE ('** REGION PROCESSING ABORTED **')
-               CALL MESAGE (' ')
+               CALL MESSAGE('ERROR IN INITIAL GRID GENERATION')
+               CALL MESSAGE('** REGION PROCESSING ABORTED **')
+               CALL MESSAGE(' ')
                CALL PLTBEL
                CALL PLTFLU
                IREGN(L) = ABS(IREGN(L))
@@ -1262,12 +1262,12 @@ C  BEGIN FULL SCHEME CONTROL
                   CALL MDEROR (6)
                   STOP ' '
                END IF
-               CALL MESAGE
+               CALL MESSAGE
      &            ('REDIMENSIONING NEEDED - PLEASE WAIT')
                IF (STEP) THEN
-                  CALL MESAGE ('CURRENT PROCESSING SCHEME IS SAVED')
+                  CALL MESSAGE('CURRENT PROCESSING SCHEME IS SAVED')
                ELSE
-                  CALL MESAGE ('CURRENT SCHEME WILL BE REPEATED')
+                  CALL MESSAGE('CURRENT SCHEME WILL BE REPEATED')
                END IF
                GO TO 330
             ELSE IF (ERR) THEN
@@ -1276,18 +1276,18 @@ C  BEGIN FULL SCHEME CONTROL
      &               IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                   IF (IANS) GO TO 330
                END IF
-               CALL MESAGE ('REGION PROCESSING ABORTED')
+               CALL MESSAGE('REGION PROCESSING ABORTED')
                GO TO 350
             ELSE IF (ICODE .EQ. IEXIT) THEN
                CALL CHKKXL (MXND, IA(K(10)), IA(K(11)), LLL, ERR)
                IF (ERR) THEN
-                  CALL MESAGE ('ERROR IN CHECK OF KXL ARRAY')
+                  CALL MESSAGE('ERROR IN CHECK OF KXL ARRAY')
                   IF (STEP) THEN
                      CALL INTRUP ('WOULD YOU LIKE TO REPROCESS REGION',
      &                  IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                      IF (IANS) GO TO 330
                   END IF
-                  CALL MESAGE ('REGION PROCESSING ABORTED')
+                  CALL MESSAGE('REGION PROCESSING ABORTED')
                   GO TO 350
                END IF
                BAR = .FALSE.
@@ -1298,13 +1298,13 @@ C  BEGIN FULL SCHEME CONTROL
      &            KSBC, LCON, ISBOUN, LINKL, NSPF, IFSB, LISTSB, LINKSB,
      &            LLL, BAR, ERR)
                IF (ERR) THEN
-                  CALL MESAGE ('ERROR IN SORTING SIDE BOUNDARIES')
+                  CALL MESSAGE('ERROR IN SORTING SIDE BOUNDARIES')
                   IF (STEP) THEN
                      CALL INTRUP ('WOULD YOU LIKE TO REPROCESS REGION',
      &                  IANS, MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
                      IF (IANS) GO TO 330
                   END IF
-                  CALL MESAGE ('REGION PROCESSING ABORTED')
+                  CALL MESSAGE('REGION PROCESSING ABORTED')
                   GO TO 350
                END IF
                CALL MKUSED (MXNL, MP, ML, IA(K(4)), IPOINT, NINT, LINKP,
@@ -1353,7 +1353,7 @@ C  SET UP THE LOOP FOR PROCESSING BAR SETS
   370 CONTINUE
   380 CONTINUE
       IF (STEP .AND. (N(21) .GT. 0)) THEN
-         CALL MESAGE ('STEP PROCESS BAR SETS I1 THROUGH I2')
+         CALL MESSAGE('STEP PROCESS BAR SETS I1 THROUGH I2')
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN, IIN,
      &         RIN)
@@ -1396,10 +1396,10 @@ C  SEE IF THIS BAR SET IS FOR SPRINGS
      &         REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX,
      &         EMIN, GRAPH)
             IF (ERR) THEN
-               CALL MESAGE ('ERROR IN 2-NODE SPRING ELEMENT '//
+               CALL MESSAGE('ERROR IN 2-NODE SPRING ELEMENT '//
      &            'GENERATION')
-               CALL MESAGE ('BAR SET PROCESSING ABORTED')
-               CALL MESAGE (' ')
+               CALL MESSAGE('BAR SET PROCESSING ABORTED')
+               CALL MESSAGE(' ')
                CALL PLTBEL
                CALL PLTFLU
                IBARST(L) = ABS(IBARST(L))
@@ -1458,9 +1458,9 @@ C  CALCULATE NODES IN THE BAR SET LINE
      &            REYMIN, REYMAX, IDIVIS, SIZMIN, EMAX, EMIN, GRAPH,
      &            DXMAX)
                IF (ERR) THEN
-                  CALL MESAGE ('ERROR IN 2-NODE ELEMENT GENERATION')
-                  CALL MESAGE ('BAR SET PROCESSING ABORTED')
-                  CALL MESAGE (' ')
+                  CALL MESSAGE('ERROR IN 2-NODE ELEMENT GENERATION')
+                  CALL MESSAGE('BAR SET PROCESSING ABORTED')
+                  CALL MESSAGE(' ')
                   CALL PLTBEL
                   CALL PLTFLU
                   IBARST(L) = ABS(IBARST(L))
@@ -1508,9 +1508,9 @@ C  WRITE OUT THE BAR SET ELEMENTS AND BOUNDARY CONDITIONS
      &         IA(K(20)), KSBC, LCON, ISBOUN, LINKL, NSPF, IFSB,
      &         LISTSB, LINKSB, KKK, BAR, ERR)
             IF (ERR) THEN
-               CALL MESAGE ('ERROR IN SORTING SIDE BOUNDARIES')
-               CALL MESAGE ('BAR SET PROCESSING ABORTED')
-               CALL MESAGE (' ')
+               CALL MESSAGE('ERROR IN SORTING SIDE BOUNDARIES')
+               CALL MESSAGE('BAR SET PROCESSING ABORTED')
+               CALL MESSAGE(' ')
                IBARST(L) = ABS(IBARST(L))
                DO 420 M = 1, N(9)
                   IF (ABS(IRPB(M)) .EQ. IBARST(L)) THEN
@@ -1567,7 +1567,7 @@ C  IF STEPPING THROUGH, SEE IF ANY MORE BAR SETS ARE TO BE PROCESSED
                IANS = .FALSE.
                ICOM = ICOM + 1
             ELSE
-               CALL MESAGE (' ')
+               CALL MESSAGE(' ')
                CALL INTRUP ('PROCESS ADDITIONAL BAR SETS', IANS, MCOM,
      &            ICOM, JCOM, CIN, IIN, RIN, KIN)
             END IF

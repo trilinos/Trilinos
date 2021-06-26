@@ -77,7 +77,7 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
-
+#include "MueLu_Aggregates.hpp"
 
 
 #ifdef HAVE_MUELU_INTREPID2
@@ -107,7 +107,8 @@ namespace MueLu {
                                                                             type_ == "LINESMOOTHING_BLOCK_RELAXATION"        ||
                                                                             type_ == "LINESMOOTHING_BLOCK RELAXATION"        ||
                                                                             type_ == "LINESMOOTHING_BLOCKRELAXATION"         ||
-                                                                            type_ == "TOPOLOGICAL");
+                                                                            type_ == "TOPOLOGICAL"                           ||
+                                                                            type_ == "AGGREGATE");
     this->declareConstructionOutcome(!isSupported, "Ifpack2 does not provide the smoother '" + type_ + "'.");
     if (isSupported)
       SetParameterList(paramList);
@@ -190,6 +191,11 @@ namespace MueLu {
       // for the topological smoother, we require an element to node map:
       this->Input(currentLevel, "pcoarsen: element to node map");
     }
+    else if (type_ == "AGGREGATE")
+    {
+      // Aggregate smoothing needs aggregates
+      this->Input(currentLevel,"Aggregates");
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -266,6 +272,9 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "'TOPOLOGICAL' smoother choice requires Intrepid2");
 #endif
     }
+    else if (type_ == "AGGREGATE") 
+      SetupAggregate(currentLevel);
+
     else
     {
       SetupGeneric(currentLevel);
@@ -381,6 +390,54 @@ namespace MueLu {
       prec_->initialize();
     }
 
+    prec_->compute();
+  }
+
+
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupAggregate(Level& currentLevel) {
+
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+    if (this->IsSetup() == true) {
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): Setup() has already been called" << std::endl;
+      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupAggregate(): reuse of this type is not available, reverting to full construction" << std::endl;    
+    }
+
+    this->GetOStream(Statistics0) << "Ifpack2Smoother: Using Aggregate Smoothing"<<std::endl;
+
+    RCP<Aggregates> aggregates = Factory::Get<RCP<Aggregates> >(currentLevel,"Aggregates");
+
+    RCP<const LOMultiVector> vertex2AggId = aggregates->GetVertex2AggId();
+    ArrayRCP<LO> aggregate_ids = rcp_const_cast<LOMultiVector>(vertex2AggId)->getDataNonConst(0);
+    ArrayRCP<LO> dof_ids;
+
+    // We need to unamalgamate, if the FixedBlockSize > 1
+    if(A_->GetFixedBlockSize() > 1) {
+      LO blocksize = (LO) A_->GetFixedBlockSize();
+      dof_ids.resize(aggregate_ids.size() * blocksize);
+      for(LO i=0; i<(LO)aggregate_ids.size(); i++) {
+        for(LO j=0; j<(LO)blocksize; j++)
+          dof_ids[i*blocksize+j] = aggregate_ids[i];    
+      }
+    }
+    else {
+      dof_ids = aggregate_ids;
+    }
+        
+    
+    paramList.set("partitioner: map", dof_ids);
+    paramList.set("partitioner: type", "user");
+    paramList.set("partitioner: overlap", 0);
+    paramList.set("partitioner: local parts", (int)aggregates->GetNumAggregates());
+
+    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tA = Utilities::Op2NonConstTpetraRow(A_);
+    
+    type_ = "BLOCKRELAXATION";
+    prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+    SetPrecParameters();
+    prec_->initialize();
     prec_->compute();
   }
 

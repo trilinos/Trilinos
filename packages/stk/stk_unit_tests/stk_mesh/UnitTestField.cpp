@@ -1170,6 +1170,16 @@ TEST_F(LateFieldFixture, addLateIntElementField)
   setup_add_late_field<int>(stk::topology::ELEM_RANK);
 }
 
+TEST_F(LateFieldFixture, disable_late_fields)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
+  setup_add_late_field<int>(stk::topology::ELEM_RANK);
+
+  get_meta().disable_late_fields();
+  stk::mesh::Field<int>& f = declare_field<int>("another_late_field", stk::topology::ELEM_RANK);
+  EXPECT_ANY_THROW(stk::mesh::put_field_on_mesh(f, get_meta().universal_part(), static_cast<int*>(nullptr)));
+}
+
 TEST_F(LateFieldFixture, addLateIntNodalField_multipleBuckets)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;

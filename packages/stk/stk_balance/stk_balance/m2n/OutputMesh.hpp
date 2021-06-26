@@ -31,49 +31,41 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#include "balanceMtoN.hpp"
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldBase.hpp>
-#include <stk_balance/internal/privateDeclarations.hpp>
-#include <stk_balance/internal/entityDataToField.hpp>
-#include <stk_balance/m2n/M2NDecomposer.hpp>
+#ifndef STK_BALANCE_M2N_OUTPUTMESH_HPP
+#define STK_BALANCE_M2N_OUTPUTMESH_HPP
 
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include "MxNutils.hpp"
-#include "MtoNRebalancer.hpp"
+#include <stk_balance/m2n/TransientFieldTransferById.hpp>
+#include <stk_balance/m2n/OutputSerializerBulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <vector>
+
+namespace stk { namespace balance { namespace m2n { class InputMesh; }}}
 
 namespace stk {
 namespace balance {
 namespace m2n {
 
-using DecomposerPtr = std::shared_ptr<M2NDecomposer>;
-
-DecomposerPtr make_decomposer(stk::mesh::BulkData& bulkData,
-                              const stk::balance::M2NBalanceSettings& balanceSettings)
+class OutputMesh
 {
-  DecomposerPtr decomposer;
-  if (balanceSettings.get_use_nested_decomp()) {
-    decomposer = std::make_shared<M2NDecomposerNested>(bulkData, balanceSettings);
-  }
-  else {
-    decomposer = std::make_shared<M2NDecomposer>(bulkData, balanceSettings);
-  }
-  return decomposer;
-}
+public:
+  OutputMesh(const InputMesh& inputMesh,
+             const std::vector<unsigned>& targetSubdomains);
+  ~OutputMesh() = default;
 
-bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker,
-                   const stk::balance::M2NBalanceSettings & balanceSettings,
-                   int numSteps,
-                   double timeStep)
-{
-    DecomposerPtr decomposer = make_decomposer(ioBroker.bulk_data(), balanceSettings);
-    MtoNRebalancer m2nRebalancer(ioBroker, *decomposer, balanceSettings);
-    m2nRebalancer.rebalance(numSteps, timeStep);
+  void transfer_and_write();
 
-    return true;
-}
+  OutputSerializerBulkData& get_bulk() { return m_bulk; }
+  stk::mesh::MetaData& get_meta() { return m_meta; }
+
+private:
+  void clone_input_mesh();
+  void move_subdomain_to_owning_processor();
+
+  const InputMesh& m_inputMesh;
+  const std::vector<unsigned>& m_targetSubdomains;
+  stk::mesh::MetaData m_meta;
+  OutputSerializerBulkData m_bulk;
+};
+
 }}}
+#endif

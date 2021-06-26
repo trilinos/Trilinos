@@ -128,7 +128,7 @@ C  D - DELETE WORST RHOMBUS
             IF (NOROOM) THEN
                GO TO 140
             ELSE IF (ERR) THEN
-               CALL MESAGE ('ERROR DURING SHAPE SORTING OF ELEMENTS')
+               CALL MESSAGE('ERROR DURING SHAPE SORTING OF ELEMENTS')
                GO TO 140
             END IF
             DOTILT = .FALSE.
@@ -140,16 +140,16 @@ C  D - DELETE WORST RHOMBUS
          IF (NOROOM) THEN
             GO TO 140
          ELSE IF (ERR) THEN
-            CALL MESAGE ('ERROR DURING DELETION OF ELEMENT')
+            CALL MESSAGE('ERROR DURING DELETION OF ELEMENT')
             GO TO 140
          END IF
          IF (DONE) THEN
             DOSMOO = .TRUE.
             RECT = .FALSE.
             ACTIVE = .TRUE.
-            CALL MESAGE ('ELEMENT DELETED')
+            CALL MESSAGE('ELEMENT DELETED')
          ELSE
-            CALL MESAGE ('NO ELEMENT(S) DELETED')
+            CALL MESSAGE('NO ELEMENT(S) DELETED')
          END IF
 
 C  E - EXIT SAVING SCHEME AND REGION
@@ -191,7 +191,7 @@ C  F - CONTROL UNDER- OR OVER-RELAXATION
          DOSMOO = .TRUE.
          WRITE(*, 10030) RO
 
-C  H - INDICATES A HELP MESSAGE RESPONSE IF STEPPING
+C  H - INDICATES A HELP MESSAGERESPONSE IF STEPPING
 
       ELSE IF ((SCHSTR(J:J) .EQ. 'H') .OR.
      &   (SCHSTR(J:J) .EQ. 'h')) THEN
@@ -244,19 +244,19 @@ C  N - NECKLACE
          IF (NOROOM) THEN
             GO TO 140
          ELSE IF (ERR) THEN
-            CALL MESAGE ('ERROR DURING NECKLACING OF REGION')
+            CALL MESSAGE('ERROR DURING NECKLACING OF REGION')
             GO TO 140
          END IF
          ACTIVE = .TRUE.
          RECT = .FALSE.
          DOSMOO = .TRUE.
-         CALL MESAGE ('NECKLACE INSTALLED')
+         CALL MESSAGE('NECKLACE INSTALLED')
 
 C  O - ORIGINATE THE MESH AGAIN.
 
       ELSE IF ((SCHSTR(J:J) .EQ. 'O') .OR.
      &   (SCHSTR(J:J) .EQ. 'o')) THEN
-         CALL MESAGE ('PROCESSING RETURNED TO ORIGINAL')
+         CALL MESSAGE('PROCESSING RETURNED TO ORIGINAL')
          SCHSTR = ' '
          ICODE = IOVER
          GO TO 140
@@ -269,7 +269,7 @@ C  P - PLOT
             CALL PLOTL (MXND, XN, YN, NXL, ABS(IREGN(L)), XMIN, XMAX,
      &         YMIN, YMAX, LLL, DEV1)
          ELSE
-            CALL MESAGE ('PLOTTING AVAILABLE ONLY IN INTERACTIVE '//
+            CALL MESSAGE('PLOTTING AVAILABLE ONLY IN INTERACTIVE '//
      &         'STEP PROCESSING')
          END IF
 
@@ -277,7 +277,7 @@ C  Q - QUIT STEP PROCESSING WITHOUT SAVING MESH
 
       ELSE IF ((SCHSTR(J:J) .EQ. 'Q') .OR.
      &   (SCHSTR(J:J) .EQ. 'q')) THEN
-         CALL MESAGE  ('REGION PROCESSING ABORTED WITH "QUIT"')
+         CALL MESSAGE ('REGION PROCESSING ABORTED WITH "QUIT"')
          ICODE = IQUIT
          GO TO 140
 
@@ -292,7 +292,7 @@ C  R - RESTRUCTURE
          IF (NOROOM) THEN
             GO TO 140
          ELSE IF (ERR) THEN
-            CALL MESAGE ('ERROR DURING RESTRUCTURE OF REGION')
+            CALL MESSAGE('ERROR DURING RESTRUCTURE OF REGION')
             GO TO 140
          END IF
          DOTILT = .FALSE.
@@ -300,7 +300,7 @@ C  R - RESTRUCTURE
             DOSMOO = .TRUE.
             RECT = .FALSE.
             ACTIVE = .TRUE.
-            CALL MESAGE ('RESTRUCTURE COMPLETED')
+            CALL MESSAGE('RESTRUCTURE COMPLETED')
          END IF
 
 C  S - SMOOTH
@@ -312,7 +312,7 @@ C  S - SMOOTH
                IF (RECT) THEN
                   CALL REPSMO (MXND, XN, YN, LXN, NNN, NNNOLD, NIT, EPS,
      &               RO, M1)
-                  CALL MESAGE ('EQUIPOTENTIAL SMOOTHING COMPLETED')
+                  CALL MESSAGE('EQUIPOTENTIAL SMOOTHING COMPLETED')
                ELSE
                   IF ((NACALL/5)*5 .EQ. NACALL) THEN
                      CALL ARELAX (MXND, XN, YN, LXK, KXL, NXL, LLL,
@@ -321,11 +321,11 @@ C  S - SMOOTH
                   CALL APALSM (MXND, XN, YN, LXK, KXL, NXL, LXN, NNN,
      &               NNNOLD, NIT, TOL, RO*ARFACT, ALPHA, ERR)
                   IF (ERR) THEN
-                     CALL MESAGE ('ERROR DURING AREA PULL & '//
+                     CALL MESSAGE('ERROR DURING AREA PULL & '//
      &                  'LAPLACIAN SMOOTHING')
                      GO TO 140
                   END IF
-                  CALL MESAGE ('AREA PULL AND LAPLACIAN SMOOTHING '//
+                  CALL MESSAGE('AREA PULL AND LAPLACIAN SMOOTHING '//
      &               'COMPLETED')
                   NACALL = NACALL + 1
                END IF
@@ -336,49 +336,49 @@ C  S - SMOOTH
                CALL APALSM (MXND, XN, YN, LXK, KXL, NXL, LXN, NNN,
      &            NNNOLD, NIT, TOL, RO*ARFACT, ALPHA, ERR)
                IF (ERR) THEN
-                  CALL MESAGE
+                  CALL MESSAGE
      &               ('ERROR DURING AREA PULL & LAPLACIAN SMOOTHING')
                   GO TO 140
                END IF
-               CALL MESAGE
+               CALL MESSAGE
      &            ('AREA PULL AND LAPLACIAN SMOOTHING COMPLETED')
                NACALL = NACALL + 1
             ELSE IF (ISTYPE .EQ. 3) THEN
                CALL CIAPAL (MXND, XN, YN, LXK, KXL, NXL, LXN, NNN,
      &            NNNOLD, NIT, EPS, RO, 0.5)
-               CALL MESAGE ('CENTROID INVERSE PUSH AND LAPLACIAN '//
+               CALL MESSAGE('CENTROID INVERSE PUSH AND LAPLACIAN '//
      &            'SMOOTHING COMPLETED')
             ELSE IF (ISTYPE .EQ. 4) THEN
                CALL CASMO (MXND, XN, YN, LXK, KXL, NXL, LXN, NNN,
      &            NNNOLD, NIT, EPS, RO)
-               CALL MESAGE
+               CALL MESSAGE
      &            ('CENTROID AREA PULL SMOOTHING COMPLETED')
             ELSE IF (ISTYPE .EQ. 5) THEN
                IF (RECT) THEN
                   CALL REPSMO (MXND, XN, YN, LXN, NNN, NNNOLD, NIT, EPS,
      &               RO, M1)
-                  CALL MESAGE ('EQUIPOTENTIAL SMOOTHING COMPLETED')
+                  CALL MESSAGE('EQUIPOTENTIAL SMOOTHING COMPLETED')
                ELSE
                   CALL SMOGS (MXND, XN, YN, NXL, LXN, NNN, NNNOLD, NIT,
      &               EPS, RO)
-                  CALL MESAGE ('LAPLACIAN SMOOTHING COMPLETED')
+                  CALL MESSAGE('LAPLACIAN SMOOTHING COMPLETED')
                END IF
             ELSE IF (ISTYPE .EQ. 6) THEN
                CALL L2SMO (MXND, XN, YN, NXL, LXN, NNN, NNNOLD, NIT,
      &            EPS, RO)
-               CALL MESAGE ('LENGTH WEIGHTED LAPLACIAN SMOOTHING '//
+               CALL MESSAGE('LENGTH WEIGHTED LAPLACIAN SMOOTHING '//
      &            'COMPLETED')
             ELSE IF (ISTYPE .EQ. 7) THEN
                CALL ISOLAP (MXND, XN, YN, LXK, KXL, NXL, LXN, NNN,
      &            NNNOLD, WF, NIT, EPS, RO)
-               CALL MESAGE
+               CALL MESSAGE
      &            ('LAPLACIAN-ISOPARAMETRIC SMOOTHING COMPLETED')
             END IF
             DOSMOO = .FALSE.
             ACTIVE = .TRUE.
          ELSE
-            CALL MESAGE ('MESH AND/OR SMOOTHING PARAMETERS HAVE')
-            CALL MESAGE ('NOT CHANGED - NO SMOOTHING ATTEMPTED')
+            CALL MESSAGE('MESH AND/OR SMOOTHING PARAMETERS HAVE')
+            CALL MESSAGE('NOT CHANGED - NO SMOOTHING ATTEMPTED')
          END IF
 
 C  T - TRIANGULAR REGION - QUAD MESH GENERATION
@@ -415,7 +415,7 @@ C  W - RESTRUCTURE WORST POSSIBLE ELEMENT ONLY
          IF (NOROOM) THEN
             GO TO 140
          ELSE IF (ERR) THEN
-            CALL MESAGE ('ERROR DURING WORST ELEMENT RESTRUCTURE')
+            CALL MESSAGE('ERROR DURING WORST ELEMENT RESTRUCTURE')
             GO TO 140
          END IF
          DOTILT = .FALSE.
@@ -423,7 +423,7 @@ C  W - RESTRUCTURE WORST POSSIBLE ELEMENT ONLY
             DOSMOO = .TRUE.
             RECT = .FALSE.
             ACTIVE = .TRUE.
-            CALL MESAGE ('WORST ELEMENT RESTRUCTURED')
+            CALL MESSAGE('WORST ELEMENT RESTRUCTURED')
          END IF
 
 C  X - PAVING REGION - QUAD MESH GENERATION
@@ -450,7 +450,7 @@ C  Z - PROCESS REGION WITH HOLES
       ELSE IF ((SCHSTR(J:J) .EQ. 'Z') .OR.
      &   (SCHSTR(J:J) .EQ. 'z')) THEN
          IF (NHPR(L) .EQ. 0) THEN
-            CALL MESAGE ('NO HOLES DEFINED IN THIS REGION')
+            CALL MESSAGE('NO HOLES DEFINED IN THIS REGION')
             GO TO 130
          ELSE IF (JJHOLE .EQ. 0) THEN
             JJHOLE = IFHOLE(L)
@@ -459,7 +459,7 @@ C  Z - PROCESS REGION WITH HOLES
             JJHOLE = JJHOLE + 1
          END IF
          IF (JJHOLE .GT. MXHOLE) THEN
-            CALL MESAGE ('ALL HOLES PROCESSED FOR REGION')
+            CALL MESSAGE('ALL HOLES PROCESSED FOR REGION')
             GO TO 130
          END IF
          ADDLNK = .FALSE.
@@ -493,9 +493,9 @@ C  JHOLE IS NEGATIVE FOR REGIONS ON BODY CARD WITH LESS THAN THREE INTERVALS
                END IF
                IF ((SCHOLE(1:1) .EQ. 'H') .OR.
      &            (SCHOLE(1:1) .EQ. 'h')) THEN
-                  CALL MESAGE (' ')
+                  CALL MESSAGE(' ')
                   CALL HELP_FQ (13)
-                  CALL MESAGE (' ')
+                  CALL MESSAGE(' ')
                   GO TO 110
                END IF
             END IF
@@ -526,7 +526,7 @@ C  JHOLE IS NEGATIVE FOR REGIONS ON BODY CARD WITH LESS THAN THREE INTERVALS
          IF (NOROOM) THEN
             GO TO 140
          ELSE IF (ERR) THEN
-            CALL MESAGE ('HOLE PROCESSING FAILED')
+            CALL MESSAGE('HOLE PROCESSING FAILED')
             GO TO 140
          ELSE
             DOSMOO = .TRUE.
@@ -545,7 +545,7 @@ C  JHOLE IS NEGATIVE FOR REGIONS ON BODY CARD WITH LESS THAN THREE INTERVALS
                ADDLNK = .FALSE.
             END IF
             if (ipntr .gt. 0) SCHEME(IPNTR) = SCHOLE
-            CALL MESAGE ('HOLE PROCESSING COMPLETED')
+            CALL MESSAGE('HOLE PROCESSING COMPLETED')
          END IF
   130    CONTINUE
 
@@ -553,7 +553,7 @@ C  ( - START LOOP
 
       ELSE IF (SCHSTR(J:J) .EQ. '(') THEN
          IF (NLEFTP .GE. 10) THEN
-            CALL MESAGE ('TOO MANY NESTED LOOPS IN THE SCHEME')
+            CALL MESSAGE('TOO MANY NESTED LOOPS IN THE SCHEME')
             GO TO 140
          END IF
          NLEFTP = NLEFTP + 1
@@ -565,9 +565,9 @@ C  ) - END OF LOOP - CHECK FOR ACTIVITY
 
       ELSE IF (SCHSTR(J:J) .EQ. ')') THEN
          IF (NLEFTP .LE. 0) THEN
-            CALL MESAGE ('THERE IS NO LEFT PARENTHESIS TO')
-            CALL MESAGE ('MATCH THE RIGHT PARENTHESIS')
-            CALL MESAGE ('")" IS THUS IGNORED')
+            CALL MESSAGE('THERE IS NO LEFT PARENTHESIS TO')
+            CALL MESSAGE('MATCH THE RIGHT PARENTHESIS')
+            CALL MESSAGE('")" IS THUS IGNORED')
          ELSE
 
 C  LOOP BACK
@@ -602,50 +602,50 @@ C  1, 2, ..., 6  SMOOTHING TYPE DECLARATION
             ISTYPE = 1
             DOSMOO = .TRUE.
          END IF
-         CALL MESAGE ('SMOOTHING TYPE SET TO "EQUIPOTENTIAL"')
+         CALL MESSAGE('SMOOTHING TYPE SET TO "EQUIPOTENTIAL"')
       ELSE IF (SCHSTR(J:J) .EQ. '2') THEN
          IF (ISTYPE .NE. 2) THEN
             ISTYPE = 2
             DOSMOO = .TRUE.
          END IF
-         CALL MESAGE ('SMOOTHING TYPE SET TO "AREA PULL & LAPLACIAN"')
+         CALL MESSAGE('SMOOTHING TYPE SET TO "AREA PULL & LAPLACIAN"')
       ELSE IF (SCHSTR(J:J) .EQ. '3') THEN
          IF (ISTYPE .NE. 3) THEN
             ISTYPE = 3
             DOSMOO = .TRUE.
          END IF
-         CALL MESAGE ('SMOOTHING TYPE SET TO "CENTROID INVERSE AREA '//
+         CALL MESSAGE('SMOOTHING TYPE SET TO "CENTROID INVERSE AREA '//
      &      'PUSH & LAPLACIAN"')
       ELSE IF (SCHSTR(J:J) .EQ. '4') THEN
          IF (ISTYPE .NE. 4) THEN
             ISTYPE = 4
             DOSMOO = .TRUE.
          END IF
-         CALL MESAGE ('SMOOTHING TYPE SET TO "CENTROID AREA PULL"')
+         CALL MESSAGE('SMOOTHING TYPE SET TO "CENTROID AREA PULL"')
       ELSE IF (SCHSTR(J:J) .EQ. '5') THEN
          IF (ISTYPE .NE. 5) THEN
             ISTYPE = 5
             DOSMOO = .TRUE.
          END IF
-         CALL MESAGE ('SMOOTHING TYPE SET TO "LAPLACIAN"')
+         CALL MESSAGE('SMOOTHING TYPE SET TO "LAPLACIAN"')
       ELSE IF (SCHSTR(J:J) .EQ. '6') THEN
          IF (ISTYPE .NE. 6) THEN
             ISTYPE = 6
             DOSMOO = .TRUE.
          END IF
-         CALL MESAGE ('SMOOTHING TYPE SET TO "LENGTH WEIGHTED '//
+         CALL MESSAGE('SMOOTHING TYPE SET TO "LENGTH WEIGHTED '//
      &      'LAPLACIAN"')
       ELSE IF (SCHSTR(J:J) .EQ. '7') THEN
          IF (ISTYPE .NE. 7) THEN
             ISTYPE = 7
             DOSMOO = .TRUE.
          END IF
-         CALL MESAGE ('SMOOTHING TYPE SET TO "LAPLACIAN-ISOPARAMETRIC"')
+         CALL MESSAGE('SMOOTHING TYPE SET TO "LAPLACIAN-ISOPARAMETRIC"')
 
 C  BLANK SCHEME FLAG
 
       ELSE IF (SCHSTR(J:J) .EQ. ' ') THEN
-         IF (J .NE. 1) CALL MESAGE ('BLANK SCHEME COMMAND IGNORED')
+         IF (J .NE. 1) CALL MESSAGE('BLANK SCHEME COMMAND IGNORED')
 
 C  ILLEGAL SCHEME FLAG
 
@@ -659,7 +659,7 @@ C  GET NEXT SCHEME COMMAND
       IF (J .LE. LENSCH) THEN
          GO TO 100
       ELSE IF (STEP) THEN
-         CALL MESAGE ('------------------------')
+         CALL MESSAGE('------------------------')
          IF (ICOM .LE. JCOM) THEN
             ADDSTR = CIN(ICOM)
             ICOM = ICOM + 1
@@ -671,7 +671,7 @@ C  GET NEXT SCHEME COMMAND
          IF ((LENSCH .EQ. 1) .AND. (SCHSTR(J - 1:J - 1) .EQ. ' '))
      &      LENSCH = LENSCH - 1
          IF (LENSCH + LENA .GT. 72) THEN
-            CALL MESAGE ('ERROR - SCHEME TOO LONG')
+            CALL MESSAGE('ERROR - SCHEME TOO LONG')
             GO TO 140
          END IF
          SCHSTR(LENSCH + 1:LENSCH + LENA) = ADDSTR(1:LENA)

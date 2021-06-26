@@ -183,7 +183,7 @@ static void search_back(int new_search); /* look back for current string */
 static void search_forw(int new_search); /* look forw for current string */
 static void io_gl_beep(void);            /* try to play a system beep sound */
 
-static int io_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab);
+static int io_gl_do_tab_completion(char *buf, int *loc, size_t bufsize);
 
 static char *copy_string(char *dest, char const *source, long int elements)
 {
@@ -729,7 +729,7 @@ char *io_getline_int(const char *prompt)
         if (io_gl_completion_proc) {
           tmp                              = io_gl_pos;
           io_gl_buf[sizeof(io_gl_buf) - 1] = '\0';
-          loc = io_gl_do_tab_completion(io_gl_buf, &tmp, sizeof(io_gl_buf), (lastch == '\t'));
+          loc = io_gl_do_tab_completion(io_gl_buf, &tmp, sizeof(io_gl_buf));
           io_gl_buf[sizeof(io_gl_buf) - 1] = '\0';
           if (loc >= 0 || tmp != io_gl_pos)
             io_gl_fixup(io_gl_prompt, /* loc */ -2, tmp);
@@ -1535,7 +1535,7 @@ static void io_gl_beep(void)
 #endif
 } /* io_gl_beep */
 
-static int io_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
+static int io_gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
 {
   char * startp;
   size_t startoff;

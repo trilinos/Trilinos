@@ -107,7 +107,7 @@ C  FIND THE LINE NUMBER IT BELONGS TO
 C  FIND THE ELEMENT BOUNDARY FLAG IF THERE IS ONE
 
                IF (LTEST.LE.0) THEN
-                  CALL MESAGE (' ERROR IN SEARCHING NXL FOR '//
+                  CALL MESSAGE(' ERROR IN SEARCHING NXL FOR '//
      &               'ELEMENT BCC')
                   RETURN
                ELSE
@@ -121,7 +121,7 @@ C  AND GET THE NEXT LINK  (NFLAG)
                      CALL LTSORT (ML, LINKSB, IFLAG, L, ADDLNK)
                      DO 170 JJ = IFSB (L), IFSB (L) + NSPF (L) - 1
                         IF (LISTSB (1, JJ) .LT. 0) THEN
-                           CALL MESAGE ('PROBLEMS WITH SIDES IN '//
+                           CALL MESSAGE('PROBLEMS WITH SIDES IN '//
      &                        'FLAG LIST IN GETSBC')
                         ELSE
                            IF (LISTSB (1, JJ) .EQ. LTEST) THEN

@@ -134,7 +134,7 @@ C  NOW GENERATE ALL THE HOLE PERIMETERS
             IF (NL1 .GE. 0 .AND. NL + NL1 .LE. MAXNL) THEN
                NL = NL + NL1
             ELSE
-               CALL MESAGE ('** PROBLEMS IN FMSCHM ADDING HOLE LINES '//
+               CALL MESSAGE('** PROBLEMS IN FMSCHM ADDING HOLE LINES '//
      &            'TO REGION LINE LIST **')
                ERR = .TRUE.
                GO TO 130
