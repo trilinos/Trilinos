@@ -30,32 +30,34 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#include "MxNutils.hpp"
+#ifndef STK_MESH_ENTITY_FIELD_DATA_HPP
+#define STK_MESH_ENTITY_FIELD_DATA_HPP
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/internal/privateDeclarations.hpp>
+#include "Kokkos_Core.hpp"
 
 namespace stk {
-namespace balance {
-namespace internal {
+namespace mesh {
 
-void fill_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings, stk::mesh::EntityProcVec &decomp)
-{
-    std::vector<stk::mesh::Selector> selectors = { bulk.mesh_meta_data().universal_part() };
-    stk::balance::internal::calculateGeometricOrGraphBasedDecomp(bulk, selectors,
-                                                                 bulk.parallel(), num_partitions,
-                                                                 graphSettings, decomp);
+template<typename T>
+class EntityFieldData {
+public:
+  KOKKOS_FUNCTION EntityFieldData(T* dataPtr, unsigned length, unsigned componentStride=1)
+  : fieldDataPtr(dataPtr), fieldDataLength(length), fieldComponentStride(componentStride)
+  {}
+  KOKKOS_DEFAULTED_FUNCTION ~EntityFieldData() = default;
+
+  KOKKOS_FUNCTION unsigned size() const { return fieldDataLength; }
+  KOKKOS_FUNCTION T& operator[](unsigned idx) { return fieldDataPtr[idx*fieldComponentStride]; }
+  KOKKOS_FUNCTION const T& operator[](unsigned idx) const { return fieldDataPtr[idx*fieldComponentStride]; }
+
+private:
+  T* fieldDataPtr;
+  unsigned fieldDataLength;
+  unsigned fieldComponentStride;
+};
+
+}
 }
 
-stk::mesh::EntityProcVec get_element_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings)
-{
-    stk::mesh::EntityProcVec decomp;
-    fill_decomp(num_partitions, bulk, graphSettings, decomp);
-    return decomp;
-}
-
-}}}
+#endif

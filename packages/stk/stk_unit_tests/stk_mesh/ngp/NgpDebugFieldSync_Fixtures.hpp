@@ -241,6 +241,15 @@ public:
     create_element<T, void>(elemParts, stkField);
   }
 
+  void delete_element(const std::vector<stk::mesh::EntityId> & elemIds)
+  {
+    get_bulk().modification_begin();
+    for (const stk::mesh::EntityId & elemId : elemIds) {
+      get_bulk().destroy_entity(get_bulk().get_entity(stk::topology::ELEM_RANK, elemId));
+    }
+    get_bulk().modification_end();
+  }
+
   void change_element_parts(const std::vector<EntityIdAddRemovePart>& elemAddRemoveParts)
   {
     for (const auto & elemAddRemovePart : elemAddRemoveParts) {
@@ -256,6 +265,23 @@ public:
     get_bulk().modification_begin();
     change_element_parts(elemAddRemoveParts);
     get_bulk().modification_end();
+  }
+
+  void batch_modify_element_part_membership(const std::vector<EntityIdAddRemovePart>& elemAddRemoveParts)
+  {
+    stk::mesh::EntityVector elemsToChange;
+    std::vector<stk::mesh::PartVector> elemsAddParts;
+    std::vector<stk::mesh::PartVector> elemsRmParts;
+
+    for (const auto & elemAddRemovePart : elemAddRemoveParts) {
+      elemsToChange.push_back(get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id));
+      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
+      elemsAddParts.push_back(addParts);
+      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
+      elemsRmParts.push_back(removeParts);
+    }
+
+    get_bulk().batch_change_entity_parts(elemsToChange, elemsAddParts, elemsRmParts);
   }
 
   template <typename T>

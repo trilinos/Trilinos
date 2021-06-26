@@ -30,26 +30,60 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-#ifndef STK_BALANCE_MTON_HPP
-#define STK_BALANCE_MTON_HPP
 
-#include <stk_mesh/base/Field.hpp>
-#include <string>
+#ifndef STK_MESH_NGPFIELD_AUX_HPP
+#define STK_MESH_NGPFIELD_AUX_HPP
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace io { class StkMeshIoBroker; } }
-namespace stk { namespace balance { class M2NBalanceSettings; } }
+#include "stk_mesh/base/NgpSpaces.hpp"
+#include <Kokkos_Core.hpp>
 
 namespace stk {
-namespace balance {
-namespace m2n {
+namespace mesh {
+namespace impl {
 
-bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker,
-                   const stk::balance::M2NBalanceSettings & balanceSettings,
-                   int numSteps = -1,
-                   double timeStep = 0.0);
+enum NgpFieldSyncMode {
+  INVALID = 0,
+  HOST_TO_DEVICE = 1,
+  HOST_TO_DEVICE_ASYNC = 2,
+  DEVICE_TO_HOST = 3,
+  DEVICE_TO_HOST_ASYNC = 4
+};
 
-}}}
+struct AsyncCopyState {
 
+  AsyncCopyState()
+  : execSpace(Kokkos::DefaultExecutionSpace()),
+    syncMode(INVALID)
+  {}
+
+  KOKKOS_FUNCTION
+  AsyncCopyState(const AsyncCopyState& state)
+  : execSpace(state.execSpace),
+    syncMode(state.syncMode)
+  {}
+
+  void set_state(const ExecSpace& space, NgpFieldSyncMode mode)
+  {
+    execSpace = space;
+    syncMode = mode;
+  }
+
+  void set_execution_space(const ExecSpace& space)
+  {
+    execSpace = space;
+  }
+
+  void reset_state()
+  {
+    execSpace = Kokkos::DefaultExecutionSpace();
+    syncMode = INVALID;
+  }
+
+  ExecSpace execSpace;
+  NgpFieldSyncMode syncMode;
+};
+
+}
+}
+}
 #endif

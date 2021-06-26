@@ -30,57 +30,59 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-#ifndef M2NDECOMPOSER_HPP
-#define M2NDECOMPOSER_HPP
 
-#include <stk_mesh/base/Types.hpp>
+#ifndef M2N_TRANSIENTFIELDTRANSFERBYID_HPP
+#define M2N_TRANSIENTFIELDTRANSFERBYID_HPP
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace balance { class M2NBalanceSettings; } }
+#include "stk_mesh/base/Types.hpp"
+#include "stk_io/IossBridge.hpp"
+#include <vector>
+#include <map>
+
+namespace stk { namespace io { class StkMeshIoBroker; } }
+namespace stk { namespace transfer_utils { class TransientTransferByIdForRank; } }
+namespace stk { namespace balance { namespace m2n { class SubdomainWriterBase; } } }
+namespace stk { namespace balance { namespace m2n { class OutputSerializerBulkData; } } }
 
 namespace stk {
 namespace balance {
 namespace m2n {
 
-class M2NDecomposer
+constexpr unsigned INVALID_SUBDOMAIN = std::numeric_limits<unsigned>::max();
+
+inline bool is_valid_subdomain(unsigned subdomain) {
+  return subdomain != INVALID_SUBDOMAIN;
+}
+
+class TransientFieldTransferById
 {
 public:
-  M2NDecomposer(stk::mesh::BulkData & bulkData,
-                const M2NBalanceSettings & balanceSettings);
-  virtual ~M2NDecomposer() = default;
+  TransientFieldTransferById() = delete;
+  TransientFieldTransferById(stk::io::StkMeshIoBroker& inputBroker, unsigned numSubDomain);
 
-  virtual stk::mesh::EntityProcVec get_partition();
+  ~TransientFieldTransferById();
 
-  virtual std::vector<unsigned> map_new_subdomains_to_original_processors();
+  void setup_subdomain(OutputSerializerBulkData& bulk, const std::string& filename,
+                       unsigned subdomain, const stk::io::EntitySharingInfo& nodeSharingInfo,
+                       int global_num_nodes, int global_num_elems);
 
-  unsigned num_required_subdomains_for_each_proc();
+  void transfer_transient_data(unsigned subdomain);
+  void transfer_and_write_transient_data(unsigned subdomain);
 
-protected:
-  stk::mesh::BulkData & m_bulkData;
-  const stk::balance::M2NBalanceSettings & m_balanceSettings;
-};
-
-class M2NDecomposerNested : public M2NDecomposer
-{
-public:
-  M2NDecomposerNested(stk::mesh::BulkData & bulkData,
-                      const stk::balance::M2NBalanceSettings & balanceSettings);
-  virtual ~M2NDecomposerNested() override = default;
-
-  virtual stk::mesh::EntityProcVec get_partition() override;
-
-  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
+  SubdomainWriterBase& get_subdomain_writer(unsigned subdomain);
 
 private:
-  std::string get_initial_subdomain_part_name(int subdomainId);
-  void declare_all_initial_subdomain_parts();
-  void move_entities_into_initial_subdomain_part();
+  void initialize_transfer(unsigned subDomainInfo);
 
-  int m_numFinalSubdomainsPerProc;
+  stk::io::StkMeshIoBroker& m_inputBroker;
+  unsigned m_numSubDomain;
+  std::map<unsigned, SubdomainWriterBase*> m_subdomainWriters;
+  std::map<unsigned, std::vector<stk::transfer_utils::TransientTransferByIdForRank*>> m_subdomainTransfers;
+  std::vector<stk::mesh::EntityRank> m_entityRanks;
 };
 
 }
 }
 }
-#endif // M2NDECOMPOSER_HPP
+
+#endif // TRANSIENTFIELDTRANSFERBYID_HPP

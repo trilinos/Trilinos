@@ -31,43 +31,67 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+#ifndef DECOMPOSER_HPP
+#define DECOMPOSER_HPP
 
-#ifndef NGPTYPES_HPP
-#define NGPTYPES_HPP
+#include <stk_mesh/base/Types.hpp>
 
-#include <stk_mesh/base/NgpSpaces.hpp>
-#include "stk_mesh/base/Types.hpp"
-#include <Kokkos_Core.hpp>
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace balance { class M2NBalanceSettings; } }
 
 namespace stk {
-namespace mesh {
+namespace balance {
+namespace m2n {
 
-using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, MemSpace>;
-using EntityKeyViewType         = Kokkos::View<EntityKey*, MemSpace>;
-using EntityViewType            = Kokkos::View<Entity*, MemSpace>;
-using BucketConnectivityType    = Kokkos::View<Entity**, MemSpace>;
-using UnsignedViewType          = Kokkos::View<unsigned*, MemSpace>;
-using BoolViewType              = Kokkos::View<bool*, MemSpace>;
-using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, MemSpace>;
-using PartOrdinalViewType       = Kokkos::View<PartOrdinal*, MemSpace>;
-using PermutationViewType       = Kokkos::View<Permutation*, MemSpace>;
-using FastSharedCommMapViewType = Kokkos::View<FastMeshIndex*, MemSpace>;
-using HostMeshIndexType         = Kokkos::View<FastMeshIndex*>::HostMirror;
-using MeshIndexType             = Kokkos::View<const FastMeshIndex*, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+class Decomposer
+{
+public:
+  Decomposer(stk::mesh::BulkData & bulkData,
+             const M2NBalanceSettings & balanceSettings);
+  virtual ~Decomposer() = default;
 
-template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, MemSpace>;
-template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, HostPinnedSpace>;
+  virtual stk::mesh::EntityProcVec get_partition() = 0;
+  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() = 0;
 
-template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  unsigned num_required_subdomains_for_each_proc();
 
-#ifdef KOKKOS_ENABLE_CUDA
-#define ORDER_INDICES(i,j) j,i
-#else
-#define ORDER_INDICES(i,j) i,j
-#endif
+protected:
+  stk::mesh::BulkData & m_bulkData;
+  const stk::balance::M2NBalanceSettings & m_balanceSettings;
+};
+
+
+class DefaultDecomposer : public Decomposer
+{
+public:
+  DefaultDecomposer(stk::mesh::BulkData & bulkData,
+                    const M2NBalanceSettings & balanceSettings);
+  virtual ~DefaultDecomposer() override = default;
+
+  virtual stk::mesh::EntityProcVec get_partition() override;
+  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
+};
+
+
+class NestedDecomposer : public Decomposer
+{
+public:
+  NestedDecomposer(stk::mesh::BulkData & bulkData,
+                   const stk::balance::M2NBalanceSettings & balanceSettings);
+  virtual ~NestedDecomposer() override = default;
+
+  virtual stk::mesh::EntityProcVec get_partition() override;
+  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
+
+private:
+  std::string get_initial_subdomain_part_name(int subdomainId);
+  void declare_all_initial_subdomain_parts();
+  void move_entities_into_initial_subdomain_part();
+
+  int m_numFinalSubdomainsPerProc;
+};
 
 }
 }
-
-#endif // NGPTYPES_HPP
+}
+#endif // M2NDECOMPOSER_HPP

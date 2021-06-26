@@ -302,7 +302,7 @@ TEST_F(StkBalancePartitioning, 4Elem2ProcMesh_Geometric_SeparateCommunicator_Emp
   test_partition_element_distribution({1, 1});
 }
 
-TEST_F(StkBalancePartitioning, 6Elem1ProcMesh_EntireDomain_Scotch)
+TEST_F(StkBalancePartitioning, DISABLED_UntilZoltan2MemoryLeakIsFixed_6Elem1ProcMesh_EntireDomain_Scotch)
 {
   if (stk::parallel_machine_size(get_comm()) != 1) GTEST_SKIP();
 
@@ -313,7 +313,7 @@ TEST_F(StkBalancePartitioning, 6Elem1ProcMesh_EntireDomain_Scotch)
 }
 
 
-TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_EntireDomain_Scotch)
+TEST_F(StkBalancePartitioning, DISABLED_UntilZoltan2MemoryLeakIsFixed_6Elem2ProcMesh_EntireDomain_Scotch)
 {
   if (stk::parallel_machine_size(get_comm()) != 2) GTEST_SKIP();
 
