@@ -32,6 +32,7 @@ enum ValueTypes : uint8_t
   VECTOR_DOUBLE,
   VECTOR_STRING,
   VECTOR_PAIR_STRING_INT,
+  VECTOR_PAIR_STRING_DOUBLE,
   INVALID_TYPE
 };
 
@@ -46,6 +47,7 @@ template<>    inline ValueTypes to_value_type<std::vector<float>>() { return VEC
 template<>    inline ValueTypes to_value_type<std::vector<double>>() { return VECTOR_DOUBLE; }
 template<>    inline ValueTypes to_value_type<std::vector<std::string>>() { return VECTOR_STRING; }
 template<>    inline ValueTypes to_value_type<std::vector<std::pair<std::string,int>>>() { return VECTOR_PAIR_STRING_INT; }
+template<>    inline ValueTypes to_value_type<std::vector<std::pair<std::string,double>>>() { return VECTOR_PAIR_STRING_DOUBLE; }
 template<>    inline ValueTypes to_value_type<char*>() { return INVALID_TYPE; }
 
 struct Value
@@ -78,6 +80,7 @@ void execute(CommandType& command, Value& value)
     case VECTOR_DOUBLE: command.template execute<std::vector<double>>(value); break;
     case VECTOR_STRING: command.template execute<std::vector<std::string>>(value); break;
     case VECTOR_PAIR_STRING_INT: command.template execute<std::vector<std::pair<std::string,int>>>(value); break;
+    case VECTOR_PAIR_STRING_DOUBLE: command.template execute<std::vector<std::pair<std::string,double>>>(value); break;
     default: ThrowErrorMsg("Found unsupported type: " << value.type << " while executing command '" << command.name() << "'"); break;
   }
 }

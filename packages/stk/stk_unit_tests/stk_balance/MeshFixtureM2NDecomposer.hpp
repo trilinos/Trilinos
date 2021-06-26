@@ -35,9 +35,9 @@
 #define MESHFIXTUREM2NDECOMPOSER_HPP
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_balance/m2n/balanceMtoN.hpp>
+#include <stk_balance/m2n/m2nRebalance.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/m2n/M2NDecomposer.hpp>
+#include <stk_balance/m2n/Decomposer.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/environment/EnvData.hpp>
@@ -111,7 +111,7 @@ protected:
     return stk::is_true_on_all_procs(get_comm(), isNested);
   }
 
-  stk::balance::m2n::M2NDecomposer * m_decomposer;
+  stk::balance::m2n::Decomposer * m_decomposer;
   stk::balance::M2NBalanceSettings m_balanceSettings;
 };
 

@@ -65,7 +65,7 @@ C  FIRST-TIMERS CLAIM THE NODE
                   LHASH = LHASH + 1
                   IF (LHASH .EQ. MDIM) LHASH = 1
                   IF (LHASH.NE.LKEEP) GOTO 110
-                  CALL MESAGE ('HASH SCHEME OVERFLOW IN KXNBDY')
+                  CALL MESSAGE('HASH SCHEME OVERFLOW IN KXNBDY')
                   STOP
                ENDIF
 

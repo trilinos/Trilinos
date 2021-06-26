@@ -46,6 +46,15 @@
 namespace stk {
 namespace mesh {
 
+namespace impl {
+
+template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+inline void internal_fence_no_sync_to_host(NgpField<T, NgpDebugger>& ngpField)
+{
+  ngpField.asyncCopyState.execSpace.fence();
+}
+}
+
 inline void ngp_field_fence(MetaData& meta)
 {
   auto fields = meta.get_fields();

@@ -25,7 +25,7 @@ C***********************************************************************
       CALL GNXKA (MXND, XN, YN, K, NODES, AREA, LXK, NXL, CCW)
       IF ( (NODE1 .NE. NODES(1)) .AND. (NODE1 .NE. NODES(2)) .AND.
      &   (NODE1 .NE. NODES(3)) .AND. (NODE1 .NE. NODES(4)) ) THEN
-         CALL MESAGE ('** PROBLEMS IN DELEM - NODE1 IS NOT IN '//
+         CALL MESSAGE('** PROBLEMS IN DELEM - NODE1 IS NOT IN '//
      &      'ELEMENT K **')
          ERR = .TRUE.
          GOTO 190
@@ -38,7 +38,7 @@ C  AND INSURE THAT THE NODE TO BE DELETED IS NOT A BOUNDARY NODE
       IF (LXN(2, NODES (1)) .LE. 0) CALL NXKORD (NODES, NODES (3))
       IF (LXN(2, NODES (1)) .LE. 0) THEN
          ERR = .TRUE.
-         CALL MESAGE ('** BOUNDARY ELEMENT CANNOT BE DELETED '//
+         CALL MESSAGE('** BOUNDARY ELEMENT CANNOT BE DELETED '//
      &      'IN DELEM **')
          GOTO 190
       END IF
@@ -66,11 +66,11 @@ C  FIND THE LINES ASSOCIATED WITH THE ELEMENT TO BE DELETED
          CALL FNDLNK (MXND, LXK, NXL, K, NODES(I), NODES(J), LINES(I),
      &      ERR)
          IF (ERR) THEN
-            CALL MESAGE ('** PROBLEMS IN DELEM GETTING NODE LINES **')
+            CALL MESSAGE('** PROBLEMS IN DELEM GETTING NODE LINES **')
             GOTO 190
          ENDIF
          IF (LINES(I) .EQ. 0) THEN
-            CALL MESAGE ('** PROBLEMS IN DELEM WITH 0 NODE LINES **')
+            CALL MESSAGE('** PROBLEMS IN DELEM WITH 0 NODE LINES **')
             ERR = .TRUE.
             GOTO 190
          END IF

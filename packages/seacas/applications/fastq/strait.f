@@ -40,8 +40,8 @@ C***********************************************************************
 
   100 CONTINUE
       IF (N (2).GT.0)THEN
-         CALL MESAGE (' ')
-         CALL MESAGE ('STRAIGHTEN LINES <I1> THROUGH <I2> PARALLEL TO'//
+         CALL MESSAGE(' ')
+         CALL MESSAGE('STRAIGHTEN LINES <I1> THROUGH <I2> PARALLEL TO'//
      &      ' THE <X OR Y> AXIS')
          IF (ICOM.GT.JCOM)THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN, IIN,
@@ -81,7 +81,7 @@ C  STRAIGHTEN THE LINE IN THE Y DIRECTION
                         COOR (1, IP2)=RIN (ICOM)
                         ICOM=ICOM+1
                      ELSE
-                        CALL MESAGE ('BAD INPUT - TRY AGAIN')
+                        CALL MESSAGE('BAD INPUT - TRY AGAIN')
                         ICOM=ICOM+1
                         GOTO 110
                      ENDIF
@@ -115,7 +115,7 @@ C  STRAIGHTEN THE LINE IN THE X DIRECTION
                         COOR (2, IP2)=RIN (ICOM)
                         ICOM=ICOM+1
                      ELSE
-                        CALL MESAGE ('BAD INPUT - TRY AGAIN')
+                        CALL MESSAGE('BAD INPUT - TRY AGAIN')
                         ICOM=ICOM+1
                         GOTO 130
                      ENDIF
@@ -123,14 +123,14 @@ C  STRAIGHTEN THE LINE IN THE X DIRECTION
                ENDIF
   140       CONTINUE
          ELSE
-            CALL MESAGE ('DIRECTION MUST BE "X" OR "Y"')
+            CALL MESSAGE('DIRECTION MUST BE "X" OR "Y"')
             ICOM=ICOM+1
          ENDIF
       ELSE
-         CALL MESAGE (' ')
-         CALL MESAGE ('*------------------------------*')
-         CALL MESAGE ('NO LINES IN THE CURRENT DATABASE')
-         CALL MESAGE ('*------------------------------*')
+         CALL MESSAGE(' ')
+         CALL MESSAGE('*------------------------------*')
+         CALL MESSAGE('NO LINES IN THE CURRENT DATABASE')
+         CALL MESSAGE('*------------------------------*')
          RETURN
       ENDIF
       GOTO 100

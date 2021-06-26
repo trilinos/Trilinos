@@ -275,7 +275,7 @@ namespace {
     }
   }
 
-  void validate_decomposition(std::vector<Iocgns::StructuredZoneData *> &zones, int proc_count)
+  void validate_decomposition(std::vector<Iocgns::StructuredZoneData *> &zones)
   {
 
     // Each active zone must be on a processor
@@ -346,8 +346,7 @@ namespace {
     }
   }
 
-  bool validate_symmetric_communications(std::vector<Iocgns::StructuredZoneData *> &zones,
-                                         int                                        proc_count)
+  bool validate_symmetric_communications(std::vector<Iocgns::StructuredZoneData *> &zones)
   {
     std::set<std::pair<std::pair<std::string, int>, std::pair<std::string, int>>> comms;
     for (const auto &adam_zone : zones) {
@@ -759,14 +758,14 @@ int main(int argc, char *argv[])
 
   describe_decomposition(zones, orig_zone_count, interFace);
 
-  auto valid = validate_symmetric_communications(zones, interFace.proc_count);
+  auto valid = validate_symmetric_communications(zones);
   if (!valid) {
     fmt::print(stderr, fg(fmt::color::red),
                "\nERROR: Zone Grid Communication interfaces are not symmetric.  There is an error "
                "in the decomposition.\n");
   }
 
-  validate_decomposition(zones, interFace.proc_count);
+  validate_decomposition(zones);
 
   cleanup(zones);
   fmt::print(stderr,

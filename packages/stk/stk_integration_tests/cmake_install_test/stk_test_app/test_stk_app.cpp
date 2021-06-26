@@ -5,6 +5,7 @@
 
 #include "src/test_stk_simd.hpp"
 #include "src/test_stk_io.hpp"
+#include "src/test_stk_tools.hpp"
 
 int main(int argc, char** argv)
 {
@@ -39,6 +40,8 @@ int main(int argc, char** argv)
   test_stk_lib::test_stk_simd(MPI_COMM_WORLD);
 
   test_stk_lib::test_stk_io(MPI_COMM_WORLD, meshSource, useAutoDecomp);
+
+  test_stk_lib::test_stk_tools();
 
   MPI_Finalize();
 

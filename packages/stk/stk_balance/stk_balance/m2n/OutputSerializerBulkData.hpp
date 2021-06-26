@@ -30,26 +30,27 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#ifndef STK_MXN_UTILS_H
-#define STK_MXN_UTILS_H
+#ifndef OUTPUTSERIALIZERBULKDATA_HPP
+#define OUTPUTSERIALIZERBULKDATA_HPP
 
-#include <stk_balance/balanceUtils.hpp>
-#include <vector>
-#include <limits>
-#include <stk_mesh/base/Types.hpp>
-
-namespace stk { namespace mesh { class BulkData; }}
+#include "stk_mesh/base/BulkData.hpp"
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
 
-void fill_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings, stk::mesh::EntityProcVec &decomp);
-stk::mesh::EntityProcVec get_element_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings);
+class OutputSerializerBulkData : public stk::mesh::BulkData
+{
+public:
+  OutputSerializerBulkData(stk::mesh::MetaData& mesh_meta_data, ParallelMachine parallel);
+  virtual ~OutputSerializerBulkData() override = default;
 
-}}}
+  void switch_to_serial_mesh();
+};
 
-#endif
+}
+}
+}
 
+#endif // OUTPUTSERIALIZERBULKDATA_HPP

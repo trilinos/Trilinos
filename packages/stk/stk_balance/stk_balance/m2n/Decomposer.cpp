@@ -31,7 +31,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#include "M2NDecomposer.hpp"
+#include "Decomposer.hpp"
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_balance/balanceUtils.hpp>
@@ -41,34 +41,41 @@ namespace stk {
 namespace balance {
 namespace m2n {
 
-M2NDecomposer::M2NDecomposer(stk::mesh::BulkData & bulkData,
-                             const stk::balance::M2NBalanceSettings & balanceSettings)
+Decomposer::Decomposer(stk::mesh::BulkData & bulkData,
+                       const stk::balance::M2NBalanceSettings & balanceSettings)
   : m_bulkData(bulkData),
     m_balanceSettings(balanceSettings)
 {
 }
 
 unsigned
-M2NDecomposer::num_required_subdomains_for_each_proc()
+Decomposer::num_required_subdomains_for_each_proc()
 {
   const unsigned numInitialSubdomains = m_bulkData.parallel_size();
   const unsigned numFinalSubdomains = m_balanceSettings.get_num_output_processors();
   return (numFinalSubdomains / numInitialSubdomains) + (numFinalSubdomains % numInitialSubdomains > 0);
 }
 
+
+DefaultDecomposer::DefaultDecomposer(stk::mesh::BulkData & bulkData,
+                                     const stk::balance::M2NBalanceSettings & balanceSettings)
+  : Decomposer(bulkData, balanceSettings)
+{
+}
+
 stk::mesh::EntityProcVec
-M2NDecomposer::get_partition()
+DefaultDecomposer::get_partition()
 {
   stk::mesh::EntityProcVec decomp;
   std::vector<stk::mesh::Selector> selectors = { m_bulkData.mesh_meta_data().universal_part() };
-  stk::balance::internal::calculateGeometricOrGraphBasedDecomp(m_bulkData, selectors,
-                                                               m_bulkData.parallel(), m_balanceSettings.get_num_output_processors(),
+  stk::balance::internal::calculateGeometricOrGraphBasedDecomp(m_bulkData, selectors, m_bulkData.parallel(),
+                                                               m_balanceSettings.get_num_output_processors(),
                                                                m_balanceSettings, decomp);
   return decomp;
 }
 
 std::vector<unsigned>
-M2NDecomposer::map_new_subdomains_to_original_processors()
+DefaultDecomposer::map_new_subdomains_to_original_processors()
 {
   const unsigned numInitialSubdomains = m_bulkData.parallel_size();
   const unsigned numFinalSubdomains = m_balanceSettings.get_num_output_processors();
@@ -80,9 +87,10 @@ M2NDecomposer::map_new_subdomains_to_original_processors()
   return targetSubdomainsToProc;
 }
 
-M2NDecomposerNested::M2NDecomposerNested(stk::mesh::BulkData& bulkData,
-                                         const M2NBalanceSettings& balanceSettings)
-  : M2NDecomposer(bulkData, balanceSettings)
+
+NestedDecomposer::NestedDecomposer(stk::mesh::BulkData& bulkData,
+                                   const M2NBalanceSettings& balanceSettings)
+  : Decomposer(bulkData, balanceSettings)
 {
   const int numInitialSubdomains = m_bulkData.parallel_size();
   const int numFinalSubdomains = m_balanceSettings.get_num_output_processors();
@@ -94,7 +102,7 @@ M2NDecomposerNested::M2NDecomposerNested(stk::mesh::BulkData& bulkData,
 }
 
 stk::mesh::EntityProcVec
-M2NDecomposerNested::get_partition()
+NestedDecomposer::get_partition()
 {
   declare_all_initial_subdomain_parts();
   move_entities_into_initial_subdomain_part();
@@ -118,7 +126,7 @@ M2NDecomposerNested::get_partition()
 }
 
 std::vector<unsigned>
-M2NDecomposerNested::map_new_subdomains_to_original_processors()
+NestedDecomposer::map_new_subdomains_to_original_processors()
 {
   const unsigned numFinalSubdomains = m_balanceSettings.get_num_output_processors();
 
@@ -130,7 +138,7 @@ M2NDecomposerNested::map_new_subdomains_to_original_processors()
 }
 
 void
-M2NDecomposerNested::declare_all_initial_subdomain_parts()
+NestedDecomposer::declare_all_initial_subdomain_parts()
 {
   for (int i = 0; i < m_bulkData.parallel_size(); ++i) {
     std::string partNameForSubdomain = get_initial_subdomain_part_name(i);
@@ -139,7 +147,7 @@ M2NDecomposerNested::declare_all_initial_subdomain_parts()
 }
 
 void
-M2NDecomposerNested::move_entities_into_initial_subdomain_part()
+NestedDecomposer::move_entities_into_initial_subdomain_part()
 {
   stk::mesh::Part * subdomainPart = m_bulkData.mesh_meta_data().get_part(get_initial_subdomain_part_name(m_bulkData.parallel_rank()));
   stk::mesh::EntityVector localEntities;
@@ -148,7 +156,7 @@ M2NDecomposerNested::move_entities_into_initial_subdomain_part()
 }
 
 std::string
-M2NDecomposerNested::get_initial_subdomain_part_name(int subdomainId)
+NestedDecomposer::get_initial_subdomain_part_name(int subdomainId)
 {
   std::ostringstream out;
   out << "initial_subdomain_" << subdomainId;

@@ -57,6 +57,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
 
+
 namespace MueLu {
 
   template <class Node>
@@ -263,7 +264,6 @@ namespace MueLu {
       prec_->Compute();
     }
 
-
     SmootherPrototype::IsSetup(true);
 
     if (type_ == "Chebyshev" && lambdaMax == -1.0) {
@@ -293,14 +293,33 @@ namespace MueLu {
     this->GetOStream(Statistics0) << "IfpackSmoother: Using Aggregate Smoothing"<<std::endl;
 
     RCP<Aggregates> aggregates = Factory::Get<RCP<Aggregates> >(currentLevel,"Aggregates");
-
     RCP<const LOMultiVector> vertex2AggId = aggregates->GetVertex2AggId();
     ArrayRCP<LO> aggregate_ids = rcp_const_cast<LOMultiVector>(vertex2AggId)->getDataNonConst(0);
-    
-    paramList.set("partitioner: map", aggregate_ids.getRawPtr());
+    ArrayRCP<LO> dof_ids;
+
+    // We need to unamalgamate, if the FixedBlockSize > 1
+    if(A_->GetFixedBlockSize() > 1) {
+      // NOTE: We're basically going to have to leave a deallocated pointer hanging out
+      // in the paramList object (and inside the partitioner).  This never gets
+      // use again after Compute() gets called, so this is OK, but I'm still leaving
+      // this note here in case it bites us again later.
+      LO blocksize = (LO) A_->GetFixedBlockSize();
+      dof_ids.resize(aggregate_ids.size() * blocksize);
+      for(LO i=0; i<(LO)aggregate_ids.size(); i++) {
+        for(LO j=0; j<(LO)blocksize; j++)
+          dof_ids[i*blocksize+j] = aggregate_ids[i];    
+      }
+    }
+    else {
+      dof_ids = aggregate_ids;
+    }
+        
+    paramList.set("partitioner: map", dof_ids.getRawPtr());
     paramList.set("partitioner: type", "user");
     paramList.set("partitioner: overlap", 0);
     paramList.set("partitioner: local parts", (int)aggregates->GetNumAggregates());
+    // In case of Dirichlet nodes
+    paramList.set("partitioner: keep singletons",true);
 
     RCP<Epetra_CrsMatrix> A = Utilities::Op2NonConstEpetraCrs(A_);
     type_ = "block relaxation stand-alone";
@@ -309,13 +328,17 @@ namespace MueLu {
     prec_ = rcp(factory.Create(type_, &(*A), overlap_));
     TEUCHOS_TEST_FOR_EXCEPTION(prec_.is_null(), Exceptions::RuntimeError, "Could not create an Ifpack preconditioner with type = \"" << type_ << "\"");
     SetPrecParameters();
-    prec_->Compute();
+
+    int rv = prec_->Compute();
+    TEUCHOS_TEST_FOR_EXCEPTION(rv, Exceptions::RuntimeError, "Ifpack preconditioner with type = \"" << type_ << "\" Compute() call failed.");
+
   }
 
 
   template <class Node>
   void IfpackSmoother<Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Apply(): Setup() has not been called");
+
 
     // Forward the InitialGuessIsZero option to Ifpack
     Teuchos::ParameterList paramList;

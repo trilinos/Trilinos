@@ -53,11 +53,35 @@ int Ifpack_UserPartitioner::ComputePartitions()
   if (Map_ == 0)
     IFPACK_CHK_ERR(-1);
 
-  // simply copy user's vector
-  for (int i = 0 ; i < NumMyRows() ; ++i) {
-    Partition_[i] = Map_[i];
+  if(keepSingletons_) {
+    // If we're keeping singletons, we need to count them and add a new part
+    // per singleton
+    int base_num_parts = NumLocalParts();
+    int curr_num_parts = base_num_parts;
+      
+    for (int i = 0 ; i < NumMyRows() ; ++i) {
+      if(Map_[i] != -1) 
+        Partition_[i] = Map_[i];
+      else {
+        Partition_[i] = curr_num_parts;
+        curr_num_parts++;
+      }
+    }
+
+    if(curr_num_parts != base_num_parts) {
+      NumLocalParts_ = curr_num_parts;
+      Parts_.resize(NumLocalParts());
+    }
+  }
+  else {
+    // copy the user's vector
+    for (int i = 0 ; i < NumMyRows() ; ++i) {
+      Partition_[i] = Map_[i];
+    }
   }
 
+
+#if 0
   // put together all partitions composed by 1 one vertex
   // (if any)
   std::vector<int> singletons(NumLocalParts());
@@ -65,7 +89,7 @@ int Ifpack_UserPartitioner::ComputePartitions()
     singletons[i] = 0;
   }
 
-#if 0
+
   // may want to uncomment the following to ensure that no
   // partitions are in fact singletons
   for (int i = 0 ; i < NumMyRows() ; ++i) {

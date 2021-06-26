@@ -163,6 +163,10 @@ TEST(UnitTestSyncInfo, exchange_2way)
   std::vector<std::pair<std::string,int>> color1_vectorPairStringInt = {{"this is a string that is longer than 32 chars",3}};
   std::vector<std::pair<std::string,int>> vectorPairStringIntValue =
      (color == 0) ? color0_vectorPairStringInt : color1_vectorPairStringInt;
+  std::vector<std::pair<std::string,double>> color0_vectorPairStringDouble = {{"one",1.0}, {"two",2.0}};
+  std::vector<std::pair<std::string,double>> color1_vectorPairStringDouble = {{"this is a string that is longer than 32 chars",3.0}};
+  std::vector<std::pair<std::string,double>> vectorPairStringDoubleValue =
+     (color == 0) ? color0_vectorPairStringDouble : color1_vectorPairStringDouble;
 
   myInfo.set_value("boolValue", boolValue);
   myInfo.set_value("intValue", intValue);
@@ -171,6 +175,7 @@ TEST(UnitTestSyncInfo, exchange_2way)
   myInfo.set_value("stringValue", stringValue);
   myInfo.set_value("vectorIntValue", vectorIntValue);
   myInfo.set_value("vectorPairStringIntValue", vectorPairStringIntValue);
+  myInfo.set_value("vectorPairStringDoubleValue", vectorPairStringDoubleValue);
 
   stk::coupling::SyncInfo otherInfo = myInfo.exchange(splitComms, otherColor);
 
@@ -182,6 +187,8 @@ TEST(UnitTestSyncInfo, exchange_2way)
   std::vector<int> expectedVectorIntValue = (color == 0) ? std::vector<int>{2, 4, 6, 8} : std::vector<int>{1, 3, 5};
   std::vector<std::pair<std::string,int>> expectedVectorPairStringInt =
     (color == 0) ? color1_vectorPairStringInt : color0_vectorPairStringInt;
+  std::vector<std::pair<std::string,double>> expectedVectorPairStringDouble =
+    (color == 0) ? color1_vectorPairStringDouble : color0_vectorPairStringDouble;
 
   EXPECT_EQ(expectedBoolValue, otherInfo.get_value<bool>("boolValue"));
   EXPECT_EQ(expectedIntValue, otherInfo.get_value<int>("intValue"));
@@ -190,6 +197,7 @@ TEST(UnitTestSyncInfo, exchange_2way)
   EXPECT_EQ(expectedStringValue, otherInfo.get_value<std::string>("stringValue"));
   EXPECT_EQ(expectedVectorIntValue, otherInfo.get_value<std::vector<int>>("vectorIntValue"));
   EXPECT_EQ(expectedVectorPairStringInt, (otherInfo.get_value<std::vector<std::pair<std::string,int>>>("vectorPairStringIntValue")));
+  EXPECT_EQ(expectedVectorPairStringDouble, (otherInfo.get_value<std::vector<std::pair<std::string,double>>>("vectorPairStringDoubleValue")));
 }
 
 TEST(UnitTestSyncInfo, exchange_2way_SplitComms_API)

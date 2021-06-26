@@ -218,11 +218,11 @@ namespace {
                                      std::vector<stk::mesh::Entity> &entities,
                                      Ioss::GroupingEntity *io_entity)
   {
-    size_t field_component_count = io_field.transformed_storage()->component_count();
+    size_t iossNumFieldComponents = io_field.transformed_storage()->component_count();
 
     std::vector<T> io_field_data;
     size_t io_entity_count = io_entity->get_field_data(io_field.get_name(), io_field_data);
-    assert(io_field_data.size() == entities.size() * field_component_count);
+    assert(io_field_data.size() == entities.size() * iossNumFieldComponents);
 
     size_t entity_count = entities.size();
 
@@ -243,8 +243,10 @@ namespace {
       if (mesh.is_valid(entities[i])) {
         T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
         if (fld_data !=nullptr) {
-          for(size_t j=0; j<field_component_count; ++j) {
-            fld_data[j] = io_field_data[i*field_component_count+j];
+          const size_t stkNumFieldComponents = stk::mesh::field_scalars_per_entity(*field, entities[i]);
+          const size_t len = std::min(stkNumFieldComponents, iossNumFieldComponents);
+          for(size_t j=0; j<len; ++j) {
+            fld_data[j] = io_field_data[i*iossNumFieldComponents+j];
           }
         }
       }
@@ -1860,7 +1862,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     {
         /// \todo REFACTOR Need some additional compatibility checks between
         /// Ioss field and stk::mesh::Field; better error messages...
-
         if (field != nullptr && io_entity->field_exists(io_fld_name)) {
             const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
             if (field->type_is<double>()) {

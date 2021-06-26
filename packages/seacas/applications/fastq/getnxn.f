@@ -56,7 +56,7 @@ C***********************************************************************
             M (2) = 1
             M (3) = 2
          ELSE
-            CALL MESAGE ('IMPOSSIBLE SITUATION IN GETNXN, LOOP 50')
+            CALL MESSAGE('IMPOSSIBLE SITUATION IN GETNXN, LOOP 50')
             ERR = .TRUE.
             RETURN
          ENDIF
