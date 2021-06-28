@@ -303,6 +303,9 @@ public:
     using nonconst_global_inds_host_view_type =
           typename row_graph_type::nonconst_global_inds_host_view_type;
 
+    using offset_device_view_type =
+          typename row_ptrs_device_view_type::non_const_type;
+
 
 //KDDKDD INROW    using local_inds_host_view_type = 
 //KDDKDD INROW          typename local_inds_dualv_type::t_host::const_type;
@@ -1387,6 +1390,10 @@ public:
     void
     getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, Kokkos::MemoryUnmanaged>& offsets) const;
 
+    /// \brief Get offsets of the off-rank entries in the graph.
+    void
+    getLocalOffRankOffsets (offset_device_view_type& offsets) const;
+
     /// \brief Backwards compatibility overload of the above method.
     ///
     /// This method takes a Teuchos::ArrayRCP instead of a
@@ -2064,6 +2071,8 @@ public:
     /// </ul>
     void computeGlobalConstants ();
 
+    bool haveLocalOffRankOffsets() const { return haveLocalOffRankOffsets_;}
+
   protected:
     /// \brief Compute local constants, if they have not yet been computed.
     ///
@@ -2410,6 +2419,13 @@ public:
     /// This may also exist with 1-D storage, if storage is unpacked.
     num_row_entries_type k_numRowEntries_;
 
+    /// \brief The offsets for off-rank entries.
+    ///
+    /// When off-rank entries are sorted last, this rowPtr-lile view
+    /// contains the offsets. It is compute on the first call to
+    /// getLocalOffRankOffsets().
+    mutable offset_device_view_type k_offRankOffsets_;
+
     //@}
 
     /// \brief Status of the graph's storage, when not in a
@@ -2438,6 +2454,8 @@ public:
     bool haveLocalConstants_ = false;
     //! Whether all processes have computed global constants.
     bool haveGlobalConstants_ = false;
+    //!
+    mutable bool haveLocalOffRankOffsets_ = false;
 
     typedef typename std::map<global_ordinal_type, std::vector<global_ordinal_type> > nonlocals_type;
 
