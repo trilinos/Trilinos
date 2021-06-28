@@ -35,14 +35,14 @@ C  ANGLES
       CALL GETANG (MXND, MLN, XN, YN, LNODES, LXK, KXL, NXL, LXN,
      &   N0, N1, N2, ANGLE (N1), ERR)
       IF (ERR) THEN
-         CALL MESAGE (' ** ERROR IN LUPANG ** ')
+         CALL MESSAGE(' ** ERROR IN LUPANG ** ')
          GOTO 110
       ENDIF
       N1 = N2
       IF (N1 .EQ. NSTART) GOTO 110
       KOUNT = KOUNT+1
       IF (KOUNT .GT. NLOOP) THEN
-         CALL MESAGE (' ** ERROR IN LUPANG ** ')
+         CALL MESSAGE(' ** ERROR IN LUPANG ** ')
          ERR = .TRUE.
          GOTO 110
       ENDIF

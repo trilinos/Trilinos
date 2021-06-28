@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -11,7 +11,8 @@ C=======================================================================
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, KFACSS,
-     &   kltsss, NQAREC, QAREC, NINFO, INFREC, NAMELB, L64BIT, NC4, *)
+     &   kltsss, NQAREC, QAREC, NINFO, INFREC, NAMELB, L64BIT, NC4,
+     $   NAMBK, NAMNS, NAMSS, *)
 C=======================================================================
 
 C   --*** WRGEN *** (GJOIN) Writes the GENESIS database
@@ -59,6 +60,7 @@ C   --   L64BIT - IN - true if use 64-bit integer output database
 
       include 'exodusII.inc'
       include 'gj_params.blk'
+      include 'gj_namlen.blk'
 
       DIMENSION A(*), IA(*)
       CHARACTER*(*) FILNAM
@@ -66,6 +68,7 @@ C   --   L64BIT - IN - true if use 64-bit integer output database
       character*(MXSTLN) qarec(4,MAXQA)
       character*(MXLNLN) infrec(MAXINF)
       character*(MXSTLN) nameco(6), namelb(*)
+      character*(namlen) nambk(*), namns(*), namss(*)
       LOGICAL            l64bit, NC4
 
 C      --QAREC - the QA records
@@ -168,6 +171,7 @@ C   --Write out the nodal point sets
             goto 150
          endif
          call mddel('NSDF')
+         call putnam(idexo, 2, numnps, namns)
       endif
 
 C   --Write element side sets
@@ -179,6 +183,7 @@ C   --Write element side sets
           call exerr ('gjoin2', 'Error from expcss', exlmsg)
           goto 150
         endif
+        call putnam(idexo, 3, numness, namss)
       endif
 
 C   --Write the element blocks
@@ -221,8 +226,19 @@ C        skipping null element blocks
          ioff = ioff + ( ia(knatr+ielb-1) * ia(knelb+ielb-1) )
          iptr = iptr + ( ia(knlnk+ielb-1) * ia(knelb+ielb-1) )
  100  continue
+      call expnams(idexo, 1, nelblk, nambk, ierr)
 
  150  call exclos (idexo, ierr)
 
       RETURN
       END
+
+      subroutine putnam(ndb, itype, isiz, names)
+      include 'gj_namlen.blk'
+      character*(namlen) names(*)
+
+      call expnams(ndb, itype, isiz, names, ierr)
+      return
+      end
+
+      

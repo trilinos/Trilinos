@@ -8,6 +8,8 @@ from FindTribitsCiSupportDir import *
 import GeneralScriptSupport as GSS
 import CDashQueryAnalyzeReport as CDQAR
 
+from BuildStatsData import *
+
 
 #
 # Helper functions
@@ -31,24 +33,13 @@ def readBuildStatsCsvFileIntoDictOfLists(buildStatusCsvFileName,
   ):
   buildStatsDOL = readCsvFileIntoDictOfLists(buildStatusCsvFileName,
     getStdBuildStatsColsAndTypesList() )
+  if not buildStatsDOL:
+    return {}
   if computeStdScaledFields:
     addStdScaledBuildStatsFields(buildStatsDOL)
   if normalizeFileName:
     normalizeFileNameField(buildStatsDOL)
   return buildStatsDOL
-
-
-# Standard set of build stats fields we want to read in
-#
-def getStdBuildStatsColsAndTypesList():
-  return [
-    ColNameAndType('max_resident_size_Kb', 'float'),
-    ColNameAndType('elapsed_real_time_sec', 'float'),
-    ColNameAndType('FileName', 'string'),
-    ColNameAndType('FileSize', 'float'),
-    ]
-# NOTE: Above, we use type 'float' instead of 'int' for fields that are ints
-# because we want to allow a very large size.
 
 
 # Read in a CSV file as a dict of lists.
@@ -60,6 +51,9 @@ def readCsvFileIntoDictOfLists(csvFileName, colNameAndTypeList):
     # Get the list of col headers and the index to the col headers we want 
     columnHeadersList = \
       CDQAR.getColumnHeadersFromCsvFileReader(csvFileName, csvReader)
+    if len(columnHeadersList) == 0:
+      # File is empty so just return an empty distOfLists!
+      return dictOfLists
     colNameTypeIdxList = \
       getColNameTypeIdxListGivenColNameAndTypeList(csvFileName, columnHeadersList,
         colNameAndTypeList)
@@ -81,6 +75,7 @@ def readCsvFileIntoDictOfLists(csvFileName, colNameAndTypeList):
       dataRowIdx += 1
   # Return completed dict of lists
   return dictOfLists
+# ToDo: Move above function into CsvFileUtils.py
 
 
 def assertNumExpectedCsvFileLineEntries(csvFileName, columnHeadersList,
@@ -91,72 +86,6 @@ def assertNumExpectedCsvFileLineEntries(csvFileName, columnHeadersList,
       "Error, the CSV file '"+csvFileName+"' has "+str(len(columnHeadersList))+\
       " column headers but data row "+str(dataRowIdx)+" only has "+\
        str(len(csvLineList))+" entries!" )
-
-
-def getColNameTypeIdxListGivenColNameAndTypeList(csvFileName, columnHeadersList,
-    colNameAndTypesToGetList,
-  ):
-  colNameTypeIdxList = []
-  for colNameAndTypeToGet in colNameAndTypesToGetList:
-    colIdx = GSS.findInSequence(columnHeadersList, colNameAndTypeToGet.colName())
-    if colIdx != -1:
-      colNameTypeIdxList.append(ColNameTypeIdx(colNameAndTypeToGet, colIdx))
-    else:
-      raise Exception(
-        "Error, the CSV file column header '"+colNameAndTypeToGet.colName()+"'"+\
-        " does not exist in the list of column headers "+str(columnHeadersList)+\
-        " from the CSV file '"+csvFileName+"'!")
-  return colNameTypeIdxList
-
-
-class ColNameAndType(object):
-  def __init__(self, colName, colType):
-    self.__colName = colName
-    self.__colType = colType
-    self.assertType()
-  def colName(self):
-    return self.__colName
-  def colType(self):
-    return self.__colType
-  def __repr__(self):
-    myStr = "ColNameAndType{"+self.__colName+","+str(self.__colType)+"}"
-    return myStr
-  def convertFromStr(self, strIn):
-    if self.__colType == "string":
-      return strIn
-    elif self.__colType == "int":
-      return int(strIn)
-    elif self.__colType == "float":
-      return float(strIn)
-  def assertType(self):
-    supportedTypes = [ "string", "int", "float" ]
-    if -1 == GSS.findInSequence(supportedTypes, self.__colType):
-      raise Exception(
-        "Error, type '"+str(self.__colType)+"' is not supported!  Supported types"+\
-        " include "+str(supportedTypes)+"!")
-  def __eq__(self, other):
-    return((self.__colName,self.__colType)==(other.__colName,other.__colType))
-  def __ne__(self, other):
-    return((self.__colName,self.__colType)!=(other.__colName,other.__colType))
-
-
-class ColNameTypeIdx(object):
-  def __init__(self, colNameAndType, colIdx):
-    self.__colNameAndType = colNameAndType
-    self.__colIdx = colIdx
-  def colName(self):
-    return self.__colNameAndType.colName()
-  def getIdx(self):
-    return self.__colIdx
-  def convertFromStr(self, strIn):
-    return self.__colNameAndType.convertFromStr(strIn)
-  def __repr__(self):
-    myStr = "ColNameTypeIdx{"+str(self.__colNameAndType)+","+str(self.__colIdx)+"}"
-    return myStr
-  def __eq__(self, other):
-    return ((self.__colNameAndType,self.__colIdx)==(other.__colNameAndType,other.__colIdx))
-  def __ne__(self, other):
-    return ((self.__colNameAndType,self.__colIdx)!=(other.__colNameAndType,other.__colIdx))
 
 
 # Add standard scaled fields to read-in build stats dict of lists
@@ -343,7 +272,6 @@ def createAsciiReportOfOneBuildStatsSummary(buildStatsSummary, buildStatsSetName
   return asciiReportStr
 
 
-
 # Create an ASCII text report block for a list of build stats summaries for a
 # single list of stats.
 #
@@ -362,12 +290,15 @@ def createAsciiReportOfBuildStatsSummaries(buildStatsSummariesBinnedBySubdirs):
 
 
 #
+# Helper functions for main()
+#
+
+
+#
 # Help message
 #
 
-usageHelp = r"""summarize_build_stats.py --build-stats-csv-file=<csv-file>
-  --bin-by-subdirs-under-dirs=<basedir0>,<basedir1>,...
-
+usageHelp = r"""
 Summarize gathered build stats from the the build stats CSV file and print the
 report as ASCII text to STDOUT.  This prints a report like:
 
@@ -388,33 +319,23 @@ Full Project: max(file_size_mb) = ??? (<file-name>)
 ...
 """
 
-
-#
-# Helper functions for main()
-#
-
-
-def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
+def injectCmndLineOptionsInParser(clp):
   
-  clp.add_option(
-    "--build-stats-csv-file", dest="buildStatsCsvFile", type="string", default="",
-    help="The build status CSV file created by build wappers and gathered up." )
-  
-  clp.add_option(
-    "--bin-by-subdirs-under-dirs", dest="binBySubdirsUnderDirsStr", type="string",
-    default="",
+  clp.add_argument(
+    "--bin-by-subdirs-under-dirs", dest="binBySubdirsUnderDirsStr", default="",
     help="List of base dirs to group results by subdir under."+\
       " Format '<basedir0>,<basedir1>,..." )
 
+  clp.add_argument("buildStatsCsvFile",
+    help="The build status CSV file created by build wappers and gathered up." )
+
 
 def getCmndLineOptions():
-  from optparse import OptionParser
-  clp = OptionParser(usage=usageHelp)
+  from argparse import ArgumentParser, RawDescriptionHelpFormatter
+  clp = ArgumentParser(description=usageHelp,
+    formatter_class=RawDescriptionHelpFormatter)
   injectCmndLineOptionsInParser(clp)
-  (options, args) = clp.parse_args()
-  if options.buildStatsCsvFile == "":
-    raise Exception(
-      "Error, input argument --build-stats-csv-file must be set!")
+  options = clp.parse_args(sys.argv[1:])
   if not os.path.exists(options.buildStatsCsvFile):
     raise Exception(
       "Error, file '"+options.buildStatsCsvFile+"' does not exist!")
@@ -430,6 +351,9 @@ if __name__ == '__main__':
   inOptions = getCmndLineOptions()
 
   buildStatsDOL = readBuildStatsCsvFileIntoDictOfLists(inOptions.buildStatsCsvFile)
+  if not buildStatsDOL:
+    print("No build statistics to summarize!")
+    sys.exit(0)
   addStdScaledBuildStatsFields(buildStatsDOL)
   buildStatsBinnedBySubdirs = binBuildStatsDictOfListsBySubdirUnderDirs(
     buildStatsDOL, inOptions.binBySubdirsUnderDirsStr.split(',') )

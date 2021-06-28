@@ -32,6 +32,8 @@
         
 \cba{matvec params}{\parameterlist}{Pass parameters to the underlying linear algebra}
         
+\cbb{half precision}{bool}{false}{Build half precision preconditioner}
+        
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
         
 \cbb{smoother: type}{string}{"RELAXATION"}{Smoother type. Possible values: see Table~\ref{tab:smoothers}.}
@@ -119,6 +121,8 @@
 \cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
         
 \cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.}
+        
+\cbb{aggregation: coloring: use color graph}{bool}{false}{Have CoalesceDropFactory generate a seperate graph for SOC and for coloring}
         
 \cbb{aggregation: enable phase 1}{bool}{true}{Turn on/off phase 1 of aggregation}
         

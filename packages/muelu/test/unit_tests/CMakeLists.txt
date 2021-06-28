@@ -150,7 +150,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Smoothers/BelosSmoother.cpp)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
+IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Thyra)
   APPEND_SET(SOURCES Smoothers/StratimikosSmoother.cpp)
 ENDIF()
 

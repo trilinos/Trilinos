@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -8,7 +8,7 @@ C=======================================================================
       SUBROUTINE MUNELB (NELBLK, ISTAT, NUMEL,
      &   IDELB, NUMELB, NUMLNK, NUMATR,
      &   LINK, ATRIB, LINKX, ATRIBX, IXEL, IXELB, NELBX,
-     $   ISCR, NAMELB, SCRSTR, LLINK, LATRIB)
+     $   ISCR, NAMELB, NAMBK, SCRSTR, LLINK, LATRIB)
 C=======================================================================
 
 C   --*** MUNELB *** (GJOIN) Compress and rearrange element blocks
@@ -42,6 +42,7 @@ C   --   NAMELB - IN/OUT - the names of the element blocks
 C   --   SCRSTR - SCRATCH - size = size of NAMELB
 
       include 'exodusII.inc'
+      include 'gj_namlen.blk'
 
       INTEGER ISTAT(*)
       INTEGER IDELB(*)
@@ -54,7 +55,8 @@ C   --   SCRSTR - SCRATCH - size = size of NAMELB
       INTEGER IXELB(*)
       INTEGER NELBX(*)
       INTEGER ISCR(*)
-      character*(MXSTLN) namelb(*), scrstr(*)
+      character*(MXSTLN) namelb(*)
+      character*(namlen) nambk(*), scrstr(*)
 
       DO 100 I = 1, NUMEL
          IXEL(I) = 0
@@ -109,6 +111,7 @@ C   --   SCRSTR - SCRATCH - size = size of NAMELB
       CALL ORDIX  (JBLK, IXELB, NELBLK, NUMLNK, ISCR, NUMLNK)
       CALL ORDIX  (JBLK, IXELB, NELBLK, NUMATR, ISCR, NUMATR)
       CALL ORDSTR (JBLK, IXELB, NELBLK, NAMELB, SCRSTR, NAMELB)
+      CALL ORDNAM (JBLK, IXELB, NELBLK, NAMBK,  SCRSTR, NAMBK)
       NELBLK = JBLK
       NUMEL  = JEL0
       LLINK  = JLNK-1

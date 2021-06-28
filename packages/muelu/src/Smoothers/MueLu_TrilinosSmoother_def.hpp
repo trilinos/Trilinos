@@ -304,6 +304,7 @@ namespace MueLu {
     if (type == "LINESMOOTHING_TRIDIAGONALRELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
     if (type == "LINESMOOTHING_TRIDIAGONAL RELAXATION")  { return "LINESMOOTHING_BLOCKRELAXATION"; }
     if (type == "LINESMOOTHING_TRIDIAGONAL_RELAXATION")  { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "AGGREGATE")                             { return "AGGREGATE";                     }
     if(type == "BLOCK_RELAXATION" ||
        type == "BLOCK RELAXATION" ||
        type == "BLOCKRELAXATION" ||

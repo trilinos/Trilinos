@@ -66,9 +66,9 @@ C  HELP FOR SCHEME
 
             IF ((SCHSTR(1:1) .EQ. 'H') .OR.
      &         (SCHSTR(1:1) .EQ. 'h')) THEN
-               CALL MESAGE (' ')
+               CALL MESSAGE(' ')
                CALL HELP_FQ (13)
-               CALL MESAGE (' ')
+               CALL MESSAGE(' ')
                GO TO 100
             END IF
          END IF
@@ -76,8 +76,8 @@ C  HELP FOR SCHEME
 C  BLANK SCHEME
 
          IF ((LENSCH .LE. 0) .OR. (SCHSTR(1:1) .EQ. ' ')) THEN
-            CALL MESAGE ('NO INITIAL SCHEME INPUT')
-            CALL MESAGE ('FORCED RECTANGLE PROCESSING USED')
+            CALL MESSAGE('NO INITIAL SCHEME INPUT')
+            CALL MESSAGE('FORCED RECTANGLE PROCESSING USED')
             SCHSTR = ' '
             LENSCH = 1
             GO TO 120
@@ -97,12 +97,12 @@ C  SEE IF A PENTAGON REGION HAS BEEN FLAGGED
          IF ((SCHSTR(J:J) .EQ. 'U') .OR. (SCHSTR(J:J) .EQ. 'u')) THEN
             IF (NPER .GE. 10) THEN
                PENTAG = .TRUE.
-               CALL MESAGE
+               CALL MESSAGE
      &            ('PENTAGON PRIMITIVE REGION PROCESSING USED')
             ELSE
-               CALL MESAGE ('PENTAGON REGION GENERATION NOT')
-               CALL MESAGE ('POSSIBLE WITH NO. IN PERIMETER < 10')
-               CALL MESAGE ('REGULAR PROCESSING WILL BE ATTEMPTED')
+               CALL MESSAGE('PENTAGON REGION GENERATION NOT')
+               CALL MESSAGE('POSSIBLE WITH NO. IN PERIMETER < 10')
+               CALL MESSAGE('REGULAR PROCESSING WILL BE ATTEMPTED')
             END IF
             GO TO 120
 
@@ -113,12 +113,12 @@ C  SEE IF A TRANSITION REGION HAS BEEN FLAGGED
             IF (NPER .GE. 8) THEN
                TRNSIT = .TRUE.
                HALFC = .FALSE.
-               CALL MESAGE
+               CALL MESSAGE
      &            ('TRANSITION PRIMITIVE REGION PROCESSING USED')
             ELSE
-               CALL MESAGE ('TRANSITION REGION GENERATION NOT')
-               CALL MESAGE ('POSSIBLE WITH NO. IN PERIMETER < 8')
-               CALL MESAGE ('REGULAR PROCESSING WILL BE ATTEMPTED')
+               CALL MESSAGE('TRANSITION REGION GENERATION NOT')
+               CALL MESSAGE('POSSIBLE WITH NO. IN PERIMETER < 8')
+               CALL MESSAGE('REGULAR PROCESSING WILL BE ATTEMPTED')
             END IF
             GO TO 120
 
@@ -129,13 +129,13 @@ C  SEE IF A SEMI-CIRCLE REGION HAS BEEN FLAGGED
             IF (NPER .GE. 8) THEN
                TRNSIT = .TRUE.
                HALFC = .TRUE.
-               CALL MESAGE
+               CALL MESSAGE
      &            ('SEMICIRCLE PRIMITIVE REGION PROCESSING USED')
             ELSE
-               CALL MESAGE
+               CALL MESSAGE
      &            ('TRANSITION/SEMICIRCLE REGION GENERATION NOT')
-               CALL MESAGE ('POSSIBLE WITH NO. IN PERIMETER < 8')
-               CALL MESAGE ('REGULAR PROCESSING WILL BE ATTEMPTED')
+               CALL MESSAGE('POSSIBLE WITH NO. IN PERIMETER < 8')
+               CALL MESSAGE('REGULAR PROCESSING WILL BE ATTEMPTED')
             END IF
             GO TO 120
 
@@ -145,12 +145,12 @@ C  SEE IF A TRIANGULAR REGION HAS BEEN FLAGGED
      &      (SCHSTR(J:J) .EQ. 't')) THEN
             IF (NPER .GE. 6) THEN
                TRIANG = .TRUE.
-               CALL MESAGE
+               CALL MESSAGE
      &            ('TRIANGLE PRIMITIVE REGION PROCESSING USED')
             ELSE
-               CALL MESAGE ('TRIANGULAR REGION GENERATION NOT')
-               CALL MESAGE ('POSSIBLE WITH NO. IN PERIMETER < 6')
-               CALL MESAGE ('REGULAR PROCESSING WILL BE ATTEMPTED')
+               CALL MESSAGE('TRIANGULAR REGION GENERATION NOT')
+               CALL MESSAGE('POSSIBLE WITH NO. IN PERIMETER < 6')
+               CALL MESSAGE('REGULAR PROCESSING WILL BE ATTEMPTED')
             END IF
             GO TO 120
 
@@ -159,7 +159,7 @@ C  SEE IF A FILL REGION HAS BEEN FLAGGED
          ELSE IF ((SCHSTR(J:J) .EQ. 'X') .OR.
      &      (SCHSTR(J:J) .EQ. 'x')) THEN
             FILL = .TRUE.
-            CALL MESAGE ('PAVING TECHNIQUE INITIALLY USED')
+            CALL MESSAGE('PAVING TECHNIQUE INITIALLY USED')
             GO TO 120
 
 C  SEE IF A REGULAR RECTANGULAR REGION HAS BEEN FLAGGED

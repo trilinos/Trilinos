@@ -35,11 +35,11 @@ C***********************************************************************
 
       CALL LTSORT (MDIM, LINKE, JJ, L, ADDLNK)
       IF (L .LE. 0) THEN
-         CALL MESAGE ('BOUNDARY CONDITION LINK ATTEMPTED')
-         CALL MESAGE ('TO A NONEXISTENT ENTITY')
+         CALL MESSAGE('BOUNDARY CONDITION LINK ATTEMPTED')
+         CALL MESSAGE('TO A NONEXISTENT ENTITY')
          WRITE ( * , 10000)IFLAG1, JJ
-         CALL MESAGE ('CHECK POINBC,  LINEBC,  OR SIDEBC (S)')
-         CALL MESAGE (' ')
+         CALL MESSAGE('CHECK POINBC,  LINEBC,  OR SIDEBC (S)')
+         CALL MESSAGE(' ')
       ELSEIF (IBOUN (L) .LE. 0) THEN
          IBOUN (L) = IFLAG1
       ELSE
@@ -61,7 +61,7 @@ C***********************************************************************
                ENDIF
             ENDIF
   110    CONTINUE
-         CALL MESAGE ('PROBLEM LINKING BOUNDARY FLAG TABLES')
+         CALL MESSAGE('PROBLEM LINKING BOUNDARY FLAG TABLES')
       ENDIF
   120 CONTINUE
       RETURN

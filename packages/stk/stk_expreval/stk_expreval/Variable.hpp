@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_expreval_Variable_hpp
-#define stk_expreval_Variable_hpp
+#ifndef stk_expreval_variable_hpp
+#define stk_expreval_variable_hpp
 
 #include <iostream>
 #include <string>
@@ -504,4 +504,4 @@ private:
 } // namespace expreval
 } // namespace stk
 
-#endif // stk_expreval_Variable_hpp
+#endif // stk_expreval_variable_hpp

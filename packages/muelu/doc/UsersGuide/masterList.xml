@@ -146,6 +146,15 @@
       <description>Pass parameters to the underlying linear algebra</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
+     </parameter>
+
+     <parameter>
+      <name>half precision</name>
+      <type>bool</type>
+      <description>Build half precision preconditioner</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+      <default>false</default>
     </parameter>
 
   </general>
@@ -615,6 +624,17 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+
+    <parameter>
+      <name>aggregation: coloring: use color graph</name>
+      <type>bool</type>
+      <default>false</default>
+      <visible>false</visible>
+      <description>Have CoalesceDropFactory generate a seperate graph for SOC and for coloring</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
     <parameter>
       <name>aggregation: enable phase 1</name>
       <type>bool</type>
@@ -942,7 +962,7 @@
       both (``both'').</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
-    
+
 
 
   </aggregate_qualities>

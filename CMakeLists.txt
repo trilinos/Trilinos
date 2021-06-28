@@ -100,6 +100,11 @@ ENDIF ()
 # really Trilinos should support bulding with every newer C++ standard so we
 # should just be doing that instead.
 
+# Force off support for Makefile.export.* files while TriBITS is refactored to
+# remove this (#8498)
+SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OFF CACHE BOOL
+  "Support being removed from TriBITS (see trilinos/Trilinos#8498)" FORCE)
+
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
 

@@ -143,11 +143,8 @@ set (Trilinos_ENABLE_TrilinosCouplings OFF CACHE BOOL "Turn off packages for non
 
 # Turn off tests currently failing with UVM = OFF
 # Packages with >5 failing tests
-set (Amesos2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Anasazi_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (Belos_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Domi_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (Ifpack2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Kokkos_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (KokkosKernels_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (MueLu_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
@@ -158,8 +155,8 @@ set (SEACAS_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (ShyLU_DD_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (STK_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Teko_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (Xpetra_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Zoltan2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
+
 
 # ShyLU_DD UVM = OFF tests
 set (ShyLU_DDFROSch_test_thyra_xpetra_laplace_one_rank_TLP_IPOU_DIM3_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")

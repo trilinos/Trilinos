@@ -56,7 +56,7 @@ C  FIND L3, N4, AND KL3
                ENDIF
             ENDIF
   100    CONTINUE
-         CALL MESAGE ('** PROBLEMS IN WEDGE FINDING L3 AND N4 **')
+         CALL MESSAGE('** PROBLEMS IN WEDGE FINDING L3 AND N4 **')
          ERR = .TRUE.
          GOTO 200
   110    CONTINUE
@@ -68,7 +68,7 @@ C  FIND THE ELEMENT KL3 - THE ELEMENT ON THE OTHER SIDE OF L3
          ELSEIF (KXL (2, L3) .EQ. KL1) THEN
             KL3 = KXL (1, L3)
          ELSE
-            CALL MESAGE ('** PROBLEMS IN WEDGE FINDING KL3 **')
+            CALL MESSAGE('** PROBLEMS IN WEDGE FINDING KL3 **')
             ERR = .TRUE.
             GOTO 200
          ENDIF
@@ -78,7 +78,7 @@ C  GET ALL THE N1 LINES
 
       CALL GETLXN (MXND, LXN, N1, L1LIST, NL, ERR)
       IF (ERR) THEN
-         CALL MESAGE ('** PROBLEMS IN WEDGE GETTING N1 LINES **')
+         CALL MESSAGE('** PROBLEMS IN WEDGE GETTING N1 LINES **')
          GOTO 200
       ENDIF
 
@@ -179,7 +179,7 @@ C  CORRECT ENDPOINT
             CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, N1,
      &         LL, NNN, ERR, NOROOM)
             IF ((NOROOM) .OR. (ERR)) THEN
-               CALL MESAGE ('** PROBLEMS IN WEDGE UNHOOKING LL FROM '//
+               CALL MESSAGE('** PROBLEMS IN WEDGE UNHOOKING LL FROM '//
      &            'N1 **')
                GOTO 200
             ENDIF
@@ -187,7 +187,7 @@ C  CORRECT ENDPOINT
             CALL ADDLXN (MXND, LXN, NUID, NAVAIL, IAVAIL,
      &         N5, LL, NNN, ERR, NOROOM)
             IF ((NOROOM) .OR. (ERR)) THEN
-               CALL MESAGE ('** PROBLEMS IN WEDGE HOOKING LL TO N5 **')
+               CALL MESSAGE('** PROBLEMS IN WEDGE HOOKING LL TO N5 **')
                GOTO 200
             ENDIF
 
@@ -196,7 +196,7 @@ C  CORRECT ENDPOINT
             ELSEIF (NXL (2, LL) .EQ. N1) THEN
                NXL (2, LL) = N5
             ELSE
-               CALL MESAGE ('** PROBLEMS IN WEDGE CHANGING LL '//
+               CALL MESSAGE('** PROBLEMS IN WEDGE CHANGING LL '//
      &            'ENDPOINT FROM N1 TO N5 **')
                ERR = .TRUE.
                GOTO 200
@@ -226,7 +226,7 @@ C  NOW FIX THE KXL ARRAY FOR LINE L3
          ELSEIF (KXL (2, L3) .EQ. KL3) THEN
             KXL (2, L3) = KKK
          ELSE
-            CALL MESAGE ('** PROBLEMS IN WEDGE REPLACING KL3 FOR L3 **')
+            CALL MESSAGE('** PROBLEMS IN WEDGE REPLACING KL3 FOR L3 **')
             ERR = .TRUE.
             GOTO 200
          ENDIF
@@ -254,7 +254,7 @@ C  NOW FIX THE LXK ARRAY FOR THE ELEMENT KL1 IF TWOLIN
                GOTO 160
             ENDIF
   150    CONTINUE
-         CALL MESAGE ('** PROBLEMS IN WEDGE REPLACING L2 WITH L4 IN '//
+         CALL MESSAGE('** PROBLEMS IN WEDGE REPLACING L2 WITH L4 IN '//
      &      'KL1 **')
          ERR = .TRUE.
          GOTO 200
@@ -269,7 +269,7 @@ C  OTHERWISE FIX THE LXK ARRAY FOR THE ELEMENT KL3
                GOTO 180
             ENDIF
   170    CONTINUE
-         CALL MESAGE ('** PROBLEMS IN WEDGE REPLACING L3 WITH L4 IN '//
+         CALL MESSAGE('** PROBLEMS IN WEDGE REPLACING L3 WITH L4 IN '//
      &      'KL3 **')
          ERR = .TRUE.
          GOTO 200

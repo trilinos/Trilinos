@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef SIERRA_ExprEval_h
-#define SIERRA_ExprEval_h
+#ifndef stk_expreval_evaluator_hpp
+#define stk_expreval_evaluator_hpp
 
 #include <string>
 #include <limits>
@@ -317,4 +317,4 @@ private:
 } // namespace expreval
 } // namespace stk
 
-#endif // SIERRA_ExprEval_h
+#endif //stk_expreval_evaluator_hpp

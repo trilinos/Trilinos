@@ -19,18 +19,6 @@ printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
 printf "FORTRAN_MACRO=${fortran_macro}\n";
 printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk_user_facing'\n\n";
 
-if [ $# -ne 1 ] ; then
-  echo "Usage: run_cmake_stk_user_facing tpl_paths_file";
-  exit 1;
-fi
-tpl_paths=$1
-if [ ! -f ${tpl_paths} ] ; then
-  echo "Error, tpl_paths file ${tpl_paths} not found.";
-  exit 1;
-fi
-
-source ${tpl_paths}
-
 mkdir -p $trilinos_install_dir
 mkdir -p $build_dir
 
@@ -61,7 +49,7 @@ cmake \
 -DMPI_BASE_DIR:PATH=$mpi_base_dir \
 -DTrilinos_ENABLE_Tpetra:BOOL=ON \
 -DTpetraCore_ENABLE_TESTS:BOOL=OFF \
--DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF \
+-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=ON \
 -DTrilinos_ENABLE_Zoltan2:BOOL=ON \
 -DZoltan2_ENABLE_ParMETIS:BOOL=ON \
 -DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
@@ -83,20 +71,10 @@ cmake \
 -DTPL_Netcdf_Enables_Netcdf4:BOOL=ON \
 -DTPL_Netcdf_Enables_Pnetcdf:BOOL=ON \
 -DTPL_ENABLE_Zlib:BOOL=ON \
+-DHAVE_PARMETIS_VERSION_4_0_3=ON \
 -DTPL_ENABLE_ParMETIS:BOOL=ON \
--DParMETIS_INCLUDE_DIRS:PATH="${PARMETIS_INC_DIR};${METIS_INC_DIR}" \
--DParMETIS_LIBRARY_DIRS:PATH="${PARMETIS_LIB_DIR};${METIS_LIB_DIR}" \
 -DTPL_ENABLE_Pnetcdf:BOOL=ON \
--DNetCDF_INCLUDE_DIRS:PATH=${NETCDF_INC_DIR} \
--DNetCDF_LIBRARIES="-L${NETCDF_LIB_DIR} -lnetcdf -L${PNETCDF_LIB_DIR} -lpnetcdf -L${HDF_LIB_DIR} -lhdf5_hl -lhdf5 -ldl" \
 -DTPL_ENABLE_HDF5:BOOL=ON \
--DHDF5_INCLUDE_DIRS:PATH=${HDF_INC_DIR} \
--DHDF5_LIBRARY_DIRS:PATH=${HDF_LIB_DIR} \
--DPnetcdf_INCLUDE_DIRS:PATH=${PNETCDF_INC_DIR} \
--DPnetcdf_LIBRARY_DIRS:PATH=${PNETCDF_LIB_DIR} \
--DBoost_INCLUDE_DIRS:PATH="$BOOST_INC_DIR" \
--DTPL_BLAS_LIBRARIES="${BLAS_LIBRARIES}" \
--DTPL_LAPACK_LIBRARIES="${LAPACK_LIBRARIES}" \
 -DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
 ${trilinos_src_dir}/
 

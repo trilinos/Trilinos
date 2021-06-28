@@ -111,7 +111,9 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) :
         m_parallelInfoForGraphEdges(bulkData.parallel_rank()),
         m_modCycleWhenGraphModified(0),
         m_any_shell_elements_exist(false),
-        m_idMapper()
+        m_idMapper(),
+        m_sideConnector(m_bulk_data, m_graph, m_coincidentGraph, m_idMapper),
+        m_sideNodeConnector(m_bulk_data, m_graph, m_coincidentGraph, m_parallelInfoForGraphEdges, m_idMapper)
 {
     fill_from_mesh();
 }
@@ -837,11 +839,6 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                             {
                                 stk::mesh::PartVector parts = impl::get_parts_for_creating_side(bulkData, parts_for_creating_side, other_element, side_id);
 
-//                                stk::mesh::EntityId side_global_id = elementGraph.get_available_side_id();
-//
-//                                stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
-//                                ThrowRequireWithSierraHelpMsg(!impl::is_id_already_in_use_locally(bulkData, side_rank, side_global_id));
-
                                 // switch elements
                                 stk::mesh::Entity element_with_perm_0 = other_element;
                                 stk::mesh::Entity element_with_perm_4 = this_element;
@@ -853,18 +850,6 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
                                                 << " in elem-elem-graph");
 
                                 side = bulkData.declare_element_side(element_with_perm_0, side_id_needed, parts);
-//                                side = bulkData.declare_element_side(side_global_id, element_with_perm_0, side_id_needed, parts);
-//
-//                                const stk::mesh::Entity* side_nodes = bulkData.begin_nodes(side);
-//                                unsigned num_side_nodes = bulkData.num_nodes(side);
-//                                stk::mesh::EntityVector side_nodes_vec(side_nodes, side_nodes + num_side_nodes);
-//
-//                                std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ord_and_perm =
-//                                        stk::mesh::get_ordinal_and_permutation(bulkData, element_with_perm_4, side_rank, side_nodes_vec);
-//
-//                                report_error_with_invalid_ordinal(ord_and_perm, bulkData, side_nodes_vec, element_with_perm_0, element_with_perm_4);
-//
-//                                bulkData.declare_relation(element_with_perm_4, side, ord_and_perm.first, ord_and_perm.second);
                             }
                         }
                         else
@@ -900,16 +885,6 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData,
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
     bulkData.make_mesh_parallel_consistent_after_element_death(shared_modified, deletedEntities, elementGraph, killedElements, active, modEndOpt);
     return remote_death_boundary.get_topology_modification_status();
-}
-
-stk::mesh::SideConnector ElemElemGraph::get_side_connector()
-{
-    return stk::mesh::SideConnector(m_bulk_data, m_graph, m_coincidentGraph, m_idMapper);
-}
-
-stk::mesh::SideNodeConnector ElemElemGraph::get_side_node_connector()
-{
-    return stk::mesh::SideNodeConnector(m_bulk_data, m_graph, m_coincidentGraph, m_parallelInfoForGraphEdges, m_idMapper);
 }
 
 stk::mesh::SideIdChooser ElemElemGraph::get_side_id_chooser()

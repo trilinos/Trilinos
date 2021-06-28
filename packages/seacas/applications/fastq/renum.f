@@ -60,9 +60,9 @@ C***********************************************************************
 
 C  HEADER
 
-      CALL MESAGE (' ')
-      CALL MESAGE ('NUMBERING OF GENERATED OUTPUT BEGUN')
-      IF (OPTIM) CALL MESAGE ('  -- OPTIMIZATION IS ENABLED --')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('NUMBERING OF GENERATED OUTPUT BEGUN')
+      IF (OPTIM) CALL MESSAGE('  -- OPTIMIZATION IS ENABLED --')
 
 C  READ THE MESH TAPE
 
@@ -71,7 +71,7 @@ C  READ THE MESH TAPE
      &   NXK, MAT, MATMAP, NUMMAT, ISIDE, NLPS, IFLINE, ILLIST, LINKS,
      &   LINKR, IMAT, LINKB, JMAT, NNNBC, NNSBC, ERR)
       IF (ERR) THEN
-         CALL MESAGE ('** NUMBERING ABORT **')
+         CALL MESSAGE('** NUMBERING ABORT **')
          RETURN
       END IF
 
@@ -97,8 +97,8 @@ C  SEQUENCE NUMBERS
             IF (NXK(I, K) .GT. 0) THEN
                NEW = INDX(NNN, NUID, NXK(I, K))
                IF (NEW .EQ. 0) THEN
-                  CALL MESAGE ('ERROR SORTING NUMBERING DATA -- NODE')
-                  CALL MESAGE ('*** NO MESH SAVED ***')
+                  CALL MESSAGE('ERROR SORTING NUMBERING DATA -- NODE')
+                  CALL MESSAGE('*** NO MESH SAVED ***')
                   KKK = 0
                   RETURN
                END IF
@@ -116,8 +116,8 @@ C  SEQUENCE NUMBERS
             IF (LSTNBC(I) .GT. 0) THEN
                NEW = INDX(NNN, NUID, LSTNBC(I))
                IF (NEW .EQ. 0) THEN
-                  CALL MESAGE ('ERROR SORTING NUMBERING DATA -- NBC')
-                  CALL MESAGE ('*** NO MESH SAVED ***')
+                  CALL MESSAGE('ERROR SORTING NUMBERING DATA -- NBC')
+                  CALL MESSAGE('*** NO MESH SAVED ***')
                   KKK = 0
                   RETURN
                END IF
@@ -145,7 +145,7 @@ C  BUILD KXN ARRAY
                CALL KXNADD (MAXKXN, NNXK, KXN, NUMKXN, K, NXK(I, K),
      &            ERR)
                IF (ERR) THEN
-                  CALL MESAGE ('** NUMBERING ABORT **')
+                  CALL MESSAGE('** NUMBERING ABORT **')
                   KKK = 0
                   RETURN
                END IF
@@ -161,21 +161,21 @@ C  GET STARTING LIST FOR CUTHILL-MCKEE PROCESS
      &         NNXK, KXN, NXK, NUID, XN, YN, LIST, NUML, NUMBER, KCRD,
      &         NNN, ERR, NOROOM)
             IF (NOROOM) THEN
-               CALL MESAGE ('TOO MANY NODES IN STARTING LIST')
-               CALL MESAGE ('*** NO MESH SAVED ***')
-               CALL MESAGE ('** NUMBERING ABORT **')
+               CALL MESSAGE('TOO MANY NODES IN STARTING LIST')
+               CALL MESSAGE('*** NO MESH SAVED ***')
+               CALL MESSAGE('** NUMBERING ABORT **')
                KKK = 0
                RETURN
             ELSE IF (ERR) THEN
-               CALL MESAGE ('ERROR GENERATING STARTING LIST')
-               CALL MESAGE ('*** NO MESH SAVED ***')
-               CALL MESAGE ('** NUMBERING ABORT **')
+               CALL MESSAGE('ERROR GENERATING STARTING LIST')
+               CALL MESSAGE('*** NO MESH SAVED ***')
+               CALL MESSAGE('** NUMBERING ABORT **')
                KKK = 0
                RETURN
             END IF
          ELSE
-            CALL MESAGE ('NO CARDS AVAILABLE FOR STARTING LIST')
-            CALL MESAGE ('FIRST NODE IN THE OUTPUT USED')
+            CALL MESSAGE('NO CARDS AVAILABLE FOR STARTING LIST')
+            CALL MESSAGE('FIRST NODE IN THE OUTPUT USED')
             NUML = 1
             LIST(1) = 1
          END IF
@@ -205,15 +205,15 @@ C  CREATE LIST OF NEW NODES CONNECTED TO LIST A
             CALL GETNXN (NPNODE, NPELEM, MAXKXN, NNXK, KXN, NXK, LISTN,
      &         LA(N), NLIST, NUMB1, ALL, ERR)
             IF (ERR) THEN
-               CALL MESAGE ('** NUMBERING ABORT **')
+               CALL MESSAGE('** NUMBERING ABORT **')
                KKK = 0
                RETURN
             END IF
             IF (NUMB1 .GT. 0) THEN
                IF ((NUMB + NUMB1) .GT. NPNODE) THEN
-                  CALL MESAGE ('LIST B HAS OVERFLOWED')
-                  CALL MESAGE ('*** NO MESH SAVED  ***')
-                  CALL MESAGE ('** NUMBERING ABORT **')
+                  CALL MESSAGE('LIST B HAS OVERFLOWED')
+                  CALL MESSAGE('*** NO MESH SAVED  ***')
+                  CALL MESSAGE('** NUMBERING ABORT **')
                   KKK = 0
                   RETURN
                END IF
@@ -251,9 +251,9 @@ C  CHECK IF ALL NODES WERE COVERED
 
 C  START THE LIST AGAIN WITH THE MISSED NODE
 
-                  CALL MESAGE ('A DISCONTINUITY (SLIDE LINE) IN THE '//
+                  CALL MESSAGE('A DISCONTINUITY (SLIDE LINE) IN THE '//
      &               'BODY HAS BEEN FOUND')
-                  CALL MESAGE
+                  CALL MESSAGE
      &               ('SEPARATE PART NUMBERING WILL ALSO BE OPTIMIZED')
                   NUMA = 1
                   LA(1) = I
@@ -263,9 +263,9 @@ C  START THE LIST AGAIN WITH THE MISSED NODE
 
 C  DEFINITE ERROR IN THE NUMBERING PROCESS
 
-            CALL MESAGE ('ALL NODES COULD NOT BE FOUND TO NUMBER')
-            CALL MESAGE ('       *** NO MESH SAVED ***')
-            CALL MESAGE ('       ** NUMBERING ABORT **')
+            CALL MESSAGE('ALL NODES COULD NOT BE FOUND TO NUMBER')
+            CALL MESSAGE('       *** NO MESH SAVED ***')
+            CALL MESSAGE('       ** NUMBERING ABORT **')
             KKK = 0
             RETURN
          END IF
@@ -315,7 +315,7 @@ C  REBUILD KXN ARRAY
                   CALL KXNADD (MAXKXN, NNXK, KXN, NUMKXN, K, NXK(I, K),
      &               ERR)
                   IF (ERR) THEN
-                     CALL MESAGE ('** NUMBERING ABORT **')
+                     CALL MESSAGE('** NUMBERING ABORT **')
                      KKK = 0
                      RETURN
                   END IF
@@ -435,8 +435,8 @@ C      MATMAP(3, I) = THE LAST ELEMENT IN THE I'TH BLOCK
          MATMAP(3, I) = KOUNT - 1
   440 CONTINUE
       IF (KOUNT - 1 .NE. KKK) THEN
-         CALL MESAGE ('ALL ELEMENTS DID NOT HAVE AN ELEMENT ID')
-         CALL MESAGE ('MESH NUMBERING ABORTED')
+         CALL MESSAGE('ALL ELEMENTS DID NOT HAVE AN ELEMENT ID')
+         CALL MESSAGE('MESH NUMBERING ABORTED')
          KKK = 0
          RETURN
       END IF
@@ -650,8 +650,8 @@ C  WATCH OUT FOR 3 NODE BAR ELEMENTS
                   N8 = INDX(NOLD, LISTN, NXK(8, I))
                   IF ((N2 .EQ. 0) .OR. (N4 .EQ. 0) .OR.
      &               (N6 .EQ. 0) .OR. (N8 .EQ. 0)) THEN
-                     CALL MESAGE ('BAD LINK IN RENUM AT 8 NODE LIST')
-                     CALL MESAGE ('NO MESH SAVED')
+                     CALL MESSAGE('BAD LINK IN RENUM AT 8 NODE LIST')
+                     CALL MESSAGE('NO MESH SAVED')
                      KKK = 0
                      RETURN
                   END IF
@@ -697,8 +697,8 @@ C  AGAIN, WATCH OUT FOR 3 NODE BAR ELEMENTS
                IF (.NOT. ISBARS .OR. NXK(I, K) .GT. 0) THEN
                   NEW = INDX(NNN, LISTN, NXK(I, K))
                   IF (NEW .EQ. 0) THEN
-                     CALL MESAGE ('BAD LINK IN RENUM 8 NODE LIST')
-                     CALL MESAGE ('NO MESH SAVED')
+                     CALL MESSAGE('BAD LINK IN RENUM 8 NODE LIST')
+                     CALL MESSAGE('NO MESH SAVED')
                      KKK = 0
                      RETURN
                   END IF
@@ -713,8 +713,8 @@ C  NOW FIX THE NODE BOUNDARY FLAGS
             DO 660 I = 1, NNLIST
                NEW = INDX(NNN, LISTN, LSTNBC(I))
                IF (NEW .EQ. 0) THEN
-                  CALL MESAGE ('BAD LINK IN RENUM AT 8 NODE NBC')
-                  CALL MESAGE ('NO MESH SAVED')
+                  CALL MESSAGE('BAD LINK IN RENUM AT 8 NODE NBC')
+                  CALL MESSAGE('NO MESH SAVED')
                   KKK = 0
                   RETURN
                END IF
@@ -728,8 +728,8 @@ C  NOW FIX THE SIDE BOUNDARY FLAGS
             DO 670 I = 1, NVLIST
                NEW = INDX(NNN, LISTN, NSIDEN(I))
                IF (NEW .EQ. 0) THEN
-                  CALL MESAGE ('BAD LINK IN RENUM AT 8 NODE SBC')
-                  CALL MESAGE ('NO MESH SAVED')
+                  CALL MESSAGE('BAD LINK IN RENUM AT 8 NODE SBC')
+                  CALL MESSAGE('NO MESH SAVED')
                   KKK = 0
                   RETURN
                END IF
@@ -740,22 +740,22 @@ C  NOW FIX THE SIDE BOUNDARY FLAGS
 
 C  RENUMBERING COMPLETED
 
-      CALL MESAGE (' ')
-      CALL MESAGE ('**************************************************')
-      CALL MESAGE ('**           MESH PROCESSING COMPLETED          **')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('**************************************************')
+      CALL MESSAGE('**           MESH PROCESSING COMPLETED          **')
       IF (ISBARS .AND. NINE) THEN
-         CALL MESAGE ('**            THREE NODE BARS OUTPUT         '//
+         CALL MESSAGE('**            THREE NODE BARS OUTPUT         '//
      &      '   **')
       ENDIF
       IF (NINE) THEN
-         CALL MESAGE ('**            NINE NODE QUADS OUTPUT         '//
+         CALL MESSAGE('**            NINE NODE QUADS OUTPUT         '//
      &      '   **')
       ELSE IF (EIGHT) THEN
-         CALL MESAGE ('**           EIGHT NODE QUADS OUTPUT         '//
+         CALL MESSAGE('**           EIGHT NODE QUADS OUTPUT         '//
      &      '   **')
       END IF
       IF (OPTIM) THEN
-         CALL MESAGE
+         CALL MESSAGE
      &      ('**   WITH NODE AND ELEMENT NUMBERING OPTIMIZED  **')
 
 C  FIND LARGEST NODE DIFFERENCE FOR AN ELEMENT
@@ -790,7 +790,7 @@ C  FIND LARGEST NODE DIFFERENCE FOR AN ELEMENT
          WRITE(*, 10000) LWID
       END IF
       WRITE(*, 10010) NNN, KKK, NUMMAT
-      CALL MESAGE ('**************************************************')
+      CALL MESSAGE('**************************************************')
 
 C  RESTORE THE NUID ARRAY AS A POINTER ARRAY OF OLD TO NEW ELEMENTS
 C  (MAPDXG ARRAY)

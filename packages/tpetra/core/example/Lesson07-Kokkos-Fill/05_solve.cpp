@@ -420,9 +420,7 @@ int main (int argc, char* argv[]) {
     //
     // u(x) = -4.0 * (x - 0.5) * (x - 0.5) + 1.0 + (T_left - T_right)x.
     Tpetra::Vector<> x_exact (x, Teuchos::Copy);
-    typedef Tpetra::Vector<>::dual_view_type dual_view_type;
     typedef typename device_type::execution_space execution_space;
-    typedef typename device_type::memory_space memory_space;
     typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
 
     auto x_exact_lcl = x_exact.getLocalViewDevice (Tpetra::Access::ReadWrite);

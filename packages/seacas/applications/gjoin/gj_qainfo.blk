@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -6,8 +6,8 @@ C    See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'GJoin2  '
-      QAINFO(2) = '2021/03/31                      '
-      QAINFO(3) = ' 1.35                           '
+      QAINFO(2) = '2021/06/22                      '
+      QAINFO(3) = ' 1.36                           '
 
 C - Added EXPXYZ - By material matching
 C - Fixes in expxyz, matxyz, comand, irennp
@@ -72,3 +72,4 @@ c - optimize nodeset combining since locint was taking lots of time on some comp
 c - fixing sideset node count information for large models
 c - fixing sideset df copy if no sideset df
 c - call mdfree()
+c - add basic support for named entities.

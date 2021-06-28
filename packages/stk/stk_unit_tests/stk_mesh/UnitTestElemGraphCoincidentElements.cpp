@@ -234,7 +234,7 @@ TEST_F(HexShellShell, SideConnections)
         setup_hex_shell_shell_on_procs({0, 0, 0});
 
         stk::mesh::ElemElemGraph elemElemGraph(get_bulk());
-        stk::mesh::SideConnector sideConnector = elemElemGraph.get_side_connector();
+        stk::mesh::SideConnector& sideConnector = elemElemGraph.get_side_connector();
 
         get_bulk().modification_begin();
         stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);

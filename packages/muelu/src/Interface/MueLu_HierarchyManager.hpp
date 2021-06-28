@@ -174,7 +174,7 @@ namespace MueLu {
       H.SetMaxCoarseSize(maxCoarseSize_);
       VerboseObject::SetDefaultVerbLevel(verbosity_);
       if (graphOutputLevel_ >= 0)
-        H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
+        H.EnableGraphDumping("dep_graph", graphOutputLevel_);
 
       if (VerboseObject::IsPrint(Statistics2)) {
         RCP<Matrix> Amat = rcp_dynamic_cast<Matrix>(Op);

@@ -119,7 +119,6 @@ namespace {
     typedef Teuchos::ScalarTraits<ST> STS;
     typedef typename STS::magnitudeType MT;
     typedef Teuchos::ScalarTraits<MT> STM;
-    typedef typename ArrayView<const LO>::size_type size_type;
     typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
 
     MT mySum = STM::zero ();

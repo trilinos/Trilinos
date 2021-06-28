@@ -10,7 +10,6 @@
 #include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert>
-#include <chrono>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -25,8 +24,6 @@
 #endif
 
 namespace {
-  auto initial_time = std::chrono::steady_clock::now();
-
 #ifdef SEACAS_HAVE_MPI
   MPI_Op which_reduction(Ioss::ParallelUtils::MinMax which)
   {

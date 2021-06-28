@@ -128,7 +128,6 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   using Teuchos::rcp_dynamic_cast;
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
-  using IST = typename CrsMatrix<Scalar, LO, GO, Node>::impl_scalar_type;
   using import_type = Tpetra::Import<LO, GO, Node>;
   using export_type = Tpetra::Export<LO, GO, Node>;
 
@@ -174,14 +173,8 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   }
 
   using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
-  using local_graph_device_type = typename crs_matrix_type::local_graph_device_type;
-  using offset_type = typename local_graph_device_type::size_type;
-  using row_map_type = typename local_matrix_device_type::row_map_type::non_const_type;
-  using index_type = typename local_matrix_device_type::index_type::non_const_type;
-  using values_type = typename local_matrix_device_type::values_type::non_const_type;
-  using execution_space = typename local_matrix_device_type::execution_space;
 
-  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrix ();
+  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
   local_matrix_device_type lclTransposeMatrix = KokkosKernels::Impl::transpose_matrix(lclMatrix);
   if (sort)
     KokkosKernels::Impl::sort_crs_matrix(lclTransposeMatrix);

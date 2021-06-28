@@ -179,6 +179,7 @@ public:
 
   NgpFieldBase * get_ngp_field() const;
   void set_ngp_field(NgpFieldBase * ngpField) const;
+  void fence() const;
 
   size_t num_syncs_to_host() const;
   size_t num_syncs_to_device() const;

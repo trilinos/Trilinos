@@ -1,149 +1,46 @@
+// Copyright 2002 - 2008, 2010, 2011 National Technology Engineering
+// Solutions of Sandia, LLC (NTESS). Under the terms of Contract
+// DE-NA0003525 with NTESS, the U.S. Government retains certain rights
+// in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of NTESS nor the names of its contributors
+//       may be used to endorse or promote products derived from this
+//       software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <test_utils/OptionsForTesting.hpp>
-#include <test_utils/MeshFixtureMxNRebalance.hpp>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_CommSet.h>
-#include <Ioss_SideSet.h>
-#include <Ioss_NodeBlock.h>
-#include <Ioss_SideBlock.h>
-#include <Ioss_Field.h>
-#include <stk_io/IossBridge.hpp>
 #include <stk_util/environment/perf_util.hpp>
-#include <stk_balance/m2n/MxNutils.hpp>
-#include <stk_balance/m2n/balanceMtoN.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_balance/m2n/MtoNRebalancer.hpp>
+#include <stk_mesh/base/Comm.hpp>
+#include <stk_balance/balanceUtils.hpp>
+#include <stk_balance/balance.hpp>
 
 namespace
 {
-
-class TestBalanceMxNRebalanceUsingInputFiles : public MeshFixtureMxNRebalance
-{
-protected:
-    TestBalanceMxNRebalanceUsingInputFiles()
-    : MeshFixtureMxNRebalance(), num_procs_initial_decomp(0),
-    num_procs_target_decomp(0), mOutputFileName("subomain.exo"), mInputFileName("")
-    {
-    }
-
-    virtual unsigned get_num_procs_initial_decomp() const { return num_procs_initial_decomp; }
-    virtual unsigned get_num_procs_target_decomp()  const { return num_procs_target_decomp; }
-    virtual std::string get_output_filename() const { return mOutputFileName; }
-    virtual std::string get_input_mesh_file_name() const { return mInputFileName; }
-
-    void set_options()
-    {
-        Options options = getOptionsForTest("none");
-        test_options_are_set(options);
-        init_member_data(options);
-    }
-
-    void init_member_data(const Options &options)
-    {
-        num_procs_initial_decomp = stk::parallel_machine_size(get_comm());
-        num_procs_target_decomp = options.getNumTargetProcs();
-        mInputFileName = options.getMeshFileName();
-        mOutputFileName = options.getOutputFilename();
-    }
-
-    void setup_initial_mesh_from_last_time_step(stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        setup_mesh_from_last_time_step(get_input_mesh_file_name(), auraOption);
-    }
-
-    int numSteps = -1;
-    double maxTime = 0.0;
-
-private:
-    void fill_time_data_from_last_time_step(stk::io::StkMeshIoBroker &stkIo)
-    {
-        numSteps = stkIo.get_num_time_steps();
-        if(numSteps>0)
-        {
-            stkIo.read_defined_input_fields(numSteps);
-            maxTime = stkIo.get_max_time();
-        }
-    }
-
-    void setup_mesh_from_last_time_step(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
-    {
-        stk::io::StkMeshIoBroker stkIo;
-        allocate_bulk(auraOption);
-        stk::io::fill_mesh_preexisting(stkIo, meshSpecification, *bulkData);
-        fill_time_data_from_last_time_step(stkIo);
-    }
-
-private:
-    void test_options_are_set(const Options &options)
-    {
-        ASSERT_TRUE(options.getMeshFileName() != "none");
-        ASSERT_TRUE(options.getNumTargetProcs() != 0);
-    }
-
-private:
-    int num_procs_initial_decomp;
-    int num_procs_target_decomp;
-    std::string mOutputFileName;
-    std::string mInputFileName;
-};
-
-
-std::vector<std::pair<stk::mesh::EntityId, int>> getSharingInfo(stk::mesh::BulkData& bulkData)
-{
-    stk::mesh::EntityVector sharedNodes;
-    const bool sortById = true;
-    stk::mesh::get_entities(bulkData, stk::topology::NODE_RANK, bulkData.mesh_meta_data().globally_shared_part(), sharedNodes, sortById);
-    std::vector<std::pair<stk::mesh::EntityId, int>> nodeSharingInfo;
-    nodeSharingInfo.reserve(8*sharedNodes.size());
-
-    std::vector<int> sharingProcs;
-    for(stk::mesh::Entity sharedNode : sharedNodes)
-    {
-        bulkData.comm_shared_procs(bulkData.entity_key(sharedNode), sharingProcs);
-        for(unsigned j=0;j<sharingProcs.size();++j)
-            nodeSharingInfo.push_back(std::make_pair(bulkData.identifier(sharedNode), sharingProcs[j]));
-    }
-
-    return nodeSharingInfo;
-}
-
-void verify_node_sharing_info(const std::vector<std::pair<stk::mesh::EntityId, int>> &nodeSharingInfo, const std::string& filename)
-{
-    stk::mesh::MetaData meta(3);
-    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-    stk::io::fill_mesh(filename, bulk);
-
-    std::vector<std::pair<stk::mesh::EntityId, int>> nodeSharingInfoAfter = getSharingInfo(bulk);
-
-    EXPECT_TRUE(nodeSharingInfo == nodeSharingInfoAfter);
-}
-
-TEST_F(TestBalanceMxNRebalanceUsingInputFiles, read4procswrite4procsFilesUsingIoss)
-{
-    if(stk::parallel_machine_size(get_comm())==4)
-    {
-        set_options();
-        setup_initial_mesh_from_last_time_step(stk::mesh::BulkData::NO_AUTO_AURA);
-        std::vector<std::pair<stk::mesh::EntityId, int>> nodeSharingInfo = getSharingInfo(get_bulk());
-        std::vector<size_t> counts;
-        stk::mesh::comm_mesh_counts(get_bulk(), counts);
-        int global_num_nodes = counts[stk::topology::NODE_RANK];
-        int global_num_elems = counts[stk::topology::ELEM_RANK];
-
-        stk::io::write_file_for_subdomain(get_output_filename(),
-                                          get_bulk().parallel_rank(),
-                                          get_bulk().parallel_size(),
-                                          global_num_nodes,
-                                          global_num_elems,
-                                          get_bulk(),
-                                          nodeSharingInfo,
-                                          numSteps,
-                                          maxTime);
-
-        verify_node_sharing_info(nodeSharingInfo, get_output_filename());
-    }
-}
 
 class BulkDataForBalance : public stk::mesh::BulkData
 {

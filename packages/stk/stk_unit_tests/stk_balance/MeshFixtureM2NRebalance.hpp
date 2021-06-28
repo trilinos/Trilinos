@@ -35,7 +35,7 @@
 #define MESHFIXTUREM2NREBALANCE_HPP
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_balance/m2n/balanceMtoN.hpp>
+#include <stk_balance/m2n/m2nRebalance.hpp>
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>

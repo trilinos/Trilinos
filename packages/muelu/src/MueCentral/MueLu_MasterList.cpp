@@ -184,6 +184,7 @@ namespace MueLu {
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
   "<Parameter name=\"hierarchy label\" type=\"string\" value=\"\"/>"
   "<ParameterList name=\"matvec params\"/>"
+  "<Parameter name=\"half precision\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -225,6 +226,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
   "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: coloring algorithm\" type=\"string\" value=\"serial\"/>"
+  "<Parameter name=\"aggregation: coloring: use color graph\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: enable phase 1\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
@@ -570,6 +572,8 @@ namespace MueLu {
       
          ("matvec params","matvec params")
       
+         ("half precision","half precision")
+      
          ("smoother: pre or post","smoother: pre or post")
       
          ("smoother: type","smoother: type")
@@ -651,6 +655,8 @@ namespace MueLu {
          ("aggregation: deterministic","aggregation: deterministic")
       
          ("aggregation: coloring algorithm","aggregation: coloring algorithm")
+      
+         ("aggregation: coloring: use color graph","aggregation: coloring: use color graph")
       
          ("aggregation: enable phase 1","aggregation: enable phase 1")
       

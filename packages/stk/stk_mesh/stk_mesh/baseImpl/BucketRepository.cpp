@@ -417,7 +417,6 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
   ThrowAssertMsg(stk::util::is_sorted_and_unique(std::vector<unsigned>(arg_key.begin()+1,arg_key.end()-1),std::less<unsigned>()),"bucket created with 'key' vector that's not sorted and unique");
   BucketVector &bucket_vec = m_buckets[arg_entity_rank];
   const unsigned bucket_id = bucket_vec.size();
-
   Bucket * new_bucket = new Bucket(m_mesh, arg_entity_rank, arg_key, arg_capacity, bucket_id);
   ThrowRequire(new_bucket != NULL);
 
