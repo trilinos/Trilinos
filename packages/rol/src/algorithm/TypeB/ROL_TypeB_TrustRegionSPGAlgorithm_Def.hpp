@@ -450,9 +450,9 @@ void TrustRegionSPGAlgorithm<Real>::dpsg(Vector<Real> &y,
   //       y = Cauchy step
   //       x = Current iterate
   //       g = Current gradient
-  const Real zero(0), half(0.5), one(1), two(2), eps(std::sqrt(ROL_EPSILON<Real>()));
+  const Real zero(0), half(0.5), one(1), two(2); //, eps(std::sqrt(ROL_EPSILON<Real>()));
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
-  Real alpha(1), sHs(0), alphaTmp(1), mmax(0), qmin(0);
+  Real alpha(1), sHs(0), alphaTmp(1), mmax(0), qmin(0), lambdaTmp(1);
   std::deque<Real> mqueue; mqueue.push_back(q);
 
   if (useNMSP_ && useMin_) { qmin = q; ymin.set(y); }
@@ -466,7 +466,8 @@ void TrustRegionSPGAlgorithm<Real>::dpsg(Vector<Real> &y,
   const Real gtol = std::min(tol1_,tol2_*gnorm);
 
   // Compute initial step
-  Real lambda = std::max(lambdaMin_,std::min(one/gmod.norm(),lambdaMax_));
+  Real coeff  = one/gmod.norm();
+  Real lambda = std::max(lambdaMin_,std::min(coeff,lambdaMax_));
   pwa.set(y); pwa.axpy(-lambda,pwa1);             // pwa = y - lambda gmod.dual()
   dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream); // pwa = P(y - lambda gmod.dual())
   pwa.axpy(-one,y);                               // pwa = P(y - lambda gmod.dual()) - y = step
@@ -525,7 +526,9 @@ void TrustRegionSPGAlgorithm<Real>::dpsg(Vector<Real> &y,
     if (gnorm < gtol) break;
 
     // Compute new spectral step
-    lambda = (sHs<=eps ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/sHs,lambdaMax_)));
+    //lambda = (sHs<=eps ? lambdaMax_ : std::max(lambdaMin_,std::min(ss/sHs,lambdaMax_)));
+    lambdaTmp = (sHs == 0 ? coeff : ss/sHs);
+    lambda = std::max(lambdaMin_,std::min(lambdaTmp,lambdaMax_));
     pwa.set(y); pwa.axpy(-lambda,pwa1);
     dproj(pwa,x,del,pwa2,pwa3,pwa4,pwa5,outStream);
     pwa.axpy(-one,y);
