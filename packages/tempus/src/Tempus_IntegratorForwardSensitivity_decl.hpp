@@ -45,8 +45,7 @@ namespace Tempus {
  */
 template<class Scalar>
 class IntegratorForwardSensitivity
-  : virtual public Tempus::Integrator<Scalar>,
-    virtual public Teuchos::ParameterListAcceptor
+  : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
@@ -84,7 +83,9 @@ public:
    */
   IntegratorForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &integrator
+    );
 
   /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
   IntegratorForwardSensitivity(
@@ -219,14 +220,7 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
-      override;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override
-      { return tempus_pl_; }
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
-
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
-      const override;
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
   //@}
 
   /// \name Overridden from Teuchos::Describable
