@@ -233,6 +233,14 @@ public:
   void expertSetExportLIDsContiguous<LO,GO,NT>(Transfer<LO, GO, NT> transfer, bool contig);
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+  /// \brief Are source and target map locally fitted?
+  ///
+  /// Returns whether source and target map are locally fitted on the
+  /// calling rank. This is can be more efficient that calling
+  /// isLocallyFitted() on the maps directly, since no indices need to
+  /// be compared.
+  bool isLocallyFitted () const;
+
   /// \brief Describe this object in a human-readable way to the given
   ///   output stream.
   ///
