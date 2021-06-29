@@ -216,6 +216,9 @@ namespace Tpetra {
     class DistributorActor {
 
     public:
+      DistributorActor();
+      DistributorActor(const DistributorActor& otherActor);
+
       /// \brief Communication requests associated with nonblocking receives and sends.
       ///
       /// \note To implementers: Distributor uses requests_.size() as
@@ -223,6 +226,38 @@ namespace Tpetra {
       ///   This means you should always resize to zero after completing
       ///   receive and send requests.
       Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
+
+#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_;
+      Teuchos::RCP<Teuchos::Time> timer_doWaits_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_recvs_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_recvs_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_barrier_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_barrier_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_slow_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_slow_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_fast_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_fast_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_recvs_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_recvs_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_barrier_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_barrier_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_slow_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_slow_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_fast_;
+      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_fast_;
+
+      //! Make the instance's timers.  (Call only in constructor.)
+      void makeTimers();
+#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
+
     };
 
   } // namespace Details
@@ -952,37 +987,6 @@ namespace Tpetra {
     /// \brief The number of bytes received by this proc in the last call to do/doReverse
     size_t lastRoundBytesRecv_;
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_;
-    Teuchos::RCP<Teuchos::Time> timer_doWaits_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_fast_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_fast_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_fast_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_fast_;
-
-    //! Make the instance's timers.  (Call only in constructor.)
-    void makeTimers ();
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
     //! Get the tag to use for receives and sends.
     ///
     /// See useDistinctTags_.  This is called in doPosts() (both
@@ -1151,7 +1155,7 @@ namespace Tpetra {
     using size_type = Array<size_t>::size_type;
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts3TA_);
+    Teuchos::TimeMonitor timeMon (*actor_.timer_doPosts3TA_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     const bool debug = Details::Behavior::debug("Distributor");
@@ -1245,7 +1249,7 @@ namespace Tpetra {
     // with a receive).
     {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3TA_recvs_);
+      Teuchos::TimeMonitor timeMonRecvs (*actor_.timer_doPosts3TA_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       size_t curBufOffset = 0;
@@ -1288,7 +1292,7 @@ namespace Tpetra {
 
     if (doBarrier) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3TA_barrier_);
+      Teuchos::TimeMonitor timeMonBarrier (*actor_.timer_doPosts3TA_barrier_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
@@ -1306,7 +1310,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts3TA_sends_);
+    Teuchos::TimeMonitor timeMonSends (*actor_.timer_doPosts3TA_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // setup scan through procIdsToSendTo_ list starting with higher numbered procs
@@ -1336,7 +1340,7 @@ namespace Tpetra {
     if (plan_.indicesTo_.empty ()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3TA_sends_fast_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts3TA_sends_fast_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       // Data are already blocked (laid out) by process, so we don't
@@ -1413,7 +1417,7 @@ namespace Tpetra {
     else { // data are not blocked by proc, use send buffer
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3TA_sends_slow_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts3TA_sends_slow_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
@@ -1539,7 +1543,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts4TA_);
+    Teuchos::TimeMonitor timeMon (*actor_.timer_doPosts4TA_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // Run-time configurable parameters that come from the input
@@ -1620,7 +1624,7 @@ namespace Tpetra {
     // with a receive).
     {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4TA_recvs_);
+      Teuchos::TimeMonitor timeMonRecvs (*actor_.timer_doPosts4TA_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       size_t curBufferOffset = 0;
@@ -1654,7 +1658,7 @@ namespace Tpetra {
 
     if (doBarrier) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4TA_barrier_);
+      Teuchos::TimeMonitor timeMonBarrier (*actor_.timer_doPosts4TA_barrier_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       // If we are using ready sends (MPI_Rsend) below, we need to do
       // a barrier before we post the ready sends.  This is because a
@@ -1665,7 +1669,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts4TA_sends_);
+    Teuchos::TimeMonitor timeMonSends (*actor_.timer_doPosts4TA_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // setup arrays containing starting-offsets into exports for each send,
@@ -1701,7 +1705,7 @@ namespace Tpetra {
     if (plan_.indicesTo_.empty()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4TA_sends_fast_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts4TA_sends_fast_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
@@ -1770,7 +1774,7 @@ namespace Tpetra {
     else { // data are not blocked by proc, use send buffer
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4TA_sends_slow_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts4TA_sends_slow_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
@@ -2093,7 +2097,7 @@ namespace Tpetra {
 #endif // KOKKOS_ENABLE_CUDA
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
+    Teuchos::TimeMonitor timeMon (*actor_.timer_doPosts3KV_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     const int myRank = plan_.comm_->getRank ();
@@ -2167,7 +2171,7 @@ namespace Tpetra {
     // with a receive).
     {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
+      Teuchos::TimeMonitor timeMonRecvs (*actor_.timer_doPosts3KV_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       size_t curBufferOffset = 0;
@@ -2210,7 +2214,7 @@ namespace Tpetra {
 
     if (doBarrier) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3KV_barrier_);
+      Teuchos::TimeMonitor timeMonBarrier (*actor_.timer_doPosts3KV_barrier_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
@@ -2228,7 +2232,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
+    Teuchos::TimeMonitor timeMonSends (*actor_.timer_doPosts3KV_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // setup scan through procIdsToSendTo_ list starting with higher numbered procs
@@ -2258,7 +2262,7 @@ namespace Tpetra {
     if (plan_.indicesTo_.empty()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_fast_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts3KV_sends_fast_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
@@ -2346,7 +2350,7 @@ namespace Tpetra {
     else { // data are not blocked by proc, use send buffer
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_slow_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts3KV_sends_slow_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
@@ -2497,7 +2501,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts4KV_);
+    Teuchos::TimeMonitor timeMon (*actor_.timer_doPosts4KV_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // Run-time configurable parameters that come from the input
@@ -2573,7 +2577,7 @@ namespace Tpetra {
     // with a receive).
     {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
+      Teuchos::TimeMonitor timeMonRecvs (*actor_.timer_doPosts4KV_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       size_t curBufferOffset = 0;
@@ -2607,7 +2611,7 @@ namespace Tpetra {
 
     if (doBarrier) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4KV_barrier_);
+      Teuchos::TimeMonitor timeMonBarrier (*actor_.timer_doPosts4KV_barrier_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       // If we are using ready sends (MPI_Rsend) below, we need to do
       // a barrier before we post the ready sends.  This is because a
@@ -2618,7 +2622,7 @@ namespace Tpetra {
     }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts4KV_sends_);
+    Teuchos::TimeMonitor timeMonSends (*actor_.timer_doPosts4KV_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // setup arrays containing starting-offsets into exports for each send,
@@ -2653,7 +2657,7 @@ namespace Tpetra {
     if (plan_.indicesTo_.empty()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_fast_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts4KV_sends_fast_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
@@ -2721,7 +2725,7 @@ namespace Tpetra {
     else { // data are not blocked by proc, use send buffer
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_slow_);
+      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts4KV_sends_slow_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
       if (verbose_) {
