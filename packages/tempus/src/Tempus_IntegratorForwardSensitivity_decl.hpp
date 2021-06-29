@@ -87,11 +87,6 @@ public:
     const Teuchos::RCP<IntegratorBasic<Scalar> > &integrator
     );
 
-  /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
-  IntegratorForwardSensitivity(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    std::string stepperType);
-
   /// Destructor
   /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
   IntegratorForwardSensitivity();
@@ -253,13 +248,6 @@ Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
-
-/// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
-integratorForwardSensitivity(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  std::string stepperType);
 
 /// Nonmember constructor
 template<class Scalar>
