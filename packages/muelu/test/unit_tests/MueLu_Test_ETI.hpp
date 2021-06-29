@@ -63,6 +63,11 @@
 #include <TpetraCore_config.h>
 #endif
 
+#ifdef HAVE_MUELU_KOKKOSKERNELS
+#include <KokkosKernels_config.h>
+#include <KokkosKernels_Controls.hpp>
+#endif
+
 #ifndef MUELU_AUTOMATIC_TEST_ETI_NAME
 #error "The macro MUELU_AUTOMATIC_TEST_ETI_NAME was not defined"
 #endif
@@ -95,6 +100,19 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
 #endif
 
+  // Create handles for cuBLAS and cuSPARSE. Otherwise they get
+  // created on the first call to these libraries, and that can mess
+  // up timings.
+#ifdef HAVE_MUELU_KOKKOSKERNELS
+  KokkosKernels::Experimental::Controls controls;
+# ifdef KOKKOSKERNELS_ENABLE_TPL_CUBLAS
+  controls.getCublasHandle();
+# endif
+# ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  controls.getCusparseHandle();
+# endif
+  Kokkos::fence();
+#endif
   bool success = true;
   bool verbose = true;
   try {

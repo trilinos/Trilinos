@@ -48,6 +48,7 @@
 #include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_getGraphDiagOffsets.hpp"
+#include "Tpetra_Details_getGraphOffRankOffsets.hpp"
 #include "Tpetra_Details_makeColMap.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
@@ -6698,6 +6699,60 @@ namespace Tpetra {
     } // debug_
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalOffRankOffsets (offset_device_view_type& offsets) const
+  {
+    using std::endl;
+    const char tfecfFuncName[] = "getLocalOffRankOffsets: ";
+    const bool verbose = verbose_;
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("CrsGraph", "getLocalOffRankOffsets");
+      std::ostringstream os;
+      os << *prefix << "offsets.extent(0)=" << offsets.extent(0)
+         << endl;
+      std::cerr << os.str();
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! hasColMap (), std::runtime_error, "The graph must have a column Map.");
+    // Instead of throwing, we could also copy the rowPtr to k_offRankOffsets_.
+
+    const size_t lclNumRows = this->getNodeNumRows ();
+
+    if (haveLocalOffRankOffsets_ && k_offRankOffsets_.extent(0) == lclNumRows+1) {
+      offsets = k_offRankOffsets_;
+      return;
+    }
+    haveLocalOffRankOffsets_ = false;
+    k_offRankOffsets_ = offset_device_view_type(Kokkos::ViewAllocateWithoutInitializing("offRankOffset"), lclNumRows+1);
+    offsets = k_offRankOffsets_;
+
+    const map_type& colMap = * (this->getColMap ());
+    const map_type& domMap = * (this->getDomainMap ());
+
+    // mfh 12 Mar 2016: LocalMap works on (CUDA) device.  It has just
+    // the subset of Map functionality that we need below.
+    auto lclColMap = colMap.getLocalMap ();
+    auto lclDomMap = domMap.getLocalMap ();
+
+    // FIXME (mfh 16 Dec 2015) It's easy to thread-parallelize this
+    // setup, at least on the host.  For CUDA, we have to use LocalMap
+    // (that comes from each of the two Maps).
+
+    TEUCHOS_ASSERT(this->isSorted ());
+    if (isFillComplete ()) {
+      auto lclGraph = this->getLocalGraph ();
+      ::Tpetra::Details::getGraphOffRankOffsets (k_offRankOffsets_,
+                                                 lclColMap, lclDomMap,
+                                                 lclGraph);
+      haveLocalOffRankOffsets_ = true;
+    }
+  }
+
   namespace { // (anonymous)
 
     // mfh 21 Jan 2016: This is useful for getLocalDiagOffsets (see
@@ -7548,6 +7603,7 @@ namespace Tpetra {
 
     std::swap(graph.rowPtrsUnpacked_dev_, this->rowPtrsUnpacked_dev_);
     std::swap(graph.rowPtrsUnpacked_host_, this->rowPtrsUnpacked_host_);
+    std::swap(graph.k_offRankOffsets_, this->k_offRankOffsets_);
 
     std::swap(graph.lclIndsUnpacked_wdv, this->lclIndsUnpacked_wdv);
     std::swap(graph.gblInds_wdv, this->gblInds_wdv);
@@ -7563,6 +7619,7 @@ namespace Tpetra {
     std::swap(graph.noRedundancies_, this->noRedundancies_);
     std::swap(graph.haveLocalConstants_, this->haveLocalConstants_);
     std::swap(graph.haveGlobalConstants_, this->haveGlobalConstants_);
+    std::swap(graph.haveLocalOffRankOffsets_, this->haveLocalOffRankOffsets_);
 
     std::swap(graph.sortGhostsAssociatedWithEachProcessor_, this->sortGhostsAssociatedWithEachProcessor_);
 
@@ -7625,6 +7682,7 @@ namespace Tpetra {
     output = this->noRedundancies_ == graph.noRedundancies_ ? output : false;
     output = this->haveLocalConstants_ == graph.haveLocalConstants_ ? output : false;
     output = this->haveGlobalConstants_ == graph.haveGlobalConstants_ ? output : false;
+    output = this->haveLocalOffRankOffsets_ == graph.haveLocalOffRankOffsets_ ? output : false;
     output = this->sortGhostsAssociatedWithEachProcessor_ == this->sortGhostsAssociatedWithEachProcessor_ ? output : false;
 
     // Compare nonlocals_ -- std::map<GlobalOrdinal, std::vector<GlobalOrdinal> >
