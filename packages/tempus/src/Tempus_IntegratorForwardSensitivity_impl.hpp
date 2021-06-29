@@ -25,12 +25,9 @@ IntegratorForwardSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   const Teuchos::RCP<IntegratorBasic<Scalar> > &integrator)
 {
-  // get and set the integrator name
-  auto integratorName = inputPL->get<std::string>("Integrator Name");
-
   model_ = model;
   integrator_ = integrator;
-  integrator_->setIntegratorName(integratorName);
+  //integrator_->setIntegratorName(integratorName);
   this->setParameterList(inputPL);
   createSensitivityModelAndStepper(model);
 
@@ -45,30 +42,6 @@ IntegratorForwardSensitivity(
   }
 }
 
-template<class Scalar>
-IntegratorForwardSensitivity<Scalar>::
-IntegratorForwardSensitivity(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  std::string stepperType)
-{
-  model_ = model;
-
-  integrator_ = createIntegratorBasic<Scalar>();
-  this->setParameterList(Teuchos::null);
-  auto integratorName = tempus_pl_->get<std::string>("Integrator Name");
-  integrator_->setIntegratorName(integratorName);
-  createSensitivityModelAndStepper(model);
-  if (use_combined_method_)
-    integrator_ = createIntegratorBasic<Scalar>(sens_model_, stepperType);
-  else {
-    auto fsa_combined_me = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>>(sens_stepper_->getModel());
-    integrator_ = createIntegratorBasic<Scalar>(tempus_pl_, fsa_combined_me);
-    this->setParameterList(tempus_pl_);
-    integrator_->setStepper(sens_stepper_);
-    integrator_->initialize();
-  }
-
-}
 
 template<class Scalar>
 IntegratorForwardSensitivity<Scalar>::
@@ -329,21 +302,9 @@ integratorForwardSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
 
-  auto fwd_integrator = createIntegratorBasic<Scalar>();
+  auto fwd_integrator = createIntegratorBasic<Scalar>(pList, model);
   Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =
     Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>(pList, model, fwd_integrator));
-  return(integrator);
-}
-
-/// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
-integratorForwardSensitivity(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
-  std::string stepperType)
-{
-  Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>(model, stepperType));
   return(integrator);
 }
 
