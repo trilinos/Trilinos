@@ -1324,6 +1324,15 @@ namespace MueLu {
       throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
 #endif  // defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
     } else {
+
+      Level level;
+      RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+      level.SetFactoryManager(factoryHandler);
+      level.SetLevelID(0);
+      level.setObjectLabel("RefMaxwell (1,1)");
+      level.Set("A",SM_Matrix_);
+      level.setlib(SM_Matrix_->getDomainMap()->lib());
+
       if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
         std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
         std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
@@ -1334,42 +1343,49 @@ namespace MueLu {
         if (parameterList_.isSublist("smoother: post params"))
           postSmootherList = parameterList_.sublist("smoother: post params");
 
-        Level level;
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        level.SetFactoryManager(factoryHandler);
-        level.SetLevelID(0);
-        level.setObjectLabel("RefMaxwell (1,1)");
-        level.Set("A",SM_Matrix_);
-        level.setlib(SM_Matrix_->getDomainMap()->lib());
-
         RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
-        RCP<SmootherFactory> preSmootherFact = rcp(new SmootherFactory(preSmootherPrototype));
-
         RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
-        RCP<SmootherFactory> postSmootherFact = rcp(new SmootherFactory(postSmootherPrototype));
+        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(preSmootherPrototype, postSmootherPrototype));
 
-        level.Request("PreSmoother",preSmootherFact.get());
-        preSmootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",preSmootherFact.get());
-
-        level.Request("PostSmoother",postSmootherFact.get());
-        postSmootherFact->Build(level);
-        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",postSmootherFact.get());
+        level.Request("PreSmoother",smootherFact.get());
+        level.Request("PostSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          ParameterList smootherFactoryParams;
+          smootherFactoryParams.set("keep smoother data", true);
+          smootherFact->SetParameterList(smootherFactoryParams);
+          level.Request("PreSmoother data", smootherFact.get());
+          level.Request("PostSmoother data", smootherFact.get());
+          if (!PreSmootherData_.is_null())
+            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+          if (!PostSmootherData_.is_null())
+            level.Set("PostSmoother data", PostSmootherData_, smootherFact.get());
+        }
+        smootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
+        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
+          PostSmootherData_ = level.Get<RCP<SmootherPrototype> >("PostSmoother data",smootherFact.get());
+        }
       } else {
         std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
-        Level level;
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        level.SetFactoryManager(factoryHandler);
-        level.SetLevelID(0);
-        level.setObjectLabel("RefMaxwell (1,1)");
-        level.Set("A",SM_Matrix_);
-        level.setlib(SM_Matrix_->getDomainMap()->lib());
+
         RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
-        RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
-        level.Request("PreSmoother",SmootherFact.get());
-        SmootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(smootherPrototype));
+        level.Request("PreSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          ParameterList smootherFactoryParams;
+          smootherFactoryParams.set("keep smoother data", true);
+          smootherFact->SetParameterList(smootherFactoryParams);
+          level.Request("PreSmoother data", smootherFact.get());
+          if (!PreSmootherData_.is_null())
+            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+        }
+        smootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
         PostSmoother_ = PreSmoother_;
+        if (enable_reuse_)
+          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
       }
       useHiptmairSmoothing_ = false;
     }
@@ -1385,31 +1401,41 @@ namespace MueLu {
       P11res_    = MultiVectorFactory::Build(R11_->getRangeMap(), numVectors);
     else
       P11res_    = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
-    if (D0_T_R11_colMapsMatch_)
+    P11res_->setObjectLabel("P11res");
+    if (D0_T_R11_colMapsMatch_) {
       D0TR11Tmp_ = MultiVectorFactory::Build(R11_->getColMap(), numVectors);
+      D0TR11Tmp_->setObjectLabel("D0TR11Tmp");
+    }
     if (!ImporterH_.is_null()) {
       P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
+      P11resTmp_->setObjectLabel("P11resTmp");
       P11x_      = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
     } else
       P11x_      = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
+    P11x_->setObjectLabel("P11x");
     if (!D0_T_Matrix_.is_null())
       D0res_     = MultiVectorFactory::Build(D0_T_Matrix_->getRangeMap(), numVectors);
     else
       D0res_     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    D0res_->setObjectLabel("D0res");
     if (!Importer22_.is_null()) {
       D0resTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
+      D0resTmp_->setObjectLabel("D0resTmp");
       D0x_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
     } else
       D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    D0x_->setObjectLabel("D0x");
     if (!AH_.is_null()) {
       if (!ImporterH_.is_null() && !implicitTranspose_)
         P11resSubComm_ = MultiVectorFactory::Build(P11resTmp_, Teuchos::View);
       else
         P11resSubComm_ = MultiVectorFactory::Build(P11res_, Teuchos::View);
       P11resSubComm_->replaceMap(AH_->getRangeMap());
+      P11resSubComm_->setObjectLabel("P11resSubComm");
 
       P11xSubComm_ = MultiVectorFactory::Build(P11x_, Teuchos::View);
       P11xSubComm_->replaceMap(AH_->getDomainMap());
+      P11xSubComm_->setObjectLabel("P11xSubComm");
     }
     if (!A22_.is_null()) {
       if (!Importer22_.is_null() && !implicitTranspose_)
@@ -1417,11 +1443,14 @@ namespace MueLu {
       else
         D0resSubComm_ = MultiVectorFactory::Build(D0res_, Teuchos::View);
       D0resSubComm_->replaceMap(A22_->getRangeMap());
+      D0resSubComm_->setObjectLabel("D0resSubComm");
 
       D0xSubComm_ = MultiVectorFactory::Build(D0x_, Teuchos::View);
       D0xSubComm_->replaceMap(A22_->getDomainMap());
+      D0xSubComm_->setObjectLabel("D0xSubComm");
     }
     residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), numVectors);
+    residual_->setObjectLabel("residual");
   }
 
 
@@ -2446,15 +2475,18 @@ namespace MueLu {
 
       if (!ImporterH_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
-        P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+        P11resTmp_->beginImport(*P11res_, *ImporterH_, Xpetra::INSERT);
       }
       if (!allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
-        D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
+        D0resTmp_->beginImport(*D0res_, *Importer22_, Xpetra::INSERT);
       }
 
       // iterate on coarse (1, 1) block
       if (!AH_.is_null()) {
+        if (!ImporterH_.is_null() && !implicitTranspose_)
+          P11resTmp_->endImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -2473,6 +2505,9 @@ namespace MueLu {
 
       // iterate on (2, 2) block
       if (!A22_.is_null()) {
+        if (!allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_)
+          D0resTmp_->endImport(*D0res_, *Importer22_, Xpetra::INSERT);
+
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -2489,6 +2524,10 @@ namespace MueLu {
           Hierarchy22_->Iterate(*D0resSubComm_, *D0xSubComm_, numIters22_, true);
       }
 
+      if (AH_.is_null() && !ImporterH_.is_null() && !implicitTranspose_)
+        P11resTmp_->endImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+      if (A22_.is_null() && !allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_)
+        D0resTmp_->endImport(*D0res_, *Importer22_, Xpetra::INSERT);
     }
 
     if (fuseProlongationAndUpdate_) {
