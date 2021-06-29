@@ -227,7 +227,7 @@ namespace MueLu {
       currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
 
       if (pL.get<bool>("keep smoother data"))
-        Set(currentLevel, "PostSmoother data", preSmoother);
+        Set(currentLevel, "PostSmoother data", postSmoother);
     }
 
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
