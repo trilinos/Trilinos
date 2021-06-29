@@ -228,8 +228,8 @@ namespace MueLu {
     }
     else
       globalColsToZero = myColsToZero;
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite),dirichletDomain);
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite),dirichletCols);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly),dirichletDomain);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly),dirichletCols);
   }
 
 #endif
