@@ -56,7 +56,7 @@
 #include "MueLu_Exceptions.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-#include "MueLu_AmalgamationInfo_kokkos_fwd.hpp"
+#include "MueLu_AmalgamationInfo_kokkos.hpp"
 
 namespace MueLu {
 
@@ -82,6 +82,9 @@ namespace MueLu {
 #include "MueLu_UseShortNames.hpp"
 
   public:
+
+    using execution_space = typename AmalgamationInfo_kokkos::execution_space;
+    using memory_space    = typename AmalgamationInfo_kokkos::memory_space;
 
     //! @name Constructors/Destructors.
     //@{
@@ -117,7 +120,7 @@ namespace MueLu {
     // @param A (const Matrix&): operator A (matrix) with striding information (if available)
     // @param amalgamatedMap (const Map&): amalgamated node based map
     // @param translation (Array<LO>&): array storing local node ids given local dof ids (needed in CoalesceDropFactory)
-    static void AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation); // const;
+    static void AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Kokkos::View<LO*, memory_space> translation); // const;
 
 
   }; //class SubBlockUnAmalgamationFactory_kokkos

@@ -119,22 +119,15 @@ namespace MueLu {
     // fullblocksize > 1
     RCP<const Map> uniqueMap, nonUniqueMap;
     RCP<AmalgamationInfo_kokkos> amalgamationData;
-    RCP<Array<LO> > rowTranslation = Teuchos::null;
-    RCP<Array<LO> > colTranslation = Teuchos::null;
+    Kokkos::View<LO*, memory_space> rowTranslation;
+    Kokkos::View<LO*, memory_space> colTranslation;
 
     if (fullblocksize > 1) {
-      // mfh 14 Apr 2015: These need to have different names than
-      // rowTranslation and colTranslation, in order to avoid
-      // shadowing warnings (-Wshadow with GCC).  Alternately, it
-      // looks like you could just assign to the existing variables in
-      // this scope, rather than creating new ones.
-      RCP<Array<LO> > theRowTranslation = rcp(new Array<LO>);
-      RCP<Array<LO> > theColTranslation = rcp(new Array<LO>);
-      AmalgamateMap(*(A->getRowMap()), *A, uniqueMap,    *theRowTranslation);
-      AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, *theColTranslation);
+      AmalgamateMap(*(A->getRowMap()), *A, uniqueMap,    rowTranslation);
+      AmalgamateMap(*(A->getColMap()), *A, nonUniqueMap, colTranslation);
 
-      amalgamationData = rcp(new AmalgamationInfo_kokkos(theRowTranslation,
-                                                         theColTranslation,
+      amalgamationData = rcp(new AmalgamationInfo_kokkos(rowTranslation,
+                                                         colTranslation,
                                                          uniqueMap,
                                                          nonUniqueMap,
                                                          A->getColMap(),
@@ -162,7 +155,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AmalgamationFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap, Array<LO>& translation) {
+  AmalgamateMap(const Map& sourceMap, const Matrix& A, RCP<const Map>& amalgamatedMap,
+                Kokkos::View<LO*, memory_space> translation) {
     typedef typename ArrayView<const GO>::size_type size_type;
     typedef std::map<GO,size_type> container;
 
@@ -182,7 +176,7 @@ namespace MueLu {
     }
 
     Array<GO> elementList(numElements);
-    translation.resize(numElements);
+    translation = Kokkos::View<LO*, memory_space>("mapTranslation", numElements);
 
     size_type numRows = 0;
     for (size_type id = 0; id < numElements; id++) {
@@ -193,7 +187,7 @@ namespace MueLu {
       if (it == filter.end()) {
         filter[nodeID] = numRows;
 
-        translation[id]      = numRows;
+        translation(id)      = numRows;
         elementList[numRows] = nodeID;
 
         numRows++;

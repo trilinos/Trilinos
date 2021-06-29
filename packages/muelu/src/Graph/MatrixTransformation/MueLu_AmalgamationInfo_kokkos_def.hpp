@@ -60,76 +60,96 @@
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationInfo_kokkos_decl.hpp"
-#include "MueLu_Aggregates_kokkos.hpp"
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AmalgamationInfo_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   UnamalgamateAggregates(const Aggregates_kokkos& aggregates,
-                         Teuchos::ArrayRCP<LocalOrdinal>& aggStart,
-                         Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
+                         Kokkos::View<LO*, memory_space>& aggStart,
+                         Kokkos::View<GO*, memory_space>& aggToRowMap) const {
 
     int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getNodeElementList();
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
+    auto nodeLocalMap = aggregates.GetMap()->getLocalMap();
+    auto procWinner   = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
+    auto vertex2AggId = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    LO size = static_cast<LO>(procWinner.extent(0));
     GO numAggregates = aggregates.GetNumAggregates();
 
-    std::vector<LO> sizes(numAggregates);
+    Kokkos::View<LO*, memory_space> sizes("sizes", numAggregates);
     if (stridedblocksize_ == 1) {
-      for (LO lnode = 0; lnode < size; ++lnode) {
-        LO myAgg = vertex2AggId[lnode];
-        if (procWinner[lnode] == myPid)
-          sizes[myAgg] += 1;
-      }
+      Kokkos::parallel_for("compute aggregates sizes",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO& lnode) {
+                             LO myAgg = vertex2AggId(lnode, 0);
+                             if (procWinner(lnode, 0) == myPid) {
+                               Kokkos::atomic_increment(&sizes(myAgg));
+                             }
+                           });
     } else {
-      for (LO lnode = 0; lnode < size; ++lnode) {
-        LO myAgg = vertex2AggId[lnode];
-        if (procWinner[lnode] == myPid) {
-          GO gnodeid = nodeGlobalElts[lnode];
-          for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
-            GlobalOrdinal gDofIndex = ComputeGlobalDOF(gnodeid,k);
-            if (columnMap_->isNodeGlobalElement(gDofIndex))
-              sizes[myAgg] += 1;
-          }
-        }
-      }
+      Kokkos::parallel_for("compute aggregates sizes",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO& lnode) {
+                             LO myAgg = vertex2AggId(lnode, 0);
+                             if (procWinner(lnode, 0) == myPid) {
+                               // GO gnodeid = nodeLocalMap.getGlobalElement(lnode);
+                               for (LO k = 0; k < stridedblocksize_; ++k) {
+                                 // // Note: LBV on 10/11/19, removing the test
+                                 // // below as there is no way to refactor it
+                                 // // correctly at the moment since the method
+                                 // // is not inlined for GPU kernels...
+                                 // GO gDofIndex = ComputeGlobalDOF(gnodeid, k);
+                                 // if (columnMap_->isNodeGlobalElement(gDofIndex)) {
+                                 Kokkos::atomic_increment(&sizes(myAgg));
+                                 // }
+                               }
+                             }
+                           });
     }
-    aggStart = ArrayRCP<LO>(numAggregates+1,0);
-    aggStart[0]=0;
-    for (GO i=0; i<numAggregates; ++i) {
-      aggStart[i+1] = aggStart[i] + sizes[i];
-    }
-    aggToRowMap = ArrayRCP<GO>(aggStart[numAggregates],0);
+
+    aggStart = Kokkos::View<LO*, memory_space>("aggStart", numAggregates+1);
+    Kokkos::parallel_scan("compute aggregate starts",
+                          Kokkos::RangePolicy<execution_space>(0, numAggregates+1),
+                          KOKKOS_LAMBDA(const LO aggIdx, LO& update, const bool final) {
+                            if(final) {aggStart(aggIdx) = update;}
+                            update += sizes(aggIdx);
+                          });
+    aggToRowMap = Kokkos::View<GO*, memory_space>("aggToRowMap", aggStart(numAggregates));
 
     // count, how many dofs have been recorded for each aggregate so far
-    Array<LO> numDofs(numAggregates, 0); // empty array with number of Dofs for each aggregate
+    Kokkos::View<LO*, memory_space> numDofs("number of dofs per aggregate", numAggregates); // empty array with number of Dofs for each aggregate
 
     if (stridedblocksize_ == 1) {
-      for (LO lnode = 0; lnode < size; ++lnode) {
-        LO myAgg = vertex2AggId[lnode];
-        if (procWinner[lnode] == myPid) {
-          aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = ComputeGlobalDOF(nodeGlobalElts[lnode]);
-          ++(numDofs[myAgg]);
-        }
-      }
+      Kokkos::parallel_for("compute addToRowMap",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO lnode) {
+                             LO myAgg = vertex2AggId(lnode, 0);
+                             if (procWinner(lnode, 0) == myPid) {
+                               LO myNumDofs = Kokkos::atomic_fetch_add(&numDofs(myAgg), 1);
+                               aggToRowMap(aggStart(myAgg) + myNumDofs)
+                                 = ComputeGlobalDOF(nodeLocalMap.getGlobalElement(lnode));
+                             }
+                           });
     } else {
-      for (LO lnode = 0; lnode < size; ++lnode) {
-        LO myAgg = vertex2AggId[lnode];
-
-        if (procWinner[lnode] == myPid) {
-          GO gnodeid = nodeGlobalElts[lnode];
-          for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
-            GlobalOrdinal gDofIndex = ComputeGlobalDOF(gnodeid,k);
-            if (columnMap_->isNodeGlobalElement(gDofIndex)) {
-              aggToRowMap[ aggStart[myAgg] + numDofs[myAgg] ] = gDofIndex;
-              ++(numDofs[myAgg]);
-            }
-          }
-        }
-      }
+      Kokkos::parallel_for("compute addToRowMap",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO lnode) {
+                             LO myAgg = vertex2AggId(lnode, 0);
+                             if (procWinner(lnode, 0) == myPid) {
+                               GO gnodeid = nodeLocalMap.getGlobalElement(lnode);
+                               for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
+                                 // // Note: LBV on 10/11/19, removing the test
+                                 // // below as there is no way to refactor it
+                                 // // correctly at the moment since the method
+                                 // // is not inlined for GPU kernels...
+                                 GlobalOrdinal gDofIndex = ComputeGlobalDOF(gnodeid, k);
+                                 // if (columnMap_->isNodeGlobalElement(gDofIndex)) {
+                                 LO myNumDofs = Kokkos::atomic_fetch_add(&numDofs(myAgg), 1);
+                                 aggToRowMap( aggStart(myAgg) + myNumDofs ) = gDofIndex;
+                                 // }
+                               }
+                             }
+                           });
     }
     // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
 
@@ -138,68 +158,85 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AmalgamationInfo_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   UnamalgamateAggregatesLO(const Aggregates_kokkos& aggregates,
-                           Teuchos::ArrayRCP<LO>& aggStart,
-                           Teuchos::ArrayRCP<LO>& aggToRowMap) const {
+                           Kokkos::View<LO*, memory_space>& aggStart,
+                           Kokkos::View<LO*, memory_space>& aggToRowMap) const {
 
-    int myPid = aggregates.GetMap()->getComm()->getRank();
-    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getNodeElementList();
-
-    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
-    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    const GO numAggregates             = aggregates.GetNumAggregates();
+    const int myPid        = aggregates.GetMap()->getComm()->getRank();
+    auto procWinner        = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
+    auto vertex2AggId      = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto nodeLocalMap      = aggregates.GetMap()->getLocalMap();
+    const GO numAggregates = aggregates.GetNumAggregates();
 
 
     // FIXME: Do we need to compute size here? Or can we use existing?
-    LO size = procWinner.size();
+    LO size = static_cast<LO>(procWinner.extent(0));
 
-    std::vector<LO> sizes(numAggregates);
+    Kokkos::View<LO*, memory_space> sizes("aggregate sizes", numAggregates);
     if (stridedblocksize_ == 1) {
-      for (LO lnode = 0; lnode < size; lnode++)
-        if (procWinner[lnode] == myPid)
-          sizes[vertex2AggId[lnode]]++;
+      Kokkos::parallel_for("compute aggregates sizes",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO lnode) {
+                             if (procWinner(lnode, 0) == myPid) {
+                               Kokkos::atomic_increment(&sizes(vertex2AggId(lnode, 0)));
+                             }
+                           });
     } else {
-      for (LO lnode = 0; lnode < size; lnode++)
-        if (procWinner[lnode] == myPid) {
-          GO nodeGID = nodeGlobalElts[lnode];
+      Kokkos::parallel_for("compute aggregates sizes",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO lnode) {
+                             if (procWinner(lnode, 0) == myPid) {
+                               // GO nodeGID = nodeLocalMap.getGlobalElement(lnode);
 
-          for (LO k = 0; k < stridedblocksize_; k++) {
-            GO GID = ComputeGlobalDOF(nodeGID, k);
-            if (columnMap_->isNodeGlobalElement(GID))
-              sizes[vertex2AggId[lnode]]++;
-          }
-        }
+                               for (LO k = 0; k < stridedblocksize_; ++k) {
+                                 // GO GID = ComputeGlobalDOF(nodeGID, k);
+                                 // if (columnMap_->isNodeGlobalElement(GID)) {
+                                 Kokkos::atomic_increment(&sizes(vertex2AggId(lnode, 0)));
+                                 // }
+                               }
+                             }
+                           });
     }
 
-    aggStart = ArrayRCP<LO>(numAggregates+1); // FIXME: useless initialization with zeros
-    aggStart[0] = 0;
-    for (GO i = 0; i < numAggregates; i++)
-      aggStart[i+1] = aggStart[i] + sizes[i];
+    aggStart = Kokkos::View<LO*, memory_space>("aggStart", numAggregates+1);
+    Kokkos::parallel_scan("compute aggregate starts",
+                          Kokkos::RangePolicy<execution_space>(0, numAggregates+1),
+                          KOKKOS_LAMBDA(const LO aggIdx, LO& update, const bool final) {
+                            if(final) {aggStart(aggIdx) = update;}
+                            update += sizes(aggIdx);
+                          });
 
-    aggToRowMap = ArrayRCP<LO>(aggStart[numAggregates], 0);
+    aggToRowMap = Kokkos::View<LO*, memory_space>("aggToRowMap", aggStart(numAggregates));
 
     // count, how many dofs have been recorded for each aggregate so far
-    Array<LO> numDofs(numAggregates, 0); // empty array with number of DOFs for each aggregate
+    Kokkos::View<LO*, memory_space> numDofs("number of dofs per aggregate", numAggregates); // empty array with number of DOFs for each aggregate
     if (stridedblocksize_ == 1) {
-      for (LO lnode = 0; lnode < size; ++lnode)
-        if (procWinner[lnode] == myPid) {
-          LO myAgg = vertex2AggId[lnode];
-          aggToRowMap[aggStart[myAgg] + numDofs[myAgg]] = lnode;
-          numDofs[myAgg]++;
-        }
-    } else {
-      for (LO lnode = 0; lnode < size; ++lnode)
-        if (procWinner[lnode] == myPid) {
-          LO myAgg = vertex2AggId[lnode];
-          GO nodeGID = nodeGlobalElts[lnode];
+      Kokkos::parallel_for("compute addToRowMap",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO lnode) {
+                             if (procWinner(lnode, 0) == myPid) {
+                               LO myAgg = vertex2AggId(lnode, 0);
+                               const LO myNumDofs = Kokkos::atomic_fetch_add(&numDofs(myAgg), 1);
+                               aggToRowMap(aggStart(myAgg) + myNumDofs) = lnode;
+                             }
+                           });
 
-          for (LO k = 0; k < stridedblocksize_; k++) {
-            GO GID = ComputeGlobalDOF(nodeGID, k);
-            if (columnMap_->isNodeGlobalElement(GID)) {
-              aggToRowMap[aggStart[myAgg] + numDofs[myAgg]] = lnode*stridedblocksize_ + k;
-              numDofs[myAgg]++;
-            }
-          }
-        }
+    } else {
+      Kokkos::parallel_for("",
+                           Kokkos::RangePolicy<execution_space>(0, size),
+                           KOKKOS_LAMBDA(const LO lnode) {
+                             if (procWinner(lnode, 0) == myPid) {
+                               LO myAgg   = vertex2AggId(lnode, 0);
+                               // GO nodeGID = nodeLocalMap.getGlobalElement(lnode);
+
+                               for (LO k = 0; k < stridedblocksize_; k++) {
+                                 // GO GID = ComputeGlobalDOF(nodeGID, k);
+                                 // if (columnMap_->isNodeGlobalElement(GID)) {
+                                 const LO myNumDofs = Kokkos::atomic_fetch_add(&numDofs(myAgg), 1);
+                                 aggToRowMap(aggStart(myAgg) + myNumDofs) = lnode*stridedblocksize_ + k;
+                                 // }
+                               }
+                             }
+                           });
     }
     // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
 
@@ -211,39 +248,45 @@ namespace MueLu {
   RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > AmalgamationInfo_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   ComputeUnamalgamatedImportDofMap(const Aggregates_kokkos& aggregates) const {
 
-    Teuchos::RCP<const Map> nodeMap = aggregates.GetMap();
+    RCP<const Map> nodeMap = aggregates.GetMap();
 
-    Teuchos::RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
-    Teuchos::ArrayView<const GO> gEltList = nodeMap->getNodeElementList();
+    RCP<std::vector<GO> > myDofGids = Teuchos::rcp(new std::vector<GO>);
+    ArrayView<const GO> gEltList = nodeMap->getNodeElementList();
     LO nodeElements = Teuchos::as<LO>(nodeMap->getNodeNumElements());
     if (stridedblocksize_ == 1) {
       for (LO n = 0; n<nodeElements; n++) {
-        GlobalOrdinal gDofIndex = ComputeGlobalDOF(gEltList[n]);
+        GO gDofIndex = ComputeGlobalDOF(gEltList[n]);
         myDofGids->push_back(gDofIndex);
       }
     } else {
       for (LO n = 0; n<nodeElements; n++) {
         for (LocalOrdinal k = 0; k < stridedblocksize_; k++) {
-          GlobalOrdinal gDofIndex = ComputeGlobalDOF(gEltList[n],k);
+          GO gDofIndex = ComputeGlobalDOF(gEltList[n],k);
           if (columnMap_->isNodeGlobalElement(gDofIndex))
             myDofGids->push_back(gDofIndex);
         }
       }
     }
 
-    Teuchos::ArrayRCP<GO> arr_myDofGids = Teuchos::arcp( myDofGids );
-    Teuchos::RCP<Map> importDofMap = MapFactory::Build(aggregates.GetMap()->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), arr_myDofGids(), aggregates.GetMap()->getIndexBase(), aggregates.GetMap()->getComm());
+    ArrayRCP<GO> arr_myDofGids = Teuchos::arcp( myDofGids );
+    RCP<Map> importDofMap = MapFactory::Build(aggregates.GetMap()->lib(),
+                                              Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                              arr_myDofGids(),
+                                              aggregates.GetMap()->getIndexBase(),
+                                              aggregates.GetMap()->getComm());
     return importDofMap;
   }
 
   /////////////////////////////////////////////////////////////////////////////
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  KOKKOS_INLINE_FUNCTION
   GlobalOrdinal AmalgamationInfo_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   ComputeGlobalDOF(GlobalOrdinal const &gNodeID, LocalOrdinal const &k) const {
     // here, the assumption is, that the node map has the same indexBase as the dof map
-    //                            this is the node map index base                    this is the dof map index base
-    GlobalOrdinal gDofIndex = offset_ + (gNodeID-indexBase_)*fullblocksize_ + nStridedOffset_ + k + indexBase_;
+    GlobalOrdinal gDofIndex = offset_
+      + (gNodeID-indexBase_)*fullblocksize_  // this is the node map index base
+      + nStridedOffset_ + k + indexBase_;    // this is the dof map index base
     return gDofIndex;
   }
 
