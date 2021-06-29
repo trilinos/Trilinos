@@ -9,37 +9,32 @@
 #ifndef Tempus_IntegratorForwardSensitivity_impl_hpp
 #define Tempus_IntegratorForwardSensitivity_impl_hpp
 
+#include "Tempus_SolutionHistory_decl.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include "Tempus_CombinedForwardSensitivityModelEvaluator.hpp"
 #include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
+#include <fstream>
 
 namespace Tempus {
 
 template<class Scalar>
 IntegratorForwardSensitivity<Scalar>::
 IntegratorForwardSensitivity(
-  Teuchos::RCP<Teuchos::ParameterList>                inputPL,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<IntegratorBasic<Scalar> > &integrator)
+  const Teuchos::RCP<IntegratorBasic<Scalar> > &integrator,
+  const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>> &sens_model,
+   const Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar>> &sens_stepper,
+   bool use_combined_method) 
 {
   model_ = model;
   integrator_ = integrator;
-  //integrator_->setIntegratorName(integratorName);
-  this->setParameterList(inputPL);
-  createSensitivityModelAndStepper(model);
-
-
-  if (use_combined_method_)
-    integrator_ = createIntegratorBasic<Scalar>(tempus_pl_, sens_model_);
-  else {
-    auto fsa_combined_me = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>>(sens_stepper_->getModel());
-    integrator_ = createIntegratorBasic<Scalar>(tempus_pl_, fsa_combined_me);
-    integrator_->setStepper(sens_stepper_);
-    integrator_->initialize();
-  }
+  sens_model_ = sens_model;
+  sens_stepper_ = sens_stepper;
+  use_combined_method_ = use_combined_method;
+  integrator_->initialize();
 }
 
 
@@ -48,7 +43,7 @@ IntegratorForwardSensitivity<Scalar>::
 IntegratorForwardSensitivity()
 {
   integrator_ = createIntegratorBasic<Scalar>();
-  this->setParameterList(Teuchos::null);
+  integrator_->initialize();
 }
 
 template<class Scalar>
@@ -236,40 +231,6 @@ describe(
   integrator_->describe(*l_out, verbLevel);
 }
 
-template<class Scalar>
-void
-IntegratorForwardSensitivity<Scalar>::
-setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
-{
-
-  Teuchos::RCP<Teuchos::ParameterList> pl =
-    Teuchos::rcp(new Teuchos::ParameterList);
-  {
-    Teuchos::RCP<const Teuchos::ParameterList> integrator_pl =
-      integrator_->getValidParameters();
-    Teuchos::RCP<const Teuchos::ParameterList> sensitivity_pl =
-      CombinedForwardSensitivityModelEvaluator<Scalar>::getValidParameters();
-    pl->setParameters(*integrator_pl);
-    Teuchos::ParameterList& spl = pl->sublist("Sensitivities");
-    spl.setParameters(*sensitivity_pl);
-    spl.set("Sensitivity Method", "Combined");
-    spl.set("Reuse State Linear Solver", false);
-  }
-
-  tempus_pl_ = Teuchos::parameterList();
-  if (inputPL != Teuchos::null)
-    *tempus_pl_ = *inputPL;
-  tempus_pl_->setParametersNotAlreadySet(*pl);
-  sens_pl_ = Teuchos::sublist(tempus_pl_, "Sensitivities", false);
-  std::string integratorName =
-    tempus_pl_->get<std::string>("Integrator Name", "Default Integrator");
-  std::string stepperName =
-    tempus_pl_->sublist(integratorName).get<std::string>("Stepper Name");
-  stepper_pl_ = Teuchos::sublist(tempus_pl_, stepperName, true);
-  use_combined_method_ =
-    sens_pl_->get<std::string>("Sensitivity Method") == "Combined";
-}
-
 template <class Scalar>
 void
 IntegratorForwardSensitivity<Scalar>::
@@ -302,10 +263,69 @@ integratorForwardSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
 
+  //4. initialize propoer integrator
+
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model;
+  Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar>> sens_stepper;
+
+  //1. create integrator
   auto fwd_integrator = createIntegratorBasic<Scalar>(pList, model);
-  Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>(pList, model, fwd_integrator));
-  return(integrator);
+
+  //2. set parameter list
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
+  {
+    Teuchos::RCP<const Teuchos::ParameterList> integrator_pl = fwd_integrator->getValidParameters();
+    Teuchos::RCP<const Teuchos::ParameterList> sensitivity_pl =
+      CombinedForwardSensitivityModelEvaluator<Scalar>::getValidParameters();
+    pl->setParameters(*integrator_pl);
+    Teuchos::ParameterList &spl = pl->sublist("Sensitivities");
+    spl.setParameters(*sensitivity_pl);
+    spl.set("Sensitivity Method", "Combined");
+    spl.set("Reuse State Linear Solver", false);
+  }
+  pList->setParametersNotAlreadySet(*pl);
+
+  auto sens_pl                    = Teuchos::sublist(pList, "Sensitivities", false);
+  std::string integratorName       = pList->get<std::string>("Integrator Name", "Default Integrator");
+  std::string stepperName          = pList->sublist(integratorName).get<std::string>("Stepper Name");
+  auto stepper_pl                 = Teuchos::sublist(pList, stepperName, true);
+  std::string sensitivity_method   = sens_pl->get<std::string>("Sensitivity Method");
+  bool use_combined_method        = sensitivity_method == "Combined";
+  bool use_dfdp_as_tagent          = sens_pl->get<bool>("Use DfDp as Tangent");
+  const int p_index                = sens_pl->get<int>("Sensitivity Parameter Index");
+  const int x_tangent_index        = sens_pl->get<int>("Sensitivity X Tangent Index");
+  const int xdot_tangent_index     = sens_pl->get<int>("Sensitivity X-Dot Tangent Index");
+  const int xdot_dot_tangent_index = sens_pl->get<int>("Sensitivity X-Dot-Dot Tangent Index");
+  const bool reuse_linear_solver  = sens_pl->get<bool>("Reuse State Linear Solver");
+
+  //3. create sensitivity model and stepper
+  // createSensitivityModelAndStepper
+  {
+    if (sens_pl->isParameter("Sensitivity Method"))
+      sens_pl->remove("Sensitivity Method");
+
+    if (use_combined_method)
+    {
+      if (sens_pl->isParameter("Reuse State Linear Solver"))
+        sens_pl->remove("Reuse State Linear Solver");
+      sens_model = wrapCombinedFSAModelEvaluator(model, sens_pl);
+      fwd_integrator = createIntegratorBasic<Scalar>(pList, sens_model);
+      //fwd_integrator->setModel(sens_model);
+    }
+    else
+    {
+      sens_stepper = Teuchos::rcp(new StepperStaggeredForwardSensitivity<Scalar>(model, stepper_pl, sens_pl));
+      auto fsa_staggered_me = Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar>>(sens_stepper->getModel());
+      fwd_integrator = createIntegratorBasic<Scalar>(pList, fsa_staggered_me);
+      fwd_integrator->setStepper(sens_stepper);
+    }
+  }
+
+
+
+  Teuchos::RCP<IntegratorForwardSensitivity<Scalar>> integrator =
+    Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>(model, fwd_integrator, sens_model, sens_stepper, use_combined_method));
+  return (integrator);
 }
 
 /// Nonmember constructor
@@ -313,6 +333,10 @@ template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity()
 {
+
+  asm("int $3");
+  std::cout << "SIDAFA: got here!!" << std::endl;
+
   Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =
     Teuchos::rcp(new IntegratorForwardSensitivity<Scalar>());
   return(integrator);
