@@ -175,7 +175,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_um vals,
+  void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
                     Kokkos::View<bool*, typename Node::device_type> nonzeros) {
     using ATS        = Kokkos::ArithTraits<Scalar>;
     using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
