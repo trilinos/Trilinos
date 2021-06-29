@@ -82,13 +82,14 @@ public:
    * </ul>
    */
   IntegratorForwardSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<IntegratorBasic<Scalar> > &integrator
-    );
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &integrator,
+  const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>> &sens_model,
+   const Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar>> &sens_stepper,
+   const bool use_combined_method);
 
   /// Destructor
-  /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
+  /** \brief Constructor that requires a subsequent setStepper, and initialize calls. */
   IntegratorForwardSensitivity();
 
   /// Destructor
@@ -212,11 +213,6 @@ public:
 
   /// Parse when screen output should be executed
   void parseScreenOutput() { integrator_->parseScreenOutput(); }
-
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-  //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
