@@ -54,8 +54,12 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netdb.h>
 #include <arpa/inet.h>
+#endif
 #endif
 
 
@@ -265,7 +269,7 @@ bool IsParamValidVariable(const std::string& name)
        int len;
        MPI_Get_processor_name(hostname,&len);
        struct hostent * host = gethostbyname(hostname);
-       int myaddr = (int) htonl(inet_network(inet_ntoa(*(struct in_addr *)host->h_addr)));
+       int myaddr = (int) inet_addr(inet_ntoa(*(struct in_addr *)host->h_addr));
 
        // All-to-all exchange of address integers
        std::vector<int> addressList(numRanks);

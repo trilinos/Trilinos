@@ -200,7 +200,9 @@ namespace Xpetra {
                       ArrayRCP<const LocalOrdinal>& colind, 
                       ArrayRCP<const Scalar>& values)  const;
 
-
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<Scalar>& values);                      
+                     
     //! @name Transformational Methods
 
     //!
@@ -398,8 +400,13 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     //using local_matrix_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
     using local_matrix_type = typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
-
-    local_matrix_type getLocalMatrix () const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    local_matrix_type getLocalMatrix () const {
+      return getLocalMatrixDevice();
+    }
+#endif
+    local_matrix_type getLocalMatrixDevice () const;
+    typename local_matrix_type::HostMirror getLocalMatrixHost () const;
 
     void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                        const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,

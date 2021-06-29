@@ -122,7 +122,7 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
   size_t N               = this->Graph_->getNodeNumRows();
   size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
 
-  Teuchos::Array<LO>     cols(allocated_space);
+  nonconst_local_inds_host_view_type cols("cols",allocated_space);
   Teuchos::Array<LO>     indices(allocated_space);
   Teuchos::Array<double> dist(allocated_space);
 
@@ -137,7 +137,7 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
     if(blockIndices[i] != invalid) continue;
 
     // Get neighbors and sort by distance
-    this->Graph_->getLocalRowCopy(i,cols(),nz);
+    this->Graph_->getLocalRowCopy(i,cols,nz);
     double x0 = (!xvals.is_null()) ? xvals[i/NumEqns_] : zero;
     double y0 = (!yvals.is_null()) ? yvals[i/NumEqns_] : zero;
     double z0 = (!zvals.is_null()) ? zvals[i/NumEqns_] : zero;
@@ -190,7 +190,8 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
 
   size_t N               = this->Graph_->getNodeNumRows();
   size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
-  Teuchos::ArrayView<LO>     cols    = itemp();
+
+  nonconst_local_inds_host_view_type cols(itemp.data(),allocated_space);
   Teuchos::ArrayView<LO>     indices = itemp.view(allocated_space,allocated_space);
   Teuchos::ArrayView<double> dist= dtemp();
 
@@ -199,7 +200,7 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
     size_t nz=0;
     LO neighbors_in_line=0;
 
-    this->Graph_->getLocalRowCopy(next,cols(),nz);
+    this->Graph_->getLocalRowCopy(next,cols,nz);
     double x0 = (!xvals.is_null()) ? xvals[next/NumEqns_] : zero;
     double y0 = (!yvals.is_null()) ? yvals[next/NumEqns_] : zero;
     double z0 = (!zvals.is_null()) ? zvals[next/NumEqns_] : zero;

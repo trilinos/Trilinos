@@ -18,6 +18,20 @@ IF(Ifpack2_ENABLE_QD)
   )
 ENDIF()
 
+IF (Tpetra_INST_LONG_DOUBLE)
+  TRIBITS_ADD_EXECUTABLE(
+    tif_belos_longdouble
+    SOURCES belos_solve_longdouble.cpp
+    )
+ENDIF()
+
+IF (Tpetra_ENABLE_quadmath)
+  TRIBITS_ADD_EXECUTABLE(
+    tif_belos_float128
+    SOURCES belos_solve_float128.cpp
+    )
+ENDIF()
+
 IF (Tpetra_INST_DOUBLE)
   TRIBITS_ADD_EXECUTABLE(
     tif_tpetra_native
@@ -39,7 +53,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_FILDL_calore1_mm.xml
   test_Jacobi_nos1_hb.xml 
   test_2_Jacobi_nos1_hb.xml 
+  test_Jacobi_gcrodr_nos1_hb.xml 
   nos1.rsa
+  test_Jacobi_bcsstk14_hb.xml
+  test_Jacobi_minres_bcsstk14_hb.xml
+  test_Jacobi_pseudoblockcg_bcsstk14_hb.xml
+  bcsstk14.hb
   test_2_ILUT_nos1_hb.xml 
   test_2_RILUK_nos1_hb.xml
   test_2_RILUK_HTS_nos1_hb.xml
@@ -50,10 +69,13 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   test_MTSGS_calore1_mm.xml
   calore1.mtx 
   test_pseudoblockcg_small_sym_mm.xml
+  test_minres_small_sym_mm.xml
   test_Jacobi_small_sym_mm.xml 
   small_sym.mtx 
   test_gmres_small_sym_mm.xml
-  test_Diagonal_calore1_mm.xml
+  test_Diagonal_tfqmr_calore1_mm.xml
+  test_Diagonal_bicgstab_calore1_mm.xml
+  test_Diagonal_gcrodr_calore1_mm.xml
   test_GS_tfqmr_small_sym_mm.xml 
   test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml
@@ -73,6 +95,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   5w_bel_tif_RILUK_1.xml
   test_RILUK_tfqmr_small_sym_mm.xml
   test_bordered_DIAG_small.xml 
+  test_minres_bordered_DIAG_small.xml 
   test_FILU_small_sym_sing.xml
   test_FIC_small_sym_sing.xml
   test_FILDL_small_sym_sing.xml
@@ -99,6 +122,28 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
+IF (Tpetra_INST_LONG_DOUBLE)
+TRIBITS_ADD_TEST(
+  tif_belos_longdouble
+  NAME gmres_belos_longdouble
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+ENDIF() 
+
+IF (Tpetra_ENABLE_quadmath)
+TRIBITS_ADD_TEST(
+  tif_belos_float128
+  NAME gmres_belos_float128
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+ENDIF()
+
 TRIBITS_ADD_TEST(
   tif_belos
   NAME small_pseudoblkcg_belos
@@ -110,8 +155,35 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
-  NAME Diagonal_belos
-  ARGS "--xml_file=test_Diagonal_calore1_mm.xml"
+  NAME small_minres_belos
+  ARGS "--xml_file=test_minres_small_sym_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Diagonal_tfqmr_belos
+  ARGS "--xml_file=test_Diagonal_tfqmr_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Diagonal_bicgstab_belos
+  ARGS "--xml_file=test_Diagonal_bicgstab_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Diagonal_gcrodr_belos
+  ARGS "--xml_file=test_Diagonal_gcrodr_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -155,9 +227,46 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
+  NAME Jacobi_gcrodr_hb_belos
+  ARGS "--xml_file=test_Jacobi_gcrodr_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
   NAME Jacobi_hb_belos
   ARGS "--xml_file=test_2_Jacobi_nos1_hb.xml"
   COMM serial mpi NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+# HKT: Commenting out test temporarily because it is causing random failures
+#TRIBITS_ADD_TEST(
+#  tif_belos
+#  NAME Jacobi_bcsstk14_hb_belos
+#  ARGS "--xml_file=test_Jacobi_bcsstk14_hb.xml"
+#  COMM serial mpi
+#  NUM_MPI_PROCS 1 
+#  STANDARD_PASS_OUTPUT
+#)
+  
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Jacobi_bcsstk14_minres_hb_belos
+  ARGS "--xml_file=test_Jacobi_minres_bcsstk14_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Jacobi_bcsstk14_pbcg_belos
+  ARGS "--xml_file=test_Jacobi_pseudoblockcg_bcsstk14_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
 
@@ -521,8 +630,17 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   tif_belos
-  NAME Bordered_belos
+  NAME Bordered_blockcg_belos
   ARGS "--xml_file=test_bordered_DIAG_small.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+TRIBITS_ADD_TEST(
+  tif_belos
+  NAME Bordered_minres_belos
+  ARGS "--xml_file=test_minres_bordered_DIAG_small.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

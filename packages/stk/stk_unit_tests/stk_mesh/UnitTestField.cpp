@@ -746,6 +746,13 @@ TEST_F(FieldFixture, DISABLED_writingDifferentElementFieldsPerSolutionCase)
         test_solution_case_with_rank(stk::topology::ELEM_RANK);
 }
 
+TEST_F(FieldFixture, fenceWithoutNgpField)
+{
+  stk::mesh::Field<double> &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "doubleField");
+
+  EXPECT_NO_THROW(field.fence());
+}
+
 class LateFieldFixtureNoTest : public stk::unit_test_util::MeshFixtureNoTest
 {
 protected:
@@ -1161,6 +1168,16 @@ TEST_F(LateFieldFixture, addLateIntElementField)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
   setup_add_late_field<int>(stk::topology::ELEM_RANK);
+}
+
+TEST_F(LateFieldFixture, disable_late_fields)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
+  setup_add_late_field<int>(stk::topology::ELEM_RANK);
+
+  get_meta().disable_late_fields();
+  stk::mesh::Field<int>& f = declare_field<int>("another_late_field", stk::topology::ELEM_RANK);
+  EXPECT_ANY_THROW(stk::mesh::put_field_on_mesh(f, get_meta().universal_part(), static_cast<int*>(nullptr)));
 }
 
 TEST_F(LateFieldFixture, addLateIntNodalField_multipleBuckets)

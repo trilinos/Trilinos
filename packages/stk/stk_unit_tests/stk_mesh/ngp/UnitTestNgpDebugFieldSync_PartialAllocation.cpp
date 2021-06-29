@@ -1527,6 +1527,32 @@ TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_
   check_no_warnings(stdoutString);
 }
 
+TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_MeshModification_Batch_Empty_MoveBucketOffField_StaleDeviceFieldCopy_AccessOnDevice_Warning)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+  create_parts({"Part1", "Part2", "Part3"});
+  declare_scalar_field<double>("doubleScalarField", {"Part2", "Part3"});
+  const unsigned bucketCapacity = 1;
+  build_mesh({{"Part1", 1}, {"Part2", 2}}, bucketCapacity);
+  stk::mesh::Field<double> & stkField = initialized_field<double>("doubleScalarField");
+  stk::mesh::NgpField<double, NgpDebugger> ngpFieldCopy = stk::mesh::get_updated_ngp_field<double, NgpDebugger>(stkField);
+
+  testing::internal::CaptureStdout();
+  batch_modify_element_part_membership({{3, "Part3", "Part2"}});
+  get_bulk().modification_begin();
+  get_bulk().modification_end();
+
+  write_scalar_field_on_host_using_entity(stkField, 3.14);
+  stkField.modify_on_host();
+  stkField.sync_to_device();
+
+  read_old_scalar_field_on_device(stkField, ngpFieldCopy);
+
+  std::string stdoutString = testing::internal::GetCapturedStdout();
+  extract_warning(stdoutString, 2, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
+  check_no_warnings(stdoutString);
+}
+
 TEST_F(NgpDebugFieldSync_PartialAllocation, SecondBlock_ScalarAccessUsingEntity_DuringMeshModification_MoveBucketOffField_StaleDeviceFieldCopy_AccessOnDevice_Warning)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;

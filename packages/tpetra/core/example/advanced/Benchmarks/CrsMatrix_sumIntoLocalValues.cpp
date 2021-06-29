@@ -178,7 +178,7 @@ doKokkosSumIntoLocalValues (const std::string& label,
 {
   TM mon (*TM::getNewCounter (label));
 
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   const bool is_sorted = A.getCrsGraph ()->isSorted ();
   constexpr bool use_atomics = false;
 

@@ -439,7 +439,7 @@ fusedCase (vector_type& W,
   using Impl::chebyshev_kernel_vector;
   using STS = Teuchos::ScalarTraits<SC>;
 
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   //D_inv, B, X and W are all Vectors, so it's safe to take the first column only
   auto Dinv_lcl = Kokkos::subview(D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   auto B_lcl = Kokkos::subview(B.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);

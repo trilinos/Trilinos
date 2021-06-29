@@ -167,6 +167,7 @@ public:
   void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values) { }
   void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values) { }
   void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const { }
+  void getAllValues(ArrayRCP<Scalar>& values) { }
   bool haveGlobalConstants() const  { return true;}
   void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
@@ -239,11 +240,23 @@ public:
   RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return Teuchos::null; } //TODO: remove
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   local_matrix_type getLocalMatrix () const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
       "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
+#endif
+local_matrix_type getLocalMatrixDevice () const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
+  typename local_matrix_type::HostMirror getLocalMatrixHost () const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsMatrix only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
 
+
+  
   void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                      const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
                      const typename local_matrix_type::values_type& val)
@@ -668,6 +681,18 @@ public:
     // Column indices
     colind = Teuchos::arcp(mtx_->ExpertExtractIndices().Values(), lowerOffset, nnz, ownMemory);
 
+    // Values
+    values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
+  }
+
+  //! Gets the 1D pointer arrays of the graph.
+  void getAllValues(ArrayRCP<Scalar>& values) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getAllValues");
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    const size_t nnz = getNodeNumEntries();
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
@@ -1219,7 +1244,24 @@ public:
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   /// \brief Compatibility layer for accessing the matrix data through a Kokkos interface
-  local_matrix_type getLocalMatrix () const {
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
+local_matrix_type getLocalMatrix () const {
+  return getLocalMatrixDevice();
+}
+#endif
+
+local_matrix_type getLocalMatrixDevice () const {
+#if 0
+  TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented,
+			     "Xpetra::EpetraCrsMatrx only available on host for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  TEUCHOS_UNREACHABLE_RETURN((local_matrix_type()));
+#endif
+  return getLocalMatrixHost();
+}
+
+
+typename local_matrix_type::HostMirror getLocalMatrixHost () const {
     if (isInitializedLocalMatrix_)
       return localMatrix_;
 
@@ -1690,6 +1732,20 @@ public:
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
+
+
+  //! Gets the 1D pointer arrays of the graph.
+  void getAllValues(ArrayRCP<Scalar>& values) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getAllValues");
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    const size_t nnz = getNodeNumEntries();
+    // Values
+    values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
+  }
+
 
   // Epetra always has global constants
   bool haveGlobalConstants() const  { return true;}

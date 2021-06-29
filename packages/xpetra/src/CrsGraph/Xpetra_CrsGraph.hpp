@@ -90,7 +90,7 @@ namespace Xpetra {
     typedef Node node_type;
 
     //! @name Constructor/Destructor Methods
-    //@{
+    //@
 
     //! Destructor.
     virtual ~CrsGraph() { }
@@ -109,6 +109,15 @@ namespace Xpetra {
     //! Remove all graph indices from the specified local row.
     virtual void removeLocalIndices(LocalOrdinal localRow)= 0;
 
+    //! Allocates the 1D pointer arrays of the graph
+    virtual void allocateAllIndices(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind)=0;
+
+    //! Sets the 1D pointer arrays of the graph.
+    virtual void setAllIndices(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind)=0;
+
+    //! Gets the 1D pointer arrays of the graph.
+    virtual void getAllIndices(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind) const = 0;
+
     //@}
 
     //! @name Transformational Methods
@@ -119,6 +128,15 @@ namespace Xpetra {
 
     //! Signal that data entry is complete.
     virtual void fillComplete(const RCP< ParameterList > &params=null)= 0;
+
+    //! Expert version of fillComplete
+    virtual void
+    expertStaticFillComplete (const RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                              const RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                              const RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =null,
+                              const RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =null,
+                              const RCP<Teuchos::ParameterList>& params = null)=0;
+
 
     //@}
 
@@ -226,7 +244,14 @@ namespace Xpetra {
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
-    virtual local_graph_type getLocalGraph () const = 0;
+    virtual typename local_graph_type::HostMirror getLocalGraphHost () const = 0;
+    virtual local_graph_type getLocalGraphDevice () const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual typename local_graph_type::HostMirror getLocalGraph () const {
+      return getLocalGraphHost();
+    }
+#endif
+
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

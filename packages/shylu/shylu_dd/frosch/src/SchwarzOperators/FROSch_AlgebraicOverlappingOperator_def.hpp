@@ -160,8 +160,8 @@ namespace FROSch {
         this->OverlappingMap_ = repeatedMap;
         this->OverlappingMatrix_ = this->K_;
 
-        GO global;
-        LO local,sum,minVal,maxVal;
+        GO global,sum;
+        LO local,minVal,maxVal;
         SC avg;
         if (verbosity==All) {
             FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
@@ -172,7 +172,7 @@ namespace FROSch {
             }
 
             local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
-            reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
+            reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
             avg = max(sum/double(this->MpiComm_->getSize()),0.0);
             reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
             reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
@@ -231,7 +231,7 @@ namespace FROSch {
             if (verbosity==All) {
                 FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
                 local = (LO) max((LO) this->OverlappingMap_->getNodeNumElements(),(LO) 0);
-                reduceAll(*this->MpiComm_,REDUCE_SUM,local,ptr(&sum));
+                reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
                 avg = max(sum/double(this->MpiComm_->getSize()),0.0);
                 reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
                 reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));

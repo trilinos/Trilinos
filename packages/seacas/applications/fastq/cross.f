@@ -51,7 +51,7 @@ C  FIND EMPTY SPOT FOR THIS ITEM
                   KK = K
                   IF (IXJ (K, L) .EQ. 0)GO TO 130
   120          CONTINUE
-               CALL MESAGE ('NO ROOM FOR REFERENCE - ERROR IN CROSS')
+               CALL MESSAGE('NO ROOM FOR REFERENCE - ERROR IN CROSS')
                NOROOM = .TRUE.
                RETURN
   130          CONTINUE

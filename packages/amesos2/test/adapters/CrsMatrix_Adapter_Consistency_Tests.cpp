@@ -230,18 +230,24 @@ namespace {
     RCP<TADAPT> tadapter = Amesos2::createMatrixAdapter<TMAT>( TA );
     RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) );
 
-    Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
-    Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
-    Array<TADAPT::global_size_t> trowptr(tadapter->getGlobalNumRows() + 1);
+    ///Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
+    //Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
+    //Array<TADAPT::global_size_t> trowptr(tadapter->getGlobalNumRows() + 1);
+    Kokkos::View<TADAPT::scalar_t*,         Kokkos::HostSpace>  tnzvals ("nzvals", tadapter->getGlobalNNZ());
+    Kokkos::View<TADAPT::global_ordinal_t*, Kokkos::HostSpace>  tcolind ("colind", tadapter->getGlobalNNZ());
+    Kokkos::View<TADAPT::global_size_t*,    Kokkos::HostSpace>  trowptr ("rowptr", tadapter->getGlobalNumRows() + 1);
     size_t tnnz = 0;
 
-    Array<EADAPT::scalar_t> enzvals(eadapter->getGlobalNNZ());
-    Array<EADAPT::global_ordinal_t> ecolind(eadapter->getGlobalNNZ());
-    Array<EADAPT::global_size_t> erowptr(eadapter->getGlobalNumRows() + 1);
+    //Array<EADAPT::scalar_t> enzvals(eadapter->getGlobalNNZ());
+    //Array<EADAPT::global_ordinal_t> ecolind(eadapter->getGlobalNNZ());
+    //Array<EADAPT::global_size_t> erowptr(eadapter->getGlobalNumRows() + 1);
+    Kokkos::View<EADAPT::scalar_t*,         Kokkos::HostSpace>  enzvals ("nzvals", eadapter->getGlobalNNZ());
+    Kokkos::View<EADAPT::global_ordinal_t*, Kokkos::HostSpace>  ecolind ("colind", eadapter->getGlobalNNZ());
+    Kokkos::View<EADAPT::global_size_t*,    Kokkos::HostSpace>  erowptr ("rowptr", eadapter->getGlobalNumRows() + 1);
     size_t ennz = 0;
 
-    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, ROOTED, SORTED_INDICES);
-    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, ROOTED, SORTED_INDICES);
+    tadapter->getCrs_kokkos_view(tnzvals, tcolind, trowptr, tnnz, ROOTED, SORTED_INDICES);
+    eadapter->getCrs_kokkos_view(enzvals, ecolind, erowptr, ennz, ROOTED, SORTED_INDICES);
 
     // The nzvals, colind, rowptr, and nnz values for each adapter
     // should be the same at the root.  It is ok to to these tests at
@@ -278,18 +284,24 @@ namespace {
     RCP<TADAPT> tadapter = Amesos2::createMatrixAdapter<TMAT>( TA );
     RCP<EADAPT> eadapter = Amesos2::createMatrixAdapter<EMAT>( rcp(EA) );
 
-    Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
-    Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
-    Array<TADAPT::global_size_t> trowptr(tadapter->getGlobalNumRows() + 1);
+    //Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
+    //Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
+    //Array<TADAPT::global_size_t> trowptr(tadapter->getGlobalNumRows() + 1);
+    Kokkos::View<TADAPT::scalar_t*,         Kokkos::HostSpace>  tnzvals ("nzvals", tadapter->getGlobalNNZ());
+    Kokkos::View<TADAPT::global_ordinal_t*, Kokkos::HostSpace>  tcolind ("colind", tadapter->getGlobalNNZ());
+    Kokkos::View<TADAPT::global_size_t*,    Kokkos::HostSpace>  trowptr ("rowptr", tadapter->getGlobalNumRows() + 1);
     size_t tnnz = 0;
 
-    Array<EADAPT::scalar_t> enzvals(eadapter->getGlobalNNZ());
-    Array<EADAPT::global_ordinal_t> ecolind(eadapter->getGlobalNNZ());
-    Array<EADAPT::global_size_t> erowptr(eadapter->getGlobalNumRows() + 1);
+    //Array<EADAPT::scalar_t> enzvals(eadapter->getGlobalNNZ());
+    //Array<EADAPT::global_ordinal_t> ecolind(eadapter->getGlobalNNZ());
+    //Array<EADAPT::global_size_t> erowptr(eadapter->getGlobalNumRows() + 1);
+    Kokkos::View<EADAPT::scalar_t*,         Kokkos::HostSpace>  enzvals ("nzvals", eadapter->getGlobalNNZ());
+    Kokkos::View<EADAPT::global_ordinal_t*, Kokkos::HostSpace>  ecolind ("colind", eadapter->getGlobalNNZ());
+    Kokkos::View<EADAPT::global_size_t*,    Kokkos::HostSpace>  erowptr ("rowptr", eadapter->getGlobalNumRows() + 1);
     size_t ennz = 0;
 
-    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, GLOBALLY_REPLICATED, SORTED_INDICES);
-    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, GLOBALLY_REPLICATED, SORTED_INDICES);
+    tadapter->getCrs_kokkos_view(tnzvals, tcolind, trowptr, tnnz, GLOBALLY_REPLICATED, SORTED_INDICES);
+    eadapter->getCrs_kokkos_view(enzvals, ecolind, erowptr, ennz, GLOBALLY_REPLICATED, SORTED_INDICES);
 
     // The nzvals, colind, rowptr, and nnz values for each adapter
     // should be the same at the root.  It is ok to to these tests at
@@ -329,14 +341,20 @@ namespace {
 
     TADAPT::global_size_t g_num_rows = tadapter->getGlobalNumRows();
 
-    Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
-    Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
-    Array<TADAPT::global_size_t> trowptr(g_num_rows + 1);
+    //Array<TADAPT::scalar_t> tnzvals(tadapter->getGlobalNNZ());
+    //Array<TADAPT::global_ordinal_t> tcolind(tadapter->getGlobalNNZ());
+    //Array<TADAPT::global_size_t> trowptr(g_num_rows + 1);
+    Kokkos::View<TADAPT::scalar_t*,         Kokkos::HostSpace>  tnzvals ("nzvals", tadapter->getGlobalNNZ());
+    Kokkos::View<TADAPT::global_ordinal_t*, Kokkos::HostSpace>  tcolind ("colind", tadapter->getGlobalNNZ());
+    Kokkos::View<TADAPT::global_size_t*,    Kokkos::HostSpace>  trowptr ("rowptr", g_num_rows + 1);
     size_t tnnz = 0;
 
-    Array<EADAPT::scalar_t> enzvals(eadapter->getGlobalNNZ());
-    Array<EADAPT::global_ordinal_t> ecolind(eadapter->getGlobalNNZ());
-    Array<EADAPT::global_size_t> erowptr(g_num_rows + 1);
+    //Array<EADAPT::scalar_t> enzvals(eadapter->getGlobalNNZ());
+    //Array<EADAPT::global_ordinal_t> ecolind(eadapter->getGlobalNNZ());
+    //Array<EADAPT::global_size_t> erowptr(g_num_rows + 1);
+    Kokkos::View<EADAPT::scalar_t*,         Kokkos::HostSpace>  enzvals ("nzvals", eadapter->getGlobalNNZ());
+    Kokkos::View<EADAPT::global_ordinal_t*, Kokkos::HostSpace>  ecolind ("colind", eadapter->getGlobalNNZ());
+    Kokkos::View<EADAPT::global_size_t*,    Kokkos::HostSpace>  erowptr ("rowptr", g_num_rows + 1);
     size_t ennz = 0;
 
     /**
@@ -356,8 +374,8 @@ namespace {
     }
     const Tpetra::Map<> half_map(g_num_rows, my_num_rows, 0, tcomm);
 
-    tadapter->getCrs(tnzvals, tcolind, trowptr, tnnz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
-    eadapter->getCrs(enzvals, ecolind, erowptr, ennz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED);
+    tadapter->getCrs_kokkos_view(tnzvals, tcolind, trowptr, tnnz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
+    eadapter->getCrs_kokkos_view(enzvals, ecolind, erowptr, ennz, Teuchos::ptrInArg(half_map), SORTED_INDICES, Amesos2::DISTRIBUTED);
 
     /*
      * Check that you got the entries you'd expect
@@ -366,22 +384,39 @@ namespace {
      * found in the top half of the rows, and the other half are found
      * in the bottom half of the rows.
      */
+    ArrayView<TADAPT::scalar_t>          tnzvals_array (&(tnzvals(0)), tnnz);
+    ArrayView<TADAPT::global_ordinal_t>  tcolind_array (&(tcolind(0)), tnnz);
+    ArrayView<TADAPT::global_size_t>     trowptr_array (&(trowptr(0)), my_num_rows);
+
+    ArrayView<EADAPT::scalar_t>          enzvals_array (&(enzvals(0)), ennz);
+    ArrayView<EADAPT::global_ordinal_t>  ecolind_array (&(ecolind(0)), ennz);
+    ArrayView<EADAPT::global_size_t>     erowptr_array (&(erowptr(0)), my_num_rows);
     if ( rank == 0 ){
       TEST_EQUALITY(tnnz, ennz);
-      TEST_EQUALITY_CONST(trowptr[my_num_rows], tnnz);
-      TEST_EQUALITY_CONST(erowptr[my_num_rows], ennz);
+      //TEST_EQUALITY_CONST(trowptr[my_num_rows], tnnz);
+      //TEST_EQUALITY_CONST(erowptr[my_num_rows], ennz);
+      TEST_EQUALITY_CONST(trowptr(my_num_rows), tnnz);
+      TEST_EQUALITY_CONST(erowptr(my_num_rows), ennz);
 
-      TEST_COMPARE_ARRAYS(tnzvals.view(0,tnnz), enzvals.view(0,ennz));
-      TEST_COMPARE_ARRAYS(tcolind.view(0,tnnz), ecolind.view(0,ennz));
-      TEST_COMPARE_ARRAYS(trowptr.view(0,my_num_rows), erowptr.view(0,my_num_rows));
+      //TEST_COMPARE_ARRAYS(tnzvals.view(0,tnnz), enzvals.view(0,ennz));
+      //TEST_COMPARE_ARRAYS(tcolind.view(0,tnnz), ecolind.view(0,ennz));
+      //TEST_COMPARE_ARRAYS(trowptr.view(0,my_num_rows), erowptr.view(0,my_num_rows));
+      TEST_COMPARE_ARRAYS(tnzvals_array, enzvals_array);
+      TEST_COMPARE_ARRAYS(tcolind_array, ecolind_array);
+      TEST_COMPARE_ARRAYS(trowptr_array, erowptr_array);
     } else if ( rank == 1 ){
       TEST_EQUALITY(tnnz, ennz);
-      TEST_EQUALITY_CONST(trowptr[my_num_rows], tnnz);
-      TEST_EQUALITY_CONST(erowptr[my_num_rows], ennz);
+      //TEST_EQUALITY_CONST(trowptr[my_num_rows], tnnz);
+      //TEST_EQUALITY_CONST(erowptr[my_num_rows], ennz);
+      TEST_EQUALITY_CONST(trowptr(my_num_rows), tnnz);
+      TEST_EQUALITY_CONST(erowptr(my_num_rows), ennz);
 
-      TEST_COMPARE_ARRAYS(tnzvals.view(0,tnnz), enzvals.view(0,ennz));
-      TEST_COMPARE_ARRAYS(tcolind.view(0,tnnz), ecolind.view(0,ennz));
-      TEST_COMPARE_ARRAYS(trowptr.view(0,my_num_rows), erowptr.view(0,my_num_rows));
+      //TEST_COMPARE_ARRAYS(tnzvals.view(0,tnnz), enzvals.view(0,ennz));
+      //TEST_COMPARE_ARRAYS(tcolind.view(0,tnnz), ecolind.view(0,ennz));
+      //TEST_COMPARE_ARRAYS(trowptr.view(0,my_num_rows), erowptr.view(0,my_num_rows));
+      TEST_COMPARE_ARRAYS(tnzvals_array, enzvals_array);
+      TEST_COMPARE_ARRAYS(tcolind_array, ecolind_array);
+      TEST_COMPARE_ARRAYS(trowptr_array, erowptr_array);
     }
   }
 } // end anonymous namespace

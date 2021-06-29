@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -10,7 +10,7 @@ C=======================================================================
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
-     &   kltsnc, KFACSS, KNMLB)
+     &   kltsnc, KFACSS, KNMLB, KNMBK, KNMNS, KNMSS)
 C=======================================================================
 
 C   --*** INIGEN *** (GJOIN) Initialize the memory for GENESIS database
@@ -49,8 +49,14 @@ C   --   kltsss - OUT - index of LTSESS; the sides for all sets
 C   --   kltsnc - OUT - index of LTSSNC; the index of the first dist factor for each face.
 C   --   KFACSS - OUT - index of FACESS; the distribution factors for all sets
 
+      include 'gj_namlen.blk'
+
       DIMENSION A(*)
       LOGICAL FIRST
+
+      if (FIRST) THEN
+         namlen = 0
+      end if
 
       IF (FIRST) THEN
          CALL MDRSRV ('XN', KXN, 0)
@@ -128,8 +134,14 @@ C   --   KFACSS - OUT - index of FACESS; the distribution factors for all sets
 
       IF (FIRST) THEN
          CALL MCRSRV ('NAMELB', KNMLB, 0)
+         CALL MCRSRV ('NAMBK', KNMBK, 0)
+         CALL MCRSRV ('NAMNS', KNMNS, 0)
+         CALL MCRSRV ('NAMSS', KNMSS, 0)
       ELSE
-         CALL MDLONG ('NAMELB', KNMLB, 0)
+         CALL MCLONG ('NAMELB', KNMLB, 0)
+         CALL MCLONG ('NAMBK', KNMBK, 0)
+         CALL MCLONG ('NAMNS', KNMNS, 0)
+         CALL MCLONG ('NAMSS', KNMSS, 0)
       END IF
 
       RETURN

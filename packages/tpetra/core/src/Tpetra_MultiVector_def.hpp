@@ -1617,6 +1617,120 @@ namespace Tpetra {
       os << *prefix << "Done!" << endl;
       std::cerr << os.str ();
     }
+
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class NO>
+  typename std::enable_if<std::is_same<typename Tpetra::Details::DefaultTypes::CommBufferMemorySpace<typename NO::execution_space>::type,
+                                       typename NO::device_type::memory_space>::value,
+      bool>::type
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  reallocImportsIfNeededImpl (const size_t newSize,
+                          const bool verbose,
+                          const std::string* prefix,
+                          const bool areRemoteLIDsContiguous,
+                          const CombineMode CM)
+  {
+    // This implementation of reallocImportsIfNeeded is an
+    // optimization that is specific to MultiVector. We check if the
+    // imports_ view can be aliased to the end of the data view_. If
+    // that is the case, we can skip the unpackAndCombine call.
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Realloc (if needed) imports_ from "
+         << this->imports_.extent (0) << " to " << newSize << std::endl;
+      std::cerr << os.str ();
+    }
+
+    bool reallocated = false;
+
+    using IST = impl_scalar_type;
+    using DV = Kokkos::DualView<IST*, Kokkos::LayoutLeft, buffer_device_type>;
+
+    // Conditions for aliasing memory:
+    // - When both sides of the dual view are in the same memory
+    //   space, we do not need to worry about syncing things.
+    // - When both memory spaces are different, we only alias if this
+    //   does not incur additional sync'ing.
+    // - The remote LIDs need to be contiguous, so that we do not need
+    //   to reorder received information.
+    // - CombineMode needs to be INSERT.
+    // - The number of vectors needs to be 1, otherwise we need to
+    //   reorder the received data.
+    if ((dual_view_type::impl_dualview_is_single_device::value ||
+         (Details::Behavior::assumeMpiIsCudaAware () && !this->need_sync_device()) ||
+         (!Details::Behavior::assumeMpiIsCudaAware () && !this->need_sync_host())) &&
+        areRemoteLIDsContiguous &&
+        (CM == INSERT || CM == REPLACE) &&
+        (getNumVectors() == 1) &&
+        (newSize > 0)) {
+
+      size_t offset = getLocalLength () - newSize;
+      reallocated = this->imports_.d_view.data() != view_.d_view.data() + offset;
+      if (reallocated) {
+        typedef std::pair<size_t, size_t> range_type;
+        this->imports_ = DV(view_,
+                            range_type (offset, getLocalLength () ),
+                            0);
+
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Aliased imports_ to MV.view_" << std::endl;
+          std::cerr << os.str ();
+        }
+      }
+      return reallocated;
+    }
+    {
+      using ::Tpetra::Details::reallocDualViewIfNeeded;
+      reallocated =
+        reallocDualViewIfNeeded (this->unaliased_imports_, newSize, "imports");
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Finished realloc'ing unaliased_imports_" << std::endl;
+        std::cerr << os.str ();
+      }
+      this->imports_ = this->unaliased_imports_;
+    }
+    return reallocated;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class NO>
+  typename std::enable_if<!std::is_same<typename Tpetra::Details::DefaultTypes::CommBufferMemorySpace<typename NO::execution_space>::type,
+                                        typename NO::device_type::memory_space>::value,
+      bool>::type
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  reallocImportsIfNeededImpl (const size_t newSize,
+                          const bool verbose,
+                          const std::string* prefix,
+                          const bool areRemoteLIDsContiguous,
+                          const CombineMode CM)
+  {
+    return DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>::reallocImportsIfNeeded(newSize, verbose, prefix, areRemoteLIDsContiguous, CM);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  reallocImportsIfNeeded(const size_t newSize,
+                                 const bool verbose,
+                                 const std::string* prefix,
+                                 const bool areRemoteLIDsContiguous,
+                                 const CombineMode CM) {
+    /// return false;
+    return reallocImportsIfNeededImpl<Node>(newSize, verbose, prefix, areRemoteLIDsContiguous, CM);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  importsAreAliased() {
+    return (this->imports_.d_view.data() + this->imports_.d_view.extent(0) ==
+            view_.d_view.data() + view_.d_view.extent(0));
   }
 
 
@@ -1667,9 +1781,21 @@ namespace Tpetra {
       if (printDebugOutput) {
         std::ostringstream os;
         os << *prefix << "No imports. Done!" << endl;
+        std::cerr << os.str ();
       }
       return;
     }
+
+    // Check, whether imports_ is a subview of the MV view.
+    if (importsAreAliased()) {
+      if (printDebugOutput) {
+        std::ostringstream os;
+        os << *prefix << "Skipping unpack, since imports_ is aliased to MV.view_. Done!" << endl;
+        std::cerr << os.str ();
+      }
+      return;
+    }
+
 
     const size_t numVecs = getNumVectors ();
     if (debugCheckIndices) {
@@ -1996,7 +2122,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::HostSpace> RV;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef typename dual_view_type::t_dev_const XMV;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
@@ -2695,7 +2820,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "scale: ";
 
     const size_t lclNumRows = getLocalLength ();
@@ -2742,7 +2866,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "reciprocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2782,7 +2905,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "abs";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2827,7 +2949,6 @@ namespace Tpetra {
     const char tfecfFuncName[] = "update: ";
     using Kokkos::subview;
     using Kokkos::ALL;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta)");
 
@@ -2881,7 +3002,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
@@ -2945,7 +3065,6 @@ namespace Tpetra {
   getData (size_t j) const
   {
     using Kokkos::ALL;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getData: ";
 
@@ -2977,7 +3096,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getDataNonConst: ";
 
@@ -3630,7 +3748,6 @@ namespace Tpetra {
       // Since get1dView() is and was always marked const, I have to
       // cast away const here in order not to break backwards
       // compatibility.
-      using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
       auto X_lcl = getLocalViewHost(Access::ReadOnly);
       Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (X_lcl);
@@ -3828,7 +3945,6 @@ namespace Tpetra {
     // Since get2dView() is and was always marked const, I have to
     // cast away const here in order not to break backwards
     // compatibility.
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     auto X_lcl = getLocalViewHost(Access::ReadOnly);
 
     // Don't use the row range here on the outside, in order to avoid
@@ -4099,8 +4215,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using V = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "elementWiseMultiply: ";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -4687,7 +4801,6 @@ namespace Tpetra {
   isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) const
   {
     using ::Tpetra::Details::PackTraits;
-    using ST = impl_scalar_type;
 
     const size_t l1 = this->getLocalLength();
     const size_t l2 = vec.getLocalLength();

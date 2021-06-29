@@ -879,8 +879,15 @@ namespace KokkosSparse{
           nnz_lno_persistent_work_view_t long_rows_per_color(Kokkos::ViewAllocateWithoutInitializing("long_rows_per_color"), numColors);
           nnz_lno_persistent_work_view_t max_row_length_per_color(Kokkos::ViewAllocateWithoutInitializing("max_row_length_per_color"), numColors);
           nnz_lno_t mostLongRowsInColor = 0;
-          Kokkos::parallel_reduce(team_policy_t(numColors, Kokkos::AUTO()),
-              SortIntoLongRowsFunctor(xadj, longRowThreshold, color_xadj, color_adj, long_rows_per_color, max_row_length_per_color),
+          SortIntoLongRowsFunctor sortIntoLongRowsFunctor(xadj, longRowThreshold,
+              color_xadj, color_adj, long_rows_per_color, max_row_length_per_color);
+          int sortLongRowsTeamSize = 1;
+          {
+            team_policy_t temp(1, 1);
+            sortLongRowsTeamSize = temp.team_size_recommended(sortIntoLongRowsFunctor, Kokkos::ParallelReduceTag());
+          }
+          Kokkos::parallel_reduce(team_policy_t(numColors, sortLongRowsTeamSize),
+              sortIntoLongRowsFunctor,
               Kokkos::Max<nnz_lno_t>(mostLongRowsInColor));
           auto host_long_rows_per_color = Kokkos::create_mirror_view(long_rows_per_color);
           Kokkos::deep_copy(host_long_rows_per_color, long_rows_per_color);

@@ -132,6 +132,11 @@ int main (int argc, char* argv[])
       *out << "Preconditioner attributes:" << std::endl;
       prec->describe (*out, Teuchos::VERB_LOW);
     }
+    prec = problem->getRightPrec();
+    if (prec !=Teuchos::null) {
+      *out << "Preconditioner attributes:" << std::endl;
+      prec->describe (*out, Teuchos::VERB_LOW);
+    }
 
     Teuchos::RCP<TMV> R = Teuchos::rcp(new TMV(*problem->getRHS()));
     problem->computeCurrResVec(&*R, &*problem->getLHS(), &*problem->getRHS());

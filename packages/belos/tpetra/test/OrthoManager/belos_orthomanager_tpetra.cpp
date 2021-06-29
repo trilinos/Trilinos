@@ -350,6 +350,8 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     if (orthoManName == "Simple") {
       params->set ("Normalization", normalization);
       label = label + " (" + normalization + " normalization)";
+    } else if (orthoManName == "TSQR") {
+      params->set ("randomizeNullSpace", false); // for testing the norm of zero-vector is zero
     }
     orthoMan = factory.makeOrthoManager (orthoManName, M, outMan, label, params);
   }

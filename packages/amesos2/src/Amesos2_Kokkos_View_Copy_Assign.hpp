@@ -88,6 +88,30 @@ implement_copy_or_assign_same_mem_check_types(bool bInitialize, dst_t & dst, con
   bAssigned = true;
 }
 
+
+// deep-copy version (no checking)
+// bInitialize:
+//   If bInitialize is false, then the data needs to be allocated but not initialized.
+//   If we are about to solve into x we don't care about setting the original values.
+//   In this case, we are allocating so we first make the memory via update_dst_size.
+//   Then we only copy from the source if bInitialize is true.
+// bAssigned:
+//   bAssigned tells the caller if the data was simply assigned, so it is set false in this case.
+template<class dst_t, class src_t> // actual implementation
+void deep_copy_only(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
+  update_dst_size(dst, src); // allocates if necessary
+  if(bInitialize) { // bInitialize false would be for solver getting x, where the actual values are not needed
+    Kokkos::deep_copy(dst, src); // full copy
+  }
+  bAssigned = false;
+}
+
+template<class dst_t, class src_t> // actual implementation
+void deep_copy_only(dst_t & dst, const src_t & src) {
+  bool bAssigned;
+  deep_copy_only(true, dst, src, bAssigned);
+}
+
 // now handle type mismatch for same memory space - now types are different
 // bInitialize:
 //   If bInitialize is false, then the data needs to be allocated but not initialized.

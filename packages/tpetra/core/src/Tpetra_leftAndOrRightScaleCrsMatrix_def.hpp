@@ -83,7 +83,7 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
     // never been called on it before.  A never-initialized (and thus
     // invalid) local matrix has zero rows, because it was default
     // constructed.
-    auto A_lcl = A.getLocalMatrix ();
+    auto A_lcl = A.getLocalMatrixDevice ();
     const LO lclNumRows =
       static_cast<LO> (A.getRowMap ()->getNodeNumElements ());
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -100,13 +100,13 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 
   const bool divide = scaling == SCALING_DIVIDE;
   if (leftScale) {
-    Details::leftScaleLocalCrsMatrix (A.getLocalMatrix (),
+    Details::leftScaleLocalCrsMatrix (A.getLocalMatrixDevice (),
                                       rowScalingFactors,
                                       assumeSymmetric,
                                       divide);
   }
   if (rightScale) {
-    Details::rightScaleLocalCrsMatrix (A.getLocalMatrix (),
+    Details::rightScaleLocalCrsMatrix (A.getLocalMatrixDevice (),
                                        colScalingFactors,
                                        assumeSymmetric,
                                        divide);
@@ -136,7 +136,6 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   using device_type = typename NT::device_type;
   using dev_memory_space = typename device_type::memory_space;
   using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
-  using vec_type = Tpetra::Vector<mag_type, LO, GO, NT>;
   const char prefix[] = "leftAndOrRightScaleCrsMatrix: ";
   const bool debug = ::Tpetra::Details::Behavior::debug ();
 

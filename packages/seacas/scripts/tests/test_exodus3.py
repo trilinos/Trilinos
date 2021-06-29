@@ -11,6 +11,7 @@ import unittest
 import sys
 import os
 import tempfile
+import ctypes
 
 path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 sys.path.append(os.path.join(path, "lib"))
@@ -41,6 +42,13 @@ class MyTestCase(unittest.TestCase):
     def test_ex_entity_type_to_objType_wrong_entity_type(self):
         self.assertEqual("EX_INVALID", exo.ex_entity_type_to_objType('fake_entity'))
 
+    def test_setup_ex_assembly(self):
+        assem = exo.assembly(name='Unit_test', type='EX_ASSEMBLY', id=444)
+        assem.entity_list = [100, 222]
+        ctype_assem = exo.setup_ex_assembly(assem)
+        self.assertIsInstance(ctype_assem, exo.ex_assembly)
+        self.assertIsInstance(ctype_assem.entity_list, ctypes.POINTER(ctypes.c_longlong))
+
     def test_get_name_assembly(self):
         temp_exofile = exo.exodus("test-assembly.exo", mode='r')
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
@@ -56,7 +64,7 @@ class MyTestCase(unittest.TestCase):
         temp_exofile = exo.exodus("test-assembly.exo", mode='r')
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
-        root = exo.assembly(name='Root', type='assembly', id=100)
+        root = exo.assembly(name='Root', type='EX_ASSEMBLY', id=100)
         root.entity_list = [100, 200, 300, 400]
         self.assertEqual(str(root), str(assemblies[0]))
 
@@ -64,12 +72,12 @@ class MyTestCase(unittest.TestCase):
         temp_exofile = exo.exodus("test-assembly.exo", mode='r')
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = temp_exofile.get_assemblies(assembly_ids)
-        expected = [exo.assembly(name='Root', type='assembly', id=100),
-                    exo.assembly(name='Child2', type='element block', id=200),
-                    exo.assembly(name='Child3', type='element block', id=300),
-                    exo.assembly(name='Child4', type='element block', id=400),
-                    exo.assembly(name='NewAssembly', type='assembly', id=222),
-                    exo.assembly(name='FromPython', type='assembly', id=333)]
+        expected = [exo.assembly(name='Root', type='EX_ASSEMBLY', id=100),
+                    exo.assembly(name='Child2', type='EX_ELEM_BLOCK', id=200),
+                    exo.assembly(name='Child3', type='EX_ELEM_BLOCK', id=300),
+                    exo.assembly(name='Child4', type='EX_ELEM_BLOCK', id=400),
+                    exo.assembly(name='NewAssembly', type='EX_ASSEMBLY', id=222),
+                    exo.assembly(name='FromPython', type='EX_ASSEMBLY', id=333)]
         for i, x in enumerate(expected):
             entity_lists = [[100, 200, 300, 400],
                             [10, 11, 12, 13],
@@ -82,7 +90,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(str(expected), str(assemblies))
 
     def test_put_assembly(self):
-        new = exo.assembly(name='Unit_test', type='EX_ASSEMBLY', id=444)
+        new = exo.assembly(name='Unit_test', type=exo.ex_entity_type.EX_ASSEMBLY, id=444)
         new.entity_list = [100, 222]
         self.temp_exofile.put_assembly(new)
         self.temp_exofile.close()
@@ -90,7 +98,7 @@ class MyTestCase(unittest.TestCase):
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
         self.assertEqual(new.name, assemblies[6].name)
-        self.assertEqual('assembly', assemblies[6].type)
+        self.assertEqual(16, assemblies[6].type)
         self.assertEqual(new.id, assemblies[6].id)
         self.assertEqual(new.entity_list, assemblies[6].entity_list)
 
@@ -128,9 +136,8 @@ class MyTestCase(unittest.TestCase):
         temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
-        print(assemblies)
         self.assertEqual(new.name, assemblies[6].name)
-        self.assertEqual('assembly', assemblies[6].type)
+        self.assertEqual(16, assemblies[6].type)
         self.assertEqual(new.id, assemblies[6].id)
         self.assertEqual(new.entity_list, assemblies[6].entity_list)
 
@@ -145,14 +152,13 @@ class MyTestCase(unittest.TestCase):
         temp_exofile = exo.exodus(self.temp_exo_path)
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
-        print(assemblies)
         self.assertEqual(new.name, assemblies[6].name)
-        self.assertEqual('assembly', assemblies[6].type)
+        self.assertEqual(16, assemblies[6].type)
         self.assertEqual(new.id, assemblies[6].id)
         self.assertEqual(new.entity_list, assemblies[6].entity_list)
 
         self.assertEqual(new2.name, assemblies[7].name)
-        self.assertEqual('assembly', assemblies[7].type)
+        self.assertEqual(16, assemblies[7].type)
         self.assertEqual(new2.id, assemblies[7].id)
         self.assertEqual(new2.entity_list, assemblies[7].entity_list)
 

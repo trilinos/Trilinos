@@ -304,12 +304,12 @@ C  INPUT A SCHEME INTO THE DATABASE
             IF (NOROOM) THEN
                N(10) = NOLD10
                N(24) = NOLD24
-               CALL MESAGE ('************************************')
-               CALL MESAGE ('NOT ENOUGH ROOM FOR SCHEME CARD')
-               CALL MESAGE ('NO DYNAMIC DIMENSIONING INCREASES')
-               CALL MESAGE ('AVAILABLE FOR CHARACTER STRINGS')
-               CALL MESAGE ('SCHEME CARD IS THUS IGNORED')
-               CALL MESAGE ('************************************')
+               CALL MESSAGE('************************************')
+               CALL MESSAGE('NOT ENOUGH ROOM FOR SCHEME CARD')
+               CALL MESSAGE('NO DYNAMIC DIMENSIONING INCREASES')
+               CALL MESSAGE('AVAILABLE FOR CHARACTER STRINGS')
+               CALL MESSAGE('SCHEME CARD IS THUS IGNORED')
+               CALL MESSAGE('************************************')
             END IF
 
 C  INPUT INTERVALS FOR SIDES OR LINES
@@ -491,16 +491,16 @@ C  FLAG THE BANDWIDTH OPTIMIZATION ROUTINES ON, AND READ A RENUM CARD
                CALL INRENM (MSC, N(28), HOLD, RIN(3), IIN(3), IDUM,
      &            NUMBER, NOROOM)
                IF (NOROOM) THEN
-                  CALL MESAGE ('************************************')
-                  CALL MESAGE ('NOT ENOUGH ROOM FOR RENUMBERING CARD')
-                  CALL MESAGE ('NO DYNAMIC DIMENSIONING INCREASES')
-                  CALL MESAGE ('AVAILABLE FOR CHARACTER STRINGS')
-                  CALL MESAGE ('RENUMBERING CARD IS THUS IGNORED')
-                  CALL MESAGE ('************************************')
+                  CALL MESSAGE('************************************')
+                  CALL MESSAGE('NOT ENOUGH ROOM FOR RENUMBERING CARD')
+                  CALL MESSAGE('NO DYNAMIC DIMENSIONING INCREASES')
+                  CALL MESSAGE('AVAILABLE FOR CHARACTER STRINGS')
+                  CALL MESSAGE('RENUMBERING CARD IS THUS IGNORED')
+                  CALL MESSAGE('************************************')
                END IF
             ELSE IF (IFOUND .EQ. 2) THEN
-               CALL MESAGE ('RENUM CARD READ WITHOUT ANY DATA')
-               CALL MESAGE ('DEFAULT RENUM PROCESSING WILL BE USED')
+               CALL MESSAGE('RENUM CARD READ WITHOUT ANY DATA')
+               CALL MESSAGE('DEFAULT RENUM PROCESSING WILL BE USED')
             END IF
 
 C  Write Database in exodusII format
@@ -573,8 +573,8 @@ C  END OF DATA
   130 CONTINUE
 
   140 CONTINUE
-      CALL MESAGE ('FILE END ENCOUNTERED BEFORE -EXIT- CARD WAS FOUND')
-      CALL MESAGE ('POSSIBLE PROBLEM IN FILE')
+      CALL MESSAGE('FILE END ENCOUNTERED BEFORE -EXIT- CARD WAS FOUND')
+      CALL MESSAGE('POSSIBLE PROBLEM IN FILE')
 
 C  RENUMBER THE CARDS IF MERGING
 
@@ -723,14 +723,14 @@ C  AND ALL THE BAR SETS
 C  SUCCESSFUL COMPLETION - WRITE SUMMARY OF SUCCESSFUL READS
 
       IF (NODATA) THEN
-         CALL MESAGE (' ')
-         CALL MESAGE (' *----------------------------------------- - *')
-         CALL MESAGE (' NO FASTQ DATA HAS BEEN FOUND IN CURRENT FILE')
-         CALL MESAGE (' *----------------------------------------- - *')
+         CALL MESSAGE(' ')
+         CALL MESSAGE(' *----------------------------------------- - *')
+         CALL MESSAGE(' NO FASTQ DATA HAS BEEN FOUND IN CURRENT FILE')
+         CALL MESSAGE(' *----------------------------------------- - *')
          RETURN
       END IF
-      CALL MESAGE (' ')
-      CALL MESAGE ('FILE SUCCESSFULLY READ')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('FILE SUCCESSFULLY READ')
       CALL STRLNG (TITLE, LEN)
       WRITE(*, 10300) TITLE(1:LEN)
       IF (MERGE) THEN
@@ -763,8 +763,8 @@ C  SUCCESSFUL COMPLETION - WRITE SUMMARY OF SUCCESSFUL READS
 C  MORE ROOM IN DIMENSIONS NEEDED
 
   310 CONTINUE
-      CALL MESAGE (' ')
-      CALL MESAGE ('DIMENSIONS MUST BE INCREASED - PLEASE WAIT')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('DIMENSIONS MUST BE INCREASED - PLEASE WAIT')
       DO 320 I = 1, 29
          N(I) = NOLD(I)
   320 CONTINUE

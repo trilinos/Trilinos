@@ -237,6 +237,7 @@ public:
   size_t num_syncs_to_host() const { return m_impl.num_syncs_to_host(); }
   size_t num_syncs_to_device() const { return m_impl.num_syncs_to_device(); }
   bool has_ngp_field() const { return m_impl.get_ngp_field() != nullptr; }
+  void fence() const { return m_impl.fence(); }
 
   template <typename StkDebugger>
   void make_field_sync_debugger() const {

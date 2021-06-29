@@ -54,7 +54,7 @@ C***********************************************************************
 
   100 CONTINUE
       IF (ICOM .GT. JCOM) THEN
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CALL FREFLD (IZ, IZ, 'ENTER DELETE OPTION: ', MCOM, IOSTAT,
      &      JCOM, KIN, CIN, IIN, RIN)
          ICOM = 1
@@ -63,9 +63,9 @@ C***********************************************************************
       IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR. (CIN(ICOM)(1:1) .EQ. 'p')) THEN
          ICOM = ICOM + 1
          IF (N(1) .GT. 0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE POINTS <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE POINTS <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   110       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -82,19 +82,19 @@ C***********************************************************************
                GO TO 110
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*-----------------------------------*')
-            CALL MESAGE ('* NO POINTS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*-----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*-----------------------------------*')
+            CALL MESSAGE('* NO POINTS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*-----------------------------------*')
          END IF
 
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'L') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'l')) THEN
          ICOM = ICOM + 1
          IF (N(2) .GT. 0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE LINES <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE LINES <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   130       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -111,10 +111,10 @@ C***********************************************************************
                GO TO 130
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*----------------------------------*')
-            CALL MESAGE ('* NO LINES IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*----------------------------------*')
+            CALL MESSAGE('* NO LINES IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*----------------------------------*')
          END IF
 
 C  DELETE BAR SET DEFINITIONS
@@ -123,9 +123,9 @@ C  DELETE BAR SET DEFINITIONS
      &   (CIN(ICOM)(1:2) .EQ. 'ba')) THEN
          ICOM = ICOM + 1
          IF (N(5) .GT. 0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE BAR SETS <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE BAR SETS <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   150       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -142,10 +142,10 @@ C  DELETE BAR SET DEFINITIONS
                GO TO 150
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*-------------------------------------*')
-            CALL MESAGE ('* NO BAR SETS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*-------------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*-------------------------------------*')
+            CALL MESSAGE('* NO BAR SETS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*-------------------------------------*')
          END IF
 
 C  DELETE THE RENUMBERING CARDS
@@ -154,7 +154,7 @@ C  DELETE THE RENUMBERING CARDS
      &   (CIN(ICOM)(1:3) .EQ. 'ren')) THEN
          ICOM = ICOM + 1
          IF (N(28) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             I1 = 1
             I2 = N(28)
             ITEST = 20
@@ -164,9 +164,9 @@ C  DELETE THE RENUMBERING CARDS
                   WRITE(*, 10050) NUMBER(I)(73:80)
                END IF
   170       CONTINUE
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE RENUMBER CARDS <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE RENUMBER CARDS <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   180       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -187,16 +187,16 @@ C  DELETE THE RENUMBERING CARDS
                GO TO 180
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE
+            CALL MESSAGE(' ')
+            CALL MESSAGE
      &         ('*-------------------------------------------*')
-            IF (.NOT. OPTIM) CALL MESAGE
+            IF (.NOT. OPTIM) CALL MESSAGE
      &         ('*        NO RENUMBER CONTROL CARDS          *')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('*        OPTIMIZATION HAS BEEN DISABLED     *')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('*-------------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             OPTIM = .FALSE.
          END IF
 
@@ -214,9 +214,9 @@ C  DELETE THE REGIONS
   210    CONTINUE
   220    CONTINUE
          IF (.NOT.LGROUP) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE REGIONS <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE REGIONS <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   230       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -287,10 +287,10 @@ C  DELETE LINK TO REGION
                GO TO 230
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*------------------------------------*')
-            CALL MESAGE ('* NO REGIONS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*------------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*------------------------------------*')
+            CALL MESSAGE('* NO REGIONS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*------------------------------------*')
          END IF
 
 C  DELETE THE GROUPS
@@ -307,9 +307,9 @@ C  DELETE THE GROUPS
   330    CONTINUE
   340    CONTINUE
          IF (LGROUP) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE GROUPS<I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE GROUPS<I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   350       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -346,10 +346,10 @@ C  DELETE LINK TO GROUP
                GO TO 350
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*-----------------------------------*')
-            CALL MESAGE ('* NO GROUPS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*-----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*-----------------------------------*')
+            CALL MESSAGE('* NO GROUPS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*-----------------------------------*')
          END IF
 
 C  DELETE THE HOLES
@@ -358,9 +358,9 @@ C  DELETE THE HOLES
      &   (CIN(ICOM)(1:2) .EQ. 'ho')) THEN
          ICOM = ICOM + 1
          IF (N(29) .GT. 0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE HOLES FOR REGIONS <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE HOLES FOR REGIONS <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   390       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -388,10 +388,10 @@ C  DELETE THE HOLES
                GO TO 390
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*----------------------------------*')
-            CALL MESAGE ('* NO HOLES IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*----------------------------------*')
+            CALL MESSAGE('* NO HOLES IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*----------------------------------*')
          END IF
 
 C  DELETE SCHEMES
@@ -400,9 +400,9 @@ C  DELETE SCHEMES
      &   (CIN(ICOM)(1:2) .EQ. 'sc')) THEN
          ICOM = ICOM + 1
          IF (N(10) .GT. 0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE SCHEMES <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE SCHEMES <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   410       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -419,15 +419,15 @@ C  DELETE SCHEMES
                GO TO 410
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE
+            CALL MESSAGE(' ')
+            CALL MESSAGE
      &         ('*---------------------------------------------*')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('* ONLY DEFAULT SCHEME IN THE CURRENT DATABASE *')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('*---------------------------------------------*')
             WRITE(*, 10020) DEFSCH
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
          END IF
 
 C  SPAWN A PROCESS
@@ -443,9 +443,9 @@ C  DELETE SIDE DEFINITIONS
      &   (CIN(ICOM)(1:1) .EQ. 's')) THEN
          ICOM = ICOM + 1
          IF (N(3) .GT. 0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('DELETE SIDES <I1> THROUGH <I2>:')
-            CALL MESAGE ('HIT A RETURN TO END')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('DELETE SIDES <I1> THROUGH <I2>:')
+            CALL MESSAGE('HIT A RETURN TO END')
   430       CONTINUE
             IF (ICOM .GT. JCOM) THEN
                CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -462,10 +462,10 @@ C  DELETE SIDE DEFINITIONS
                GO TO 430
             END IF
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*----------------------------------*')
-            CALL MESAGE ('* NO SIDES IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*----------------------------------*')
+            CALL MESSAGE('* NO SIDES IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*----------------------------------*')
          END IF
 
 C  DELETE BOUNDARY CONDITIONS
@@ -474,13 +474,13 @@ C  DELETE BOUNDARY CONDITIONS
      &   (CIN(ICOM)(1:1) .EQ. 'b')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE
+            CALL MESSAGE
      &         ('THE FOLLOWING BOUNDARY FLAG TYPES ARE AVAILABLE')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('        P*OINT FLAGS    - FOR NODES AT POINTS')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('        N*ODE FLAGS     - FOR NODES ON A BOUNDARY')
-            CALL MESAGE ('        E*LEMENT FLAGS  - FOR ELEMENT SIDES '
+            CALL MESSAGE('        E*LEMENT FLAGS  - FOR ELEMENT SIDES '
      &         //'ON A BOUNDARY')
             CALL FREFLD (IZ, IZ, 'TYPE OF BOUNDARY FLAG TO BE '//
      &         'DELETED FROM: ', MCOM, IOSTAT, JCOM, KIN, CIN, IIN, RIN)
@@ -490,10 +490,10 @@ C  DELETE BOUNDARY CONDITIONS
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
             IF (N(11) .GT. 0) THEN
-               CALL MESAGE (' ')
-               CALL MESAGE ('DELETE POINT BOUNDARY FLAGS <I1> '//
+               CALL MESSAGE(' ')
+               CALL MESSAGE('DELETE POINT BOUNDARY FLAGS <I1> '//
      &            'THROUGH <I2>:')
-               CALL MESAGE ('HIT A RETURN TO END')
+               CALL MESSAGE('HIT A RETURN TO END')
   450          CONTINUE
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
@@ -515,23 +515,23 @@ C  DELETE BOUNDARY CONDITIONS
                   GO TO 450
                END IF
             ELSE
-               CALL MESAGE (' ')
-               CALL MESAGE
+               CALL MESSAGE(' ')
+               CALL MESSAGE
      &            ('*-----------------------------------------*')
-               CALL MESAGE
+               CALL MESSAGE
      &            ('* NO POINT BOUNDARY FLAGS IN THE DATABASE *')
-               CALL MESAGE
+               CALL MESSAGE
      &            ('*-----------------------------------------*')
-               CALL MESAGE (' ')
+               CALL MESSAGE(' ')
             END IF
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'n')) THEN
             ICOM = ICOM + 1
             IF (N(13) .GT. 0) THEN
-               CALL MESAGE (' ')
-               CALL MESAGE
+               CALL MESSAGE(' ')
+               CALL MESSAGE
      &            ('DELETE NODE BOUNDARY FLAGS <I1> THROUGH <I2>:')
-               CALL MESAGE ('HIT A RETURN TO END')
+               CALL MESSAGE('HIT A RETURN TO END')
   470          CONTINUE
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
@@ -556,23 +556,23 @@ C  RELINK UP THE LINES TO THEIR ASSOCIATED FLAGS
                   GO TO 470
                END IF
             ELSE
-               CALL MESAGE (' ')
-               CALL MESAGE
+               CALL MESSAGE(' ')
+               CALL MESSAGE
      &            ('*----------------------------------------*')
-               CALL MESAGE
+               CALL MESSAGE
      &            ('* NO NODE BOUNDARY FLAGS IN THE DATABASE *')
-               CALL MESAGE
+               CALL MESSAGE
      &            ('*----------------------------------------*')
-               CALL MESAGE (' ')
+               CALL MESSAGE(' ')
             END IF
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'E') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'e')) THEN
             ICOM = ICOM + 1
             IF (N(15) .GT. 0) THEN
-               CALL MESAGE (' ')
-               CALL MESAGE
+               CALL MESSAGE(' ')
+               CALL MESSAGE
      &            ('DELETE ELEMENT BOUNDARY FLAGS <I1> THROUGH <I2>:')
-               CALL MESAGE ('HIT A RETURN TO END')
+               CALL MESSAGE('HIT A RETURN TO END')
   490          CONTINUE
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
@@ -597,14 +597,14 @@ C  RELINK UP THE LINES TO THEIR ASSOCIATED FLAGS
                   GO TO 490
                END IF
             ELSE
-               CALL MESAGE (' ')
-               CALL MESAGE
+               CALL MESSAGE(' ')
+               CALL MESSAGE
      &            ('*-------------------------------------------*')
-               CALL MESAGE
+               CALL MESSAGE
      &            ('* NO ELEMENT BOUNDARY FLAGS IN THE DATABASE *')
-               CALL MESAGE
+               CALL MESSAGE
      &            ('*-------------------------------------------*')
-               CALL MESAGE (' ')
+               CALL MESSAGE(' ')
             END IF
          END IF
 
@@ -626,7 +626,7 @@ C  EXIT OPTION - EXITS FASTQ
          ICOM = ICOM + 1
          RETURN
 
-C  PRINT HELP MESAGE
+C  PRINT HELP MESSAGE
 
       ELSE
          ICOM = ICOM + 1

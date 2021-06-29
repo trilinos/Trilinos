@@ -79,14 +79,17 @@ bool compare_final_matrix_structure_impl(Teuchos::FancyOStream &out,Tpetra::CrsM
   if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;return false;}
   if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {out<<"Compare: DomainMap failed"<<endl;return false;}
 
-  auto rowptr1 = g1.getLocalMatrix().graph.row_map;
-  auto rowptr2 = g2.getLocalMatrix().graph.row_map;
+  auto lclMtx1 = g1.getLocalMatrixHost();
+  auto lclMtx2 = g2.getLocalMatrixHost();
 
-  auto colind1 = g1.getLocalMatrix().graph.entries;
-  auto colind2 = g2.getLocalMatrix().graph.entries;
+  auto rowptr1 = lclMtx1.graph.row_map;
+  auto rowptr2 = lclMtx2.graph.row_map;
 
-  auto values1 = g1.getLocalMatrix().values;
-  auto values2 = g2.getLocalMatrix().values;
+  auto colind1 = lclMtx1.graph.entries;
+  auto colind2 = lclMtx2.graph.entries;
+
+  auto values1 = lclMtx1.values;
+  auto values2 = lclMtx2.values;
 
   if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}      
   if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed"<<endl;return false;}      
@@ -346,25 +349,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   FEMAT mat1(graph); // Here we use graph as a FECrsGraph
   CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
   mat1.beginFill();
+  {
+    auto k_e2n = pack.k_element2node;
+    auto localMat = mat1.getLocalMatrixDevice();
+    auto localMap = pack.overlapMap->getLocalMap();
+    //get local map too
 
-  auto k_e2n = pack.k_element2node;
-  auto localMat = mat1.getLocalMatrix();
-  auto localMap = pack.overlapMap->getLocalMap();
-  //get local map too
-
-  Kokkos::parallel_for("assemble_1d",
-		       range_type (0,k_e2n.extent(0)), 
-		       KOKKOS_LAMBDA(const size_t i) {
-    size_t extent = k_e2n.extent(1);
-    for(size_t j=0; j < extent; j++) {
-      LO lid_j = localMap.getLocalElement(k_e2n(i, j));
-      for(size_t k=0; k < extent; k++) {
-        LO lid_k = localMap.getLocalElement(k_e2n(i, k));
-	ImplScalarType tmp = kokkosValues(j, k);
-	localMat.sumIntoValues(lid_j, &lid_k, 1, &tmp, true, true);
+    Kokkos::parallel_for("assemble_1d",
+		         range_type (0,k_e2n.extent(0)), 
+		         KOKKOS_LAMBDA(const size_t i) {
+      size_t extent = k_e2n.extent(1);
+      for(size_t j=0; j < extent; j++) {
+        LO lid_j = localMap.getLocalElement(k_e2n(i, j));
+        for(size_t k=0; k < extent; k++) {
+          LO lid_k = localMap.getLocalElement(k_e2n(i, k));
+	  ImplScalarType tmp = kokkosValues(j, k);
+	  localMat.sumIntoValues(lid_j, &lid_k, 1, &tmp, true, true);
+        }
       }
-    }
-  });
+    });
+  }
   mat1.endFill();
   
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
@@ -486,22 +490,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   FEMAT mat1(graph); // Here we use graph as a FECrsGraph
   CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
   mat1.beginFill();
-  auto k_e2n = pack.k_element2node;
-  auto localMat = mat1.getLocalMatrix();
-  auto localMap = pack.overlapMap->getLocalMap();
+  {
+    auto k_e2n = pack.k_element2node;
+    auto localMat = mat1.getLocalMatrixDevice();
+    auto localMap = pack.overlapMap->getLocalMap();
 
-  Kokkos::parallel_for("assemble_1d_local_index", 
-		       range_type (0, k_e2n.extent(0)),
-		       KOKKOS_LAMBDA(const size_t i) {
-    for(size_t j=0; j<k_e2n.extent(1); j++) {
-      LO lid_j = localMap.getLocalElement(k_e2n(i, j));
-      for(size_t k=0; k<k_e2n.extent(1); k++) {
-        LO lid_k = localMap.getLocalElement(k_e2n(i, k));
-	ImplScalarType tmp = kokkosValues(j, k);
-	localMat.sumIntoValues(lid_j, &lid_k, 1, &tmp, true, true);
+    Kokkos::parallel_for("assemble_1d_local_index", 
+		         range_type (0, k_e2n.extent(0)),
+		         KOKKOS_LAMBDA(const size_t i) {
+      for(size_t j=0; j<k_e2n.extent(1); j++) {
+        LO lid_j = localMap.getLocalElement(k_e2n(i, j));
+        for(size_t k=0; k<k_e2n.extent(1); k++) {
+          LO lid_k = localMap.getLocalElement(k_e2n(i, k));
+	  ImplScalarType tmp = kokkosValues(j, k);
+	  localMat.sumIntoValues(lid_j, &lid_k, 1, &tmp, true, true);
+        }
       }
-    }
-  });
+    });
+  }
   mat1.endFill();
 
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
@@ -573,7 +579,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos_Mul
     mat1.beginFill();
     mat1.setAllToScalar(SC_ZERO);
     auto k_e2n = pack.k_element2node;
-    auto localMat = mat1.getLocalMatrix();
+    auto localMat = mat1.getLocalMatrixDevice();
     auto localMap = pack.overlapMap->getLocalMap();
     
     Kokkos::parallel_for("assemble_1d_local_index", 

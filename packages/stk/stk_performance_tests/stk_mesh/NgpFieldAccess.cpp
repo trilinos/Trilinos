@@ -162,10 +162,12 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 5;
+  const int NUM_RUNS = 50;
   const int ELEMS_PER_DIM = 100;
   const int NUM_BLOCKS = 100;
-  const int BLOCKS = stk::unit_test_util::get_command_line_option<int>("-n", 1);
+  int BLOCKS = stk::unit_test_util::get_command_line_option<int>("-n", 50);
+  BLOCKS = std::max(BLOCKS, 1);
+  BLOCKS = std::min(BLOCKS, NUM_BLOCKS);
 
   declare_centroid_partial_mesh(BLOCKS);
   setup_multi_block_mesh(ELEMS_PER_DIM, NUM_BLOCKS);

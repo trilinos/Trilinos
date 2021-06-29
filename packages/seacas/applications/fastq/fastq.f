@@ -206,8 +206,8 @@ C  SET UP THE DEFAULT LABELING FOR DATA PLOTTING
 
 C  PRINT GREETING AND TRACE
 
-      CALL MESAGE (' ')
-      CALL MESAGE ('WELCOME TO FASTQ:')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('WELCOME TO FASTQ:')
       CALL EXDATE (DATE)
       CALL EXTIME (TIME)
       WRITE (*, *) '            DATE: ', DATE
@@ -219,7 +219,7 @@ C  PRINT GREETING AND TRACE
          write (*,*) '   Output Format: Genesis/ExodusI'
       end if
 
-      CALL MESAGE (' ')
+      CALL MESSAGE(' ')
       WRITE (*, *)
      *  '+++            Copyright(C) 1999-2021 NTESS               +++'
       WRITE (*, *)
@@ -242,11 +242,11 @@ C  AND SET UP THE MULTIPLE DEVICE OUTPUT ROUTINES
          CALL VDIQES (10002, KAVAL2)
          IF (KAVAL1.NE.1) THEN
             ALPHA = .TRUE.
-            CALL MESAGE ('TERMINAL PLOTTING DEVICE NOT AVAILABLE')
+            CALL MESSAGE('TERMINAL PLOTTING DEVICE NOT AVAILABLE')
          ELSE
             ALPHA = .FALSE.
          END IF
-         IF (KAVAL2.NE.1) CALL MESAGE ('HARDCOPY DEVICE NOT AVAILABLE')
+         IF (KAVAL2.NE.1) CALL MESSAGE('HARDCOPY DEVICE NOT AVAILABLE')
       END IF
       IF ((.NOT.BATCH) .AND. (.NOT.ALPHA)) THEN
          CALL VDESCP (10003, 0, 0)
@@ -394,7 +394,7 @@ C  ENTER FASTQ MAIN OPTION
       IZ = 0
   120 CONTINUE
       IF ((.NOT.BATCH) .AND. (ICOM .GT. JCOM)) THEN
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CALL FREFLD (IZ, IZ, 'ENTER OPTION: ', MCOM, IOSTAT, JCOM,
      &      KIN, CIN, IIN, RIN)
          ICOM = 1
@@ -643,7 +643,7 @@ C  RESORT THE LINK ARRAYS
             CALL LTNEW (ML, IA(K(58)))
             CALL LTNEW (ML, IA(K(59)))
             CALL LTADD (ML, MLOLD, N(15), IA(K(49)), IA(K(59)))
-            CALL MESAGE('DIGITIZATION CAN NOW BE CONTINUED')
+            CALL MESSAGE('DIGITIZATION CAN NOW BE CONTINUED')
             GO TO 150
          END IF
          WROTE = .FALSE.
@@ -786,7 +786,7 @@ C  RESORT THE LINK ARRAYS
             CALL LTNEW (ML, IA(K(58)))
             CALL LTNEW (ML, IA(K(59)))
             CALL LTADD (ML, MLOLD, N(15), IA(K(49)), IA(K(59)))
-            CALL MESAGE ('KEYIN OPTION CAN NOW BE CONTINUED')
+            CALL MESSAGE('KEYIN OPTION CAN NOW BE CONTINUED')
             GO TO 160
          END IF
 
@@ -835,7 +835,7 @@ C  CHECK TO SEE IF A FASTQ DATA MERGING IS DESIRED
                CALL LTNEW (ML, IA(K(59)))
             ELSE
                IF (.NOT.WROTE) THEN
-                  CALL MESAGE('CONTINUATION WILL OVERWRITE OLD DATA')
+                  CALL MESSAGE('CONTINUATION WILL OVERWRITE OLD DATA')
                   CALL INTRUP('DO YOU WISH TO CONTINUE', IANS, MCOM,
      &               ICOM, JCOM, CIN, IIN, RIN, KIN)
                   IF (.NOT.IANS) GO TO 120
@@ -1029,7 +1029,7 @@ C  RESORT THE LINK ARRAYS
                CALL LTNEW (ML, IA(K(58)))
                CALL LTNEW (ML, IA(K(59)))
                CALL LTADD (ML, MLOLD, N(15), IA(K(49)), IA(K(59)))
-               CALL MESAGE('FILE WILL NOW BE READ AGAIN AS NEW INPUT')
+               CALL MESSAGE('FILE WILL NOW BE READ AGAIN AS NEW INPUT')
                GO TO 190
             END IF
             TBZOOM = .FALSE.
@@ -1100,7 +1100,7 @@ C  WRITE OPTION - WRITES A FASTQ DATA FILE
          WROTE = .TRUE.
          CLOSE (IUNIT)
 
-C  GET THE APPROPRIATE HELP MESAGE
+C  GET THE APPROPRIATE HELP MESSAGE
 
       ELSE
          ICOM = ICOM + 1

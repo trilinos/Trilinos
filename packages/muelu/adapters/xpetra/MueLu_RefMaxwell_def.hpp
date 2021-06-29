@@ -109,7 +109,8 @@
 #include <Thyra_SolveSupportTypes.hpp>
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include <Stratimikos_MueLuHelpers.hpp>
+#include <Thyra_MueLuPreconditionerFactory.hpp>
+#include "Teuchos_AbstractFactoryStd.hpp"
 // Ifpack2 includes
 #ifdef HAVE_MUELU_IFPACK2
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
@@ -171,34 +172,6 @@ namespace MueLu {
     FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getData(0),dirichletCols);
   }
 
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
-                            Teuchos::ArrayRCP<bool>& dirichletRows)
-  {
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
-    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
-      size_t nnz = A.getNumEntriesInLocalRow(row);
-      ArrayView<const LocalOrdinal> indices;
-      ArrayView<const Scalar> vals;
-      A.getLocalRowView(row, indices, vals);
-
-      Scalar rowsum = STS::zero();
-      Scalar diagval = STS::zero();
-      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
-        LocalOrdinal col = indices[colID];
-        if (row == col)
-          diagval = vals[colID];
-        rowsum += vals[colID];
-      }
-      if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
-        dirichletRows[row] = true;
-    }
-  }
-
-
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -257,33 +230,6 @@ namespace MueLu {
       globalColsToZero = myColsToZero;
     FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(),dirichletDomain);
     FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(),dirichletCols);
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
-                            Kokkos::View<bool*, typename Node::device_type> & dirichletRows)
-  {
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
-    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
-      size_t nnz = A.getNumEntriesInLocalRow(row);
-      ArrayView<const LocalOrdinal> indices;
-      ArrayView<const Scalar> vals;
-      A.getLocalRowView(row, indices, vals);
-
-      Scalar rowsum = STS::zero();
-      Scalar diagval = STS::zero();
-      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
-        LocalOrdinal col = indices[colID];
-        if (row == col)
-          diagval = vals[colID];
-        rowsum += vals[colID];
-      }
-      if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
-        dirichletRows(row) = true;
-    }
   }
 
 #endif
@@ -416,7 +362,7 @@ namespace MueLu {
       BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
 
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
+        Utilities_kokkos::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
 
       BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getNodeNumElements());
       BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getDomainMap()->getNodeNumElements());
@@ -438,7 +384,7 @@ namespace MueLu {
       BCrows_ = Teuchos::arcp_const_cast<bool>(Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true));
 
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
+        Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
 
       BCcols_.resize(D0_Matrix_->getColMap()->getNodeNumElements());
       BCdomain_.resize(D0_Matrix_->getDomainMap()->getNodeNumElements());
@@ -1378,6 +1324,15 @@ namespace MueLu {
       throw(Xpetra::Exceptions::RuntimeError("MueLu must be compiled with Ifpack2 for Hiptmair smoothing."));
 #endif  // defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
     } else {
+
+      Level level;
+      RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+      level.SetFactoryManager(factoryHandler);
+      level.SetLevelID(0);
+      level.setObjectLabel("RefMaxwell (1,1)");
+      level.Set("A",SM_Matrix_);
+      level.setlib(SM_Matrix_->getDomainMap()->lib());
+
       if (parameterList_.isType<std::string>("smoother: pre type") && parameterList_.isType<std::string>("smoother: post type")) {
         std::string preSmootherType = parameterList_.get<std::string>("smoother: pre type");
         std::string postSmootherType = parameterList_.get<std::string>("smoother: post type");
@@ -1388,42 +1343,49 @@ namespace MueLu {
         if (parameterList_.isSublist("smoother: post params"))
           postSmootherList = parameterList_.sublist("smoother: post params");
 
-        Level level;
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        level.SetFactoryManager(factoryHandler);
-        level.SetLevelID(0);
-        level.setObjectLabel("RefMaxwell (1,1)");
-        level.Set("A",SM_Matrix_);
-        level.setlib(SM_Matrix_->getDomainMap()->lib());
-
         RCP<SmootherPrototype> preSmootherPrototype = rcp(new TrilinosSmoother(preSmootherType, preSmootherList));
-        RCP<SmootherFactory> preSmootherFact = rcp(new SmootherFactory(preSmootherPrototype));
-
         RCP<SmootherPrototype> postSmootherPrototype = rcp(new TrilinosSmoother(postSmootherType, postSmootherList));
-        RCP<SmootherFactory> postSmootherFact = rcp(new SmootherFactory(postSmootherPrototype));
+        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(preSmootherPrototype, postSmootherPrototype));
 
-        level.Request("PreSmoother",preSmootherFact.get());
-        preSmootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",preSmootherFact.get());
-
-        level.Request("PostSmoother",postSmootherFact.get());
-        postSmootherFact->Build(level);
-        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",postSmootherFact.get());
+        level.Request("PreSmoother",smootherFact.get());
+        level.Request("PostSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          ParameterList smootherFactoryParams;
+          smootherFactoryParams.set("keep smoother data", true);
+          smootherFact->SetParameterList(smootherFactoryParams);
+          level.Request("PreSmoother data", smootherFact.get());
+          level.Request("PostSmoother data", smootherFact.get());
+          if (!PreSmootherData_.is_null())
+            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+          if (!PostSmootherData_.is_null())
+            level.Set("PostSmoother data", PostSmootherData_, smootherFact.get());
+        }
+        smootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
+        PostSmoother_ = level.Get<RCP<SmootherBase> >("PostSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
+          PostSmootherData_ = level.Get<RCP<SmootherPrototype> >("PostSmoother data",smootherFact.get());
+        }
       } else {
         std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
-        Level level;
-        RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        level.SetFactoryManager(factoryHandler);
-        level.SetLevelID(0);
-        level.setObjectLabel("RefMaxwell (1,1)");
-        level.Set("A",SM_Matrix_);
-        level.setlib(SM_Matrix_->getDomainMap()->lib());
+
         RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
-        RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
-        level.Request("PreSmoother",SmootherFact.get());
-        SmootherFact->Build(level);
-        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+        RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(smootherPrototype));
+        level.Request("PreSmoother",smootherFact.get());
+        if (enable_reuse_) {
+          ParameterList smootherFactoryParams;
+          smootherFactoryParams.set("keep smoother data", true);
+          smootherFact->SetParameterList(smootherFactoryParams);
+          level.Request("PreSmoother data", smootherFact.get());
+          if (!PreSmootherData_.is_null())
+            level.Set("PreSmoother data", PreSmootherData_, smootherFact.get());
+        }
+        smootherFact->Build(level);
+        PreSmoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",smootherFact.get());
         PostSmoother_ = PreSmoother_;
+        if (enable_reuse_)
+          PreSmootherData_ = level.Get<RCP<SmootherPrototype> >("PreSmoother data",smootherFact.get());
       }
       useHiptmairSmoothing_ = false;
     }
@@ -1439,31 +1401,41 @@ namespace MueLu {
       P11res_    = MultiVectorFactory::Build(R11_->getRangeMap(), numVectors);
     else
       P11res_    = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
-    if (D0_T_R11_colMapsMatch_)
+    P11res_->setObjectLabel("P11res");
+    if (D0_T_R11_colMapsMatch_) {
       D0TR11Tmp_ = MultiVectorFactory::Build(R11_->getColMap(), numVectors);
+      D0TR11Tmp_->setObjectLabel("D0TR11Tmp");
+    }
     if (!ImporterH_.is_null()) {
       P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
+      P11resTmp_->setObjectLabel("P11resTmp");
       P11x_      = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
     } else
       P11x_      = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
+    P11x_->setObjectLabel("P11x");
     if (!D0_T_Matrix_.is_null())
       D0res_     = MultiVectorFactory::Build(D0_T_Matrix_->getRangeMap(), numVectors);
     else
       D0res_     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    D0res_->setObjectLabel("D0res");
     if (!Importer22_.is_null()) {
       D0resTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
+      D0resTmp_->setObjectLabel("D0resTmp");
       D0x_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
     } else
       D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    D0x_->setObjectLabel("D0x");
     if (!AH_.is_null()) {
       if (!ImporterH_.is_null() && !implicitTranspose_)
         P11resSubComm_ = MultiVectorFactory::Build(P11resTmp_, Teuchos::View);
       else
         P11resSubComm_ = MultiVectorFactory::Build(P11res_, Teuchos::View);
       P11resSubComm_->replaceMap(AH_->getRangeMap());
+      P11resSubComm_->setObjectLabel("P11resSubComm");
 
       P11xSubComm_ = MultiVectorFactory::Build(P11x_, Teuchos::View);
       P11xSubComm_->replaceMap(AH_->getDomainMap());
+      P11xSubComm_->setObjectLabel("P11xSubComm");
     }
     if (!A22_.is_null()) {
       if (!Importer22_.is_null() && !implicitTranspose_)
@@ -1471,11 +1443,14 @@ namespace MueLu {
       else
         D0resSubComm_ = MultiVectorFactory::Build(D0res_, Teuchos::View);
       D0resSubComm_->replaceMap(A22_->getRangeMap());
+      D0resSubComm_->setObjectLabel("D0resSubComm");
 
       D0xSubComm_ = MultiVectorFactory::Build(D0x_, Teuchos::View);
       D0xSubComm_->replaceMap(A22_->getDomainMap());
+      D0xSubComm_->setObjectLabel("D0xSubComm");
     }
     residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), numVectors);
+    residual_->setObjectLabel("residual");
   }
 
 
@@ -2408,7 +2383,7 @@ namespace MueLu {
             AHBCrows[i*dim+k] = BCdomain_[i];
       magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
+        Utilities::ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
       if (applyBCsToH_)
         Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
     }
@@ -2500,15 +2475,18 @@ namespace MueLu {
 
       if (!ImporterH_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
-        P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+        P11resTmp_->beginImport(*P11res_, *ImporterH_, Xpetra::INSERT);
       }
       if (!allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
-        D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
+        D0resTmp_->beginImport(*D0res_, *Importer22_, Xpetra::INSERT);
       }
 
       // iterate on coarse (1, 1) block
       if (!AH_.is_null()) {
+        if (!ImporterH_.is_null() && !implicitTranspose_)
+          P11resTmp_->endImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -2527,6 +2505,9 @@ namespace MueLu {
 
       // iterate on (2, 2) block
       if (!A22_.is_null()) {
+        if (!allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_)
+          D0resTmp_->endImport(*D0res_, *Importer22_, Xpetra::INSERT);
+
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
 
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -2543,6 +2524,10 @@ namespace MueLu {
           Hierarchy22_->Iterate(*D0resSubComm_, *D0xSubComm_, numIters22_, true);
       }
 
+      if (AH_.is_null() && !ImporterH_.is_null() && !implicitTranspose_)
+        P11resTmp_->endImport(*P11res_, *ImporterH_, Xpetra::INSERT);
+      if (A22_.is_null() && !allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_)
+        D0resTmp_->endImport(*D0res_, *Importer22_, Xpetra::INSERT);
     }
 
     if (fuseProlongationAndUpdate_) {
@@ -3010,10 +2995,11 @@ namespace MueLu {
     RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-    Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+    typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
+    typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
 #ifdef HAVE_MUELU_IFPACK2
     // Register Ifpack2 as a Stratimikos preconditioner strategy.
-    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
     typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
     linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif

@@ -264,17 +264,20 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
     return false;
   }
 
-  auto findLID = [](const Teuchos::ArrayView<const LO>& lids, const LO lid) -> int {
-    auto it = std::find(lids.begin(),lids.end(),lid);
-    if (it==lids.end()) {
+  typedef typename Tpetra::CrsMatrix<ST,LO,GO,NT> crs_matrix_type;
+  auto findLID = [](
+       const typename crs_matrix_type::local_inds_host_view_type& lids,
+       const LO lid) -> int {
+    auto it = std::find(lids.data(),lids.data()+lids.extent(0),lid);
+    if (it==lids.data()+lids.extent(0)) {
       return -1;
     } else {
-      return std::distance(lids.begin(),it);
+      return std::distance(lids.data(),it);
     }
   };
 
-  Teuchos::ArrayView<const ST> valsA, valsB;
-  Teuchos::ArrayView<const LO> colsA, colsB;
+  typename crs_matrix_type::values_host_view_type  valsA, valsB;
+  typename crs_matrix_type::local_inds_host_view_type colsA, colsB;
   const LO invLO = Teuchos::OrdinalTraits<LO>::invalid();
   const auto& colMapA = *gA.getColMap();
   const auto& colMapB = *gB.getColMap();
@@ -293,7 +296,7 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
     }
 
     // Loop over rows entries
-    for (int j=0; j<numEntries; ++j) {
+    for (size_t j=0; j<numEntries; ++j) {
       const LO lidA = colsA[j];
       const GO gid = colMapA.getGlobalElement(lidA);
       const LO lidB = colMapB.getLocalElement(gid);
@@ -381,6 +384,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+// FIXME_SYCL
+#ifndef KOKKOS_ENABLE_SYCL
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_SC_LO_GO_NO )
+#endif
 
 } // anonymous namespace

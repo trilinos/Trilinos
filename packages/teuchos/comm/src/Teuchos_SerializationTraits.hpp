@@ -91,7 +91,7 @@ struct UndefinedSerializationTraits {
  *
  * Teuchos defines specializations of this class for many commonly
  * used types in distributed-memory communication, such as char, int
- * (signed and unsigned), float, double, and std::pair<P1, P2> for
+ * (signed and unsigned), float, double, long double and std::pair<P1, P2> for
  * certain types P1 and P2.  Depending on your Trilinos build options,
  * other specializations may be defined as well, for example for long
  * long int, double-double and quad-double real types (dd_real
@@ -413,6 +413,14 @@ template<typename Ordinal>
 class SerializationTraits<Ordinal,double>
   : public DirectSerializationTraits<Ordinal,double>
 {};
+
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
+template<typename Ordinal>
+class SerializationTraits<Ordinal,long double>
+  : public DirectSerializationTraits<Ordinal,long double>
+{};
+#endif
+
 
 // FIXME: How do we know that P1 and P2 are directly serializable?
 template<typename Ordinal, typename P1, typename P2>

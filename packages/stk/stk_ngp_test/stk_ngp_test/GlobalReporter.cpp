@@ -68,7 +68,9 @@ void initialize_reporters() {
 inline
 void finalize_reporters() {
   delete global::getHostReporter();
+  global::getHostReporter() = nullptr;
   delete global::getDeviceReporterOnHost();
+  global::getDeviceReporterOnHost() = nullptr;
   Kokkos::kokkos_free(global::getDeviceReporterAddress());
 }
 

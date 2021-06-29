@@ -66,6 +66,7 @@ void StepperBDF2<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   StepperImplicit<Scalar>::setModel(appModel);
+  // If the startUpStepper's model is not set, set it to the stepper model.
   if (startUpStepper_->getModel() == Teuchos::null) {
     startUpStepper_->setModel(appModel);
     startUpStepper_->initialize();
@@ -275,6 +276,7 @@ void StepperBDF2<Scalar>::describe(
   const Teuchos::EVerbosityLevel      verbLevel ) const
 {
   auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
   l_out->setOutputToRootOnly(0);
   *l_out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
@@ -340,13 +342,13 @@ createStepperBDF2(
   auto stepper = Teuchos::rcp(new StepperBDF2<Scalar>());
   stepper->setStepperImplicitValues(pl);
 
+  std::string startUpStepperName = "DIRK 1 Stage Theta Method";
+  if (pl != Teuchos::null) startUpStepperName =
+    pl->get<std::string>("Start Up Stepper Type", startUpStepperName);
+  stepper->setStartUpStepper(startUpStepperName);
+
   if (model != Teuchos::null) {
     stepper->setModel(model);
-
-    std::string startUpStepperName = "DIRK 1 Stage Theta Method";
-    if (pl != Teuchos::null) startUpStepperName =
-      pl->get<std::string>("Start Up Stepper Type", startUpStepperName);
-    stepper->setStartUpStepper(startUpStepperName);
     stepper->initialize();
   }
 

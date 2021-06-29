@@ -37,6 +37,7 @@
 #include <sstream>                      // for operator<<, basic_ostream, etc
 #include <vector>
 #include "stk_mesh/base/Entity.hpp"     // for Entity, etc
+#include "stk_util/util/SortAndUnique.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 
 
@@ -45,6 +46,10 @@ namespace mesh {
 namespace impl {
 
 struct EntityKeyEntityLess {
+inline bool operator()(const std::pair<EntityKey,Entity>& lhsPair, const std::pair<EntityKey,Entity>& rhsPair) const
+{
+  return lhsPair.first.m_value < rhsPair.first.m_value;
+}
 inline bool operator()(const std::pair<EntityKey,Entity>& key_ent_pair, const EntityKey& key) const
 {
   return key_ent_pair.first.m_value < key.m_value;
@@ -151,19 +156,7 @@ void EntityRepository::clear_created_entity_cache(EntityRank rank) const
 {
   if (!m_create_cache[rank].empty()) {
     std::sort(m_create_cache[rank].begin(), m_create_cache[rank].end());
-    unsigned numOld = m_entities[rank].size();
-    m_entities[rank].insert(m_entities[rank].end(), m_create_cache[rank].begin(), m_create_cache[rank].end());
-    if (numOld > 0) {
-      const EntityKey& firstNewKey = m_create_cache[rank][0].first;
-      const EntityKey& lastOldKey = m_entities[rank][numOld-1].first;
-      const bool isOverlap = (firstNewKey < lastOldKey);
-      if (isOverlap) {
-        EntityKeyEntityVector::iterator oldEnd = m_entities[rank].begin()+numOld;
-        EntityKeyEntityVector::iterator startOfOverlap = std::lower_bound(m_entities[rank].begin(), oldEnd, firstNewKey, EntityKeyEntityLess());
-        EntityKeyEntityVector::iterator endOfOverlap = std::lower_bound(oldEnd, m_entities[rank].end(), lastOldKey, EntityKeyEntityLess());
-        std::inplace_merge(startOfOverlap, oldEnd, endOfOverlap);
-      }
-    }
+    stk::util::insert_keep_sorted(m_create_cache[rank], m_entities[rank], EntityKeyEntityLess());
     m_create_cache[rank].clear();
     size_t num = std::max(m_entities[stk::topology::NODE_RANK].size(),
                           m_entities[stk::topology::ELEM_RANK].size());

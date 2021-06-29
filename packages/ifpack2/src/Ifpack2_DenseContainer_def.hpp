@@ -160,14 +160,16 @@ void DenseContainer<MatrixType, LocalScalarType>::extract()
         LO localCol = this->translateRowToCol(blockRows[j]);
         colToBlockOffset[localCol] = blockStart + j;
       }
+      using h_inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+      using h_vals_type = typename block_crs_matrix_type::values_host_view_type;
       for(LO blockRow = 0; blockRow < LO(blockRows.size()); blockRow++)
       {
         //get a raw view of the whole block row
-        const LO* indices;
-        SC* values;
-        LO numEntries;
+        h_inds_type indices;
+        h_vals_type values;
         LO inputRow = this->blockRows_[blockStart + blockRow];
-        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values, numEntries);
+        this->inputBlockMatrix_->getLocalRowView(inputRow, indices, values);
+        LO numEntries = (LO) indices.size();
         for(LO k = 0; k < numEntries; k++)
         {
           LO colOffset = colToBlockOffset[indices[k]];

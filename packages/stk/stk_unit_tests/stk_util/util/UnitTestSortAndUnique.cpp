@@ -49,6 +49,19 @@ TEST( SortAndUnique, insert_keep_sorted_and_unique_overlapping_vecs)
   EXPECT_EQ(expectedResult, sortedVec);
 }
 
+TEST( SortAndUnique, insert_keep_sorted_and_unique_overlapping_vecs_high_capacity)
+{
+  std::vector<int> sortedVec = {0, 2, 4, 6};
+  sortedVec.reserve(16);
+  std::vector<int> itemsToInsert = {5, 7, 9};
+
+  std::vector<int> expectedResult = {0, 2, 4, 5, 6, 7, 9};
+
+  stk::util::insert_keep_sorted_and_unique(itemsToInsert, sortedVec);
+
+  EXPECT_EQ(expectedResult, sortedVec);
+}
+
 TEST( SortAndUnique, insert_keep_sorted_and_unique_vec_items_at_beginning)
 {
   std::vector<int> sortedVec = {2, 4, 6};
@@ -61,9 +74,35 @@ TEST( SortAndUnique, insert_keep_sorted_and_unique_vec_items_at_beginning)
   EXPECT_EQ(expectedResult, sortedVec);
 }
 
+TEST( SortAndUnique, insert_keep_sorted_and_unique_vec_items_at_beginning_high_capacity)
+{
+  std::vector<int> sortedVec = {2, 4, 6};
+  sortedVec.reserve(16);
+  std::vector<int> itemsToInsert = {0, 1};
+
+  std::vector<int> expectedResult = {0, 1, 2, 4, 6};
+
+  stk::util::insert_keep_sorted_and_unique(itemsToInsert, sortedVec);
+
+  EXPECT_EQ(expectedResult, sortedVec);
+}
+
 TEST( SortAndUnique, insert_keep_sorted_and_unique_vec_items_already_present)
 {
   std::vector<int> sortedVec = {0, 2, 4, 6};
+  std::vector<int> itemsToInsert = {4, 6};
+
+  std::vector<int> expectedResult = {0, 2, 4, 6};
+
+  stk::util::insert_keep_sorted_and_unique(itemsToInsert, sortedVec);
+
+  EXPECT_EQ(expectedResult, sortedVec);
+}
+
+TEST( SortAndUnique, insert_keep_sorted_and_unique_vec_items_already_present_high_capacity)
+{
+  std::vector<int> sortedVec = {0, 2, 4, 6};
+  sortedVec.reserve(16);
   std::vector<int> itemsToInsert = {4, 6};
 
   std::vector<int> expectedResult = {0, 2, 4, 6};
@@ -107,6 +146,32 @@ TEST( SortAndUnique, insert_keep_sorted_and_unique_overlapping_vecs_myless)
   std::vector<int> itemsToInsert = {5, 7, 9};
 
   std::vector<int> expectedResult = {0, 2, 4, 5, 6, 7, 9};
+
+  stk::util::insert_keep_sorted_and_unique(itemsToInsert, sortedVec, MyTestLess());
+
+  EXPECT_EQ(expectedResult, sortedVec);
+}
+
+TEST( SortAndUnique, insert_keep_sorted_and_unique_overlapping_vecs_myless_high_capacity)
+{
+  std::vector<int> sortedVec = {0, 2, 4, 6};
+  sortedVec.reserve(16);
+  std::vector<int> itemsToInsert = {5, 7, 9};
+
+  std::vector<int> expectedResult = {0, 2, 4, 5, 6, 7, 9};
+
+  stk::util::insert_keep_sorted_and_unique(itemsToInsert, sortedVec, MyTestLess());
+
+  EXPECT_EQ(expectedResult, sortedVec);
+}
+
+TEST( SortAndUnique, insert_keep_sorted_and_unique_overlapping_vecs_items_at_end_myless_high_capacity)
+{
+  std::vector<int> sortedVec = {0, 2, 4, 6};
+  sortedVec.reserve(16);
+  std::vector<int> itemsToInsert = {8, 9, 10};
+
+  std::vector<int> expectedResult = {0, 2, 4, 6, 8, 9, 10};
 
   stk::util::insert_keep_sorted_and_unique(itemsToInsert, sortedVec, MyTestLess());
 

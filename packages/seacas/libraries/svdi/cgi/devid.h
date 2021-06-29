@@ -7,8 +7,10 @@
  */
 /* devid.h - these functions are used to map SVDI device code numbers
  *           to device code character strings and vice versa
- * Debbie Campbell
  */
+#ifndef DEVID_H
+#define DEVID_H
+
 struct device_ids
 {
   char *devid_char;
@@ -54,4 +56,5 @@ static char *get_devid_char(float number)
   return (0);
 }
 #endif
-/* end devid.h */
+
+#endif

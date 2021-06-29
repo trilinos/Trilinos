@@ -62,6 +62,7 @@ public:
   //! Constructor.
   Ifpack_UserPartitioner(const Ifpack_Graph* Graph) :
     Ifpack_OverlappingPartitioner(Graph),
+    keepSingletons_(false),
     Map_(0)
   {}
 
@@ -71,6 +72,7 @@ public:
   //! Sets all the parameters for the partitioner (none for linear partioning).
   int SetPartitionParameters(Teuchos::ParameterList& List)
   {
+    keepSingletons_ = List.get("partitioner: keep singletons",keepSingletons_);
     Map_ = List.get("partitioner: map",Map_);
     if (Map_ == 0)
       IFPACK_CHK_ERR(-1);
@@ -82,6 +84,7 @@ public:
   int ComputePartitions();
 
 private:
+  bool keepSingletons_;
   int* Map_;
 };
 

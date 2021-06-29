@@ -198,12 +198,12 @@ namespace FROSch {
     int CoarseSpace<SC,LO,GO,NO>::buildGlobalBasisMatrix(ConstXMapPtr rowMap,
                                                          ConstXMapPtr rangeMap,
                                                          ConstXMapPtr repeatedMap,
-                                                         SC treshold)
+                                                         SC tresholdDropping)
     {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace: AssembledBasisMap_.is_null().");
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace: AssembledBasis_.is_null().");
 
-        #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
         if (rowMap->lib() == UseTpetra) {
             UN numRows = AssembledBasis_->getLocalLength();
             UN numCols = AssembledBasis_->getNumVectors();
@@ -234,7 +234,7 @@ namespace FROSch {
                     if (lo != -1) {
                         for (UN j=0; j<numCols; j++) {
                             SC valueTmp=AssembledBasisView(i, j);
-                            if (fabs(valueTmp) > treshold) {
+                            if (fabs(valueTmp) > tresholdDropping) {
                                 Rowptr[lo+1] ++;
                             }
                         }
@@ -260,7 +260,7 @@ namespace FROSch {
                         UN nnz_i = Rowptr[lo];
                         for (UN j=0; j<numCols; j++) {
                             SC valueTmp=AssembledBasisView(i, j);
-                            if (fabs(valueTmp) > treshold) {
+                            if (fabs(valueTmp) > tresholdDropping) {
                                 Values[nnz_i] = valueTmp;
                                 Indices[nnz_i] = j;
 
@@ -283,7 +283,7 @@ namespace FROSch {
                                                                    AssembledBasisMapUnique_, rangeMap,
                                                                    params);
         } else
-        #endif
+#endif
         {
             if (rowMap->lib()==UseEpetra) {
                 GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
@@ -294,7 +294,7 @@ namespace FROSch {
                     SCVec values;
                     for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
                         valueTmp=AssembledBasis_->getData(j)[i];
-                        if (fabs(valueTmp)>treshold) {
+                        if (fabs(valueTmp)>tresholdDropping) {
                             indices.push_back(AssembledBasisMap_->getGlobalElement(j));
                             values.push_back(valueTmp);
                         }
@@ -314,7 +314,7 @@ namespace FROSch {
                     SCVec values;
                     for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
                         valueTmp=AssembledBasis_->getData(j)[i];
-                        if (fabs(valueTmp)>treshold) {
+                        if (fabs(valueTmp)>tresholdDropping) {
                             indices.push_back(j);
                             values.push_back(valueTmp);
                         }

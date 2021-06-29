@@ -114,8 +114,7 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra:
     const XTMV tX(rcpFromRef(temp_x));
     XTMV       tY(rcpFromRef(Y));
 
-    tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-    if(!Hierarchy_.is_null()) 
+    if(!Hierarchy_.is_null())
       Hierarchy_->Iterate(tX, tY, 1, true);
     else
       Operator_->apply(tX, tY);

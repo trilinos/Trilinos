@@ -88,11 +88,11 @@ bool compare_final_graph_structure(Teuchos::FancyOStream &out,Tpetra::CrsGraph<L
   if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {out<<"Compare: DomainMap failed"<<endl;return false;}
   if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;g1.describe(out,Teuchos::VERB_EXTREME);g2.describe(out,Teuchos::VERB_EXTREME);return false;}
 
-  auto rowptr1 = g1.getLocalGraph().row_map;
-  auto rowptr2 = g2.getLocalGraph().row_map;
+  auto rowptr1 = g1.getLocalGraphHost().row_map;
+  auto rowptr2 = g2.getLocalGraphHost().row_map;
 
-  auto colind1 = g1.getLocalGraph().entries;
-  auto colind2 = g2.getLocalGraph().entries;
+  auto colind1 = g1.getLocalGraphHost().entries;
+  auto colind2 = g2.getLocalGraphHost().entries;
 
   if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}      
   if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed: "<<colind1.extent(0)<<" vs "<<colind2.extent(0)<<endl;
@@ -148,12 +148,15 @@ bool compare_final_graph_structure_relaxed(Teuchos::FancyOStream &out,
     return false;
   }
 
-  auto hasLID = [](const Teuchos::ArrayView<const LO>& lids, const LO lid) -> bool {
-    auto it = std::find(lids.begin(),lids.end(),lid);
-    return it!=lids.end();
+  typedef typename Tpetra::CrsGraph<LO,GO,Node>::local_inds_host_view_type
+                   lcl_ind_type;
+
+  auto hasLID = [](const lcl_ind_type & lids, const LO lid) -> bool {
+    auto it = std::find(lids.data(),lids.data()+lids.extent(0),lid);
+    return it!=lids.data()+lids.extent(0);
   };
 
-  Teuchos::ArrayView<const LO> cols1, cols2;
+  lcl_ind_type cols1, cols2;
   const LO invLO = Teuchos::OrdinalTraits<LO>::invalid();
   const auto& colMap1 = *g1.getColMap();
   const auto& colMap2 = *g2.getColMap();

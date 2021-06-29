@@ -440,8 +440,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   using Teuchos::rcp_dynamic_cast;
   using std::endl;
   typedef Teuchos::ScalarTraits<Packet> PT;
-  //typedef typename PT::magnitudeType PacketMag; // unused
-  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
 
   RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
   const Ordinal numProcs = size(*comm);
@@ -457,7 +455,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
     return; // Pass!
   }
 
-  // Only use randomize on one proc and then broacast
+  // Only use randomize on one proc and then broadcast
   Packet orig_input_data = PT::random();
   broadcast( *comm, 0, &orig_input_data );
 
@@ -509,6 +507,104 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
   int globalSuccess_int = -1;
   reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive_isReady_true, Ordinal, Packet )
+{
+  using Teuchos::as;
+  using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
+  using Teuchos::isend;
+  using Teuchos::ireceive;
+  using Teuchos::SerialComm;
+  using Teuchos::rcp_dynamic_cast;
+  using PT = Teuchos::ScalarTraits<Packet>;
+
+  RCP<const Comm<Ordinal>> comm = getDefaultComm<Ordinal>();
+  const Ordinal numProcs = size(*comm);
+  const Ordinal procRank = rank(*comm);
+
+  if (numProcs == 1 && !is_null(rcp_dynamic_cast<const SerialComm<Ordinal>>(comm))) {
+    out << "\nThis is Teuchos::SerialComm which does not yet support isend/ireceive!\n";
+    return;
+  }
+
+  // Only use randomize on one proc and then broadcast
+  Packet input_data = PT::random();
+  broadcast(*comm, 0, &input_data);
+  Packet output_data = as<Packet>(-1);
+
+  const Ordinal sendRank = (procRank + 1) % numProcs;
+  const Ordinal recvRank = (procRank + numProcs - 1) % numProcs;
+
+  RCP<Teuchos::CommRequest<Ordinal>> recvRequest = ireceive<Ordinal, Packet>(*comm, rcpFromRef(output_data), recvRank);
+  RCP<Teuchos::CommRequest<Ordinal>> sendRequest = isend<Ordinal, Packet>(*comm, rcpFromRef(input_data), sendRank);
+
+  recvRequest->wait();
+  TEST_ASSERT(recvRequest->isReady());
+
+  // All procs fail if any proc fails
+  int globalSuccess_int = -1;
+  reduceAll(*comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int));
+  TEST_EQUALITY_CONST(globalSuccess_int, 0);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive_isReady_false, Ordinal, Packet )
+{
+  using Teuchos::as;
+  using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
+  using Teuchos::ireceive;
+  using Teuchos::SerialComm;
+  using Teuchos::rcp_dynamic_cast;
+
+  RCP<const Comm<Ordinal>> comm = getDefaultComm<Ordinal>();
+  const Ordinal numProcs = size(*comm);
+  const Ordinal procRank = rank(*comm);
+
+  if (numProcs == 1 && !is_null(rcp_dynamic_cast<const SerialComm<Ordinal>>(comm))) {
+    out << "\nThis is Teuchos::SerialComm which does not yet support isend/ireceive!\n";
+    return;
+  }
+
+  Packet output_data = as<Packet>(-1);
+
+  RCP<Teuchos::CommRequest<Ordinal>> recvRequest;
+  const Ordinal recvRank = (procRank + numProcs - 1) % numProcs;
+
+  recvRequest = ireceive<Ordinal, Packet>(*comm, rcpFromRef(output_data), recvRank);
+  TEST_ASSERT(!recvRequest->isReady());
+
+  // All procs fail if any proc fails
+  int globalSuccess_int = -1;
+  reduceAll(*comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int));
+  TEST_EQUALITY_CONST(globalSuccess_int, 0);
+}
+
+
+template <class Ordinal>
+bool null_request_is_always_ready_if_mpi_available() {
+#ifdef HAVE_TEUCHOS_MPI
+  Teuchos::MpiCommRequestBase<Ordinal> nullRequest;
+  return nullRequest.isReady();
+#else
+  return true;
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, Ordinal, Packet )
+{
+  using Teuchos::outArg;
+
+  RCP<const Comm<Ordinal>> comm = getDefaultComm<Ordinal>();
+  TEST_ASSERT(null_request_is_always_ready_if_mpi_available<Ordinal>());
+
+  // All procs fail if any proc fails
+  int globalSuccess_int = -1;
+  reduceAll(*comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int));
+  TEST_EQUALITY_CONST(globalSuccess_int, 0);
 }
 
 
@@ -818,6 +914,9 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
 
 #define UNIT_TEST_GROUP_ORDINAL_PACKET( ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive, ORDINAL, PACKET ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive_isReady_true, ORDINAL, PACKET ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive_isReady_false, ORDINAL, PACKET ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceiveSet, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PACKET )
@@ -832,6 +931,9 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
 
 #define UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS( ORDINAL, PAIROFPACKETS ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive, ORDINAL, PAIROFPACKETS ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive_isReady_true, ORDINAL, PAIROFPACKETS ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive_isReady_false, ORDINAL, PAIROFPACKETS ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, ORDINAL, PAIROFPACKETS ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceiveSet, ORDINAL, PAIROFPACKETS ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PAIROFPACKETS ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PAIROFPACKETS )
@@ -870,9 +972,15 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, float) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive_isReady_true, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive_isReady_false, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive_isReady_true, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive_isReady_false, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL) \
     UNIT_TEST_GROUP_ORDINAL_SUBCOMMUNICATORS(ORDINAL)
@@ -889,9 +997,15 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfFloats) \
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfDoubles) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive_isReady_true, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive_isReady_false, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive_isReady_true, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive_isReady_false, ORDINAL) \
+    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive_isReady_nullIsTrue, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)
 

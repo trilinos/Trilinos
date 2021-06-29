@@ -189,8 +189,8 @@ namespace { // (anonymous)
 
       Kokkos::fence(); // since we're accessing data on host now
 
-      Teuchos::ArrayView<const LO> lclColInds;
-      Teuchos::ArrayView<const Scalar> vals;
+      typename crs_matrix_type::local_inds_host_view_type lclColInds;
+      typename crs_matrix_type::values_host_view_type vals;
       const LO lclRowToTest (0);
       A_tgt.getLocalRowView(lclRowToTest, lclColInds, vals);
 
@@ -224,6 +224,8 @@ namespace { // (anonymous)
     using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
     using import_type = Tpetra::Import<LO, GO, Node>;
     using map_type = Tpetra::Map<LO, GO, Node>;
+    using gids_type = typename crs_matrix_type::nonconst_global_inds_host_view_type;
+    using vals_type = typename crs_matrix_type::nonconst_values_host_view_type;
     int lclSuccess = 1;
     int gblSuccess = 0;
 
@@ -387,16 +389,16 @@ namespace { // (anonymous)
     if (myRank == 0) {
       const GO gblRowToTest = tgtRowMap->getMinGlobalIndex();
       size_t numEnt = A_tgt.getNumEntriesInGlobalRow(gblRowToTest);
-      Teuchos::Array<GO> gblColInds(numEnt);
-      Teuchos::Array<Scalar> vals(numEnt);
-      A_tgt.getGlobalRowCopy(gblRowToTest, gblColInds(),
-                             vals(), numEnt);
+      gids_type gblColInds("gids",numEnt);
+      vals_type vals("vals",numEnt);
+      A_tgt.getGlobalRowCopy(gblRowToTest, gblColInds,
+                             vals, numEnt);
 
       const LO expectedNumEnt(expectedTgtVals.size());
       TEST_EQUALITY( size_t(numEnt), size_t(expectedNumEnt) );
-      TEST_EQUALITY( size_t(gblColInds.size()),
+      TEST_EQUALITY( size_t(gblColInds.extent(0)),
                      size_t(expectedNumEnt) );
-      TEST_EQUALITY( size_t(vals.size()), size_t(expectedNumEnt) );
+      TEST_EQUALITY( size_t(vals.extent(0)), size_t(expectedNumEnt) );
 
       if (success) {
         for (LO k = 0; k < expectedNumEnt; ++k) {
