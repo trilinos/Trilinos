@@ -549,7 +549,7 @@ namespace MueLu {
       local_matrix_type kokkosMatrix = A->getLocalMatrixDevice();
       auto nnzA  = kokkosMatrix.nnz();
       auto rowsA = kokkosMatrix.graph.row_map;
-      kokkosMatrix = local_matrix_type();
+
 
       typedef Kokkos::ArithTraits<SC>     ATS;
 
@@ -589,8 +589,10 @@ namespace MueLu {
           // Construct overlapped matrix diagonal
           RCP<Vector> ghostedDiag;
           {
+	    kokkosMatrix = local_matrix_type();
             SubFactoryMonitor m2(*this, "Ghosted diag construction", currentLevel);
             ghostedDiag     = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
+	    kokkosMatrix=A->getLocalMatrixDevice();
           }
 
           // Filter out entries
@@ -601,7 +603,7 @@ namespace MueLu {
 
             CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-	      scalarFunctor(A->getLocalMatrixDevice(), bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+	      scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
                                     scalarFunctor, nnzFA);
@@ -638,7 +640,7 @@ namespace MueLu {
             localLaplDiag = VectorFactory::Build(uniqueMap);
 
             auto localLaplDiagView = localLaplDiag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
-            auto kokkosGraph = A->getLocalMatrixDevice().graph;
+            auto kokkosGraph = kokkosMatrix.graph;
 
             Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag", range_type(0,numRows),
               KOKKOS_LAMBDA(const LO row) {
@@ -672,7 +674,7 @@ namespace MueLu {
             CoalesceDrop_Kokkos_Details::DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
                 dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-                scalarFunctor(A->getLocalMatrixDevice(), bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+                scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
                                     scalarFunctor, nnzFA);
