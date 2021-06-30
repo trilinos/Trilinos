@@ -574,16 +574,14 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     ghost_map_t ghosts; 
 
     //Read the 1 layer ghosts from the second adjacency matrix
-    Array<gno_t> Indices;
-    Array<nonzero_t> Values;
     for (unsigned int i=0;i<numLocalEdges_;i++) {
       if (!isOwner_[i])
         continue;
       gno_t gid = edgeGids_[i];
       size_t NumEntries = secondAdj->getNumEntriesInGlobalRow (gid);
-      Indices.resize (NumEntries);
-      Values.resize (NumEntries);
-      secondAdj->getGlobalRowCopy(gid,Indices(),Values(),NumEntries);
+      typename sparse_matrix_type::nonconst_global_inds_host_view_type  Indices("Indices", NumEntries);
+      typename sparse_matrix_type::nonconst_values_host_view_type Values("Values", NumEntries);      
+      secondAdj->getGlobalRowCopy(gid,Indices,Values,NumEntries);
       for (size_t j = 0; j < NumEntries; ++j) {
 	if(gid != Indices[j]) {
           ghosts[gid].insert(Indices[j]);
@@ -604,9 +602,9 @@ HyperGraphModel<Adapter>::HyperGraphModel(
           continue;
         gno_t gid = edgeGids_[j];
         size_t NumEntries = mat_new->getNumEntriesInGlobalRow (gid);
-        Indices.resize(NumEntries);
-        Values.resize(NumEntries);
-        mat_new->getGlobalRowCopy(gid,Indices(),Values(),NumEntries);
+      typename sparse_matrix_type::nonconst_global_inds_host_view_type  Indices("Indices", NumEntries);
+      typename sparse_matrix_type::nonconst_values_host_view_type Values("Values", NumEntries);      
+        mat_new->getGlobalRowCopy(gid,Indices,Values,NumEntries);
         for (size_t k = 0; k < NumEntries; ++k) 
           if(gid != Indices[k]) 
             ghosts[gid].insert(Indices[k]);

@@ -218,7 +218,7 @@ namespace Zoltan2 {
     void determineRegularity()
     {
       // Get the row pointers in the host
-      auto rowOffsets = graph_->getLocalGraph().row_map;
+      auto rowOffsets = graph_->getLocalGraphDevice().row_map;
       auto rowOffsets_h = Kokkos::create_mirror_view(rowOffsets);
       Kokkos::deep_copy(rowOffsets_h, rowOffsets);
 
@@ -368,7 +368,7 @@ namespace Zoltan2 {
     {
 
 	// Get the row pointers in the host
-	auto rowOffsets = graph_->getLocalGraph().row_map;
+	auto rowOffsets = graph_->getLocalGraphDevice().row_map;
 	auto rowOffsets_h = Kokkos::create_mirror_view(rowOffsets);
 	Kokkos::deep_copy(rowOffsets_h, rowOffsets);
 
@@ -419,7 +419,7 @@ namespace Zoltan2 {
       graph_->getLocalDiagOffsets(diagOffsets);
 
       // Get the row pointers in the host
-      auto rowOffsets = graph_->getLocalGraph().row_map;
+      auto rowOffsets = graph_->getLocalGraphDevice().row_map;
 
       // Compute the diagonal entries as the vertex degrees
       Kokkos::parallel_for("Combinatorial Laplacian", range_policy(0, numRows),
@@ -469,7 +469,7 @@ namespace Zoltan2 {
       graph_->getLocalDiagOffsets(diagOffsets);
 
       // Get the row pointers
-      auto rowOffsets = graph_->getLocalGraph().row_map;
+      auto rowOffsets = graph_->getLocalGraphDevice().row_map;
 
       // Compute the diagonal entries as the vertex degrees
       Kokkos::parallel_for("Combinatorial Laplacian", range_policy(0, numRows),
