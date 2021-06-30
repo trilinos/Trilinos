@@ -49,7 +49,6 @@ void IntegratorForwardSensitivity<Scalar>::
 setStepper(
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model)
 {
-  createSensitivityModelAndStepper(model);
   if (use_combined_method_)
     integrator_->setModel(sens_model_);
   else
@@ -229,29 +228,6 @@ describe(
   integrator_->describe(*l_out, verbLevel);
 }
 
-template <class Scalar>
-void
-IntegratorForwardSensitivity<Scalar>::
-createSensitivityModelAndStepper(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* model */)
-{
-  using Teuchos::rcp;
-
-  Teuchos::RCP<Teuchos::ParameterList> spl = Teuchos::parameterList();
-  *spl = *sens_pl_;
-  spl->remove("Sensitivity Method");
-
-  if (use_combined_method_) {
-    spl->remove("Reuse State Linear Solver");
-    sens_model_ =
-      wrapCombinedFSAModelEvaluator(model_, spl);
-  }
-  else {
-    sens_stepper_ =
-      rcp(new StepperStaggeredForwardSensitivity<Scalar>(
-            model_, stepper_pl_, spl));
-  }
-}
 
 /// Nonmember constructor
 template<class Scalar>
@@ -288,12 +264,6 @@ integratorForwardSensitivity(
   auto stepper_pl                 = Teuchos::sublist(pList, stepperName, true);
   std::string sensitivity_method   = sens_pl->get<std::string>("Sensitivity Method");
   bool use_combined_method        = sensitivity_method == "Combined";
-  bool use_dfdp_as_tagent          = sens_pl->get<bool>("Use DfDp as Tangent");
-  const int p_index                = sens_pl->get<int>("Sensitivity Parameter Index");
-  const int x_tangent_index        = sens_pl->get<int>("Sensitivity X Tangent Index");
-  const int xdot_tangent_index     = sens_pl->get<int>("Sensitivity X-Dot Tangent Index");
-  const int xdot_dot_tangent_index = sens_pl->get<int>("Sensitivity X-Dot-Dot Tangent Index");
-  const bool reuse_linear_solver  = sens_pl->get<bool>("Reuse State Linear Solver");
 
   //3. create sensitivity model and stepper
   // createSensitivityModelAndStepper
