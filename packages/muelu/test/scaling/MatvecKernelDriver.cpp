@@ -443,9 +443,9 @@ void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   typedef typename Node::device_type device_type;
-  const auto& AK = A.getLocalMatrix();
-  auto X_lcl = x.template getLocalView<device_type> ();
-  auto Y_lcl = y.template getLocalView<device_type> ();
+  const auto& AK = A.getLocalMatrixDevice();
+  auto X_lcl = x.getLocalViewDevice (Tpetra::Access::ReadOnly);
+  auto Y_lcl = y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
 }
 #endif

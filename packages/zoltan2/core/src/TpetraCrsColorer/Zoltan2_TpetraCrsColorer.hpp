@@ -322,7 +322,7 @@ TpetraCrsColorer<CrsMatrixType>::reconstructMatrixFitted(
 
   auto W_view_dev = W.getLocalViewDevice(Tpetra::Access::ReadOnly);
   auto local_matrix = mat.getLocalMatrixDevice();
-  auto local_graph = graph->getLocalGraphDevice();
+  auto local_graph = local_matrix.graph;
   const size_t num_local_rows = graph->getNodeNumRows();
   list_of_colors_t my_list_of_colors = list_of_colors;
 

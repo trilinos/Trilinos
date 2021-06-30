@@ -293,7 +293,7 @@ void testAdapter(
 
     typename Tpetra::CrsGraph<zlno_t, zgno_t>::local_inds_host_view_type idx;
     Mgraph->getLocalRowView(i, idx);
-    numNbors[i] = idx.size();
+    numNbors[i] = idx.extent(0);
 
     for (std::size_t j=0; j < idx.size(); j++){
       if (idx[j] == i){
