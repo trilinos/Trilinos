@@ -449,8 +449,6 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
            TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
               "\n Error! Piro::TransientSolver: DxDp returned by Tempus::IntegratorForwardSensitivity::getDxDp() routine is null!\n"); 
         } 
-        //IKT FIXME: probably a lot of this can be reused for adjoint sensitivities.  Will clean up later, 
-        //when adjoint sensitivities are implemented. 
         for (int l = 0; l < num_p_; ++l) {
           for (int j = 0; j < num_g_; ++j) {
             //Get DgDp and DgDx 
@@ -484,9 +482,10 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
 		//forward sensitivities.  
 		//IKT TODO: throw an error for this case to prevent confusion?
                 const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
+	        //IKT, question: is it worth throwing if dgdp_mv == null, or this cannot happen?
                 if (Teuchos::nonnull(dgdp_mv)) {
-                  if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
-		    std::cout << "IKT Piro::TransientSolver::evalModelImpl Case 2!\n"; 
+                  if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) { //case 2
+		    std::cout << "IKT Piro::TransientSolver::evalModelImpl Case 2 (distributed parameters)!\n"; 
                     //Case 2: DgDp = DERIV_MV_GRADIENT_FORM, DgDx is MV, DxDp is MV.
                     //This corresponds to a scalar response and distributed parameters
                     //[dgdp_mv]^T = [dx/dp_mv]^T*dg/dx_mv + [dg/dp_mv]^T
@@ -496,8 +495,8 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
                     Thyra::apply(*dxdp_mv, Thyra::TRANS, *dgdx_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
                                  Teuchos::ScalarTraits<Scalar>::one());
                   } 
-                  else {
-		    std::cout << "IKT Piro::TransientSolver::evalModelImpl Case 3!\n"; 
+                  else { //case 3
+		    std::cout << "IKT Piro::TransientSolver::evalModelImpl Case 3 (scalar parameters)!\n"; 
                     //Case 3: DgDp = DERIV_MV_JACOBIAN_FORM (the alternate to DERIV_MV_GRADIENT_FORM for getMultiVectorOrientation),
                     //DgDx = DERIV_LINEAR_OP (for distributed responses) or DERIV_MV_JACOBIAN_FORM (for scalar responses), 
 		    //and DxDp is MV.  Note that DgDx implementes a DERIV_LINEAR_OP for MVs, so there is no contradiction here in the type,
@@ -513,10 +512,51 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
         }
         break; 
       }
-    case ADJOINT: //adjoint sensitivities - not yet implemented 
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TransientSolver: adjoint sentivities (Sensitivity Method = "
-        << "Adjoint) are not yet supported!  Please set 'Sensitivity Method' to 'None' or 'Forward'.\n");
+    case ADJOINT: //adjoint sensitivities
+      std::cout << "IKT Piro::TransientSolver::evalModelImpl - adjoint sensitivities!\n";  
+      for (int l = 0; l < num_p_; ++l) {
+        for (int j = 0; j < num_g_; ++j) {
+          //Get DgDp from outArgs and set it based on adjoint integrator from Tempus 
+          const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+             outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+          if (!dgdp_support.none()) {
+            const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv = outArgs.get_DgDp(j, l);
+            if (!dgdp_deriv.isEmpty()) {
+              const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
+              if (Teuchos::nonnull(dgdp_op)) {
+                //Case 1: DgDp is a linear ops.  This corresponds to a non-scalar
+                //response and distributed parameters.  Tempus::AdjointSensitivityIntegrator 
+                //cannot return a LinearOp for DgDp.  Therefore this case is not relevant here.
+                TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                  "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP (relevant for distributed responses) is not supported with adjoint sensitivities!");
+              }
+              //Cases 2 and 3.  These can happen with dgdp = DERIV_MV_GRADIENT_FORM and dgpg = DERIV_MV_JACOBIAN_FORM.  For 
+              //DERIV_MV_GRADIENT_FORM, the map is the responses, and the columns are the parameters; for 
+              //DERIV_MV_JACOBIAN_FORM, the map is the parameters, and the columns are the responses.
+	      //Both cases are relevant for adjoint sensitivities: Case 2 corresponds to distributed parameters, whereas
+	      //case 3 correspondes to scalar parameters.
+              const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
+	      //IKT, question: is it worth throwing if dgdp_mv == null, or this cannot happen?
+              if (Teuchos::nonnull(dgdp_mv)) {
+		Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> dgdp_mv_from_tempus = piroTempusIntegrator_->getDgDp();
+                if (dgdp_mv_from_tempus == Teuchos::null) {
+                  TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                    "\n Error! Piro::TransientSolver: DgDp returned by Tempus::IntegratorAdjointSensitivity::getDgDp() routine is null!\n"); 
+                } 
+		//Copy dgdp_mv_from_tempus into dgdp_mv - IKT, there may be better way to do this
+		dgdp_mv->assign(*dgdp_mv_from_tempus); 
+	        //IKT: the following is for debug output only and can be removed eventually 
+                if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) { //case 2
+	          std::cout << "IKT Piro::TransientSolver::evalModelImpl adjoint sensitivities Case 2 (distributed params)!\n"; 
+                } 
+                else { //case 3
+	         std::cout << "IKT Piro::TransientSolver::evalModelImpl adjoint sensitivities Case 3 (scalar params)!\n"; 
+                }
+	      }
+	    }
+	  }
+	}
+      }
       break; 
     }
   }
