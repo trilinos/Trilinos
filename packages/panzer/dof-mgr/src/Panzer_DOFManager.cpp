@@ -395,8 +395,10 @@ DOFManager::getGIDFieldOffsetsKokkos(const std::string & blockID, int fieldNum) 
   TEUCHOS_TEST_FOR_EXCEPTION(!buildConnectivityRun_,std::logic_error, "DOFManager::getGIDFieldOffsets: cannot be called before "
                                                                       "buildGlobalUnknowns has been called");
   std::map<std::string,int>::const_iterator bitr = blockNameToID_.find(blockID);
-  if(bitr==blockNameToID_.end())
+  if(bitr==blockNameToID_.end()) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"DOFManager::fieldInBlock: invalid block name");
+  }
+
   int bid=bitr->second;
   if(fa_fps_[bid]!=Teuchos::null)
     return fa_fps_[bid]->localOffsetsKokkos(fieldNum);
@@ -761,11 +763,11 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
   panzer::GlobalOrdinal localsum=0;
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_07-09 local_count",GUN07_09);
-    auto values = non_overlap_mv->getLocalViewDevice();
+    auto values = non_overlap_mv->getLocalViewDevice(Tpetra::Access::ReadOnly);
     auto mv_size = values.extent(0);
     Kokkos::parallel_reduce(mv_size,panzer::dof_functors::SumRank2<panzer::GlobalOrdinal,decltype(values)>(values),localsum);
   }
-  
+
  /* 11. Create a map using local sums to generate final GIDs.
    */
 
