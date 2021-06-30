@@ -358,12 +358,15 @@ int feAssemblyHex(int argc, char *argv[]) {
     //compute global ids of element vertices
     DynRankViewGId ConstructWithLabel(elemNodesGID, numOwnedElems, numNodesPerElem);
     {
+      auto elemNodesGID_host = Kokkos::create_mirror_view(elemNodesGID);
+
       for(int i=0; i<numOwnedElems; ++i) {
         const auto GIDs = connManager->getConnectivity(i);
         for(int j=0; j<numNodesPerElem; ++j) {
-          elemNodesGID(i,j) = GIDs[j];
+          elemNodesGID_host(i,j) = GIDs[j];
         }
       }
+      Kokkos::deep_copy(elemNodesGID,elemNodesGID_host);
     }
 
     // compute orientations for cells (one time computation)
@@ -476,13 +479,14 @@ int feAssemblyHex(int argc, char *argv[]) {
     auto maxNumRowEntries = numVertices*numDofsPerVertex+numEdges*numDofsPerEdge+
         numFaces*numDofsPerFace + numCells*numDofsPerCell;
 
-    // this constructor ensures that the local ids in the owned+gosthed map and in the graph col map corresponds to the same global ids
+    // this constructor ensures that the local ids in the owned+ghosted map and in the graph col map corresponds to the same global ids
     // in our case the owned row map is the same as the (owned) domain map
     auto feGraph = Teuchos::rcp(new fe_graph_t(ownedMap, ownedAndGhostedMap, maxNumRowEntries, ownedAndGhostedMap, Teuchos::null, ownedMap));
 
     Teuchos::Array<global_ordinal_t> globalIdsInRow(basisCardinality);
     const std::string blockId = "eblock-0_0_0";
     auto elmtOffsetKokkos = dofManager->getGIDFieldOffsetsKokkos(blockId,0);
+    auto elmtOffsets_host = dofManager->getGIDFieldOffsets(blockId,0);
 
     // fill graph
     // for each element in the mesh...
@@ -496,7 +500,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       std::vector<global_ordinal_t> elementGIDs;
       dofManager->getElementGIDs(elemId, elementGIDs);
       for(int nodeId=0; nodeId<basisCardinality; nodeId++) {
-        globalIdsInRow[nodeId] = elementGIDs[elmtOffsetKokkos(nodeId)];
+        globalIdsInRow[nodeId] = elementGIDs[elmtOffsets_host[nodeId]];
       }
 
       // Add the contributions from the current row into the graph.
@@ -531,7 +535,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     auto localColMap  = A->getColMap()->getLocalMap();
     auto localMap  = ownedAndGhostedMap->getLocalMap();
     auto localMatrix  = A->getLocalMatrix();
-    auto localRHS     = b->getLocalViewDevice();
+    auto localRHS     = b->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     //fill matrix
     // Loop over elements
@@ -560,6 +564,9 @@ int feAssemblyHex(int argc, char *argv[]) {
           Kokkos::atomic_add (&(localRHS(localRowId,0)), elemRHS(nodeId));
         }
       });
+
+    // Release the device view
+    localRHS = decltype(localRHS)("empty",0,0);
 
     Tpetra::endFill(*A, *b);
 
@@ -603,7 +610,7 @@ int feAssemblyHex(int argc, char *argv[]) {
 
         for(int nodeId=0; nodeId<basisCardinality; nodeId++)
         {
-          global_ordinal_t gid = elementGIDs[elmtOffsetKokkos(nodeId)];
+          global_ordinal_t gid = elementGIDs[elmtOffsets_host[nodeId]];
           if(ownedMap->isNodeGlobalElement(gid))
             x.replaceGlobalValue(gid, basisCoeffsLIHost(elemId, nodeId));
         }
