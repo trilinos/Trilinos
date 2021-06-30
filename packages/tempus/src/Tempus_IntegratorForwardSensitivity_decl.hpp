@@ -223,18 +223,10 @@ public:
 
 protected:
 
-  // Create sensitivity model evaluator from application model
-  void
-  createSensitivityModelAndStepper(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
-
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
   Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar> > sens_stepper_;
   Teuchos::RCP<IntegratorBasic<Scalar> > integrator_;
-  Teuchos::RCP<Teuchos::ParameterList> tempus_pl_;
-  Teuchos::RCP<Teuchos::ParameterList> sens_pl_;
-  Teuchos::RCP<Teuchos::ParameterList> stepper_pl_;
   bool use_combined_method_;
 };
 
