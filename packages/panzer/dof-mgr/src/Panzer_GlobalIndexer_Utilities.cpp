@@ -153,8 +153,10 @@ printMeshTopology(std::ostream & os,const panzer::GlobalIndexer & ugi)
  
     // loop over element in this element block, write out to 
     for(std::size_t e=0;e<elements.size();e++) {
-      // extract LIDs, this is returned by reference nominally for performance
+      // extract LIDs, this is terribly inefficient for certain
+      // devices but only used for debugging
       PHX::View<const int*> lids = ugi.getElementLIDs(elements[e]);
+      auto lids_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),lids);
 
       // extract GIDs, this array is filled
       std::vector<panzer::GlobalOrdinal> gids;
@@ -168,7 +170,7 @@ printMeshTopology(std::ostream & os,const panzer::GlobalIndexer & ugi)
 
       os << ",  lids =";
       for(std::size_t i=0;i<gids.size();i++)
-        os << " " << lids[i];
+        os << " " << lids_host(i);
       os << std::endl;
     }
   }
