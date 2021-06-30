@@ -442,6 +442,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
                 if (Teuchos::is_null(dgdx_op)) {
                   //NOTE: dgdx_mv is the transpose, so by calling Thyra::adjoint on dgdx_mv, 
                   //we get the untransposed operator back as dgdx_op
+  		  std::cout << "IKT Piro::TransientSolver::evalModelImpl dgdx_op is null and returning dgdx_mv!\n"; 
                   dgdx_op = Thyra::adjoint<Scalar>(dgdx_mv);
                 }
                 const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
@@ -450,26 +451,34 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
                   //response and distributed parameters.  Tempus::ForwardSensitivityIntegrator 
                   //cannot return a LinearOp for DxDp.  Therefore this case is not relevant here.
                   TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-                    "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP is not supported with forward sensitivities!");
+                    "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP (relevant for distributed responses) is not supported with forward sensitivities!");
                 }
-                //Cases 2 and 3 below correspond to scalar responses and scalar parameters.  These can happen
-                //with dgdp = DERIV_MV_GRADIENT_FORM and dgpg = DERIV_MV_JACOBIAN_FORM.  For 
+                //Cases 2 and 3.  These can happen with dgdp = DERIV_MV_GRADIENT_FORM and dgpg = DERIV_MV_JACOBIAN_FORM.  For 
                 //DERIV_MV_GRADIENT_FORM, the map is the responses, and the columns are the parameters; for 
                 //DERIV_MV_JACOBIAN_FORM, the map is the parameters, and the columns are the responses.
+		//Note that Case 2, which assumes distributed parameters, would not get called for forward sensitivities
+		//and therefore should not be relevant.  Therefore really only Case 3 should be relevant for 
+		//forward sensitivities.  
+		//IKT TODO: throw an error for this case to prevent confusion?
                 const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
                 if (Teuchos::nonnull(dgdp_mv)) {
                   if (dgdp_deriv.getMultiVectorOrientation() == Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) {
+		    std::cout << "IKT Piro::TransientSolver::evalModelImpl Case 2!\n"; 
                     //Case 2: DgDp = DERIV_MV_GRADIENT_FORM, DgDx is MV, DxDp is MV.
-                    //This corresponds to a scalar response and distributed parameters 
+                    //This corresponds to a scalar response and distributed parameters
                     //[dgdp_mv]^T = [dx/dp_mv]^T*dg/dx_mv + [dg/dp_mv]^T
                     //Note: Gradient form stores transpose of derivative in dgdx_mv (DERIV_MV_GRADIENT_FORM is transposed!) 
+		    //Note that forward sensitivities will not be called for distributed parameters, therefore this case
+		    //is not really relevant here. 
                     Thyra::apply(*dxdp_mv, Thyra::TRANS, *dgdx_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
                                  Teuchos::ScalarTraits<Scalar>::one());
                   } 
                   else {
+		    std::cout << "IKT Piro::TransientSolver::evalModelImpl Case 3!\n"; 
                     //Case 3: DgDp = DERIV_MV_JACOBIAN_FORM (the alternate to DERIV_MV_GRADIENT_FORM for getMultiVectorOrientation),
-                    //DgDx = DERIV_LINEAR_OP and DxDp is MV.  Note that DgDx implementes a DERIV_LINEAR_OP for MVs, 
-                    //so there is no contradiction here in the type.   
+                    //DgDx = DERIV_LINEAR_OP (for distributed responses) or DERIV_MV_JACOBIAN_FORM (for scalar responses), 
+		    //and DxDp is MV.  Note that DgDx implementes a DERIV_LINEAR_OP for MVs, so there is no contradiction here in the type,
+		    //and this case encompasses both distributed and scalar responses.   
                     //dgdp_mv = dg/dx_op*dx/dp_mv + dg/dp_mv
                     Thyra::apply(*dgdx_op, Thyra::NOTRANS, *dxdp_mv, dgdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::one(),
                                  Teuchos::ScalarTraits<Scalar>::one());
