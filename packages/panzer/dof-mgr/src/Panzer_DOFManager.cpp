@@ -552,10 +552,8 @@ void DOFManager::buildGlobalUnknowns(const Teuchos::RCP<const FieldPattern> & ge
     HashTable isOwned, remainingOwned;
 
     // owned_ is made up of owned_ids.: This doesn't work for high order
-    non_overlap_mv->sync_host();
-    tagged_non_overlap_mv->sync_host();
-    auto nvals = non_overlap_mv->getLocalViewHost();
-    auto tagged_vals = tagged_non_overlap_mv->getLocalViewHost();
+    auto nvals = non_overlap_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto tagged_vals = tagged_non_overlap_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
     TEUCHOS_ASSERT(nvals.size()==tagged_vals.size());
     for (size_t i = 0; i < nvals.extent(1); ++i) {
       for (size_t j = 0; j < nvals.extent(0); ++j) {
@@ -795,9 +793,7 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("panzer::DOFManager::buildGlobalUnknowns_GUN::line_13-21 gid_assignment",GUN13_21);
     int which_id=0;
-    if (non_overlap_mv->need_sync_host())
-      non_overlap_mv->sync_host();
-    auto editnonoverlap = non_overlap_mv->getLocalViewHost();
+    auto editnonoverlap = non_overlap_mv->getLocalViewHost(Tpetra::Access::ReadWrite);
     for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
       for(int j=0; j<numFields_; ++j){
         if(editnonoverlap(i,j)!=0){
@@ -812,8 +808,6 @@ DOFManager::buildGlobalUnknowns_GUN(const Tpetra::MultiVector<panzer::GlobalOrdi
 
       }
     }
-    non_overlap_mv->modify_host();
-    non_overlap_mv->sync_device();
   }
 
   // LINE 22: In the GUN paper. Were performed above, and the overlaped_mv is
@@ -902,8 +896,7 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
 
     // temporary working vector to fill each row in tagged array
     std::vector<int> working(overlap_mv->getNumVectors());
-    overlap_mv->sync_host();
-    auto edittwoview_host = overlap_mv->getLocalViewHost();
+    auto edittwoview_host = overlap_mv->getLocalViewHost(Tpetra::Access::ReadWrite);
     for (size_t b = 0; b < blockOrder_.size(); ++b) {
       // there has to be a field pattern associated with the block
       if(fa_fps_[b]==Teuchos::null)
@@ -936,8 +929,6 @@ DOFManager::buildTaggedMultiVector(const ElementBlockAccess & ownedAccess)
         }
       }
     }
-    overlap_mv->modify_host();
-    overlap_mv->sync_device();
     // // verbose output for inspecting overlap_mv
     // for(int i=0;i<overlap_mv->getLocalLength(); i++) {
     //   for(int j=0;j<overlap_mv->getNumVectors() ; j++)
@@ -1276,8 +1267,7 @@ fillGIDsFromOverlappedMV(const ElementBlockAccess & access,
 
   //To generate elementGIDs we need to go through all of the local elements.
   auto overlap_mv = const_cast<Tpetra::MultiVector<panzer::GlobalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>&>(const_overlap_mv);
-  overlap_mv.sync_host();
-  const auto twoview_host = overlap_mv.getLocalViewHost();
+  const auto twoview_host = overlap_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
 
   //And for each of the things in fa_fp.fieldIds we go to that column. To the the row,
   //we move from globalID to localID in the map and use our local value for something.
