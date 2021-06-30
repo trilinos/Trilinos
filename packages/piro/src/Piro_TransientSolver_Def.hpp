@@ -162,39 +162,62 @@ Piro::TransientSolver<Scalar>::createOutArgsImpl() const
       const Thyra::ModelEvaluatorBase::DerivativeSupport dfdp_support =
         modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DfDp, l);
       if (!dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+        //IKT 6/30/2021: this is a special case that comes up when not doing sensitivity calculations
         return outArgs;
       }
+      // DxDp has same support as DfDp 
       const bool dxdp_linOpSupport =
-        dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+          dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
       const bool dxdp_mvJacSupport =
-        dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-      Thyra::ModelEvaluatorBase::DerivativeSupport dxdp_support;
-      if (dxdp_linOpSupport) {
-        dxdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+          dfdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+      {
+        Thyra::ModelEvaluatorBase::DerivativeSupport dxdp_support;
+        if (dxdp_linOpSupport) {
+          dxdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+        }
+        if (dxdp_mvJacSupport) {
+          dxdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+        }
+        outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g_, l, dxdp_support);
       }
-      if (dxdp_mvJacSupport) {
-        dxdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
-      }
-      outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, num_g_, l, dxdp_support);
 
       // Response sensitivities: DgDp(j, l)
       // DxDp(l) required
       if (dxdp_linOpSupport || dxdp_mvJacSupport) {
         for (int j = 0; j < num_g_; ++j) {
-          const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdx_support =
-          modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
-          if (!model_dgdx_support.none()) {
-            const Thyra::ModelEvaluatorBase::DerivativeSupport model_dgdp_support =
-            modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-           // Response sensitivity
-            Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support;
-            if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
-              dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+          // DgDx(j) required
+          const Thyra::ModelEvaluatorBase::DerivativeSupport dgdx_support =
+              modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDx, j);
+	  // IKT, 6/30/2021: note that DERIV_LINEAR_OP is not relevant for DgDx for the 
+	  // current use cases in Albany but keeping it nonetheless for completeness and
+	  // consistency with Piro::SteadySolver
+          const bool dgdx_linOpSupport =
+              dgdx_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+          const bool dgdx_mvGradSupport =
+              dgdx_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+          if (dgdx_linOpSupport || dgdx_mvGradSupport) {
+            // Dgdp(j, l) required
+            const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+                modelOutArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+            Thyra::ModelEvaluatorBase::DerivativeSupport total_dgdp_support;
+	    //IKT. 6/30/2021: DERIV_LINEAR_OP is not relevant (and actually not supported)
+	    //for Tempus sensitivities but keeping it nonethless for completeness and 
+	    //consistency with Piro::SteadySolver. There is a throw for this case in 
+	    //evalConvergedModelResponsesAndSensitivities(). 
+            if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP) &&
+                dgdx_linOpSupport && dxdp_linOpSupport) {
+              total_dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
             }
-            if (model_dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP)) {
-              dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
+            if (dxdp_mvJacSupport) {
+              if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM)) {
+                total_dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM);
+              }
+              if (dgdp_support.supports(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM) &&
+                  dgdx_mvGradSupport) {
+                total_dgdp_support.plus(Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM);
+              }
             }
-            outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l, dgdp_support);
+            outArgs.setSupports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l, total_dgdp_support);
           }
         }
       }
