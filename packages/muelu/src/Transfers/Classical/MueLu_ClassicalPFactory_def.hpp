@@ -252,7 +252,7 @@ namespace MueLu {
       if(Importer.is_null()) 
         BlockNumber = OwnedBlockNumber;
       else{
-        BlockNumber = LocalOrdinalVectorFactory::Build(A->getRowMap());
+        BlockNumber = LocalOrdinalVectorFactory::Build(A->getColMap());
         BlockNumber->doImport(*OwnedBlockNumber,*Importer,Xpetra::INSERT);
       }
     }
@@ -707,7 +707,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                 GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
                 LO mghost = A_indices_k[m0];//Aghost LCID
                 LO m = Aghostcol_to_Acol[mghost]; //A's LID (could be LO_INVALID)
-                if(m_g != k_g && m != LO_INVALID && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
+                if(m_g != k_g && m != LO_INVALID && Acol_to_Pcol[m] >=  (LO)P_rowptr[i]) {
                   SC a_km = A_vals_k[m0];
                   second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
                 }
@@ -721,7 +721,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                   LO jghost = A_indices_k[j0];//Aghost LCID
                   LO j = Aghostcol_to_Acol[jghost]; //A's LID (could be LO_INVALID)
                   // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
-                  if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
+                  if((j != LO_INVALID) && (Acol_to_Pcol[j] >=  (LO)P_rowptr[i])) {
                     SC a_kj = A_vals_k[j0];
                     SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
                     P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
