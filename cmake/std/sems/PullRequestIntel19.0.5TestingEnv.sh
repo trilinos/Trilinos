@@ -32,10 +32,6 @@ module load sems-git/2.10.1
 module unload sems-python
 module load sems-python/3.5.2
 
-# Change the intel license reference until sems can correct it
-unset INTEL_LICENSE_FILE
-export LM_LICENSE_FILE=28518@cee-infra009.sandia.gov
-
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2
 
