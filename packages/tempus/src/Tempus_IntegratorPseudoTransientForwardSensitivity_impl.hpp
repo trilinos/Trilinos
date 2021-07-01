@@ -27,8 +27,8 @@ IntegratorPseudoTransientForwardSensitivity(
 {
   model_ = model;
   sens_model_ = createSensitivityModel(model_, inputPL);
-  state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
-  sens_integrator_ = integratorBasic<Scalar>(inputPL, sens_model_);
+  state_integrator_ = createIntegratorBasic<Scalar>(inputPL, model_);
+  sens_integrator_ = createIntegratorBasic<Scalar>(inputPL, sens_model_);
 }
 
 template<class Scalar>
@@ -41,8 +41,8 @@ IntegratorPseudoTransientForwardSensitivity(
 {
   model_ = model;
   sens_model_ = createSensitivityModel(model, Teuchos::null);
-  state_integrator_ = integratorBasic<Scalar>(model_, stepperType);
-  sens_integrator_ = integratorBasic<Scalar>(sens_model_, stepperType);
+  state_integrator_ = createIntegratorBasic<Scalar>(model_, stepperType);
+  sens_integrator_ = createIntegratorBasic<Scalar>(sens_model_, stepperType);
 }
 
 template<class Scalar>
@@ -51,8 +51,8 @@ IntegratorPseudoTransientForwardSensitivity() :
   reuse_solver_(false),
   force_W_update_(false)
 {
-  state_integrator_ = integratorBasic<Scalar>();
-  sens_integrator_ = integratorBasic<Scalar>();
+  state_integrator_ = createIntegratorBasic<Scalar>();
+  sens_integrator_ = createIntegratorBasic<Scalar>();
 }
 
 template<class Scalar>
@@ -163,7 +163,7 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getTempusParameterList()
 {
-  return state_integrator_->getTempusParameterList();
+  //return state_integrator_->getTempusParameterList();
 }
 
 template<class Scalar>
@@ -171,8 +171,8 @@ void
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
 {
-  state_integrator_->setTempusParameterList(pl);
-  sens_integrator_->setTempusParameterList(pl);
+  //state_integrator_->setTempusParameterList(pl);
+  //sens_integrator_->setTempusParameterList(pl);
 }
 
 template<class Scalar>
@@ -375,8 +375,8 @@ void
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
 {
-  state_integrator_->setParameterList(inputPL);
-  sens_integrator_->setParameterList(inputPL);
+  //state_integrator_->setParameterList(inputPL);
+  //sens_integrator_->setParameterList(inputPL);
   reuse_solver_ =
     inputPL->sublist("Sensitivities").get("Reuse State Linear Solver", false);
   force_W_update_ =
@@ -388,35 +388,17 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 unsetParameterList()
 {
-  state_integrator_->unsetParameterList();
-  return sens_integrator_->unsetParameterList();
+  //state_integrator_->unsetParameterList();
+  //return sens_integrator_->unsetParameterList();
 }
 
-template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl =
-    Teuchos::rcp(new Teuchos::ParameterList);
-  Teuchos::RCP<const Teuchos::ParameterList> integrator_pl =
-    state_integrator_->getValidParameters();
-  Teuchos::RCP<const Teuchos::ParameterList> sensitivity_pl =
-    StaggeredForwardSensitivityModelEvaluator<Scalar>::getValidParameters();
-  pl->setParameters(*integrator_pl);
-  pl->sublist("Sensitivities").setParameters(*sensitivity_pl);
-  pl->sublist("Sensitivities").set("Reuse State Linear Solver", false);
-  pl->sublist("Sensitivities").set("Force W Update", false);
-
-  return pl;
-}
 
 template<class Scalar>
 Teuchos::RCP<Teuchos::ParameterList>
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getNonconstParameterList()
 {
-  return state_integrator_->getNonconstParameterList();
+  //return state_integrator_->getNonconstParameterList();
 }
 
 template <class Scalar>
@@ -458,9 +440,8 @@ buildSolutionHistory()
 
   // Create combined solution histories, first for the states with zero
   // sensitivities and then for the sensitivities with frozen states
-  RCP<ParameterList> shPL =
-    Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
-                     "Solution History", true);
+  RCP<ParameterList> shPL;
+    //Teuchos::sublist(state_integrator_->getIntegratorParameterList(), "Solution History", true);
   solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   const int num_param =
@@ -571,6 +552,24 @@ integratorPseudoTransientForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
+
+  auto fwd_integrator = createIntegratorBasic<Scalar>(pList, model);
+
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::RCP<const Teuchos::ParameterList> integrator_pl = fwd_integrator->getValidParameters();
+    Teuchos::RCP<const Teuchos::ParameterList> sensitivity_pl =
+      StaggeredForwardSensitivityModelEvaluator<Scalar>::getValidParameters();
+    pl->setParameters(*integrator_pl);
+    pl->sublist("Sensitivities").setParameters(*sensitivity_pl);
+    pl->sublist("Sensitivities").set("Reuse State Linear Solver", false);
+    pl->sublist("Sensitivities").set("Force W Update", false);
+
+    pList->validateParametersAndSetDefaults(*pl);
+  }
+
+
   Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(pList, model));
   return(integrator);

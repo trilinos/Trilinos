@@ -11,7 +11,7 @@
 
 // Tempus
 #include "Tempus_config.hpp"
-#include "Tempus_IntegratorBasicOld.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
 namespace Tempus {
@@ -48,8 +48,7 @@ namespace Tempus {
  */
 template<class Scalar>
 class IntegratorPseudoTransientForwardSensitivity
-  : virtual public Tempus::Integrator<Scalar>,
-    virtual public Teuchos::ParameterListAcceptor
+  : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
@@ -159,13 +158,10 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
-      override;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override;
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() ;
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() ;
 
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
-      const override;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -187,8 +183,8 @@ protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > sens_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   bool reuse_solver_;
   bool force_W_update_;
