@@ -131,6 +131,16 @@ TpetraCrsGraph(const local_graph_type& lclGraph,
 #endif
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::
+TpetraCrsGraph(const Teuchos::RCP< const Map > &rowMap,
+               const Teuchos::RCP< const Map > &colMap,
+               const Teuchos::ArrayRCP<size_t>& rowPointers,
+               const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
+               const Teuchos::RCP<Teuchos::ParameterList>& params)
+  : graph_(Teuchos::rcp(new Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(toTpetra(rowMap), toTpetra(colMap), rowPointers, columnIndices, params))) {  }
+
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
  TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::~TpetraCrsGraph() {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -884,6 +894,37 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
                                    typeid(EpetraNode).name());
     }
 #endif
+
+    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the graph,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the graph.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the graph.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    TpetraCrsGraph(const Teuchos::RCP< const map_type > &rowMap,
+                   const Teuchos::RCP< const map_type > &colMap,
+                   const Teuchos::ArrayRCP<size_t>& rowPointers,
+                   const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
+                   const Teuchos::RCP<Teuchos::ParameterList>& params) {
+      XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(),
+                                   typeid(TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,EpetraNode>).name(),
+                                   "int",
+                                   typeid(EpetraNode).name())
+      }
+
 
     //! Destructor.
     virtual ~TpetraCrsGraph() {  }
