@@ -113,7 +113,7 @@
 #include "Tpetra_Assembly_Helpers.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_applyDirichletBoundaryCondition.hpp"
-
+#include "MatrixMarket_Tpetra.hpp"
 
 
 // Teuchos includes
@@ -1162,11 +1162,67 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
   /********************* BUILD Graphs FOR GLOBAL SOLUTION ***************************/
   /**********************************************************************************/
+  // Define desired workset size and count how many worksets there are on this processor's mesh block
+  int desiredWorksetSize = numElems;                      // change to desired workset size!
+  //int desiredWorksetSize = 100;                      // change to desired workset size!
+  int numWorksets        = numElems/desiredWorksetSize;
+
+  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
+  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
+
   RCP<Tpetra_FECrsGraph> EdgeGraph = rcp(new Tpetra_FECrsGraph(globalMapC,overlapMapC,27*numFieldsC));
   RCP<Tpetra_FECrsGraph> NodeGraph = rcp(new Tpetra_FECrsGraph(globalMapG,overlapMapG,9*numFieldsG));
-  throw std::runtime_error("Fill these guys");
+
+  Tpetra::beginFill(*EdgeGraph,*NodeGraph);
+  for(int workset = 0; workset < numWorksets; workset++){    
+    // Compute cell numbers where the workset starts and ends
+    //    int worksetSize  = 0;
+    int worksetBegin = (workset + 0)*desiredWorksetSize;
+    int worksetEnd   = (workset + 1)*desiredWorksetSize;
+    
+    // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+    
+    // Now we know the actual workset size and can allocate the array for the cell nodes
+    //    worksetSize  = worksetEnd - worksetBegin;
+
+    // Loop over workset cells
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+      
+      /*** Assemble H(grad) mass matrix ***/
+      // loop over nodes for matrix row
+      for (int cellNodeRow = 0; cellNodeRow < numFieldsG; cellNodeRow++){
+        int localNodeRow  = elemToNode(cell, cellNodeRow);
+        int globalNodeRow = globalNodeIds[localNodeRow];
+
+        // loop over nodes for matrix column
+        for (int cellNodeCol = 0; cellNodeCol < numFieldsG; cellNodeCol++){
+          int localNodeCol  = elemToNode(cell, cellNodeCol);
+          int globalNodeCol = globalNodeIds[localNodeCol];          
+          NodeGraph->insertGlobalIndices(globalNodeRow,1,&globalNodeCol);
+
+        }// *** cell node col loop ***
+      }// *** cell node row loop ***
 
 
+      /*** Assemble H(curl) mass matrix, stiffness matrix and right-hand side ***/
+
+      // loop over edges for matrix row
+      for (int cellEdgeRow = 0; cellEdgeRow < numFieldsC; cellEdgeRow++){
+        int localEdgeRow  = elemToEdge(cell, cellEdgeRow);
+        int globalEdgeRow = globalEdgeIds[localEdgeRow];
+
+        // loop over edges for matrix column
+        for (int cellEdgeCol = 0; cellEdgeCol < numFieldsC; cellEdgeCol++){
+          int localEdgeCol  = elemToEdge(cell, cellEdgeCol);
+          int globalEdgeCol = globalEdgeIds[localEdgeCol];
+          EdgeGraph->insertGlobalIndices(globalEdgeRow,1,&globalEdgeCol);
+        }// *** cell edge col loop ***
+      }// *** cell edge row loop ***
+
+    }// *** workset cell loop **
+  }// *** workset loop ***
+  Tpetra::endFill(*EdgeGraph,*NodeGraph);
 
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
@@ -1179,7 +1235,6 @@ int body(int argc, char *argv[]) {
   Tpetra_FEMultiVector rhsVector   (EdgeGraph->getRowMap(),EdgeGraph->getImporter(),1);
 
   if(MyPID==0) {std::cout << "Build global maps                           \n";}
-
 
 
   /**********************************************************************************/
@@ -1222,45 +1277,44 @@ int body(int argc, char *argv[]) {
   }
 
 
-#if 0
+
   if (dump){  
-    EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coords.dat",nCoord);
 
     // Put element to node mapping in multivector for output
     Tpetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
-    for (int ielem=0; ielem<numElems; ielem++) {
-      for (int inode=0; inode<numNodesPerElem; inode++) {
-        elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
+    for (int inode=0; inode<numNodesPerElem; inode++) {
+      auto data = elem2node.getDataNonConst(inode);
+      for (int ielem=0; ielem<numElems; ielem++) {
+        data[ielem]=globalNodeIds[elemToNode(ielem,inode)];
       }
     }
-    EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("elem2node.dat",elem2node);
 
     // Put element to edge mapping in multivector for output
-    Tpetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
-    for (int ielem=0; ielem<numElems; ielem++) {
-      for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-        elem2edge[iedge][ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
+    Tpetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);    
+    for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+       auto data = elem2edge.getDataNonConst(iedge);
+       for (int ielem=0; ielem<numElems; ielem++) {
+          data[ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
       }
     }
-    EpetraExt::MultiVectorToMatrixMarketFile("elem2edge.dat",elem2edge,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("elem2edge.dat",elem2edge);
 
     // Put edge to node mapping in multivector for output
     Tpetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
-    int ownedEdge = 0;
-    for (int iedge=0; iedge<numEdges; iedge++) {
-      if (edgeIsOwned[iedge]) {
-        for (int inode=0; inode<numNodesPerEdge; inode++) {
-          edge2node[inode][ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+    for (int inode=0; inode<numNodesPerEdge; inode++) {
+      int ownedEdge = 0;
+      auto data = edge2node.getDataNonConst(inode);
+      for (int iedge=0; iedge<numEdges; iedge++) {
+        if (edgeIsOwned[iedge]) {
+          data[ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
         }
         ownedEdge++;
       }
     }
-    EpetraExt::MultiVectorToMatrixMarketFile("edge2node.dat",edge2node,0,0,false);
-
-    
-
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge2node.dat",edge2node);    
   }
-#endif  
     
   // Define multi-vector for cell edge sign (fill during cell loop)
   Tpetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
@@ -1464,14 +1518,6 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
   /**********************************************************************************/
-
-  // Define desired workset size and count how many worksets there are on this processor's mesh block
-  int desiredWorksetSize = numElems;                      // change to desired workset size!
-  //int desiredWorksetSize = 100;                      // change to desired workset size!
-  int numWorksets        = numElems/desiredWorksetSize;
-
-  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
-  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
 
   if (MyPID == 0) {
     std::cout << "Building discretization matrix and right hand side... \n\n";
@@ -1880,7 +1926,7 @@ int body(int argc, char *argv[]) {
           int globalNodeCol = globalNodeIds[localNodeCol];
           double massGContribution = massMatrixHGrad(worksetCellOrdinal, cellNodeRow, cellNodeCol);
 
-          MassMatrixG.insertGlobalValues(globalNodeRow, 1, &massGContribution, &globalNodeCol);
+          MassMatrixG.sumIntoGlobalValues(globalNodeRow, 1, &massGContribution, &globalNodeCol);
 
         }// *** cell node col loop ***
       }// *** cell node row loop ***
@@ -1908,9 +1954,9 @@ int body(int argc, char *argv[]) {
 
           double massCContribution1  = massMatrixHCurlNoSigma (worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
 
-          MassMatrixC.insertGlobalValues (globalEdgeRow, 1, &massCContribution, &globalEdgeCol);
-          MassMatrixC1.insertGlobalValues (globalEdgeRow, 1, &massCContribution1, &globalEdgeCol);
-          StiffMatrixC.insertGlobalValues(globalEdgeRow, 1, &stiffCContribution, &globalEdgeCol);
+          MassMatrixC.sumIntoGlobalValues (globalEdgeRow, 1, &massCContribution, &globalEdgeCol);
+          MassMatrixC1.sumIntoGlobalValues (globalEdgeRow, 1, &massCContribution1, &globalEdgeCol);
+          StiffMatrixC.sumIntoGlobalValues(globalEdgeRow, 1, &stiffCContribution, &globalEdgeCol);
 
 
         }// *** cell edge col loop ***
@@ -1934,28 +1980,27 @@ int body(int argc, char *argv[]) {
 
   if(MyPID==0) {std::cout << "Global assembly                             \n";}
 
-#if 0
   if (dump) {
     // Node Coordinates
-    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
-    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
-    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordx.dat",Nx);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordy.dat",Ny);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordz.dat",Nz);
 
     // Edge Coordinates
-    EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
-    EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
-    EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordx.dat",EDGE_X);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordy.dat",EDGE_Y);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordz.dat",EDGE_Z);
 
 
     // Edge signs
-    EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge_signs.dat",edgeSign);
 
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_k1_matrix.mat",StiffMatrixC);
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_ms_matrix.mat",MassMatrixC);
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_m1_matrix.mat",MassMatrixC1);
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_t_matrix.mat",DGrad);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_k1_matrix.dat",StiffMatrixC);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_ms_matrix.dat",MassMatrixC);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_km_matrix.dat",MassMatrixC1);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_t_matrix.dat",DGrad);
   }
-#endif
+
   
 
   /**********************************************************************************/
@@ -1994,14 +2039,15 @@ int body(int argc, char *argv[]) {
   }
 
   // Get the full matrix operator Kc += Mc
-  Tpetra::MatrixMatrix::Add(MassMatrixC,false,scaling,StiffMatrixC,1.0);
+  Tpetra_CrsMatrix SystemMatrix(StiffMatrixC.getRowMap(),0);
+  Tpetra::MatrixMatrix::add(scaling,false,MassMatrixC,1.0,false,StiffMatrixC,SystemMatrix);
   //  int rv=EpetraExt::MatrixMatrix::Add(MassMatrixC,false,scaling,StiffMatrixC,1.0);
   //  if(rv!=0) {printf("EpetraExt::MatrixMatrix:Add FAILED\n"); exit(1);}
 
 
   // Apply it to v
   Tpetra_MultiVector rhsDir(globalMapC,1);
-  StiffMatrixC.apply(v,rhsDir);
+  SystemMatrix.apply(v,rhsDir);
 
   // Update right-hand side
   rhsVector.update(-1.0,rhsDir,1.0);
@@ -2028,18 +2074,16 @@ int body(int argc, char *argv[]) {
   //  and add one to diagonal.
   {
     Kokkos::View<LO*, Kokkos::HostSpace> bce(BCEdges.data(),numBCEdges);
-    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows(StiffMatrixC,bce);
+    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows(SystemMatrix,bce);
   }
 
   if(MyPID==0) {std::cout << "Adjust global matrix and rhs due to BCs     \n";}
 
 
-#if 0
   if (dump) {
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_m0_matrix.mat",MassMatrixG);
-    EpetraExt::RowMatrixToMatrixMarketFile("edge_matrix.mat",StiffMatrixC);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_m0_matrix.mat",MassMatrixG);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("edge_matrix.mat",SystemMatrix);
   }
-#endif
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
@@ -2120,7 +2164,7 @@ int body(int argc, char *argv[]) {
   int num_steps = 1;
   double tol = 1e-10;
   
-  RCP<Tpetra_CrsMatrix> StiffMatrixC_r   = rcp(&StiffMatrixC,false);
+  RCP<Tpetra_CrsMatrix> SystemMatrix_r   = rcp(&SystemMatrix,false);
   RCP<Tpetra_CrsMatrix> DGrad_r          = rcp(&DGrad,false);
   RCP<Tpetra_CrsMatrix> MassMatrixGinv_r = rcp(&MassMatrixGinv,false);
   RCP<Tpetra_CrsMatrix> MassMatrixC_r    = rcp(&MassMatrixC,false);
@@ -2133,9 +2177,9 @@ int body(int argc, char *argv[]) {
     // MueLu RefMaxwell
     if(MyPID==0) {std::cout << "\n\nMueLu solve \n";}
     RCP<Xpetra_Operator>  preconditioner = 
-      BuildPreconditioner_MueLu(probType,MueLuList,StiffMatrixC_r,DGrad_r,MassMatrixGinv_r,MassMatrixC_r,MassMatrixC1_r,nCoord_r);
+      BuildPreconditioner_MueLu(probType,MueLuList,SystemMatrix_r,DGrad_r,MassMatrixGinv_r,MassMatrixC_r,MassMatrixC1_r,nCoord_r);
 
-    RCP<Xpetra_Operator> A_x = toXpetra(StiffMatrixC_r);
+    RCP<Xpetra_Operator> A_x = toXpetra(SystemMatrix_r);
     RCP<Xpetra_MultiVector> xh_x = toXpetra(xh_r);
     RCP<Xpetra_MultiVector> rhsVector_x = toXpetra(rhsVector_r);
     
@@ -2145,6 +2189,7 @@ int body(int argc, char *argv[]) {
     RCP<BOP> precOp  = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(preconditioner));
     RCP<BOP> dummy;
     
+    solverName="CG";
     TrilinosCouplings::IntrepidPoissonExample::
       solveWithBelos<SC,BMV,BOP>(converged,numItersPerformed,solverName,tol,maxNumIters,num_steps,
                    xh_x,belosOp,rhsVector_x,dummy,precOp);
