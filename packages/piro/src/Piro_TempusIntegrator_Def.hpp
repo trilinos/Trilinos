@@ -275,7 +275,9 @@ Piro::TempusIntegrator<Scalar>::getDxDp() const
     return fwdSensIntegrator_->getDxDp(); 
   }
   else {
-    return Teuchos::null; 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDxDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }
 
@@ -287,7 +289,9 @@ Piro::TempusIntegrator<Scalar>::getDxdotDp() const
     return fwdSensIntegrator_->getDxdotDp(); 
   }
   else {
-    return Teuchos::null; 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDxdotDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }
 
@@ -299,7 +303,9 @@ Piro::TempusIntegrator<Scalar>::getDxdotdotDp() const
     return fwdSensIntegrator_->getDxdotdotDp(); 
   }
   else {
-    return Teuchos::null; 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDxdotdotDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }
   
@@ -312,6 +318,8 @@ Piro::TempusIntegrator<Scalar>::getDgDp() const
     return adjSensIntegrator_->getDgDp(); 
   }
   else {
-    return Teuchos::null; 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDgDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorAdjointSensitivity!\n");
   }
 }

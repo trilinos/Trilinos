@@ -250,7 +250,7 @@ Thyra::ModelEvaluatorBase::InArgs<double> getStaticNominalValues(const Thyra::Mo
 // Floating point tolerance
 const double tol = 1.0e-8;
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionForwardSensitivity)
 {
   Teuchos::RCP<Teuchos::FancyOStream> fos =
       Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -289,7 +289,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivity)
   }
 }
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivityOp)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionForwardSensitivityOp)
 {
   Teuchos::RCP<Teuchos::FancyOStream> fos =
       Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -327,7 +327,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultSolutionSensitivityOp)
   }
 }
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseForwardSensitivity)
 {
   const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
 
@@ -366,7 +366,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity)
   }
 }
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxMv)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseForwardSensitivity_NoDgDxMv)
 {
   Teuchos::RCP<Teuchos::FancyOStream> fos =
       Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -410,7 +410,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseSensitivity_NoDgDxM
 }
 
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultForwardSensitivities)
 {
   Teuchos::RCP<Teuchos::FancyOStream> fos =
       Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -479,7 +479,7 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultSensitivities)
   }
 }
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialConditionWhenSensitivitiesRequested)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialConditionWhenForwardSensitivitiesRequested)
 {
   Teuchos::RCP<Teuchos::FancyOStream> fos =
       Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -538,6 +538,115 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveInitialConditionWhenSensitivitiesReq
   }
 
   TEST_FLOATING_EQUALITY(observer->lastStamp(), timeStamp, tol);
+}
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseAdjointSensitivity)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+  const double finalTime = 0.0;
+
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Adjoint");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+  const int solutionResponseIndex = solver->Ng() - 1;
+  const int parameterIndex = 0;
+  const Thyra::MEB::Derivative<double> dxdp_deriv =
+    Thyra::create_DgDp_mv(*solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
+  outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
+
+  solver->evalModel(inArgs, outArgs);
+  
+  // Test if at 'Final Time'
+  double time = solver->getPiroTempusIntegrator()->getTime();
+  TEST_FLOATING_EQUALITY(time, 0.0, 1.0e-14);
+
+  std::vector<double> expected(2);
+  expected[0] = 2.0; expected[1] = 2.0; //Exact solution for DgDp = [2,2]
+  //Specifically, we have dg/dp0 = -sum(x_i) + 2*p0 + p1 + 11 and dg/dp1 = -sum(x_i) + p0 + p1 + 12
+  //evaluated at the initial condition x = [3,3,3,3] and p = [1,1] 
+  RCP<const Thyra::MultiVectorBase<double> > DgDp = solver->getPiroTempusIntegrator()->getDgDp();
+  TEST_EQUALITY(DgDp->range()->dim(), expected.size());
+
+  const Array<double> actual = arrayFromVector(*DgDp->col(0));
+  const Array<double> expected_array = Array<double>(expected); 
+  TEST_COMPARE_FLOATING_ARRAYS(actual, expected_array, tol);
+}
+
+
+
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_ResponseAndDefaultAdjointSensitivities)
+{
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
+      Teuchos::VerboseObjectBase::getDefaultOStream();
+  
+  const RCP<Thyra::ModelEvaluatorDefaultBase<double> > model = defaultModelNew();
+
+  const int responseIndex = 0;
+  const int parameterIndex = 0;
+
+  const RCP<Thyra::VectorBase<double> > expectedResponse =
+    Thyra::createMember(model->get_g_space(responseIndex));
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_g(responseIndex, expectedResponse);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const Thyra::MEB::Derivative<double> dgdp_deriv_expected =
+    Thyra::create_DgDp_mv(*model, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp_expected = dgdp_deriv_expected.getMultiVector();
+  {
+    const Thyra::MEB::InArgs<double> modelInArgs = getStaticNominalValues(*model);
+    Thyra::MEB::OutArgs<double> modelOutArgs = model->createOutArgs();
+    modelOutArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv_expected);
+    model->evalModel(modelInArgs, modelOutArgs);
+  }
+
+  const double finalTime = 0.0;
+  const RCP<TempusSolver<double> > solver = solverNew(model, finalTime, "Adjoint");
+
+  const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
+
+  Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
+
+  // Requesting response
+  const RCP<Thyra::VectorBase<double> > response =
+    Thyra::createMember(solver->get_g_space(responseIndex));
+  outArgs.set_g(responseIndex, response);
+
+  // Requesting response sensitivity
+  const Thyra::MEB::Derivative<double> dgdp_deriv =
+    Thyra::create_DgDp_mv(*solver, responseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
+  const RCP<const Thyra::MultiVectorBase<double> > dgdp = dgdp_deriv.getMultiVector();
+  outArgs.set_DgDp(responseIndex, parameterIndex, dgdp_deriv);
+
+  // Run solver
+  solver->evalModel(inArgs, outArgs);
+
+  // Checking response
+  {
+    const Array<double> expected = arrayFromVector(*expectedResponse);
+    const Array<double> actual = arrayFromVector(*response);
+    TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+  }
+
+  // Checking sensitivity
+  {
+    TEST_EQUALITY(dgdp->domain()->dim(), dgdp_expected->domain()->dim());
+    TEST_EQUALITY(dgdp->range()->dim(), dgdp_expected->range()->dim());
+    for (int i = 0; i < dgdp_expected->domain()->dim(); ++i) {
+      const Array<double> actual = arrayFromVector(*dgdp->col(i));
+      const Array<double> expected = arrayFromVector(*dgdp_expected->col(i));
+      TEST_COMPARE_FLOATING_ARRAYS(actual, expected, tol);
+    }
+  }
 }
 
 #endif /* HAVE_PIRO_TEMPUS */
