@@ -95,7 +95,7 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
   zlno_t n = A->getNodeNumRows();
   for (zlno_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
-    for (zlno_t j=0; j<static_cast<zlno_t>(indices.size()); j++) {
+    for (zlno_t j=0; j<static_cast<zlno_t>(indices.extent(0)); j++) {
       if ((indices[j]<n) && (indices[j]!=i) && (color[i]==color[indices[j]])){
         nconflicts++;
         //std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
@@ -129,7 +129,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
   auto colorData = C.getData();
   for(size_t i = 0; i < n; i++){
     A->getLocalRowView(i, indices, values);
-    for(size_t j = 0; j < indices.size(); j++){
+    for(size_t j = 0; j < indices.extent(0); j++){
       if(values[j] == 0) continue; //this catches removed entries.
       if( (rowMap->getGlobalElement(i) != colMap->getGlobalElement(indices[j])) && (color[i] == colorData[indices[j]]) ){
         nconflicts++;
@@ -417,7 +417,7 @@ int main(int narg, char** arg)
     Matrix->getGlobalRowCopy(rowInds[i], inds, vals, numEntries);
     //check to see if this row has a diagonal
     bool hasDiagonal = false;
-    for(size_t j = 0; j < inds.size(); j++){
+    for(size_t j = 0; j < inds.extent(0); j++){
       if(inds[j] == rowInds[i]) hasDiagonal = true;
     }
     //replace the diagonal if it exists.
