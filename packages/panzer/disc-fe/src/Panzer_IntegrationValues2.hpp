@@ -159,14 +159,16 @@ namespace panzer {
     void swapQuadraturePoints(int cell,int a,int b);
 
     static void convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3]);
-    
+
+    /// This should be a private method, but using lambdas on cuda forces this to be public.
+    void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
+    /// This should be a private method, but using lambdas on cuda forces this to be public.
+    void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
+
   protected:
-
-
 
     // TODO: Make this a utility function that only exists in source file
     Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> getIntrepidCubature(const panzer::IntegrationRule & ir) const;
-
 
   private:
     bool alloc_arrays;
@@ -175,8 +177,6 @@ namespace panzer {
 
     void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells,const SubcellConnectivity & face_connectivity);
     void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
-    void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
-    void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
     void evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,const int in_num_cells);
   };
 

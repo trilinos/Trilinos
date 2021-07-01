@@ -292,7 +292,7 @@ getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
 
   int num_space_dim = int_rule->topology->getDimension();
   if (int_rule->isSide() && num_space_dim==1) {
-    std::cout << "WARNING: 0-D quadrature rule ifrastructure does not exist!!! Will not be able to do "
+    std::cout << "WARNING: 0-D quadrature rule infrastructure does not exist!!! Will not be able to do "
         << "non-natural integration rules.";
     return;
   }
@@ -895,21 +895,12 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
 
   // copy the dynamic data structures into the static data structures
   {
-    size_type num_ip = dyn_cub_points.extent(0);
-    size_type num_dims = dyn_cub_points.extent(1);
-
-    for (size_type ip = 0; ip < num_ip;  ++ip) {
-      cub_weights(ip) = dyn_cub_weights(ip);
-      for (size_type dim = 0; dim < num_dims; ++dim)
-        cub_points(ip,dim) = dyn_cub_points(ip,dim);
-    }
+    Kokkos::deep_copy(cub_weights.get_static_view(),dyn_cub_weights.get_view());
+    Kokkos::deep_copy(cub_points.get_static_view(),dyn_cub_points.get_view());
   }
 
   if (int_rule->isSide()) {
-    const size_type num_ip = dyn_cub_points.extent(0), num_side_dims = dyn_side_cub_points.extent(1);
-    for (size_type ip = 0; ip < num_ip; ++ip)
-      for (size_type dim = 0; dim < num_side_dims; ++dim)
-        side_cub_points(ip,dim) = dyn_side_cub_points(ip,dim);
+    Kokkos::deep_copy(side_cub_points.get_static_view(),dyn_side_cub_points.get_view());
   }
 
   const int num_cells = in_num_cells < 0 ? in_node_coordinates.extent(0) : in_num_cells;
@@ -917,15 +908,14 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
   {
     size_type num_nodes = in_node_coordinates.extent(1);
     size_type num_dims = in_node_coordinates.extent(2);
+    auto node_coordinates_k = node_coordinates.get_view();
+    auto in_node_coordinates_k = in_node_coordinates.get_view();
 
-    for (int cell = 0; cell < num_cells;  ++cell) {
-      for (size_type node = 0; node < num_nodes; ++node) {
-        for (size_type dim = 0; dim < num_dims; ++dim) {
-          node_coordinates(cell,node,dim) =
-              in_node_coordinates(cell,node,dim);
-        }
-      }
-    }
+    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
+    Kokkos::parallel_for("node coordinates",policy,KOKKOS_LAMBDA (const int cell,const int node,const int dim) {
+      node_coordinates_k(cell,node,dim) = in_node_coordinates_k(cell,node,dim);
+    });
+    PHX::Device::execution_space().fence();
   }
 
   auto s_in_node_coordinates = Kokkos::subview(in_node_coordinates.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL());
@@ -961,24 +951,27 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
   else TEUCHOS_ASSERT(false);
 
   // Shakib contravarient metric tensor
-  for (int cell = 0; cell < num_cells; ++cell) {
-    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
-
+  {
+    auto covarient_k = covarient.get_view();
+    auto contravarient_k = contravarient.get_view();
+    auto jac_k = jac.get_view();
+    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<2>> policy({0,0},{num_cells,static_cast<int>(contravarient.extent(1))});
+    Kokkos::parallel_for("evalaute covarient metric tensor",policy,KOKKOS_LAMBDA (const int cell,const int ip) {
       // zero out matrix
-      for (size_type i = 0; i < contravarient.extent(2); ++i)
-        for (size_type j = 0; j < contravarient.extent(3); ++j)
-          covarient(cell,ip,i,j) = 0.0;
+      for (int i = 0; i < static_cast<int>(contravarient_k.extent(2)); ++i)
+        for (int j = 0; j < static_cast<int>(contravarient_k.extent(3)); ++j)
+          covarient_k(cell,ip,i,j) = 0.0;
 
       // g^{ij} = \frac{\parital x_i}{\partial \chi_\alpha}\frac{\parital x_j}{\partial \chi_\alpha}
-      for (size_type i = 0; i < contravarient.extent(2); ++i) {
-        for (size_type j = 0; j < contravarient.extent(3); ++j) {
-          for (size_type alpha = 0; alpha < contravarient.extent(2); ++alpha) {
-            covarient(cell,ip,i,j) += jac(cell,ip,i,alpha) * jac(cell,ip,j,alpha);
+      for (int i = 0; i < static_cast<int>(contravarient_k.extent(2)); ++i) {
+        for (int j = 0; j < static_cast<int>(contravarient_k.extent(3)); ++j) {
+          for (int alpha = 0; alpha < static_cast<int>(contravarient_k.extent(2)); ++alpha) {
+            covarient_k(cell,ip,i,j) += jac_k(cell,ip,i,alpha) * jac_k(cell,ip,j,alpha);
           }
         }
       }
-
-    }
+    });
+    PHX::Device::execution_space().fence();
   }
 
   auto s_covarient = Kokkos::subview(covarient.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -986,16 +979,20 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
   Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(s_contravarient, s_covarient);
 
   // norm of g_ij
-  for (int cell = 0; cell < num_cells; ++cell) {
-    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
-      norm_contravarient(cell,ip) = 0.0;
-      for (size_type i = 0; i < contravarient.extent(2); ++i) {
-        for (size_type j = 0; j < contravarient.extent(3); ++j) {
-          norm_contravarient(cell,ip) += contravarient(cell,ip,i,j) * contravarient(cell,ip,i,j);
+  {
+    auto contravarient_k = contravarient.get_view();
+    auto norm_contravarient_k = norm_contravarient.get_view();
+    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<2>> policy({0,0},{num_cells,static_cast<int>(contravarient.extent(1))});
+    Kokkos::parallel_for("evaluate norm_contravarient",policy,KOKKOS_LAMBDA (const int cell,const int ip) {
+      norm_contravarient_k(cell,ip) = 0.0;
+      for (int i = 0; i < static_cast<int>(contravarient_k.extent(2)); ++i) {
+        for (int j = 0; j < static_cast<int>(contravarient_k.extent(3)); ++j) {
+          norm_contravarient_k(cell,ip) += contravarient_k(cell,ip,i,j) * contravarient_k(cell,ip,i,j);
         }
       }
-      norm_contravarient(cell,ip) = std::sqrt(norm_contravarient(cell,ip));
-    }
+      norm_contravarient_k(cell,ip) = std::sqrt(norm_contravarient_k(cell,ip));
+    });
+    PHX::Device::execution_space().fence();
   }
 }
 
@@ -1172,17 +1169,16 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
   {
     size_type num_nodes = in_node_coordinates.extent(1);
     size_type num_dims = in_node_coordinates.extent(2);
+    auto node_coordinates_k = node_coordinates.get_view();
+    auto dyn_node_coordinates_k = dyn_node_coordinates.get_view();
+    auto in_node_coordinates_k = in_node_coordinates.get_view();
 
-    for (size_type cell = 0; cell < num_cells;  ++cell) {
-      for (size_type node = 0; node < num_nodes; ++node) {
-        for (size_type dim = 0; dim < num_dims; ++dim) {
-          node_coordinates(cell,node,dim) =
-              in_node_coordinates(cell,node,dim);
-          dyn_node_coordinates(cell,node,dim) =
-              Sacado::ScalarValue<Scalar>::eval(in_node_coordinates(cell,node,dim));
-        }
-      }
-    }
+    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
+    Kokkos::parallel_for("getCubatureCV: node coordinates",policy,KOKKOS_LAMBDA (const int cell,const int node,const int dim) {
+      node_coordinates_k(cell,node,dim) = in_node_coordinates_k(cell,node,dim);
+      dyn_node_coordinates_k(cell,node,dim) = Sacado::ScalarValue<Scalar>::eval(in_node_coordinates_k(cell,node,dim));
+    });
+    PHX::Device::execution_space().fence();
   }
 
   auto s_dyn_phys_cub_points = Kokkos::subdynrankview(dyn_phys_cub_points.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
@@ -1199,19 +1195,27 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
   // size_type num_cells = dyn_phys_cub_points.extent(0);
   size_type num_ip =dyn_phys_cub_points.extent(1);
   size_type num_dims = dyn_phys_cub_points.extent(2);
+  auto weighted_measure_k = weighted_measure.get_view();
+  auto dyn_phys_cub_weights_k = dyn_phys_cub_weights.get_view();
+  auto ip_coordinates_k = ip_coordinates.get_view();
+  auto dyn_phys_cub_points_k = dyn_phys_cub_points.get_view();
+  auto weighted_normals_k = weighted_normals.get_view();
+  auto dyn_phys_cub_norms_k = dyn_phys_cub_norms.get_view();
+  bool is_side = false;
+  if (int_rule->cv_type == "side")
+    is_side = true;
 
-  for (size_type cell = 0; cell < num_cells;  ++cell) {
-    for (size_type ip = 0; ip < num_ip;  ++ip) {
-      if (int_rule->cv_type != "side")
-        weighted_measure(cell,ip) = dyn_phys_cub_weights(cell,ip);
-      for (size_type dim = 0; dim < num_dims; ++dim) {
-        ip_coordinates(cell,ip,dim) = dyn_phys_cub_points(cell,ip,dim);
-        if (int_rule->cv_type == "side")
-          weighted_normals(cell,ip,dim) = dyn_phys_cub_norms(cell,ip,dim);
-      }
+  Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<2>> policy({0,0},{num_cells,num_ip});
+  Kokkos::parallel_for("getCubatureCV: weighted measure",policy,KOKKOS_LAMBDA (const int cell,const int ip) {
+    if (!is_side)
+      weighted_measure_k(cell,ip) = dyn_phys_cub_weights_k(cell,ip);
+    for (size_type dim = 0; dim < num_dims; ++dim) {
+      ip_coordinates_k(cell,ip,dim) = dyn_phys_cub_points_k(cell,ip,dim);
+      if (is_side)
+        weighted_normals_k(cell,ip,dim) = dyn_phys_cub_norms_k(cell,ip,dim);
     }
-  }
-
+  });
+  PHX::Device::execution_space().fence();
 }
 
 template <typename Scalar>

@@ -93,27 +93,30 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
-      node_coordinates(cell,0,x) = 0.0;
-      node_coordinates(cell,0,y) = 0.0;
-      node_coordinates(cell,1,x) = 1.0;
-      node_coordinates(cell,1,y) = 0.0;
-      node_coordinates(cell,2,x) = 1.0;
-      node_coordinates(cell,2,y) = 1.0;
-      node_coordinates(cell,3,x) = 0.0;
-      node_coordinates(cell,3,y) = 1.0;
-    }
+    auto node_coordinates_k = node_coordinates.get_view();
+    Kokkos::parallel_for("initialize node coords",node_coordinates.extent(0),
+                         KOKKOS_LAMBDA (const int cell) {
+      node_coordinates_k(cell,0,x) = 0.0;
+      node_coordinates_k(cell,0,y) = 0.0;
+      node_coordinates_k(cell,1,x) = 1.0;
+      node_coordinates_k(cell,1,y) = 0.0;
+      node_coordinates_k(cell,2,x) = 1.0;
+      node_coordinates_k(cell,2,y) = 1.0;
+      node_coordinates_k(cell,3,x) = 0.0;
+      node_coordinates_k(cell,3,y) = 1.0;
+    });
 
     int_values.evaluateValues(node_coordinates);
     
     TEST_EQUALITY(int_values.ip_coordinates.extent(1), 4);
     double realspace_x_coord = (1.0/std::sqrt(3.0) + 1.0) / 2.0;
     double realspace_y_coord = (1.0/std::sqrt(3.0) + 1.0) / 2.0;
-    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,0), 
+    auto tmp_coords = int_values.ip_coordinates;
+    auto tmp_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),tmp_coords.get_view());
+    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,0), 
                            realspace_x_coord, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,1), 
                            realspace_y_coord, 1.0e-8);
-
   }
 
   TEUCHOS_UNIT_TEST(integration_values, control_volume)
@@ -158,16 +161,18 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
-      node_coordinates(cell,0,x) = 0.0;
-      node_coordinates(cell,0,y) = 0.0;
-      node_coordinates(cell,1,x) = 1.0;
-      node_coordinates(cell,1,y) = 0.0;
-      node_coordinates(cell,2,x) = 1.0;
-      node_coordinates(cell,2,y) = 1.0;
-      node_coordinates(cell,3,x) = 0.0;
-      node_coordinates(cell,3,y) = 1.0;
-    }
+    auto node_coordinates_k = node_coordinates.get_view();
+    Kokkos::parallel_for("initialize node coords",node_coordinates.extent(0),
+                         KOKKOS_LAMBDA (const int cell) {
+      node_coordinates_k(cell,0,x) = 0.0;
+      node_coordinates_k(cell,0,y) = 0.0;
+      node_coordinates_k(cell,1,x) = 1.0;
+      node_coordinates_k(cell,1,y) = 0.0;
+      node_coordinates_k(cell,2,x) = 1.0;
+      node_coordinates_k(cell,2,y) = 1.0;
+      node_coordinates_k(cell,3,x) = 0.0;
+      node_coordinates_k(cell,3,y) = 1.0;
+    });
 
     int_values_vol.evaluateValues(node_coordinates);
     int_values_side.evaluateValues(node_coordinates);
@@ -177,15 +182,19 @@ namespace panzer {
     TEST_EQUALITY(int_values_side.weighted_normals.extent(1), 4);
     double realspace_x_coord_1 = 0.25;
     double realspace_y_coord_1 = 0.25;
-    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,0), 
+    auto tmp_coords = int_values_vol.ip_coordinates;
+    auto tmp_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),tmp_coords.get_view());
+    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,0), 
                            realspace_x_coord_1, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,1), 
                            realspace_y_coord_1, 1.0e-8);
     double realspace_x_coord_2 = 0.5;
     double realspace_y_coord_2 = 0.25;
-    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,0), 
+    auto tmp_side_coords = int_values_side.ip_coordinates;
+    auto tmp_side_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),tmp_side_coords.get_view());
+    TEST_FLOATING_EQUALITY(tmp_side_coords_host(0,0,0), 
                            realspace_x_coord_2, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(tmp_side_coords_host(0,0,1), 
                            realspace_y_coord_2, 1.0e-8);
 
   }
@@ -225,25 +234,29 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
-      node_coordinates(cell,0,x) = 0.0;
-      node_coordinates(cell,0,y) = 0.0;
-      node_coordinates(cell,1,x) = 1.0;
-      node_coordinates(cell,1,y) = 0.0;
-      node_coordinates(cell,2,x) = 1.0;
-      node_coordinates(cell,2,y) = 1.0;
-      node_coordinates(cell,3,x) = 0.0;
-      node_coordinates(cell,3,y) = 1.0;
-    }
+    auto node_coordinates_k = node_coordinates.get_view();
+    Kokkos::parallel_for("initialize node coords",node_coordinates.extent(0),
+                         KOKKOS_LAMBDA (const int cell) {
+      node_coordinates_k(cell,0,x) = 0.0;
+      node_coordinates_k(cell,0,y) = 0.0;
+      node_coordinates_k(cell,1,x) = 1.0;
+      node_coordinates_k(cell,1,y) = 0.0;
+      node_coordinates_k(cell,2,x) = 1.0;
+      node_coordinates_k(cell,2,y) = 1.0;
+      node_coordinates_k(cell,3,x) = 0.0;
+      node_coordinates_k(cell,3,y) = 1.0;
+    });
 
     int_values_bc.evaluateValues(node_coordinates);
+
+    auto ip_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values_bc.ip_coordinates.get_view());
     
     TEST_EQUALITY(int_values_bc.ip_coordinates.extent(1), 2);
     double realspace_x_coord_1 = 1.0;
     double realspace_y_coord_1 = 0.25;
-    TEST_FLOATING_EQUALITY(int_values_bc.ip_coordinates(0,0,0), 
+    TEST_FLOATING_EQUALITY(ip_coords_host(0,0,0), 
                            realspace_x_coord_1, 1.0e-8);
-    TEST_FLOATING_EQUALITY(int_values_bc.ip_coordinates(0,0,1), 
+    TEST_FLOATING_EQUALITY(ip_coords_host(0,0,1), 
                            realspace_y_coord_1, 1.0e-8);
 
   }
@@ -282,27 +295,29 @@ namespace panzer {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
-    for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
-      node_coordinates(cell,0,x) = 0.0;
-      node_coordinates(cell,0,y) = 0.0;
-      node_coordinates(cell,1,x) = 1.0;
-      node_coordinates(cell,1,y) = 0.0;
-      node_coordinates(cell,2,x) = 1.5;
-      node_coordinates(cell,2,y) = 1.5;
-      node_coordinates(cell,3,x) = 0.0;
-      node_coordinates(cell,3,y) = 1.0;
-    }
+    auto node_coordinates_k = node_coordinates.get_view();
+    Kokkos::parallel_for("initialize node coords",node_coordinates.extent(0),
+                         KOKKOS_LAMBDA (const int cell) {
+      node_coordinates_k(cell,0,x) = 0.0;
+      node_coordinates_k(cell,0,y) = 0.0;
+      node_coordinates_k(cell,1,x) = 1.0;
+      node_coordinates_k(cell,1,y) = 0.0;
+      node_coordinates_k(cell,2,x) = 1.5;
+      node_coordinates_k(cell,2,y) = 1.5;
+      node_coordinates_k(cell,3,x) = 0.0;
+      node_coordinates_k(cell,3,y) = 1.0;
+    });
 
     int_values.evaluateValues(node_coordinates);
 
     // pull out arrays to look at
     
-    auto weighted_measure   = int_values.weighted_measure;
-    auto jac_det            = int_values.jac_det;
-    auto ref_ip_coordinates = int_values.ref_ip_coordinates;
-    auto ip_coordinates     = int_values.ip_coordinates;
-    auto jac                = int_values.jac;
-    auto jac_inv            = int_values.jac_inv;
+    auto weighted_measure   = Kokkos::create_mirror_view(int_values.weighted_measure.get_view());
+    auto jac_det            = Kokkos::create_mirror_view(int_values.jac_det.get_view());
+    auto ref_ip_coordinates = Kokkos::create_mirror_view(int_values.ref_ip_coordinates.get_view());
+    auto ip_coordinates     = Kokkos::create_mirror_view(int_values.ip_coordinates.get_view());
+    auto jac                = Kokkos::create_mirror_view(int_values.jac.get_view());
+    auto jac_inv            = Kokkos::create_mirror_view(int_values.jac_inv.get_view());
 
     int num_cells  = ip_coordinates.extent(0); 
     int num_points = ip_coordinates.extent(1); 
@@ -320,7 +335,13 @@ namespace panzer {
       int new_pt = 1;
 
       int_values.swapQuadraturePoints(tst_cell,org_pt,new_pt);
-   
+      Kokkos::deep_copy(weighted_measure,int_values.weighted_measure.get_view());
+      Kokkos::deep_copy(jac_det,int_values.jac_det.get_view());
+      Kokkos::deep_copy(ref_ip_coordinates,int_values.ref_ip_coordinates.get_view());
+      Kokkos::deep_copy(ip_coordinates,int_values.ip_coordinates.get_view());
+      Kokkos::deep_copy(jac,int_values.jac.get_view());
+      Kokkos::deep_copy(jac_inv,int_values.jac_inv.get_view());
+      
       TEST_EQUALITY(    weighted_measure(ref_cell,org_pt),     weighted_measure(tst_cell,new_pt));
       TEST_EQUALITY(             jac_det(ref_cell,org_pt),              jac_det(tst_cell,new_pt));
       TEST_EQUALITY(ref_ip_coordinates(ref_cell,org_pt,0), ref_ip_coordinates(tst_cell,new_pt,0));
@@ -343,6 +364,13 @@ namespace panzer {
       int new_pt = 3;
 
       int_values.swapQuadraturePoints(tst_cell,org_pt,new_pt);
+      Kokkos::deep_copy(weighted_measure,int_values.weighted_measure.get_view());
+      Kokkos::deep_copy(jac_det,int_values.jac_det.get_view());
+      Kokkos::deep_copy(ref_ip_coordinates,int_values.ref_ip_coordinates.get_view());
+      Kokkos::deep_copy(ip_coordinates,int_values.ip_coordinates.get_view());
+      Kokkos::deep_copy(jac,int_values.jac.get_view());
+      Kokkos::deep_copy(jac_inv,int_values.jac_inv.get_view());
+
    
       TEST_EQUALITY(    weighted_measure(ref_cell,org_pt),     weighted_measure(tst_cell,new_pt));
       TEST_EQUALITY(             jac_det(ref_cell,org_pt),              jac_det(tst_cell,new_pt));
