@@ -231,9 +231,9 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   Teuchos::RCP<Thyra::VectorBase<Scalar>> x = solutionHistory_->getCurrentState()->getX(); 
   Teuchos::RCP<DMVPV> X = Teuchos::rcp_dynamic_cast<DMVPV>(x);
   //IKT, 5/12/2020: getX() returns a vector containing the sensitivities for the 
-  //case of sensitivity calculations for sensitivity integrator. 
-  //Hence, we extract the first column, which is the solution.
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> solution = (sens_method_ == NONE) ? x : X->getNonconstMultiVector()->col(0);
+  //case of sensitivity calculations for the forward sensitivity integrator. 
+  //In this case, we extract the first column, which is the solution.
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> solution = (X == Teuchos::null) ? x : X->getNonconstMultiVector()->col(0);
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > solution_dxdp_mv = Teuchos::null; 
   if (sens_method_ == FORWARD) {
     const int num_param = X->getMultiVector()->domain()->dim()-1;
@@ -265,16 +265,16 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   Teuchos::RCP<const DMVPV> XDotDot = Teuchos::rcp_dynamic_cast<const DMVPV>(xdotdot);
   if (Teuchos::nonnull(xdot)) {
     //IKT, 5/11/2020: getXDot() returns a vector containing the sensitivities for 
-    //the case of sensitivity calculations for sentivity integrator 
-    //Hence, we extract the first column, which is the solution_dot.
+    //the case of sensitivity calculations for the forward sentivity integrator 
+    //In this case, we extract the first column, which is the solution_dot.
     Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dot 
-          = (sens_method_ == NONE) ? xdot : XDot->getMultiVector()->col(0);
+          = (XDot == Teuchos::null) ? xdot : XDot->getMultiVector()->col(0);
     if (supports_x_dotdot_) {
       //IKT, 5/11/2020: getXDotDot() returns a vector containing the sensitivities for 
-      //the case of sensitivity calculations. 
-      //Hence, we extract the first column, which is the solution_dotdot.
+      //the case of forward sensitivity calculations. 
+      //In this case, we extract the first column, which is the solution_dotdot.
       Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dotdot 
-          = (sens_method_ == NONE) ? xdot : XDotDot->getMultiVector()->col(0);
+          = (XDotDot == Teuchos::null) ? xdot : XDotDot->getMultiVector()->col(0);
       if (solution_dxdp_mv != Teuchos::null) {
         wrappedObserver_->observeSolution(*solution, *solution_dxdp_mv, *solution_dot, *solution_dotdot, time);
       }
