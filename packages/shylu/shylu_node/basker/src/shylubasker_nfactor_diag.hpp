@@ -93,8 +93,8 @@ namespace BaskerNS
 #if defined(BASKER_SPLIT_A) 
       if (info == BASKER_SUCCESS && basker->btf_top_nblks > 0) {
         Int tot_num_ranks = (Int)(thread.league_size()*thread.team_size());
-        Int chunk_size = basker->btf_top_nblks / tot_num_ranks;
-        Int chunk_start = kid * chunk_size;
+        chunk_size = basker->btf_top_nblks / tot_num_ranks;
+        chunk_start = kid * chunk_size;
         if (kid == tot_num_ranks-1) {
           chunk_size = basker->btf_top_nblks - chunk_start;
         }
@@ -167,7 +167,7 @@ namespace BaskerNS
 
 #if defined(BASKER_SPLIT_A) 
       if (info == BASKER_SUCCESS && basker->btf_top_nblks > 0) {
-        Int chunk_start = thread_start_top(kid);
+        chunk_start = thread_start_top(kid);
 
         if(chunk_start != BASKER_MAX_IDX) {
           Int tot_num_ranks = (Int)(thread.league_size()*thread.team_size());
@@ -245,7 +245,7 @@ namespace BaskerNS
    Int kid,
    Int c
   )
-  {  
+  {
     const Entry zero (0.0);
     const Entry one (1.0);
 
@@ -336,12 +336,14 @@ namespace BaskerNS
     }
 
     #ifdef BASKER_DEBUG_NFACTOR_DIAG
-    printf("CURRENT BLK: %ld \n", (long)c);
-    printf("btab: %ld %ld\n", (long)btab, (long)c-btab);
-    printf("brow2: %ld \n", (long)brow2);
-    printf("col_start: %ld \n", (long)btf_tabs(c));
-    printf("BLK size %ld \n",
-        (long)btf_tabs(c+1)-(long)btf_tabs(c));
+    if (Options.verbose == BASKER_TRUE) {
+      printf("CURRENT BLK: %ld \n", (long)c);
+      printf("btab: %ld %ld\n", (long)btab, (long)c-btab);
+      printf("brow2: %ld \n", (long)brow2);
+      printf("col_start: %ld \n", (long)btf_tabs(c));
+      printf("BLK size %ld \n",
+          (long)btf_tabs(c+1)-(long)btf_tabs(c));
+    }
     #endif
     #ifdef BASKER_TIMER
     double initi_time = 0.0;
@@ -393,20 +395,23 @@ namespace BaskerNS
     lnnz = 0;
 
     #ifdef BASKER_DEBUG_NFACTOR_DIAG
-    printf( " c: %d bcol=%d, brow2=%d, wsize=%d\n", (int)c, (int)bcol, (int)brow2, (int)ws_size );
-    if (c >= btab) {
-      printf( " BTF_C -> UBTF(%d) & LBTF(%d) \n",c-btab,c-btab );
-    } else {
-      printf( " BTF_D -> U_D(%d) & L_D(%d)\n",c,c );
-    }
-    std::cout << " K" << c << " = [" << std::endl;
-    for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) {
-      for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i) {
-        if (M.row_idx(i) >= brow2) 
-          printf( " %d %d %d %e, %d %d %d\n", i, M.row_idx(i)-brow2, k-btf_tabs(c), M.val(i), M.row_idx(i),k,i);
+    if (Options.verbose == BASKER_TRUE) {
+      printf( " c: %d bcol=%d, brow2=%d, wsize=%d\n", (int)c, (int)bcol, (int)brow2, (int)ws_size );
+      if (c >= btab) {
+        printf( " BTF_C -> UBTF(%d) & LBTF(%d) \n",(int)(c-btab),(int)(c-btab) );
+      } else {
+        printf( " BTF_D -> U_D(%d) & L_D(%d)\n",(int)c, (int)c );
       }
+      std::cout << " K" << c << " = [" << std::endl;
+      for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) {
+        for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i) {
+          if (M.row_idx(i) >= brow2) 
+            printf( " %d %d %d %e, %d %d %d\n", (int)i, (int)(M.row_idx(i)-brow2), (int)(k-btf_tabs(c)),
+                    std::real(M.val(i)), (int)(M.row_idx(i)), (int)(k), (int)(i));
+        }
+      }
+      std::cout << "];" << std::endl << std::endl << std::flush;
     }
-    std::cout << "];" << std::endl << std::endl << std::flush;
     #endif
 
     // initialize perm vector
@@ -423,21 +428,21 @@ namespace BaskerNS
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
     {
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
-      {
+      if (Options.verbose == BASKER_TRUE) {
         printf("\n------------ K=%d (%d) -------------\n", (int)(k-btf_tabs(c)), (int)k);
         BASKER_ASSERT(top == ws_size, "nfactor dig, top");
         for( i = 0; i < ws_size; ++i)
         {
-          if(X(i) != 0)
+          if(X(i) != zero)
           {
-            printf("x(i) error: %d  %e k: %d \n", (int)i , X(i), (int)k);
+            printf("x(i) error: %d  %e k: %d \n", (int)i , std::real(X(i)), (int)k);
           }
-          if(ws[i] != 0)
+          if(ws(i) != 0)
           {
             printf("ws(i) error: %d K: %d \n", (int)i, (int)k);
           }
-          BASKER_ASSERT(X[i] == 0, "X!=0");
-          BASKER_ASSERT(ws[i] == 0, "ws!=0");
+          BASKER_ASSERT(X(i)  == zero, "X!=0");
+          BASKER_ASSERT(ws(i) == 0, "ws!=0");
         }
       }
       #endif
@@ -451,21 +456,30 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       timer_nfactor.reset();
       #endif
+      #ifdef BASKER_DEBUG_NFACTOR_DIAG
+      if (Options.verbose == BASKER_TRUE) {
+        printf(" ptr[%d] = %d:%d", (int)(k-bcol), (int)M.col_ptr(k-bcol), (int)M.col_ptr(k-bcol+1));
+      }
+      #endif
       for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i)
       {
         j = M.row_idx(i);
         j = j - brow2;
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
-        printf("\n Input(%d): %d(%d-%d) %d(%d-%d) %e", (int)i, (int)j, (int)M.row_idx(i), (int)brow2, (int)(k-bcol), (int)k, (int)bcol, M.val(i));
+        if (Options.verbose == BASKER_TRUE) {
+          printf("\n Input(i=%d): %d(%d-%d) %d(%d-%d) %e", (int)i, (int)j, (int)M.row_idx(i), (int)brow2, (int)(k-bcol), (int)k, (int)bcol, std::real(M.val(i)));
+          if (j < 0) {
+            printf( "\n" );
+          } else {
+            printf(" (color[%d]=%d, gperm[%d+%d]=%d)\n", (int)j, (int)color[j], (int)j, (int)L.srow, (int)gperm(j+L.srow));
+          }
+        }
         #endif
         if(j < 0)
         {
           // j is in off-diagonal
           continue;
         }
-        #ifdef BASKER_DEBUG_NFACTOR_DIAG
-        printf(" (color[%d]=%d, gperm[%d+%d]=%d)\n", (int)j, (int)color[j], (int)j, (int)L.srow, (int)gperm(j+L.srow));
-        #endif
 
         if (M.val(i) != zero) 
         {
@@ -489,7 +503,7 @@ namespace BaskerNS
       #endif
 
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
-      {
+      if (Options.verbose == BASKER_TRUE) {
         printf("xnnz: %d ws_size: %d top: %d \n", 
                (int)xnnz, (int)ws_size, (int)top);
       }
@@ -539,15 +553,15 @@ namespace BaskerNS
         absv = abs(value);
 
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
-        {
+        if (Options.verbose == BASKER_TRUE) {
           #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
           printf("\nconsider X(%d)=%e -> %e, c=%d, i=%d, k=%d->%d: j=%d t=%d: perm=%d, permi=%d: val=%e,max=%e (off=%d, %d, %d)\n",
                  (int)j,X(j),absv, (int)c, (int)i, (int)k,(int)(k-L.scol), (int)j, (int)t,
                  (int)gperm_array(j+L.srow),(int)gpermi_array(j+L.srow), value,maxv, (int)L.srow,(int)L.scol,(int)btf_tabs(c));
           #else
           printf("\nconsider X(%d)=%e -> %e, c=%d, i=%d, k=%d->%d: j=%d t=%d: val=%e,max=%e (off=%d, %d, %d)\n",
-                 (int)j,X(j),absv, (int)c, (int)i, (int)k,(int)(k-L.scol), (int)j, (int)t,
-                 value,maxv, (int)L.srow,(int)L.scol,(int)btf_tabs(c));
+                 (int)j,std::real(X(j)),absv, (int)c, (int)i, (int)k,(int)(k-L.scol), (int)j, (int)t,
+                 std::real(value),maxv, (int)L.srow,(int)L.scol,(int)btf_tabs(c));
           #endif
         }
         #endif
@@ -561,7 +575,9 @@ namespace BaskerNS
             pivot    = value;
             maxindex = j;
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
-            printf( " pivot=%e (k=%d, j=%d -> %d)\n",pivot,k,j,j+L.srow);
+            if (Options.verbose == BASKER_TRUE) {
+              printf( " pivot=%e (k=%d, j=%d -> %d)\n", std::real(pivot), (int)k, (int)j, (int)(j+L.srow));
+            }
             #endif
           }
           #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
@@ -573,19 +589,21 @@ namespace BaskerNS
             digv = absv;
             digindex = j;
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
-             #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-             printf( " digv=%e (k=%d, permii(%d) = %d, brow=%d,bcol=%d)\n",absv,k,j+L.srow,gpermi_array(j+L.srow),M.scol,M.srow);
-             #else
-             printf( " digv=%e (k=%d, brow=%d,bcol=%d)\n",absv,k,M.scol,M.srow);
-             #endif
+            if (Options.verbose == BASKER_TRUE) {
+              #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
+              printf( " digv=%e (k=%d, permii(%d) = %d, brow=%d,bcol=%d)\n",absv,k,j+L.srow,gpermi_array(j+L.srow),M.scol,M.srow);
+              #else
+              printf( " digv=%e (k=%d, brow=%d,bcol=%d)\n", absv, (int)(k), (int)(M.scol), (int)(M.srow));
+              #endif
+            }
             #endif
           }
         }
       } //for (i = top; i < ws_size)
       //printf("b: %d lcnt: %d after \n", b, lcnt);
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
-      {
-        printf(" >> pivot=%g, maxindex=%d, k=%d \n", pivot, (int)maxindex, (int)k);
+      if (Options.verbose == BASKER_TRUE) {
+        printf(" >> pivot=%g, maxindex=%d, k=%d \n", std::real(pivot), (int)maxindex, (int)k);
       }
       #endif
       //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e (nopivot=%d)\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol,Options.no_pivot);
@@ -608,7 +626,7 @@ namespace BaskerNS
       }
 
       #ifdef BASKER_DEBUG_NFACTOR_DEBUG
-      {
+      if (Options.verbose == BASKER_TRUE) {
         printf("pivot: %g maxindex: %d K:%d \n", pivot, maxindex, k);
       }
       #endif
@@ -667,15 +685,17 @@ namespace BaskerNS
       }
       #endif
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
-      printf( " > gperm(%d+%d = %d) = %d\n",maxindex,L.scol,maxindex+L.scol, k );
-      //for(Int ii = btf_tabs(c); ii < btf_tabs(c+1); ++ii) {
-      //  printf( "gperm_array(%d) = %d, gpermi_array(%d) = %d\n",ii,gperm_array(ii), ii,gpermi_array(ii));
-      //}
-      if((maxindex+L.scol) != k)
-      {
-        cout << " >> Permuting Pivot: " << k
-             << " as row " 
-             << maxindex+L.scol << endl;
+      if (Options.verbose == BASKER_TRUE) {
+        printf( " > gperm(%d+%d = %d) = %d\n", (int)maxindex, (int)L.scol, (int)(maxindex+L.scol), (int)k );
+        //for(Int ii = btf_tabs(c); ii < btf_tabs(c+1); ++ii) {
+        //  printf( "gperm_array(%d) = %d, gpermi_array(%d) = %d\n",ii,gperm_array(ii), ii,gpermi_array(ii));
+        //}
+        if((maxindex+L.scol) != k)
+        {
+          cout << " >> Permuting Pivot: " << k
+               << " as row " 
+               << maxindex+L.scol << endl;
+        }
       }
       #endif
 
@@ -746,8 +766,10 @@ namespace BaskerNS
         t = gperm(j+L.srow);
 
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
-        printf("j = %d, t = %d, k = %d, x = %g\n",
-                (int)j, (int)t, (int)k, X(j));
+        if (Options.verbose == BASKER_TRUE) {
+          printf("j = %d, t = %d, k = %d, x = %g\n",
+                  (int)j, (int)t, (int)k, std::real(X(j)));
+        }
         #endif            
 
         if(t != BASKER_MAX_IDX)
@@ -764,7 +786,9 @@ namespace BaskerNS
               #endif
 
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
-              printf("%d: U(%d,%d) = %f \n", unnz, U.row_idx(unnz), k-L.srow, U.val(unnz));
+              if (Options.verbose == BASKER_TRUE) {
+                printf("%d: U(%d,%d) = %f \n", (int)unnz, (int)U.row_idx(unnz), (int)(k-L.srow), std::real(U.val(unnz)));
+              }
               #endif
               ++unnz;
             }
@@ -790,7 +814,9 @@ namespace BaskerNS
             #endif
 
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
-            printf("%d: L(%d,%d) = %f \n", lnnz, L.row_idx(lnnz), k-L.srow, L.val(lnnz));
+            if (Options.verbose == BASKER_TRUE) {
+              printf("%d: L(%d,%d) = %f \n", (int)lnnz, (int)L.row_idx(lnnz), (int)(k-L.srow), std::real(L.val(lnnz)));
+            }
             #endif
             ++lnnz;
           }
@@ -802,7 +828,9 @@ namespace BaskerNS
         //Note: move x[j] inside of if() not 0..
         //..extra ops this way
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
-        printf("Zeroing element: %d \n", (int)j);
+        if (Options.verbose == BASKER_TRUE) {
+          printf("Zeroing element: %d \n", (int)j);
+        }
         #endif
 
         #ifdef BASKER_2DL
@@ -1209,18 +1237,18 @@ namespace BaskerNS
       #endif
       if(t != BASKER_MAX_IDX && xj != zero)
       { // j is original nonzero in upper-triangullar part of A
-        Int k = t - L.scol;
-        for(Int p = L.col_ptr(k)+1; p < L.col_ptr(k+1); ++p)
+        Int k_i = t - L.scol;
+        for(Int p = L.col_ptr(k_i)+1; p < L.col_ptr(k_i+1); ++p)
         {
           #ifdef BASKER_DEBUG_NFACTOR_DIAG
           #ifdef BASKER_2DL
           printf("Updating row: %d  with value: %f %f \n",
                  (int)L.row_idx[p],
-                 X[L.row_idx[p]], L.val[p]*xj);
+                 std::real(X[L.row_idx[p]]), std::real(L.val[p]*xj));
           #else
           printf("Updating row: %d with value: %f %f \n",
               L.row_idx(p),
-              X[L.row_idx(p)], L.val[p]*xj);
+              std::real(X[L.row_idx(p)]), std::real(L.val[p]*xj));
           #endif
           #endif
 

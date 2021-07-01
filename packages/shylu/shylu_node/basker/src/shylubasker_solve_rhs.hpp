@@ -177,18 +177,18 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::solve_interface
   (
-   Int nrhs,
+   Int _nrhs,
    Entry *_x, // Solution
    Entry *_y  // rhs
   )
   {
-    for(Int r = 0; r < nrhs; r++)
+    for(Int r = 0; r < _nrhs; r++)
     {
       solve_interface(&(_x[r*gm]), &(_y[r*gm]));
     }
 
     return 0;
-  }//end solve_interface(nrhs,x,y);
+  }//end solve_interface(_nrhs,x,y);
 
 
   // _x will be solution (properly permuted)

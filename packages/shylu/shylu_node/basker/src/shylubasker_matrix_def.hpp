@@ -11,6 +11,7 @@
 #else
 #include <omp.h>
 #endif
+#include "Teuchos_ScalarTraits.hpp"
 
 
 #include <iostream>
@@ -63,7 +64,7 @@ namespace BaskerNS
   BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
   (
    Int _m, Int _n, Int _nnz,
-   Int *col_ptr, Int *row_idx, Entry *val
+   Int *colptr, Int *rowind, Entry *nzval
   )
   {
     tpivot = 0;
@@ -75,15 +76,15 @@ namespace BaskerNS
     #endif
 
     v_fill = BASKER_FALSE;
-    init_matrix("matrix", _m,_n,_nnz, col_ptr, row_idx, val);
+    init_matrix("matrix", _m,_n,_nnz, colptr, rowind, nzval);
   }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
   (
-   string label, Int _m, Int _n, Int _nnz,
-   Int *col_ptr, Int *row_idx, Entry *val
+   string _label, Int _m, Int _n, Int _nnz,
+   Int *colptr, Int *rowind, Entry *nzval
   )
   {
     tpivot = 0;
@@ -95,7 +96,7 @@ namespace BaskerNS
     #endif
 
     v_fill = BASKER_FALSE;
-    init_matrix(label, _m,_n,_nnz, col_ptr, row_idx, val);
+    init_matrix(_label, _m,_n,_nnz, colptr, rowind, nzval);
   }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
 
   template <class Int, class Entry, class Exe_Space>
@@ -617,7 +618,7 @@ namespace BaskerNS
                     << " idx: " << i
                     << std::endl << std::endl;
           char error_msg[100];
-          sprintf(error_msg, " ERROR: j is less than srow (j=%d, srow=%d, kid=%d)",j,srow,kid);
+          sprintf(error_msg, " ERROR: j is less than srow (j=%d, srow=%d, kid=%d)",(int)j,(int)srow,(int)kid);
           BASKER_ASSERT(0 == 1, error_msg);
         }
         /*if (kid == 1) 

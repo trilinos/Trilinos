@@ -126,9 +126,7 @@ namespace BaskerNS
       //printf("============SFACTOR INC SEP=======\n");
       for(Int lvl = 0; lvl < tree.nlvls; lvl++)
       {
-        Int p = pow(tree.nparts, tree.nlvls-lvl-1);
-
-        for(Int pp=0; pp < p; pp++)
+        for(Int pp=0; pp < pow(tree.nparts, tree.nlvls-lvl-1); pp++)
         {
           Int ppp = pp*pow(tree.nparts, lvl+1);
           Int U_col = S(lvl+1)(ppp);

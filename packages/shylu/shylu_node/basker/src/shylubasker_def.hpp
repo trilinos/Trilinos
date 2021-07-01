@@ -2163,9 +2163,9 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int Options)
+  int Basker<Int,Entry,Exe_Space>::Factor_Inc(Int _Options)
   {
-    factor_inc_lvl(Options);
+    factor_inc_lvl(_Options);
 
     return 0;
   }
@@ -2221,7 +2221,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::Solve(Int nrhs, Entry *b, Entry *x)
+  int Basker<Int,Entry,Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x)
   {
     #ifdef BASKER_TIMER 
     Kokkos::Timer timer;
@@ -2241,7 +2241,7 @@ namespace BaskerNS
       return BASKER_ERROR;
     }
 
-    solve_interface(nrhs,x,b);
+    solve_interface(_nrhs,x,b);
 
     if(Options.verbose == BASKER_TRUE)
     {
@@ -2268,13 +2268,13 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Solve(Int nrhs, Entry *b, Entry *x, Int option)
+  int Basker<Int, Entry, Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x, Int option)
   {    
     int err = 0;
     printf("Basker: This solve call not implemented\n");
     if(solve_flag == false) //never solved before
     {
-      //err = malloc_init_solve(nrhs, x, b);
+      //err = malloc_init_solve(_nrhs, x, b);
     }
     if(solve_flag == true) //fix data
     {

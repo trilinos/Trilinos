@@ -28,6 +28,7 @@ using namespace std;
 #else
 #include <omp.h>
 #endif
+#include "Teuchos_OrdinalTraits.hpp"
 
 //#define BASKER_TIMER 
 //#define BASKER_DEBUG_SFACTOR
@@ -515,7 +516,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //printf( " >>> -> nnz = %d\n",ALM(U_col)(U_row).nnz );
 
         //S_assign_nnz(LL[U_col][U_row], stree, 0);
-        //printf( " >>>  S_assign_nnz( LL(%d,%d) )\n",U_col,U_row );
+        if(Options.verbose == BASKER_TRUE)
+        {
+          printf( "   >>  S_assign_nnz( LL(%d,%d) )\n",(int)U_col,(int)U_row );
+        }
         #ifdef SHYLU_BASKER_STREE_LIST
         S_assign_nnz(LL(U_col)(U_row), stree_p, 0);
         #else
@@ -523,6 +527,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         #endif
         //S_assign_nnz(LU[U_col][LU_size[U_col]-1], stree,0);
         //printf( " >>>  S_assign_nnz( LU(%d,%d) )\n",U_col,LU_size(U_col)-1 );
+        if(Options.verbose == BASKER_TRUE)
+        {
+          printf( "   ++ S_assign_nnz(LU(%d, %d))\n",(int)U_col,(int)LU_size(U_col)-1);
+        }
         #ifdef SHYLU_BASKER_STREE_LIST
         S_assign_nnz(LU(U_col)(LU_size(U_col)-1), stree_p, 0);
         #else
@@ -2082,6 +2090,10 @@ printf( " col_count:: view \n" );
     //Int nnz_S = (nnz_c*nnz_r);
     //Assumming dense
     Int nnz_S = ((MV.nrow*MV.ncol)+MV.nrow)/2;
+    if (nnz_S < 0) {
+      // overflow?
+      nnz_S = Teuchos::OrdinalTraits<Int>::max()/2;
+    }
 
     #ifdef BASKER_DEBUG_SFACTOR
     printf("Snnz: %d \n", nnz_S);
@@ -2169,6 +2181,10 @@ printf( " col_count:: view \n" );
     //Int nnz_S = (nnz_c*nnz_r);
     //Assumming dense
     Int nnz_S = ((MV.nrow*MV.ncol)+MV.nrow)/2;
+    if (nnz_S < 0) {
+      // overflow?
+      nnz_S = Teuchos::OrdinalTraits<Int>::max()/2;
+    }
 
     #ifdef BASKER_DEBUG_SFACTOR
     printf("Snnz: %d \n", nnz_S);
@@ -2357,10 +2373,11 @@ printf( " col_count:: view \n" );
         // let's just hope it is enough, if overflow
         global_nnz += M.nnz;
       }
+      if(Options.verbose == BASKER_TRUE)
+      {
+        printf("S_assign elbow global_nnz = %ld, M.nnz = %ld + 2\n", (long)global_nnz, (long)M.nnz);
+      }
       M.nnz += 2;
-      #ifdef BASKER_DEBUG_SFACTOR
-      printf("S_assign elbow global_nnz = %ld, M.nnz = %ld  \n", (long)global_nnz, (long)M.nnz);
-      #endif
     }
   }//end assign_sep_nnze
 
@@ -2398,7 +2415,7 @@ printf( " col_count:: view \n" );
         if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
             nnz = lblk_size*lblk_size;
         }
-        //printf( " LBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
+        //printf( " LBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
         L_D(i).init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
@@ -2445,7 +2462,7 @@ printf( " col_count:: view \n" );
         if ((double)nnz > ((double)lblk_size)*((double)lblk_size)) {
           nnz = lblk_size*lblk_size;
         }
-        //printf( " LBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
+        //printf( " LBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
         LBTF(i-btf_tabs_offset).init_matrix("LBFT",
           btf_tabs(i),
           lblk_size,
@@ -2454,10 +2471,10 @@ printf( " col_count:: view \n" );
           nnz);
 
         //For pruning
-        //printf( " LBTF(%d).init_pend()\n",i-btf_tabs_offset );
+        //printf( " LBTF(%d).init_pend()\n",(int)(i-btf_tabs_offset) );
         LBTF(i-btf_tabs_offset).init_pend();
 
-        //printf( " UBTF(%d, nnz = %d)\n",i-btf_tabs_offset, nnz );
+        //printf( " UBTF(%d, nnz = %d)\n",(int)(i-btf_tabs_offset), (int)nnz );
         UBTF(i-btf_tabs_offset).init_matrix("UBFT",
           btf_tabs(i),
           lblk_size,

@@ -18,7 +18,7 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    Int           nblks,
-   INT_1DARRAY   btf_tabs
+   INT_1DARRAY  _btf_tabs
   )
   {
     //Find total work estimate
@@ -77,7 +77,7 @@ namespace BaskerNS
   {
     Int nblks = 0;
 
-    strong_component(M,nblks,order_btf_array,btf_tabs);
+    strong_component(M, nblks, order_btf_array, btf_tabs);
 
     btf_flag = BASKER_TRUE;
 
@@ -391,7 +391,7 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    Int           nblks,
-   INT_1DARRAY   btf_tabs
+   INT_1DARRAY  _btf_tabs
   )
   {
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -429,7 +429,7 @@ namespace BaskerNS
     while(move_fwd==BASKER_TRUE)
     {
 
-      Int blk_size = btf_tabs(blk_idx) - btf_tabs(blk_idx-1);
+      Int blk_size = _btf_tabs(blk_idx) - _btf_tabs(blk_idx-1);
 
     #ifdef BASKER_DEBUG_ORDER_BTF
       printf("move_fwd loop \n");
@@ -455,9 +455,9 @@ namespace BaskerNS
             (double) BASKER_BTF_MAX_PERCENT);
     #endif
 
-        t_size = t_size+blk_size;
+        t_size  = t_size+blk_size;
         blk_idx = blk_idx-1;
-        scol   = btf_tabs[blk_idx];
+        scol    = _btf_tabs[blk_idx];
       }
       else
       {
@@ -470,7 +470,7 @@ namespace BaskerNS
         {
           blk_idx = 0;
           t_size = t_size + blk_size;
-          scol = btf_tabs[blk_idx];
+          scol   = _btf_tabs[blk_idx];
         }
 
         //#endif
@@ -670,7 +670,7 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    Int           nblks,
-   INT_1DARRAY   btf_tabs
+   INT_1DARRAY  _btf_tabs
   )
   {
   #ifdef BASKER_DEBUG_ORDER_BTF
@@ -757,7 +757,7 @@ namespace BaskerNS
     {
       Int blk_work = btf_blk_work(blk_idx-1);
       // subtract the bounding column ids to determine size of the (square) block
-      Int blk_size = btf_tabs(blk_idx) - btf_tabs(blk_idx-1);
+      Int blk_size = _btf_tabs(blk_idx) - _btf_tabs(blk_idx-1);
 
       #ifdef BASKER_DEBUG_ORDER_BTF
       printf(" \n move_fwd loop \n");
@@ -783,7 +783,7 @@ namespace BaskerNS
 
         t_size  = t_size+blk_size;
         blk_idx = blk_idx-1;
-        scol    = btf_tabs[blk_idx];
+        scol    = _btf_tabs[blk_idx];
       }
       //break due to size i.e. entered non-trivial large BTF_A block
       else if( blk_work >= break_size )
@@ -802,7 +802,7 @@ namespace BaskerNS
         //printf("break last blk\n");
         blk_idx = 0;
         t_size = t_size + blk_size;
-        scol = btf_tabs[blk_idx];	
+        scol = _btf_tabs[blk_idx];	
         move_fwd = BASKER_FALSE;
       }
       //should not be called
@@ -841,7 +841,7 @@ namespace BaskerNS
       btf_top_tabs_offset = btf_tabs_offset-1;  // starting block ID of A block (for now, there is just one big block in A)
       btf_top_nblks = btf_top_tabs_offset;      // number of blocks in D
 
-      scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+      scol_top = _btf_tabs[btf_top_tabs_offset]; // the first column index of A
       #endif
       Int dnnz = M.col_ptr(scol_top);
       Int ennz = 0;
@@ -969,8 +969,8 @@ namespace BaskerNS
     if(Options.verbose == BASKER_TRUE) {
       printf( "\n > btf_tabs_offset = %d, btf_top_tabs_offset = %d\n", (int)btf_tabs_offset, (int)btf_top_tabs_offset );
       for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
-      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
-      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
+      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]) );
+      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]) );
       printf( "\n" );
     }
 

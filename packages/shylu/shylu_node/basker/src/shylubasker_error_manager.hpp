@@ -99,8 +99,8 @@ namespace BaskerNS
           resize_U = thread_array(ti).error_info;
         }
 
-        //Resize L
-        if(resize_L > BASKER_MAX_IDX)
+        //Resize L, if resize_L != -1 (meaning realloc-L is requested)
+        if(resize_L != BASKER_MAX_IDX)
         {
           if(Options.verbose == BASKER_TRUE)
           {
@@ -125,8 +125,8 @@ namespace BaskerNS
           L.nnz = resize_L;
         }
 
-        //Resize U
-        if(resize_U > BASKER_MAX_IDX)
+        //Resize U, if resize_U != -1 (meaning realloc-U is requested)
+        if(resize_U != BASKER_MAX_IDX)
         {
           if(Options.verbose == BASKER_TRUE)
           {
@@ -293,8 +293,8 @@ namespace BaskerNS
           }
         }
 
-        //Resize L
-        if(resize_L > BASKER_MAX_IDX)
+        //Resize L, if resize_L != -1 (meaning realloc-L is requested)
+        if(resize_L != BASKER_MAX_IDX)
         {
           const Int tsb = (-1*thread_array(ti).error_subblk)-1;
           BASKER_MATRIX &L =
@@ -310,8 +310,8 @@ namespace BaskerNS
           L.clear_pend();
         }
 
-        //Resize U
-        if(resize_U > BASKER_MAX_IDX)
+        //Resize U, if resize_U != -1 (meaning realloc-U is requested)
+        if(resize_U != BASKER_MAX_IDX)
         {
           const Int tsb = thread_array(ti).error_subblk;
           BASKER_MATRIX &U = 
@@ -503,7 +503,7 @@ namespace BaskerNS
         }
 
         //Resize L
-        BASKER_MATRIX &L = (c >= btab ? LBTF(c) : L_D(c));
+        BASKER_MATRIX &L = (c >= btab ? LBTF(c-btab) : L_D(c));
         L.clear_pend();
         REALLOC_INT_1DARRAY(L.row_idx,
             L.nnz,
@@ -524,7 +524,7 @@ namespace BaskerNS
         }
 
         //Resize U
-        BASKER_MATRIX &U = (c >= btab ? UBTF(c) : U_D(c));
+        BASKER_MATRIX &U = (c >= btab ? UBTF(c-btab) : U_D(c));
         REALLOC_INT_1DARRAY(U.row_idx,
             U.nnz,
             thread_array(ti).error_info);

@@ -1700,11 +1700,11 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   BASKER_INLINE
   void Basker<Int, Entry, Exe_Space>::permute_composition_for_solve( Int ncols )
   {
-    Int gn = ncols;
+    Int gn_ = ncols;
     // This macro is to test a minor improvement to this routine
     #define REDUCE_PERM_COMP_ARRAY 1
 
-    for(Int i = 0; i < gn; i++) // Move this to a different init function
+    for(Int i = 0; i < gn_; i++) // Move this to a different init function
     {
       perm_inv_comp_array(i) = i; 
       #ifndef REDUCE_PERM_COMP_ARRAY
@@ -1722,23 +1722,23 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     // Note: The order had to be reversed as well as the type of permutation call
     //
     // p6 inv
-    //      permute(perm_inv_comp_array, gperm, gn);
+    //      permute(perm_inv_comp_array, gperm, gn_);
 
     // NDE: This is moved out and initialized once - reused in 4 possible permutations
     using range_type = Kokkos::pair<int, int>;
-    Int offset_amd = gn;
-    Int offset_nd  = gn+gn;
+    Int offset_amd = gn_;
+    Int offset_nd  = gn_+gn_;
     auto iwork_amd = Kokkos::subview(perm_comp_iworkspace_array,
-                                     range_type(offset_amd, offset_amd+gn));
+                                     range_type(offset_amd, offset_amd+gn_));
     auto iwork_nd  = Kokkos::subview(perm_comp_iworkspace_array,
-                                     range_type(offset_nd, offset_nd+gn));
+                                     range_type(offset_nd, offset_nd+gn_));
 
-    MALLOC_INT_1DARRAY(numeric_row_iperm_array, gn);
-    MALLOC_INT_1DARRAY(numeric_col_iperm_array, gn);
+    MALLOC_INT_1DARRAY(numeric_row_iperm_array, gn_);
+    MALLOC_INT_1DARRAY(numeric_col_iperm_array, gn_);
 
-    MALLOC_INT_1DARRAY(symbolic_row_iperm_array, gn);
-    MALLOC_INT_1DARRAY(symbolic_col_iperm_array, gn);
-    for(Int i = 0; i < gn; ++i)
+    MALLOC_INT_1DARRAY(symbolic_row_iperm_array, gn_);
+    MALLOC_INT_1DARRAY(symbolic_col_iperm_array, gn_);
+    for(Int i = 0; i < gn_; ++i)
     {
       symbolic_col_iperm_array(i) = i;
       symbolic_row_iperm_array(i) = i;
@@ -1747,7 +1747,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     // p5 inv
     if(amd_flag == BASKER_TRUE)
     {
-      //printVec("amd.txt",order_csym_array, gn);
+      //printVec("amd.txt",order_csym_array, gn_);
       Int scol_top = btf_tabs[btf_top_tabs_offset];
       for(Int i = 0; i < scol_top; ++i) {
         iwork_amd(i) = i;
@@ -1755,19 +1755,19 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       for(Int i = 0; i < BTF_A.ncol; ++i) {
         iwork_amd(scol_top + i) = scol_top + order_csym_array(i);
       }
-      for(Int i = scol_top+BTF_A.ncol; i < gn; ++i) {
+      for(Int i = scol_top+BTF_A.ncol; i < gn_; ++i) {
         iwork_amd(i) = i;
       }
-      //for(Int i = 0; i < gn; ++i) {
+      //for(Int i = 0; i < gn_; ++i) {
       //  printf( " + perm[%d] = %d\n",i,iwork_amd(i));
       //}
       //if(Options.static_delayed_pivot == 0)
       {
         if(Options.verbose == BASKER_TRUE) {
-          printf(" > CSYM AMD order in A(scol=%d, ncol=%d) and gn=%d\n", (int)BTF_A.scol, (int)BTF_A.ncol, (int)gn);
+          printf(" > CSYM AMD order in A(scol=%d, ncol=%d) and gn=%d\n", (int)BTF_A.scol, (int)BTF_A.ncol, (int)gn_);
         }
-        permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn, 0, offset_amd);
-        //for(Int i = 0; i < gn; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+        permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn_, 0, offset_amd);
+        //for(Int i = 0; i < gn_; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
         //printf("\n");
       }
     }
@@ -1775,17 +1775,17 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     if(nd_flag == BASKER_TRUE)
     {
       Int scol_top = btf_tabs[btf_top_tabs_offset];
-      //printVec("nd.txt", part_tree.permtab, gn);
+      //printVec("nd.txt", part_tree.permtab, gn_);
       for(Int i = 0; i < scol_top; ++i) {
         iwork_nd(i) = i;
       }
       for(Int i = 0; i < BTF_A.ncol; ++i) {
         iwork_nd(scol_top + i) = scol_top + part_tree.permtab(i);
       }
-      for(Int i = scol_top+BTF_A.ncol; i < gn; ++i) {
+      for(Int i = scol_top+BTF_A.ncol; i < gn_; ++i) {
         iwork_nd(i) = i;
       }
-      //for(Int i = 0; i < gn; ++i) {
+      //for(Int i = 0; i < gn_; ++i) {
       //  printf( " + perm[%d] = %d\n",i,iwork_nd(i));
       //}
       //if(Options.static_delayed_pivot == 0)
@@ -1793,8 +1793,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         if(Options.verbose == BASKER_TRUE) {
           printf(" > ND order in \n");
         }
-        permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn, 0, offset_nd);
-        //for(Int i = 0; i < gn; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+        permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn_, 0, offset_nd);
+        //for(Int i = 0; i < gn_; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
         //printf("\n");
       }
     }
@@ -1805,22 +1805,22 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //p3
       if(Options.verbose == BASKER_TRUE) {
         printf(" > blk_amd order in\n");
-        //for(Int i = 0; i < gn; ++i) {
+        //for(Int i = 0; i < gn_; ++i) {
         //  printf( " perm[%d] = %d\n",i,order_blk_amd_array(i));
         //}
       }
-      permute_with_workspace(perm_inv_comp_array, order_blk_amd_array, gn);
-      //for(Int i = 0; i < gn; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+      permute_with_workspace(perm_inv_comp_array, order_blk_amd_array, gn_);
+      //for(Int i = 0; i < gn_; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
       //printf("\n");
 
       if(Options.verbose == BASKER_TRUE) {
         printf(" > blk_mwm order in\n");
-        //for(Int i = 0; i < gn; ++i) {
+        //for(Int i = 0; i < gn_; ++i) {
         //  printf( " perm[%d] = %d\n",i,order_blk_mwm_array(i));
         //}
       }
-      permute_with_workspace(perm_inv_comp_array, order_blk_mwm_array, gn);
-      //for(Int i = 0; i < gn; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+      permute_with_workspace(perm_inv_comp_array, order_blk_mwm_array, gn_);
+      //for(Int i = 0; i < gn_; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
       //printf("\n");
 
       #if 0 // should go to numeric?
@@ -1828,41 +1828,41 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       {
         if(amd_flag == BASKER_TRUE) {
           if(Options.verbose == BASKER_TRUE) {
-            printf(" >> CSYM AMD order in A(scol=%d, ncol=%d) and gn=%d, with delayed\n",BTF_A.scol,BTF_A.ncol,gn);
+            printf(" >> CSYM AMD order in A(scol=%d, ncol=%d) and gn=%d, with delayed\n",BTF_A.scol,BTF_A.ncol,gn_);
           }
-          for(Int i = 0; i < gn; ++i) {
+          for(Int i = 0; i < gn_; ++i) {
             printf( " + perm[%d + %d] = %d\n",offset_amd,i,perm_comp_iworkspace_array(offset_amd + i));
           }
-          permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn, offset_amd);
+          permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn_, offset_amd);
         }
         // p4 inv
         if(nd_flag == BASKER_TRUE) {
           if(Options.verbose == BASKER_TRUE) {
             printf(" >> ND order in, with delayed\n");
           }
-          for(Int i = 0; i < gn; ++i) {
+          for(Int i = 0; i < gn_; ++i) {
             printf( " + perm[%d + %d] = %d\n",offset_nd,i,perm_comp_iworkspace_array(offset_nd + i));
           }
-          permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn, offset_nd);
+          permute_with_workspace(perm_inv_comp_array, perm_comp_iworkspace_array, gn_, offset_nd);
         }
       }
       #endif
       //for (int i=0; i<(int)perm_inv_comp_array.extent(0); i++) printf( "%d %d\n",i,perm_inv_comp_array(i) );
-      //printVec("btf.txt", order_btf_array, gn);
+      //printVec("btf.txt", order_btf_array, gn_);
       //p2
       if(Options.verbose == BASKER_TRUE) {
         printf(" > btf order in\n");
-        //for(Int i = 0; i < gn; ++i) {
+        //for(Int i = 0; i < gn_; ++i) {
         //  printf( " perm[%d] = %d\n",i,order_btf_array(i));
         //}
       }
-      permute_with_workspace(perm_inv_comp_array, order_btf_array, gn);
-      //for(Int i = 0; i < gn; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+      permute_with_workspace(perm_inv_comp_array, order_btf_array, gn_);
+      //for(Int i = 0; i < gn_; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
       //printf("\n");
 
       // compose perm for symbolic phase
-      permute_with_workspace(symbolic_row_iperm_array, order_btf_array, gn);
-      permute_with_workspace(symbolic_col_iperm_array, order_btf_array, gn);
+      permute_with_workspace(symbolic_row_iperm_array, order_btf_array, gn_);
+      permute_with_workspace(symbolic_col_iperm_array, order_btf_array, gn_);
     }
 
     // p1 inv
@@ -1870,33 +1870,33 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     {
       if(Options.verbose == BASKER_TRUE) {
         printf(" > match order in\n");
-        //for(Int i = 0; i < gn; ++i) {
+        //for(Int i = 0; i < gn_; ++i) {
         //  printf( " perm[%d] = %d\n",i,order_match_array(i));
         //}
       }
-      permute_with_workspace(perm_inv_comp_array, order_match_array, gn);
-      //for(Int i = 0; i < gn; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
+      permute_with_workspace(perm_inv_comp_array, order_match_array, gn_);
+      //for(Int i = 0; i < gn_; i++) printf( " %d, %d\n",i,perm_inv_comp_array(i) );
       //printf("\n");
 
       // compose perm for symbolic phase
-      permute_with_workspace(symbolic_row_iperm_array, order_match_array, gn);
+      permute_with_workspace(symbolic_row_iperm_array, order_match_array, gn_);
     }
-    MALLOC_INT_1DARRAY(symbolic_row_perm_array, gn);
-    MALLOC_INT_1DARRAY(symbolic_col_perm_array, gn);
-    for(Int i = 0; i < gn; ++i)
+    MALLOC_INT_1DARRAY(symbolic_row_perm_array, gn_);
+    MALLOC_INT_1DARRAY(symbolic_col_perm_array, gn_);
+    for(Int i = 0; i < gn_; ++i)
     {
       symbolic_col_perm_array(i) = i;
       symbolic_row_perm_array(i) = i;
     }
-    permute_inv(symbolic_row_perm_array, symbolic_row_iperm_array, gn);
-    permute_inv(symbolic_col_perm_array, symbolic_col_iperm_array, gn);
+    permute_inv(symbolic_row_perm_array, symbolic_row_iperm_array, gn_);
+    permute_inv(symbolic_col_perm_array, symbolic_col_iperm_array, gn_);
 
     // ===============================================================================
     // perm_comp_array calculation
     // Note: don't need to inverse a row only perm
     // q1
     #if REDUCE_PERM_COMP_ARRAY
-    for(Int i = 0; i < gn; i++) // NDE: Move this to a different init function
+    for(Int i = 0; i < gn_; i++) // NDE: Move this to a different init function
     {
       perm_comp_array(i) = perm_inv_comp_array(i);
       //if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
@@ -1905,83 +1905,83 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     {
       if(Options.verbose == BASKER_TRUE)
       {printf(" x match order out\n");}
-      //printVec("match.txt", order_match_array, gn);
-      permute_inv_with_workspace(perm_comp_array, order_match_array, gn);
-      //for(Int i = 0; i < gn; i++) if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
+      //printVec("match.txt", order_match_array, gn_);
+      permute_inv_with_workspace(perm_comp_array, order_match_array, gn_);
+      //for(Int i = 0; i < gn_; i++) if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
     }
     if(btf_flag == BASKER_TRUE)
     {
       // invert btf first
-      permute_inv_with_workspace(perm_comp_array, order_btf_array, gn);
+      permute_inv_with_workspace(perm_comp_array, order_btf_array, gn_);
       #if 0 // should go to numeric?
       if (Options.static_delayed_pivot != 0) {
         if (nd_flag) {
           if(Options.verbose == BASKER_TRUE)
           { printf(" xx ND order out, delayed\n");}
-          permute_inv_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn, offset_nd);
+          permute_inv_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn_, offset_nd);
         }
         if (nd_flag) {
           if(Options.verbose == BASKER_TRUE)
           { printf(" xx CSYM AMD order out, delayed\n");}
-          permute_inv_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn, offset_amd);
+          permute_inv_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn_, offset_amd);
         }
       }
       #endif
       // now invert mwm
       if(Options.verbose == BASKER_TRUE)
       { printf(" x blk_mwm order out\n");}
-      permute_inv_with_workspace(perm_comp_array, order_blk_mwm_array, gn);
+      permute_inv_with_workspace(perm_comp_array, order_blk_mwm_array, gn_);
 
       // finally reapply btf
       #if 0 // should go to numeric?
       if (Options.static_delayed_pivot != 0) {
         if (nd_flag) {
-          permute_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn, offset_amd);
+          permute_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn_, offset_amd);
         }
         if (nd_flag) {
-          permute_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn, offset_nd);
+          permute_with_workspace(perm_comp_array, perm_comp_iworkspace_array, gn_, offset_nd);
         }
       }
       #endif
-      permute_with_workspace(perm_comp_array, order_btf_array, gn);
-      //for(Int i = 0; i < gn; i++) if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
+      permute_with_workspace(perm_comp_array, order_btf_array, gn_);
+      //for(Int i = 0; i < gn_; i++) if (i != perm_comp_array(i)) printf( " perm_comp_array(%d) = %d\n",i,perm_comp_array(i) );
     }
     #else
     if(amd_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE)
       {printf("CSYM AMD order out \n");}
-      //printVec(order_csym_array, gn);
+      //printVec(order_csym_array, gn_);
       for(Int i = 0; i < BTF_A.ncol; ++i)
       {
         perm_comp_iworkspace_array(i) = order_csym_array(i);
       }
-      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array, gn);
+      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array, gn_);
     }
     // q2
     if(nd_flag == BASKER_TRUE)
     {
       if(Options.verbose == BASKER_TRUE)
       {printf("ND order out \n");}
-      //printVec(part_tree.permtab, gn);
+      //printVec(part_tree.permtab, gn_);
       for(Int i = 0; i < BTF_A.ncol; ++i)
       {
         perm_comp_iworkspace_array(i) = part_tree.permtab(i);
       }
-      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array, gn);
+      permute_with_workspace(perm_comp_array,perm_comp_iworkspace_array, gn_);
     }
     // q3, q4
     if(btf_flag == BASKER_TRUE)
     {
-      //printVec(order_btf_array, gn);
+      //printVec(order_btf_array, gn_);
       // q3
       if(Options.verbose == BASKER_TRUE)
       {printf("blk_amd order out\n");}
-      permute_with_workspace(perm_comp_array,order_blk_amd_array, gn);
+      permute_with_workspace(perm_comp_array,order_blk_amd_array, gn_);
       // q4
       if(Options.verbose == BASKER_TRUE)
       {printf("btf order out\n");}
-      permute_with_workspace(perm_comp_array,order_btf_array, gn);
+      permute_with_workspace(perm_comp_array,order_btf_array, gn_);
     }
     #endif
     #undef REDUCE_PERM_COMP_ARRAY

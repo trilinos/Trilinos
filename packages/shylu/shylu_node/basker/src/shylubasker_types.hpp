@@ -267,13 +267,29 @@ enum BASKER_INCOMPLETE_CODE
     }                                    \
   }
 //RESIZE (with copy)
-#define RESIZE_1DARRAY(a,os,s)           Kokkos::resize(a,s)
-#define RESIZE_2DARRAY(a,os1,os2,s1,s2)   Kokkos::resize(a,s1,s2)
+#define RESIZE_1DARRAY(a,os,s)           \
+  { \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT RESIZE 1D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::resize(a,s);                 \
+  }
+#define RESIZE_2DARRAY(a,os1,os2,s1,s2)  \
+  { \
+    BASKER_ASSERT(s1 >= 0 && s2 >= 0, "BASKER ASSERT RESIZE 2D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::resize(a,s1,s2);             \
+  }
 #define RESIZE_INT_1DARRAY(a,os,s)       RESIZE_1DARRAY(a,os,s)
 #define RESIZE_ENTRY_1DARRAY(a,os,s)     RESIZE_1DARRAY(a,os,s)
 //REALLOC (no copy)
-#define REALLOC_1DARRAY(a,os,s)          Kokkos::realloc(a,s)
-#define REALLOC_2DRRAAY(a,os1,os2,s1,s2) Kokkos::realloc(a,s1,s2)
+#define REALLOC_1DARRAY(a,os,s)          \
+  { \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT REALLOC 1D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::realloc(a,s);                 \
+  }
+#define REALLOC_2DRRAAY(a,os1,os2,s1,s2) \
+  { \
+    BASKER_ASSERT(s1 >= 0 && s2 >= 0, "BASKER ASSERT REALLOC 2D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::realloc(a,s1,s2);            \
+  }
 #define REALLOC_INT_1DARRAY(a,os,s)      REALLOC_1DARRAY(a,os,s)
 #define REALLOC_ENTRY_1DARRAY(a,os,s)    REALLOC_1DARRAY(a,os,s)
 //Set values

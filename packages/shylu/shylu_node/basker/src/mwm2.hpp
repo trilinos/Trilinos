@@ -1572,9 +1572,9 @@ L160:
    Int &num
   )
   {
-    Int i,j,jj,k;
+    Int i, k;
     Int isp, jsp;
-    Int jord, jdum;
+    Int jord;
 
     Entry dnew;
 
@@ -1607,7 +1607,7 @@ L160:
 
       //if(jperm[jord]==-1)
       {
-        j     = jord;
+        Int j = jord;
         pr[j] = -1; // the root for j
 
 
@@ -1688,9 +1688,8 @@ L160:
           }//if-
 
           //updates augment tree
-          jj  = iperm[i];
-          out[jj] = k;
-          pr[jj]  = j;
+          out[iperm[i]] = k;
+          pr [iperm[i]] = j;
 
         }//for-kk all heap objects
 
@@ -1700,7 +1699,7 @@ L160:
             up, low);
         #endif
 
-        for(jdum = 0; jdum < num; jdum++)
+        for(Int jdum = 0; jdum < num; jdum++)
         { 
           //If top Q is empty, need to fill
           if(low == up)
@@ -1764,9 +1763,9 @@ L160:
               continue;
             }
             //update cost
-            Entry dnew = vj+ val[k]-U[i];
+            Entry dnew_k = vj+ val[k]-U[i];
             //if newcost is more continue
-            if(dnew >= csp)
+            if(dnew_k >= csp)
             {
               continue;
             }
@@ -1774,7 +1773,7 @@ L160:
             //if row is not already matched
             if(iperm[i] == -1)
             {
-              csp = dnew;
+              csp = dnew_k;
               isp = k;
               jsp = j;
             }
@@ -1783,7 +1782,7 @@ L160:
               //check if dnew is smaller
               Entry di = d[i];
               //if not smaller continue
-              if(di <= dnew)
+              if(di <= dnew_k)
               {
                 continue;
               }
@@ -1793,10 +1792,10 @@ L160:
               {
                 continue;
               }
-              d[i] = dnew;
+              d[i] = dnew_k;
               //if new value is less than min, 
               //needs to be moved to upper heap
-              if(dnew <= dmin)
+              if(dnew_k <= dmin)
               {
                 Int lpos = L[i];
                 //check that it really is in the heap
@@ -1820,9 +1819,8 @@ L160:
                 }
                 mwm_heap_down(i,n,Q,d,L);
               }
-              Int jj  = iperm[i];
-              out[jj] = k;
-              pr[jj]  = j;
+              out[iperm[i]] = k;
+              pr [iperm[i]]  = j;
             }//if(row is or isnot already matched)
           }//for--upated all connecting nodes
         }
@@ -1848,10 +1846,10 @@ L160:
             break;
           }
 
-          Int k     = out[j];
-          i         = row_idx[k];
+          Int k_j   = out[j];
+          i         = row_idx[k_j];
           iperm[i]  = jj;
-          jperm[jj] = k;
+          jperm[jj] = k_j;
           j         = jj;
         }//end for--jdum pathtrace
 
@@ -1883,7 +1881,7 @@ L160:
     }//for--outer most loop over column matches
 
     //set dual column variable in d(1:n)
-    for( j = 0; j < n; j++)
+    for(Int j = 0; j < n; j++)
     {
       k = jperm[j];
       if(k != -1)
@@ -1904,7 +1902,7 @@ L160:
     if(num != n)
     {
       //clear j for workspace
-      for( j = 0; j < n; j++)
+      for(Int j = 0; j < n; j++)
       {
         jperm[j] = -1;
       }//for- j, clear j for work space
@@ -1919,13 +1917,13 @@ L160:
         }
         else
         {
-          j = iperm[i];
+          Int j = iperm[i];
           jperm[j] = i;
         }
       }//for=i, find row not matched
 
       k = 0;
-      for( j=0; j <n ; j++)
+      for(Int j=0; j <n ; j++)
       {
         if(jperm[j] != -1)
         {

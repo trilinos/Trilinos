@@ -496,6 +496,9 @@ namespace BaskerNS
           return BASKER_ERROR;
         }
       }
+      /*else if (abs(pivot) < BTF_A.gnorm*sqrt(eps)) {
+        cout << " tiny but not zero : " << abs(pivot) << " vs " << BTF_A.gnorm << " * " << sqrt(eps) << " = " << BTF_A.gnorm*sqrt(eps) << endl;
+      }*/
       // store pivot
       gperm(maxindex+brow_g) = k+brow_g;
       gpermi(k+brow_g) = maxindex + brow_g;

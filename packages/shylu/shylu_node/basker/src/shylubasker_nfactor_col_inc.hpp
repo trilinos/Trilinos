@@ -189,7 +189,7 @@ namespace BaskerNS
 		//if((lvl != 2) || 
 		//  ((kid == 0) && (k < 4)))
 		  {
-		Int upper_error =
+		upper_error =
 		t_upper_col_factor_inc_lvl(kid, team_leader, 
 				   lvl, l, 
 				   k,

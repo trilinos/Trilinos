@@ -366,7 +366,6 @@ namespace BaskerNS
         */
 
         LU(b)(LU_size(b)-1).nnz = LU(b)(LU_size(b)-1).mnnz;
-
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
           Int U_col = S(l)(kid);
@@ -439,7 +438,7 @@ namespace BaskerNS
           #ifdef BASKER_TIMER
           timer_init_matrixL.reset();
           #endif
-          //printf( " lvl=%d: LL(%d,%d): nnz=%d, mnnz=%d\n",lvl,b,row,LL(b)(row).nnz,LL(b)(row).mnnz);
+          //printf( " lvl=%d: LL(%d,%d): nnz=%d, mnnz=%d\n",(int)lvl, (int)b, (int)row, (int)LL(b)(row).nnz, (int)LL(b)(row).mnnz);
           LL(b)(row).init_matrix("Loffdig",
               LL(b)(row).srow,
               LL(b)(row).nrow,
@@ -493,7 +492,7 @@ namespace BaskerNS
             LU[b][LU_size[b]-1].nnz);
         #endif
 
-        //printf( " lvl=%d: LU(%d,%d): nnz=%d, mnnz=%d\n",lvl, b,LU_size(b)-1, LU(b)(LU_size(b)-1).nnz, LU(b)(LU_size(b)-1).mnnz);
+        //printf( " lvl=%d: LU(%d,%d): nnz=%d, mnnz=%d\n", (int)lvl, (int)b, (int)LU_size(b)-1, (int)LU(b)(LU_size(b)-1).nnz, (int)LU(b)(LU_size(b)-1).mnnz);
         LU(b)(LU_size(b)-1).init_matrix("Udiag",
             LU(b)(LU_size(b)-1).srow,
             LU(b)(LU_size(b)-1).nrow,
@@ -542,7 +541,7 @@ namespace BaskerNS
               LU[U_col][U_row].nnz);
           #endif
 
-          //printf( " > l=%d: LU(%d,%d): nnz=%d, mnnz=%d\n",l,U_col,U_row,LU(U_col)(U_row).nnz,LU(U_col)(U_row).mnnz);
+          //printf( " > l=%d: LU(%d,%d): nnz=%d, mnnz=%d\n", (int)l, (int)U_col, (int)U_row, (int)LU(U_col)(U_row).nnz, (int)LU(U_col)(U_row).mnnz);
           LU(U_col)(U_row).init_matrix("Uoffdiag",
               LU(U_col)(U_row).srow,
               LU(U_col)(U_row).nrow,
@@ -1290,7 +1289,7 @@ namespace BaskerNS
     {
       for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
       {
-        fprintf(fp, "%ld %ld %e \n", (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]); 
+        fprintf(fp, "%ld %ld %e \n", (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j])); 
       }//over nnz in each column
     }//over each column
 
@@ -1323,12 +1322,12 @@ namespace BaskerNS
         if(off == BASKER_FALSE)
         {
           fprintf(fp, "%ld %ld %e \n", 
-              (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]);
+              (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j]));
         }
         else
         {
           fprintf(fp, "%ld %ld %e \n", 
-              (long)M.row_idx[j]+1-brow, (long)k-bcol+1,M.val[j]);
+              (long)M.row_idx[j]+1-brow, (long)k-bcol+1, std::real(M.val[j]));
         }
       }//over nnz in each column
     }//over each column
@@ -1586,7 +1585,7 @@ namespace BaskerNS
       for(Int r = 0; r < LL_size(l); r++)
       {
         BASKER_MATRIX &myL = LL(l)(r);
-        total_nnz += myL.col_ptr(myL.ncol);  
+        total_nnz += myL.col_ptr(myL.ncol);
       }//end over each matrix row
     }//end over all nblks
 
@@ -1597,6 +1596,12 @@ namespace BaskerNS
     //Get nnz for BTF L
     if(Options.btf == BASKER_TRUE)
     {
+      for(Int i =0; i < btf_top_nblks; i++)
+      {
+        BASKER_MATRIX &myL = L_D(i);
+        total_nnz += myL.col_ptr(myL.ncol);
+      }
+
       Int nblks = btf_nblks-btf_tabs_offset;
       for(Int i =0; i < nblks; i++)
       {
@@ -1634,9 +1639,14 @@ namespace BaskerNS
     printf("nnz in ND: %d \n", total_nnz);
     #endif
 
-    //Get nnz for BTF L
+    //Get nnz for BTF U
     if(Options.btf == BASKER_TRUE)
     {
+      for(Int i =0; i < btf_top_nblks; i++)
+      {
+        BASKER_MATRIX &myU = U_D(i);
+        total_nnz += myU.col_ptr(myU.ncol);
+      }
       Int nblks = btf_nblks-btf_tabs_offset;
       for(Int i =0; i < nblks; i++)
       {

@@ -29,7 +29,7 @@ namespace BaskerNS {
     template < typename U >
     BASKER_INLINE
     int Symbolic
-    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val, bool crs_transpose_needed = false)
+    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val, bool _crs_transpose_needed = false)
     {
       // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
       //Int* matching_type_col_ptr = new Int[ncol+1];
@@ -53,7 +53,7 @@ namespace BaskerNS {
          matching_type_col_ptr, 
          row_idx, 
          val,
-         crs_transpose_needed
+         _crs_transpose_needed
         );
 
       //delete [] matching_type_col_ptr;
@@ -64,7 +64,7 @@ namespace BaskerNS {
     template < typename U >
     BASKER_INLINE
     int Symbolic
-    (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val, bool crs_transpose_needed = false)
+    (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val, bool _crs_transpose_needed = false)
     {
       // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
 
@@ -77,7 +77,7 @@ namespace BaskerNS {
          col_ptr, 
          row_idx, 
          val,
-         crs_transpose_needed
+         _crs_transpose_needed
         );
 
       return return_value;

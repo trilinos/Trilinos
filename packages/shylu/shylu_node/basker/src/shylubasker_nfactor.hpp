@@ -243,7 +243,7 @@ namespace BaskerNS
               sep_restart++;
               if (Options.verbose == BASKER_TRUE)
               {
-                printf("\n restart facttorization\n");
+                printf("\n restart factorization\n\n");
               }
               Kokkos::parallel_for(TeamPolicy(lnteams,lthreads), sep_nfactor);
               //printf( "\n ***** done sep_nfactor *****\n\n" ); fflush(stdout);

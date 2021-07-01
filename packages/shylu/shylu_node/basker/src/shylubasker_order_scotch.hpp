@@ -180,7 +180,7 @@ namespace BaskerNS
         idx_t  metis_size = M.nrow - metis_offset;
         idx_t  metis_nnz = M.col_ptr(M.nrow);
 
-        using METIS_1DARRAY = Kokkos::View<idx_t*, BASKER_EXE_SPACE>;
+        using METIS_1DARRAY = Kokkos::View<idx_t*,  BASKER_EXE_SPACE>;
         METIS_1DARRAY metis_part   (KOKKOS_NOINIT("metis_part"),   metis_size);
         METIS_1DARRAY metis_rowptr (KOKKOS_NOINIT("metis_rowptr"), metis_size+1);
         METIS_1DARRAY metis_colidx (KOKKOS_NOINIT("metis_colidx"), metis_nnz);
@@ -188,6 +188,11 @@ namespace BaskerNS
         METIS_1DARRAY metis_part_k  (KOKKOS_NOINIT("metis_part_k"),  metis_size);
         METIS_1DARRAY metis_permtab (KOKKOS_NOINIT("metis_permtab"), metis_size);
         METIS_1DARRAY metis_peritab (KOKKOS_NOINIT("metis_peritab"), metis_size);
+
+        // to find vertex cover/separator
+        using METIS_2DARRAY = Kokkos::View<idx_t**, BASKER_EXE_SPACE>;
+        METIS_2DARRAY metis_vc (KOKKOS_NOINIT("metis_vc"), metis_nnz, 3);
+        METIS_1DARRAY metis_vc_score (KOKKOS_NOINIT("metis_vc_score"),  metis_nnz);
 
         int info = 0;
         idx_t sepsize = 0;
@@ -415,11 +420,107 @@ namespace BaskerNS
                   }
                 }  
               }
+              #if 0
               for(Int i = 0; i < metis_size_k; i++) {
                 if (metis_part_k(i) == -2) {
+                  // put it to edge separator
                   metis_part_k(i) = 2;
                 }
               }
+              #else
+              // look for vertex cover/separator
+              // > look for edges within edge separator
+              Int num_edges = 0;
+              for(Int i = 0; i < metis_size_k; i++) {
+                if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
+                  metis_vc_score(i) = 0;
+                }
+              }
+              for(Int i = 0; i < metis_size_k; i++) {
+                if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
+                  for (idx_t k = metis_rowptr(i); k < metis_rowptr(i+1); k++) {
+                    if (metis_part_k(metis_colidx(k)) == 2 || metis_part_k(metis_colidx(k)) == -2) {
+                      metis_vc(num_edges, 0) = i;
+                      metis_vc(num_edges, 1) = metis_colidx(k);
+                      metis_vc(num_edges, 2) = 0;
+                      num_edges ++;
+
+                      metis_vc_score(i) ++;
+                      metis_vc_score(metis_colidx(k)) ++;
+                    }
+                  }
+                }
+              }
+              //for (Int i = 0; i < num_edges; i++) std::cout << " edge(" << metis_vc(i, 0) << ", " << metis_vc(i, 1) << ")" << std::endl;
+              // > look for vertex cover/separator
+              Int num_edges_left = num_edges;
+              while (num_edges_left > 0) {
+                // look for un-processed edge
+                Int next_edge = 0;
+                #if 0
+                while (metis_vc(next_edge, 2) != 0) {
+                  next_edge ++;
+                }
+                #else
+                Int max_score = 0;
+                for (Int i = 0; i < num_edges; i++) {
+                  Int v1 = metis_vc(i, 0);
+                  Int v2 = metis_vc(i, 1);
+                  Int score = metis_vc_score(v1) + metis_vc_score(v2);
+                  if (metis_vc(i, 2) == 0 && score > max_score) { 
+                    next_edge = i;
+                  }
+                }
+                #endif
+                num_edges_left --;
+                Int v1 = metis_vc(next_edge, 0);
+                Int v2 = metis_vc(next_edge, 1);
+                metis_part_k(v1) = 3;
+                metis_part_k(v2) = 3;
+                metis_vc_score(v1) --;
+                metis_vc_score(v2) --;
+                //std::cout << " >> next edge = " << next_edge << ": edges left = " << num_edges_left << std::endl;
+                // > remove all the incidental edges
+                metis_vc(next_edge, 2) = 2;
+                for (Int i = 0; i < num_edges; i++) {
+                  bool edge_removed = false;
+                  if (metis_vc(i, 0) == v1 || metis_vc(i, 0) == v2) {
+                    if (metis_vc(i, 2) == 0) {
+                      num_edges_left --;
+                    }
+                    //std::cout << "   ++ incident edge = " << i << std::endl;
+                    metis_vc(i, 2) ++;
+                    edge_removed = true;
+                  }
+                  if (metis_vc(i, 1) == v1 || metis_vc(i, 1) == v2) {
+                    if (metis_vc(i, 2) == 0) {
+                      num_edges_left --;
+                    }
+                    //std::cout << "   -- incident edge = " << i << std::endl;
+                    metis_vc(i, 2) ++;
+                    edge_removed = true;
+                  }
+                  if (edge_removed) {
+                    metis_vc_score(metis_vc(i, 0)) --;
+                    metis_vc_score(metis_vc(i, 1)) --;
+                  }
+                }
+              }
+              for(Int i = 0; i < metis_size_k; i++) {
+                if (metis_part_k(i) == -2) {
+                  // put it back to dom-0
+                  metis_part_k(i) = 0;
+                }
+                if (metis_part_k(i) == 2) {
+                  // put it back to dom-1
+                  metis_part_k(i) = 1;
+                }
+                if (metis_part_k(i) == 3) {
+                  // put it to vertex separator
+                  metis_part_k(i) = 2;
+                }
+              }
+              #endif
             } else {
               // find vertex separator
               if (Options.verbose == BASKER_TRUE) {
@@ -867,8 +968,8 @@ namespace BaskerNS
    Int lvl,
    Int iblks,
    Int nblks,
-   INT_1DARRAY tabs,
-   INT_1DARRAY tree
+   INT_1DARRAY  tabs,
+   INT_1DARRAY _tree
   )
   {
     //Goal is to turn the incomplete tree 
@@ -928,7 +1029,7 @@ namespace BaskerNS
     
     for(Int t_blk = 1; t_blk < nblks; t_blk++)
     {
-      if(tree(t_blk-1) == tree(t_blk))
+      if(_tree(t_blk-1) == _tree(t_blk))
       {
         ndomains++;
       } 
@@ -984,7 +1085,7 @@ namespace BaskerNS
     printf("IN Tree: ");
     for(Int i=0; i < iblks+1; i++)
     {
-      printf("%d, ", tree(i));
+      printf("%d, ", _tree(i));
     }
     printf("\n");
     printf("Out Tree: ");
@@ -1006,33 +1107,33 @@ namespace BaskerNS
 
     #ifdef BASKER_DEBUG_ORDER_SCOTCH
       printf("top of loop: %d \n",
-          tree(s_tree_p));
+          _tree(s_tree_p));
     #endif
 
       if(ws(m_tree_p) == 0)
       {
         //Not assigned yet
-        if((tree(s_tree_p) == otree(m_tree_p)))
+        if((_tree(s_tree_p) == otree(m_tree_p)))
         {
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("same case\n");
         #endif
           otabs(m_tab_p) = tabs(s_tab_p);
         }
-        else if(tree(s_tree_p) == -1)
+        else if(_tree(s_tree_p) == -1)
         {
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("-1 case \n");
         #endif
-          tree(s_tree_p) = otree(m_tree_p);
+          _tree(s_tree_p) = otree(m_tree_p);
           otabs(m_tab_p) = tabs(s_tab_p);
         }
-        else if(tree(s_tree_p) == 0)
+        else if(_tree(s_tree_p) == 0)
         {
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("end case\n");
         #endif
-          tree(s_tree_p) = otree(m_tree_p);
+          _tree(s_tree_p) = otree(m_tree_p);
           otabs(m_tab_p) = tabs(s_tab_p-1);
           s_tab_p--;
         }
@@ -1041,7 +1142,7 @@ namespace BaskerNS
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("no sep \n");
           printf("tree: %d %d otree: %d %d \n",
-              s_tree_p, tree(s_tree_p),
+              s_tree_p, _tree(s_tree_p),
               m_tree_p, otree(m_tree_p));
         #endif
           if(ws(otree(m_tree_p)) == 0)
@@ -1049,30 +1150,30 @@ namespace BaskerNS
             //need to offset to make space
             for(Int jj = iblks; jj > otree(m_tree_p); jj--)
             {
-              if((tree(jj-1) == 0) || (tree(jj-1) ==-1))
+              if((_tree(jj-1) == 0) || (_tree(jj-1) ==-1))
               {
-                tree(jj) = tree(jj-1);
+                _tree(jj) = _tree(jj-1);
                 #ifdef BASKER_DEBUG_ORDER_SCOTCH
                 printf("sliding1: %d %d %d \n",
-                    jj, jj-1, tree(jj-1));
+                    jj, jj-1, _tree(jj-1));
                 #endif
               }
               else
               {
-                tree(jj) = tree(jj-1)+1;
+                _tree(jj) = _tree(jj-1)+1;
                 #ifdef BASKER_DEBUG_ORDER_SCOTCH
                 printf("sliding2: %d %d %d \n",
-                    jj, jj-1, tree(jj-1));
+                    jj, jj-1, _tree(jj-1));
                 #endif
               }
             }//end for-over upper
 
-            tree(otree(m_tree_p)) = otree(otree(m_tree_p));
+            _tree(otree(m_tree_p)) = otree(otree(m_tree_p));
             ws(otree(m_tree_p)) = 1;
 
           }//ws == 0;
 
-          tree(s_tree_p) = otree(m_tree_p);
+          _tree(s_tree_p) = otree(m_tree_p);
           otabs(m_tab_p) = tabs(s_tab_p);
         }//eles
 
@@ -1089,7 +1190,7 @@ namespace BaskerNS
         #endif
         //Note assigned sep
         otabs(m_tab_p) = tabs(s_tab_p-1);
-        tree(s_tree_p) = otree(m_tree_p);
+        _tree(s_tree_p) = otree(m_tree_p);
         s_tree_p++;
         m_tab_p++;
       }//ws == 1
@@ -1110,7 +1211,7 @@ namespace BaskerNS
       printf("Tree: ");
       for(Int i=0; i < iblks+1; i++)
       {
-        printf("%d, ", tree(i));
+        printf("%d, ", _tree(i));
       }
       printf("\n");
       printf("Tabs: ");
@@ -1134,7 +1235,7 @@ namespace BaskerNS
     printf("Tree: ");
     for(Int i=0; i < iblks+1; i++)
     {
-      printf("%d, ", tree(i));
+      printf("%d, ", _tree(i));
     }
     printf("\n");
     printf("Tabs: ");
@@ -1160,7 +1261,7 @@ namespace BaskerNS
    Int lvl,
    Int &lpos, Int &rpos, 
    Int &mynum,
-   INT_1DARRAY tree
+   INT_1DARRAY _tree
   )
   {
     //printf("assign, lpos: %d rpos: %d  number: %d\n",
@@ -1179,8 +1280,8 @@ namespace BaskerNS
           lpos, rpos, lvl);
       #endif
 
-      tree(leftc)  = mynum;
-      tree(rightc) = mynum;
+      _tree(leftc)  = mynum;
+      _tree(rightc) = mynum;
 
       #ifdef BASKER_DEBUG_ORDER_SCOTCH
       printf("assign: %d %d \n", leftc, mynum);
@@ -1191,13 +1292,13 @@ namespace BaskerNS
       rec_build_tree(lvl-1, 
           leftc, rightc,
           mynum,
-          tree);
+          _tree);
 
       mynum = leftc;
       rec_build_tree(lvl-1,
           lpos, leftc, 
           mynum,
-          tree);
+          _tree);
 
     } // end if lvl > 0
 
