@@ -364,6 +364,8 @@ namespace Belos {
 
     // Internal state variables.
     bool isSet_;
+
+    Teuchos::RCP<CGIterationState<ScalarType,MV> > state_;
   };
 
 
@@ -832,13 +834,21 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
       // Reset the number of calls that the status test output knows about.
       outputTest_->resetNumCalls();
 
-      // Get the current residual for this block of linear systems.
-      Teuchos::RCP<MV> R_0 = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
-
       // Get a new state struct and initialize the solver.
-      CGIterationState<ScalarType,MV> newState;
-      newState.R = R_0;
-      block_cg_iter->initializeCG(newState);
+      if (state_.is_null())
+        state_ = Teuchos::rcp(new CGIterationState<ScalarType,MV>());
+
+      // Get the current residual for this block of linear systems.
+      if (state_->R.is_null() || MVT::GetNumberVecs( *state_->R ) != Teuchos::as<int>(currIdx.size()) ) {
+        state_->R = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
+      } else {
+        MVT::SetBlock( *Teuchos::rcp_const_cast<MV>(problem_->getInitResVec()), currIdx, *Teuchos::rcp_const_cast<MV>(state_->R) );
+      }
+
+      block_cg_iter->initializeCG(*state_);
+      *state_ = block_cg_iter->getState();
+
+      Teuchos::RCP<MV> R_0;
 
       while(1) {
 
