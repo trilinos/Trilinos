@@ -87,9 +87,10 @@ public:
    * </ul>
    */
   IntegratorPseudoTransientForwardSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >&sens_model,
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &fwd_integrator,
+    const Teuchos::RCP<IntegratorBasic<Scalar> > &sens_integrator,
     const bool reuse_solver, const bool force_W_update);
 
   /// Destructor
@@ -180,6 +181,15 @@ protected:
 };
 
 /// Nonmember constructor
+/**
+ * @brief Nonmember constructor
+ *
+ * @param pList ParameterList to construct the Tempus state integrator, the
+ *              sensitivity model evaluator, and the sensisitivity integrator
+ * @param model Physics model
+ *
+ * @return 
+ */
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
 integratorPseudoTransientForwardSensitivity(
@@ -187,6 +197,14 @@ integratorPseudoTransientForwardSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 /// Nonmember constructor
+/**
+ * @brief Default ctor
+ *
+ * Instantiates a default IntegratorBasic for both the state and the sensitivity
+ * integrator. 
+ *
+ * @return IntegratorPseudoTransientForwardSensitivity
+ */
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
 integratorPseudoTransientForwardSensitivity();
