@@ -40,6 +40,7 @@
 #ifndef TPETRA_DISTRIBUTOR_HPP
 #define TPETRA_DISTRIBUTOR_HPP
 
+#include "Tpetra_Details_DistributorActor.hpp"
 #include "Tpetra_Details_DistributorPlan.hpp"
 
 #include "Tpetra_Util.hpp"
@@ -57,56 +58,6 @@
 #include <type_traits>
 
 namespace Tpetra {
-
-  namespace Details {
-    class DistributorActor {
-
-    public:
-      DistributorActor();
-      DistributorActor(const DistributorActor& otherActor);
-
-      /// \brief Communication requests associated with nonblocking receives and sends.
-      ///
-      /// \note To implementers: Distributor uses requests_.size() as
-      ///   the number of outstanding nonblocking receives and sends.
-      ///   This means you should always resize to zero after completing
-      ///   receive and send requests.
-      Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_;
-      Teuchos::RCP<Teuchos::Time> timer_doWaits_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_recvs_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_recvs_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_barrier_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_barrier_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_slow_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_slow_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_fast_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_fast_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_recvs_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_recvs_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_barrier_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_barrier_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_slow_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_slow_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_fast_;
-      Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_fast_;
-
-      //! Make the instance's timers.  (Call only in constructor.)
-      void makeTimers();
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    };
-
-  } // namespace Details
 
   /// \brief Valid values for Distributor's "Send type" parameter.
   ///
