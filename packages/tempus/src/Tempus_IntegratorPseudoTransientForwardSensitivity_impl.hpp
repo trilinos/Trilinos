@@ -19,18 +19,17 @@
 
 namespace Tempus {
 
-template<class Scalar>
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-IntegratorPseudoTransientForwardSensitivity(
-  Teuchos::RCP<Teuchos::ParameterList>                inputPL,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const bool reuse_solver, const bool force_W_update) :
-  reuse_solver_(reuse_solver), force_W_update_(force_W_update)
+template <class Scalar>
+IntegratorPseudoTransientForwardSensitivity<Scalar>::IntegratorPseudoTransientForwardSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> inputPL,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
+    const Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar>> &sens_model,
+    const bool reuse_solver,
+    const bool force_W_update)
+    : model_(model), sens_model_(sens_model), reuse_solver_(reuse_solver), force_W_update_(force_W_update)
 {
-  model_ = model;
-  sens_model_ = createSensitivityModel(model_, inputPL);
   state_integrator_ = createIntegratorBasic<Scalar>(inputPL, model_);
-  sens_integrator_ = createIntegratorBasic<Scalar>(inputPL, sens_model_);
+  sens_integrator_  = createIntegratorBasic<Scalar>(inputPL, sens_model_);
 }
 
 template<class Scalar>
@@ -41,6 +40,10 @@ IntegratorPseudoTransientForwardSensitivity(
   reuse_solver_(false),
   force_W_update_(false)
 {
+
+  asm("int $3");
+  std::cout << "SIDAFA: got here!!" << std::endl;
+
   model_ = model;
   sens_model_ = createSensitivityModel(model, Teuchos::null);
   state_integrator_ = createIntegratorBasic<Scalar>(model_, stepperType);
@@ -525,6 +528,8 @@ integratorPseudoTransientForwardSensitivity(
 {
 
   auto fwd_integrator = createIntegratorBasic<Scalar>(pList, model);
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model;
+  //Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar>> sens_stepper;
 
   {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
@@ -541,8 +546,22 @@ integratorPseudoTransientForwardSensitivity(
   bool reuse_solver   = pList->sublist("Sensitivities").get("Reuse State Linear Solver", false);
   bool force_W_update = pList->sublist("Sensitivities").get("Force W Update", false);
 
+  {
+
+    using Teuchos::rcp;
+
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    if (pList!= Teuchos::null)
+    {
+      *pl = pList->sublist("Sensitivities");
+    }
+    pl->remove("Reuse State Linear Solver");
+    pl->remove("Force W Update");
+    sens_model = wrapStaggeredFSAModelEvaluator(model, pl);
+  }
+
   Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(pList, model, reuse_solver, force_W_update));
+    Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(pList, model, sens_model, reuse_solver, force_W_update));
 
   return(integrator);
 }
@@ -554,6 +573,10 @@ integratorPseudoTransientForwardSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   std::string stepperType)
 {
+
+  asm("int $3");
+  std::cout << "SIDAFA: got here!!" << std::endl;
+
   Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(model, stepperType));
   return(integrator);

@@ -89,6 +89,7 @@ public:
   IntegratorPseudoTransientForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >&sens_model,
     const bool reuse_solver, const bool force_W_update);
 
   /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
