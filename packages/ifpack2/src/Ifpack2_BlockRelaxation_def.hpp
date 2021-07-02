@@ -1017,6 +1017,8 @@ description () const
     out << "Block Gauss-Seidel";
   } else if (PrecType_ == Ifpack2::Details::SGS) {
     out << "Block Symmetric Gauss-Seidel";
+  } else if (PrecType_ == Ifpack2::Details::MTSPLITJACOBI) {
+    out << "MT Split Jacobi";
   } else {
     out << "INVALID";
   }
