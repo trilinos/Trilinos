@@ -163,12 +163,6 @@ public:
 
 protected:
 
-  // Create sensitivity model evaluator from application model
-  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >
-  createSensitivityModel(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
-
   void buildSolutionHistory();
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;

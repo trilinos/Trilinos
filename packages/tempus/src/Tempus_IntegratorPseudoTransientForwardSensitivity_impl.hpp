@@ -361,25 +361,6 @@ describe(
   sens_integrator_->describe(*l_out, verbLevel);
 }
 
-template <class Scalar>
-Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-createSensitivityModel(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Teuchos::ParameterList>& inputPL)
-{
-  using Teuchos::rcp;
-
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  if (inputPL != Teuchos::null) {
-    *pl = inputPL->sublist("Sensitivities");
-  }
-  reuse_solver_ = pl->get("Reuse State Linear Solver", false);
-  force_W_update_ = pl->get("Force W Update", true);
-  pl->remove("Reuse State Linear Solver");
-  pl->remove("Force W Update");
-  return wrapStaggeredFSAModelEvaluator(model, pl);
-}
 
 template<class Scalar>
 void
@@ -397,6 +378,8 @@ buildSolutionHistory()
   using Thyra::multiVectorProductVector;
   using Thyra::assign;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+
+  //TODO: get the solution history PL or create it
 
   // Create combined solution histories, first for the states with zero
   // sensitivities and then for the sensitivities with frozen states
@@ -533,9 +516,6 @@ integratorPseudoTransientForwardSensitivity(
   bool force_W_update = pList->sublist("Sensitivities").get("Force W Update", false);
 
   {
-
-    using Teuchos::rcp;
-
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     if (pList!= Teuchos::null)
     {
