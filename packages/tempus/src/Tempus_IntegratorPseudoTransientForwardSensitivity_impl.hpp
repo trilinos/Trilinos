@@ -23,8 +23,9 @@ template<class Scalar>
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 IntegratorPseudoTransientForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                inputPL,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model) :
-  reuse_solver_(false)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const bool reuse_solver, const bool force_W_update) :
+  reuse_solver_(reuse_solver), force_W_update_(force_W_update)
 {
   model_ = model;
   sens_model_ = createSensitivityModel(model_, inputPL);
@@ -371,20 +372,6 @@ describe(
   sens_integrator_->describe(*l_out, verbLevel);
 }
 
-template<class Scalar>
-void
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
-{
-  //state_integrator_->setParameterList(inputPL);
-  //sens_integrator_->setParameterList(inputPL);
-  reuse_solver_ =
-    inputPL->sublist("Sensitivities").get("Reuse State Linear Solver", false);
-  force_W_update_ =
-    inputPL->sublist("Sensitivities").get("Force W Update", false);
-}
-
-
 template <class Scalar>
 Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
@@ -551,8 +538,11 @@ integratorPseudoTransientForwardSensitivity(
     pList->setParametersNotAlreadySet(*pl);
   }
 
+  bool reuse_solver   = pList->sublist("Sensitivities").get("Reuse State Linear Solver", false);
+  bool force_W_update = pList->sublist("Sensitivities").get("Force W Update", false);
+
   Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(pList, model));
+    Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(pList, model, reuse_solver, force_W_update));
 
   return(integrator);
 }

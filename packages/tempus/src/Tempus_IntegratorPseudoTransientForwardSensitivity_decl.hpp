@@ -88,7 +88,8 @@ public:
    */
   IntegratorPseudoTransientForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const bool reuse_solver, const bool force_W_update);
 
   /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
   IntegratorPseudoTransientForwardSensitivity(
@@ -96,7 +97,7 @@ public:
     std::string stepperType);
 
   /// Destructor
-  /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
+  /** \brief Constructor that requires a subsequent setStepper, and initialize calls. */
   IntegratorPseudoTransientForwardSensitivity();
 
   /// Destructor
@@ -155,12 +156,6 @@ public:
   /// Get current the second time derivative of the solution, xdotdot
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
-
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-
-  //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
