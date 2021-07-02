@@ -155,13 +155,17 @@ namespace panzer {
      * \param[in] cell   Cell index
      * \param[in] a      Quadrature point a
      * \param[in] b      Quadrature point b
+     *
+     * NOTE: this is a non-const function but we had to make it const to run on device.
      */
-    void swapQuadraturePoints(int cell,int a,int b);
+    KOKKOS_INLINE_FUNCTION
+    void swapQuadraturePoints(int cell,int a,int b) const;
 
     static void convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3]);
 
     /// This should be a private method, but using lambdas on cuda forces this to be public.
     void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
+
     /// This should be a private method, but using lambdas on cuda forces this to be public.
     void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
 

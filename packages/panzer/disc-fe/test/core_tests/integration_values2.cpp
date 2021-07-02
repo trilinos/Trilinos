@@ -48,6 +48,7 @@
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntegrationValues2.hpp"
+#include "Panzer_IntegrationValues2_impl.hpp" // for unit testing wihtout CUDA RDC
 #include "Panzer_ArrayTraits.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_SubcellConnectivity.hpp"
@@ -261,6 +262,21 @@ namespace panzer {
 
   }
 
+  // This should be a simple lambda but the RCPs and std::vector in
+  // the int_values triggers warnings for calling host code form a
+  // host/device function. We eliminate the warnings by using a
+  // functor that is memcopied to device.
+  template<typename Scalar>
+  struct DoSwapOnDevice {
+    int cell_,orig_pt_,new_pt_;
+    panzer::IntegrationValues2<Scalar> int_values_;
+    DoSwapOnDevice(int cell,int orig_pt,int new_pt,panzer::IntegrationValues2<Scalar>& int_values)
+      : cell_(cell),orig_pt_(orig_pt),new_pt_(new_pt),int_values_(int_values){}
+    KOKKOS_INLINE_FUNCTION void operator() (const int ) const {
+      int_values_.swapQuadraturePoints(cell_,orig_pt_,new_pt_);
+    }
+  };
+
   TEUCHOS_UNIT_TEST(integration_values, quadpt_swap)
   {    
     Teuchos::RCP<shards::CellTopology> topo = 
@@ -334,7 +350,8 @@ namespace panzer {
       int org_pt = 0;
       int new_pt = 1;
 
-      int_values.swapQuadraturePoints(tst_cell,org_pt,new_pt);
+      Kokkos::parallel_for("swap qp",1,DoSwapOnDevice<double>(tst_cell,org_pt,new_pt,int_values));
+
       Kokkos::deep_copy(weighted_measure,int_values.weighted_measure.get_view());
       Kokkos::deep_copy(jac_det,int_values.jac_det.get_view());
       Kokkos::deep_copy(ref_ip_coordinates,int_values.ref_ip_coordinates.get_view());
@@ -363,7 +380,8 @@ namespace panzer {
       int org_pt = 1;
       int new_pt = 3;
 
-      int_values.swapQuadraturePoints(tst_cell,org_pt,new_pt);
+      Kokkos::parallel_for("swap qp",1,DoSwapOnDevice<double>(tst_cell,org_pt,new_pt,int_values));
+
       Kokkos::deep_copy(weighted_measure,int_values.weighted_measure.get_view());
       Kokkos::deep_copy(jac_det,int_values.jac_det.get_view());
       Kokkos::deep_copy(ref_ip_coordinates,int_values.ref_ip_coordinates.get_view());
