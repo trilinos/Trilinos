@@ -626,20 +626,21 @@ int feProjection(int argc, char *argv[]) {
       std::vector<global_ordinal_t> elementGIDs(basisCardinality);
       Teuchos::TimeMonitor vTimer1 =  *Teuchos::TimeMonitor::getNewTimer("Verification, assemble solution");
       auto basisCoeffsL2ProjHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2Proj);
+      auto elmtOffsetKokkosHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), elmtOffsetKokkos);
 
       for(int elemId=0; elemId<numOwnedElems; elemId++)
       {
         dofManager->getElementGIDs(elemId, elementGIDs);
         for(int nodeId=0; nodeId<basisCardinality; nodeId++)
         {
-          global_ordinal_t gid = elementGIDs[elmtOffsetKokkos(nodeId)];
+          global_ordinal_t gid = elementGIDs[elmtOffsetKokkosHost(nodeId)];
           if(ownedMap->isNodeGlobalElement(gid)) {
             auto it = mapL2Proj.find(gid);
             if (it==mapL2Proj.end())
-              mapL2Proj.insert(std::make_pair(gid,basisCoeffsL2Proj(elemId, nodeId)));
-            else if(abs(it->second-basisCoeffsL2Proj(elemId, nodeId))>1e-10) {
+              mapL2Proj.insert(std::make_pair(gid,basisCoeffsL2ProjHost(elemId, nodeId)));
+            else if(abs(it->second-basisCoeffsL2ProjHost(elemId, nodeId))>1e-10) {
               std::cout << "ERROR: DoFs shared by cells are not consistent \n"
-                  "basisL2Proj(" << gid << "):" << it->second << " " << basisCoeffsL2Proj(elemId, nodeId) <<std::endl;
+                  "basisL2Proj(" << gid << "):" << it->second << " " << basisCoeffsL2ProjHost(elemId, nodeId) <<std::endl;
               errorFlag++;
             }
           }

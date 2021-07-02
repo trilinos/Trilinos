@@ -87,7 +87,7 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
       kh.set_verbose(this->verbose);
 
       //set initial colors to be the colors from the femv
-      auto femvColors = femv->template getLocalView<MemorySpace>();
+      auto femvColors = femv->template getLocalView<MemorySpace>(Tpetra::Access::ReadWrite);
       auto sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_graph_coloring_handle()->set_vertex_colors(sv);
       

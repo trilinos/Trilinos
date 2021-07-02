@@ -147,8 +147,7 @@ void computeNumDiags<tcrsGraph_t>(
   typedef typename tcrsGraph_t::global_ordinal_type gno_t;
 
   size_t maxnnz = M->getNodeMaxNumRowEntries();
-  Teuchos::Array<gno_t> colGids(maxnnz);
-
+  typename tcrsGraph_t::nonconst_global_inds_host_view_type colGids("colGIds", maxnnz);
   numLocalDiags = 0;
   numGlobalDiags = 0;
 
@@ -157,7 +156,7 @@ void computeNumDiags<tcrsGraph_t>(
 
     gno_t rowGid = M->getRowMap()->getGlobalElement(i);
     size_t nnz;
-    M->getGlobalRowCopy(rowGid, colGids(), nnz);
+    M->getGlobalRowCopy(rowGid, colGids, nnz);
 
     for (size_t j = 0; j < nnz; j++) {
       if (rowGid == colGids[j]) {
@@ -291,11 +290,12 @@ void testAdapter(
   for (zlno_t i=0; i < nLocalRows; i++){
     numLocalNbors[i] = 0;
     haveDiag[i] = false;
-    ArrayView<const zlno_t> idx;
-    Mgraph->getLocalRowView(i, idx);
-    numNbors[i] = idx.size();
 
-    for (zlno_t j=0; j < idx.size(); j++){
+    typename Tpetra::CrsGraph<zlno_t, zgno_t>::local_inds_host_view_type idx;
+    Mgraph->getLocalRowView(i, idx);
+    numNbors[i] = idx.extent(0);
+
+    for (std::size_t j=0; j < idx.size(); j++){
       if (idx[j] == i){
         haveDiag[i] = true;
         numLocalNbors[i]++;

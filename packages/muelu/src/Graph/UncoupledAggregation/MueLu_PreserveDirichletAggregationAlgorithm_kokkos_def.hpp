@@ -81,8 +81,8 @@ namespace MueLu {
     const int myRank    = graph.GetComm()->getRank();
 
     // 3) the aggregates
-    auto vertex2AggId   = aggregates.GetVertex2AggId()->getDeviceLocalView();
-    auto procWinner     = aggregates.GetProcWinner()  ->getDeviceLocalView();
+    auto vertex2AggId   = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto procWinner     = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
     // A view is needed to count on the fly the current number of local aggregates
     Kokkos::View<LO, memory_space> aggCount("aggCount");
