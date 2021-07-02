@@ -325,7 +325,7 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixColumns {
         Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace, LO>;
       Kokkos::parallel_for
         ("Tpetra::CrsMatrix apply Dirichlet cols: Host",
-         range_type (execSpace, 0, numRows),
+         range_type (0, numRows),
          KOKKOS_LAMBDA (const LO i) {
           for (auto j = rowptr(i); j < rowptr(i+1); ++j) {
             if(lclColFlags[colind[j]])
