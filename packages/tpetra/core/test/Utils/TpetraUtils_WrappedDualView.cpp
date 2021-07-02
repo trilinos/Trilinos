@@ -52,6 +52,8 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_StackedTimer.hpp>
 
 namespace {
 
@@ -1351,6 +1353,119 @@ TEUCHOS_UNIT_TEST(WrappedDualView, attemptConstructUnmanaged) {
   }
   catch(std::exception&)
   {}
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, hostViewMicrobench) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
+  using Teuchos::StackedTimer;
+  using std::cout;
+  using std::endl;
+  /*
+  Write a loop over many multiple calls to getLocalViewHost(Access::...)
+  Make sure the sync does not happen; want to measure only the overhead
+     Compare to just grabbing the host pointer from a DualView
+
+       for each access tag {
+         auto tmp = getLocalViewHost(Access::ReadOnly);
+         start timer
+         for many many iterations
+           auto blah = getLocalViewHost(Access::...);
+         stop timer
+       }
+  */
+  WrappedDualViewFixture fixture;
+  fixture.fillDualViewOnHostDevice();
+  RCP<StackedTimer> timer = rcp(new StackedTimer("hostView"));
+  TimeMonitor::setStackedTimer(timer);
+  size_t iterations = 1048576;
+  std::string roTimer = "hostView: ReadOnly";
+  std::string oaTimer = "hostView: OverwriteAll";
+  std::string rwTimer = "hostView: ReadWrite";
+  
+  //get communicator
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+
+  auto dv = fixture.getDualView();
+  //ReadOnly
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(roTimer));
+    for (size_t i = 0; i < iterations; i++) {
+      auto tmp = fixture.getHostView(Tpetra::Access::ReadOnly);
+    }
+  }
+
+  //OverwriteAll
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(oaTimer));
+    for (size_t i = 0; i < iterations; i++) {
+      auto tmp = fixture.getHostView(Tpetra::Access::OverwriteAll);
+    }
+  }
+
+  //ReadWrite
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(rwTimer));
+    for (size_t i = 0; i < iterations; i++) {
+      auto tmp = fixture.getHostView(Tpetra::Access::ReadWrite);
+    }
+  }
+  StackedTimer::OutputOptions options;
+  options.print_warnings = false;
+  timer->report(std::cout, comm, options);
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewMicrobench) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
+  using Teuchos::StackedTimer;
+  using std::cout;
+  using std::endl;
+
+  WrappedDualViewFixture fixture;
+  fixture.fillDualViewOnHost();
+  RCP<StackedTimer> timer = rcp(new StackedTimer("deviceView"));
+  TimeMonitor::setStackedTimer(timer);
+  size_t iterations = 1048576;
+  std::string roTimer = "deviceView: ReadOnly";
+  std::string oaTimer = "deviceView: OverwriteAll";
+  std::string rwTimer = "deviceView: ReadWrite";
+
+  //get communicator
+  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  HostViewType hostView("host view", fixture.getViewSize());
+  WrappedDualViewType dv = wrappedDualViewType(hostView);
+
+  auto dv = fixture.getDualView();
+  //ReadOnly
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(roTimer));
+    for (size_t i = 0; i < iterations; i++) {
+      auto tmp = dv.getDeviceView(Tpetra::Access::ReadOnly);
+    }
+  }
+
+  //OverwriteAll
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(oaTimer));
+    for (size_t i = 0; i < iterations; i++) {
+      auto tmp = dv.getDeviceView(Tpetra::Access::OverwriteAll);
+    }
+  }
+
+  //ReadWrite
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(rwTimer));
+    for (size_t i = 0; i < iterations; i++) {
+      auto tmp = dv.getDeviceView(Tpetra::Access::ReadWrite);
+    }
+  }
+  StackedTimer::OutputOptions options;
+  options.print_warnings = false;
+  timer->report(std::cout, comm, options);
+
 }
 
 }
