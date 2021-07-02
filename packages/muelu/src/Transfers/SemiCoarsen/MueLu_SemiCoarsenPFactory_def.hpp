@@ -416,6 +416,7 @@ namespace MueLu {
 
     for (i = 0; i < Ntotal*DofsPerNode; i++)
       valptr[i]= LayerId[i/DofsPerNode];
+    valptr=ArrayRCP<LO>();
 
     RCP< const Import> importer;
     importer = Amat->getCrsGraph()->getImporter();
@@ -428,9 +429,12 @@ namespace MueLu {
     for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Layerdofs[i]= valptr[i];
     valptr= localdtemp->getDataNonConst(0);
     for (i = 0; i < Ntotal*DofsPerNode;        i++) valptr[i]= i%DofsPerNode;
+    valptr=ArrayRCP<LO>();
     dtemp->doImport(*localdtemp, *(importer), Xpetra::INSERT);
+
     valptr= dtemp->getDataNonConst(0);
     for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]= valptr[i];
+    valptr=ArrayRCP<LO>();
 
     if (Ntotal != 0) {
       NLayers   = LayerId[0];

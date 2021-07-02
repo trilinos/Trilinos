@@ -5,7 +5,7 @@ set +x
 #
 
 if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
-  export Trilinos_ENABLE_BUILD_STATS=ON
+  export Trilinos_ENABLE_BUILD_STATS=OFF
 fi
 echo "Trilinos_ENABLE_BUILD_STATS='${Trilinos_ENABLE_BUILD_STATS}'"
 

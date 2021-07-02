@@ -107,10 +107,11 @@ namespace MueLuTests {
    
     // This test only works in parallel if we have Zoltan2 & Tpetra
 #ifndef HAVE_MUELU_ZOLTAN2
-    if(A->getRowMap()->getComm()->getRank() > 1)
+    if(A->getRowMap()->getComm()->getSize() > 1)
       return;
 #else
-    if(A->getRowMap()->lib() == Xpetra::UseEpetra)
+    if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
+        (A->getRowMap()->getComm()->getSize() > 1))
       return;
 #endif
 
@@ -150,6 +151,13 @@ namespace MueLuTests {
     RCP<Matrix> P;
     coarseLevel.Get("P",P,PFact.get());
 
+    // Check that the matrix is not zero.
+    RCP<MultiVector> x = MultiVectorFactory::Build(P->getDomainMap(),1);
+    x->putScalar(TST::one());
+    RCP<MultiVector> y = MultiVectorFactory::Build(P->getRangeMap(),1);
+    P->apply(*x, *y,Teuchos::NO_TRANS);
+    const magnitude_type expected = TMT::one();
+    TEST_FLOATING_EQUALITY(y->getVector(0)->normInf(), expected, 10*TMT::eps());
   } //BuildP
 
 
@@ -180,10 +188,11 @@ namespace MueLuTests {
 
     // This test only works in parallel if we have Zoltan2 & Tpetra
 #ifndef HAVE_MUELU_ZOLTAN2
-    if(A->getRowMap()->getComm()->getRank() > 1)
+    if(A->getRowMap()->getComm()->getSize() > 1)
       return;
 #else
-    if(A->getRowMap()->lib() == Xpetra::UseEpetra)
+    if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
+        (A->getRowMap()->getComm()->getSize() > 1))
       return;
 #endif
 
@@ -225,6 +234,14 @@ namespace MueLuTests {
     RCP<Matrix> P;
     coarseLevel.Get("P",P,PFact.get());
 
+    // Check that the matrix is not zero.
+    RCP<MultiVector> x = MultiVectorFactory::Build(P->getDomainMap(),1);
+    x->putScalar(TST::one());
+    RCP<MultiVector> y = MultiVectorFactory::Build(P->getRangeMap(),1);
+    P->apply(*x, *y,Teuchos::NO_TRANS);
+    const magnitude_type expected = TMT::one();
+    TEST_FLOATING_EQUALITY(y->getVector(0)->normInf(), expected, 10*TMT::eps());
+
   } //BuildP
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ClassicalPFactory, BuildP_Ext, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -251,6 +268,16 @@ namespace MueLuTests {
     RCP<Matrix> A = test_factory::Build1DPoisson(nx);
     A->SetFixedBlockSize(1);
     fineLevel.Set("A", A);
+
+    // This test only works in parallel if we have Zoltan2 & Tpetra
+#ifndef HAVE_MUELU_ZOLTAN2
+    if(A->getRowMap()->getComm()->getSize() > 1)
+      return;
+#else
+    if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
+        (A->getRowMap()->getComm()->getSize() > 1))
+      return;
+#endif
 
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", nx);
@@ -288,6 +315,14 @@ namespace MueLuTests {
 
     RCP<Matrix> P;
     coarseLevel.Get("P",P,PFact.get());
+
+    // Check that the matrix is not zero.
+    RCP<MultiVector> x = MultiVectorFactory::Build(P->getDomainMap(),1);
+    x->putScalar(TST::one());
+    RCP<MultiVector> y = MultiVectorFactory::Build(P->getRangeMap(),1);
+    P->apply(*x, *y,Teuchos::NO_TRANS);
+    const magnitude_type expected = TMT::one();
+    TEST_FLOATING_EQUALITY(y->getVector(0)->normInf(), expected, 10*TMT::eps());
 
   } //BuildP
 

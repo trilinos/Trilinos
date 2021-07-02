@@ -73,8 +73,8 @@ public:
 
     // Fill JBlock with random numbers for a better test.
     JBlock->resumeFill();
-    auto local_matrix = JBlock->getLocalMatrix();
-    auto local_graph = JBlock->getCrsGraph()->getLocalGraph();
+    auto local_matrix = JBlock->getLocalMatrixHost();
+    auto local_graph = JBlock->getCrsGraph()->getLocalGraphHost();
 
     using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
     using pool_type = 
@@ -86,8 +86,8 @@ public:
     JBlock->fillComplete();
 
     // Make JCyclic:  same matrix with different Domain and Range maps
-    auto lclMatrix = JBlock->getLocalMatrix();
-    JCyclic = rcp(new matrix_t(JBlock->getLocalMatrix(),
+    auto lclMatrix = JBlock->getLocalMatrixHost();
+    JCyclic = rcp(new matrix_t(JBlock->getLocalMatrixHost(),
                                JBlock->getRowMap(), JBlock->getColMap(),
                                vMapCyclic, wMapCyclic));
   }
@@ -164,8 +164,8 @@ public:
     colorer.reconstructMatrix(W, *Jp);
 
     // Check that values of J = values of Jp
-    auto J_local_matrix = J->getLocalMatrix();
-    auto Jp_local_matrix = Jp->getLocalMatrix();
+    auto J_local_matrix = J->getLocalMatrixHost();
+    auto Jp_local_matrix = Jp->getLocalMatrixHost();
     const size_t num_local_nz = J->getNodeNumEntries();
 
     Kokkos::parallel_reduce(

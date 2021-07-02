@@ -118,10 +118,6 @@ namespace MueLu {
     RCP<const Map>      uniqueMap  = fineTV->getMap();
     ArrayRCP<const LO> fineData    = fineTV->getData(0);
     
-    // FIXME: Handle MPI parallel
-    // Sanity checks
-    TEUCHOS_TEST_FOR_EXCEPTION(P->getRowMap()->getComm()->getSize() != 1,Exceptions::RuntimeError,"BuildFC: Only currently supports 1 MPI rank.");
-     
     // Allocate new LO Vector
     RCP<LocalOrdinalVector> coarseTV   = LocalOrdinalVectorFactory::Build(coarseMap,1);
     ArrayRCP<LO>     coarseData = coarseTV->getDataNonConst(0);
@@ -131,20 +127,47 @@ namespace MueLu {
       coarseData[i] = LO_INVALID;
    
     // Fill in coarse TV
-    size_t error_count = 0;
+    LO domMapNumElements = P->getDomainMap()->getNodeNumElements();
     for (LO row=0; row<(LO)P->getNodeNumRows(); row++) {
       LO fineNumber = fineData[row];
       ArrayView<const LO> indices;
       P->getLocalRowView(row,indices);
       
-      // FIXME: MPI parallel
       for(LO j=0; j<(LO)indices.size(); j++) {
-        if(coarseData[indices[j]] == LO_INVALID) 
-          coarseData[indices[j]] = fineNumber;
-        else if (coarseData[indices[j]] != fineNumber)
-          error_count++;          
+        LO col = indices[j];
+        if (col >= domMapNumElements) {
+          // skip off rank entries of P
+        } else {
+          coarseData[col] = fineNumber;
+        }
       }
+    }
 
+#ifdef HAVE_MUELU_DEBUG
+    size_t error_count = 0;
+    {
+      RCP<LocalOrdinalVector> coarseTVghosted;
+      RCP<const Import> importer = P->getImporter();
+      if (!importer.is_null()) {
+        coarseTVghosted = LocalOrdinalVectorFactory::Build(P->getColMap(),1);
+        coarseTVghosted->doImport(*coarseTV, *importer, Xpetra::INSERT);
+      } else {
+        coarseTVghosted = coarseTV;
+      }
+      ArrayRCP<LO> coarseDataGhosted = coarseTVghosted->getDataNonConst(0);
+      for (LO col=0; col<(LO)P->getColMap()->getNodeNumElements(); col++) {
+        if (coarseDataGhosted[col] == LO_INVALID)
+          error_count++;
+      }
+      for (LO row=0; row<(LO)P->getNodeNumRows(); row++) {
+        LO fineNumber = fineData[row];
+        ArrayView<const LO> indices;
+        P->getLocalRowView(row,indices);
+        for(LO j=0; j<(LO)indices.size(); j++) {
+          if (coarseDataGhosted[indices[j]] != fineNumber)
+            error_count++;
+        }
+      }
     }
 
     // Error checking:  All nodes in an aggregate must share a local ordinal
@@ -153,6 +176,7 @@ namespace MueLu {
       ofs << "LocalOrdinalTransferFactory("<<TransferVecName_<<"): ERROR:  Each coarse dof must have a unique LO value.  We had "<<std::to_string(error_count)<<" unknowns that did not match.";
       throw std::runtime_error(ofs.str());
     }
+#endif
       
     Set<RCP<LocalOrdinalVector> >(coarseLevel, TransferVecName_, coarseTV);
 

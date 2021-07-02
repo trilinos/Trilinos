@@ -145,6 +145,7 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
                         Kokkos::DynRankView<int,PHX::Device> & data)
 {
   data = Kokkos::DynRankView<int,PHX::Device>("data",1,4);
+  auto host_data = Kokkos::create_mirror_view(data);
 
   const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
@@ -152,8 +153,9 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
    for(std::size_t e=0;e<elements.size();e++) {
       ugi.getElementGIDs(elements[e],gids);
       for(std::size_t f=0;f<fieldOffsets.size();f++)
-         data(e,f) = gids[fieldOffsets[f]];
+         host_data(e,f) = gids[fieldOffsets[f]];
    }
+   Kokkos::deep_copy(data,host_data);
 }
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
@@ -161,16 +163,18 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
                         Kokkos::DynRankView<int,PHX::Device> & data,std::size_t cols)
 {
   data = Kokkos::DynRankView<int,PHX::Device>("data",1,4,cols);
+  auto host_data = Kokkos::create_mirror_view(data);
 
-   const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
-   const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
-   std::vector<panzer::GlobalOrdinal> gids;
-   for(std::size_t e=0;e<elements.size();e++) {
-      ugi.getElementGIDs(elements[e],gids);
-      for(std::size_t f=0;f<fieldOffsets.size();f++)
-         for(std::size_t c=0;c<cols;c++)
-            data(e,f,c) = gids[fieldOffsets[f]]+c;
-   }
+  const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
+  const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
+  std::vector<panzer::GlobalOrdinal> gids;
+  for(std::size_t e=0;e<elements.size();e++) {
+    ugi.getElementGIDs(elements[e],gids);
+    for(std::size_t f=0;f<fieldOffsets.size();f++)
+      for(std::size_t c=0;c<cols;c++)
+        host_data(e,f,c) = gids[fieldOffsets[f]]+c;
+  }
+  Kokkos::deep_copy(data,host_data);
 }
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
@@ -222,7 +226,7 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
 
    reducedUDataVector.get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_u));
    reducedTDataVector.get1dCopy(Teuchos::arrayViewFromVector(ghostedFields_t));
-   
+
    if(myRank==0) {
       TEST_EQUALITY(ghostedFields_u[0], 0);
       TEST_EQUALITY(ghostedFields_u[1], 2);

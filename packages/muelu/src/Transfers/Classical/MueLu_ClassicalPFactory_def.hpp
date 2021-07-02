@@ -252,7 +252,7 @@ namespace MueLu {
       if(Importer.is_null()) 
         BlockNumber = OwnedBlockNumber;
       else{
-        BlockNumber = LocalOrdinalVectorFactory::Build(A->getRowMap());
+        BlockNumber = LocalOrdinalVectorFactory::Build(A->getColMap());
         BlockNumber->doImport(*OwnedBlockNumber,*Importer,Xpetra::INSERT);
       }
     }
@@ -475,40 +475,50 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
       tmp_rowptr[row+1] = tmp_rowptr[row] + C_hat.size();
     }
     // Resize down
-    tmp_colind.resize(tmp_rowptr[Nrows]);  
+    tmp_colind.resize(tmp_rowptr[Nrows]);
 
-    // Make the matrix and then get the graph out of it (necessary for Epetra)
-    // NOTE: The lack of an Epetra_CrsGraph::ExpertStaticFillComplete makes this
-    // impossible to do the obvious way
     RCP<CrsMatrix> Pcrs = CrsMatrixFactory::Build(A.getRowMap(),coarseColMap,0);
     ArrayRCP<size_t>  P_rowptr;
     ArrayRCP<LO>      P_colind;
     ArrayRCP<SC>      P_values;
-    Pcrs->allocateAllValues(tmp_rowptr[Nrows],P_rowptr,P_colind,P_values);
 
-    // FIXME:  This can be short-circuited for Tpetra, if we decide we care
-    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
-    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());  
-    Pcrs->setAllValues(P_rowptr,P_colind,P_values);
-    Pcrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
-
-    RCP<const CrsGraph> Pgraph = Pcrs->getCrsGraph();
+    if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
+      P_rowptr = Teuchos::arcpFromArray(tmp_rowptr);
+      P_colind = Teuchos::arcpFromArray(tmp_colind);
+      P_values.resize(P_rowptr[Nrows]);
+    } else {
+      // Make the matrix and then get the graph out of it (necessary for Epetra)
+      // NOTE: The lack of an Epetra_CrsGraph::ExpertStaticFillComplete makes this
+      // impossible to do the obvious way
+      Pcrs->allocateAllValues(tmp_rowptr[Nrows],P_rowptr,P_colind,P_values);
+      std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
+      std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());
+      Pcrs->setAllValues(P_rowptr,P_colind,P_values);
+      Pcrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+    }
 
     // Generate a remote-ghosted version of the graph (if we're in parallel)
-    RCP<CrsGraph> Pghost;
+    RCP<const CrsGraph> Pgraph;
+    RCP<const CrsGraph> Pghost;
+    // TODO: We might want to be more efficient here and actually use
+    // Pgraph in the matrix constructor.
     ArrayRCP<const size_t> Pghost_rowptr;
     ArrayRCP<const LO> Pghost_colind;
     if(!remoteOnlyImporter.is_null()) {
+      if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
+        RCP<CrsGraph> tempPgraph = CrsGraphFactory::Build(A.getRowMap(),coarseColMap,P_rowptr,P_colind);
+        tempPgraph->fillComplete(coarseDomainMap,A.getDomainMap());
+        Pgraph = tempPgraph;
+      } else {
+        // Epetra does not have a graph constructor that uses rowptr and colind.
+        Pgraph = Pcrs->getCrsGraph();
+      }
+      TEUCHOS_ASSERT(!Pgraph.is_null());
       Pghost = CrsGraphFactory::Build(Pgraph,*remoteOnlyImporter,Pgraph->getDomainMap(),remoteOnlyImporter->getTargetMap());
       Pghost->getAllIndices(Pghost_rowptr,Pghost_colind);
     }
 
-    // Wrap from CrsMatrix to Matrix and resumeFill
-    P = rcp(new CrsMatrixWrap(Pcrs));
-    Pcrs->resumeFill();
-    //    Pcrs->getAllValues(P_values);
-
-    // Gustavston-style perfect hashing
+    // Gustavson-style perfect hashing
     ArrayRCP<LO> Acol_to_Pcol(A.getColMap()->getNodeNumElements(),LO_INVALID);
 
     // Get a quick reindexing array from Pghost LCIDs to P LCIDs
@@ -516,7 +526,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     if(!Pghost.is_null()) {
       Pghostcol_to_Pcol.resize(Pghost->getColMap()->getNodeNumElements(),LO_INVALID);
       for(LO i=0; i<(LO) Pghost->getColMap()->getNodeNumElements(); i++) 
-        Pghostcol_to_Pcol[i] = P->getColMap()->getLocalElement(Pghost->getColMap()->getGlobalElement(i));
+        Pghostcol_to_Pcol[i] = Pgraph->getColMap()->getLocalElement(Pghost->getColMap()->getGlobalElement(i));
     }//end Pghost
 
     // Get a quick reindexing array from Aghost LCIDs to A LCIDs
@@ -697,7 +707,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                 GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
                 LO mghost = A_indices_k[m0];//Aghost LCID
                 LO m = Aghostcol_to_Acol[mghost]; //A's LID (could be LO_INVALID)
-                if(m_g != k_g && m != LO_INVALID && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
+                if(m_g != k_g && m != LO_INVALID && Acol_to_Pcol[m] >=  (LO)P_rowptr[i]) {
                   SC a_km = A_vals_k[m0];
                   second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
                 }
@@ -711,7 +721,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                   LO jghost = A_indices_k[j0];//Aghost LCID
                   LO j = Aghostcol_to_Acol[jghost]; //A's LID (could be LO_INVALID)
                   // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
-                  if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
+                  if((j != LO_INVALID) && (Acol_to_Pcol[j] >=  (LO)P_rowptr[i])) {
                     SC a_kj = A_vals_k[j0];
                     SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
                     P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
@@ -752,9 +762,11 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     }// end if i < Nrows
 
     // Finish up
-    //    Pcrs->setAllValues(P_rowptr,P_colind,P_values);
-    Pcrs->fillComplete(Pcrs->getDomainMap(),Pcrs->getRangeMap());
-    
+    Pcrs->setAllValues(P_rowptr,P_colind,P_values);
+    Pcrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+    // Wrap from CrsMatrix to Matrix
+    P = rcp(new CrsMatrixWrap(Pcrs));
+
 }//end Coarsen_ClassicalModified
 
 
