@@ -112,8 +112,9 @@
 #include "Tpetra_FEMultiVector.hpp"
 #include "Tpetra_Assembly_Helpers.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
-#include "Tpetra_applyDirichletBoundaryCondition.hpp"
 #include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_applyDirichletBoundaryCondition.hpp"
+
 
 
 // Teuchos includes
@@ -1227,7 +1228,7 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
   /**********************************************************************************/
-
+  Tpetra_FECrsMatrix   SystemMatrix(EdgeGraph);
   Tpetra_FECrsMatrix   StiffMatrixC(EdgeGraph);
   Tpetra_FECrsMatrix   MassMatrixC (EdgeGraph);
   Tpetra_FECrsMatrix   MassMatrixC1(EdgeGraph);// No sigma
@@ -1263,8 +1264,8 @@ int body(int argc, char *argv[]) {
   Tpetra_MultiVector nCoord(globalMapG,3);  
   {  
     auto Nx_data=nCoord.getDataNonConst(0);
-    auto Ny_data=nCoord.getDataNonConst(0);
-    auto Nz_data=nCoord.getDataNonConst(0);
+    auto Ny_data=nCoord.getDataNonConst(1);
+    auto Nz_data=nCoord.getDataNonConst(2);
     int ownedNode = 0;
     for (int inode=0; inode<numNodes; inode++) {
       if (nodeIsOwned[inode]) {
@@ -1502,15 +1503,24 @@ int body(int argc, char *argv[]) {
     int iOwned=0;
     for (int i=0; i<numEdges; i++){
       if (edgeIsOwned[i]){
-      if (edgeOnBoundary(i)){
-        BCEdges[indbc]=iOwned;
-        indbc++;
-        v_data[iOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
-      }
-      iOwned++;
+        if (edgeOnBoundary(i)){
+          BCEdges[indbc]=iOwned;
+          indbc++;
+          v_data[iOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+        }
+        iOwned++;
       }
     }
   }
+
+  if(numProcs==1 && dump) {
+    FILE * f=fopen("boundary_edge_list.dat","w");
+    for(LO i=0; i<(LO)BCEdges.size(); i++)
+      fprintf(f,"%d ",BCEdges[i]);
+    fclose(f);
+  }
+
+
 
   if(MyPID==0) {std::cout << "Boundary Condition Setup                    \n";}
 
@@ -1902,7 +1912,7 @@ int body(int argc, char *argv[]) {
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
     /**********************************************************************************/
-    Tpetra::beginFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,rhsVector);
+    Tpetra::beginFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
 
     // Loop over workset cells
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
@@ -1954,9 +1964,12 @@ int body(int argc, char *argv[]) {
 
           double massCContribution1  = massMatrixHCurlNoSigma (worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
 
+          double systemContribution = massCContribution*scaling + stiffCContribution;
+
           MassMatrixC.sumIntoGlobalValues (globalEdgeRow, 1, &massCContribution, &globalEdgeCol);
-          MassMatrixC1.sumIntoGlobalValues (globalEdgeRow, 1, &massCContribution1, &globalEdgeCol);
+          MassMatrixC1.sumIntoGlobalValues(globalEdgeRow, 1, &massCContribution1, &globalEdgeCol);
           StiffMatrixC.sumIntoGlobalValues(globalEdgeRow, 1, &stiffCContribution, &globalEdgeCol);
+          SystemMatrix.sumIntoGlobalValues(globalEdgeRow, 1, &systemContribution, &globalEdgeCol);
 
 
         }// *** cell edge col loop ***
@@ -1974,7 +1987,7 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Assemble over multiple processors, if necessary
-  Tpetra::endFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,rhsVector);
+  Tpetra::endFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
 
   MLStatistics.Phase2b(MassMatrixG.getCrsGraph(),rcp(&nCoord,false));
 
@@ -1991,13 +2004,15 @@ int body(int argc, char *argv[]) {
     Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordy.dat",EDGE_Y);
     Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordz.dat",EDGE_Z);
 
+    // Boundary Application
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("boundary_v.dat",v);
 
     // Edge signs
     Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge_signs.dat",edgeSign);
 
     Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_k1_matrix.dat",StiffMatrixC);
     Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_ms_matrix.dat",MassMatrixC);
-    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_km_matrix.dat",MassMatrixC1);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_m1_matrix.dat",MassMatrixC1);
     Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_t_matrix.dat",DGrad);
   }
 
@@ -2038,13 +2053,6 @@ int body(int argc, char *argv[]) {
     }
   }
 
-  // Get the full matrix operator Kc += Mc
-  Tpetra_CrsMatrix SystemMatrix(StiffMatrixC.getRowMap(),0);
-  Tpetra::MatrixMatrix::add(scaling,false,MassMatrixC,1.0,false,StiffMatrixC,SystemMatrix);
-  //  int rv=EpetraExt::MatrixMatrix::Add(MassMatrixC,false,scaling,StiffMatrixC,1.0);
-  //  if(rv!=0) {printf("EpetraExt::MatrixMatrix:Add FAILED\n"); exit(1);}
-
-
   // Apply it to v
   Tpetra_MultiVector rhsDir(globalMapC,1);
   SystemMatrix.apply(v,rhsDir);
@@ -2070,11 +2078,16 @@ int body(int argc, char *argv[]) {
     }
   }
   
+  if (dump) {
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("edge_matrix_nobcs.mat",SystemMatrix);
+  }
+
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
   {
+
     Kokkos::View<LO*, Kokkos::HostSpace> bce(BCEdges.data(),numBCEdges);
-    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRows(SystemMatrix,bce);
+    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRowsAndColumns(SystemMatrix,bce);
   }
 
   if(MyPID==0) {std::cout << "Adjust global matrix and rhs due to BCs     \n";}
