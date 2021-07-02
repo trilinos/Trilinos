@@ -441,19 +441,24 @@ namespace panzer {
       mesh.num_virtual_cells = 0;
       mesh.cell_topology = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
       mesh.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
-      mesh.local_cells(0) = 0;
-      mesh.local_cells(1) = 1;
+      auto local_cells_host = Kokkos::create_mirror_view(mesh.local_cells);
+      local_cells_host(0) = 0;
+      local_cells_host(1) = 1;
+      Kokkos::deep_copy(mesh.local_cells,local_cells_host);
       mesh.cell_vertices = PHX::View<double***>("cell_vertices",2,4,2);
 
       PHX::View<double**> coordinates("coordinates",6,2);
-      coordinates(0,0) = 1.; coordinates(0,1) = 3.;
-      coordinates(1,0) = 3.; coordinates(1,1) = 3.;
-      coordinates(2,0) = 5.; coordinates(2,1) = 3.;
-      coordinates(3,0) = 2.; coordinates(3,1) = 1.;
-      coordinates(4,0) = 3.; coordinates(4,1) = 1.;
-      coordinates(5,0) = 4.; coordinates(5,1) = 1.;
-      
-#define SET_NC(cell,node,vertex) mesh.cell_vertices(cell,node,0) = coordinates(vertex,0); mesh.cell_vertices(cell,node,1) = coordinates(vertex,1);
+      auto coordinates_host = Kokkos::create_mirror_view(coordinates);
+      coordinates_host(0,0) = 1.; coordinates_host(0,1) = 3.;
+      coordinates_host(1,0) = 3.; coordinates_host(1,1) = 3.;
+      coordinates_host(2,0) = 5.; coordinates_host(2,1) = 3.;
+      coordinates_host(3,0) = 2.; coordinates_host(3,1) = 1.;
+      coordinates_host(4,0) = 3.; coordinates_host(4,1) = 1.;
+      coordinates_host(5,0) = 4.; coordinates_host(5,1) = 1.;
+      Kokkos::deep_copy(coordinates,coordinates_host);
+
+      auto cell_vertices_host = Kokkos::create_mirror_view(mesh.cell_vertices);
+#define SET_NC(cell,node,vertex) cell_vertices_host(cell,node,0) = coordinates_host(vertex,0); cell_vertices_host(cell,node,1) = coordinates_host(vertex,1);
       SET_NC(0,0, 0);
       SET_NC(0,1, 3);
       SET_NC(0,2, 4);
@@ -463,27 +468,33 @@ namespace panzer {
       SET_NC(1,2, 5);
       SET_NC(1,3, 2);
 #undef SET_NC
+      Kokkos::deep_copy(mesh.cell_vertices,cell_vertices_host);
 
       mesh.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",6);
-      mesh.face_to_cells(0,0) = 0; mesh.face_to_cells(0,1) =  1;
-      mesh.face_to_cells(1,0) = 0; mesh.face_to_cells(1,1) = -1;
-      mesh.face_to_cells(2,0) = 0; mesh.face_to_cells(2,1) =  1;
-      mesh.face_to_cells(3,0) = 0; mesh.face_to_cells(3,1) = -1;
-      mesh.face_to_cells(4,0) = 1; mesh.face_to_cells(4,1) = -1;
-      mesh.face_to_cells(5,0) = 1; mesh.face_to_cells(5,1) = -1;
+      auto face_to_cells_host = Kokkos::create_mirror_view(mesh.face_to_cells);
+      face_to_cells_host(0,0) = 0; face_to_cells_host(0,1) =  1;
+      face_to_cells_host(1,0) = 0; face_to_cells_host(1,1) = -1;
+      face_to_cells_host(2,0) = 0; face_to_cells_host(2,1) =  1;
+      face_to_cells_host(3,0) = 0; face_to_cells_host(3,1) = -1;
+      face_to_cells_host(4,0) = 1; face_to_cells_host(4,1) = -1;
+      face_to_cells_host(5,0) = 1; face_to_cells_host(5,1) = -1;
+      Kokkos::deep_copy(mesh.face_to_cells,face_to_cells_host);
 
       mesh.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",6);
-      mesh.face_to_lidx(0,0) = 0; mesh.face_to_lidx(0,1) =  2;
-      mesh.face_to_lidx(1,0) = 1; mesh.face_to_lidx(1,1) = -1;
-      mesh.face_to_lidx(2,0) = 2; mesh.face_to_lidx(2,1) =  0;
-      mesh.face_to_lidx(3,0) = 3; mesh.face_to_lidx(3,1) = -1;
-      mesh.face_to_lidx(4,0) = 1; mesh.face_to_lidx(4,1) = -1;
-      mesh.face_to_lidx(5,0) = 3; mesh.face_to_lidx(5,1) = -1;
+      auto face_to_lidx_host = Kokkos::create_mirror_view(mesh.face_to_lidx);
+      face_to_lidx_host(0,0) = 0; face_to_lidx_host(0,1) =  2;
+      face_to_lidx_host(1,0) = 1; face_to_lidx_host(1,1) = -1;
+      face_to_lidx_host(2,0) = 2; face_to_lidx_host(2,1) =  0;
+      face_to_lidx_host(3,0) = 3; face_to_lidx_host(3,1) = -1;
+      face_to_lidx_host(4,0) = 1; face_to_lidx_host(4,1) = -1;
+      face_to_lidx_host(5,0) = 3; face_to_lidx_host(5,1) = -1;
+      Kokkos::deep_copy(mesh.face_to_lidx,face_to_lidx_host);
 
       mesh.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",2,4);
-      mesh.cell_to_faces(0,0) = 0; mesh.cell_to_faces(0,1) = 1; mesh.cell_to_faces(0,2) = 2; mesh.cell_to_faces(0,3) = 3;
-      mesh.cell_to_faces(1,0) = 2; mesh.cell_to_faces(1,1) = 4; mesh.cell_to_faces(1,2) = 0; mesh.cell_to_faces(1,3) = 5;
-      
+      auto cell_to_faces_host = Kokkos::create_mirror_view(mesh.cell_to_faces);
+      cell_to_faces_host(0,0) = 0; cell_to_faces_host(0,1) = 1; cell_to_faces_host(0,2) = 2; cell_to_faces_host(0,3) = 3;
+      cell_to_faces_host(1,0) = 2; cell_to_faces_host(1,1) = 4; cell_to_faces_host(1,2) = 0; cell_to_faces_host(1,3) = 5;
+      Kokkos::deep_copy(mesh.cell_to_faces,cell_to_faces_host);
     }
    
     const auto id = panzer::IntegrationDescriptor(2, panzer::IntegrationDescriptor::SURFACE);
@@ -494,11 +505,15 @@ namespace panzer {
     // Fill node coordinates
     panzer::MDFieldArrayFactory af("prefix_",true);
     auto node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("node_coordinates",2,4,2);
-
-    for(int i=0; i<mesh.cell_vertices.extent_int(0); ++i)
-      for(int j=0; j<mesh.cell_vertices.extent_int(1); ++j)
-        for(int k=0; k<mesh.cell_vertices.extent_int(2); ++k)
-          node_coordinates(i,j,k) = mesh.cell_vertices(i,j,k);
+    {
+      auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_static_view());
+      auto cell_vertices_host = Kokkos::create_mirror_view(mesh.cell_vertices);
+      for(int i=0; i<mesh.cell_vertices.extent_int(0); ++i)
+        for(int j=0; j<mesh.cell_vertices.extent_int(1); ++j)
+          for(int k=0; k<mesh.cell_vertices.extent_int(2); ++k)
+            node_coordinates_host(i,j,k) = cell_vertices_host(i,j,k);
+      Kokkos::deep_copy(node_coordinates.get_static_view(),node_coordinates_host);
+    }
 
     // Make sure the integration values fail to construct without the subcell connectivity
     TEST_THROW(int_values.evaluateValues(node_coordinates), std::logic_error);
@@ -511,8 +526,8 @@ namespace panzer {
     int_values.evaluateValues(node_coordinates,-1,connectivity);
     
     // This test will focus on normals and points
-    const auto normals = int_values.surface_normals;
-    const auto points = int_values.ip_coordinates;
+    const auto normals = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.surface_normals.get_static_view());
+    const auto points = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.ip_coordinates.get_static_view());
     const int num_points_per_cell = points.extent_int(1);
     const int num_points_per_face = num_points_per_cell / 4;
 

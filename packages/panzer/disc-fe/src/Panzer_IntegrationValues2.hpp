@@ -169,6 +169,9 @@ namespace panzer {
     /// This should be a private method, but using lambdas on cuda forces this to be public.
     void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
 
+    /// This should be a private method, but using lambdas on cuda forces this to be public.
+    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells,const SubcellConnectivity & face_connectivity);
+
   protected:
 
     // TODO: Make this a utility function that only exists in source file
@@ -179,7 +182,6 @@ namespace panzer {
     std::string prefix;
     std::vector<PHX::index_size_type> ddims_;
 
-    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells,const SubcellConnectivity & face_connectivity);
     void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
     void evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,const int in_num_cells);
   };

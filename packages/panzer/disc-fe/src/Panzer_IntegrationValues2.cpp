@@ -464,14 +464,14 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   {
     const int num_nodes = in_node_coordinates.extent(1);
     const int num_dims = in_node_coordinates.extent(2);
+    auto node_coordinates_k = node_coordinates.get_view();
+    auto in_node_coordinates_k = in_node_coordinates.get_view();
 
-    for(int cell=0; cell<num_cells; ++cell){
-      for(int node=0; node<num_nodes; ++node){
-        for(int dim=0; dim<num_dims; ++dim){
-          node_coordinates(cell,node,dim) = in_node_coordinates(cell,node,dim);
-        }
-      }
-    }
+    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
+    Kokkos::parallel_for("node_coordinates",policy,KOKKOS_LAMBDA (const int cell, const int node, const int dim) {
+          node_coordinates_k(cell,node,dim) = in_node_coordinates_k(cell,node,dim);
+    });
+    PHX::Device::execution_space().fence();
   }
 
   // NOTE: We are assuming that each face can have a different number of points.
@@ -497,8 +497,12 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       if(cell_dim==1){
         tmp_side_cub_weights = Kokkos::DynRankView<double,PHX::Device>("tmp_side_cub_weights",num_points_on_face);
         tmp_side_cub_points = Kokkos::DynRankView<double,PHX::Device>("cell_tmp_side_cub_points",num_points_on_face,cell_dim);
-        tmp_side_cub_weights(0)=1.;
-        tmp_side_cub_points(0,0) = (subcell_index==0)? -1. : 1.;
+        auto tmp_side_cub_weights_host = Kokkos::create_mirror_view(tmp_side_cub_weights);
+        auto tmp_side_cub_points_host = Kokkos::create_mirror_view(tmp_side_cub_points);
+        tmp_side_cub_weights_host(0)=1.;
+        tmp_side_cub_points_host(0,0) = (subcell_index==0)? -1. : 1.;
+        Kokkos::deep_copy(tmp_side_cub_weights,tmp_side_cub_weights_host);
+        Kokkos::deep_copy(tmp_side_cub_points,tmp_side_cub_points_host);
       } else {
 
         // Get the face topology from the cell topology
@@ -523,12 +527,17 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
                                        cell_topology);
       }
 
-
-      for(int local_point=0;local_point<num_points_on_face;++local_point){
-        const int point = point_offset + local_point;
-        for(int dim=0;dim<cell_dim;++dim){
-          cub_points(point,dim) = tmp_side_cub_points(local_point,dim);
+      // Do this on host
+      {
+        auto tmp_side_cub_points_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),tmp_side_cub_points);
+        auto cub_points_host = Kokkos::create_mirror_view(cub_points.get_static_view());
+        for(int local_point=0;local_point<num_points_on_face;++local_point){
+          const int point = point_offset + local_point;
+          for(int dim=0;dim<cell_dim;++dim){
+            cub_points_host(point,dim) = tmp_side_cub_points_host(local_point,dim);
+          }
         }
+        Kokkos::deep_copy(cub_points.get_static_view(),cub_points_host);
       }
 
 
