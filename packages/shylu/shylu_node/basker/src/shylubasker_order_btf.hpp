@@ -717,101 +717,113 @@ namespace BaskerNS
       return 0;
     }
 
-    //Step 1.
-    //Find total work estimate
-    Int total_work_estimate = 0;
-    for(Int b = 0; b < nblks; b++) //nblks is input; determined during btf ordering - total BTF_A blocks AND BTF_C blocks
-    {
-      total_work_estimate += btf_blk_work(b); //determined prior, during btf ordering
-    }
-    //Set a class variable to use later
-    btf_total_work = total_work_estimate;
-    //printf("num_threads: %d epsilon: %f \n",
-    //	   num_threads, 
-    //	   ((double)1/num_threads) +
-    //	   ((double)BASKER_BTF_IMBALANCE));
-    #if 0 // forcing to have the big A bloock for debug
-    //Int break_size = 0;
-    //Int break_size = 5;
-    Int break_size = 10;
-    //Int break_size = 100;
-    //Int break_size = 500000;
-    printf( " > debug: break_size = %d\n",break_size );
-    #else
-    Int break_size = ceil((double)total_work_estimate*(
-          ((double)1/num_threads) + 
-          ((double)BASKER_BTF_IMBALANCE)));
-    #endif
-    if(Options.verbose == BASKER_TRUE) {
-      printf("Basker: Break size for workspace: %d \n", (int)break_size);
-    }
-
-    Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
     Int scol_top          = 0;      // starting column of the BTF_A bloc
     Int scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
     Int blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
-                                    // note: blk_idx index acts as block id + 1; btf_tabs(nblks) is likely the end column number
-    BASKER_BOOL  move_fwd = BASKER_TRUE;
-
-    while(move_fwd==BASKER_TRUE)
-    {
-      Int blk_work = btf_blk_work(blk_idx-1);
-      // subtract the bounding column ids to determine size of the (square) block
-      Int blk_size = _btf_tabs(blk_idx) - _btf_tabs(blk_idx-1);
-
-      #ifdef BASKER_DEBUG_ORDER_BTF
-      printf(" \n move_fwd loop \n");
-      BASKER_ASSERT(blk_idx>=0, "btf blk idx off");
-      BASKER_ASSERT(blk_work>=0, "btk_work wrong");
-      BASKER_ASSERT(blk_size>0, "btf blk size wrong");
-      printf("blk_idx: %d blk_work: %d break_size: %d \n",
-          blk_idx, blk_work, break_size);
-      #endif
-
-      //Should be end
-      //if(((blk_work < break_size) ||
-      //  (blk_size < BASKER_BTF_SMALL)) &&
-      //  (blk_idx > 1))
-
-      //Continue to be in btf
-      if( (Options.use_sequential_diag_facto || blk_work < break_size) && (blk_idx > 1) )
-      {
-      #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker(blk_idx=%d, blk_size=%d, blk_work=%d, break_size=%d): continue with fine structure btf blocks\n",
-                (int)blk_idx,(int)blk_size,(int)blk_work,(int)break_size);
-      #endif
-
-        t_size  = t_size+blk_size;
-        blk_idx = blk_idx-1;
-        scol    = _btf_tabs[blk_idx];
+    if (num_threads == 1) {
+      // Short circuit for single thread = no big block A
+      scol = 0;
+      blk_idx = 0;
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker: short-circuit for one thread\n");
       }
-      //break due to size i.e. entered non-trivial large BTF_A block
-      else if( blk_work >= break_size )
+    } else {
+      //Step 1.
+      //Find total work estimate
+      double total_work_estimate = 0;
+      for(Int b = 0; b < nblks; b++) //nblks is input; determined during btf ordering - total BTF_A blocks AND BTF_C blocks
       {
-      #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker: break due to size (%d > %d)\n",blk_work,break_size);
+        total_work_estimate += btf_blk_work(b); //determined prior, during btf ordering
+      }
+      //Set a class variable to use later
+      btf_total_work = total_work_estimate;
+      //printf("num_threads: %d epsilon: %f \n",
+      //	   num_threads, 
+      //	   ((double)1/num_threads) +
+      //	   ((double)BASKER_BTF_IMBALANCE));
+      #if 0 // forcing to have the big A bloock for debug
+      //Int break_size = 0;
+      //Int break_size = 5;
+      Int break_size = 10;
+      //Int break_size = 100;
+      //Int break_size = 500000;
+      printf( " > debug: break_size = %d\n",break_size );
+      #else
+      double break_size = ceil(total_work_estimate*(
+            ((double)1.0/num_threads) + 
+            ((double)BASKER_BTF_IMBALANCE)));
       #endif
-        move_fwd = BASKER_FALSE;
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker: Break size for workspace: %d with %d threads\n", (int)break_size, (int)num_threads);
       }
-      //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
-      else if(blk_idx == 1)
+
+      scol_top          = 0;      // starting column of the BTF_A bloc
+      scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
+      blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
+                                  // note: blk_idx index acts as block id + 1; btf_tabs(nblks) is likely the end column number
+
+      Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
+      BASKER_BOOL  move_fwd = BASKER_TRUE;
+      while(move_fwd==BASKER_TRUE)
       {
-      #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker: last block\n");
-      #endif
-        //printf("break last blk\n");
-        blk_idx = 0;
-        t_size = t_size + blk_size;
-        scol = _btf_tabs[blk_idx];	
-        move_fwd = BASKER_FALSE;
-      }
-      //should not be called
-      else
-      {
-        BASKER_ASSERT(1==0, "btf order break");
-        move_fwd = BASKER_FALSE;
-      }
-    }//end while(move_fwd)
+        Int blk_work = btf_blk_work(blk_idx-1);
+        // subtract the bounding column ids to determine size of the (square) block
+        Int blk_size = _btf_tabs(blk_idx) - _btf_tabs(blk_idx-1);
+
+        #ifdef BASKER_DEBUG_ORDER_BTF
+        printf(" \n move_fwd loop \n");
+        BASKER_ASSERT(blk_idx>=0, "btf blk idx off");
+        BASKER_ASSERT(blk_work>=0, "btk_work wrong");
+        BASKER_ASSERT(blk_size>0, "btf blk size wrong");
+        printf("blk_idx: %d blk_work: %d break_size: %d \n",
+            blk_idx, blk_work, break_size);
+        #endif
+
+        //Should be end
+        //if(((blk_work < break_size) ||
+        //  (blk_size < BASKER_BTF_SMALL)) &&
+        //  (blk_idx > 1))
+
+        //Continue to be in btf
+        if( (Options.use_sequential_diag_facto || blk_work < break_size) && (blk_idx > 1) )
+        {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+           printf("Basker(blk_idx=%d, blk_size=%d, blk_work=%d, break_size=%d): continue with fine structure btf blocks\n",
+                   (int)blk_idx,(int)blk_size,(int)blk_work,(int)break_size);
+          #endif
+
+          t_size  = t_size+blk_size;
+          blk_idx = blk_idx-1;
+          scol    = _btf_tabs[blk_idx];
+        }
+        //break due to size i.e. entered non-trivial large BTF_A block
+        else if( blk_work >= break_size )
+        {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+           printf("Basker: break due to size (%d > %d)\n",(int)blk_work,(int)break_size);
+          #endif
+          move_fwd = BASKER_FALSE;
+        }
+        //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
+        else if(blk_idx == 1)
+        {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+           printf("Basker: last block\n");
+          #endif
+          //printf("break last blk\n");
+          blk_idx = 0;
+          t_size = t_size + blk_size;
+          scol = _btf_tabs[blk_idx];	
+          move_fwd = BASKER_FALSE;
+        }
+        //should not be called
+        else
+        {
+          BASKER_ASSERT(1==0, "btf order break");
+          move_fwd = BASKER_FALSE;
+        }
+      }//end while(move_fwd)
+    }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker: Done finding BTF2 cut.  Cut size: %d scol: %d \n", t_size, scol);

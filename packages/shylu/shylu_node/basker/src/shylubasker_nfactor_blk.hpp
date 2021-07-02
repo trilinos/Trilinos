@@ -136,7 +136,6 @@ namespace BaskerNS
     using Mag = typename STS::magnitudeType;
     const Entry zero (0.0);
     const Entry one (1.0);
-    const Mag eps = STS::eps ();
 
     Int b = S[0][kid]; //Which blk from schedule
     BASKER_MATRIX &L   = LL(b)(0);
@@ -447,8 +446,9 @@ namespace BaskerNS
       ucnt = ws_size - top - lcnt +1;
       if((maxindex == BASKER_MAX_IDX) || (pivot == zero) )
       {
-        Mag normA = BTF_A.gnorm;
-        Mag normM = M.anorm;
+        const Mag eps = STS::eps ();
+        const Mag normA     = BTF_A.gnorm;
+        const Mag normA_blk = BTF_A.anorm;
         if (Options.verbose == BASKER_TRUE)
         {
           cout << endl << endl;
@@ -459,18 +459,19 @@ namespace BaskerNS
                << " with nnz = " << M.nnz
                << " is singular"
                << endl;
-          cout << " Ptr       = " << M.col_ptr(k) 
-                          << " " << M.col_ptr(k+1)-1 << endl;
-          cout << " WS_size   = " << ws_size     << endl
-               << " i         = " << i           << endl
-               << " MaxIndex  = " << maxindex    << endl
-               << " Pivot     = " << pivot       << endl
-               << " x(MaxInd) = " << X(maxindex) << endl;
-          if (Options.replace_tiny_pivot && normA >= abs(zero) && maxindex != BASKER_MAX_IDX) {
-            cout << " norm(M)   = " << normM    << endl
-                 << " norm(A)   = " << normA    << endl
-                 << "  replace_tiny_diag with " << normA * eps << endl;
+          cout << "  norm(A)   = " << normA     << " (global)" << endl
+               << "  norm(A)   = " << normA_blk << " (block)"  << endl
+               << "  replace_tiny_pivot = " << (Options.replace_tiny_pivot ? " true " : "false" ) << endl;
+          if (Options.replace_tiny_pivot && normA_blk >= abs(zero) && maxindex != BASKER_MAX_IDX) {
+            cout << "  replace tiny pivot with " << normA_blk * eps << endl;
           }
+          cout << "  Ptr       = " << M.col_ptr(k) 
+                           << " " << M.col_ptr(k+1)-1 << endl;
+          cout << "  WS_size   = " << ws_size     << endl
+               << "  i         = " << i           << endl
+               << "  MaxIndex  = " << maxindex    << endl
+               << "  Pivot     = " << pivot       << endl
+               << "  x(MaxInd) = " << X(maxindex) << endl;
           cout << " Lcount    = " << lcnt       << endl
                << "---------------------------" << endl;
           /*if (kid == 0)
@@ -484,10 +485,12 @@ namespace BaskerNS
             printf( "];\n" );
           }*/
         }
-        if (Options.replace_tiny_pivot && normA > abs(zero) && maxindex != BASKER_MAX_IDX) {
-          pivot = normA * eps;
+        if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+          pivot = normA_blk * eps;
           X(maxindex) = pivot;
         } else {
+          // replace-tiny-pivot not requested, or the current column is structurally empty after elimination
+          // TODO: should we "add" tiny pivot to diagonal?    
           thread_array(kid).error_type =
             BASKER_ERROR_SINGULAR;
           thread_array(kid).error_blk    = b;

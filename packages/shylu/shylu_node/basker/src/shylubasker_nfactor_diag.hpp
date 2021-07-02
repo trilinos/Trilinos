@@ -414,6 +414,23 @@ namespace BaskerNS
     }
     #endif
 
+    // compute one-norm of diagonal block, if needed
+    const Mag eps = STS::eps ();
+    Mag normA_blk = Mag (0.0);
+    if (Options.replace_tiny_pivot) {
+      for (j = btf_tabs(c); j < btf_tabs(c+1); ++j) {
+        Mag anorm_j = Mag(0.0);
+        for (i = M.col_ptr(j-bcol); i < M.col_ptr(j-bcol+1); ++i) {
+          if (M.row_idx(i) >= brow2) {
+            anorm_j += abs(M.val(i));
+          }
+        }
+        if (anorm_j > normA_blk) {
+          normA_blk = anorm_j;
+        }
+      }
+    }
+
     // initialize perm vector
     // gperm_array(i) = k means that the current i-th row is the k-th row before pivot
     #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
@@ -648,11 +665,19 @@ namespace BaskerNS
           cout << "MaxIndex: " << maxindex 
             << " pivot " 
             << pivot << endl;
+          if (Options.replace_tiny_pivot && normA_blk >= abs(zero) && maxindex != BASKER_MAX_IDX) {
+            cout << "  replace tiny pivot with " << normA_blk * eps << endl;
+          }
         }
-        thread_array(kid).error_type = BASKER_ERROR_SINGULAR;
-        thread_array(kid).error_blk  = c;
-        thread_array(kid).error_info = k;
-        return BASKER_ERROR;
+        if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+          pivot = normA_blk * eps;
+          X(maxindex) = pivot;
+        } else {
+          thread_array(kid).error_type = BASKER_ERROR_SINGULAR;
+          thread_array(kid).error_blk  = c;
+          thread_array(kid).error_info = k;
+          return BASKER_ERROR;
+        }
       }
 
       //printf("----------------PIVOT------------blk: %d %d \n", 

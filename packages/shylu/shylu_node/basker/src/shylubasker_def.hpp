@@ -1178,7 +1178,8 @@ namespace BaskerNS
     printf("];\n");*/
 
     if (Options.replace_tiny_pivot && BTF_A.nnz > 0) {
-      // to compute norm of A
+      // to compute one-norm of global A and BTF_A
+      Kokkos::Timer normA_timer;
       using STS = Teuchos::ScalarTraits<Entry>;
       using Mag = typename STS::magnitudeType;
       const Entry zero (0.0);
@@ -1192,10 +1193,23 @@ namespace BaskerNS
           A.anorm = anorm_j;
         }
       }
+      A.gnorm = A.anorm;
+
+      for (Int j = 0; j < (Int)BTF_A.ncol; j++) {
+        Mag anorm_j = abs(zero);
+        for (Int k = BTF_A.col_ptr(j); k < BTF_A.col_ptr(j+1); k++) {
+          anorm_j += abs(BTF_A.val(k));
+        }
+        if (anorm_j > BTF_A.anorm) {
+          BTF_A.anorm = anorm_j;
+        }
+      }
       BTF_A.gnorm = A.anorm;
       if(Options.verbose == BASKER_TRUE) {
-         Kokkos::Timer normA_timer;
-         cout<< " Basker Factor: Time to compute norm(A) = " << A.anorm << ": " << normA_timer.seconds() << std::endl;
+         cout<< " Basker Factor: Time to compute " 
+             << " norm(A) = "     << BTF_A.gnorm << " with n = " << A.ncol << ", and "
+             << " norm(BTF_A) = " << BTF_A.anorm << " with n = " << BTF_A.ncol
+             << " : " << normA_timer.seconds() << std::endl;
       }
     }
 

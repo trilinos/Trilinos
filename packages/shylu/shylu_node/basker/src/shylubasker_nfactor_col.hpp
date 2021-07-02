@@ -1055,8 +1055,6 @@ namespace BaskerNS
     const Int U_row = LU_size(U_col)-1;
     const Int X_col = S(0)(kid);
     //Int col_idx_offset = 0; //can we get rid of now?
-    const Mag eps = STS::eps ();
-    const Mag normA = BTF_A.gnorm;
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
     printf("LOWER_COL_FACTOR kid: %d \n", kid);
@@ -1243,7 +1241,7 @@ namespace BaskerNS
       if(t == BASKER_MAX_IDX)
       {
         lcnt++;
-        if(EntryOP::gt(absv,maxv) || maxindex == BASKER_MAX_IDX)
+        if(EntryOP::gt(absv,maxv) || maxindex == BASKER_MAX_IDX) // \gt, or the first time
         {
           maxv     = absv;
           pivot    = value;
@@ -1292,15 +1290,27 @@ namespace BaskerNS
 
     if((maxindex == BASKER_MAX_IDX) || (pivot == zero) )
     {
+      const Mag eps = STS::eps ();
+      const Mag normA = BTF_A.gnorm;
+      const Mag normA_blk = BTF_A.anorm;
       if(Options.verbose == BASKER_TRUE)
       {
         cout << "Error: Col Matrix is singular, col k = " << k << ", lvl = " << l <<endl;
         cout << "MaxIndex: " << maxindex << " pivot " << pivot << endl;
+        cout << " norm(A)   = " << normA     << " (global)" << endl
+             << " norm(A)   = " << normA_blk << " (block)"  << endl
+             << " replace_tiny_pivot = " << Options.replace_tiny_pivot << endl;
+        if (Options.replace_tiny_pivot && normA_blk >= abs(zero) && maxindex != BASKER_MAX_IDX) {
+          cout << "  replace tiny pivot with " << normA_blk * eps << endl;
+        }
       }
-      if (Options.replace_tiny_pivot && normA > abs(zero) && maxindex != BASKER_MAX_IDX) {
-        pivot = normA * eps;
+       
+      if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
+        pivot = normA_blk * eps;
         X(maxindex) = pivot;
       } else {
+        // replace-tiny-pivot not requested, or the current column is structurally empty after elimination
+        // TODO: should we "add" tiny pivot to diagonal?  
         thread_array(kid).error_type   = BASKER_ERROR_SINGULAR;
         thread_array(kid).error_blk    = L_col;
         thread_array(kid).error_subblk = -1;
@@ -1482,9 +1492,7 @@ namespace BaskerNS
     }//if(x[j-brow] != 0)
    
     //Fill in last element of U
-    //U.row_idx[unnz] = k;
     U.row_idx(unnz) = k;
-    //U.val[unnz] = lastU;
     U.val(unnz) = lastU;
     unnz++;
    
