@@ -32,23 +32,6 @@ IntegratorPseudoTransientForwardSensitivity<Scalar>::IntegratorPseudoTransientFo
   sens_integrator_  = createIntegratorBasic<Scalar>(inputPL, sens_model_);
 }
 
-template<class Scalar>
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-IntegratorPseudoTransientForwardSensitivity(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  std::string stepperType) :
-  reuse_solver_(false),
-  force_W_update_(false)
-{
-
-  asm("int $3");
-  std::cout << "SIDAFA: got here!!" << std::endl;
-
-  model_ = model;
-  sens_model_ = createSensitivityModel(model, Teuchos::null);
-  state_integrator_ = createIntegratorBasic<Scalar>(model_, stepperType);
-  sens_integrator_ = createIntegratorBasic<Scalar>(sens_model_, stepperType);
-}
 
 template<class Scalar>
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
@@ -566,21 +549,6 @@ integratorPseudoTransientForwardSensitivity(
   return(integrator);
 }
 
-/// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
-  std::string stepperType)
-{
-
-  asm("int $3");
-  std::cout << "SIDAFA: got here!!" << std::endl;
-
-  Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(model, stepperType));
-  return(integrator);
-}
 
 /// Nonmember constructor
 template<class Scalar>

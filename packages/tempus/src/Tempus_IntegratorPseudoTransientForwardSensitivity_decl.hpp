@@ -92,11 +92,6 @@ public:
     const  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >&sens_model,
     const bool reuse_solver, const bool force_W_update);
 
-  /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
-  IntegratorPseudoTransientForwardSensitivity(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    std::string stepperType);
-
   /// Destructor
   /** \brief Constructor that requires a subsequent setStepper, and initialize calls. */
   IntegratorPseudoTransientForwardSensitivity();
@@ -190,13 +185,6 @@ Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
 integratorPseudoTransientForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
-
-/// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  std::string stepperType);
 
 /// Nonmember constructor
 template<class Scalar>
