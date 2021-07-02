@@ -160,7 +160,6 @@ public:
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() ;
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() ;
 
   //@}
 
