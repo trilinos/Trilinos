@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
   out << "Ifpack2::Factory: Test BlockCrs" << endl;
   Teuchos::OSTab tab1 (out);
 
-  const int num_rows_per_proc = 8;
+  const int num_rows_per_proc = 5;
   const int blockSize = 3;
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
@@ -195,19 +195,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
   check_precond_basics(prec_relax, out, success);
   check_precond_apply(prec_relax, out, success);
 
-
-  
-  Teuchos::RCP<Teuchos::FancyOStream> ofs = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-  bcrsmatrix->describe(*ofs,Teuchos::VERB_EXTREME);
-
   // Block-Tridiagonal
   {
     Teuchos::ParameterList params;
     params.set("relaxation: container", "BlockTriDi");
     params.set("relaxation: type", "MT Split Jacobi");
     params.set("partitioner: type", "linear");
-    //    params.set("partitioner: PDE equations", blockSize);
-    params.set("partitioner: local parts",2);
+    params.set("partitioner: local parts", num_rows_per_proc);
 
     prec_relax = factory.create<row_matrix_type> ("BLOCKRELAXATION", rowmatrix);
     TEST_EQUALITY(prec_relax != Teuchos::null, true);
