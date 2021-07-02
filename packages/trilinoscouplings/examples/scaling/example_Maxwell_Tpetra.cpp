@@ -638,9 +638,9 @@ int body(int argc, char *argv[]) {
   im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
-#ifdef HAVE_XPETRA_EPETRA
+
   MachineLearningStatistics_Hex3D<SC,LO,GO,Node> MLStatistics(numElemsGlobal);
-#endif
+
 
   long long * block_ids = new long long [numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
@@ -1193,13 +1193,13 @@ int body(int argc, char *argv[]) {
       /*** Assemble H(grad) mass matrix ***/
       // loop over nodes for matrix row
       for (int cellNodeRow = 0; cellNodeRow < numFieldsG; cellNodeRow++){
-        int localNodeRow  = elemToNode(cell, cellNodeRow);
-        int globalNodeRow = globalNodeIds[localNodeRow];
+        int localNodeRow = elemToNode(cell, cellNodeRow);
+        GO globalNodeRow = (GO) globalNodeIds[localNodeRow];
 
         // loop over nodes for matrix column
         for (int cellNodeCol = 0; cellNodeCol < numFieldsG; cellNodeCol++){
-          int localNodeCol  = elemToNode(cell, cellNodeCol);
-          int globalNodeCol = globalNodeIds[localNodeCol];          
+          int localNodeCol = elemToNode(cell, cellNodeCol);
+          GO globalNodeCol = (GO) globalNodeIds[localNodeCol];          
           NodeGraph->insertGlobalIndices(globalNodeRow,1,&globalNodeCol);
 
         }// *** cell node col loop ***
@@ -1210,13 +1210,13 @@ int body(int argc, char *argv[]) {
 
       // loop over edges for matrix row
       for (int cellEdgeRow = 0; cellEdgeRow < numFieldsC; cellEdgeRow++){
-        int localEdgeRow  = elemToEdge(cell, cellEdgeRow);
-        int globalEdgeRow = globalEdgeIds[localEdgeRow];
+        int localEdgeRow = elemToEdge(cell, cellEdgeRow);
+        GO globalEdgeRow = (GO) globalEdgeIds[localEdgeRow];
 
         // loop over edges for matrix column
         for (int cellEdgeCol = 0; cellEdgeCol < numFieldsC; cellEdgeCol++){
-          int localEdgeCol  = elemToEdge(cell, cellEdgeCol);
-          int globalEdgeCol = globalEdgeIds[localEdgeCol];
+          int localEdgeCol = elemToEdge(cell, cellEdgeCol);
+          GO globalEdgeCol = globalEdgeIds[localEdgeCol];
           EdgeGraph->insertGlobalIndices(globalEdgeRow,1,&globalEdgeCol);
         }// *** cell edge col loop ***
       }// *** cell edge row loop ***
@@ -1342,10 +1342,10 @@ int body(int argc, char *argv[]) {
     vals[0]=-1.0; vals[1]=1.0;
     for (int j=0, elid=0; j<numEdges; j++){
       if (edgeIsOwned[j]){
-        int rowNum = globalEdgeIds[j];
-        int colNum[2];
-        colNum[0] = globalNodeIds[edgeToNode(j,0)];
-        colNum[1] = globalNodeIds[edgeToNode(j,1)];
+        GO rowNum = (GO) globalEdgeIds[j];
+        GO colNum[2];
+        colNum[0] = (GO) globalNodeIds[edgeToNode(j,0)];
+        colNum[1] = (GO) globalNodeIds[edgeToNode(j,1)];
         DGrad.insertGlobalValues(rowNum, 2, vals, colNum);
         ex_data[elid] = (nodeCoordx[edgeToNode(j,0)] + nodeCoordx[edgeToNode(j,1)])/2.0;
         ey_data[elid] = (nodeCoordy[edgeToNode(j,0)] + nodeCoordy[edgeToNode(j,1)])/2.0;
@@ -1926,14 +1926,14 @@ int body(int argc, char *argv[]) {
       // loop over nodes for matrix row
       for (int cellNodeRow = 0; cellNodeRow < numFieldsG; cellNodeRow++){
 
-        int localNodeRow  = elemToNode(cell, cellNodeRow);
-        int globalNodeRow = globalNodeIds[localNodeRow];
+        int localNodeRow = elemToNode(cell, cellNodeRow);
+        GO globalNodeRow = (GO) globalNodeIds[localNodeRow];
 
         // loop over nodes for matrix column
         for (int cellNodeCol = 0; cellNodeCol < numFieldsG; cellNodeCol++){
 
-          int localNodeCol  = elemToNode(cell, cellNodeCol);
-          int globalNodeCol = globalNodeIds[localNodeCol];
+          int localNodeCol = elemToNode(cell, cellNodeCol);
+          GO globalNodeCol = (GO) globalNodeIds[localNodeCol];
           double massGContribution = massMatrixHGrad(worksetCellOrdinal, cellNodeRow, cellNodeCol);
 
           MassMatrixG.sumIntoGlobalValues(globalNodeRow, 1, &massGContribution, &globalNodeCol);
@@ -1947,8 +1947,8 @@ int body(int argc, char *argv[]) {
       // loop over edges for matrix row
       for (int cellEdgeRow = 0; cellEdgeRow < numFieldsC; cellEdgeRow++){
 
-        int localEdgeRow  = elemToEdge(cell, cellEdgeRow);
-        int globalEdgeRow = globalEdgeIds[localEdgeRow];
+        int localEdgeRow = elemToEdge(cell, cellEdgeRow);
+        GO globalEdgeRow = (GO) globalEdgeIds[localEdgeRow];
         double rhsContribution = gC(worksetCellOrdinal, cellEdgeRow) + hC(worksetCellOrdinal, cellEdgeRow);
 
         rhsVector.sumIntoGlobalValue(globalEdgeRow, 0, rhsContribution);
@@ -1957,7 +1957,7 @@ int body(int argc, char *argv[]) {
         for (int cellEdgeCol = 0; cellEdgeCol < numFieldsC; cellEdgeCol++){
 
           int localEdgeCol  = elemToEdge(cell, cellEdgeCol);
-          int globalEdgeCol = globalEdgeIds[localEdgeCol];
+          GO globalEdgeCol = (GO) globalEdgeIds[localEdgeCol];
 
           double massCContribution  = massMatrixHCurl (worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
           double stiffCContribution = stiffMatrixHCurl(worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
@@ -2048,7 +2048,7 @@ int body(int argc, char *argv[]) {
   for(int i=0;i<numNodes;i++) {
     if (nodeOnBoundary(i)){
       double val=0.0;
-      int index = globalNodeIds[i];
+      GO index = (GO) globalNodeIds[i];
       MassMatrixGinv.replaceGlobalValues(index,1,&val,&index);
     }
   }
@@ -2102,14 +2102,14 @@ int body(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
-#ifdef HAVE_XPETRA_EPETRA
+
   MLStatistics.Phase3();
   Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
   if(MyPID==0) {
     std::cout<<"*** Problem Statistics ***"<<std::endl;
     std::cout<<problemStatistics<<std::endl;
   }
-#endif
+
 
   //  double TotalErrorResidual=0, TotalErrorExactSol=0;
 
