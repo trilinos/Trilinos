@@ -14,6 +14,7 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
+#include <fstream>
 
 
 namespace Tempus {
@@ -566,9 +567,8 @@ integratorPseudoTransientForwardSensitivity(
     pl->sublist("Sensitivities").set("Reuse State Linear Solver", false);
     pl->sublist("Sensitivities").set("Force W Update", false);
 
-    pList->validateParametersAndSetDefaults(*pl);
+    pList->setParametersNotAlreadySet(*pl);
   }
-
 
   Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>(pList, model));
