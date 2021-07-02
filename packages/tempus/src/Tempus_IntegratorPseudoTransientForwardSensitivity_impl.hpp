@@ -385,14 +385,6 @@ setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
 }
 
 
-template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-getNonconstParameterList()
-{
-  //return state_integrator_->getNonconstParameterList();
-}
-
 template <class Scalar>
 Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
