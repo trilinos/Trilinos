@@ -66,10 +66,6 @@ namespace Tpetra {
     return sendTypes;
   }
 
-  int Distributor::getTag (const int pathTag) const {
-    return plan_.useDistinctTags_ ? pathTag : plan_.comm_->getTag ();
-  }
-
   Distributor::
   Distributor (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
@@ -641,7 +637,7 @@ namespace Tpetra {
 
     // MPI tag for nonblocking receives and blocking sends in this method.
     const int pathTag = 2;
-    const int tag = this->getTag (pathTag);
+    const int tag = plan_.getTag(pathTag);
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {

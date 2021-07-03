@@ -117,5 +117,9 @@ DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
     indicesFrom_(otherPlan.indicesFrom_)
 { }
 
+int DistributorPlan::getTag(const int pathTag) const {
+  return useDistinctTags_ ? pathTag : comm_->getTag();
+}
+
 }
 }

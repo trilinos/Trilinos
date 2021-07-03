@@ -784,12 +784,6 @@ namespace Tpetra {
     /// \brief The number of bytes received by this proc in the last call to do/doReverse
     size_t lastRoundBytesRecv_;
 
-    //! Get the tag to use for receives and sends.
-    ///
-    /// See useDistinctTags_.  This is called in doPosts() (both
-    /// variants) and computeReceives().
-    int getTag (const int pathTag) const;
-
     /// \brief Compute receive info from sends.
     ///
     /// This method computes numReceives_, lengthsFrom_, procsFrom_,
@@ -1005,7 +999,7 @@ namespace Tpetra {
     // the same doPosts() call, so the path tag must be the same for
     // both.
     const int pathTag = 0;
-    const int tag = this->getTag (pathTag);
+    const int tag = plan_.getTag(pathTag);
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -1380,7 +1374,7 @@ namespace Tpetra {
     // the same doPosts() call, so the path tag must be the same for
     // both.
     const int pathTag = 1;
-    const int tag = this->getTag (pathTag);
+    const int tag = plan_.getTag(pathTag);
 
 #ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -1927,7 +1921,7 @@ namespace Tpetra {
     // the same doPosts() call, so the path tag must be the same for
     // both.
     const int pathTag = 0;
-    const int tag = this->getTag (pathTag);
+    const int tag = plan_.getTag(pathTag);
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -2336,7 +2330,7 @@ namespace Tpetra {
     // the same doPosts() call, so the path tag must be the same for
     // both.
     const int pathTag = 1;
-    const int tag = this->getTag (pathTag);
+    const int tag = plan_.getTag(pathTag);
 
 #ifdef HAVE_TEUCHOS_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
