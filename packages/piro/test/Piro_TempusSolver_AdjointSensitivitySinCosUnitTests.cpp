@@ -86,12 +86,12 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
   std::string errfile_name; 
 
   outfile_name = "Tempus_BackwardEuler_SinCos_Sens_ASA.dat"; 
+  errfile_name = "Tempus_BackwardEuler_SinCos_Sens_ASA_Error.dat";
 
   const RCP<MockObserver<double> > observer(new MockObserver<double>);
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  //const int nTimeStepSizes = 7;
-  const int nTimeStepSizes = 1;
+  const int nTimeStepSizes = 7;
   double dt = 0.2;
   double order = 0.0;
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
@@ -101,12 +101,10 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
   my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
   my_out->setOutputToRootOnly(0);
 
-  std::cout << "IKT sens_method_string = " << sens_method_string << "\n";   
   SENS_METHOD sens_method;
   if (sens_method_string == "None") sens_method = Piro::NONE;
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
   else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
-  std::cout << "IKT sens_method = " << sens_method << "\n";   
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -124,6 +122,8 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     RCP<ParameterList> tempus_pl = sublist(pList, "Tempus", true);
     
     //Set up sensitivity PL
+    // IKT 7/2/2021: TODO - ask Eric Phipps about these options, 
+    // as w/o them I got runtime errors.
     ParameterList& sens_pl = tempus_pl->sublist("Sensitivities");
     sens_pl.set("Mass Matrix Is Identity", false); // Just for testing
     ParameterList& interp_pl =
@@ -146,7 +146,7 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     std::cout << "IKT tempus_pl = " << *tempus_pl << "\n"; 
     Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
         = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempus_pl, model, sens_method));
-    /*order = integrator->getStepper()->getOrder();
+    order = integrator->getStepper()->getOrder();
 
     // Initial Conditions
     double t0 = tempus_pl->sublist("Default Integrator")
@@ -158,10 +158,12 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     const int num_param = model->get_p_space(0)->dim();
     RCP<Thyra::MultiVectorBase<double> > DxDp0 =
       Thyra::createMembers(model->get_x_space(), num_param);
-    for (int i=0; i<num_param; ++i) {
+    for (int i=0; i<num_param; ++i)
       Thyra::assign(DxDp0->col(i).ptr(),
                     *(model->getExactSensSolution(i, t0).get_x()));
-    }
+    integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
+                                DxDp0, Teuchos::null, Teuchos::null);
+
     integrator->initializeSolutionHistory(t0, x0, Teuchos::null, Teuchos::null,
                                 DxDp0, Teuchos::null, Teuchos::null);
     const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
@@ -178,7 +180,7 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepper_pl, model);
     const RCP<TempusSolver<double> > tempus_solver = 
          rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string));
-
+    
     const Thyra::MEB::InArgs<double> inArgs = tempus_solver->getNominalValues();
     Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();
     const int solutionResponseIndex = tempus_solver->Ng() - 1;
@@ -197,72 +199,78 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
-    // Time-integrated solution and the exact solution
+    // Time-integrated solution and the exact solution along with
+    // sensitivities (relying on response g(x) = x).  Note we must transpose
+    // dg/dp since the integrator returns it in gradient form.
     RCP<const Thyra::VectorBase<double> > x = integrator->getX();
-    RCP<const Thyra::MultiVectorBase<double> > DxDp = integrator->getDxDp();
+    RCP<const Thyra::MultiVectorBase<double> > DgDp = integrator->getDgDp();
+    RCP<Thyra::MultiVectorBase<double> > DxDp =
+      Thyra::createMembers(model->get_x_space(), num_param);
+    {
+      Thyra::ConstDetachedMultiVectorView<double> dgdp_view(*DgDp);
+      Thyra::DetachedMultiVectorView<double> dxdp_view(*DxDp);
+      const int num_g = DgDp->domain()->dim();
+      for (int i=0; i<num_g; ++i)
+        for (int j=0; j<num_param; ++j)
+          dxdp_view(i,j) = dgdp_view(j,i);
+    }
     RCP<const Thyra::VectorBase<double> > x_exact =
       model->getExactSolution(time).get_x();
     RCP<Thyra::MultiVectorBase<double> > DxDp_exact =
       Thyra::createMembers(model->get_x_space(), num_param);
-    for (int i=0; i<num_param; ++i) {
+    for (int i=0; i<num_param; ++i)
       Thyra::assign(DxDp_exact->col(i).ptr(),
                     *(model->getExactSensSolution(i, time).get_x()));
-    }
-     // Plot sample solution and exact solution
+
+    // Plot sample solution, exact solution, and adjoint solution
     if (comm->getRank() == 0 && n == nTimeStepSizes-1) {
+      typedef Thyra::DefaultProductVector<double> DPV;
       typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
       std::ofstream ftmp(outfile_name);
       RCP<const Tempus::SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
-      RCP< Thyra::MultiVectorBase<double> > DxDp_exact_plot =
-        Thyra::createMembers(model->get_x_space(), num_param);
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const Tempus::SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time_i = solutionState->getTime();
-        RCP<const DMVPV> x_prod_plot =
-          Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
+        const double time_i = solutionState->getTime();
+        RCP<const DPV> x_prod_plot =
+          Teuchos::rcp_dynamic_cast<const DPV>(solutionState->getX());
         RCP<const Thyra::VectorBase<double> > x_plot =
-          x_prod_plot->getMultiVector()->col(0);
-        RCP<const Thyra::MultiVectorBase<double> > DxDp_plot =
-          x_prod_plot->getMultiVector()->subView(Teuchos::Range1D(1,num_param));
+          x_prod_plot->getVectorBlock(0);
+        RCP<const DMVPV > adjoint_prod_plot =
+          Teuchos::rcp_dynamic_cast<const DMVPV>(x_prod_plot->getVectorBlock(1));
+        RCP<const Thyra::MultiVectorBase<double> > adjoint_plot =
+          adjoint_prod_plot->getMultiVector();
         RCP<const Thyra::VectorBase<double> > x_exact_plot =
           model->getExactSolution(time_i).get_x();
-        for (int j=0; j<num_param; ++j) {
-          Thyra::assign(DxDp_exact_plot->col(j).ptr(),
-                        *(model->getExactSensSolution(j, time_i).get_x()));
-        }
         ftmp << std::fixed << std::setprecision(7)
              << time_i
              << std::setw(11) << get_ele(*(x_plot), 0)
-             << std::setw(11) << get_ele(*(x_plot), 1);
-        for (int j=0; j<num_param; ++j) {
-          ftmp << std::setw(11) << get_ele(*(DxDp_plot->col(j)), 0)
-               << std::setw(11) << get_ele(*(DxDp_plot->col(j)), 1);
-        }
-        ftmp << std::setw(11) << get_ele(*(x_exact_plot), 0)
-             << std::setw(11) << get_ele(*(x_exact_plot), 1);
-        for (int j=0; j<num_param; ++j) {
-          ftmp << std::setw(11) << get_ele(*(DxDp_exact_plot->col(j)), 0)
-               << std::setw(11) << get_ele(*(DxDp_exact_plot->col(j)), 1);
-        }
-        ftmp << std::endl;
+             << std::setw(11) << get_ele(*(x_plot), 1)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(0)), 0)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(0)), 1)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(1)), 0)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(1)), 1)
+             << std::setw(11) << get_ele(*(x_exact_plot), 0)
+             << std::setw(11) << get_ele(*(x_exact_plot), 1)
+             << std::endl;
       }
       ftmp.close();
     }
 
+    //Compare solution from observer and x to verify observer routines 
     const RCP<const Thyra::VectorBase<double> > solution =
       observer->lastSolution();
-    const RCP<const Thyra::MultiVectorBase<double> > solution_dxdp =
-      observer->lastSolution_dxdp();
-
-    //Compare solution from observer and x to verify observer routines 
     TEST_COMPARE_FLOATING_ARRAYS(
       arrayFromVector(*solution),
       arrayFromVector(*x),
       tol);
 
-    //Compare solution_dxdp from observer and DxDp to verify observer routines 
+    //IKT, 7/4/2021: we'll want to add some capability to observe DgDp eventually, maybe,
+    //in which case we'd want too add logic similar to the following.
+    /*//Compare solution_dxdp from observer and DxDp to verify observer routines 
+    const RCP<const Thyra::MultiVectorBase<double> > solution_dxdp =
+      observer->lastSolution_dxdp();
     for (int np = 0; np < DxDp->domain()->dim(); np++) { 
       Teuchos::RCP<const Thyra::VectorBase<double>> DxDp_vec = DxDp->col(np);
       Teuchos::RCP<const Thyra::VectorBase<double>> solution_dxdp_vec = solution_dxdp->col(np);
@@ -270,8 +278,8 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
         arrayFromVector(*solution_dxdp_vec),
         arrayFromVector(*DxDp_vec),
         tol);
-    }
-    
+    }*/
+
     // Calculate the error
     RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
     RCP<Thyra::MultiVectorBase<double> > DxDpdiff = DxDp->clone_mv();
@@ -287,10 +295,10 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     L2norm = std::sqrt(L2norm);
     ErrorNorm.push_back(L2norm);
 
-    *my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
-            << std::endl;*/
+    *my_out << " n = " << n << " dt = " << dt << " error = " << L2norm << "\n";
+
   }
-  /*// Check the order and intercept
+  // Check the order and intercept
   double slope = Tempus_Test::computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
   *my_out << "  Stepper = BackwardEuler" << std::endl;
   *my_out << "  =========================" << std::endl;
@@ -298,7 +306,7 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.163653, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.151746, 1.0e-4 );
 
   if (comm->getRank() == 0) {
     std::ofstream ftmp(errfile_name);
@@ -308,11 +316,11 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
            << error0*(StepSize[n]/StepSize[0]) << std::endl;
     }
     ftmp.close();
-  }*/
+  }
 
 }
 
-TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_Staggered_ASA)
+TEUCHOS_UNIT_TEST(Piro_TempusSolver, SinCos_AdjointSensitivities)
 {
   test_sincos_asa(out, success);
 }
