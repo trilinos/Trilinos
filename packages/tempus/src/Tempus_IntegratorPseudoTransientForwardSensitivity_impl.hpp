@@ -381,12 +381,10 @@ buildSolutionHistory()
 
   //TODO: get the solution history PL or create it
 
-
-  RCP<ParameterList> tempusPL;
-  *tempusPL = *(state_integrator_->getValidParameters());
   // Create combined solution histories, first for the states with zero
   // sensitivities and then for the sensitivities with frozen states
-  RCP<ParameterList> shPL = Teuchos::sublist(tempusPL, "Solution History", true);
+  RCP<ParameterList> shPL;
+    //Teuchos::sublist(state_integrator_->getIntegratorParameterList(), "Solution History", true);
   solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   const int num_param =
