@@ -50,28 +50,6 @@ template <typename... Args>
 inline void foreach_pack(Args &&... args) {}
 } // namespace Impl
 
-template <typename... Args>
-void beginFill(Args &&... args)
-{
-  // use the comma operator to transform a potentially void function call
-  // into a argument to allow proper parameter expansion for c++11
-  Impl::foreach_pack( (args.beginFill(),1)... );
-
-  // using c++17 the code would be
-  // (args.beginFill()...);
-}
-
-template <typename... Args>
-void endFill(Args &&... args)
-{
-  // use the comma operator to transform a potentially void function call
-  // into a argument to allow proper parameter expansion for c++11
-  Impl::foreach_pack( (args.endFill(),1)... );
-
-  // using c++17 the code would be
-  // (args.endFill()...);
-
-}
 
 template <typename... Args>
 void beginAssembly(Args &&... args)
