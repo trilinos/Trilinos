@@ -1379,7 +1379,8 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostViewMicrobench) {
   fixture.fillDualViewOnHostDevice();
   RCP<StackedTimer> timer = rcp(new StackedTimer("hostView"));
   TimeMonitor::setStackedTimer(timer);
-  size_t iterations = 1048576;
+  size_t iterations = 4000000;
+  std::string dvTimer = "hostView: raw dualView";
   std::string roTimer = "hostView: ReadOnly";
   std::string oaTimer = "hostView: OverwriteAll";
   std::string rwTimer = "hostView: ReadWrite";
@@ -1387,85 +1388,61 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostViewMicrobench) {
   //get communicator
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
-  auto dv = fixture.getDualView();
+  auto dualV = fixture.getDualView();
+  WrappedDualViewType wdv(fixture.getDualView());
+
+  //warm up call
+  {
+    auto warmUp = dualV.view_host();
+  }
+  //raw dualView
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(dvTimer));
+    for (size_t i = 0; i < iterations; i++) {
+      auto tmp = dualV.view_host();
+    }
+  }
+
+  //warm up call (force a sync)
+  {
+    auto warmUp = wdv.getHostView(Tpetra::Access::ReadOnly);
+  }
+
   //ReadOnly
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(roTimer));
     for (size_t i = 0; i < iterations; i++) {
-      auto tmp = fixture.getHostView(Tpetra::Access::ReadOnly);
+      auto tmp = wdv.getHostView(Tpetra::Access::ReadOnly);
     }
+  }
+  //warm up call (force a sync)
+  {
+    auto warmUp = wdv.getHostView(Tpetra::Access::OverwriteAll);
   }
 
   //OverwriteAll
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(oaTimer));
     for (size_t i = 0; i < iterations; i++) {
-      auto tmp = fixture.getHostView(Tpetra::Access::OverwriteAll);
+      auto tmp = wdv.getHostView(Tpetra::Access::OverwriteAll);
     }
+  }
+
+  //warm up call (force a sync)
+  {
+    auto warmUp = wdv.getHostView(Tpetra::Access::ReadWrite);
   }
 
   //ReadWrite
   {
     TimeMonitor t(*TimeMonitor::getNewTimer(rwTimer));
     for (size_t i = 0; i < iterations; i++) {
-      auto tmp = fixture.getHostView(Tpetra::Access::ReadWrite);
+      auto tmp = wdv.getHostView(Tpetra::Access::ReadWrite);
     }
   }
   StackedTimer::OutputOptions options;
   options.print_warnings = false;
   timer->report(std::cout, comm, options);
-}
-
-TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewMicrobench) {
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::TimeMonitor;
-  using Teuchos::StackedTimer;
-  using std::cout;
-  using std::endl;
-
-  WrappedDualViewFixture fixture;
-  fixture.fillDualViewOnHost();
-  RCP<StackedTimer> timer = rcp(new StackedTimer("deviceView"));
-  TimeMonitor::setStackedTimer(timer);
-  size_t iterations = 1048576;
-  std::string roTimer = "deviceView: ReadOnly";
-  std::string oaTimer = "deviceView: OverwriteAll";
-  std::string rwTimer = "deviceView: ReadWrite";
-
-  //get communicator
-  RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  HostViewType hostView("host view", fixture.getViewSize());
-  WrappedDualViewType dv = wrappedDualViewType(hostView);
-
-  auto dv = fixture.getDualView();
-  //ReadOnly
-  {
-    TimeMonitor t(*TimeMonitor::getNewTimer(roTimer));
-    for (size_t i = 0; i < iterations; i++) {
-      auto tmp = dv.getDeviceView(Tpetra::Access::ReadOnly);
-    }
-  }
-
-  //OverwriteAll
-  {
-    TimeMonitor t(*TimeMonitor::getNewTimer(oaTimer));
-    for (size_t i = 0; i < iterations; i++) {
-      auto tmp = dv.getDeviceView(Tpetra::Access::OverwriteAll);
-    }
-  }
-
-  //ReadWrite
-  {
-    TimeMonitor t(*TimeMonitor::getNewTimer(rwTimer));
-    for (size_t i = 0; i < iterations; i++) {
-      auto tmp = dv.getDeviceView(Tpetra::Access::ReadWrite);
-    }
-  }
-  StackedTimer::OutputOptions options;
-  options.print_warnings = false;
-  timer->report(std::cout, comm, options);
-
 }
 
 }
