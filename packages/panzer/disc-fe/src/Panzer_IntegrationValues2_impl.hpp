@@ -31,41 +31,40 @@ swapQuadraturePoints(int cell,
   KOKKOS_ASSERT(b >= 0);
 #endif
 
-  // Using scratch_for_compute_side_measure instead of hold. This
-  // works around UVM issues of DFAD temporaries in device code.
-  // Scalar hold;
+  // If this is a DFAD type, we will need to fix allocation to size the derivative array. 
+  Scalar hold;
 
-  scratch_for_compute_side_measure(0) = weighted_measure(cell,new_cell_point);
+  hold = weighted_measure(cell,new_cell_point);
   weighted_measure(cell,new_cell_point) = weighted_measure(cell,old_cell_point);
-  weighted_measure(cell,old_cell_point) = scratch_for_compute_side_measure(0);
+  weighted_measure(cell,old_cell_point) = hold;
 
-  scratch_for_compute_side_measure(0) = jac_det(cell,new_cell_point);
+  hold = jac_det(cell,new_cell_point);
   jac_det(cell,new_cell_point) = jac_det(cell,old_cell_point);
-  jac_det(cell,old_cell_point) = scratch_for_compute_side_measure(0);
+  jac_det(cell,old_cell_point) = hold;
 
   for(int dim=0;dim<cell_dim;++dim){
 
-    scratch_for_compute_side_measure(0) = ref_ip_coordinates(cell,new_cell_point,dim);
+    hold = ref_ip_coordinates(cell,new_cell_point,dim);
     ref_ip_coordinates(cell,new_cell_point,dim) = ref_ip_coordinates(cell,old_cell_point,dim);
-    ref_ip_coordinates(cell,old_cell_point,dim) = scratch_for_compute_side_measure(0);
+    ref_ip_coordinates(cell,old_cell_point,dim) = hold;
 
-    scratch_for_compute_side_measure(0) = ip_coordinates(cell,new_cell_point,dim);
+    hold = ip_coordinates(cell,new_cell_point,dim);
     ip_coordinates(cell,new_cell_point,dim) = ip_coordinates(cell,old_cell_point,dim);
-    ip_coordinates(cell,old_cell_point,dim) = scratch_for_compute_side_measure(0);
+    ip_coordinates(cell,old_cell_point,dim) = hold;
 
-    scratch_for_compute_side_measure(0) = surface_normals(cell,new_cell_point,dim);
+    hold = surface_normals(cell,new_cell_point,dim);
     surface_normals(cell,new_cell_point,dim) = surface_normals(cell,old_cell_point,dim);
-    surface_normals(cell,old_cell_point,dim) = scratch_for_compute_side_measure(0);
+    surface_normals(cell,old_cell_point,dim) = hold;
 
     for(int dim2=0;dim2<cell_dim;++dim2){
 
-      scratch_for_compute_side_measure(0) = jac(cell,new_cell_point,dim,dim2);
+      hold = jac(cell,new_cell_point,dim,dim2);
       jac(cell,new_cell_point,dim,dim2) = jac(cell,old_cell_point,dim,dim2);
-      jac(cell,old_cell_point,dim,dim2) = scratch_for_compute_side_measure(0);
+      jac(cell,old_cell_point,dim,dim2) = hold;
 
-      scratch_for_compute_side_measure(0) = jac_inv(cell,new_cell_point,dim,dim2);
+      hold = jac_inv(cell,new_cell_point,dim,dim2);
       jac_inv(cell,new_cell_point,dim,dim2) = jac_inv(cell,old_cell_point,dim,dim2);
-      jac_inv(cell,old_cell_point,dim,dim2) = scratch_for_compute_side_measure(0);
+      jac_inv(cell,old_cell_point,dim,dim2) = hold;
     }
   }
 
@@ -76,6 +75,58 @@ swapQuadraturePoints(int cell,
       surface_rotation_matrices(cell,new_cell_point,dim,dim2) = surface_rotation_matrices(cell,old_cell_point,dim,dim2);
       surface_rotation_matrices(cell,old_cell_point,dim,dim2) = scratch_for_compute_side_measure(0);
     }
+  }
+}
+
+template <typename Scalar>
+void IntegrationValues2<Scalar>::
+convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3])
+{
+  using T = Scalar;
+  
+  const T n  = sqrt(normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2]);
+
+  // If this fails then the geometry for this cell is probably undefined
+  if(n > 0.){
+    // Make sure transverse is not parallel to normal within some margin of error
+    transverse[0]=0.;transverse[1]=1.;transverse[2]=0.;
+    if(std::fabs(normal[0]*transverse[0]+normal[1]*transverse[1])>0.9){
+      transverse[0]=1.;transverse[1]=0.;
+    }
+
+    const T nt = normal[0]*transverse[0]+normal[1]*transverse[1]+normal[2]*transverse[2];
+
+    // Note normal has unit length
+    const T mult = nt/(n*n); // = nt
+
+    // Remove normal projection from transverse
+    for(int dim=0;dim<3;++dim){
+      transverse[dim] = transverse[dim] - mult * normal[dim];
+    }
+
+    const T t = sqrt(transverse[0]*transverse[0]+transverse[1]*transverse[1]+transverse[2]*transverse[2]);
+    KOKKOS_ASSERT(t != 0.);
+    for(int dim=0;dim<3;++dim){
+      transverse[dim] /= t;
+    }
+
+    // We assume a right handed system such that b = n \times t
+    binormal[0] = (normal[1] * transverse[2] - normal[2] * transverse[1]);
+    binormal[1] = (normal[2] * transverse[0] - normal[0] * transverse[2]);
+    binormal[2] = (normal[0] * transverse[1] - normal[1] * transverse[0]);
+
+    // Normalize binormal
+    const T b = sqrt(binormal[0]*binormal[0]+binormal[1]*binormal[1]+binormal[2]*binormal[2]);
+    for(int dim=0;dim<3;++dim){
+      binormal[dim] /= b;
+    }
+  } else {
+    transverse[0] = 0.;
+    transverse[1] = 0.;
+    transverse[2] = 0.;
+    binormal[0] = 0.;
+    binormal[1] = 0.;
+    binormal[2] = 0.;
   }
 }
 

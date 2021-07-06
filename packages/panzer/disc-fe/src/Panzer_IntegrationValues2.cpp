@@ -324,6 +324,7 @@ getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
                                 *(int_rule->topology));
 }
 
+  /*
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
 convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3])
@@ -351,7 +352,7 @@ convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scal
     }
 
     const T t = sqrt(transverse[0]*transverse[0]+transverse[1]*transverse[1]+transverse[2]*transverse[2]);
-    TEUCHOS_ASSERT(t != 0.);
+    KOKKOS_ASSERT(t != 0.);
     for(int dim=0;dim<3;++dim){
       transverse[dim] /= t;
     }
@@ -375,6 +376,7 @@ convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scal
     binormal[2] = 0.;
   }
 }
+  */
   /*  
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
@@ -556,11 +558,15 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
                              s_node_coordinates,
                              cell_topology);
 
+      PHX::Device::execution_space().fence();
+
       auto side_inverse_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_inv_jac",num_cells,num_points_on_face,cell_dim,cell_dim);
       cell_tools.setJacobianInv(side_inverse_jacobian, side_jacobian);
 
       auto side_det_jacobian = Kokkos::DynRankView<Scalar,PHX::Device>("side_det_jac",num_cells,num_points_on_face);
       cell_tools.setJacobianDet(side_det_jacobian, side_jacobian);
+
+      PHX::Device::execution_space().fence();
 
       // Calculate measures (quadrature weights in physical space) for this side
       auto side_weighted_measure = Kokkos::DynRankView<Scalar,PHX::Device>("side_weighted_measure",num_cells,num_points_on_face);
@@ -571,65 +577,79 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           computeEdgeMeasure(side_weighted_measure, side_jacobian, tmp_side_cub_weights,
                              subcell_index,cell_topology,
                              scratch_for_compute_side_measure.get_view());
+        PHX::Device::execution_space().fence();
       } else if(cell_dim == 3){
         Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::
           computeFaceMeasure(side_weighted_measure, side_jacobian, tmp_side_cub_weights,
                              subcell_index,cell_topology,
                              scratch_for_compute_side_measure.get_view());
+        PHX::Device::execution_space().fence();
       }
 
       // Calculate normals
       auto side_normals = Kokkos::DynRankView<Scalar,PHX::Device>("side_normals",num_cells,num_points_on_face,cell_dim);
       if(cell_dim == 1){
 
-        int other_subcell_index = (subcell_index==0) ? 1 : 0;
+        const int other_subcell_index = (subcell_index==0) ? 1 : 0;
+        auto in_node_coordinates_k = in_node_coordinates.get_view();
+        const auto min = std::numeric_limits<typename Sacado::ScalarType<Scalar>::type>::min();
 
-        for(int cell=0;cell<num_cells;++cell){
-          Scalar norm = (in_node_coordinates(cell,subcell_index,0) - in_node_coordinates(cell,other_subcell_index,0));
-          side_normals(cell,0,0) = norm / fabs(norm+std::numeric_limits<typename Sacado::ScalarType<Scalar>::type>::min());
-        }
+        Kokkos::parallel_for("compute normals 1D",num_cells,KOKKOS_LAMBDA (const int cell) {
+          Scalar norm = (in_node_coordinates_k(cell,subcell_index,0) - in_node_coordinates_k(cell,other_subcell_index,0));
+          side_normals(cell,0,0) = norm / fabs(norm + min);
+        });
 
       } else {
 
         cell_tools.getPhysicalSideNormals(side_normals,side_jacobian,subcell_index,cell_topology);
 
         // Normalize each normal
-        for(int cell=0;cell<num_cells;++cell){
-          for(int point=0;point<num_points_on_face;++point){
-            Scalar n = 0.;
+        Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{num_cells,num_points_on_face});
+        Kokkos::parallel_for("Normalize the normals",policy,KOKKOS_LAMBDA (const int cell,const int point) {
+          Scalar n = 0.;
+          for(int dim=0;dim<cell_dim;++dim){
+            n += side_normals(cell,point,dim)*side_normals(cell,point,dim);
+          }
+          // If n is zero then this is - hopefully - a virtual cell
+          if(n > 0.){
+            n = std::sqrt(n);
             for(int dim=0;dim<cell_dim;++dim){
-              n += side_normals(cell,point,dim)*side_normals(cell,point,dim);
-            }
-            // If n is zero then this is - hopefully - a virtual cell
-            if(n > 0.){
-              n = std::sqrt(n);
-              for(int dim=0;dim<cell_dim;++dim){
-                side_normals(cell,point,dim) /= n;
-              }
+              side_normals(cell,point,dim) /= n;
             }
           }
-        }
+        });
 
       }
+      PHX::Device::execution_space().fence();
 
       // Now that we have all these wonderful values, lets copy them to the actual arrays
-      for(int cell=0;cell<num_cells;++cell){
-        for(int side_point=0; side_point<num_points_on_face;++side_point){
+      {
+        auto weighted_measure_k = weighted_measure.get_view();
+        auto jac_k = jac.get_view();
+        auto jac_inv_k = jac_inv.get_view();
+        auto jac_det_k = jac_det.get_view();
+        auto ref_ip_coordinates_k = ref_ip_coordinates.get_view();
+        auto ip_coordinates_k = ip_coordinates.get_view();
+        auto surface_normals_k = surface_normals.get_view();
+        auto cub_points_k = cub_points.get_view();
+        Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{num_cells,num_points_on_face});
+        Kokkos::parallel_for("copy values",policy,KOKKOS_LAMBDA (const int cell,const int side_point) {
           const int cell_point = point_offset + side_point;
 
-          weighted_measure(cell,cell_point) = side_weighted_measure(cell,side_point);
-          jac_det(cell,cell_point) = side_det_jacobian(cell,side_point);
+          weighted_measure_k(cell,cell_point) = side_weighted_measure(cell,side_point);
+          jac_det_k(cell,cell_point) = side_det_jacobian(cell,side_point);
           for(int dim=0;dim<cell_dim;++dim){
-            ref_ip_coordinates(cell,cell_point,dim) = cub_points(cell_point,dim);
-            ip_coordinates(cell,cell_point,dim)     = side_ip_coordinates(cell,side_point,dim);
-            surface_normals(cell,cell_point,dim)    = side_normals(cell,side_point,dim);
+            ref_ip_coordinates_k(cell,cell_point,dim) = cub_points_k(cell_point,dim);
+            ip_coordinates_k(cell,cell_point,dim)     = side_ip_coordinates(cell,side_point,dim);
+            surface_normals_k(cell,cell_point,dim)    = side_normals(cell,side_point,dim);
 
             for(int dim2=0;dim2<cell_dim;++dim2){
-              jac(cell,cell_point,dim,dim2) = side_jacobian(cell,side_point,dim,dim2);
-              jac_inv(cell,cell_point,dim,dim2) = side_inverse_jacobian(cell,side_point,dim,dim2);
+              jac_k(cell,cell_point,dim,dim2) = side_jacobian(cell,side_point,dim,dim2);
+              jac_inv_k(cell,cell_point,dim,dim2) = side_inverse_jacobian(cell,side_point,dim,dim2);
             }
           }
-        }
+        });
+        PHX::Device::execution_space().fence();
       }
       point_offset += num_points_on_face;
     }
@@ -638,33 +658,27 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   // We also need surface rotation matrices in order to enforce alignment
   {
     const int num_points = ir.getPointOffset(num_subcells);
-    Scalar normal[3];
-    Scalar transverse[3];
-    Scalar binormal[3];
-    for(int i=0;i<3;i++){normal[i]=0.;}
-    for(int i=0;i<3;i++){transverse[i]=0.;}
-    for(int i=0;i<3;i++){binormal[i]=0.;}
-    for(int cell=0; cell<num_cells; ++cell){
-      for(int subcell_index=0; subcell_index<num_subcells; ++subcell_index){
-        for(int point=0; point<num_points; ++point){
-          
-          for(int dim=0; dim<3; ++dim)
-            normal[dim] = 0.0;
-          
-          for(int dim=0; dim<cell_dim; ++dim){
-            normal[dim] = surface_normals(cell,point,dim);
-          }
-          
-          convertNormalToRotationMatrix(normal,transverse,binormal);
-          
-          for(int dim=0; dim<3; ++dim){
-            surface_rotation_matrices(cell,point,0,dim) = normal[dim];
-            surface_rotation_matrices(cell,point,1,dim) = transverse[dim];
-            surface_rotation_matrices(cell,point,2,dim) = binormal[dim];
-          }
-        }
+    auto surface_normals_k = surface_normals.get_view();
+    auto surface_rotation_matrices_k = surface_rotation_matrices.get_view();
+    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_subcells,num_points});
+    Kokkos::parallel_for("create surface rotation matrices",policy,KOKKOS_LAMBDA (const int cell,const int subcell_index,const int point) {
+      Scalar normal[3];
+        
+      for(int dim=0; dim<cell_dim; ++dim){
+        normal[dim] = surface_normals_k(cell,point,dim);
       }
-    }
+      
+      Scalar transverse[3];
+      Scalar binormal[3];
+      convertNormalToRotationMatrix(normal,transverse,binormal);
+      
+      for(int dim=0; dim<3; ++dim){
+        surface_rotation_matrices_k(cell,point,0,dim) = normal[dim];
+        surface_rotation_matrices_k(cell,point,1,dim) = transverse[dim];
+        surface_rotation_matrices_k(cell,point,2,dim) = binormal[dim];
+      }
+    });
+    PHX::Device::execution_space().fence();
   }
 
   // =========================================================
