@@ -280,7 +280,7 @@ namespace MueLu {
     syncTimers_                = list.get("sync timers",                       false);
     numItersH_                 = list.get("refmaxwell: num iters H",           1);
     numIters22_                = list.get("refmaxwell: num iters 22",          1);
-    applyBCsToAnodal_          = list.get("refmaxwell: apply BCs to Anodal",   false);
+    applyBCsToAnodal_          = list.get("refmaxwell: apply BCs to Anodal",   true);
     applyBCsToH_               = list.get("refmaxwell: apply BCs to H",        true);
     applyBCsTo22_              = list.get("refmaxwell: apply BCs to 22",       true);
 
