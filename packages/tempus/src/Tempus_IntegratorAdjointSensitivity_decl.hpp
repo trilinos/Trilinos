@@ -11,7 +11,7 @@
 
 // Tempus
 #include "Tempus_config.hpp"
-#include "Tempus_IntegratorBasicOld.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointAuxSensitivityModelEvaluator.hpp"
 
 namespace Tempus {
@@ -42,8 +42,7 @@ namespace Tempus {
  */
 template<class Scalar>
 class IntegratorAdjointSensitivity :
-    virtual public Tempus::Integrator<Scalar>,
-    virtual public Teuchos::ParameterListAcceptor
+    virtual public Tempus::Integrator<Scalar>
 {
 public:
 
@@ -78,8 +77,17 @@ public:
    * </ul>
    */
   IntegratorAdjointSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
+      const Teuchos::RCP<IntegratorBasic<Scalar>> &state_integrator,
+      const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_model,
+      const Teuchos::RCP<IntegratorBasic<Scalar>> &ajoint_integrator,
+      const Teuchos::RCP<SolutionHistory<Scalar> > &solutionHistory,
+      const int p_index,
+      const int g_index,
+      const bool g_depends_on_p,
+      const bool f_depends_on_p,
+      const bool ic_depends_on_p,
+      const bool mass_matrix_is_identity);
 
   /// Destructor
   /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
@@ -149,17 +157,6 @@ public:
   /// Return adjoint sensitivity stored in gradient format
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
 
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
-      override;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override;
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
-
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
-      const override;
-  //@}
-
   /// \name Overridden from Teuchos::Describable
   //@{
     std::string description() const override;
@@ -181,8 +178,8 @@ protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > adjoint_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > adjoint_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   int p_index_;
   int g_index_;
