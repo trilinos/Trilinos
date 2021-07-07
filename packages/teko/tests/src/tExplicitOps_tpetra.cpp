@@ -285,21 +285,19 @@ bool tExplicitOps_tpetra::test_mult_modScaleMatProd(int verbosity,std::ostream &
 
    // do some random violence (oh my brothers) to one row
    size_t numEntries = crsF->getNumEntriesInLocalRow (3);
-   std::vector<ST> values1(numEntries);
-   std::vector<LO> indices1(numEntries);  
-   Teuchos::ArrayView<const ST> values1_av(values1);
-   Teuchos::ArrayView<const LO> indices1_av(indices1);
-   crsF->getLocalRowView(3,indices1_av,values1_av);
-   for(size_t i=0;i<numEntries;i++) values1[i] *= values1[i]*ST(i+1)*0.92;
+   auto indices1 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   auto values1 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   crsF->getLocalRowCopy(3,indices1,values1,numEntries);
+   for(size_t i=0;i<numEntries;i++) values1(i) *= values1(i)*ST(i+1)*0.92;
+   crsF->replaceLocalValues(3,indices1,values1);
 
    // do some random violence (oh my brothers) to one row
    numEntries = crsF->getNumEntriesInLocalRow (7);
-   std::vector<ST> values2(numEntries);
-   std::vector<LO> indices2(numEntries);  
-   Teuchos::ArrayView<const ST> values2_av(values2);
-   Teuchos::ArrayView<const LO> indices2_av(indices2);
-   crsF->getLocalRowView(7,indices2_av,values2_av);
-   for(size_t i=0;i<numEntries;i++) values2[i] *= values2[i]*ST(i+1)*0.92;
+   auto indices2 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   auto values2 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   crsF->getLocalRowCopy(7,indices2,values2,numEntries);
+   for(size_t i=0;i<numEntries;i++) values2(i) *= values2(i)*ST(i+1)*0.92;
+   crsF->replaceLocalValues(7,indices2,values2);
 
    // perform the next test
    thyOp = Teko::multiply(Teko::scale(-4.0,F_),D_,Teko::adjoint(G_));
@@ -393,21 +391,19 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity,std::ostream & os)
 
    // do some random violence (oh my brothers) to one row
    size_t numEntries = crsF->getNumEntriesInLocalRow (3);
-   std::vector<ST> values1(numEntries);
-   std::vector<LO> indices1(numEntries);  
-   Teuchos::ArrayView<const ST> values1_av(values1);
-   Teuchos::ArrayView<const LO> indices1_av(indices1);
-   crsF->getLocalRowView(3,indices1_av,values1_av);
-   for(size_t i=0;i<numEntries;i++) values1[i] *= values1[i]*ST(i+1)*0.92;
+   auto indices1 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   auto values1 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   crsF->getLocalRowCopy(3,indices1,values1,numEntries);
+   for(size_t i=0;i<numEntries;i++) values1(i) *= values1(i)*ST(i+1)*0.92;
+   crsF->replaceLocalValues(3,indices1,values1);
 
    // do some random violence (oh my brothers) to one row
    numEntries = crsF->getNumEntriesInLocalRow (7);
-   std::vector<ST> values2(numEntries);
-   std::vector<LO> indices2(numEntries);  
-   Teuchos::ArrayView<const ST> values2_av(values2);
-   Teuchos::ArrayView<const LO> indices2_av(indices2);
-   crsF->getLocalRowView(7,indices2_av,values2_av);
-   for(size_t i=0;i<numEntries;i++) values2[i] *= values2[i]*ST(i+1)*0.92;
+   auto indices2 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   auto values2 = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+   crsF->getLocalRowCopy(7,indices2,values2,numEntries);
+   for(size_t i=0;i<numEntries;i++) values2(i) *= values2(i)*ST(i+1)*0.92;
+   crsF->replaceLocalValues(7,indices2,values2);
 
    // perform the next test
    thyOp = Teko::add(Teko::scale(-4.0,F_),Teko::adjoint(G_));
