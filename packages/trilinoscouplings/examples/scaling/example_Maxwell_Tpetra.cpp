@@ -28,7 +28,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_Maxwell.cpp
+/** \file   example_Maxwell_Tpetra.cpp
     \brief  Example solution of the eddy current Maxwell's equations using
     curl-conforming (edge) elements.
 
@@ -86,6 +86,7 @@
 #include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
 #include "TrilinosCouplings_Statistics.hpp"
+#include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -98,20 +99,23 @@
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_Utils.hpp"
 
-// Epetra includes
-#include "Epetra_Time.h"
-#include "Epetra_Map.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_LinearProblem.h"
+// Kokkos includes
+#include "Kokkos_Core.hpp"
+
+// Tpetra includes
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_Export.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
+#include "Tpetra_FECrsGraph.hpp"
+#include "Tpetra_FEMultiVector.hpp"
+#include "Tpetra_Assembly_Helpers.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_applyDirichletBoundaryCondition.hpp"
+
+
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
@@ -121,27 +125,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
 
-// EpetraExt includes
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_VectorOut.h"
-#include "EpetraExt_MatrixMatrix.h"
 
-// AztecOO includes
-#include "AztecOO.h"
-
-// ML Includes
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_RefMaxwell_11_Operator.h"
-#include "ml_RefMaxwell.h"
-#include "ml_EdgeMatrixFreePreconditioner.h"
-#include "ml_epetra_utils.h"
-
-#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
 // Xpetra
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -149,18 +138,17 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_Matrix.hpp>
 
-#ifdef HAVE_TRILINOSCOUPLINGS_AVATAR
-#  include "MueLu_AvatarInterface.hpp"
-#endif //HAVE_TRILINOSCOUPLINGS_AVATAR
+// Belos includes
+#include <BelosConfigDefs.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosSolverFactory.hpp>
+#include <BelosXpetraAdapter.hpp>
+#include <BelosMueLuAdapter.hpp>
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
-#ifdef HAVE_MUELU_EPETRA
-#include <MueLu_AztecEpetraOperator.hpp>
-#endif
 #include <MueLu_Exceptions.hpp>
 
-#endif
 
 // Pamgen includes
 #include "create_inline_mesh.h"
@@ -169,22 +157,61 @@
 #include "pamgen_extras.h"
 
 
-#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS0
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include <Stratimikos_MueLuHelpers.hpp>
 #endif
 
-#include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
+//#include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 
 #define ABS(x) ((x)>0?(x):-(x))
 #define SQR(x) ((x)*(x))
 
 
-/*** Uncomment if you would like output data for plotting ***/
+#define TC_sumAll(rcpComm, in, out) \
+    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
+#define TC_minAll(rcpComm, in, out) \
+    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
+#define TC_maxAll(rcpComm, in, out) \
+    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
+
+
 
 using namespace std;
 using namespace Intrepid;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_dynamic_cast;
+
+// Typedefs for Tpetra
+typedef double SC;
+typedef int    LO;
+typedef Tpetra::Map<>::global_ordinal_type GO;
+typedef Tpetra::Map<>::node_type           Node;
+typedef Node NO;
+
+typedef Tpetra::CrsMatrix<SC, LO, GO, Node>     Tpetra_CrsMatrix;
+typedef Tpetra::FECrsMatrix<SC, LO, GO, Node>   Tpetra_FECrsMatrix;
+typedef Tpetra::FECrsGraph<LO, GO, Node>        Tpetra_FECrsGraph;
+typedef Tpetra::MultiVector<SC, LO, GO, Node>   Tpetra_MultiVector;
+typedef Tpetra::FEMultiVector<SC, LO, GO, Node> Tpetra_FEMultiVector;
+typedef Tpetra::Vector<SC, LO, GO, Node>        Tpetra_Vector;
+typedef Tpetra::Map<LO, GO, Node>               Tpetra_Map;
+typedef Tpetra::Import<LO, GO, Node>            Tpetra_Import;
+typedef Tpetra::Export<LO, GO, Node>            Tpetra_Export;
+typedef Tpetra::Operator<SC, LO, GO, Node>      Tpetra_Operator;
+
+typedef Xpetra::Operator<SC, LO, GO, Node>      Xpetra_Operator;
+typedef Xpetra::Matrix<SC,LO,GO,NO> Matrix;
+typedef Xpetra::MultiVector<SC,LO,GO,NO> Xpetra_MultiVector;
+//  typedef Xpetra::CrsMatrix<SC,LO,GO,NO> CrsMatrix;
+//  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> TpetraCrsMatrix;
+
+
+
+
+
 
 
 /*********************************************************/
@@ -211,128 +238,65 @@ double distance(Container &nodeCoord, int i1, int i2) {
   return sqrt(dist);
 }
 
+
+RCP<Matrix> toXpetra(RCP<Tpetra_CrsMatrix> & mat) {
+  typedef Xpetra::CrsMatrix<SC,LO,GO,NO> CrsMatrix;
+  typedef Xpetra::TpetraCrsMatrix<SC,LO,GO,NO> TpetraCrsMatrix;
+  typedef Xpetra::CrsMatrixWrap<SC,LO,GO,NO> CrsMatrixWrap;
+  RCP<CrsMatrix> ccMat = rcp(new TpetraCrsMatrix(mat));
+  RCP<CrsMatrixWrap> ccOp = rcp(new CrsMatrixWrap(ccMat));
+  return rcp_dynamic_cast<Matrix>(ccOp);
+}
+
+RCP<Xpetra_MultiVector> toXpetra(RCP<Tpetra_MultiVector> & vec) {
+  typedef Xpetra::TpetraMultiVector<SC,LO,GO,NO> TpetraMultiVector;
+  return rcp(new TpetraMultiVector(vec));
+}
+
 /**********************************************************************************/
 /***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
 /**********************************************************************************/
 
-/** \brief  ML Preconditioner
 
-    \param  ProblemType        [in]    problem type
-    \param  MLList             [in]    ML parameter list
-    \param  CurlCurl           [in]    H(curl) stiffness matrix
-    \param  D0clean            [in]    Edge to node stiffness matrix
-    \param  M0inv              [in]    H(grad) mass matrix inverse
-    \param  Ms                 [in]    H(curl) mass matrix w/ sigma
-    \param  M1                 [in]    H(curl) mass matrix w/o sigma
-    \param  xh                 [out]   solution vector
-    \param  b                  [in]    right-hand-side vector
-    \param  TotalErrorResidual [out]   error residual
-    \param  TotalErrorExactSol [out]   error in xh
-
-*/
-void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
-                                          Teuchos::ParameterList   & MLList,
-                                          Epetra_CrsMatrix   & CurlCurl,
-                                          Epetra_CrsMatrix   & D0clean,
-                                          Epetra_CrsMatrix   & M0inv,
-                                          Epetra_CrsMatrix   & Ms,
-                                          Epetra_CrsMatrix   & M1,
-                                          Epetra_MultiVector & xh,
-                                          Epetra_MultiVector & b,
-                                          double & TotalErrorResidual,
-                                          double & TotalErrorExactSol);
-
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
 /** \brief  MueLu Preconditioner
-
     \param  ProblemType        [in]    problem type
-    \param  MLList             [in]    ML parameter list
+    \param  MLList             [in]    Parameter list
     \param  CurlCurl           [in]    H(curl) stiffness matrix
     \param  D0clean            [in]    Edge to node stiffness matrix
     \param  M0inv              [in]    H(grad) mass matrix inverse
     \param  Ms                 [in]    H(curl) mass matrix w/ sigma
-    \param  M1                 [in]    H(curl) mass matrix w/o sigma
-    \param  xh                 [out]   solution vector
-    \param  b                  [in]    right-hand-side vector
-    \param  TotalErrorResidual [out]   error residual
-    \param  TotalErrorExactSol [out]   error in xh
-
+    \param  M1                 [in]    H(curl) mass matrix w/o sigm
 */
-void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
+RCP<Xpetra_Operator> BuildPreconditioner_MueLu(char ProblemType[],
                                                Teuchos::ParameterList   & MLList,
-                                               Epetra_CrsMatrix   & CurlCurl,
-                                               Epetra_CrsMatrix   & D0clean,
-                                               Epetra_CrsMatrix   & M0inv,
-                                               Epetra_CrsMatrix   & Ms,
-                                               Epetra_CrsMatrix   & M1,
-                                               Epetra_MultiVector & coords,
-                                               Epetra_MultiVector & xh,
-                                               Epetra_MultiVector & b,
-                                               double & TotalErrorResidual,
-                                               double & TotalErrorExactSol);
-#endif
+                                               RCP<Tpetra_CrsMatrix>   & CurlCurl,
+                                               RCP<Tpetra_CrsMatrix>   & D0clean,
+                                               RCP<Tpetra_CrsMatrix>   & M0inv,
+                                               RCP<Tpetra_CrsMatrix>   & Ms,
+                                               RCP<Tpetra_CrsMatrix>   & M1,
+                                               RCP<Tpetra_MultiVector> & coords);
 
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS0
 
-/** \brief  ML Preconditioner
-
+/** \brief  Stratimikos Preconditioner
     \param  ProblemType        [in]    problem type
-    \param  MLList             [in]    ML parameter list
+    \param  MLList             [in]    Parameter list
     \param  CurlCurl           [in]    H(curl) stiffness matrix
     \param  D0clean            [in]    Edge to node stiffness matrix
     \param  M0inv              [in]    H(grad) mass matrix inverse
     \param  Ms                 [in]    H(curl) mass matrix w/ sigma
     \param  M1                 [in]    H(curl) mass matrix w/o sigma
-    \param  xh                 [out]   solution vector
-    \param  b                  [in]    right-hand-side vector
-    \param  TotalErrorResidual [out]   error residual
-    \param  TotalErrorExactSol [out]   error in xh
-
 */
-#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
-void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
-                                              Teuchos::ParameterList   & MLList,
-                                              Epetra_CrsMatrix   & CurlCurl,
-                                              Epetra_CrsMatrix   & D0clean,
-                                              Epetra_CrsMatrix   & M0inv,
-                                              Epetra_CrsMatrix   & Ms,
-                                              Epetra_CrsMatrix   & M1,
-                                              Epetra_MultiVector & xh,
-                                              Epetra_MultiVector & b,
-                                              double & TotalErrorResidual,
-                                              double & TotalErrorExactSol);
 
-  #if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-/** \brief  MueLu Preconditioner
+RCP<Tpetra_Operator> BuildPreconditioner_Stratimikos(char ProblemType[],
+                                                       Teuchos::ParameterList   & MLList,
+                                                       RCP<Tpetra_CrsMatrix>   & CurlCurl,
+                                                       RCP<Tpetra_CrsMatrix>   & D0clean,
+                                                       RCP<Tpetra_CrsMatrix>   & M0inv,
+                                                       RCP<Tpetra_CrsMatrix>   & Ms,
+                                                       RCP<Tpetra_CrsMatrix>   & M1,
+                                                       RCP<Tpetra_MultiVector> & coords);
 
-    \param  ProblemType        [in]    problem type
-    \param  MLList             [in]    ML parameter list
-    \param  CurlCurl           [in]    H(curl) stiffness matrix
-    \param  D0clean            [in]    Edge to node stiffness matrix
-    \param  M0inv              [in]    H(grad) mass matrix inverse
-    \param  Ms                 [in]    H(curl) mass matrix w/ sigma
-    \param  M1                 [in]    H(curl) mass matrix w/o sigma
-    \param  xh                 [out]   solution vector
-    \param  b                  [in]    right-hand-side vector
-    \param  TotalErrorResidual [out]   error residual
-    \param  TotalErrorExactSol [out]   error in xh
-
-*/
-void TestPreconditioner_Stratimikos(char ProblemType[],
-                                    Teuchos::ParameterList & SList,
-                                    Epetra_CrsMatrix   & CurlCurl,
-                                    Epetra_CrsMatrix   & D0clean,
-                                    Epetra_CrsMatrix   & M0inv,
-                                    Epetra_CrsMatrix   & Ms,
-                                    Epetra_CrsMatrix   & M1,
-                                    Epetra_MultiVector & coords,
-                                    Epetra_Vector      & Nx,
-                                    Epetra_Vector      & Ny,
-                                    Epetra_Vector      & Nz,
-                                    Epetra_MultiVector & xh,
-                                    Epetra_MultiVector & b,
-                                    double & TotalErrorResidual,
-                                    double & TotalErrorExactSol);
-  #endif
 #endif
 
 /**********************************************************************************/
@@ -400,7 +364,21 @@ int evalCurlCurlu(double & curlcurlu0,
 /**********************************************************************************/
 /******************************** MAIN ********************************************/
 /**********************************************************************************/
+#ifndef HAVE_MPI
 int main(int argc, char *argv[]) {
+  return 0;
+}
+#else
+int body(int argc, char *argv[]);
+
+int main(int argc, char *argv[]) {
+  Kokkos::initialize(argc,argv);
+  body(argc,argv);
+  Kokkos::finalize();
+}
+
+
+int body(int argc, char *argv[]) {
   // using namespace TrilinosCouplings;
   // using IntrepidPoissonExample::parseCommandLineArguments;
   // using IntrepidPoissonExample::setCommandLineArgumentDefaults;
@@ -409,20 +387,11 @@ int main(int argc, char *argv[]) {
   using Teuchos::CommandLineProcessor;
 
   int error = 0;
-#ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank=mpiSession.getRank();
   int numProcs=mpiSession.getNProc();
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  int MyPID = Comm.MyPID();
-#else
-  int rank=0;
-  int numProcs=1;
-  int MyPID = 0;
-  Epetra_SerialComm Comm;
-#endif
-  Epetra_Time Time(Comm);
-
+  int MyPID=rank;
 
   // Did the user specify --help at the command line to print help
   // with command-line arguments?
@@ -459,7 +428,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption ("stratimikosParams", &xmlStratimikos, "XML file with Stratimikos inputs");
   cmdp.setOption ("solverName", &solverName, "Name of iterative linear solver "
                   "to use for solving the linear system.  Examples include "
-                  "\"ML\", \"MueLu\", \"ML-Stratimikos\" and \"Stratimikos\".");
+                  "\"MueLu\", and \"Stratimikos\".");
   cmdp.setOption ("verbose", "quiet", &verbose,
                   "Whether to print verbose status output.");
   cmdp.setOption ("debug", "release", &debug,
@@ -483,7 +452,7 @@ int main(int argc, char *argv[]) {
       << "|                                                                             |\n" \
       << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
       << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen             |\n" \
-      << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
+      << "|  MueLu's website:    http://trilinos.sandia.gov/packages/muelu              |\n" \
       << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
       << "|                                                                             |\n" \
       << "===============================================================================\n";
@@ -669,9 +638,9 @@ int main(int argc, char *argv[]) {
   im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal,
                           &numElemBlkGlobal, &numNodeSetsGlobal,
                           &numSideSetsGlobal);
-#ifdef HAVE_XPETRA_EPETRA
-  MachineLearningStatistics_Hex3D<double, int, int, Xpetra::EpetraNode> MLStatistics(numElemsGlobal);
-#endif
+
+  MachineLearningStatistics_Hex3D<SC,LO,GO,Node> MLStatistics(numElemsGlobal);
+
 
   long long * block_ids = new long long [numElemBlk];
   error += im_ex_get_elem_blk_ids_l(id, block_ids);
@@ -810,16 +779,16 @@ int main(int argc, char *argv[]) {
                        rank);
 
   // Count owned nodes
-  int ownedNodes=0;
+  LO ownedNodes=0;
   for(int i=0;i<numNodes;i++)
     if(nodeIsOwned[i]) ownedNodes++;
 
   // Build a list of the OWNED global ids...
-  int *ownedGIDs=new int [ownedNodes];
+  Teuchos::Array<GO> ownedGIDs(ownedNodes);
   int oidx=0;
   for(int i=0;i<numNodes;i++)
     if(nodeIsOwned[i]){
-      ownedGIDs[oidx]=(int)globalNodeIds[i];
+      ownedGIDs[oidx]=(GO)globalNodeIds[i];
       oidx++;
     }
 
@@ -952,11 +921,11 @@ int main(int argc, char *argv[]) {
       numOwnedEdges++;
     }
   }
-  int * ownedEdgeIds = new int[numOwnedEdges];
+  Teuchos::Array<GO> ownedEdgeIds(numOwnedEdges);
   int nedge=0;
   for (int i=0; i<numEdges; i++) {
     if (edgeIsOwned[i]){
-      ownedEdgeIds[nedge]=(int)globalEdgeIds[i];
+      ownedEdgeIds[nedge]=(GO)globalEdgeIds[i];
       nedge++;
     }
   }
@@ -984,13 +953,8 @@ int main(int argc, char *argv[]) {
   // Calculate number of global edges and faces
   int numEdgesGlobal;
   int numFacesGlobal;
-#ifdef HAVE_MPI
-  Comm.SumAll(&numOwnedEdges,&numEdgesGlobal,1);
-  Comm.SumAll(&numOwnedFaces,&numFacesGlobal,1);
-#else
-  numEdgesGlobal = numEdges;
-  numFacesGlobal = numFaces;
-#endif
+  TC_sumAll(comm,numOwnedEdges,numEdgesGlobal);
+  TC_sumAll(comm,numOwnedFaces,numFacesGlobal);
 
 
   // Print mesh size information
@@ -1045,9 +1009,22 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Define global epetra maps
-  Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
-  Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
+  // Define global owned maps
+  Tpetra::global_size_t GST_INVALID=Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  RCP<const Tpetra_Map> globalMapG = rcp(new Tpetra_Map(GST_INVALID,ownedGIDs,0,comm));
+  RCP<const Tpetra_Map> globalMapC = rcp(new Tpetra_Map(GST_INVALID,ownedEdgeIds,0,comm));
+
+
+  // Define overlapping maps
+  Teuchos::Array<GO> overlappedNodes(numNodes);
+  for (int i=0; i<numNodes; i++)
+    overlappedNodes[i]=(GO)globalNodeIds[i];
+  RCP<const Tpetra_Map> overlapMapG = rcp(new Tpetra_Map(GST_INVALID,overlappedNodes,0,comm));
+  Teuchos::Array<GO> overlappedEdges(numEdges);
+  for (int i=0; i<numEdges; i++)
+    overlappedEdges[i]=(GO)globalEdgeIds[i];
+  RCP<const Tpetra_Map> overlapMapC = rcp(new Tpetra_Map(GST_INVALID,overlappedEdges,0,comm));
+ 
   
   if (jiggle) {
     /***********************************************************************************/
@@ -1057,20 +1034,15 @@ int main(int argc, char *argv[]) {
 
     if(MyPID==0) {std::cout << "Jiggling the mesh" << std::endl << std::endl;}
 
-    // Build an overlapping map. To match globalMapG, we need to convert to int.
-    int * globalNodeIdsInt = new int[numNodes];
-    for (int i=0; i<numNodes; i++)
-      globalNodeIdsInt[i]=(int)globalNodeIds[i];
-    Epetra_Map globalMapAllNodes(-1,numNodes,globalNodeIdsInt,0,Comm);
 
     // get random numbers between -1.0 and 1.0 wrt to 1-to-1 map
-    Epetra_MultiVector displacementTemp(globalMapG,3);
-    displacementTemp.Random();
+    Tpetra_MultiVector displacementTemp(globalMapG,3);
+    displacementTemp.randomize();
 
     // import that to overlapping map
-    Epetra_MultiVector displacement(globalMapAllNodes,3);
-    Epetra_Export MyImporter(globalMapAllNodes,globalMapG);
-    displacement.Import(displacementTemp,MyImporter,Insert);
+    Tpetra_MultiVector displacement(overlapMapG,3);
+    Tpetra_Export MyImporter(overlapMapG,globalMapG);
+    displacement.doImport(displacementTemp,MyImporter,Tpetra::INSERT);
 
     // Side length assuming an initially regular grid
     double hx = nodeCoord(elemToNode(0,1),0)-nodeCoord(elemToNode(0,0),0);
@@ -1082,9 +1054,9 @@ int main(int argc, char *argv[]) {
     // Loop over nodes
     for (int inode = 0; inode < numNodes; inode++){
       if (!nodeOnBoundary(inode)) {
-        double rx = displacement[0][inode];
-        double ry = displacement[1][inode];
-        double rz = displacement[2][inode]; 
+        double rx = displacement.getData(0)[inode];
+        double ry = displacement.getData(1)[inode];
+        double rz = displacement.getData(2)[inode]; 
 
         nodeCoord(inode,0) = nodeCoord(inode,0) + fac * hx * rx;
         nodeCoord(inode,1) = nodeCoord(inode,1) + fac * hy * ry;
@@ -1096,10 +1068,9 @@ int main(int argc, char *argv[]) {
     }
   }
 
-#ifdef HAVE_XPETRA_EPETRA
   // Statistics: Phase 1
   MLStatistics.Phase1(elemToNode,elemToEdge,edgeToNode,nodeCoord,sigmaVal);
-#endif
+
 
   /**********************************************************************************/
   /********************************* GET CUBATURE ***********************************/
@@ -1108,7 +1079,7 @@ int main(int argc, char *argv[]) {
   // Get numerical integration points and weights for cell
   DefaultCubatureFactory<double>  cubFactory;
   int cubDegree = 2;
-  Teuchos::RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
+  RCP<Cubature<double> > hexCub = cubFactory.create(cellType, cubDegree);
 
   int cubDim       = hexCub->getDimension();
   int numCubPoints = hexCub->getNumPoints();
@@ -1128,7 +1099,7 @@ int main(int argc, char *argv[]) {
 
   // Define cubature
   DefaultCubatureFactory<double>  cubFactoryFace;
-  Teuchos::RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
+  RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
   int cubFaceDim    = hexFaceCubature -> getDimension();
   int numFacePoints = hexFaceCubature -> getNumPoints();
 
@@ -1149,7 +1120,7 @@ int main(int argc, char *argv[]) {
 
   // Define cubature
   DefaultCubatureFactory<double>  cubFactoryEdge;
-  Teuchos::RCP<Cubature<double> > hexEdgeCubature = cubFactoryEdge.create(paramEdge, 3);
+  RCP<Cubature<double> > hexEdgeCubature = cubFactoryEdge.create(paramEdge, 3);
   int cubEdgeDim    = hexEdgeCubature -> getDimension();
   int numEdgePoints = hexEdgeCubature -> getNumPoints();
 
@@ -1160,8 +1131,8 @@ int main(int argc, char *argv[]) {
   // Define storage for cubature points on workset faces
   hexEdgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
 
-  if(MyPID==0) {std::cout << "Getting cubature                            "
-                          << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+  if(MyPID==0) {std::cout << "Getting cubature                            \n";}
+
 
 
   /**********************************************************************************/
@@ -1185,22 +1156,86 @@ int main(int argc, char *argv[]) {
   hexHCurlBasis.getValues(HCurls, cubPoints, OPERATOR_CURL);
   hexHGradBasis.getValues(HGVals, cubPoints, OPERATOR_VALUE);
 
-  if(MyPID==0) {std::cout << "Getting basis                               "
-                          << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+  if(MyPID==0) {std::cout << "Getting basis                               \n";}
 
+
+
+  /**********************************************************************************/
+  /********************* BUILD Graphs FOR GLOBAL SOLUTION ***************************/
+  /**********************************************************************************/
+  // Define desired workset size and count how many worksets there are on this processor's mesh block
+  int desiredWorksetSize = numElems;                      // change to desired workset size!
+  //int desiredWorksetSize = 100;                      // change to desired workset size!
+  int numWorksets        = numElems/desiredWorksetSize;
+
+  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
+  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
+
+  RCP<Tpetra_FECrsGraph> EdgeGraph = rcp(new Tpetra_FECrsGraph(globalMapC,overlapMapC,27*numFieldsC));
+  RCP<Tpetra_FECrsGraph> NodeGraph = rcp(new Tpetra_FECrsGraph(globalMapG,overlapMapG,9*numFieldsG));
+
+  Tpetra::beginFill(*EdgeGraph,*NodeGraph);
+  for(int workset = 0; workset < numWorksets; workset++){    
+    // Compute cell numbers where the workset starts and ends
+    //    int worksetSize  = 0;
+    int worksetBegin = (workset + 0)*desiredWorksetSize;
+    int worksetEnd   = (workset + 1)*desiredWorksetSize;
+    
+    // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+    
+    // Now we know the actual workset size and can allocate the array for the cell nodes
+    //    worksetSize  = worksetEnd - worksetBegin;
+
+    // Loop over workset cells
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+      
+      /*** Assemble H(grad) mass matrix ***/
+      // loop over nodes for matrix row
+      for (int cellNodeRow = 0; cellNodeRow < numFieldsG; cellNodeRow++){
+        int localNodeRow = elemToNode(cell, cellNodeRow);
+        GO globalNodeRow = (GO) globalNodeIds[localNodeRow];
+
+        // loop over nodes for matrix column
+        for (int cellNodeCol = 0; cellNodeCol < numFieldsG; cellNodeCol++){
+          int localNodeCol = elemToNode(cell, cellNodeCol);
+          GO globalNodeCol = (GO) globalNodeIds[localNodeCol];          
+          NodeGraph->insertGlobalIndices(globalNodeRow,1,&globalNodeCol);
+
+        }// *** cell node col loop ***
+      }// *** cell node row loop ***
+
+
+      /*** Assemble H(curl) mass matrix, stiffness matrix and right-hand side ***/
+
+      // loop over edges for matrix row
+      for (int cellEdgeRow = 0; cellEdgeRow < numFieldsC; cellEdgeRow++){
+        int localEdgeRow = elemToEdge(cell, cellEdgeRow);
+        GO globalEdgeRow = (GO) globalEdgeIds[localEdgeRow];
+
+        // loop over edges for matrix column
+        for (int cellEdgeCol = 0; cellEdgeCol < numFieldsC; cellEdgeCol++){
+          int localEdgeCol = elemToEdge(cell, cellEdgeCol);
+          GO globalEdgeCol = globalEdgeIds[localEdgeCol];
+          EdgeGraph->insertGlobalIndices(globalEdgeRow,1,&globalEdgeCol);
+        }// *** cell edge col loop ***
+      }// *** cell edge row loop ***
+
+    }// *** workset cell loop **
+  }// *** workset loop ***
+  Tpetra::endFill(*EdgeGraph,*NodeGraph);
 
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
   /**********************************************************************************/
+  Tpetra_FECrsMatrix   SystemMatrix(EdgeGraph);
+  Tpetra_FECrsMatrix   StiffMatrixC(EdgeGraph);
+  Tpetra_FECrsMatrix   MassMatrixC (EdgeGraph);
+  Tpetra_FECrsMatrix   MassMatrixC1(EdgeGraph);// No sigma
+  Tpetra_FECrsMatrix   MassMatrixG (NodeGraph);
+  Tpetra_FEMultiVector rhsVector   (EdgeGraph->getRowMap(),EdgeGraph->getImporter(),1);
 
-  Epetra_FECrsMatrix StiffMatrixC(Copy, globalMapC, numFieldsC);
-  Epetra_FECrsMatrix MassMatrixC (Copy, globalMapC, numFieldsC);
-  Epetra_FECrsMatrix MassMatrixC1 (Copy, globalMapC, numFieldsC);// No sigma
-  Epetra_FECrsMatrix MassMatrixG (Copy, globalMapG, numFieldsG);
-  Epetra_FEVector    rhsVector   (globalMapC);
-
-  if(MyPID==0) {std::cout << "Build global maps                           "
-                          << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
+  if(MyPID==0) {std::cout << "Build global maps                           \n";}
 
 
   /**********************************************************************************/
@@ -1209,71 +1244,81 @@ int main(int argc, char *argv[]) {
 
 
   // Build the coordinate vectors for ML solver (including owned nodes only)
-  Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
-  for(int i=0,nlid=0;i<numNodes;i++)
-    if(nodeIsOwned[i]) {
-      Nx[nlid]=nodeCoordx[i];
-      Ny[nlid]=nodeCoordy[i];
-      Nz[nlid]=nodeCoordz[i];
-      nlid++;
-    }
+  Tpetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
+  {
+    auto Nx_data=Nx.getDataNonConst(0);
+    auto Ny_data=Ny.getDataNonConst(0);
+    auto Nz_data=Nz.getDataNonConst(0);
+    for(int i=0,nlid=0;i<numNodes;i++)
+      if(nodeIsOwned[i]) {
+        Nx_data[nlid]=nodeCoordx[i];
+        Ny_data[nlid]=nodeCoordy[i];
+        Nz_data[nlid]=nodeCoordz[i];
+        nlid++;
+      }
+  }
 
-
-  Epetra_Map globalMapElem(numElemsGlobal, numElems, 0, Comm);
+  RCP<const Tpetra_Map> globalMapElem = rcp(new Tpetra_Map(numElemsGlobal, numElems, 0, comm));
 
   // Put coordinates in multivector for output
-  Epetra_MultiVector nCoord(globalMapG,3);
-  
-  int ownedNode = 0;
-  for (int inode=0; inode<numNodes; inode++) {
-    if (nodeIsOwned[inode]) {
-      nCoord[0][ownedNode]=nodeCoord(inode,0);
-      nCoord[1][ownedNode]=nodeCoord(inode,1);
-      nCoord[2][ownedNode]=nodeCoord(inode,2);
-      ownedNode++;
+  Tpetra_MultiVector nCoord(globalMapG,3);  
+  {  
+    auto Nx_data=nCoord.getDataNonConst(0);
+    auto Ny_data=nCoord.getDataNonConst(1);
+    auto Nz_data=nCoord.getDataNonConst(2);
+    int ownedNode = 0;
+    for (int inode=0; inode<numNodes; inode++) {
+      if (nodeIsOwned[inode]) {
+        Nx_data[ownedNode]=nodeCoord(inode,0);
+        Ny_data[ownedNode]=nodeCoord(inode,1);
+        Nz_data[ownedNode]=nodeCoord(inode,2);
+        ownedNode++;
+      }
     }
   }
+
+
+
   if (dump){  
-    EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",nCoord,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coords.dat",nCoord);
 
     // Put element to node mapping in multivector for output
-    Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
-    for (int ielem=0; ielem<numElems; ielem++) {
-      for (int inode=0; inode<numNodesPerElem; inode++) {
-        elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
+    Tpetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
+    for (int inode=0; inode<numNodesPerElem; inode++) {
+      auto data = elem2node.getDataNonConst(inode);
+      for (int ielem=0; ielem<numElems; ielem++) {
+        data[ielem]=globalNodeIds[elemToNode(ielem,inode)];
       }
     }
-    EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("elem2node.dat",elem2node);
 
     // Put element to edge mapping in multivector for output
-    Epetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
-    for (int ielem=0; ielem<numElems; ielem++) {
-      for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-        elem2edge[iedge][ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
+    Tpetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);    
+    for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
+       auto data = elem2edge.getDataNonConst(iedge);
+       for (int ielem=0; ielem<numElems; ielem++) {
+          data[ielem]=globalEdgeIds[elemToEdge(ielem,iedge)];
       }
     }
-    EpetraExt::MultiVectorToMatrixMarketFile("elem2edge.dat",elem2edge,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("elem2edge.dat",elem2edge);
 
     // Put edge to node mapping in multivector for output
-    Epetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
-    int ownedEdge = 0;
-    for (int iedge=0; iedge<numEdges; iedge++) {
-      if (edgeIsOwned[iedge]) {
-        for (int inode=0; inode<numNodesPerEdge; inode++) {
-          edge2node[inode][ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+    Tpetra_MultiVector edge2node(globalMapC, numNodesPerEdge);
+    for (int inode=0; inode<numNodesPerEdge; inode++) {
+      int ownedEdge = 0;
+      auto data = edge2node.getDataNonConst(inode);
+      for (int iedge=0; iedge<numEdges; iedge++) {
+        if (edgeIsOwned[iedge]) {
+          data[ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
         }
         ownedEdge++;
       }
     }
-    EpetraExt::MultiVectorToMatrixMarketFile("edge2node.dat",edge2node,0,0,false);
-
-    
-    if(MyPID==0) {Time.ResetStartTime();}
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge2node.dat",edge2node);    
   }
-  
     
   // Define multi-vector for cell edge sign (fill during cell loop)
-  Epetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
+  Tpetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
 
 
   /**********************************************************************************/
@@ -1281,37 +1326,39 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Edge to node incidence matrix
-  Epetra_FECrsMatrix DGrad(Copy, globalMapC, 2);
+  Tpetra_CrsMatrix DGrad(globalMapC, 2);
 
   // Estimate the global CFL based on minimum edge length and assumed dt=1"
 
   // Grab edge coordinates (for dumping to disk)
-  Epetra_Vector EDGE_X(globalMapC);
-  Epetra_Vector EDGE_Y(globalMapC);
-  Epetra_Vector EDGE_Z(globalMapC);
-
-  double vals[2];
-  vals[0]=-1.0; vals[1]=1.0;
-  for (int j=0, elid=0; j<numEdges; j++){
-    if (edgeIsOwned[j]){
-      int rowNum = globalEdgeIds[j];
-      int colNum[2];
-      colNum[0] = globalNodeIds[edgeToNode(j,0)];
-      colNum[1] = globalNodeIds[edgeToNode(j,1)];
-      DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, vals);
-      EDGE_X[elid] = (nodeCoordx[edgeToNode(j,0)] + nodeCoordx[edgeToNode(j,1)])/2.0;
-      EDGE_Y[elid] = (nodeCoordy[edgeToNode(j,0)] + nodeCoordy[edgeToNode(j,1)])/2.0;
-      EDGE_Z[elid] = (nodeCoordz[edgeToNode(j,0)] + nodeCoordz[edgeToNode(j,1)])/2.0;
-      elid++;
+  Tpetra_Vector EDGE_X(globalMapC);
+  Tpetra_Vector EDGE_Y(globalMapC);
+  Tpetra_Vector EDGE_Z(globalMapC);
+  {
+    auto ex_data = EDGE_X.getDataNonConst(0);   
+    auto ey_data = EDGE_Y.getDataNonConst(0);
+    auto ez_data = EDGE_Z.getDataNonConst(0);
+    double vals[2];
+    vals[0]=-1.0; vals[1]=1.0;
+    for (int j=0, elid=0; j<numEdges; j++){
+      if (edgeIsOwned[j]){
+        GO rowNum = (GO) globalEdgeIds[j];
+        GO colNum[2];
+        colNum[0] = (GO) globalNodeIds[edgeToNode(j,0)];
+        colNum[1] = (GO) globalNodeIds[edgeToNode(j,1)];
+        DGrad.insertGlobalValues(rowNum, 2, vals, colNum);
+        ex_data[elid] = (nodeCoordx[edgeToNode(j,0)] + nodeCoordx[edgeToNode(j,1)])/2.0;
+        ey_data[elid] = (nodeCoordy[edgeToNode(j,0)] + nodeCoordy[edgeToNode(j,1)])/2.0;
+        ez_data[elid] = (nodeCoordz[edgeToNode(j,0)] + nodeCoordz[edgeToNode(j,1)])/2.0;
+        elid++;
+      }
     }
   }
+  
+  DGrad.fillComplete(MassMatrixG.getRowMap(),MassMatrixC.getRowMap());
 
+  if(MyPID==0) {std::cout << "Building incidence matrix                   \n";}
 
-  DGrad.GlobalAssemble(globalMapG,globalMapC);
-  DGrad.FillComplete(MassMatrixG.RowMap(),MassMatrixC.RowMap());
-
-  if(MyPID==0) {std::cout << "Building incidence matrix                   "
-                          << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
   // Local CFL Calculations
   double DOUBLE_MAX = std::numeric_limits<double>::max();  
@@ -1351,11 +1398,11 @@ int main(int argc, char *argv[]) {
 
   // CFL Range Calculations (assuming a timestep dt=1)
   double g_max_dx, g_min_dx, g_max_mu, g_min_mu, g_max_sigma, g_min_sigma, g_max_cfl, g_min_cfl, g_max_osm, g_min_osm;
-  Comm.MaxAll(&l_max_dx,&g_max_dx,1);       Comm.MinAll(&l_min_dx,&g_min_dx,1);
-  Comm.MaxAll(&l_max_sigma,&g_max_sigma,1); Comm.MinAll(&l_min_sigma,&g_min_sigma,1);
-  Comm.MaxAll(&l_max_mu,&g_max_mu,1);       Comm.MinAll(&l_min_mu,&g_min_mu,1);
-  Comm.MaxAll(&l_max_cfl,&g_max_cfl,1);     Comm.MinAll(&l_min_cfl,&g_min_cfl,1);
-  Comm.MaxAll(&l_max_osm,&g_max_osm,1);     Comm.MinAll(&l_min_osm,&g_min_osm,1);
+  TC_maxAll(comm,l_max_dx,g_max_dx);       TC_minAll(comm,l_min_dx,g_min_dx);
+  TC_maxAll(comm,l_max_sigma,g_max_sigma); TC_minAll(comm,l_min_sigma,g_min_sigma);
+  TC_maxAll(comm,l_max_mu,g_max_mu);       TC_minAll(comm,l_min_mu,g_min_mu);
+  TC_maxAll(comm,l_max_cfl,g_max_cfl);     TC_minAll(comm,l_min_cfl,g_min_cfl);
+  TC_maxAll(comm,l_max_osm,g_max_osm);     TC_minAll(comm,l_min_osm,g_min_osm);
 
   if(MyPID==0) {
     std::cout<<"*** Parameter Ranges ***"<<std::endl;
@@ -1445,52 +1492,47 @@ int main(int argc, char *argv[]) {
   }
 
   // Vector for use in applying BCs
-  Epetra_Vector v(globalMapC,true);
-  v.PutScalar(0.0);
+  Tpetra_Vector v(globalMapC);
+  v.putScalar(0.0);
 
   // Set v to boundary values on Dirichlet edges
-  int * BCEdges = new int [numBCEdges];
-  int indbc=0;
-  int iOwned=0;
-  for (int i=0; i<numEdges; i++){
-    if (edgeIsOwned[i]){
-      if (edgeOnBoundary(i)){
-        BCEdges[indbc]=iOwned;
-        indbc++;
-        v[iOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+  Teuchos::Array<LO> BCEdges(numBCEdges);
+  {
+    auto v_data = v.getDataNonConst(0);
+    int indbc=0;
+    int iOwned=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeIsOwned[i]){
+        if (edgeOnBoundary(i)){
+          BCEdges[indbc]=iOwned;
+          indbc++;
+          v_data[iOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+        }
+        iOwned++;
       }
-      iOwned++;
     }
   }
 
   if(numProcs==1 && dump) {
     FILE * f=fopen("boundary_edge_list.dat","w");
-    for(int i=0; i<numBCEdges; i++)
+    for(LO i=0; i<(LO)BCEdges.size(); i++)
       fprintf(f,"%d ",BCEdges[i]);
     fclose(f);
   }
 
 
-  if(MyPID==0) {std::cout << "Boundary Condition Setup                    "
-                          << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
+
+  if(MyPID==0) {std::cout << "Boundary Condition Setup                    \n";}
+
 
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
   /**********************************************************************************/
 
-  // Define desired workset size and count how many worksets there are on this processor's mesh block
-  int desiredWorksetSize = numElems;                      // change to desired workset size!
-  //int desiredWorksetSize = 100;                      // change to desired workset size!
-  int numWorksets        = numElems/desiredWorksetSize;
-
-  // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
-  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
-
   if (MyPID == 0) {
     std::cout << "Building discretization matrix and right hand side... \n\n";
     std::cout << "\tDesired workset size:                 " << desiredWorksetSize <<"\n";
     std::cout << "\tNumber of worksets (per processor):   " << numWorksets <<"\n\n";
-    Time.ResetStartTime();
   }
 
   for(int workset = 0; workset < numWorksets; workset++){
@@ -1549,7 +1591,7 @@ int main(int argc, char *argv[]) {
 
       if (dump){
         for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
-          edgeSign[iedge][cell] = worksetEdgeSigns(cellCounter,iedge);
+          edgeSign.getDataNonConst(iedge)[cell] = worksetEdgeSigns(cellCounter,iedge);
         }
       }
 
@@ -1619,8 +1661,8 @@ int main(int argc, char *argv[]) {
     IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
     IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
-    if(MyPID==0) {std::cout << "Calculate Jacobians                         "
-                            << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+    if(MyPID==0) {std::cout << "Calculate Jacobians                         \n";}
+
 
 
     /**********************************************************************************/
@@ -1650,13 +1692,11 @@ int main(int argc, char *argv[]) {
     IntrepidFSTools::integrate<double>(massMatrixHGrad,
                                        HGValsTransformed, HGValsTransformedWeighted, COMP_BLAS);
 
-    if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   "
-                            << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+    if(MyPID==0) {std::cout << "Compute HGRAD Mass Matrix                   \n";}
 
-#ifdef HAVE_XPETRA_EPETRA
+
     // Statistics: Phase 2a
     MLStatistics.Phase2a(worksetJacobDet,cubWeights);
-#endif
 
     /**********************************************************************************/
     /*                          Compute HCURL Mass Matrix                             */
@@ -1698,8 +1738,8 @@ int main(int argc, char *argv[]) {
                                        HCValsTransformed, HCValsTransformedWeightedNoSigma,
                                        COMP_BLAS);
 
-    if(MyPID==0) {std::cout << "Compute HCURL Mass Matrix                   "
-                            << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+    if(MyPID==0) {std::cout << "Compute HCURL Mass Matrix                   \n";}
+
 
 
     /**********************************************************************************/
@@ -1732,8 +1772,8 @@ int main(int argc, char *argv[]) {
     IntrepidFSTools::applyLeftFieldSigns<double> (stiffMatrixHCurl, worksetEdgeSigns);
     IntrepidFSTools::applyRightFieldSigns<double>(stiffMatrixHCurl, worksetEdgeSigns);
 
-    if(MyPID==0) {std::cout << "Compute HCURL Stiffness Matrix              "
-                            << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+    if(MyPID==0) {std::cout << "Compute HCURL Stiffness Matrix              \n";}
+
 
 
     /**********************************************************************************/
@@ -1865,13 +1905,14 @@ int main(int argc, char *argv[]) {
     }// *** workset cell loop **
 
 
-    if(MyPID==0) {std::cout << "Compute right-hand side                     "
-                            << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+    if(MyPID==0) {std::cout << "Compute right-hand side                     \n";}
+
 
 
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
     /**********************************************************************************/
+    Tpetra::beginFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
 
     // Loop over workset cells
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
@@ -1885,17 +1926,17 @@ int main(int argc, char *argv[]) {
       // loop over nodes for matrix row
       for (int cellNodeRow = 0; cellNodeRow < numFieldsG; cellNodeRow++){
 
-        int localNodeRow  = elemToNode(cell, cellNodeRow);
-        int globalNodeRow = globalNodeIds[localNodeRow];
+        int localNodeRow = elemToNode(cell, cellNodeRow);
+        GO globalNodeRow = (GO) globalNodeIds[localNodeRow];
 
         // loop over nodes for matrix column
         for (int cellNodeCol = 0; cellNodeCol < numFieldsG; cellNodeCol++){
 
-          int localNodeCol  = elemToNode(cell, cellNodeCol);
-          int globalNodeCol = globalNodeIds[localNodeCol];
+          int localNodeCol = elemToNode(cell, cellNodeCol);
+          GO globalNodeCol = (GO) globalNodeIds[localNodeCol];
           double massGContribution = massMatrixHGrad(worksetCellOrdinal, cellNodeRow, cellNodeCol);
 
-          MassMatrixG.InsertGlobalValues(1, &globalNodeRow, 1, &globalNodeCol, &massGContribution);
+          MassMatrixG.sumIntoGlobalValues(globalNodeRow, 1, &massGContribution, &globalNodeCol);
 
         }// *** cell node col loop ***
       }// *** cell node row loop ***
@@ -1906,27 +1947,29 @@ int main(int argc, char *argv[]) {
       // loop over edges for matrix row
       for (int cellEdgeRow = 0; cellEdgeRow < numFieldsC; cellEdgeRow++){
 
-        int localEdgeRow  = elemToEdge(cell, cellEdgeRow);
-        int globalEdgeRow = globalEdgeIds[localEdgeRow];
+        int localEdgeRow = elemToEdge(cell, cellEdgeRow);
+        GO globalEdgeRow = (GO) globalEdgeIds[localEdgeRow];
         double rhsContribution = gC(worksetCellOrdinal, cellEdgeRow) + hC(worksetCellOrdinal, cellEdgeRow);
 
-        rhsVector.SumIntoGlobalValues(1, &globalEdgeRow, &rhsContribution);
+        rhsVector.sumIntoGlobalValue(globalEdgeRow, 0, rhsContribution);
 
         // loop over edges for matrix column
         for (int cellEdgeCol = 0; cellEdgeCol < numFieldsC; cellEdgeCol++){
 
           int localEdgeCol  = elemToEdge(cell, cellEdgeCol);
-          int globalEdgeCol = globalEdgeIds[localEdgeCol];
+          GO globalEdgeCol = (GO) globalEdgeIds[localEdgeCol];
 
           double massCContribution  = massMatrixHCurl (worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
           double stiffCContribution = stiffMatrixHCurl(worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
 
           double massCContribution1  = massMatrixHCurlNoSigma (worksetCellOrdinal, cellEdgeRow, cellEdgeCol);
 
-          MassMatrixC.InsertGlobalValues (1, &globalEdgeRow, 1, &globalEdgeCol, &massCContribution);
-          MassMatrixC1.InsertGlobalValues (1, &globalEdgeRow, 1, &globalEdgeCol, &massCContribution1);
+          double systemContribution = massCContribution*scaling + stiffCContribution;
 
-          StiffMatrixC.InsertGlobalValues(1, &globalEdgeRow, 1, &globalEdgeCol, &stiffCContribution);
+          MassMatrixC.sumIntoGlobalValues (globalEdgeRow, 1, &massCContribution, &globalEdgeCol);
+          MassMatrixC1.sumIntoGlobalValues(globalEdgeRow, 1, &massCContribution1, &globalEdgeCol);
+          StiffMatrixC.sumIntoGlobalValues(globalEdgeRow, 1, &stiffCContribution, &globalEdgeCol);
+          SystemMatrix.sumIntoGlobalValues(globalEdgeRow, 1, &systemContribution, &globalEdgeCol);
 
 
         }// *** cell edge col loop ***
@@ -1935,8 +1978,8 @@ int main(int argc, char *argv[]) {
     }// *** workset cell loop **
   }// *** workset loop ***
 
-  if(MyPID==0) {std::cout << "Assemble Matrices                           "
-                          << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+  if(MyPID==0) {std::cout << "Assemble Matrices                           \n";}
+
 
 
   /**********************************************************************************/
@@ -1944,41 +1987,35 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Assemble over multiple processors, if necessary
-  MassMatrixG.GlobalAssemble();  MassMatrixG.FillComplete();
-  StiffMatrixC.GlobalAssemble(); StiffMatrixC.FillComplete();
-  MassMatrixC.GlobalAssemble();  MassMatrixC.FillComplete();
-  MassMatrixC1.GlobalAssemble(); MassMatrixC1.FillComplete();
-  rhsVector.GlobalAssemble();
+  Tpetra::endFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
 
-#ifdef HAVE_XPETRA_EPETRA
-  MLStatistics.Phase2b(Teuchos::rcp(&MassMatrixG.Graph(),false),Teuchos::rcp(&nCoord,false));
-#endif
+  MLStatistics.Phase2b(MassMatrixG.getCrsGraph(),rcp(&nCoord,false));
 
-  if(MyPID==0) {std::cout << "Global assembly                             "
-                          << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+  if(MyPID==0) {std::cout << "Global assembly                             \n";}
 
   if (dump) {
     // Node Coordinates
-    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
-    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
-    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordx.dat",Nx);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordy.dat",Ny);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coordz.dat",Nz);
 
     // Edge Coordinates
-    EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
-    EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
-    EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordx.dat",EDGE_X);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordy.dat",EDGE_Y);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("ecoordz.dat",EDGE_Z);
 
     // Boundary Application
-    EpetraExt::VectorToMatrixMarketFile("boundary_v.dat",v);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("boundary_v.dat",v);
 
     // Edge signs
-    EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge_signs.dat",edgeSign);
 
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_k1_matrix.mat",StiffMatrixC);
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_ms_matrix.mat",MassMatrixC);
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_m1_matrix.mat",MassMatrixC1);
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_t_matrix.mat",DGrad);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_k1_matrix.dat",StiffMatrixC);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_ms_matrix.dat",MassMatrixC);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_m1_matrix.dat",MassMatrixC1);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_t_matrix.dat",DGrad);
   }
+
   
 
   /**********************************************************************************/
@@ -1986,127 +2023,99 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Build the inverse diagonal for MassMatrixG
-  Epetra_Vector DiagG(MassMatrixG.RowMap());
-  DiagG.PutScalar(1.0);
-  MassMatrixG.Multiply(false,DiagG,DiagG);
-  for(int i=0;i<DiagG.MyLength();i++) {
-    DiagG[i]=1.0/DiagG[i];
+  Tpetra_Vector DiagG(MassMatrixG.getRowMap());
+  {
+    DiagG.putScalar(1.0);
+    auto d_data = DiagG.getDataNonConst(0);
+    MassMatrixG.apply(DiagG,DiagG);
+    for(int i=0;i<(int)d_data.size();i++) {
+      d_data[i]=1.0/d_data[i];
+    }      
   }
-  Epetra_CrsMatrix MassMatrixGinv(Copy,MassMatrixG.RowMap(),MassMatrixG.RowMap(),1);
-  for(int i=0;i<DiagG.MyLength();i++) {
-    int CID=MassMatrixG.GCID(i);
-    MassMatrixGinv.InsertGlobalValues(MassMatrixG.GRID(i),1,&(DiagG[i]),&CID);
+
+  Tpetra_CrsMatrix MassMatrixGinv(MassMatrixG.getRowMap(),MassMatrixG.getRowMap(),1);
+  {
+    auto d_data = DiagG.getData(0);
+    for(int i=0;i<(int)MassMatrixGinv.getRowMap()->getNodeNumElements();i++) {
+      GO GCID=MassMatrixG.getColMap()->getGlobalElement(i);
+      GO GRID=MassMatrixG.getRowMap()->getGlobalElement(i);
+      MassMatrixGinv.insertGlobalValues(GRID,1,&(d_data[i]),&GCID);
+    }
   }
-  MassMatrixGinv.FillComplete();
+  MassMatrixGinv.fillComplete();
 
   // Zero out entries that correspond to boundary nodes
   for(int i=0;i<numNodes;i++) {
     if (nodeOnBoundary(i)){
       double val=0.0;
-      int index = globalNodeIds[i];
-      MassMatrixGinv.ReplaceGlobalValues(index,1,&val,&index);
+      GO index = (GO) globalNodeIds[i];
+      MassMatrixGinv.replaceGlobalValues(index,1,&val,&index);
     }
   }
-
-  // Get the full matrix operator Kc += Mc
-  int rv=EpetraExt::MatrixMatrix::Add(MassMatrixC,false,scaling,StiffMatrixC,1.0);
-  if(rv!=0) {printf("EpetraExt::MatrixMatrix:Add FAILED\n"); exit(1);}
-
 
   // Apply it to v
-  Epetra_MultiVector rhsDir(globalMapC,true);
-  StiffMatrixC.Apply(v,rhsDir);
+  Tpetra_MultiVector rhsDir(globalMapC,1);
+  SystemMatrix.apply(v,rhsDir);
 
   // Update right-hand side
-  rhsVector.Update(-1.0,rhsDir,1.0);
+  rhsVector.update(-1.0,rhsDir,1.0);
 
   // Adjust rhs due to Dirichlet boundary conditions
-  indbc=0;
-  int indOwned=0;
-  for (int i=0; i<numEdges; i++){
-    if (edgeIsOwned[i]){
-      if (edgeOnBoundary(i)){
-        indbc++;
-        rhsVector[0][indOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
-        rhsDir[0][indOwned]=0.0;
+  {
+    auto rhsV_data = rhsVector.getDataNonConst(0);
+    auto rhsD_data = rhsDir.getDataNonConst(0);
+    int indbc=0;
+    int indOwned=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeIsOwned[i]){
+        if (edgeOnBoundary(i)){
+          indbc++;
+          rhsV_data[indOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+          rhsD_data[indOwned]=0.0;
+        }
+        indOwned++;
       }
-      indOwned++;
     }
   }
-
+  
   if (dump) {
-    EpetraExt::RowMatrixToMatrixMarketFile("edge_matrix_nobcs.mat",StiffMatrixC);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("edge_matrix_nobcs.mat",SystemMatrix);
   }
 
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
-  ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffMatrixC);
+  {
 
-  delete [] BCEdges;
+    Kokkos::View<LO*, Kokkos::HostSpace> bce(BCEdges.data(),numBCEdges);
+    Tpetra::applyDirichletBoundaryConditionToLocalMatrixRowsAndColumns(SystemMatrix,bce);
+  }
 
-  if(MyPID==0) {std::cout << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
-                          << " sec \n"; Time.ResetStartTime();}
+  if(MyPID==0) {std::cout << "Adjust global matrix and rhs due to BCs     \n";}
+
 
   if (dump) {
-    EpetraExt::RowMatrixToMatrixMarketFile("mag_m0_matrix.mat",MassMatrixG);
-    EpetraExt::RowMatrixToMatrixMarketFile("edge_matrix.mat",StiffMatrixC);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_m0_matrix.mat",MassMatrixG);
+    Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("edge_matrix.mat",SystemMatrix);
   }
 
   /**********************************************************************************/
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
-#ifdef HAVE_XPETRA_EPETRA
+
   MLStatistics.Phase3();
   Teuchos::ParameterList problemStatistics = MLStatistics.GetStatistics();
   if(MyPID==0) {
     std::cout<<"*** Problem Statistics ***"<<std::endl;
     std::cout<<problemStatistics<<std::endl;
   }
-#endif
 
-  double TotalErrorResidual=0, TotalErrorExactSol=0;
 
-  // Parameter list for ML
-  Teuchos::ParameterList MLList;
-  if(inputList.isSublist("ML")) {
-    MLList = inputList.sublist("ML");
-  } else {
-    ML_Epetra::SetDefaultsRefMaxwell(MLList);
-    Teuchos::ParameterList &List11=MLList.sublist("refmaxwell: 11list");
-    Teuchos::ParameterList &List11c=List11.sublist("edge matrix free: coarse");
-    Teuchos::ParameterList &List22=MLList.sublist("refmaxwell: 22list");
-    // MLList.set("refmaxwell: mode","none");
-    MLList.set("refmaxwell: mode","additive");
-    MLList.set("refmaxwell: disable addon",false);
-    MLList.set("aggregation: type","Uncoupled-MIS");
-    MLList.set("ML output",10);
-    MLList.set("smoother: type","Chebyshev");
-    // MLList.set("print hierarchy", 0);
+  //  double TotalErrorResidual=0, TotalErrorExactSol=0;
 
-    List11.set("ML output",10);
-    // List11.set("print hierarchy", true);
-    List22.set("coarse: type","Amesos-KLU");
-    List22.set("ML output",10);
-
-    List11c.set("coarse: type","Amesos-KLU");
-    List11c.set("ML output",10);
-    List11c.set("PDE equations",3);
-  }
-  Teuchos::ParameterList &List11=MLList.sublist("refmaxwell: 11list");
-  List11.set("x-coordinates",&Nx[0]);
-  List11.set("y-coordinates",&Ny[0]);
-  List11.set("z-coordinates",&Nz[0]);
-
-  Teuchos::ParameterList &List22=MLList.sublist("refmaxwell: 22list");
-  List22.set("x-coordinates",&Nx[0]);
-  List22.set("y-coordinates",&Ny[0]);
-  List22.set("z-coordinates",&Nz[0]);
 
   // Parameter list for MueLu
   Teuchos::ParameterList MueLuList;
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
   if(inputList.isSublist("MueLu")) {
     MueLuList = inputList.sublist("MueLu");
   } else {
@@ -2139,7 +2148,7 @@ int main(int argc, char *argv[]) {
   }
 
   
-#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR) && defined(HAVE_TRILINOSCOUPLINGS_MUELU) && defined(HAVE_XPETRA_EPETRA)
+#if defined(HAVE_TRILINOSCOUPLINGS_AVATAR)
   Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
   Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
  
@@ -2159,85 +2168,67 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  Epetra_FEVector xh(rhsVector);
-
-  MassMatrixC.SetLabel("Ms");
-  MassMatrixC1.SetLabel("M1");
-  StiffMatrixC.SetLabel("K1");
-  DGrad.SetLabel("D0");
-  MassMatrixGinv.SetLabel("M0^{-1}");
+  Tpetra_MultiVector xh(EdgeGraph->getRowMap(),1);
 
   char probType[12] = "maxwell";
-
-
-  // Form the Stiffness+Mass Matrix
-  StiffMatrixC.SetLabel("CurlCurl+Mass");
-
-  if (solverName == "ML") {
-    // ML version
-    if(MyPID==0) {std::cout << "\n\nML solve \n";}
-    TestMultiLevelPreconditioner_Maxwell(probType,MLList,StiffMatrixC,
-                                         DGrad,MassMatrixGinv,MassMatrixC,MassMatrixC1,
-                                         xh,rhsVector,
-                                         TotalErrorResidual, TotalErrorExactSol);
-  }
-
-#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
-  if (solverName == "ML-Stratimikos") {
-    if(MyPID==0) {std::cout << "\n\nML Stratimikos solve \n";}
-    TestMultiLevelPreconditioner_Stratimikos(probType,MLList,StiffMatrixC,
-                                             DGrad,MassMatrixGinv,MassMatrixC,MassMatrixC1,
-                                             xh,rhsVector,
-                                             TotalErrorResidual, TotalErrorExactSol);
-  }
-#endif
-
-  Epetra_MultiVector coords(MassMatrixGinv.RowMap(),3);
-  if (solverName == "MueLu" || solverName == "Stratimikos") {
-    // build coordinates multivector
-
-    double* xx = coords[0];
-    double* yy = coords[1];
-    double* zz = coords[2];
-    for(int i = 0; i < MassMatrixGinv.RowMap(). NumMyElements(); ++i) {
-      xx[i] = Nx[i];
-      yy[i] = Ny[i];
-      zz[i] = Nz[i];
-    }
-
-  }
-
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+  bool converged;
+  int numItersPerformed;
+  int maxNumIters = 200;
+  int num_steps = 1;
+  double tol = 1e-10;
+  
+  RCP<Tpetra_CrsMatrix> SystemMatrix_r   = rcp(&SystemMatrix,false);
+  RCP<Tpetra_CrsMatrix> DGrad_r          = rcp(&DGrad,false);
+  RCP<Tpetra_CrsMatrix> MassMatrixGinv_r = rcp(&MassMatrixGinv,false);
+  RCP<Tpetra_CrsMatrix> MassMatrixC_r    = rcp(&MassMatrixC,false);
+  RCP<Tpetra_CrsMatrix> MassMatrixC1_r   = rcp(&MassMatrixC1,false);
+  RCP<Tpetra_MultiVector> nCoord_r       = rcp(&nCoord,false);
+  RCP<Tpetra_MultiVector> xh_r           = rcp(&xh,false);
+  RCP<Tpetra_MultiVector> rhsVector_r    = rcp(&rhsVector,false);
+  
   if (solverName == "MueLu") {
     // MueLu RefMaxwell
     if(MyPID==0) {std::cout << "\n\nMueLu solve \n";}
-    TestMueLuMultiLevelPreconditioner_Maxwell(probType,MueLuList,StiffMatrixC,
-                                              DGrad,MassMatrixGinv,MassMatrixC,MassMatrixC1,
-                                              coords,
-                                              xh,rhsVector,
-                                              TotalErrorResidual, TotalErrorExactSol);
+    RCP<Xpetra_Operator>  preconditioner = 
+      BuildPreconditioner_MueLu(probType,MueLuList,SystemMatrix_r,DGrad_r,MassMatrixGinv_r,MassMatrixC_r,MassMatrixC1_r,nCoord_r);
+
+    RCP<Xpetra_Operator> A_x = toXpetra(SystemMatrix_r);
+    RCP<Xpetra_MultiVector> xh_x = toXpetra(xh_r);
+    RCP<Xpetra_MultiVector> rhsVector_x = toXpetra(rhsVector_r);
+    
+    using BMV = Xpetra_MultiVector;
+    using BOP = typename Belos::OperatorT<BMV>;
+    RCP<BOP> belosOp = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(A_x));
+    RCP<BOP> precOp  = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(preconditioner));
+    RCP<BOP> dummy;
+    
+    solverName="CG";
+    TrilinosCouplings::IntrepidPoissonExample::
+      solveWithBelos<SC,BMV,BOP>(converged,numItersPerformed,solverName,tol,maxNumIters,num_steps,
+                   xh_x,belosOp,rhsVector_x,dummy,precOp);
+
   }
 
-  #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
+  #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS0
   if (solverName == "Stratimikos") {
     if(MyPID==0) {std::cout << "\n\nStratimikos solve \n";}
     Teuchos::ParameterList SList;
     Teuchos::updateParametersFromXmlFile(xmlStratimikos,Teuchos::ptr (&SList));
     TestPreconditioner_Stratimikos(probType,SList,StiffMatrixC,
                                    DGrad,MassMatrixGinv,MassMatrixC,MassMatrixC1,
-                                   coords,Nx,Ny,Nz,
+                                   nCoord,Nx,Ny,Nz,
                                    xh,rhsVector,
                                    TotalErrorResidual, TotalErrorExactSol);
   }
   #endif
-#endif
+
 
 
   /**********************************************************************************/
   /**************************** CALCULATE ERROR *************************************/
   /**********************************************************************************/
 
-  if (MyPID == 0) {Time.ResetStartTime();}
+
 
   double L2err = 0.0;
   double HCurlerr = 0.0;
@@ -2246,13 +2237,11 @@ int main(int argc, char *argv[]) {
   double HCurlerrTot = 0.0;
   double LinferrTot = 0.0;
 
-#ifdef HAVE_MPI
   // Import solution onto current processor
-  Epetra_Map  solnMap(numEdgesGlobal, numEdgesGlobal, 0, Comm);
-  Epetra_Import  solnImporter(solnMap, globalMapC);
-  Epetra_FEVector  uCoeff(solnMap);
-  uCoeff.Import(xh, solnImporter, Insert);
-#endif
+  RCP<const Tpetra_Map> solnMap = rcp(new Tpetra_Map(numEdgesGlobal, numEdgesGlobal, 0, comm));
+  Tpetra_Import  solnImporter(solnMap, globalMapC);
+  Tpetra_Vector  uCoeff(solnMap);
+  uCoeff.doImport(xh, solnImporter, Tpetra::INSERT);
 
   int numCells = 1;
   FieldContainer<double> hexEdgeSigns(numCells, numFieldsC);
@@ -2261,7 +2250,7 @@ int main(int argc, char *argv[]) {
   // Get cubature points and weights for error calc (may be different from previous)
   DefaultCubatureFactory<double>  cubFactoryErr;
   int cubDegErr = 3;
-  Teuchos::RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(cellType, cubDegErr);
+  RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(cellType, cubDegErr);
   int cubDimErr       = hexCubErr->getDimension();
   int numCubPointsErr = hexCubErr->getNumPoints();
   FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
@@ -2357,13 +2346,11 @@ int main(int argc, char *argv[]) {
       double curluApprox1 = 0.0;
       double curluApprox2= 0.0;
       double curluApprox3 = 0.0;
+      auto ucoeff_data = uCoeff.getData(0);
       for (int i = 0; i < numFieldsC; i++){
         int rowIndex = globalEdgeIds[elemToEdge(k,i)];
-#ifdef HAVE_MPI
-        double uh1 = uCoeff.Values()[rowIndex];
-#else
-        double uh1 = xh.Values()[rowIndex];
-#endif
+        double uh1 = ucoeff_data[rowIndex];
+
         uApprox1 += uh1*uhCValsTrans(0,i,nPt,0)*hexEdgeSigns(0,i);
         uApprox2 += uh1*uhCValsTrans(0,i,nPt,1)*hexEdgeSigns(0,i);
         uApprox3 += uh1*uhCValsTrans(0,i,nPt,2)*hexEdgeSigns(0,i);
@@ -2391,17 +2378,10 @@ int main(int argc, char *argv[]) {
     HCurlerr+=HCurlerrElem;
   }
 
-
-#ifdef HAVE_MPI
   // sum over all processors
-  Comm.SumAll(&L2err,&L2errTot,1);
-  Comm.SumAll(&HCurlerr,&HCurlerrTot,1);
-  Comm.MaxAll(&Linferr,&LinferrTot,1);
-#else
-  L2errTot = L2err;
-  HCurlerrTot = HCurlerr;
-  LinferrTot = Linferr;
-#endif
+  TC_sumAll(comm,L2err,L2errTot);
+  TC_sumAll(comm,HCurlerr,HCurlerrTot);
+  TC_maxAll(comm,Linferr,LinferrTot);
 
   if (MyPID == 0) {
     std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
@@ -2452,73 +2432,13 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+#endif
 /**********************************************************************************/
 /********************************* END MAIN ***************************************/
 /**********************************************************************************/
 
 
-/*************************************************************************************/
-/****************************** Multiply Ones ****************************************/
-/*************************************************************************************/
-/** \brief Multiplies Ax = y, where all non-zero entries of A are replaced with the value 1.0
 
-    \param  A                [in]    matrix
-    \param  x                [in]    vector
-    \param  y                [in]    vector
-*/
-int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
-  if(!A.Filled())
-    EPETRA_CHK_ERR(-1); // Matrix must be filled.
-
-  double* xp = (double*) x.Values();
-  double* yp = (double*) y.Values();
-  const Epetra_Import* Importer_=A.Importer();
-  const Epetra_Export* Exporter_=A.Exporter();
-  Epetra_Vector *xcopy=0, *ImportVector_=0, *ExportVector_=0;
-
-  if (&x==&y && Importer_==0 && Exporter_==0) {
-    xcopy = new Epetra_Vector(x);
-    xp = (double *) xcopy->Values();
-  }
-  else if (Importer_)
-    ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
-  else if (Exporter_)
-    ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
-
-
-  // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
-  if(Importer_ != 0) {
-    EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer_, Insert));
-    xp = (double*) ImportVector_->Values();
-  }
-
-  // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
-  if(Exporter_ != 0)  yp = (double*) ExportVector_->Values();
-
-  // Do actual computation
-  for(int i = 0; i < A.NumMyRows(); i++) {
-    int NumEntries,*RowIndices;
-    A.Graph().ExtractMyRowView(i,NumEntries,RowIndices);
-    double sum = 0.0;
-    for(int j = 0; j < NumEntries; j++)
-      sum += xp[*RowIndices++];
-    yp[i] = sum;
-  }
-
-  if(Exporter_ != 0) {
-    y.PutScalar(0.0); // Make sure target is zero
-    EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter_, Add)); // Fill y with Values from export vector
-  }
-  // Handle case of rangemap being a local replicated map
-  if (!A.Graph().RangeMap().DistributedGlobal() && A.Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
-
-  delete xcopy;
-  delete ImportVector_;
-  delete ExportVector_;
-
-
-  return(0);
-}
 
 /*************************************************************************************/
 /**************************** GET ML RESIDUAL ****************************************/
@@ -2533,275 +2453,85 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
     \param  TotalErrorExactSol [out]   error in xh (not an appropriate measure
     for H(curl) basis functions)
 */
-void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector &lhs,const Epetra_MultiVector &rhs,const Epetra_MultiVector &xexact,Epetra_Time & Time, double & TotalErrorExactSol, double& TotalErrorResidual){
+void solution_test(string msg, const Tpetra_Operator &A,const Tpetra_MultiVector &lhs,const Tpetra_MultiVector &rhs,const Tpetra_MultiVector &xexact, double & TotalErrorExactSol, double& TotalErrorResidual){
   // ==================================================== //
   // compute difference between exact solution and ML one //
   // ==================================================== //
+  auto comm = A.getDomainMap()->getComm();
   double d = 0.0, d_tot = 0.0;
-  for( int i=0 ; i<lhs.Map().NumMyElements() ; ++i )
-    d += (lhs[0][i] - xexact[0][i]) * (lhs[0][i] - xexact[0][i]);
-
-  A.Comm().SumAll(&d,&d_tot,1);
+  auto lhs_data    = lhs.getData(0);
+  auto xexact_data = xexact.getData(0);
+  for(LO i=0 ; i<(LO)lhs.getMap()->getNodeNumElements() ; ++i )
+    d += (lhs_data[i] - xexact_data[i]) * (lhs_data[i] - xexact_data[i]);
+  
+  TC_sumAll(comm,d,d_tot);
 
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
-  double Norm;
-  Epetra_Vector Ax(rhs.Map());
-  A.Apply(lhs, Ax);
-  Ax.Update(1.0, rhs, -1.0);
-  Ax.Norm2(&Norm);
+  Teuchos::Array<double> Norm(1);
+  Tpetra_Vector Ax(rhs.getMap());
+  A.apply(lhs, Ax);
+  Ax.update(1.0, rhs, -1.0);
+  Ax.norm2(Norm);
 
   // NOTE: (x_exact - x) does not make sense for H(curl) or H(grad) basis functions
-  if (A.Comm().MyPID() == 0) {
-    cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
+  if (comm->getRank() == 0) {
+    cout << msg << "......Using " << comm->getSize() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     //    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
-    cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
 
   TotalErrorExactSol += sqrt(d_tot);
-  TotalErrorResidual += Norm;
+  TotalErrorResidual += Norm[0];
 }
 
 /*************************************************************************************/
 /*************************** MueLu PRECONDITIONER ************************************/
 /*************************************************************************************/
-void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
+RCP<Xpetra_Operator> BuildPreconditioner_MueLu(char ProblemType[],
                                                Teuchos::ParameterList   & MLList,
-                                               Epetra_CrsMatrix   & CurlCurl,
-                                               Epetra_CrsMatrix   & D0clean,
-                                               Epetra_CrsMatrix   & M0inv,
-                                               Epetra_CrsMatrix   & Ms,
-                                               Epetra_CrsMatrix   & M1,
-                                               Epetra_MultiVector & coords,
-                                               Epetra_MultiVector & xh,
-                                               Epetra_MultiVector & b,
-                                               double & TotalErrorResidual,
-                                               double & TotalErrorExactSol){
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-  typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef Xpetra::EpetraNode Node;
-  typedef Scalar SC;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Node NO;
-  typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
-  typedef Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrixWrap;
-  typedef Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CrsMatrix;
-  typedef Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> EpetraCrsMatrix;
-  typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
-  typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal,Node> EpetraMultiVector;
-  
-
-  Epetra_Time SetupTime(CurlCurl.Comm());
-
-  Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(CurlCurl)));
-  Teuchos::RCP<CrsMatrixWrap> ccOp = Teuchos::rcp(new CrsMatrixWrap(ccMat));
-  Teuchos::RCP<Matrix> curlcurlOp = Teuchos::rcp_dynamic_cast<Matrix>(ccOp);
-
-  Teuchos::RCP<CrsMatrix> d0cMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(D0clean)));
-  Teuchos::RCP<CrsMatrixWrap> d0cOp = Teuchos::rcp(new CrsMatrixWrap(d0cMat));
-  Teuchos::RCP<Matrix> D0cleanOp = Teuchos::rcp_dynamic_cast<Matrix>(d0cOp);
-
-  Teuchos::RCP<CrsMatrix> m0invMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(M0inv)));
-  Teuchos::RCP<CrsMatrixWrap> m0invOp = Teuchos::rcp(new CrsMatrixWrap(m0invMat));
-  Teuchos::RCP<Matrix> M0invOp = Teuchos::rcp_dynamic_cast<Matrix>(m0invOp);
-
-  Teuchos::RCP<CrsMatrix> m1Mat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(M1)));
-  Teuchos::RCP<CrsMatrixWrap> m1Op = Teuchos::rcp(new CrsMatrixWrap(m1Mat));
-  Teuchos::RCP<Matrix> M1Op = Teuchos::rcp_dynamic_cast<Matrix>(m1Op);
-
-  Teuchos::RCP<CrsMatrix> msMat = Teuchos::rcp(new EpetraCrsMatrix(Teuchos::rcpFromRef(Ms)));
-  Teuchos::RCP<CrsMatrixWrap> msOp = Teuchos::rcp(new CrsMatrixWrap(msMat));
-  Teuchos::RCP<Matrix> MsOp = Teuchos::rcp_dynamic_cast<Matrix>(msOp);
-
-  Teuchos::RCP<MultiVector> xxh = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(xh)));
-  Teuchos::RCP<MultiVector> xb  = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(b)));
-
-  Teuchos::RCP<MultiVector> xcoords = Teuchos::rcp(new EpetraMultiVector(Teuchos::rcpFromRef(coords)));
-
+                                               RCP<Tpetra_CrsMatrix>   & CurlCurl,
+                                               RCP<Tpetra_CrsMatrix>   & D0clean,
+                                               RCP<Tpetra_CrsMatrix>   & M0inv,
+                                               RCP<Tpetra_CrsMatrix>   & Ms,
+                                               RCP<Tpetra_CrsMatrix>   & M1,
+                                               RCP<Tpetra_MultiVector> & coords){
   MLList.set("parameterlist: syntax","muelu");
 
+  RCP<Matrix> curlcurlOp = toXpetra(CurlCurl);
+  RCP<Matrix> D0cleanOp = toXpetra(D0clean);
+  RCP<Matrix> M0invOp = toXpetra(M0inv);
+  RCP<Matrix> M1Op = toXpetra(M1);
+  RCP<Matrix> MsOp = toXpetra(Ms);
+
+  RCP<Xpetra_MultiVector> xcoords = toXpetra(coords);
+
+
   // construct preconditioner
-  Teuchos::RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
-  = Teuchos::rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(curlcurlOp,d0cOp,MsOp,M0invOp,
-                                                       M1Op,Teuchos::null,xcoords,MLList) );
-
-  MueLu::AztecEpetraOperator prec(preconditioner);
-
-  if(CurlCurl.Comm().MyPID()==0) {std::cout << "Setup time: " << SetupTime.ElapsedTime()
-                                            << " sec \n"; SetupTime.ResetStartTime();}
-
-  Epetra_MultiVector x(xh);
-  x.PutScalar(0.0);
-  Epetra_LinearProblem Problem(&CurlCurl,&x,&b);
-  Epetra_MultiVector* lhs = Problem.GetLHS();
-  Epetra_MultiVector* rhs = Problem.GetRHS();
-
-  Epetra_Time Time(CurlCurl.Comm());
-
-  AztecOO solver(Problem);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 10);
-  solver.SetPrecOperator(&prec);
-  solver.Iterate(500, 1e-10);
-
-  // accuracy check
-  Epetra_MultiVector xexact(xh);
-  xexact.PutScalar(0.0);
-
-  string msg = ProblemType;
-  solution_test(msg,CurlCurl,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
-
-  xh = *lhs;
-#endif
-}
-
-/*************************************************************************************/
-/*************************** ML PRECONDITIONER****************************************/
-/*************************************************************************************/
-void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
-                                          Teuchos::ParameterList   & MLList,
-                                          Epetra_CrsMatrix   & CurlCurl,
-                                          Epetra_CrsMatrix   & D0clean,
-                                          Epetra_CrsMatrix   & M0inv,
-                                          Epetra_CrsMatrix   & Ms,
-                                          Epetra_CrsMatrix   & M1,
-                                          Epetra_MultiVector & xh,
-                                          Epetra_MultiVector & b,
-                                          double & TotalErrorResidual,
-                                          double & TotalErrorExactSol){
-  /* Build RMP */
-
-  Epetra_Time SetupTime(CurlCurl.Comm());
-
-  ML_Epetra::RefMaxwellPreconditioner RMP(CurlCurl,D0clean,Ms,M0inv,M1,MLList);
-
-  if(CurlCurl.Comm().MyPID()==0) {std::cout << "Setup time: " << SetupTime.ElapsedTime()
-                                            << " sec \n"; SetupTime.ResetStartTime();}
-
-  /* Build the AztecOO stuff */
-  Epetra_MultiVector x(xh);
-  x.PutScalar(0.0);
-
-  Epetra_LinearProblem Problem(&CurlCurl,&x,&b);
-  Epetra_MultiVector* lhs = Problem.GetLHS();
-  Epetra_MultiVector* rhs = Problem.GetRHS();
-
-  Epetra_Time Time(CurlCurl.Comm());
-
-  /* Solve! */
-  AztecOO solver(Problem);
-  solver.SetPrecOperator(&RMP);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 10);
-  solver.Iterate(500, 1e-10);
-
-  // accuracy check
-  Epetra_MultiVector xexact(xh);
-  xexact.PutScalar(0.0);
-
-  string msg = ProblemType;
-  solution_test(msg,CurlCurl,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
-
-  xh = *lhs;
+  RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
+    = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(curlcurlOp,D0cleanOp,MsOp,M0invOp,
+                                              M1Op,Teuchos::null,xcoords,MLList) );
+  return preconditioner;
 }
 
 
-/*************************************************************************************/
-/*************************** ML PRECONDITIONER****************************************/
-/*************************************************************************************/
-#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
-void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
-                                              Teuchos::ParameterList   & MLList,
-                                              Epetra_CrsMatrix   & CurlCurl,
-                                              Epetra_CrsMatrix   & D0clean,
-                                              Epetra_CrsMatrix   & M0inv,
-                                              Epetra_CrsMatrix   & Ms,
-                                              Epetra_CrsMatrix   & M1,
-                                              Epetra_MultiVector & xh,
-                                              Epetra_MultiVector & b,
-                                              double & TotalErrorResidual,
-                                              double & TotalErrorExactSol){
-  using Teuchos::rcp;
-  using Teuchos::RCP;
 
-  /* Add matrices to parameterlist */
-  MLList.set("D0",rcp((const Epetra_CrsMatrix*) &D0clean,false));
-  MLList.set("M0inv",rcp((const Epetra_CrsMatrix*) &M0inv,false));
-  MLList.set("M1",rcp((const Epetra_CrsMatrix*) &M1,false));
-  MLList.set("Ms",rcp((const Epetra_CrsMatrix*) &Ms,false));
-
+#ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS0
+/*************************************************************************************/
+/********************* Straitmikos PRECONDITIONER*************************************/
+/*************************************************************************************/
+RCP<Tpetra_Operator> BuildPreconditioner_Stratimikos(char ProblemType[],
+                                               Teuchos::ParameterList   & MLList,
+                                               RCP<Tpetra_CrsMatrix>   & CurlCurl,
+                                               RCP<Tpetra_CrsMatrix>   & D0clean,
+                                               RCP<Tpetra_CrsMatrix>   & M0inv,
+                                               RCP<Tpetra_CrsMatrix>   & Ms,
+                                               RCP<Tpetra_CrsMatrix>   & M1,
+                                               RCP<Tpetra_MultiVector> & coords){
 
   /* Build the rest of the Stratimikos list */
   Teuchos::ParameterList SList;
-  SList.set("Linear Solver Type","AztecOO");
-  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Aztec Solver","CG");
-  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",10);
-  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Max Iterations",500);
-  SList.sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Tolerance",1e-10);
-  SList.sublist("Linear Solver Types").sublist("AztecOO").set("Output Every RHS",true);
-  SList.set("Preconditioner Type","ML");
-  SList.sublist("Preconditioner Types").sublist("ML").set("Base Method Defaults","refmaxwell");
-  SList.sublist("Preconditioner Types").sublist("ML").set("ML Settings",MLList);
-
-  Epetra_Time Time(CurlCurl.Comm());
-
-  /* Thyra Wrappers */
-  Epetra_MultiVector x(xh);
-  x.PutScalar(0.0);
-
-  RCP<const Thyra::LinearOpBase<double> > At = Thyra::epetraLinearOp( rcp(&CurlCurl,false) );
-  RCP<Thyra::MultiVectorBase<double> > xt         = Thyra::create_MultiVector( rcp(&x,false), At->domain() );
-  RCP<const Thyra::MultiVectorBase<double> > bt   = Thyra::create_MultiVector( rcp(&b,false), At->range() );
-
-  /* Stratimikos setup */
-  Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-  linearSolverBuilder.setParameterList(rcp(&SList,false));
-  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
-  RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve<double>(*lowsFactory,At);
-
-  /* Solve */
-  Thyra::SolveStatus<double> status = Thyra::solve<double>(*lows, Thyra::NOTRANS, *bt, xt.ptr());
-
-  // accuracy check
-  Epetra_MultiVector xexact(xh);
-  xexact.PutScalar(0.0);
-  string msg = ProblemType;
-  solution_test(msg,CurlCurl,x,b,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
-
-  xh = x;
-
-}
-
-
-/*************************************************************************************/
-/*************************** MueLu PRECONDITIONER ************************************/
-/*************************************************************************************/
-void TestPreconditioner_Stratimikos(char ProblemType[],
-                                    Teuchos::ParameterList & SList,
-                                    Epetra_CrsMatrix   & CurlCurl,
-                                    Epetra_CrsMatrix   & D0clean,
-                                    Epetra_CrsMatrix   & M0inv,
-                                    Epetra_CrsMatrix   & Ms,
-                                    Epetra_CrsMatrix   & M1,
-                                    Epetra_MultiVector & coords,
-                                    Epetra_Vector      & Nx,
-                                    Epetra_Vector      & Ny,
-                                    Epetra_Vector      & Nz,
-                                    Epetra_MultiVector & xh,
-                                    Epetra_MultiVector & b,
-                                    double & TotalErrorResidual,
-                                    double & TotalErrorExactSol){
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-
-  Epetra_Time SetupTime(CurlCurl.Comm());
-
-  /* Build the rest of the Stratimikos list */
   SList.sublist("Preconditioner Types").sublist("ML").set("Base Method Defaults","refmaxwell");
 
   SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("D0","substitute const D0");
@@ -2842,25 +2572,25 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
     for (auto key_it = keys.begin(); key_it != keys.end(); ++key_it) {
       std::string value = sublist->get<std::string>(*key_it).substr(11, std::string::npos);
       if (value == "D0")
-        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &D0clean,false));
+        sublist->set(*key_it, rcp((Tpetra_CrsMatrix*) &*D0clean,false));
       else if (value == "M0inv")
-        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &M0inv,false));
+        sublist->set(*key_it, rcp((Tpetra_CrsMatrix*) &*M0inv,false));
       else if (value == "M1")
-        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &M1,false));
+        sublist->set(*key_it, rcp((Tpetra_CrsMatrix*) &*M1,false));
       else if (value == "Ms")
-        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &Ms,false));
+        sublist->set(*key_it, rcp((Tpetra_CrsMatrix*) &*Ms,false));
       else if (value == "Coordinates")
-        sublist->set(*key_it, rcp((Epetra_MultiVector*) &coords,false));
+        sublist->set(*key_it, rcp((Tpetra_MultiVector*) &*coords,false));
       else if (value == "const D0")
-        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &D0clean,false));
+        sublist->set(*key_it, rcp((const Tpetra_CrsMatrix*) &*D0clean,false));
       else if (value == "const M0inv")
-        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &M0inv,false));
+        sublist->set(*key_it, rcp((const Tpetra_CrsMatrix*) &*M0inv,false));
       else if (value == "const M1")
-        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &M1,false));
+        sublist->set(*key_it, rcp((const Tpetra_CrsMatrix*) &*M1,false));
       else if (value == "const Ms")
-        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &Ms,false));
+        sublist->set(*key_it, rcp((const Tpetra_CrsMatrix*) &*Ms,false));
       else if (value == "const Coordinates")
-        sublist->set(*key_it, rcp((const Epetra_MultiVector*) &coords,false));
+        sublist->set(*key_it, rcp((const Tpetra_MultiVector*) &*coords,false));
       else if (value == "x-coordinates")
         sublist->set(*key_it, &Nx[0]);
       else if (value == "y-coordinates")
@@ -2870,11 +2600,11 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
     }
   }
 
-  Epetra_Time Time(CurlCurl.Comm());
+  //  Tpetra_Time Time(CurlCurl.Comm());
 
   /* Thyra Wrappers */
-  Epetra_MultiVector x(xh);
-  x.PutScalar(0.0);
+  Tpetra_MultiVector x(xh);
+  x.putScalar(0.0);
 
   RCP<const Thyra::LinearOpBase<double> > At = Thyra::epetraLinearOp( rcp(&CurlCurl,false) );
   RCP<Thyra::MultiVectorBase<double> > xt         = Thyra::create_MultiVector( rcp(&x,false), At->domain() );
@@ -2882,15 +2612,8 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
 
   /* Stratimikos setup */
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-  // typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Xpetra::EpetraNode Node;
   Stratimikos::enableMueLuRefMaxwell<LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
-#endif
+
   linearSolverBuilder.setParameterList(rcp(&SList,false));
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
   RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve<double>(*lowsFactory,At);
@@ -2899,10 +2622,10 @@ void TestPreconditioner_Stratimikos(char ProblemType[],
   Thyra::SolveStatus<double> status = Thyra::solve<double>(*lows, Thyra::NOTRANS, *bt, xt.ptr());
 
   // accuracy check
-  Epetra_MultiVector xexact(xh);
-  xexact.PutScalar(0.0);
+  Tpetra_MultiVector xexact(xh);
+  xexact.putScalar(0.0);
   string msg = ProblemType;
-  solution_test(msg,CurlCurl,x,b,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
+  solution_test(msg,CurlCurl,x,b,xexact,TotalErrorExactSol,TotalErrorResidual);
 
   xh = x;
 }
