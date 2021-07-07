@@ -224,9 +224,9 @@ public:
 protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > integrator_;
   Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
   Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar> > sens_stepper_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > integrator_;
   bool use_combined_method_;
 };
 
