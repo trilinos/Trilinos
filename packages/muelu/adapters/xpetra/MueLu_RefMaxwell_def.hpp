@@ -280,7 +280,7 @@ namespace MueLu {
     syncTimers_                = list.get("sync timers",                       false);
     numItersH_                 = list.get("refmaxwell: num iters H",           1);
     numIters22_                = list.get("refmaxwell: num iters 22",          1);
-    applyBCsToAnodal_          = list.get("refmaxwell: apply BCs to Anodal",   true);
+    applyBCsToAnodal_          = list.get("refmaxwell: apply BCs to Anodal",   false);
     applyBCsToH_               = list.get("refmaxwell: apply BCs to H",        true);
     applyBCsTo22_              = list.get("refmaxwell: apply BCs to 22",       true);
 
@@ -2425,17 +2425,25 @@ namespace MueLu {
         Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
     }
 
-    if (!AH_.is_null() && precList11_.isType<bool>("rap: fix zero diagonals") && precList11_.get<bool>("rap: fix zero diagonals", false)) {
-      magnitudeType threshold;
-      if (precList11_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
-        threshold = precList11_.get<magnitudeType>("rap: fix zero diagonals threshold");
-      else
-        threshold = Teuchos::as<magnitudeType>(precList11_.get<double>("rap: fix zero diagonals threshold", 1e-16));
-      Scalar replacement = Teuchos::as<Scalar>(precList11_.get<double>("rap: fix zero diagonals replacement", 1.0));
-      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(AH_, true, GetOStream(Warnings1), threshold, replacement);
-    }
-
     if (!AH_.is_null()) {
+      // If we already applied BCs to A_nodal, we likely do not need
+      // to fix up AH.
+      // If we did not apply BCs to A_nodal, we now need to correct
+      // the zero diagonals of AH, since we did nuke the nullspace.
+
+      const bool fixZeroDiagonal = precList11_.get<bool>("rap: fix zero diagonals", !applyBCsToAnodal_);
+
+      if (fixZeroDiagonal) {
+        magnitudeType threshold;
+        if (precList11_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+          threshold = precList11_.get<magnitudeType>("rap: fix zero diagonals threshold");
+        else
+          threshold = Teuchos::as<magnitudeType>(precList11_.get<double>("rap: fix zero diagonals threshold", 1e-16));
+        Scalar replacement = Teuchos::as<Scalar>(precList11_.get<double>("rap: fix zero diagonals replacement", 1.0));
+        Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(AH_, true, GetOStream(Warnings1), threshold, replacement);
+      }
+
+      // Set block size
       size_t dim = Nullspace_->getNumVectors();
       AH_->SetFixedBlockSize(dim);
     }
