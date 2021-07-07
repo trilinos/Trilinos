@@ -56,13 +56,24 @@ setup(const panzer::LocalMeshPartition & partition)
   const int num_cells_per_face = 2;
 
   _num_subcells = num_faces;
+  _num_subcells_device = PHX::View<int*>("_num_subcells_device",1);
+  Kokkos::deep_copy(_num_subcells_device,_num_subcells);
   _num_cells = num_cells;
+  _num_cells_device = PHX::View<int*>("_num_cells_device",1);
+  Kokkos::deep_copy(_num_cells_device,_num_cells);
 
   _subcell_to_cells_adj = PHX::View<int*>("subcell_to_cells_adj", num_faces+1);
   _subcell_to_cells = PHX::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);
   _subcell_to_local_subcells = PHX::View<int*>("subcell_to_local_subcells", num_faces*num_cells_per_face);
   _cell_to_subcells_adj = PHX::View<int*>("cell_to_subcells_adj", num_cells+1);
   _cell_to_subcells = PHX::View<int*>("cell_to_subcells", num_cells*num_faces_per_cell);
+
+  // Host copies
+  _subcell_to_cells_adj_host = PHX::View<int*>::HostMirror("subcell_to_cells_adj_host", num_faces+1);
+  _subcell_to_cells_host = PHX::View<int*>::HostMirror("subcell_to_cells_host", num_faces*num_cells_per_face);
+  _subcell_to_local_subcells_host = PHX::View<int*>::HostMirror("subcell_to_local_subcells_host", num_faces*num_cells_per_face);
+  _cell_to_subcells_adj_host = PHX::View<int*>::HostMirror("cell_to_subcells_adj_host", num_cells+1);
+  _cell_to_subcells_host = PHX::View<int*>::HostMirror("cell_to_subcells_host", num_cells*num_faces_per_cell);
 
   // This line not needed since kokkos initializes the arrays above to zero
   //_subcell_to_cells_adj(0)=0;
@@ -99,6 +110,12 @@ setup(const panzer::LocalMeshPartition & partition)
     PHX::Device::execution_space().fence();
   }
 
+  // Copy values to host
+  Kokkos::deep_copy(_subcell_to_cells_adj_host, _subcell_to_cells_adj);
+  Kokkos::deep_copy(_subcell_to_cells_host, _subcell_to_cells);
+  Kokkos::deep_copy(_subcell_to_local_subcells_host,_subcell_to_local_subcells);
+  Kokkos::deep_copy(_cell_to_subcells_adj_host,_cell_to_subcells_adj);
+  Kokkos::deep_copy(_cell_to_subcells_host,_cell_to_subcells);
 }
 
 }

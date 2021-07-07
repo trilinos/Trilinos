@@ -69,7 +69,8 @@ public:
    * \return Number of subcells associated with the cells
    */
   KOKKOS_INLINE_FUNCTION
-  int numSubcells() const {return _num_subcells;}
+  int numSubcells() const {return _num_subcells_device(0);}
+  int numSubcellsHost() const {return _num_subcells;}
 
   /**
    * \brief Gives number of cells in connectivity
@@ -77,7 +78,8 @@ public:
    * \return Number of subcells associated with the cells
    */
   KOKKOS_INLINE_FUNCTION
-  int numCells() const {return _num_cells;}
+  int numCells() const {return _num_cells_device(0);}
+  int numCellsHost() const {return _num_cells;}
 
   /**
    * \brief gives number of subcells (e.g. faces) found on a given cell
@@ -90,6 +92,8 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   int numSubcellsOnCell(const int cell) const;
+  inline
+  int numSubcellsOnCellHost(const int cell) const;
 
   /**
    * \brief Returns the number of cells attached to a given subcell
@@ -104,6 +108,8 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   int numCellsOnSubcell(const int subcell) const;
+  inline
+  int numCellsOnSubcellHost(const int subcell) const;
 
   /**
    * \brief Get the subcell index for a given cell and local subcell index
@@ -121,6 +127,8 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   int subcellForCell(const int cell, const int local_subcell_index) const;
+  inline
+  int subcellForCellHost(const int cell, const int local_subcell_index) const;
 
   /**
    * \brief Get the cell for a given subcell and a local_cell_index
@@ -138,6 +146,8 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   int cellForSubcell(const int subcell, const int local_cell_index) const;
+  inline
+  int cellForSubcellHost(const int subcell, const int local_cell_index) const;
 
   /**
    * \brief Get the local subcell index given a subcell and a local cell index
@@ -151,29 +161,38 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   int localSubcellForSubcell(const int subcell, const int local_cell_index) const;
+  inline
+  int localSubcellForSubcellHost(const int subcell, const int local_cell_index) const;
 
 protected:
 
   /// Number of subcells for a given number of cells
   int _num_subcells;
+  PHX::View<int*> _num_subcells_device;
 
   /// Number of cells
   int _num_cells;
+  PHX::View<int*> _num_cells_device;
 
   /// Adjacency array for indexing into subcell_to_cells array
   PHX::View<int*> _subcell_to_cells_adj;
+  PHX::View<int*>::HostMirror _subcell_to_cells_adj_host;
 
   /// Mapping from subcells to cells
   PHX::View<int*> _subcell_to_cells;
+  PHX::View<int*>::HostMirror _subcell_to_cells_host;
 
   /// Mapping from subcell indexes to local subcell indexes
   PHX::View<int*> _subcell_to_local_subcells;
+  PHX::View<int*>::HostMirror _subcell_to_local_subcells_host;
 
   /// Adjacency array for indexing into cell_to_subcells array
   PHX::View<int*> _cell_to_subcells_adj;
+  PHX::View<int*>::HostMirror _cell_to_subcells_adj_host;
 
   /// Mapping from cells to subcells
   PHX::View<int*> _cell_to_subcells;
+  PHX::View<int*>::HostMirror _cell_to_subcells_host;
 
 };
 
@@ -211,11 +230,19 @@ SubcellConnectivity::
 numSubcellsOnCell(const int cell) const
 {
 #ifdef PANZER_DEBUG
-#ifndef KOKKOS_ENABLE_CUDA
-  TEUCHOS_ASSERT(cell >= 0 and cell < _num_cells);
-#endif
+  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells_device(0));
 #endif
   return _cell_to_subcells_adj(cell+1)-_cell_to_subcells_adj(cell);
+}
+
+int
+SubcellConnectivity::
+numSubcellsOnCellHost(const int cell) const
+{
+#ifdef PANZER_DEBUG
+  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells);
+#endif
+  return _cell_to_subcells_adj_host(cell+1)-_cell_to_subcells_adj_host(cell);
 }
 
 int
@@ -223,11 +250,19 @@ SubcellConnectivity::
 numCellsOnSubcell(const int subcell) const
 {
 #ifdef PANZER_DEBUG
-#ifndef KOKKOS_ENABLE_CUDA
-  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
-#endif
+  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells_device(0));
 #endif
   return _subcell_to_cells_adj(subcell+1)-_subcell_to_cells_adj(subcell);
+}
+
+int
+SubcellConnectivity::
+numCellsOnSubcellHost(const int subcell) const
+{
+#ifdef PANZER_DEBUG
+  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+#endif
+  return _subcell_to_cells_adj_host(subcell+1)-_subcell_to_cells_adj_host(subcell);
 }
 
 int
@@ -235,10 +270,8 @@ SubcellConnectivity::
 subcellForCell(const int cell, const int local_subcell_index) const
 {
 #ifdef PANZER_DEBUG
-#ifndef KOKKOS_ENABLE_CUDA
-  TEUCHOS_ASSERT(cell >= 0 and cell < _num_cells);
-  TEUCHOS_ASSERT(local_subcell_index < numSubcellsOnCell(cell));
-#endif
+  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells_device(0));
+  KOKKOS_ASSERT(local_subcell_index < numSubcellsOnCell(cell));
 #endif
   const int index = _cell_to_subcells_adj(cell)+local_subcell_index;
   return _cell_to_subcells(index);
@@ -246,13 +279,23 @@ subcellForCell(const int cell, const int local_subcell_index) const
 
 int
 SubcellConnectivity::
+subcellForCellHost(const int cell, const int local_subcell_index) const
+{
+#ifdef PANZER_DEBUG
+  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells);
+  KOKKOS_ASSERT(local_subcell_index < numSubcellsOnCellHost(cell));
+#endif
+  const int index = _cell_to_subcells_adj_host(cell)+local_subcell_index;
+  return _cell_to_subcells_host(index);
+}
+
+int
+SubcellConnectivity::
 cellForSubcell(const int subcell, const int local_cell_index) const
 {
 #ifdef PANZER_DEBUG
-#ifndef KOKKOS_ENABLE_CUDA
-  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
-  TEUCHOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
-#endif
+  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells_device(0));
+  KOKKOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
 #endif
   const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
   return _subcell_to_cells(index);
@@ -260,16 +303,38 @@ cellForSubcell(const int subcell, const int local_cell_index) const
 
 int
 SubcellConnectivity::
+cellForSubcellHost(const int subcell, const int local_cell_index) const
+{
+#ifdef PANZER_DEBUG
+  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  KOKKOS_ASSERT(local_cell_index < numCellsOnSubcellHost(subcell));
+#endif
+  const int index = _subcell_to_cells_adj_host(subcell)+local_cell_index;
+  return _subcell_to_cells_host(index);
+}
+
+int
+SubcellConnectivity::
 localSubcellForSubcell(const int subcell, const int local_cell_index) const
 {
 #ifdef PANZER_DEBUG
-#ifndef KOKKOS_ENABLE_CUDA
-  TEUCHOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
-  TEUCHOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
-#endif
+  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells_device(0));
+  KOKKOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
 #endif
   const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
   return _subcell_to_local_subcells(index);
+}
+
+int
+SubcellConnectivity::
+localSubcellForSubcellHost(const int subcell, const int local_cell_index) const
+{
+#ifdef PANZER_DEBUG
+  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  KOKKOS_ASSERT(local_cell_index < numCellsOnSubcellHost(subcell));
+#endif
+  const int index = _subcell_to_cells_adj_host(subcell)+local_cell_index;
+  return _subcell_to_local_subcells_host(index);
 }
 
 } // namespace panzer

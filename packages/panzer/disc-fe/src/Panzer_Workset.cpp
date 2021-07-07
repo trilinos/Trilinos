@@ -52,6 +52,7 @@
 #include "Panzer_LocalMeshInfo.hpp"
 #include "Panzer_PointGenerator.hpp"
 #include "Panzer_PointValues2.hpp"
+#include "Panzer_IntegrationValues2_impl.hpp" // needed for lambda dispatch with convertNormalToRotationMatrix()
 
 #include "Panzer_SubcellConnectivity.hpp"
 #include "Panzer_OrientationsInterface.hpp"

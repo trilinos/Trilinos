@@ -685,7 +685,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   // Enforce alignment across surface quadrature points
   
   const int num_points = ip_coordinates.extent_int(1);
-  const int num_faces_per_cell = face_connectivity.numSubcellsOnCell(0);
+  const int num_faces_per_cell = face_connectivity.numSubcellsOnCellHost(0);
   const int num_points_per_face = num_points / num_faces_per_cell;
 
   // Now we need to align the cubature points for each face
@@ -703,7 +703,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     std::vector<int> point_order(num_points_per_face);
 
     // Iterate through faces
-    for(int face=0; face<face_connectivity.numSubcells(); ++face){
+    for(int face=0; face<face_connectivity.numSubcellsHost(); ++face){
       // Cells for sides 0 and 1
       const int cell_0 = face_connectivity.cellForSubcell(face,0);
       const int cell_1 = face_connectivity.cellForSubcell(face,1);
