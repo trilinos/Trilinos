@@ -144,7 +144,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginAssembly() {
     std::ostringstream errmsg;
     errmsg << "Cannot begin assembly, matrix is not in a closed state "
            << "but is currently open for "
-           << (*fillState_ == FillState::open) ? "assembly" : "modification";
+           << (*fillState_ == FillState::open ? "assembly" : "modification");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   *fillState_ = FillState::open;
@@ -159,7 +159,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
     std::ostringstream errmsg;
     errmsg << "Cannot end assembly, matrix is not open for assembly "
            << "but is currently "
-           << (*fillState_ == FillState::closed) ? "closed" : "open for modification";
+           << (*fillState_ == FillState::closed ? "closed" : "open for modification");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   *fillState_ = FillState::closed;
@@ -172,9 +172,9 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginModify() {
   if (*fillState_ != FillState::closed)
   {
     std::ostringstream errmsg;
-    errmsg << "Cannot begin modifying, matrix is not in a closed state"
+    errmsg << "Cannot begin modifying, matrix is not in a closed state "
            << "but is currently open for "
-           << (*fillState_ == FillState::open) ? "assembly" : "modification";
+           << (*fillState_ == FillState::open ? "assembly" : "modification");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   *fillState_ = FillState::modify;
@@ -188,7 +188,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endModify() {
   {
     std::ostringstream errmsg;
     errmsg << "Cannot end modifying, matrix is not open to modify but is currently "
-           << (*fillState_ == FillState::open) ? "open for assembly" : "closed";
+           << (*fillState_ == FillState::open ? "open for assembly" : "closed");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   *fillState_ = FillState::closed;
@@ -211,7 +211,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValuesImpl(
     std::ostringstream errmsg;
     errmsg << "Cannot replace global values, matrix is not open for assembly "
            << "but is currently "
-           << (*fillState_ == FillState::modify) ? "open for modification" : "closed";
+           << (*fillState_ == FillState::modify ? "open for modification" : "closed");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   return crs_matrix_type::replaceGlobalValuesImpl(rowVals, graph, rowInfo, inds, newVals, numElts);
@@ -255,7 +255,7 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValuesImpl(
     std::ostringstream errmsg;
     errmsg << "Cannot sum in to global values, matrix is not open for assembly. "
            << "The matrix is currently "
-           << (*fillState_ == FillState::modify) ? "open for modification" : "closed";
+           << (*fillState_ == FillState::modify ? "open for modification" : "closed");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   return crs_matrix_type::sumIntoGlobalValuesImpl(
@@ -278,9 +278,9 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoLocalValuesImpl(
   if (*fillState_ != FillState::open)
   {
     std::ostringstream errmsg;
-    errmsg << "Cannot sum in to local values, matrix is not open for assembly."
+    errmsg << "Cannot sum in to local values, matrix is not open for assembly. "
            << "The matrix is currently "
-           << (*fillState_ == FillState::modify) ? "open for modification" : "closed";
+           << (*fillState_ == FillState::modify ? "open for modification" : "closed");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   return crs_matrix_type::sumIntoLocalValuesImpl(
@@ -301,9 +301,9 @@ FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValuesImpl(
   if (*fillState_ != FillState::open)
   {
     std::ostringstream errmsg;
-    errmsg << "Cannot insert global values, matrix is not open for assembly."
+    errmsg << "Cannot insert global values, matrix is not open for assembly. "
            << "The matrix is currently "
-           << (*fillState_ == FillState::modify) ? "open for modification" : "closed";
+           << (*fillState_ == FillState::modify ? "open for modification" : "closed");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error, errmsg.str());
   }
   return crs_matrix_type::insertGlobalValuesImpl(graph, rowInfo, gblColInds, vals, numInputEnt);
