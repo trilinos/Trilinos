@@ -2013,23 +2013,17 @@ namespace Ifpack2 {
         local_ordinal_type kfs[vector_length] = {};
         local_ordinal_type ri0[vector_length] = {};
         local_ordinal_type nrows[vector_length] = {};
-        printf("CMS: blocksize = %d\n",blocksize);
-
-
 
         for (local_ordinal_type vi=0;vi<npacks;++vi,++partidx) {
           kfs[vi] = flat_td_ptr(partidx);
           ri0[vi] = partptr(partidx);
           nrows[vi] = partptr(partidx+1) - ri0[vi];
         }
-        printf("CMS: nrows[0] = %d  A_values.size() = %d A_colindsub.size() = %d\n",nrows[0],A_values.size(),A_colindsub.size());
-
         for (local_ordinal_type tr=0,j=0;tr<nrows[0];++tr) {
           for (local_ordinal_type e=0;e<3;++e) {
             const impl_scalar_type* block[vector_length] = {};
             for (local_ordinal_type vi=0;vi<npacks;++vi) {
               const size_type Aj = A_rowptr(lclrow(ri0[vi] + tr)) + A_colindsub(kfs[vi] + j);
-              printf("CMS: [%d] Accessing lclrow(%d) = %d  A_rowptr(%d) = %d A_colindsub(%d)  =%d Aj = %d A_values[%d]...\n",tr,ri0[vi]+tr,lclrow(ri0[vi] + tr), lclrow(ri0[vi] + tr),A_rowptr(lclrow(ri0[vi] + tr)),kfs[vi] + j,A_colindsub(kfs[vi] + j),Aj,Aj*blocksize_square);fflush(stdout);
               block[vi] = &A_values(Aj*blocksize_square);
             }
             const size_type pi = kps + j;
