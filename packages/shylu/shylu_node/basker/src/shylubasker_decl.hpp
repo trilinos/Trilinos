@@ -1057,7 +1057,7 @@ namespace BaskerNS
     int t_local_reach_old(Int,BASKER_MATRIX&,Int,Int,Int,Int*);
 
     BASKER_INLINE
-    int t_back_solve(Int,BASKER_MATRIX&,Int,Int,Int,Int,Int);
+    int t_back_solve(Int,Int,BASKER_MATRIX&,Int,Int,Int,Int,Int);
 
     //basker_thread.hpp
     //BASKER_INLINE

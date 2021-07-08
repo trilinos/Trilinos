@@ -1534,20 +1534,20 @@ bool do_kokkos_test_with_types(const string& mm_file,
     // MDM Right now I'm employing the Tpetra version to generate the random
     // values. But probably should make a pure kokkos version though I'd like
     // them all to be the same.
-    RCP<MV> xMV, bMV;
+    RCP<MV> xMV_i, bMV_i;
     if( transpose ){
-      xMV = rcp(new MV(rngmap,numVecs));
-      bMV = rcp(new MV(dmnmap,numVecs));
+      xMV_i = rcp(new MV(rngmap,numVecs));
+      bMV_i = rcp(new MV(dmnmap,numVecs));
     }
     else {
-      xMV = rcp(new MV(dmnmap,numVecs));
-      bMV = rcp(new MV(rngmap,numVecs));
+      xMV_i = rcp(new MV(dmnmap,numVecs));
+      bMV_i = rcp(new MV(rngmap,numVecs));
     }
-    xMV->randomize();
-    tpetraM->apply(*xMV, *bMV, trans);
+    xMV_i->randomize();
+    tpetraM->apply(*xMV_i, *bMV_i, trans);
 
-    Kokkos::deep_copy(*x[i], xMV->getLocalViewHost());
-    Kokkos::deep_copy(*b[i], bMV->getLocalViewHost());
+    Kokkos::deep_copy(*x[i], xMV_i->getLocalViewHost());
+    Kokkos::deep_copy(*b[i], bMV_i->getLocalViewHost());
   }
 
   RCP<tpetra_crsmatrix_t> temp_tpetraM =
@@ -1580,17 +1580,17 @@ bool do_kokkos_test_with_types(const string& mm_file,
 
     // perturb the values just a bit (element-wise square of first row)
     size_t l_fst_row_nnz = tpetraM2->getNumEntriesInLocalRow(0);
-    Array<LocalOrdinal> indices(l_fst_row_nnz);
-    Array<TpetraScalar> values(l_fst_row_nnz);
-    tpetraM2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
+    Array<LocalOrdinal> indices1(l_fst_row_nnz);
+    Array<TpetraScalar> values1(l_fst_row_nnz);
+    tpetraM2->getLocalRowCopy(0, indices1, values1, l_fst_row_nnz);
     for( size_t i = 0; i < l_fst_row_nnz; ++i ){
-      values[i] = values[i] * values[i];
+      values1[i] = values1[i] * values1[i];
     }
     tpetraM2->resumeFill ();
-    tpetraM2->replaceLocalValues (0, indices, values);
+    tpetraM2->replaceLocalValues (0, indices1, values1);
     tpetraM2->fillComplete (tpetraM->getDomainMap (), tpetraM->getRangeMap ());
 
-    // Get Tpetra ahain
+    // Get Tpetra again
     Teuchos::ArrayRCP<const size_t> rowPointers2;
     Teuchos::ArrayRCP<const LocalOrdinal> columnIndices2;
     Teuchos::ArrayRCP<const TpetraScalar> values2;

@@ -1182,6 +1182,49 @@ namespace BaskerNS
 			&(perm_in(0)), 
 			&(CC(0)));
 
+    if (Options.min_block_size > 0 && nblks > 1) {
+      for (Int blk = 0; blk < nblks-1; blk++) {
+        Int blk_size = CC(blk+1) - CC(blk);
+        if (blk_size < Options.min_block_size) {
+          if (blk == 0) {
+            // merge this block to the next block
+            for (Int I = blk+1; I < nblks; I++) {
+              CC(I) = CC(I+1);
+            }
+            // the next block is blk-th block
+            blk --;   // check this block again
+            nblks --; // reducd # of blocks
+          } else if (blk == nblks-1) {
+            // merge this block to the prev block
+            for (Int I = blk; I < nblks; I++) {
+              CC(I) = CC(I+1);
+            }
+            // the prev block is (blk-1)th block,
+            // the next block is blk-th block
+            blk --;   // check this block again
+            nblks --; // reducd # of blocks
+            break;    // done
+          } else {
+            Int prev_size = CC(blk)-CC(blk-1);
+            Int next_size = CC(blk+1)-CC(blk);
+            if (prev_size < next_size) {
+              // merge this block to the prev block
+              for (Int I = blk; I <= nblks; I++) {
+                CC(I) = CC(I-1);
+              }
+            } else {
+              // merge this block to the next block
+              for (Int I = blk+1; I < nblks; I++) {
+                CC(I) = CC(I+1);
+              }
+            }
+            blk --;   // check this block again
+            nblks --; // reducd # of block
+          }
+        }
+      }
+    }
+
     #ifdef BASKER_DEBUG_ORDER_BTF
     FILE *fp;
     fp = fopen("btf.txt", "w");

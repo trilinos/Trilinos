@@ -821,8 +821,8 @@ namespace BaskerNS
     U.nnz = unnz;
     if(Options.verbose == BASKER_TRUE)
     {
-      printf(" thread-%ld: >  factoring_blk : nnzL = %ld, nnzU = %ld\n",
-          (long)kid, (long)lnnz, (long)unnz); fflush(stdout);
+      printf(" thread-%ld: >  factoring_blk : nnzL = %ld, nnzU = %ld (%ld x %ld)\n",
+          (long)kid, (long)lnnz, (long)unnz, (long)M.nrow, (long)M.ncol ); fflush(stdout);
     }
 
     #ifdef BASKER_TIME

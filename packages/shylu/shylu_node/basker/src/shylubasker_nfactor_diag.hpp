@@ -394,28 +394,34 @@ namespace BaskerNS
     unnz = 0;
     lnnz = 0;
 
+    //#define BASKER_DEBUG_NFACTOR_DIAG
     #ifdef BASKER_DEBUG_NFACTOR_DIAG
     if (Options.verbose == BASKER_TRUE) {
-      printf( " c: %d bcol=%d, brow2=%d, wsize=%d\n", (int)c, (int)bcol, (int)brow2, (int)ws_size );
-      if (c >= btab) {
-        printf( " BTF_C -> UBTF(%d) & LBTF(%d) \n",(int)(c-btab),(int)(c-btab) );
-      } else {
-        printf( " BTF_D -> U_D(%d) & L_D(%d)\n",(int)c, (int)c );
-      }
-      std::cout << " K" << c << " = [" << std::endl;
+      //printf( " c: %d bcol=%d, brow2=%d, wsize=%d\n", (int)c, (int)bcol, (int)brow2, (int)ws_size );
+      //if (c >= btab) {
+      //  printf( " BTF_C -> UBTF(%d) & LBTF(%d) \n",(int)(c-btab),(int)(c-btab) );
+      //} else {
+      //  printf( " BTF_D -> U_D(%d) & L_D(%d)\n",(int)c, (int)c );
+      //}
+      //std::cout << " K" << c << " = [" << std::endl;
+
+      char filename[250];
+      sprintf(filename,"A_%d.dat",(int)c);
+      FILE *fp = fopen(filename,"w");
       for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k) {
         for( i = M.col_ptr(k-bcol); i < M.col_ptr(k-bcol+1); ++i) {
           if (M.row_idx(i) >= brow2) 
-            printf( " %d %d %d %e, %d %d %d\n", (int)i, (int)(M.row_idx(i)-brow2), (int)(k-btf_tabs(c)),
+            fprintf(fp, " %d %d %d %e, %d %d %d\n", (int)i, (int)(M.row_idx(i)-brow2), (int)(k-btf_tabs(c)),
                     std::real(M.val(i)), (int)(M.row_idx(i)), (int)(k), (int)(i));
         }
       }
-      std::cout << "];" << std::endl << std::endl << std::flush;
+      fclose(fp);
+
+      //std::cout << "];" << std::endl << std::endl << std::flush;
     }
     #endif
 
     // compute one-norm of diagonal block, if needed
-    const Mag eps = STS::eps ();
     Mag normA_blk = Mag (0.0);
     if (Options.replace_tiny_pivot) {
       for (j = btf_tabs(c); j < btf_tabs(c+1); ++j) {
@@ -530,7 +536,7 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       timer_nfactor.reset();
       #endif
-      t_back_solve(kid, L, 0, 0, k, top, xnnz);
+      t_back_solve(kid, c, L, 0, 0, k, top, xnnz);
       #ifdef BASKER_TIMER
       solve_time += timer_nfactor.seconds();
       #endif
@@ -586,6 +592,8 @@ namespace BaskerNS
         if(t == BASKER_MAX_IDX)
         {
           ++lcnt;
+          // looking for the pivot candidate (largest off-diagonal)
+          // will be compared with diagonal
           if(absv > maxv || maxindex == BASKER_MAX_IDX) 
           {
             maxv     = absv;
@@ -620,7 +628,8 @@ namespace BaskerNS
       //printf("b: %d lcnt: %d after \n", b, lcnt);
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
       if (Options.verbose == BASKER_TRUE) {
-        printf(" >> pivot=%g, maxindex=%d, k=%d \n", std::real(pivot), (int)maxindex, (int)k);
+        printf(" >> pivot=%e, maxindex=%d, k=%d (digv = %e, pivot_tol = %g)\n",
+               std::real(pivot), (int)maxindex, (int)k, digv, Options.pivot_tol);
       }
       #endif
       //printf( "c=%d k=%d (%d) maxindex=%d pivot=%e maxv=%e, diag=%e tol=%e (nopivot=%d)\n", c, k, k-btf_tabs(c), maxindex, pivot, maxv, digv, Options.pivot_tol,Options.no_pivot);
@@ -639,7 +648,11 @@ namespace BaskerNS
       {
         maxindex = digindex;
         pivot    = X(maxindex);
-        //printf( " -> %d %e\n",maxindex,pivot );
+        #ifdef BASKER_DEBUG_NFACTOR_DIAG
+        if (Options.verbose == BASKER_TRUE) {
+          printf( " pivot -> %d %e (using diagonal)\n",maxindex,pivot );
+        }
+        #endif
       }
 
       #ifdef BASKER_DEBUG_NFACTOR_DEBUG
@@ -652,6 +665,8 @@ namespace BaskerNS
 
       if((maxindex == BASKER_MAX_IDX) || (pivot == zero))
       {
+        const Mag eps = STS::eps ();
+        const Mag normA = A.gnorm;
         if (Options.verbose == BASKER_TRUE)
         {
           cout << endl;
@@ -661,12 +676,15 @@ namespace BaskerNS
             << c 
             << " Column: "
             << k
+            << " Size: "
+            << btf_tabs(c+1)-btf_tabs(c)
             << endl;
           cout << "MaxIndex: " << maxindex 
             << " pivot " 
             << pivot << endl;
           if (Options.replace_tiny_pivot && normA_blk >= abs(zero) && maxindex != BASKER_MAX_IDX) {
-            cout << "  replace tiny pivot with " << normA_blk * eps << endl;
+            cout << "  replace tiny pivot with " << normA_blk * eps
+                 << " (normA = " << normA << ", normA_blk = " << normA_blk << ", eps = " << eps << ")" << endl;
           }
         }
         if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
@@ -1223,6 +1241,7 @@ namespace BaskerNS
   int Basker<Int, Entry,Exe_Space>::t_back_solve
   (
    Int kid,
+   Int c,
    BASKER_MATRIX &L,
    Int lvl,
    Int l,
@@ -1262,19 +1281,23 @@ namespace BaskerNS
       #endif
       if(t != BASKER_MAX_IDX && xj != zero)
       { // j is original nonzero in upper-triangullar part of A
+        // p starts witth ptr(k)+1, skipping diagonal element
         Int k_i = t - L.scol;
         for(Int p = L.col_ptr(k_i)+1; p < L.col_ptr(k_i+1); ++p)
         {
           #ifdef BASKER_DEBUG_NFACTOR_DIAG
-          #ifdef BASKER_2DL
-          printf("Updating row: %d  with value: %f %f \n",
-                 (int)L.row_idx[p],
-                 std::real(X[L.row_idx[p]]), std::real(L.val[p]*xj));
-          #else
-          printf("Updating row: %d with value: %f %f \n",
-              L.row_idx(p),
-              std::real(X[L.row_idx(p)]), std::real(L.val[p]*xj));
-          #endif
+          if (Options.verbose == BASKER_TRUE) {
+            #ifdef BASKER_2DL
+            printf("Updating block %d row: %d with value: %f - %f * %f -> %f (j=%d, p=%d)\n",
+                   (int)c, (int)L.row_idx[p],
+                   std::real(X[L.row_idx[p]]), std::real(L.val[p]), std::real(xj),
+                   std::real(X(L.row_idx(p)) - L.val(p)*xj), (int)j, (int)p);
+            #else
+            printf("Updating block %d row: %d with value: %f %f -> %f (j=%d)\n",
+                   (int)c, (int)L.row_idx(p),
+                   std::real(X[L.row_idx(p)]), std::real(L.val[p]*xj), std::real(X[L.row_idx[p]] - L.val[p]*xj), (int)j);
+            #endif
+          }
           #endif
 
           #ifdef BASKER_2DL

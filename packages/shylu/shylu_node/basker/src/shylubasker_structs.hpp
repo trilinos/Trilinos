@@ -763,6 +763,7 @@ namespace BaskerNS
       // matching before BTF in symbolic 
       // > 0 = none, 1 = ShyLUBasker::mwm, 2 = trilinos_btf_maxtrans, or 3 = MC64 if enabled
       btf_matching = 2;
+      min_block_size = 0; // no merging blocks
 
       //BTF Ordering Options
       btf             = BASKER_TRUE;
@@ -831,6 +832,7 @@ namespace BaskerNS
     // TODO: remove this (matching during symbolic)
     int btf_matching; // carbinality matching before BTF (Symbolic):                0 = none, 1 = Basker, or 2 = Trilinos (default) (3 = MC64 if enable)
     int blk_matching; // max weight matching on each of diagonal blocks (Numeric):  0 = none (default), or 1 = Basker (2 = MC64 if enable)
+    Int min_block_size; // min size of blocks
 
     // Replace tiny pivott
     BASKER_BOOL replace_tiny_pivot;

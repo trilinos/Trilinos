@@ -90,12 +90,13 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
   ShyLUbasker->Options.no_pivot      = BASKER_FALSE;
   ShyLUbasker->Options.static_delayed_pivot = 0;
-  ShyLUbasker->Options.symmetric     = BASKER_FALSE;
-  ShyLUbasker->Options.realloc       = BASKER_TRUE;
-  ShyLUbasker->Options.verbose       = BASKER_FALSE;
-  ShyLUbasker->Options.prune         = BASKER_TRUE;
-  ShyLUbasker->Options.btf_matching  = 2; // use cardinary matching from Trilinos, globally
-  ShyLUbasker->Options.blk_matching  = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbasker->Options.symmetric      = BASKER_FALSE;
+  ShyLUbasker->Options.realloc        = BASKER_TRUE;
+  ShyLUbasker->Options.verbose        = BASKER_FALSE;
+  ShyLUbasker->Options.prune          = BASKER_TRUE;
+  ShyLUbasker->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
+  ShyLUbasker->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbasker->Options.min_block_size = 0; // no merging small blocks
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE;  // use block-wise AMD
   ShyLUbasker->Options.use_metis     = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
@@ -113,12 +114,13 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr = new ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>();
   ShyLUbaskerTr->Options.no_pivot      = BASKER_FALSE;
   ShyLUbaskerTr->Options.static_delayed_pivot = 0;
-  ShyLUbaskerTr->Options.symmetric     = BASKER_FALSE;
-  ShyLUbaskerTr->Options.realloc       = BASKER_TRUE;
-  ShyLUbaskerTr->Options.verbose       = BASKER_FALSE;
-  ShyLUbaskerTr->Options.prune         = BASKER_TRUE;
-  ShyLUbaskerTr->Options.btf_matching  = 2; // use cardinary matching from Trilinos, globally
-  ShyLUbaskerTr->Options.blk_matching  = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbaskerTr->Options.symmetric      = BASKER_FALSE;
+  ShyLUbaskerTr->Options.realloc        = BASKER_TRUE;
+  ShyLUbaskerTr->Options.verbose        = BASKER_FALSE;
+  ShyLUbaskerTr->Options.prune          = BASKER_TRUE;
+  ShyLUbaskerTr->Options.btf_matching   = 2; // use cardinary matching from Trilinos, globally
+  ShyLUbaskerTr->Options.blk_matching   = 1; // use max-weight matching from Basker on each diagonal block
+  ShyLUbaskerTr->Options.min_block_size = 0; // no merging small blocks
   ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE;  // use block-wise AMD
   ShyLUbaskerTr->Options.use_metis     = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
@@ -655,6 +657,11 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       ShyLUbasker->Options.blk_matching = parameterList->get<int>("blk_matching");
       ShyLUbaskerTr->Options.blk_matching = parameterList->get<int>("blk_matching");
     }
+  if(parameterList->isParameter("min_block_size"))
+    {
+      ShyLUbasker->Options.min_block_size = parameterList->get<int>("min_block_size");
+      ShyLUbaskerTr->Options.min_block_size = parameterList->get<int>("min_block_size");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -690,10 +697,12 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
 	      "Use BTF ordering");
       pl->set("prune", false,
 	      "Use prune on BTF blocks (Not Supported)");
-      pl->set("btf_matching",  1, 
+      pl->set("btf_matching",  2, 
              "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
-      pl->set("blk_matching", 0, 
-             "Matching optioon for block: 0 = none (default), 1 or anything else = Basker (2 = MC64 if enabled)");
+      pl->set("blk_matching", 1, 
+             "Matching optioon for block: 0 = none, 1 or anything else = Basker (default), (2 = MC64 if enabled)");
+      pl->set("min_block_size",  0, 
+             "Size of the minimum diagonal blocks");
       pl->set("replace_tiny_pivot",  true, 
              "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,  // TODO: should METIS optional?
