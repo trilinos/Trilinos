@@ -192,6 +192,12 @@ namespace Xpetra {
 
 #endif
 
+    TpetraCrsGraph(const Teuchos::RCP<const Map>& rowMap,
+                   const Teuchos::RCP<const Map>& colMap,
+                   const Teuchos::ArrayRCP<size_t>& rowPointers,
+                   const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
+                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     //! Destructor.
     virtual ~TpetraCrsGraph();
 

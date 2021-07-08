@@ -412,33 +412,35 @@ namespace Galeri {
       // NOTE: nullspace local ordering is consistent with that of the matrix
       // map, as it inherits ordering from coordinates, which is consistent.
 
-      // Translations
-      Teuchos::ArrayRCP<SC> T0 = this->Nullspace_->getDataNonConst(0), T1 = this->Nullspace_->getDataNonConst(1), T2 = this->Nullspace_->getDataNonConst(2);
-      for (size_t i = 0; i < numDofs; i += nDim_) {
-        T0[i]   = one;
-        T1[i+1] = one;
-        T2[i+2] = one;
-      }
+      {
+	// Translations
+	Teuchos::ArrayRCP<SC> T0 = this->Nullspace_->getDataNonConst(0), T1 = this->Nullspace_->getDataNonConst(1), T2 = this->Nullspace_->getDataNonConst(2);
+	for (size_t i = 0; i < numDofs; i += nDim_) {
+	  T0[i]   = one;
+	  T1[i+1] = one;
+	  T2[i+2] = one;
+	}
 
-      // Calculate center
-      real_type cx = this->Coords_->getVector(0)->meanValue();
-      real_type cy = this->Coords_->getVector(1)->meanValue();
-      real_type cz = this->Coords_->getVector(2)->meanValue();
+	// Calculate center
+	real_type cx = this->Coords_->getVector(0)->meanValue();
+	real_type cy = this->Coords_->getVector(1)->meanValue();
+	real_type cz = this->Coords_->getVector(2)->meanValue();
 
-      // Rotations
-      Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
-      for (size_t i = 0; i < numDofs; i += nDim_) {
-        // Rotate in Y-Z Plane (around Z axis): [ -y; x]
-        R0[i+0] = -(y[i] - cy);
-        R0[i+1] =  (x[i] - cx);
+	// Rotations
+	Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
+	for (size_t i = 0; i < numDofs; i += nDim_) {
+	  // Rotate in Y-Z Plane (around Z axis): [ -y; x]
+	  R0[i+0] = -(y[i] - cy);
+	  R0[i+1] =  (x[i] - cx);
+	  
+	  // Rotate in Y-Z Plane (around Z axis): [ -z; y]
+	  R1[i+1] = -(z[i] - cz);
+	  R1[i+2] =  (y[i] - cy);
 
-        // Rotate in Y-Z Plane (around Z axis): [ -z; y]
-        R1[i+1] = -(z[i] - cz);
-        R1[i+2] =  (y[i] - cy);
-
-        // Rotate in Y-Z Plane (around Z axis): [ z; -x]
-        R2[i+0] =  (z[i] - cz);
-        R2[i+2] = -(x[i] - cx);
+	  // Rotate in Y-Z Plane (around Z axis): [ z; -x]
+	  R2[i+0] =  (z[i] - cz);
+	  R2[i+2] = -(x[i] - cx);
+	}
       }
 
       // Equalize norms of all vectors to that of the first one

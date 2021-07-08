@@ -166,18 +166,22 @@ namespace MueLu {
     }
 
     RCP<GOVector> tempAmalgColVec = GOVectorFactory::Build(A->getDomainMap());
-    Teuchos::ArrayRCP<GlobalOrdinal> tempAmalgColVecData = tempAmalgColVec->getDataNonConst(0);
-    for (size_t i = 0; i < A->getDomainMap()->getNodeNumElements(); i++)
-      tempAmalgColVecData[i] = amalgColMapGIDs[ myLocalNodeIds[i]];
+    {
+      Teuchos::ArrayRCP<GlobalOrdinal> tempAmalgColVecData = tempAmalgColVec->getDataNonConst(0);
+      for (size_t i = 0; i < A->getDomainMap()->getNodeNumElements(); i++)
+	tempAmalgColVecData[i] = amalgColMapGIDs[ myLocalNodeIds[i]];
+    }
 
     RCP<GOVector> tempAmalgColVecTarget = GOVectorFactory::Build(A->getColMap());
     Teuchos::RCP<Import> dofImporter = ImportFactory::Build(A->getDomainMap(), A->getColMap());
     tempAmalgColVecTarget->doImport(*tempAmalgColVec, *dofImporter, Xpetra::INSERT);
-    Teuchos::ArrayRCP<const GlobalOrdinal> tempAmalgColVecBData = tempAmalgColVecTarget->getData(0);
 
-    // copy from dof vector to nodal vector
-    for (size_t i = 0; i < myLocalNodeIds.size(); i++)
-       amalgColMapGIDs[ myLocalNodeIds[i]] = tempAmalgColVecBData[i];
+    {
+      Teuchos::ArrayRCP<const GlobalOrdinal> tempAmalgColVecBData = tempAmalgColVecTarget->getData(0);
+      // copy from dof vector to nodal vector
+      for (size_t i = 0; i < myLocalNodeIds.size(); i++)
+	amalgColMapGIDs[ myLocalNodeIds[i]] = tempAmalgColVecBData[i];
+    }
 
     Teuchos::RCP<Map> amalgRowMap = MapFactory::Build(lib,
                Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
@@ -191,7 +195,7 @@ namespace MueLu {
                A->getRangeMap()->getIndexBase(),
                comm);
 
-    // end fill nodal maps
+   // end fill nodal maps
 
 
     // start variable dof amalgamation
@@ -199,16 +203,6 @@ namespace MueLu {
     Teuchos::RCP<CrsMatrixWrap> Awrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A);
     Teuchos::RCP<CrsMatrix> Acrs = Awrap->getCrsMatrix();
     //Acrs->describe(*fancy, Teuchos::VERB_EXTREME);
-
-    Teuchos::ArrayRCP<const size_t> rowptr(Acrs->getNodeNumRows());
-    Teuchos::ArrayRCP<const LocalOrdinal> colind(Acrs->getNodeNumEntries());
-    Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
-    Acrs->getAllValues(rowptr, colind, values);
-
-
-    // create arrays for amalgamated matrix
-    Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
-    Teuchos::ArrayRCP<LocalOrdinal> amalgCols(rowptr[rowptr.size()-1]);
 
     size_t nNonZeros = 0;
     std::vector<bool> isNonZero(nLocalPlusGhostDofs,false);
@@ -220,6 +214,16 @@ namespace MueLu {
     A->getLocalDiagCopy(*diagVecUnique);
     diagVec->doImport(*diagVecUnique, *dofImporter, Xpetra::INSERT);
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
+
+    Teuchos::ArrayRCP<const size_t> rowptr(Acrs->getNodeNumRows());
+    Teuchos::ArrayRCP<const LocalOrdinal> colind(Acrs->getNodeNumEntries());
+    Teuchos::ArrayRCP<const Scalar> values(Acrs->getNodeNumEntries());
+    Acrs->getAllValues(rowptr, colind, values);
+
+
+    // create arrays for amalgamated matrix
+    Teuchos::ArrayRCP<size_t> amalgRowPtr(nLocalNodes+1);
+    Teuchos::ArrayRCP<LocalOrdinal> amalgCols(rowptr[rowptr.size()-1]);
 
     LocalOrdinal oldBlockRow = 0;
     LocalOrdinal blockRow = 0;
@@ -487,9 +491,11 @@ namespace MueLu {
     Teuchos::RCP<LOVector> localNodeIds     = LOVectorFactory::Build(colDofMap,true);
 
     // fill local dofs (padded local ids)
-    Teuchos::ArrayRCP< LocalOrdinal > localNodeIdsTempData = localNodeIdsTemp->getDataNonConst(0);
-    for(size_t i = 0; i < localNodeIdsTemp->getLocalLength(); i++)
-      localNodeIdsTempData[i] = std::floor<LocalOrdinal>( dofMap[i] / maxDofPerNode );
+    {
+      Teuchos::ArrayRCP< LocalOrdinal > localNodeIdsTempData = localNodeIdsTemp->getDataNonConst(0);
+      for(size_t i = 0; i < localNodeIdsTemp->getLocalLength(); i++)
+	localNodeIdsTempData[i] = std::floor<LocalOrdinal>( dofMap[i] / maxDofPerNode );
+    }
 
     localNodeIds->doImport(*localNodeIdsTemp, *importer, Xpetra::INSERT);
     Teuchos::ArrayRCP< const LocalOrdinal > localNodeIdsData = localNodeIds->getData(0);
@@ -502,9 +508,11 @@ namespace MueLu {
     Teuchos::RCP<LOVector> myProc     = LOVectorFactory::Build(colDofMap,true);
 
     // fill local dofs (padded local ids)
-    Teuchos::ArrayRCP< LocalOrdinal > myProcTempData = myProcTemp->getDataNonConst(0);
-    for(size_t i = 0; i < myProcTemp->getLocalLength(); i++)
-      myProcTempData[i] = Teuchos::as<LocalOrdinal>(comm->getRank());
+    {
+      Teuchos::ArrayRCP< LocalOrdinal > myProcTempData = myProcTemp->getDataNonConst(0);
+      for(size_t i = 0; i < myProcTemp->getLocalLength(); i++)
+	myProcTempData[i] = Teuchos::as<LocalOrdinal>(comm->getRank());
+    }
     myProc->doImport(*myProcTemp, *importer, Xpetra::INSERT);
     Teuchos::ArrayRCP<LocalOrdinal> myProcData = myProc->getDataNonConst(0); // we have to modify the data (therefore the non-const version)
 

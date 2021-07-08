@@ -503,8 +503,8 @@ namespace MueLu {
       auto aggGraph = aggregates->GetGraph();
       auto numAggs  = aggGraph.numRows();
 
-      auto fineCoordsView   = fineCoords  ->getDeviceLocalView();
-      auto coarseCoordsView = coarseCoords->getDeviceLocalView();
+      auto fineCoordsView   = fineCoords  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
 
       // Fill in coarse coordinates
       {
@@ -615,8 +615,8 @@ namespace MueLu {
     GO globalOffset = amalgInfo->GlobalOffset();
 
     // Extract aggregation info (already in Kokkos host views)
-    auto         procWinner    = aggregates->GetProcWinner()  ->getDeviceLocalView();
-    auto         vertex2AggId  = aggregates->GetVertex2AggId()->getDeviceLocalView();
+    auto         procWinner    = aggregates->GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto         vertex2AggId  = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
     const size_t numAggregates = aggregates->GetNumAggregates();
 
     int myPID = aggregates->GetMap()->getComm()->getRank();
@@ -709,8 +709,8 @@ namespace MueLu {
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
     // Pull out the nullspace vectors so that we can have random access (on the device)
-    auto fineNS   = fineNullspace  ->getDeviceLocalView();
-    auto coarseNS = coarseNullspace->getDeviceLocalView();
+    auto fineNS   = fineNullspace  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto coarseNS = coarseNullspace->getDeviceLocalView(Xpetra::Access::OverwriteAll);
 
     size_t nnz = 0;                       // actual number of nnz
 

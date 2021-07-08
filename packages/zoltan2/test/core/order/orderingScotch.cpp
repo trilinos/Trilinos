@@ -86,8 +86,9 @@ typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
 {
   z2TestLO ii, i, j, k;
-  ArrayView<const z2TestLO> indices;
-  ArrayView<const z2TestScalar> values;
+  typename SparseMatrix::local_inds_host_view_type  indices;
+  typename SparseMatrix::values_host_view_type  values;
+
   z2TestLO bw_left = 0;
   z2TestLO bw_right = 0;
 
@@ -96,7 +97,7 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
   // Loop over rows of matrix
   for (ii=0; ii<n; ii++) {
     A->getLocalRowView (ii, indices, values);
-    for (k=0; k< indices.size(); k++){
+    for (k=0; k< static_cast<z2TestLO>(indices.size()); k++){
       if (indices[k] < n){ // locally owned
         if (perm){
           i = perm[ii];
@@ -165,10 +166,10 @@ void tempDebugTest(
 
   // write 1's in our matrix
   for (lno_t j = 0; j < numRows; ++j) {
-    ArrayView<const lno_t> indices;
-    ArrayView<const scalar_t> wgts;
+    typename SparseMatrix::local_inds_host_view_type  indices;
+    typename SparseMatrix::values_host_view_type  wgts;
     origMatrix->getLocalRowView( j, indices, wgts );
-    for (lno_t n = 0; n < indices.size(); ++n) {
+    for (lno_t n = 0; n < static_cast<lno_t>(indices.size()); ++n) {
       lno_t i = indices[n];
       if (i < numRows) { // locally owned
         oldMatrix[i + j*numRows] = 1;

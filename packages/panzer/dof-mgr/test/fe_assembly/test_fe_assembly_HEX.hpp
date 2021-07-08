@@ -46,10 +46,10 @@
 
   The mesh topology and global numbering of the Degrees of Freedom (DoFs) are computed using Panzer Dof Manager package
   Local matrices and right-hand-side are computed using high-order HGRAD elements on Hexahedra provided by the package Intrepid2
-  Local matrices and right-hand-side are assembled into global matrix A and right-hand-side b using the 
+  Local matrices and right-hand-side are assembled into global matrix A and right-hand-side b using the
   FECrsMatrix and FEMultivector provided by Tpetra package
-  
-  The code is then verified by checking the norm of the residual r = b - A x. 
+
+  The code is then verified by checking the norm of the residual r = b - A x.
   When the solution belong to the chosen finite element space, the residual norm should be close to machine eps.
 
   Command line arguments:
@@ -212,7 +212,7 @@ int feAssemblyHex(int argc, char *argv[]) {
 
   try {
 
-    
+
     // ************************************ GET INPUTS **************************************
     constexpr local_ordinal_t dim = 3;
     int degree = 4;
@@ -240,7 +240,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     clp.setOption("timings-file",&timingsFile);
     clp.setOption("verbose", &verbose);
     auto cmdResult = clp.parse(argc,argv);
-    cubDegree = (cubDegree == -1) ? 2*degree : cubDegree;    
+    cubDegree = (cubDegree == -1) ? 2*degree : cubDegree;
 
     if(cmdResult!=Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       clp.printHelpMessage(argv[0], std::cout);
@@ -250,12 +250,12 @@ int feAssemblyHex(int argc, char *argv[]) {
     outStream = ((comm.getRank () == 0) && verbose) ?
       getFancyOStream(Teuchos::rcpFromRef (std::cout)) :
       getFancyOStream(Teuchos::rcp (new Teuchos::oblackholestream ()));
-   
+
     *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
     *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
     *outStream << "\n";
 
- 
+
     auto meshTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Mesh Generation")));
 
     // *********************************** MESH TOPOLOGY **********************************
@@ -304,7 +304,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     *outStream << std::setw(5) << px <<
         std::setw(5) << py <<
         std::setw(5) << pz << "\n\n";
-    
+
     global_ordinal_t totalNumElements = numOwnedElems*px*py*pz;
      *outStream << "Total number of elements: " << totalNumElements << ", number of DoFs per element: " << basisCardinality << "\n";
 
@@ -330,9 +330,9 @@ int feAssemblyHex(int argc, char *argv[]) {
       DynRankView ConstructWithLabel(refVertices, numNodesPerElem, dim);
       Intrepid2::Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,scalar_t,scalar_t> hexaLinearBasis;
       hexaLinearBasis.getDofCoords(refVertices);
-      auto refVerticesHost = Kokkos::create_mirror_view(refVertices);   
+      auto refVerticesHost = Kokkos::create_mirror_view(refVertices);
       Kokkos::deep_copy(refVerticesHost, refVertices);
-   
+
       auto elemTriplet = connManager->getMyBrickElementsTriplet();
       double h[3] = {hx, hy, hz};
 
@@ -349,7 +349,7 @@ int feAssemblyHex(int argc, char *argv[]) {
 
     meshTimer = Teuchos::null;
 
-    
+
     // *********************************** COMPUTE ELEMENTS' ORIENTATION BASED ON GLOBAL IDs  ************************************
 
 
@@ -358,12 +358,15 @@ int feAssemblyHex(int argc, char *argv[]) {
     //compute global ids of element vertices
     DynRankViewGId ConstructWithLabel(elemNodesGID, numOwnedElems, numNodesPerElem);
     {
+      auto elemNodesGID_host = Kokkos::create_mirror_view(elemNodesGID);
+
       for(int i=0; i<numOwnedElems; ++i) {
         const auto GIDs = connManager->getConnectivity(i);
         for(int j=0; j<numNodesPerElem; ++j) {
-          elemNodesGID(i,j) = GIDs[j];
+          elemNodesGID_host(i,j) = GIDs[j];
         }
       }
+      Kokkos::deep_copy(elemNodesGID,elemNodesGID_host);
     }
 
     // compute orientations for cells (one time computation)
@@ -447,7 +450,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     fst::integrate(elemsMat, transformedBasisValuesAtQPointsOriented, weightedTransformedBasisValuesAtQPointsOriented, true);
     Kokkos::fence(); //make sure that funAtQPoints has been evaluated
     fst::integrate(elemsRHS, funAtQPoints, weightedTransformedBasisValuesAtQPointsOriented);
-    
+
     localFeAssemblyTimer =  Teuchos::null;
 
 
@@ -463,7 +466,7 @@ int feAssemblyHex(int argc, char *argv[]) {
     Teuchos::RCP<const map_t> ownedAndGhostedMap = Teuchos::rcp(new const map_t(Teuchos::OrdinalTraits<global_ordinal_t>::invalid(),ownedAndGhostedIndices,0,Teuchos::rcpFromRef(comm)));
 
      *outStream << "Total number of DoFs: " << ownedMap->getGlobalNumElements() << ", number of owned DoFs: " << ownedMap->getNodeNumElements() << "\n";
-    
+
     mapsTimer = Teuchos::null;
     auto graphGenerationTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Graph Generation")));
 
@@ -476,17 +479,18 @@ int feAssemblyHex(int argc, char *argv[]) {
     auto maxNumRowEntries = numVertices*numDofsPerVertex+numEdges*numDofsPerEdge+
         numFaces*numDofsPerFace + numCells*numDofsPerCell;
 
-    // this constructor ensures that the local ids in the owned+gosthed map and in the graph col map corresponds to the same global ids
+    // this constructor ensures that the local ids in the owned+ghosted map and in the graph col map corresponds to the same global ids
     // in our case the owned row map is the same as the (owned) domain map
     auto feGraph = Teuchos::rcp(new fe_graph_t(ownedMap, ownedAndGhostedMap, maxNumRowEntries, ownedAndGhostedMap, Teuchos::null, ownedMap));
 
     Teuchos::Array<global_ordinal_t> globalIdsInRow(basisCardinality);
     const std::string blockId = "eblock-0_0_0";
     auto elmtOffsetKokkos = dofManager->getGIDFieldOffsetsKokkos(blockId,0);
+    auto elmtOffsets_host = dofManager->getGIDFieldOffsets(blockId,0);
 
     // fill graph
     // for each element in the mesh...
-    Tpetra::beginFill(*feGraph);
+    Tpetra::beginAssembly(*feGraph);
     for(int elemId=0; elemId<numOwnedElems; elemId++)
     {
       // Populate globalIdsInRow:
@@ -496,7 +500,7 @@ int feAssemblyHex(int argc, char *argv[]) {
       std::vector<global_ordinal_t> elementGIDs;
       dofManager->getElementGIDs(elemId, elementGIDs);
       for(int nodeId=0; nodeId<basisCardinality; nodeId++) {
-        globalIdsInRow[nodeId] = elementGIDs[elmtOffsetKokkos(nodeId)];
+        globalIdsInRow[nodeId] = elementGIDs[elmtOffsets_host[nodeId]];
       }
 
       // Add the contributions from the current row into the graph.
@@ -510,14 +514,14 @@ int feAssemblyHex(int argc, char *argv[]) {
         feGraph->insertGlobalIndices(globalIdsInRow[nodeId], globalIdsInRow());
       }
     }
-    Tpetra::endFill(*feGraph);
+    Tpetra::endAssembly(*feGraph);
 
     graphGenerationTimer = Teuchos::null;
 
     // ************************************ MATRIX ASSEMBLY **************************************
 
     auto matrixAndRhsAllocationTimer =  Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Allocation of Matrix and Rhs")));
-   
+
     auto A = Teuchos::rcp(new fe_matrix_t(feGraph));
     auto b = Teuchos::rcp (new fe_multivector_t(ownedMap, feGraph->getImporter(), 1));
 
@@ -531,11 +535,11 @@ int feAssemblyHex(int argc, char *argv[]) {
     auto localColMap  = A->getColMap()->getLocalMap();
     auto localMap  = ownedAndGhostedMap->getLocalMap();
     auto localMatrix  = A->getLocalMatrix();
-    auto localRHS     = b->getLocalViewDevice();
+    auto localRHS     = b->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     //fill matrix
     // Loop over elements
-    Tpetra::beginFill(*A,*b);
+    Tpetra::beginAssembly(*A, *b);
 
     std::vector<global_ordinal_t> elementGIDs(basisCardinality);
     auto elementLIDs = globalIndexer->getLIDs();
@@ -554,14 +558,17 @@ int feAssemblyHex(int argc, char *argv[]) {
           const local_ordinal_t localRowId = elemLIds(elmtOffsetKokkos(nodeId));
 
           // Force atomics on sums
-          for (local_ordinal_t colId = 0; colId < basisCardinality; ++colId) 
+          for (local_ordinal_t colId = 0; colId < basisCardinality; ++colId)
             localMatrix.sumIntoValues (localRowId, &elemLIds(elmtOffsetKokkos(colId)), 1, &(elemMat(nodeId,colId)), true, true);
 
           Kokkos::atomic_add (&(localRHS(localRowId,0)), elemRHS(nodeId));
         }
       });
 
-    Tpetra::endFill(*A, *b);
+    // Release the device view
+    localRHS = decltype(localRHS)("empty",0,0);
+
+    Tpetra::endAssembly(*A, *b);
 
     matrixAndRhsFillTimer =  Teuchos::null;
 
@@ -574,9 +581,9 @@ int feAssemblyHex(int argc, char *argv[]) {
       Teuchos::TimeMonitor liTimer =  *Teuchos::TimeMonitor::getNewTimer("Verification, locally interpolate analytic solution");
       DynRankView ConstructWithLabel(dofCoordsOriented, numOwnedElems, basisCardinality, dim);
       DynRankView ConstructWithLabel(dofCoeffsPhys, numOwnedElems, basisCardinality);
-      
+
       li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basis.getRawPtr(), elemOrts);
- 
+
       DynRankView ConstructWithLabel(funAtDofPoints, numOwnedElems, basisCardinality);
       {
         DynRankView ConstructWithLabel(physDofPoints, numOwnedElems, basisCardinality, dim);
@@ -587,7 +594,7 @@ int feAssemblyHex(int argc, char *argv[]) {
         Kokkos::parallel_for("loop for evaluating the function at DoF points", numOwnedElems,functor);
         Kokkos::fence(); //make sure that funAtDofPoints has been evaluated
       }
-    
+
       li::getBasisCoeffs(basisCoeffsLI, funAtDofPoints, dofCoeffsPhys);
     }
 
@@ -603,12 +610,12 @@ int feAssemblyHex(int argc, char *argv[]) {
 
         for(int nodeId=0; nodeId<basisCardinality; nodeId++)
         {
-          global_ordinal_t gid = elementGIDs[elmtOffsetKokkos(nodeId)];
+          global_ordinal_t gid = elementGIDs[elmtOffsets_host[nodeId]];
           if(ownedMap->isNodeGlobalElement(gid))
             x.replaceGlobalValue(gid, basisCoeffsLIHost(elemId, nodeId));
         }
       }
-     
+
       {
         Teuchos::TimeMonitor vTimer2 =  *Teuchos::TimeMonitor::getNewTimer("Verification,compute rhs (matrix-vector product)");
         A->apply(x, *b, Teuchos::NO_TRANS, -1.0, 1.0);   // b - A x
@@ -629,8 +636,8 @@ int feAssemblyHex(int argc, char *argv[]) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
- 
- 
+
+
   Teuchos::RCP<Teuchos::ParameterList> reportParams = parameterList(* (Teuchos::TimeMonitor::getValidReportParameters()));
   reportParams->set("Report format", "YAML");
   reportParams->set("YAML style", "spacious");

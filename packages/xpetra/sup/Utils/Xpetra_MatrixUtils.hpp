@@ -445,89 +445,186 @@ public:
                                       const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero(),
                                       const Scalar replacementValue = Teuchos::ScalarTraits<Scalar>::one())
   {
-    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    using TST = typename Teuchos::ScalarTraits<Scalar>;
+    using Teuchos::rcp_dynamic_cast;
 
-    Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
-    p->set("DoOptimizeStorage", true);
+    GlobalOrdinal gZeroDiags;
+    bool usedEfficientPath = false;
 
-    RCP<const Map> rowMap = Ac->getRowMap();
-    RCP<Vector> diagVec = VectorFactory::Build(rowMap);
-    Ac->getLocalDiagCopy(*diagVec);
+#ifdef HAVE_MUELU_TPETRA
+    RCP<CrsMatrixWrap> crsWrapAc = rcp_dynamic_cast<CrsMatrixWrap>(Ac);
+    RCP<TpetraCrsMatrix> tpCrsAc;
+    if (!crsWrapAc.is_null())
+      tpCrsAc = rcp_dynamic_cast<TpetraCrsMatrix>(crsWrapAc->getCrsMatrix());
 
-    LocalOrdinal lZeroDiags = 0;
-    Teuchos::ArrayRCP< const Scalar > diagVal = diagVec->getData(0);
+    if (!tpCrsAc.is_null()) {
+      auto tpCrsGraph = tpCrsAc->getTpetra_CrsMatrix()->getCrsGraph();
+      size_t numRows = Ac->getRowMap()->getNodeNumElements();
+      typedef typename Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::offset_device_view_type offset_type;
+      using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+      auto offsets = offset_type(Kokkos::ViewAllocateWithoutInitializing("offsets"), numRows);
+      tpCrsGraph->getLocalDiagOffsets(offsets);
 
-    for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
-      if (TST::magnitude(diagVal[i]) <= threshold) {
-        lZeroDiags++;
+      const size_t STINV =
+          Tpetra::Details::OrdinalTraits<typename offset_type::value_type>::invalid ();
+
+      if (repairZeroDiagonals) {
+        // Make sure that the matrix has all its diagonal entries, so
+        // we can fix them in-place.
+
+        LO numMissingDiagonalEntries = 0;
+
+        Kokkos::parallel_reduce("countMissingDiagonalEntries",
+                                range_type(0, numRows),
+                                KOKKOS_LAMBDA (const LO i, LO& missing) {
+                                  missing += (offsets(i) == STINV);
+                                }, numMissingDiagonalEntries);
+
+        if (numMissingDiagonalEntries == 0) {
+          // Matrix has all diagonal entries, now we fix them
+
+          auto lclA = tpCrsAc->getLocalMatrixDevice();
+
+          using ATS      = Kokkos::ArithTraits<Scalar>;
+          using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+
+          LO lZeroDiags = 0;
+
+          Kokkos::parallel_reduce("fixSmallDiagonalEntries",
+                                  range_type(0, numRows),
+                                  KOKKOS_LAMBDA (const LO i, LO& fixed) {
+                                    const auto offset = offsets(i);
+                                    auto curRow = lclA.row (i);
+                                    if (impl_ATS::magnitude(curRow.value(offset)) <= threshold) {
+                                      curRow.value(offset) = replacementValue;
+                                      fixed += 1;
+                                    }
+                                  }, lZeroDiags);
+
+          Teuchos::reduceAll(*(Ac->getRowMap()->getComm()), Teuchos::REDUCE_SUM, Teuchos::as<GlobalOrdinal>(lZeroDiags),
+                             Teuchos::outArg(gZeroDiags));
+
+          usedEfficientPath = true;
+        }
+      } else {
+        // We only want to count up small diagonal entries, but not
+        // fix them. So missing diagonal entries are not an issue.
+
+        auto lclA = tpCrsAc->getLocalMatrixDevice();
+
+        using ATS      = Kokkos::ArithTraits<Scalar>;
+        using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+
+        LO lZeroDiags = 0;
+
+        Kokkos::parallel_reduce("detectSmallDiagonalEntries",
+                                range_type(0, numRows),
+                                KOKKOS_LAMBDA (const LO i, LO& small) {
+                                  const auto offset = offsets(i);
+                                  if (offset == STINV)
+                                    small += 1;
+                                  else {
+                                    auto curRow = lclA.row (i);
+                                    if (impl_ATS::magnitude(curRow.value(offset)) <= threshold) {
+                                      small += 1;
+                                    }
+                                  }
+                                }, lZeroDiags);
+
+        Teuchos::reduceAll(*(Ac->getRowMap()->getComm()), Teuchos::REDUCE_SUM, Teuchos::as<GlobalOrdinal>(lZeroDiags),
+                           Teuchos::outArg(gZeroDiags));
+
+        usedEfficientPath = true;
+
       }
     }
-    GlobalOrdinal gZeroDiags;
-    Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_SUM, Teuchos::as<GlobalOrdinal>(lZeroDiags),
-                       Teuchos::outArg(gZeroDiags));
+#endif
 
-    if (repairZeroDiagonals && gZeroDiags > 0) {
-      /*
-        TAW: If Ac has empty rows, put a 1 on the diagonal of Ac. Be aware that Ac might have empty rows AND
-        columns.  The columns might not exist in the column map at all.  It would be nice to add the entries
-        to the original matrix Ac. But then we would have to use insertLocalValues. However we cannot add
-        new entries for local column indices that do not exist in the column map of Ac (at least Epetra is
-        not able to do this).  With Tpetra it is also not possible to add new entries after the FillComplete
-        call with a static map, since the column map already exists and the diagonal entries are completely
-        missing.  Here we build a diagonal matrix with zeros on the diagonal and ones on the diagonal for
-        the rows where Ac has empty rows We have to build a new matrix to be able to use insertGlobalValues.
-        Then we add the original matrix Ac to our new block diagonal matrix and use the result as new
-        (non-singular) matrix Ac.  This is very inefficient.
+    if (!usedEfficientPath) {
+      RCP<const Map> rowMap = Ac->getRowMap();
+      RCP<Vector> diagVec = VectorFactory::Build(rowMap);
+      Ac->getLocalDiagCopy(*diagVec);
 
-        If you know something better, please let me know.
-      */
-      RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
-      Teuchos::Array<GlobalOrdinal> indout(1);
-      Teuchos::Array<Scalar> valout(1);
-      for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
-        if (TST::magnitude(diagVal[r]) <= threshold) {
-          GlobalOrdinal grid = rowMap->getGlobalElement(r);
-          indout[0] = grid;
-          valout[0] = replacementValue;
-          fixDiagMatrix->insertGlobalValues(grid,indout(), valout());
+      LocalOrdinal lZeroDiags = 0;
+      Teuchos::ArrayRCP< const Scalar > diagVal = diagVec->getData(0);
+
+      for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
+        if (TST::magnitude(diagVal[i]) <= threshold) {
+          lZeroDiags++;
         }
       }
-      {
-        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
-        fixDiagMatrix->fillComplete(Ac->getDomainMap(),Ac->getRangeMap());
-      }
 
-      RCP<Matrix> newAc;
-      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, fos);
-      if (Ac->IsView("stridedMaps"))
-        newAc->CreateView("stridedMaps", Ac);
+      Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_SUM, Teuchos::as<GlobalOrdinal>(lZeroDiags),
+                         Teuchos::outArg(gZeroDiags));
 
-      Ac = Teuchos::null;  // free singular matrix
-      fixDiagMatrix = Teuchos::null;
-      Ac = newAc;          // set fixed non-singular matrix
+      if (repairZeroDiagonals && gZeroDiags > 0) {
+        /*
+          TAW: If Ac has empty rows, put a 1 on the diagonal of Ac. Be aware that Ac might have empty rows AND
+          columns.  The columns might not exist in the column map at all.  It would be nice to add the entries
+          to the original matrix Ac. But then we would have to use insertLocalValues. However we cannot add
+          new entries for local column indices that do not exist in the column map of Ac (at least Epetra is
+          not able to do this).  With Tpetra it is also not possible to add new entries after the FillComplete
+          call with a static map, since the column map already exists and the diagonal entries are completely
+          missing.  Here we build a diagonal matrix with zeros on the diagonal and ones on the diagonal for
+          the rows where Ac has empty rows We have to build a new matrix to be able to use insertGlobalValues.
+          Then we add the original matrix Ac to our new block diagonal matrix and use the result as new
+          (non-singular) matrix Ac.  This is very inefficient.
 
-      // call fillComplete with optimized storage option set to true
-      // This is necessary for new faster Epetra MM kernels.
-      {
-        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
-        Ac->fillComplete(p);
-      }
-    } // end repair
+          If you know something better, please let me know.
+        */
+        RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
+        Teuchos::Array<GlobalOrdinal> indout(1);
+        Teuchos::Array<Scalar> valout(1);
+        for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
+          if (TST::magnitude(diagVal[r]) <= threshold) {
+            GlobalOrdinal grid = rowMap->getGlobalElement(r);
+            indout[0] = grid;
+            valout[0] = replacementValue;
+            fixDiagMatrix->insertGlobalValues(grid,indout(), valout());
+          }
+        }
+        {
+          Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
+          fixDiagMatrix->fillComplete(Ac->getDomainMap(),Ac->getRangeMap());
+        }
 
+        RCP<Matrix> newAc;
+        Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, false, 1.0, newAc, fos);
+        if (Ac->IsView("stridedMaps"))
+          newAc->CreateView("stridedMaps", Ac);
 
+        Ac = Teuchos::null;  // free singular matrix
+        fixDiagMatrix = Teuchos::null;
+        Ac = newAc;          // set fixed non-singular matrix
+
+        // call fillComplete with optimized storage option set to true
+        // This is necessary for new faster Epetra MM kernels.
+        Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
+        p->set("DoOptimizeStorage", true);
+        {
+          Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
+          Ac->fillComplete(p);
+        }
+      } // end repair
+    }
 
     // print some output
     fos << "CheckRepairMainDiagonal: " << (repairZeroDiagonals ? "repaired " : "found ")
         << gZeroDiags << " too small entries (threshold = " << threshold <<") on main diagonal of Ac." << std::endl;
 
 #ifdef HAVE_XPETRA_DEBUG // only for debugging
-    // check whether Ac has been repaired...
-    Ac->getLocalDiagCopy(*diagVec);
-    diagVal = diagVec->getData(0);
-    for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
-      if (TST::magnitude(diagVal[r]) <= threshold) {
-        fos << "Error: there are too small entries left on diagonal after repair..." << std::endl;
-        break;
+    {
+      // check whether Ac has been repaired...
+      RCP<const Map> rowMap = Ac->getRowMap();
+      RCP<Vector> diagVec = VectorFactory::Build(rowMap);
+      Teuchos::ArrayRCP< const Scalar > diagVal;
+      Ac->getLocalDiagCopy(*diagVec);
+      diagVal = diagVec->getData(0);
+      for (size_t r = 0; r < Ac->getRowMap()->getNodeNumElements(); r++) {
+        if (TST::magnitude(diagVal[r]) <= threshold) {
+          fos << "Error: there are too small entries left on diagonal after repair..." << std::endl;
+          break;
+        }
       }
     }
 #endif

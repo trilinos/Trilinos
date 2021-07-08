@@ -217,8 +217,6 @@ void get2ndAdjsViewFromAdjs(
   lno_t *start = new lno_t [LocalNumIDs+1];
 
   if (secondAdjs!=RCP<sparse_matrix_type>()) {
-    Array<gno_t> Indices;
-    Array<nonzero_t> Values;
 
     size_t nadj = 0;
 
@@ -231,9 +229,9 @@ void get2ndAdjsViewFromAdjs(
       start[localElement] = nadj;
       const gno_t globalRow = Ids[localElement];
       size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
-      Indices.resize (NumEntries);
-      Values.resize (NumEntries);
-      secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+      typename sparse_matrix_type::nonconst_global_inds_host_view_type  Indices("Indices", NumEntries);
+      typename sparse_matrix_type::nonconst_values_host_view_type Values("Values", NumEntries);
+      secondAdjs->getGlobalRowCopy (globalRow,Indices,Values,NumEntries);
 
       for (size_t j = 0; j < NumEntries; ++j) {
         if(globalRow != Indices[j]) {

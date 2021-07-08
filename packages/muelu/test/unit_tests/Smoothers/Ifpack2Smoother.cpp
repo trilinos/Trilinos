@@ -592,61 +592,6 @@ namespace MueLuTests {
     }
   }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockCrsMatrix_BlockRelaxation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
-      Teuchos::ParameterList matrixParams, ifpack2Params;
-
-      matrixParams.set("matrixType","Laplace1D");
-      matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
-
-      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
-      ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
-      ifpack2Params.set("partitioner: type","linear");
-      ifpack2Params.set("partitioner: PDE equations",3);
-      
-      Ifpack2Smoother smoother("BLOCKRELAXATION",ifpack2Params);
-      
-      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-      smoother.Setup(level);
-
-      TEST_EQUALITY(1,1);
-    }
-  }
-
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockCrsMatrix_BlockRelaxation_BlockTriDi, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
-      Teuchos::ParameterList matrixParams, ifpack2Params;
-
-      matrixParams.set("matrixType","Laplace1D");
-      matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
-
-      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
-      ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
-      ifpack2Params.set("relaxation: container","BlockTriDi");
-      ifpack2Params.set("relaxation: type", "MT Split Jacobi");
-      ifpack2Params.set("partitioner: type","linear");
-      ifpack2Params.set("partitioner: PDE equations",3);
-      
-      Ifpack2Smoother smoother("BLOCKRELAXATION",ifpack2Params);
-      
-      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
-      level.Set("A", A);
-      smoother.Setup(level);
-
-      TEST_EQUALITY(1,1);
-    }
-  }
 
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
@@ -660,9 +605,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockCrsMatrix_BlockRelaxatio
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BandedRelaxation,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,TriDiRelaxation,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockRelaxation_Autosize,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockCrsMatrix_Relaxation,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockCrsMatrix_BlockRelaxation,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockCrsMatrix_BlockRelaxation_BlockTriDi,SC,LO,GO,NO) 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,BlockCrsMatrix_Relaxation,SC,LO,GO,NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
