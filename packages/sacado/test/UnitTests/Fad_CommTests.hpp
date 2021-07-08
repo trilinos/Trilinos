@@ -943,16 +943,33 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_Broadcast ) {        \
   if (comm->getRank() == 0) {                                           \
     x2 = x;                                                             \
     x3 = x;                                                             \
+    h_x2 = h_x;                                                         \
+    h_x3 = h_x;                                                         \
   }                                                                     \
                                                                         \
-  Teuchos::broadcast(*comm, 0, n, x2);                                  \
-  Kokkos::deep_copy(h_x2, x2);                                          \
+  /* The Teuchos MPI wrappers know nothing of CUDA nor CUDA-aware MPI*/ \
+  /* so only do the communication on the host.  This probably makes  */ \
+  /* the deep copy unnecessary.                                      */ \
+  const bool accessible =                                               \
+    Kokkos::Impl::MemorySpaceAccess<                                    \
+      Kokkos::HostSpace,                                                \
+      typename Device::memory_space >::accessible;                      \
+  if (accessible) {                                                     \
+    Teuchos::broadcast(*comm, 0, n, x2);                                \
+    Kokkos::deep_copy(h_x2, x2);                                        \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::broadcast(*comm, 0, n, h_x2);                              \
   bool success1 = checkFadArrays(                                       \
     h_x, h_x2, std::string(#FAD)+" Broadcast", out);                    \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
-  Teuchos::broadcast(*comm, fts, 0, n, x3);                             \
-  Kokkos::deep_copy(h_x3, x3);                                          \
+  if (accessible) {                                                     \
+    Teuchos::broadcast(*comm, fts, 0, n, x3);                           \
+    Kokkos::deep_copy(h_x3, x3);                                        \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::broadcast(*comm, fts, 0, n, h_x3);                         \
   bool success2 = checkFadArrays(                                       \
     h_x, h_x3, std::string(#FAD)+" Broadcast FTS", out);                \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
@@ -995,14 +1012,29 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_SumAll ) {           \
   Kokkos::deep_copy(sums, h_sums);                                      \
   Kokkos::deep_copy(sums2, h_sums2);                                    \
                                                                         \
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, x, sums2);          \
-  Kokkos::deep_copy(h_sums2, sums2);                                    \
+  /* The Teuchos MPI wrappers know nothing of CUDA nor CUDA-aware MPI*/ \
+  /* so only do the communication on the host.  This probably makes  */ \
+  /* the deep copy unnecessary.                                      */ \
+  const bool accessible =                                               \
+    Kokkos::Impl::MemorySpaceAccess<                                    \
+      Kokkos::HostSpace,                                                \
+      typename Device::memory_space >::accessible;                      \
+  if (accessible) {                                                     \
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, x, sums2);        \
+    Kokkos::deep_copy(h_sums2, sums2);                                  \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, n, h_x, h_sums2);    \
   bool success1 = checkFadArrays(                                       \
     h_sums, h_sums2, std::string(#FAD)+" Sum All", out);                \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
-  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_SUM, n, x, sums3);     \
-  Kokkos::deep_copy(h_sums3, sums3);                                    \
+  if (accessible) {                                                     \
+    Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_SUM, n, x, sums3);   \
+    Kokkos::deep_copy(h_sums3, sums3);                                  \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_SUM, n, h_x, h_sums3); \
   bool success2 = checkFadArrays(                                       \
     h_sums, h_sums3, std::string(#FAD)+" Sum All FTS", out);            \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
@@ -1046,14 +1078,29 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MaxAll ) {           \
   Kokkos::deep_copy(maxs, h_maxs);                                      \
   Kokkos::deep_copy(maxs2, h_maxs2);                                    \
                                                                         \
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, x, maxs2);          \
-  Kokkos::deep_copy(h_maxs2, maxs2);                                    \
+  /* The Teuchos MPI wrappers know nothing of CUDA nor CUDA-aware MPI*/ \
+  /* so only do the communication on the host.  This probably makes  */ \
+  /* the deep copy unnecessary.                                      */ \
+  const bool accessible =                                               \
+    Kokkos::Impl::MemorySpaceAccess<                                    \
+      Kokkos::HostSpace,                                                \
+      typename Device::memory_space >::accessible;                      \
+  if (accessible) {                                                     \
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, x, maxs2);        \
+    Kokkos::deep_copy(h_maxs2, maxs2);                                  \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, n, h_x, h_maxs2);    \
   bool success1 = checkFadArrays(                                       \
     h_maxs, h_maxs2, std::string(#FAD)+" Max All", out);                \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
-  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MAX, n, x, maxs3);     \
-  Kokkos::deep_copy(h_maxs3, maxs3);                                    \
+  if (accessible) {                                                     \
+    Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MAX, n, x, maxs3);   \
+    Kokkos::deep_copy(h_maxs3, maxs3);                                  \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MAX, n, h_x, h_maxs3); \
   bool success2 = checkFadArrays(                                       \
     h_maxs, h_maxs3, std::string(#FAD)+" Max All FTS", out);            \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
@@ -1096,14 +1143,29 @@ TEUCHOS_UNIT_TEST( FAD##_Comm_Kokkos_##Device, Fad_MinAll ) {           \
   Kokkos::deep_copy(mins, h_mins);                                      \
   Kokkos::deep_copy(mins2, h_mins2);                                    \
                                                                         \
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, x, mins2);          \
-  Kokkos::deep_copy(h_mins2, mins2);                                    \
+  /* The Teuchos MPI wrappers know nothing of CUDA nor CUDA-aware MPI*/ \
+  /* so only do the communication on the host.  This probably makes  */ \
+  /* the deep copy unnecessary.                                      */ \
+  const bool accessible =                                               \
+    Kokkos::Impl::MemorySpaceAccess<                                    \
+      Kokkos::HostSpace,                                                \
+      typename Device::memory_space >::accessible;                      \
+  if (accessible) {                                                     \
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, x, mins2);        \
+    Kokkos::deep_copy(h_mins2, mins2);                                  \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, n, h_x, h_mins2);    \
   bool success1 = checkFadArrays(                                       \
     h_mins, h_mins2, std::string(#FAD)+" Min All", out);                \
   success1 = checkResultOnAllProcs(*comm, out, success1);               \
                                                                         \
-  Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MIN, n, x, mins3);     \
-  Kokkos::deep_copy(h_mins3, mins3);                                    \
+  if (accessible) {                                                     \
+    Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MIN, n, x, mins3);   \
+    Kokkos::deep_copy(h_mins3, mins3);                                  \
+  }                                                                     \
+  else                                                                  \
+    Teuchos::reduceAll(*comm, fts, Teuchos::REDUCE_MIN, n, h_x, h_mins3); \
   bool success2 = checkFadArrays(                                       \
     h_mins, h_mins3, std::string(#FAD)+" Min All FTS", out);            \
   success2 = checkResultOnAllProcs(*comm, out, success2);               \
