@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/util/concat_variable_name.hpp>
-#include <stddef.h>                     // for size_t
+#include "stk_util/util/concat_variable_name.hpp"
+#include <cstddef>  // for size_t
 
 namespace stk {
   namespace util {

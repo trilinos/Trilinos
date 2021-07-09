@@ -46,33 +46,79 @@
 
 TEST(EntityCommDatabase, testCommMapChangeListener)
 {
-    stk::mesh::EntityCommDatabase comm_map;
+    stk::mesh::EntityCommDatabase commDB;
     stk::mesh::EntityCommListInfoVector comm_list;
-    std::vector<stk::mesh::EntityComm*> entity_comms(200);
-    stk::mesh::CommListUpdater comm_list_updater(comm_list, entity_comms);
-    comm_map.setCommMapChangeListener(&comm_list_updater);
+    std::vector<stk::mesh::EntityComm*> entityComms(200);
+    stk::mesh::CommListUpdater comm_list_updater(comm_list, entityComms);
+    commDB.setCommMapChangeListener(&comm_list_updater);
 
     int owner = 0;
     stk::mesh::EntityKey key(stk::topology::NODE_RANK, 99);
     unsigned ghost_id = 3;
     int proc = 4;
     stk::mesh::EntityCommInfo value(ghost_id, proc);
-    comm_map.insert(key, value, owner);
+    commDB.insert(key, value, owner);
 
     //CommListUpdater only manages removing entries from comm-list,
     //so we must add an entry manually to set up the test.
     stk::mesh::EntityCommListInfo comm_list_info =
-    {key, stk::mesh::Entity(), comm_map.entity_comm(key)};
+    {key, stk::mesh::Entity(), commDB.entity_comm(key)};
     comm_list.push_back(comm_list_info);
 
     EXPECT_EQ(1u, comm_list.size());
 
-    //now clear an entry from comm_map and expect that it also
+    //now clear an entry from commDB and expect that it also
     //set the entity_comm ptr in comm_list to NULL.
-    comm_map.comm_clear(key);
+    commDB.comm_clear(key);
 
     EXPECT_EQ(1u, comm_list.size());
     comm_list_info = comm_list[0];
     EXPECT_EQ(nullptr, comm_list_info.entity_comm);
+}
+
+TEST(EntityCommDatabase, insertAndErase)
+{
+    stk::mesh::EntityCommDatabase commDB;
+    std::vector<stk::mesh::EntityComm*> entityComms(2, nullptr);
+    std::vector<stk::mesh::EntityKey> entityKeys =
+      {stk::mesh::EntityKey(stk::topology::NODE_RANK, 1),
+       stk::mesh::EntityKey(stk::topology::NODE_RANK, 2)};
+    int owner = 0;
+
+    const unsigned SHARED = 0;
+    const unsigned GHOSTED = 1;
+    const int otherProc = 1;
+
+    for (unsigned i=0; i<entityKeys.size(); ++i) {
+      std::pair<stk::mesh::EntityComm*, bool> result =
+        commDB.insert(entityKeys[i], stk::mesh::EntityCommInfo(SHARED, otherProc), owner);
+      EXPECT_TRUE(result.second);
+      EXPECT_FALSE(result.first == nullptr);
+      entityComms[i] = result.first;
+      EXPECT_TRUE(entityComms[i]->isShared);
+      EXPECT_FALSE(entityComms[i]->isGhost);
+    }
+
+    for (unsigned i=0; i<entityKeys.size(); ++i) {
+      std::pair<stk::mesh::EntityComm*, bool> result =
+        commDB.insert(entityKeys[i], stk::mesh::EntityCommInfo(GHOSTED, otherProc), owner);
+      EXPECT_TRUE(result.second);
+      EXPECT_TRUE(entityComms[i]->isShared);
+      EXPECT_TRUE(entityComms[i]->isGhost);
+    }
+
+    commDB.erase(entityKeys[0], stk::mesh::EntityCommInfo(SHARED, otherProc));
+    EXPECT_FALSE(entityComms[0]->isShared);
+    EXPECT_TRUE(entityComms[0]->isGhost);
+
+    commDB.erase(entityKeys[1], stk::mesh::EntityCommInfo(GHOSTED, otherProc));
+    EXPECT_TRUE(entityComms[1]->isShared);
+    EXPECT_FALSE(entityComms[1]->isGhost);
+
+    commDB.erase(entityKeys[0], stk::mesh::EntityCommInfo(GHOSTED, otherProc));
+    EXPECT_TRUE(commDB.entity_comm(entityKeys[0]) == nullptr);
+
+    commDB.erase(entityKeys[1], stk::mesh::EntityCommInfo(SHARED, otherProc));
+    EXPECT_TRUE(commDB.entity_comm(entityKeys[1]) == nullptr);
 }
 

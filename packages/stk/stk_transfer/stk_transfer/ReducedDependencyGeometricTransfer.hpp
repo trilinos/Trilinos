@@ -50,8 +50,6 @@
 #include <stk_transfer/GeometricTransferImpl.hpp>
 #include <stk_transfer/TransferBase.hpp>
 
-#include<impl/Kokkos_Timer.hpp>
-
 
 namespace stk {
 namespace transfer {
@@ -176,12 +174,12 @@ void create_offset_and_num_key(const std::vector<int> & uniqueProcVec,
 {
   for(unsigned iproc = 0; iproc < uniqueProcVec.size(); ++iproc)
   {
-    const unsigned procid = uniqueProcVec[iproc];
+    const int procid = uniqueProcVec[iproc];
     int offset = -1;
     int numKeys = 0;
     for(int jj = 0; jj < (int) entity_key_proc.size(); ++jj)
     {
-      if(entity_key_proc[jj].proc() == procid)
+      if(static_cast<int>(entity_key_proc[jj].proc()) == procid)
       {
         if(offset < 0)
           offset = jj;

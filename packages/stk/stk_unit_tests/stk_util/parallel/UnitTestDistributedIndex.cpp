@@ -32,13 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <stdexcept>                    // for runtime_error
-#include <stk_util/parallel/DistributedIndex.hpp>
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <gtest/gtest.h>
-#include <utility>                      // for pair, swap
-#include <vector>                       // for vector
+#include "gtest/gtest.h"
+#include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex::KeyTypeVector, Distr...
+#include "stk_util/parallel/Parallel.hpp"          // for parallel_machine_rank, parallel_machin...
+#include <cstddef>                                 // for size_t
+#include <memory>                                  // for allocator_traits<>::value_type
+#include <stdexcept>                               // for runtime_error
+#include <utility>                                 // for swap
+#include <vector>                                  // for vector, vector::size_type
 
 class UnitTestSTKParallelDistributedIndex {
  public:

@@ -53,6 +53,14 @@
 #ifndef FLEXINT_H
 #define FLEXINT_H
 
+#if defined(_MSC_VER)
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
+
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
@@ -972,38 +980,11 @@ static yyconst flex_int16_t yy_rule_linenum[102] = {
 #define YY_RESTORE_YY_MORE_OFFSET
 /* -*- Mode: c++ -*- */
 /*
- * Copyright (c) 2014-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 #include <fcntl.h>
@@ -1042,7 +1023,7 @@ int           loop_lvl = 0;
 std::fstream *tmp_file;
 const char *  temp_f;
 
-#if defined           __NVCC__
+#if defined __NVCC__
 #pragma diag_suppress code_is_unreachable
 #endif
 
@@ -1059,7 +1040,7 @@ bool   switch_skip_to_endcase      = false;
 double switch_condition            = 0.0; // Value specified in "switch(condition)"
 
 // For substitution history
-size_t      curr_index = 0;
+ssize_t     curr_index = 0;
 std::string history_string;
 size_t      hist_start = 0;
 
@@ -2128,7 +2109,7 @@ YY_DECL
       {
         // Check if we need to save the substitution history first.
         if (aprepro.ap_options.keep_history && (aprepro.ap_file_list.top().name != "_string_")) {
-          if (curr_index > (size_t)yyleng)
+          if (curr_index > (ssize_t)yyleng)
             hist_start = curr_index - yyleng;
           else
             hist_start = 0;
@@ -3230,13 +3211,13 @@ namespace SEAMS {
     }
 
     if (aprepro.ap_options.interactive && yyin == &std::cin && isatty(0) != 0 && isatty(1) != 0) {
-      char *line = getline_int(nullptr);
+      char *line = ap_getline_int(nullptr);
 
       if (strlen(line) == 0) {
         return 0;
       }
 
-      gl_histadd(line);
+      ap_gl_histadd(line);
 
       if (strlen(line) > (size_t)max_size - 2) {
         yyerror("input line is too long");

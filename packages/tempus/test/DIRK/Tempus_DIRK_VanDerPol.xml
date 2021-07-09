@@ -35,9 +35,6 @@
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Time Step"      type="double" value="1.0"/>
-        <Parameter name="Minimum Order"          type="int"    value="0"/>
-        <Parameter name="Initial Order"          type="int"    value="0"/>
-        <Parameter name="Maximum Order"          type="int"    value="0"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Output Time List"       type="string" value=""/>
@@ -46,16 +43,12 @@
         <Parameter name="Output Index Interval"  type="int"    value="100000"/>
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
-        <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
         <ParameterList name="Time Step Control Strategy">
-            <Parameter name="Time Step Control Strategy List"  type="string" value="basic_vs"/>
-            <ParameterList name="basic_vs">
-                <Parameter name="Name" type="string" value="Basic VS"/>
-                <Parameter name="Reduction Factor" type="double" value="0.5"/>
-                <Parameter name="Amplification Factor" type="double" value="1.75"/>
-                <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
-                <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e-1"/>
-            </ParameterList>
+            <Parameter name="Strategy Type" type="string" value="Basic VS"/>
+            <Parameter name="Reduction Factor" type="double" value="0.5"/>
+            <Parameter name="Amplification Factor" type="double" value="1.75"/>
+            <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
+            <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e-1"/>
         </ParameterList>
       </ParameterList>
   </ParameterList>
@@ -72,7 +65,6 @@
       <ParameterList name="Time Step Control">
           <Parameter name="Initial Time"           type="double" value="0.0"/>
           <Parameter name="Final Time"             type="double" value="2.0"/>
-          <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
           <Parameter name="Number of Time Steps" type="int" value="100"/>
       </ParameterList>
   </ParameterList>
@@ -95,14 +87,17 @@
           <Parameter name="Maximum Absolute Error" type="double" value="1.0e-3"/>
           <Parameter name="Maximum Relative Error" type="double" value="1.0e-3"/>
           <Parameter name="Output Index Interval"  type="int"    value="1"/>
-          <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
           <Parameter name="Maximum Number of Stepper Failures" type="int" value="12"/>
           <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="3"/>
           <ParameterList name="Time Step Control Strategy">
-              <Parameter name="Time Step Control Strategy List" type="string" value="pid"/>
-              <ParameterList name="pid">
-                  <Parameter name="Name" type="string" value="Integral Controller"/>
-              </ParameterList>
+              <Parameter name="Strategy Type"   type="string" value="Integral Controller"/>
+              <Parameter name="Controller Type" type="string" value="PID"/>
+              <Parameter name="KI"              type="double" value="0.58"/>
+              <Parameter name="KP"              type="double" value="0.21"/>
+              <Parameter name="KD"              type="double" value="0.10"/>
+              <Parameter name="Safety Factor"   type="double" value="0.90"/>
+              <Parameter name="Maximum Safety Factor" type="double" value="5.0"/>
+              <Parameter name="Minimum Safety Factor" type="double" value="0.5"/>
           </ParameterList>
       </ParameterList>
   </ParameterList>

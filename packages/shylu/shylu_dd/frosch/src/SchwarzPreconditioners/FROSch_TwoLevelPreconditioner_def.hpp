@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -55,7 +56,7 @@ namespace FROSch {
                                                                 ParameterListPtr parameterList) :
     OneLevelPreconditioner<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(twoLevelPreconditionerTime,"TwoLevelPreconditioner::TwoLevelPreconditioner::");
+        FROSCH_DETAILTIMER_START_LEVELID(twoLevelPreconditionerTime,"TwoLevelPreconditioner::TwoLevelPreconditioner::");
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
             // Set the LevelID in the sublist
             parameterList->sublist("IPOUHarmonicCoarseOperator").set("Level ID",this->LevelID_);
@@ -131,13 +132,13 @@ namespace FROSch {
         // Maps //
         //////////
         if (repeatedMap.is_null()) {
-            FROSCH_TIMER_START_LEVELID(buildRepeatedMapTime,"BuildRepeatedMap");
+            FROSCH_DETAILTIMER_START_LEVELID(buildRepeatedMapTime,"BuildRepeatedMap");
             repeatedMap = BuildRepeatedMap(this->K_->getCrsGraph()); // Todo: Achtung, die UniqueMap könnte unsinnig verteilt sein. Falls es eine repeatedMap gibt, sollte dann die uniqueMap neu gebaut werden können. In diesem Fall, sollte man das aber basierend auf der repeatedNodesMap tun
         }
         // Build dofsMaps and repeatedNodesMap
         ConstXMapPtr repeatedNodesMap;
         if (dofsMaps.is_null()) {
-            FROSCH_TIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
+            FROSCH_DETAILTIMER_START_LEVELID(buildDofMapsTime,"BuildDofMaps");
             if (0>BuildDofMaps(repeatedMap,dofsPerNode,dofOrdering,repeatedNodesMap,dofsMaps)) ret -= 100; // Todo: Rückgabewerte
         } else {
             FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode");
@@ -153,7 +154,7 @@ namespace FROSch {
         // Communicate nodeList //
         //////////////////////////
         if (!nodeList.is_null()) {
-            FROSCH_TIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
+            FROSCH_DETAILTIMER_START_LEVELID(communicateNodeListTime,"Communicate Node List");
             ConstXMapPtr nodeListMap = nodeList->getMap();
             if (!nodeListMap->isSameAs(*repeatedNodesMap)) {
                 RCP<MultiVector<SC,LO,GO,NO> > tmpNodeList = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedNodesMap,nodeList->getNumVectors());
@@ -167,7 +168,7 @@ namespace FROSch {
         // Determine dirichletBoundaryDofs //
         /////////////////////////////////////
         if (dirichletBoundaryDofs.is_null()) {
-            FROSCH_TIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
+            FROSCH_DETAILTIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
 #ifdef FindOneEntryOnlyRowsGlobal_Matrix
             GOVecPtr dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_.getConst(),repeatedMap);
 #else
@@ -191,14 +192,14 @@ namespace FROSch {
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
             // Build Null Space
             if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Laplace")) {
-                nullSpaceBasis = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMap,dofsPerNode,dofsMaps);
+                nullSpaceBasis = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNode,dofsMaps);
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Linear Elasticity")) {
-                nullSpaceBasis = BuildNullSpace(dimension,LinearElasticityNullSpace,repeatedMap,dofsPerNode,dofsMaps,nodeList);
+                nullSpaceBasis = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMap,dofsPerNode,dofsMaps,nodeList);
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasis.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
                 ConstXMapPtr nullSpaceBasisMap = nullSpaceBasis->getMap();
                 if (!nullSpaceBasisMap->isSameAs(*repeatedMap)) {
-                    FROSCH_TIMER_START_LEVELID(communicateNullSpaceBasis,"Communicate Null Space");
+                    FROSCH_DETAILTIMER_START_LEVELID(communicateNullSpaceBasis,"Communicate Null Space");
                     RCP<MultiVector<SC,LO,GO,NO> > tmpNullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,nullSpaceBasis->getNumVectors());
                     RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(nullSpaceBasisMap,repeatedMap);
                     tmpNullSpaceBasis->doImport(*nullSpaceBasis,*scatter,INSERT);
@@ -239,7 +240,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string TwoLevelPreconditioner<SC,LO,GO,NO>::description() const
+    string TwoLevelPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "GDSW Preconditioner";
     }
@@ -247,7 +248,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int TwoLevelPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
     {
-        FROSCH_TIMER_START_LEVELID(resetMatrixTime,"TwoLevelPreconditioner::resetMatrix");
+        FROSCH_DETAILTIMER_START_LEVELID(resetMatrixTime,"TwoLevelPreconditioner::resetMatrix");
         this->K_ = k;
         this->OverlappingOperator_->resetMatrix(this->K_);
         CoarseOperator_->resetMatrix(this->K_);

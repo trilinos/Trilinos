@@ -46,6 +46,9 @@
 #ifndef MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_
 #define MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_
 
+#include "MueLu_ConfigDefs.hpp"
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+
 
 #include <Xpetra_Map_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
@@ -55,7 +58,6 @@
 
 #include <Xpetra_Matrix.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
 #include "MueLu_GraphBase.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -132,6 +134,7 @@ public:
   /*! @brief Further aggregation phase increases coarsening rate by a factor of ~2 per iteration. */
   void BuildFurtherAggregates(const Teuchos::ParameterList& params,
                               const RCP<const Matrix>& A,
+                              const Teuchos::ArrayView<const LO> & orderingVector,
                               const local_matrix_type& coarseA,
                               const magnitude_type kappa,
                               const row_sum_type& rowSum,
@@ -169,4 +172,5 @@ private:
 }
 
 #define MUELU_NOTAYAGGREGATIONFACTORY_SHORT
+#endif //ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #endif /* MUELU_NOTAYAGGREGATIONFACTORY_DECL_HPP_ */

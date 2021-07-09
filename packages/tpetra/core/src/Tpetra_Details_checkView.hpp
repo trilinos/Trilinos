@@ -40,14 +40,13 @@
 #ifndef TPETRA_DETAILS_CHECKVIEW_HPP
 #define TPETRA_DETAILS_CHECKVIEW_HPP
 
-/// \file Tpetra_Details_checkPointer.hpp
+/// \file Tpetra_Details_checkView.hpp
 /// \brief Declaration of functions for checking whether a given
 ///   pointer is accessible from a given Kokkos execution space.
 ///
 /// \warning This header file and its contents are implementation
 ///   details of Tpetra.
 
-#include "Tpetra_Details_checkPointer.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -57,11 +56,6 @@
 
 namespace Tpetra {
 namespace Details {
-
-template<class ExecutionSpace>
-bool
-pointerAccessibleFromExecutionSpace (const void* ptr,
-                                     const ExecutionSpace& space);
 
 std::string memorySpaceName (const void* ptr);
 
@@ -75,13 +69,6 @@ std::string memorySpaceName (const void* ptr);
 ///      is accessible from ViewType::execution_space (e.g., not a
 ///      host pointer with execution_space Kokkos::Cuda). </li>
 /// </ol>
-///
-/// This function doesn't promise exact results for anything other
-/// than CudaSpace, CudaUVMSpace, or CudaHostPinnedSpace.  The point
-/// of this function is for Tpetra classes to debug user error in
-/// which users create a Kokkos::View with a raw pointer in the wrong
-/// memory space (e.g., a host pointer, when they should have used a
-/// UVM pointer).
 ///
 /// \param lclErrStrm [out] If the View is invalid, and this pointer
 ///   is nonnull, then write a human-readable explanation of what's
@@ -102,7 +89,6 @@ checkLocalViewValidity
   using Teuchos::TypeNameTraits;
   using std::endl;
   using view_type = Kokkos::View<DataType, Properties...>;
-  using ES = typename view_type::execution_space;
 
   if (view.size () == 0) {
     // Kokkos::View can be zero size with a nonnull pointer.
@@ -121,21 +107,8 @@ checkLocalViewValidity
       }
       return false;
     }
-    else { // nonnull pointer, nonzero size
-      const bool canAcc = pointerAccessibleFromExecutionSpace (ptr, ES ());
-      if (! canAcc && lclErrStrm != nullptr) {
-        const std::string viewName = TypeNameTraits<view_type>::name ();
-        const std::string esName = TypeNameTraits<ES>::name ();
-        *lclErrStrm << "Proc " << myMpiProcessRank << ": Kokkos::View "
-          "of type " << viewName << " and nonzero size " << view.size ()
-          << " has a pointer " << ptr << " which is nonnull, but not "
-          "accessible from the View's claimed execution space "
-          << esName << ".  As far as I can tell, the View's pointer "
-          "(view.data()) lives in memory space " << memorySpaceName (ptr)
-          << "." << endl;
-      }
-      return canAcc;
-    }
+    else 
+      return true;
   }
 }
 
@@ -218,18 +191,11 @@ checkGlobalDualViewValidity
 
   if (gblSuccess != 1 && gblErrStrm != nullptr) {
     *gblErrStrm << "On at least one (MPI) process, the "
-      "Kokkos::DualView has either device or host pointer that "
-      "is not accessible from the corresponding execution space.  "
-      "This can happen if you, the user, created the DualView "
-      "with raw pointer(s) that is/are not in the correct memory "
-      "space.  For example, you may have a Kokkos::DualView whose "
-      "device memory_space is Kokkos::CudaUVMSpace, but you gave "
-      "the device View's constructor a raw host pointer.  It may "
-      "also happen if either the device or host pointer in the "
-      "DualView is null, but the DualView has a nonzero number of "
+      "Kokkos::DualView has "
+      "either the device or host pointer in the "
+      "DualView equal to null, but the DualView has a nonzero number of "
       "rows.  For more detailed information, please rerun with the "
-      "TPETRA_VERBOSE environment variable set to 1.  (You do not "
-      "need to recompile.)";
+      "TPETRA_VERBOSE environment variable set to 1. ";
     if (verbose) {
       *gblErrStrm << "  Here are error messages from all "
         "processes:" << endl;

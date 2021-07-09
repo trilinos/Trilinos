@@ -70,14 +70,14 @@ namespace Intrepid2 {
       \li Gauss-Radau-Right - right-most integration point is fixed at +1
       \li Gauss-Lobatto     - left-most and right-most integration points are fixed at -1 and +1, respectively
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubaturePolylib
-    : public CubatureDirect<ExecSpaceType,pointValueType,weightValueType> {
+    : public CubatureDirect<DeviceType,pointValueType,weightValueType> {
   public:
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType; 
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::PointViewType  PointViewType; 
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
     CubaturePolylib( const ordinal_type degree,
                      const EPolyType polytype = POLYTYPE_GAUSS,
@@ -88,7 +88,7 @@ namespace Intrepid2 {
      */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "CubaturePolylib";
     }
 

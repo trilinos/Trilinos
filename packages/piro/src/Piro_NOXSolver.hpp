@@ -103,14 +103,10 @@ class NOXSolver
   /** \brief Whether to throw an exception when solve fails. */
   bool exitUponFailedNOXSolve; 
 
-  mutable bool solveState;
+  /** \brief Whether to Solve again the system with zero intial guess after failure. */
+  bool reComputeWithZeroInitialGuess;
 
-  /** \brief Derivative layouts for Thyra operator"
-   * OP:  Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP
-   * COL: Thyra::ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM
-   * ROW: Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM
-   * */
-  enum DerivativeLayout { OP, COL, ROW };
+  mutable bool solveState;
 
   //Store current iteration of Analysis solver
   mutable int current_iteration;

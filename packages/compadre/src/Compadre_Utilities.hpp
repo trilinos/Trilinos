@@ -171,7 +171,7 @@ struct Extract {
 //
 //     // Make view on the device (does nothing if already on the device)
 //     auto input_data_device = Kokkos::create_mirror_view(
-//         device_execution_space::memory_space(), input_data_host_or_device);
+//         device_memory_space(), input_data_host_or_device);
 //     Kokkos::deep_copy(input_data_device, input_data_host_or_device);
 //     Kokkos::fence();
 //

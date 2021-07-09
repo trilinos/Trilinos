@@ -1,35 +1,9 @@
 /*
- * Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * See packages/seacas/LICENSE for details
  */
 #ifndef IOCGNS_DECOMPOSITONDATA_H
 #define IOCGNS_DECOMPOSITONDATA_H
@@ -37,13 +11,13 @@
 #include <string>
 #include <vector>
 
-#define USE_ROBIN
-#if defined USE_STD
+#define CG_USE_ROBIN
+#if defined CG_USE_STD
 #include <unordered_map>
-#elif defined USE_HOPSCOTCH
-#include <hash/bhopscotch_map.h>
-#elif defined USE_ROBIN
-#include <hash/robin_map.h>
+#elif defined CG_USE_HOPSCOTCH
+#include <bhopscotch_map.h>
+#elif defined CG_USE_ROBIN
+#include <robin_map.h>
 #endif
 
 #include <cstddef>
@@ -59,6 +33,12 @@
 #include <cgns/Iocgns_StructuredZoneData.h>
 
 #include <cgnslib.h>
+
+#if 0
+#if !defined(NO_PARMETIS_SUPPORT)
+#include <parmetis.h>
+#endif
+#endif
 
 #undef MPICPP
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -83,7 +63,7 @@ namespace Iocgns {
   class DecompositionDataBase
   {
   public:
-    DecompositionDataBase() {}
+    DecompositionDataBase() = default;
 
     virtual ~DecompositionDataBase();
     virtual void   decompose_model(int filePtr, Ioss::MeshType mesh_type) = 0;
@@ -112,7 +92,7 @@ namespace Iocgns {
     void get_element_field(int filePtr, int solution_index, int blk_seq, int field_index,
                            double *data) const;
 
-    void get_node_field(int filePtr, int solution_index, int field_index, double *data) const;
+    void get_node_field(int filePtr, int step, int field_index, double *data) const;
 
     void get_node_entity_proc_data(void *entity_proc, const Ioss::MapContainer &node_map,
                                    bool do_map) const;
@@ -133,12 +113,12 @@ namespace Iocgns {
 
     // Maps nodes shared between zones.
     // TODO: Currently each processor has same map; need to figure out how to reduce size
-#if defined USE_STD
+#if defined CG_USE_STD
     using ZoneSharedMap = std::unordered_map<cgsize_t, cgsize_t>;
-#elif defined USE_HOPSCOTCH
+#elif defined CG_USE_HOPSCOTCH
     //    using ZoneSharedMap = tsl::hopscotch_map<cgsize_t, cgsize_t>;
     using ZoneSharedMap = tsl::bhopscotch_map<cgsize_t, cgsize_t>;
-#elif defined USE_ROBIN
+#elif defined CG_USE_ROBIN
     using ZoneSharedMap = tsl::robin_map<cgsize_t, cgsize_t>;
 #endif
     ZoneSharedMap m_zoneSharedMap;
@@ -148,26 +128,26 @@ namespace Iocgns {
   {
   public:
     DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator);
-    ~DecompositionData() {}
+    ~DecompositionData() override = default;
 
-    int int_size() const { return sizeof(INT); }
+    int int_size() const override { return sizeof(INT); }
 
-    void decompose_model(int filePtr, Ioss::MeshType mesh_type);
+    void decompose_model(int filePtr, Ioss::MeshType mesh_type) override;
 
-    int spatial_dimension() const { return m_decomposition.m_spatialDimension; }
+    int spatial_dimension() const override { return m_decomposition.m_spatialDimension; }
 
-    size_t global_node_count() const { return m_decomposition.global_node_count(); }
-    size_t global_elem_count() const { return m_decomposition.global_elem_count(); }
+    size_t global_node_count() const override { return m_decomposition.global_node_count(); }
+    size_t global_elem_count() const override { return m_decomposition.global_elem_count(); }
 
-    size_t ioss_node_count() const { return m_decomposition.ioss_node_count(); }
-    size_t ioss_elem_count() const { return m_decomposition.ioss_elem_count(); }
+    size_t ioss_node_count() const override { return m_decomposition.ioss_node_count(); }
+    size_t ioss_elem_count() const override { return m_decomposition.ioss_elem_count(); }
 
-    size_t decomp_node_offset() const { return m_decomposition.file_node_offset(); }
-    size_t decomp_node_count() const { return m_decomposition.file_node_count(); }
-    size_t decomp_elem_offset() const { return m_decomposition.file_elem_offset(); }
-    size_t decomp_elem_count() const { return m_decomposition.file_elem_count(); }
+    size_t decomp_node_offset() const override { return m_decomposition.file_node_offset(); }
+    size_t decomp_node_count() const override { return m_decomposition.file_node_count(); }
+    size_t decomp_elem_offset() const override { return m_decomposition.file_elem_offset(); }
+    size_t decomp_elem_count() const override { return m_decomposition.file_elem_count(); }
 
-    std::vector<double> &centroids() { return m_decomposition.m_centroids; }
+    std::vector<double> &centroids() override { return m_decomposition.m_centroids; }
 
     template <typename T>
     void communicate_element_data(T *file_data, T *ioss_data, size_t comp_count) const
@@ -200,9 +180,12 @@ namespace Iocgns {
     void get_element_field(int filePtr, int solution_index, int blk_seq, int field_index,
                            double *data) const;
 
-    void get_node_field(int filePtr, int solution_index, int field_index, double *data) const;
+    void get_node_field(int filePtr, int step, int field_offset, double *data) const;
 
-    size_t get_commset_node_size() const { return m_decomposition.m_nodeCommMap.size() / 2; }
+    size_t get_commset_node_size() const override
+    {
+      return m_decomposition.m_nodeCommMap.size() / 2;
+    }
 
     void get_sideset_element_side(int filePtr, const Ioss::SetDecompositionData &sset,
                                   INT *data) const;
@@ -249,7 +232,7 @@ namespace Iocgns {
       m_decomposition.get_element_block_communication(m_elementBlocks);
     }
 
-    void generate_adjacency_list(int fileId, Ioss::Decomposition<INT> &decomposition);
+    void generate_adjacency_list(int filePtr, Ioss::Decomposition<INT> &decomposition);
 
     void calculate_element_centroids(int filePtr, std::vector<double> &centroids);
 
@@ -258,7 +241,8 @@ namespace Iocgns {
     void get_local_node_list() { m_decomposition.get_local_node_list(); }
 
     void get_file_node_coordinates(int filePtr, int direction, double *ioss_data) const;
-    void get_node_coordinates(int filePtr, double *ioss_data, const Ioss::Field &field) const;
+    void get_node_coordinates(int filePtr, double *ioss_data,
+                              const Ioss::Field &field) const override;
 
     double      m_loadBalanceThreshold{1.4};
     std::string m_lineDecomposition{};

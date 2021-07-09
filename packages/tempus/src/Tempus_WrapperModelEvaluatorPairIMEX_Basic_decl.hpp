@@ -9,6 +9,7 @@
 #ifndef Tempus_ModelEvaluatorPairIMEX_Basic_decl_hpp
 #define Tempus_ModelEvaluatorPairIMEX_Basic_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 

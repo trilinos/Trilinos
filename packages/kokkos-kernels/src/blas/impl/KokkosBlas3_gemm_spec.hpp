@@ -157,6 +157,10 @@ struct GEMM {
   if(std::is_same<typename CViewType::execution_space,Kokkos::Cuda>::value)
     team_size = blockA0;
   #endif
+  #if defined(KOKKOS_ENABLE_HIP)
+  if(std::is_same<typename CViewType::execution_space,Kokkos::Experimental::HIP>::value)
+    team_size = blockA0;
+  #endif
   #if defined(KOKKOS_ENABLE_ROCM)
   if(std::is_same<typename CViewType::execution_space,Kokkos::ROCm>::value)
     team_size = blockA0;

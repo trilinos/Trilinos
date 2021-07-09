@@ -32,40 +32,31 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
-#include <fstream>
-#if defined ( STK_HAS_MPI )
-#  include "mpi.h"
-#endif
+#include "stk_util/diag/PrintTimer.hpp"
+#include "stk_util/diag/PrintTable.hpp"           // for operator<<, PrintTable, end_col, PrintT...
+#include "stk_util/diag/Timer.hpp"                // for getEnabledTimerMetricsMask, Timer, Time...
+#include "stk_util/diag/WriterExt.hpp"            // for operator<<
+#include "stk_util/environment/WallTime.hpp"      // for wall_time
+#include "stk_util/parallel/Parallel.hpp"         // for parallel_machine_rank, MPI_Gather, para...
+#include "stk_util/stk_config.h"                  // for STK_HAS_MPI
+#include "stk_util/util/Marshal.hpp"              // for operator>>, Marshal, operator<<
+#include "stk_util/util/Writer.hpp"               // for operator<<, Writer, dendl, pop, push
+#include "stk_util/util/WriterManip.hpp"          // for hex
+#include "stk_util/util/string_case_compare.hpp"  // for equal_case
+#include <cstddef>                                // for size_t
+#include <algorithm>                              // for find_if, max, min
+#include <functional>                             // for unary_function
+#include <iomanip>                                // for setw, operator<<, _Setw, setprecision
+#include <limits>                                 // for numeric_limits
+#include <list>                                   // for list, _List_const_iterator, list<>::con...
+#include <ostream>                                // for operator<<, basic_ostream, basic_ostrea...
+#include <stdexcept>                              // for runtime_error
+#include <string>                                 // for string, char_traits, operator<<
+#include <vector>                                 // for vector
 
-#include <stk_util/diag/PrintTimer.hpp>
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for find_if, max, min
-#include <functional>                   // for unary_function
-#include <iomanip>                      // for setw, operator<<, _Setw, etc
-#include <limits>                       // for numeric_limits
-#include <list>                         // for _List_iterator, list, etc
-#include <ostream>                      // for operator<<, basic_ostream, etc
-#include <stdexcept>                    // for runtime_error
-#include <stk_util/diag/PrintTable.hpp>  // for operator<<, PrintTable, etc
-#include <stk_util/diag/WriterExt.hpp>  // for operator<<
-#include <stk_util/util/Marshal.hpp>    // for Marshal, operator>>, etc
-#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
-#include <stk_util/util/WriterManip.hpp>  // for hex
-#include <stk_util/util/string_case_compare.hpp>  // for equal_case
-#include <string>                       // for basic_string, string, etc
-#include <vector>                       // for vector
-#include "stk_util/diag/Timer.hpp"      // for getEnabledTimerMetricsMask, etc
-#include "stk_util/environment/WallTime.hpp"
-#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 namespace stk { namespace diag { namespace { struct ParallelTimer; } } }
 
-
-
 namespace stk {
-namespace diag {
-namespace {
-}}
 
 template <class T>
 Marshal &operator<<(Marshal &mout, const diag::Timer::Metric<T> &t);

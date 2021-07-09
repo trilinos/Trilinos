@@ -74,7 +74,7 @@
 #include <Thyra_VectorSpaceBase_decl.hpp>
 
 // Stratimikos includes
-#include <Stratimikos_FROSchXpetra.hpp>
+#include <Stratimikos_FROSch_def.hpp>
 
 #include <Tpetra_Core.hpp>
 
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
-    if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
+    if (parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
 
@@ -165,16 +165,16 @@ int main(int argc, char *argv[])
     if (color==0) {
 
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
-        
+
         Comm->barrier();
-        if(Comm->getRank()==0) {
+        if (Comm->getRank()==0) {
             cout << "##################\n# Parameter List #\n##################" << endl;
             parameterList->print(cout);
             cout << endl;
         }
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Laplacian #\n##############################\n" << endl;
-        
+
         ParameterList GaleriList;
         GaleriList.set("nx", GO(N*M));
         GaleriList.set("ny", GO(N*M));
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
         GaleriList.set("mx", GO(N));
         GaleriList.set("my", GO(N));
         GaleriList.set("mz", GO(N));
-        
+
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
         RCP<Matrix<SC,LO,GO,NO> > K;
@@ -200,22 +200,22 @@ int main(int argc, char *argv[])
         RCP<const Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMapNonConst<LO,GO,NO>(K->getCrsGraph());
 
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Set Up Coarse Operator #\n##############################\n" << endl;
-        
+
         RCP<GDSWCoarseOperator<SC,LO,GO,NO> > CoarseOperator(new GDSWCoarseOperator<SC,LO,GO,NO>(K,parameterList));
         CoarseOperator->initialize(Dimension,RepeatedMap);
         CoarseOperator->compute();
-        
+
         RCP<MultiVector<SC,LO,GO,NO> > x = MultiVectorFactory<SC,LO,GO,NO>::Build(K->getMap(),1);
         RCP<MultiVector<SC,LO,GO,NO> > y = MultiVectorFactory<SC,LO,GO,NO>::Build(K->getMap(),1);
         x->putScalar(ScalarTraits<SC>::one());
         y->putScalar(ScalarTraits<SC>::zero());
-        
+
         Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Apply Coarse Operator #\n##############################\n" << endl;
         for (int i=0; i<Iterations; i++) {
             CoarseOperator->apply(*x,*y,true);
             *x = *y;
         }
-        
+
         Comm->barrier();
         SC norm = y->getVector(0)->norm2();
         if (Comm->getRank()==0) cout << "Norm2: " << norm << endl;

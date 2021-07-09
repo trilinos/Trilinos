@@ -69,6 +69,19 @@ condCloneVec(
   return vec;
 }
 
+template<class Scalar>
+inline
+RCP<const Thyra::MultiVectorBase<Scalar> >
+condCloneMultiVec(
+  const RCP<const Thyra::MultiVectorBase<Scalar> > &vec,
+  bool cloneObject
+  )
+{
+  if(cloneObject)
+    return vec->clone_mv();
+  return vec;
+}
+
 inline
 RCP<const Stokhos::ProductEpetraVector >
 condCloneVec_mp(
@@ -110,6 +123,10 @@ ModelEvaluatorBase::InArgs<Scalar>::InArgs()
 template<class Scalar>
 int ModelEvaluatorBase::InArgs<Scalar>::Np() const
 { return p_.size(); }
+
+template<class Scalar>
+int ModelEvaluatorBase::InArgs<Scalar>::Ng() const
+{ return g_multiplier_.size(); }
 
 template<class Scalar>
 bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
@@ -167,6 +184,32 @@ ModelEvaluatorBase::InArgs<Scalar>::get_x() const
 
 
 template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_direction(
+  const RCP<const MultiVectorBase<Scalar> > &x_direction
+  )
+{ assert_supports(IN_ARG_x); x_direction_ = x_direction; }
+
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_p_direction(
+  int l, const RCP<const MultiVectorBase<Scalar> > &p_direction_l
+  )
+{ assert_l(l); p_direction_[l] = p_direction_l; }
+
+
+template<class Scalar>
+RCP<const MultiVectorBase<Scalar> >
+ModelEvaluatorBase::InArgs<Scalar>::get_x_direction() const
+{ assert_supports(IN_ARG_x); return x_direction_; }
+
+
+template<class Scalar>
+RCP<const MultiVectorBase<Scalar> >
+ModelEvaluatorBase::InArgs<Scalar>::get_p_direction(int l) const
+{ assert_l(l); return p_direction_[l]; }
+
+
+template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_mp(
   const RCP<const Stokhos::ProductEpetraVector > &x_dot_mp
   )
@@ -191,6 +234,35 @@ RCP<const Stokhos::ProductEpetraVector >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_mp() const
 { assert_supports(IN_ARG_x_mp); return x_mp_; }
 
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_f_multiplier(
+  const RCP<const VectorBase<Scalar> > &f_multiplier
+  )
+{ assert_supports(IN_ARG_x); f_multiplier_ = f_multiplier; }
+
+template<class Scalar>
+RCP<const VectorBase<Scalar> >
+ModelEvaluatorBase::InArgs<Scalar>::get_f_multiplier() const
+{ assert_supports(IN_ARG_x); return f_multiplier_; }
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::set_g_multiplier(
+  int j, const RCP<const VectorBase<Scalar> > &g_multiplier
+  )
+{
+  assert_j(j);
+  assert_supports(IN_ARG_x);
+  g_multiplier_[j] = g_multiplier;
+}
+
+template<class Scalar>
+RCP<const VectorBase<Scalar> >
+ModelEvaluatorBase::InArgs<Scalar>::get_g_multiplier(int j) const
+{
+  assert_j(j);
+  assert_supports(IN_ARG_x);
+  return g_multiplier_[j];
+}
 
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
 
@@ -310,6 +382,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
   )
 {
   using ModelEvaluatorHelperPack::condCloneVec;
+  using ModelEvaluatorHelperPack::condCloneMultiVec;
   using ModelEvaluatorHelperPack::condCloneVec_mp;
   if( inArgs.supports(IN_ARG_x_dot_dot) && nonnull(inArgs.get_x_dot_dot()) ) {
     if(supports(IN_ARG_x_dot_dot) || !ignoreUnsupported)
@@ -331,6 +404,19 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
     if(supports(IN_ARG_x_mp) || !ignoreUnsupported)
       set_x_mp(condCloneVec_mp(inArgs.get_x_mp(),cloneObjects));
   }
+  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_x_direction()) ) {
+    if(supports(IN_ARG_x) || !ignoreUnsupported)
+      set_x_direction(condCloneMultiVec(inArgs.get_x_direction(),cloneObjects));
+  }
+  if( inArgs.supports(IN_ARG_x) && nonnull(inArgs.get_f_multiplier()) ) {
+    if(supports(IN_ARG_x) || !ignoreUnsupported)
+      set_f_multiplier(condCloneVec(inArgs.get_f_multiplier(),cloneObjects));
+  }
+  const int min_Ng = TEUCHOS_MIN(this->Ng(),inArgs.Ng());
+  for (int j = 0; j < min_Ng; ++j) {
+    if (nonnull(inArgs.get_g_multiplier(j)))
+      set_g_multiplier(j,condCloneVec(inArgs.get_g_multiplier(j),cloneObjects));
+  }
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
   if( inArgs.supports(IN_ARG_x_dot_poly) && nonnull(inArgs.get_x_dot_poly()) ) {
     if(supports(IN_ARG_x_dot_poly) || !ignoreUnsupported) {
@@ -351,6 +437,10 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
   for (int l = 0; l < min_Np; ++l) {
     if (nonnull(inArgs.get_p(l)))
       set_p(l,condCloneVec(inArgs.get_p(l),cloneObjects));
+  }
+  for (int l = 0; l < min_Np; ++l) {
+    if (nonnull(inArgs.get_p_direction(l)))
+      set_p_direction(l,condCloneMultiVec(inArgs.get_p_direction(l),cloneObjects));
   }
   for (int l = 0; l < min_Np; ++l) {
     if (inArgs.supports(IN_ARG_p_mp,l)) {
@@ -535,11 +625,13 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setModelEvalDescription(
 
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::_set_Np(int Np_in)
+void ModelEvaluatorBase::InArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
 {
   p_.resize(Np_in);
+  p_direction_.resize(Np_in);
   p_mp_.resize(Np_in);
   supports_p_mp_.resize(Np_in);
+  g_multiplier_.resize(Ng_in);
 }
 
 
@@ -573,7 +665,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports(
   std::copy(
     &inArgs.supports_[0],
     &inArgs.supports_[0] + NUM_E_IN_ARGS_MEMBERS, &supports_[0] );
-  this->_set_Np( Np_in >= 0 ? Np_in : inArgs.Np() );
+  this->_set_Np_Ng( Np_in >= 0 ? Np_in : inArgs.Np(), inArgs.Ng() );
 }
 
 
@@ -645,6 +737,17 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
     );
 }
 
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::assert_j(int j) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !( 0 <= j && j < Ng() ), std::logic_error
+    ,"Thyra::ModelEvaluatorBase::InArgs<Scalar>::assert_j(j):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The auxiliary function g("<<j<<")"
+    " is not in the range [0,"<<Ng()<<")!"
+    );
+}
 
 //
 // ModelEvaluatorBase::DerivativeMultiVector
@@ -757,7 +860,10 @@ template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::OutArgs()
   :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITIALIZED!"),
    isFailed_(false)
-{ std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
+{
+  std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);
+  this->_setHessianSupports(false);
+}
 
 
 template<class Scalar>
@@ -826,6 +932,167 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
   assert_j(j);
   assert_l(l);
   return supports_DgDp_[ j*Np() + l ];
+}
+
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_f_xx /* arg */
+  ) const
+{
+  return supports_hess_vec_prod_f_xx_;
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_f_xp /* arg */, int l
+  ) const
+{
+  assert_l(l);
+  return supports_hess_vec_prod_f_xp_[l];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_f_px /* arg */, int l
+  ) const
+{
+  assert_l(l);
+  return supports_hess_vec_prod_f_px_[l];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_f_pp /* arg */, int l1, int l2
+  ) const
+{
+  assert_l(l1);
+  assert_l(l2);
+  return supports_hess_vec_prod_f_pp_[ l1*Np() + l2 ];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_g_xx /* arg */, int j
+  ) const
+{
+  assert_j(j);
+  return supports_hess_vec_prod_g_xx_[j];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_g_xp /* arg */, int j, int l
+  ) const
+{
+  assert_j(j);
+  assert_l(l);
+  return supports_hess_vec_prod_g_xp_[ j*Np() + l ];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_g_px /* arg */, int j, int l
+  ) const
+{
+  assert_j(j);
+  assert_l(l);
+  return supports_hess_vec_prod_g_px_[ j*Np() + l ];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_vec_prod_g_pp /* arg */, int j, int l1, int l2
+  ) const
+{
+  assert_j(j);
+  assert_l(l1);
+  assert_l(l2);
+  return supports_hess_vec_prod_g_pp_[ j*Np()*Np() + l1*Np() + l2 ];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_f_xx /* arg */
+  ) const
+{
+  return supports_hess_f_xx_;
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_f_xp /* arg */, int l
+  ) const
+{
+  assert_l(l);
+  return supports_hess_f_xp_[l];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_f_pp /* arg */, int l1, int l2
+  ) const
+{
+  assert_l(l1);
+  assert_l(l2);
+  return supports_hess_f_pp_[ l1*Np() + l2 ];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_H_xx /* arg */
+  ) const
+{
+  return supports_H_xx_;
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_H_xp /* arg */, int l
+  ) const
+{
+  assert_l(l);
+  return supports_H_xp_[l];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_H_pp /* arg */, int l1, int l2
+  ) const
+{
+  assert_l(l1);
+  assert_l(l2);
+  return supports_H_pp_[ l1*Np() + l2 ];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_g_xx /* arg */, int j
+  ) const
+{
+  assert_j(j);
+  return supports_hess_g_xx_[j];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_g_xp /* arg */, int j, int l
+  ) const
+{
+  assert_j(j);
+  assert_l(l);
+  return supports_hess_g_xp_[ j*Np() + l ];
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
+  EOutArgs_hess_g_pp /* arg */, int j, int l1, int l2
+  ) const
+{
+  assert_j(j);
+  assert_l(l1);
+  assert_l(l2);
+  return supports_hess_g_pp_[ j*Np()*Np() + l1*Np() + l2 ];
 }
 
 
@@ -1270,6 +1537,297 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_mp_properties(int j, int l) const
 }
 
 
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_f_xx(
+  const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_xx
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_xx);
+  hess_vec_prod_f_xx_ = hess_vec_prod_f_xx;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_f_xp(
+  int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_xp_l
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_xp,l);
+  hess_vec_prod_f_xp_[l] = hess_vec_prod_f_xp_l;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_f_px(
+  int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_px_l
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_px,l);
+  hess_vec_prod_f_px_[l] = hess_vec_prod_f_px_l;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_f_pp(
+  int l1, int l2, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_pp_l1_l2
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_pp,l1,l2);
+  hess_vec_prod_f_pp_[ l1*Np() + l2 ] = hess_vec_prod_f_pp_l1_l2;
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_f_xx() const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_xx);
+  return hess_vec_prod_f_xx_;
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_f_xp(int l) const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_xp,l);
+  return hess_vec_prod_f_xp_[l];
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_f_px(int l) const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_px,l);
+  return hess_vec_prod_f_px_[l];
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_f_pp(int l1, int l2) const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_f_pp,l1,l2);
+  return hess_vec_prod_f_pp_[ l1*Np() + l2 ];
+}
+
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_g_xx(
+  int j, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_xx_j
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_xx,j);
+  hess_vec_prod_g_xx_[j] = hess_vec_prod_g_xx_j;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_g_xp(
+  int j, int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_xp_j_l
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_xp,j,l);
+  hess_vec_prod_g_xp_[ j*Np() + l ] = hess_vec_prod_g_xp_j_l;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_g_px(
+  int j, int l, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_px_j_l
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_px,j,l);
+  hess_vec_prod_g_px_[ j*Np() + l ] = hess_vec_prod_g_px_j_l;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_g_pp(
+  int j, int l1, int l2, const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_g_pp_j_l1_l2
+  )
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_pp,j,l1,l2);
+  hess_vec_prod_g_pp_[ j*Np()*Np() + l1*Np() + l2 ] = hess_vec_prod_g_pp_j_l1_l2;
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_g_xx(int j) const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_xx,j);
+  return hess_vec_prod_g_xx_[j];
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_g_xp(int j, int l) const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_xp,j,l);
+  return hess_vec_prod_g_xp_[ j*Np() + l ];
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_g_px(int j, int l) const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_px,j,l);
+  return hess_vec_prod_g_px_[ j*Np() + l ];
+}
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_vec_prod_g_pp(int j, int l1, int l2) const
+{
+  assert_supports(OUT_ARG_hess_vec_prod_g_pp,j,l1,l2);
+  return hess_vec_prod_g_pp_[ j*Np()*Np() + l1*Np() + l2 ];
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_f_xx(
+  const RCP<LinearOpBase<Scalar> > &hess_f_xx
+  )
+{
+  assert_supports(OUT_ARG_hess_f_xx);
+  hess_f_xx_ = hess_f_xx;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_f_xp(
+  int l, const RCP<LinearOpBase<Scalar> > &hess_f_xp_l
+  )
+{
+  assert_supports(OUT_ARG_hess_f_xp,l);
+  hess_f_xp_[l] = hess_f_xp_l;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_f_pp(
+  int l1, int l2, const RCP<LinearOpBase<Scalar> > &hess_f_pp_l1_l2
+  )
+{
+  assert_supports(OUT_ARG_hess_f_pp,l1,l2);
+  hess_f_pp_[ l1*Np() + l2 ] = hess_f_pp_l1_l2;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_f_xx() const
+{
+  assert_supports(OUT_ARG_hess_f_xx);
+  return hess_f_xx_;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_f_xp(int l) const
+{
+  assert_supports(OUT_ARG_hess_f_xp,l);
+  return hess_f_xp_[l];
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_f_pp(int l1, int l2) const
+{
+  assert_supports(OUT_ARG_hess_f_pp,l1,l2);
+  return hess_f_pp_[ l1*Np() + l2 ];
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_g_xx(
+  int j, const RCP<LinearOpBase<Scalar> > &hess_g_xx_j
+  )
+{
+  assert_supports(OUT_ARG_hess_g_xx,j);
+  hess_g_xx_[j] = hess_g_xx_j;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_g_xp(
+  int j, int l, const RCP<LinearOpBase<Scalar> > &hess_g_xp_j_l
+  )
+{
+  assert_supports(OUT_ARG_hess_g_xp,j,l);
+  hess_g_xp_[ j*Np() + l ] = hess_g_xp_j_l;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_g_pp(
+  int j, int l1, int l2, const RCP<LinearOpBase<Scalar> > &hess_g_pp_j_l1_l2
+  )
+{
+  assert_supports(OUT_ARG_hess_g_pp,j,l1,l2);
+  hess_g_pp_[ j*Np()*Np() + l1*Np() + l2 ] = hess_g_pp_j_l1_l2;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_g_xx(int j) const
+{
+  assert_supports(OUT_ARG_hess_g_xx,j);
+  return hess_g_xx_[j];
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_g_xp(int j, int l) const
+{
+  assert_supports(OUT_ARG_hess_g_xp,j,l);
+  return hess_g_xp_[ j*Np() + l ];
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_hess_g_pp(int j, int l1, int l2) const
+{
+  assert_supports(OUT_ARG_hess_g_pp,j,l1,l2);
+  return hess_g_pp_[ j*Np()*Np() + l1*Np() + l2 ];
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_H_xx(
+  const RCP<LinearOpBase<Scalar> > &H_xx
+  )
+{
+  assert_supports(OUT_ARG_H_xx);
+  H_xx_ = H_xx;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_H_xp(
+  int l, const RCP<LinearOpBase<Scalar> > &H_xp_l
+  )
+{
+  assert_supports(OUT_ARG_H_xp,l);
+  H_xp_[l] = H_xp_l;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_H_pp(
+  int l1, int l2, const RCP<LinearOpBase<Scalar> > &H_pp_l1_l2
+  )
+{
+  assert_supports(OUT_ARG_H_pp,l1,l2);
+  H_pp_[ l1*Np() + l2 ] = H_pp_l1_l2;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_H_xx() const
+{
+  assert_supports(OUT_ARG_H_xx);
+  return H_xx_;
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_H_xp(int l) const
+{
+  assert_supports(OUT_ARG_H_xp,l);
+  return H_xp_[l];
+}
+
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_H_pp(int l1, int l2) const
+{
+  assert_supports(OUT_ARG_H_pp,l1,l2);
+  return H_pp_[ l1*Np() + l2 ];
+}
+
+
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
 
 
@@ -1424,6 +1982,109 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
       }
     }
   }
+
+  // hess_vec_prod_f
+  if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_f_xx) && nonnull(inputOutArgs.get_hess_vec_prod_f_xx()) ) {
+    if ( supports(OUT_ARG_hess_vec_prod_f_xx) || !ignoreUnsupported )
+      set_hess_vec_prod_f_xx(inputOutArgs.get_hess_vec_prod_f_xx());
+  }
+  for ( int l1 = 0; l1 < min_Np; ++l1 ) {
+    if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_f_xp,l1) && nonnull(inputOutArgs.get_hess_vec_prod_f_xp(l1)) ) {
+      if ( supports(OUT_ARG_hess_vec_prod_f_xp,l1) || !ignoreUnsupported )
+        set_hess_vec_prod_f_xp(l1,inputOutArgs.get_hess_vec_prod_f_xp(l1));
+    }
+    if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_f_px,l1) && nonnull(inputOutArgs.get_hess_vec_prod_f_px(l1)) ) {
+      if ( supports(OUT_ARG_hess_vec_prod_f_px,l1) || !ignoreUnsupported )
+        set_hess_vec_prod_f_px(l1,inputOutArgs.get_hess_vec_prod_f_px(l1));
+    }
+    for ( int l2 = 0; l2 < min_Np; ++l2 ) {
+      if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_f_pp,l1,l2) && nonnull(inputOutArgs.get_hess_vec_prod_f_pp(l1,l2)) ) {
+        if ( supports(OUT_ARG_hess_vec_prod_f_pp,l1,l2) || !ignoreUnsupported )
+          set_hess_vec_prod_f_pp(l1,l2,inputOutArgs.get_hess_vec_prod_f_pp(l1,l2));
+      }
+    }
+  }
+
+  // hess_vec_prod_g
+  for ( int j = 0; j < min_Ng; ++j ) {
+    if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_g_xx,j) && nonnull(inputOutArgs.get_hess_vec_prod_g_xx(j)) ) {
+      if ( supports(OUT_ARG_hess_vec_prod_g_xx,j) || !ignoreUnsupported )
+        set_hess_vec_prod_g_xx(j,inputOutArgs.get_hess_vec_prod_g_xx(j));
+    }
+    for ( int l1 = 0; l1 < min_Np; ++l1 ) {
+      if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_g_xp,j,l1) && nonnull(inputOutArgs.get_hess_vec_prod_g_xp(j,l1)) ) {
+        if ( supports(OUT_ARG_hess_vec_prod_g_xp,j,l1) || !ignoreUnsupported )
+          set_hess_vec_prod_g_xp(j,l1,inputOutArgs.get_hess_vec_prod_g_xp(j,l1));
+      }
+      if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_g_px,j,l1) && nonnull(inputOutArgs.get_hess_vec_prod_g_px(j,l1)) ) {
+        if ( supports(OUT_ARG_hess_vec_prod_g_px,j,l1) || !ignoreUnsupported )
+          set_hess_vec_prod_g_px(j,l1,inputOutArgs.get_hess_vec_prod_g_px(j,l1));
+      }
+      for ( int l2 = 0; l2 < min_Np; ++l2 ) {
+        if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_g_pp,j,l1,l2) && nonnull(inputOutArgs.get_hess_vec_prod_g_pp(j,l1,l2)) ) {
+          if ( supports(OUT_ARG_hess_vec_prod_g_pp,j,l1,l2) || !ignoreUnsupported )
+            set_hess_vec_prod_g_pp(j,l1,l2,inputOutArgs.get_hess_vec_prod_g_pp(j,l1,l2));
+        }
+      }
+    }
+  }
+
+  // hess_f
+  if( inputOutArgs.supports(OUT_ARG_hess_f_xx) && nonnull(inputOutArgs.get_hess_f_xx()) ) {
+    if ( supports(OUT_ARG_hess_f_xx) || !ignoreUnsupported )
+      set_hess_f_xx(inputOutArgs.get_hess_f_xx());
+  }
+  for ( int l1 = 0; l1 < min_Np; ++l1 ) {
+    if( inputOutArgs.supports(OUT_ARG_hess_f_xp,l1) && nonnull(inputOutArgs.get_hess_f_xp(l1)) ) {
+      if ( supports(OUT_ARG_hess_f_xp,l1) || !ignoreUnsupported )
+        set_hess_f_xp(l1,inputOutArgs.get_hess_f_xp(l1));
+    }
+    for ( int l2 = 0; l2 < min_Np; ++l2 ) {
+      if( inputOutArgs.supports(OUT_ARG_hess_f_pp,l1,l2) && nonnull(inputOutArgs.get_hess_f_pp(l1,l2)) ) {
+        if ( supports(OUT_ARG_hess_f_pp,l1,l2) || !ignoreUnsupported )
+          set_hess_f_pp(l1,l2,inputOutArgs.get_hess_f_pp(l1,l2));
+      }
+    }
+  }
+
+  // hess_g
+  for ( int j = 0; j < min_Ng; ++j ) {
+    if( inputOutArgs.supports(OUT_ARG_hess_g_xx,j) && nonnull(inputOutArgs.get_hess_g_xx(j)) ) {
+      if ( supports(OUT_ARG_hess_g_xx,j) || !ignoreUnsupported )
+        set_hess_g_xx(j,inputOutArgs.get_hess_g_xx(j));
+    }
+    for ( int l1 = 0; l1 < min_Np; ++l1 ) {
+      if( inputOutArgs.supports(OUT_ARG_hess_g_xp,j,l1) && nonnull(inputOutArgs.get_hess_g_xp(j,l1)) ) {
+        if ( supports(OUT_ARG_hess_g_xp,j,l1) || !ignoreUnsupported )
+          set_hess_g_xp(j,l1,inputOutArgs.get_hess_g_xp(j,l1));
+      }
+      for ( int l2 = 0; l2 < min_Np; ++l2 ) {
+        if( inputOutArgs.supports(OUT_ARG_hess_g_pp,j,l1,l2) && nonnull(inputOutArgs.get_hess_g_pp(j,l1,l2)) ) {
+          if ( supports(OUT_ARG_hess_g_pp,j,l1,l2) || !ignoreUnsupported )
+            set_hess_g_pp(j,l1,l2,inputOutArgs.get_hess_g_pp(j,l1,l2));
+        }
+      }
+    }
+  }
+
+  // H
+  if( inputOutArgs.supports(OUT_ARG_H_xx) && nonnull(inputOutArgs.get_H_xx()) ) {
+    if ( supports(OUT_ARG_H_xx) || !ignoreUnsupported )
+      set_H_xx(inputOutArgs.get_H_xx());
+  }
+  for ( int l1 = 0; l1 < min_Np; ++l1 ) {
+    if( inputOutArgs.supports(OUT_ARG_H_xp,l1) && nonnull(inputOutArgs.get_H_xp(l1)) ) {
+      if ( supports(OUT_ARG_H_xp,l1) || !ignoreUnsupported )
+        set_H_xp(l1,inputOutArgs.get_H_xp(l1));
+    }
+    for ( int l2 = 0; l2 < min_Np; ++l2 ) {
+      if( inputOutArgs.supports(OUT_ARG_H_pp,l1,l2) && nonnull(inputOutArgs.get_H_pp(l1,l2)) ) {
+        if ( supports(OUT_ARG_H_pp,l1,l2) || !ignoreUnsupported )
+          set_H_pp(l1,l2,inputOutArgs.get_H_pp(l1,l2));
+      }
+    }
+  }
+
   // Extended outArgs
   this->extended_outargs_ = inputOutArgs.extended_outargs_;
 
@@ -1720,6 +2381,12 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
     DgDx_.resize(Ng_in); std::fill_n(DgDx_.begin(),Ng_in,Derivative<Scalar>());
     DgDx_properties_.resize(Ng_in); std::fill_n(DgDx_properties_.begin(),Ng_in,DerivativeProperties());
 
+    supports_hess_vec_prod_g_xx_.resize(Ng_in);
+    hess_vec_prod_g_xx_.resize(Ng_in); std::fill_n(hess_vec_prod_g_xx_.begin(),Ng_in,RCP<MultiVectorBase<Scalar> >());
+
+    supports_hess_g_xx_.resize(Ng_in);
+    hess_g_xx_.resize(Ng_in); std::fill_n(hess_g_xx_.begin(),Ng_in,RCP<LinearOpBase<Scalar> >());
+
     g_mp_.resize(Ng_in); std::fill_n(g_mp_.begin(),Ng_in,Teuchos::null);
     supports_g_mp_.resize(Ng_in);
     supports_DgDx_dot_mp_.resize(Ng_in);
@@ -1729,11 +2396,52 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
     DgDx_mp_.resize(Ng_in); std::fill_n(DgDx_mp_.begin(),Ng_in,MPDerivative());
     DgDx_mp_properties_.resize(Ng_in); std::fill_n(DgDx_mp_properties_.begin(),Ng_in,DerivativeProperties());
   }
+  if(Np_in) {
+    const int Np = Np_in;
+    const int NpNp = Np_in*Np_in;
+
+    supports_hess_vec_prod_f_xp_.resize(Np);
+    hess_vec_prod_f_xp_.resize(Np); std::fill_n(hess_vec_prod_f_xp_.begin(),Np,RCP<MultiVectorBase<Scalar> >());
+
+    supports_hess_vec_prod_f_px_.resize(Np);
+    hess_vec_prod_f_px_.resize(Np); std::fill_n(hess_vec_prod_f_px_.begin(),Np,RCP<MultiVectorBase<Scalar> >());
+
+    supports_hess_vec_prod_f_pp_.resize(NpNp);
+    hess_vec_prod_f_pp_.resize(NpNp); std::fill_n(hess_vec_prod_f_pp_.begin(),NpNp,RCP<MultiVectorBase<Scalar> >());
+
+    supports_hess_f_xp_.resize(Np);
+    hess_f_xp_.resize(Np); std::fill_n(hess_f_xp_.begin(),Np,RCP<LinearOpBase<Scalar> >());
+
+    supports_hess_f_pp_.resize(NpNp);
+    hess_f_pp_.resize(NpNp); std::fill_n(hess_f_pp_.begin(),NpNp,RCP<LinearOpBase<Scalar> >());
+
+    supports_H_xp_.resize(Np);
+    H_xp_.resize(Np); std::fill_n(H_xp_.begin(),Np,RCP<LinearOpBase<Scalar> >());
+
+    supports_H_pp_.resize(NpNp);
+    H_pp_.resize(NpNp); std::fill_n(H_pp_.begin(),NpNp,RCP<LinearOpBase<Scalar> >());
+  }
   if(Np_in && Ng_in) {
     const int NpNg = Np_in*Ng_in;
+    const int NpNpNg = Np_in*Np_in*Ng_in;
     supports_DgDp_.resize(NpNg);
     DgDp_.resize(NpNg); std::fill_n(DgDp_.begin(),NpNg,Derivative<Scalar>());
     DgDp_properties_.resize(NpNg); std::fill_n(DgDp_properties_.begin(),NpNg,DerivativeProperties());
+
+    supports_hess_vec_prod_g_xp_.resize(NpNg);
+    hess_vec_prod_g_xp_.resize(NpNg); std::fill_n(hess_vec_prod_g_xp_.begin(),NpNg,RCP<MultiVectorBase<Scalar> >());
+
+    supports_hess_vec_prod_g_px_.resize(NpNg);
+    hess_vec_prod_g_px_.resize(NpNg); std::fill_n(hess_vec_prod_g_px_.begin(),NpNg,RCP<MultiVectorBase<Scalar> >());
+
+    supports_hess_vec_prod_g_pp_.resize(NpNpNg);
+    hess_vec_prod_g_pp_.resize(NpNpNg); std::fill_n(hess_vec_prod_g_pp_.begin(),NpNpNg,RCP<MultiVectorBase<Scalar> >());
+
+    supports_hess_g_xp_.resize(NpNg);
+    hess_g_xp_.resize(NpNg); std::fill_n(hess_g_xp_.begin(),NpNg,RCP<LinearOpBase<Scalar> >());
+
+    supports_hess_g_pp_.resize(NpNpNg);
+    hess_g_pp_.resize(NpNpNg); std::fill_n(hess_g_pp_.begin(),NpNpNg,RCP<LinearOpBase<Scalar> >());
 
     supports_DgDp_mp_.resize(NpNg);
     DgDp_mp_.resize(NpNg); std::fill_n(DgDp_mp_.begin(),NpNg,MPDerivative());
@@ -1788,12 +2496,174 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_f_xx /* arg */, bool supports_in
+  )
+{
+  supports_hess_vec_prod_f_xx_ = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_f_xp /* arg */, int l, bool supports_in
+  )
+{
+  assert_l(l);
+  supports_hess_vec_prod_f_xp_[l] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_f_px /* arg */, int l, bool supports_in
+  )
+{
+  assert_l(l);
+  supports_hess_vec_prod_f_px_[l] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_f_pp /* arg */, int l1, int l2, bool supports_in
+  )
+{
+  assert_l(l1);
+  assert_l(l2);
+  supports_hess_vec_prod_f_pp_[ l1*Np()+ l2 ] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   EOutArgsDgDp /* arg */, int j, int l, const DerivativeSupport& supports_in
   )
 {
   assert_j(j);
   assert_l(l);
   supports_DgDp_[ j*Np()+ l ] = supports_in;
+}
+
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_g_xx /* arg */, int j, bool supports_in
+  )
+{
+  assert_j(j);
+  supports_hess_vec_prod_g_xx_[j] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_g_xp /* arg */, int j, int l, bool supports_in
+  )
+{
+  assert_j(j);
+  assert_l(l);
+  supports_hess_vec_prod_g_xp_[ j*Np()+ l ] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_g_px /* arg */, int j, int l, bool supports_in
+  )
+{
+  assert_j(j);
+  assert_l(l);
+  supports_hess_vec_prod_g_px_[ j*Np()+ l ] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_vec_prod_g_pp /* arg */, int j, int l1, int l2, bool supports_in
+  )
+{
+  assert_j(j);
+  assert_l(l1);
+  assert_l(l2);
+  supports_hess_vec_prod_g_pp_[ j*Np()*Np()+ l1*Np() + l2 ] = supports_in;
+}
+
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_f_xx /* arg */, bool supports_in
+  )
+{
+  supports_hess_f_xx_ = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_f_xp /* arg */, int l, bool supports_in
+  )
+{
+  assert_l(l);
+  supports_hess_f_xp_[l] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_f_pp /* arg */, int l1, int l2, bool supports_in
+  )
+{
+  assert_l(l1);
+  assert_l(l2);
+  supports_hess_f_pp_[ l1*Np()+ l2 ] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_g_xx /* arg */, int j, bool supports_in
+  )
+{
+  assert_j(j);
+  supports_hess_g_xx_[j] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_g_xp /* arg */, int j, int l, bool supports_in
+  )
+{
+  assert_j(j);
+  assert_l(l);
+  supports_hess_g_xp_[ j*Np()+ l ] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_hess_g_pp /* arg */, int j, int l1, int l2, bool supports_in
+  )
+{
+  assert_j(j);
+  assert_l(l1);
+  assert_l(l2);
+  supports_hess_g_pp_[ j*Np()*Np()+ l1*Np() + l2 ] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_H_xx /* arg */, bool supports_in
+  )
+{
+  supports_H_xx_ = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_H_xp /* arg */, int l, bool supports_in
+  )
+{
+  assert_l(l);
+  supports_H_xp_[l] = supports_in;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
+  EOutArgs_H_pp /* arg */, int l1, int l2, bool supports_in
+  )
+{
+  assert_l(l1);
+  assert_l(l2);
+  supports_H_pp_[ l1*Np()+ l2 ] = supports_in;
 }
 
 
@@ -1999,6 +2869,48 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   if(this->supports(OUT_ARG_W_mp))
     this->_set_W_properties(inputOutArgs.get_W_properties());  //JF should this be W_mp_properties?
 
+  this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_xx,inputOutArgs.supports(OUT_ARG_hess_vec_prod_f_xx));
+  for( int l1 = 0; l1 < l_Np; ++l1 ) {
+    this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_xp,l1,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_f_xp,l1));
+    this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_px,l1,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_f_px,l1));
+    for( int l2 = 0; l2 < l_Np; ++l2 ) {
+      this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_pp,l1,l2,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_f_pp,l1,l2));
+    }
+  }
+  for( int j = 0; j < l_Ng; ++j ) {
+    this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_xx,j,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_g_xx,j));
+    for( int l1 = 0; l1 < l_Np; ++l1 ) {
+      this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_xp,j,l1,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_g_xp,j,l1));
+      this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_px,j,l1,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_g_px,j,l1));
+      for( int l2 = 0; l2 < l_Np; ++l2 ) {
+        this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_pp,j,l1,l2,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_g_pp,j,l1,l2));
+      }
+    }
+  }
+  this->_setSupports(MEB::OUT_ARG_hess_f_xx,inputOutArgs.supports(OUT_ARG_hess_f_xx));
+  for( int l1 = 0; l1 < l_Np; ++l1 ) {
+    this->_setSupports(MEB::OUT_ARG_hess_f_xp,l1,inputOutArgs.supports(MEB::OUT_ARG_hess_f_xp,l1));
+    for( int l2 = 0; l2 < l_Np; ++l2 ) {
+      this->_setSupports(MEB::OUT_ARG_hess_f_pp,l1,l2,inputOutArgs.supports(MEB::OUT_ARG_hess_f_pp,l1,l2));
+    }
+  }
+  for( int j = 0; j < l_Ng; ++j ) {
+    this->_setSupports(MEB::OUT_ARG_hess_g_xx,j,inputOutArgs.supports(MEB::OUT_ARG_hess_g_xx,j));
+    for( int l1 = 0; l1 < l_Np; ++l1 ) {
+      this->_setSupports(MEB::OUT_ARG_hess_g_xp,j,l1,inputOutArgs.supports(MEB::OUT_ARG_hess_g_xp,j,l1));
+      for( int l2 = 0; l2 < l_Np; ++l2 ) {
+        this->_setSupports(MEB::OUT_ARG_hess_g_pp,j,l1,l2,inputOutArgs.supports(MEB::OUT_ARG_hess_g_pp,j,l1,l2));
+      }
+    }
+  }
+  this->_setSupports(MEB::OUT_ARG_H_xx,inputOutArgs.supports(OUT_ARG_H_xx));
+  for( int l1 = 0; l1 < l_Np; ++l1 ) {
+    this->_setSupports(MEB::OUT_ARG_H_xp,l1,inputOutArgs.supports(MEB::OUT_ARG_H_xp,l1));
+    for( int l2 = 0; l2 < l_Np; ++l2 ) {
+      this->_setSupports(MEB::OUT_ARG_H_pp,l1,l2,inputOutArgs.supports(MEB::OUT_ARG_H_pp,l1,l2));
+    }
+  }
+
   extended_outargs_ = inputOutArgs.extended_outargs_;
 }
 
@@ -2067,6 +2979,46 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
   this->_setSupports(arg,false);
 }
 
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setHessianSupports(
+  const bool supports
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_xx,supports);
+  this->_setSupports(MEB::OUT_ARG_hess_f_xx,supports);
+  this->_setSupports(MEB::OUT_ARG_H_xx,supports);
+  for (int l1=0; l1<this->Np(); ++l1)
+  {
+    this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_xp,l1,supports);
+    this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_px,l1,supports);
+    this->_setSupports(MEB::OUT_ARG_hess_f_xp,l1,supports);
+    this->_setSupports(MEB::OUT_ARG_H_xp,l1,supports);
+    for (int l2=0; l2<this->Np(); ++l2)
+    {
+      this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_pp,l1,l2,supports);
+      this->_setSupports(MEB::OUT_ARG_hess_f_pp,l1,l2,supports);
+      this->_setSupports(MEB::OUT_ARG_H_pp,l1,l2,supports);
+    }
+  }
+
+  for (int j=0; j<this->Ng(); ++j)
+  {
+    this->_setSupports(MEB::OUT_ARG_hess_g_xx,j,supports);
+    this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_xx,j,supports);
+    for (int l1=0; l1<this->Np(); ++l1)
+    {
+      this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_xp,j,l1,supports);
+      this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_px,j,l1,supports);
+      this->_setSupports(MEB::OUT_ARG_hess_g_xp,j,l1,supports);
+      for (int l2=0; l2<this->Np(); ++l2)
+      {
+        this->_setSupports(MEB::OUT_ARG_hess_vec_prod_g_pp,j,l1,l2,supports);
+        this->_setSupports(MEB::OUT_ARG_hess_g_pp,j,l1,l2,supports);
+      }
+    }
+  }
+}
 
 // private
 
@@ -2147,6 +3099,245 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
     "Error, The argument DgDp("<<j<<","<<l<<") = " << deriv.description() << "\n"
     "is not supported!\n\n"
     "The supported types include " << derivSupport.description() << "!"
+    );
+}
+
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_f_xx arg
+  ) const
+{
+  const bool support = this->supports(arg);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_f_xx):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_f_xx() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_f_xp arg, int l
+  ) const
+{
+  const bool support = this->supports(arg,l);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_f_xp,l):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_f_xp("<<l<<") is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_f_px arg, int l
+  ) const
+{
+  const bool support = this->supports(arg,l);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_f_px,l):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_f_px("<<l<<") is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_f_pp arg, int l1, int l2
+  ) const
+{
+  const bool support = this->supports(arg,l1,l2);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_f_pp,l1,l2):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_f_pp("<<l1<<","<<l2<<") is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_g_xx arg, int j
+  ) const
+{
+  const bool support = this->supports(arg,j);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_g_xx,j):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_g_xx("<<j<<") is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_g_xp arg, int j, int l
+  ) const
+{
+  const bool support = this->supports(arg,j,l);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_g_xp,j,l):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_g_xp("<<j<<","<<l<<") is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_g_px arg, int j, int l
+  ) const
+{
+  const bool support = this->supports(arg,j,l);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_g_px,j,l):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_g_px("<<j<<","<<l<<") is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_vec_prod_g_pp arg, int j, int l1, int l2
+  ) const
+{
+  const bool support = this->supports(arg,j,l1,l2);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_vec_prod_g_pp,j,l1,l2):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_vec_prod_g_pp("<<j<<","<<l1<<","<<l2<<") is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_f_xx arg
+  ) const
+{
+  const bool support = this->supports(arg);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_f_xx):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_f_xx() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_f_xp arg, int l
+  ) const
+{
+  const bool support = this->supports(arg,l);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_f_xp,l):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_f_xp() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_f_pp arg, int l1, int l2
+  ) const
+{
+  const bool support = this->supports(arg,l1,l2);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_f_pp,l1,l2):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_f_pp() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_g_xx arg, int j
+  ) const
+{
+  const bool support = this->supports(arg,j);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_g_xx,j):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_g_xx() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_g_xp arg, int j, int l
+  ) const
+{
+  const bool support = this->supports(arg,j,l);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_g_xp,j,l):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_g_xp() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_hess_g_pp arg, int j, int l1, int l2
+  ) const
+{
+  const bool support = this->supports(arg,j,l1,l2);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_hess_g_pp,j,l1,l2):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument hess_g_pp() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_H_xx arg
+  ) const
+{
+  const bool support = this->supports(arg);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_H_xx):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument H_xx() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_H_xp arg, int l
+  ) const
+{
+  const bool support = this->supports(arg,l);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_H_xp,l):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument H_xp() is not supported!"
+    );
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
+  EOutArgs_H_pp arg, int l1, int l2
+  ) const
+{
+  const bool support = this->supports(arg,l1,l2);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    !support, std::logic_error,
+    "Thyra::ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(OUT_ARG_H_pp,l1,l2):\n\n"
+    "model = \'"<<modelEvalDescription_<<"\':\n\n"
+    "Error, The argument H_pp() is not supported!"
     );
 }
 
@@ -2287,8 +3478,11 @@ void ModelEvaluatorBase::InArgsSetup<Scalar>::setModelEvalDescription(
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgsSetup<Scalar>::set_Np(int Np_in)
-{ this->_set_Np(Np_in); }
+{ this->_set_Np_Ng(Np_in, 0); }
 
+template<class Scalar>
+void ModelEvaluatorBase::InArgsSetup<Scalar>::set_Np_Ng(int Np_in, int Ng_in)
+{ this->_set_Np_Ng(Np_in, Ng_in); }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgsSetup<Scalar>::setSupports( EInArgsMembers arg, bool supports_in )
@@ -2378,10 +3572,113 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_f_xx arg, bool supports_in
+  )
+{ this->_setSupports(arg,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_f_xp arg, int l, bool supports_in
+  )
+{ this->_setSupports(arg,l,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_f_px arg, int l, bool supports_in
+  )
+{ this->_setSupports(arg,l,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_f_pp arg, int l1, int l2, bool supports_in
+  )
+{ this->_setSupports(arg,l1,l2,supports_in); }
+
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
   EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports_in
   )
 { this->_setSupports(arg,j,l,supports_in); }
 
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_g_xx arg, int j, bool supports_in
+  )
+{ this->_setSupports(arg,j,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_g_xp arg, int j, int l, bool supports_in
+  )
+{ this->_setSupports(arg,j,l,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_g_px arg, int j, int l, bool supports_in
+  )
+{ this->_setSupports(arg,j,l,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_vec_prod_g_pp arg, int j, int l1, int l2, bool supports_in
+  )
+{ this->_setSupports(arg,j,l1,l2,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_f_xx arg, bool supports_in
+  )
+{ this->_setSupports(arg,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_f_xp arg, int l, bool supports_in
+  )
+{ this->_setSupports(arg,l,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_f_pp arg, int l1, int l2, bool supports_in
+  )
+{ this->_setSupports(arg,l1,l2,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_g_xx arg, int j, bool supports_in
+  )
+{ this->_setSupports(arg,j,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_g_xp arg, int j, int l, bool supports_in
+  )
+{ this->_setSupports(arg,j,l,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_hess_g_pp arg, int j, int l1, int l2, bool supports_in
+  )
+{ this->_setSupports(arg,j,l1,l2,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_H_xx arg, bool supports_in
+  )
+{ this->_setSupports(arg,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_H_xp arg, int l, bool supports_in
+  )
+{ this->_setSupports(arg,l,supports_in); }
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
+  EOutArgs_H_pp arg, int l1, int l2, bool supports_in
+  )
+{ this->_setSupports(arg,l1,l2,supports_in); }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
@@ -2501,6 +3798,12 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setUnsupportsAndRelated(
   )
 { this->_setUnsupportsAndRelated(arg); }
 
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setHessianSupports(
+  const bool supports
+  )
+{ this->_setHessianSupports(supports); }
 
 } // namespace Thyra
 

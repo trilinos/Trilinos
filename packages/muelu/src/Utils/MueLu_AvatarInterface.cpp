@@ -141,6 +141,9 @@ RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
   // Add dummy variables before the class
   validParamList->set<int>("avatar: pre-class dummy variables",int_dummy,"Number of dummy variables to add at the before the class");
 
+  // Value of the dummy variables
+  validParamList->set<int>("avatar: dummy value",int_dummy,"Value of the dummy variables to add at the before/after the class");
+
   return validParamList;
 }
 
@@ -223,8 +226,10 @@ void AvatarInterface::GenerateFeatureString(const Teuchos::ParameterList & probl
   // Initial Dummy Variables
   if (params_.isParameter("avatar: initial dummy variables")) {
     int num_dummy = params_.get<int>("avatar: initial dummy variables");
+    int dummy_value = params_.get("avatar: dummy value",666);
+  
     for(int i=0; i<num_dummy; i++)
-      ss<<"666,";
+      ss<<dummy_value<<",";
   }
 
   for(Teuchos::ParameterList::ConstIterator i=problemFeatures.begin(); i != problemFeatures.end(); i++) {
@@ -285,8 +290,9 @@ std::string AvatarInterface::ParamsToString(const std::vector<int> & indices) co
   // Pre-Class dummy variables
   if (params_.isParameter("avatar: pre-class dummy variables")) {
     int num_dummy = params_.get<int>("avatar: pre-class dummy variables");
+    int dummy_value = params_.get("avatar: dummy value",666);
     for(int i=0; i<num_dummy; i++)
-      ss<<",666";
+      ss<<","<<dummy_value;
   }
   
   return ss.str();

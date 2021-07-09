@@ -1,66 +1,25 @@
-C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
-C $Id: mklstv.f,v 1.2 2007/10/17 18:40:35 gdsjaar Exp $
-C $Log: mklstv.f,v $
-C Revision 1.2  2007/10/17 18:40:35  gdsjaar
-C Added copyright notice to all files.
-C
-C Mapvar is licensed under the BSD license
-C
-C Revision 1.1  1998/03/13 18:12:24  gdsjaar
-C New code -- mapvar. Interpolates results form an exodusII results file
-C to a differently mesh geometry.  Written by Gerry Wellman,
-C 9117. Loosely based on MERLIN. Provides a superset of merlin
-C functionality.
-C
-C
       SUBROUTINE MKLSTV( NUMPTS,IND,IRNK2,IUP,ILO,INDX,
      *                   IE,LIST,NLIST,NBLKSZ,NSPC)
-C
+
 C-----------------------------------------------------------------------
-C
+
 C DESCRIPTION:
-C
+
 C VECTOR MAKE LIST (3D)
 C GIVEN A LIST OF PARTICLES (IE  THEIR INDEX AND RANK) FIND
 C THE LIST OF PARTICLES WITHIN THE BOUNDS SET BY XMIN AND XMAX
 C FOR THE IE'TH PARTICLE IN THE VECTOR BLOCK
-C
+
 C-----------------------------------------------------------------------
-C
+
 C  CALLING ARGUMENTS:
-C
+
 C     NUMPTS INTEGER   NUMBER OF POINTS TO BE SEARCHED
 C     IND    INTEGER   ORDER INDEX
 C     IRNK2  INTEGER   RANK
@@ -72,14 +31,14 @@ C     LIST   INTEGER   LIST OF FOUND PARTICLES
 C     NLIST  INTEGER   NUMBER OF PARTICLES FOUND
 C     NBLKSZ INTEGER   BLOCK SIZE OF IUP AND ILO BLOCKS
 C     NSPC   INTEGER   NUMBER OF SPACIAL COORD. (NUMBER OF DIMENSIONS)
-C
+
 C-----------------------------------------------------------------------
-C
+
       DIMENSION
      *  IND(NUMPTS,NSPC),IRNK2(NUMPTS,NSPC,*),
      *  IUP(NBLKSZ,NSPC),INDX(NUMPTS),
      *  ILO(NBLKSZ,NSPC), LIST(NUMPTS)
-C
+
 C BUILD A LIST OF POINTS THAT ARE CLOSE TO SURFACE IE
       J = IE
       NLIST = 0
@@ -92,7 +51,7 @@ C============================== o n e   -  d ======================
           NLIST = NLIST +1
           LIST(NLIST) = IND(I1,1)
  101    CONTINUE
-C
+
       ELSE IF( NSPC .EQ. 2 )THEN
 C============================== t w o   -  d ======================
         NUM1 = IUP(J,1) - ILO(J,1) + 1
@@ -109,7 +68,7 @@ C SELECT WHICH LIST IS THE SMALLEST
           IY = 1
           NUM = NUM2
         ENDIF
-C
+
         ILOW = ILO(J,IXYZ)
         IUPR = IUP(J,IXYZ)
 C FIRST TEST
@@ -130,7 +89,7 @@ C FIRST TEST
             ENDIF
  202      CONTINUE
         ENDIF
-C
+
       ELSE IF( NSPC .EQ. 3 )THEN
 C============================== t h r e e   -  d ======================
         NUM1 = IUP(J,1) - ILO(J,1) + 1
@@ -155,7 +114,7 @@ C SELECT WHICH LIST IS THE SMALLEST
           IZ = 2
           NUM = NUM3
         ENDIF
-C
+
         ILOW = ILO(J,IXYZ)
         IUPR = IUP(J,IXYZ)
         IF (ILOW.EQ.0) THEN
@@ -200,7 +159,7 @@ C SECOND TEST
  313      CONTINUE
         ENDIF
       ENDIF
-C
+
       RETURN
       END
-C
+

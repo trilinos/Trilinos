@@ -6,6 +6,7 @@
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include "stk_unit_test_utils/FaceTestingUtils.hpp"
 
 namespace
@@ -19,7 +20,7 @@ typedef std::map<int,ElementSidePairs> ExodusSideSet;
 
 void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSet& goldSideset)
 {
-    stk::io::create_bulkdata_sidesets(bulkData);
+    stk::mesh::create_bulkdata_sidesets(bulkData);
 
     std::map<int,ElementSidePairs>::const_iterator iter = goldSideset.begin();
     for(;iter!=goldSideset.end();++iter)

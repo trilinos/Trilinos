@@ -157,13 +157,10 @@ int OrientationTet(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 + a*x;
-        break;
       case 1:
         return f1 + a*y;
-        break;
       case 2:
         return f2 + a*z;
-        break;
       default:
         return 0;
       }
@@ -184,13 +181,10 @@ int OrientationTet(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 + (a1*z-a2*y);//2*x+y-z + (x+2*(y+z);
-        break;
       case 1:
         return f1 + (a2*x-a0*z);//y+2*(z+x);
-        break;
       case 2:
         return f2 + (a0*y-a1*x);//z+2*(x+y);
-        break;
       default:
         return 0;
       }
@@ -630,13 +624,9 @@ int OrientationTet(const bool verbose) {
 
 
 
-        //computing edges and tangents
-        ValueType edgeTan[numCells][numElemEdges][3];
-        ValueType faceTanU[numCells][numElemFaces][3];
-        ValueType faceTanV[numCells][numElemFaces][3];
+        //computing edges and faces
         ordinal_type faceIndex[numCells];
         ordinal_type edgeIndexes[numCells][3];
-
         {
           faceType face={};
           edgeType edge={};
@@ -657,10 +647,6 @@ int OrientationTet(const bool verbose) {
                 face[k]= reorder[face[k]];
 
               std::sort(face.begin(),face.end());
-              for(int d=0; d<dim; ++d) {
-                faceTanU[i][is][d] = vertices[face[1]][d]-vertices[face[0]][d];
-                faceTanV[i][is][d] = vertices[face[2]][d]-vertices[face[0]][d];
-              }
             }
             //compute edges' tangents
             for (std::size_t ie=0; ie<tet.getEdgeCount(); ++ie) {
@@ -679,8 +665,6 @@ int OrientationTet(const bool verbose) {
               for (std::size_t k=0; k<tet.getNodeCount(1,ie); ++k)
                 edge[k] = reorder[edge[k]];
               std::sort(edge.begin(),edge.end());
-              for(int d=0; d<dim; ++d)
-                edgeTan[i][ie][d] = vertices[edge[1]][d]-vertices[edge[0]][d];
             }
           }
         }
@@ -830,7 +814,6 @@ int OrientationTet(const bool verbose) {
               }
             }
 
-            const ValueType refEdgeLength = 2.0;
             for(ordinal_type iedge=0; iedge<numElemEdges; iedge++) {
 
               ordinal_type eOrt[numElemEdges];
@@ -839,7 +822,7 @@ int OrientationTet(const bool verbose) {
               ct::getReferenceEdgeTangent(refEdgeTan, iedge, tet);
               ValueType edgeTan3d[3] = {};
               for(ordinal_type d=0; d <dim; ++d)
-                edgeTan3d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1)*refEdgeLength;
+                edgeTan3d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1);
 
               for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(1, iedge, j);
@@ -857,53 +840,6 @@ int OrientationTet(const bool verbose) {
         ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
         ct::setJacobianInv (jacobian_inv, jacobian);
         rst::matvec(dofCoeffsPhys, jacobian, dofCoeffsTmp);
-
-        //check whether dofCoeffs related to faces and edges are proportional to faces' and edges' tangents
-        {
-          auto numEdgeDOFs = basis.getDofCount(1,0);
-          auto numFaceDOFs = basis.getDofCount(2,0);
-          for(ordinal_type i=0; i<numCells; ++i) {
-
-            for(ordinal_type iface=0; iface<numElemFaces; iface++)
-              for(ordinal_type j=0; j<numFaceDOFs; ++j) {
-                ordinal_type itan = j%2;///(numFaceDOFs/2);     //Convention here is different than for hexas!
-                auto idof = basis.getDofOrdinal(2, iface, j);
-                ValueType tangent[dim];
-                bool areDifferent = false;
-                for(ordinal_type d=0; d <dim; ++d) {
-                  tangent[d] = (itan == 0) ? faceTanU[i][iface][d] : faceTanV[i][iface][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d])>tol)
-                    areDifferent = true;
-                }
-                if(areDifferent) {
-                  errorFlag++;
-                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT equivalent to tangent " << itan << " of face " << iface << "\n";
-                  *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
-                  *outStream << "Face tangent is: (" << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << ")\n";
-                }
-              }
-
-            for(ordinal_type iedge=0; iedge<numElemEdges; iedge++)
-              for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
-                auto idof = basis.getDofOrdinal(1, iedge, j);
-                ValueType tangent[dim];
-                bool areDifferent = false;
-                for(ordinal_type d=0; d <dim; ++d) {
-                  tangent[d] = edgeTan[i][iedge][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d) - tangent[d])>tol)
-                    areDifferent = true;
-                }
-                if(areDifferent) {
-                  errorFlag++;
-                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT equivalent to the tangent of edge " << iedge << "\n";
-                  *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
-                  *outStream << "Edge tangent is: (" << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << ")\n";
-                }
-              }
-          }
-        }
 
         //Testing Kronecker property of basis functions
         {

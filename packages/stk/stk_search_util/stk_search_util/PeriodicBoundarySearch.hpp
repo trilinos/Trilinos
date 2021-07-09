@@ -162,17 +162,6 @@ public:
       // Default is identity transform.
     }
 
-//#if defined(STK_HAVE_BOOST)
-//    TransformHelper(const boost::array<double, 3> & trans_arg)
-//      : m_transform_type(TRANSLATION)
-//      , m_translation(3,0)
-//    {
-//        m_translation[0] = trans_arg[0];
-//        m_translation[1] = trans_arg[1];
-//        m_translation[2] = trans_arg[2];
-//    }
-//#endif
-//
     TransformHelper(double angle, const double axis[3])
       : m_transform_type(ROTATIONAL)
       , m_translation(3,0)
@@ -506,7 +495,6 @@ private:
     {
       case TRANSLATION:
         translate_coordinates(side_1_vector,
-                              side_2_vector,
                               transform.m_translation);
         break;
       case ROTATIONAL:
@@ -619,10 +607,8 @@ private:
 
   void translate_coordinates(
       SphereIdVector & side_1_vector,
-      SphereIdVector & side_2_vector,
       const std::vector<double> &translate) const
   {
-    // translate domain to range, i.e. master to slave
     for (auto && side_1 : side_1_vector)
     {
       for (int j = 0; j < 3; ++j)

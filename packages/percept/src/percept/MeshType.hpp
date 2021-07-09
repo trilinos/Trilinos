@@ -282,10 +282,10 @@ struct StructuredGrid {
   };
 
   KOKKOS_INLINE_FUNCTION
-     std::pair<bool,int> get_fixed_flag_sgrid(StructuredGrid::MTNode node_ptr, StructuredGrid::MTSelector *boundarySelector)
+     Kokkos::pair<bool,int> get_fixed_flag_sgrid(StructuredGrid::MTNode node_ptr, StructuredGrid::MTSelector *boundarySelector)
       {
      //   int dof = -1;
-        std::pair<bool,int> ret(true,MS_VERTEX);
+        Kokkos::pair<bool,int> ret(true,MS_VERTEX);
         //if the owner is something other than the top-level owner, the node
         // is on the boundary; otherwise, it isn't.
         bool& fixed = ret.first;

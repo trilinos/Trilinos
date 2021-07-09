@@ -13,11 +13,17 @@ namespace Tacho {
   template<typename VT, typename ST>
   Solver<VT,ST>
   ::Solver()
-    : _m(0), _nnz(0),
-      _ap(), _h_ap(),_aj(), _h_aj(),
+    : _transpose(0), _mode(0), _order_connected_graph_separately(0),
+      _m(0), _nnz(0),
+      _ap(), _h_ap(), _aj(), _h_aj(),
       _perm(), _h_perm(), _peri(), _h_peri(),
+      _m_graph(0), _nnz_graph(0),
+      _h_ap_graph(), _h_aj_graph(),
+      _h_perm_graph(), _h_peri_graph(),
       _N(nullptr),
-      _L(nullptr),
+      _L0(nullptr),
+      _L1(nullptr),
+      _L2(nullptr),
       _verbose(0),
       _small_problem_thres(1024),
       _serial_thres_size(-1),
@@ -28,12 +34,14 @@ namespace Tacho {
       _device_level_cut(0),
       _device_factor_thres(64),
       _device_solve_thres(128),
-      _nstreams(8),
+      _variant(2),
+      _nstreams(16),
       _max_num_superblocks(-1) {}
-  
-  template<typename VT, typename ST>
-  Solver<VT,ST>
-  ::Solver(const Solver &b) = default;
+
+  /// deleted
+  // template<typename VT, typename ST>
+  // Solver<VT,ST>
+  // ::Solver(const Solver &b) = default;
   
   ///
   /// common options
@@ -52,17 +60,17 @@ namespace Tacho {
     _small_problem_thres = small_problem_thres;
   }
   
-  template<typename VT, typename ST>  
-  void 
-  Solver<VT,ST>
-  ::setTransposeSolve(const bool transpose) {
-    _transpose = transpose; // this option is not used yet
-  }
+  // template<typename VT, typename ST>  
+  // void 
+  // Solver<VT,ST>
+  // ::setTransposeSolve(const bool transpose) {
+  //   _transpose = transpose; // this option is not used yet
+  // }
   
   template<typename VT, typename ST>  
   void 
   Solver<VT,ST>
-  ::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric, 3 - hermitian
+  ::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                   const bool is_positive_definite) { 
     switch (symmetric) {
     case 0: { _mode = LU; break; }
@@ -70,27 +78,14 @@ namespace Tacho {
     case 2: {
       if (is_positive_definite) {
         if (std::is_same<value_type,double>::value ||
-            std::is_same<value_type,float>::value) { // real symmetric posdef
+            std::is_same<value_type,float>::value || 
+            std::is_same<value_type,Kokkos::complex<float> >::value || 
+            std::is_same<value_type,Kokkos::complex<double> >::value) {
+          // real symmetric posdef
           _mode = Cholesky;
-        } else { // complex symmetric posdef - does not exist; should be hermitian if the matrix is posdef
-          TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
-                                   "symmetric positive definite with complex values are not right combination: try hermitian positive definite");
-        }
+        } 
       } else { // real or complex symmetric indef
-        _mode = UtDU;
-      }
-      break;
-    }
-    case 3: {
-      if (is_positive_definite) { // real or complex hermitian posdef
-        _mode = Cholesky;
-      } else {
-        if (std::is_same<value_type,double>::value ||
-            std::is_same<value_type,float>::value) { // real symmetric indef 
-          _mode = UtDU;
-        } else { // complex hermitian indef
-          _mode = SymLU; 
-        }
+        _mode = LDL;
       }
       break;
     }
@@ -98,7 +93,13 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "symmetric argument is wrong");
     }
     }
-    TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
+  }
+
+  template<typename VT, typename ST>
+  void
+  Solver<VT,ST>
+  ::setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately) {
+    _order_connected_graph_separately = order_connected_graph_separately;
   }
 
   ///
@@ -168,6 +169,16 @@ namespace Tacho {
   template<typename VT, typename ST>  
   void 
   Solver<VT,ST>
+  ::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
+    if (variant > 2 || variant < 0) {
+      std::logic_error("levelset algorithm variants range from 0 to 2");
+    }
+    _variant = variant;
+  }
+  
+  template<typename VT, typename ST>  
+  void 
+  Solver<VT,ST>
   ::setLevelSetOptionNumStreams(const ordinal_type nstreams) {
     _nstreams = nstreams;
   }
@@ -175,6 +186,20 @@ namespace Tacho {
   ///
   /// get interface
   ///
+  template<typename VT, typename ST>  
+  ordinal_type
+  Solver<VT,ST>
+  ::getNumSupernodes() const { 
+    return _nsupernodes;
+  } 
+
+  template<typename VT, typename ST>  
+  typename Solver<VT,ST>::ordinal_type_array
+  Solver<VT,ST>
+  ::getSupernodes() const { 
+    return _supernodes;
+  } 
+
   template<typename VT, typename ST>  
   typename Solver<VT,ST>::ordinal_type_array
   Solver<VT,ST>
@@ -195,62 +220,68 @@ namespace Tacho {
   int
   Solver<VT,ST>  
   ::analyze() {
-    Graph graph(_m, _nnz, _h_ap, _h_aj);
-    graph_tools_type G(graph);
-    G.reorder(_verbose);
-
-    _h_perm = G.PermVector(); 
-    _h_peri = G.InvPermVector();
-
-    // invoke a private function
-    return analyze(_m, _h_ap, _h_aj, _h_perm, _h_peri);
-  }
-
-  template<typename VT, typename ST>  
-  int
-  Solver<VT,ST>  
-  ::analyze(const ordinal_type m,
-            const size_type_array_host &ap,
-            const ordinal_type_array_host &aj,
-            const ordinal_type_array_host &perm,
-            const ordinal_type_array_host &peri) {
-    if (_verbose) {
-      printf("TachoSolver: Analyze\n");
-      printf("====================\n");
-    }
-
-    if (_m == 0) {
-      _m = m;
-        
-      _ap   = Kokkos::create_mirror_view(exec_memory_space(), ap); Kokkos::deep_copy(_ap, ap);
-      _aj   = Kokkos::create_mirror_view(exec_memory_space(), aj); Kokkos::deep_copy(_aj, aj);
-
-      _h_ap = ap;
-      _h_aj = aj;
-
-      _nnz = _ap(m);
-
-      _h_perm = perm;
-      _h_peri = peri;
-    }
-
+    int r_val(0);
     if (_m < _small_problem_thres) {
-      // for small problems, use lapack and no analysis and no permutation
-      _perm = Kokkos::create_mirror_view(exec_memory_space(), _h_perm); 
-      _peri = Kokkos::create_mirror_view(exec_memory_space(), _h_peri); 
-
-      Kokkos::deep_copy(_perm, _h_perm);
-      Kokkos::deep_copy(_peri, _h_peri);
-        
+      /// do nothing
       if (_verbose) {
+        printf("TachoSolver: Analyze\n");
+        printf("====================\n");
         printf("  Linear system A\n");
         printf("             number of equations:                             %10d\n", _m);
         printf("\n");
         printf("  A is a small problem ( < %d ) and LAPACK is used\n", _small_problem_thres);
         printf("\n");
       }
-      return 0;
     } else {
+      const bool use_condensed_graph = (_m_graph > 0 && _m_graph < _m);
+      if (use_condensed_graph) {
+        Graph graph(_m_graph, _nnz_graph, _h_ap_graph, _h_aj_graph);
+        graph_tools_type G(graph);
+#if defined(TACHO_HAVE_METIS)
+        if (_order_connected_graph_separately) {
+          G.setOption(METIS_OPTION_CCORDER, 1);
+        }
+#endif
+        G.reorder(_verbose);
+        
+        _h_perm_graph = G.PermVector();
+        _h_peri_graph = G.InvPermVector();
+        
+        r_val = analyze_condensed_graph();
+      } else {
+	const bool use_graph_partitioner = (_h_perm.extent(0) == 0 && _h_peri.extent(0) == 0);
+	if (use_graph_partitioner) {
+	  Graph graph(_m, _nnz, _h_ap, _h_aj);
+	  graph_tools_type G(graph);
+#if defined(TACHO_HAVE_METIS)
+        if (_order_connected_graph_separately) {
+          G.setOption(METIS_OPTION_CCORDER, 1);          
+        }
+#endif
+	  G.reorder(_verbose);
+	  
+	  _h_perm = G.PermVector(); 
+	  _h_peri = G.InvPermVector();
+	  
+	  r_val = analyze_linear_system();
+	} else {
+	  r_val = analyze_linear_system();
+	} 
+      }
+    }
+    return r_val;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>  
+  ::analyze_linear_system() {
+    if (_verbose) {
+      printf("TachoSolver: Analyze Linear System\n");
+      printf("==================================\n");
+    }
+
+    {
       symbolic_tools_type S(_m, _h_ap, _h_aj, _h_perm, _h_peri);
       S.symbolicFactorize(_verbose);
 
@@ -291,6 +322,54 @@ namespace Tacho {
   template<typename VT, typename ST>  
   int
   Solver<VT,ST>  
+  ::analyze_condensed_graph() {
+    if (_verbose) {
+      printf("TachoSolver: Analyze Condensed Graph and Evaporate the Graph\n");
+      printf("============================================================\n");
+    }
+
+    {
+      symbolic_tools_type S(_m_graph, _h_ap_graph, _h_aj_graph, _h_perm_graph, _h_peri_graph);
+      S.symbolicFactorize(_verbose);
+      S.evaporateSymbolicFactors(_h_aw_graph, _verbose);
+
+      _nsupernodes = S.NumSupernodes();
+      _stree_level = S.SupernodesTreeLevel();
+      _stree_roots = S.SupernodesTreeRoots();
+
+      _supernodes             = Kokkos::create_mirror_view(exec_memory_space(), S.Supernodes());            
+      _gid_super_panel_ptr    = Kokkos::create_mirror_view(exec_memory_space(), S.gidSuperPanelPtr());      
+      _gid_super_panel_colidx = Kokkos::create_mirror_view(exec_memory_space(), S.gidSuperPanelColIdx());   
+      _sid_super_panel_ptr    = Kokkos::create_mirror_view(exec_memory_space(), S.sidSuperPanelPtr());      
+      _sid_super_panel_colidx = Kokkos::create_mirror_view(exec_memory_space(), S.sidSuperPanelColIdx());   
+      _blk_super_panel_colidx = Kokkos::create_mirror_view(exec_memory_space(), S.blkSuperPanelColIdx());   
+      _stree_parent           = Kokkos::create_mirror_view(exec_memory_space(), S.SupernodesTreeParent());  
+      _stree_ptr              = Kokkos::create_mirror_view(exec_memory_space(), S.SupernodesTreePtr());     
+      _stree_children         = Kokkos::create_mirror_view(exec_memory_space(), S.SupernodesTreeChildren());
+      _perm                   = Kokkos::create_mirror_view(exec_memory_space(), S.PermVector());
+      _peri                   = Kokkos::create_mirror_view(exec_memory_space(), S.InvPermVector());
+
+      Kokkos::deep_copy(_supernodes             , S.Supernodes());
+      Kokkos::deep_copy(_gid_super_panel_ptr    , S.gidSuperPanelPtr());
+      Kokkos::deep_copy(_gid_super_panel_colidx , S.gidSuperPanelColIdx());
+      Kokkos::deep_copy(_sid_super_panel_ptr    , S.sidSuperPanelPtr());
+      Kokkos::deep_copy(_sid_super_panel_colidx , S.sidSuperPanelColIdx());
+      Kokkos::deep_copy(_blk_super_panel_colidx , S.blkSuperPanelColIdx());
+      Kokkos::deep_copy(_stree_parent           , S.SupernodesTreeParent());
+      Kokkos::deep_copy(_stree_ptr              , S.SupernodesTreePtr());
+      Kokkos::deep_copy(_stree_children         , S.SupernodesTreeChildren());
+      Kokkos::deep_copy(_perm                   , S.PermVector());
+      Kokkos::deep_copy(_peri                   , S.InvPermVector());
+
+      _h_perm = S.PermVector();
+      _h_peri = S.InvPermVector();
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>  
   ::initialize() {
     if (_verbose) {
       printf("TachoSolver: Initialize\n");
@@ -301,9 +380,12 @@ namespace Tacho {
     /// initialize numeric tools
     ///
     if (_m < _small_problem_thres) {
-      //_U = value_type_matrix_host("U", _m, _m);
+      //_A = value_type_matrix_host("A", _m, _m);
     } else {
-      _N = new numeric_tools_type(_m, _ap, _aj,
+      if (_N == nullptr) 
+        _N = (numeric_tools_type*) ::operator new (sizeof(numeric_tools_type));
+      
+      new (_N) numeric_tools_type(_m, _ap, _aj,
                                   _perm, _peri,
                                   _nsupernodes, _supernodes,
                                   _gid_super_panel_ptr, _gid_super_panel_colidx,
@@ -331,9 +413,25 @@ namespace Tacho {
       /// initialize levelset tools
       ///
       if (_levelset) {
-        _L = new levelset_tools_type(*_N);
-        _L->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
-        _L->createStream(_nstreams);
+        if        (_variant == 0) {
+          if (_L0 == nullptr) 
+            _L0 = (levelset_tools_var0_type*) ::operator new (sizeof(levelset_tools_var0_type));
+          new (_L0) levelset_tools_var0_type(*_N);
+          _L0->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+          _L0->createStream(_nstreams);
+        } else if (_variant == 1) {
+          if (_L1 == nullptr) 
+            _L1 = (levelset_tools_var1_type*) ::operator new (sizeof(levelset_tools_var1_type));
+          new (_L1) levelset_tools_var1_type(*_N);
+          _L1->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+          _L1->createStream(_nstreams);
+        } else if (_variant == 2) {
+          if (_L2 == nullptr) 
+            _L2 = (levelset_tools_var2_type*) ::operator new (sizeof(levelset_tools_var2_type));
+          new (_L2) levelset_tools_var1_type(*_N);
+          _L2->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose);
+          _L2->createStream(_nstreams);
+        }
       }
     }
     return 0;
@@ -343,6 +441,19 @@ namespace Tacho {
   int
   Solver<VT,ST>      
   ::factorize(const value_type_array &ax) {
+    switch (_mode) {
+    case Cholesky: factorize_chol(ax); break;
+    case LDL:      factorize_ldl(ax); break;
+    default:
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
+  ::factorize_chol(const value_type_array &ax) {
     if (_verbose) {
       printf("TachoSolver: Factorize\n");
       printf("======================\n");
@@ -351,20 +462,20 @@ namespace Tacho {
       Kokkos::Impl::Timer timer;
 
       timer.reset();
-      _U = value_type_matrix_host("U", _m, _m);
+      _A = value_type_matrix_host("A", _m, _m);
       auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
       for (ordinal_type i=0;i<_m;++i) {
         const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
         for (size_type j=jbeg;j<jend;++j) {
           const ordinal_type col = _h_aj(j);
           if (i <= col) 
-            _U(i, col) = h_ax(j);
+            _A(i, col) = h_ax(j);
         }
       }
       const double t_copy = timer.seconds();
         
       timer.reset();
-      Chol<Uplo::Upper,Algo::External>::invoke(_U);
+      Tacho::Chol<Uplo::Upper,Algo::External>::invoke(_A);
       const double t_factor = timer.seconds();
 
       if (_verbose) {
@@ -379,14 +490,12 @@ namespace Tacho {
     } else {
 
 #if !defined (KOKKOS_ENABLE_CUDA)
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const ordinal_type nthreads = host_space::thread_pool_size(0);
-#else
       const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
 #endif
-#endif
       if (_levelset) {
-        _L->factorizeCholesky(ax, _verbose);
+        if      (_variant == 0) _L0->factorizeCholesky(ax, _verbose);
+        else if (_variant == 1) _L1->factorizeCholesky(ax, _verbose);
+        else if (_variant == 2) _L2->factorizeCholesky(ax, _verbose);
       } 
 #if !defined (KOKKOS_ENABLE_CUDA)
       else if (nthreads == 1) {
@@ -450,9 +559,91 @@ namespace Tacho {
   template<typename VT, typename ST>  
   int
   Solver<VT,ST>      
+  ::factorize_ldl(const value_type_array &ax) {
+    if (_verbose) {
+      printf("TachoSolver: Factorize\n");
+      printf("======================\n");
+    }
+    if (_m < _small_problem_thres) {
+      Kokkos::Impl::Timer timer;
+
+      timer.reset();
+      _A = value_type_matrix_host("A", _m, _m);
+      auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
+      for (ordinal_type i=0;i<_m;++i) {
+        const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
+        for (size_type j=jbeg;j<jend;++j) {
+          const ordinal_type col = _h_aj(j);
+          if (i >= col) 
+            _A(i, col) = h_ax(j);
+        }
+      }
+      const double t_copy = timer.seconds();
+        
+      timer.reset();
+      _P = ordinal_type_array_host("P", 4*_m);
+      _D = value_type_matrix_host("D", _m, 2);
+      auto W = value_type_array_host("W", 32*_m);
+      Tacho::LDL<Uplo::Lower,Algo::External>::invoke(_A, _P, W);
+      Tacho::LDL<Uplo::Lower,Algo::External>::modify(_A, _P, _D);
+      const double t_factor = timer.seconds();
+      
+      if (_verbose) {
+        printf("Summary: NumericTools (SmallDenseFactorization)\n");
+        printf("===============================================\n");
+        printf("  Time\n");
+        printf("             time for copying A into L:                       %10.6f s\n", t_copy);
+        printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
+        printf("             total time spent:                                %10.6f s\n", (t_copy+t_factor));
+        printf("\n");
+      }
+    } else {
+#if !defined (KOKKOS_ENABLE_CUDA)
+      const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
+#endif
+      if (_levelset) {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");
+        // if      (_variant == 0) _L0->factorizeLDL(ax, _verbose);
+        // else if (_variant == 1) _L1->factorizeLDL(ax, _verbose);
+        // else if (_variant == 2) _L2->factorizeLDL(ax, _verbose);
+      } 
+#if !defined (KOKKOS_ENABLE_CUDA)
+      else if (nthreads == 1) {
+        _N->factorizeLDL_Serial(ax, _verbose);
+        // if (_nb < 0) 
+        //   _N->factorizeLDL_Serial(ax, _verbose);
+        // else 
+        //   _N->factorizeLDL_SerialPanel(ax, _nb, _verbose);
+      }
+#endif
+      else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
+      }
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
   ::solve(const value_type_matrix &x,
           const value_type_matrix &b,
           const value_type_matrix &t) {
+    switch (_mode) {
+    case Cholesky: solve_chol(x, b, t); break;
+    case LDL:      solve_ldl(x, b, t); break;
+    default:
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
+    }      
+    return 0;
+  }    
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
+  ::solve_chol(const value_type_matrix &x,
+               const value_type_matrix &b,
+               const value_type_matrix &t) {
     if (_verbose) {
       printf("TachoSolver: Solve\n");
       printf("==================\n");
@@ -469,9 +660,9 @@ namespace Tacho {
       auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
       Kokkos::deep_copy(h_x, x);
       Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-        ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
+        ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-        ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
+        ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
       Kokkos::deep_copy(x, h_x);         
       const double t_solve = timer.seconds();
 
@@ -486,11 +677,7 @@ namespace Tacho {
       }
     } else {
 #if !defined (KOKKOS_ENABLE_CUDA)
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const ordinal_type nthreads = host_space::thread_pool_size(0);
-#else
       const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
-#endif
 #endif
       TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
                                t.extent(1) < x.extent(1), std::logic_error, "Temporary rhs vector t is smaller than x");
@@ -498,7 +685,9 @@ namespace Tacho {
                                 Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
                                 Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
       if (_levelset) {
-        _L->solveCholesky(x, b, tt, _verbose);
+        if      (_variant == 0) _L0->solveCholesky(x, b, tt, _verbose);
+        else if (_variant == 1) _L1->solveCholesky(x, b, tt, _verbose);
+        else if (_variant == 2) _L2->solveCholesky(x, b, tt, _verbose);
       } 
 #if !defined (KOKKOS_ENABLE_CUDA)
       else if (nthreads == 1) {
@@ -507,6 +696,79 @@ namespace Tacho {
 #endif
       else {
         _N->solveCholesky_Parallel(x, b, tt, _verbose);
+      }
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
+  ::solve_ldl(const value_type_matrix &x,
+              const value_type_matrix &b,
+              const value_type_matrix &t) {
+    if (_verbose) {
+      printf("TachoSolver: Solve\n");
+      printf("==================\n");
+    }
+
+    if (_m < _small_problem_thres) {
+      Kokkos::Impl::Timer timer;
+
+      timer.reset();
+      Kokkos::deep_copy(x, b);
+      const double t_copy = timer.seconds();
+
+      timer.reset();
+      auto perm = ordinal_type_array_host(_P.data()+2*_m, _m);
+      auto peri = ordinal_type_array_host(_P.data()+3*_m, _m);
+      auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
+      auto h_t = Kokkos::create_mirror_view(host_memory_space(), t); 
+
+      ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
+        ::invoke(h_x, perm, h_t);              
+      Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::External>
+        ::invoke(Diag::Unit(), 1.0, _A, h_t);
+      Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal>
+        ::invoke(_P, _D, h_t);
+      Trsm<Side::Left,Uplo::Lower,Trans::Transpose,Algo::External>
+        ::invoke(Diag::Unit(), 1.0, _A, h_t);
+      ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
+        ::invoke(h_t, peri, h_x);        
+      Kokkos::deep_copy(x, h_x);         
+      const double t_solve = timer.seconds();
+
+      if (_verbose) {
+        printf("Summary: NumericTools (SmallDenseSolve)\n");
+        printf("=======================================\n");
+        printf("  Time\n");
+        printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", t_copy);
+        printf("             time for numeric solve:                          %10.6f s\n", t_solve);
+        printf("             total time spent:                                %10.6f s\n", (t_solve+t_copy));
+        printf("\n");
+      }
+    } else {
+#if !defined (KOKKOS_ENABLE_CUDA)
+      const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
+#endif
+      TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
+                               t.extent(1) < x.extent(1), std::logic_error, "Temporary rhs vector t is smaller than x");
+      auto tt = Kokkos::subview(t, 
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
+      if (_levelset) {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
+        // if      (_variant == 0) _L0->solveCholesky(x, b, tt, _verbose);
+        // else if (_variant == 1) _L1->solveCholesky(x, b, tt, _verbose);
+        // else if (_variant == 2) _L2->solveCholesky(x, b, tt, _verbose);
+      } 
+#if !defined (KOKKOS_ENABLE_CUDA)
+      else if (nthreads == 1) {
+        _N->solveLDL_Serial(x, b, tt, _verbose);
+      }
+#endif
+      else {
+        //_N->solveCholesky_Parallel(x, b, tt, _verbose);
       }
     }
     return 0;
@@ -537,7 +799,7 @@ namespace Tacho {
       size_type_array_host h_ap("h_ap", m+1);
       for (ordinal_type i=0;i<m;++i) 
         for (ordinal_type j=0;j<m;++j) 
-          h_ap(i+1) += (ats::abs(_U(i,j)) > zero);
+          h_ap(i+1) += (ats::abs(_A(i,j)) > zero);
         
       /// serial scan; this is a small problem
       h_ap(0) = 0;
@@ -551,9 +813,9 @@ namespace Tacho {
 
       for (ordinal_type i=0,k=0;i<m;++i) 
         for (ordinal_type j=i;j<m;++j)
-          if (ats::abs(_U(i,j)) > zero) {
+          if (ats::abs(_A(i,j)) > zero) {
             h_aj(k) = j;
-            h_ax(k) = _U(i,j);
+            h_ax(k) = _A(i,j);
             ++k;
           }
 
@@ -579,9 +841,19 @@ namespace Tacho {
     }
 
     if (_levelset) {
-      if (_L != nullptr)
-        _L->release(_verbose);
-      delete _L; _L = nullptr;
+      if (_variant == 0) {
+        if (_L0 != nullptr)
+          _L0->release(_verbose);
+        delete _L0; _L0 = nullptr;
+      } else if (_variant == 1) {
+        if (_L1 != nullptr)
+          _L1->release(_verbose);
+        delete _L1; _L1 = nullptr;
+      } else if (_variant == 2) {
+        if (_L2 != nullptr)
+          _L2->release(_verbose);
+        delete _L2; _L2 = nullptr;
+      }
     }
     
     {
@@ -601,7 +873,16 @@ namespace Tacho {
         
       _perm = ordinal_type_array(); _h_perm = ordinal_type_array_host();
       _peri = ordinal_type_array(); _h_peri = ordinal_type_array_host();
+       
+      _m_graph = 0;
+      _nnz_graph = 0;
+      
+      _h_ap_graph = size_type_array_host();
+      _h_aj_graph = ordinal_type_array_host();
         
+      _h_perm_graph = ordinal_type_array_host();
+      _h_peri_graph = ordinal_type_array_host();
+ 
       _nsupernodes = 0;
       _supernodes = ordinal_type_array();
         
@@ -619,7 +900,7 @@ namespace Tacho {
       _stree_parent = ordinal_type_array();
       _stree_roots = ordinal_type_array_host();
       
-      _U = value_type_matrix_host();
+      _A = value_type_matrix_host();
         
       _verbose = 0;
       _small_problem_thres = 1024;

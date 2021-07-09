@@ -12,6 +12,7 @@
 #include <Ioss_SideSet.h>
 #include <Ioss_SideBlock.h>
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/ExodusTranslator.hpp>
 #include "stk_io/WriteMesh.hpp"
@@ -95,7 +96,7 @@ ExodusSideSet set_gold_data(ExodusSideSet &goldSideSetData, ExodusSideSet &goldS
 
 void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSet& goldSideset)
 {
-    stk::io::create_bulkdata_sidesets(bulkData);
+    stk::mesh::create_bulkdata_sidesets(bulkData);
 
     std::map<int,ElementSidePairs>::const_iterator iter = goldSideset.begin();
     for(;iter!=goldSideset.end();++iter)
@@ -144,7 +145,7 @@ std::string get_output_file_name(const std::string &input_file_name)
 void write_mesh(const std::string& filename, stk::mesh::BulkData &bulkData)
 {
     std::string output_file_name = get_output_file_name(filename);
-    stk::io::create_bulkdata_sidesets(bulkData);
+    stk::mesh::create_bulkdata_sidesets(bulkData);
     stk::io::write_mesh(output_file_name, bulkData);
 }
 

@@ -32,11 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>                     // for operator<<, ostringstream, etc
-#include <stdexcept>                    // for runtime_error
-#include <stk_util/util/ReportHandler.hpp>
-#include <gtest/gtest.h>
-#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"
+#include "stk_util/util/ReportHandler.hpp"  // for source_relative_path, set_report_handler, report
+#include <iostream>                         // for operator<<, ostringstream, basic_ostream, bas...
+#include <stdexcept>                        // for runtime_error
+#include <string>                           // for operator==, string, char_traits
 
 
 

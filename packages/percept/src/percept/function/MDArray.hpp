@@ -18,13 +18,6 @@
   namespace percept
   {
 
-    //     class MDArray : public FieldContainer<double>
-    //     {
-    //       public:
-    //       typedef FieldContainer<double> base;
-    //       MDArray(std::vector<int> dimensions) : FieldContainer<double>( Teuchos::Array<int>(dimensions.begin(), dimensions.end()) ) {}
-    //     };
-
     typedef Intrepid::FieldContainer<double> MDArray;
     typedef Intrepid::FieldContainer<int> MDArrayInt;
     typedef Intrepid::FieldContainer<unsigned> MDArrayUInt;
@@ -73,7 +66,6 @@
     }
 
 
-    //typedef Intrepid::FieldContainer<std::string> MDArrayString;
     class MDArrayString
     {
       typedef std::vector<std::string > VecOfString;
@@ -137,7 +129,7 @@
           }
 
       }
-      const int rank() const { return m_rank; }
+      int rank() const { return m_rank; }
 
       void setValues(std::string *data)
       {

@@ -17,6 +17,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
+#include "Tempus_config.hpp"
 
 namespace Tempus {
 

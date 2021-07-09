@@ -34,15 +34,19 @@
 // 
  */
 
-#include <stdexcept>
-#include <sstream>
-#include <string>
-
-#include <stk_util/diag/UserPlugin.hpp>
-#include <stk_util/diag/SlibDiagWriter.hpp>
+#include "stk_util/diag/UserPlugin.hpp"
+#include "stk_util/diag/SlibDiagWriter.hpp"  // for slibout
+#include "stk_util/util/Writer.hpp"          // for operator<<, Writer, dendl, pop, push
+#include "stk_util/util/Writer_fwd.hpp"      // for LOG_PLUGIN
+#include <string.h>                          // for strlen
+#include <algorithm>                         // for max
+#include <sstream>                           // for operator<<, basic_ostream, basic_ostream::op...
+#include <stdexcept>                         // for invalid_argument, runtime_error
+#include <string>                            // for string, operator<<, char_traits, allocator
+#include <type_traits>                       // for __decay_and_strip<>::__type
 
 #ifdef SIERRA_DLOPEN_ENABLED
-#include <dlfcn.h>
+#include <dlfcn.h>                           // for dlsym, dlopen, dlclose, dlerror, RTLD_LAZY
 #endif
 
 namespace sierra {

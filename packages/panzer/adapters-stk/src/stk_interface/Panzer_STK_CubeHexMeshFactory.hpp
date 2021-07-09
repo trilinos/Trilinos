@@ -93,6 +93,8 @@ protected:
    void addSides(STK_Interface & mesh) const; // this adds side entities only (does not inject them into side sets)
    void addSideSets(STK_Interface & mesh) const;
    void addNodeSets(STK_Interface & mesh) const;
+   void addEdgeBlocks(STK_Interface & mesh) const;
+   void addFaceBlocks(STK_Interface & mesh) const;
 
    double x0_, y0_, z0_;
    double xf_, yf_, zf_;

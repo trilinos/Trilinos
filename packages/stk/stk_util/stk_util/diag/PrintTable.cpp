@@ -32,13 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/diag/PrintTable.hpp>
-#include <algorithm>                    // for max
-#include <iomanip>                      // for operator<<, setw, setfill
-#include <sstream>                      // for ostream, operator<<, etc
-#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl
-#include <string>                       // for operator<<, allocator, etc
-#include <vector>                       // for vector, etc
+#include "stk_util/diag/PrintTable.hpp"
+#include "stk_util/util/Writer.hpp"  // for operator<<, Writer, dendl
+#include <algorithm>                 // for max
+#include <iomanip>                   // for operator<<, setw, setfill
+#include <memory>                    // for allocator_traits<>::value_type
+#include <sstream>                   // for operator<<, ostream, basic_ostream, left, basic_ostr...
+#include <string>                    // for operator<<, string, allocator, operator+, char_traits
+#include <vector>                    // for vector, vector<>::const_iterator
 
 
 namespace stk {

@@ -51,43 +51,66 @@ namespace { // (anonymous)
   // UNIT TESTS
   //
 
+  using map_type = Tpetra::Map<>;
+  using device_type = map_type::device_type;
+  using device_view_type = Kokkos::View<int*, device_type>;
+
+  using Tpetra::Details::getEntryOnHost;
+  using Tpetra::Details::getEntriesOnHost;
+
+  void ensureKokkosIsInitializedCorrectly() {
+    auto comm = Tpetra::TestingUtilities::getDefaultComm();
+    const map_type map(comm->getSize(), 1, 0, comm);
+  }
+
   TEUCHOS_UNIT_TEST( TpetraUtils, get_entry_on_host )
   {
-    using Tpetra::Details::getEntryOnHost;
-    typedef Tpetra::Map<> map_type;
-    typedef map_type::device_type device_type;
+    ensureKokkosIsInitializedCorrectly();
 
-    auto comm = Tpetra::TestingUtilities::getDefaultComm ();
-    // Create a Map just to ensure that Kokkos gets initialized and
-    // finalized correctly.
-    const map_type map (comm->getSize (), 1, 0, comm);
+    const int SIZE = 42;
 
-    typedef Kokkos::View<int*, device_type> dev_view_type;
-    typedef dev_view_type::HostMirror::execution_space host_exec_space;
-    // Don't just use HostMirror's memory space, because that could be
-    // the same memory space (in the case of CudaUVMSpace).
-    typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_device_type;
-    // Same array layout means we can deep_copy between host_view_type
-    // and dev_view_type.
-    typedef Kokkos::View<int*, dev_view_type::array_layout, host_device_type> host_view_type;
+    device_view_type deviceView("deviceView", SIZE);
+    Kokkos::parallel_for("fill deviceView", SIZE, KOKKOS_LAMBDA(const int& i) {
+          deviceView(i) = i+1;
+        });
 
-    const int size = 42;
-    host_view_type x_h ("x_h", size);
-    for (int i = 0; i < size; ++i) {
-      x_h(i) = i+1; // no entries are zero
+    for (int i=0; i<SIZE; ++i) {
+      TEST_EQUALITY( getEntryOnHost(deviceView, i), i+1 );
     }
-    dev_view_type x_d ("x_d", size);
-    Kokkos::deep_copy (x_d, x_h);
+  }
 
-    // Make sure that x_h and x_d really are distinct.  Otherwise,
-    // getEntryOnHost might not be doing what we expect.
-    for (int i = 0; i < size; ++i) {
-      x_h(i) = -(i+1);
+  TEUCHOS_UNIT_TEST( TpetraUtils, get_two_entries_on_host )
+  {
+    ensureKokkosIsInitializedCorrectly();
+
+    const int SIZE = 42;
+
+    device_view_type deviceView("deviceView", SIZE);
+    Kokkos::parallel_for("fill deviceView", SIZE, KOKKOS_LAMBDA(const int& i) {
+          deviceView(i) = i+1;
+        });
+
+    for (int i=0; i<SIZE-1; ++i) {
+      auto entries = getEntriesOnHost(deviceView, i, 2);
+      TEST_EQUALITY( entries(0), i+1 );
+      TEST_EQUALITY( entries(1), i+2 );
     }
+  }
 
-    for (int i = 0; i < size; ++i) {
-      const int curEnt = getEntryOnHost (x_d, i);
-      TEST_EQUALITY( curEnt, i+1 );
+  TEUCHOS_UNIT_TEST( TpetraUtils, get_all_entries_on_host )
+  {
+    ensureKokkosIsInitializedCorrectly();
+
+    const int SIZE = 42;
+
+    device_view_type deviceView("deviceView", SIZE);
+    Kokkos::parallel_for("fill deviceView", SIZE, KOKKOS_LAMBDA(const int& i) {
+          deviceView(i) = i+1;
+        });
+
+    auto entries = getEntriesOnHost(deviceView, 0, SIZE);
+    for (int i=0; i<SIZE-1; ++i) {
+      TEST_EQUALITY( entries(i), i+1 );
     }
   }
 

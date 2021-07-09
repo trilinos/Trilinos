@@ -3,7 +3,7 @@
 
   <Parameter name="Use matrix with const graph" type="bool" value="true"/>
 
-  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
     <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
     <Parameter name="Num Blocks" type="int" value="50"/>

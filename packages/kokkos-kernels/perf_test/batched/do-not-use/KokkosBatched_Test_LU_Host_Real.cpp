@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 
   Kokkos::initialize(argc, argv);
 
-#if !defined(__CUDA_ARCH__) 
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
   int N = 128*128;
 
   for (int i=1;i<argc;++i) {

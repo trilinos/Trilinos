@@ -35,6 +35,7 @@
 #define STK_ENTITYCOMMLIST_INFO_HPP
 
 #include <vector>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Entity.hpp>
 

@@ -57,10 +57,7 @@
 
 #include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
-
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
@@ -305,7 +302,13 @@ namespace Belos {
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * polyType_default_ = "Roots";
     static constexpr const char * orthoType_default_ = "DGKS";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
     static constexpr bool damp_default_ = false;
     static constexpr bool addRoots_default_ = true;
 
@@ -394,9 +397,6 @@ namespace Belos {
 
     if (params_in->isParameter("Orthogonalization")) {
       orthoType_ = params_in->get("Orthogonalization",orthoType_default_);
-      TEUCHOS_TEST_FOR_EXCEPTION( orthoType_ != "DGKS" && orthoType_ != "ICGS" && orthoType_ != "IMGS",
-                                  std::invalid_argument,
-                                  "Belos::GmresPolyOp: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
     }
 
     // Check for timer label
@@ -423,7 +423,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void GmresPolyOp<ScalarType, MV, OP>::generateGmresPoly()
   {
-    Teuchos::RCP< MV > V = MVT::Clone( *problem_->getRHS(), maxDegree_+2 );   
+    Teuchos::RCP< MV > V = MVT::Clone( *problem_->getRHS(), maxDegree_+1 );   
 
     //Make power basis:
     std::vector<int> index(1,0);
@@ -442,7 +442,7 @@ namespace Belos {
       problem_->apply( *Vtemp, *V0);
     }
 
-    for(int i=0; i< maxDegree_+1; i++)
+    for(int i=0; i< maxDegree_; i++)
     {
       index[0] = i;
       Teuchos::RCP< const MV > Vi = MVT::CloneView(*V, index);
@@ -452,11 +452,11 @@ namespace Belos {
     }
 
     //Consider AV:
-    Teuchos::Range1D range( 1, maxDegree_+1);
+    Teuchos::Range1D range( 1, maxDegree_);
     Teuchos::RCP< const MV > AV = MVT::CloneView( *V, range);
    
     //Make lhs (AV)^T(AV)
-    Teuchos::SerialDenseMatrix< OT, ScalarType > AVtransAV( maxDegree_+1, maxDegree_+1);
+    Teuchos::SerialDenseMatrix< OT, ScalarType > AVtransAV( maxDegree_, maxDegree_);
     MVT::MvTransMv( SCT::one(), *AV, *AV, AVtransAV);
     //This process adds pDeg*pDeg + pDeg inner products that aren't in the final count.
 
@@ -468,8 +468,8 @@ namespace Belos {
     Teuchos::SerialDenseMatrix< OT, ScalarType > lhs;
     while( status && dim_ >= 1)
     {
-      Teuchos::SerialDenseMatrix< OT, ScalarType > lhstemp(Teuchos::Copy, AVtransAV,  dim_+1, dim_+1);
-      lapack.POTRF( 'U', dim_+1, lhstemp.values(), lhstemp.stride(), &infoInt);
+      Teuchos::SerialDenseMatrix< OT, ScalarType > lhstemp(Teuchos::Copy, AVtransAV,  dim_, dim_);
+      lapack.POTRF( 'U', dim_, lhstemp.values(), lhstemp.stride(), &infoInt);
       
       if(autoDeg == false)
       { 
@@ -504,14 +504,14 @@ namespace Belos {
     } 
     else
     {
-      pCoeff_.shape( dim_+1, 1);
+      pCoeff_.shape( dim_, 1);
       //Get correct submatrix of AV:
-      Teuchos::Range1D rangeSub( 1, dim_+1);
+      Teuchos::Range1D rangeSub( 1, dim_);
       Teuchos::RCP< const MV > AVsub = MVT::CloneView( *V, rangeSub);
       
       //Compute rhs (AV)^T V0
       MVT::MvTransMv( SCT::one(), *AVsub, *V0, pCoeff_);
-      lapack.POTRS( 'U', dim_+1, 1, lhs.values(), lhs.stride(), pCoeff_.values(), pCoeff_.stride(), &infoInt);
+      lapack.POTRS( 'U', dim_, 1, lhs.values(), lhs.stride(), pCoeff_.values(), pCoeff_.stride(), &infoInt);
       if(infoInt != 0) 
       {
         std::cout << "BelosGmresPolyOp.hpp: LAPACK POTRS was not successful!!" << std::endl;
@@ -553,26 +553,17 @@ namespace Belos {
     polyList.set("Block Size",1);
     polyList.set("Keep Hessenberg", true);
 
+    // Create output manager.
+    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+
     // Create orthogonalization manager if we need to.  
     if (ortho_.is_null()) {
       params_->set("Orthogonalization", orthoType_);
-      if (orthoType_=="DGKS") {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else if (orthoType_=="ICGS") {
-        ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else if (orthoType_=="IMGS") {
-        ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( polyLabel ) );
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::invalid_argument,
-          "Belos::GmresPolyOp(): Invalid orthogonalization type.");
-      }
-    }
+      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+      Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
 
-    // Create output manager.
-    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, polyLabel, paramsOrtho);
+    }
 
     // Create a simple status test that either reaches the relative residual tolerance or maximum polynomial size.
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxItrTst =
@@ -724,10 +715,14 @@ namespace Belos {
       std::cout << "GEEV solve : info = " << info << std::endl;
     }
 
-    // Set index for sort function and sort Harmonic Ritz Values:
+    // Set index for sort function, verify roots are non-zero,
+    // and sort Harmonic Ritz Values:
+    const MagnitudeType tol = 10.0 * Teuchos::ScalarTraits<MagnitudeType>::eps();
     std::vector<int> index(dim_);
     for(int i=0; i<dim_; ++i){ 
       index[i] = i; 
+      // Check if real + imag parts of roots < tol. 
+      TEUCHOS_TEST_FOR_EXCEPTION(hypot(theta_(i,0),theta_(i,1)) < tol, std::runtime_error, "BelosGmresPolyOp Error: One of the computed polynomial roots is approximately zero.  This will cause a divide by zero error!  Your matrix may be close to singular.  Please select a lower polynomial degree or give a shifted matrix.");
     }
     SortModLeja(theta_,index);
 
@@ -935,7 +930,7 @@ namespace Belos {
 #endif
       MVT::MvAddMv(pCoeff_(0,0), *AX, SCT::zero(), y, y); //y= coeff_i(A^ix)
     }
-    for( int i=1; i < dim_+1; i++)
+    for( int i=1; i < dim_; i++)
     {
       Teuchos::RCP<MV> X, Y;
       if ( i%2 )

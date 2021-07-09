@@ -51,6 +51,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
+#include <Kokkos_Sort.hpp>
 
 //#define SYMBOLIC_OUTPUT_INFO
 
@@ -97,8 +98,10 @@ void level_sched ( IlukHandle& thandle,
     level_ptr(level_list(i)-1) += 1;
   }
 
-  for ( size_type i = nlevels-1; i > 0; --i ) {
-    level_ptr(i) = level_ptr(i-1);
+  if (nlevels>0) {//note: to avoid wrapping around to the max of size_t when nlevels = 0.
+    for ( size_type i = nlevels-1; i > 0; --i ) {
+      level_ptr(i) = level_ptr(i-1);
+    }
   }
 
   level_ptr(0) = 0;
@@ -169,49 +172,32 @@ void iluk_symbolic ( IlukHandle& thandle,
  {
   // Scheduling and symbolic phase currently compute on host - need host copy of all views
 
-  typedef typename ARowMapType::HostMirror  AHostRowMapType;
-  typedef typename AEntriesType::HostMirror AHostEntriesType;
-  typedef typename LRowMapType::HostMirror  LHostRowMapType;
-  typedef typename LEntriesType::HostMirror LHostEntriesType;
-  typedef typename URowMapType::HostMirror  UHostRowMapType;
-  typedef typename UEntriesType::HostMirror UHostEntriesType;
-
   typedef typename IlukHandle::size_type size_type;
   typedef typename IlukHandle::nnz_lno_t nnz_lno_t;
 
   typedef typename IlukHandle::nnz_lno_view_t             HandleDeviceEntriesType;
-  typedef typename IlukHandle::nnz_lno_view_t::HostMirror HandleHostEntriesType;
-
   typedef typename IlukHandle::nnz_row_view_t             HandleDeviceRowMapType;
-  typedef typename IlukHandle::nnz_row_view_t::HostMirror HandleHostRowMapType;
 
   //typedef typename IlukHandle::signed_integral_t signed_integral_t;
 
   size_type nrows = thandle.get_nrows();
 
-  AHostRowMapType A_row_map = Kokkos::create_mirror_view(A_row_map_d);
-  Kokkos::deep_copy(A_row_map, A_row_map_d);
+  auto A_row_map = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), A_row_map_d );
+  auto A_entries = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), A_entries_d );
+  auto L_row_map = Kokkos::create_mirror_view(Kokkos::HostSpace(), L_row_map_d);
+  auto L_entries = Kokkos::create_mirror_view(Kokkos::HostSpace(), L_entries_d);
+  auto U_row_map = Kokkos::create_mirror_view(Kokkos::HostSpace(), U_row_map_d);
+  auto U_entries = Kokkos::create_mirror_view(Kokkos::HostSpace(), U_entries_d);
 
-  AHostEntriesType A_entries = Kokkos::create_mirror_view(A_entries_d);
-  Kokkos::deep_copy(A_entries, A_entries_d);
-
-  LHostRowMapType  L_row_map = Kokkos::create_mirror_view(L_row_map_d);
-  LHostEntriesType L_entries = Kokkos::create_mirror_view(L_entries_d);
-  UHostRowMapType  U_row_map = Kokkos::create_mirror_view(U_row_map_d);
-  UHostEntriesType U_entries = Kokkos::create_mirror_view(U_entries_d);
-  
   HandleDeviceRowMapType dlevel_list = thandle.get_level_list();
-  HandleHostRowMapType level_list    = Kokkos::create_mirror_view(dlevel_list);
-  Kokkos::deep_copy(level_list, dlevel_list);
-  
+  auto level_list = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), dlevel_list );
+
   HandleDeviceEntriesType dlevel_ptr = thandle.get_level_ptr();
-  HandleHostEntriesType level_ptr    = Kokkos::create_mirror_view(dlevel_ptr);
-  Kokkos::deep_copy(level_ptr, dlevel_ptr);
+  auto level_ptr = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), dlevel_ptr );
 
   HandleDeviceEntriesType dlevel_idx = thandle.get_level_idx();
-  HandleHostEntriesType level_idx    = Kokkos::create_mirror_view(dlevel_idx);
-  Kokkos::deep_copy(level_idx, dlevel_idx);
- 
+  auto level_idx = Kokkos::create_mirror_view_and_copy( Kokkos::HostSpace(), dlevel_idx );
+
   size_type nlev = 0;
 
   //Level scheduling on A???
@@ -226,7 +212,7 @@ void iluk_symbolic ( IlukHandle& thandle,
 
   typedef Kokkos::View<nnz_lno_t*, Kokkos::LayoutLeft, Kokkos::HostSpace> HostTmpViewType;
     
-  HostTmpViewType h_lev ( "h_lev",  thandle.get_nnzL() );
+  HostTmpViewType h_lev ( "h_lev",  thandle.get_nnzU() );
   HostTmpViewType h_iw  ( "h_iw",   nrows              );
   HostTmpViewType h_iL  ( "h_iL",   nrows              );
   HostTmpViewType h_llev( "h_llev", nrows              );
@@ -252,18 +238,20 @@ void iluk_symbolic ( IlukHandle& thandle,
 
     for ( size_type k = k1; k < k2; ++k ) {
       size_type col = static_cast<size_type>(A_entries(k));
-      if (col > i) {//U part
-        h_iw(col)         = lenu;
-        h_iL(iU+lenu)     = col;
-        h_llev(ulev+lenu) = 0;
-        lenu++;
-      } 
-      else if (col < i) {//L part
-        h_iw(col)    = lenl;
-        h_iL(lenl)   = col;
-        h_llev(lenl) = 0;
-        lenl++;
-      }
+      if (col < nrows) { // Ignore column elements that are not in the square matrix
+        if (col > i) {//U part
+          h_iw(col)         = lenu;
+          h_iL(iU+lenu)     = col;
+          h_llev(ulev+lenu) = 0;
+          lenu++;
+        } 
+        else if (col < i) {//L part
+          h_iw(col)    = lenl;
+          h_iL(lenl)   = col;
+          h_llev(lenl) = 0;
+          lenl++;
+        }
+      }  
     }
 
     //Eliminate rows
@@ -306,11 +294,15 @@ void iluk_symbolic ( IlukHandle& thandle,
     for (size_type k = 0; k < lenu; ++k) h_iw(h_iL(iU+k)) = -1;
 
     //Copy U part+diag and levels
-    //if (cntU+lenu+1 > U_entries_d.extent(0)) {
-    //  size_type newsize = (size_type)(U_entries_d.extent(0)*EXPAND_FACT);
-    //  //thandle.set_nnzU(newsize);
-    //  Kokkos::resize(h_lev, newsize);
-    //}
+    if (cntU+lenu+1 > static_cast<size_type>(U_entries_d.extent(0))) {
+      //size_type newsize = (size_type)(U_entries_d.extent(0)*EXPAND_FACT);
+      //Kokkos::resize(h_lev, newsize);
+      //Kokkos::resize(U_entries, newsize);
+      //Kokkos::resize(U_entries_d, newsize);
+      std::ostringstream os;
+      os << "KokkosSparse::Experimental::spiluk_symbolic: U_entries's extent must be larger than " << U_entries_d.extent(0);
+      Kokkos::Impl::throw_runtime_exception (os.str ());
+    }
     //U diag entry
     U_entries(cntU) = i;
     cntU++;
@@ -323,10 +315,18 @@ void iluk_symbolic ( IlukHandle& thandle,
     U_row_map(i+1) = cntU;
 
     //Copy L part
-    //if (cntL+lenl > L_entries_d.extent(0)) {
-    //  size_type newsize = (size_type) (L_entries_d.extent(0)*EXPAND_FACT);
-    //  //thandle.set_nnzL(newsize);
-    //}
+#ifdef KEEP_DIAG
+    if (cntL+lenl+1 > static_cast<size_type>(L_entries_d.extent(0))) {
+#else
+    if (cntL+lenl > static_cast<size_type>(L_entries_d.extent(0))) {
+#endif
+      //size_type newsize = (size_type) (L_entries_d.extent(0)*EXPAND_FACT);
+      //Kokkos::resize(L_entries, newsize);
+      //Kokkos::resize(L_entries_d, newsize);
+      std::ostringstream os;
+      os << "KokkosSparse::Experimental::spiluk_symbolic: L_entries's extent must be larger than " << L_entries_d.extent(0);
+      Kokkos::Impl::throw_runtime_exception (os.str ());
+    }
     for (size_type k = 0; k < lenl; ++k) {
       L_entries(cntL) = h_iL(k);
       cntL++;
@@ -341,6 +341,18 @@ void iluk_symbolic ( IlukHandle& thandle,
 
   thandle.set_nnzL(cntL);
   thandle.set_nnzU(cntU);
+
+  // Sort
+  for (size_type row_id = 0; row_id < static_cast<size_type>(L_row_map.extent(0))-1; row_id++) {
+    size_type row_start = L_row_map(row_id);
+    size_type row_end   = L_row_map(row_id + 1);
+    Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
+  }
+  for (size_type row_id = 0; row_id < static_cast<size_type>(U_row_map.extent(0))-1; row_id++) {
+    size_type row_start = U_row_map(row_id);
+    size_type row_end   = U_row_map(row_id + 1);
+    Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
+  }
 
   //Level scheduling on L
   level_sched (thandle, L_row_map, L_entries, nrows, level_list, level_ptr, level_idx, nlev);  

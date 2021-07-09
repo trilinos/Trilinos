@@ -75,7 +75,6 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
@@ -415,8 +414,8 @@ TEST(CEOME, TwoElemGiveAllEntitiesToOneProcAndCheckParts)
 
 TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
 {
-    // This unit-test is designed to test the conditions that results that
-    // resulted in the difficult-to-fix rebalance use-case bug. Specifically,
+    // This unit-test is designed to test the conditions that resulted
+    // in the difficult-to-fix rebalance use-case bug. Specifically,
     // it will test the changing-of-ownership of a shared edge to a proc that
     // either ghosted it or did not know about it.
     //

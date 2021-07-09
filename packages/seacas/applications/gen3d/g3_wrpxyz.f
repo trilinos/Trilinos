@@ -1,34 +1,8 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C * Redistributions of source code must retain the above copyright
-C    notice, this list of conditions and the following disclaimer.
-C
-C * Redistributions in binary form must reproduce the above
-C   copyright notice, this list of conditions and the following
-C   disclaimer in the documentation and/or other materials provided
-C   with the distribution.
-C
-C * Neither the name of NTESS nor the names of its
-C   contributors may be used to endorse or promote products derived
-C   from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE WRPXYZ (XN, YN, XN3, YN3, ZN3, IXNP, NRNP, ZCORD  )
@@ -64,10 +38,9 @@ C   --      CENTER, NUMCOL, NUMROW of /PARAMS/
       INTEGER IXNP(*), NRNP(*)
       REAL ZCORD(NNREPL)
 
-C
 C ... Doing a Warp
 C ... CALCULATE THE THICKNESS INCREMENT FOR EACH TRANSLATION
-C
+
       IF (VEDGE) THEN
          CALL INIGRD (0.0, 1.0, ZGRAD(1), NRTRAN(1), NNREPL, ZCORD)
       ELSE
@@ -108,9 +81,9 @@ C   30    CONTINUE
 C      END IF
 
       IF (IWARP .EQ. 1) THEN
-C
+
 C ... Warp type 1: Point Centered
-C
+
          DO 60 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             DX = XN(INP)
@@ -137,9 +110,9 @@ C
 
          CONTINUE
       ELSE IF (IWARP .EQ. -1) THEN
-C
+
 C ... Warp type -1: X Axis Centered
-C
+
          DO 90 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             THET = YN(INP) / DWARP
@@ -170,9 +143,9 @@ C
    90    CONTINUE
 
       ELSE IF (IWARP .EQ. -2) THEN
-C
+
 C ... Warp type -2: Y Axis Centered
-C
+
          DO 120 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             THET = XN(INP) / DWARP
@@ -203,9 +176,9 @@ C
   120    CONTINUE
 
       ELSE IF (IWARP .EQ. 2) THEN
-C
+
 C ... Warp type 1: Point-Centered Ellipse
-C
+
          DO 360 INP = 1, NUMNP
             JNP0 = IXNP(INP) - 1
             DX = XN(INP)

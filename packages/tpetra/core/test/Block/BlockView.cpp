@@ -43,13 +43,15 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_BlockView.hpp"
-#include "Tpetra_Vector.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #ifdef HAVE_TPETRA_INST_FLOAT128
 #  include "Teuchos_Details_Lapack128.hpp"
 #endif // HAVE_TPETRA_INST_FLOAT128
+#ifdef HAVE_TPETRA_INST_LONG_DOUBLE
+#  include "Teuchos_Details_LapackLongDouble.hpp"
+#endif // HAVE_TPETRA_INST_LONG_DOUBLE
 
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -111,11 +113,10 @@ namespace {
   {
     using Teuchos::Array;
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
-    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
-    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
-    typedef Kokkos::View<LO*, device_type> int_vec_type;
-    typedef Kokkos::View<IST*, device_type> scalar_vec_type;
+    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace> block_type;
+    typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
+    typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
     const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
 
@@ -209,11 +210,10 @@ namespace {
   {
     using Teuchos::Array;
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
-    typedef typename Tpetra::Vector<ST, LO>::device_type device_type;
     typedef Teuchos::LAPACK<LO, ST> lapack_type;
-    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, device_type> block_type;
-    typedef Kokkos::View<LO*, device_type> int_vec_type;
-    typedef Kokkos::View<IST*, device_type> scalar_vec_type;
+    typedef Kokkos::View<IST**, Kokkos::LayoutLeft, Kokkos::HostSpace> block_type;
+    typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
+    typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
     const auto tol = 10.0 * Kokkos::Details::ArithTraits<IST>::eps ();
 
@@ -818,6 +818,10 @@ namespace {
 #ifdef TPETRA_INST_FLOAT128
   UNIT_TEST_GROUP2( __float128 )
 #endif // TPETRA_INST_FLOAT128
+
+#ifdef TPETRA_INST_LONG_DOUBLE
+  UNIT_TEST_GROUP2( long double )
+#endif // TPETRA_INST_LONG_DOUBLE
 
 } // namespace (anonymous)
 

@@ -49,7 +49,8 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
 // GNU COMPILER BUG WORKAROUND
-#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__)
+#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
+
       int i = team.league_rank();
 #else
       const int i = team.league_rank();
@@ -126,8 +127,6 @@ namespace Test {
     ScalarA alpha_trmm = ScalarA(1)/alpha;
     ScalarA beta       = ScalarA(0);
 
-    Kokkos::fence();
- 
     if ((uplo[0]=='L')||(uplo[0]=='l')) {
       for (int i = 0; i < K-1; i++)
         for (int j = i+1; j < K; j++)
@@ -197,7 +196,7 @@ int test_trsm(const char* mode, ScalarA alpha) {
   Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0],&mode[1],&mode[2],&mode[3],0,0,alpha);
   Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0],&mode[1],&mode[2],&mode[3],101,19,alpha);
   Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0],&mode[1],&mode[2],&mode[3],19,101,alpha);
-  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0],&mode[1],&mode[2],&mode[3],1031,731,alpha);
+  Test::impl_test_trsm<view_type_a_ll, view_type_b_ll, Device>(&mode[0],&mode[1],&mode[2],&mode[3],343,201,alpha);
 #endif
 
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT) || (!defined(KOKKOSKERNELS_ETI_ONLY) && !defined(KOKKOSKERNELS_IMPL_CHECK_ETI_CALLS))
@@ -206,7 +205,7 @@ int test_trsm(const char* mode, ScalarA alpha) {
   Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0],&mode[1],&mode[2],&mode[3],0,0,alpha);
   Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0],&mode[1],&mode[2],&mode[3],101,19,alpha);
   Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0],&mode[1],&mode[2],&mode[3],19,101,alpha);
-  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0],&mode[1],&mode[2],&mode[3],1031,731,alpha);
+  Test::impl_test_trsm<view_type_a_lr, view_type_b_lr, Device>(&mode[0],&mode[1],&mode[2],&mode[3],343,201,alpha);
 #endif
 
   return 1;

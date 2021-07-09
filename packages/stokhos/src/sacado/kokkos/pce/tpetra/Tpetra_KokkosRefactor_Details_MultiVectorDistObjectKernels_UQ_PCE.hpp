@@ -52,9 +52,6 @@
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Kokkos_Parallel_MP_Vector.hpp"
 
-// For device_is_cuda<>
-#include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels_MP_Vector.hpp"
-
 namespace Tpetra {
 namespace KokkosRefactor {
 namespace Details {
@@ -62,16 +59,12 @@ namespace Details {
   // Functors for implementing packAndPrepare and unpackAndCombine
   // through parallel_for
 
-  template <typename DS, typename ... DP,
-            typename SS, typename ... SP,
-            typename IdxView>
+  template <typename DstView, typename SrcView, typename IdxView>
   struct PackArraySingleColumn<
-    Kokkos::View<Sacado::UQ::PCE<DS>*,DP...>,
-    Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...>,
-    IdxView >
+    DstView, SrcView, IdxView,
+    typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
+                             Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef Kokkos::View<Sacado::UQ::PCE<DS>*,DP...> DstView;
-    typedef Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -103,26 +96,18 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      size_t col) {
-      if ( Details::device_is_cuda<execution_space>::value )
-        Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
-          PackArraySingleColumn(dst,src,idx,col) );
-      else
-         Kokkos::parallel_for( idx.size(),
-                               PackArraySingleColumn(dst,src,idx,col) );
+      Kokkos::parallel_for(
+        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        PackArraySingleColumn(dst,src,idx,col) );
     }
   };
 
-  template <typename DS, typename ... DP,
-            typename SS, typename ... SP,
-            typename IdxView>
+  template <typename DstView, typename SrcView, typename IdxView>
   struct PackArrayMultiColumn<
-    Kokkos::View<Sacado::UQ::PCE<DS>*,DP...>,
-    Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...>,
-    IdxView >
+    DstView, SrcView, IdxView,
+    typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
+                             Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef Kokkos::View<Sacado::UQ::PCE<DS>*,DP...> DstView;
-    typedef Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -161,28 +146,19 @@ namespace Details {
                      const SrcView& src,
                      const IdxView& idx,
                      size_t numCols) {
-      if ( Details::device_is_cuda<execution_space>::value )
-        Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
-          PackArrayMultiColumn(dst,src,idx,numCols) );
-      else
-        Kokkos::parallel_for( idx.size(),
-                              PackArrayMultiColumn(dst,src,idx,numCols) );
+      Kokkos::parallel_for(
+        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        PackArrayMultiColumn(dst,src,idx,numCols) );
     }
   };
 
-  template <typename DS, typename ... DP,
-            typename SS, typename ... SP,
-            typename IdxView,
+  template <typename DstView, typename SrcView, typename IdxView,
             typename ColView>
   struct PackArrayMultiColumnVariableStride<
-    Kokkos::View<Sacado::UQ::PCE<DS>*,DP...>,
-    Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...>,
-    IdxView,
-    ColView>
+    DstView, SrcView, IdxView, ColView,
+    typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
+                             Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef Kokkos::View<Sacado::UQ::PCE<DS>*,DP...> DstView;
-    typedef Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -224,33 +200,22 @@ namespace Details {
                      const IdxView& idx,
                      const ColView& col,
                      size_t numCols) {
-      if ( Details::device_is_cuda<execution_space>::value )
-        Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
-          PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
-      else
-        Kokkos::parallel_for( idx.size(),
-                              PackArrayMultiColumnVariableStride(
-                                dst,src,idx,col,numCols) );
+      Kokkos::parallel_for(
+        Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
+        PackArrayMultiColumnVariableStride(dst,src,idx,col,numCols) );
     }
   };
 
   template <typename ExecutionSpace,
-            typename DS,
-            typename ... DP,
-            typename SS,
-            typename ... SP,
+            typename DstView,
+            typename SrcView,
             typename IdxView,
             typename Op>
   struct UnpackArrayMultiColumn<
-    ExecutionSpace,
-    Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
-    Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...>,
-    IdxView,
-    Op >
+    ExecutionSpace, DstView, SrcView, IdxView, Op,
+    typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
+                             Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
-    typedef Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...> SrcView;
     typedef typename ExecutionSpace::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -275,24 +240,26 @@ namespace Details {
       numCols (numCols_)
     {}
 
+    template <class TagType>
     KOKKOS_INLINE_FUNCTION void
-    operator() (const size_type k) const
+    operator() (TagType tag, const size_type k) const
     {
       const typename IdxView::value_type localRow = idx(k);
       const size_t offset = k*numCols;
       for (size_t j = 0; j < numCols; ++j) {
-        op (dst(localRow, j), src(offset+j));
+        op (tag, dst(localRow, j), src(offset+j));
       }
     }
 
+    template <class TagType>
     KOKKOS_INLINE_FUNCTION void
-    operator() (const size_type k, const size_type tidx) const
+    operator() (TagType tag, const size_type k, const size_type tidx) const
     {
       const typename IdxView::value_type localRow = idx(k);
       const size_t offset = k*numCols;
       for (size_t j = 0; j < numCols; ++j) {
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize) {
-          op (dst(localRow, j).fastAccessCoeff(i),
+          op (tag, dst(localRow, j).fastAccessCoeff(i),
               src(offset+j).fastAccessCoeff(i));
         }
       }
@@ -304,41 +271,37 @@ namespace Details {
             const SrcView& src,
             const IdxView& idx,
             const Op& op,
-            const size_t numCols)
+            const size_t numCols,
+            const bool use_atomic_updates)
     {
-      if (Details::device_is_cuda<execution_space>::value) {
+      if (use_atomic_updates) {
         Kokkos::parallel_for
           ("Tpetra::MultiVector (Sacado::UQ::PCE) unpack (constant stride)",
-           Kokkos::MPVectorWorkConfig<execution_space> (idx.size (), BlockSize),
+           Kokkos::MPVectorWorkConfig<execution_space, atomic_tag> (
+             idx.size (), BlockSize),
            UnpackArrayMultiColumn (execSpace, dst, src, idx, op, numCols));
       }
       else {
         Kokkos::parallel_for
           ("Tpetra::MultiVector (Sacado::UQ::PCE) unpack (constant stride)",
-           Kokkos::RangePolicy<execution_space, size_type> (0, idx.size ()),
+           Kokkos::MPVectorWorkConfig<execution_space, nonatomic_tag> (
+             idx.size (), BlockSize),
            UnpackArrayMultiColumn (execSpace, dst, src, idx, op, numCols));
       }
     }
   };
 
   template <typename ExecutionSpace,
-            typename DS,
-            typename ... DP,
-            typename SS,
-            typename ... SP,
+            typename DstView,
+            typename SrcView,
             typename IdxView,
             typename ColView,
             typename Op>
   struct UnpackArrayMultiColumnVariableStride<
-    ExecutionSpace,
-    Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
-    Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...>,
-    IdxView,
-    ColView,
-    Op>
+    ExecutionSpace, DstView, SrcView, IdxView, ColView, Op,
+    typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
+                             Kokkos::is_view_uq_pce<SrcView>::value >::type>
   {
-    typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
-    typedef Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...> SrcView;
     typedef typename ExecutionSpace::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -360,21 +323,23 @@ namespace Details {
                                           size_t numCols_) :
       dst(dst_), src(src_), idx(idx_), col(col_), op(op_), numCols(numCols_) {}
 
-    KOKKOS_INLINE_FUNCTION
-    void operator()( const size_type k ) const {
+    template <class TagType>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( TagType tag, const size_type k ) const {
       const typename IdxView::value_type localRow = idx(k);
       const size_t offset = k*numCols;
       for (size_t j = 0; j < numCols; ++j)
-        op( dst(localRow,col(j)), src(offset+j) );
+        op( tag, dst(localRow,col(j)), src(offset+j) );
     }
 
-    KOKKOS_INLINE_FUNCTION
-    void operator()( const size_type k, const size_type tidx ) const {
+    template <class TagType>
+    KOKKOS_INLINE_FUNCTION void
+    operator()( TagType tag, const size_type k, const size_type tidx ) const {
       const typename IdxView::value_type localRow = idx(k);
       const size_t offset = k*numCols;
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          op( dst(localRow,col(j)).fastAccessCoeff(i),
+          op( tag, dst(localRow,col(j)).fastAccessCoeff(i),
               src(offset+j).fastAccessCoeff(i) );
     }
 
@@ -385,36 +350,35 @@ namespace Details {
             const IdxView& idx,
             const ColView& col,
             const Op& op,
-            const size_t numCols)
+            const size_t numCols,
+            const bool use_atomic_updates)
     {
-      if ( Details::device_is_cuda<execution_space>::value ) {
+      if (use_atomic_updates) {
         Kokkos::parallel_for
           ("Tpetra::MultiVector unpack (Sacado::UQ::PCE) (nonconstant stride)",
-           Kokkos::MPVectorWorkConfig<execution_space> (idx.size (), BlockSize),
+           Kokkos::MPVectorWorkConfig<execution_space, atomic_tag> (
+             idx.size (), BlockSize),
            UnpackArrayMultiColumnVariableStride (execSpace, dst, src,
                                                  idx, col, op, numCols));
       }
       else {
         Kokkos::parallel_for
           ("Tpetra::MultiVector unpack (Sacado::UQ::PCE) (nonconstant stride)",
-           Kokkos::RangePolicy<execution_space, size_type> (0, idx.size ()),
+           Kokkos::MPVectorWorkConfig<execution_space, nonatomic_tag> (
+             idx.size (), BlockSize),
            UnpackArrayMultiColumnVariableStride (execSpace, dst, src,
                                                  idx, col, op, numCols));
       }
     }
   };
 
-  template <typename DS, typename ... DP,
-            typename SS, typename ... SP,
-            typename DstIdxView, typename SrcIdxView>
+  template <typename DstView, typename SrcView,
+            typename DstIdxView, typename SrcIdxView, typename Op>
   struct PermuteArrayMultiColumn<
-    Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
-    Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...>,
-    DstIdxView,
-    SrcIdxView>
+    DstView, SrcView, DstIdxView, SrcIdxView, Op,
+    typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
+                             Kokkos::is_view_uq_pce<SrcView>::value >::type>
   {
-    typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
-    typedef Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -425,61 +389,57 @@ namespace Details {
     DstIdxView dst_idx;
     SrcIdxView src_idx;
     size_t numCols;
+    Op op;
 
     PermuteArrayMultiColumn(const DstView& dst_,
                             const SrcView& src_,
                             const DstIdxView& dst_idx_,
                             const SrcIdxView& src_idx_,
-                            size_t numCols_) :
+                            size_t numCols_, const Op& op_) :
       dst(dst_), src(src_), dst_idx(dst_idx_), src_idx(src_idx_),
-      numCols(numCols_) {}
+      numCols(numCols_), op(op_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        dst(toRow, j) = src(fromRow, j);
+        op(tag, dst(toRow, j),src(fromRow, j));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          dst(toRow, j).fastAccessCoeff(i) =
-            src(fromRow, j).fastAccessCoeff(i);
+          op(tag, dst(toRow, j).fastAccessCoeff(i),
+             src(fromRow, j).fastAccessCoeff(i));
     }
 
     static void permute(const DstView& dst,
                         const SrcView& src,
                         const DstIdxView& dst_idx,
                         const SrcIdxView& src_idx,
-                        size_t numCols) {
+                        size_t numCols,
+                        const Op& op) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      if ( Details::device_is_cuda<execution_space>::value )
-        Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<execution_space>( n, BlockSize ),
-          PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols) );
-      else
-        Kokkos::parallel_for(
-          n, PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols) );
+      Kokkos::parallel_for(
+        Kokkos::MPVectorWorkConfig<execution_space>( n, BlockSize ),
+        PermuteArrayMultiColumn(dst,src,dst_idx,src_idx,numCols,op) );
     }
   };
 
-  template <typename DS, typename ... DP,
-            typename SS, typename ... SP,
+  template <typename DstView, typename SrcView,
             typename DstIdxView, typename SrcIdxView,
-            typename DstColView, typename SrcColView>
+            typename DstColView, typename SrcColView, typename Op>
   struct PermuteArrayMultiColumnVariableStride<
-    Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
-    Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...>,
-    DstIdxView, SrcIdxView,
-    DstColView, SrcColView >
+    DstView, SrcView, DstIdxView, SrcIdxView, DstColView, SrcColView, Op,
+    typename std::enable_if< Kokkos::is_view_uq_pce<DstView>::value &&
+                             Kokkos::is_view_uq_pce<SrcView>::value >::type >
   {
-    typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
-    typedef Kokkos::View<const Sacado::UQ::PCE<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -492,6 +452,7 @@ namespace Details {
     DstColView dst_col;
     SrcColView src_col;
     size_t numCols;
+    Op op;
 
     PermuteArrayMultiColumnVariableStride(const DstView& dst_,
                                           const SrcView& src_,
@@ -499,27 +460,30 @@ namespace Details {
                                           const SrcIdxView& src_idx_,
                                           const DstColView& dst_col_,
                                           const SrcColView& src_col_,
-                                          size_t numCols_) :
+                                          size_t numCols_,
+                                          const Op& op_) :
       dst(dst_), src(src_), dst_idx(dst_idx_), src_idx(src_idx_),
       dst_col(dst_col_), src_col(src_col_),
-      numCols(numCols_) {}
+      numCols(numCols_), op(op_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
-        dst(toRow, dst_col(j)) = src(fromRow, src_col(j));
+        op(tag, dst(toRow, dst_col(j)),src(fromRow, src_col(j)));
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k, const size_type tidx ) const {
       const typename DstIdxView::value_type toRow = dst_idx(k);
       const typename SrcIdxView::value_type fromRow = src_idx(k);
+      nonatomic_tag tag;  // permute does not need atomics
       for (size_t j = 0; j < numCols; ++j)
         for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          dst(toRow, dst_col(j)).fastAccessCoeff(i) =
-            src(fromRow, src_col(j)).fastAccessCoeff(i);
+          op(tag, dst(toRow, dst_col(j)).fastAccessCoeff(i),
+             src(fromRow, src_col(j)).fastAccessCoeff(i));
     }
 
     static void permute(const DstView& dst,
@@ -528,17 +492,13 @@ namespace Details {
                         const SrcIdxView& src_idx,
                         const DstColView& dst_col,
                         const SrcColView& src_col,
-                        size_t numCols) {
+                        size_t numCols,
+                        const Op& op) {
       const size_type n = std::min( dst_idx.size(), src_idx.size() );
-      if ( Details::device_is_cuda<execution_space>::value )
-        Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<execution_space>( n, BlockSize ),
-          PermuteArrayMultiColumnVariableStride(
-            dst,src,dst_idx,src_idx,dst_col,src_col,numCols) );
-      else
-        Kokkos::parallel_for(
-          n, PermuteArrayMultiColumnVariableStride(
-            dst,src,dst_idx,src_idx,dst_col,src_col,numCols) );
+      Kokkos::parallel_for(
+        Kokkos::MPVectorWorkConfig<execution_space>( n, BlockSize ),
+        PermuteArrayMultiColumnVariableStride(
+          dst,src,dst_idx,src_idx,dst_col,src_col,numCols,op) );
     }
   };
 

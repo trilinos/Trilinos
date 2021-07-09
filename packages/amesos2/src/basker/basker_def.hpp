@@ -96,7 +96,7 @@ namespace BaskerClassicNS{
       {
         free_factor();
         //BASKERFREE(pinv);
-        delete pinv;
+        delete [] pinv;
       }
     if(perm_flag)
       {
@@ -211,6 +211,14 @@ namespace BaskerClassicNS{
     A->val = val;
     /*End initalize A*/
 
+    //free factor
+    if(been_fact)
+      {
+        free_factor();
+        //BASKERFREE(pinv);
+        delete [] pinv;
+      }
+
     /*Creating space for L and U*/
     L->nrow = nrow;
     L->ncol = ncol;
@@ -238,8 +246,8 @@ namespace BaskerClassicNS{
     //U->val =     (Entry *) BASKERCALLOC(U->nnz, sizeof(Entry));
     U->val = new Entry[U->nnz]();
 
-    if((L->col_ptr == NULL) || (L->row_idx == NULL) || (L->val == NULL) ||
-       (U->col_ptr == NULL) || (U->row_idx == NULL) || (U->val == NULL))
+    if((L->col_ptr == nullptr) || (L->row_idx == nullptr) || (L->val == nullptr) ||
+       (U->col_ptr == nullptr) || (U->row_idx == nullptr) || (U->val == nullptr))
       {
         ierr = -1;
         return ierr;
@@ -247,17 +255,18 @@ namespace BaskerClassicNS{
     /*End creating space for L and U*/
 
     /*Creating working space*/
-    Int *tptr;
+    Int *color, *pattern, *stack; 
     Entry *X;
-    //tptr = (Int *)   BASKERCALLOC( (ncol)+(4*nrow), sizeof(Int));
-    tptr = new Int[(ncol)+(4*nrow)]();
+    color = new Int[ncol]();
+    pattern = new Int[nrow]();
+    stack = new Int[2*nrow]();
     //X =    (Entry *) BASKERCALLOC(2*nrow, sizeof(Entry));
     X = new Entry[2*nrow]();
     //pinv = (Int * )  BASKERCALLOC(ncol+1, sizeof(Int)); //Note extra pad
     pinv = new Int[ncol+1]();
 
 
-    if( (tptr == NULL) || (X == NULL) || (pinv == NULL) )
+    if( (color == nullptr) || (pattern == nullptr) || (stack == nullptr) || (X == nullptr) || (pinv == nullptr) )
       {
         ierr = -2;
         return ierr;
@@ -267,7 +276,6 @@ namespace BaskerClassicNS{
 
     /*Defining Variables Used*/
     Int i, j, k;
-    Int *color, *pattern, *stack; // pointers into the work space
     Int top, top1, maxindex, t; // j1, j2;
     Int lnnz, unnz, xnnz, lcnt, ucnt;
     Int cu_ltop, cu_utop;
@@ -275,15 +283,6 @@ namespace BaskerClassicNS{
     Int newsize;
     Entry pivot, value, xj;
     Entry absv, maxv;
-
-    color = tptr;
-    tptr += ncol;
-
-    pattern = tptr;
-    tptr += nrow;
-
-    stack = tptr;
-    tptr += 2*(nrow);
 
     cu_ltop = 0;
     cu_utop = 0;
@@ -600,8 +599,11 @@ namespace BaskerClassicNS{
     cout << endl;
 #endif
 
-    //BASKERFREE(X);
-    //BASKERFREE(tptr);
+    // Cleanup workspace allocations
+    delete [] X;
+    delete [] color;
+    delete [] pattern;
+    delete [] stack;
 
     actual_lnnz = lnnz;
     actual_unnz = unnz;
@@ -645,7 +647,7 @@ namespace BaskerClassicNS{
     //*val     = (Entry *) BASKERCALLOC(L->nnz, sizeof(Entry));
     *val = new Entry[L->nnz];
 
-    if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
+    if( (*col_ptr == nullptr) || (*row_idx == nullptr) || (*val == nullptr) )
       {
         return -1;
       }
@@ -678,7 +680,7 @@ namespace BaskerClassicNS{
     //*val     = (Entry *) BASKERCALLOC(U->nnz, sizeof(Entry));
     *val = new Entry[U->nnz];
 
-    if( (*col_ptr == NULL) || (*row_idx == NULL) || (*val == NULL) )
+    if( (*col_ptr == nullptr) || (*row_idx == nullptr) || (*val == nullptr) )
       {
         return -1;
       }
@@ -702,7 +704,7 @@ namespace BaskerClassicNS{
     //*p = (Int *) BASKERCALLOC(A->nrow, sizeof(Int));
     *p = new Int[A->nrow];
 
-    if( (*p == NULL ) )
+    if( (*p == nullptr ) )
       {
         return -1;
       }
@@ -733,6 +735,7 @@ namespace BaskerClassicNS{
     //BASKERFREE(U->val);
     delete[] U->val;
 
+    been_fact = false;
   }
   template <class Int, class Entry>
   void BaskerClassic<Int, Entry>::free_perm_matrix()
@@ -858,7 +861,7 @@ namespace BaskerClassicNS{
     B->row_idx = (Int *) BASKERCALLOC(A->nnz, sizeof(Int));
     B->val     = (Entry *) BASKERCALLOC(A->val, sizeof(Int));
 
-    if( (B->col_ptr == NULL) || (B->row_idx == NULL) || (B->val == NULL) )
+    if( (B->col_ptr == nullptr) || (B->row_idx == nullptr) || (B->val == nullptr) )
       {
         perm_flag = false;
         return -1;

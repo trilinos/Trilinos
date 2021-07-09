@@ -172,7 +172,7 @@ getValues(       OutputViewType output,
   }
 }
 
-template<typename SpT, ordinal_type numPtsPerEval,
+template<typename DT, ordinal_type numPtsPerEval,
 typename outputValueValueType, class ...outputValueProperties,
 typename inputPointValueType,  class ...inputPointProperties,
 typename vinvValueType,        class ...vinvProperties>
@@ -185,7 +185,7 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
   typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
   typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
-  typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+  typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
 
   // loopSize corresponds to cardinality
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
@@ -247,8 +247,8 @@ getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 }
 
 // -------------------------------------------------------------------------------------
-template<typename SpT, typename OT, typename PT>
-Basis_HGRAD_TRI_Cn_FEM<SpT,OT,PT>::
+template<typename DT, typename OT, typename PT>
+Basis_HGRAD_TRI_Cn_FEM<DT,OT,PT>::
 Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
     const EPointType   pointType ) {
   constexpr ordinal_type spaceDim = 2;
@@ -256,14 +256,15 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-  this->basisType_         = BASIS_FEM_FIAT;
+  this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HGRAD;
 
+  pointType_ = (pointType == POINTTYPE_DEFAULT) ? POINTTYPE_EQUISPACED : pointType;
   const ordinal_type card = this->basisCardinality_;
 
   // points are computed in the host and will be copied
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   dofCoords("Hgrad::Tri::Cn::dofCoords", card, spaceDim);
 
   // construct lattice
@@ -271,9 +272,9 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
   PointTools::getLattice( dofCoords,
       this->basisCellTopology_,
       order, offset,
-      pointType );
+      pointType_ );
 
-  this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+  this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);
 
   // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
@@ -309,14 +310,14 @@ Basis_HGRAD_TRI_Cn_FEM( const ordinal_type order,
       ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM) lapack.GETRI returns nonzero info." );
 
   // create host mirror
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   vinv("Hgrad::Line::Cn::vinv", card, card);
 
   for (ordinal_type i=0;i<card;++i)
     for (ordinal_type j=0;j<card;++j)
       vinv(i,j) = vmat(j,i);
 
-  this->vinv_ = Kokkos::create_mirror_view(typename SpT::memory_space(), vinv);
+  this->vinv_ = Kokkos::create_mirror_view(typename DT::memory_space(), vinv);
   Kokkos::deep_copy(this->vinv_ , vinv);
 
   // initialize tags

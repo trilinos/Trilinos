@@ -93,7 +93,6 @@ void spgemm_debug_symbolic(
 
   size_type result_index = 0;
 
-
   h_rmc(0) = 0;
   for (lno_t i = 0; i < m; ++i){
     const size_type a_row_begin = h_rma(i);

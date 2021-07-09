@@ -35,25 +35,24 @@
 #ifndef STK_UTIL_DIAG_WRITEREXT_HPP
 #define STK_UTIL_DIAG_WRITEREXT_HPP
 
-#include <stk_util/stk_config.h>
-#include <stddef.h>                     // for size_t
-#include <bitset>                       // for bitset
-#include <iostream>                     // for ostream, endl
-#include <list>                         // for list
-#include <map>                          // for map, multimap
-#include <memory>                       //
-#include <set>                          // for set
-#include <stk_util/diag/String.hpp>     // for String, Identifier
-#include <stk_util/diag/StringUtil.hpp>  // for demangle
-#include <stk_util/util/Array.hpp>      // for Array, ArrayContainer
-#include <stk_util/util/VecSet.hpp>     // for vecset
-#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
-#include <string>                       // for string
-#include <typeinfo>                     // for type_info
-#include <utility>                      // for pair
-#include <vector>                       // for vector
-#include "stk_util/util/FArray.hpp"     // for FArrayContainer, FArray
-#include <stk_util/parallel/MPI.hpp>
+#include "stk_util/diag/String.hpp"      // for String, Identifier
+#include "stk_util/diag/StringUtil.hpp"  // for demangle
+#include "stk_util/parallel/MPI.hpp"     // for Loc
+#include "stk_util/stk_config.h"         // for STK_HAS_MPI
+#include "stk_util/util/Array.hpp"       // for Array, ArrayContainer
+#include "stk_util/util/FArray.hpp"      // for FArrayContainer, FArray
+#include "stk_util/util/VecSet.hpp"      // for vecset
+#include "stk_util/util/Writer.hpp"      // for operator<<, Writer, dendl, pop, push, c_ptr_
+#include <cstddef>                       // for size_t
+#include <bitset>                        // for bitset
+#include <iostream>                      // for endl
+#include <list>                          // for list
+#include <map>                           // for map, multimap
+#include <set>                           // for set
+#include <string>                        // for string
+#include <typeinfo>                      // for type_info
+#include <utility>                       // for pair
+#include <vector>                        // for vector
 
 namespace stk {
 namespace diag {

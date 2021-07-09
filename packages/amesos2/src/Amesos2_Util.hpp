@@ -274,6 +274,7 @@ namespace Amesos2 {
      * effectively inlined.
      */
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_gs_helper
     {
@@ -433,6 +434,7 @@ namespace Amesos2 {
         }
       }
     };
+    #endif
 
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -448,6 +450,7 @@ namespace Amesos2 {
      *
      * \ingroup amesos2_util
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Matrix, typename S, typename GO, typename GS, class Op>
     struct get_cxs_helper
     {
@@ -521,6 +524,181 @@ namespace Amesos2 {
                                                                 distribution, ordering);
       }
     };
+    #endif
+
+
+    template<class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct same_gs_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
+          indices, pointers, nnz, map, distribution, ordering);
+      }
+    };
+
+    template<class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct diff_gs_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_size_t mat_gs_t;
+        typedef typename Kokkos::View<mat_gs_t*, Kokkos::HostSpace> KV_TMP;
+        size_t i, size = pointers.extent(0);
+        KV_TMP pointers_tmp(Kokkos::ViewAllocateWithoutInitializing("pointers_tmp"), size);
+
+        mat_gs_t nnz_tmp = 0;
+        Op::template apply_kokkos_view<KV_S, KV_GO, KV_TMP>(mat, nzvals,
+          indices, pointers_tmp, nnz_tmp, Teuchos::ptrInArg(*map), distribution, ordering);
+        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_tmp);
+
+        typedef typename KV_GS::value_type view_gs_t;
+        for (i = 0; i < size; ++i){
+          pointers(i) = Teuchos::as<view_gs_t>(pointers_tmp(i));
+        }
+        nnz = Teuchos::as<view_gs_t>(nnz_tmp);
+      }
+    };
+
+    template<class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct same_go_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_size_t mat_gs_t;
+        typedef typename KV_GS::value_type view_gs_t;
+        if_then_else<is_same<view_gs_t,mat_gs_t>::value,
+          same_gs_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op>,
+          diff_gs_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op> >::type::do_get(mat, nzvals, indices,
+                                                                                pointers, nnz, map,
+                                                                                distribution, ordering);
+      }
+    };
+
+    template<class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct diff_go_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_ordinal_t mat_go_t;
+        typedef typename M::global_size_t mat_gs_t;
+        typedef typename Kokkos::View<mat_go_t*, Kokkos::HostSpace> KV_TMP;
+        size_t i, size = indices.extent(0);
+        KV_TMP indices_tmp(Kokkos::ViewAllocateWithoutInitializing("indices_tmp"), size);
+
+        typedef typename KV_GO::value_type view_go_t;
+        typedef typename KV_GS::value_type view_gs_t;
+        if_then_else<is_same<view_gs_t,mat_gs_t>::value,
+          same_gs_helper_kokkos_view<M, KV_S, KV_TMP, KV_GS, Op>,
+          diff_gs_helper_kokkos_view<M, KV_S, KV_TMP, KV_GS, Op> >::type::do_get(mat, nzvals, indices_tmp,
+                                                                                 pointers, nnz, map,
+                                                                                 distribution, ordering);
+        for (i = 0; i < size; ++i){
+          indices(i) = Teuchos::as<view_go_t>(indices_tmp(i));
+        }
+      }
+    };
+
+    template<class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct same_scalar_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_ordinal_t mat_go_t;
+        typedef typename KV_GO::value_type view_go_t;
+        if_then_else<is_same<view_go_t,mat_go_t>::value,
+          same_go_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op>,
+          diff_go_helper_kokkos_view<M, KV_S, KV_GO, KV_GS, Op> >::type::do_get(mat, nzvals, indices,
+                                                                                pointers, nnz, map,
+                                                                                distribution, ordering);
+      }
+    };
+
+    template<class M, typename KV_S, typename KV_GO, typename KV_GS, class Op>
+    struct diff_scalar_helper_kokkos_view
+    {
+      static void do_get(const Teuchos::Ptr<const M> mat,
+                         KV_S& nzvals,
+                         KV_GO& indices,
+                         KV_GS& pointers,
+                         typename KV_GS::value_type& nnz,
+                         const Teuchos::Ptr<
+                           const Tpetra::Map<typename M::local_ordinal_t,
+                                             typename M::global_ordinal_t,
+                                             typename M::node_t> > map,
+                         EDistribution distribution,
+                         EStorage_Ordering ordering)
+      {
+        typedef typename M::global_ordinal_t mat_go_t;
+        typedef typename Kokkos::ArithTraits<typename M::scalar_t>::val_type mat_scalar_t;
+        typedef typename Kokkos::View<mat_scalar_t*, Kokkos::HostSpace> KV_TMP;
+        size_t i, size = nzvals.extent(0);
+        KV_TMP nzvals_tmp(Kokkos::ViewAllocateWithoutInitializing("nzvals_tmp"), size);
+
+        typedef typename KV_S::value_type view_scalar_t;
+        typedef typename KV_GO::value_type view_go_t;
+        if_then_else<is_same<view_go_t,mat_go_t>::value,
+          same_go_helper_kokkos_view<M, KV_TMP, KV_GO, KV_GS, Op>,
+          diff_go_helper_kokkos_view<M, KV_TMP, KV_GO, KV_GS, Op> >::type::do_get(mat, nzvals_tmp, indices,
+                                                                                  pointers, nnz, map,
+                                                                                  distribution, ordering);
+
+        for (i = 0; i < size; ++i){
+          nzvals(i) = Teuchos::as<view_scalar_t>(nzvals_tmp(i));
+        }
+      }
+    };
+
 
     template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS, class Op>
     struct get_cxs_helper_kokkos_view
@@ -546,10 +724,7 @@ namespace Amesos2 {
                                                       indexBase,
                                                       Op::getMapFromMatrix(mat) //getMap must be the map returned, NOT rowmap or colmap
                                                       );
-        typename Matrix::global_size_t nnz_temp = 0; // only setting because Cuda gives warning used before unset
-        Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
-          indices, pointers, nnz_temp, Teuchos::ptrInArg(*map), distribution, ordering);
-        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_temp);
+        do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), distribution, ordering);
       }
 
       /**
@@ -568,10 +743,7 @@ namespace Amesos2 {
                                              typename Matrix::global_ordinal_t,
                                              typename Matrix::node_t> > map
           = Op::getMap(mat);
-        typename Matrix::global_size_t nnz_temp;
-        Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
-          indices, pointers, nnz_temp, map, distribution, ordering);
-        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_temp);
+        do_get(mat, nzvals, indices, pointers, nnz, Teuchos::ptrInArg(*map), distribution, ordering);
       }
 
       /**
@@ -590,10 +762,16 @@ namespace Amesos2 {
                          EDistribution distribution,
                          EStorage_Ordering ordering=ARBITRARY)
       {
-        typename Matrix::global_size_t nnz_temp;
-        Op::template apply_kokkos_view<KV_S, KV_GO, KV_GS>(mat, nzvals,
-          indices, pointers, nnz_temp, map, distribution, ordering);
-        nnz = Teuchos::as<typename KV_GS::value_type>(nnz_temp);
+        typedef typename Matrix::scalar_t mat_scalar;
+        typedef typename KV_S::value_type view_scalar_t;
+
+        if_then_else<is_same<mat_scalar,view_scalar_t>::value,
+          same_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op>,
+          diff_scalar_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,Op> >::type::do_get(mat,
+                                                                                     nzvals, indices,
+                                                                                     pointers, nnz,
+                                                                                     map,
+                                                                                     distribution, ordering);
       }
     };
 
@@ -605,6 +783,7 @@ namespace Amesos2 {
     template<class Matrix>
     struct get_ccs_func
     {
+      #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       static void apply(const Teuchos::Ptr<const Matrix> mat,
                         const ArrayView<typename Matrix::scalar_t> nzvals,
                         const ArrayView<typename Matrix::global_ordinal_t> rowind,
@@ -620,6 +799,7 @@ namespace Amesos2 {
         mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering, distribution);
         //mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering);
       }
+      #endif
 
       template<typename KV_S, typename KV_GO, typename KV_GS>
       static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
@@ -666,6 +846,7 @@ namespace Amesos2 {
     template<class Matrix>
     struct get_crs_func
     {
+      #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       static void apply(const Teuchos::Ptr<const Matrix> mat,
                         const ArrayView<typename Matrix::scalar_t> nzvals,
                         const ArrayView<typename Matrix::global_ordinal_t> colind,
@@ -680,6 +861,7 @@ namespace Amesos2 {
       {
         mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering, distribution);
       }
+      #endif
 
       template<typename KV_S, typename KV_GO, typename KV_GS>
       static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
@@ -761,9 +943,11 @@ namespace Amesos2 {
      * \sa \ref get_crs_helper
      * \ingroup amesos2_util
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Matrix, typename S, typename GO, typename GS>
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >
     {};
+    #endif
 
     template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
     struct get_ccs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_ccs_func<Matrix> >
@@ -776,9 +960,11 @@ namespace Amesos2 {
      * \sa \ref get_ccs_helper
      * \ingroup amesos2_util
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Matrix, typename S, typename GO, typename GS>
     struct get_crs_helper : get_cxs_helper<Matrix,S,GO,GS,get_crs_func<Matrix> >
     {};
+    #endif
 
     template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
     struct get_crs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_crs_func<Matrix> >
@@ -1024,11 +1210,11 @@ namespace Amesos2 {
       }
     }
 
-    template<class values_view_t, class row_ptr_view_t,
-      class cols_view_t, class per_view_t>
+    template<class row_ptr_view_t, class cols_view_t, class per_view_t>
     void
-    reorder(values_view_t & values, row_ptr_view_t & row_ptr, cols_view_t & cols,
-            per_view_t & perm, per_view_t & peri)
+    reorder(row_ptr_view_t & row_ptr, cols_view_t & cols,
+            per_view_t & perm, per_view_t & peri, size_t & nnz,
+            bool permute_matrix)
     {
       #ifndef HAVE_AMESOS2_METIS
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -1045,14 +1231,15 @@ namespace Amesos2 {
 
         // strip out the diagonals - metis will just crash with them included.
         // make space for the stripped version
-        typedef Kokkos::View<idx_t*, Kokkos::HostSpace>         host_metis_array;
+        typedef Kokkos::View<idx_t*, Kokkos::HostSpace> host_metis_array;
         const ordinal_type size = row_ptr.size() - 1;
+        size_type max_nnz = host_row_ptr(size);
         host_metis_array host_strip_diag_row_ptr(
           Kokkos::ViewAllocateWithoutInitializing("host_strip_diag_row_ptr"),
-          row_ptr.size());
+          size+1);
         host_metis_array host_strip_diag_cols(
           Kokkos::ViewAllocateWithoutInitializing("host_strip_diag_cols"),
-          cols.size() - size); // dropping diagonals.
+          max_nnz);
 
         size_type new_nnz = 0;
         for(ordinal_type i = 0; i < size; ++i) {
@@ -1080,95 +1267,122 @@ namespace Amesos2 {
         TEUCHOS_TEST_FOR_EXCEPTION(err != METIS_OK, std::runtime_error,
           "METIS_NodeND failed to sort matrix.");
 
-        // exec space to resort the matrix
-        // right now we're assuming all three vectors are in fact on the same
-        // memory space but this is not necessarily true for future use. Then
-        // we'll need to make the exec space an option to set and they'll all
-        // need to be mirrored into that space. Add a compilation failure here
-        // to make that clear to a future user.
-        typedef typename values_view_t::execution_space exec_space_t;
-        typedef typename cols_view_t::execution_space cols_exec_space_t;
-        typedef typename row_ptr_view_t::execution_space row_ptr_exec_space_t;
-        static_assert(std::is_same<exec_space_t, cols_exec_space_t>::value &&
-                      std::is_same<cols_exec_space_t, row_ptr_exec_space_t>::value,
-                      "Amesos2 reorder method is currently assuming all three "
-                      "matrix vectors are on the same memory space. If this "
-                      "requirement is changing it will need some minor updates "
-                      "to make it work with differing memory spaces.");
-
         // put the permutations on our saved device ptrs
         // these will be used to permute x and b when we solve
+        typedef typename cols_view_t::execution_space exec_space_t;
         auto device_perm = Kokkos::create_mirror_view(exec_space_t(), host_perm);
         auto device_peri = Kokkos::create_mirror_view(exec_space_t(), host_peri);
         deep_copy(device_perm, host_perm);
         deep_copy(device_peri, host_peri);
 
-        // we'll permute matrix on device to a new set of arrays
-        row_ptr_view_t new_row_ptr(
-          Kokkos::ViewAllocateWithoutInitializing("new_row_ptr"), row_ptr.size());
-        cols_view_t new_cols(
-          Kokkos::ViewAllocateWithoutInitializing("new_cols"), cols.size() - new_nnz/2);
-        values_view_t new_values(
-          Kokkos::ViewAllocateWithoutInitializing("new_values"), values.size() - new_nnz/2);
+        // also set the permutation which may need to convert the type from
+        // metis to the native ordinal_type
+        deep_copy_or_assign_view(perm, device_perm);
+        deep_copy_or_assign_view(peri, device_peri);
 
-        // permute row indices
-        Kokkos::RangePolicy<exec_space_t> policy_row(0, row_ptr.size());
-        Kokkos::parallel_scan(policy_row, KOKKOS_LAMBDA(
+        if (permute_matrix) {
+          // we'll permute matrix on device to a new set of arrays
+          row_ptr_view_t new_row_ptr(
+            Kokkos::ViewAllocateWithoutInitializing("new_row_ptr"), row_ptr.size());
+          cols_view_t new_cols(
+            Kokkos::ViewAllocateWithoutInitializing("new_cols"), cols.size() - new_nnz/2);
+
+          // permute row indices
+          Kokkos::RangePolicy<exec_space_t> policy_row(0, row_ptr.size());
+          Kokkos::parallel_scan(policy_row, KOKKOS_LAMBDA(
           ordinal_type i, size_type & update, const bool &final) {
           if(final) {
             new_row_ptr(i) = update;
           }
           if(i < size) {
-            ordinal_type count = 0;
-            const ordinal_type row = device_perm(i);
-            for(size_t k = row_ptr(row); k < row_ptr(row + 1); ++k) {
-              const ordinal_type j = device_peri(cols(k)); /// col in A
-              count += (i >= j); /// lower triangular
+              ordinal_type count = 0;
+              const ordinal_type row = device_perm(i);
+              for(ordinal_type k = row_ptr(row); k < row_ptr(row + 1); ++k) {
+                const ordinal_type j = device_peri(cols(k)); /// col in A
+                count += (i >= j); /// lower triangular
+              }
+              update += count;
             }
-            update += count;
-          }
-        });
+          });
+
+          // permute col indices
+          Kokkos::RangePolicy<exec_space_t> policy_col(0, size);
+          Kokkos::parallel_for(policy_col, KOKKOS_LAMBDA(ordinal_type i) {
+            const ordinal_type kbeg = new_row_ptr(i);
+            const ordinal_type row = device_perm(i);
+            const ordinal_type col_beg = row_ptr(row);
+            const ordinal_type col_end = row_ptr(row + 1);
+            const ordinal_type nk = col_end - col_beg;
+            for(ordinal_type k = 0, t = 0; k < nk; ++k) {
+              const ordinal_type tk = kbeg + t;
+              const ordinal_type sk = col_beg + k;
+              const ordinal_type j = device_peri(cols(sk));
+              if(i >= j) {
+                new_cols(tk) = j;
+                ++t;
+              }
+            }
+          });
+
+          // finally set the inputs to the new sorted arrays
+          row_ptr = new_row_ptr;
+          cols = new_cols;
+        }
+
+        nnz = new_nnz;
+      #endif // HAVE_AMESOS2_METIS
+    }
+
+    template<class values_view_t, class row_ptr_view_t,
+      class cols_view_t, class per_view_t>
+    void
+    reorder_values(values_view_t & values, const row_ptr_view_t & orig_row_ptr,
+      const row_ptr_view_t & new_row_ptr,
+      const cols_view_t & orig_cols, const per_view_t & perm, const per_view_t & peri,
+      size_t nnz)
+    {
+        typedef typename cols_view_t::value_type ordinal_type;
+        typedef typename cols_view_t::execution_space exec_space_t;
+
+        auto device_perm = Kokkos::create_mirror_view(exec_space_t(), perm);
+        auto device_peri = Kokkos::create_mirror_view(exec_space_t(), peri);
+        deep_copy(device_perm, perm);
+        deep_copy(device_peri, peri);
+
+        const ordinal_type size = orig_row_ptr.size() - 1;
+
+        auto host_orig_row_ptr = Kokkos::create_mirror_view(orig_row_ptr);
+        auto new_nnz = host_orig_row_ptr(size); // TODO: Maybe optimize this by caching
+
+        values_view_t new_values(
+          Kokkos::ViewAllocateWithoutInitializing("new_values"), values.size() - new_nnz/2);
 
         // permute col indices
         Kokkos::RangePolicy<exec_space_t> policy_col(0, size);
         Kokkos::parallel_for(policy_col, KOKKOS_LAMBDA(ordinal_type i) {
           const ordinal_type kbeg = new_row_ptr(i);
           const ordinal_type row = device_perm(i);
-          const ordinal_type col_beg = row_ptr(row);
-          const ordinal_type col_end = row_ptr(row + 1);
+          const ordinal_type col_beg = orig_row_ptr(row);
+          const ordinal_type col_end = orig_row_ptr(row + 1);
           const ordinal_type nk = col_end - col_beg;
           for(ordinal_type k = 0, t = 0; k < nk; ++k) {
             const ordinal_type tk = kbeg + t;
             const ordinal_type sk = col_beg + k;
-            const ordinal_type j = device_peri(cols(sk));
+            const ordinal_type j = device_peri(orig_cols(sk));
             if(i >= j) {
-              new_cols(tk) = j;
               new_values(tk) = values(sk);
               ++t;
             }
           }
         });
 
-        // finally set the inputs to the new sorted arrays
-        row_ptr = new_row_ptr;
-        cols = new_cols;
         values = new_values;
-
-        // also set the permutation which may need to convert the type from
-        // metis to the native ordinal_type
-        deep_copy_or_assign_view(perm, device_perm);
-        deep_copy_or_assign_view(peri, device_peri);
-      #endif
     }
 
     template<class array_view_t, class per_view_t>
     void
     apply_reorder_permutation(const array_view_t & array,
       array_view_t & permuted_array, const per_view_t & permutation) {
-      #ifndef HAVE_AMESOS2_METIS
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-          "Cannot apply_reorder_permutation for cuSolver because no METIS is available.");
-      #else
         if(permuted_array.extent(0) != array.extent(0) || permuted_array.extent(1) != array.extent(1)) {
           permuted_array = array_view_t(
             Kokkos::ViewAllocateWithoutInitializing("permuted_array"),
@@ -1181,7 +1395,6 @@ namespace Amesos2 {
             permuted_array(i, j) = array(permutation(i), j);
           }
         });
-      #endif
     }
 
     /** @} */

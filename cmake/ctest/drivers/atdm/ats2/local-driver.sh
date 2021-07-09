@@ -5,27 +5,31 @@ set +x
 # Need to load env so we define some vars
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
-echo
-echo "Current node type: $(atdm_ats2_get_node_type)"
-echo
+# Make adjustments for the XL builds
+if atdm_match_buildname_keyword xl ; then
+  echo "This is an XL build!"
+  # For XL, do not build tests and examples by default.
+  if [[ "${Trilinos_INNER_ENABLE_TESTS}" == "" ]]; then
+    export Trilinos_INNER_ENABLE_TESTS=OFF
+  fi
+  # Don't do the cuda-aware build for the XL builds if you are not building
+  # internal tests and examples.
+  if [[ "${Trilinos_INNER_ENABLE_TESTS}" == "OFF" ]]; then
+    export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=0
+  fi
+  # Only enable the SPARC packages by default
+  export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake
 
-if [[ "$(atdm_ats2_get_node_type)" != "login_node" ]] ; then
-  echo
-  echo "***"
-  echo "*** ERROR: $0"
-  echo "*** can only be run from login node '${ATDM_CONFIG_ATS2_LOGIN_NODE}'"
-  echo "*** and not the current node '$(hostname)'!"
-  echo "***"
-  echo "*** See instructions for the ATS-2 ('ats2') env in the file:"
-  echo "***"
-  echo "***   Trilinos/cmake/std/atdm/README.md"
-  echo "***"
-  echo
-  exit 1
+  # Ensure that we don't set both Trilinos_PACKAGES and Trilinos_PACKAGE_ENABLES_FILE
+  if [ -z $Trilinos_PACKAGES ]; then
+      export Trilinos_PACKAGE_ENABLES_FILE=$WORKSPACE/Trilinos/cmake/std/atdm/apps/sparc/SPARCMiniTrilinosPackagesEnables.cmake
+  fi
 fi
 
 # Allow default setting for TPETRA_ASSUME_CUDA_AWARE_MPI=0 in trilinos_jsrun
 unset TPETRA_ASSUME_CUDA_AWARE_MPI
+atdm_config_ctest_regex_old="$ATDM_CONFIG_CTEST_REGEX"
+export ATDM_CONFIG_CTEST_REGEX="$ATDM_CONFIG_CTEST_REGEX -E Adelus*"
 
 echo
 echo "======================================================================="
@@ -37,6 +41,8 @@ echo
 set -x
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ats2/local-driver-single-build.sh
 set +x
+
+export ATDM_CONFIG_CTEST_REGEX="$atdm_config_ctest_regex_old"
 
 if [[ "${Trilinos_CTEST_RUN_CUDA_AWARE_MPI}" == "1" ]]; then
   echo

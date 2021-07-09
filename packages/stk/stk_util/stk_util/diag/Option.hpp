@@ -35,10 +35,10 @@
 #ifndef STK_UTIL_DIAG_Option_h
 #define STK_UTIL_DIAG_Option_h
 
-#include <iosfwd>                       // for ostream
-#include <map>                          // for _Rb_tree_iterator, map, etc
-#include <string>                       // for string, basic_string, etc
-#include <utility>                      // for make_pair, pair
+#include <iosfwd>   // for ostream
+#include <map>      // for _Rb_tree_iterator, map, map<>::iterator
+#include <string>   // for string, operator<
+#include <utility>  // for pair
 
 namespace stk {
 namespace diag {

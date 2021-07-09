@@ -16,6 +16,11 @@
 # ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT if != "".  Otherwise, a default is set
 # internally.
 #
+# The value of ATDM_CONFIG_SBATCH_EXTRA_ARGS is added to sbatch as follows:
+#   sbatch --output=$output_file --wait -N1 \
+#   ${ATDM_CONFIG_SBATCH_EXTRA_ARGS} --time=${timeout} \
+#   -J $ATDM_CONFIG_BUILD_NAME --account=${account} ${script_to_run} &
+#
 # In this case, sbatch is used to run the script but it also sends ouptut to
 # STDOUT in real-time while it is running in addition to writing to the
 # <outout_file>.  The SLURM job name for the sbatch script is taken from the
@@ -55,7 +60,7 @@ function atdm_run_script_on_compute_node {
   if [ "${account_input}" != "" ] ; then
     account=${account_input}
   elif [[ "${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}" != "" ]] ; then
-    timeout=${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}
+    account=${ATDM_CONFIG_SBATCH_DEFAULT_ACCOUNT}
   else
     account=fy150090
   fi
@@ -70,8 +75,8 @@ function atdm_run_script_on_compute_node {
   echo
   echo "Running '$script_to_run' using sbatch in the background ..."
   set -x
-  sbatch --output=$output_file --wait -N1 --time=${timeout} \
-    -J $ATDM_CONFIG_BUILD_NAME --account=${account} ${script_to_run} &
+  sbatch --output=$output_file --wait -N1 ${ATDM_CONFIG_SBATCH_EXTRA_ARGS} \
+    --time=${timeout} -J $ATDM_CONFIG_BUILD_NAME --account=${account} ${script_to_run} &
   SBATCH_PID=$!
   set +x
 

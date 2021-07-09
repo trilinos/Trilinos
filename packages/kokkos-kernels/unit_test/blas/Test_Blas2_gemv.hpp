@@ -26,7 +26,7 @@ namespace Test {
 
     ScalarA alpha = 3;
     ScalarX beta = 5;
-    double eps = (std::is_same<ScalarY,float>::value ? 2*1e-5 : 1e-7);
+    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarY>::mag_type, float>::value ? 1e-3 : 1e-10);
 
     int ldx;
     int ldy;
@@ -61,59 +61,80 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarX(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarY(10));
-    Kokkos::fill_random(b_A,rand_pool,ScalarA(10));
-
-    Kokkos::fence();
+    {
+      ScalarX randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
+    }
+    {
+      ScalarY randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_y,rand_pool,randStart,randEnd);
+    }
+    {
+      ScalarA randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_A,rand_pool,randStart,randEnd);
+    }
 
     Kokkos::deep_copy(b_org_y,b_y);
+    auto h_b_org_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
+    auto h_org_y = Kokkos::subview(h_b_org_y, Kokkos::ALL(), 0);
 
     Kokkos::deep_copy(h_b_x,b_x);
     Kokkos::deep_copy(h_b_y,b_y);
     Kokkos::deep_copy(h_b_A,b_A);
 
     typedef Kokkos::Details::ArithTraits<typename ViewTypeA::non_const_value_type> KAT;
-    ScalarY expected_result = KAT:: zero();
+    Kokkos::View<ScalarY*, Kokkos::HostSpace> expected("expected aAx+by", ldy);
     if(mode[0] == 'N') {
       for(int i = 0; i < M; i++) {
-        ScalarY y_i = KAT::zero ();
+        ScalarY y_i = beta * h_org_y(i);
         for(int j = 0; j < N; j++) {
-           y_i += h_A(i,j) * h_x(j);
+           y_i += alpha * h_A(i,j) * h_x(j);
         }
-        expected_result += (beta * h_y(i) + alpha * y_i) * (beta * h_y(i) + alpha * y_i) ;
+        expected(i) = y_i;
       }
     } else if(mode[0] == 'T') {
       for(int j = 0; j < N; j++) {
-        ScalarY y_j = KAT::zero ();
+        ScalarY y_j = beta * h_org_y(j);
         for(int i = 0; i < M; i++) {
-           y_j += h_A(i,j) * h_x(i);
+           y_j += alpha * h_A(i,j) * h_x(i);
         }
-        expected_result += (beta * h_y(j) + alpha * y_j) * (beta * h_y(j) + alpha * y_j) ;
+        expected(j) = y_j;
       }
     } else if(mode[0] == 'C') {
       for(int j = 0; j < N; j++) {
-        ScalarY y_j = KAT::zero ();
+        ScalarY y_j = beta * h_org_y(j);
         for(int i = 0; i < M; i++) {
-           y_j += KAT::conj (h_A(i,j)) * h_x(i);
+           y_j += alpha * KAT::conj (h_A(i,j)) * h_x(i);
         }
-        expected_result += (beta * h_y(j) + alpha * y_j) * (beta * h_y(j) + alpha * y_j) ;
+        expected(j) = y_j;
       }
     }
 
     KokkosBlas::gemv(mode, alpha, A, x, beta, y);
-    ScalarY nonconst_nonconst_result = KokkosBlas::dot(y, y);
-    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i = 0; i < ldy; i++)
+    {
+      EXPECT_NEAR_KK(expected(i), h_y(i), eps * expected(i));
+    }
  
     Kokkos::deep_copy(b_y, b_org_y);
     KokkosBlas::gemv(mode, alpha,A ,c_x, beta, y);
-    ScalarY const_nonconst_result = KokkosBlas::dot(y, y);
-    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i = 0; i < ldy; i++)
+    {
+      EXPECT_NEAR_KK(expected(i), h_y(i), eps);
+    }
 
     Kokkos::deep_copy(b_y, b_org_y);
     KokkosBlas::gemv(mode, alpha, c_A, c_x, beta, y);
-    ScalarY const_const_result = KokkosBlas::dot(y, y);
-    EXPECT_NEAR_KK( const_const_result, expected_result, eps*expected_result);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i = 0; i < ldy; i++)
+    {
+      EXPECT_NEAR_KK(expected(i), h_y(i), eps);
+    }
   }
 }
 
@@ -203,7 +224,7 @@ TEST_F( TestCategory, gemv_complex_double ) {
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::gemv_conj_complex_double");
-    test_gemv<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("T");
+    test_gemv<Kokkos::complex<double>,Kokkos::complex<double>,Kokkos::complex<double>,TestExecSpace> ("C");
   Kokkos::Profiling::popRegion();
 }
 #endif

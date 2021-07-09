@@ -78,7 +78,7 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
   TEUCHOS_TEST_FOR_EXCEPTION
     (colMapPtr.get () == nullptr, std::invalid_argument,
      "replaceDiagonalCrsMatrix: "
-     "Input matrix A must have a nonnull column Map.");
+     "Input matrix must have a nonnull column Map.");
 
   const map_type& rowMap = *rowMapPtr;
   const map_type& colMap = *colMapPtr;
@@ -90,13 +90,18 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
         "Row map of matrix and map of input vector do not match.");
   }
 
-  typename crs_matrix_type::execution_space().fence(); // for UVM's sake
+  // KJ: This fence is necessary for UVM. Views used in the row map and colmap
+  // can use UVM and they are accessed in the following routine. So, we need to
+  // make sure that the values are available for touching in host.
+  typename crs_matrix_type::execution_space().fence();
 
   if (isFillCompleteOnInput)
     matrix.resumeFill();
 
   Teuchos::ArrayRCP<const SC> newDiagData = newDiag.getVector(0)->getData();
   LO numReplacedEntriesPerRow = 0;
+
+  auto invalid = Teuchos::OrdinalTraits<LO>::invalid();
 
   // Loop over all local rows to replace the diagonal entry row by row
   for (LO lclRowInd = 0; lclRowInd < myNumRows; ++lclRowInd) {
@@ -105,19 +110,25 @@ replaceDiagonalCrsMatrix (CrsMatrix<SC, LO, GO, NT>& matrix,
     const GO gblInd = rowMap.getGlobalElement(lclRowInd);
     const LO lclColInd = colMap.getLocalElement(gblInd);
 
+    // If the row map is not one-to-one, the diagonal may not be on this proc.
+    // Skip this row; some processor will have the diagonal for this row.
+    if (lclColInd == invalid) continue;
+
     const SC vals[] = {static_cast<SC>(newDiagData[lclRowInd])};
     const LO cols[] = {lclColInd};
 
-    // Do the actual replacement of the diagonal element
-    numReplacedEntriesPerRow = matrix.replaceLocalValues(lclRowInd, oneLO, vals, cols);
+    // Do the actual replacement of the diagonal element, if on this proc
+    numReplacedEntriesPerRow = matrix.replaceLocalValues(lclRowInd, oneLO,
+                                                         vals, cols);
 
-    // Check for success of replacement
+    // Check for success of replacement. 
+    // numReplacedEntriesPerRow is one if the diagonal was replaced.
+    // numReplacedEntriesPerRow is zero if the diagonal is not on 
+    // this processor.  For example, in a 2D matrix distribution, gblInd may
+    // be in both the row and column map, but the diagonal may not be on 
+    // this processor.
     if (numReplacedEntriesPerRow == oneLO) {
       ++numReplacedDiagEntries;
-    } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-        "Number of replaced entries in this row is not equal to one.  "
-        "It has to be exactly one, since we want to replace the diagonal element.");
     }
   }
 

@@ -68,7 +68,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int BasisConst_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -82,6 +82,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -98,7 +99,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
@@ -125,7 +126,7 @@ namespace Intrepid2 {
 
       try {
         for (ordinal_type id=0;id<6;++id) {
-          Basis_HVOL_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
+          Basis_HVOL_C0_FEM<DeviceType,outputValueType,pointValueType> basis(cells[id]);
         }
 
       } catch (std::logic_error &err){
@@ -143,7 +144,7 @@ namespace Intrepid2 {
 
       try {
         for (ordinal_type id=0;id<6;++id) {
-          Basis_HVOL_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
+          Basis_HVOL_C0_FEM<DeviceType,outputValueType,pointValueType> basis(cells[id]);
 
           const ordinal_type numFields = basis.getCardinality();
           const auto allTags = basis.getAllDofTags();
@@ -210,16 +211,19 @@ namespace Intrepid2 {
       try {
         
         for (ordinal_type id=0;id<6;++id) {
-          Basis_HVOL_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
+          Basis_HVOL_C0_FEM<DeviceType,outputValueType,pointValueType> basis(cells[id]);
 
           const ordinal_type numFields = basis.getCardinality();
           const ordinal_type numPoints = 1;
           const ordinal_type spaceDim  = basis.getBaseCellTopology().getDimension();
 
           
-          DynRankView cellCenter("cellCenter", 1, spaceDim), cellVert("cellVert", spaceDim);
-          CellTools<DeviceSpaceType>::getReferenceCellCenter(Kokkos::subview(cellCenter, 0, Kokkos::ALL()),
-                                                             cellVert, cells[id]);
+          DynRankView cellCenter("cellCenter", 1, spaceDim);
+          auto cellCenter_host = Kokkos::create_mirror_view(cellCenter);
+          CellTools<typename HostSpaceType::device_type>
+            ::getReferenceCellCenter(Kokkos::subview(cellCenter_host, 0, Kokkos::ALL()),
+                                     cells[id]);
+          Kokkos::deep_copy(cellCenter, cellCenter_host);
 
           // Check VALUE of basis functions: resize vals to rank-2 container:
           {
@@ -257,7 +261,7 @@ namespace Intrepid2 {
       
       try {
         for (ordinal_type id=0;id<6;++id) {
-          Basis_HVOL_C0_FEM<DeviceSpaceType,outputValueType,pointValueType> basis(cells[id]);
+          Basis_HVOL_C0_FEM<DeviceType,outputValueType,pointValueType> basis(cells[id]);
           
           const EFunctionSpace fs      = basis.getFunctionSpace();
           

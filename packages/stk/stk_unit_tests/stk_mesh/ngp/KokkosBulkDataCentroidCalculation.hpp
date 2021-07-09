@@ -55,8 +55,8 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-
 #include <stk_mesh/base/Field.hpp>
+#include <stk_io/FillMesh.hpp>
 
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> DeviceViewEntitiesType;
 

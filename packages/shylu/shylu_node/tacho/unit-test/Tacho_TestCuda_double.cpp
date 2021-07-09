@@ -11,11 +11,11 @@ static const std::string MM_TEST_FILE="test_double";
 //#define TEST_END   Kokkos::finalize()
 
 #define __TACHO_TEST_CUDA__
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 #include "Tacho_Util.hpp"
 
-typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;
-typedef typename Tacho::UseThisDevice<Kokkos::Cuda>::device_type DeviceType;
+typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type HostDeviceType;
+typedef typename Tacho::UseThisDevice<Kokkos::Cuda>::type DeviceType;
 
 typedef double ValueType;
 typedef double MagnitudeType;

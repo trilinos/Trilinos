@@ -86,14 +86,19 @@ namespace MueLu {
 
   public:
 
+    //LBV: I doubt that it makes sense to have
+    // this particular constructor since it is
+    // not used anywhere and parameters cannot
+    // all accessible after construction.
     UncoupledIndexManager() = default;
 
     UncoupledIndexManager(const RCP<const Teuchos::Comm<int> > comm, const bool coupled,
-                                   const int NumDimensions, const int interpolationOrder,
-                                   const int MyRank, const int NumRanks,
-                                   const Array<GO> GFineNodesPerDir,
-                                   const Array<LO> LFineNodesPerDir,
-                                   const Array<LO> CoarseRate);
+                          const int NumDimensions, const int interpolationOrder,
+                          const int MyRank, const int NumRanks,
+                          const Array<GO> GFineNodesPerDir,
+                          const Array<LO> LFineNodesPerDir,
+                          const Array<LO> CoarseRate,
+                          const bool singleCoarsePoint);
 
     virtual ~UncoupledIndexManager() {}
 

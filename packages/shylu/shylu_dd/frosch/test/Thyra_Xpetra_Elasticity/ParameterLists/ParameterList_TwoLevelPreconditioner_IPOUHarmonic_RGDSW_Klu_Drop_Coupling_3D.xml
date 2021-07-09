@@ -1,0 +1,80 @@
+<ParameterList name="Thyra Example">
+    <Parameter name="Linear Solver Type"                                        type="string"           value="Belos"/>
+    <ParameterList name="Linear Solver Types">
+        <ParameterList name="Belos">
+            <Parameter name="Solver Type"                                       type="string"           value="Block GMRES"/>
+            <ParameterList name="Solver Types">
+                <ParameterList name="Block GMRES">
+                    <Parameter name="PreconditionerPosition"                    type="string"           value="left"/>
+                    <Parameter name="Block Size"                                type="int"              value="1"/>
+                    <Parameter name="Convergence Tolerance"                     type="double"           value="1e-4"/>
+                    <Parameter name="Maximum Iterations"                        type="int"              value="100"/>
+                    <Parameter name="Output Frequency"                          type="int"              value="1"/>
+                    <Parameter name="Show Maximum Residual Norm Only"           type="bool"             value="1"/>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+    <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
+    <ParameterList name="Preconditioner Types">
+        <ParameterList name="FROSch">
+            <Parameter name="FROSch Preconditioner Type"                        type="string"           value="TwoLevelPreconditioner"/>
+
+            <Parameter name="OverlappingOperator Type"                          type="string"           value="AlgebraicOverlappingOperator"/>
+            <Parameter name="CoarseOperator Type"                               type="string"           value="IPOUHarmonicCoarseOperator"/>
+            <Parameter name="Null Space Type"                                   type="string"           value="Linear Elasticity"/>
+
+            <ParameterList name="AlgebraicOverlappingOperator">
+                <ParameterList name="Solver">
+                    <Parameter name="SolverType"                                type="string"           value="Amesos2"/>
+                    <Parameter name="Solver"                                    type="string"           value="Klu"/>
+                </ParameterList>
+            </ParameterList>
+
+            <ParameterList name="IPOUHarmonicCoarseOperator">
+
+                <Parameter name="Extensions: Remove Coupling"                   type="bool"             value="true"/>
+                <Parameter name="Extensions: Coupling IDs to Remove"            type="TwoDArray(int)"   value="6x4:{0, 0, 0, 1,
+                                                                                                                    0, 0, 0, 2,
+                                                                                                                    0, 1, 0, 0,
+                                                                                                                    0, 1, 0, 2,
+                                                                                                                    0, 2, 0, 0,
+                                                                                                                    0, 2, 0, 1}"/>
+
+                <ParameterList name="Blocks">
+                    <ParameterList name="1">
+                        <Parameter name="Use For Coarse Space"                  type="bool"             value="true"/>
+                        <ParameterList name="InterfacePartitionOfUnity">
+                            <Parameter name="Type"                              type="string"           value="RGDSW"/>
+                            <ParameterList name="RGDSW">
+                                <Parameter name="Type"                          type="string"           value="Full"/>
+                                <Parameter name="Distance Function"             type="string"           value="Inverse Euclidean"/>
+                            </ParameterList>
+                        </ParameterList>
+                    </ParameterList>
+                </ParameterList>
+
+                <ParameterList name="ExtensionSolver">
+                    <Parameter name="SolverType"                                type="string"           value="Amesos2"/>
+                    <Parameter name="Solver"                                    type="string"           value="Klu"/>
+                </ParameterList>
+
+                <ParameterList name="Distribution">
+                    <Parameter name="Type"                                      type="string"           value="linear"/>
+                    <Parameter name="NumProcs"                                  type="int"              value="1"/>
+                    <Parameter name="Factor"                                    type="double"           value="1.0"/>
+                    <Parameter name="GatheringSteps"                            type="int"              value="1"/>
+                    <ParameterList name="Gathering Communication">
+                        <Parameter name="Send type"                             type="string"           value="Send"/>
+                    </ParameterList>
+                </ParameterList>
+
+                <ParameterList name="CoarseSolver">
+                    <Parameter name="SolverType"                                type="string"           value="Amesos2"/>
+                    <Parameter name="Solver"                                    type="string"           value="Klu"/>
+                </ParameterList>
+            </ParameterList>
+
+        </ParameterList>
+    </ParameterList>
+</ParameterList>

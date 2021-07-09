@@ -11,12 +11,11 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperRKBase.hpp"
 
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperRKBase;
 
 /** \brief Application Action for StepperRKBase.
@@ -25,11 +24,10 @@ template<class Scalar> class StepperRKBase;
  *  RK time step.  The data available to this class is solution
  *  variables (through SolutionHistory), and stepper data (through
  *  the Stepper).  It allows the application to just observe this
- *  data (i.e., use but not change the data) to change any of it
- *  (USER BEWARE!).
+ *  data, i.e., use but not change any of it (USER BEWARE!).
  *
- *  The locations of the RK AppActions (ACITON_LOCATION) in takeStep
- *  are documented in each of the RK Algorithm sections:
+ *  The locations of the RK AppActions (StepperRKAppAction::ACTION_LOCATION)
+ *  in takeStep are documented in each of the RK Algorithm sections:
  *  StepperExplicitRK, StepperDIRK and StepperIMEX_RK.
  */
 template<class Scalar>

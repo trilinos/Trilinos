@@ -43,12 +43,12 @@
 #ifndef STK_UTIL_UTIL_Array_h
 #define STK_UTIL_UTIL_Array_h
 
+#include "stk_util/util/TypeList.hpp"
+#include "stk_util/util/FArray.hpp"
 #include <cstddef>
 #include <utility>
 #include <algorithm>
 #include <stdexcept>
-#include <stk_util/util/TypeList.hpp>
-#include <stk_util/util/FArray.hpp>
 
 namespace sierra {
 
@@ -200,7 +200,7 @@ public:
 		 TypeListEnd> Trunc;
 
   //----------------------------------------
-  /** Dimensions defined at contruction */
+  /** Dimensions defined at construction */
 
   const unsigned * dimension() const {
     return BaseType::dimension();

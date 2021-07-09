@@ -283,6 +283,83 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, large, LO, GO, Scalar , Node )
+  {
+    using map_type = Tpetra::Map<LO, GO, Node>;
+    using MV = Tpetra::MultiVector<Scalar, LO, GO, Node>;
+    using vec_type = Tpetra::Vector<Scalar, LO, GO, Node>;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    constexpr bool debug = true;
+
+    RCP<Teuchos::FancyOStream> outPtr = debug ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::rcpFromRef (out);
+    Teuchos::FancyOStream& myOut = *outPtr;
+
+    myOut << "Test: MultiVector, basic" << endl;
+    Teuchos::OSTab tab0 (myOut);
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid ();
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int numImages = comm->getSize ();
+
+    myOut << "Create Map" << endl;
+    const size_t numLocal = 15000;
+    const size_t numVecs  = 10;
+    const GO indexBase = 0;
+    RCP<const map_type> map =
+      rcp (new map_type (INVALID, numLocal, indexBase, comm));
+
+    myOut << "Test MultiVector's & Vector's default constructors" << endl;
+    {
+      MV defaultConstructedMultiVector;
+      auto dcmv_map = defaultConstructedMultiVector.getMap ();
+      TEST_ASSERT( dcmv_map.get () != nullptr );
+      if (dcmv_map.get () != nullptr) {
+        TEST_EQUALITY( dcmv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
+      }
+      vec_type defaultConstructedVector;
+      auto dcv_map = defaultConstructedVector.getMap ();
+      TEST_ASSERT( dcv_map.get () != nullptr );
+      if (dcv_map.get () != nullptr) {
+        TEST_EQUALITY( dcv_map->getGlobalNumElements (),
+                       Tpetra::global_size_t (0) );
+      }
+    }
+
+    myOut << "Test MultiVector's usual constructor" << endl;
+    RCP<MV> mvec;
+    TEST_NOTHROW( mvec = rcp (new MV (map, numVecs, true)) );
+    if (mvec.is_null ()) {
+      myOut << "MV constructor threw an exception: returning" << endl;
+      return;
+    }
+    TEST_EQUALITY( mvec->getNumVectors(), numVecs );
+    TEST_EQUALITY( mvec->getLocalLength(), numLocal );
+    TEST_EQUALITY( mvec->getGlobalLength(), numImages*numLocal );
+
+    myOut << "Test that all norms are zero" << endl;
+    Array<Magnitude> norms(numVecs), zeros(numVecs);
+    std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
+    TEST_NOTHROW( mvec->norm2(norms) );
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    TEST_NOTHROW( mvec->norm1(norms) );
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    TEST_NOTHROW( mvec->normInf(norms) );
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,ScalarTraits<Magnitude>::zero());
+    // print it
+    myOut << *mvec << endl;
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadConstLDA, LO, GO, Scalar , Node )
   {
     // numlocal > LDA
@@ -378,22 +455,30 @@ namespace {
       RCP<      MV> mvView1 = mvOrig1.subViewNonConst(inView1);
       TEST_ASSERT( ! mvView1.is_null() );
       if (! mvView1.is_null() ) {
-        auto mvView1_d = mvView1->getLocalViewDevice();
-        auto mvOrig1_d = mvOrig1.getLocalViewDevice();
-        TEST_ASSERT( mvView1_d.data() == mvOrig1_d.data() );
-        auto mvView1_h = mvView1->getLocalViewHost();
-        auto mvOrig1_h = mvOrig1.getLocalViewHost();
-        TEST_ASSERT( mvView1_h.data() == mvOrig1_h.data() );
+        {
+          auto mvView1_d = mvView1->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto mvOrig1_d = mvOrig1.getLocalViewDevice(Tpetra::Access::ReadOnly);
+          TEST_ASSERT( mvView1_d.data() == mvOrig1_d.data() );
+        }
+        {
+          auto mvView1_h = mvView1->getLocalViewHost(Tpetra::Access::ReadOnly);
+          auto mvOrig1_h = mvOrig1.getLocalViewHost(Tpetra::Access::ReadOnly);
+          TEST_ASSERT( mvView1_h.data() == mvOrig1_h.data() );
+        }
       }
       RCP<const MV> mvView2 = mvOrig2.subView(inView2);
       TEST_ASSERT( ! mvView2.is_null() );
       if (! mvView2.is_null() ) {
-        auto mvView2_lcl = mvView2->getLocalViewDevice();
-        auto mvOrig2_lcl = mvOrig2.getLocalViewDevice();
-        TEST_ASSERT( mvView2_lcl.data() == mvOrig2_lcl.data() );
-        auto mvView2_h = mvView2->getLocalViewHost();
-        auto mvOrig2_h = mvOrig2.getLocalViewHost();
-        TEST_ASSERT( mvView2_h.data() == mvOrig2_h.data() );
+        {
+          auto mvView2_lcl = mvView2->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto mvOrig2_lcl = mvOrig2.getLocalViewDevice(Tpetra::Access::ReadOnly);
+          TEST_ASSERT( mvView2_lcl.data() == mvOrig2_lcl.data() );
+        }
+        {
+          auto mvView2_h = mvView2->getLocalViewHost(Tpetra::Access::ReadOnly);
+          auto mvOrig2_h = mvOrig2.getLocalViewHost(Tpetra::Access::ReadOnly);
+          TEST_ASSERT( mvView2_h.data() == mvOrig2_h.data() );
+        }
       }
       Array<Mag> nView2(numView), nView1(numView), nViewI(numView);
       Array<Scalar> meansView(numView), dotsView(numView);
@@ -749,17 +834,15 @@ namespace {
       Teuchos::Array<Scalar> check2(4,3); // each entry (of four) is the product [1 1 1]*[1 1 1]' = 3
       Teuchos::Array<Scalar> check3(9,2); // each entry (of nine) is the product [1 1]*[1 1]' = 2
       // test
-      ArrayRCP<const Scalar> tmpView;
       mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,S1,mv3x2l,mv2x3l,S0);
-      tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0);
+      { auto tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0); }
       mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,S1,mv2x3l,mv2x3l,S0);
-      tmpView = mv2x2l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,4),check2,M0);
+      { auto tmpView = mv2x2l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,4),check2,M0); }
       mv2x2l.multiply(CONJ_TRANS,NO_TRANS  ,S1,mv3x2l,mv3x2l,S0);
-      tmpView = mv2x2l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,4),check2,M0);
+      { auto tmpView = mv2x2l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,4),check2,M0); }
       mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,S1,mv2x3l,mv3x2l,S0);
-      tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0);
+      { auto tmpView = mv3x3l.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView(0,9),check3,M0); }
     }
-
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
@@ -784,12 +867,13 @@ namespace {
       // space for answers
       SerialDenseMatrix<int,Scalar> sdm2x2(2,2), sdm3x3(3,3);
       // test: perform local Tpetra::MultiVector multiply and Teuchos::SerialDenseMatrix multiply, then check that answers are equivalent
-      ArrayRCP<const Scalar> tmpView;
       {
         tmv3x3.multiply(NO_TRANS,NO_TRANS,S1,tmv3x2,tmv2x3,S0);
         sdm3x3.multiply(NO_TRANS,NO_TRANS,S1,sdm3x2,sdm2x3,S0);
-        tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        {
+          auto tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+          TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        }
       }
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0;
@@ -800,8 +884,10 @@ namespace {
       {
         tmv2x2.multiply(NO_TRANS,CONJ_TRANS,S1,tmv2x3,tmv2x3,S0);
         sdm2x2.multiply(NO_TRANS,CONJ_TRANS,S1,sdm2x3,sdm2x3,S0);
-        tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        { 
+          auto tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols()); 
+          TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        }
       }
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0;
@@ -813,8 +899,10 @@ namespace {
         tmv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,tmv3x2,tmv3x2,S0);
         Kokkos::fence ();
         sdm2x2.multiply(CONJ_TRANS,NO_TRANS,S1,sdm3x2,sdm3x2,S0);
-        tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        { 
+          auto tmpView = tmv2x2.get1dView(); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols()); 
+          TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        }
       }
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0;
@@ -826,8 +914,10 @@ namespace {
         tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,tmv2x3,tmv3x2,S0);
         Kokkos::fence ();
         sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,sdm2x3,sdm3x2,S0);
-        tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        { 
+          auto tmpView = tmv3x3.get1dView(); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols()); 
+          TEST_COMPARE_FLOATING_ARRAYS(tmpView,sdmView,testingTol<Scalar>() * errorTolSlack);
+        }
       }
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0;
@@ -849,19 +939,18 @@ namespace {
       mv3nx3.putScalar(ScalarTraits<Scalar>::one());
       mv3nx2.putScalar(ScalarTraits<Scalar>::one());
       // fill expected answers Array
-      ArrayRCP<const Scalar> tmpView;
+
       Teuchos::Array<Scalar> check(9,3*numImages);
       // test
       mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0);
-      tmpView = mv2x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      { auto tmpView = mv2x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0); }
       mv2x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx3,S0);
-      tmpView = mv2x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      { auto tmpView = mv2x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0); }
       mv3x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx2,S0);
-      tmpView = mv3x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      { auto tmpView = mv3x2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);}
       mv3x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx3,S0);
-      tmpView = mv3x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      { auto tmpView = mv3x3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);}
     }
-
     lclSuccess = success ? 1 : 0;
     gblSuccess = 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
@@ -877,15 +966,14 @@ namespace {
       // fill multivectors with ones
       mv2x3.putScalar(S1);
       // fill expected answers Array
-      ArrayRCP<const Scalar> tmpView;
       Teuchos::Array<Scalar> check2(9,2), check3(6,3);
       // test
       mv3nx3.putScalar(S1); mv3nx2.putScalar(S1);
       mv3nx3.multiply(NO_TRANS,  NO_TRANS,S1,mv3nx2,mv2x3,S0);
-      tmpView = mv3nx3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,M0);
+      { auto tmpView = mv3nx3.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,M0);}
       mv3nx3.putScalar(S1); mv3nx2.putScalar(S1);
       mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx3,mv2x3,S0);
-      tmpView = mv3nx2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);
+      { auto tmpView = mv3nx2.get1dView(); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);}
     }
 
     // Make sure that the test passed on all processes, not just Proc 0.
@@ -923,6 +1011,331 @@ namespace {
     // Create a Map.
     RCP<const Comm<int> > comm = getDefaultComm ();
     const size_t lclNumRows = 3;
+    const GST gblNumRows = comm->getSize () * lclNumRows;
+    const GO indexBase = 0;
+    RCP<const map_type> map3n =
+      rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
+
+    const MT M0 = STM::zero ();
+    const ST S0 = STS::zero ();
+    const ST S1 = STS::one ();
+
+    // In what follows, '@' (without single quotes) denotes
+    // element-wise multiplication -- that is, what
+    // MultiVector::elementWiseMultiply implements.
+
+    const size_t maxNumVecs = 3;
+
+    // Test for various numbers of columns.
+    for (size_t numVecs = 1; numVecs <= maxNumVecs; ++numVecs) {
+      out << "Test numVecs = " << numVecs << endl;
+      Teuchos::OSTab tab1 (out);
+
+      // A (always) has 1 vector, and B and C have numVecs vectors.
+      V A (map3n);
+      MV B (map3n, numVecs);
+      MV C (map3n, numVecs);
+      MV C_exp (map3n, numVecs);
+      Array<MT> C_norms (C.getNumVectors ());
+      Array<MT> C_zeros (C.getNumVectors ());
+      std::fill (C_zeros.begin (), C_zeros.end (), M0);
+
+      int caseNum = 0;
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 0*(A @ B)" << endl;
+      // Fill A and B initially with nonzero values, just for
+      // generality.  C should get filled with zeros afterwards.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S0, A, B, S0);
+
+        C_exp.putScalar (S0);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S3 = S1 + S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S0, A, B, S1);
+
+        C_exp.putScalar (S3);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 2*C + 0*(A @ B)" << endl;
+      // Fill A and B with NaN to check that the method follows BLAS
+      // update rules.
+      {
+        const ST S2 = S1 + S1;
+
+        // Prefill A and B with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        A.putScalar (nan);
+        B.putScalar (nan);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (S0, A, B, S2);
+
+        C_exp.putScalar (S2);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 1*(A @ B)" << endl;
+      // A and B will be filled with 1s, so C should get filled with 1s.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S1, A, B, S0);
+
+        C_exp.putScalar (S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + (-1)*(A @ B)" << endl;
+      // A and B will be filled with 1, so C should get filled with -1.
+      // Prefill C with NaN, to ensure that the method follows BLAS
+      // update rules.
+      {
+        A.putScalar (S1);
+        B.putScalar (S1);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (-S1, A, B, S0);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be 5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, S1);
+
+        C_exp.putScalar (S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + 1*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -1 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (S1, A, B, -S1);
+
+        C_exp.putScalar (-S1);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 1*C + (-1)*(A @ B)" << endl;
+      // Fill A with 2, B with 3, and C with 1.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S5 = S2 + S3;
+
+        A.putScalar (S2);
+        B.putScalar (S3);
+        C.putScalar (S1);
+
+        C.elementWiseMultiply (-S1, A, B, S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-1)*C + (-1)*(A @ B)" << endl;
+      // Fill A with 1, B with 2, and C with 3.  C should be -5 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S1 + S1 + S1;
+        const ST S5 = S2 + S3;
+        A.putScalar (S1);
+        B.putScalar (S2);
+        C.putScalar (S3);
+
+        C.elementWiseMultiply (-S1, A, B, -S1);
+
+        C_exp.putScalar (-S5);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = 0*C + 2*(A @ B)" << endl;
+      // Fill A with 3 and B with 4.  C should be 24 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S24 = S2 * S3 * S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+
+        // Prefill C with NaN, if NaN exists for ST.
+        const ST nan = static_cast<ST> (Kokkos::Details::ArithTraits<IST>::nan ());
+        C.putScalar (nan);
+
+        C.elementWiseMultiply (S2, A, B, S0);
+
+        C_exp.putScalar (S24);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+
+      caseNum++;
+      out << "Case " << caseNum << ": C = (-2)*C + 2*(A @ B)" << endl;
+      // Fill A with 3, B with 4, and C with 5.  C should be 14 after.
+      {
+        const ST S2 = S1 + S1;
+        const ST S3 = S2 + S1;
+        const ST S4 = S3 + S1;
+        const ST S5 = S4 + S1;
+        const ST S14 = S5 * S2 + S4;
+
+        A.putScalar (S3);
+        B.putScalar (S4);
+        C.putScalar (S5);
+
+        C.elementWiseMultiply (S2, A, B, -S2);
+
+        C_exp.putScalar (S14);
+        C_exp.update (S1, C, -S1);
+        C_exp.normInf (C_norms ());
+
+        TEST_COMPARE_FLOATING_ARRAYS( C_norms, C_zeros, M0 );
+      }
+    }
+
+    // Make sure that the test passed on all processes, not just Proc 0.
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+  }
+
+  // Test Tpetra::MultiVector::elementWiseMultiply on a large multivector
+  //
+  // Be sure to exercise all combinations of the cases alpha =
+  // {-1,0,1,other} and beta = {-1,0,1,other}, as these commonly have
+  // special cases.
+  //
+  // Also be sure to exercise the common case (also often with a
+  // special-case implementation) where all the MultiVectors have one
+  // column.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ElementWiseMultiplyLg, LO , GO , ST , Node )
+  {
+    using Teuchos::View;
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<ST> STS;
+    typedef typename STS::magnitudeType MT;
+    typedef Teuchos::ScalarTraits<MT> STM;
+    typedef Tpetra::Map<LO,GO,Node> map_type;
+    typedef Tpetra::MultiVector<ST,LO,GO,Node> MV;
+    typedef Tpetra::Vector<ST,LO,GO,Node> V;
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+
+    out << "Tpetra::MultiVector::elementWiseMultiplyLg test" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Create a Map.
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const size_t lclNumRows = 15000;
     const GST gblNumRows = comm->getSize () * lclNumRows;
     const GO indexBase = 0;
     RCP<const map_type> map3n =
@@ -1347,7 +1760,7 @@ namespace {
     mvec2.norm1(norms2());
     std::fill(ans.begin(), ans.end(), M0);
     TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
-    TEST_COMPARE_FLOATING_ARRAYS(norms1,ans,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(norms2,ans,M0);
     // replace local entries s.t.
     // mvec1 = [1 1]  and  mvec2 = [0 0]
     //         [0 0]               [1 1]
@@ -1549,12 +1962,22 @@ namespace {
     {
       A.randomize();
 
-      out << "Check that get1dView and get1dCopy have the same values" << endl;
+      out << "Check that get1dView and get1dCopy have the same values (type 1)" << endl;
       {
         ArrayRCP<const Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
         TEST_NOTHROW( view = A.get1dView() );
-        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
+        TEST_NOTHROW( A.get1dCopy(copy,numLocal) );
+        TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
+      }
+
+      A.randomize();
+      out << "Check that get1dView and get1dCopy have the same values (type 2)" << endl;
+      {
+        ArrayRCP<const Scalar> view;
+        Array<Scalar> copy(numLocal*numVectors);
+        TEST_NOTHROW( A.get1dCopy(copy,numLocal) );
+        TEST_NOTHROW( view = A.get1dView() );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
       }
 
@@ -1562,8 +1985,8 @@ namespace {
       {
         ArrayRCP<Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
+        TEST_NOTHROW( A.get1dCopy(copy,numLocal) );
         TEST_NOTHROW( view = A.get1dViewNonConst() );
-        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
         // clear view, ensure that A is zero
         std::fill(view.begin(), view.end(), S0);
@@ -1572,7 +1995,8 @@ namespace {
         A.norm1(norms());
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
-
+    }
+    {
       A.randomize();
 
       out << "Check that get2dView and get2dCopy have the same values" << endl;
@@ -1583,8 +2007,8 @@ namespace {
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
+        TEST_NOTHROW( A.get2dCopy(copies) );
         TEST_NOTHROW( views = A.get2dView() );
-        TEST_NOTHROW( A.get2dCopy(copies()) );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
@@ -1598,8 +2022,8 @@ namespace {
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        TEST_NOTHROW( views = A.get2dViewNonConst() );
         TEST_NOTHROW( A.get2dCopy(copies()) );
+        TEST_NOTHROW( views = A.get2dViewNonConst() );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
@@ -2003,9 +2427,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->getLocalViewHost ();
-      auto X1_local = X1->getLocalViewHost ();
-      auto X2_local = X2->getLocalViewHost ();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X1_local = X1->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X2_local = X2->getLocalViewHost(Tpetra::Access::ReadOnly);
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -2056,9 +2480,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X1_local = X1_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X2_local = X2_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X1_local = X1_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X2_local = X2_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly);
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -2111,9 +2535,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X1_local = X1->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X1_local = X1->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X2_local = X2->getLocalViewHost(Tpetra::Access::ReadOnly);
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
       TEST_EQUALITY( X2_local.data (), X_local.data () );
@@ -2163,9 +2587,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X1_local = X1_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X2_local = X2_nonconst->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X_local = X->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X1_local = X1_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto X2_local = X2_nonconst->getLocalViewHost(Tpetra::Access::ReadOnly);
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X1_local points, as long as it has zero rows.
@@ -2303,6 +2727,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ScaleAndAssign, LO , GO , Scalar , Node )
   {
+    std::cerr << std::endl;
+
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
@@ -2333,12 +2759,12 @@ namespace {
     // Also, ensure that other vectors aren't changed
 
     out << "Create A, and fill with random numbers" << endl;
-    MV A (map, numVectors, false);
-    A.randomize ();
+    MV A(map, numVectors, false);
+    A.randomize();
 
     out << "Stash away norms of columns of A" << endl;
     Array<Mag> Anrms(numVectors);
-    A.norm1 (Anrms ());
+    A.norm1(Anrms());
 
     out << "Test B := A*2, using different methods" << endl;
     // set B = A * 2, using different techniques
@@ -2367,8 +2793,8 @@ namespace {
             std::ostringstream os;
             os << ">>> Proc " << comm->getSize ();
             os << ": A.modified_host: " << (A.need_sync_device ()?1:0);
-            os  << ", A.modified_device: " << (A.need_sync_host ()?1:0);
-            os << ": B.modified_host: " << (B.need_sync_device ()?1:0);
+            os << ", A.modified_device: " << (A.need_sync_host ()?1:0);
+            os << ", B.modified_host: " << (B.need_sync_device ()?1:0);
             os << ", B.modified_device: " << (B.need_sync_host ()?1:0);
             os << std::endl;
             std::cerr << os.str ();
@@ -2385,6 +2811,7 @@ namespace {
               bjview[i] *= as<Scalar>(2);
             }
           }
+          
           lclSuccess = success ? 1 : 0;
           gblSuccess = 0; // output argument
           reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -2480,8 +2907,8 @@ namespace {
     {
       MV C (map, numVectors, false);
       C.scale (as<Scalar> (2), A);
-
       C.update (-1.0,B,1.0);
+
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
@@ -2494,8 +2921,8 @@ namespace {
       C.scale(as<Scalar>(2));
       C.update(-1.0,B,1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
-      C.norm1(Cnorms());
-      TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
+      C.norm1(Cnorms);
+      TEST_COMPARE_FLOATING_ARRAYS(Cnorms,zeros,tol);
     }
 
     out << "Check that C := A, C.scale(tuple(2)) == B" << endl;
@@ -3371,11 +3798,6 @@ namespace {
 
     myOut << "Modify entries of x and y" << endl;
 
-    x.sync_host ();
-    y.sync_host ();
-    x.modify_host ();
-    y.modify_host ();
-
     // dot([i], [i]) should be 1, not -1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
     y.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
@@ -3385,11 +3807,6 @@ namespace {
     TEST_EQUALITY( results[0], STS::one() );
 
     myOut << "Modify entries of x and y" << endl;
-
-    x.sync_host ();
-    y.sync_host ();
-    x.modify_host ();
-    y.modify_host ();
 
     // dot([-i], [i]) should be -1, not +1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), -STM::one ()));
@@ -3761,66 +4178,25 @@ namespace {
       return; // no sense in continuing.
     }
 
-    // putScalar doesn't sync afterwards, so we have to sync manually.
-    // It has the option to modify the data in the last modified
-    // location without sync.  (This is supposed to avoid allocation,
-    // once Kokkos::DualView gets the feature of lazy allocation on
-    // modify.)
-    //
-    // The use of "execution_space" and not "memory_space" here
-    // ensures that Kokkos won't attempt to use a host execution space
-    // that hasn't been initialized.  For example, if Kokkos::OpenMP
-    // is disabled and Kokkos::Threads is enabled, the latter is
-    // always the default execution space of Kokkos::HostSpace, even
-    // when ExecSpace is Kokkos::Serial.  That's why we use
-    // execution_space here and not memory_space.
-
-    if (X->need_sync_host ()) {
-      out << "Sync to host" << endl;
-      X->sync_host ();
-    } else if (X->template need_sync<device_type> ()) {
-      out << "Sync to device" << endl;
-      X->template sync<device_type> ();
-    } else {
-      out << "No need to sync" << endl;
-    }
-
-    // mfh 01 Mar 2015: DualView doesn't actually reset the modified
-    // flags if the host and device memory spaces are the same.  I
-    // don't like that, but I don't want to mess with DualView.
-    const bool hostAndDeviceSpacesSame =
-      std::is_same<typename device_type::memory_space,
-                   Kokkos::HostSpace>::value;
-    if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (! X->need_sync_host () &&
-                    ! X->template need_sync<device_type> ()) ? 1 : 0;
-      gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST(gblSuccess, 1);
-      if (gblSuccess != 1) {
-        out << "Kokkos::DualView did not sync correctly on one or more "
-          "processes!" << endl;
-      }
-    }
-
     // Modify the data through the host View, by setting all of its
     // entries to a different number than before.  (ONE and TWO differ
     // even in the finite field Z_2.)
-    auto X_lcl_h = X->getLocalViewHost ();
-    X->modify_host ();
-    Kokkos::deep_copy (X_lcl_h, ONE);
-    X->template sync<device_type> ();
-
+    {
+      auto X_lcl_h = X->getLocalViewHost(Tpetra::Access::OverwriteAll);
+      Kokkos::deep_copy (X_lcl_h, ONE);
+    }
     // Now compute the inf-norms of the columns of X.  (We want a
     // separate mechanism from methods that return Kokkos::DualView or
     // Kokkos::View.)  All inf-norms should be ONE, not TWO.
-    typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
-    norms.template modify<device_type> ();
-    X->normInf (norms.template view<device_type> ());
-    norms.sync_host ();
-    for (size_t k = 0; k < numVecs; ++k) {
-      TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+    {
+      typedef typename MV::mag_type mag_type;
+      Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+      norms.template modify<device_type> ();
+      X->normInf (norms.template view<device_type> ());
+      norms.sync_host ();
+      for (size_t k = 0; k < numVecs; ++k) {
+        TEST_EQUALITY_CONST( norms.h_view(k), ONE );
+      }
     }
   }
 
@@ -3848,8 +4224,8 @@ namespace {
 
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
-    int lclSuccess = 1;
-    int gblSuccess = 1;
+    //int lclSuccess = 1;
+    //int gblSuccess = 1;
 
     // This typedef (a 2-D Kokkos::DualView specialization) must exist.
     typedef typename MV::dual_view_type dual_view_type;
@@ -3863,29 +4239,11 @@ namespace {
     dual_view_type X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::DualView's data on the host.
-    auto X_lcl_h = X_lcl.view_host ();
-    X_lcl.modify_host ();
-    Kokkos::deep_copy (X_lcl_h, ONE);
-    X_lcl.template sync<device_type> ();
-
-    // Make sure that the DualView actually sync'd.
-    //
-    // mfh 01 Mar 2015: DualView doesn't actually reset the modified
-    // flags if the host and device memory spaces are the same.  I
-    // don't like that, but I don't want to mess with DualView.
-
-    const bool hostAndDeviceSpacesSame = std::is_same<
-      typename dual_view_type::t_dev::memory_space,
-      typename dual_view_type::t_host::memory_space>::value;
-    if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (X_lcl.need_sync_host()==false && X_lcl.need_sync_device()==false) ? 1 : 0;
-      gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST(gblSuccess, 1);
-      if (gblSuccess != 1) {
-        out << "Kokkos::DualView did not sync correctly on one or more "
-          "processes!" << endl;
-      }
+    {
+      auto X_lcl_h = X_lcl.view_host ();
+      X_lcl.modify_host ();
+      Kokkos::deep_copy (X_lcl_h, ONE);
+      X_lcl.template sync<device_type> ();
     }
 
     // Hand off the Kokkos::DualView to a Tpetra::MultiVector.
@@ -3909,25 +4267,11 @@ namespace {
 
     // Now change the values in X_lcl.  X_gbl should see them.  Just
     // for variety, we do this on the device, not on the host.
-    auto X_lcl_d = X_lcl.template view<device_type> ();
-    X_lcl.template modify<device_type> ();
-    Kokkos::deep_copy (X_lcl_d, TWO);
-    X_lcl.sync_host ();
-
-    // Make sure that the DualView actually sync'd.
-    //
-    // mfh 01 Mar 2015: DualView doesn't actually reset the modified
-    // flags if the host and device memory spaces are the same.  I
-    // don't like that, but I don't want to mess with DualView.
-    if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (X_lcl.need_sync_host()==false && X_lcl.need_sync_device()==false) ? 1 : 0;
-      gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST(gblSuccess, 1);
-      if (gblSuccess != 1) {
-        out << "Kokkos::DualView did not sync correctly on one or more "
-          "processes!" << endl;
-      }
+    {
+      auto X_lcl_d = X_lcl.template view<device_type> ();
+      X_lcl.template modify<device_type> ();
+      Kokkos::deep_copy (X_lcl_d, TWO);
+      X_lcl.sync_host ();
     }
 
     // Make sure that X_gbl saw the changes made to X_lcl's data.
@@ -3969,7 +4313,10 @@ namespace {
 
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
+#define TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST
+#if !defined(TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST)
     const Scalar THREE = TWO + ONE;
+#endif
     int lclSuccess = 1;
     int gblSuccess = 0; // to be set below
 
@@ -3979,6 +4326,12 @@ namespace {
     // Create the Kokkos::View X_lcl.
     const size_t numLclRows = 10;
     const size_t numVecs = 3;
+
+    /// KJ : release local object, this workflow is problematic. 
+    ///      a user create a device view and hand it to tpetra. 
+    ///      tpetra now has unmatched referecne count for host and device view
+    ///      as the local device view is alive. this is the case that we do not want 
+    ///      to encourage users.
     typename dual_view_type::t_dev X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::View's data.
@@ -4002,8 +4355,14 @@ namespace {
     const GO indexBase = 0;
     RCP<const map_type> map =
       rcp (new map_type (INVALID, numLclRows, indexBase, comm));
-    MV X_gbl (map, X_lcl);
 
+    /// KJ : release local object, this workflow is problematic. 
+    ///      a user create a device view and hand it to tpetra. 
+    ///      tpetra now has unmatched referecne count for host and device view
+    ///      as the local device view is alive. this is the case that we do not want 
+    ///      to encourage users.
+    MV X_gbl (map, X_lcl);
+    
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -4044,7 +4403,6 @@ namespace {
 
     // Now change the values in X_lcl.  X_gbl should see them.  Be
     // sure to tell X_gbl that we want to modify its data on device.
-    X_gbl.template modify<device_type> ();
     Kokkos::deep_copy (X_lcl, TWO);
 
     // Tpetra::MultiVector::normInf _should_ either read from the most
@@ -4082,17 +4440,15 @@ namespace {
       std::cerr << os.str ();
     }
 
+#if !defined(TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST)
     // Just as X_gbl views X_lcl, X_lcl should also view X_gbl.  Thus,
     // if we modify X_gbl in host memory, and sync to device memory,
     // X_lcl should also be changed.
 
     // We modified on device above, and we're about to modify on host
     // now, so we need to sync to host first.
-    X_gbl.sync_host ();
-
-    auto X_host = X_gbl.getLocalViewHost ();
-    X_gbl.modify_host ();
-
+    auto X_host = X_gbl.getLocalViewHost(Tpetra::Access::ReadWrite);
+    
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -4105,10 +4461,8 @@ namespace {
       os << "Proc " << comm->getRank () << ": checkpoint 5" << std::endl;
       std::cerr << os.str ();
     }
-
+    
     Kokkos::deep_copy (X_host, THREE);
-    X_gbl.sync_device ();
-
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
@@ -4173,6 +4527,8 @@ namespace {
       os << "Proc " << comm->getRank () << ": DONE" << std::endl;
       std::cerr << os.str ();
     }
+#endif
+#undef TPETRA_MULTIVECTOR_VIEWCTOR_DO_NOT_TEST
   }
 
 // Macro used inside the SubViewSomeZeroRows test below.  It tests for
@@ -4794,12 +5150,44 @@ namespace {
 
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DualViewRefcountCheck, LO , GO , Scalar , Node ) {
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (100, 0, comm));
+    MV x(map, 1);
+
+    const void* devicePtr = x.getLocalViewDevice(Tpetra::Access::ReadOnly).data();
+    const void* hostPtr = x.getLocalViewHost(Tpetra::Access::ReadOnly).data();
+
+    if(devicePtr != hostPtr)
+    {
+      //Host and device views are not the same.
+      //Make sure that (assuming the 'device' space is not host accessible) checking out
+      //host and device views at the same time is not allowed.
+      bool threw = false;
+      try
+      {
+        auto xDevice = x.getLocalViewDevice(Tpetra::Access::ReadOnly);
+        //this shouldn't be allowed, since xDevice holds a reference to device view.
+        auto xHost = x.getLocalViewHost(Tpetra::Access::ReadOnly);
+      }
+      catch(...)
+      {
+        threw = true;
+      }
+      TEST_EQUALITY(threw, true);
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, basic             , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, large             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonMemberConstructors, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstLDA       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, BadConstAA        , LO, GO, SCALAR, NODE ) \
@@ -4822,6 +5210,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SingleVecNormalize, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Multiply          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ElementWiseMultiply,LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ElementWiseMultiplyLg,LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, NonContigView     , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Describable       , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Typedefs          , LO, GO, SCALAR, NODE ) \
@@ -4833,7 +5222,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, SubViewSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithSomeZeroRows, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DimsWithAllZeroRows, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
 
   #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
     UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )

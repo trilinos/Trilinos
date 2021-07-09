@@ -32,18 +32,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/parallel/DistributedIndex.hpp>
-#include <algorithm>                    // for sort, lower_bound, min, etc
-#include <iterator>                     // for distance
-#include <limits>                       // for numeric_limits
-#include <sstream>                      // for operator<<, basic_ostream, etc
-#include <stdexcept>                    // for runtime_error
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer
-#include <stk_util/parallel/ParallelReduceBool.hpp>  // for is_true_on_any_proc
-#include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
-#include <stk_util/util/RadixSort.hpp>  // for radix_sort_unsigned
-#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
+#include "stk_util/parallel/DistributedIndex.hpp"
+#include "stk_util/parallel/CommSparse.hpp"          // for CommSparse
+#include "stk_util/parallel/Parallel.hpp"            // for MPI_Bcast, parallel_machine_rank
+#include "stk_util/parallel/ParallelComm.hpp"        // for CommBuffer
+#include "stk_util/parallel/ParallelReduceBool.hpp"  // for is_true_on_any_proc
+#include "stk_util/stk_config.h"                     // for STK_HAS_MPI
+#include "stk_util/util/RadixSort.hpp"               // for radix_sort_unsigned
+#include <algorithm>                                 // for sort, lower_bound, min, unique, remo...
+#include <iterator>                                  // for distance
+#include <limits>                                    // for numeric_limits
+#include <memory>                                    // for allocator_traits<>::value_type
+#include <sstream>                                   // for operator<<, basic_ostream, ostringst...
+#include <stdexcept>                                 // for runtime_error
 
 
 namespace stk {

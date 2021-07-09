@@ -50,6 +50,7 @@
 #define __INTREPID2_HGRAD_QUAD_C1_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
+#include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
 
 namespace Intrepid2 {
 
@@ -101,7 +102,7 @@ namespace Intrepid2 {
 
       };
 
-      template<typename ExecSpaceType,
+      template<typename DeviceType,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
@@ -156,30 +157,30 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
-  class Basis_HGRAD_QUAD_C1_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+  class Basis_HGRAD_QUAD_C1_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
     /** \brief Constructor.
      */
     Basis_HGRAD_QUAD_C1_FEM();
 
-    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
+    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
 
-    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
 
     virtual
     void
     getValues(       OutputViewType outputValues,
                const PointViewType  inputPoints,
-               const EOperator operatorType = OPERATOR_VALUE ) const {
+               const EOperator operatorType = OPERATOR_VALUE ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify arguments
       Intrepid2::getValues_HGRAD_Args(outputValues,
@@ -189,14 +190,14 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       Impl::Basis_HGRAD_QUAD_C1_FEM::
-        getValues<ExecSpaceType>( outputValues,
+        getValues<DeviceType>( outputValues,
                                   inputPoints,
                                   operatorType );
     }
 
     virtual
     void
-    getDofCoords( ScalarViewType dofCoords ) const {
+    getDofCoords( ScalarViewType dofCoords ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
@@ -213,7 +214,7 @@ namespace Intrepid2 {
 
     virtual
     void
-    getDofCoeffs( ScalarViewType dofCoeffs ) const {
+    getDofCoeffs( ScalarViewType dofCoeffs ) const override {
 #ifdef HAVE_INTREPID2_DEBUG
       // Verify rank of output array.
       INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
@@ -227,10 +228,31 @@ namespace Intrepid2 {
 
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "Intrepid2_HGRAD_QUAD_C1_FEM";
     }
 
+    /** \brief returns the basis associated to a subCell.
+
+        The bases of the subCell are the restriction to the subCell
+        of the bases of the parent cell.
+        \param [in] subCellDim - dimension of subCell
+        \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+        \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+     */
+    BasisPtr<DeviceType, outputValueType, pointValueType>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        return Teuchos::rcp(new
+            Basis_HGRAD_LINE_C1_FEM<DeviceType, outputValueType, pointValueType>());
+      }
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+
+    BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+    getHostBasis() const override {
+      return Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>());
+    }  
   };
 }// namespace Intrepid2
 

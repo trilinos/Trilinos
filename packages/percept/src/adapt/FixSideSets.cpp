@@ -180,11 +180,14 @@ namespace percept {
               stk::topology elem_topo = m_eMesh.topology(element);
               if (m_eMesh.get_spatial_dim() == 3 && m_eMesh.entity_rank(side) == m_eMesh.edge_rank())
                 {
-                  stk::topology elem_edge_topo = elem_topo.edge_topology();
-                  if (side_topo != elem_edge_topo)
+                  bool found_match=false;
+                  for (unsigned iedge=0; iedge<elem_topo.num_edges(); iedge++) {
+                    if (side_topo == elem_topo.edge_topology(iedge))
                     {
-                      continue;
+                      found_match = true;
                     }
+                  }
+                  if (!found_match) continue;
                 }
               else
                 {
@@ -878,6 +881,11 @@ namespace percept {
         reduced_mod_end = false;
       (void)reduced_mod_end;
 
+      bool skip_side_part_fixes = false;
+      if (m_eMesh.getProperty("Refiner_skip_side_part_fixes") == "true")
+        skip_side_part_fixes = true;
+
+
       // loop over all sides that are leaves (not parent or have no family tree),
       //   loop over their nodes and their associated elements,
       //     connect element and side if they share a face
@@ -906,6 +914,7 @@ namespace percept {
       fix_permutation(side_set);
 
       end_begin(msg+"moveSides");
-      move_sides_to_correct_surfaces();
+      if (!skip_side_part_fixes)
+        move_sides_to_correct_surfaces();
     }
 }

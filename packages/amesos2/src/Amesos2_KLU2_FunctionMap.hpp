@@ -52,6 +52,9 @@
 #ifndef AMESOS2_KLU2_FUNCTIONMAP_HPP
 #define AMESOS2_KLU2_FUNCTIONMAP_HPP
 
+// Note since Klu2 is templated we don't use function maps.
+// Includes are still collected here which mirrors setup in other solvers.
+
 #ifdef HAVE_TEUCHOS_COMPLEX
 #include <complex>
 #endif
@@ -59,11 +62,8 @@
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_KLU2_TypeMap.hpp"
 
-
 /* External definitions of the KLU2 functions
- *
  */
- // TODO
 namespace KLU2 {
 #include "klu2_defaults.hpp"
 #include "klu2_analyze.hpp"
@@ -74,39 +74,28 @@ namespace KLU2 {
 #include "klu2_free_numeric.hpp"
 } // end namespace KLU2
 
-
 namespace Amesos2 {
 
-  /* ==================== Specializations ====================
-   *
-   * \cond KLU2_function_specializations
-   */
+#ifdef HAVE_TEUCHOS_COMPLEX
+  template <>
+  struct FunctionMap<KLU2,Kokkos::complex<double>>
+  {
+    static std::complex<double> * convert_scalar(Kokkos::complex<double> * pData) {
+      return reinterpret_cast<std::complex<double> *>(pData);
+    }
+  };
 
-  /**
-   * \brief Pass function calls to KLU2 based on data type.
-   *
-   * Helper class which passes on function calls to the appropriate
-   * KLU2 function based on the type of its scalar template argument.
-   *
-   * KLU2 has solver and matrix builder functions defined based on
-   * data type.  One function for complex, one for double precision
-   * complex, another for \c float , and yet another for \c double.  To
-   * work elegantly with the Amesos2::KLU2 interface we want to be
-   * able to perform a single function call which is appropriate for the
-   * scalar type of the Matrix and MultiVectors that we are working
-   * with.  The \c FunctionMap class provides that capability.
-   *
-   * The class template is specialized for each data type that KLU2
-   * supports.  The Amesos2::create function assures that an
-   * unspecialized FunctionMap will never be called by the solver
-   * interface.
-   *
-   */
-  // TODO : Do we need the specializations for KLU2 ??
+  // Note that Klu2 does not support complex float so it does not appear here.
+#endif // HAVE_TEUCHOS_COMPLEX
 
-
-  /* \endcond KLU2_function_specializations */
-
+  // if not specialized, then assume generic conversion is fine
+  template <typename scalar_t>
+  struct FunctionMap<KLU2,scalar_t>
+  {
+    static scalar_t * convert_scalar(scalar_t * pData) {
+      return pData; // no conversion necessary
+    }
+  };
 
 } // end namespace Amesos2
 

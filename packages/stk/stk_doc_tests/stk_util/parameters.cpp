@@ -32,17 +32,21 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stddef.h>                     // for size_t
-#include <sys/types.h>                  // for int64_t
-#include <complex>                      // for complex, operator<<, etc
-#include <exception>                    // for exception
-#include <iostream>                     // for basic_ostream::operator<<, etc
-#include <map>                          // for operator==, etc
-#include <stk_util/util/ParameterList.hpp>  // for ParameterList, Type, etc
-#include <string>                       // for string, basic_string
-#include <vector>                       // for vector
-#include "boost/any.hpp"                // for any_cast
+#include "stk_util/stk_config.h"
+
+#ifdef STK_HAVE_BOOST
+
+#include "gtest/gtest.h"
+#include "stk_util/util/ParameterList.hpp"  // for ParameterList, Type, etc
+#include "boost/any.hpp"                    // for any_cast
+#include <stddef.h>                         // for size_t
+#include <sys/types.h>                      // for int64_t
+#include <complex>                          // for complex, operator<<, etc
+#include <exception>                        // for exception
+#include <iostream>                         // for basic_ostream::operator<<, etc
+#include <map>                              // for operator==, etc
+#include <string>                           // for string, basic_string
+#include <vector>                           // for vector
 
 namespace
 {
@@ -256,5 +260,5 @@ namespace
   }
 }
 
-// type not supported...
-// iterator access valid
+#endif //STK_HAVE_BOOST
+

@@ -98,6 +98,10 @@ OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mes
                                                   stk::mesh::EntityRank to_rank,
                                                   const stk::mesh::EntityVector &nodes_of_sub_rank);
 
+bool element_side_polarity(const BulkData& mesh,
+                           const Entity elem ,
+                           const Entity side , unsigned local_side_id );
+
 stk::EquivalentPermutation sub_rank_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank,
                                                             const stk::mesh::Entity* subRankNodes);
 
@@ -162,6 +166,7 @@ void get_parts_with_topology(stk::topology topology,
   }
 }
 
+stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank);
 stk::mesh::Entity get_side_entity_for_elem_side_pair(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal);
 stk::mesh::Entity get_side_entity_for_elem_id_side_pair_of_rank(const stk::mesh::BulkData &bulk, int64_t elemId, int sideOrdinal, stk::mesh::EntityRank sideRank);
 

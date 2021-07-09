@@ -76,7 +76,7 @@ class Mesh {
   Kokkos::View<double**,PHX::Device> qp_;
 
   // Weights for integration rule <qp>
-  Kokkos::View<double*> weights_;
+  Kokkos::View<double*,PHX::Device> weights_;
   
   // Basis <qp,basis>
   Kokkos::View<double**,PHX::Device> basis_;
@@ -94,7 +94,7 @@ class Mesh {
   Kokkos::View<double**,PHX::Device> det_jac_;  
 
   // Gradient of basis in real space <cell,qp,basis,dim>
-  Kokkos::View<double****> grad_basis_real_;
+  Kokkos::View<double****,PHX::Device> grad_basis_real_;
 
 public:
   

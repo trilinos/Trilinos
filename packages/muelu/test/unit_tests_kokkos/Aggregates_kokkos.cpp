@@ -130,6 +130,7 @@ namespace MueLuTests {
     params.set<int> ("aggregation: max agg size", 3);
     params.set<bool>("aggregation: deterministic", false);
 
+    params.set<bool>("aggregation: phase2a include root", true);
     params.set<bool>("aggregation: error on nodes with no on-rank neighbors", false);
     params.set<bool>("aggregation: phase3 avoid singletons", false);
 
@@ -183,7 +184,7 @@ namespace MueLuTests {
     using memory_space      = typename LWGraph_kokkos::memory_space;
 
     const LO numNodes = graph.GetNodeNumVertices();
-    auto vertex2AggId = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto aggSizes     = aggregates.ComputeAggregateSizes(true);
 
     Kokkos::View<LO*, memory_space> discontiguousAggs("discontiguous aggregates",
@@ -364,8 +365,8 @@ namespace MueLuTests {
     Kokkos::deep_copy(aggStat, MueLu::READY);
 
     // Performing fake aggregates to generate a discontiguous aggregate
-    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> vertex2AggId = aggregates->GetVertex2AggId()->template getLocalView<memory_space>();
-    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> procWinner   = aggregates->GetProcWinner()->template getLocalView<memory_space>();
+    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> vertex2AggId = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> procWinner   = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
     typename Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space>::HostMirror vertex2AggId_h
       = Kokkos::create_mirror_view(vertex2AggId);
@@ -412,15 +413,12 @@ namespace MueLuTests {
 
     typename Aggregates_kokkos::aggregates_sizes_type::const_type aggSizes
       = aggregates->ComputeAggregateSizes(true);
-    typename Aggregates_kokkos::aggregates_sizes_type::const_type::HostMirror aggSizes_h =
-      Kokkos::create_mirror_view(aggSizes);
-    Kokkos::deep_copy(aggSizes_h, aggSizes);
 
     LO numBadAggregates = 0;
     Kokkos::parallel_reduce("Checking aggregates sizes",
-                            Kokkos::RangePolicy<LO, typename Aggregates_kokkos::execution_space>(0, aggSizes_h.extent(0)),
+                            Kokkos::RangePolicy<LO, typename Aggregates_kokkos::execution_space>(0, aggSizes.extent(0)),
                             KOKKOS_LAMBDA(const LO aggIdx, LO& lNumBadAggregates) {
-                              if ((aggSizes_h(aggIdx) < 1) || (3 < aggSizes_h(aggIdx))) {
+                              if ((aggSizes(aggIdx) < 1) || (3 < aggSizes(aggIdx))) {
                                 lNumBadAggregates += 1;
                               }
                             }, numBadAggregates);
@@ -469,15 +467,12 @@ namespace MueLuTests {
 
     typename Aggregates_kokkos::aggregates_sizes_type::const_type aggSizes
       = aggregates->ComputeAggregateSizes(true);
-    typename Aggregates_kokkos::aggregates_sizes_type::const_type::HostMirror aggSizes_h =
-      Kokkos::create_mirror_view(aggSizes);
-    Kokkos::deep_copy(aggSizes_h, aggSizes);
 
     LO numBadAggregates = 0;
     Kokkos::parallel_reduce("Checking aggregates sizes",
-                            Kokkos::RangePolicy<LO, typename Aggregates_kokkos::execution_space>(0, aggSizes_h.extent(0)),
+                            Kokkos::RangePolicy<LO, typename Aggregates_kokkos::execution_space>(0, aggSizes.extent(0)),
                             KOKKOS_LAMBDA(const LO aggIdx, LO& lNumBadAggregates) {
-                              if ((aggSizes_h(aggIdx) < 1) || (5 < aggSizes_h(aggIdx))) {
+                              if ((aggSizes(aggIdx) < 1) || (5 < aggSizes(aggIdx))) {
                                 lNumBadAggregates += 1;
                               }
                             }, numBadAggregates);

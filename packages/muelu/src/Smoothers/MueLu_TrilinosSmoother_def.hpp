@@ -135,7 +135,7 @@ namespace MueLu {
     }
     triedBelos_ = true;
 #endif
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
     try {
       sStratimikos_ = rcp(new StratimikosSmoother(type_, paramList));
       if (sStratimikos_.is_null())
@@ -195,7 +195,7 @@ namespace MueLu {
       s_ = (useTpetra ? sTpetra_ : sEpetra_);
       if (s_.is_null()) {
         if (useTpetra) {
-#if not defined(HAVE_MUELU_IFPACK22)
+#if not defined(HAVE_MUELU_IFPACK2)
           TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
                                      "Error: running in Tpetra mode, but MueLu with Ifpack2 was disabled during the configure stage.\n"
                                      "Please make sure that:\n"
@@ -304,6 +304,7 @@ namespace MueLu {
     if (type == "LINESMOOTHING_TRIDIAGONALRELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
     if (type == "LINESMOOTHING_TRIDIAGONAL RELAXATION")  { return "LINESMOOTHING_BLOCKRELAXATION"; }
     if (type == "LINESMOOTHING_TRIDIAGONAL_RELAXATION")  { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "AGGREGATE")                             { return "AGGREGATE";                     }
     if(type == "BLOCK_RELAXATION" ||
        type == "BLOCK RELAXATION" ||
        type == "BLOCKRELAXATION" ||

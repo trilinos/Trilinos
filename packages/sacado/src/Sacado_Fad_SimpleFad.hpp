@@ -149,7 +149,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator += (const S& x) {
         GeneralFadType::operator+=(x);
         return *this;
@@ -157,7 +157,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator -= (const S& x) {
         GeneralFadType::operator-=(x);
         return *this;
@@ -165,7 +165,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator *= (const S& x) {
         GeneralFadType::operator*=(x);
         return *this;
@@ -173,35 +173,35 @@ namespace Sacado {
 
       //! Division-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(SimpleFad&) operator /= (const S& x) {
         GeneralFadType::operator/=(x);
         return *this;
       }
 
       //! Addition-assignment operator with SimpleFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SimpleFad& operator += (const SimpleFad& x) {
         GeneralFadType::operator+=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
       //! Subtraction-assignment operator with SimpleFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SimpleFad& operator -= (const SimpleFad& x) {
         GeneralFadType::operator-=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
       //! Multiplication-assignment operator with SimpleFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SimpleFad& operator *= (const SimpleFad& x) {
         GeneralFadType::operator*=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
       //! Division-assignment operator with SimpleFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SimpleFad& operator /= (const SimpleFad& x) {
         GeneralFadType::operator/=(static_cast<const GeneralFadType&>(x));
         return *this;

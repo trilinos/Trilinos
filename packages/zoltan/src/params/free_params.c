@@ -81,6 +81,63 @@ PARAM_LIST **params)				/* parameters structure */
 
     *params = NULL;
 }
+ 
+size_t Zoltan_Serialize_Params_Size(struct Zoltan_Struct const *from) 
+{
+  /* Count the number of parameters */
+  PARAM_LIST const *param = from->Params;
+  int nParam = 0;
+  while (param) {
+    nParam++;
+    param = param->next;
+  }
+
+  return sizeof(int)                          /* to store number of params */
+       + nParam * (MAX_PARAM_STRING_LEN * 2); /* max per param: (name, value) */
+}
+
+int Zoltan_Serialize_Params(struct Zoltan_Struct const *from, char **buf)
+{
+  /* Serialize the parameters */
+  char *bufptr = *buf;
+  PARAM_LIST const *param = from->Params;
+  size_t paramSize = Zoltan_Serialize_Params_Size(from);
+
+  /* Pack number of parameters */
+  int nParam = paramSize / (MAX_PARAM_STRING_LEN * 2);
+  *((int *) bufptr) = nParam;
+  bufptr += sizeof(int);
+
+  /* Pack each parameter, using max string length bytes per string */
+  while (param) {
+    strcpy(bufptr, param->name);
+    bufptr += MAX_PARAM_STRING_LEN;
+    strcpy(bufptr, param->new_val);
+    bufptr += MAX_PARAM_STRING_LEN;
+    param = param->next;
+  }
+  *buf = bufptr;
+}
+
+int Zoltan_Deserialize_Params(struct Zoltan_Struct *to, char **buf)
+{
+  /* Serialize the parameters */
+  char *bufptr = *buf;
+  int i;
+
+  /* Unpack number of parameters */
+  int nParam = *((int *)bufptr);
+  bufptr += sizeof(int);
+
+  /* Unpack parameters' (name, value) pairs and set them */
+  for (i = 0; i < nParam; i++) {
+    char *pname = bufptr;
+    char *pval = bufptr + MAX_PARAM_STRING_LEN;
+    Zoltan_Set_Param(to, pname, pval);
+    bufptr += 2 * MAX_PARAM_STRING_LEN;
+  }
+  *buf = bufptr;
+}
 
 int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from)
 {

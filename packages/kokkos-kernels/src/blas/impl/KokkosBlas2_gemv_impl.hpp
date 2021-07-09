@@ -139,8 +139,8 @@ private:
 // matrix A and the input vector x.  The output vector y is the
 // reduction result.
 //
-// WARNING: NOT RECOMMENDED FOR CUDA.  Reduction result may have
-// arbitrary length.  This is bad on CUDA because the CUDA
+// WARNING: NOT RECOMMENDED FOR GPU.  Reduction result may have
+// arbitrary length.  This is bad on GPU because the GPU
 // implementation of Kokkos::parallel_reduce may use shared memory for
 // intermediate results.
 template<class AViewType,

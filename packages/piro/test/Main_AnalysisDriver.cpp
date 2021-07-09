@@ -82,13 +82,11 @@ int main(int argc, char *argv[]) {
 
   Piro::Epetra::SolverFactory solverFactory;
 
-  for (int iTest=0; iTest<3; iTest++) {
+  for (int iTest=0; iTest<1; iTest++) {
 
     if (doAll) {
       switch (iTest) {
        case 0: inputFile="input_Analysis_Dakota.xml"; break;
-       case 1: inputFile="input_Analysis_ROL.xml"; break;
-       case 2: inputFile="input_Analysis_ROL_AdjointSensitivities.xml"; break;
        default : std::cout << "iTest logic error " << std::endl; exit(-1);
       }
     }
@@ -113,7 +111,6 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(&appParams));
 
       Teuchos::ParameterList piroParams = appParams.sublist("Piro");
-      Teuchos::ParameterList& analysisParams = piroParams.sublist("Analysis");
 
 #ifdef HAVE_PIRO_NOX
       solverFactory.setSource<NOX::Epetra::Observer>(
@@ -128,7 +125,7 @@ int main(int argc, char *argv[]) {
 
       // Call the analysis routine
       RCP<Epetra_Vector> p;
-      status = Piro::Epetra::PerformAnalysis(*piro, analysisParams, p);
+      status = Piro::Epetra::PerformAnalysis(*piro, piroParams, p);
 
       if (Teuchos::nonnull(p)) {
       double p_exact[2] = {1,3};

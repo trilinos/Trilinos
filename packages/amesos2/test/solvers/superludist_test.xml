@@ -19,7 +19,7 @@
 	<ParameterList name="run0-l">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList> <!-- end SuperLU_DIST -->
@@ -44,7 +44,7 @@
 	<ParameterList name="run0-l">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList> <!-- end SuperLU_DIST -->
@@ -62,7 +62,7 @@
 	</ParameterList>
 	<ParameterList name="run1-l">
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="Magnitude" type="string" value="double"/>
 	</ParameterList>

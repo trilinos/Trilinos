@@ -130,10 +130,10 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayViewOfView ) {
   Kokkos::deep_copy (y_host, y);
 
   Teuchos::ArrayView<double> y_view (y_host.data (), y_host.extent (0));
-  TEST_EQUALITY_CONST( size_t (y_view.size ()), size_t (y.extent (0)) );
+  TEST_EQUALITY_CONST( size_t (y_view.size ()), size_t (y_host.extent (0)) );
   if (success) {
-    for (size_type k = 0; k < size_type (y.extent (0)); ++k) {
-      TEST_EQUALITY( y_view[k], y[k] );
+    for (size_type k = 0; k < size_type (y_host.extent (0)); ++k) {
+      TEST_EQUALITY( y_view[k], y_host[k] );
     }
   }
 }

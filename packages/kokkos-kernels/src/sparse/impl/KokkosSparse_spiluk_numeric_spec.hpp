@@ -92,7 +92,7 @@ struct spiluk_numeric_eti_spec_avail {
                   Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
-                  Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
+                  Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
                   Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
@@ -101,7 +101,7 @@ struct spiluk_numeric_eti_spec_avail {
                   Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
-                  Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
+                  Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
                   Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
@@ -200,9 +200,6 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType, LRow
     // Call specific algorithm type
     auto spiluk_handle = handle->get_spiluk_handle();
 
-    if ( spiluk_handle->is_symbolic_complete() == false ) {
-      Experimental::iluk_symbolic(*spiluk_handle, fill_lev, A_row_map, A_entries, L_row_map, L_entries, U_row_map, U_entries);
-    }
     Experimental::iluk_numeric(*spiluk_handle, A_row_map, A_entries, A_values,
                                                L_row_map, L_entries, L_values, 
                                                U_row_map, U_entries, U_values);
@@ -237,7 +234,7 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType, LRow
                   Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
-                  Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
+                  Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
                   Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
@@ -246,7 +243,7 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType, LRow
                   Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
-                  Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
+                  Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
                   Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
@@ -271,7 +268,7 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType, LRow
                   Kokkos::View<const SCALAR_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
-                  Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
+                  Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
                   Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \
@@ -280,7 +277,7 @@ struct SPILUK_NUMERIC<KernelHandle, ARowMapType, AEntriesType, AValuesType, LRow
                   Kokkos::View<SCALAR_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
-                  Kokkos::View<OFFSET_TYPE *, LAYOUT_TYPE,  \
+                  Kokkos::View<const OFFSET_TYPE *, LAYOUT_TYPE,  \
                                Kokkos::Device<EXEC_SPACE_TYPE, MEM_SPACE_TYPE>, \
                                Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> >, \
                   Kokkos::View<ORDINAL_TYPE *, LAYOUT_TYPE,  \

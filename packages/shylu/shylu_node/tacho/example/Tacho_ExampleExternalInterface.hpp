@@ -1,14 +1,22 @@
 #ifndef __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
 #define __TACHO_EXAMPLE_EXTERNALINTERFACE_HPP__
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 
 #if defined(TACHO_USE_INT_INT) 
 
 #include "Tacho.hpp"
 #include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_MatrixMarket.hpp"
+
+#define TACHO_TEST_REFACTOR_DRIVER
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+#include "Tacho_Driver.hpp"
+#else
 #include "Tacho_Solver.hpp"
+#endif
 #include "Tacho_CommandLineParser.hpp"
+
+
 
 namespace tacho {
 
@@ -16,6 +24,10 @@ namespace tacho {
     {USEDEFAULTSOLVERPARAMETERS,
      VERBOSITY,
      SMALLPROBLEMTHRESHOLDSIZE,
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+     MATRIX_SYMMETRIC,
+     MATRIX_POSITIVE_DEFINITE,
+#endif
      TASKING_OPTION_BLOCKSIZE,
      TASKING_OPTION_PANELSIZE,
      TASKING_OPTION_MAXNUMSUPERBLOCKS, 
@@ -24,13 +36,14 @@ namespace tacho {
      LEVELSET_OPTION_DEVICE_FACTOR_THRES,
      LEVELSET_OPTION_DEVICE_SOLVE_THRES,
      LEVELSET_OPTION_NSTREAMS,
+     LEVELSET_OPTION_VARIANT,
      INDEX_LENGTH
     };
 
-  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type;
+  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
   using exec_space = typename device_type::execution_space;
   
-  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type;
+  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
   using host_space = typename host_device_type::execution_space;
 
   using ViewVectorType = Kokkos::View<double*,device_type>; 
@@ -39,8 +52,13 @@ namespace tacho {
   template <class SX> class tachoSolver
   {
   public:
+
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+    typedef Tacho::Driver<SX,device_type> solver_type;
+#else
     using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
     typedef Tacho::Solver<SX,sched_type> solver_type;
+#endif
 
     typedef Tacho::ordinal_type ordinal_type;
     typedef Tacho::size_type size_type;
@@ -73,7 +91,11 @@ namespace tacho {
                    /// with TACHO_ENABLE_INT_INT, size_type is "int"
 		   int* rowBegin,
 		   int* columns,
-		   SX* values)
+		   SX* values,
+                   int numGraphRows = 0,
+                   int* graphRowBegin = nullptr,
+                   int* graphColumns = nullptr,
+                   int* graphWeights = nullptr)
     {
       m_numRows = numRows;
       if (m_numRows == 0) return 0;
@@ -81,6 +103,24 @@ namespace tacho {
       const int numTerms = rowBegin[numRows];
       size_type_array_host    ap_host((size_type*)   rowBegin, numRows+1);
       ordinal_type_array_host aj_host((ordinal_type*)columns,  numTerms);
+
+      size_type_array_host graph_ap_host;
+      ordinal_type_array_host graph_aj_host;
+      ordinal_type_array_host graph_aw_host;
+
+      if (numGraphRows > 0) {
+        if (graphRowBegin == nullptr ||
+            graphColumns == nullptr ||
+            graphWeights == nullptr) {
+          std::cout << "ExternalInterface::Error, with non-zero numGraphRows, graph pointers should not be nullptr\n";
+          std::logic_error("Error: one of graph pointers is nullptr");
+        } else {
+          const size_type nnz_graph = graph_ap_host(numGraphRows);
+          graph_ap_host = size_type_array_host((size_type*)graphRowBegin, numGraphRows+1);
+          graph_aj_host = ordinal_type_array_host((ordinal_type*)graphColumns, nnz_graph);
+          graph_aw_host = ordinal_type_array_host((ordinal_type*)graphWeights, nnz_graph);
+        }
+      }
 
 #if defined (KOKKOS_ENABLE_CUDA)
       /// transfer A into device
@@ -96,7 +136,12 @@ namespace tacho {
       Kokkos::Impl::Timer timer; 
       {
         timer.reset();
-	m_Solver.analyze(numRows, ap_host, aj_host);
+        if (numGraphRows > 0) {
+          m_Solver.analyze(numRows, ap_host, aj_host,
+                           numGraphRows, graph_ap_host, graph_aj_host, graph_aw_host);
+        } else {
+          m_Solver.analyze(numRows, ap_host, aj_host);
+        }
         const double t = timer.seconds();
         std::cout << "ExternalInterface:: analyze time " << t << std::endl;
       }
@@ -115,6 +160,16 @@ namespace tacho {
       }
 
       return 0;
+    }
+
+    void exportSupernodes(std::vector<int> &supernodes) {
+      const auto supernodes_device = m_Solver.getSupernodes();
+      auto supernodes_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), supernodes_device); 
+      {
+        const int n = supernodes_host.extent(0);
+        supernodes.resize(n);
+        std::copy(supernodes_host.data(), supernodes_host.data()+n, supernodes.data());
+      }
     }
 
     void exportUpperTriangularFactorsToCrsMatrix(std::vector<int> &rowBeginU,
@@ -182,21 +237,27 @@ namespace tacho {
     {
       if (solverParams[USEDEFAULTSOLVERPARAMETERS]) return;
       // common options
-      m_Solver.setVerbose                     (solverParams[VERBOSITY]);
-      m_Solver.setSmallProblemThresholdsize   (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
+      m_Solver.setVerbose                       (solverParams[VERBOSITY]);
+      m_Solver.setSmallProblemThresholdsize     (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
+
+      // matrix type
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+      m_Solver.setMatrixType(solverParams[MATRIX_SYMMETRIC], solverParams[MATRIX_POSITIVE_DEFINITE]);
+#endif
 
       // tasking options
-      m_Solver.setBlocksize                   (solverParams[TASKING_OPTION_BLOCKSIZE]);
-      m_Solver.setPanelsize                   (solverParams[TASKING_OPTION_PANELSIZE]);
-      m_Solver.setMaxNumberOfSuperblocks      (solverParams[TASKING_OPTION_MAXNUMSUPERBLOCKS]);
+      m_Solver.setBlocksize                     (solverParams[TASKING_OPTION_BLOCKSIZE]);
+      m_Solver.setPanelsize                     (solverParams[TASKING_OPTION_PANELSIZE]);
+      m_Solver.setMaxNumberOfSuperblocks        (solverParams[TASKING_OPTION_MAXNUMSUPERBLOCKS]);
 
       // levelset options
-      m_Solver.setLevelSetScheduling          (solverParams[LEVELSET_OPTION_SCHEDULING]);      
-      m_Solver.setLevelSetOptionDeviceLevelCut(solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
+      m_Solver.setLevelSetScheduling            (solverParams[LEVELSET_OPTION_SCHEDULING]);      
+      m_Solver.setLevelSetOptionDeviceLevelCut  (solverParams[LEVELSET_OPTION_DEVICE_LEVEL_CUT]);
       m_Solver.setLevelSetOptionDeviceFunctionThreshold
         (solverParams[LEVELSET_OPTION_DEVICE_FACTOR_THRES], 
          solverParams[LEVELSET_OPTION_DEVICE_SOLVE_THRES]);
-      m_Solver.setLevelSetOptionNumStreams    (solverParams[LEVELSET_OPTION_NSTREAMS]);
+      m_Solver.setLevelSetOptionNumStreams      (solverParams[LEVELSET_OPTION_NSTREAMS]);
+      m_Solver.setLevelSetOptionAlgorithmVariant(solverParams[LEVELSET_OPTION_VARIANT]);
     }
 
   };

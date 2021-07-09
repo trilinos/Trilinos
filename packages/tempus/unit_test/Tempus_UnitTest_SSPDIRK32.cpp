@@ -13,7 +13,6 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -32,8 +31,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
-
-using Tempus::StepperFactory;
 
 
 // ************************************************************

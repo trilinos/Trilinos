@@ -14,8 +14,8 @@ TRIBITS_ADD_EXECUTABLE(
   NOEXESUFFIX
   SOURCES ${SOURCES}
   COMM serial mpi
+  INSTALLABLE
   )
-install_executable(nem_spread)
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
 

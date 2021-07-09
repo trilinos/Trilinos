@@ -70,8 +70,6 @@
 #include "NOX_Thyra_MatrixFreeJacobianOperator.hpp"
 #include "NOX_MatrixFree_ModelEvaluatorDecorator.hpp"
 
-const Tpetra::global_size_t numGlobalElements = 100;
-
 TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_NoPrec)
 {
   Teuchos::TimeMonitor::zeroOutTimers();
@@ -87,6 +85,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_NoPrec)
   // Create the model evaluator object
   Scalar x00 = 0.0;
   Scalar x01 = 1.0;
+  const Tpetra::global_size_t numGlobalElements = 100;
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 
@@ -181,6 +180,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, AnalyticJacobian_Ifpack2Prec)
   // Create the model evaluator object
   Scalar x00 = 0.0;
   Scalar x01 = 1.0;
+  const Tpetra::global_size_t numGlobalElements = 100;
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 
@@ -281,6 +281,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_NoPrec)
   // Create the model evaluator object
   Scalar x00 = 0.0;
   Scalar x01 = 1.0;
+  const Tpetra::global_size_t numGlobalElements = 100;
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 
@@ -398,6 +399,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, JFNK_UserPrec)
   // Create the model evaluator object
   Scalar x00 = 0.0;
   Scalar x01 = 1.0;
+  const Tpetra::global_size_t numGlobalElements = 100;
   Teuchos::RCP<EvaluatorTpetra1DFEM<Scalar,LO,GO,Node> > model =
     evaluatorTpetra1DFEM<Scalar,LO,GO,Node>(comm, numGlobalElements, x00, x01);
 

@@ -25,7 +25,7 @@ namespace Test {
     KOKKOS_INLINE_FUNCTION
     void operator() (const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type& team) const {
 // GNU COMPILER BUG WORKAROUND
-#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__)
+#if defined(KOKKOS_COMPILER_GNU) && !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
       int i = team.league_rank();
 #else
       const int i = team.league_rank();
@@ -115,8 +115,6 @@ namespace Test {
     
     Kokkos::deep_copy(C2,C);
 
-    Kokkos::fence();
- 
     struct VanillaGEMM<ViewTypeA,ViewTypeB,ViewTypeC,execution_space> vgemm;
     vgemm.A_t = A_t; vgemm.B_t = B_t;
     vgemm.A_c = A_c; vgemm.B_c = B_c;
@@ -129,8 +127,6 @@ namespace Test {
     Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
 
     KokkosBlas::gemm(TA,TB,alpha,A,B,beta,C);
-
-    Kokkos::fence();
 
     mag_type diff_C = 0;
     struct DiffGEMM<ViewTypeC,execution_space> diffgemm;

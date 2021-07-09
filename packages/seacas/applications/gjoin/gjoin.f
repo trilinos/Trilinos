@@ -1,40 +1,11 @@
-C Copyright (c) 2008-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
 C -*- Mode: fortran -*-
 C=======================================================================
-C $Id: gjoin2.f,v 1.10 2008/07/31 20:15:56 gdsjaar Exp $
-c
       PROGRAM GJOIN2
 C=======================================================================
 
@@ -52,7 +23,7 @@ C   --
 C   --Output:
 C   --   o Prompts on the standard output device.
 C   --   o The output database (name requested)
-C
+
 C   --Developed at Sandia National Laboratories.
 C   --
 C   --Current author and code sponsor: Greg Sjaardema
@@ -169,7 +140,7 @@ C ... Parse options...
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
-     &   kltsnc, kfacss, KNMLB)
+     &   kltsnc, kfacss, KNMLB, KNMBK, KNMNS, KNMSS)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 140
 
@@ -193,7 +164,7 @@ C   --Open and read the database
      &  KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &  KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
      &  kltsnc, kfacss, NQAREC, QAREC, NINFO, INFREC, KNMLB,
-     &  USESDF, *150)
+     &  KNMBK, KNMNS, KNMSS, USESDF, *150)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 140
 
@@ -211,7 +182,6 @@ C   --Open and read the second database
       CALL OUTLOG (KLOG, 1, 0, FILNAM, IDUM, RDUM)
       TWODB = (FILNAM .NE. ' ')
 
-
       IF (TWODB) THEN
         CALL RDGEN (A, IA, C, .TRUE., FILNAM,
      &    TITLE2, NDIM2, NUMNP2, NUMEL2, NELBL2,
@@ -221,7 +191,7 @@ C   --Open and read the second database
      &    KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &    KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
      &    kltsnc, kfacss, NQAREC, QAREC, NINFO, INFREC, KNMLB,
-     &    USESDF, *110)
+     &    KNMBK, KNMNS, KNMSS, USESDF, *110)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 140
 
@@ -300,7 +270,6 @@ C   --Combine the nodes
             zoff = 0.0
             zscl = 1.0
          end if
-
 
          IF (XSCL * YSCL * ZSCL .LT. 0.0) THEN
             kidel2 = kidelb + nelbl1
@@ -451,7 +420,7 @@ C   --"Munch" the element blocks
          CALL MDRSRV ('JNELB', KJNELB, NEWELB)
          CALL MDRSRV ('ISCR', KISCR, NEWELB)
 
-         CALL MCFIND ('NAMELB', IDUM, LNAM)
+         CALL MCFIND ('NAMBK', IDUM, LNAM)
          CALL MCRSRV ('NAMSCR', KNMSC, LNAM)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 140
@@ -460,7 +429,7 @@ C   --"Munch" the element blocks
      &      IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &      IA(KLINK), A(KATRIB), IA(KLINKO), A(KATRO),
      &      IA(KIXEL), IA(KIXELB), IA(KJNELB), IA(KISCR),
-     &      C(KNMLB),  C(KNMSC), LLINK, LATRIB)
+     &      C(KNMLB),  C(KNMBK), C(KNMSC), LLINK, LATRIB)
 
          CALL MDDEL ('LINKO')
          CALL MDDEL ('ATRIBO')
@@ -721,7 +690,6 @@ C   --Write the QA records
          FILNAM = '%gjoin'
       END IF
 
-
       CALL WRGEN (A, A, FILNAM, TITLE, NDIM, NEWNP, NEWEL, NEWELB,
      &   NEWNPS, NEWNNL, NEWESS, NEWSEL, NEWSDL,
      &   KXN, KYN, KZN, KMAPEL,
@@ -729,7 +697,7 @@ C   --Write the QA records
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, KFACSS,
      &   kltsss, NQAREC, QAREC, NINFO, INFREC, C(KNMLB), L64BIT, NC4,
-     &   *140)
+     &   C(KNMBK), C(KNMNS), C(KNMSS), *140)
 
       FIRST = .FALSE.
 
@@ -741,6 +709,7 @@ C   --Write the QA records
       GOTO 150
 
   150 CONTINUE
+      call mdfree()
       CALL WRAPUP (QAINFO(1))
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       OPEN (UNIT=9, FILE='%gjoin', FORM='unformatted',
@@ -769,3 +738,4 @@ C   This is currently used in the sideset mirroring code
  10   continue
       return
       end
+

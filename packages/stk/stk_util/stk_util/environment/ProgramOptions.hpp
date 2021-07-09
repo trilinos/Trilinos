@@ -35,8 +35,8 @@
 #ifndef STK_UTIL_ENVIRONMENT_PROGRAMOPTIONS_HPP
 #define STK_UTIL_ENVIRONMENT_PROGRAMOPTIONS_HPP
 
-#include <stk_util/environment/OptionsSpecification.hpp>
-#include <stk_util/environment/ParsedOptions.hpp>
+#include "stk_util/environment/OptionsSpecification.hpp"
+#include "stk_util/environment/ParsedOptions.hpp"
 
 namespace stk {
 

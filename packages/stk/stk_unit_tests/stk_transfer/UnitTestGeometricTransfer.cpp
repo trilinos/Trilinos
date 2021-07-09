@@ -26,13 +26,67 @@
 namespace stk {
 namespace transfer {
 
+struct TrivialTestKey {
+  TrivialTestKey(int in=0) : m_id(in){}
+  int id() const { return m_id; }
+  bool operator<(const TrivialTestKey& other) const
+  { return id() < other.id(); }
+  bool operator==(const TrivialTestKey& other) const
+  { return id() == other.id(); }
+private:
+  int m_id;
+};
+
+class TrivialTestSrcMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  { /* empty to test coarse_search_impl with empty domain */ }
+};
+
+class TrivialTestDestMesh {
+public:
+  typedef TrivialTestKey Key;
+  typedef stk::search::IdentProc<Key, int> EntityProc;
+  typedef std::pair<stk::search::Box<double>,EntityProc> BoundingBox;
+  void bounding_boxes(std::vector<BoundingBox>& boxes) const
+  {
+    boxes.clear();
+    boxes.push_back(BoundingBox(stk::search::Box<double>(),EntityProc(0,0)));
+  }
+};
+
+class TrivialTestInterp {
+public:
+  typedef TrivialTestSrcMesh MeshA;
+  typedef TrivialTestDestMesh MeshB;
+  typedef MeshA::EntityProc EntityProcA;
+  typedef MeshB::EntityProc EntityProcB;
+  typedef std::pair<EntityProcA, EntityProcB> EntityProcRelation;
+  typedef std::vector<EntityProcRelation> EntityProcRelationVec;
+};
+
+TEST(GeomXferImpl, coarseSearchImpl_emptyDomain)
+{
+  TrivialTestInterp::EntityProcRelationVec entProcRelVec;
+  TrivialTestSrcMesh empty_meshA;
+  TrivialTestDestMesh meshB;
+  const double expansionFactor = 1.1; // >1 so coarse_search_impl will try
+                                    //to expand boxes to find range entries
+  EXPECT_NO_THROW(stk::transfer::impl::coarse_search_impl<TrivialTestInterp>
+                  (entProcRelVec, MPI_COMM_WORLD, &empty_meshA, &meshB,
+                  stk::search::KDTREE, expansionFactor));
+  EXPECT_TRUE(entProcRelVec.empty());
+}
 
 using EntityKey = uint64_t;
 
 class MockMeshA_Common
 {
 public:
-  using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
 
@@ -48,7 +102,7 @@ public:
 class MockMeshB_Common
 {
 public:
-  using EntityProc = stk::search::IdentProc<EntityKey, unsigned>;
+  using EntityProc = stk::search::IdentProc<EntityKey>;
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Sphere<double>, EntityProc>;
 
@@ -302,29 +356,29 @@ void check_single_elem_to_point_parametric_mask(stk::ParallelMachine transfer_pm
   }
 }
 
-TEST_P(GeometricTransferTest, SingleElemToPoint)
+TEST(GeometricTransferTest, SingleElemToPoint)
 {
   GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockSingleElemToSinglePointInterpolate>> test;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, SingleElemToPoint)
+TEST(ReducedDependencyGeometricTransferTest, SingleElemToPoint)
 {
   GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockSingleElemToSinglePointInterpolate>> test;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPoint)
+TEST(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPoint)
 {
   if (2 != stk::parallel_machine_size(MPI_COMM_WORLD)) return;
   using TestType = GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockSingleElemToSinglePointInterpolate>>;
   const int color = stk::parallel_machine_rank(MPI_COMM_WORLD) % 2;
   TestType test(MPI_COMM_WORLD, color, {0,1});
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
   check_single_elem_to_point_parametric_mask(MPI_COMM_WORLD, test.meshA.get());
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInvertedOwnership)
+TEST(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInvertedOwnership)
 {
   if (2 != stk::parallel_machine_size(MPI_COMM_WORLD)) return;
   using TestType = GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockSingleElemToSinglePointInterpolate>>;
@@ -334,11 +388,11 @@ TEST_P(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInvertedOwne
     test.meshA->m_owning_rank = 1;
   if (test.meshB)
     test.meshB->m_owning_rank = 0;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
   check_single_elem_to_point_parametric_mask(MPI_COMM_WORLD, test.meshA.get());
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInSubCommunicator)
+TEST(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInSubCommunicator)
 {
   stk::ParallelMachine global_pm = MPI_COMM_WORLD;
   if (3 != stk::parallel_machine_size(global_pm)) return;
@@ -360,7 +414,7 @@ TEST_P(ReducedDependencyGeometricTransferTest, MpmdSingleElemToPointInSubCommuni
     test.meshA->m_owning_rank = 0;
   if (test.meshB)
     test.meshB->m_owning_rank = 1;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
   check_single_elem_to_point_parametric_mask(transfer_shared_pm, test.meshA.get());
 }
 
@@ -527,9 +581,9 @@ public:
       {
         ASSERT_EQ(2u, from_entity_keys_masked.size());
         EXPECT_EQ(0u, from_entity_keys_masked[0].id());
-        EXPECT_EQ(1u, from_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, from_entity_keys_masked[0].proc());
         EXPECT_EQ(0u, from_entity_keys_masked[1].id());
-        EXPECT_EQ(2u, from_entity_keys_masked[1].proc());
+        EXPECT_EQ(2, from_entity_keys_masked[1].proc());
       }else {
         EXPECT_EQ(3u, FromElem->elemToUse);
         EXPECT_EQ(0u, from_entity_keys_masked.size());
@@ -541,15 +595,15 @@ public:
       if( FromElem->elemToUse == 0)
       {
         ASSERT_EQ(0u, from_entity_keys_masked.size());
-        EXPECT_EQ(0u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(0, to_entity_keys_masked[0].proc());
       }else {
         EXPECT_EQ(3u, FromElem->elemToUse);
         ASSERT_EQ(2u, from_entity_keys_masked.size());
         EXPECT_EQ(3u, from_entity_keys_masked[0].id());
-        EXPECT_EQ(1u, from_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, from_entity_keys_masked[0].proc());
         EXPECT_EQ(3u, from_entity_keys_masked[1].id());
-        EXPECT_EQ(2u, from_entity_keys_masked[1].proc());
-        EXPECT_EQ(1u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(2, from_entity_keys_masked[1].proc());
+        EXPECT_EQ(1, to_entity_keys_masked[0].proc());
       }
       EXPECT_EQ(ToPoints->point_ids[0], to_entity_keys_masked[0].id());
     }
@@ -559,9 +613,9 @@ public:
       EXPECT_EQ(ToPoints->point_ids[1], to_entity_keys_masked[0].id());
 
       if( FromElem->elemToUse == 0)
-        EXPECT_EQ(0u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(0, to_entity_keys_masked[0].proc());
       else
-        EXPECT_EQ(1u, to_entity_keys_masked[0].proc());
+        EXPECT_EQ(1, to_entity_keys_masked[0].proc());
 
       ASSERT_EQ(0u, from_entity_keys_masked.size());
     }
@@ -569,83 +623,83 @@ public:
 
 };
 
-TEST_P(GeometricTransferTest, ThreeElemToTwoPoint)
+TEST(GeometricTransferTest, ThreeElemToTwoPoint)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPoint)
+TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPoint)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
 
-TEST_P(GeometricTransferTest, ThreeElemToTwoPointChangeDistance)
+TEST(GeometricTransferTest, ThreeElemToTwoPointChangeDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointChangeDistance)
+TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointChangeDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
 
-TEST_P(GeometricTransferTest, ThreeElemToTwoPointRequireExpansion)
+TEST(GeometricTransferTest, ThreeElemToTwoPointRequireExpansion)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
-  test.run(GetParam(), 1.3);
+  test.run(stk::search::SearchMethod::KDTREE, 1.3);
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansion)
+TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansion)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
-  test.run(GetParam(), 1.3);
+  test.run(stk::search::SearchMethod::KDTREE, 1.3);
 }
 
-TEST_P(GeometricTransferTest, ThreeElemToTwoPointRequireExpansionChangedDistance)
+TEST(GeometricTransferTest, ThreeElemToTwoPointRequireExpansionChangedDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
-  test.run(GetParam(), 1.3);
+  test.run(stk::search::SearchMethod::KDTREE, 1.3);
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansionChangedDistance)
+TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointRequireExpansionChangedDistance)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshA->elemToUse = 3;
   test.meshA->elemToFilter = 0;
   test.meshB->pointA = stk::search::Point<double>(0.5, 1.01, 0.5);
-  test.run(GetParam(), 1.3);
+  test.run(stk::search::SearchMethod::KDTREE, 1.3);
 }
 
-TEST_P(GeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
+TEST(GeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::GeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
@@ -654,34 +708,18 @@ TEST_P(GeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
   test.meshB->point_ids = {1, 1};
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
 
-TEST_P(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
+TEST(ReducedDependencyGeometricTransferTest, ThreeElemToTwoPointLocalPointIds)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) return;
   GeometricTransferExecutor<stk::transfer::ReducedDependencyGeometricTransfer<MockThreeElemToTwoPointsInerpolate>> test;
   test.meshB->point_ids = {1, 1};
   test.meshA->elemToUse = 0;
   test.meshA->elemToFilter = 3;
-  test.run(GetParam());
+  test.run(stk::search::SearchMethod::KDTREE);
 }
-
-//Note, these test segfault with the stk::search::SearchMethod::MORTON_LINEARIZED_BVH
-//I'm not sure who uses that search method or it is supposed to be production ready
-#ifdef INSTANTIATE_TEST_SUITE_P
-INSTANTIATE_TEST_SUITE_P(GeometricTransferTest, GeometricTransferTest,
-    ::testing::Values(stk::search::SearchMethod::KDTREE));
-
-INSTANTIATE_TEST_SUITE_P(ReducedDependencyGeometricTransferTest, ReducedDependencyGeometricTransferTest,
-    ::testing::Values(stk::search::SearchMethod::KDTREE));
-#else
-INSTANTIATE_TEST_CASE_P(GeometricTransferTest, GeometricTransferTest,
-    ::testing::Values(stk::search::SearchMethod::KDTREE),);
-
-INSTANTIATE_TEST_CASE_P(ReducedDependencyGeometricTransferTest, ReducedDependencyGeometricTransferTest,
-    ::testing::Values(stk::search::SearchMethod::KDTREE),);
-#endif
 
 }
 }

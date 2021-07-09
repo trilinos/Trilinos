@@ -9,7 +9,6 @@
 #include "mpi.h"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
 
-namespace { // (anonymous)
 
 bool isMpiInitialized ()
 {
@@ -177,49 +176,13 @@ void testMain (bool& success, int argc, char* argv[])
   }
 }
 
-class CaptureOstream {
-public:
-  CaptureOstream (std::ostream& stream) :
-    originalStream_ (stream),
-    originalBuffer_ (stream.rdbuf ())
-  {
-    originalStream_.rdbuf (tempStream_.rdbuf ());
-  }
-
-  std::string getCapturedOutput () const {
-    return tempStream_.str ();
-  }
-
-  ~CaptureOstream () {
-    originalStream_.rdbuf (originalBuffer_);
-  }
-private:
-  std::ostream& originalStream_;
-  std::ostringstream tempStream_;
-  using buf_ptr_type = decltype (originalStream_.rdbuf ());
-  buf_ptr_type originalBuffer_;
-};
-
-} // namespace (anonymous)
-
 int main (int argc, char* argv[])
 {
   using std::cout;
   using std::endl;
 
   bool success = true;
-  {
-    // Capture std::cerr output, so we can tell if Tpetra::initialize
-    // printed a warning message.
-    CaptureOstream captureCerr (std::cerr);
-    testMain (success, argc, argv);
-    const std::string capturedOutput = captureCerr.getCapturedOutput ();
-    cout << "Captured output: " << capturedOutput << endl;
-    if (capturedOutput.size () != 0) {
-      success = false; // should NOT have printed in this case
-      cout << "Captured output is empty!" << endl;
-    }
-  }
+  testMain (success, argc, argv);
 
   cout << "End Result: TEST " << (success ? "PASSED" : "FAILED") << endl;
   return EXIT_SUCCESS;

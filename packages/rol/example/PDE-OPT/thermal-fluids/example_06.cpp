@@ -149,7 +149,7 @@ void print(ROL::Objective<Real> &obj,
 }
 
 int main(int argc, char *argv[]) {
-//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -241,8 +241,8 @@ int main(int argc, char *argv[]) {
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec[0],assembler);
     ROL::Ptr<ROL::Objective_SimOpt<RealT> > objCtrl
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec[1],assembler);
-    ROL::Ptr<ROL::SimController<RealT> > stateStore
-      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::VectorController<RealT> > stateStore
+      = ROL::makePtr<ROL::VectorController<RealT>>();
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, stateStore, up, zp, pp, true, false);
 
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
     if ( lambdaZero ) {
       lambda.erase(lambda.begin()); --N;
       // Solve.
-      parlist->sublist("SOL").set("Stochastic Component Type","Risk Neutral");
+      parlist->sublist("SOL").set("Type","Risk Neutral");
       opt = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp);
       parlist->sublist("SOL").set("Initial Statistic",one);
       opt->setStochasticObjective(*parlist,sampler);
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
-    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").set("Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Confidence Level",alpha);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Smoothing Parameter",1e-4);

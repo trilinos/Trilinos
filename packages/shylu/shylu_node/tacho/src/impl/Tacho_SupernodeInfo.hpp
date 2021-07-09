@@ -69,11 +69,11 @@ namespace Tacho {
       typedef ValueType value_type;
       typedef SchedulerType scheduler_type;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
       typedef typename device_type::execution_space exec_space;
       typedef typename device_type::memory_space exec_memory_space;
 
-      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
       typedef typename host_device_type::execution_space host_space;
       typedef typename host_device_type::memory_space host_memory_space;
 
@@ -292,7 +292,9 @@ namespace Tacho {
 
         // supernodal factor array; data is held outside with a managed view
         // supernode does not include this view
-        superpanel_buf_ = value_type_array("superpanel_buf", init_reduce_val.nnz); 
+        // for the case that the same data structure is reused, the buffer will
+        // be zero'ed for each numeric factorization.
+        superpanel_buf_ = value_type_array(do_not_initialize_tag("superpanel_buf"), init_reduce_val.nnz); 
         Kokkos::parallel_scan
           (supernodes_range_policy, KOKKOS_LAMBDA(const ordinal_type &sid, size_type &update, const bool &final) {
             auto &s = supernodes_(sid);
@@ -364,7 +366,8 @@ namespace Tacho {
                   ii = i + s.row_begin,  // row in U
                   row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
                 const ordinal_type kcnt = kend - kbeg;
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kcnt), [&](const ordinal_type &kk) {
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kcnt),
+                  [&, kbeg, ii](const ordinal_type &kk) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
                     const ordinal_type k  = kk + kbeg;
                     const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
                     if (ii <= jj) {

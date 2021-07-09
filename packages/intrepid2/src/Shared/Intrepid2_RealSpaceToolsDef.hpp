@@ -59,11 +59,11 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename inVecValueType, class ...inVecProperties>
   KOKKOS_INLINE_FUNCTION
   inVecValueType
-  RealSpaceTools<SpT>::Serial::
+  RealSpaceTools<DeviceType>::Serial::
   vectorNorm( const Kokkos::DynRankView<inVecValueType,inVecProperties...> inVec,
               const ENorm normType ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -128,18 +128,19 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
 
-  template<typename SpT>
-  template<typename inMatValueType, class ...inMatProperties>
+
+  template<typename DeviceType>
+  template<class MatrixViewType>
   KOKKOS_INLINE_FUNCTION
-  inMatValueType
-  RealSpaceTools<SpT>::Serial::
-  det( const Kokkos::DynRankView<inMatValueType,inMatProperties...> inMat) {
+  typename MatrixViewType::value_type
+  RealSpaceTools<DeviceType>::Serial::
+  det( const MatrixViewType inMat ) {
 
     typedef typename decltype(inMat)::non_const_value_type value_type;
 #ifdef HAVE_INTREPID2_DEBUG
     {
       bool dbgInfo = false;
-      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.rank() != 2, dbgInfo,
+      INTREPID2_TEST_FOR_DEBUG_ABORT( getFunctorRank( inMat ) != 2, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Rank of matrix argument must be 2!");
       INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) != inMat.extent(1), dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
@@ -175,12 +176,12 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename inVec1ValueType, class ...inVec1Properties,
            typename inVec2ValueType, class ...inVec2Properties>
   KOKKOS_INLINE_FUNCTION
   inVec1ValueType
-  RealSpaceTools<SpT>::Serial::
+  RealSpaceTools<DeviceType>::Serial::
   dot( const Kokkos::DynRankView<inVec1ValueType,inVec1Properties...> inVec1,
        const Kokkos::DynRankView<inVec2ValueType,inVec2Properties...> inVec2 ) {
 
@@ -248,19 +249,26 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   extractScalarValues(       Kokkos::DynRankView<outputValueType,outputProperties...>  output,
                        const Kokkos::DynRankView<inputValueType, inputProperties...>   input ) {
-    typedef          Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
-    typedef          Kokkos::DynRankView<inputValueType,inputProperties...> inputViewType;
-    typedef          FunctorRealSpaceTools::F_extractScalarValues<OutputViewType,inputViewType> FunctorType;
-    typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
     
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(output)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(input)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::extractScalarValues(..): input/output views' memory spaces are not compatible with DeviceType");
+
+    using FunctorType = FunctorRealSpaceTools::F_extractScalarValues<decltype(output),decltype(input)>;
+
     const auto loopSize = input.extent(0);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(output, input) );
   }
@@ -318,11 +326,11 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   clone(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
          const Kokkos::DynRankView<inputValueType,inputProperties...> input ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -348,10 +356,15 @@ namespace Intrepid2 {
       }
     }
 #endif
-    typedef          Kokkos::DynRankView<outputValueType,outputProperties...>     OutputViewType;
-    typedef          Kokkos::DynRankView<inputValueType,inputProperties...>       inputViewType;
-    typedef          FunctorRealSpaceTools::F_clone<OutputViewType,inputViewType> FunctorType;
-    typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(output)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(input)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::clone(..): input/output views' memory spaces are not compatible with DeviceType");
+
+    using FunctorType = FunctorRealSpaceTools::F_clone<decltype(output),decltype(input)>;
 
     size_type loopSize = 1;
     const ordinal_type out_rank = output.rank();
@@ -360,6 +373,7 @@ namespace Intrepid2 {
     for (ordinal_type i=0;i<rankDiff;++i)
       loopSize *= output.extent(i);
 
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(output, input) );
   }
@@ -397,11 +411,11 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename absArrayValueType, class ...absArrayProperties,
            typename inArrayValueType,  class ...inArrayProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   absval(       Kokkos::DynRankView<absArrayValueType,absArrayProperties...> absArray,
           const Kokkos::DynRankView<inArrayValueType, inArrayProperties...>   inArray ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -417,25 +431,30 @@ namespace Intrepid2 {
       }
     }
 #endif
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(absArray)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inArray)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::absval(..): input/output views' memory spaces are not compatible with DeviceType");
 
-    typedef          Kokkos::DynRankView<absArrayValueType,absArrayProperties...>            absArrayViewType;
-    typedef          Kokkos::DynRankView<inArrayValueType, inArrayProperties...>             inArrayViewType;
-    typedef          FunctorRealSpaceTools::F_absval<absArrayViewType,inArrayViewType>       FunctorType;
-    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    using FunctorType = FunctorRealSpaceTools::F_absval<decltype(absArray),decltype(inArray)>;
 
     const auto loopSize = inArray.extent(0);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(absArray, inArray) );
   }
 
   // ------------------------------------------------------------------------------------
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename inoutArrayValueType, class ...inoutAbsArrayProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   absval( Kokkos::DynRankView<inoutArrayValueType,inoutAbsArrayProperties...> inoutAbsArray ) {
-    RealSpaceTools<SpT>::absval(inoutAbsArray, inoutAbsArray);
+    RealSpaceTools<DeviceType>::absval(inoutAbsArray, inoutAbsArray);
   }
 
   // ------------------------------------------------------------------------------------
@@ -473,11 +492,11 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename normArrayValueType, class ...normArrayProperties,
            typename inVecValueType,     class ...inVecProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   vectorNorm(       Kokkos::DynRankView<normArrayValueType,normArrayProperties...> normArray,
               const Kokkos::DynRankView<inVecValueType,    inVecProperties...>     inVecs,
               const ENorm normType ) {
@@ -494,13 +513,18 @@ namespace Intrepid2 {
     }
 #endif
 
-    typedef          Kokkos::DynRankView<normArrayValueType,normArrayProperties...>        normArrayViewType;
-    typedef          Kokkos::DynRankView<inVecValueType,    inVecProperties...>            inVecViewType;
-    typedef          FunctorRealSpaceTools::F_vectorNorm<normArrayViewType,inVecViewType>  FunctorType;
-    typedef typename ExecSpace<typename inVecViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(normArray)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inVecs)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::vectorNorm(..): input/output views' memory spaces are not compatible with DeviceType");
+    using FunctorType = FunctorRealSpaceTools::F_vectorNorm<decltype(normArray),decltype(inVecs)>;
 
     // normArray rank is either 1 or 2
     const auto loopSize = normArray.extent(0)*normArray.extent(1);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(normArray, inVecs, normType) );
   }
@@ -553,11 +577,11 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename transposeMatValueType, class ...transposeMatProperties,
            typename inMatValueType,        class ...inMatProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   transpose(       Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...> transposeMats,
              const Kokkos::DynRankView<inMatValueType,       inMatProperties...>        inMats ) {
 
@@ -577,16 +601,21 @@ namespace Intrepid2 {
     }
 #endif
 
-    typedef          Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...>   transposeMatViewType;
-    typedef          Kokkos::DynRankView<inMatValueType,       inMatProperties...>          inMatViewType;
-    typedef          FunctorRealSpaceTools::F_transpose<transposeMatViewType,inMatViewType> FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType  ExecSpaceType;
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(transposeMats)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inMats)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::transpose(..): input/output views' memory spaces are not compatible with DeviceType");
+    using FunctorType = FunctorRealSpaceTools::F_transpose<decltype(transposeMats),decltype(inMats)>;
 
     const auto r = transposeMats.rank();
     const auto loopSize = ( r == 2 ? 1 :
                             r == 3 ? transposeMats.extent(0) :
                                      transposeMats.extent(0)*transposeMats.extent(1) );
 
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(transposeMats, inMats) );
   }
@@ -674,56 +703,73 @@ namespace Intrepid2 {
         }
       }
       
+      template< bool B, class T = void >
+      using enable_if_t = typename std::enable_if<B,T>::type;
+      
+      template<int M=0>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl,
-                      const ordinal_type pt) const {
+      enable_if_t<M==0 && supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl,
+                 const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats,      cl, pt, Kokkos::ALL(), Kokkos::ALL());
         auto       inv = Kokkos::subview(_inverseMats, cl, pt, Kokkos::ALL(), Kokkos::ALL());
 
         apply_inverse( inv, mat );
       }
-
+      
+      template<int M=0>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type pt) const {
+      enable_if_t<M==0 && !supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl, const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
+      }
+      
+      template<int M=0>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==0 && supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats,      pt, Kokkos::ALL(), Kokkos::ALL());
         auto       inv = Kokkos::subview(_inverseMats, pt, Kokkos::ALL(), Kokkos::ALL());
 
         apply_inverse( inv, mat );
       }
+      
+      template<int M=0>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==0 && !supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
+      }
     };
   }
 
-  template<typename SpT>
-  template<typename inverseMatValueType, class ...inverseMatProperties,
-           typename inMatValueType,      class ...inMatProperties>
+  template<typename DeviceType>
+  template<class InverseMatrixViewType, class MatrixViewType>
   void
-  RealSpaceTools<SpT>::
-  inverse(       Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...> inverseMats,
-           const Kokkos::DynRankView<inMatValueType,     inMatProperties...>      inMats ) {
-
+  RealSpaceTools<DeviceType>::
+  inverse( InverseMatrixViewType inverseMats, MatrixViewType inMats ) {
+    const unsigned rank = getFunctorRank(inMats);
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != inverseMats.rank(), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank != getFunctorRank(inverseMats), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 3 || inMats.rank() > 4, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( rank < 3 || rank > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 3, or 4!");
-      for (size_type i=0;i<inMats.rank();++i) {
+      for (size_type i=0;i<rank;++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != inverseMats.extent(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) != inMats.extent(inMats.rank()-1), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(rank-2) != inMats.extent(rank-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Matrices are not square!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) < 1 || inMats.extent(inMats.rank()-2) > 3, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(rank-2) < 1 || inMats.extent(rank-2) > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
     }
 #endif
 
-    typedef          Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...>      inverseMatViewType;
-    typedef          Kokkos::DynRankView<inMatValueType,     inMatProperties...>           inMatViewType;
-    typedef          FunctorRealSpaceTools::F_inverse<inverseMatViewType,inMatViewType>    FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    using ExecSpaceType = typename DeviceType::execution_space;
+    using FunctorType = FunctorRealSpaceTools::F_inverse<InverseMatrixViewType, MatrixViewType>;
 
-    switch (inMats.rank()) {
+    switch (rank) {
     case 3: { // output P,D,D and input P,D,D
       using range_policy_type = Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> >;
       range_policy_type policy(0, inverseMats.extent(0));
@@ -731,8 +777,8 @@ namespace Intrepid2 {
       break;
     }
     case 4: { // output C,P,D,D and input C,P,D,D
-      using range_policy_type = Kokkos::Experimental::MDRangePolicy
-        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      using range_policy_type = Kokkos::MDRangePolicy
+        < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { inverseMats.extent(0), inverseMats.extent(1) } );
       Kokkos::parallel_for( policy, FunctorType(inverseMats, inMats) );
@@ -752,7 +798,7 @@ namespace Intrepid2 {
       \brief Functor to compute determinant see Intrepid2::RealSpaceTools for more
     */ 
     template<typename detArrayViewType,
-             typename inMatViewType>
+             typename inMatViewType, int rank>
     struct F_det {
       detArrayViewType _detArray;
       inMatViewType    _inMats;
@@ -762,61 +808,88 @@ namespace Intrepid2 {
              inMatViewType    inMats_ )
         : _detArray(detArray_), _inMats(inMats_) {}
 
+      template< bool B, class T = void >
+      using enable_if_t = typename std::enable_if<B,T>::type;
+      
+      template<int M=rank>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type pt) const {
+      enable_if_t<M==1 && supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats, pt, Kokkos::ALL(), Kokkos::ALL());
         _detArray(pt) = RealSpaceTools<>::Serial::det(mat);
       }
-
+      
+      template<int M=rank>
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl, 
-                      const ordinal_type pt) const {
+      enable_if_t<M==1 && !supports_rank_3<inMatViewType>::value >
+      operator()(const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
+      }
+
+      template<int M=rank>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==2 && supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl,
+                 const ordinal_type pt) const {
         const auto mat = Kokkos::subview(_inMats, cl, pt, Kokkos::ALL(), Kokkos::ALL());
         _detArray(cl, pt) = RealSpaceTools<>::Serial::det(mat);
+      }
+      
+      template<int M=rank>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M==2 && !supports_rank_4<inMatViewType>::value >
+      operator()(const ordinal_type cl,
+                 const ordinal_type pt) const {
+        // empty implementation to allow compilation of parallel_for. (this combination never gets invoked at run-time, but does occur at compile-time.)
       }
     };
   }
 
-  template<typename SpT>
-  template<typename detArrayValueType, class ...detArrayProperties,
-           typename inMatValueType,    class ...inMatProperties>
+template<class DeterminantArrayViewType, class MatrixViewType>
+static void
+det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
+
+  template<typename DeviceType>
+  template<class DeterminantArrayViewType, class MatrixViewType>
   void
-  RealSpaceTools<SpT>::
-  det(       Kokkos::DynRankView<detArrayValueType,detArrayProperties...> detArray,
-       const Kokkos::DynRankView<inMatValueType,   inMatProperties...>    inMats ) {
+  RealSpaceTools<DeviceType>::
+  det( DeterminantArrayViewType detArray, const MatrixViewType inMats ) {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != detArray.rank()+2, std::invalid_argument,
+      const unsigned matrixRank = getFunctorRank(inMats);
+      const unsigned detRank    = getFunctorRank(detArray);
+      INTREPID2_TEST_FOR_EXCEPTION( matrixRank != detRank+2, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Determinant and matrix array arguments do not have compatible ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 3 || inMats.rank() > 4, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( matrixRank < 3 || matrixRank > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Rank of matrix array must be 3 or 4!");
-      for (size_type i=0;i<inMats.rank()-2;++i) {
+      for (size_type i=0;i<matrixRank-2;++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(i) != detArray.extent(i), std::invalid_argument,
                                        ">>> ERROR (RealSpaceTools::det): Dimensions of determinant and matrix array arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) != inMats.extent(inMats.rank()-1), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(matrixRank-2) != inMats.extent(matrixRank-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Matrices are not square!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(inMats.rank()-2) < 1 || inMats.extent(inMats.rank()-2) > 3, std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.extent(matrixRank-2) < 1 || inMats.extent(matrixRank-2) > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
     }
 #endif
 
-    typedef          Kokkos::DynRankView<detArrayValueType,detArrayProperties...>          detArrayViewType;
-    typedef          Kokkos::DynRankView<inMatValueType,   inMatProperties...>             inMatViewType;
-    typedef          FunctorRealSpaceTools::F_det<detArrayViewType,inMatViewType>          FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename DeviceType::execution_space ExecSpaceType;
 
-    switch (detArray.rank()) {
+    const int detArrayRank = getFunctorRank(detArray);
+    
+    switch (detArrayRank) {
     case 1: { // output P and input P,D,D
+      using FunctorType = FunctorRealSpaceTools::F_det<DeterminantArrayViewType,MatrixViewType,1>;
       using range_policy_type = Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> >;
       range_policy_type policy(0, detArray.extent(0));
       Kokkos::parallel_for( policy, FunctorType(detArray, inMats) );
       break;
     }
     case 2: { // output C,P and input C,P,D,D
-      using range_policy_type = Kokkos::Experimental::MDRangePolicy
-        < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+      using FunctorType = FunctorRealSpaceTools::F_det<DeterminantArrayViewType,MatrixViewType,2>;
+      using range_policy_type = Kokkos::MDRangePolicy
+        < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
       range_policy_type policy( { 0, 0 },
                                 { detArray.extent(0), detArray.extent(1) } );
       Kokkos::parallel_for( policy, FunctorType(detArray, inMats) );
@@ -865,12 +938,12 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename sumArrayValueType, class ...sumArrayProperties,
            typename inArray1ValueType, class ...inArray1Properties,
            typename inArray2ValueType, class ...inArray2Properties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   add(       Kokkos::DynRankView<sumArrayValueType,sumArrayProperties...> sumArray,
        const Kokkos::DynRankView<inArray1ValueType,inArray1Properties...> inArray1,
        const Kokkos::DynRankView<inArray2ValueType,inArray2Properties...> inArray2 ) {
@@ -887,25 +960,31 @@ namespace Intrepid2 {
       }
     }
 #endif
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(sumArray)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inArray1)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inArray2)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::add(..): input/output views' memory spaces are not compatible with DeviceType");
 
-    typedef          Kokkos::DynRankView<sumArrayValueType,sumArrayProperties...>                     sumArrayViewType;
-    typedef          Kokkos::DynRankView<inArray1ValueType,inArray1Properties...>                     inArray1ViewType;
-    typedef          Kokkos::DynRankView<inArray2ValueType,inArray2Properties...>                     inArray2ViewType;
-    typedef          FunctorRealSpaceTools::F_add<sumArrayViewType,inArray1ViewType,inArray2ViewType> FunctorType;
-    typedef typename ExecSpace<typename inArray1ViewType::execution_space,SpT>::ExecSpaceType         ExecSpaceType;
+    using FunctorType = FunctorRealSpaceTools::F_add<decltype(sumArray),decltype(inArray1),decltype(inArray2)>;
 
     const auto loopSize = sumArray.extent(0);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(sumArray, inArray1, inArray2) );
   }
 
   // ------------------------------------------------------------------------------------
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename inoutSumArrayValueType, class ...inoutSumArrayProperties,
            typename inArrayValueType,       class ...inArrayProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   add(       Kokkos::DynRankView<inoutSumArrayValueType,inoutSumArrayProperties...> inoutSumArray,
        const Kokkos::DynRankView<inArrayValueType,      inArrayProperties...>       inArray ) {
 
@@ -919,7 +998,7 @@ namespace Intrepid2 {
       }
     }
 #endif
-    RealSpaceTools<SpT>::add(inoutSumArray, inoutSumArray, inArray);
+    RealSpaceTools<DeviceType>::add(inoutSumArray, inoutSumArray, inArray);
   }
 
   // ------------------------------------------------------------------------------------
@@ -958,12 +1037,12 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename diffArrayValueType, class ...diffArrayProperties,
            typename inArray1ValueType,  class ...inArray1Properties,
            typename inArray2ValueType,  class ...inArray2Properties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   subtract(       Kokkos::DynRankView<diffArrayValueType,diffArrayProperties...> diffArray,
             const Kokkos::DynRankView<inArray1ValueType, inArray1Properties...>  inArray1,
             const Kokkos::DynRankView<inArray2ValueType, inArray2Properties...>  inArray2 ) {
@@ -980,25 +1059,31 @@ namespace Intrepid2 {
       }
     }
 #endif
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(diffArray)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inArray1)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inArray2)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::subtract(..): input/output views' memory spaces are not compatible with DeviceType");
 
-    typedef          Kokkos::DynRankView<diffArrayValueType,diffArrayProperties...>                         diffArrayViewType;
-    typedef          Kokkos::DynRankView<inArray1ValueType, inArray1Properties...>                          inArray1ViewType;
-    typedef          Kokkos::DynRankView<inArray2ValueType, inArray2Properties...>                          inArray2ViewType;
-    typedef          FunctorRealSpaceTools::F_subtract<diffArrayViewType,inArray1ViewType,inArray2ViewType> FunctorType;
-    typedef typename ExecSpace<typename inArray1ViewType::execution_space,SpT>::ExecSpaceType               ExecSpaceType;
+    using FunctorType = FunctorRealSpaceTools::F_subtract<decltype(diffArray),decltype(inArray1),decltype(inArray2)>;
 
     const size_type loopSize = diffArray.extent(0);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(diffArray, inArray1, inArray2) );
   }
 
   // ------------------------------------------------------------------------------------
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename inoutDiffArrayValueType, class ...inoutDiffArrayProperties,
            typename inArrayValueType,        class ...inArrayProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   subtract(       Kokkos::DynRankView<inoutDiffArrayValueType,inoutDiffArrayProperties...> inoutDiffArray,
             const Kokkos::DynRankView<inArrayValueType,       inArrayProperties...>        inArray ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -1011,7 +1096,7 @@ namespace Intrepid2 {
       }
     }
 #endif
-    RealSpaceTools<SpT>::subtract(inoutDiffArray, inoutDiffArray, inArray);
+    RealSpaceTools<DeviceType>::subtract(inoutDiffArray, inoutDiffArray, inArray);
   }
 
   // ------------------------------------------------------------------------------------
@@ -1051,12 +1136,12 @@ namespace Intrepid2 {
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename ValueType,
            typename scaledArrayValueType, class ...scaledArrayProperties,
            typename inArrayValueType,     class ...inArrayProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   scale(       Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...> scaledArray,
          const Kokkos::DynRankView<inArrayValueType,    inArrayProperties...>     inArray,
          const ValueType alpha ) {
@@ -1074,26 +1159,32 @@ namespace Intrepid2 {
     }
 #endif
 
-    typedef          Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...>               scaledArrayViewtype;
-    typedef          Kokkos::DynRankView<inArrayValueType,    inArrayProperties...>                   inArrayViewType;
-    typedef          FunctorRealSpaceTools::F_scale<ValueType,scaledArrayViewtype,inArrayViewType> FunctorType;
-    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType          ExecSpaceType;
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(scaledArray)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inArray)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::scale(..): input/output views' memory spaces are not compatible with DeviceType");
+
+    using FunctorType = FunctorRealSpaceTools::F_scale<ValueType,decltype(scaledArray),decltype(inArray)>;
 
     const auto loopSize = scaledArray.extent(0);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(scaledArray, inArray, alpha) );
   }
 
   // ------------------------------------------------------------------------------------
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename ValueType,
            typename inoutScaledArrayValueType, class ...inoutScaledArrayProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   scale(       Kokkos::DynRankView<inoutScaledArrayValueType,inoutScaledArrayProperties...> inoutScaledArray,
          const ValueType alpha ) {
-    RealSpaceTools<SpT>::scale(inoutScaledArray, inoutScaledArray, alpha);
+    RealSpaceTools<DeviceType>::scale(inoutScaledArray, inoutScaledArray, alpha);
   }
 
 
@@ -1137,12 +1228,12 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename dotArrayValueType, class ...dotArrayProperties,
            typename inVec1ValueType,   class ...inVec1Properties,
            typename inVec2ValueType,   class ...inVec2Properties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   dot(       Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...> dotArray,
        const Kokkos::DynRankView<inVec1ValueType,  inVec1Properties...>   inVecs1,
        const Kokkos::DynRankView<inVec2ValueType,  inVec2Properties...>   inVecs2 ) {
@@ -1165,14 +1256,20 @@ namespace Intrepid2 {
       }
     }
 #endif
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(dotArray)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inVecs1)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inVecs2)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::dot(..): input/output views' memory spaces are not compatible with DeviceType");
 
-    typedef          Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...>                 dotArrayViewType;
-    typedef          Kokkos::DynRankView<inVec1ValueType,  inVec1Properties...>                   inVec1ViewType;
-    typedef          Kokkos::DynRankView<inVec2ValueType,  inVec2Properties...>                   inVec2ViewType;
-    typedef          FunctorRealSpaceTools::F_dot<dotArrayViewType,inVec1ViewType,inVec2ViewType> FunctorType;
-    typedef typename ExecSpace<typename inVec1ViewType::execution_space,SpT>::ExecSpaceType       ExecSpaceType;
+    using FunctorType = FunctorRealSpaceTools::F_dot<decltype(dotArray),decltype(inVecs1),decltype(inVecs2)>;
 
     const auto loopSize = dotArray.extent(0)*dotArray.extent(1);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(dotArray, inVecs1, inVecs2) );
   }
@@ -1232,12 +1329,12 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename matVecValueType, class ...matVecProperties,
            typename inMatValueType,  class ...inMatProperties,
            typename inVecValueType,  class ...inVecProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   matvec(       Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
           const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
           const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs ) {
@@ -1292,18 +1389,24 @@ namespace Intrepid2 {
                                       ">>> ERROR (RealSpaceTools::matvec): Matrix column dimension does not match to the length of a vector!");
     }
 #endif
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(matVecs)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inMats)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inVecs)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::matvec(..): input/output views' memory spaces are not compatible with DeviceType");
 
-    typedef          Kokkos::DynRankView<matVecValueType,matVecProperties...>                    matVecViewType;
-    typedef          Kokkos::DynRankView<inMatValueType, inMatProperties...>                     inMatViewType;
-    typedef          Kokkos::DynRankView<inVecValueType, inVecProperties...>                     inVecViewType;
-    typedef          FunctorRealSpaceTools::F_matvec<matVecViewType,inMatViewType,inVecViewType> FunctorType;
-    typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType       ExecSpaceType;
+    using FunctorType = FunctorRealSpaceTools::F_matvec<decltype(matVecs),decltype(inMats),decltype(inVecs)>;
 
     size_type loopSize = 1;
     const ordinal_type r = matVecs.rank() - 1;
     for (ordinal_type i=0;i<r;++i) 
       loopSize *= matVecs.extent(i);
 
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(matVecs, inMats, inVecs) );
   }
@@ -1364,12 +1467,12 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename vecProdValueType, class ...vecProdProperties,
            typename inLeftValueType,  class ...inLeftProperties,
            typename inRightValueType, class ...inRightProperties>
   void
-  RealSpaceTools<SpT>::
+  RealSpaceTools<DeviceType>::
   vecprod(       Kokkos::DynRankView<vecProdValueType,vecProdProperties...> vecProd,
            const Kokkos::DynRankView<inLeftValueType, inLeftProperties...>  inLeft,
            const Kokkos::DynRankView<inRightValueType,inRightProperties...> inRight ) {
@@ -1402,17 +1505,24 @@ namespace Intrepid2 {
                                       ">>> ERROR (RealSpaceTools::vecprod): Dimensions of arrays (rank-1) must be 2 or 3!");
     }
 #endif
-    typedef          Kokkos::DynRankView<vecProdValueType, vecProdProperties...>                      vecProdViewType;
-    typedef          Kokkos::DynRankView<inLeftValueType, inLeftProperties...>                        inLeftViewType;
-    typedef          Kokkos::DynRankView<inRightValueType, inRightProperties...>                      inRightViewType;
-    typedef          FunctorRealSpaceTools::F_vecprod<vecProdViewType,inLeftViewType,inRightViewType> FunctorType;
-    typedef typename ExecSpace<typename inLeftViewType::execution_space,SpT>::ExecSpaceType           ExecSpaceType;
+    using MemSpaceType = typename DeviceType::memory_space;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(vecProd)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inLeft)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(inRight)::memory_space>::accessible;
+    static_assert(are_accessible, "RealSpaceTools<DeviceType>::vecprod(..): input/output views' memory spaces are not compatible with DeviceType");
+
+    using FunctorType = FunctorRealSpaceTools::F_vecprod<decltype(vecProd),decltype(inLeft),decltype(inRight)>;
 
     const auto r = inLeft.rank();
     const auto loopSize = ( r == 1 ? 1 :
                             r == 2 ? inLeft.extent(0) :
                                      inLeft.extent(0)*inLeft.extent(1) );
     const bool is_vecprod_3d = (inLeft.extent(inLeft.rank() - 1) == 3);
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(vecProd, inLeft, inRight, is_vecprod_3d) );
   }
@@ -1435,7 +1545,7 @@ namespace Intrepid2 {
 //            class ...inVec2Properties>
 //   KOKKOS_INLINE_FUNCTION
 //   typename Kokkos::DynRankView<inVec1Properties...>::value_type
-//   RealSpaceTools<SpT>::
+//   RealSpaceTools<DeviceType>::
 //   dot( const Kokkos::DynRankView<inVec1Properties...> inVec1,
 //        const Kokkos::DynRankView<inVec2Properties...> inVec2 ) {
 

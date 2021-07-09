@@ -272,9 +272,9 @@ protected:
     size_t node_ids[8];
     double centroid[3];
 
-    BadCell() : global_id(-1) {
+    BadCell() : global_id(size_t(-1)) {
       for(int i = 0; i < 8; ++i)
-        node_ids[i] = -1;
+        node_ids[i] = size_t(-1);
       for(int i = 0; i < 3; ++i)
         centroid[i] = 0;
     }

@@ -70,8 +70,8 @@ void compare_fields(const stk::mesh::BulkData& bulk1,
     const stk::mesh::Selector s1(*field1);
     const stk::mesh::Selector s2(*field2);
 
-    stk::mesh::get_selected_entities(s1, bulk1.buckets(rank), entityList1);
-    stk::mesh::get_selected_entities(s2, bulk2.buckets(rank), entityList2);
+    stk::mesh::get_entities(bulk1, rank, s1, entityList1);
+    stk::mesh::get_entities(bulk2, rank, s2, entityList2);
 
     ASSERT_EQ(entityList1.size(), entityList2.size());
 
@@ -111,7 +111,7 @@ void verify_entity_from_file(stk::mesh::BulkData& input_bulk, stk::mesh::Entity 
 
     stk::topology::rank_t rank = input_bulk.entity_rank(input_entity);
     stk::mesh::EntityVector entities;
-    stk::mesh::get_selected_entities(*bulkEntitySetPart, bulk.buckets(rank), entities);
+    stk::mesh::get_entities(bulk, rank, *bulkEntitySetPart, entities);
     ASSERT_EQ(1u, entities.size());
     EXPECT_EQ(input_bulk.identifier(input_entity), bulk.identifier(entities[0]));
 }

@@ -25,7 +25,6 @@
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
-        <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
         <Parameter name="Output Time List"       type="string" value=""/>
         <Parameter name="Output Index List"      type="string" value=""/>
         <Parameter name="Output Time Interval"   type="double" value="1.0"/>

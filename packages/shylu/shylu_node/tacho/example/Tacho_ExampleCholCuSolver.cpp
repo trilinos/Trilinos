@@ -32,8 +32,8 @@ int main (int argc, char *argv[]) {
 
   typedef double value_type;
 
-  typedef UseThisDevice<Kokkos::Cuda>::device_type device_type;
-  typedef UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+  typedef UseThisDevice<Kokkos::Cuda>::type device_type;
+  typedef UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
   
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);
@@ -73,8 +73,7 @@ int main (int argc, char *argv[]) {
 #if defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
 #else
-    /// not recommend to use CAMD
-    typedef GraphTools_CAMD graph_tools_type;
+    typedef GraphTools graph_tools_type;    
 #endif
     Graph graph(h_A.NumRows(), h_A.NumNonZeros(), h_A.RowPtr(), h_A.Cols());
     graph_tools_type G(graph);

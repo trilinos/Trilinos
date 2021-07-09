@@ -60,20 +60,21 @@ private:
   std::vector<std::vector<Real>> pts_;
   std::vector<Real> vals_;
 
-  ROL::Ptr<Intrepid::FieldContainer<Real>> phi_, dphi_;
+  ROL::Ptr<Intrepid::FieldContainer<Real>> phi_, dphi_, dphi1_;
 
   Real evaluateSensor(const std::vector<Real> &pt, const int isens) const {
-    const Real two(2), pi(M_PI);
     const int d = pt.size();
-    Real dist(0), s2 = sig_*sig_, nc = std::sqrt(std::pow(two*pi*s2,static_cast<Real>(d)));
+    const Real half(0.5), two(2), pi(M_PI), dr(d);
+    Real dist(0), s2 = sig_*sig_, nc = std::pow(two*pi*s2,half*dr);
     for (int i = 0; i < d; ++i) {
       dist += std::pow(pt[i]-pts_[isens][i],two);
     }
-    return std::exp(-dist/(two*s2))/nc;
+    return std::exp(-half*dist/s2)/nc;
   }
 
   void computeSensor(ROL::Ptr<Intrepid::FieldContainer<Real>> &phi,
-                     ROL::Ptr<Intrepid::FieldContainer<Real>> &dphi) const {
+                     ROL::Ptr<Intrepid::FieldContainer<Real>> &dphi,
+                     ROL::Ptr<Intrepid::FieldContainer<Real>> &dphi1) const {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
@@ -82,6 +83,7 @@ private:
     std::vector<Real> pt(d);
     phi->initialize(static_cast<Real>(0));
     dphi->initialize(static_cast<Real>(0));
+    dphi1->initialize(static_cast<Real>(0));
     for (int i = 0; i < c; ++i) {
       for (int j = 0; j < p; ++j) {
         for ( int k = 0; k < d; ++k) {
@@ -90,8 +92,9 @@ private:
         // Compute diffusivity kappa
         for (int l = 0; l < nsens_; ++l) {
           phil = evaluateSensor(pt,l);
-          (*phi)(i,j)  += phil;
-          (*dphi)(i,j) += vals_[l]*phil;
+          (*phi)(i,j)   += phil;
+          (*dphi)(i,j)  += vals_[l]*phil;
+          (*dphi1)(i,j) += vals_[l]*std::sqrt(phil);
         }
       }
     }
@@ -120,9 +123,10 @@ public:
       }
     }
     file.close();
-    phi_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    dphi_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
-    computeSensor(phi_,dphi_);
+    phi_   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    dphi_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    dphi1_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    computeSensor(phi_,dphi_,dphi1_);
   }
 
   Real value(ROL::Ptr<Intrepid::FieldContainer<Real>> & val,
@@ -143,7 +147,7 @@ public:
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*Usqr,*valU_eval,*valU_eval);
     // Compute squared L2-norm of diff
     fe_->computeIntegral(val,phi_,Usqr,false);
-    fe_->computeIntegral(val,dphi_,dphi_,true);
+    fe_->computeIntegral(val,dphi1_,dphi1_,true);
     Intrepid::RealSpaceTools<Real>::scale(*val,static_cast<Real>(0.5));
     fe_->computeIntegral(val0,dphi_,valU_eval,false);
     Intrepid::RealSpaceTools<Real>::subtract(*val,*val0);
@@ -186,6 +190,23 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_State_Cost_stoch_adv_diff::gradient_3 is zero.");
+  }
+
+  void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    const int c = fe_->gradN()->dimension(0);
+    const int f = fe_->gradN()->dimension(1);
+    const int p = fe_->gradN()->dimension(2);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> H;
+    hess      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, f);
+    H         = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p);
+    Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*H, *phi_, *fe_->N());
+    Intrepid::FunctionSpaceTools::integrate<Real>(*hess,
+                                                  *H,
+                                                  *(fe_->NdetJ()),
+                                                  Intrepid::COMP_CPP, false);
   }
 
   void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
@@ -509,13 +530,13 @@ private:
 public:
   QoI_Control_Cost_adv_diff(const ROL::Ptr<FE<Real>> &fe,
                             ROL::ParameterList & parlist) : fe_(fe) {
-    int order = parlist.sublist("Problem").get("Hilbert Curve Order", 2);
+    int nx  = parlist.sublist("Problem").get("Number of X-Cells", 4);
+    int ny  = parlist.sublist("Problem").get("Number of Y-Cells", 2);
     Real XL = parlist.sublist("Geometry").get("X0", 0.0);
     Real YL = parlist.sublist("Geometry").get("Y0", 0.0);
     Real XU = XL + parlist.sublist("Geometry").get("Width",  1.0);
     Real YU = YL + parlist.sublist("Geometry").get("Height", 1.0);
-    int n = std::pow(2,order);
-    vol_ = (XU-XL)/static_cast<Real>(n) * (YU-YL)/static_cast<Real>(n);
+    vol_ = (XU-XL)/static_cast<Real>(nx) * (YU-YL)/static_cast<Real>(ny);
   }
 
   Real value(ROL::Ptr<Intrepid::FieldContainer<Real>> & val,
@@ -679,13 +700,13 @@ private:
 public:
   QoI_Control_Cost_L2_adv_diff(const ROL::Ptr<FE<Real>> &fe,
                                ROL::ParameterList & parlist) : fe_(fe) {
-    int order = parlist.sublist("Problem").get("Hilbert Curve Order", 2);
+    int nx  = parlist.sublist("Problem").get("Number of X-Cells", 4);
+    int ny  = parlist.sublist("Problem").get("Number of Y-Cells", 2);
     Real XL = parlist.sublist("Geometry").get("X0", 0.0);
     Real YL = parlist.sublist("Geometry").get("Y0", 0.0);
     Real XU = XL + parlist.sublist("Geometry").get("Width",  1.0);
     Real YU = YL + parlist.sublist("Geometry").get("Height", 1.0);
-    int n = std::pow(2,order);
-    vol_ = (XU-XL)/static_cast<Real>(n) * (YU-YL)/static_cast<Real>(n);
+    vol_ = (XU-XL)/static_cast<Real>(nx) * (YU-YL)/static_cast<Real>(ny);
   }
 
   Real value(ROL::Ptr<Intrepid::FieldContainer<Real>> & val,
@@ -872,19 +893,19 @@ class QoI_TVControl_Cost_adv_diff : public QoI<Real> {
 private:
   ROL::Ptr<FE<Real>> fe_;
   Real volx_,voly_, vol_, eps_;
-  int n_;
+  int nx_, ny_;
 
 public:
   QoI_TVControl_Cost_adv_diff(const ROL::Ptr<FE<Real>> &fe,
                               ROL::ParameterList & parlist) : fe_(fe) {
-    int order = parlist.sublist("Problem").get("Hilbert Curve Order", 2);
     Real XL = parlist.sublist("Geometry").get("X0", 0.0);
     Real YL = parlist.sublist("Geometry").get("Y0", 0.0);
     Real XU = XL + parlist.sublist("Geometry").get("Width",  1.0);
     Real YU = YL + parlist.sublist("Geometry").get("Height", 1.0);
-    n_    = std::pow(2,order);
-    volx_ = (XU-XL)/static_cast<Real>(n_);
-    voly_ = (YU-YL)/static_cast<Real>(n_);
+    nx_ = parlist.sublist("Problem").get("Number of X-Cells", 4);
+    ny_ = parlist.sublist("Problem").get("Number of Y-Cells", 2);
+    volx_ = (XU-XL)/static_cast<Real>(nx_);
+    voly_ = (YU-YL)/static_cast<Real>(ny_);
     vol_  = volx_*voly_;
     eps_  = parlist.sublist("Problem").get("TV Smoothing Parameter",1e-3);
   }
@@ -925,36 +946,56 @@ public:
     else {
       const Real half(0.5), two(2);
       Real sum(0);
-      std::vector<Real> tmp(n_);
-      std::vector<std::vector<Real>> Dx(n_+1,tmp), Dy(n_+1,tmp);
-      for (int i = 0; i < n_+1; ++i) {
-        for (int j = 0; j < n_; ++j) {
+      std::vector<Real> tmpx(nx_), tmpy(ny_);
+      std::vector<std::vector<Real>> Dx(nx_+1,tmpy), Dy(ny_+1,tmpx);
+      for (int i = 0; i < nx_+1; ++i) {
+        for (int j = 0; j < ny_; ++j) {
           if (i==0) {
-            Dx[i][j] = std::pow(-(*z_param)[i+j*n_]/volx_,two);
-            Dy[i][j] = std::pow(-(*z_param)[j+i*n_]/voly_,two);
+            Dx[i][j] = std::pow(-(*z_param)[i+j*nx_]/volx_,two);
           }
-          else if (i > 0 && i < n_) {
-            Dx[i][j] = std::pow(((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])/volx_,two);
-            Dy[i][j] = std::pow(((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])/voly_,two);
+          else if (i > 0 && i < nx_) {
+            Dx[i][j] = std::pow(((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])/volx_,two);
           }
           else {
-            Dx[i][j] = std::pow((*z_param)[(i-1)+j*n_]/volx_,two);
-            Dy[i][j] = std::pow((*z_param)[j+(i-1)*n_]/voly_,two);
+            Dx[i][j] = std::pow((*z_param)[(i-1)+j*nx_]/volx_,two);
           }
         }
       }
-      for (int i = 0; i < n_+1; ++i) {
-        for (int j = 0; j < n_; ++j) {
+      for (int i = 0; i < ny_+1; ++i) {
+        for (int j = 0; j < nx_; ++j) {
+          if (i==0) {
+            Dy[i][j] = std::pow(-(*z_param)[j+i*nx_]/voly_,two);
+          }
+          else if (i > 0 && i < ny_) {
+            Dy[i][j] = std::pow(((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])/voly_,two);
+          }
+          else {
+            Dy[i][j] = std::pow((*z_param)[j+(i-1)*nx_]/voly_,two);
+          }
+        }
+      }
+      for (int i = 0; i < nx_+1; ++i) {
+        for (int j = 0; j < ny_; ++j) {
           if (i==0) {
             sum += std::sqrt(Dx[i][j]+eps_);
-            sum += std::sqrt(Dy[i][j]+eps_);
           }
-          else if (i > 0 && i < n_) {
+          else if (i > 0 && i < nx_) {
             sum += std::sqrt(half*(Dx[i][j]+Dx[i+1][j])+eps_);
-            sum += std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_);
           }
           else {
             sum += std::sqrt(half*Dx[i][j]+eps_);
+          }
+        }
+      }
+      for (int i = 0; i < ny_+1; ++i) {
+        for (int j = 0; j < nx_; ++j) {
+          if (i==0) {
+            sum += std::sqrt(Dy[i][j]+eps_);
+          }
+          else if (i > 0 && i < ny_) {
+            sum += std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_);
+          }
+          else {
             sum += std::sqrt(half*Dy[i][j]+eps_);
           }
         }
@@ -1021,59 +1062,77 @@ public:
       const int size = z_param->size();
       std::vector<Real> g(size,static_cast<Real>(0));
       const Real half(0.5), two(2), volx2 = volx_*volx_, voly2 = voly_*voly_;
-      std::vector<Real> tmp(n_);
-      std::vector<std::vector<Real>> Dx(n_+1,tmp), Dy(n_+1,tmp);
-      for (int i = 0; i < n_+1; ++i) {
-        for (int j = 0; j < n_; ++j) {
+      std::vector<Real> tmpx(nx_), tmpy(ny_);
+      std::vector<std::vector<Real>> Dx(nx_+1,tmpy), Dy(ny_+1,tmpx);
+      for (int i = 0; i < nx_+1; ++i) {
+        for (int j = 0; j < ny_; ++j) {
           if (i==0) {
-            Dx[i][j] = std::pow(-(*z_param)[i+j*n_]/volx_,two);
-            Dy[i][j] = std::pow(-(*z_param)[j+i*n_]/voly_,two);
+            Dx[i][j] = std::pow(-(*z_param)[i+j*nx_]/volx_,two);
           }
-          else if (i > 0 && i < n_) {
-            Dx[i][j] = std::pow(((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])/volx_,two);
-            Dy[i][j] = std::pow(((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])/voly_,two);
+          else if (i > 0 && i < nx_) {
+            Dx[i][j] = std::pow(((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])/volx_,two);
           }
           else {
-            Dx[i][j] = std::pow((*z_param)[(i-1)+j*n_]/volx_,two);
-            Dy[i][j] = std::pow((*z_param)[j+(i-1)*n_]/voly_,two);
+            Dx[i][j] = std::pow((*z_param)[(i-1)+j*nx_]/volx_,two);
           }
         }
       }
-      for (int i = 0; i < n_+1; ++i) {
-        for (int j = 0; j < n_; ++j) {
+      for (int i = 0; i < ny_+1; ++i) {
+        for (int j = 0; j < nx_; ++j) {
+          if (i==0) {
+            Dy[i][j] = std::pow(-(*z_param)[j+i*nx_]/voly_,two);
+          }
+          else if (i > 0 && i < ny_) {
+            Dy[i][j] = std::pow(((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])/voly_,two);
+          }
+          else {
+            Dy[i][j] = std::pow((*z_param)[j+(i-1)*nx_]/voly_,two);
+          }
+        }
+      }
+      for (int i = 0; i < nx_+1; ++i) {
+        for (int j = 0; j < ny_; ++j) {
           if (i==0) {
             Real cx = (vol_/volx2)/std::sqrt(Dx[i][j]+eps_);
-            g[i+j*n_] += cx*(*z_param)[i+j*n_];
-
-            Real cy = (vol_/voly2)/std::sqrt(Dy[i][j]+eps_);
-            g[j+i*n_] += cy*(*z_param)[j+i*n_];
+            g[i+j*nx_] += cx*(*z_param)[i+j*nx_];
           }
-          else if (i > 0 && i < n_-1) {
+          else if (i > 0 && i < nx_-1) {
             Real cx = half*vol_/(volx2*std::sqrt(half*(Dx[i][j]+Dx[i+1][j])+eps_));
-            g[(i-1)+j*n_] -= cx*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_]);
-            g[i+j*n_]     += cx*(two*(*z_param)[i+j*n_]-(*z_param)[(i+1)+j*n_]-(*z_param)[(i-1)+j*n_]);
-            g[(i+1)+j*n_] += cx*((*z_param)[(i+1)+j*n_]-(*z_param)[i+j*n_]);
-
-            Real cy = half*vol_/(voly2*std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_));
-            g[j+(i-1)*n_] -= cy*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_]);
-            g[j+i*n_]     += cy*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i+1)*n_]-(*z_param)[j+(i-1)*n_]);
-            g[j+(i+1)*n_] += cy*((*z_param)[j+(i+1)*n_]-(*z_param)[j+i*n_]);
+            g[(i-1)+j*nx_] -= cx*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_]);
+            g[i+j*nx_]     += cx*(two*(*z_param)[i+j*nx_]-(*z_param)[(i+1)+j*nx_]-(*z_param)[(i-1)+j*nx_]);
+            g[(i+1)+j*nx_] += cx*((*z_param)[(i+1)+j*nx_]-(*z_param)[i+j*nx_]);
           }
-          else if (i == n_-1) {
+          else if (i == nx_-1) {
             Real cx = half*vol_/(volx2*std::sqrt(half*(Dx[i][j]+Dx[i+1][j])+eps_));
-            g[(i-1)+j*n_] -= cx*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_]);
-            g[i+j*n_]     += cx*(two*(*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_]);
-
-            Real cy = half*vol_/(voly2*std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_));
-            g[j+(i-1)*n_] -= cy*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_]);
-            g[j+i*n_]     += cy*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_]);
+            g[(i-1)+j*nx_] -= cx*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_]);
+            g[i+j*nx_]     += cx*(two*(*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_]);
           }
-          else if (i==n_) {
+          else if (i==nx_) {
             Real cx = vol_*half/(volx2*std::sqrt(half*Dx[i][j]+eps_));
-            g[(i-1)+j*n_] += cx*(*z_param)[(i-1)+j*n_];
-
+            g[(i-1)+j*nx_] += cx*(*z_param)[(i-1)+j*nx_];
+          }
+        }
+      }
+      for (int i = 0; i < ny_+1; ++i) {
+        for (int j = 0; j < nx_; ++j) {
+          if (i==0) {
+            Real cy = (vol_/voly2)/std::sqrt(Dy[i][j]+eps_);
+            g[j+i*nx_] += cy*(*z_param)[j+i*nx_];
+          }
+          else if (i > 0 && i < ny_-1) {
+            Real cy = half*vol_/(voly2*std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_));
+            g[j+(i-1)*nx_] -= cy*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_]);
+            g[j+i*nx_]     += cy*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i+1)*nx_]-(*z_param)[j+(i-1)*nx_]);
+            g[j+(i+1)*nx_] += cy*((*z_param)[j+(i+1)*nx_]-(*z_param)[j+i*nx_]);
+          }
+          else if (i == ny_-1) {
+            Real cy = half*vol_/(voly2*std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_));
+            g[j+(i-1)*nx_] -= cy*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_]);
+            g[j+i*nx_]     += cy*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_]);
+          }
+          else if (i==ny_) {
             Real cy = vol_*half/(voly2*std::sqrt(half*Dy[i][j]+eps_));
-            g[j+(i-1)*n_] += cy*(*z_param)[j+(i-1)*n_];
+            g[j+(i-1)*nx_] += cy*(*z_param)[j+(i-1)*nx_];
           }
         }
       }
@@ -1197,93 +1256,111 @@ public:
       const int size = z_param->size();
       std::vector<Real> h(size,static_cast<Real>(0));
       const Real half(0.5), two(2), three(3), volx2 = volx_*volx_, voly2 = voly_*voly_;
-      std::vector<Real> tmp(n_);
-      std::vector<std::vector<Real>> Dx(n_+1,tmp), Dy(n_+1,tmp);
-      for (int i = 0; i < n_+1; ++i) {
-        for (int j = 0; j < n_; ++j) {
+      std::vector<Real> tmpx(nx_), tmpy(ny_);
+      std::vector<std::vector<Real>> Dx(nx_+1,tmpy), Dy(ny_+1,tmpx);
+      for (int i = 0; i < nx_+1; ++i) {
+        for (int j = 0; j < ny_; ++j) {
           if (i==0) {
-            Dx[i][j] = std::pow(-(*z_param)[i+j*n_]/volx_,two);
-            Dy[i][j] = std::pow(-(*z_param)[j+i*n_]/voly_,two);
+            Dx[i][j] = std::pow(-(*z_param)[i+j*nx_]/volx_,two);
           }
-          else if (i > 0 && i < n_) {
-            Dx[i][j] = std::pow(((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])/volx_,two);
-            Dy[i][j] = std::pow(((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])/voly_,two);
+          else if (i > 0 && i < nx_) {
+            Dx[i][j] = std::pow(((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])/volx_,two);
           }
           else {
-            Dx[i][j] = std::pow((*z_param)[(i-1)+j*n_]/volx_,two);
-            Dy[i][j] = std::pow((*z_param)[j+(i-1)*n_]/voly_,two);
+            Dx[i][j] = std::pow((*z_param)[(i-1)+j*nx_]/volx_,two);
           }
         }
       }
-      for (int i = 0; i < n_+1; ++i) {
-        for (int j = 0; j < n_; ++j) {
+      for (int i = 0; i < ny_+1; ++i) {
+        for (int j = 0; j < nx_; ++j) {
+          if (i==0) {
+            Dy[i][j] = std::pow(-(*z_param)[j+i*nx_]/voly_,two);
+          }
+          else if (i > 0 && i < ny_) {
+            Dy[i][j] = std::pow(((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])/voly_,two);
+          }
+          else {
+            Dy[i][j] = std::pow((*z_param)[j+(i-1)*nx_]/voly_,two);
+          }
+        }
+      }
+      for (int i = 0; i < nx_+1; ++i) {
+        for (int j = 0; j < ny_; ++j) {
           if (i==0) {
             Real cx1 = (vol_/volx2)/std::sqrt(Dx[i][j]+eps_);
             Real cx2 = (vol_/volx2)*(two/volx2)*(-half/std::pow(std::sqrt(Dx[i][j]+eps_),three));
-            h[i+j*n_] += (cx1+cx2*std::pow((*z_param)[i+j*n_],two))*(*v_param)[i+j*n_];
-
-            Real cy1 = (vol_/voly2)/std::sqrt(Dy[i][j]+eps_);
-            Real cy2 = (vol_/voly2)*(two/voly2)*(-half/std::pow(std::sqrt(Dy[i][j]+eps_),three));
-            h[j+i*n_] += (cy1+cy2*std::pow((*z_param)[j+i*n_],two))*(*v_param)[j+i*n_];
+            h[i+j*nx_] += (cx1+cx2*std::pow((*z_param)[i+j*nx_],two))*(*v_param)[i+j*nx_];
           }
-          else if (i > 0 && i < n_-1) {
+          else if (i > 0 && i < nx_-1) {
             Real cx1 = (half*vol_/volx2)/std::sqrt(half*(Dx[i][j]+Dx[i+1][j])+eps_);
             Real cx2 = (half*vol_/volx2)*(two/volx2)*(-half*half/std::pow(std::sqrt(half*(Dx[i][j]+Dx[i+1][j])+eps_),three));
-            h[(i-1)+j*n_] += cx2*std::pow((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_],two)*(*v_param)[(i-1)+j*n_]
-                              -cx2*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*(two*(*z_param)[i+j*n_]-(*z_param)[(i+1)+j*n_]-(*z_param)[(i-1)+j*n_])*(*v_param)[i+j*n_]
-                              -cx2*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*((*z_param)[(i+1)+j*n_]-(*z_param)[i+j*n_])*(*v_param)[(i+1)+j*n_]
-                              -cx1*((*v_param)[i+j*n_]-(*v_param)[(i-1)+j*n_]);
-            h[i+j*n_]     += cx2*std::pow(two*(*z_param)[i+j*n_]-(*z_param)[(i+1)+j*n_]-(*z_param)[(i-1)+j*n_],two)*(*v_param)[i+j*n_]
-                              -cx2*(two*(*z_param)[i+j*n_]-(*z_param)[(i+1)+j*n_]-(*z_param)[(i-1)+j*n_])*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*(*v_param)[(i-1)+j*n_]
-                              +cx2*(two*(*z_param)[i+j*n_]-(*z_param)[(i+1)+j*n_]-(*z_param)[(i-1)+j*n_])*((*z_param)[(i+1)+j*n_]-(*z_param)[i+j*n_])*(*v_param)[(i+1)+j*n_]
-                              +cx1*(two*(*v_param)[i+j*n_]-(*v_param)[(i+1)+j*n_]-(*v_param)[(i-1)+j*n_]);
-            h[(i+1)+j*n_] += cx2*std::pow((*z_param)[(i+1)+j*n_]-(*z_param)[i+j*n_],two)*(*v_param)[(i+1)+j*n_]
-                              -cx2*((*z_param)[(i+1)+j*n_]-(*z_param)[i+j*n_])*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*(*v_param)[(i-1)+j*n_]
-                              +cx2*((*z_param)[(i+1)+j*n_]-(*z_param)[i+j*n_])*(two*(*z_param)[i+j*n_]-(*z_param)[(i+1)+j*n_]-(*z_param)[(i-1)+j*n_])*(*v_param)[i+j*n_]
-                              +cx1*((*v_param)[(i+1)+j*n_]-(*v_param)[i+j*n_]);
-
-            Real cy1 = (half*vol_/voly2)/std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_);
-            Real cy2 = (half*vol_/voly2)*(two/voly2)*(-half*half/std::pow(std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_),three));
-            h[j+(i-1)*n_] += cy2*std::pow((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_],two)*(*v_param)[j+(i-1)*n_]
-                              -cy2*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i+1)*n_]-(*z_param)[j+(i-1)*n_])*(*v_param)[j+i*n_]
-                              -cy2*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*((*z_param)[j+(i+1)*n_]-(*z_param)[j+i*n_])*(*v_param)[j+(i+1)*n_]
-                              -cy1*((*v_param)[j+i*n_]-(*v_param)[j+(i-1)*n_]);
-            h[j+i*n_]     += cy2*std::pow(two*(*z_param)[j+i*n_]-(*z_param)[j+(i+1)*n_]-(*z_param)[j+(i-1)*n_],two)*(*v_param)[j+i*n_]
-                              -cy2*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i+1)*n_]-(*z_param)[j+(i-1)*n_])*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*(*v_param)[j+(i-1)*n_]
-                              +cy2*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i+1)*n_]-(*z_param)[j+(i-1)*n_])*((*z_param)[j+(i+1)*n_]-(*z_param)[j+i*n_])*(*v_param)[j+(i+1)*n_]
-                              +cy1*(two*(*v_param)[j+i*n_]-(*v_param)[j+(i+1)*n_]-(*v_param)[j+(i-1)*n_]);
-            h[j+(i+1)*n_] += cy2*std::pow((*z_param)[j+(i+1)*n_]-(*z_param)[j+i*n_],two)*(*v_param)[j+(i+1)*n_]
-                              -cy2*((*z_param)[j+(i+1)*n_]-(*z_param)[j+i*n_])*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*(*v_param)[j+(i-1)*n_]
-                              +cy2*((*z_param)[j+(i+1)*n_]-(*z_param)[j+i*n_])*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i+1)*n_]-(*z_param)[j+(i-1)*n_])*(*v_param)[j+i*n_]
-                              +cy1*((*v_param)[j+(i+1)*n_]-(*v_param)[j+i*n_]);
+            h[(i-1)+j*nx_] += cx2*std::pow((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_],two)*(*v_param)[(i-1)+j*nx_]
+                              -cx2*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*(two*(*z_param)[i+j*nx_]-(*z_param)[(i+1)+j*nx_]-(*z_param)[(i-1)+j*nx_])*(*v_param)[i+j*nx_]
+                              -cx2*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*((*z_param)[(i+1)+j*nx_]-(*z_param)[i+j*nx_])*(*v_param)[(i+1)+j*nx_]
+                              -cx1*((*v_param)[i+j*nx_]-(*v_param)[(i-1)+j*nx_]);
+            h[i+j*nx_]     += cx2*std::pow(two*(*z_param)[i+j*nx_]-(*z_param)[(i+1)+j*nx_]-(*z_param)[(i-1)+j*nx_],two)*(*v_param)[i+j*nx_]
+                              -cx2*(two*(*z_param)[i+j*nx_]-(*z_param)[(i+1)+j*nx_]-(*z_param)[(i-1)+j*nx_])*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*(*v_param)[(i-1)+j*nx_]
+                              +cx2*(two*(*z_param)[i+j*nx_]-(*z_param)[(i+1)+j*nx_]-(*z_param)[(i-1)+j*nx_])*((*z_param)[(i+1)+j*nx_]-(*z_param)[i+j*nx_])*(*v_param)[(i+1)+j*nx_]
+                              +cx1*(two*(*v_param)[i+j*nx_]-(*v_param)[(i+1)+j*nx_]-(*v_param)[(i-1)+j*nx_]);
+            h[(i+1)+j*nx_] += cx2*std::pow((*z_param)[(i+1)+j*nx_]-(*z_param)[i+j*nx_],two)*(*v_param)[(i+1)+j*nx_]
+                              -cx2*((*z_param)[(i+1)+j*nx_]-(*z_param)[i+j*nx_])*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*(*v_param)[(i-1)+j*nx_]
+                              +cx2*((*z_param)[(i+1)+j*nx_]-(*z_param)[i+j*nx_])*(two*(*z_param)[i+j*nx_]-(*z_param)[(i+1)+j*nx_]-(*z_param)[(i-1)+j*nx_])*(*v_param)[i+j*nx_]
+                              +cx1*((*v_param)[(i+1)+j*nx_]-(*v_param)[i+j*nx_]);
           }
-          else if (i == n_-1) {
+          else if (i == nx_-1) {
             Real cx1 = (half*vol_/volx2)/std::sqrt(half*(Dx[i][j]+Dx[i+1][j])+eps_);
             Real cx2 = (half*vol_/volx2)*(two/volx2)*(-half*half/std::pow(std::sqrt(half*(Dx[i][j]+Dx[i+1][j])+eps_),three));
-            h[(i-1)+j*n_] += cx2*std::pow((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_],two)*(*v_param)[(i-1)+j*n_]
-                              -cx2*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*(two*(*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*(*v_param)[i+j*n_]
-                              -cx1*((*v_param)[i+j*n_]-(*v_param)[(i-1)+j*n_]);
-            h[i+j*n_]     += cx2*std::pow(two*(*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_],two)*(*v_param)[i+j*n_]
-                              -cx2*(two*(*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*((*z_param)[i+j*n_]-(*z_param)[(i-1)+j*n_])*(*v_param)[(i-1)+j*n_]
-                              +cx1*(two*(*v_param)[i+j*n_]-(*v_param)[(i-1)+j*n_]);
-
-            Real cy1 = (half*vol_/voly2)/std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_);
-            Real cy2 = (half*vol_/voly2)*(two/voly2)*(-half*half/std::pow(std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_),three));
-            h[j+(i-1)*n_] += cy2*std::pow((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_],two)*(*v_param)[j+(i-1)*n_]
-                              -cy2*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*(*v_param)[j+i*n_]
-                              -cy1*((*v_param)[j+i*n_]-(*v_param)[j+(i-1)*n_]);
-            h[j+i*n_]     += cy2*std::pow(two*(*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_],two)*(*v_param)[j+i*n_]
-                              -cy2*(two*(*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*((*z_param)[j+i*n_]-(*z_param)[j+(i-1)*n_])*(*v_param)[j+(i-1)*n_]
-                              +cy1*(two*(*v_param)[j+i*n_]-(*v_param)[j+(i-1)*n_]);
+            h[(i-1)+j*nx_] += cx2*std::pow((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_],two)*(*v_param)[(i-1)+j*nx_]
+                              -cx2*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*(two*(*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*(*v_param)[i+j*nx_]
+                              -cx1*((*v_param)[i+j*nx_]-(*v_param)[(i-1)+j*nx_]);
+            h[i+j*nx_]     += cx2*std::pow(two*(*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_],two)*(*v_param)[i+j*nx_]
+                              -cx2*(two*(*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*((*z_param)[i+j*nx_]-(*z_param)[(i-1)+j*nx_])*(*v_param)[(i-1)+j*nx_]
+                              +cx1*(two*(*v_param)[i+j*nx_]-(*v_param)[(i-1)+j*nx_]);
           }
-          else if (i==n_) {
+          else if (i==nx_) {
             Real cx1 = (vol_*half/volx2)/std::sqrt(half*Dx[i][j]+eps_);
             Real cx2 = (vol_*half/volx2)*(two/volx2)*(-half*half/std::pow(std::sqrt(half*Dx[i][j]+eps_),three));
-            h[(i-1)+j*n_] += (cx1+cx2*std::pow((*z_param)[(i-1)+j*n_],two))*(*v_param)[(i-1)+j*n_];
-
+            h[(i-1)+j*nx_] += (cx1+cx2*std::pow((*z_param)[(i-1)+j*nx_],two))*(*v_param)[(i-1)+j*nx_];
+          }
+        }
+      }
+      for (int i = 0; i < ny_+1; ++i) {
+        for (int j = 0; j < nx_; ++j) {
+          if (i==0) {
+            Real cy1 = (vol_/voly2)/std::sqrt(Dy[i][j]+eps_);
+            Real cy2 = (vol_/voly2)*(two/voly2)*(-half/std::pow(std::sqrt(Dy[i][j]+eps_),three));
+            h[j+i*nx_] += (cy1+cy2*std::pow((*z_param)[j+i*nx_],two))*(*v_param)[j+i*nx_];
+          }
+          else if (i > 0 && i < ny_-1) {
+            Real cy1 = (half*vol_/voly2)/std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_);
+            Real cy2 = (half*vol_/voly2)*(two/voly2)*(-half*half/std::pow(std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_),three));
+            h[j+(i-1)*nx_] += cy2*std::pow((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_],two)*(*v_param)[j+(i-1)*nx_]
+                              -cy2*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i+1)*nx_]-(*z_param)[j+(i-1)*nx_])*(*v_param)[j+i*nx_]
+                              -cy2*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*((*z_param)[j+(i+1)*nx_]-(*z_param)[j+i*nx_])*(*v_param)[j+(i+1)*nx_]
+                              -cy1*((*v_param)[j+i*nx_]-(*v_param)[j+(i-1)*nx_]);
+            h[j+i*nx_]     += cy2*std::pow(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i+1)*nx_]-(*z_param)[j+(i-1)*nx_],two)*(*v_param)[j+i*nx_]
+                              -cy2*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i+1)*nx_]-(*z_param)[j+(i-1)*nx_])*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*(*v_param)[j+(i-1)*nx_]
+                              +cy2*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i+1)*nx_]-(*z_param)[j+(i-1)*nx_])*((*z_param)[j+(i+1)*nx_]-(*z_param)[j+i*nx_])*(*v_param)[j+(i+1)*nx_]
+                              +cy1*(two*(*v_param)[j+i*nx_]-(*v_param)[j+(i+1)*nx_]-(*v_param)[j+(i-1)*nx_]);
+            h[j+(i+1)*nx_] += cy2*std::pow((*z_param)[j+(i+1)*nx_]-(*z_param)[j+i*nx_],two)*(*v_param)[j+(i+1)*nx_]
+                              -cy2*((*z_param)[j+(i+1)*nx_]-(*z_param)[j+i*nx_])*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*(*v_param)[j+(i-1)*nx_]
+                              +cy2*((*z_param)[j+(i+1)*nx_]-(*z_param)[j+i*nx_])*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i+1)*nx_]-(*z_param)[j+(i-1)*nx_])*(*v_param)[j+i*nx_]
+                              +cy1*((*v_param)[j+(i+1)*nx_]-(*v_param)[j+i*nx_]);
+          }
+          else if (i == ny_-1) {
+            Real cy1 = (half*vol_/voly2)/std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_);
+            Real cy2 = (half*vol_/voly2)*(two/voly2)*(-half*half/std::pow(std::sqrt(half*(Dy[i][j]+Dy[i+1][j])+eps_),three));
+            h[j+(i-1)*nx_] += cy2*std::pow((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_],two)*(*v_param)[j+(i-1)*nx_]
+                              -cy2*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*(*v_param)[j+i*nx_]
+                              -cy1*((*v_param)[j+i*nx_]-(*v_param)[j+(i-1)*nx_]);
+            h[j+i*nx_]     += cy2*std::pow(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_],two)*(*v_param)[j+i*nx_]
+                              -cy2*(two*(*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*((*z_param)[j+i*nx_]-(*z_param)[j+(i-1)*nx_])*(*v_param)[j+(i-1)*nx_]
+                              +cy1*(two*(*v_param)[j+i*nx_]-(*v_param)[j+(i-1)*nx_]);
+          }
+          else if (i==ny_) {
             Real cy1 = (vol_*half/voly2)/std::sqrt(half*Dy[i][j]+eps_);
             Real cy2 = (vol_*half/voly2)*(two/voly2)*(-half*half/std::pow(std::sqrt(half*Dy[i][j]+eps_),three));
-            h[j+(i-1)*n_] += (cy1+cy2*std::pow((*z_param)[j+(i-1)*n_],two))*(*v_param)[j+(i-1)*n_];
+            h[j+(i-1)*nx_] += (cy1+cy2*std::pow((*z_param)[j+(i-1)*nx_],two))*(*v_param)[j+(i-1)*nx_];
           }
         }
       }
@@ -1298,19 +1375,19 @@ class QoI_IntegralityControl_Cost_adv_diff : public QoI<Real> {
 private:
   const ROL::Ptr<FE<Real>> fe_;
   Real volx_,voly_, vol_;
-  int n_;
+  int nx_, ny_;
 
 public:
   QoI_IntegralityControl_Cost_adv_diff(const ROL::Ptr<FE<Real>> &fe,
                                        ROL::ParameterList & parlist) : fe_(fe) {
-    int order = parlist.sublist("Problem").get("Hilbert Curve Order", 2);
     Real XL = parlist.sublist("Geometry").get("X0", 0.0);
     Real YL = parlist.sublist("Geometry").get("Y0", 0.0);
     Real XU = XL + parlist.sublist("Geometry").get("Width",  1.0);
     Real YU = YL + parlist.sublist("Geometry").get("Height", 1.0);
-    n_    = std::pow(2,order);
-    volx_ = (XU-XL)/static_cast<Real>(n_);
-    voly_ = (YU-YL)/static_cast<Real>(n_);
+    nx_ = parlist.sublist("Problem").get("Number of X-Cells", 4);
+    ny_ = parlist.sublist("Problem").get("Number of Y-Cells", 2);
+    volx_ = (XU-XL)/static_cast<Real>(nx_);
+    voly_ = (YU-YL)/static_cast<Real>(ny_);
     vol_  = volx_*voly_;
   }
 
@@ -1341,9 +1418,9 @@ public:
     else {
       const Real one(1);
       Real sum(0);
-      for (int i = 0; i < n_; ++i) {
-        for (int j = 0; j < n_; ++j) {
-          sum += (*z_param)[i+j*n_]*(one-(*z_param)[i+j*n_]);
+      for (int i = 0; i < nx_; ++i) {
+        for (int j = 0; j < ny_; ++j) {
+          sum += (*z_param)[i+j*nx_]*(one-(*z_param)[i+j*nx_]);
         }
       }
       val = ROL::nullPtr;
@@ -1400,9 +1477,9 @@ public:
       const int size = z_param->size();
       std::vector<Real> g(size,static_cast<Real>(0));
       const Real one(1), two(2);
-      for (int i = 0; i < n_; ++i) {
-        for (int j = 0; j < n_; ++j) {
-          g[i+j*n_] = vol_*(one - two*(*z_param)[i+j*n_]);
+      for (int i = 0; i < nx_; ++i) {
+        for (int j = 0; j < ny_; ++j) {
+          g[i+j*nx_] = vol_*(one - two*(*z_param)[i+j*nx_]);
         }
       }
       return g;
@@ -1505,9 +1582,9 @@ public:
       const int size = z_param->size();
       std::vector<Real> h(size,static_cast<Real>(0));
       const Real two(2);
-      for (int i = 0; i < n_+1; ++i) {
-        for (int j = 0; j < n_; ++j) {
-          h[i+j*n_] = -vol_*two*(*v_param)[i+j*n_];
+      for (int i = 0; i < nx_; ++i) {
+        for (int j = 0; j < ny_; ++j) {
+          h[i+j*nx_] = -vol_*two*(*v_param)[i+j*nx_];
         }
       }
       return h;

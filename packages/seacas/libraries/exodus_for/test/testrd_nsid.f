@@ -1,42 +1,14 @@
-C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C        * Redistributions of source code must retain the above copyright
-C          notice, this list of conditions and the following disclaimer.
-C
-C        * Redistributions in binary form must reproduce the above
-C          copyright notice, this list of conditions and the following
-C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.
-C
-C        * Neither the name of NTESS nor the names of its
-C          contributors may be used to endorse or promote products derived
-C          from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
       program testrd
 
-c
 c This is a test program for the Fortran binding of the EXODUS II
 c database read routines
-c
+
 c       09/07/93 V.R. Yarberry - Modified for API 2.00
       implicit none
 
@@ -61,10 +33,7 @@ c       09/07/93 V.R. Yarberry - Modified for API 2.00
 
       data iin /5/, iout /6/
 
-
-c
 c open EXODUS II files
-c
 
       cpu_ws = 0
       io_ws = 0
@@ -81,9 +50,7 @@ c
       mod_sz = exlgmd(exoid)
       write (iout, '("  Model Size",i2)') mod_sz
 
-c
 c read database parameters
-c
 
       call exgini (exoid, titl, num_dim, num_nodes, num_elem,
      1             num_elem_blk, num_node_sets, num_side_sets, ierr)
@@ -100,10 +67,7 @@ c
      8               titl,num_dim, num_nodes, num_elem,
      9               num_elem_blk,num_node_sets, num_side_sets
 
-
-c
 c read nodal coordinates values and names from database
-c
 
       call exgcor (exoid, x, y, z, ierr)
       write (iout, '(/"after exgcor, error = ", i3)' ) ierr
@@ -131,9 +95,7 @@ c
       write (iout, '("x coord name = ", a9)') coord_names(1)
       write (iout, '("y coord name = ", a9)') coord_names(2)
 
-c
 c read element order map
-c
 
       call exgmap (exoid, elem_map, ierr)
       write (iout, '(/"after exgmap, error = ", i3)' ) ierr
@@ -142,10 +104,8 @@ c
          write (iout, '("elem_map(",i1,") = ", i1)') i, elem_map(i)
 30    continue
 
-c
 c read element block parameters
-c
-c
+
       call exgebi (exoid, ids, ierr)
       write (iout, '(/"after exgebi, error = ", i3)' ) ierr
 
@@ -165,9 +125,7 @@ c
 
 40    continue
 
-c
 c read element connectivity
-c
 
       do 60 i = 1, num_elem_blk
 

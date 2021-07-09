@@ -192,6 +192,13 @@ public:
         m_isRestart = restart;
     }
 
+    bool get_enable_edge_io() const {
+        return m_enableEdgeIO;
+    }
+    void set_enable_edge_io(const bool enableEdgeIO) {
+        m_enableEdgeIO = enableEdgeIO;
+    }
+
     const std::vector<stk::io::FieldAndName>& get_additional_attribute_fields() const {
         return m_additionalAttributeFields;
     }
@@ -226,6 +233,7 @@ private:
     bool m_hasGhosting = false;
     bool m_hasAdaptivity = false;
     bool m_isRestart = false;
+    bool m_enableEdgeIO = false;
     std::vector<stk::io::FieldAndName> m_additionalAttributeFields;
 };
 

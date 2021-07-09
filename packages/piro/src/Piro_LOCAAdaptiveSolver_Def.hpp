@@ -129,6 +129,8 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
   if (piroParams_->isSublist("NOX") &&
       piroParams_->sublist("NOX").isSublist("Printing"))
     utils_.reset(piroParams_->sublist("NOX").sublist("Printing"));
+
+  this->setSensitivityMethod("Forward");
 }
 
 template<typename Scalar>
@@ -263,7 +265,8 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
       modelInArgs.set_p(l, p_inargs);
     }
 
-    this->evalConvergedModel(modelInArgs, outArgs);
+    Teuchos::ParameterList analysisParams;
+    this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs, analysisParams);
 
     // Save the final solution TODO: this needs to be redone
 
@@ -292,6 +295,13 @@ Piro::observedLocaSolver(
     Teuchos::null;
 
   return Teuchos::rcp(new Piro::LOCAAdaptiveSolver<Scalar>(appParams, model, solMgr, saveDataStrategy));
+}
+
+template <typename Scalar>
+Teuchos::RCP<LOCA::AdaptiveStepper>
+Piro::LOCAAdaptiveSolver<Scalar>::getStepper()
+{
+  return stepper_;
 }
 
 #endif /* PIRO_LOCAADAPTIVESOLVER_DEF_HPP */

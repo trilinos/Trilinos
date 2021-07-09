@@ -75,7 +75,7 @@ namespace Intrepid2 {
       };                                                                \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int ArrayTools_Test01(const bool verbose) {
       
       typedef ValueType value_type;
@@ -91,11 +91,11 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
-      typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      using DeviceExecSpaceType = typename DeviceType::execution_space;
+      using HostExecSpaceType = Kokkos::DefaultHostExecutionSpace;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(std::cout, false);
-      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
+      *outStream << "DeviceSpace::  "; DeviceExecSpaceType::print_configuration(std::cout, false);
+      *outStream << "HostSpace::    ";   HostExecSpaceType::print_configuration(std::cout, false);
 
       *outStream      \
         << "===============================================================================\n" \
@@ -112,9 +112,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n" \
         << "===============================================================================\n";      
       
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef ArrayTools<DeviceSpaceType> art; 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef RealSpaceTools<DeviceType> rst;
+      typedef ArrayTools<DeviceType> art; 
+      typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       
@@ -141,8 +141,6 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(a_10_3_2, 10, 3, 2);
         DynRankView ConstructWithLabel(a_9_2_2, 9, 2, 2);
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-    
         *outStream << "-> contractFieldFieldScalar:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldScalar(a_2_2, a_2_2, a_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldScalar(a_2_2, a_10_2_2, a_2_2) );
@@ -155,21 +153,11 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldScalar(a_10_2_3, a_10_2_2, a_10_3_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldScalar(a_10_2_3, a_10_2_2, a_10_3_2) );
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
-
         DynRankView ConstructWithLabel(a_10_2_2_2, 10, 2, 2, 2);
-        std::cout << "Line: " << __LINE__ <<std::endl;
         DynRankView ConstructWithLabel(a_9_2_2_2, 9, 2, 2, 2);
-        std::cout << "Line: " << __LINE__ <<std::endl;
         DynRankView ConstructWithLabel(a_10_3_2_2, 10, 3, 2, 2);
-        std::cout << "Line: " << __LINE__ <<std::endl;
         DynRankView ConstructWithLabel(a_10_2_3_2, 10, 2, 3, 2);
-        std::cout << "Line: " << __LINE__ <<std::endl;
         DynRankView ConstructWithLabel(a_10_2_2_3, 10, 2, 2, 3);
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
 
         *outStream << "-> contractFieldFieldVector:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldVector(a_2_2, a_2_2, a_2_2) );
@@ -184,17 +172,12 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldVector(a_10_2_3, a_10_2_2_2, a_10_3_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldVector(a_10_2_3, a_10_2_2_2, a_10_3_2_2) );
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
-
         DynRankView ConstructWithLabel(a_10_2_2_2_2, 10, 2, 2, 2, 2);
         DynRankView ConstructWithLabel(a_9_2_2_2_2, 9, 2, 2, 2, 2);
         DynRankView ConstructWithLabel(a_10_3_2_2_2, 10, 3, 2, 2, 2);
         DynRankView ConstructWithLabel(a_10_2_3_2_2, 10, 2, 3, 2, 2);
         DynRankView ConstructWithLabel(a_10_2_2_3_2, 10, 2, 2, 3, 2);
         DynRankView ConstructWithLabel(a_10_2_2_2_3, 10, 2, 2, 2, 3);
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
 
         *outStream << "-> contractFieldFieldTensor:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldTensor(a_2_2, a_2_2, a_2_2) );
@@ -210,13 +193,8 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldTensor(a_10_2_3, a_10_2_2_2_2, a_10_3_2_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractFieldFieldTensor(a_10_2_3, a_10_2_2_2_2, a_10_3_2_2_2) );
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
-
         DynRankView ConstructWithLabel(a_9_2, 9, 2);
         DynRankView ConstructWithLabel(a_10_1, 10, 1);
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
 
         *outStream << "-> contractDataFieldScalar:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldScalar(a_2_2, a_2_2, a_2_2) );
@@ -230,13 +208,8 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldScalar(a_10_2, a_10_2, a_10_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldScalar(a_10_2, a_10_1, a_10_2_2) );
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
-
         DynRankView ConstructWithLabel(a_10_1_2, 10, 1, 2);
         DynRankView ConstructWithLabel(a_10_1_3, 10, 1, 3);
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
 
         *outStream << "-> contractDataFieldVector:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldVector(a_2_2, a_2_2, a_2_2) );
@@ -251,12 +224,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldVector(a_10_2, a_10_2_2, a_10_2_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldVector(a_10_2, a_10_1_2, a_10_2_2_2) );
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
-
         DynRankView ConstructWithLabel(a_10_1_2_2, 10, 1, 2, 2);
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
 
         *outStream << "-> contractDataFieldTensor:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldTensor(a_2_2, a_2_2, a_2_2) );
@@ -272,13 +240,8 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldTensor(a_10_2, a_10_2_2_2, a_10_2_2_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataFieldTensor(a_10_2, a_10_1_2_2, a_10_2_2_2_2) );
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
-
         DynRankView ConstructWithLabel(a_2, 2);
         DynRankView ConstructWithLabel(a_10, 10);
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
 
         *outStream << "-> contractDataDataScalar:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataScalar(a_2_2, a_10_2_2, a_10_2_2) );
@@ -289,9 +252,6 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataScalar(a_2, a_10_2, a_10_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataScalar(a_10, a_10_2, a_10_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataScalar(a_10, a_10_2, a_10_2) );
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
 
         *outStream << "-> contractDataDataVector:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataVector(a_2_2, a_2_2, a_2_2) );
@@ -304,9 +264,6 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataVector(a_10, a_10_2_2, a_10_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataVector(a_10, a_10_2_2, a_10_2_2) );
 
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
-
         *outStream << "-> contractDataDataTensor:\n";
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataTensor(a_2_2, a_2_2, a_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataTensor(a_2_2, a_10_2_2_2, a_2_2) );
@@ -318,9 +275,6 @@ namespace Intrepid2 {
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataTensor(a_2, a_10_2_2_2, a_10_2_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataTensor(a_10, a_10_2_2_2, a_10_2_2_2) );
         INTREPID2_TEST_ERROR_EXPECTED( art::contractDataDataTensor(a_10, a_10_2_2_2, a_10_2_2_2) );
-
-        std::cout << "Line: " << __LINE__ <<std::endl;
-
 
     #endif
 
@@ -351,39 +305,54 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(in_c_r_p, c, r, p);
           DynRankView ConstructWithLabel(out1_c_l_r, c, l, r);
           DynRankView ConstructWithLabel(out2_c_l_r, c, l, r);
+          
+
+          const auto in_c_l_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_l_p);
+          const auto in_c_r_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_r_p);
+          const auto out1_c_l_r_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c_l_r);
+          const auto out2_c_l_r_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c_l_r);
+          
+          // fill with random numbers
+          //Kokkos::Random_XorShift64_Pool<DeviceExecSpaceType> random(13718); 
+          //Kokkos::fill_random(in_c_l_p, random, value_type(1));
+          //Kokkos::fill_random(in_c_r_p, random, value_type(1));
 
           // fill with random numbers
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<l;++j)
               for (auto k=0;k<p;++k)
-                  in_c_l_p(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+                in_c_l_p_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
             for (auto j=0;j<r;++j)
-               for (auto k=0;k<p;++k)
-                   in_c_r_p(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+              for (auto k=0;k<p;++k)
+                in_c_r_p_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
           }
-
+          
+          Kokkos::deep_copy(in_c_l_p, in_c_l_p_host);
+          Kokkos::deep_copy(in_c_r_p, in_c_r_p_host);
+          
           art::contractFieldFieldScalar(out1_c_l_r, in_c_l_p, in_c_r_p);
           art::contractFieldFieldScalar(out2_c_l_r, in_c_l_p, in_c_r_p);
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          
+          Kokkos::deep_copy(out1_c_l_r_host, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // with sumInto:
-
+          
           //fill with 2.0
-          for (auto i=0;i<c;++i)
-            for (auto j=0;j<l;++j)
-              for (auto k=0;k<r;++k)
-                out1_c_l_r(i,j,k) = out2_c_l_r(i,j,k) = 2.0;
+          Kokkos::deep_copy(out1_c_l_r, value_type(2));
+          Kokkos::deep_copy(out2_c_l_r, value_type(2));
 
           art::contractFieldFieldScalar(out1_c_l_r, in_c_l_p, in_c_r_p, true);
           art::contractFieldFieldScalar(out2_c_l_r, in_c_l_p, in_c_r_p, true);
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_host, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -398,44 +367,53 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c_l_r, c, l, r);
           DynRankView ConstructWithLabel(out2_c_l_r, c, l, r);
 
+          const auto in_c_l_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_l_p_d);
+          const auto in_c_r_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_r_p_d);
+          const auto out1_c_l_r_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c_l_r);
+          const auto out2_c_l_r_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c_l_r);
+
           // fill with random numbers
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<l;++j)
               for (auto k=0;k<p;++k)
                 for (auto m=0;m<d;++m)
-                  in_c_l_p_d(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
+                  in_c_l_p_d_host(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
             for (auto j=0;j<r;++j)
               for (auto k=0;k<p;++k)
                 for (auto m=0;m<d;++m)
-                  in_c_r_p_d(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
+                  in_c_r_p_d_host(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
           }
 
+          Kokkos::deep_copy(in_c_l_p_d, in_c_l_p_d_host);
+          Kokkos::deep_copy(in_c_r_p_d, in_c_r_p_d_host);
 
           art::contractFieldFieldVector(out1_c_l_r, in_c_l_p_d, in_c_r_p_d);
           art::contractFieldFieldVector(out2_c_l_r, in_c_l_p_d, in_c_r_p_d);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_host, out1_c_l_r);
+
+          if (rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
-
+          
           // with sumInto:
 
           //fill with 2.0
-          for (auto i=0;i<c;++i)
-            for (auto j=0;j<l;++j)
-              for (auto k=0;k<r;++k)
-                out1_c_l_r(i,j,k) = out2_c_l_r(i,j,k) = 2.0;
+          Kokkos::deep_copy(out1_c_l_r, value_type(2));
+          Kokkos::deep_copy(out2_c_l_r, value_type(2));
 
           art::contractFieldFieldVector(out1_c_l_r, in_c_l_p_d, in_c_r_p_d, true);
           art::contractFieldFieldVector(out2_c_l_r, in_c_l_p_d, in_c_r_p_d, true);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_host, out1_c_l_r);
+
+          if (rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -450,45 +428,53 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c_l_r, c, l, r);
           DynRankView ConstructWithLabel(out2_c_l_r, c, l, r);
 
+          const auto in_c_l_p_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_l_p_d_d);
+          const auto in_c_r_p_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_r_p_d_d);
+          const auto out1_c_l_r_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c_l_r);
+          const auto out2_c_l_r_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c_l_r);
+
           // fill with random numbers
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<l;++j)
               for (auto k=0;k<p;++k)
                 for (auto m=0;m<d1;++m)
                   for (auto n=0;n<d2;++n)
-                    in_c_l_p_d_d(i,j,k,m,n) = Teuchos::ScalarTraits<value_type>::random();
+                    in_c_l_p_d_d_host(i,j,k,m,n) = Teuchos::ScalarTraits<value_type>::random();
             for (auto j=0;j<r;++j)
               for (auto k=0;k<p;++k)
                 for (auto m=0;m<d1;++m)
                   for (auto n=0;n<d2;++n)
-                    in_c_r_p_d_d(i,j,k,m,n) = Teuchos::ScalarTraits<value_type>::random();
+                    in_c_r_p_d_d_host(i,j,k,m,n) = Teuchos::ScalarTraits<value_type>::random();
           }
+
+          Kokkos::deep_copy(in_c_l_p_d_d, in_c_l_p_d_d_host);
+          Kokkos::deep_copy(in_c_r_p_d_d, in_c_r_p_d_d_host);
 
           art::contractFieldFieldTensor(out1_c_l_r, in_c_l_p_d_d, in_c_r_p_d_d);
           art::contractFieldFieldTensor(out2_c_l_r, in_c_l_p_d_d, in_c_r_p_d_d);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_host, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
           // with sumInto:
 
           //fill with 2.0
-          for (auto i=0;i<c;++i)
-            for (auto j=0;j<l;++j)
-              for (auto k=0;k<r;++k)
-                out1_c_l_r(i,j,k) = out2_c_l_r(i,j,k) = 2.0;
+          Kokkos::deep_copy(out1_c_l_r, value_type(2));
+          Kokkos::deep_copy(out2_c_l_r, value_type(2));
 
           art::contractFieldFieldTensor(out1_c_l_r, in_c_l_p_d_d, in_c_r_p_d_d, true);
           art::contractFieldFieldTensor(out2_c_l_r, in_c_l_p_d_d, in_c_r_p_d_d, true);
 
           rst::subtract(out1_c_l_r, out2_c_l_r);
-          if (rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_r_host, out1_c_l_r);
+          if (rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractFieldFieldTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_r_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -504,46 +490,56 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c_l, c, l);
           DynRankView ConstructWithLabel(out2_c_l, c, l);
 
+          const auto in_c_l_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_l_p);
+          const auto data_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_p);
+          const auto data_c_1_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_1);
+          const auto out1_c_l_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c_l);
+          const auto out2_c_l_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c_l);
 
           // fill with random numbers
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<l;++j)
               for (auto k=0;k<p;++k)
-                in_c_l_p(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+                in_c_l_p_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
             for (auto j=0;j<p;++j)
-              data_c_p(i,j) = Teuchos::ScalarTraits<value_type>::random();
-            data_c_1(i,0) = Teuchos::ScalarTraits<value_type>::random();
+              data_c_p_host(i,j) = Teuchos::ScalarTraits<value_type>::random();
+            data_c_1_host(i,0) = Teuchos::ScalarTraits<value_type>::random();
           }
 
           // nonconstant data
           art::contractDataFieldScalar(out1_c_l, data_c_p, in_c_l_p);
           art::contractDataFieldScalar(out2_c_l, data_c_p, in_c_l_p);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // constant data
           art::contractDataFieldScalar(out1_c_l, data_c_1, in_c_l_p);
           art::contractDataFieldScalar(out2_c_l, data_c_1, in_c_l_p);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldScalar (2): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
+
           // nonconstant data with sumInto
-          for (auto i=0;i<c;++i)
-            for (auto j=0;j<l;++j)
-              out1_c_l(i,j) = out2_c_l(i,j) = 2.0;
+          Kokkos::deep_copy(out1_c_l, value_type(2));
+          Kokkos::deep_copy(out2_c_l, value_type(2));
 
           art::contractDataFieldScalar(out1_c_l, data_c_p, in_c_l_p, true);
           art::contractDataFieldScalar(out2_c_l, data_c_p, in_c_l_p, true);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -559,53 +555,63 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c_l, c, l);
           DynRankView ConstructWithLabel(out2_c_l, c, l);
 
+          const auto in_c_l_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_l_p_d);
+          const auto data_c_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_p_d);
+          const auto data_c_1_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_1_d);
+          const auto out1_c_l_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c_l);
+          const auto out2_c_l_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c_l);
+
           // fill with random numbers
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<l;++j)
               for (auto k=0;k<p;++k)
                 for (auto m=0;m<d;++m)
-                  in_c_l_p_d(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
+                  in_c_l_p_d_host(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
             for (auto j=0;j<p;++j)
               for (auto k=0;k<d;++k)
-                data_c_p_d(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+                data_c_p_d_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
             for (auto k=0;k<d;++k)
-              data_c_1_d(i,0,k) = Teuchos::ScalarTraits<value_type>::random();
+              data_c_1_d_host(i,0,k) = Teuchos::ScalarTraits<value_type>::random();
           }
 
+          Kokkos::deep_copy(in_c_l_p_d, in_c_l_p_d_host);
+          Kokkos::deep_copy(data_c_p_d, data_c_p_d_host);
+          Kokkos::deep_copy(data_c_1_d, data_c_1_d_host);
 
           // nonconstant data
           art::contractDataFieldVector(out1_c_l, data_c_p_d, in_c_l_p_d);
           art::contractDataFieldVector(out2_c_l, data_c_p_d, in_c_l_p_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // constant data
           art::contractDataFieldVector(out1_c_l, data_c_1_d, in_c_l_p_d);
           art::contractDataFieldVector(out2_c_l, data_c_1_d, in_c_l_p_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldVector (2): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // nonconstant data with sumInto
 
           //fill with 2.0
-          value_type two=2.0;
-          deep_copy(out1_c_l, two);
-          for (auto i=0;i<c;++i)
-            for (auto j=0;j<l;++j)
-              out1_c_l(i,j) = out2_c_l(i,j) = 2.0;
-
+          Kokkos::deep_copy(out1_c_l, value_type(2));
+          Kokkos::deep_copy(out2_c_l, value_type(2));
+          
           art::contractDataFieldVector(out1_c_l, data_c_p_d, in_c_l_p_d, true);
           art::contractDataFieldVector(out2_c_l, data_c_p_d, in_c_l_p_d, true);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l,NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host,NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldVector (3): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -621,6 +627,11 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c_l, c, l);
           DynRankView ConstructWithLabel(out2_c_l, c, l);
 
+          const auto in_c_l_p_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), in_c_l_p_d_d);          
+          const auto data_c_p_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_p_d_d);          
+          const auto data_c_1_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), data_c_1_d_d);          
+          const auto out1_c_l_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c_l);          
+          const auto out2_c_l_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c_l);          
 
           // fill with random numbers
           for (auto i=0;i<c;++i) {
@@ -628,23 +639,24 @@ namespace Intrepid2 {
               for (auto k=0;k<p;++k)
                 for (auto m=0;m<d1;++m)
                   for (auto n=0;n<d2;++n)
-                    in_c_l_p_d_d(i,j,k,m,n) = Teuchos::ScalarTraits<value_type>::random();
+                    in_c_l_p_d_d_host(i,j,k,m,n) = Teuchos::ScalarTraits<value_type>::random();
             for (auto j=0;j<p;++j)
               for (auto k=0;k<d1;++k)
                 for (auto m=0;m<d2;++m)
-                  data_c_p_d_d(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
+                  data_c_p_d_d_host(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
             for (auto k=0;k<d1;++k)
               for (auto m=0;m<d2;++m)
-                data_c_1_d_d(i,0,k,m) = Teuchos::ScalarTraits<value_type>::random();
+                data_c_1_d_d_host(i,0,k,m) = Teuchos::ScalarTraits<value_type>::random();
           }
 
           // nonconstant data
           art::contractDataFieldTensor(out1_c_l, data_c_p_d_d, in_c_l_p_d_d);
           art::contractDataFieldTensor(out2_c_l, data_c_p_d_d, in_c_l_p_d_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
@@ -652,25 +664,26 @@ namespace Intrepid2 {
           art::contractDataFieldTensor(out1_c_l, data_c_1_d_d, in_c_l_p_d_d);
           art::contractDataFieldTensor(out2_c_l, data_c_1_d_d, in_c_l_p_d_d);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldTensor (2): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
           // nonconstant data with sumInto
 
           //fill with 2.0
-          for (auto i=0;i<c;++i)
-            for (auto j=0;j<l;++j)
-              out1_c_l(i,j) = out2_c_l(i,j) = 2.0;
+          Kokkos::deep_copy(out1_c_l, value_type(2));
+          Kokkos::deep_copy(out2_c_l, value_type(2));
 
           art::contractDataFieldTensor(out1_c_l, data_c_p_d_d, in_c_l_p_d_d, true);
           art::contractDataFieldTensor(out2_c_l, data_c_p_d_d, in_c_l_p_d_d, true);
           rst::subtract(out1_c_l, out2_c_l);
-          if (rst::Serial::vectorNorm(out1_c_l, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_l_host, out1_c_l);
+          if (rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataFieldTensor (3): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_l_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -685,33 +698,44 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c, c);
           DynRankView ConstructWithLabel(out2_c, c);
 
+          const auto inl_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), inl_c_p);
+          const auto inr_c_p_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), inr_c_p);
+          const auto out1_c_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c);
+          const auto out2_c_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c);
+
           // fill with random numbers
           for (auto i=0;i<c;++i)
             for (auto j=0;j<p;++j) {
-              inl_c_p(i,j) = Teuchos::ScalarTraits<value_type>::random();
-              inr_c_p(i,j) = Teuchos::ScalarTraits<value_type>::random();
+              inl_c_p_host(i,j) = Teuchos::ScalarTraits<value_type>::random();
+              inr_c_p_host(i,j) = Teuchos::ScalarTraits<value_type>::random();
             }
+
+          Kokkos::deep_copy(inl_c_p, inl_c_p_host);
+          Kokkos::deep_copy(inr_c_p, inr_c_p_host);
 
           art::contractDataDataScalar(out1_c, inl_c_p, inr_c_p);
           art::contractDataDataScalar(out2_c, inl_c_p, inr_c_p);
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+
+          Kokkos::deep_copy(out1_c_host, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           // with sumInto:
 
           //fill with 2.0
-          for (auto i=0;i<c;++i)
-            out1_c(i) = out2_c(i) = 2.0;
+          Kokkos::deep_copy(out1_c, value_type(2));
+          Kokkos::deep_copy(out2_c, value_type(2));
 
           art::contractDataDataScalar(out1_c, inl_c_p, inr_c_p, true);
           art::contractDataDataScalar(out2_c, inl_c_p, inr_c_p, true);
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_host, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataScalar (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -726,37 +750,45 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c, c);
           DynRankView ConstructWithLabel(out2_c, c);
 
+          const auto inl_c_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), inl_c_p_d);
+          const auto inr_c_p_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), inr_c_p_d);
+          const auto out1_c_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c);
+          const auto out2_c_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c);
+
           // fill with random numbers
           for (auto i=0;i<c;++i)
             for (auto j=0;j<p;++j)
               for (auto k=0;k<d;++k) {
-              inl_c_p_d(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
-              inr_c_p_d(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+              inl_c_p_d_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
+              inr_c_p_d_host(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
             }
 
           art::contractDataDataVector(out1_c, inl_c_p_d, inr_c_p_d);
           art::contractDataDataVector(out2_c, inl_c_p_d, inr_c_p_d);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+
+          Kokkos::deep_copy(out1_c_host, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
           // with sumInto:
 
           //fill with 2.0
-          for (auto i=0;i<c;++i)
-            out1_c(i) = out2_c(i) = 2.0;
-
+          Kokkos::deep_copy(out1_c, value_type(2));
+          Kokkos::deep_copy(out2_c, value_type(2));
+          
           art::contractDataDataVector(out1_c, inl_c_p_d, inr_c_p_d, true);
           art::contractDataDataVector(out2_c, inl_c_p_d, inr_c_p_d, true);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_host, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataVector (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope
@@ -771,38 +803,46 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out1_c, c);
           DynRankView ConstructWithLabel(out2_c, c);
 
+          const auto inl_c_p_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), inl_c_p_d_d);
+          const auto inr_c_p_d_d_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), inr_c_p_d_d);
+          const auto out1_c_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out1_c);
+          const auto out2_c_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), out2_c);
+
           // fill with random numbers
           for (auto i=0;i<c;++i)
             for (auto j=0;j<p;++j)
               for (auto k=0;k<d1;++k)
                 for (auto m=0;m<d2;++m) {
-                  inl_c_p_d_d(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
-                  inr_c_p_d_d(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
+                  inl_c_p_d_d_host(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
+                  inr_c_p_d_d_host(i,j,k,m) = Teuchos::ScalarTraits<value_type>::random();
                 }
 
           art::contractDataDataTensor(out1_c, inl_c_p_d_d, inr_c_p_d_d);
           art::contractDataDataTensor(out2_c, inl_c_p_d_d, inr_c_p_d_d);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+
+          Kokkos::deep_copy(out1_c_host, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
 
           // with sumInto:
 
           //fill with 2.0
-          for (auto i=0;i<c;++i)
-            out1_c[i] = out2_c[i] = 2.0;
+          Kokkos::deep_copy(out1_c, value_type(2));
+          Kokkos::deep_copy(out2_c, value_type(2));
 
           art::contractDataDataTensor(out1_c, inl_c_p_d_d, inr_c_p_d_d, true);
           art::contractDataDataTensor(out2_c, inl_c_p_d_d, inr_c_p_d_d, true);
 
           rst::subtract(out1_c, out2_c);
-          if (rst::Serial::vectorNorm(out1_c, NORM_ONE) > tol) {
+          Kokkos::deep_copy(out1_c_host, out1_c);
+          if (rst::Serial::vectorNorm(out1_c_host, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT contractDataDataTensor (1): check COMP_CPP vs. COMP_BLAS; "
-                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c, NORM_ONE) << "\n\n";
+                       << " diff-1norm = " << rst::Serial::vectorNorm(out1_c_host, NORM_ONE) << "\n\n";
             errorFlag = -1000;
           }
           } // end scope

@@ -55,15 +55,12 @@
 #include "BelosCGIter.hpp"
 #include "BelosCGSingleRedIter.hpp"
 #include "BelosBlockCGIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
@@ -103,17 +100,6 @@ namespace Belos {
   class BlockCGSolMgrLinearProblemFailure : public BelosError {public:
     BlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-
-  /** \brief BlockCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the initial basis vectors.
-   *
-   * This std::exception is thrown from the BlockCGSolMgr::solve() method.
-   *
-   */
-  class BlockCGSolMgrOrthoFailure : public BelosError {public:
-    BlockCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
 
   template<class ScalarType, class MV, class OP,
            const bool lapackSupportsScalarType =
@@ -199,7 +185,7 @@ namespace Belos {
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms
      *                               must reach to decide convergence. Default: 1e-8.
      *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:
-     *                           DGKS ,ICGS, and IMGS. Default: "DGKS"
+     *                           DGKS ,ICGS, and IMGS. Default: "ICGS"
      *   - "Orthogonalization Constant" - a \c MagnitudeType used by DGKS orthogonalization to
      *                                    determine whether another step of classical Gram-Schmidt
      *                                    is necessary.  Default: -1 (use DGKS default)
@@ -374,9 +360,15 @@ namespace Belos {
     static constexpr bool foldConvergenceDetectionIntoAllreduce_default_ = false;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
-    static constexpr const char * orthoType_default_ = "DGKS";
+    static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr bool assertPositiveDefiniteness_default_ = true;
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
     //
     // Current solver parameters and other values.
@@ -525,9 +517,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Check if the user is requesting the single-reduction version of CG (only for blocksize == 1)
   if (params->isParameter("Use Single Reduction")) {
     useSingleReduction_ = params->get("Use Single Reduction", useSingleReduction_default_);
-    if (useSingleReduction_)
-      foldConvergenceDetectionIntoAllreduce_ = params->get("Fold Convergence Detection Into Allreduce",
-                                                           foldConvergenceDetectionIntoAllreduce_default_);
+  }
+
+  if (params->isParameter("Fold Convergence Detection Into Allreduce")) {
+    foldConvergenceDetectionIntoAllreduce_ = params->get("Fold Convergence Detection Into Allreduce",
+                                                         foldConvergenceDetectionIntoAllreduce_default_);
   }
 
   // Check to see if the timer label changed.
@@ -544,54 +538,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 #endif
       if (ortho_ != Teuchos::null) {
         ortho_->setLabel( label_ );
-      }
-    }
-  }
-
-  // Check if the orthogonalization changed.
-  if (params->isParameter("Orthogonalization")) {
-    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEUCHOS_TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS",
-                        std::invalid_argument,
-                        "Belos::BlockCGSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
-    if (tempOrthoType != orthoType_) {
-      orthoType_ = tempOrthoType;
-      params_->set("Orthogonalization", orthoType_);
-      // Create orthogonalization manager
-      if (orthoType_=="DGKS") {
-        if (orthoKappa_ <= 0) {
-          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-        }
-        else {
-          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-          Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-        }
-      }
-      else if (orthoType_=="ICGS") {
-        ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-      else if (orthoType_=="IMGS") {
-        ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-    }
-  }
-
-  // Check which orthogonalization constant to use.
-  if (params->isParameter("Orthogonalization Constant")) {
-    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
-    }
-    else {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 DefaultSolverParameters::orthoKappa);
-    }
-
-    // Update parameter in our list.
-    params_->set("Orthogonalization Constant",orthoKappa_);
-    if (orthoType_=="DGKS") {
-      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
       }
     }
   }
@@ -648,6 +594,48 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
   // Create output manager if we need to.
   if (printer_ == Teuchos::null) {
     printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+  }
+
+  // Check if the orthogonalization changed.
+  bool changedOrthoType = false;
+  if (params->isParameter("Orthogonalization")) {
+    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    if (tempOrthoType != orthoType_) {
+      orthoType_ = tempOrthoType;
+      changedOrthoType = true;
+    }
+  }
+  params_->set("Orthogonalization", orthoType_);
+
+  // Check which orthogonalization constant to use.
+  if (params->isParameter("Orthogonalization Constant")) {
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
+
+    // Update parameter in our list.
+    params_->set("Orthogonalization Constant",orthoKappa_);
+    if (orthoType_=="DGKS") {
+      if (orthoKappa_ > 0 && ortho_ != Teuchos::null && !changedOrthoType) {
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      }
+    }
+  }
+
+  // Create orthogonalization manager if we need to.
+  if (ortho_ == Teuchos::null || changedOrthoType) {
+    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+    if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho->set ("depTol", orthoKappa_ );
+    }
+
+    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, label_, paramsOrtho);
   }
 
   // Convergence
@@ -752,30 +740,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
   }
 
-  // Create orthogonalization manager if we need to.
-  if (ortho_ == Teuchos::null) {
-    params_->set("Orthogonalization", orthoType_);
-    if (orthoType_=="DGKS") {
-      if (orthoKappa_ <= 0) {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      }
-      else {
-        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-      }
-    }
-    else if (orthoType_=="ICGS") {
-      ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    }
-    else if (orthoType_=="IMGS") {
-      ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
-                         "Belos::BlockCGSolMgr(): Invalid orthogonalization type.");
-    }
-  }
-
   // BelosCgIter accepts a parameter specifying whether to assert for the positivity of p^H*A*p in the CG iteration
   if (params->isParameter("Assert Positive Definiteness")) {
     assertPositiveDefiniteness_ = Teuchos::getParameter<bool>(*params,"Assert Positive Definiteness");
@@ -870,7 +834,6 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
 
-  Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
 
   TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
@@ -930,9 +893,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     // Standard (nonblock) CG is faster for the special case of a
     // block size of 1.  A single reduction iteration can also be used
     // if collectives are more expensive than vector updates.
+    plist.set("Fold Convergence Detection Into Allreduce",
+              foldConvergenceDetectionIntoAllreduce_);
     if (useSingleReduction_) {
-      plist.set("Fold Convergence Detection Into Allreduce",
-                foldConvergenceDetectionIntoAllreduce_);
       block_cg_iter =
         rcp (new CGSingleRedIter<ScalarType,MV,OP> (problem_, printer_,
                                                     outputTest_, convTest_, plist));
@@ -940,7 +903,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     else {
       block_cg_iter =
         rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_,
-                                           outputTest_, plist));
+                                           outputTest_, convTest_, plist));
     }
   } else {
     block_cg_iter =

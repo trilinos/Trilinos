@@ -108,6 +108,17 @@
           }
       }
 
+      void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      {
+        EXCEPTWATCH;
+        throw std::runtime_error("Not implemented");
+      }
+
+      void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0)
+      {
+        EXCEPTWATCH;
+        throw std::runtime_error("Not implemented");
+      }
     };
 
     struct NormBase

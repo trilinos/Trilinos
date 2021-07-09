@@ -18,8 +18,8 @@ IF(NOT __LINUX_COMPILER_PGI)
     NOEXESUFFIX
     SOURCES ${SOURCES}
     COMM serial mpi
+    INSTALLABLE
     )
-  install_executable(exo_format)
 ENDIF()
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()

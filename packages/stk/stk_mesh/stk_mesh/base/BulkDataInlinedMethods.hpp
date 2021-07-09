@@ -42,100 +42,6 @@
 namespace stk {
 namespace mesh {
 
- /** \brief  Comparator functor for entities compares the entities' keys */
-#ifdef SIERRA_MIGRATION
-inline
-bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
-{
-  bool result = false;
-  if (m_shouldSortFacesByNodeIds &&
-      m_mesh->entity_rank(lhs) == m_sideRank &&
-      m_mesh->entity_rank(rhs) == m_sideRank)
-  {
-      unsigned num_nodes_lhs = m_mesh->count_valid_connectivity(lhs, stk::topology::NODE_RANK);
-      unsigned num_nodes_rhs = m_mesh->count_valid_connectivity(rhs, stk::topology::NODE_RANK);
-      if (num_nodes_lhs != num_nodes_rhs)
-      {
-          result = num_nodes_lhs < num_nodes_rhs;
-      }
-      else if (num_nodes_lhs == 0) {
-          result = m_mesh->identifier(lhs) < m_mesh->identifier(rhs);
-      }
-      else
-      {
-          const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
-          const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
-          unsigned i=0;
-          while(i<num_nodes_lhs &&
-                (m_mesh->identifier(nodes_lhs_ptr[i]) == m_mesh->identifier(nodes_rhs_ptr[i])))
-          {
-            ++i;
-          }
-          result = (i<num_nodes_lhs) ?
-                     (m_mesh->identifier(nodes_lhs_ptr[i]) < m_mesh->identifier(nodes_rhs_ptr[i]))
-                   : false;
-      }
-  }
-  else
-  {
-      const EntityKey lhs_key = m_mesh->entity_key(lhs);
-      const EntityKey rhs_key = m_mesh->entity_key(rhs);
-      result = lhs_key < rhs_key;
-  }
-  return result;
-}
-
-#else
-
-inline EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
-
-inline
-bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs);
-  const EntityKey rhs_key = m_mesh->entity_key(rhs);
-  return (lhs_key < rhs_key);
-}
-#endif
-
-/** \brief  Comparison operator */
-inline
-bool EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs);
-  return lhs_key < rhs;
-}
-
-inline
-bool EntityLess::operator()( const EntityProc & lhs, const EntityProc & rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
-  const EntityKey rhs_key = m_mesh->entity_key(rhs.first);
-  return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
-}
-
-inline
-bool EntityLess::operator()( const EntityProc & lhs, const Entity rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
-  const EntityKey rhs_key = m_mesh->entity_key(rhs);
-  return lhs_key < rhs_key;
-}
-
-inline
-bool EntityLess::operator()( const EntityProc & lhs, const EntityKey & rhs) const
-{
-  const EntityKey lhs_key = m_mesh->entity_key(lhs.first);
-  return lhs_key < rhs ;
-}
-
-inline
-EntityLess& EntityLess::operator=(const EntityLess& rhs)
-{
-  m_mesh = rhs.m_mesh;
-  return *this;
-}
-
 inline
 unsigned BulkData::num_connectivity(Entity entity, EntityRank rank) const
 {
@@ -563,119 +469,6 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 #endif
 }
 
-struct EntityGhostData
-{
-    enum DIRECTION {
-        INVALID,
-        NONE,
-        SEND,
-        RECEIVE
-    };
-    enum GHOST_LEVEL {
-        LOCALLY_OWNED = -1,
-        SHARED = 0,
-        AURA = 1
-    };
-    DIRECTION direction;
-    int ghostingLevel;
-    int processor;
-    Entity entity;
-    const BulkData * bulkData;
-
-    EntityGhostData()
-    : direction(INVALID)
-    , ghostingLevel(-2)
-    , processor(-1)
-    , entity()
-    , bulkData(NULL) { }
-
-    // insert to any ostream-like s
-    template<class OStream> friend inline OStream& operator << (OStream& s, const DIRECTION& dir)
-    {
-        switch (dir) {
-            case INVALID:
-                s << "INVALID";
-                break;
-            case NONE:
-                s << "NONE";
-                break;
-            case SEND:
-                s << "SEND";
-                break;
-            case RECEIVE:
-                s << "RECEIVE";
-                break;
-            default:
-                s << "INVALID";
-        }
-        return s;
-    }
-    template<class OStream> inline OStream& printGhostLevel(OStream& s, int gl) const
-    {
-        switch (gl) {
-            case LOCALLY_OWNED:
-                s << "LOCALLY_OWNED";
-                break;
-            case SHARED:
-                s << "SHARED";
-                break;
-            case AURA:
-                s << "AURA";
-                break;
-            default:
-                s << "CUSTOM_" << (gl-1);
-        }
-        return s;
-    }
-    template<class OStream> friend inline OStream& operator << (OStream& s, const EntityGhostData& egd)
-    {
-        if (egd.bulkData != NULL) {
-            s << "(Entity_gid=";
-            s << egd.bulkData->identifier(egd.entity)
-              << ", rank=" << static_cast<unsigned int>(egd.bulkData->entity_rank(egd.entity));
-        }
-        else {
-            s << "(Entity_lid=";
-            s << egd.entity;
-        }
-        s << ", direction=" << egd.direction
-          << ", processor=" << egd.processor
-          << ", ghosting level=";
-        egd.printGhostLevel(s,egd.ghostingLevel);
-        s << ")";
-        return s;
-    }
-};
-
-struct StoreEntityInSet
-{
-    StoreEntityInSet() : entity_set() {}
-    void operator()(Entity entity) {
-       entity_set.insert(entity);
-    }
-    std::set<Entity> entity_set;
-};
-
-struct StoreEntityProcInSet
-{
-    StoreEntityProcInSet(const BulkData & mesh_in)
-    :mesh(mesh_in)
-    ,entity_proc_set(EntityLess(mesh_in))
-    ,target(-1) {}
-
-    bool operator()(Entity entity) {
-        EntityProc ep(entity,target);
-        if (entity_proc_set.find(ep) == entity_proc_set.end()) {
-            entity_proc_set.insert(ep);
-            return true;
-        }
-        return false;
-    }
-    const BulkData & mesh;
-    std::set<EntityProc,EntityLess> entity_proc_set;
-    int target;
-};
-
 ////////////////
 
 inline void BulkData::copy_entity_fields(Entity src, Entity dst)
@@ -710,50 +503,13 @@ inline bool BulkData::relation_exist( const Entity entity, EntityRank subcell_ra
   return found;
 }
 
-inline bool BulkData::element_side_polarity( const Entity elem ,
-      const Entity side , unsigned local_side_id ) const
-{
-    // 09/14/10:  TODO:  tscoffe:  Will this work in 1D??
-    const bool is_side = entity_rank(side) != stk::topology::EDGE_RANK;
-    stk::topology elem_top = bucket(elem).topology();
-
-    const unsigned side_count = ! (elem_top != stk::topology::INVALID_TOPOLOGY) ? 0 : (
-        is_side ? elem_top.num_sides()
-            : elem_top.num_edges() );
-
-    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
-        "For Element[" << identifier(elem) << "], element has no defined topology");
-
-    ThrowErrorMsgIf( static_cast<unsigned>(side_count) <= local_side_id,
-        "For Element[" << identifier(elem) << "], " <<
-        "side: " << identifier(side) << ", " <<
-        "local_side_id = " << local_side_id <<
-        " ; unsupported local_side_id");
-
-    stk::topology side_top =
-        is_side ? elem_top.side_topology( local_side_id )
-            : elem_top.sub_topology( stk::topology::EDGE_RANK, local_side_id );
-
-    std::vector<unsigned> side_map(side_top.num_nodes());
-    elem_top.side_node_ordinals( local_side_id, side_map.data());
-
-    Entity const *elem_nodes = begin_nodes(elem);
-    Entity const *side_nodes = begin_nodes(side);
-    const unsigned n = side_top.num_nodes();
-    bool good = false ;
-    for ( unsigned i = 0 ; !good && i < n ; ++i ) {
-        good = true;
-        for ( unsigned j = 0; good && j < n ; ++j ) {
-          good = side_nodes[(j+i)%n] == elem_nodes[ side_map[j] ];
-        }
-    }
-    return good ;
-}
-
 inline VolatileFastSharedCommMapOneRank const& BulkData::volatile_fast_shared_comm_map(EntityRank rank) const
 {
   ThrowAssert(this->in_synchronized_state());
   ThrowAssertMsg(rank < stk::topology::ELEMENT_RANK, "Cannot shared entities of rank: " << rank);
+  if (m_volatile_fast_shared_comm_map_sync_count < synchronized_count()) {
+    internal_update_fast_comm_maps();
+  }
   return m_volatile_fast_shared_comm_map[rank];
 }
 
@@ -788,9 +544,7 @@ inline const MeshIndex& BulkData::mesh_index(Entity entity) const
 
 inline MeshIndex& BulkData::mesh_index(Entity entity)
 {
-#ifndef NDEBUG
-  entity_setter_debug_check(entity); // setter check due to non-const
-#endif
+  ThrowAssert(entity.local_offset() > 0); // setter check due to non-const
 
   return m_mesh_indexes[entity.local_offset()];
 }
@@ -903,7 +657,7 @@ inline BulkData::FmwkId BulkData::global_id(stk::mesh::Entity entity) const
 inline const RelationVector& BulkData::aux_relations(Entity entity) const
 {
   ThrowAssert(m_add_fmwk_data);
-  entity_setter_debug_check(entity); // setter check due to side effects
+  ThrowAssert(entity.local_offset() > 0);
 
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
@@ -914,7 +668,7 @@ inline const RelationVector& BulkData::aux_relations(Entity entity) const
 inline RelationVector& BulkData::aux_relations(Entity entity)
 {
   ThrowAssert(m_add_fmwk_data);
-  entity_setter_debug_check(entity); // setter check due to side effects
+  ThrowAssert(entity.local_offset() > 0);
 
   if (m_fmwk_aux_relations[entity.local_offset()] == NULL) {
     m_fmwk_aux_relations[entity.local_offset()] = new RelationVector();
@@ -924,7 +678,7 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
 
 inline void BulkData::set_global_id(stk::mesh::Entity entity, BulkData::FmwkId id)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_modSummary.track_set_global_id(entity, id);
 
@@ -965,7 +719,7 @@ inline void BulkData::compress_relation_capacity(Entity entity)
 
 inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal )
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   if (in_bucket != NULL) {
     ThrowAssertMsg(in_bucket->size() >= ordinal, "Detected bad bucket/ordinal.");
@@ -977,14 +731,14 @@ inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::
 
 inline void BulkData::set_entity_key(Entity entity, EntityKey key)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_entity_keys[entity.local_offset()] = key;
 }
 
 inline void BulkData::set_state(Entity entity, EntityState entity_state)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_meshModification.set_entity_state(entity.local_offset(), entity_state);
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
@@ -992,7 +746,7 @@ inline void BulkData::set_state(Entity entity, EntityState entity_state)
 
 inline void BulkData::set_local_id(Entity entity, unsigned id)
 {
-  entity_setter_debug_check(entity);
+  ThrowAssert(entity.local_offset() > 0);
 
   m_local_ids[entity.local_offset()] = id;
 }

@@ -1,6 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
 
-set(Compadre_VERSION "1.0.3")
+# get Compadre_VERSION
+file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/cmake/Compadre_Version.txt Compadre_VERSION)
 
 # Called at the top of every CMakeLists.txt file
 macro(include_tribits_build)
@@ -34,16 +35,9 @@ if (${PROJECT_NAME}_TRIBITS_DIR) # TriBITS CMake Project
       "Enable extreme debug code in compadre"
       OFF )
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_LAPACK_DECLARED_THREADSAFE
-      LAPACK_DECLARED_THREADSAFE
-      "Set to OFF if non-threadsafe version of LAPACK being used"
-      ON )
-
   if ("${TPL_ENABLE_CUDA}" STREQUAL "ON")
-      set(Compadre_USE_LAPACK OFF CACHE BOOL "Whether to use LAPACK")
       set(Compadre_USE_CUDA   ON  CACHE BOOL "Whether to use CUDA")
   else ()
-      set(Compadre_USE_LAPACK ON  CACHE BOOL "Whether to use LAPACK")
       set(Compadre_USE_CUDA   OFF CACHE BOOL "Whether to use CUDA")
   endif()
 
@@ -69,6 +63,10 @@ else() # Raw CMake Project
 
   get_directory_property(Compadre_HAS_PARENT PARENT_DIRECTORY)
 
+  if (NOT Compadre_HAS_PARENT)
+    include(GNUInstallDirs)
+  endif()
+
   bob_begin_package()
 
   # Set to OFF for significantly faster performance and ON for error tracking
@@ -86,7 +84,19 @@ else() # Raw CMake Project
   # RPATH should always include the folder it is called from
   bob_option(PYTHON_CALLING_BUILD "Python setuptools calling build" OFF)
   bob_option(Compadre_USE_PYTHON "Use PYTHON" OFF)
+  bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
+  bob_option(Compadre_USE_MPI "Use MPI (not needed for Compadre toolkit)" OFF)
+  set(PYTHON_LIBRARY_PREFIX "..") # relative to examples folder
   if (Compadre_USE_PYTHON)
+    bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
+    IF(NOT(PYTHON_EXECUTABLE))
+      MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
+      EXECUTE_PROCESS(
+        COMMAND which "python"
+        OUTPUT_VARIABLE PYTHON_EXECUTABLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE )
+    ENDIF()
+    MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
     if (APPLE)
       SET(CMAKE_BUILD_RPATH ${CMAKE_BUILD_RPATH} "@loader_path/")
       SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_RPATH} "@loader_path/")
@@ -145,8 +155,6 @@ else() # Raw CMake Project
   set(KOKKOSKERNELS_IN_TRILINOS OFF)
   set(KOKKOSKERNELS_EXISTING_ELSEWHERE OFF)
   set(KOKKOSKERNELS_BUILT_FOR_USER OFF)
-  set(Compadre_USE_LAPACK ON) # ON until turned OFF if Compadre_USE_CUDA is eventually set
-  bob_option(LAPACK_DECLARED_THREADSAFE "Is LAPACK threadsafe? If not, default to serial calls for solves." ON)
 
   if (Trilinos_PREFIX)
     FIND_PACKAGE(Trilinos)
@@ -232,6 +240,11 @@ else() # Raw CMake Project
       set(Compadre_USE_PTHREAD ON)
     endif()
 
+    FIND_PACKAGE(Kokkos)
+    if (Kokkos_VERSION VERSION_LESS "3.3")
+        message(FATAL_ERROR "${Kokkos_VERSION}: Requires Trilinos with Kokkos version 3.3.01 or greater")
+    endif()
+
   ENDIF()
 
   if (KOKKOS_IN_TRILINOS)
@@ -253,6 +266,8 @@ else() # Raw CMake Project
         bob_option(Kokkos_ENABLE_OPENMP "Whether to use OPENMP" ON)
         bob_option(Kokkos_ENABLE_PTHREAD "Whether to use PTHREAD" OFF)
       endif()
+      option(Kokkos_ENABLE_DEBUG "" "${Compadre_DEBUG}")
+      option(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK "" "${Compadre_EXTREME_DEBUG}")
       option(Kokkos_ENABLE_CUDA_LAMBDA "" "${Kokkos_ENABLE_CUDA}")
       option(Kokkos_ENABLE_TESTS "" OFF)
       option(Kokkos_ENABLE_EXAMPLES "" OFF)
@@ -270,6 +285,9 @@ else() # Raw CMake Project
       # Existing KokkosCore indicated by user by setting KokkosCore_PREFIX, so we look for it
       # where specified (only)
       find_package(Kokkos PATHS "${KokkosCore_PREFIX}" NO_DEFAULT_PATH REQUIRED)
+      if (Kokkos_VERSION VERSION_LESS "3.3")
+          message(FATAL_ERROR "${Kokkos_VERSION}: Requires Trilinos with Kokkos version 3.3.01 or greater")
+      endif()
       set(KOKKOS_EXISTING_ELSEWHERE ON)
       # set Compadre_USE_ to whatever is enabled in Kokkos build
       if (TARGET Kokkos::OPENMP)
@@ -283,24 +301,9 @@ else() # Raw CMake Project
       set(Kokkos_PREFIX "${KokkosCore_PREFIX}")
     endif()
   endif()
-  # set LAPACK to off if CUDA is ON
-  if (Compadre_USE_CUDA)
-    set(Compadre_USE_LAPACK OFF)
-  endif()
-  message(STATUS "Compadre_USE_LAPACK: ${Compadre_USE_LAPACK}")
   message(STATUS "Compadre_USE_CUDA: ${Compadre_USE_CUDA}")
 
   if (KOKKOSKERNELS_IN_TRILINOS)
-    if (Compadre_USE_LAPACK)
-      list(FIND Trilinos_TPL_LIST "LAPACK" LAPACKID)
-      if (NOT(LAPACKID GREATER -1))
-        MESSAGE(FATAL_ERROR "Compadre_USE_LAPACK set to ON, but LAPACK not defined in Trilinos")
-      endif()
-      list(FIND Trilinos_TPL_LIST "BLAS" BLASID)
-      if (NOT(BLASID GREATER -1))
-          MESSAGE(FATAL_ERROR "Compadre_USE_LAPACK set to ON, but BLAS not defined in Trilinos")
-      endif()
-    endif()
     if (Compadre_US_CUDA)
       list(FIND Trilinos_TPL_LIST "CUDA" CUDAID)
       if (NOT(CUDAID GREATER -1))
@@ -313,14 +316,6 @@ else() # Raw CMake Project
     if (KokkosKernels_PREFIX STREQUAL "")
       SET(KOKKOSKERNELS_BUILT_FOR_USER ON)
       # both are required to be sure it finds it
-      OPTION(KokkosKernels_ENABLE_TPL_LAPACK "" "${Compadre_USE_LAPACK}")
-      SET(KokkosKernels_ENABLE_TPL_LAPACK "${Compadre_USE_LAPACK}")
-      OPTION(KokkosKernels_ENABLE_TPL_BLAS "" "${Compadre_USE_LAPACK}")
-      SET(KokkosKernels_ENABLE_TPL_BLAS "${Compadre_USE_LAPACK}")
-      OPTION(KokkosKernels_ENABLE_TPL_CUSPARSE "" "${Compadre_USE_CUDA}")
-      SET(KokkosKernels_ENABLE_TPL_CUSPARSE "${Compadre_USE_CUDA}")
-      OPTION(KokkosKernels_ENABLE_TPL_CUBLAS "" "${Compadre_USE_CUDA}")
-      SET(KokkosKernels_ENABLE_TPL_CUBLAS "${Compadre_USE_CUDA}")
       SET(KokkosKernels_ENABLE_EXAMPLES OFF)
       SET(KokkosKernels_ENABLE_TESTS OFF)
       OPTION(KokkosKernels_ETI_ONLY "" OFF)
@@ -347,12 +342,6 @@ else() # Raw CMake Project
       # Existing KokkosCore indicated by user by setting KokkosCore_PREFIX, so we look for it
       # where specified (only)
       find_package(KokkosKernels PATHS "${KokkosKernels_PREFIX}" NO_DEFAULT_PATH REQUIRED)
-      if(Compadre_USE_LAPACK AND NOT(TARGET Kokkos::LAPACK))
-        MESSAGE(FATAL_ERROR "Compadre_USE_LAPACK set to ON, but Kokkos::LAPACK not defined")
-      endif()
-      if(Compadre_USE_BLAS AND NOT(TARGET Kokkos::BLAS))
-        MESSAGE(FATAL_ERROR "Compadre_USE_BLAS set to ON, but Kokkos::BLAS not defined")
-      endif()
       if(Compadre_USE_CUDA AND NOT(TARGET Kokkos::CUDA))
         MESSAGE(FATAL_ERROR "Compadre_USE_CUDA set to ON, but Kokkos::CUDA not defined")
       endif()
@@ -365,91 +354,15 @@ else() # Raw CMake Project
 
 
   #MPI (Not really needed, only used so that if a kokkos-tool was built with MPI, it won't segfault)
-  FIND_PACKAGE(MPI QUIET)
-  bob_option(Compadre_USE_MPI "Use MPI for parallelism" ${MPI_CXX_FOUND})
-  message(STATUS "MPI Enabled: ${MPI_CXX_FOUND}")
-  if (MPI_CXX_FOUND)
-      MESSAGE(STATUS "MPI_CXX_INCLUDE_PATH: ${MPI_CXX_INCLUDE_PATH}")
-      MESSAGE(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
-  endif()
-
-
-
-  #PYTHON
-  bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
-  bob_input(PYTHON_PREFIX "" PATH "Path to PYTHON install")
-  if (PYTHON_PREFIX)
-    set(CMAKE_PREFIX_PATH ${PYTHON_PREFIX} ${CMAKE_PREFIX_PATH})
-  endif()
-  if (Compadre_USE_PYTHON)
-
-    bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
-    IF(NOT(PYTHON_EXECUTABLE))
-      MESSAGE(STATUS "Python executable location PYTHON_EXECUTABLE not given. Search made using 'which python'")
-      EXECUTE_PROCESS(
-        COMMAND which "python"
-        OUTPUT_VARIABLE PYTHON_EXECUTABLE
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
-    
-    EXECUTE_PROCESS(
-      COMMAND "${PYTHON_EXECUTABLE}" -c "import site; print(site.USER_SITE)"
-      OUTPUT_VARIABLE PYTHON_SITEPACKAGES
-      OUTPUT_STRIP_TRAILING_WHITESPACE )
-    
-    IF(NOT EXISTS ${PYTHON_SITEPACKAGES})
-      EXECUTE_PROCESS(
-        COMMAND "${PYTHON_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_path('platlib'))"
-        OUTPUT_VARIABLE PYTHON_SITEPACKAGES
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "PYTHON_SITEPACKAGES: ${PYTHON_SITEPACKAGES}")
-
-    IF(NOT EXISTS ${Numpy_PREFIX})
-      EXECUTE_PROCESS(
-        COMMAND "${PYTHON_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
-        OUTPUT_VARIABLE Numpy_PREFIX
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-    MESSAGE(STATUS "Numpy_PREFIX: ${Numpy_PREFIX}")
-    
-    FIND_PATH(Numpy_INCLUDE_DIRS numpy/arrayobject.h HINTS ${Numpy_PREFIX})
-    IF (Numpy_INCLUDE_DIRS)
-      MESSAGE(STATUS "Numpy_INCLUDE_DIRS: ${Numpy_INCLUDE_DIRS}")
-    ELSE()
-      MESSAGE(FATAL_ERROR "Numpy headers not found, but needed when Compadre_USE_PYTHON:BOOL=ON. Try setting Numpy_PREFIX.")
-    ENDIF()
-
-    set(SWIG_PREFIX "../python") # relative to examples folder
-    bob_input(GMLS_Module_DEST "${CMAKE_INSTALL_LIBDIR}/python/dist-packages" PATH "Path to install python module")
-
-    IF(NOT EXISTS ${PYTHON_INCLUDE_DIRS})
-      EXECUTE_PROCESS(
-        COMMAND "${PYTHON_EXECUTABLE}" -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"
-        OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
-        OUTPUT_STRIP_TRAILING_WHITESPACE )
-    ENDIF()
-
-    EXECUTE_PROCESS(
-      COMMAND "${PYTHON_EXECUTABLE}" -c "from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"))"
-      OUTPUT_VARIABLE PYTHON_PATHS
-      OUTPUT_STRIP_TRAILING_WHITESPACE )
-    MESSAGE(STATUS "PYTHON_PATHS: ${PYTHON_PATHS}")
-
-    file(GLOB PYTHON_LIBNAME
-      "${PYTHON_PATHS}/libpython*${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    )
-    get_filename_component(PYTHON_LIBNAME_BASE "${PYTHON_LIBNAME}" NAME)
-    STRING(REGEX REPLACE "lib(.*)${CMAKE_SHARED_LIBRARY_SUFFIX}" "\\1" PYTHON_LIBNAME "${PYTHON_LIBNAME_BASE}")
-
-    MESSAGE(STATUS "PYTHON_LIBNAME: ${PYTHON_LIBNAME}")
-    find_library(PYTHON_LIBRARIES NAME "${PYTHON_LIBNAME}" PATHS "${PYTHON_PATHS}" NO_DEFAULT_PATH)
-
-    MESSAGE(STATUS "PYTHON_INCLUDE_DIRS: ${PYTHON_INCLUDE_DIRS}")
-    MESSAGE(STATUS "PYTHON_LIBRARIES: ${PYTHON_LIBRARIES}")
-
-  endif()
+  if (Compadre_USE_MPI)
+    FIND_PACKAGE(MPI QUIET)
+    bob_option(Compadre_USE_MPI "Use MPI for parallelism" ${MPI_CXX_FOUND})
+    message(STATUS "MPI Enabled: ${MPI_CXX_FOUND}")
+    if (MPI_CXX_FOUND)
+        MESSAGE(STATUS "MPI_CXX_INCLUDE_PATH: ${MPI_CXX_INCLUDE_PATH}")
+        MESSAGE(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+    endif()
+  endif (Compadre_USE_MPI)
 
 
 
@@ -485,10 +398,8 @@ set(Compadre_KEY_BOOLS
     Compadre_DEBUG
     Compadre_EXTREME_DEBUG
     Compadre_USE_CUDA
-    Compadre_USE_LAPACK
     Compadre_USE_MPI
     Compadre_USE_PYTHON
-    LAPACK_DECLARED_THREADSAFE
    )
 
 set(Compadre_KEY_INTS
@@ -541,34 +452,24 @@ else() # Raw CMake Project
   # compadre library
   add_subdirectory(src)
 
+  if (Compadre_EXAMPLES AND Compadre_TESTS)
+    if (NOT TARGET gtest)
+      # gtest from kokkos
+      add_library(gtest
+          kokkos/tpls/gtest/gtest/gtest-all.cc
+      )
+      target_include_directories(gtest PUBLIC kokkos/tpls/gtest)
+    endif()
+  endif()
+
   if(Compadre_EXAMPLES)
     add_subdirectory(examples)
   endif()
 
   if(Compadre_USE_PYTHON)
-    add_subdirectory(python)
-  endif()
-
-  ##########
-  #
-  #
-  #  DOXYGEN
-  #
-  #
-  ##########
-
-  find_package(Doxygen QUIET)
-  if (DOXYGEN_FOUND)
-    if (NOT(Compadre_HAS_PARENT))
-      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in" "${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile" @ONLY)
-      add_custom_target(doc
-          COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile
-          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc 
-          VERBATIM 
-      )
-      set_target_properties(doc PROPERTIES EXCLUDE_FROM_ALL TRUE)
-      # still must be called manually with "make doc"
-    endif()
+    add_subdirectory(pycompadre/pybind11)
+    pybind11_add_module(pycompadre pycompadre/pycompadre.cpp)
+    target_link_libraries(pycompadre PUBLIC compadre)
   endif()
 
 
@@ -578,3 +479,14 @@ else() # Raw CMake Project
     bob_end_package()
   endif()
 endif()
+
+## print variables beginning with some string
+#function (getListOfVarsStartingWith _prefix _varResult)
+#  get_cmake_property(_vars VARIABLES)
+#  string (REGEX MATCHALL "(^|;)${_prefix}[A-Za-z0-9_]*" _matchedVars "${_vars}")
+#  set (${_varResult} ${_matchedVars} PARENT_SCOPE)
+#endfunction()
+#getListOfVarsStartingWith("SomeString" matchedVars)
+#foreach (_var IN LISTS matchedVars)
+#    message("${_var}=${${_var}}")
+#endforeach()

@@ -46,14 +46,12 @@
 #include "Piro_ConfigDefs.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
-#include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_IntegratorObserverBasic.hpp"
-
 #include "Piro_ObserverBase.hpp"
 
 #include "Piro_TempusStepperFactory.hpp"
 #include "Piro_TempusStepControlFactory.hpp"
 #include "Piro_TransientSolver.hpp"
+#include "Piro_Helpers.hpp" 
 
 #include <map>
 #include <string>
@@ -78,29 +76,29 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      bool computeSensitivities,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
   TempusSolver(
-      const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+      const Teuchos::RCP<Piro::TempusIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
+      const std::string sens_method_string = "None", 
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
-  //@}
+ 
+ //@}
 
   /** \brief Initialize using prebuilt objects - supplying initial time value. */
   TempusSolver(
-      const Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > &stateIntegrator,
+      const Teuchos::RCP<Piro::TempusIntegrator<Scalar> > &stateIntegrator,
       const Teuchos::RCP<Tempus::Stepper<Scalar> > &stateStepper,
       const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar initialTime,
       Scalar finalTime,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &initialConditionModel = Teuchos::null,
+      const std::string sens_method_string = "None", 
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
@@ -157,6 +155,9 @@ public:
 
   Tempus::Status 
   getTempusIntegratorStatus() const;
+  
+  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> 
+  getPiroTempusIntegrator() const {return piroTempusIntegrator_;} 
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -171,38 +172,35 @@ private:
   /** \brief . */
   Teuchos::RCP<const Teuchos::ParameterList> getValidTempusParameters() const;
 
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > fwdStateIntegrator;
-  Teuchos::RCP<Tempus::Stepper<Scalar> > fwdStateStepper;
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
+  Teuchos::RCP<Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
+  Teuchos::RCP<Tempus::Stepper<Scalar> > fwdStateStepper_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver_;
 
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
-  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel_;
 
-  Scalar t_initial;
-  Scalar t_final;
+  Scalar t_initial_;
+  Scalar t_final_;
 
-  int num_p;
-  int num_g;
+  int num_p_;
+  int num_g_;
 
-  bool computeSensitivities_;
-
-  Teuchos::RCP<Teuchos::FancyOStream> out;
-  Teuchos::EVerbosityLevel solnVerbLevel;
+  Teuchos::RCP<Teuchos::FancyOStream> out_; 
+  Teuchos::EVerbosityLevel solnVerbLevel_;
 
   // used for adding user defined steppers externally, this gives us "the open-close principal"
-  std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories;
+  std::map<std::string,Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > > stepperFactories_;
 
-  std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories;
+  std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories_;
 
-  bool isInitialized;
+  bool isInitialized_;
 
   Teuchos::RCP<Piro::ObserverBase<Scalar> > piroObserver_;
 
   bool supports_x_dotdot_; 
- 
+  
   //! Set observer
-  void setObserver(); 
+  void setObserver() const; 
 
   //! Boolean to tell TempusSolver whether or not to abort if a transient solve fails 
   bool abort_on_failure_;
@@ -212,6 +210,10 @@ private:
   //from Albany.  
   bool abort_on_fail_at_min_dt_;
 
+  SENS_METHOD sens_method_;
+
+  //Boolean to mark whether initial state was reset using setInitialState routine
+  bool initial_state_reset_; 
 };
 
 /** \brief Non-member constructor function */

@@ -32,10 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <sstream>                      // for operator<<, endl, etc
-#include <gtest/gtest.h>
-#include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf, etc
-#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"
+#include "stk_util/util/IndentStreambuf.hpp"  // for indent_streambuf, PUSH, pop, push, POP, LEFT
+#include <sstream>                            // for operator<<, endl, basic_ostream, ostream
+#include <string>                             // for operator==, string, basic_string, char_traits
 
 
 using stk::push;

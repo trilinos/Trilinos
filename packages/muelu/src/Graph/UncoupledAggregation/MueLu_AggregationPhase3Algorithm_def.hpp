@@ -73,6 +73,8 @@ namespace MueLu {
     if(params.isParameter("aggregation: phase3 avoid singletons"))
       makeNonAdjAggs = params.get<bool>("aggregation: phase3 avoid singletons");
 
+    size_t numSingletons=0;
+
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
@@ -178,7 +180,8 @@ namespace MueLu {
           throw Exceptions::RuntimeError(oss.str());
         } else {
           // Create new aggregate (singleton)
-          this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
+	  //          this->GetOStream(Warnings1) << "Found singleton: " << i << std::endl;
+	  numSingletons++;
 
           aggregates.SetIsRoot(i);
           vertex2AggId[i] = numLocalAggregates++;
@@ -191,6 +194,11 @@ namespace MueLu {
       procWinner[i] = myRank;
 
     } // loop over numRows
+    
+
+    if(numSingletons > 0)
+      this->GetOStream(Runtime0)<<"  WARNING Rank "<<myRank<<" singletons :"<<numSingletons<<" (phase)"<<std::endl;
+
 
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);

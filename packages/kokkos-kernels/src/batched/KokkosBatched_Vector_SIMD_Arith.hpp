@@ -4,6 +4,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Kokkos_Complex.hpp"
+#include "KokkosKernels_Macros.hpp"
 
 namespace KokkosBatched {
 
@@ -57,21 +58,26 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator + (const Vector<SIMD<T>,l> &a,  const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] + b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] + b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] + b[i];
+    }
     return r_val;
   }
     
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION 
   static
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
@@ -273,21 +279,26 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] - b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] - b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] - b[i];
+    }
     return r_val;
   }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION
   static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
@@ -336,17 +347,22 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator - (const Vector<SIMD<T>,l> &a) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = -a[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = -a[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = -a[i];
+    }
     return r_val;
   }
 
@@ -533,21 +549,26 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator * (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] * b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] * b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] * b[i];
+    }
     return r_val;
   }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION
   static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)
@@ -818,21 +839,26 @@ namespace KokkosBatched {
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(T,l)
     operator / (const Vector<SIMD<T>,l> &a, const Vector<SIMD<T>,l> &b) {
     Vector<SIMD<T>,l> r_val;
+    if (std::is_fundamental<T>::value) {
 #if defined( KOKKOS_ENABLE_PRAGMA_IVDEP )
 #pragma ivdep
 #endif
 #if defined( KOKKOS_ENABLE_PRAGMA_VECTOR )
 #pragma vector always
 #endif
-#if defined( KOKKOS_ENABLE_OPENMP ) && !defined(__CUDA_ARCH__) 
+#ifdef KOKKOSKERNELS_ENABLE_OMP_SIMD
 #pragma omp simd
 #endif
-    for (int i=0;i<l;++i)
-      r_val[i] = a[i] / b[i];
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] / b[i];
+    } else {
+      for (int i=0;i<l;++i)
+        r_val[i] = a[i] / b[i];
+    }
     return r_val;
   }
 
-#if defined(KOKKOS_ENABLE_CUDA) && defined(__CUDA_ARCH__)  
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   KOKKOS_FORCEINLINE_FUNCTION
   static 
   KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float,2)

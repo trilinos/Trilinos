@@ -62,7 +62,7 @@ struct topology_data<topology::INVALID_TOPOLOGY>
   static constexpr bool is_valid = false;
   static constexpr topology::rank_t rank = topology::INVALID_RANK;
   static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
-  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::INVALID_TOPOLOGY};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 0;
@@ -104,7 +104,7 @@ struct topology_data<topology::NODE>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::NODE_RANK;
   static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
-  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::INVALID_TOPOLOGY};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 0;
@@ -148,7 +148,7 @@ struct topology_data<topology::PARTICLE>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::INVALID_RANK;
-  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::INVALID_TOPOLOGY};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 1;
@@ -196,7 +196,7 @@ struct topology_data<topology::LINE_2>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::EDGE_RANK;
   static constexpr topology::rank_t side_rank = topology::NODE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::INVALID_TOPOLOGY};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 1;
@@ -293,7 +293,7 @@ struct topology_data<topology::BEAM_2>
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2};
 
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 2;
@@ -312,7 +312,7 @@ struct topology_data<topology::BEAM_3>
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3};
 
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 2;
@@ -344,7 +344,8 @@ struct topology_data<topology::SHELL_LINE_2>
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2,
+                                                                  topology::LINE_2};
 
   static constexpr bool is_shell = true;
   static constexpr unsigned dimension = 2;
@@ -369,7 +370,8 @@ struct topology_data<topology::SHELL_LINE_3>
 
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3};
 
   static constexpr bool is_shell = true;
   static constexpr unsigned dimension = 2;
@@ -405,7 +407,7 @@ struct topology_data<topology::SPRING_2>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::NODE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::INVALID_TOPOLOGY};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 2;
@@ -434,7 +436,7 @@ struct topology_data<topology::SPRING_3>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::NODE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::INVALID_TOPOLOGY};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 2;
@@ -500,7 +502,9 @@ struct topology_data<topology::TRI_3>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::FACE_RANK;
   static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 2;
@@ -556,7 +560,9 @@ struct topology_data<topology::TRI_6>
   static constexpr topology::topology_t value = topology::TRI_6;
   static constexpr unsigned num_nodes = 6;
 
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3};
 
   static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9};
   static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  3,
@@ -772,6 +778,8 @@ struct topology_data<topology::SHELL_TRI_6>
 // topology::QUADRILATERAL -- topology::FACE_RANK
 // defined on spatial dimension 3d
 // 4, 8, or 9 nodes with 4 edges
+// for quad_6, extra node is on edge0 and edge2, so that node5 is labeled node6
+// in diagram below
 //
 //                 Edge #2
 //
@@ -802,7 +810,10 @@ struct topology_data<topology::QUAD_4>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::FACE_RANK;
   static constexpr topology::rank_t side_rank = topology::EDGE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2, 
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 2;
@@ -840,13 +851,47 @@ struct topology_data<topology::QUAD_4>
 };
 
 template <>
+struct topology_data<topology::QUAD_6>
+  : public topology_data<topology::QUAD_4>
+{
+  static constexpr topology::topology_t value = topology::QUAD_6;
+  static constexpr topology::rank_t rank = topology::FACE_RANK;
+  static constexpr unsigned num_nodes = 6;
+
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_2};
+
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 5, 8, 10};
+  static constexpr unsigned edge_node_ordinals_vector[] = { 0, 1, 4,
+                                                            1, 2,
+                                                            2, 3, 5,
+                                                            3, 0 };
+
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3,  4, 5,
+    3, 0, 1, 2,  4, 5,
+    2, 3, 0, 1,  5, 4,
+    1, 2, 3, 0,  5, 4,
+    0, 3, 2, 1,  5, 4,
+    3, 2, 1, 0,  5, 4,
+    2, 1, 0, 3,  4, 5,
+    1, 0, 3, 2,  4, 5 
+  };
+};
+
+template <>
 struct topology_data<topology::QUAD_8>
   : public topology_data<topology::QUAD_4>
 {
   static constexpr topology::topology_t value = topology::QUAD_8;
   static constexpr unsigned num_nodes = 8;
 
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3};
 
   static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9, 12};
   static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  4,
@@ -1063,7 +1108,12 @@ struct topology_data<topology::TET_4>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2};
   static constexpr bool has_homogeneous_faces = true;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 3;
@@ -1144,7 +1194,12 @@ struct topology_data<topology::TET_10>
   static constexpr topology::topology_t value = topology::TET_10;
   static constexpr unsigned num_nodes = 10;
 
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3};
 
   static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
                                                                   topology::TRI_6,
@@ -1218,7 +1273,14 @@ struct topology_data<topology::PYRAMID_5>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 3;
@@ -1270,7 +1332,15 @@ struct topology_data<topology::PYRAMID_13>
   static constexpr topology::topology_t value = topology::PYRAMID_13;
   static constexpr unsigned num_nodes = 13;
 
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3};
+
 
   static constexpr topology::topology_t face_topology_vector[] = {topology::TRI_6,
                                                                   topology::TRI_6,
@@ -1346,7 +1416,15 @@ struct topology_data<topology::WEDGE_6>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2};
   static constexpr bool has_homogeneous_faces = false;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 3;
@@ -1395,13 +1473,74 @@ struct topology_data<topology::WEDGE_6>
 };
 
 template <>
+struct topology_data<topology::WEDGE_12>
+  : public topology_data<topology::WEDGE_6>
+{
+  static constexpr topology::topology_t value = topology::WEDGE_12;
+  static constexpr unsigned num_nodes = 12;
+
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2};
+
+
+  static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_6,
+                                                                  topology::QUAD_6,
+                                                                  topology::QUAD_6,
+                                                                  topology::TRI_6,
+                                                                  topology::TRI_6};
+
+  static constexpr unsigned edge_node_ordinals_offsets[] = {0, 3, 6, 9, 12, 15, 18, 20, 22, 24};
+  static constexpr unsigned edge_node_ordinals_vector[] = {0, 1,  6,
+                                                           1, 2,  7,
+                                                           2, 0,  8,
+                                                           3, 4,  9,
+                                                           4, 5,  10,
+                                                           5, 3,  11,
+                                                           0, 3,
+                                                           1, 4,
+                                                           2, 5};
+
+  static constexpr unsigned face_node_ordinals_offsets[] = {0, 6, 12, 18, 24, 30};
+  static constexpr unsigned face_node_ordinals_vector[] = {0, 1, 4, 3,  6, 9,
+                                                           1, 2, 5, 4,  7, 10,
+                                                           0, 3, 5, 2,  8, 11,
+                                                           0, 2, 1,   8, 7, 6,
+                                                           3, 4, 5,  9, 10, 11};
+
+  static constexpr unsigned permutation_node_ordinals_vector[] = {
+    0, 1, 2, 3, 4, 5,  6,  7,  8,  9, 10, 11,
+    1, 2, 0, 4, 5, 3,  7,  8,  6, 10, 11,  9,
+    2, 0, 1, 5, 3, 4,  8,  6,  7, 11,  9, 10,
+    3, 5, 4, 0, 2, 1,  9, 11, 10,  8,  7,  6,
+    5, 4, 3, 2, 1, 0, 11, 10,  9,  7,  6,  8,
+    4, 3, 5, 1, 0, 2, 10,  9, 11,  6,  8,  7
+  };
+};
+
+template <>
 struct topology_data<topology::WEDGE_15>
   : public topology_data<topology::WEDGE_6>
 {
   static constexpr topology::topology_t value = topology::WEDGE_15;
   static constexpr unsigned num_nodes = 15;
 
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3};
+
 
   static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_8,
                                                                   topology::QUAD_8,
@@ -1556,7 +1695,19 @@ struct topology_data<topology::HEX_8>
   static constexpr bool is_valid = true;
   static constexpr topology::rank_t rank = topology::ELEMENT_RANK;
   static constexpr topology::rank_t side_rank = topology::FACE_RANK;
-  static constexpr topology::topology_t edge_topology = topology::LINE_2;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2,
+                                                                  topology::LINE_2};
+
   static constexpr bool has_homogeneous_faces = true;
   static constexpr bool is_shell = false;
   static constexpr unsigned dimension = 3;
@@ -1636,7 +1787,18 @@ struct topology_data<topology::HEX_20>
   static constexpr unsigned num_permutations = 24;
   static constexpr unsigned num_positive_permutations = 24;
 
-  static constexpr topology::topology_t edge_topology = topology::LINE_3;
+  static constexpr topology::topology_t edge_topology_vector[] = {topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3,
+                                                                  topology::LINE_3};
 
   static constexpr topology::topology_t face_topology_vector[] = {topology::QUAD_8,
                                                                   topology::QUAD_8,

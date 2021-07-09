@@ -685,14 +685,13 @@ packCrsGraph
   using crs_graph_type = CrsGraph<LO, GO, NT>;
   using packet_type = typename crs_graph_type::packet_type;
   using buffer_device_type = typename crs_graph_type::buffer_device_type;
-  using execution_space = typename buffer_device_type::execution_space;
   using exports_view_type = Kokkos::DualView<packet_type*, buffer_device_type>;
-  using local_graph_type = typename crs_graph_type::local_graph_type;
+  using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
   using local_map_type = typename Tpetra::Map<LO, GO, NT>::local_map_type;
   const char prefix[] = "Tpetra::Details::packCrsGraph: ";
   constexpr bool debug = false;
 
-  local_graph_type local_graph = sourceGraph.getLocalGraph ();
+  local_graph_device_type local_graph = sourceGraph.getLocalGraphDevice ();
   local_map_type local_col_map = sourceGraph.getColMap ()->getLocalMap ();
 
   // Setting this to zero tells the caller to expect a possibly
@@ -715,12 +714,7 @@ packCrsGraph
   }
 
   if (num_export_lids == 0) {
-    // FIXME (26 Apr 2016) Fences around (UVM) allocations only
-    // temporarily needed for #227 debugging.  Should be able to
-    // remove them after that's fixed.
-    execution_space().fence ();
     exports = exports_view_type ("exports", 0);
-    execution_space().fence ();
     return;
   }
 
@@ -735,17 +729,12 @@ packCrsGraph
 
   // Resize the output pack buffer if needed.
   if (count > size_t (exports.extent (0))) {
-    // FIXME (26 Apr 2016) Fences around (UVM) allocations only
-    // temporarily needed for #227 debugging.  Should be able to
-    // remove them after that's fixed.
-    execution_space().fence ();
     exports = exports_view_type ("exports", count);
     if (debug) {
       std::ostringstream os;
       os << "*** exports resized to " << count << std::endl;
       std::cerr << os.str ();
     }
-    execution_space().fence ();
   }
   if (debug) {
     std::ostringstream os;
@@ -766,7 +755,7 @@ packCrsGraph
 
   exports.modify_device ();
   auto exports_d = exports.view_device ();
-  do_pack<packet_type, local_graph_type, local_map_type, buffer_device_type>
+  do_pack<packet_type, local_graph_device_type, local_map_type, buffer_device_type>
     (local_graph, local_col_map, exports_d, num_packets_per_lid,
      export_lids, export_pids, offsets, pack_pids);
   // If we got this far, we succeeded.
@@ -891,11 +880,11 @@ packCrsGraphNew (const CrsGraph<LO,GO,NT>& sourceGraph,
   using BDT = typename crs_graph_type::buffer_device_type;
   using PT = typename crs_graph_type::packet_type;
   using exports_dual_view_type = Kokkos::DualView<PT*, BDT>;
-  using LGT = typename crs_graph_type::local_graph_type;
+  using LGT = typename crs_graph_type::local_graph_device_type;
   using LMT = typename crs_graph_type::map_type::local_map_type;
   const char prefix[] = "Tpetra::Details::packCrsGraphNew: ";
 
-  const LGT local_graph = sourceGraph.getLocalGraph ();
+  const LGT local_graph = sourceGraph.getLocalGraphDevice ();
   const LMT local_col_map = sourceGraph.getColMap ()->getLocalMap ();
 
   // Setting this to zero tells the caller to expect a possibly

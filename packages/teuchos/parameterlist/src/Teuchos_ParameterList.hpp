@@ -149,22 +149,25 @@ public:
   /** \brief Utility class for setting and passing in print options. */
   class PrintOptions {
   public:
-    PrintOptions() : indent_(0), showTypes_(false), showFlags_(false), showDoc_(false) {}
-    PrintOptions& indent(int _indent)        { indent_ = _indent; return *this; }
-    PrintOptions& showTypes(bool _showTypes) { showTypes_ = _showTypes; return *this; }
-    PrintOptions& showFlags(bool _showFlags) { showFlags_ = _showFlags; return *this; }
-    PrintOptions& showDoc(bool _showDoc)     { showDoc_ = _showDoc; return *this; }
-    PrintOptions& incrIndent(int indents)    { indent_ += indents; return *this; }
+    PrintOptions() : indent_(0), showTypes_(false), showFlags_(false), showDoc_(false), showDefault_(true) {}
+    PrintOptions& indent(int _indent)            { indent_ = _indent; return *this; }
+    PrintOptions& showTypes(bool _showTypes)     { showTypes_ = _showTypes; return *this; }
+    PrintOptions& showFlags(bool _showFlags)     { showFlags_ = _showFlags; return *this; }
+    PrintOptions& showDoc(bool _showDoc)         { showDoc_ = _showDoc; return *this; }
+    PrintOptions& showDefault(bool _showDefault) { showDefault_ = _showDefault; return *this; }
+    PrintOptions& incrIndent(int indents)        { indent_ += indents; return *this; }
     int indent() const { return indent_; }
     bool showTypes() const { return showTypes_; }
     bool showFlags() const { return showFlags_; }
     bool showDoc() const { return showDoc_; }
+    bool showDefault() const { return showDefault_; }
     PrintOptions copy() const { return PrintOptions(*this); }
   private:
     int    indent_;
     bool   showTypes_;
     bool   showFlags_;
     bool   showDoc_;
+    bool   showDefault_;
   };
 
   //@}
@@ -184,9 +187,6 @@ public:
   
   //! Destructor
   virtual ~ParameterList();
-
-  //! Get the number of stored parameters.
-  Ordinal numParams () const;
 
   //@}
   //! @name Set Functions 
@@ -577,6 +577,9 @@ public:
   bool isType(const std::string& name, T* ptr) const;
 #endif
 
+  //! Get the number of stored parameters.
+  Ordinal numParams () const;
+
   //@}
   
   //! @name I/O Functions 
@@ -595,7 +598,7 @@ public:
 
   /*! \brief Printing method for parameter lists.  Indenting is used to indicate
     parameter list hierarchies. */
-  std::ostream& print(std::ostream& os, int indent = 0, bool showTypes = false, bool showFlags = true ) const;
+  std::ostream& print(std::ostream& os, int indent = 0, bool showTypes = false, bool showFlags = true, bool showDefault = true ) const;
   
   //! Print out unused parameters in the ParameterList.
   void unused(std::ostream& os) const;

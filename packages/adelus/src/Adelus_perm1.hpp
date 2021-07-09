@@ -90,7 +90,7 @@ namespace Adelus {
   template<class XView, class YView>
   void zcopy_ld_local_index(int N, XView& X, YView& Y) {
     Kokkos::parallel_for(Kokkos::RangePolicy<typename XView::device_type::execution_space>(0,N), KOKKOS_LAMBDA (const int i) {
-  #ifdef COMPLEX
+  #ifdef ADELUS_COMPLEX
       int lidx = (int)(X(N).real());
   #else
       int lidx = (int)(X(N));

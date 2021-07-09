@@ -1,11 +1,12 @@
 #include "KokkosBulkDataCentroidCalculation.hpp"
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 
 struct GpuGatherBucketScratchData
 {
   GpuGatherBucketScratchData(const stk::mesh::BulkData &bulk)
-    : ngpMesh(bulk.get_updated_ngp_mesh())
+    : ngpMesh(stk::mesh::get_updated_ngp_mesh(bulk))
   {
   }
 

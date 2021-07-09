@@ -63,6 +63,7 @@ namespace FROSch {
         using XMap                          = Map<LO,GO,NO>;
         using XMapPtr                       = RCP<XMap>;
         using ConstXMapPtr                  = RCP<const XMap>;
+        using XMapPtrVec                    = Array<XMapPtr>;
         using XMapPtrVecPtr                 = ArrayRCP<XMapPtr>;
         using ConstXMapPtrVecPtr            = ArrayRCP<ConstXMapPtr>;
 
@@ -88,11 +89,11 @@ namespace FROSch {
 
         using UN                            = unsigned;
         using ConstUN                       = const UN;
-        
+
         using LOVec                         = Array<LO>;
         using LOVecPtr                      = ArrayRCP<LO>;
         using LOVecPtr2D                    = ArrayRCP<LOVecPtr>;
-        
+
         using GOVec                         = Array<GO>;
         using GOVecView                     = ArrayView<GO>;
 
@@ -118,12 +119,12 @@ namespace FROSch {
         virtual int computePartitionOfUnity(ConstXMultiVectorPtr nodeList = null) = 0;
 
         int assembledPartitionOfUnityMaps();
-        
-        XMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
 
-        XMapPtrVecPtr getPartitionOfUnityMaps() const;
-        
-        XMapPtr getAssembledPartitionOfUnityMap() const;
+        ConstXMultiVectorPtrVecPtr getLocalPartitionOfUnity() const;
+
+        ConstXMapPtrVecPtr getPartitionOfUnityMaps() const;
+
+        ConstXMapPtr getAssembledPartitionOfUnityMap() const;
 
     protected:
 
@@ -132,14 +133,14 @@ namespace FROSch {
 
         ParameterListPtr ParameterList_;
 
-        XMultiVectorPtrVecPtr LocalPartitionOfUnity_;
+        ConstXMultiVectorPtrVecPtr LocalPartitionOfUnity_;
 
-        XMapPtrVecPtr PartitionOfUnityMaps_;
-        
-        XMapPtr AssmbledPartitionOfUnityMap_;
+        ConstXMapPtrVecPtr PartitionOfUnityMaps_;
+
+        ConstXMapPtr AssmbledPartitionOfUnityMap_;
 
         bool Verbose_ = false;
-        
+
         Verbosity Verbosity_ = All;
 
         const UN LevelID_;

@@ -1,0 +1,7 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= parmetis_method=partkway
+Zoltan Parameters	= check_graph=2
+Zoltan Parameters	= num_global_parts=4
+File Type		= Chaco
+File Name		= 7944
+Parallel Disk Info	= number=0

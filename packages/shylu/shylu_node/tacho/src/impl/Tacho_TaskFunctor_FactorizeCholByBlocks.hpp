@@ -24,7 +24,7 @@ namespace Tacho {
       typedef SchedulerType scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
 
       typedef Kokkos::MemoryPool<device_type> memory_pool_type;
 
@@ -138,7 +138,8 @@ namespace Tacho {
             bufsize = matrix_of_blocks_bufsize + abr_bufsize;
           
           char *buf = NULL;
-          Kokkos::single(Kokkos::PerTeam(member), [&](char *&val) {
+          Kokkos::single(Kokkos::PerTeam(member), 
+            [&, bufsize](char *&val) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               val = (char*)_bufpool.allocate(bufsize);
               if (bufsize) {
                 if (val == NULL) {

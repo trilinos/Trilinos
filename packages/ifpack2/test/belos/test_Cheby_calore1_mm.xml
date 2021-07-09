@@ -1,7 +1,7 @@
 <ParameterList name="test_params">
   <Parameter name="mm_file" type="string" value="calore1.mtx"/>
 
-  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
     <Parameter name="Verbosity" type="int" value="2"/>
   </ParameterList>

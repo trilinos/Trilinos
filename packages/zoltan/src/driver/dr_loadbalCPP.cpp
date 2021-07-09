@@ -2193,6 +2193,7 @@ static void test_point_drops(
 {
 int status;
 int one_part, one_proc;
+int one_part_only;
 int i;
 
   if (test_both) {
@@ -2224,6 +2225,7 @@ int i;
     fprintf(fp, "%d Zoltan_LB_Point_PP_Assign (%e %e %e) on proc %d part %d\n",
 	    Proc, x[0], x[1], x[2], one_proc, one_part);
 
+    /* Check that the result is in result from Zoltan_LB_Box_PP_Assign */
     for (i = 0; i < proccnt; i++)
       if (one_proc == procs[i])
 	break;
@@ -2240,6 +2242,19 @@ int i;
 	fprintf(fp, "%d Error:  partition %d (from Zoltan_LB_Point_PP_Assign) "
 		    "not in part list from Zoltan_LB_Box_PP_Assign\n",
 		    Proc, one_part);
+    }
+
+    /* Test part-only interface */
+    status = zz.LB_Point_PP_Assign(x, one_part_only);
+    if (status != ZOLTAN_OK) 
+      fprintf(fp, "error returned from part-only version of "
+                  "Zoltan_LB_Point_PP_Assign()\n");
+    else {
+      if (one_part_only != one_part) {
+        fprintf(fp, "%d Error:  inconsistent results from part-only (%d) and "
+                    " part+proc (%d) versions of Zoltan_LB_Box_PP_Assign\n",
+                    Proc, one_part_only, one_part);
+      }
     }
   }
 }

@@ -47,7 +47,7 @@
 #define MUELU_STRATIMIKOSSMOOTHER_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_STRATIMIKOS)
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_THYRA)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

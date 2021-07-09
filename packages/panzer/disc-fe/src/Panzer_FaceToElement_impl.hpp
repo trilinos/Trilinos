@@ -271,10 +271,10 @@ initialize(panzer::ConnManager & conn)
   // Now cache the data
   face_map_ = face_map;
   LocalOrdinal nfaces = face_map_->getNodeNumElements();
-  elems_by_face_ = Kokkos::View<GlobalOrdinal *[2]>("FaceToElement::elems_by_face_", nfaces);
-  lidx_by_face_ = Kokkos::View<int *[2]>("FaceToElement::elems_by_face_", nfaces);
-  blocks_by_face_ = Kokkos::View<int *[2]> ("FaceToElement::blocks_by_face_", nfaces);
-  procs_by_face_ = Kokkos::View<int *[2]> ("FaceToElement::procs_by_face_", nfaces);
+  elems_by_face_ = PHX::View<GlobalOrdinal *[2]>("FaceToElement::elems_by_face_", nfaces);
+  lidx_by_face_ = PHX::View<int *[2]>("FaceToElement::elems_by_face_", nfaces);
+  blocks_by_face_ = PHX::View<int *[2]> ("FaceToElement::blocks_by_face_", nfaces);
+  procs_by_face_ = PHX::View<int *[2]> ("FaceToElement::procs_by_face_", nfaces);
 
   // We have to subtract 'shift' because we added 'shift' earlier to shift things away from 0
   for (LocalOrdinal i=0; i< nfaces; ++i) {

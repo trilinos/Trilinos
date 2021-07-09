@@ -1421,7 +1421,10 @@
                   unsigned entity_ft_size = m_eMesh.get_bulk_data()->num_connectivity(aside, FAMILY_TREE_RANK);
                   for (unsigned ii = 0; ii < entity_ft_size; ++ii)
                     {
-                      change.push_back(stk::mesh::EntityProc(entity_ft[ii], element_proc));
+                      if(m_eMesh.owned(entity_ft[ii]))
+                      {
+                        change.push_back(stk::mesh::EntityProc(entity_ft[ii], element_proc));
+                      }
                     }
                 }
             }

@@ -1,3 +1,14 @@
+/*
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
+ *
+ * See packages/seacas/LICENSE for details
+ */
+
+#ifndef VDICGI_H
+#define VDICGI_H
+
 void vdicgi_errh(char errmsg[])
 void vdinit_ (float *aspect, int *justif)
 void vdiqdc_ (int *index, float *value)
@@ -29,3 +40,5 @@ void vdakgl_ (int *charac, float *x, float *y)
 void vdstla_ (float *x, float *y)
 void vdstos_ (float attr_array[])
 void vdfram_(int itype)
+
+#endif

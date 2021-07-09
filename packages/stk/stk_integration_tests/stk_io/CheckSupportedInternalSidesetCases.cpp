@@ -11,6 +11,7 @@
 #include <Ioss_SideSet.h>
 #include <Ioss_SideBlock.h>
 #include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_unit_test_utils/getOption.h>
@@ -19,7 +20,7 @@
 namespace
 {
 
-stk::mesh::EntityVector getSides(const stk::mesh::BulkData &bulkData, const stk::mesh::Part& sidesetPart)
+stk::mesh::EntityVector get_sides(const stk::mesh::BulkData &bulkData, const stk::mesh::Part& sidesetPart)
 {
     const stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
     stk::mesh::EntityVector sides;
@@ -28,7 +29,7 @@ stk::mesh::EntityVector getSides(const stk::mesh::BulkData &bulkData, const stk:
     return sides;
 }
 
-bool isCaseSupported(const std::string& input_file_name, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+bool is_sideset_case_supported(const std::string& input_file_name, stk::mesh::BulkData::AutomaticAuraOption auraOption)
 {
     bool supported = true;
     if(stk::parallel_machine_size(MPI_COMM_WORLD) < 3)
@@ -46,7 +47,7 @@ bool isCaseSupported(const std::string& input_file_name, stk::mesh::BulkData::Au
         for(auto sidesetPart : allparts)
         {
             if(stk::mesh::is_side_set(*sidesetPart))
-                supported = supported & stk::io::isSidesetSupported(bulk, getSides(bulk, *sidesetPart), parallelPartInfo);
+                supported = supported & stk::mesh::does_not_contain_internal_sideset(bulk, get_sides(bulk, *sidesetPart), parallelPartInfo);
         }
     }
     return supported;
@@ -62,12 +63,12 @@ void test_supported_sideset_cases_with_aura_option(stk::mesh::BulkData::Automati
         {
             std::vector<std::string> files ={"ADA.e", "ARA.e", "ALA.e"};
             for(std::string& filename : files)
-                EXPECT_FALSE(isCaseSupported(filename, auraOption));
+                EXPECT_FALSE(is_sideset_case_supported(filename, auraOption));
         }
     }
     else
     {
-        if(isCaseSupported(exodusFileName, auraOption))
+        if(is_sideset_case_supported(exodusFileName, auraOption))
             std::cerr << "Sidesets in file are OK\n";
         else
             std::cerr << "Sidesets in file are not supported\n";

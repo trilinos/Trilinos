@@ -72,7 +72,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int HDIV_HEX_I1_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -86,6 +86,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -110,7 +111,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = tolerence();
@@ -119,7 +120,7 @@ namespace Intrepid2 {
 
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HDIV_HEX_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> hexBasis;
+      Basis_HDIV_HEX_I1_FEM<DeviceType,outputValueType,pointValueType> hexBasis;
 
       *outStream
         << "\n"
@@ -298,51 +299,51 @@ namespace Intrepid2 {
         // VALUE: Each row pair gives the 6x3 correct basis set values at an evaluation point: (P,F,D) layout
         ValueType basisValues[] = {
           // bottom 4 vertices
-            0.,-0.25,0.,  0.,0.,0.,  0.,0.,0., -0.25,0.,0.,  0.,0.,-0.25,  0.,0.,0.,
-            0.,-0.25,0.,  0.25,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,-0.25,  0.,0.,0.,
-            0.,0.,0.,  0.25,0.,0.,  0.,0.25,0.,  0.,0.,0.,  0.,0.,-0.25,  0.,0.,0.,
-            0.,0.,0.,  0.,0.,0.,  0.,0.25,0., -0.25,0.,0.,  0.,0.,-0.25,  0.,0.,0.,
+            0.,-1.0,0.,  0.,0.,0.,  0.,0.,0., -1.0,0.,0.,  0.,0.,-1.0,  0.,0.,0.,
+            0.,-1.0,0.,  1.0,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,-1.0,  0.,0.,0.,
+            0.,0.,0.,  1.0,0.,0.,  0.,1.0,0.,  0.,0.,0.,  0.,0.,-1.0,  0.,0.,0.,
+            0.,0.,0.,  0.,0.,0.,  0.,1.0,0., -1.0,0.,0.,  0.,0.,-1.0,  0.,0.,0.,
           // top 4 vertices
-            0.,-0.25,0.,  0.,0.,0.,  0.,0.,0.,  -0.25,0.,0.,  0.,0.,0.,  0.,0.,0.25,
-            0.,-0.25,0.,  0.25,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0.25,
-            0.,0.,0.,  0.25,0.,0.,  0.,0.25,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0.25,
-            0.,0.,0.,  0.,0.,0.,  0.,0.25,0.,  -0.25,0.,0.,  0.,0.,0.,  0.,0.,0.25,
+            0.,-1.0,0.,  0.,0.,0.,  0.,0.,0.,  -1.0,0.,0.,  0.,0.,0.,  0.,0.,1.0,
+            0.,-1.0,0.,  1.0,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,1.0,
+            0.,0.,0.,  1.0,0.,0.,  0.,1.0,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,1.0,
+            0.,0.,0.,  0.,0.,0.,  0.,1.0,0.,  -1.0,0.,0.,  0.,0.,0.,  0.,0.,1.0,
           // center {0, 0, 0}
-            0.,-0.125,0.,  0.125,0.,0.,  0.,0.125,0.,  -0.125,0.,0.,  0.,0.,-0.125,  0.,0.,0.125,
+            0.,-0.5,0.,  0.5,0.,0.,  0.,0.5,0.,  -0.5,0.,0.,  0.,0.,-0.5,  0.,0.,0.5,
           // faces { 1, 0, 0} and {-1, 0, 0}
-            0.,-0.125,0.,  0.25,0.,0.,  0.,0.125,0.,  0.,0.,0.,  0.,0.,-0.125,  0.,0.,0.125,
-            0.,-0.125,0.,  0.,0.,0.,  0.,0.125,0., -0.25,0.,0.,  0.,0.,-0.125,  0.,0.,0.125,
+            0.,-0.5,0.,  1.0,0.,0.,  0.,0.5,0.,  0.,0.,0.,  0.,0.,-0.5,  0.,0.,0.5,
+            0.,-0.5,0.,  0.,0.,0.,  0.,0.5,0., -1.0,0.,0.,  0.,0.,-0.5,  0.,0.,0.5,
           // faces { 0, 1, 0} and { 0,-1, 0}
-            0.,0.,0.,  0.125,0.,0.,  0.,0.25,0.,  -0.125,0.,0.,  0.,0.,-0.125,  0.,0.,0.125,
-            0.,-0.25,0.,  0.125,0.,0.,  0.,0.,0.,  -0.125,0.,0.,  0.,0.,-0.125,  0.,0.,0.125,
+            0.,0.,0.,  0.5,0.,0.,  0.,1.0,0.,  -0.5,0.,0.,  0.,0.,-0.5,  0.,0.,0.5,
+            0.,-1.0,0.,  0.5,0.,0.,  0.,0.,0.,  -0.5,0.,0.,  0.,0.,-0.5,  0.,0.,0.5,
           // faces {0, 0, 1} and {0, 0, -1}
-            0.,-0.125,0.,  0.125,0.,0.,  0.,0.125,0.,  -0.125,0.,0.,  0.,0.,0.,  0.,0.,0.25,
-            0.,-0.125,0.,  0.125,0.,0.,  0.,0.125,0.,  -0.125,0.,0.,  0.,0.,-0.25,  0.,0.,0.
+            0.,-0.5,0.,  0.5,0.,0.,  0.,0.5,0.,  -0.5,0.,0.,  0.,0.,0.,  0.,0.,1.0,
+            0.,-0.5,0.,  0.5,0.,0.,  0.,0.5,0.,  -0.5,0.,0.,  0.,0.,-1.0,  0.,0.,0.
         };
 
         // DIV: each row gives the 6 correct values of the divergence of the 6 basis functions: (P,F) layout
         ValueType basisDivs[] = {
           // bottom 4 vertices
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
           // top 4 vertices
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
           // center {0, 0, 0}
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
           // faces { 1, 0, 0} and {-1, 0, 0}
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
           // faces { 0, 1, 0} and { 0,-1, 0}
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
           // faces {0, 0, 1} and {0, 0, -1}
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
-            0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
         };
 
         // Define array containing the 8 vertices of the reference HEX, its center and 6 face centers
@@ -369,7 +370,7 @@ namespace Intrepid2 {
         hexNodesHost(13,0)=  0.0;  hexNodesHost(13,1)=  0.0;  hexNodesHost(13,2)=  1.0;
         hexNodesHost(14,0)=  0.0;  hexNodesHost(14,1)=  0.0;  hexNodesHost(14,2)= -1.0;
 
-        const auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+        const auto hexNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), hexNodesHost);
         Kokkos::deep_copy(hexNodes, hexNodesHost);
         
         // Dimensions for the output arrays:

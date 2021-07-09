@@ -516,7 +516,7 @@ void SupportGraph<MatrixType>::initialize ()
   if (timer.is_null()) {
     timer = TimeMonitor::getNewCounter(timerName);
   }
-
+  double startTime = timer->wallTime();
   { // Start timing here.
     TimeMonitor timeMon (*timer);
 
@@ -543,9 +543,7 @@ void SupportGraph<MatrixType>::initialize ()
     ++NumInitialize_;
   } // Stop timing here.
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  InitializeTime_ = timer->totalElapsedTime();
+  InitializeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -570,7 +568,7 @@ void SupportGraph<MatrixType>::compute () {
   if (timer.is_null()) {
     timer = TimeMonitor::getNewCounter(timerName);
   }
-
+  double startTime = timer->wallTime();
   { // Start timing here.
     Teuchos::TimeMonitor timeMon (*timer);
     solver_->numericFactorization();
@@ -578,9 +576,7 @@ void SupportGraph<MatrixType>::compute () {
     ++NumCompute_;
   } // Stop timing here.
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ComputeTime_ = timer->totalElapsedTime();
+  ComputeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -622,7 +618,7 @@ apply (const Tpetra::MultiVector<scalar_type,
   if (timer.is_null()) {
     timer = TimeMonitor::getNewCounter(timerName);
   }
-
+  double startTime = timer->wallTime();
   { // Start timing here.
     Teuchos::TimeMonitor timeMon (*timer);
 
@@ -646,9 +642,7 @@ apply (const Tpetra::MultiVector<scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     {
-      auto X_lcl_host = X.getLocalView<Kokkos::HostSpace> ();
-      auto Y_lcl_host = Y.getLocalView<Kokkos::HostSpace> ();
-      if (X_lcl_host.data () == Y_lcl_host.data ()) {
+      if (X.aliases(Y)) {
         Xcopy = rcp (new MV (X, Teuchos::Copy));
       } else {
         Xcopy = rcpFromRef (X);
@@ -668,9 +662,7 @@ apply (const Tpetra::MultiVector<scalar_type,
 
   ++NumApply_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ApplyTime_ = timer->totalElapsedTime();
+  ApplyTime_ += (timer->wallTime() - startTime);
 }
 
 

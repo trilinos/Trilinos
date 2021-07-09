@@ -1,45 +1,21 @@
-// Copyright(C) 1999-2017, 2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SmartAssert.h>
+#include <Ioss_Sort.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
 #include <cgns/Iocgns_DecompositionData.h>
 #include <cgns/Iocgns_Utils.h>
 #include <fmt/color.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <tokenize.h>
 
@@ -60,7 +36,7 @@ namespace {
   int zoltan_num_dim(void *data, int *ierr)
   {
     // Return dimensionality of coordinate data.
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     *ierr = ZOLTAN_OK;
     return zdata->spatial_dimension();
@@ -69,7 +45,7 @@ namespace {
   int zoltan_num_obj(void *data, int *ierr)
   {
     // Return number of objects (element count) on this processor...
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     *ierr = ZOLTAN_OK;
     return zdata->decomp_elem_count();
@@ -79,7 +55,7 @@ namespace {
                        ZOLTAN_ID_PTR lids, int wdim, float *wgts, int *ierr)
   {
     // Return list of object IDs, both local and global.
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     // At the time this is called, we don't have much information
     // These routines are the ones that are developing that
@@ -89,11 +65,11 @@ namespace {
 
     *ierr = ZOLTAN_OK;
 
-    if (lids) {
+    if (lids != nullptr) {
       std::iota(lids, lids + element_count, 0);
     }
 
-    if (wdim) {
+    if (wdim != 0) {
       std::fill(wgts, wgts + element_count, 1.0);
     }
 
@@ -101,13 +77,12 @@ namespace {
       std::iota(gids, gids + element_count, element_offset);
     }
     else if (ngid_ent == 2) {
-      int64_t *global_ids = (int64_t *)gids;
+      auto *global_ids = (int64_t *)gids;
       std::iota(global_ids, global_ids + element_count, element_offset);
     }
     else {
       *ierr = ZOLTAN_FATAL;
     }
-    return;
   }
 
   void zoltan_geom(void *data, int /* ngid_ent */, int /* nlid_ent */, int /* nobj */,
@@ -115,12 +90,11 @@ namespace {
                    int *ierr)
   {
     // Return coordinates for objects.
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     std::copy(zdata->centroids().begin(), zdata->centroids().end(), &geom[0]);
 
     *ierr = ZOLTAN_OK;
-    return;
   }
 #endif
 
@@ -181,7 +155,8 @@ namespace {
 
 #if IOSS_DEBUG_OUTPUT
         if (rank == 0) {
-          fmt::print(stderr, "Adding zgc {} to {} donor: {}\n", connectname, zone_name, donorname);
+          fmt::print(Ioss::DEBUG(), "Adding zgc {} to {} donor: {}\n", connectname, zone_name,
+                     donorname);
         }
 #endif
         zone_data->m_zoneConnectivity.emplace_back(connectname, zone, donorname, donor_zone,
@@ -277,12 +252,15 @@ namespace Iocgns {
     if (!m_lineDecomposition.empty()) {
       // See if the ordinal is specified as "__ordinal_{ijk}" which is used for testing...
       if (m_lineDecomposition.find("__ordinal_") == 0) {
-        // Get the ordinal... (last character of string)
-        char ordinal = m_lineDecomposition[m_lineDecomposition.size() - 1];
-        int  ord     = ordinal == 'i' ? 0 : ordinal == 'j' ? 1 : 2;
+        auto         sub = m_lineDecomposition.substr(10);
+        unsigned int ord = 0;
+        for (size_t i = 0; i < sub.size(); i++) {
+          char ordinal = sub[i];
+          ord |= ordinal == 'i' ? Ordinal::I : ordinal == 'j' ? Ordinal::J : Ordinal::K;
+        }
         for (auto zone : m_structuredZones) {
           if (zone->is_active()) {
-            zone->m_lineOrdinal = ord;
+            zone->m_lineOrdinal |= ord;
           }
         }
       }
@@ -296,10 +274,10 @@ namespace Iocgns {
     Utils::decompose_model(m_structuredZones, m_decomposition.m_processorCount, rank,
                            m_loadBalanceThreshold, verbose);
 
-    std::sort(m_structuredZones.begin(), m_structuredZones.end(),
-              [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
-                return a->m_zone < b->m_zone;
-              });
+    Ioss::sort(m_structuredZones.begin(), m_structuredZones.end(),
+               [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
+                 return a->m_zone < b->m_zone;
+               });
 
     for (auto zone : m_structuredZones) {
       if (zone->is_active()) {
@@ -316,12 +294,19 @@ namespace Iocgns {
           auto zone_node_count =
               (zone->m_ordinal[0] + 1) * (zone->m_ordinal[1] + 1) * (zone->m_ordinal[2] + 1);
           fmt::print(
-              stderr,
+              Ioss::DEBUG(),
               "Zone {}({}) assigned to processor {}, Adam zone = {}, Cells = {}, Nodes = {}\n",
               zone->m_name, zone->m_zone, zone->m_proc, zone->m_adam->m_zone, zone->work(),
               zone_node_count);
           auto zgcs = zone->m_zoneConnectivity;
-          fmt::print(stderr, "{}\n", fmt::join(zgcs.begin(), zgcs.end(), "\n"));
+#if 0
+	  // This should work, but doesn't...
+          fmt::print(Ioss::DEBUG(), "{}\n", fmt::join(zgcs, "\n"));
+#else
+          for (auto &zgc : zgcs) {
+            fmt::print(Ioss::DEBUG(), "{}\n", zgc);
+          }
+#endif
         }
 #endif
       }
@@ -331,17 +316,17 @@ namespace Iocgns {
     if (rank == 0) {
       int z = 1;
       fmt::print(
-          stderr,
+          Ioss::OUTPUT(),
           "     n    proc  parent    imin    imax    jmin    jmax    kmin    kmax          work\n");
       auto tmp_zone(m_structuredZones);
-      std::sort(tmp_zone.begin(), tmp_zone.end(),
-                [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
-                  return a->m_proc < b->m_proc;
-                });
+      Ioss::sort(tmp_zone.begin(), tmp_zone.end(),
+                 [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
+                   return a->m_proc < b->m_proc;
+                 });
 
       for (auto &zone : tmp_zone) {
         if (zone->is_active()) {
-          fmt::print(stderr, "{:6d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:14n}\n", z++,
+          fmt::print(Ioss::OUTPUT(), "{:6d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:8d}{:14L}\n", z++,
                      zone->m_proc, zone->m_adam->m_zone, zone->m_offset[0] + 1,
                      zone->m_ordinal[0] + zone->m_offset[0] + 1, zone->m_offset[1] + 1,
                      zone->m_ordinal[1] + zone->m_offset[1] + 1, zone->m_offset[2] + 1,
@@ -359,7 +344,8 @@ namespace Iocgns {
 #if IOSS_DEBUG_OUTPUT
     MPI_Barrier(m_decomposition.m_comm);
     if (rank == 0) {
-      fmt::print(fg(fmt::color::green), "Returning from decomposition\n");
+      fmt::print(Ioss::DEBUG(), "{}",
+                 fmt::format(fg(fmt::color::green), "Returning from decomposition\n"));
     }
 #endif
   }
@@ -442,7 +428,7 @@ namespace Iocgns {
 
 #if IOSS_DEBUG_OUTPUT
     if (rank == 0) {
-      fmt::print(stderr,
+      fmt::print(Ioss::DEBUG(),
                  "Processor {0} has {1} elements; offset = {2}\n"
                  "Processor {0} has {3} nodes; offset = {4}.\n",
                  m_decomposition.m_processor, decomp_elem_count(), decomp_elem_offset(),
@@ -568,7 +554,7 @@ namespace Iocgns {
         if (dz != zone) {
 #if IOSS_DEBUG_OUTPUT
           if (m_decomposition.m_processor == 0) {
-            fmt::print(stderr, "Zone {} shares {} nodes with {}\n", zone, npnts, donorname);
+            fmt::print(Ioss::DEBUG(), "Zone {} shares {} nodes with {}\n", zone, npnts, donorname);
           }
 #endif
           // The 'ids' in 'points' and 'donors' will be zone-local 1-based.
@@ -591,7 +577,7 @@ namespace Iocgns {
             m_zoneSharedMap.insert({point, donor});
 #if IOSS_DEBUG_OUTPUT
             if (m_decomposition.m_processor == 0) {
-              fmt::print(stderr, "Inserted {} to {}\n", point, donor);
+              fmt::print(Ioss::DEBUG(), "Inserted {} to {}\n", point, donor);
             }
 #endif
           }
@@ -634,7 +620,8 @@ namespace Iocgns {
       // The BC_t nodes in the ZoneBC_t give the element range for each SideBlock
       // which can be matched up below with the Elements_t nodes to get contents
       // of the SideBlocks.
-      auto zonebc = Utils::parse_zonebc_sideblocks(filePtr, base, zone, m_decomposition.m_processor);
+      auto zonebc =
+          Utils::parse_zonebc_sideblocks(filePtr, base, zone, m_decomposition.m_processor);
 
       cgsize_t size[3];
       char     zone_name[CGNS_MAX_NAME_LENGTH + 1];
@@ -696,28 +683,28 @@ namespace Iocgns {
         else {
           // This is a boundary-condition -- sideset (?)
           std::string bc_name(section_name);
-	  std::string ss_name;
-	  // Search zonebc (if it exists) for an entry such that the element ranges overlap.
-	  if (!zonebc.empty()) {
-	    size_t i = 0;
-	    for (; i < zonebc.size(); i++) {
-	      if (zonebc[i].range_beg >= el_start && zonebc[i].range_end <= el_end) {
-		break;
-	      }
-	    }
-	    if (i < zonebc.size()) {
-	      ss_name = zonebc[i].name;
-	    }
-	  }
-	  else {
-	    ss_name = section_name;
-	  }
+          std::string ss_name;
+          // Search zonebc (if it exists) for an entry such that the element ranges overlap.
+          if (!zonebc.empty()) {
+            size_t i = 0;
+            for (; i < zonebc.size(); i++) {
+              if (zonebc[i].range_beg >= el_start && zonebc[i].range_end <= el_end) {
+                break;
+              }
+            }
+            if (i < zonebc.size()) {
+              ss_name = zonebc[i].name;
+            }
+          }
+          else {
+            ss_name = section_name;
+          }
 
           Ioss::SetDecompositionData sset;
           sset.zone_            = zone;
           sset.section_         = is;
           sset.name_            = bc_name;
-	  sset.ss_name_         = ss_name;
+          sset.ss_name_         = ss_name;
           sset.fileCount        = num_entity;
           sset.topologyType     = Utils::map_cgns_to_topology_type(e_type);
           sset.parentBlockIndex = last_blk_location;
@@ -742,15 +729,14 @@ namespace Iocgns {
     // Make sure 'sum' can fit in INT...
     INT tmp_sum = (INT)sum;
     if ((size_t)tmp_sum != sum) {
-      if (rank == 0) {
-        fmt::print(
-            stderr,
-            "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
-            "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
-            "       set to 8. The details of how to do this vary with the code that is being run.\n"
-            "       Contact gdsjaar@sandia.gov for more details.\n");
-      }
-      exit(EXIT_FAILURE);
+      std::ostringstream errmsg;
+      fmt::print(
+          errmsg,
+          "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
+          "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
+          "       set to 8. The details of how to do this vary with the code that is being run.\n"
+          "       Contact gdsjaar@sandia.gov for more details.\n");
+      IOSS_ERROR(errmsg);
     }
 
     // Now, populate the vectors...
@@ -774,13 +760,13 @@ namespace Iocgns {
 
       // Get the connectivity (raw) for this portion of elements...
       CGNSIntVector connectivity(overlap * element_nodes);
-      INT                   blk_start = std::max(b_start, p_start) - b_start + 1;
-      INT                   blk_end   = blk_start + overlap - 1;
-      blk_start                       = blk_start < 0 ? 0 : blk_start;
-      blk_end                         = blk_end < 0 ? 0 : blk_end;
+      INT           blk_start = std::max(b_start, p_start) - b_start + 1;
+      INT           blk_end   = blk_start + overlap - 1;
+      blk_start               = blk_start < 0 ? 0 : blk_start;
+      blk_end                 = blk_end < 0 ? 0 : blk_end;
 #if IOSS_DEBUG_OUTPUT
       if (rank == 0) {
-        fmt::print(stderr, "Processor {} has {} elements on element block {}\t({} to {})\n",
+        fmt::print(Ioss::DEBUG(), "Processor {} has {} elements on element block {}\t({} to {})\n",
                    m_decomposition.m_processor, overlap, block.name(), blk_start, blk_end);
       }
 #endif
@@ -824,8 +810,8 @@ namespace Iocgns {
     else {
       for (auto &sset : m_sideSets) {
 
-        auto                  topology = Ioss::ElementTopology::factory(sset.topologyType, true);
-        int                   nodes_per_face = topology->number_nodes();
+        auto          topology       = Ioss::ElementTopology::factory(sset.topologyType, true);
+        int           nodes_per_face = topology->number_nodes();
         CGNSIntVector nodes(nodes_per_face * sset.file_count());
 
         // We get:
@@ -970,7 +956,7 @@ namespace Iocgns {
 #if IOSS_DEBUG_OUTPUT
       if (rank == 0) {
         fmt::print(
-            stderr,
+            Ioss::DEBUG(),
             "{}: reading {} nodes from zone {} starting at {} with an offset of {} ending at {}\n",
             m_decomposition.m_processor, count, zone, start, offset, finish);
       }
@@ -1087,8 +1073,8 @@ namespace Iocgns {
     std::vector<INT> element_side;
     int              base = 1;
 
-    auto                  topology       = Ioss::ElementTopology::factory(sset.topologyType, true);
-    int                   nodes_per_face = topology->number_nodes();
+    auto          topology       = Ioss::ElementTopology::factory(sset.topologyType, true);
+    int           nodes_per_face = topology->number_nodes();
     CGNSIntVector nodes(nodes_per_face * sset.file_count());
 
     CGNSIntVector parent(4 * sset.file_count());
@@ -1140,8 +1126,8 @@ namespace Iocgns {
         if (it != boundary.end()) {
           cgsize_t fid = (*it).element[0];
 #if IOSS_DEBUG_OUTPUT
-          fmt::print("Connectivity: {} {} {} {} maps to element {}, face {}\n", conn[0], conn[1],
-                     conn[2], conn[3], fid / 10, fid % 10 + 1);
+          fmt::print(Ioss::DEBUG(), "Connectivity: {} {} {} {} maps to element {}, face {}\n",
+                     conn[0], conn[1], conn[2], conn[3], fid / 10, fid % 10 + 1);
 #endif
           ioss_data[j++] = fid / 10 + zone_element_id_offset;
           ioss_data[j++] = fid % 10 + 1;
@@ -1193,9 +1179,9 @@ namespace Iocgns {
   void DecompositionData<INT>::get_block_connectivity(int filePtr, INT *data, int blk_seq,
                                                       bool raw_ids) const
   {
-    auto                  blk = m_elementBlocks[blk_seq];
+    auto          blk = m_elementBlocks[blk_seq];
     CGNSIntVector file_conn(blk.file_count() * blk.nodesPerEntity);
-    int                   base = 1;
+    int           base = 1;
     CGCHECK2(cgp_elements_read_data(filePtr, base, blk.zone(), blk.section(), blk.fileSectionOffset,
                                     blk.fileSectionOffset + blk.file_count() - 1,
                                     file_conn.data()));

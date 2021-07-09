@@ -52,10 +52,13 @@
 #include <algorithm>
 #include <vector>
 
+#include "KokkosSparse_spiluk.hpp"
+
 #include <Ifpack2_ConfigDefs.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_Details_WrappedDualView.hpp>
 #include <Tpetra_Import.hpp>
 #include <Ifpack2_CreateOverlapGraph.hpp>
 #include <Ifpack2_Parameters.hpp>
@@ -93,7 +96,7 @@ namespace Ifpack2 {
 /// via the Tpetra::CrsGraph InsertIndices and RemoveIndices
 /// functions.  However, in this case FillComplete must be called
 /// before the graph is used for subsequent operations.
-template<class GraphType>
+template<class GraphType, class KKHandleType>
 class IlukGraph : public Teuchos::Describable {
 public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
@@ -108,6 +111,13 @@ public:
   typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> crs_graph_type;
+
+
+
+  typedef typename crs_graph_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename crs_graph_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename crs_graph_type::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename crs_graph_type::local_inds_host_view_type  local_inds_host_view_type;
 
   /// \brief Constructor.
   ///
@@ -146,7 +156,8 @@ public:
   /// initialize(), but not compute().  RILUK calls IlukGraph's
   /// initialize() method in its own initialize() method, as one would
   /// expect.
-  void initialize ();
+  void initialize();
+  void initialize(const Teuchos::RCP<KKHandleType>& KernelHandle);
 
   //! The level of fill used to construct this graph.
   int getLevelFill () const { return LevelFill_; }
@@ -173,7 +184,7 @@ public:
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }
 
 private:
-  typedef typename GraphType::map_type map_type;
+  typedef typename GraphType::map_type map_type;  
 
   /// \brief Copy constructor (UNIMPLEMENTED; DO NOT USE).
   ///
@@ -183,7 +194,7 @@ private:
   /// internal graphs.  It may do a shallow copy of the input graph
   /// (which is not modified).  Also, you must implement operator= in
   /// a similar way.
-  IlukGraph (const IlukGraph<GraphType>&);
+  IlukGraph (const IlukGraph<GraphType, KKHandleType>&);
 
   /// \brief Assignment operator (UNIMPLEMENTED; DO NOT USE).
   ///
@@ -193,7 +204,7 @@ private:
   /// all internal graphs.  It may do a shallow copy of the input
   /// graph (which is not modified).  Also, you must implement the
   /// copy constructor in a similar way.
-  IlukGraph& operator= (const IlukGraph<GraphType>&);
+  IlukGraph& operator= (const IlukGraph<GraphType, KKHandleType>&);
 
   //! Construct the overlap graph.
   void constructOverlapGraph();
@@ -210,8 +221,8 @@ private:
 };
 
 
-template<class GraphType>
-IlukGraph<GraphType>::
+template<class GraphType, class KKHandleType>
+IlukGraph<GraphType, KKHandleType>::
 IlukGraph (const Teuchos::RCP<const GraphType>& G,
            const int levelFill,
            const int levelOverlap,
@@ -228,13 +239,13 @@ IlukGraph (const Teuchos::RCP<const GraphType>& G,
 }
 
 
-template<class GraphType>
-IlukGraph<GraphType>::~IlukGraph()
+template<class GraphType, class KKHandleType>
+IlukGraph<GraphType, KKHandleType>::~IlukGraph()
 {}
 
 
-template<class GraphType>
-void IlukGraph<GraphType>::
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::
 setParameters (const Teuchos::ParameterList& parameterlist)
 {
   getParameter (parameterlist, "iluk level-of-fill", LevelFill_);
@@ -242,8 +253,8 @@ setParameters (const Teuchos::ParameterList& parameterlist)
 }
 
 
-template<class GraphType>
-void IlukGraph<GraphType>::constructOverlapGraph () {
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::constructOverlapGraph () {
   // FIXME (mfh 22 Dec 2013) This won't do if we want
   // RILUK::initialize() to do the right thing (that is,
   // unconditionally recompute the "symbolic factorization").
@@ -253,8 +264,8 @@ void IlukGraph<GraphType>::constructOverlapGraph () {
 }
 
 
-template<class GraphType>
-void IlukGraph<GraphType>::initialize()
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::initialize()
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -275,21 +286,41 @@ void IlukGraph<GraphType>::initialize()
   // getNodeNumElements() returns, instead of ptrdiff_t.
   const int NumMyRows = OverlapGraph_->getRowMap ()->getNodeNumElements ();
 
-  // Heuristic to get the maximum number of entries per row.
-  size_t MaxNumEntriesPerRow = (LevelFill_ == 0)
-                             ? MaxNumIndices  // No additional storage needed
-                             : ceil(static_cast<double>(MaxNumIndices) 
-                                  * pow(Overalloc_,LevelFill_));
+  using device_type = typename node_type::device_type;
+  using execution_space = typename device_type::execution_space;
+  using dual_view_type = Kokkos::DualView<size_t*,device_type>;
+  dual_view_type numEntPerRow_dv("numEntPerRow",NumMyRows);
+  Tpetra::Details::WrappedDualView<dual_view_type> numEntPerRow(numEntPerRow_dv);
+
+  const auto overalloc = Overalloc_;
+  const auto levelfill = LevelFill_;
+  {
+    // Scoping for the  localOverlapGraph access
+    auto numEntPerRow_d = numEntPerRow.getDeviceView(Tpetra::Access::OverwriteAll);
+    auto localOverlapGraph = OverlapGraph_->getLocalGraphDevice();
+    Kokkos::parallel_for("CountOverlapGraphRowEntries",
+                         Kokkos::RangePolicy<execution_space>(0, NumMyRows),
+                         KOKKOS_LAMBDA(const int i)
+                         {
+                           // Heuristic to get the maximum number of entries per row.
+                           int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
+                           numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
+                             : Kokkos::Experimental::ceil(static_cast<double>(RowMaxNumIndices) 
+                                    * Kokkos::Experimental::pow(overalloc, levelfill));
+                         });
+   
+  };
 
   bool insertError;  // No error found yet while inserting entries
   do {
     insertError = false;
+    Teuchos::ArrayView<const size_t> a_numEntPerRow(numEntPerRow.getHostView(Tpetra::Access::ReadOnly).data(),NumMyRows);
     L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
                                         OverlapGraph_->getRowMap (),
-                                        MaxNumEntriesPerRow));
+                                        a_numEntPerRow));
     U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
                                         OverlapGraph_->getRowMap (),
-                                        MaxNumEntriesPerRow));
+                                        a_numEntPerRow));
 
     Array<local_ordinal_type> L (MaxNumIndices);
     Array<local_ordinal_type> U (MaxNumIndices);
@@ -299,7 +330,7 @@ void IlukGraph<GraphType>::initialize()
     NumMyDiagonals_ = 0;
 
     for (int i = 0; i< NumMyRows; ++i) {
-      ArrayView<const local_ordinal_type> my_indices;
+      local_inds_host_view_type my_indices;
       OverlapGraph_->getLocalRowView (i, my_indices);
 
       // Split into L and U (we don't assume that indices are ordered).
@@ -334,12 +365,10 @@ void IlukGraph<GraphType>::initialize()
         ++NumMyDiagonals_;
       }
       if (NumL) {
-        ArrayView<const local_ordinal_type> L_view = L.view (0, NumL);
-        L_Graph_->insertLocalIndices (i, L_view);
+        L_Graph_->insertLocalIndices (i, NumL, L.data());
       }
       if (NumU) {
-        ArrayView<const local_ordinal_type> U_view = U.view (0, NumU);
-        U_Graph_->insertLocalIndices (i, U_view);
+        U_Graph_->insertLocalIndices (i, NumU, U.data());
       }
     }
 
@@ -376,16 +405,16 @@ void IlukGraph<GraphType>::initialize()
           size_t LenL = L_Graph_->getNumEntriesInLocalRow(i);
           size_t LenU = U_Graph_->getNumEntriesInLocalRow(i);
           size_t Len = LenL + LenU + 1;
-
           CurrentRow.resize(Len);
-
-          L_Graph_->getLocalRowCopy(i, CurrentRow(), LenL);  // Get L Indices
+          nonconst_local_inds_host_view_type CurrentRow_view(CurrentRow.data(),CurrentRow.size());
+          L_Graph_->getLocalRowCopy(i, CurrentRow_view, LenL);  // Get L Indices
           CurrentRow[LenL] = i;                              // Put in Diagonal
           if (LenU > 0) {
-            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,
-                                                                      LenU);
+            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,LenU);            
+            nonconst_local_inds_host_view_type URowView_v(URowView.data(),URowView.size());
+
             // Get U Indices
-            U_Graph_->getLocalRowCopy (i, URowView, LenU);
+            U_Graph_->getLocalRowCopy (i, URowView_v, LenU);
           }
 
           // Construct linked list for current row
@@ -407,7 +436,7 @@ void IlukGraph<GraphType>::initialize()
             int NextInList = LinkList[Next];
             int RowU = Next;
             // Get Indices for this row of U
-            ArrayView<const local_ordinal_type> IndicesU;
+            local_inds_host_view_type IndicesU;
             U_Graph_->getLocalRowView (RowU, IndicesU);
             // FIXME (mfh 23 Dec 2013) size() returns ptrdiff_t, not int.
             int LengthRowU = IndicesU.size ();
@@ -446,15 +475,13 @@ void IlukGraph<GraphType>::initialize()
           }
 
           // Put pattern into L and U
-
-          CurrentRow.resize (0);
+          CurrentRow.resize(0);
 
           Next = First;
 
           // Lower
-
           while (Next < i) {
-            CurrentRow.push_back (Next);
+            CurrentRow.push_back(Next);
             Next = LinkList[Next];
           }
 
@@ -463,7 +490,7 @@ void IlukGraph<GraphType>::initialize()
           // particular, it does not actually change the column Map.
           L_Graph_->removeLocalIndices (i); // Delete current set of Indices
           if (CurrentRow.size() > 0) {
-            L_Graph_->insertLocalIndices (i, CurrentRow ());
+            L_Graph_->insertLocalIndices (i, CurrentRow.size(),CurrentRow.data());
           }
 
           // Diagonal
@@ -476,8 +503,7 @@ void IlukGraph<GraphType>::initialize()
           Next = LinkList[Next];
 
           // Upper
-
-          CurrentRow.resize (0);
+          CurrentRow.resize(0);
           LenU = 0;
 
           while (Next < NumMyRows) {
@@ -493,7 +519,7 @@ void IlukGraph<GraphType>::initialize()
 
           U_Graph_->removeLocalIndices (i); // Delete current set of Indices
           if (LenU > 0) {
-            U_Graph_->insertLocalIndices (i, CurrentRow ());
+            U_Graph_->insertLocalIndices (i, CurrentRow.size(),CurrentRow.data());
           }
 
           // Allocate and fill Level info for this row
@@ -505,9 +531,20 @@ void IlukGraph<GraphType>::initialize()
       }
       catch (std::runtime_error &e) {
         insertError = true;
-        MaxNumEntriesPerRow = ceil(static_cast<double>(MaxNumEntriesPerRow) * 
-                                   Overalloc_);
+        auto numEntPerRow_d = numEntPerRow.getDeviceView(Tpetra::Access::OverwriteAll);
+        Kokkos::parallel_for("CountOverlapGraphRowEntries",
+          Kokkos::RangePolicy<execution_space>(0, NumMyRows),
+          KOKKOS_LAMBDA(const int i)
+          {
+            const auto numRowEnt = numEntPerRow_d(i);
+            numEntPerRow_d(i) = ceil(static_cast<double>((numRowEnt != 0 ? numRowEnt : 1)) * overalloc);
+          });
       }
+      const int localInsertError = insertError ? 1 : 0;
+      int globalInsertError = 0;
+      reduceAll (* (OverlapGraph_->getRowMap ()->getComm ()), REDUCE_SUM, 1,
+                 &localInsertError, &globalInsertError);
+      insertError = globalInsertError > 0;
     }
   } while (insertError);  // do until all insertions complete successfully
 
@@ -521,6 +558,88 @@ void IlukGraph<GraphType>::initialize()
 
   reduceAll<int, size_t> (* (L_DomainMap->getComm ()), REDUCE_SUM, 1,
                           &NumMyDiagonals_, &NumGlobalDiagonals_);
+}
+
+
+template<class GraphType, class KKHandleType>
+void IlukGraph<GraphType, KKHandleType>::initialize(const Teuchos::RCP<KKHandleType>& KernelHandle)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::REDUCE_SUM;
+  using Teuchos::reduceAll;
+
+  typedef typename crs_graph_type::local_graph_device_type local_graph_device_type;
+  typedef typename local_graph_device_type::size_type      size_type;
+  typedef typename local_graph_device_type::data_type      data_type;
+  typedef typename local_graph_device_type::array_layout   array_layout;
+  typedef typename local_graph_device_type::device_type    device_type;
+
+  typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
+  typedef typename Kokkos::View<data_type*, array_layout, device_type> lno_nonzero_view_t;
+  
+  constructOverlapGraph();
+
+  // FIXME (mfh 23 Dec 2013) Use size_t or whatever
+  // getNodeNumElements() returns, instead of ptrdiff_t.
+  const int NumMyRows = OverlapGraph_->getRowMap()->getNodeNumElements();
+  auto localOverlapGraph = OverlapGraph_->getLocalGraphDevice();
+
+  if (KernelHandle->get_spiluk_handle()->get_nrows() < static_cast<size_type>(NumMyRows)) {
+    KernelHandle->get_spiluk_handle()->reset_handle(NumMyRows,
+                                                    KernelHandle->get_spiluk_handle()->get_nnzL(),
+                                                    KernelHandle->get_spiluk_handle()->get_nnzU());
+  }
+
+  lno_row_view_t     L_row_map("L_row_map", NumMyRows + 1);
+  lno_nonzero_view_t L_entries("L_entries", KernelHandle->get_spiluk_handle()->get_nnzL());
+  lno_row_view_t     U_row_map("U_row_map", NumMyRows + 1);
+  lno_nonzero_view_t U_entries("U_entries", KernelHandle->get_spiluk_handle()->get_nnzU());
+
+  bool symbolicError;
+  do {
+    symbolicError = false;
+    try {
+      KokkosSparse::Experimental::spiluk_symbolic( KernelHandle.getRawPtr(), LevelFill_, 
+                                                   localOverlapGraph.row_map, localOverlapGraph.entries, 
+                                                   L_row_map, L_entries, U_row_map, U_entries );
+    }
+    catch (std::runtime_error &e) {
+      symbolicError = true;
+      data_type nnzL = static_cast<data_type>(Overalloc_)*L_entries.extent(0);
+      data_type nnzU = static_cast<data_type>(Overalloc_)*U_entries.extent(0);	  
+      KernelHandle->get_spiluk_handle()->reset_handle(NumMyRows, nnzL, nnzU);
+      Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
+      Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
+    }
+    const int localSymbolicError = symbolicError ? 1 : 0;
+    int globalSymbolicError = 0;
+    reduceAll (* (OverlapGraph_->getRowMap ()->getComm ()), REDUCE_SUM, 1,
+                   &localSymbolicError, &globalSymbolicError);
+    symbolicError = globalSymbolicError > 0;
+  } while (symbolicError);
+
+  Kokkos::resize(L_entries, KernelHandle->get_spiluk_handle()->get_nnzL());
+  Kokkos::resize(U_entries, KernelHandle->get_spiluk_handle()->get_nnzU());
+  
+  RCP<Teuchos::ParameterList> params = Teuchos::parameterList ();
+  params->set ("Optimize Storage",false);
+  
+  L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), 
+                                      L_row_map, L_entries));
+  U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
+                                      OverlapGraph_->getRowMap (), 
+                                      U_row_map, U_entries));
+									  
+  RCP<const map_type> L_DomainMap = OverlapGraph_->getRowMap ();
+  RCP<const map_type> L_RangeMap  = Graph_->getRangeMap ();
+  RCP<const map_type> U_DomainMap = Graph_->getDomainMap ();
+  RCP<const map_type> U_RangeMap  = OverlapGraph_->getRowMap ();
+  L_Graph_->fillComplete (L_DomainMap, L_RangeMap, params);
+  U_Graph_->fillComplete (U_DomainMap, U_RangeMap, params);
 }
 
 } // namespace Ifpack2

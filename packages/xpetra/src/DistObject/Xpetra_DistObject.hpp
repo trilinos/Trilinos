@@ -81,14 +81,38 @@ namespace Xpetra {
     //! Import data into this object using an Import object ("forward mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
 
+    //! Import data into this object using an Import object ("forward mode").
+    virtual void beginImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { doImport(source, importer, CM); };
+
+    //! Import data into this object using an Import object ("forward mode").
+    virtual void endImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { };
+
     //! Export data into this object using an Export object ("forward mode").
     virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
+
+    //! Export data into this object using an Export object ("forward mode").
+    virtual void beginExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { doExport(source, exporter, CM); };
+
+    //! Export data into this object using an Export object ("forward mode").
+    virtual void endExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { };
 
     //! Import data into this object using an Export object ("reverse mode").
     virtual void doImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM)= 0;
 
+    //! Import data into this object using an Export object ("reverse mode").
+    virtual void beginImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { doImport(source, exporter, CM); };
+
+    //! Import data into this object using an Export object ("reverse mode").
+    virtual void endImport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Export< LocalOrdinal, GlobalOrdinal, Node > &exporter, CombineMode CM) { };
+
     //! Export data into this object using an Import object ("reverse mode").
-    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)= 0;
+    virtual void doExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)=0;
+
+    //! Export data into this object using an Import object ("reverse mode").
+    virtual void beginExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { doExport(source, importer, CM); };
+
+    //! Export data into this object using an Import object ("reverse mode").
+    virtual void endExport(const DistObject< Packet, LocalOrdinal, GlobalOrdinal, Node > &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) { };
 
     //@}
 

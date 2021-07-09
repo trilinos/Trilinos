@@ -49,6 +49,8 @@ namespace percept {
 
     virtual bool use_batch_filter() { return true; }
 
+    virtual void batch_filter(stk::mesh::EntityRank rank, std::vector<stk::mesh::Entity>& elements) { throw std::runtime_error("not impl"); }
+
     virtual void batch_filter(stk::mesh::EntityRank rank, SetOfEntities& sides)
     {
       bool tmp = true;
@@ -116,6 +118,8 @@ namespace percept {
     }
 
     virtual bool use_batch_filter() { return true; }
+
+    virtual void batch_filter(stk::mesh::EntityRank rank, std::vector<stk::mesh::Entity>& elements) { throw std::runtime_error("still not impl"); }
 
     virtual void batch_filter(stk::mesh::EntityRank rank, SetOfEntities& sides)
     {

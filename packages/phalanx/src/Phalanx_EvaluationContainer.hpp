@@ -172,6 +172,9 @@ namespace PHX {
     */
     void printEvaluatorStartStopMessage(const Teuchos::RCP<std::ostream>& ostr);
 
+    /** Returns the underlying DAGManager. Used for queries, debugging and unit testing. */
+    const PHX::DagManager<Traits>& getDagManager() const;
+
   protected:
 
     void assignSharedFields();

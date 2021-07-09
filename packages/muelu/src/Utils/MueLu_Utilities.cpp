@@ -54,8 +54,12 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <netdb.h>
 #include <arpa/inet.h>
+#endif
 #endif
 
 
@@ -65,13 +69,12 @@ namespace MueLu {
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList) {
     using Teuchos::ParameterList;
 
-    ParameterList dummy;
     long maxLevel = 0;
 
-    for (ParameterList::ConstIterator it = inList.begin(); it != inList.end(); it++) {
-      const std::string& levelName = it->first;
+    for (ParameterList::ConstIterator inListEntry = inList.begin(); inListEntry != inList.end(); inListEntry++) {
+      const std::string& levelName = inListEntry->first;
 
-      // Check for mach of the form "level X" where X is a positive integer
+      // Check for match of the form "level X" where X is a positive integer
       if (inList.isSublist(levelName) && ((levelName.find("level ") == 0 && levelName.size() > 6) || levelName.find("user data") == 0)) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
         bool userFlag = true;
@@ -84,32 +87,33 @@ namespace MueLu {
 
         // Split the sublist
         const ParameterList& levelList = inList.sublist(levelName);
-        for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
-          const std::string& name = it2->first;
+        for (ParameterList::ConstIterator levelListEntry = levelList.begin(); levelListEntry != levelList.end(); levelListEntry++) {
+          const std::string& name = levelListEntry->first;
           if (name == "A" || name == "P" || name == "R"  || name== "M" || name == "Mdiag" || name == "K" || name == "Nullspace" || name == "Coordinates"
               || name == "Node Comm" || name == "DualNodeID2PrimalNodeID"
 #ifdef HAVE_MUELU_INTREPID2 // For the IntrepidPCoarsenFactory
               || name == "pcoarsen: element to node map"
 #endif
+              || name == "output stream"
               )
           {
-            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+            nonSerialList.sublist(levelName).setEntry(name, levelListEntry->second);
           }
 #ifdef HAVE_MUELU_MATLAB
           else if(!userFlag && IsParamMuemexVariable(name))
           {
-            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+            nonSerialList.sublist(levelName).setEntry(name, levelListEntry->second);
           }
 #endif
           else if( userFlag && IsParamValidVariable(name)) {
-            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+            nonSerialList.sublist(levelName).setEntry(name, levelListEntry->second);
           } else {
-            serialList.sublist(levelName).setEntry(name, it2->second);
+            serialList.sublist(levelName).setEntry(name, levelListEntry->second);
           }
         }
 
       } else {
-        serialList.setEntry(it->first, it->second);
+        serialList.setEntry(inListEntry->first, inListEntry->second);
       }
     }
 
@@ -265,7 +269,7 @@ bool IsParamValidVariable(const std::string& name)
        int len;
        MPI_Get_processor_name(hostname,&len);
        struct hostent * host = gethostbyname(hostname);
-       int myaddr = (int) htonl(inet_network(inet_ntoa(*(struct in_addr *)host->h_addr)));
+       int myaddr = (int) inet_addr(inet_ntoa(*(struct in_addr *)host->h_addr));
 
        // All-to-all exchange of address integers
        std::vector<int> addressList(numRanks);
@@ -317,22 +321,6 @@ bool IsParamValidVariable(const std::string& name)
        return baseComm;
 #endif
     }
-
-  std::string
-  lowerCase (const std::string& s)
-  {
-    typedef std::string::value_type char_t;
-    typedef std::ctype<char_t> facet_type;
-    const facet_type& facet = std::use_facet<facet_type> (std::locale ());
-
-    const std::string::size_type len = s.size ();
-    std::string s_lc (s);
-    for (std::string::size_type k = 0; k < len; ++k) {
-      s_lc[k] = facet.tolower (s[k]);
-    }
-
-    return s_lc;
-  }
 
 
 } // namespace MueLu

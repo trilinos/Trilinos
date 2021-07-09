@@ -33,15 +33,15 @@ typedef std::size_t global_index_type;
 
 // execution spaces
 typedef Kokkos::DefaultHostExecutionSpace host_execution_space;
-#ifdef COMPADRE_USE_CUDA
-  typedef Kokkos::DefaultExecutionSpace device_execution_space;
-#else
-  typedef Kokkos::DefaultHostExecutionSpace device_execution_space;
-#endif
+typedef Kokkos::DefaultExecutionSpace device_execution_space;
 
 // memory spaces
 typedef typename host_execution_space::memory_space host_memory_space;
-typedef typename device_execution_space::memory_space device_memory_space;
+#ifdef COMPADRE_USE_CUDA
+    typedef typename Kokkos::CudaSpace device_memory_space;
+#else
+    typedef typename device_execution_space::memory_space device_memory_space;
+#endif
 
 // team policies
 typedef typename Kokkos::TeamPolicy<device_execution_space> team_policy;
@@ -75,13 +75,13 @@ typedef Kokkos::View<int*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Un
             host_scratch_local_index_type;
 
 // managed device data views
-typedef Kokkos::View<double**, layout_right, device_execution_space>
+typedef Kokkos::View<double**, layout_right, device_memory_space>
             device_managed_matrix_right_type;
-typedef Kokkos::View<double**, layout_left, device_execution_space>
+typedef Kokkos::View<double**, layout_left, device_memory_space>
             device_managed_matrix_left_type;
-typedef Kokkos::View<double*, device_execution_space>
+typedef Kokkos::View<double*, device_memory_space>
             device_managed_vector_type;
-typedef Kokkos::View<int*, device_execution_space>
+typedef Kokkos::View<int*, device_memory_space>
             device_managed_local_index_type;
 
 // managed host data views

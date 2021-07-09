@@ -1,34 +1,8 @@
-// Copyright(C) 2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// See packages/seacas/LICENSE for details
 #include <cctype>
 #include <cfloat>
 #include <cmath>
@@ -132,8 +106,8 @@ namespace {
 #endif
   }
 
-  typedef std::set<std::pair<Ioss::EntityType, int64_t>> EntityIdSet;
-  EntityIdSet                                            id_set;
+  using EntityIdSet = std::set<std::pair<Ioss::EntityType, int64_t>>;
+  EntityIdSet id_set;
 
   void set_id(Ioss::GroupingEntity *old_ge, Ioss::GroupingEntity *new_ge)
   {
@@ -313,10 +287,16 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
     properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
   }
 
-  if (interFace.compression_level() > 0) {
+  if (interFace.compression_level() > 0 || interFace.szip()) {
     properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compression_level()));
     properties.add(Ioss::Property("COMPRESSION_SHUFFLE", true));
+    if (interFace.szip()) {
+      properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
+    }
+    else if (interFace.zlib()) {
+      properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
+    }
   }
 
   properties.add(Ioss::Property("FLUSH_INTERVAL", 0));
@@ -368,6 +348,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   // in the global node list.  If no mapping, then the list is simply
   // 0..number_of_global_nodes where number_of_global_nodes is the sum
   // of the node counts in the individual files.
+  // This routine also eliminates nodes if there are omitted element blocks.
   if (interFace.match_node_ids()) {
     build_reverse_node_map(output_region, part_mesh, global_node_map, local_node_map);
   }
@@ -383,7 +364,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   node_count    = global_node_map.size();
   size_t merged = local_node_map.size() - global_node_map.size();
   if (merged > 0) {
-    fmt::print("*** {:n} Nodes were merged/omitted.\n", merged);
+    fmt::print("*** {:L} Nodes were merged/omitted.\n", merged);
   }
 
 // Verify nodemap...
@@ -559,9 +540,9 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   }
   output_region.output_summary(std::cout);
   fmt::print("******* END *******\n");
-  fmt::print(stderr, "\nTotal Execution time     = {} seconds.\n", end - begin);
+  fmt::print(stderr, "\nTotal Execution time     = {:.5} seconds.\n", end - begin);
   if (steps > 0) {
-    fmt::print(stderr, "\tMesh = {} seconds; Timesteps = {} seconds / step.\n\n",
+    fmt::print(stderr, "\tMesh = {:.5} seconds; Timesteps = {:.5} seconds / step.\n\n",
                (ts_begin - begin), (end - ts_begin) / (double)(steps));
   }
   return (end - begin);
@@ -570,10 +551,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
 namespace {
   bool entity_is_omitted(Ioss::GroupingEntity *block)
   {
-    bool omitted = false;
-    if (block->property_exists("omitted")) {
-      omitted = (block->get_property("omitted").get_int() == 1);
-    }
+    bool omitted = block->get_optional_property("omitted", 0) == 1;
     return omitted;
   }
 
@@ -597,7 +575,7 @@ namespace {
         if (debug) {
           fmt::print(stderr, "{}, ", name);
         }
-        std::string type     = eb->get_property("topology_type").get_string();
+        std::string type     = eb->topology()->name();
         size_t      num_elem = eb->entity_count();
         total_elements += num_elem;
 
@@ -648,8 +626,8 @@ namespace {
           if (debug) {
             fmt::print(stderr, "{}, ", fbname);
           }
-          std::string fbtype   = fb->get_property("topology_type").get_string();
-          std::string partype  = fb->get_property("parent_topology_type").get_string();
+          std::string fbtype   = fb->topology()->name();
+          std::string partype  = fb->parent_element_topology()->name();
           size_t      num_side = fb->entity_count();
           total_sides += num_side;
 
@@ -1024,7 +1002,7 @@ namespace {
   {
     for (const auto &pm : part_mesh) {
       Ioss::NameList fields;
-      pm->field_describe(Ioss::Field::TRANSIENT, &fields);
+      pm->field_describe(Ioss::Field::REDUCTION, &fields);
       for (const auto &field : fields) {
         std::vector<double> data;
         pm->get_field_data(field, data);
@@ -1311,7 +1289,7 @@ namespace {
     }
     for (const auto &pm : part_mesh) {
       Ioss::NameList fields;
-      pm->field_describe(Ioss::Field::TRANSIENT, &fields);
+      pm->field_describe(Ioss::Field::REDUCTION, &fields);
       for (const auto &field_name : fields) {
         if (valid_variable(field_name, 0, variable_list)) {
           Ioss::Field field = pm->get_field(field_name);

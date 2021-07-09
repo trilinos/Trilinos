@@ -107,13 +107,13 @@ of the problem.
 </tr>
 <tr>
 <td colspan=2>These results show the runtime for matrix vector multiplication
-for some matrices from the <a href=http://www.cise.ufl.edu/research/sparse/matrices/>University of Florida</a> matrix collection. 
+for some matrices from the <a href=https://www.cise.ufl.edu/research/sparse/matrices/>University of Florida</a> matrix collection. 
 The tests were run on four nodes of the
-<a href=http://www.nersc.gov/users/computational-systems/hopper/>Hopper</a> 
+<a href=https://www.nersc.gov/users/computational-systems/hopper/>Hopper</a> 
 machine
-at <a href=http://www.nersc.gov>NERSC</a>, a machine composed of dual-socket, dual-die nodes, with each die having 6 cores.
+at <a href=https://www.nersc.gov>NERSC</a>, a machine composed of dual-socket, dual-die nodes, with each die having 6 cores.
 The graphs were first partitioned once across all 96 processes with
-<a href=http://www.labri.fr/perso/pelegrin/scotch/>PTScotch</a>.  Then, using
+<a href=https://www.labri.fr/perso/pelegrin/scotch/>PTScotch</a>.  Then, using
 hierarchical partitioning with <I>TOPOLOGY="24"</I>, they were partitioned across the nodes first, then the cores.  Then with <I>TOPOLOGY="2,12"</I> they were partitioned across the nodes, then across the sockets, then into 12 parts.  Finally, with <I>TOPOLOGY="2,2,6"</I> they were partitioned across the nodes, then the sockets, then the dies, and finally partitioned into 6 parts.  (Runtime is normalized to the flat partitioning case.)
 </td>
 </tr>
@@ -213,7 +213,7 @@ hierarchical partitions [<U><A HREF="ug_refs.html#para04">Teresco,
 <I>et al.</I></A></U>].  It can be used directly by an application or
 be guided by the tree representation of the computational environment
 created and maintained by the <A
-HREF="http://www.cs.williams.edu/drum/">Dynamic Resource Utilization
+HREF="https://www.cs.williams.edu/drum/">Dynamic Resource Utilization
 Model (DRUM)</A> [<U><A HREF="ug_refs.html#adapt03">Devine, <I>et
 al.</I> </A>, <A HREF="ug_refs.html#cluster04">Faik, <I>et
 al.</I></A>, <A HREF="ug_refs.html#cise05">Teresco, <I>et
@@ -259,7 +259,7 @@ HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>).
 These are in addition to the callbacks needed to specify objects,
 coordinates, and graph edges.  This fairly cumbersome interface can be
 avoided by using the separately available <A
-HREF="http://www.cs.williams.edu/~terescoj/research/zoltanParams/">zoltanParams</A>
+HREF="https://www.cs.williams.edu/~terescoj/research/zoltanParams/">zoltanParams</A>
 library.  This allows a file-based description to replace these
 callbacks.  A more direct interface with DRUM's hierarchical machine
 model is also planned, allowing hierarchical balancing parameters to
@@ -469,6 +469,6 @@ partitioning requires graph information:</td>
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_order.html">Next:&nbsp; Ordering </A>&nbsp;
-|&nbsp; <A HREF="ug_alg_ptscotch.html">Previous:&nbsp;&nbsp; PT-Scotch</A>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+|&nbsp; <A HREF="ug_alg_ptscotch.html">Previous:&nbsp;&nbsp; PT-Scotch</A>&nbsp; |&nbsp; <a href="https://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
 </BODY>
 </HTML>

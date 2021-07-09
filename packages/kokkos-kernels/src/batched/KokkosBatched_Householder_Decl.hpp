@@ -5,7 +5,6 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
 
@@ -13,7 +12,7 @@ namespace KokkosBatched {
   /// Serial Householder 
   ///
 
-  // level 1 operation (no blocking algorithm info avail)
+  // level 1 operation
   template<typename ArgSide>
   struct SerialHouseholder {
     template<typename aViewType,
@@ -24,6 +23,27 @@ namespace KokkosBatched {
            const tauViewType &tau);
   };
 
+  ///
+  /// TeamVector Householder 
+  ///
+
+  // level 1 operation
+  template<typename MemberType, 
+           typename ArgSide>
+  struct TeamVectorHouseholder {
+    template<typename MemberType,
+             typename aViewType,
+             typename tauViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member, 
+           const aViewType &a,
+           const tauViewType &tau);
+  };
+
 }
+
+#include "KokkosBatched_Householder_Serial_Impl.hpp"
+#include "KokkosBatched_Householder_TeamVector_Impl.hpp"
 
 #endif

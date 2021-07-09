@@ -38,7 +38,11 @@ namespace ML_Epetra
 
   // Edge Nullspace
   Epetra_MultiVector* Build_Edge_Nullspace(const Epetra_CrsMatrix & D0Clean_Matrix, const Teuchos::ArrayRCP<int> BCedges, Teuchos::ParameterList & List, bool verbose);
+
+  // Pi Matrix
+  Epetra_CrsMatrix *Build_Pi_Matrix(const Epetra_CrsMatrix & D0Clean_Matrix, const Teuchos::ArrayRCP<int> BCedges, Teuchos::ParameterList & List, bool verbose);
 }
+
 
 
 

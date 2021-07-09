@@ -43,18 +43,12 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_UzawaSmoother_def.hpp
- *
- *  Created on: 13 May 2014
- *      Author: wiesner
- */
 
 #ifndef MUELU_UZAWASMOOTHER_DEF_HPP_
 #define MUELU_UZAWASMOOTHER_DEF_HPP_
 
-#include "Teuchos_ArrayViewDecl.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include <Teuchos_ArrayViewDecl.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -70,37 +64,22 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_HierarchyUtils.hpp"
 #include "MueLu_SmootherBase.hpp"
-#include "MueLu_SubBlockAFactory.hpp"
 
-// include files for default FactoryManager
-#include "MueLu_SchurComplementFactory.hpp"
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_SmootherFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
 
 namespace MueLu {
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  UzawaSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UzawaSmoother()
-    : type_("Uzawa"), A_(Teuchos::null)
-  {
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  UzawaSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~UzawaSmoother() {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> UzawaSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
-    validParamList->set< Scalar >                ("Damping factor",     1.0, "Damping/Scaling factor in SIMPLE");
-    validParamList->set< LocalOrdinal >          ("Sweeps",             1, "Number of SIMPLE sweeps (default = 1)");
+    validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set<Scalar> ("Damping factor", 1.0, "Damping/Scaling factor in SIMPLE");
+    validParamList->set<LocalOrdinal>("Sweeps", 1, "Number of SIMPLE sweeps (default = 1)");
 
     return validParamList;
   }
 
-  //! Add a factory manager at a specific position
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void UzawaSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddFactoryManager(RCP<const FactoryManagerBase> FactManager, int pos) {
     TEUCHOS_TEST_FOR_EXCEPTION(pos < 0, Exceptions::RuntimeError, "MueLu::UzawaSmoother::AddFactoryManager: parameter \'pos\' must not be negative! error.");
@@ -331,7 +310,7 @@ namespace MueLu {
     // FIXME: This is a placeholder
     return Teuchos::OrdinalTraits<size_t>::invalid();
   }
-  
+
 } // namespace MueLu
 
 

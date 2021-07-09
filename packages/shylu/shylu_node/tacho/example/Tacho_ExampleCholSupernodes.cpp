@@ -11,20 +11,8 @@
 
 using namespace Tacho;
 
-/// select a kokkos task scheudler
-/// - TaskScheduler, TaskSchedulerMultiple, ChaseLevTaskScheduler
-#if defined(TACHO_USE_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
-static const char * scheduler_name = "TaskScheduler";
-#endif
-#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
 template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
 static const char * scheduler_name = "TaskSchedulerMultiple";
-#endif
-#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
-static const char * scheduler_name = "ChaseLevTaskScheduler";
-#endif
 
 
 int main (int argc, char *argv[]) {
@@ -108,7 +96,7 @@ int main (int argc, char *argv[]) {
 #elif defined(TACHO_HAVE_SCOTCH)
     GraphTools_Scotch T(G);
 #else
-    GraphTools_CAMD T(G);
+    GraphTools T(G);
 #endif
     T.reorder(verbose);
     

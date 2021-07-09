@@ -176,46 +176,30 @@ namespace { // (anonymous)
          << numKeys << " != vals.extent(0) = " << vals.extent (0)
          << ".");
 
-      const bool testReverse = table.hasKeys ();
-      auto keys_h = Kokkos::create_mirror_view (keys);
-      Kokkos::deep_copy (keys_h, keys);
-      auto vals_h = Kokkos::create_mirror_view (vals);
-      Kokkos::deep_copy (vals_h, vals);
       size_type badCount = 0;
-      for (size_type i = 0; i < keys.size (); ++i) {
-        const KeyType key = keys_h(i);
-        const ValueType expectedVal = vals_h(i);
-        const ValueType actualVal = table.get (key);
-        bool curBad = false;
-
-        if (actualVal == Teuchos::OrdinalTraits<ValueType>::invalid ()) {
-          curBad = true;
-          out << "get(key=" << key << ") = invalid, should have been "
-              << expectedVal << endl;
-        }
-        else if (testValues && actualVal != expectedVal) {
-          curBad = true;
-          out << "get(key=" << key << ") = " << actualVal
-              << ", should have been " << expectedVal << endl;
-        }
-
-        if (testReverse) {
-          const KeyType returnedKey = table.getKey (expectedVal);
-          if (returnedKey == Teuchos::OrdinalTraits<KeyType>::invalid ()) {
+      Kokkos::parallel_reduce("testKeys",
+        Kokkos::RangePolicy<typename DeviceType::execution_space>(0, numKeys),
+        KOKKOS_LAMBDA(const size_t &i, size_type &myBadCount) {
+          const KeyType key = keys(i);
+          const ValueType expectedVal = vals(i);
+          const ValueType actualVal = table.get (key);
+          bool curBad = false;
+  
+          if (actualVal == Tpetra::Details::OrdinalTraits<ValueType>::invalid ()) {
             curBad = true;
-            out << "getKey(val=" << expectedVal << ") = invalid, should have "
-              "been " << key << endl;
+            printf("get(key=%lld) = invalid, should have been %d\n",
+                    key, expectedVal);
           }
-          else if (returnedKey != key) {
+          else if (testValues && actualVal != expectedVal) {
             curBad = true;
-            out << "getKey(val=" << expectedVal << ") = " << returnedKey
-                << ", should have been " << key << endl;
+            printf("get(key=%lld) = %d, should have been %d\n",
+                    key, actualVal, expectedVal);
           }
-        }
-        if (curBad) {
-          ++badCount;
-        }
-      }
+  
+          if (curBad) {
+            ++myBadCount;
+          }
+        }, badCount);
 
       if (badCount == 0) {
         out << "PASSED" << endl;
@@ -253,8 +237,6 @@ namespace { // (anonymous)
     const size_type numKeys = 0;
     Kokkos::View<KeyType*, Kokkos::LayoutLeft, DeviceType> keys ("keys", numKeys);
     auto keys_h = Kokkos::create_mirror_view (keys);
-    Kokkos::deep_copy (keys, keys_h);
-    out << "Finished deep_copy(keys, keys_h)" << endl;
 
     // Pick something other than 0, just to make sure that it works.
     const ValueType startingValue = 1;
@@ -262,41 +244,41 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av = Kokkos::Compat::getArrayView (keys_h);
     out << "Create table" << endl;
 
-    const bool keepKeys = true;
-    using table_ptr_type = std::unique_ptr<table_type>; // macros may not like colons etc.
-    table_ptr_type table;
-    TEST_NOTHROW( table = table_ptr_type (new table_type (keys_av, startingValue, keepKeys)) );
-    if (table.get () == nullptr) {
-      out << "table is null!  Its constructor must have thrown.  "
-        "No sense in continuing." << endl;
-      return; // above constructor must have thrown
+    Teuchos::RCP<table_type> table;
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
+    if (table.is_null ()) {
+      return; // stop the test now to prevent dereferencing null
     }
 
     bool duplicateKeys = false;
     TEST_NOTHROW( duplicateKeys = table->hasDuplicateKeys () );
     if (! success) {
-      out << "table->hasDuplicateKeys() raised an exception; no sense in "
+      out << "table.hasDuplicateKeys() raised an exception; no sense in "
         "continuing." << endl;
       return;
     }
     TEST_EQUALITY_CONST( duplicateKeys, false );
 
-    KeyType key = 0;
-    ValueType val = 0;
-    TEST_NOTHROW( val = table->get (key) );
-    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
+    const size_type numTestKeys = 4;
+    Kokkos::View<KeyType*, Kokkos::LayoutLeft, DeviceType> testKeys ("testKeys", numTestKeys);
+    auto testKeys_h = Kokkos::create_mirror_view (testKeys);
+    testKeys_h(0) = static_cast<KeyType> (0);
+    testKeys_h(1) = static_cast<KeyType> (1);
+    testKeys_h(2) = static_cast<KeyType> (-1);
+    testKeys_h(3) = static_cast<KeyType> (42);
+    Kokkos::deep_copy (testKeys, testKeys_h);
 
-    key = 1;
-    TEST_NOTHROW( val = table->get (key) );
-    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
+    size_type badCount = 0;
+    table_type tt = *table;
+    Kokkos::parallel_reduce("testEmpty",
+      Kokkos::RangePolicy<typename DeviceType::execution_space>(0, numTestKeys),
+      KOKKOS_LAMBDA(const size_t &i, size_type &myBadCount) {
+        if (tt.get(testKeys(i)) != Tpetra::Details::OrdinalTraits<ValueType>::invalid()) {
+          myBadCount++;
+        }
+      }, badCount);
 
-    key = -1;
-    TEST_NOTHROW( val = table->get (key) );
-    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
-
-    key = 42;
-    TEST_NOTHROW( val = table->get (key) );
-    TEST_EQUALITY( val, Teuchos::OrdinalTraits<ValueType>::invalid () );
+    TEST_EQUALITY( badCount, 0);
   }
 
   // Test contiguous keys, with the constructor that takes a
@@ -348,9 +330,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -493,9 +474,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -716,9 +696,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // stop the test now to prevent dereferencing null
     }
@@ -894,9 +873,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // fail fast to avoid dereferencing null
     }
@@ -952,20 +930,11 @@ namespace { // (anonymous)
 
 #ifdef KOKKOS_ENABLE_CUDA
     {
-      // mfh 14 Jan 2016: Only exercise CudaUVMSpace, not CudaSpace,
-      // because Tpetra (and FixedHashTable in particular) assume UVM.
-      // Testing CudaSpace here results in the following exception:
-      //
-      // p=0: *** Caught standard std::exception of type 'std::runtime_error' :
-      //
-      // Kokkos::CudaSpace::access_error attempt to execute Cuda
-      //   function from non-Cuda space
-      // Traceback functionality not available
-      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
-        out << "Testing copy constructor to CudaUVMSpace" << endl;
-        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
+        out << "Testing copy constructor to CudaSpace" << endl;
+        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
           DeviceType>::test (out, success, *table, keys, vals,
-                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>",
+                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
                              typeid(DeviceType).name ());
         testedAtLeastOnce = true;
       }
@@ -1037,9 +1006,8 @@ namespace { // (anonymous)
     Teuchos::ArrayView<const KeyType> keys_av (keys_h.data (), numKeys);
     out << " Create table" << endl;
 
-    const bool keepKeys = true;
     Teuchos::RCP<table_type> table;
-    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue, keepKeys)) );
+    TEST_NOTHROW( table = Teuchos::rcp (new table_type (keys_av, startingValue)) );
     if (table.is_null ()) {
       return; // fail fast to avoid dereferencing null
     }
@@ -1102,20 +1070,11 @@ namespace { // (anonymous)
 
 #ifdef KOKKOS_ENABLE_CUDA
     {
-      // mfh 14 Jan 2016: Only exercise CudaUVMSpace, not CudaSpace,
-      // because Tpetra (and FixedHashTable in particular) assume UVM.
-      // Testing CudaSpace here results in the following exception:
-      //
-      // p=0: *** Caught standard std::exception of type 'std::runtime_error' :
-      //
-      // Kokkos::CudaSpace::access_error attempt to execute Cuda
-      //   function from non-Cuda space
-      // Traceback functionality not available
-      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
-        out << "Testing copy constructor to CudaUVMSpace" << endl;
-        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>,
+      if (! std::is_same<typename DeviceType::memory_space, Kokkos::CudaSpace>::value) {
+        out << "Testing copy constructor to CudaSpace" << endl;
+        TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>,
           DeviceType>::test (out, success, *table, keys, vals,
-                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>",
+                             "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace>",
                              typeid(DeviceType).name (), testValues);
         testedAtLeastOnce = true;
       }
@@ -1201,24 +1160,16 @@ namespace { // (anonymous)
 #endif // KOKKOS_ENABLE_THREADS
 
 
-// NOTE (mfh 12 Jan 2016) Both Tpetra and the above test assume UVM.
-// Thus, it is both incorrect and unnecessary to use them with
-// Kokkos::CudaSpace as the memory space.  The right memory space is
-// CudaUVMSpace.  As a result, using CudaSpace raises an exception (as
-// it should) when Kokkos' bounds checking option is enabled:
-// "Kokkos::CudaSpace::access_error attempt to execute Cuda function
-// from non-Cuda space".
-
 #ifdef KOKKOS_ENABLE_CUDA
-  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cuda_uvm_device_type;
+  typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cuda_device_type;
 
-#define UNIT_TEST_GROUP_CUDA_UVM( LO, GO ) \
-  UNIT_TEST_GROUP_3( LO, GO, cuda_uvm_device_type )
+#define UNIT_TEST_GROUP_CUDA( LO, GO ) \
+  UNIT_TEST_GROUP_3( LO, GO, cuda_device_type )
 
-  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_CUDA_UVM )
+  TPETRA_INSTANTIATE_LG( UNIT_TEST_GROUP_CUDA )
 
 #else
-#  define UNIT_TEST_GROUP_CUDA_UVM( LO, GO )
+#  define UNIT_TEST_GROUP_CUDA( LO, GO )
 #endif // KOKKOS_ENABLE_CUDA
 
 } // namespace (anonymous)

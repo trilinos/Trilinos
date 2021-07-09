@@ -135,15 +135,20 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 
    // check the LIDs
    {
-     Kokkos::View<const int*, PHX::Device> lids = dofManager->getElementLIDs(0);
-     Kokkos::View<const int*, PHX::Device> lids_f = filtered_ugi.getElementLIDs(0);
+     PHX::View<const int*> lids = dofManager->getElementLIDs(0);
+     PHX::View<const int*> lids_f = filtered_ugi.getElementLIDs(0);
+
+     auto lids_host = Kokkos::create_mirror_view(lids);
+     Kokkos::deep_copy(lids_host,lids);
+     auto lids_f_host = Kokkos::create_mirror_view(lids_f);
+     Kokkos::deep_copy(lids_f_host,lids_f);
 
      TEST_EQUALITY(lids.size(),lids_f.size());
      for(std::size_t i=0;i<lids.size();i++) {
-       TEST_EQUALITY(lids[i],lids_f[i]);
+       TEST_EQUALITY(lids_host(i),lids_f_host(i));
      }
    }
-   
+
    // check owned and ghosted
    {
      std::vector<panzer::GlobalOrdinal> indices, indices_f;

@@ -1,3 +1,5 @@
 ADD_SUBDIRECTORY(adv-diff)
 ADD_SUBDIRECTORY(adv-diff-SUR)
+ADD_SUBDIRECTORY(adv-diff-TEST)
 ADD_SUBDIRECTORY(elasticity)
+ADD_SUBDIRECTORY(stefan-boltzmann)

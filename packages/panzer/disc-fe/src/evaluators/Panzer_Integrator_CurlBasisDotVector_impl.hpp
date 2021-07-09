@@ -85,7 +85,7 @@ namespace panzer
     multiplier_(multiplier),
     basisName_(basis.name())
   {
-    using Kokkos::View;
+    using PHX::View;
     using panzer::BASIS;
     using panzer::Cell;
     using panzer::Dim;
@@ -146,7 +146,7 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ = View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>(
+    kokkosFieldMults_ = View<View<const ScalarT**>*>(
       "CurlBasisDotVector::KokkosFieldMultipliers", fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -219,7 +219,7 @@ namespace panzer
     multiplier_(multiplier),
     spaceDim_(spaceDim)
   {
-    using Kokkos::View;
+    using PHX::View;
     using panzer::EvaluatorStyle;
     using std::logic_error;
     using std::string;
@@ -256,7 +256,7 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(multipliers.size());
-    kokkosFieldMults_ = View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>(
+    kokkosFieldMults_ = View<View<const ScalarT**>*>(
       "CurlBasisDotVector::KokkosFieldMultipliers", multipliers.size());
     for (const auto& fm : multipliers)
     {
@@ -290,7 +290,7 @@ namespace panzer
     using PHX::MDField;
     using std::vector;
 
-    // Get the Kokkos::Views of the field multipliers.
+    // Get the PHX::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
 

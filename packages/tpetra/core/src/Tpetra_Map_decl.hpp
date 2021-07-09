@@ -58,22 +58,6 @@
 
 namespace Tpetra {
 
-  namespace Details {
-
-    /// \class MapCloner
-    /// \brief Implementation detail of Map::clone().
-    template<class OutMapType, class InMapType>
-    struct MapCloner {
-      typedef typename OutMapType::node_type out_node_type;
-      typedef typename InMapType::node_type in_node_type;
-
-      static OutMapType
-      clone (const InMapType& mapIn,
-             const Teuchos::RCP<out_node_type>& node2);
-    };
-
-  } // namespace Details
-
   /// \class Map
   /// \brief A parallel distribution of indices over processes.
   ///
@@ -267,6 +251,15 @@ namespace Tpetra {
 
     //! Legacy typedef that will go away at some point.
     using node_type = Node;
+
+    //! The hash will be CudaSpace, not CudaUVMSpace
+#ifdef KOKKOS_ENABLE_CUDA
+    using no_uvm_memory_space = typename std::conditional<std::is_same<memory_space, Kokkos::CudaUVMSpace>::value,
+      Kokkos::CudaSpace, memory_space>::type;
+    using no_uvm_device_type = Kokkos::Device<execution_space, no_uvm_memory_space>;
+#else
+    using no_uvm_device_type = device_type;
+#endif
 
     /// \brief Type of the "local" Map.
     ///
@@ -534,7 +527,7 @@ namespace Tpetra {
     /// This constructor exists mainly to support view semantics of
     /// Map.  That is, we can create an empty Map, and then assign a
     /// nonempty Map to it using operator=.  This constructor is also
-    /// useful in methods like clone() and removeEmptyProcesses(),
+    /// useful in methods like removeEmptyProcesses(),
     /// where we have the information to initialize the Map more
     /// efficiently ourselves, without going through one of the three
     /// usual Map construction paths.
@@ -770,7 +763,7 @@ namespace Tpetra {
     /// have made this class declaration harder to read.
     typedef Kokkos::View<const global_ordinal_type*,
                          Kokkos::LayoutLeft,
-                         device_type> global_indices_array_type;
+                         Kokkos::HostSpace> global_indices_array_type;
 
   public:
     /// \brief Return a view of the global indices owned by this process.
@@ -1076,16 +1069,7 @@ namespace Tpetra {
     replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const;
     //@}
 
-  protected:
-    // This lets other specializations of Map access all of this
-    // specialization's internal methods and data, so that we can
-    // implement clone() without exposing the details of Map to users.
-    template <class LO, class GO, class N> friend class Map;
-
   private:
-    template<class OutMapType, class InMapType>
-    friend struct Details::MapCloner;
-
     /// \brief Print the calling process' verbose describe()
     ///   information to the returned string.
     ///
@@ -1236,9 +1220,6 @@ namespace Tpetra {
     /// global indices explicitly), or that the Map really does
     /// contain zero indices on the calling process.
     ///
-    /// NOTE: With CUDA, we assume UVM, in that host code can access
-    /// the entries of this View.
-    ///
     /// This has LayoutLeft so that we can call Kokkos::deep_copy to
     /// copy this between any two Kokkos Devices.  Otherwise, the
     /// Devices might have different default layouts, thus forbidding
@@ -1248,7 +1229,7 @@ namespace Tpetra {
     /// the nondefault layout.
     mutable Kokkos::View<const global_ordinal_type*,
                          Kokkos::LayoutLeft,
-                         device_type> lgMap_;
+                         no_uvm_device_type> lgMap_;
 
     /// \brief Host View of lgMap_.
     ///
@@ -1264,8 +1245,8 @@ namespace Tpetra {
 #endif
 
     //! Type of a mapping from global IDs to local IDs.
-    typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type, local_ordinal_type, device_type>
-      global_to_local_table_type;
+    typedef ::Tpetra::Details::FixedHashTable<global_ordinal_type,
+      local_ordinal_type, no_uvm_device_type> global_to_local_table_type;
 
     /// \brief A mapping from global IDs to local IDs.
     ///
@@ -1280,6 +1261,18 @@ namespace Tpetra {
     /// getLocalElement() and isNodeGlobalElement() methods use
     /// this mapping.
     global_to_local_table_type glMap_;
+
+    //! Type of a mapping from global IDs to local IDs on host.
+    typedef ::Tpetra::Details::FixedHashTable<
+      global_ordinal_type, local_ordinal_type, Kokkos::HostSpace::device_type>
+      global_to_local_table_host_type;
+
+    /// \brief Host View of glMap_.
+    ///
+    /// Used by getLocalElement() (which is a host method, and therefore
+    /// requires a host View) if necessary (only noncontiguous Maps
+    /// need this).
+    global_to_local_table_host_type glMapHost_;
 
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.
@@ -1465,93 +1458,6 @@ namespace Tpetra {
 } // namespace Tpetra
 
 #include "Tpetra_Directory_decl.hpp"
-
-namespace Tpetra {
-  namespace Details {
-
-    template<class OutMapType, class InMapType>
-    OutMapType TPETRA_DEPRECATED
-    MapCloner<OutMapType, InMapType>::
-    clone (const InMapType& mapIn,
-           const Teuchos::RCP<out_node_type>& /* nodeOut */)
-    {
-      static_assert (std::is_same<typename OutMapType::local_ordinal_type,
-                                  typename InMapType::local_ordinal_type>::value,
-                     "Tpetra::Map clone: The LocalOrdinal template parameter "
-                     "of the input and output Map types must be the same.");
-      static_assert (std::is_same<typename OutMapType::global_ordinal_type,
-                                  typename InMapType::global_ordinal_type>::value,
-                     "Tpetra::Map clone: The GlobalOrdinal template parameter "
-                     "of the input and output Map types must be the same.");
-      typedef typename OutMapType::local_ordinal_type LO;
-      typedef typename OutMapType::global_ordinal_type GO;
-      typedef ::Tpetra::Directory<LO, GO,
-                                  typename OutMapType::node_type> out_dir_type;
-      typedef typename OutMapType::global_to_local_table_type out_table_type;
-      typedef typename OutMapType::device_type out_device_type;
-
-      OutMapType mapOut; // Make an empty Map.
-
-      // Fill the new Map with (possibly) shallow copies of all of the
-      // original Map's data.  This is safe because Map is immutable,
-      // so users can't change the original Map.
-      mapOut.comm_              = mapIn.comm_;
-      mapOut.indexBase_         = mapIn.indexBase_;
-      mapOut.numGlobalElements_ = mapIn.numGlobalElements_;
-      mapOut.numLocalElements_  = mapIn.numLocalElements_;
-      mapOut.minMyGID_          = mapIn.minMyGID_;
-      mapOut.maxMyGID_          = mapIn.maxMyGID_;
-      mapOut.minAllGID_         = mapIn.minAllGID_;
-      mapOut.maxAllGID_         = mapIn.maxAllGID_;
-      mapOut.firstContiguousGID_= mapIn.firstContiguousGID_;
-      mapOut.lastContiguousGID_ = mapIn.lastContiguousGID_;
-      mapOut.uniform_           = mapIn.uniform_;
-      mapOut.contiguous_        = mapIn.contiguous_;
-      mapOut.distributed_       = mapIn.distributed_;
-      {
-        // mfh 25 Dec 2015, 11 Jan 2016: We really only need to make a
-        // deep copy if the two Map types have different memory
-        // spaces.  However, if you're calling clone(), it is likely
-        // the case that the memory spaces differ, so it doesn't hurt
-        // to make a deep copy here.
-        Kokkos::View<GO*, Kokkos::LayoutLeft, out_device_type>
-          lgMapOut ("lgMap", mapIn.lgMap_.extent (0));
-        Kokkos::deep_copy (lgMapOut, mapIn.lgMap_);
-        mapOut.lgMap_ = lgMapOut; // cast to const
-
-        // mfh 11 Apr 2016: We can't just assign mapIn.lgMapHost_ to
-        // mapOut.lgMapHost_ either.  This is because the memory space
-        // of the host mirror of a CudaUVMSpace View is also
-        // CudaUVMSpace, but the memory space of the host mirror of a
-        // HostSpace View is HostSpace.  We can't assign one View to
-        // another View with a different memory space.
-        //
-        // What we _can_ do here, though, is avoid a deep_copy in case
-        // we're not using CUDA, by exploiting host mirrors.
-
-        // lgMapOut is nonconst, so use it here instead of mapOut.lgMap_.
-        auto lgMapHostOut =
-          Kokkos::create_mirror_view (Kokkos::HostSpace (), lgMapOut);
-        Kokkos::deep_copy (lgMapHostOut, lgMapOut);
-        mapOut.lgMapHost_ = lgMapHostOut;
-      }
-      // This makes a deep copy only if necessary.  We could have
-      // defined operator= to do this, but that would violate
-      // expectations.  (Kokkos::View::operator= only does a shallow
-      // copy, EVER.)
-      mapOut.glMap_ = out_table_type (mapIn.glMap_);
-
-      // We could cleverly clone the Directory here if it is
-      // initialized, but there is no harm in simply creating it
-      // uninitialized.
-      mapOut.directory_ = Teuchos::rcp (new out_dir_type ());
-
-      return mapOut;
-    }
-  } // namespace Details
-
-
-} // namespace Tpetra
 
 /// \brief True if map1 is the same as (in the sense of isSameAs()) map2, else false.
 /// \relatesalso Tpetra::Map

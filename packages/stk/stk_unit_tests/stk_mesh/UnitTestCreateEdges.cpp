@@ -53,7 +53,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_unit_test_utils/BulkDataTester.hpp>
-#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.hpp>
 #include <string>                       // for string
 #include <vector>                       // for vector, vector<>::iterator
 

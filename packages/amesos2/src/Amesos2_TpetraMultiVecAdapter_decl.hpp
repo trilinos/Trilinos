@@ -241,8 +241,8 @@ namespace Amesos2 {
                                               EDistribution distribution) const;
 
     template<typename KV>
-    void
-    get1dCopy_kokkos_view (KV& v,
+    bool
+    get1dCopy_kokkos_view (bool bInitialize, KV& v,
                size_t lda,
                Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,
                                               global_ordinal_t,

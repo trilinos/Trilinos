@@ -371,7 +371,7 @@ public:
       return this->team_work_size;
     }
     else {
-      if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+      if (my_exec_space == KokkosKernels::Impl::Exec_CUDA || my_exec_space == KokkosKernels::Impl::Exec_HIP) {
         return team_size;
       }
       else {
@@ -580,10 +580,22 @@ public:
     return gs2;
   }
   // ---------------------------------------- //
-  // Specify to use either Two-stage or Classical (i.e., inner Jacobi-Richardson or SpTrsv)
+  // Specify numer of outer sweeps for two-stage Gauss-Seidel
+  void set_gs_set_num_outer_sweeps (int num_outer_sweeps) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setNumOuterSweeps (num_outer_sweeps);
+  }
+  // ---------------------------------------- //
+  // Specify numer of inner sweeps for two-stage Gauss-Seidel
   void set_gs_set_num_inner_sweeps (int num_inner_sweeps) {
     auto gs2 = get_twostage_gs_handle();
     gs2->setNumInnerSweeps (num_inner_sweeps);
+  }
+  // ---------------------------------------- //
+  // Specify damping factor of inner sweeps for two-stage Gauss-Seidel
+  void set_gs_set_inner_damp_factor (nnz_scalar_t damp_factor) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setInnerDampFactor (damp_factor);
   }
   // ---------------------------------------- //
   // Specify to use either Two-stage or Classical (i.e., inner Jacobi-Richardson or SpTrsv)
@@ -608,17 +620,21 @@ public:
       }
     }
   }
+  // ---------------------------------------- //
+  // Specify to use either Compact or Classical form of recurrence
+  void set_gs_twostage_compact_form (bool compact_form) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setCompactForm (compact_form);
+  }
 
-  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t verts_per_cluster) {
+
+  void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t hint_verts_per_cluster) {
     this->destroy_gs_handle();
     this->is_owner_of_the_gs_handle = true;
-    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, verts_per_cluster);
+    this->gsHandle = new ClusterGaussSeidelHandleType(clusterAlgo, hint_verts_per_cluster);
   }
   void destroy_gs_handle(){
     if (is_owner_of_the_gs_handle && this->gsHandle != NULL){
-      if (this->gsHandle->is_owner_of_coloring()){
-        this->destroy_graph_coloring_handle();
-      }
       delete this->gsHandle;
       this->gsHandle = NULL;
     }
@@ -716,6 +732,10 @@ public:
   void set_sptrsv_diag_supernode_sizes (int unblocked, int blocked) {
     this->sptrsvHandle->set_supernode_size_unblocked(unblocked);
     this->sptrsvHandle->set_supernode_size_blocked(blocked);
+  }
+
+  void set_sptrsv_unit_diagonal(bool flag) {
+    this->sptrsvHandle->set_unit_diagonal (flag);
   }
 
   void set_sptrsv_merge_supernodes (bool flag) {

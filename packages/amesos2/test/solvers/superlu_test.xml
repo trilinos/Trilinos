@@ -28,13 +28,13 @@
 	<ParameterList name="run0">
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	  <!-- The `Node' parameter is not yet supported -->
 	</ParameterList>
 	<ParameterList name="run1 - single iterrefine">
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	  <!-- Optional parameter list whose values override those in the "solver_params" parameter list -->
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="IterRefine" type="string" value="SLU_SINGLE"/>
@@ -43,35 +43,60 @@
 	<ParameterList name="run2 - double iterrefine">
 	  <Parameter name="Scalar" type="string" value="float"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	  <ParameterList name="solver_run_params">
 	    <Parameter name="IterRefine" type="string" value="SLU_DOUBLE"/>
 	  </ParameterList>
 	</ParameterList>
 	<ParameterList name="run3">
-	  <Parameter name="Scalar" type="string" value="float"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	</ParameterList>
-	<ParameterList name="run4">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	</ParameterList>
-	<ParameterList name="run5">
+	<ParameterList name="run4 - transpose">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
-	</ParameterList>
-	<ParameterList name="run6 - transpose">
-	  <Parameter name="Scalar" type="string" value="double"/>
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	  <ParameterList name="amesos2_params">
 	    <Parameter name="Transpose" type="bool" value="true"/>
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
+
+      <!-- Next test Kokkos objects -->
+      <ParameterList name="kokkos">
+        <ParameterList name="run_serial_double">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_double">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_double">
+          <Parameter name="Scalar" type="string" value="double"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+        </ParameterList>
+        <ParameterList name="run_serial_float">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_float">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_float">
+          <Parameter name="Scalar" type="string" value="float"/>
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="solver_params">
 	<Parameter name="ColPerm" type="string" value="COLAMD"/>
 	<Parameter name="IterRefine" type="string" value="NOREFINE"/>
@@ -89,31 +114,58 @@
       <ParameterList name="tpetra">
 	<ParameterList name="run0">
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
-	  <Parameter name="Magnitude" type="string" value="float"/>
-	</ParameterList>
-	<ParameterList name="run0-1">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <!-- "Magnitude" parameter only checked if the value of "Scalar" is "complex" -->
 	  <Parameter name="Magnitude" type="string" value="float"/>
 	</ParameterList>
 	<ParameterList name="run1">
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
-	  <Parameter name="Scalar" type="string" value="complex"/>
-	  <Parameter name="Magnitude" type="string" value="double"/>
-	</ParameterList>
-	<ParameterList name="run1-1">
-	  <Parameter name="LocalOrdinal" type="string" value="int"/>
-	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
 	  <Parameter name="Scalar" type="string" value="complex"/>
 	  <Parameter name="Magnitude" type="string" value="double"/>
 	</ParameterList>
       </ParameterList>
+
+      <ParameterList name="kokkos">
+        <ParameterList name="run_serial_double_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_double_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_double_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="double"/>
+        </ParameterList>
+        <ParameterList name="run_serial_float_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="serial"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+        <ParameterList name="run_cuda_float_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cuda"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+        <ParameterList name="run_cudauvmoff_float_complex">
+          <Parameter name="LocalOrdinal" type="string" value="int"/>
+          <Parameter name="Node" type="string" value="cudauvmoff"/>
+          <Parameter name="Scalar" type="string" value="complex"/>
+          <Parameter name="Magnitude" type="string" value="float"/>
+        </ParameterList>
+      </ParameterList>
+
     </ParameterList>
   </ParameterList> <!-- end young1c.mtx -->
 </ParameterList>

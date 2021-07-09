@@ -59,7 +59,7 @@
 
 #include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MapFactory.hpp>
-#include <Xpetra_MapExtractorFactory.hpp>
+#include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_ReorderedBlockedMultiVector.hpp>
 #include <Xpetra_Exceptions.hpp>
@@ -1342,10 +1342,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ConstructorReorderedSmall
     vData2 = mmv->getData(1);
     for(size_t i=0; i< mmv->getMap()->getNodeNumElements(); i++) {
       GO expected = 42, expected2 = 43;
-      if(i >=0 && i < 10) expected = comm->getRank() * 20 + 10 + i;
+      if(i < 10) expected = comm->getRank() * 20 + 10 + i;
       if(i >=10 && i < 15) expected = comm->getRank() * 20 + i - 10;
       if(i >=15 && i < 20) expected = comm->getRank() * 20 + 5 + i - 15;
-      if(i >=0 && i < 10) expected2 = 10 + i;
+      if(i < 10) expected2 = 10 + i;
       if(i >=10 && i < 15) expected2 = i - 10;
       if(i >=15 && i < 20) expected2 = 5 + i - 15;
       TEST_EQUALITY(vData[i], Teuchos::as<Scalar>(expected));

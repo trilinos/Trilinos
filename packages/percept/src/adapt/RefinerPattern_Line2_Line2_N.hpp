@@ -101,7 +101,6 @@
         //const UInt * const * child_nodes() const {
         //const UInt * child_node_0 = ref_topo.child_node(0);
 
-        typedef Elem::StdMeshObjTopologies::RefTopoX RefTopoX;
         RefTopoX& l2 = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;
 
 #define CENTROID_N NN(m_primaryEntityRank,0)

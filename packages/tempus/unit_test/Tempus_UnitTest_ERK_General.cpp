@@ -34,12 +34,13 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-  auto modifier = rcp(new Tempus::StepperRKModifierDefault<double>());
-
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
+  auto modifier  = rcp(new Tempus::StepperRKModifierDefault<double>());
+  auto modifierX = rcp(new Tempus::StepperRKModifierXDefault<double>());
+  auto observer  = rcp(new Tempus::StepperRKObserverDefault<double>());
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
+  bool useEmbedded          = stepper->getUseEmbedded();
 
   int NumStages = 4;
   Teuchos::SerialDenseMatrix<int,double> A(NumStages,NumStages);
@@ -63,11 +64,9 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
 
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -77,12 +76,6 @@ TEUCHOS_UNIT_TEST(ERK_General, Default_Construction)
 
 
   // Full argument list construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperERK_General<double>(
-    model, obs, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded,
-    A, b, c, order, order, order, bstar));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper = rcp(new Tempus::StepperERK_General<double>(
     model, useFSAL, ICConsistency, ICConsistencyCheck, useEmbedded,
     A, b, c, order, order, order, bstar, modifier));

@@ -64,6 +64,7 @@
 #include "adolc/adouble.h"
 #include "adolc/drivers/drivers.h"
 #include "adolc/interfaces.h"
+#include "adolc/taping.h"
 #endif
 
 #ifdef HAVE_ADIC

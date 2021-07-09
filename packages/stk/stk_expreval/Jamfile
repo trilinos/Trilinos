@@ -142,7 +142,6 @@ exe stk_expreval_utest
     [ glob $(stk_expreval-root)/unit_tests/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     stk_expreval
-    /sierra/stk_util//stk_util_unit_test_support
   : <tag>@sierra-exec-tag
   ;
 

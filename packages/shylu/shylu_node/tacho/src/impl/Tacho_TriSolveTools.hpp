@@ -44,7 +44,7 @@ namespace Tacho {
     ///
     typedef SchedulerType scheduler_type;
 
-    typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+    typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
     typedef typename device_type::execution_space exec_space;
     typedef typename device_type::memory_space exec_memory_space;
 
@@ -58,7 +58,7 @@ namespace Tacho {
     typedef typename supernode_info_type::supernode_type_array supernode_type_array;
     typedef typename supernode_type_array::HostMirror supernode_type_array_host;
 
-    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
     typedef typename host_device_type::execution_space host_space;
     typedef typename host_device_type::memory_space host_memory_space;
 
@@ -166,7 +166,7 @@ namespace Tacho {
     void
     track_alloc(const double in) {
       stat.m_used += in;
-      stat.m_peak  = max(stat.m_peak, stat.m_used);
+      stat.m_peak  = std::max(stat.m_peak, stat.m_used);
     }
 
     inline
@@ -187,14 +187,15 @@ namespace Tacho {
     inline
     void
     print_stat_init() {
+      const double kilo(1024);
       printf("  Time\n");
       printf("             time for initialization:                         %10.6f s\n", stat.t_init);
       printf("             time for compute mode classification:            %10.6f s\n", stat.t_mode_classification);
       printf("             total time spent:                                %10.6f s\n", (stat.t_init+stat.t_mode_classification));
       printf("\n");
       printf("  Memory\n");
-      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used in solve:                       %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             memory used in solve:                            %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used in solve:                       %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
       printf("  Compute Mode in Solve (nlevel: %d, device cut %d, serial cut %d)\n", _nlevel, _device_level_cut, _team_serial_level_cut);
       printf("             # of subproblems using device functions:         %6d\n", stat.n_device_problems);
@@ -206,12 +207,13 @@ namespace Tacho {
     inline
     void
     print_stat_prepare() {
+      const double kilo(1024);
       printf("  Time\n");
       printf("             total time spent:                                %10.6f s\n", stat.t_prepare);
       printf("\n");
       printf("  Memory\n");
-      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used in solve:                       %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             memory used in solve:                            %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used in solve:                       %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
       printf("  Compute Mode in Prepare\n");
       printf("             # of subproblems using device functions:         %6d\n", stat.n_device_problems);
@@ -223,11 +225,12 @@ namespace Tacho {
     inline
     void
     print_stat_solve() {
+      const double kilo(1024);
       printf("  Time\n");
       printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
       printf("\n");
       printf("  Memory\n");
-      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("             memory used in solve:                            %10.3f MB\n", stat.m_used/kilo/kilo);
       printf("  Kernels\n");
       printf("             # of kernel launching:                           %6d\n", stat.n_kernel_launching);
       printf("\n");
@@ -236,9 +239,10 @@ namespace Tacho {
     inline
     void
     print_stat_memory() {
+      const double kilo(1024);
       printf("  Memory\n");
-      printf("             memory used now:                                 %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used:                                %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             memory used now:                                 %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used:                                %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
     }
 

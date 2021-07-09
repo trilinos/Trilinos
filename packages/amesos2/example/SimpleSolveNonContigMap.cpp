@@ -146,8 +146,7 @@ int main(int argc, char *argv[]) {
     "The non-contiguous map claims to be contiguous.");
 
 
-  //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
-  RCP<MAT> A = rcp( new MAT(map,0) );
+  RCP<MAT> A = rcp( new MAT(map,3) );
 
   /*
    * We will solve a system with a known solution, for which we will be using

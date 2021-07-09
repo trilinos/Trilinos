@@ -224,6 +224,7 @@ void Hiptmair<MatrixType>::initialize ()
   IsComputed_ = false;
 
   Teuchos::Time timer ("initialize");
+  double startTime = timer.wallTime();
   { // The body of code to time
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -240,7 +241,7 @@ void Hiptmair<MatrixType>::initialize ()
   }
   IsInitialized_ = true;
   ++NumInitialize_;
-  InitializeTime_ += timer.totalElapsedTime ();
+  InitializeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -258,6 +259,7 @@ void Hiptmair<MatrixType>::compute ()
   }
 
   Teuchos::Time timer ("compute");
+  double startTime = timer.wallTime();
   { // The body of code to time
     Teuchos::TimeMonitor timeMon (timer);
     ifpack2_prec1_->compute();
@@ -265,7 +267,7 @@ void Hiptmair<MatrixType>::compute ()
   }
   IsComputed_ = true;
   ++NumCompute_;
-  ComputeTime_ += timer.totalElapsedTime ();
+  ComputeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -309,6 +311,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     "Ifpack2::Hiptmair::apply: mode != Teuchos::NO_TRANS has not been implemented.");
 
   Teuchos::Time timer ("apply");
+  double startTime = timer.wallTime();
   { // The body of code to time
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -316,10 +319,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     {
-      auto X_lcl_host = X.getLocalViewHost ();
-      auto Y_lcl_host = Y.getLocalViewHost ();
-
-      if (X_lcl_host.data () == Y_lcl_host.data ()) {
+      if (X.aliases(Y)) {
         Xcopy = rcp (new MV (X, Teuchos::Copy));
       } else {
         Xcopy = rcpFromRef (X);
@@ -336,7 +336,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
 
   }
   ++NumApply_;
-  ApplyTime_ += timer.totalElapsedTime ();
+  ApplyTime_ += (timer.wallTime() - startTime);
 }
 
 template <class MatrixType>

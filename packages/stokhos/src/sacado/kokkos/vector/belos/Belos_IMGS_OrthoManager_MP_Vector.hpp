@@ -58,8 +58,7 @@ namespace Belos {
 
   template<class Storage, class MV, class OP>
   class IMGSOrthoManager<Sacado::MP::Vector<Storage>,MV,OP> :
-    public MatOrthoManager<Sacado::MP::Vector<Storage>,MV,OP>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public MatOrthoManager<Sacado::MP::Vector<Storage>,MV,OP>
   {
   private:
     typedef Sacado::MP::Vector<Storage> ScalarType;
@@ -208,7 +207,7 @@ namespace Belos {
       blk_tol_ = blkTol;
       sing_tol_ = singTol;
 
-      setMyParamList (params);
+      this->setMyParamList (params);
     }
 
     Teuchos::RCP<const Teuchos::ParameterList>

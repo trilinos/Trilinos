@@ -19,13 +19,17 @@ if [ "$ATDM_TRILINOS_DIR" == "" ] ; then
     export ATDM_TRILINOS_DIR=$STD_ATDM_DIR/../../..
   fi
 fi
-
 echo "ATDM_TRILINOS_DIR = '$ATDM_TRILINOS_DIR'"
 
 if [ "$ATDM_TRILINOS_DIR" == "" ] ; then
   echo "ERROR: Cannot determine TRILINOS_DIR (you must be on a non-Linux system or you must have copied the script instead of symlinking it as per instructions)."
   exit 1
 fi
+
+if [ "$ATDM_TRIBITS_DIR" == "" ] ; then
+  export ATDM_TRIBITS_DIR=$ATDM_TRILINOS_DIR/cmake/tribits
+fi
+echo "ATDM_TRIBITS_DIR = '${ATDM_TRIBITS_DIR}'"
 
 #
 # Load a default env for the system
@@ -241,7 +245,8 @@ echo
 echo "  ==> See output file checkin-test.final.out" 
 echo
 
-$ATDM_TRILINOS_DIR/cmake/tribits/ci_support/checkin-test.py \
+${ATDM_TRIBITS_DIR}/ci_support/checkin-test.py \
+  --src-dir=$ATDM_TRILINOS_DIR \
   --default-builds= --st-extra-builds=$ATDM_BUILD_NAME_KEYS_COMMA_LIST \
   --allow-no-pull "$ATDM_CHT_ENABLE_PACKAGES_ARG" \
   $ATDM_CHT_SEND_EMAIL_TO_ARG \

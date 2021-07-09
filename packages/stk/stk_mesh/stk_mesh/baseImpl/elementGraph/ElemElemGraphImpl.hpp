@@ -104,20 +104,20 @@ struct ParallelInfo
 {
 public:
     ParallelInfo(int proc, int perm, stk::topology other_elem_topology) :
-        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), remoteElementData(proc) {}
+        m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
     ParallelInfo(int proc, int perm, stk::mesh::EntityId chosen_face_id, stk::topology other_elem_topology) :
-        m_permutation(perm), m_remote_element_toplogy(other_elem_topology), remoteElementData(proc) {}
+        m_permutation(perm), m_remote_element_topology(other_elem_topology), remoteElementData(proc) {}
 
     int get_proc_rank_of_neighbor() const { return remoteElementData.get_proc_rank_of_neighbor(); }
 
     void set_proc_rank(int proc) { remoteElementData.set_proc_rank(proc); }
 
     int m_permutation;
-    stk::topology m_remote_element_toplogy;
+    stk::topology m_remote_element_topology;
 
     bool operator!=(const ParallelInfo& rhs) const {
         return m_permutation != rhs.m_permutation ||
-                m_remote_element_toplogy != rhs.m_remote_element_toplogy ||
+                m_remote_element_topology != rhs.m_remote_element_topology ||
                 remoteElementData != rhs.remoteElementData;
     }
 private:
@@ -129,7 +129,7 @@ std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
 {
     out << "(other_proc=" << info.get_proc_rank_of_neighbor()
             << ", perm=" << info.m_permutation
-            << ", remote_top=" << info.m_remote_element_toplogy
+            << ", remote_top=" << info.m_remote_element_topology
             << ")";
     return out;
 }
@@ -137,8 +137,8 @@ std::ostream& operator<<(std::ostream& out, const ParallelInfo& info)
 struct SerialElementData
 {
 public:
-    SerialElementData(LocalId elementLocalId, stk::mesh::EntityId elementId, stk::topology elementToplogy, unsigned sideIndex, const stk::mesh::EntityVector& sideNodes) :
-        m_elementLocalId(elementLocalId), m_elementIdentifier(elementId), m_elementTopology(elementToplogy), m_sideIndex(sideIndex), m_sideNodes(sideNodes) {}
+    SerialElementData(LocalId elementLocalId, stk::mesh::EntityId elementId, stk::topology elementTopology, unsigned sideIndex, const stk::mesh::EntityVector& sideNodes) :
+        m_elementLocalId(elementLocalId), m_elementIdentifier(elementId), m_elementTopology(elementTopology), m_sideIndex(sideIndex), m_sideNodes(sideNodes) {}
 
     SerialElementData()
     : m_elementLocalId(std::numeric_limits<impl::LocalId>::max()),
@@ -339,6 +339,11 @@ struct GraphEdge
         return std::abs(vertex)%max_num_sides_per_elem;
     }
 
+    bool is_elem2_local() const
+    {
+      return vertex2 >= 0;
+    }
+
     // elem1, side1, elem2, side2
 
     impl::LocalId vertex1;
@@ -401,7 +406,7 @@ typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
 unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData);
 
-bool fill_topologies(const stk::mesh::BulkData& bulkData, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
+bool fill_topologies(stk::mesh::ElemElemGraph& eeGraph, const stk::mesh::impl::ElementLocalIdMapper & localMapper, std::vector<stk::topology>& element_topologies);
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
@@ -454,6 +459,22 @@ inline bool is_shell_or_beam2(stk::topology top)
     return top.is_shell();
     //return top.is_shell() || top == stk::topology::BEAM_2;
 }
+
+struct TopologyChecker
+{
+    bool are_both_shells() const
+    {
+        return is_shell_or_beam2(localTopology) && is_shell_or_beam2(remoteTopology);
+    }
+
+    bool are_both_not_shells() const
+    {
+        return !is_shell_or_beam2(localTopology) && !is_shell_or_beam2(remoteTopology);
+    }
+
+    stk::topology localTopology;
+    stk::topology remoteTopology;
+};
 
 }}} // end namespaces stk mesh
 

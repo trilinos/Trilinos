@@ -69,22 +69,20 @@ testGids (bool& success,
 
   try {
     auto gblInds = gblMap.getMyGlobalIndices ();
-    auto gblInds_host = Kokkos::create_mirror_view (gblInds);
-    Kokkos::deep_copy (gblInds_host, gblInds);
 
-    TEST_EQUALITY( static_cast<size_t> (gblInds_host.size ()),
+    TEST_EQUALITY( static_cast<size_t> (gblInds.size ()),
                    static_cast<size_t> (gblMap.getNodeNumElements ()) );
     if (success) {
-      const LO numLclElts = static_cast<LO> (gblInds_host.size ());
+      const LO numLclElts = static_cast<LO> (gblInds.size ());
 
       // Test the reported global indices.
       for (LO lid = 0; lid < numLclElts; ++lid) {
         const GO expectedGid = gblMap.getGlobalElement (lid);
-        const GO reportedGid = gblInds_host(lid);
+        const GO reportedGid = gblInds(lid);
 
         // Make sure that the (global) Map behaves as expected.
         TEST_INEQUALITY( expectedGid, gblInvalid );
-        // Make sure gblInds_host contains the right global index.
+        // Make sure gblInds contains the right global index.
         TEST_EQUALITY( expectedGid, reportedGid );
       }
     }

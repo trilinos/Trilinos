@@ -52,6 +52,7 @@
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/GenerateALefRAMesh.hpp"
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include "stk_util/environment/WallTime.hpp"
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <iostream>                     // for ostream, operator<<, etc
@@ -62,6 +63,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include <stk_mesh/base/NgpUtils.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <string>                       // for string, operator==, etc
@@ -168,6 +170,34 @@ TEST(UnitTestField, testFieldMaxSize)
   EXPECT_EQ( f4.field_array_rank(), 4u );
   EXPECT_EQ( f5.field_array_rank(), 5u );
 
+}
+
+TEST(UnitTestField, fieldDataAccess_rankMustMatch)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::MetaData meta(3);
+  using MyField = stk::mesh::Field<double>;
+  MyField& nodalField = meta.declare_field<MyField>(NODE_RANK, "nodal_field");
+
+  stk::mesh::FieldTraits<MyField>::data_type* initialValue = nullptr;
+  stk::mesh::put_field_on_mesh(nodalField, meta.universal_part(), initialValue);
+
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:2x2x2|sideset:xXyYzZ", bulk);
+
+  stk::mesh::EntityVector nodes;
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, meta.universal_part(), nodes);
+  stk::mesh::EntityVector faces;
+  stk::mesh::get_entities(bulk, stk::topology::FACE_RANK, meta.universal_part(), faces);
+
+  ASSERT_TRUE(!nodes.empty());
+  ASSERT_TRUE(!faces.empty());
+
+  EXPECT_NO_THROW(stk::mesh::field_data(nodalField, nodes[0]));
+#ifndef NDEBUG
+  EXPECT_THROW(stk::mesh::field_data(nodalField, faces[0]), std::logic_error);
+#endif
 }
 
 TEST(UnitTestField, testFieldWithSelector)
@@ -663,6 +693,47 @@ protected:
     }
 };
 
+TEST_F(FieldFixture, totalNgpFieldDataBytes)
+{
+  stk::mesh::Part & partA = get_meta().declare_part("partA", stk::topology::ELEM_RANK);
+  stk::mesh::Part & partB = get_meta().declare_part("partB", stk::topology::ELEM_RANK);
+  stk::mesh::Field<double> &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "doubleField");
+  const double scalarInitValue = 3.14;
+  const double vectorInitValue[] = {1., 2., 3., 4., 5.};
+  stk::mesh::put_field_on_mesh(field, partA, &scalarInitValue);
+  stk::mesh::put_field_on_mesh(field, partB, 5, vectorInitValue);
+
+  const int numElemsPerDim = 10;
+  setup_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), stk::mesh::BulkData::NO_AUTO_AURA);
+  const int totalNumElements = numElemsPerDim * numElemsPerDim * numElemsPerDim;
+
+  stk::mesh::EntityVector elements;
+  stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::ELEM_RANK), elements);
+  stk::mesh::EntityVector partAElements;
+  stk::mesh::EntityVector partBElements;
+  for (const stk::mesh::Entity & element : elements) {
+    if (get_bulk().identifier(element) <= (totalNumElements/2)) {
+      partAElements.push_back(element);
+    }
+    else {
+      partBElements.push_back(element);
+    }
+  }
+  get_bulk().modification_begin();
+  get_bulk().change_entity_parts<stk::mesh::PartVector>(partAElements, {&partA});
+  get_bulk().change_entity_parts<stk::mesh::PartVector>(partBElements, {&partB});
+  get_bulk().modification_end();
+
+  const size_t numBuckets = get_bulk().buckets(stk::topology::ELEM_RANK).size();
+  const size_t bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity;
+  const size_t numPerEntityA = 1;
+  const size_t numPerEntityB = 5;
+  const size_t maxNumPerEntity = std::max(numPerEntityA, numPerEntityB);
+  const size_t bytesPerScalar = sizeof(double);
+  const size_t expectedTotalFieldDataBytes = (numBuckets * bucketCapacity * maxNumPerEntity * bytesPerScalar);
+  EXPECT_EQ(stk::mesh::get_total_ngp_field_allocation_bytes(field), expectedTotalFieldDataBytes);
+}
+
 TEST_F(FieldFixture, writingDifferentNodalFieldsPerSolutionCase)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD)<3)
@@ -673,6 +744,13 @@ TEST_F(FieldFixture, DISABLED_writingDifferentElementFieldsPerSolutionCase)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD)<3)
         test_solution_case_with_rank(stk::topology::ELEM_RANK);
+}
+
+TEST_F(FieldFixture, fenceWithoutNgpField)
+{
+  stk::mesh::Field<double> &field = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "doubleField");
+
+  EXPECT_NO_THROW(field.fence());
 }
 
 class LateFieldFixtureNoTest : public stk::unit_test_util::MeshFixtureNoTest
@@ -1090,6 +1168,16 @@ TEST_F(LateFieldFixture, addLateIntElementField)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
   setup_add_late_field<int>(stk::topology::ELEM_RANK);
+}
+
+TEST_F(LateFieldFixture, disable_late_fields)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
+  setup_add_late_field<int>(stk::topology::ELEM_RANK);
+
+  get_meta().disable_late_fields();
+  stk::mesh::Field<int>& f = declare_field<int>("another_late_field", stk::topology::ELEM_RANK);
+  EXPECT_ANY_THROW(stk::mesh::put_field_on_mesh(f, get_meta().universal_part(), static_cast<int*>(nullptr)));
 }
 
 TEST_F(LateFieldFixture, addLateIntNodalField_multipleBuckets)

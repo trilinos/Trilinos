@@ -103,7 +103,7 @@ namespace MueLu {
         }
       }
 
-    } else if ( valuestr == "chebyshev" ) {
+    } else if (( valuestr == "chebyshev" ) || ( valuestr == "mls" )) {
        std::string my_name = "\"" + pname + "\"";
        mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"CHEBYSHEV\"/>" << std::endl;
 
@@ -112,7 +112,7 @@ namespace MueLu {
 
       bool valid = false;
       const int  validatorSize = 5;
-      std::string validator[validatorSize] = {"superlu", "superludist", "klu", "umfpack"};
+      std::string validator[validatorSize] = {"superlu", "superludist", "klu", "umfpack", "mumps"};
       for (int i=0; i < validatorSize; i++)
         if (validator[i] == solverType)
           valid = true;
@@ -152,6 +152,7 @@ namespace MueLu {
 
       if ( paramList.isParameter("smoother: sweeps") ) { mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("smoother: sweeps") << "\"/>" << std::endl; adaptingParamList.remove("smoother: sweeps",false); }
       if ( paramList.isParameter("smoother: damping factor") ) { mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>("smoother: damping factor") << "\"/>" << std::endl; adaptingParamList.remove("smoother: damping factor",false); }
+      if ( paramList.isParameter("smoother: use l1 Gauss-Seidel") ) { mueluss << "<Parameter name=\"relaxation: use l1\" type=\"bool\" value=\"" << paramList.get<bool>("smoother: use l1 Gauss-Seidel") << "\"/>" << std::endl; adaptingParamList.remove("smoother: use l1 Gauss-Seidel",false); }
     }
 
     // Chebyshev
@@ -160,6 +161,16 @@ namespace MueLu {
       else { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"2\"/>" << std::endl; }
       if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
       else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
+    }
+
+    // MLS
+    if ( valuestr == "mls") {
+      if ( paramList.isParameter("smoother: MLS polynomial order") ) { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("smoother: MLS polynomial order") << "\"/>" << std::endl; adaptingParamList.remove("smoother: MLS polynomial order",false); }
+      else if ( paramList.isParameter("smoother: polynomial order") ) { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("smoother: polynomial order") << "\"/>" << std::endl; adaptingParamList.remove("smoother: polynomial order",false); }
+      else { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"2\"/>" << std::endl; }
+      if ( paramList.isParameter("smoother: MLS alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: MLS alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: MLS alpha",false); }
+      else if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
+      else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; }
     }
 
     // parameters for ILU based preconditioners
@@ -267,6 +278,22 @@ namespace MueLu {
       // transform ML parameter to corresponding MueLu parameter and generate XML string
       std::string valueInterpreterStr = "\"" + valuestr + "\"";
       std::string ret = MasterList::interpretParameterName(MasterList::ML2MueLu(pname),valueInterpreterStr);
+
+      // special handling for verbosity level
+      if (pname == "ML output") {
+        // Translate verbosity parameter
+        int verbosityLevel = std::stoi(valuestr);
+        std::string eVerbLevel = "none";
+        if (verbosityLevel ==  0) eVerbLevel = "none";
+        if (verbosityLevel >=  1) eVerbLevel = "low";
+        if (verbosityLevel >=  5) eVerbLevel = "medium";
+        if (verbosityLevel >= 10) eVerbLevel = "high";
+        if (verbosityLevel >= 11) eVerbLevel = "extreme";
+        if (verbosityLevel >= 42) eVerbLevel = "test";
+        if (verbosityLevel >= 666) eVerbLevel = "interfacetest";
+        mueluss << "<Parameter name=\"verbosity\" type=\"string\"     value=\"" << eVerbLevel << "\"/>" << std::endl;
+        continue;
+      }
 
       // add XML string
       if (ret != "") {

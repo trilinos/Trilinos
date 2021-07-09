@@ -32,19 +32,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>
-#include <stk_util/environment/OutputLog.hpp>
-#include <stk_util/util/TeeStreambuf.hpp>
-#include <stk_util/util/IndentStreambuf.hpp>
-
-
-#include <map>
-#include <list>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <stdexcept>
-#include <cctype>
+#include "stk_util/environment/OutputLog.hpp"
+#include "stk_util/util/IndentStreambuf.hpp"  // for indent_streambuf
+#include "stk_util/util/TeeStreambuf.hpp"     // for tee_streambuf
+#include <cctype>                             // for isgraph, isspace
+#include <fstream>                            // for ofstream
+#include <iostream>                           // for operator<<, basic_ostream, cout, basic_ios:...
+#include <list>                               // for _List_iterator, list<>::iterator, list, _Li...
+#include <map>                                // for _Rb_tree_iterator, map<>::iterator, map
+#include <sstream>                            // for ostringstream
+#include <stdexcept>                          // for runtime_error
+#include <string>                             // for string, operator<<, operator==, char_traits
+#include <utility>                            // for pair
 
 namespace stk {
 

@@ -166,7 +166,7 @@
         <!--Parameter name="Uniform Parameter Guess" type="double" value="2.0"/ -->
         <!--Parameter name="Min And Max Of Random Parameter Guess" type="Array(double)" value="{1.0, 3.0}"/ -->
 
-        <Parameter name="Check Gradient" type="bool" value="false" />
+        <Parameter name="Check Gradient" type="bool" value="true" />
         <Parameter name="Number Of Gradient Checks" type="int" value="1" />
 
         <Parameter name="Test Vector" type="bool" value="false" />
@@ -179,7 +179,7 @@
         <Parameter name="Bound Constrained" type="bool" value="true" />
         <Parameter name="epsilon bound" type="double" value="1e-4" />
 
-        <Parameter name="Step Method" type="string" value="Line Search" />
+        <Parameter name="Step Method" type="string" value="Trust Region" />
         <Parameter name="Full Space" type="bool" value="false" />
         <Parameter name="Use NOX Solver" type="bool" value="true" />
 
@@ -291,10 +291,10 @@
 
           <!-- =========== STATUS TEST SUBLIST =========== -->
           <ParameterList name="Status Test">
-            <Parameter name="Gradient Tolerance" type="double" value="1.e-10" />
+            <Parameter name="Gradient Tolerance" type="double" value="1.e-8" />
             <Parameter name="Constraint Tolerance" type="double" value="1.e-10" />
             <Parameter name="Step Tolerance" type="double" value="1.e-14" />
-            <Parameter name="Iteration Limit" type="int" value="1000" />
+            <Parameter name="Iteration Limit" type="int" value="10" />
           </ParameterList>
         </ParameterList>
       </ParameterList>

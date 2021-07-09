@@ -1,0 +1,18 @@
+<ParameterList name="Solver Factory Example">
+    <Parameter name="SolverType" type="string" value="ThyraPreconditioner"/>
+    <ParameterList name="ThyraPreconditioner">
+        <Parameter name="Preconditioner Type" type="string" value="FROSch"/>
+        <ParameterList name="Preconditioner Types">
+            <ParameterList name="FROSch">
+                <Parameter name="FROSch Preconditioner Type"        type="string"   value="OneLevelPreconditioner"/>
+                <Parameter name="OverlappingOperator Type"          type="string"   value="AlgebraicOverlappingOperator"/>
+                <ParameterList name="AlgebraicOverlappingOperator">
+                    <ParameterList name="Solver">
+                        <Parameter name="SolverType"                type="string"   value="Amesos2"/>
+                        <Parameter name="Solver"                    type="string"   value="Klu"/>
+                    </ParameterList>
+                </ParameterList>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+</ParameterList>

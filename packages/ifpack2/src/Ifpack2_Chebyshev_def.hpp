@@ -98,6 +98,13 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
 
 
 template<class MatrixType>
+void
+Chebyshev<MatrixType>::setZeroStartingSolution (bool zeroStartingSolution)
+{
+  impl_.setZeroStartingSolution(zeroStartingSolution);
+}
+
+template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
 Chebyshev<MatrixType>::getComm () const
 {
@@ -240,6 +247,8 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   // Start timing here.
   {
     Teuchos::TimeMonitor timeMon (*timer);
@@ -258,10 +267,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     applyImpl (X, Y, mode, alpha, beta);
   }
   ++NumApply_;
-
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ApplyTime_ = timer->totalElapsedTime ();
+  ApplyTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -310,6 +316,8 @@ void Chebyshev<MatrixType>::compute ()
     timer = Teuchos::TimeMonitor::getNewCounter (timerName);
   }
 
+  double startTime = timer->wallTime();
+
   // Start timing here.
   {
     Teuchos::TimeMonitor timeMon (*timer);
@@ -322,9 +330,7 @@ void Chebyshev<MatrixType>::compute ()
   IsComputed_ = true;
   ++NumCompute_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ComputeTime_ = timer->totalElapsedTime ();
+  ComputeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -461,15 +467,11 @@ applyImpl (const MV& X,
   // optimize for it by caching X_copy.
   RCP<const MV> X_copy;
   bool copiedInput = false;
-  {
-    auto X_lcl_host = X.getLocalViewHost ();
-    auto Y_lcl_host = Y.getLocalViewHost ();
-    if (X_lcl_host.data () == Y_lcl_host.data ()) {
-      X_copy = rcp (new MV (X, Teuchos::Copy));
-      copiedInput = true;
-    } else {
-      X_copy = rcpFromRef (X);
-    }
+  if (X.aliases(Y)) {
+    X_copy = rcp (new MV (X, Teuchos::Copy));
+    copiedInput = true;
+  } else {
+    X_copy = rcpFromRef (X);
   }
 
   // If alpha != 1, fold alpha into (a deep copy of) X.

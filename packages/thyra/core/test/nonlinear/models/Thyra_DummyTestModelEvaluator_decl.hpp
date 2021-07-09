@@ -84,7 +84,8 @@ dummyTestModelEvaluator(
   const bool supports_x_dot = false,
   const bool supports_x_dot_dot = false,
   const bool supports_extended_inargs = true,
-  const bool supports_extended_outargs = true
+  const bool supports_extended_outargs = true,
+  const bool supports_derivatives = false
   );
 
 
@@ -109,7 +110,8 @@ public:
     const bool supports_x_dot = false,
     const bool supports_x_dot_dot = false,
     const bool supports_extended_inargs = true,
-    const bool supports_extended_outargs = true
+    const bool supports_extended_outargs = true,
+    const bool supports_derivatives = false
     );
 
   //@}

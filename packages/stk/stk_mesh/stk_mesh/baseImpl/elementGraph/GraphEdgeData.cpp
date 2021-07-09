@@ -15,6 +15,8 @@ void Graph::set_num_local_elements(size_t n)
 void Graph::add_new_element()
 {
     m_graphEdges.push_back(GraphEdgesForElement());
+    constexpr unsigned maxNumSides = 6;
+    m_graphEdges.back().reserve(maxNumSides);
 }
 
 size_t Graph::get_num_elements_in_graph() const
@@ -62,9 +64,7 @@ const GraphEdgesForElement& Graph::get_edges_for_element(impl::LocalId elem) con
 
 void Graph::reserve_edges(impl::LocalId localElemId, size_t numEdges)
 {
-    if (numEdges > 0) {
-        m_graphEdges[localElemId].reserve(m_graphEdges[localElemId].size()+numEdges);
-    }
+  m_graphEdges[localElemId].reserve(numEdges);
 }
 
 void Graph::add_edge(const GraphEdge &graphEdge)
@@ -127,11 +127,11 @@ std::string get_par_info_description(const impl::ParallelInfo &parInfo)
     std::ostringstream s;
     s << "    other proc: " << parInfo.get_proc_rank_of_neighbor() << std::endl;
     s << "    permutation: " << parInfo.m_permutation << std::endl;
-    s << "    remote topology: " << parInfo.m_remote_element_toplogy << std::endl;
+    s << "    remote topology: " << parInfo.m_remote_element_topology << std::endl;
     return s.str();
 }
 
-void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo &parInfo)
+bool ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo &parInfo)
 {
     std::pair<impl::ParallelGraphInfo::iterator, bool> inserted = m_parallel_graph_info.emplace(graphEdge, parInfo);
     if (!inserted.second)
@@ -148,6 +148,8 @@ void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphE
                             << get_par_info_description(parInfo));
         }
     }
+
+    return inserted.second;
 }
 
 impl::LocalId ParallelInfoForGraphEdges::convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const

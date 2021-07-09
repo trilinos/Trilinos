@@ -105,97 +105,138 @@ public:
     field_manager_.template postEvaluate<EvalType>(post_eval_data);
   }
 
+  void setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims)
+  {
+    field_manager_.template setKokkosExtendedDataTypeDimensions<EvalType>(dims);
+  }
+
   //! Check the field values to a specified tolerance for a rank 1 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues1(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
     field_manager_.template getFieldData<EvalType>(field);
+
+    auto host_gold_field = Kokkos::create_mirror_view(gold_field.get_view());
+    auto host_field = Kokkos::create_mirror_view(field.get_view());
+    Kokkos::deep_copy(host_gold_field,gold_field.get_view());
+    Kokkos::deep_copy(host_field,field.get_view());
+
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
-      TEST_FLOATING_EQUALITY(field(i),gold_field(i),tolerance);
+      TEST_FLOATING_EQUALITY(host_field(i),host_gold_field(i),tolerance);
   }
 
   //! Check the field values to a specified tolerance for a rank 2 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues2(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
     field_manager_.template getFieldData<EvalType>(field);
+
+    auto host_gold_field = Kokkos::create_mirror_view(gold_field.get_view());
+    auto host_field = Kokkos::create_mirror_view(field.get_view());
+    Kokkos::deep_copy(host_gold_field,gold_field.get_view());
+    Kokkos::deep_copy(host_field,field.get_view());
+
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
-        TEST_FLOATING_EQUALITY(field(i,j),gold_field(i,j),tolerance);
+        TEST_FLOATING_EQUALITY(host_field(i,j),host_gold_field(i,j),tolerance);
   }
 
   //! Check the field values to a specified tolerance for a rank 3 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues3(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
     field_manager_.template getFieldData<EvalType>(field);
+
+    auto host_gold_field = Kokkos::create_mirror_view(gold_field.get_view());
+    auto host_field = Kokkos::create_mirror_view(field.get_view());
+    Kokkos::deep_copy(host_gold_field,gold_field.get_view());
+    Kokkos::deep_copy(host_field,field.get_view());
+
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)
-          TEST_FLOATING_EQUALITY(field(i,j,k),gold_field(i,j,k),tolerance);
+          TEST_FLOATING_EQUALITY(host_field(i,j,k),host_gold_field(i,j,k),tolerance);
   }
 
   //! Check the field values to a specified tolerance for a rank 4 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues4(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
     field_manager_.template getFieldData<EvalType>(field);
+
+    auto host_gold_field = Kokkos::create_mirror_view(gold_field.get_view());
+    auto host_field = Kokkos::create_mirror_view(field.get_view());
+    Kokkos::deep_copy(host_gold_field,gold_field.get_view());
+    Kokkos::deep_copy(host_field,field.get_view());
+
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)
           for (int l=0; l < static_cast<int>(field.extent(3)); ++l)
-            TEST_FLOATING_EQUALITY(field(i,j,k,l),gold_field(i,j,k,l),tolerance);
+            TEST_FLOATING_EQUALITY(host_field(i,j,k,l),host_gold_field(i,j,k,l),tolerance);
   }
 
   //! Check the field values to a specified tolerance for a rank 5 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues5(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
     field_manager_.template getFieldData<EvalType>(field);
+
+    auto host_gold_field = Kokkos::create_mirror_view(gold_field.get_view());
+    auto host_field = Kokkos::create_mirror_view(field.get_view());
+    Kokkos::deep_copy(host_gold_field,gold_field.get_view());
+    Kokkos::deep_copy(host_field,field.get_view());
+
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)
           for (int l=0; l < static_cast<int>(field.extent(3)); ++l)
             for (int m=0; m < static_cast<int>(field.extent(4)); ++m)
-              TEST_FLOATING_EQUALITY(field(i,j,k,l,m),gold_field(i,j,k,l,m),tolerance);
+              TEST_FLOATING_EQUALITY(host_field(i,j,k,l,m),host_gold_field(i,j,k,l,m),tolerance);
   }
 
   //! Check the field values to a specified tolerance for a rank 6 MDField
-  template<typename FieldType>
+  template<typename FieldType, typename MagnitudeType>
   void checkFloatValues6(const FieldType& gold_field,
-                        const typename FieldType::value_type& tolerance,
+                        const MagnitudeType& tolerance,
                         bool& success,
                         std::ostream& out)
   {
     FieldType field(gold_field); // copies name and layout into target field
     field_manager_.template getFieldData<EvalType>(field);
+
+    auto host_gold_field = Kokkos::create_mirror_view(gold_field.get_view());
+    auto host_field = Kokkos::create_mirror_view(field.get_view());
+    Kokkos::deep_copy(host_gold_field,gold_field.get_view());
+    Kokkos::deep_copy(host_field,field.get_view());
+
     for (int i=0; i < static_cast<int>(field.extent(0)); ++i)
       for (int j=0; j < static_cast<int>(field.extent(1)); ++j)
         for (int k=0; k < static_cast<int>(field.extent(2)); ++k)
           for (int l=0; l < static_cast<int>(field.extent(3)); ++l)
             for (int m=0; m < static_cast<int>(field.extent(4)); ++m)
               for (int n=0; n < static_cast<int>(field.extent(4)); ++n)
-                TEST_FLOATING_EQUALITY(field(i,j,k,l,m,n),gold_field(i,j,k,l,m,n),tolerance);
+                TEST_FLOATING_EQUALITY(host_field(i,j,k,l,m,n),host_gold_field(i,j,k,l,m,n),tolerance);
   }
 
 };

@@ -34,6 +34,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/CoarseSpaces)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSets)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzOperators)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzPreconditioners)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SolverInterfaces)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Tools)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adapters)
 
@@ -54,7 +55,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/muelu/adapters/belos)
 
 APPEND_SET(HEADERS
-  Adapters/Stratimikos_FROSchXpetra.hpp
+  Adapters/Stratimikos_FROSch_decl.hpp
+  Adapters/Stratimikos_FROSch_def.hpp
   Adapters/Thyra_FROSchFactory_decl.hpp
   Adapters/Thyra_FROSchFactory_def.hpp
   Adapters/Thyra_FROSchLinearOp_decl.hpp
@@ -99,6 +101,7 @@ APPEND_SET(HEADERS
   SchwarzOperators/FROSch_RGDSWCoarseOperator_def.hpp
   SchwarzOperators/FROSch_SchwarzOperator_decl.hpp
   SchwarzOperators/FROSch_SchwarzOperator_def.hpp
+  SchwarzOperators/FROSch_SchwarzOperators_fwd.hpp
   SchwarzOperators/FROSch_SumOperator_decl.hpp
   SchwarzOperators/FROSch_SumOperator_def.hpp
   SchwarzPreconditioners/FROSch_AlgebraicOverlappingPreconditioner_decl.hpp
@@ -111,14 +114,41 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_RGDSWPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_SchwarzPreconditioners_fwd.hpp
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
+  SolverInterfaces/FROSch_AmesosSolverEpetra_decl.hpp
+  SolverInterfaces/FROSch_AmesosSolverEpetra_def.hpp
+  SolverInterfaces/FROSch_Amesos2SolverEpetra_decl.hpp
+  SolverInterfaces/FROSch_Amesos2SolverEpetra_def.hpp
+  SolverInterfaces/FROSch_Amesos2SolverTpetra_decl.hpp
+  SolverInterfaces/FROSch_Amesos2SolverTpetra_def.hpp
+  SolverInterfaces/FROSch_BelosSolverEpetra_decl.hpp
+  SolverInterfaces/FROSch_BelosSolverEpetra_def.hpp
+  SolverInterfaces/FROSch_BelosSolverTpetra_decl.hpp
+  SolverInterfaces/FROSch_BelosSolverTpetra_def.hpp
+  SolverInterfaces/FROSch_FROSchPreconditioner_decl.hpp
+  SolverInterfaces/FROSch_FROSchPreconditioner_def.hpp
+  SolverInterfaces/FROSch_Ifpack2PreconditionerTpetra_decl.hpp
+  SolverInterfaces/FROSch_Ifpack2PreconditionerTpetra_def.hpp
+  SolverInterfaces/FROSch_MueLuPreconditioner_decl.hpp
+  SolverInterfaces/FROSch_MueLuPreconditioner_def.hpp
+  SolverInterfaces/FROSch_Solver_decl.hpp
+  SolverInterfaces/FROSch_Solver_def.hpp
+  SolverInterfaces/FROSch_SolverFactory_decl.hpp
+  SolverInterfaces/FROSch_SolverFactory_def.hpp
+  SolverInterfaces/FROSch_ThyraPreconditioner_decl.hpp
+  SolverInterfaces/FROSch_ThyraPreconditioner_def.hpp
+  SolverInterfaces/FROSch_ThyraSolver_decl.hpp
+  SolverInterfaces/FROSch_ThyraSolver_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
+  Tools/FROSch_Output.h
   Tools/FROSch_SubdomainSolver_decl.hpp
   Tools/FROSch_SubdomainSolver_def.hpp
+  Tools/FROSch_Timers.h
   Tools/FROSch_Tools_decl.hpp
   Tools/FROSch_Tools_def.hpp
 )
@@ -134,4 +164,3 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-

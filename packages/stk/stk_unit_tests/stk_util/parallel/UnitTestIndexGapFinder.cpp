@@ -32,14 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/parallel/ParallelIndexGapFinder.hpp>
-#include <gtest/gtest.h>
-#include <string>                       // for string
-#include <stk_util/util/ReportHandler.hpp>
-#include <stk_util/parallel/ParallelVectorConcat.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/parallel/Parallel.hpp"                // for MPI_COMM_WORLD, MPI_Scan, MPI_SUM
+#include "stk_util/parallel/ParallelIndexGapFinder.hpp"  // for parallel_index_gap_finder_global
+#include "stk_util/parallel/ParallelVectorConcat.hpp"    // for parallel_vector_concat
+#include <algorithm>                                     // for sort
+#include <cstdint>                                       // for uint64_t
+#include <vector>                                        // for vector<>::iterator, vector
 
 
 //------------------------------------------------------------------------------

@@ -98,6 +98,8 @@ unpack(const FadType* a, OrdinalType n, OrdinalType inc,
        OrdinalType& n_dot, OrdinalType& inc_val, OrdinalType& inc_dot,
        const ValueType*& cval, const ValueType*& cdot) const
 {
+  cdot = NULL; // Ensure dot is always initialized
+
   if (n == 0) {
     n_dot = 0;
     inc_val = 0;
@@ -143,6 +145,8 @@ unpack(const FadType* A, OrdinalType m, OrdinalType n, OrdinalType lda,
        OrdinalType& n_dot, OrdinalType& lda_val, OrdinalType& lda_dot,
        const ValueType*& cval, const ValueType*& cdot) const
 {
+  cdot = NULL; // Ensure dot is always initialized
+
   if (m*n == 0) {
     n_dot = 0;
     lda_val = 0;

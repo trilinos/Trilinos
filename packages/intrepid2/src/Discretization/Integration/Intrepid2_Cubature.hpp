@@ -50,6 +50,8 @@
 #define __INTREPID2_CUBATURE_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
+#include "Intrepid2_TensorData.hpp"
+#include "Intrepid2_TensorPoints.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -116,15 +118,47 @@ namespace Intrepid2 {
       For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
       templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class Cubature {
   public:
+    using ExecSpaceType = typename DeviceType::execution_space;
+    using PointViewType             = Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,DeviceType>;
+    using weightViewType            = Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,DeviceType>;
 
-    typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>   PointViewType;
-    typedef Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,ExecSpaceType>  weightViewType;
+    using PointViewTypeAllocatable  = Kokkos::DynRankView<pointValueType,DeviceType>;  // uses default layout; allows us to allocate (in contrast to LayoutStride)
+    using WeightViewTypeAllocatable = Kokkos::DynRankView<weightValueType,DeviceType>; // uses default layout; allows us to allocate (in contrast to LayoutStride)
+    using TensorPointDataType       = TensorPoints<pointValueType,DeviceType>;
+    using TensorWeightDataType      = TensorData<weightValueType,DeviceType>;
+    
+    /** \brief Returns a points container appropriate for passing to getCubature().
 
+        \return cubPoints  - Data structure sized for the cubature points.
+    */
+    virtual TensorPointDataType allocateCubaturePoints() const
+    {
+      // default implementation has trivial tensor structure
+      PointViewTypeAllocatable allPointData("cubature points",this->getNumPoints(),this->getDimension());
+      Kokkos::Array< PointViewTypeAllocatable, 1> cubaturePointComponents;
+      cubaturePointComponents[0] = allPointData;
+      return TensorPointDataType(cubaturePointComponents);
+    }
+    
+    /** \brief Returns a weight container appropriate for passing to getCubature().
+
+        \return cubWeights  - Data structure sized for the cubature weights.
+    */
+    virtual TensorWeightDataType allocateCubatureWeights() const
+    {
+      // default implementation has trivial tensor structure
+      using WeightDataType = Data<weightValueType,DeviceType>;
+      WeightViewTypeAllocatable allWeightData("cubature weights",this->getNumPoints());
+      Kokkos::Array< WeightDataType, 1> cubatureWeightComponents;
+      cubatureWeightComponents[0] = WeightDataType(allWeightData);
+      return TensorWeightDataType(cubatureWeightComponents);
+    }
+    
     /** \brief Returns cubature points and weights
         (return arrays must be pre-sized/pre-allocated).
 
@@ -136,7 +170,7 @@ namespace Intrepid2 {
     getCubature( PointViewType  /* cubPoints */,
                  weightViewType /* cubWeights */ ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
+                                    ">>> ERROR (Cubature::getCubature): this method should be overridden by derived classes.");
     }
 
     /** \brief Returns cubature points and weights on physical cells
@@ -152,7 +186,26 @@ namespace Intrepid2 {
                  weightViewType /* cubWeights */,
                  PointViewType  /* cellVertices */) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
+                                    ">>> ERROR (Cubature::getCubature): this method should be overridden by derived classes.");
+    }
+    
+    /** \brief Returns tensor cubature points and weights.  For non-tensor cubatures, the tensor structures are trivial, thin wrappers around the data returned by getCubature().  The provided containers should be pre-allocated through calls to allocateCubaturePoints() and allocateCubatureWeights().
+
+        \param cubPoints       [out]   - TensorPoints structure containing the cubature points.
+        \param cubWeights      [out]  - TensorData structure containing cubature weights.
+    */
+    virtual
+    void
+    getCubature( const TensorPointDataType & tensorCubPoints,
+                       const TensorWeightDataType & tensorCubWeights) const {
+      // default implementation has trivial tensor product structure.
+      
+      INTREPID2_TEST_FOR_EXCEPTION(1 != tensorCubPoints.numTensorComponents(), std::logic_error, "default implementation of getCubature only supports trivial tensor structure -- numTensorComponents() must be 1");
+      INTREPID2_TEST_FOR_EXCEPTION(1 != tensorCubWeights.numTensorComponents(), std::logic_error, "default implementation of getCubature only supports trivial tensor structure -- numTensorComponents() must be 1");
+      
+      auto underlyingPointView  = tensorCubPoints.getTensorComponent(0);
+      
+      this->getCubature(underlyingPointView, tensorCubWeights.getTensorComponent(0).getUnderlyingView());
     }
 
     /** \brief Returns the number of cubature points.
@@ -161,7 +214,7 @@ namespace Intrepid2 {
     ordinal_type
     getNumPoints() const {
       INTREPID2_TEST_FOR_WARNING( true, 
-                                  ">>> ERROR (Cubature::getNumPoints): this method should be over-riden by derived classes.");
+                                  ">>> ERROR (Cubature::getNumPoints): this method should be overridden by derived classes.");
       return 0;
     }
 
@@ -172,7 +225,7 @@ namespace Intrepid2 {
     ordinal_type
     getDimension() const {
       INTREPID2_TEST_FOR_WARNING( true, 
-                                  ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
+                                  ">>> ERROR (Cubature::getDimension): this method should be overridden by derived classes.");
       return 0;
     }
 
@@ -182,7 +235,7 @@ namespace Intrepid2 {
     ordinal_type
     getAccuracy() const {
       INTREPID2_TEST_FOR_WARNING( true, 
-                                  ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
+                                  ">>> ERROR (Cubature::getDimension): this method should be overridden by derived classes.");
       return 0;
     }
 

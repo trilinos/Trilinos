@@ -215,6 +215,15 @@ public:
     return rawMpiRequest_ == MPI_REQUEST_NULL;
   }
 
+  bool isReady() {
+    MPI_Status rawMpiStatus;
+    int flag = 0;
+
+    MPI_Test(&rawMpiRequest_, &flag, &rawMpiStatus);
+
+    return (flag != 0);
+  }
+
   /// \brief Wait on this communication request to complete.
   ///
   /// This is a blocking operation.  The user is responsible for
@@ -724,6 +733,27 @@ template<typename Ordinal>
 RCP<MpiComm<Ordinal> >
 createMpiComm(
   const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
+  );
+
+
+/** \brief Helper function that creates a dynamically allocated
+ * <tt>MpiComm</tt> object or returns <tt>Teuchos::null</tt> to correctly
+ * represent a null communicator.
+ *
+ * <b>Postconditions:</b></ul>
+ * <li>[<tt>rawMpiComm.get()!=NULL && *rawMpiComm!=MPI_COMM_NULL</tt>]
+ *     <tt>return.get()!=NULL</tt>
+ * <li>[<tt>rawMpiComm.get()==NULL || *rawMpiComm==MPI_COMM_NULL</tt>]
+ *     <tt>return.get()==NULL</tt>
+ * </ul>
+ *
+ * \relates MpiComm
+ */
+template<typename Ordinal>
+RCP<MpiComm<Ordinal> >
+createMpiComm(
+              const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm,
+              const int defaultTag              
   );
 
 
@@ -1803,6 +1833,19 @@ Teuchos::createMpiComm(
 {
   if( rawMpiComm.get()!=NULL && *rawMpiComm != MPI_COMM_NULL )
     return rcp(new MpiComm<Ordinal>(rawMpiComm));
+  return Teuchos::null;
+}
+
+
+template<typename Ordinal>
+Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
+Teuchos::createMpiComm(
+                       const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm,
+                       const int defaultTag
+  )
+{
+  if( rawMpiComm.get()!=NULL && *rawMpiComm != MPI_COMM_NULL )
+    return rcp(new MpiComm<Ordinal>(rawMpiComm, defaultTag));
   return Teuchos::null;
 }
 

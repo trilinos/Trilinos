@@ -35,9 +35,9 @@
 #ifndef STK_UTIL_DIAG_Signal_hpp
 #define STK_UTIL_DIAG_Signal_hpp
 
-#include <string>
+#include <setjmp.h>  // for sigjmp_buf
+#include <string>    // for string
 
-#include <setjmp.h>
 
 /**
  * Signal handling is enabled via the <b>activate_signals()</b> function.  The

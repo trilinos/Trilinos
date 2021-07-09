@@ -9,27 +9,16 @@
 
 #include <Kokkos_Macros.hpp>
 #include <stk_mesh/base/NgpProfilingBlock.hpp>
-// mfh 27 Sep 2017: Note that it is possible to disable Kokkos'
-// profiling interface at configure time.  There's no good reason for
-// this as far as I know, but it's possible.
-#if defined(KOKKOS_ENABLE_PROFILING)
-#include <impl/Kokkos_Profiling_Interface.hpp>
-#endif // defined(KOKKOS_ENABLE_PROFILING)
+#include <impl/Kokkos_Profiling.hpp>
 
 namespace stk {
 namespace mesh {
 
-#if defined(KOKKOS_ENABLE_PROFILING)
 ProfilingBlock::ProfilingBlock(const std::string & name) { Kokkos::Profiling::pushRegion(name); }
-#else
-ProfilingBlock::ProfilingBlock(const std::string & /* name */) {}
-#endif // defined(KOKKOS_ENABLE_PROFILING)
 
 ProfilingBlock::~ProfilingBlock()
 {
-#if defined(KOKKOS_ENABLE_PROFILING)
   Kokkos::Profiling::popRegion();
-#endif // defined(KOKKOS_ENABLE_PROFILING)
 }
 
 }

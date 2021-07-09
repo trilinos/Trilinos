@@ -217,15 +217,17 @@ namespace Amesos2 {
                 EDistribution distribution) const;
 
     template<typename KV>
-    void
-    get1dCopy_kokkos_view (KV& kokkos_view,
+    bool
+    get1dCopy_kokkos_view (bool bInitialize, KV& kokkos_view,
                 size_t lda,
                 Teuchos::Ptr<
                   const Tpetra::Map<local_ordinal_t,
                   global_ordinal_t,
                   node_t> > distribution_map,
                 EDistribution distribution) const {
-      deep_copy_or_assign_view(kokkos_view, *mv_);
+      bool bAssigned; // deep_copy_or_assign_view sets true if assigned (no deep copy)
+      deep_copy_or_assign_view(bInitialize, kokkos_view, *mv_, bAssigned);
+      return bAssigned;
     }
 
     /**

@@ -1,0 +1,19 @@
+Decomposition Method = none
+Zoltan Parameters = comm_pattern=S
+Zoltan Parameters = vertex_visit_order=I
+Zoltan Parameters = superstep_size=100
+Zoltan Parameters = coloring_problem=distance-1
+Zoltan Parameters = num_gid_entries=2
+Zoltan Parameters = num_lid_entries=2
+File Type = Chaco
+File Name = simple
+Parallel Disk Info = number=0
+zdrive action = 4
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1	0	1	-1
+2	0	2	-1
+3	0	1	-1
+4	0	2	-1
+5	0	1	-1
+6	0	2	-1

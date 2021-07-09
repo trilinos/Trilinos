@@ -72,6 +72,7 @@ namespace Stratimikos {
   template <typename LocalOrdinal = MueLu::DefaultLocalOrdinal, typename GlobalOrdinal = MueLu::DefaultGlobalOrdinal, typename Node = MueLu::DefaultNode>
   void enableMueLu(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu")
   {
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
     TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
@@ -81,6 +82,7 @@ namespace Stratimikos {
     typedef Thyra::MueLuPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal, Node> Impl;
 
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
+#endif
   }
 
   // Dynamically register MueLu RefMaxwell adapters in Stratimikos
@@ -89,6 +91,7 @@ namespace Stratimikos {
   template <typename LocalOrdinal = MueLu::DefaultLocalOrdinal, typename GlobalOrdinal = MueLu::DefaultGlobalOrdinal, typename Node = MueLu::DefaultNode>
   void enableMueLuRefMaxwell(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLuRefMaxwell")
   {
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
     TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
@@ -98,6 +101,7 @@ namespace Stratimikos {
     typedef Thyra::MueLuRefMaxwellPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal, Node> Impl;
 
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
+#endif
   }
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)

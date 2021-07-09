@@ -273,10 +273,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     LO blocksize = 1;                    clp.setOption("blocksize",&blocksize,"block size");
 
     switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
     //Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();

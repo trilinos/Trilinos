@@ -34,12 +34,14 @@
 #ifndef STK_MESH_HOSTMESH_HPP
 #define STK_MESH_HOSTMESH_HPP
 
+#include "stk_mesh/base/NgpMeshBase.hpp"
 #include <stk_util/stk_config.h>
 #include <stk_util/util/StridedArray.hpp>
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/baseImpl/BucketRepository.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/NgpTypes.hpp"
 #include "stk_topology/topology.hpp"
 #include <Kokkos_Core.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -54,15 +56,13 @@
 namespace stk {
 namespace mesh {
 
-using DeviceCommMapIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::mesh::MemSpace>;
-
 struct HostMeshIndex
 {
   const stk::mesh::Bucket *bucket;
   size_t bucketOrd;
 };
 
-class HostMesh
+class HostMesh : public NgpMeshBase
 {
 public:
   using MeshExecSpace     = stk::mesh::HostExecSpace;
@@ -73,20 +73,28 @@ public:
   using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
   using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
 
-  HostMesh() : bulk(nullptr)
+  HostMesh()
+    : NgpMeshBase(),
+      bulk(nullptr)
   {
 
   }
 
-  HostMesh(const stk::mesh::BulkData& b) : bulk(&b)
+  HostMesh(const stk::mesh::BulkData& b)
+    : NgpMeshBase(),
+      bulk(&b)
   {
+    require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
   }
 
-  ~HostMesh()
-  {
-  }
+  virtual ~HostMesh() override = default;
 
-  void update_mesh()
+  HostMesh(const HostMesh &) = default;
+  HostMesh(HostMesh &&) = default;
+  HostMesh& operator=(const HostMesh&) = default;
+  HostMesh& operator=(HostMesh&&) = default;
+
+  void update_mesh() override
   {
   }
 

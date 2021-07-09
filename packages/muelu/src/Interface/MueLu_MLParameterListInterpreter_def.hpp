@@ -256,6 +256,7 @@ namespace MueLu {
     if (verbosityLevel >= 10) eVerbLevel = High;
     if (verbosityLevel >= 11) eVerbLevel = Extreme;
     if (verbosityLevel >= 42) eVerbLevel = Test;
+    if (verbosityLevel >= 43) eVerbLevel = InterfaceTest;
     this->verbosity_ = eVerbLevel;
 
 
@@ -725,7 +726,7 @@ namespace MueLu {
       // Validator: following upper/lower case is what is allowed by ML
       bool valid = false;
       const int  validatorSize = 5;
-      std::string validator[validatorSize] = {"Superlu", "Superludist", "KLU", "UMFPACK"}; /* TODO: should "" be allowed? */
+      std::string validator[validatorSize] = {"Superlu", "Superludist", "KLU", "UMFPACK", "MUMPS"}; /* TODO: should "" be allowed? */
       for (int i=0; i < validatorSize; i++) { if (validator[i] == solverType) valid = true; }
       TEUCHOS_TEST_FOR_EXCEPTION(!valid, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter: unknown smoother type. '" << type << "' not supported.");
 

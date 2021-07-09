@@ -76,7 +76,7 @@ TEUCHOSCORE_LIB_DLL_EXPORT void TestForException_setEnableStacktrace(bool enable
 TEUCHOSCORE_LIB_DLL_EXPORT bool TestForException_getEnableStacktrace();
 
 /** \brief Prints the message to std::cerr and calls std::terminate. */
-TEUCHOSCORE_LIB_DLL_EXPORT [[noreturn]] void TestForTermination_terminate(const std::string &msg);
+[[noreturn]] TEUCHOSCORE_LIB_DLL_EXPORT void TestForTermination_terminate(const std::string &msg);
 
 
 } // namespace Teuchos

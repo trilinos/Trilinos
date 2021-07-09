@@ -41,7 +41,6 @@
 #include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
 #include <vector>                                    // for vector, etc
 #include "mpi.h"                                     // for MPI_COMM_WORLD, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################

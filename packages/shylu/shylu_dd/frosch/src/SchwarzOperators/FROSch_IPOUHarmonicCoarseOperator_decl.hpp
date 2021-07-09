@@ -51,7 +51,8 @@
 
 
 namespace FROSch {
-    
+
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -80,6 +81,9 @@ namespace FROSch {
         using XMultiVectorPtrVecPtr             = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
         using ConstXMultiVectorPtrVecPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtrVecPtr;
 
+        using XCrsGraph                         = typename SchwarzOperator<SC,LO,GO,NO>::XCrsGraph;
+        using GraphPtr                          = typename SchwarzOperator<SC,LO,GO,NO>::GraphPtr;
+        using ConstXCrsGraphPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
         using ParameterListPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
         using DDInterfacePtr                    = typename SchwarzOperator<SC,LO,GO,NO>::DDInterfacePtr;
@@ -95,7 +99,8 @@ namespace FROSch {
 
         using LocalPartitionOfUnityBasisPtr     = typename SchwarzOperator<SC,LO,GO,NO>::LocalPartitionOfUnityBasisPtr;
 
-        using SubdomainSolverPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using SolverPtr                         = typename SchwarzOperator<SC,LO,GO,NO>::SolverPtr;
+        using SolverFactoryPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::SolverFactoryPtr;
 
         using UN                                = typename SchwarzOperator<SC,LO,GO,NO>::UN;
         using UNVecPtr                          = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
@@ -145,7 +150,12 @@ namespace FROSch {
         void describe(FancyOStream &out,
                       const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
-        std::string description() const;
+        string description() const;
+
+        virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                    UN dofsPerNode,
+                                                    ConstXMapPtrVecPtr dofsMaps,
+                                                    UN partitionType);
 
     protected:
 
@@ -183,6 +193,8 @@ namespace FROSch {
         PartitionOfUnityPtr PartitionOfUnity_;
 
         LocalPartitionOfUnityBasisPtr LocalPartitionOfUnityBasis_;
+
+        GOVec NumEnt_;
         /*
          ^^^^^^^^^^
          */

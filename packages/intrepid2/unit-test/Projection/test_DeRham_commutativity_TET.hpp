@@ -154,13 +154,10 @@ int DeRhamCommutativityTet(const bool verbose) {
       switch (comp) {
       case 0:
         return 4*x*x*x*(y - 2);
-        break;
       case 1:
         return x*x*x*x + 1;
-        break;
       case 2:
         return 0;
-        break;
       default:
         return 0;
       }
@@ -182,13 +179,10 @@ int DeRhamCommutativityTet(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 + a*x;
-        break;
       case 1:
         return f1 + a*y;
-        break;
       case 2:
         return f2 + a*z;
-        break;
       default:
         return 0;
       }
@@ -229,13 +223,10 @@ int DeRhamCommutativityTet(const bool verbose) {
       switch (comp) {
       case 0:
         return f0 + (a1*z-a2*y);//2*x+y-z + (x+2*(y+z);
-        break;
       case 1:
         return f1 + (a2*x-a0*z);//y+2*(z+x);
-        break;
       case 2:
         return f2 + (a0*y-a1*x);//z+2*(x+y);
-        break;
       default:
         return 0;
       }
@@ -264,13 +255,10 @@ int DeRhamCommutativityTet(const bool verbose) {
       switch (comp) {
       case 0:
         return gf2[1] - gf1[2] + 2*a0 + (x*ga0[0]+y*ga0[1]+z*ga0[2]) - x*diva;//2*x+y-z + (x+2*(y+z);
-        break;
       case 1:
         return gf0[2] - gf2[0] + 2*a1 + (x*ga1[0]+y*ga1[1]+z*ga1[2]) - y*diva;//y+2*(z+x);
-        break;
       case 2:
         return gf1[0] - gf0[1] + 2*a2 + (x*ga2[0]+y*ga2[1]+z*ga2[2]) - z*diva;//z+2*(x+y);
-        break;
       default:
         return 0;
       }

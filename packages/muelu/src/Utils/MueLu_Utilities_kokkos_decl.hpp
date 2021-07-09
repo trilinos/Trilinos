@@ -172,7 +172,7 @@ namespace MueLu {
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100); // FIXME
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = TST::eps()*100, const bool doLumped = false); // FIXME
 
 
 
@@ -228,6 +228,11 @@ namespace MueLu {
       return Utilities::PowerMethod(A, scaleByDiag, niters, tolerance, verbose, seed);
     }
 
+    static SC PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag,
+                          LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return Utilities::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
+    }
+
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
                                  bool doFillComplete = true, bool doOptimizeStorage = true); // FIXME
 
@@ -266,6 +271,10 @@ namespace MueLu {
     static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
     static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+    
+    static void ApplyRowSumCriterion(const Matrix& A,
+                                     const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                     Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
 
     static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 
@@ -293,16 +302,16 @@ namespace MueLu {
       return Utilities::ExtractCoordinatesFromParameterList(paramList);
     }
 
-
-    /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix
-      Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
-     */
-    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Matrix &Op);
-
-    /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix
+    /*! Perform a Cuthill-McKee (CM) or Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix.
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
     */
     static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Matrix &Op);
+
+    /*! Perform a Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix.
+     */
+    static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > ReverseCuthillMcKee(const Matrix &Op);
+
+    static void ApplyOAZToMatrixRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
 
   }; // class Utils
 
@@ -376,14 +385,11 @@ namespace MueLu {
     static ArrayRCP<SC> GetMatrixDiagonal(const Matrix& A) {
       return UtilitiesBase::GetMatrixDiagonal(A);
     }
-    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100) {
-      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol);
+    static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false) {
+      return UtilitiesBase::GetMatrixDiagonalInverse(A, tol, doLumped);
     }
-    static ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A);
-    }
-    static RCP<Vector> GetLumpedMatrixDiagonal(RCP<const Matrix > A) {
-      return UtilitiesBase::GetLumpedMatrixDiagonal(A);
+    static RCP<Vector> GetLumpedMatrixDiagonal(Matrix const &A, const bool doReciprocal=false, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero(), const bool replaceSingleEntryRowWithZero = false) {
+      return UtilitiesBase::GetLumpedMatrixDiagonal(A, doReciprocal, tol, tolReplacement, replaceSingleEntryRowWithZero);
     }
     static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A) {
       return UtilitiesBase::GetMatrixOverlappedDiagonal(A);
@@ -418,10 +424,18 @@ namespace MueLu {
 
     static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
+    static void ApplyRowSumCriterion(const Matrix& A,
+                                     const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                     Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
+
     static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 
     static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
       return UtilitiesBase::PowerMethod(A,scaleByDiag,niters,tolerance,verbose,seed);
+    }
+
+    static Scalar PowerMethod(const Matrix& A, const Teuchos::RCP<Vector> &invDiag, LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return UtilitiesBase::PowerMethod(A, invDiag, niters, tolerance, verbose, seed);
     }
 
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
@@ -474,8 +488,8 @@ namespace MueLu {
           tpOp.resumeFill();
 
         if (Op.isLocallyIndexed() == true) {
-          Teuchos::ArrayView<const LO> cols;
-          Teuchos::ArrayView<const SC> vals;
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type cols;
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             tpOp.getLocalRowView(i, cols, vals);
@@ -488,14 +502,15 @@ namespace MueLu {
               scaledVals[j] = vals[j]*scalingVector[i];
 
             if (nnz > 0) {
+	      Teuchos::ArrayView<const LocalOrdinal> cols_view(cols.data(), nnz);
               Teuchos::ArrayView<const SC> valview(&scaledVals[0], nnz);
-              tpOp.replaceLocalValues(i, cols, valview);
+              tpOp.replaceLocalValues(i, cols_view, valview);
             }
           } //for (size_t i=0; ...
 
         } else {
-          Teuchos::ArrayView<const GO> cols;
-          Teuchos::ArrayView<const SC> vals;
+          typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_inds_host_view_type cols;
+          typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             GO gid = rowMap->getGlobalElement(i);
@@ -509,9 +524,10 @@ namespace MueLu {
             for (size_t j = 0; j < nnz; ++j)
               scaledVals[j] = vals[j]*scalingVector[i]; //FIXME i or gid?
 
-            if (nnz > 0) {
+	    if (nnz > 0) {
+	      Teuchos::ArrayView<const GlobalOrdinal> cols_view(cols.data(), nnz);
               Teuchos::ArrayView<const SC> valview(&scaledVals[0], nnz);
-              tpOp.replaceGlobalValues(gid, cols, valview);
+              tpOp.replaceGlobalValues(gid, cols_view, valview);
             }
           } //for (size_t i=0; ...
         }
@@ -715,6 +731,8 @@ namespace MueLu {
       Kokkos-Kernels has an RCM implementation, so we reverse that here if we call CM.
     */
     static RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Matrix &Op);
+
+    static void ApplyOAZToMatrixRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
 
   }; // class Utilities (specialization SC=double LO=GO=int)
 

@@ -34,13 +34,13 @@
 // 
  */
 
-#include <stk_util/util/Signal.hpp>
-#include <signal.h>                     // for SIGBUS, SIGILL, SIGSEGV, etc
-#include <stk_util/util/Callback.hpp>   // for Callback
-#include <stk_util/util/FeatureTest.hpp>  // for SIERRA_MPI_ABORT_SIGNAL, etc
-#include <stk_util/util/SignalHandler.hpp>  // for SignalHandler
-
-
+#include "stk_util/util/Signal.hpp"
+#include "stk_util/util/Callback.hpp"       // for Callback
+#include "stk_util/util/FeatureTest.hpp"    // for SIERRA_MPI_ABORT_SIGNAL, SIERRA_USER_SHUTDOWN...
+#include "stk_util/util/ReportHandler.hpp"  // for SignalHandler
+#include "stk_util/util/SignalHandler.hpp"  // for SignalHandler
+#include <csignal>                          // for SIGBUS, SIGILL, SIGSEGV, raise, SIGTERM
+#include <sstream>
 
 namespace sierra {
 namespace Env {
@@ -146,9 +146,19 @@ private:
 };
 
 
-  void
+#ifdef __SANITIZE_ADDRESS__
+#define STK_ASAN_IS_ON
+#endif
+#if !defined(STK_ASAN_IS_ON) && defined(__has_feature)
+# if __has_feature(address_sanitizer)
+#define STK_ASAN_IS_ON
+# endif
+#endif
+
+void
 EnvSignal::activateSignals()
 {
+#ifndef STK_ASAN_IS_ON
   SignalHandler::instance().add_handler(SIGSEGV, EnvSignal::segvCallback);
   SignalHandler::instance().add_handler(SIGILL, EnvSignal::illCallback);
   SignalHandler::instance().add_handler(SIGBUS, EnvSignal::busCallback);
@@ -163,12 +173,14 @@ EnvSignal::activateSignals()
 #if defined(SIERRA_MPI_ABORT_SIGNAL)
   SignalHandler::instance().add_handler(SIERRA_MPI_ABORT_SIGNAL, EnvSignal::termCallback);
 #endif
+#endif
 }
 
 
 void
 EnvSignal::deactivateSignals()
 {
+#ifndef STK_ASAN_IS_ON
   SignalHandler::instance().remove_handler(SIGSEGV, EnvSignal::segvCallback);
   SignalHandler::instance().remove_handler(SIGILL, EnvSignal::illCallback);
   SignalHandler::instance().remove_handler(SIGBUS, EnvSignal::busCallback);
@@ -182,6 +194,7 @@ EnvSignal::deactivateSignals()
 #endif
 #if defined(SIERRA_MPI_ABORT_SIGNAL)
   SignalHandler::instance().remove_handler(SIERRA_MPI_ABORT_SIGNAL, EnvSignal::termCallback);
+#endif
 #endif
 }
 
@@ -198,7 +211,10 @@ EnvSignal::doSignal(
   }
   else {
     m_enabled = false;
-    m_message = message;
+    std::ostringstream os;
+    os << message << "\noccurred at:\n";
+    stk::output_stacktrace(os) << "\n";
+    m_message = os.str();
     ::siglongjmp(m_sigJmpBuf, signal);
   }
 }

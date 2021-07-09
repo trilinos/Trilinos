@@ -120,6 +120,10 @@ class GraphColorDistance2Handle
     double overall_coloring_time_phase5;      //
     double coloring_time;                     // the time that it took to color the graph
 
+    bool use_vtx_list;
+    nnz_lno_temp_work_view_type vertex_list;
+    size_type vertex_list_size;    
+
     int num_phases;      // Number of phases used by the coloring algorithm
 
     color_view_type vertex_colors;
@@ -144,6 +148,7 @@ class GraphColorDistance2Handle
         , overall_coloring_time_phase4(0)
         , overall_coloring_time_phase5(0)
         , coloring_time(0)
+        , use_vtx_list(false)
         , num_phases(0)
         , vertex_colors()
         , is_coloring_called_before(false)
@@ -198,71 +203,27 @@ class GraphColorDistance2Handle
      * Chooses best algorithm based on the execution space.
      *
      * This chooses the best algorithm based on the execution space:
-     * - COLORING_D2_SERIAL if the execution space is SERIAL
-     * - COLORING_D2_NB_BIT otherwise
+     * - COLORING_D2_SERIAL if the execution space is SERIAL (more work efficient than NB_BIT)
+     * - COLORING_D2_NB_BIT otherwise (fastest parallel algorithm)
      *
      */
 
     void choose_default_algorithm()
     {
-        bool found = false;
-#if defined(KOKKOS_ENABLE_SERIAL)
-        if(std::is_same<Kokkos::Serial, ExecutionSpace>::value)
+        if(KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>() == KokkosKernels::Impl::Exec_SERIAL)
         {
             this->coloring_algorithm_type = COLORING_D2_SERIAL;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "Serial Execution Space, Default Algorithm: COLORING_D2_SERIAL" << std::endl;
+#ifdef VERBOSE 
+            std::cout << "Serial Execution Space, Default Algorithm: COLORING_D2_SERIAL\n";
 #endif
         }
-#endif
-
-#if defined(KOKKOS_ENABLE_THREADS)
-        if(std::is_same<Kokkos::Threads, ExecutionSpace>::value)
+        else
         {
             this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
+#ifdef VERBOSE 
+            std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_D2_NB_BIT\n";
 #endif
         }
-#endif
-
-#if defined(KOKKOS_ENABLE_OPENMP)
-        if(std::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
-        {
-            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
-#endif
-        }
-#endif
-
-#if defined(KOKKOS_ENABLE_CUDA)
-        if(std::is_same<Kokkos::Cuda, ExecutionSpace>::value)
-        {
-            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
-#endif
-        }
-#endif
-
-#if defined(KOKKOS_ENABLE_QTHREAD)
-        if(std::is_same<Kokkos::Qthread, ExecutionSpace>::value)
-        {
-            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
-#endif
-        }
-#endif
-        //Since this logic is based on checking every exec space, detect when a new one needs to be supported
-        if(!found)
-          throw std::logic_error("D2 coloring: default algorithm hasn't been chosen for the current execution space");
     }
 
 
@@ -326,7 +287,16 @@ class GraphColorDistance2Handle
 
     bool is_coloring_called() const { return this->is_coloring_called_before; }
 
+    bool get_use_vtx_list() const { return this->use_vtx_list; }
+    nnz_lno_temp_work_view_type get_vertex_list() const { return this->vertex_list; }
+    size_type get_vertex_list_size() const { return this->vertex_list_size; }
+
     // setters
+    void set_vertex_list(nnz_lno_temp_work_view_type vertex_list_, size_type vertex_list_size_){
+      this->vertex_list = vertex_list_;
+      this->vertex_list_size = vertex_list_size_;
+      this->use_vtx_list = true;
+    }
     void set_coloring_called() { this->is_coloring_called_before = true; }
 
     void set_coloring_algo_type(const GraphColoringAlgorithmDistance2& col_algo) { this->coloring_algorithm_type = col_algo; }

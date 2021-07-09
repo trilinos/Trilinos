@@ -35,10 +35,10 @@
 #ifndef STK_UTIL_DIAG_PrintTable_hpp
 #define STK_UTIL_DIAG_PrintTable_hpp
 
-#include <stddef.h>                     // for size_t
-#include <sstream>                      // for ostream, ostringstream, etc
-#include <string>                       // for string
-#include <vector>                       // for vector
+#include <cstddef>  // for size_t
+#include <sstream>  // for ostream, ios_base, ostringstream
+#include <string>   // for string
+#include <vector>   // for vector
 namespace stk { namespace diag { class Writer; } }
 
 

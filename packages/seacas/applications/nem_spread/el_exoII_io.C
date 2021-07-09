@@ -1,36 +1,9 @@
 /*
- * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 #include "copy_string_cpp.h"
 #include "el_check_monot.h" // for check_monot
@@ -200,8 +173,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   INT *  num_elem_in_ssets = nullptr, *num_df_in_ssets = nullptr, *num_df_in_nsets = nullptr;
   int    cpu_ws;
   float  version;
-  double start_time      = 0.0;
-  int    max_name_length = 0;
+  double start_time = 0.0;
 
   /* Allocate some memory for each processor read by this processor */
   globals.Proc_Num_Elem_Blk  = (int *)array_alloc(__FILE__, __LINE__, 1, Proc_Info[2], sizeof(int));
@@ -306,7 +278,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     }
   }
 
-  max_name_length = ex_inquire_int(mesh_exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  auto max_name_length = ex_inquire_int(mesh_exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(mesh_exoid, max_name_length);
 
   globals.Num_QA_Recs = ex_inquire_int(mesh_exoid, EX_INQ_QA);
@@ -345,6 +317,29 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
       fmt::print(stderr, "[{}]: ERROR, could not get Info record(s)\n", __func__);
       exit(1);
     }
+  }
+
+  /* Read in the assembly information */
+  {
+    ex_init_params ex_info;
+    ex_get_init_ext(mesh_exoid, &ex_info);
+    globals.Num_Assemblies = ex_info.num_assembly;
+  }
+
+  if (globals.Num_Assemblies > 0) {
+    globals.Assemblies.resize(globals.Num_Assemblies);
+    for (int i = 0; i < globals.Num_Assemblies; i++) {
+      globals.Assemblies[i].name        = nullptr;
+      globals.Assemblies[i].entity_list = nullptr;
+    }
+    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
+
+    for (auto &assembly : globals.Assemblies) {
+      assembly.entity_list = new int64_t[assembly.entity_count];
+    }
+
+    // Now get the assembly entity lists...
+    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
   }
 
   /* Read in the coordinate frame information */
@@ -870,7 +865,7 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
 
     if (globals.Num_Side_Set > 0) {
       for (int i = 0; i < globals.Num_Side_Set; i++) {
-        fmt::print("{:6d}{:11d}  {:12n}\n", i, (size_t)Side_Set_Ids[i],
+        fmt::print("{:6d}{:11d}  {:12L}\n", i, (size_t)Side_Set_Ids[i],
                    (size_t)num_elem_in_ssets[i]);
       }
     }
@@ -891,8 +886,8 @@ template <typename T, typename INT>
 void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
 {
 
-  /* Function which reads the nodal coordinates information from an * EXODUS
-   * database for a given processor.
+  /* Function which reads the nodal coordinates information from an
+   * EXODUS database for a given processor.
    */
 
   /*
@@ -970,7 +965,7 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
       if (global_node_ids[i] <= 0) {
         fmt::print(stderr,
                    "---------------------------------------------------------------------\n"
-                   "ERROR: Local node {:n} has a global id of {:n} which is invalid.\n"
+                   "ERROR: Local node {:L} has a global id of {:L} which is invalid.\n"
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
                    i + 1, global_node_ids[i]);
@@ -1159,7 +1154,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
                  "Glb_Elm_In_Blk");
       print_line("-", 79);
       for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
-        fmt::print("{:4d}\t\t{:5n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\n", i,
+        fmt::print("{:4d}\t\t{:5L}\t{:8L}\t{:8L}\t{:8L}\t{:8L}\t{:8L}\t{:8L}\n", i,
                    globals.GElem_Blks[iproc][i], globals.Proc_Elem_Blk_Ids[iproc][i],
                    globals.Proc_Nodes_Per_Elem[iproc][i], globals.Proc_Num_Attr[iproc][i],
                    globals.Proc_Elem_Blk_Types[iproc][i], globals.Proc_Num_Elem_In_Blk[iproc][i],
@@ -1490,7 +1485,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       if (global_ids[i] <= 0) {
         fmt::print(stderr,
                    "---------------------------------------------------------------------\n"
-                   "ERROR: Local element {:n} has a global id of {:n} which is invalid.\n"
+                   "ERROR: Local element {:L} has a global id of {:L} which is invalid.\n"
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
                    i + 1, global_ids[i]);

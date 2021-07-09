@@ -37,11 +37,14 @@ function atdm_match_any_keyword() {
   input_string=$1 ; shift
   keyword_array=$@
 
+  #echo "input_string=$input_string"
+  #echo "keyword_array=$keyword_array"
+
   for keyword in ${keyword_array[@]} ; do
     if atdm_match_keyword "${input_string}" ${keyword}; then
       return 0
     fi
-  done 
+  done
 
   return 1
 }

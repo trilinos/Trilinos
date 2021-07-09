@@ -39,6 +39,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
 #include <stk_mesh/base/FindRestriction.hpp>
+#include <stk_mesh/base/NgpFieldBase.hpp>
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 
 
@@ -56,11 +57,7 @@ std::ostream & operator << ( std::ostream & s , const FieldBase & field )
   }
   s << ">" ;
 
-  s << "[ name: \"" ;
-  s << field.name() ;
-  s << "\" , #states: " ;
-  s << field.number_of_states();
-  s << " ]" ;
+  s << "[\"" << field.name() << "\", #states: " << field.number_of_states() << "]" ;
   return s ;
 }
 
@@ -109,6 +106,21 @@ unsigned FieldBase::length(const stk::mesh::Part& part) const
   const stk::mesh::FieldRestriction& restriction =
     stk::mesh::find_restriction(*this, entity_rank(), part);
   return restriction.num_scalars_per_entity();
+}
+
+void FieldBase::rotate_multistate_data()
+{
+  const unsigned numStates = m_impl.number_of_states();
+  if (numStates > 1 && StateNew == state()) {
+    NgpFieldBase* ngpField = get_ngp_field();
+    if (ngpField != nullptr) {
+      ngpField->rotate_multistate_data();
+    }
+    for (unsigned s = 1; s < numStates; ++s) {
+      FieldBase* sField = field_state(static_cast<FieldState>(s));
+      m_field_meta_data.swap(sField->m_field_meta_data);
+    }
+  }
 }
 
 //----------------------------------------------------------------------

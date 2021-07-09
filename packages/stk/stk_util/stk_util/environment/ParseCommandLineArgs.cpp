@@ -31,9 +31,18 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <stk_util/stk_config.h>
-#include <stk_util/util/string_utils.hpp>
-#include <stk_util/environment/ParseCommandLineArgs.hpp>
+#include "stk_util/environment/ParseCommandLineArgs.hpp"
+#include "stk_util/environment/OptionsSpecification.hpp"  // for Option, OptionsSpecification
+#include "stk_util/environment/ParsedOptions.hpp"         // for ParsedOptions
+#include "stk_util/util/ReportHandler.hpp"                // for ThrowRequireMsg
+#include "stk_util/util/string_utils.hpp"                 // for dash_it, rm_dashes
+#include <cstddef>                                        // for size_t
+#include <algorithm>                                      // for fill
+#include <memory>                                         // for __shared_ptr_access, shared_ptr
+#include <ostream>                                        // for operator<<, basic_ostream
+#include <stdexcept>                                      // for runtime_error
+#include <string>                                         // for string, operator<<, char_traits
+#include <vector>                                         // for vector, vector<>::reference
 
 namespace stk {
 

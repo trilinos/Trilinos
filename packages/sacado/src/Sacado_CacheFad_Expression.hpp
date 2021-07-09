@@ -123,31 +123,31 @@ namespace Sacado {
       typedef ConstT base_expr_type;
 
       //! Constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ConstExpr(const ConstT& constant) : constant_(constant) {}
 
       //! Return size of the derivative array of the operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return 0; }
 
       //! Return if operation has fast access
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       bool hasFastAccess() const { return 1; }
 
       //! Cache values
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void cache() const {}
 
       //! Return value of operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type val() const { return constant_; }
 
       //! Return derivative component \c i of operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type dx(int i) const { return value_type(0); }
 
       //! Return derivative component \c i of operation
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       value_type fastAccessDx(int i) const { return value_type(0); }
 
     protected:

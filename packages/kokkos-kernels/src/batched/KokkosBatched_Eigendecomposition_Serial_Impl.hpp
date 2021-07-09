@@ -12,7 +12,6 @@ namespace KokkosBatched {
   ///
   /// Serial Impl
   /// ===========
-
   template<typename AViewType,
            typename EViewType,
            typename UViewType,
@@ -33,9 +32,9 @@ namespace KokkosBatched {
     assert(m == int(UL.extent(1)) && "Eigendecomposition: Width of UL does not match to A's dimension");
     assert(m == int(UR.extent(0)) && "Eigendecomposition: Length of UR does not match to A's dimension");
     assert(m == int(UR.extent(1)) && "Eigendecomposition: Width of UR does not match to A's dimension");
-    assert(int(W.extent(0)) >= int(2*m*m+5*m) && "Eigendecomposition: workspace size is too small");
+    //assert(int(W.extent(0)) >= int(2*m*m+5*m) && "Eigendecomposition: workspace size is too small");
     assert(int(W.stride(0)) == int(1)  && "Eigendecomposition: Provided workspace is not contiguous");
-      
+
     /// static assert A,er,ei,UL,UR,W has the same value_type
     /// static assert all views have the same memory space
     return m ? SerialEigendecompositionInternal

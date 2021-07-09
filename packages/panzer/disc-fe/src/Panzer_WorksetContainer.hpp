@@ -79,7 +79,7 @@ public:
      * map.
      *
      * \param[in] factory Factory to be used for constructing worksets
-     * \param[in] needs Workset needs mapped from the elemetn blocks
+     * \param[in] needs Workset needs mapped from the element blocks
      *                  (integration rules and basis values for each element block)
      */ 
    WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
@@ -118,11 +118,25 @@ public:
      */
    void setNeeds(const std::string & eBlock,const WorksetNeeds & needs);
 
-   /** Clear all allocated worksets, maintain the workset factory and element to physics
-     * block map.
+   /** Clear all allocated worksets, maintain the workset factory and
+     * element to physics block map.
      */ 
    void clear();
 
+   /** Clear all allocated worksets for the volume assembly, maintain
+     * the workset factory, element to physics block map and side
+     * worksets. This is meant for cases where volume assembly is
+     * needed during setup, but during a run only side worksets are
+     * needed to adjust boundary conditions. This allows for
+     * significant memory savings.
+     */
+   void clearVolumeWorksets();
+
+   /** Clear all allocated worksets for the side assembly, maintain
+     * the workset factory, element to physics block map and volume
+     * worksets.
+     */
+   void clearSideWorksets();
 
    //! Look up an input physics block, throws an exception if it can not be found.
    const WorksetNeeds & lookupNeeds(const std::string & eBlock) const;
@@ -193,6 +207,13 @@ private:
      * \param[in] worksets Set the unique identifiers on these worksets
      */
    void setIdentifiers(const WorksetDescriptor & wd,std::map<unsigned,Workset> & wkstMap);
+
+   /** Check if WorksetNeeds have been registered
+    *
+    * \return True if there are element blocks with required needs objects
+    */
+   bool hasNeeds() const
+   {return ebToNeeds_.size() > 0;}
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
    std::map<std::string,WorksetNeeds> ebToNeeds_; //! Maps element blocks to input physics block objects

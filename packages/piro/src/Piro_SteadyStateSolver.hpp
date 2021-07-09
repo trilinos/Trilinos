@@ -44,6 +44,7 @@
 #define PIRO_STEADYSTATESOLVER_HPP
 
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Piro_Helpers.hpp"
 
 namespace Piro {
 
@@ -103,6 +104,15 @@ class SteadyStateSolver
   /** \brief . */
   int num_g() const;
 
+  /** \brief . */
+  SENS_METHOD getSensitivityMethod();
+  //@}
+
+  /** \name Setters for subbclasses */
+  /** \brief . */
+  void setSensitivityMethod(const std::string& sensitivity_method_string);
+  //@}
+
   //@}
 
   protected:
@@ -110,7 +120,13 @@ class SteadyStateSolver
   //@{
 
   /** \brief . */
-  void evalConvergedModel(
+  void evalConvergedModelResponsesAndSensitivities(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
+      Teuchos::ParameterList& analysisParams) const;
+
+  /** \brief . */
+  void evalReducedHessian(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
   //@}
@@ -135,6 +151,8 @@ class SteadyStateSolver
 
   int num_p_;
   int num_g_;
+
+  SENS_METHOD sensitivityMethod_;
 };
 
 }

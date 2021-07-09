@@ -47,6 +47,7 @@
 #cmakedefine HAVE_PIRO_EPETRA
 #cmakedefine HAVE_PIRO_EPETRAEXT
 #cmakedefine HAVE_PIRO_TPETRA
+#cmakedefine HAVE_PIRO_TEKO
 
 /* Define to the address where bug reports for this package should be sent. */
 #cmakedefine PACKAGE_BUGREPORT

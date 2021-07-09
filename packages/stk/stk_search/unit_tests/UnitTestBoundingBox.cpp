@@ -36,6 +36,7 @@
 
 #include <stk_math/StkVector.hpp>
 #include <stk_search/BoundingBox.hpp>
+#include <stk_search/Plane.hpp>
 
 #include <string>
 #include <iostream>
@@ -441,6 +442,58 @@ TEST( stk_search_bounding_box, read_box_as_written) {
   EXPECT_EQ(box, readBox );
   EXPECT_EQ(box, readBox2 );
 }
+
+TEST( stk_search_bounding_box, intersects_box_plane)
+{
+  typedef stk::search::Box<double> Box;
+  typedef stk::search::Plane<double> Plane;
+  using stk::search::intersects;
+
+  Box unitBox(Point(-0.5, -0.5, -0.5), Point(0.5, 0.5, 0.5));
+
+  Plane nullPlane;
+  Plane wayLeft           (Point(-2, 0.0, 0.0), Point(1.0, 0.0, 0.0));
+  Plane wayRight          (Point( 5, 0.0, 0.0), Point( 1.0, 0.0, 0.0));
+  Plane inside            (Point(0.15, 100.0, 0.0 ), Point(1.0, 0.0, 0.0));
+  Plane inside2           (Point(0.15, 0.1, 0.0 ), Point(1.0, 0.0, 0.0));
+  Plane justOutsideLeft   (Point(-0.500001, 1, 1), Point(-1.0, 0.0, 0.0));
+  Plane justOutsideRight  (Point(0.500001, 1, 1), Point(-1.0, 0.0, 0.0));
+  Plane justTouchingLeft  (Point(-0.5, 100.0, -99), Point(-1.0, 0.0, 0.0));
+  Plane justTouchingRight (Point(0.5, 1, 0.36), Point(1.0, 0.0, 0.0));
+  Plane diagonallyOutside (Point(-0.530330, 0.530330, 0.000000), Point(-0.707107, 0.707107, 0.000000));
+  Plane diagonallyInside  (Point(-0.459619, 0.459619, 0.000000), Point(-0.707107, 0.707107, 0.000000));
+  Plane cutCorner1        (Point( -0.325000, 0.459619, -0.325000), Point(-0.500000, 0.707107, -0.500000));
+  Plane cutCorner2        (Point( -0.325000, 0.459619, 0.325000), Point(-0.500000, 0.707107, 0.500000));
+  Plane cutCorner3        (Point(  0.325000, 0.459619, 0.325000), Point( 0.500000, 0.707107, 0.500000));
+  Plane cutCorner4        (Point(  0.325000, 0.459619, -0.325000), Point( 0.500000, 0.707107, -0.500000));
+  Plane cutCorner5        (Point( -0.459619, -0.325000, -0.325000), Point(-0.707107, -0.500000, -0.500000));
+  Plane cutCorner6        (Point( -0.325000, -0.325000, 0.459619), Point(-0.500000, -0.500000, 0.707107));
+  Plane cutCorner7        (Point( 0.459619, -0.325000, 0.325000), Point(0.707107, -0.500000, 0.500000));
+  Plane cutCorner8        (Point( 0.325000, -0.325000, -0.459619), Point(0.500000, -0.500000, -0.707107));
+
+
+  CheckIntersections(nullPlane,        unitBox, false);
+  CheckIntersections(wayLeft,          unitBox, false);
+  CheckIntersections(wayRight,         unitBox, false);
+  CheckIntersections(inside,           unitBox, true);
+  CheckIntersections(inside2,          unitBox, true);
+  CheckIntersections(justOutsideLeft,  unitBox, false);
+  CheckIntersections(justOutsideRight, unitBox, false);
+  CheckIntersections(justTouchingLeft, unitBox, true);
+  CheckIntersections(justTouchingRight,unitBox, true);
+  CheckIntersections(diagonallyOutside,unitBox, false);
+  CheckIntersections(diagonallyInside, unitBox, true);
+  CheckIntersections(cutCorner1,       unitBox, true);
+  CheckIntersections(cutCorner2,       unitBox, true);
+  CheckIntersections(cutCorner3,       unitBox, true);
+  CheckIntersections(cutCorner4,       unitBox, true);
+  CheckIntersections(cutCorner5,       unitBox, true);
+  CheckIntersections(cutCorner6,       unitBox, true);
+  CheckIntersections(cutCorner7,       unitBox, true);
+  CheckIntersections(cutCorner8,       unitBox, true);
+
+}
+
 
 
 } // unnamed namespace

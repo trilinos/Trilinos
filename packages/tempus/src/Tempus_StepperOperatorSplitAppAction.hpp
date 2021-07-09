@@ -11,26 +11,29 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperOperatorSplit.hpp"
+
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this Observer <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperOperatorSplit;
 
 /** \brief StepperOperatorSplitAppAction class for StepperOperatorSplit.
  *
- * This is a means for application developers to perform tasks
- * during the time steps, e.g.,
- *   - Compute specific quantities 
- *   - Output information 
- *   - "Massage" the working solution state
- *   - ...
+ *  This class provides a means to apply various actions with the OperatorSplit time step.
+ *  The data available to this class is solution variables (through
+ *  SolutionHistory), and stepper data (through the Stepper).  It allows
+ *  the application to just observe this data, i.e., use but not change
+ *  any of it (USER BEWARE!).
+ *
+ *  The locations for these AppAction calls
+ *  (StepperOperatorSplitAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperOperatorSplit.
  *
  * <b>Design Considerations</b>
  *   - StepperOperatorSplitAppAction is not stateless!  Developers may touch the
  *     solution state!  Developers need to be careful not to break the
- *     restart (checkpoint) capability.                                               
+ *     restart (checkpoint) capability.
  */
 template<class Scalar>
 class StepperOperatorSplitAppAction
@@ -38,10 +41,10 @@ class StepperOperatorSplitAppAction
 public:
 
   enum ACTION_LOCATION {
-    BEGIN_STEP,     ///< At the beginning of the step.                                
-    BEFORE_STEPPER, ///< Before a stepper evaluation.                      
-    AFTER_STEPPER,  ///< After a stepper evaluation. 
-    END_STEP        ///< At the end of the step.                                      
+    BEGIN_STEP,     ///< At the beginning of the step.
+    BEFORE_STEPPER, ///< Before a stepper evaluation.
+    AFTER_STEPPER,  ///< After a stepper evaluation.
+    END_STEP        ///< At the end of the step.
   };
 
   /// Constructor
@@ -50,7 +53,7 @@ public:
   /// Destructor
   virtual ~StepperOperatorSplitAppAction(){}
 
-  /// Execute application action for OperatorSplit Stepper.                            
+  /// Execute application action for OperatorSplit Stepper.
   virtual void execute(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     Teuchos::RCP<StepperOperatorSplit<Scalar> > stepper,

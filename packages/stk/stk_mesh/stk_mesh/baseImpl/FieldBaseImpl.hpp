@@ -169,11 +169,17 @@ public:
 
   void modify_on_host() const;
   void modify_on_device() const;
+  void modify_on_host(const Selector& s) const;
+  void modify_on_device(const Selector& s) const;
   void sync_to_host() const;
   void sync_to_device() const;
+  void clear_sync_state() const;
+  void clear_host_sync_state() const;
+  void clear_device_sync_state() const;
 
   NgpFieldBase * get_ngp_field() const;
   void set_ngp_field(NgpFieldBase * ngpField) const;
+  void fence() const;
 
   size_t num_syncs_to_host() const;
   size_t num_syncs_to_device() const;
@@ -204,17 +210,11 @@ private:
   mutable NgpFieldBase       * m_ngpField;
   mutable size_t               m_numSyncsToHost;
   mutable size_t               m_numSyncsToDevice;
-
 };
 
 
 /** \brief  Print the field type, text name, and number of states. */
 std::ostream & operator << ( std::ostream & , const FieldBaseImpl & );
-
-/** \brief  Print field and field restrictions on new lines. */
-std::ostream & print( std::ostream & ,
-                      const char * const , const FieldBase & );
-
 
 } // namespace impl
 } // namespace mesh

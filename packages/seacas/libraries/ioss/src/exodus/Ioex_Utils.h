@@ -1,35 +1,9 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * See packages/seacas/LICENSE for details
  */
 #ifndef IOEX_UTILS_H
 #define IOEX_UTILS_H
@@ -44,8 +18,15 @@
 #include <string>
 #include <vector>
 
-// Contains code that is common between the file-per-processor (Iofx)
-// and parallel exodus (Iopx) and base exodus (Ioex) classes.
+#define EXU_USE_HOPSCOTCH
+#if defined EXU_USE_HOPSCOTCH
+#include <hopscotch_map.h>
+#elif defined EXU_USE_ROBIN
+#include <robin_map.h>
+#endif
+
+// Contains code that is common between the file-per-processor and
+// parallel exodus and base exodus classes.
 
 namespace Ioss {
   class GroupingEntity;
@@ -57,10 +38,10 @@ namespace Ioex {
   using SideSetSet  = std::set<std::string>;
   using SideSetMap  = std::map<std::string, const std::string, std::less<const std::string>>;
 
-  struct TopologyMapCompare
+  using NameTopoKey = std::pair<std::string, const Ioss::ElementTopology *>;
+  struct NameTopoKeyCompare
   {
-    bool operator()(const std::pair<std::string, const Ioss::ElementTopology *> &lhs,
-                    const std::pair<std::string, const Ioss::ElementTopology *> &rhs) const
+    bool operator()(const NameTopoKey &lhs, const NameTopoKey &rhs) const
     {
       assert(lhs.second != nullptr);
       assert(rhs.second != nullptr);
@@ -69,11 +50,29 @@ namespace Ioex {
     }
   };
 
-  using TopologyMap =
-      std::map<std::pair<std::string, const Ioss::ElementTopology *>, int, TopologyMapCompare>;
+  struct NameTopoKeyHash
+  {
+    size_t operator()(const NameTopoKey &name_topo) const
+    {
+      return std::hash<std::string>{}(name_topo.first) +
+             std::hash<size_t>{}((size_t)name_topo.second);
+    }
+  };
+
+#if defined EXU_USE_HOPSCOTCH
+  using TopologyMap = tsl::hopscotch_map<NameTopoKey, int, NameTopoKeyHash>;
+#elif defined EXU_USE_ROBIN
+  using TopologyMap = tsl::robin_map<NameTopoKey, int, NameTopoKeyHash>;
+#else
+  // This is the original method that was used in IOSS prior to using hopscotch or robin map.
+  using TopologyMap = std::map<NameTopoKey, int, NameTopoKeyCompare>;
+#endif
 
   const char *Version();
   bool        check_processor_info(int exodusFilePtr, int processor_count, int processor_id);
+
+  Ioss::EntityType map_exodus_type(ex_entity_type type);
+  ex_entity_type   map_exodus_type(Ioss::EntityType type);
 
   void update_last_time_attribute(int exodusFilePtr, double value);
   bool read_last_time_attribute(int exodusFilePtr, double *value);
@@ -86,8 +85,9 @@ namespace Ioex {
                               const std::string &name);
   void    fix_bad_name(char *name);
 
+  void exodus_error(int exoid, int lineno, const char *function, const char *filename);
   void exodus_error(int exoid, int lineno, const char *function, const char *filename,
-                    const std::string &extra = {});
+                    const std::string &extra);
 
   int add_map_fields(int exoid, Ioss::ElementBlock *block, int64_t my_element_count,
                      size_t name_length);
@@ -124,5 +124,14 @@ namespace Ioex {
                                       Ioex::TopologyMap &    side_map,
                                       Ioss::SurfaceSplitType split_type,
                                       const std::string &    surface_name);
+
+  void                       write_reduction_attributes(int exoid, const Ioss::GroupingEntity *ge);
+  template <typename T> void write_reduction_attributes(int exoid, const std::vector<T *> &entities)
+  {
+    // For the entity, write all "reduction attributes"
+    for (const auto &ge : entities) {
+      write_reduction_attributes(exoid, ge);
+    }
+  }
 } // namespace Ioex
 #endif

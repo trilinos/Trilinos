@@ -89,12 +89,42 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
 {
 
   if(worksetDesc.requiresPartitioning()){
+
+    // Generate the local mesh info if it doesn't already exist
     if(mesh_info_ == Teuchos::null){
-      auto mesh_info = Teuchos::rcp(new panzer::LocalMeshInfo);
-      panzer_stk::generateLocalMeshInfo(*mesh_,*mesh_info);
-      mesh_info_ = mesh_info;
+      TEUCHOS_ASSERT(mesh_ != Teuchos::null);
+      mesh_info_ = panzer_stk::generateLocalMeshInfo(*mesh_);
     }
-    return panzer::buildPartitionedWorksets(*mesh_info_,worksetDesc,needs);
+
+    auto worksets = panzer::buildPartitionedWorksets(*mesh_info_, worksetDesc, this->getOrientationsInterface());
+
+    // Fill in whatever is in the needs object
+    // FIXME: This will just get optimized out... Adding volatile to the calls makes the worksets pretty ugly
+    for(auto & workset : *worksets){
+
+      // Initialize IntegrationValues from integration descriptors
+      for(const auto & id : needs.getIntegrators())
+        workset.getIntegrationValues(id);
+
+      // Initialize PointValues from point descriptors
+      for(const auto & pd : needs.getPoints())
+        workset.getPointValues(pd);
+
+      // Initialize BasisValues
+      for(const auto & bd : needs.getBases()){
+
+        // Initialize BasisValues from integrators
+        for(const auto & id : needs.getIntegrators())
+          workset.getBasisValues(bd,id);
+
+        // Initialize BasisValues from points
+        for(const auto & pd : needs.getPoints())
+          workset.getBasisValues(bd,pd);
+      }
+    }
+
+    return worksets;
+
   } else if(!worksetDesc.useSideset()) {
     // The non-partitioned case always creates worksets with just the
     // owned elements.  CLASSIC_MODE gets the workset size directly

@@ -10,7 +10,8 @@
 #define Tempus_IntegratorAdjointSensitivity_decl_hpp
 
 // Tempus
-#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_config.hpp"
+#include "Tempus_IntegratorBasicOld.hpp"
 #include "Tempus_AdjointAuxSensitivityModelEvaluator.hpp"
 
 namespace Tempus {
@@ -41,7 +42,8 @@ namespace Tempus {
  */
 template<class Scalar>
 class IntegratorAdjointSensitivity :
-    virtual public Tempus::Integrator<Scalar>
+    virtual public Tempus::Integrator<Scalar>,
+    virtual public Teuchos::ParameterListAcceptor
 {
 public:
 
@@ -99,6 +101,8 @@ public:
   virtual int getIndex() const override;
   /// Get Status
   virtual Status getStatus() const override;
+  /// Set Status
+  virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
   /// Return a copy of the Tempus ParameterList
@@ -106,6 +110,8 @@ public:
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
+  /// Get the SolutionHistory
+  virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
   virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
@@ -127,12 +133,18 @@ public:
     Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotDp0 = Teuchos::null,
     Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotdotDp0 = Teuchos::null);
 
+  /// Set the Observer
+  virtual void setObserver(
+    Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
+  /// Initializes the Integrator after set* function calls
+  virtual void initialize();
+
   /// Get current the solution, x
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
   /// Get current the time derivative of the solution, xdot
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXdot() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const;
   /// Get current the second time derivative of the solution, xdotdot
-  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXdotdot() const;
+  virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
 
   /// Return adjoint sensitivity stored in gradient format
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
@@ -169,8 +181,8 @@ protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > adjoint_integrator_;
+  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
+  Teuchos::RCP<IntegratorBasicOld<Scalar> > adjoint_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   int p_index_;
   int g_index_;
@@ -182,14 +194,14 @@ protected:
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > dgdp_;
 };
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity();

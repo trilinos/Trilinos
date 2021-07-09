@@ -185,7 +185,7 @@ namespace panzer
       /**
        *  \brief Post-Registration Setup.
        *
-       *  Sets the basis index, and gets the Kokkos::View versions of the field
+       *  Sets the basis index, and gets the PHX::View versions of the field
        *  multiplier, if there are any.
        *
        *  \param[in] sd Essentially a list of `Workset`s, which are collections
@@ -334,11 +334,11 @@ namespace panzer
       fieldMults_;
 
       /**
-       *  \brief The `Kokkos::View` representation of the (possibly empty) list
+       *  \brief The `PHX::View` representation of the (possibly empty) list
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-    Kokkos::View<Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*> kokkosFieldMults_;
+    PHX::View<PHX::View<const ScalarT**>* > kokkosFieldMults_;
 
       /**
        *  \brief The name of the basis we're using.

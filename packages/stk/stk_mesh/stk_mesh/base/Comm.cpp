@@ -37,6 +37,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
+#include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_mesh/base/Bucket.hpp"     // for has_superset, Bucket
 #include "stk_mesh/base/Types.hpp"      // for EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -50,8 +51,7 @@ namespace mesh {
 void fillNumEntitiesPerRankOnThisProc(const BulkData & M, std::vector<size_t>&local, const Selector *selector)
 {
     const MetaData & meta = M.mesh_meta_data();
-    const EntityRank entity_rank_count = static_cast<EntityRank>(meta.entity_rank_count());
-    size_t numEntityRanks = entity_rank_count;
+    const EntityRank numEntityRanks = meta.entity_rank_count();
     local.clear();
     local.resize(numEntityRanks,0);
 

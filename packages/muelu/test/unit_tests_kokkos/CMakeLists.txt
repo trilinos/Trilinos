@@ -23,8 +23,9 @@ APPEND_SET(SOURCES
   LWGraph_kokkos.cpp
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
+  NotayAggregationFactory.cpp
   StructuredAggregation_kokkos.cpp
-  #SaPFactory_kokkos.cpp
+  SaPFactory_kokkos.cpp
   TentativePFactory_kokkos.cpp
   UseKokkos_kokkos.cpp
   Utilities_kokkos.cpp

@@ -173,7 +173,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
     const std::vector<int> & offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
 
     // allocate and copy offsets vector to Kokkos array
-    offsets_array = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    offsets_array = PHX::View<int*>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
       offsets_array(i) = offsets[i];
 

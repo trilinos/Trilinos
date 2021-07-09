@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# change all the link.txt files found in the build sub-tree starting from where patchLinkForRecurMG is invoked so that a libmuelu.a is added just before libmuelu-interface.a. 
+# This script needs to be re-run each time after configure is exectuted. 
+#
+find . -name link.txt -exec sed -i "s, \([\./ ]*\)/src/Interface/libmuelu-interface\.a, \1/src/libmuelu.a \1/src/Interface/libmuelu-interface\.a,"  {} \; 
+find . -name link.txt -exec sed -i "s, \([\./ ]*\)/muelu/src/Interface/libmuelu-interface\.a, \1/muelu/src/libmuelu.a \1/muelu/src/Interface/libmuelu-interface\.a,"  {} \; 
+

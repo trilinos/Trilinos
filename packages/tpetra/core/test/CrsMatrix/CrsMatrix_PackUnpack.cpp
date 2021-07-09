@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
   out << "Building second matrix" << endl;
   auto graph = A->getCrsGraph();
   RCP<crs_matrix_type> B (new crs_matrix_type (graph));
-  B->setAllToScalar(SC {});
+  B->setAllToScalar(SC{-1.});
   B->fillComplete();
 
   out << "Calling unpackCrsMatrixAndCombine with "
@@ -254,12 +254,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     std::ostringstream errStrm;
     int lclNumErrors = 0;
     for (LO lclRow=0; lclRow<num_loc_rows; ++lclRow) {
-      ArrayView<const LO> A_indices;
-      ArrayView<const SC> A_values;
+      typename crs_matrix_type::local_inds_host_view_type A_indices;
+      typename crs_matrix_type::values_host_view_type A_values;
       A->getLocalRowView(lclRow, A_indices, A_values);
 
-      ArrayView<const LO> B_indices;
-      ArrayView<const SC> B_values;
+      typename crs_matrix_type::local_inds_host_view_type B_indices;
+      typename crs_matrix_type::values_host_view_type B_values;
       B->getLocalRowView(lclRow, B_indices, B_values);
 
       TEST_EQUALITY( A_indices.size (), B_indices.size () );
@@ -272,6 +272,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
                   << ", A[" << i << "]=" << A_values[i] << ", but "
                   <<   "B[" << i << "]=" << B_values[i] << "!\n";
           ++curNumErrors;
+        }
+        else
+        {
+          errStrm << "INFO: Proc " << world_rank << ", row " << lclRow
+                  << ", A[" << i << "]=" << A_values[i] << ", and "
+                  <<   "B[" << i << "]=" << B_values[i] << "!\n";
         }
       }
       lclNumErrors += curNumErrors;
@@ -342,13 +348,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     std::ostringstream errStrm;
     int lclNumErrors = 0;
     for (LO loc_row=0; loc_row<num_loc_rows; ++loc_row) {
-      ArrayView<const LO> A_indices;
-      ArrayView<const SC> A_values;
+      typename crs_matrix_type::local_inds_host_view_type A_indices;
+      typename crs_matrix_type::values_host_view_type A_values;
       A->getLocalRowView(loc_row, A_indices, A_values);
 
-      ArrayView<const LO> B_indices;
-      ArrayView<const SC> B_values;
+      typename crs_matrix_type::local_inds_host_view_type B_indices;
+      typename crs_matrix_type::values_host_view_type B_values;
       B->getLocalRowView(loc_row, B_indices, B_values);
+//      std::cout << "A_values: " << A_values << "\n";
+//      std::cout << "B_values: " << B_values << "\n";
+//      std::cout << std::flush;
 
       TEST_EQUALITY( A_indices.size (), B_indices.size () );
 
@@ -621,12 +630,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
     std::ostringstream errStrm;
     int lclNumErrors = 0;
     for (LO lclRow=0; lclRow<num_loc_rows; ++lclRow) {
-      ArrayView<const LO> A_indices;
-      ArrayView<const SC> A_values;
+      typename crs_matrix_type::local_inds_host_view_type A_indices;
+      typename crs_matrix_type::values_host_view_type A_values;
       A->getLocalRowView(lclRow, A_indices, A_values);
 
-      ArrayView<const LO> B_indices;
-      ArrayView<const SC> B_values;
+      typename crs_matrix_type::local_inds_host_view_type B_indices;
+      typename crs_matrix_type::values_host_view_type B_values;
       B->getLocalRowView(lclRow, B_indices, B_values);
 
       TEST_EQUALITY( A_indices.size (), B_indices.size () );

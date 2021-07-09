@@ -41,7 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-
 #ifndef PHX_DAG_MANAGER_HPP
 #define PHX_DAG_MANAGER_HPP
 
@@ -173,16 +172,24 @@ namespace PHX {
      */
     const std::vector<Teuchos::RCP<PHX::FieldTag>>& getFieldTags();
 
+    /// Returns true if sortAndOrderEvaluators has been called.
     bool sortingCalled() const;
 
+    /// Write the DAG to file in graphviz/dot format. This is the deprecated version.
     void writeGraphvizFile(const std::string filename,
 			   bool writeEvaluatedFields,
 			   bool writeDependentFields,
 			   bool debugRegisteredEvaluators) const;
 
+    /// Write the DAG to file in graphviz/dot format.
     void writeGraphvizFileNew(const std::string filename,
 			      bool writeEvaluatedFields,
 			      bool writeDependentFields) const;
+
+    /// Write the DAG to std::ostream in graphviz/dot format.
+    void writeGraphviz(std::ostream& os,
+                       bool writeEvaluatedFields,
+                       bool writeDependentFields) const;
 
     //! Printing
     void print(std::ostream& os) const;
@@ -253,6 +260,17 @@ namespace PHX {
 
     /// Returns all fields that the user requested to to be evaluated by the field manager.
     const std::vector<Teuchos::RCP<PHX::FieldTag>>& getRequiredFields() const;
+
+    /** Returns the internal fields this DagManager can currently
+        evaluate and the index into the DAG node vector. This function
+        is provided only for query, debug and unit testing.
+    */
+    const std::unordered_map<std::string,int>& queryRegisteredFields() const;
+
+    /** Returns all nodes registered with the DagManager. This
+        function is provided only for query, debug and unit testing.
+     */
+    const std::vector<PHX::DagNode<Traits>>& queryRegisteredEvaluators() const;
 
   protected:
 

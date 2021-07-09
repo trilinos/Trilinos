@@ -18,7 +18,7 @@ namespace Tacho {
         void set(MemberType &member,
                  int m, 
                  const T alpha, 
-                 /* */ T *a, int as0) {
+                 /* */ T *__restrict__ a, int as0) {
           Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
               a[i*as0] = alpha;
             });
@@ -30,7 +30,7 @@ namespace Tacho {
         void scale(MemberType &member,
                    int m, 
                    const T alpha, 
-                   /* */ T *a, int as0) {
+                   /* */ T *__restrict__ a, int as0) {
           Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
               a[i*as0] *= alpha;
             });
@@ -42,7 +42,7 @@ namespace Tacho {
         void set(MemberType &member,
                  int m, int n, 
                  const T alpha, 
-                 /* */ T *a, int as0, int as1) {
+                 /* */ T *__restrict__ a, int as0, int as1) {
           if (as0 == 1 || as0 < as1) 
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
@@ -63,7 +63,7 @@ namespace Tacho {
         void scale(MemberType &member,
                    int m, int n, 
                    const T alpha, 
-                   /* */ T *a, int as0, int as1) {
+                   /* */ T *__restrict__ a, int as0, int as1) {
           if (as0 == 1 || as0 < as1) 
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
@@ -84,7 +84,7 @@ namespace Tacho {
         void set_upper(MemberType &member,
                        int m, int n, int offset,
                        const T alpha, 
-                       /* */ T *a, int as0, int as1) {
+                       /* */ T *__restrict__ a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1-offset),[&](const int &i) {
                   a[i*as0+j*as1] = alpha;
@@ -98,7 +98,7 @@ namespace Tacho {
         void scale_upper(MemberType &member,
                          int m, int n, int offset, 
                          const T alpha, 
-                         /* */ T *a, int as0, int as1) {
+                         /* */ T *__restrict__ a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1-offset),[&](const int &i) {
                   a[i*as0+j*as1] *= alpha;
@@ -113,10 +113,10 @@ namespace Tacho {
         void set_lower(MemberType &member,
                        int m, int n, int offset,
                        const T alpha, 
-                       /* */ T *a, int as0, int as1) {
+                       /* */ T *__restrict__ a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               const int jj = j + offset;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&,alpha,as0,as1,j,jj](const int &i) { /// compiler bug with c++14 lambda capturing and workaround
                   a[(i+jj)*as0+j*as1] = alpha;
                 });
             });
@@ -128,10 +128,10 @@ namespace Tacho {
         void scale_lower(MemberType &member,
                          int m, int n, int offset, 
                          const T alpha, 
-                         /* */ T *a, int as0, int as1) {
+                         /* */ T *__restrict__ a, int as0, int as1) {
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
               const int jj = j + offset;
-              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&](const int &i) {
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,n-j-offset),[&,alpha,as0,as1,j,jj](const int &i) {/// compiler bug with c++14 lambda capturing and workaround
                   a[(i+jj)*as0+j*as1] *= alpha;
                 });
             });
@@ -143,10 +143,10 @@ namespace Tacho {
         void gemv(MemberType &member, const ConjType &cj,
                   const int m, const int n, 
                   const T alpha, 
-                  const T *A, const int as0, const int as1,
-                  const T *x, const int xs0,
+                  const T *__restrict__ A, const int as0, const int as1,
+                  const T *__restrict__ x, const int xs0,
                   const T beta,
-                  /* */ T *y, const int ys0) {          
+                  /* */ T *__restrict__ y, const int ys0) {          
           const T one(1), zero(0);
 
           if (beta == zero) set  (member, m, zero, y, ys0);
@@ -157,7 +157,7 @@ namespace Tacho {
 
             member.team_barrier();            
             {
-              if (as0 == 1) { 
+              if (as0 == 1 || as0 < as1) { 
                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,m),[&](const int &i) {
                     T t(0);
                     Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
@@ -184,8 +184,8 @@ namespace Tacho {
         void trsv_upper(MemberType &member, const ConjType &cjA,
                         const char diag, 
                         const int m, 
-                        const T *A, const int as0, const int as1,
-                        /* */ T *b, const int bs0) {          
+                        const T *__restrict__ A, const int as0, const int as1,
+                        /* */ T *__restrict__ b, const int bs0) {          
           if (m <= 0) return;
           
           const bool use_unit_diag = diag == 'U'|| diag == 'u';
@@ -222,8 +222,8 @@ namespace Tacho {
         void trsv_lower(MemberType &member, const ConjType &cjA,
                         const char diag, 
                         const int m, 
-                        const T *A, const int as0, const int as1,
-                        /* */ T *b, const int bs0) {          
+                        const T *__restrict__ A, const int as0, const int as1,
+                        /* */ T *__restrict__ b, const int bs0) {          
           if (m <= 0) return;
 
           const bool use_unit_diag = diag == 'U'|| diag == 'u';
@@ -264,10 +264,10 @@ namespace Tacho {
         void gemm(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
                   const int m, const int n, const int k,
                   const T alpha, 
-                  const T *A, const int as0, const int as1,
-                  const T *B, const int bs0, const int bs1,
+                  const T *__restrict__ A, const int as0, const int as1,
+                  const T *__restrict__ B, const int bs0, const int bs1,
                   const T beta,
-                  /* */ T *C, const int cs0, const int cs1) {
+                  /* */ T *__restrict__ C, const int cs0, const int cs1) {
           const T one(1), zero(0);
           
           if      (beta == zero) set  (member, m, n, zero, C, cs0, cs1);
@@ -292,6 +292,41 @@ namespace Tacho {
             }
           } 
         }
+       
+        template<typename ConjTypeA, typename ConjTypeB, typename MemberType>
+        static 
+        KOKKOS_INLINE_FUNCTION
+        void gemm_upper(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
+                        const int m, const int n, const int k,
+                        const T alpha, 
+                        const T *__restrict__ A, const int as0, const int as1,
+                        const T *__restrict__ B, const int bs0, const int bs1,
+                        const T beta,
+                        /* */ T *__restrict__ C, const int cs0, const int cs1) {
+          const T one(1), zero(0);
+          
+          if      (beta == zero) set  (member, m, n, zero, C, cs0, cs1);
+          else if (beta != one ) scale(member, m, n, beta, C, cs0, cs1);
+          
+          if (alpha != zero) {
+            if (m <= 0 || n <= 0 || k <= 0) return;
+            
+            member.team_barrier();
+            {
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(member,n),[&](const int &j) {
+                  Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
+                      const T 
+                        *__restrict__ pA = A+i*as0, 
+                        *__restrict__ pB = B+j*bs1;
+                      T c(0);
+                      for (int p=0;p<k;++p)
+                        c += cjA(pA[p*as1])*cjB(pB[p*bs0]);
+                      C[i*cs0+j*cs1] += alpha*c;
+                    });
+                });
+            }
+          } 
+        }
 
 
         template<typename ConjTypeA, typename ConjTypeB, typename MemberType>
@@ -300,9 +335,9 @@ namespace Tacho {
         void herk_upper(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,  
                         const int n, const int k,
                         const T alpha, 
-                        const T *A, const int as0, const int as1,
+                        const T *__restrict__ A, const int as0, const int as1,
                         const T beta,
-                        /* */ T *C, const int cs0, const int cs1) {
+                        /* */ T *__restrict__ C, const int cs0, const int cs1) {
           const T one(1), zero(0);
           
           if      (beta == zero) set_upper  (member, n, n, 0, zero, C, cs0, cs1);
@@ -334,9 +369,9 @@ namespace Tacho {
         void herk_lower(MemberType &member, const ConjTypeA &cjA, const ConjTypeB &cjB,
                         const int n, const int k,
                         const T alpha, 
-                        const T *A, const int as0, const int as1,
+                        const T *__restrict__ A, const int as0, const int as1,
                         const T beta,
-                        /* */ T *C, const int cs0, const int cs1) {
+                        /* */ T *__restrict__ C, const int cs0, const int cs1) {
           const T one(1), zero(0);
           
           if      (beta == zero) set_lower  (member, n, n, 0, zero, C, cs0, cs1);
@@ -371,8 +406,8 @@ namespace Tacho {
                              const char diag, 
                              const int m, const int n, 
                              const T alpha, 
-                             const T *A, const int as0, const int as1,
-                             /* */ T *B, const int bs0, const int bs1) {          
+                             const T *__restrict__ A, const int as0, const int as1,
+                             /* */ T *__restrict__ B, const int bs0, const int bs1) {          
           const T one(1), zero(0);
 
           if (alpha == zero)   set  (member, m, n, zero,  B, bs0, bs1);
@@ -417,8 +452,8 @@ namespace Tacho {
                              const char diag, 
                              const int m, const int n, 
                              const T alpha, 
-                             const T *A, const int as0, const int as1,
-                             /* */ T *B, const int bs0, const int bs1) {          
+                             const T *__restrict__ A, const int as0, const int as1,
+                             /* */ T *__restrict__ B, const int bs0, const int bs1) {          
           const T one(1.0), zero(0.0);
 
           // note that parallel range is different ( m*n vs m-1*n);
@@ -462,10 +497,10 @@ namespace Tacho {
                 const char trans, 
                 const int m, const int n, 
                 const T alpha, 
-                const T *a, const int lda,
-                const T *x, const int xs,
+                const T *__restrict__ a, const int lda,
+                const T *__restrict__ x, const int xs,
                 const T beta,
-                /* */ T *y, const int ys) {
+                /* */ T *__restrict__ y, const int ys) {
         switch (trans) {
         case 'N':
         case 'n': {
@@ -515,8 +550,8 @@ namespace Tacho {
       void trsv(MemberType &member,
                 const char uplo, const char trans, const char diag, 
                 const int m, 
-                const T *a, const int lda,
-                /* */ T *b, const int bs) {
+                const T *__restrict__ a, const int lda,
+                /* */ T *__restrict__ b, const int bs) {
         if (uplo == 'U' || uplo == 'u') {
           switch (trans) {
           case 'N':
@@ -591,10 +626,10 @@ namespace Tacho {
                 const char transa, const char transb, 
                 const int m, const int n, const int k,
                 const T alpha, 
-                const T *a, int lda,
-                const T *b, int ldb,
+                const T *__restrict__ a, int lda,
+                const T *__restrict__ b, int ldb,
                 const T beta,
-                /* */ T *c, int ldc) {
+                /* */ T *__restrict__ c, int ldc) {
 
         if (transa == 'N' || transa == 'n') {
           const NoConjugate cjA;
@@ -727,6 +762,150 @@ namespace Tacho {
         }
       }
 
+      template<typename MemberType>
+      static 
+      KOKKOS_INLINE_FUNCTION
+      void gemm_upper(MemberType &member, 
+                      const char transa, const char transb, 
+                      const int m, const int n, const int k,
+                      const T alpha, 
+                      const T *__restrict__ a, int lda,
+                      const T *__restrict__ b, int ldb,
+                      const T beta,
+                      /* */ T *__restrict__ c, int ldc) {
+        
+        if (transa == 'N' || transa == 'n') {
+          const NoConjugate cjA;
+          switch (transb) {
+          case 'N':
+          case 'n': {
+            const NoConjugate cjB;
+            Impl::gemm_upper(member, cjA, cjB,
+                       m, n, k,
+                       alpha,
+                       a, 1, lda,
+                       b, 1, ldb,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          case 'T':
+          case 't': {
+            const NoConjugate cjB;
+            Impl::gemm_upper(member, cjA, cjB, 
+                       m, n, k,
+                       alpha,
+                       a, 1, lda,
+                       b, ldb, 1,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          case 'C':
+          case 'c': {
+            const Conjugate cjB;
+            Impl::gemm_upper(member, cjA, cjB,
+                       m, n, k,
+                       alpha,
+                       a, 1, lda,
+                       b, ldb, 1,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          default:
+            Kokkos::abort("transa is no trans but transb is not valid");
+          }
+        } else if (transa == 'T' || transa == 't') {
+          const NoConjugate cjA;          
+          switch (transb) {
+          case 'N':
+          case 'n': {
+            const NoConjugate cjB;          
+            Impl::gemm_upper(member, cjA, cjB,
+                       m, n, k,
+                       alpha,
+                       a, lda, 1,
+                       b, 1, ldb,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          case 'T':
+          case 't': {
+            const NoConjugate cjB;          
+            Impl::gemm_upper(member, cjA, cjB,
+                       m, n, k,
+                       alpha,
+                       a, lda, 1,
+                       b, ldb, 1,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          case 'C':
+          case 'c': {
+            const Conjugate cjB;          
+            Impl::gemm_upper(member, cjA, cjB,
+                       m, n, k,
+                       alpha,
+                       a, lda, 1,
+                       b, ldb, 1,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          default:
+            Kokkos::abort("transa is trans but transb is not valid");
+          }
+        } else if (transa == 'C' || transa == 'c') {
+          const Conjugate cjA;          
+          switch (transb) {
+          case 'N':
+          case 'n': {
+            const NoConjugate cjB;          
+            Impl::gemm_upper(member, cjA, cjB,
+                       m, n, k,
+                       alpha,
+                       a, lda, 1,
+                       b, 1, ldb,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          case 'T':
+          case 't': {
+            const NoConjugate cjB;          
+            Impl::gemm_upper(member, cjA, cjB, 
+                       m, n, k,
+                       alpha,
+                       a, lda, 1,
+                       b, ldb, 1,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          case 'C':
+          case 'c': {
+            const Conjugate cjB;          
+            Impl::gemm_upper(member, cjA, cjB,
+                       m, n, k,
+                       alpha,
+                       a, lda, 1,
+                       b, ldb, 1,
+                       beta,
+                       c, 1, ldc);
+            break;
+          }
+          default:
+            Kokkos::abort("transa is conj trans but transb is not valid");
+          }
+        } else { 
+          Kokkos::abort("transa is not valid");          
+        }
+      }
+
+
       
       template<typename MemberType>
       static 
@@ -735,9 +914,9 @@ namespace Tacho {
                 const char uplo, const char trans, 
                 const int n, const int k,
                 const T alpha, 
-                const T *a, const int lda,
+                const T *__restrict__ a, const int lda,
                 const T beta,
-                /* */ T *c, const int ldc) {
+                /* */ T *__restrict__ c, const int ldc) {
         if (uplo  == 'U' || uplo  == 'u')
           switch (trans) {
           case 'N':
@@ -808,8 +987,8 @@ namespace Tacho {
                 const char side, const char uplo, const char trans, const char diag,
                 const int m, const int n, 
                 const T alpha, 
-                const T *a, const int lda,
-                /* */ T *b, const int ldb) {
+                const T *__restrict__ a, const int lda,
+                /* */ T *__restrict__ b, const int ldb) {
         ///
         /// side left 
         ///

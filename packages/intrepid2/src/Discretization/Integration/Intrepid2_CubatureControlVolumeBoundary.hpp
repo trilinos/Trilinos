@@ -66,11 +66,11 @@ namespace Intrepid2{
       defined on primary cell sides. These points are not equivalent to control volume points on lower
       dimensional topologies and therefore require a separate class to define them. 
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubatureControlVolumeBoundary
-    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
+    : public Cubature<DeviceType,pointValueType,weightValueType> {
   public:
 
     template<typename cubPointViewType,
@@ -125,14 +125,14 @@ namespace Intrepid2{
 
     // cubature points and weights associated with sub-control volume.
     Kokkos::View<ordinal_type**,Kokkos::HostSpace> boundarySidesHost_;
-    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,ExecSpaceType> sideNodeMap_;
-    Kokkos::DynRankView<pointValueType, ExecSpaceType> sidePoints_;
+    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,DeviceType> sideNodeMap_;
+    Kokkos::DynRankView<pointValueType, DeviceType> sidePoints_;
     
   public:
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewType  PointViewType;
+    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
-    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
+    using Cubature<DeviceType,pointValueType,weightValueType>::getCubature;
 
     /** \brief Returns cubature points and weights
         (return arrays must be pre-sized/pre-allocated).
@@ -145,13 +145,13 @@ namespace Intrepid2{
     void
     getCubature( PointViewType  cubPoints,
                  weightViewType cubWeights,
-                 PointViewType  cellCoords) const;
+                 PointViewType  cellCoords) const override;
     
     /** \brief Returns the number of cubature points.
      */
     virtual
     ordinal_type
-    getNumPoints() const {
+    getNumPoints() const override {
       // one control volume boundary cubature point per subcell node (for now)
       const ordinal_type sideDim = primaryCellTopo_.getDimension() - 1;
       return primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
@@ -161,7 +161,7 @@ namespace Intrepid2{
      */
     virtual
     ordinal_type 
-    getDimension() const {
+    getDimension() const override {
       return primaryCellTopo_.getDimension();
     }
     
@@ -169,7 +169,7 @@ namespace Intrepid2{
      */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "CubatureControlVolumeBoundary";
     }
 

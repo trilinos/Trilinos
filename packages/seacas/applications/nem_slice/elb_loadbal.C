@@ -1,36 +1,9 @@
 /*
- * Copyright (C) 2009-2017, 2020 National Technology & Engineering Solutions of
- * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -73,8 +46,8 @@
 
 int ilog2i(size_t n)
 {
-  size_t       i  = 0;
-  unsigned int n1 = n;
+  size_t i  = 0;
+  size_t n1 = n;
   while ((n1 >>= 1) != 0U) {
     ++i;
   }
@@ -428,11 +401,11 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       exit(-1);
     }
     else {
-      flag = INTERFACE(problem->num_vertices, (int *)graph->start.data(), (int *)graph->adj.data(),
-                       weight->vertices.data(), weight->edges.data(), x_ptr, y_ptr, z_ptr,
-                       const_cast<char *>(assignfile), (char *)nullptr, lb->vertex2proc, tmp_arch,
-                       tmp_lev, dim, goal, glob_method, refine, solve->rqi_flag, solve->vmax,
-                       lb->num_sects, solve->tolerance, seed);
+      flag = INTER_FACE(problem->num_vertices, (int *)graph->start.data(), (int *)graph->adj.data(),
+                        weight->vertices.data(), weight->edges.data(), x_ptr, y_ptr, z_ptr,
+                        const_cast<char *>(assignfile), (char *)nullptr, lb->vertex2proc, tmp_arch,
+                        tmp_lev, dim, goal, glob_method, refine, solve->rqi_flag, solve->vmax,
+                        lb->num_sects, solve->tolerance, seed);
     }
 
     time2 = get_time();
@@ -534,7 +507,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       Gen_Error(0, "fatal: insufficient memory");
       goto cleanup;
     }
-    start_proc = 0; /* counter to keep track of proccessors for each group */
+    start_proc = 0; /* counter to keep track of processors for each group */
   }
 
   /*
@@ -644,10 +617,18 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       }
       else {
         tmp_nv    = problem->num_vertices;
-        tmp_start = &graph->start[0];
-        tmp_adj   = &graph->adj[0];
-        tmp_vwgts = &weight->vertices[0];
-        tmp_ewgts = &weight->edges[0];
+	if (!graph->start.empty()) {
+	  tmp_start = &graph->start[0];
+	}
+	if (!graph->adj.empty()) {
+	  tmp_adj   = &graph->adj[0];
+	}
+	if (!weight->vertices.empty()) {
+	  tmp_vwgts = &weight->vertices[0];
+	}
+	if (!weight->edges.empty()) {
+	  tmp_ewgts = &weight->edges[0];
+	}
         tmp_x     = x_ptr;
         tmp_y     = y_ptr;
         tmp_z     = z_ptr;
@@ -744,10 +725,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       else {
         fmt::print("===================Call Chaco===========================\n");
         time1 = get_time();
-        flag  = INTERFACE(tmp_nv, (int *)tmp_start, (int *)tmp_adj, tmp_vwgts, tmp_ewgts, tmp_x,
-                         tmp_y, tmp_z, const_cast<char *>(assignfile), (char *)nullptr, tmp_v2p,
-                         arch, num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag,
-                         solve->vmax, lb->num_sects, solve->tolerance, seed);
+        flag  = INTER_FACE(tmp_nv, (int *)tmp_start, (int *)tmp_adj, tmp_vwgts, tmp_ewgts, tmp_x,
+                          tmp_y, tmp_z, const_cast<char *>(assignfile), (char *)nullptr, tmp_v2p,
+                          arch, num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag,
+                          solve->vmax, lb->num_sects, solve->tolerance, seed);
         time2 = get_time();
         fmt::print("========================================================\n");
         fmt::print("Time in Chaco: {}s\n", time2 - time1);
@@ -1078,7 +1059,7 @@ namespace {
     size_t           num_found = 0;
 
     std::vector<int> list_ptr;
-    int              end;
+    size_t           end;
 
     /*
      * look for discontinuities in the graph
@@ -1162,7 +1143,7 @@ namespace {
                   ;
                 }
                 size_t distance = 1;
-                for (int i = graph->start[ecnt]; i < end; i++) {
+                for (size_t i = graph->start[ecnt]; i < end; i++) {
                   int proc2 = lb->vertex2proc[graph->adj[i] - 1];
                   assert(proc2 < machine->num_procs);
                   if (proc2 == proc) {
@@ -1192,7 +1173,7 @@ namespace {
                   else {
                     end = graph->nadj;
                   }
-                  for (int i = graph->start[ecnt]; i < end; i++) {
+                  for (size_t i = graph->start[ecnt]; i < end; i++) {
                     int proc2 = lb->vertex2proc[graph->adj[i] - 1];
                     assert(proc2 < machine->num_procs);
                     if (proc2 == proc) {

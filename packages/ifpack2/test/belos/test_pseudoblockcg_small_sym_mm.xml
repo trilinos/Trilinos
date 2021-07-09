@@ -1,7 +1,7 @@
 <ParameterList name="test_params">
   <Parameter name="mm_file" type="string" value="small_sym.mtx"/>
 
-  <Parameter name="solver_type" type="string" value="PseudoBlockCG"/>
+  <Parameter name="solver_type" type="string" value="PseudoBlock CG"/>
   <ParameterList name="Belos">
     <Parameter name="Verbosity" type="int" value="33"/>
     <Parameter name="Output Style" type="int" value="1"/>

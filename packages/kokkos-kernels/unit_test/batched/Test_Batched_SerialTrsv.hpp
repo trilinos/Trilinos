@@ -4,10 +4,8 @@
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
 
-//#include "KokkosBatched_Vector.hpp"
-
+#include "KokkosBatched_Util.hpp"
 #include "KokkosBatched_Trsv_Decl.hpp"
-#include "KokkosBatched_Trsv_Serial_Impl.hpp"
 
 //#include "KokkosKernels_TestUtils.hpp"
 

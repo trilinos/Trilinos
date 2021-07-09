@@ -32,10 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>                     // for ostringstream, etc
-#include <stk_util/environment/LogControl.hpp>  // for LogControl, RuleMap, etc
-#include <gtest/gtest.h>
-#include <string>                       // for operator==, char_traits, etc
+#include "gtest/gtest.h"
+#include "stk_util/environment/LogControl.hpp"  // for LogControlRuleInterval, LogControl, RuleMap
+#include <iostream>                             // for basic_ostream::operator<<, operator<<
+#include <string>                               // for char_traits, operator==, string, basic_st...
 
 
 

@@ -1,37 +1,9 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: mesh.f,v 1.15 2005/06/23 20:18:44 gdsjaar Exp $
       SUBROUTINE MESH (A, IA, MP, ML, MS, MR, MSC, MA, MCOM, ICOM, JCOM,
      &   CIN, RIN, IIN, KIN, IDUMP, N, IPOINT, COOR, IPBOUN, ILINE,
      &   LTYPE, NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE,
@@ -45,38 +17,38 @@ C $Id: mesh.f,v 1.15 2005/06/23 20:18:44 gdsjaar Exp $
      &   AREACG, LABN, LABE, LABO, LABNB, LABSB, LABM, LABW, WROTE,
      &   TIME1, HARDPL, EXODUSII)
 C***********************************************************************
-C
+
 C  SUBROUTINE MESH = PROCESSES THE MESH AND THEN GRAPHICALLY DISPLAYS
 C                    THE MESH
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     FASTQ  = A PROGRAM TO QUICKLY PREPARE QMESH INPUT
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINES CALLED:
 C     QMESH  = GENERATES THE MESH
 C     RENUM  = ASSIGNS NODAL AND ELEMENT NUMBERS TO THE MESH
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     IANS   = LOGICAL RESPONSE FROM YES-NO QUESTION
 C     TITLE  = MESH TITLE
 C     TALL   = CHARACTER HEIGHT SETTING PARAMETER
 C     STEP   = .TRUE. IF GENERATION TO BE STEPPED THROUGH INTERACTIVELY
 C     DONE   = .TRUE. IF MESH HAS BEEN PROCESSED
-C
+
 C***********************************************************************
-C
+
       PARAMETER (MAXNAM = 40, MLINK = 55)
 
       include 'exodusII.inc'
-C
+
 C  DIMENSIONS FOR MESH DEFINING ENTITIES  (I.E. POINTS,  LINES,  ETC.)
-C
+
       DIMENSION A(1), IA(1)
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML)
@@ -102,17 +74,17 @@ C
       DIMENSION NUMBER(MSC)
       DIMENSION N(29), K(41), IDEV(2), III(1)
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM)
-C
+
       CHARACTER*72 SCHEME, DEFSCH, TITLE, DEV1*3, CIN(MCOM)
       CHARACTER*2048 FNAME
       CHARACTER*80 NUMBER, HOLD, VERSN*10
-C
+
       LOGICAL OPTIM, STEP, ERR, ALPHA, THREE, EIGHT, NINE
       LOGICAL AXIS, AREACG, LABE, LABO, LABN, LABNB, LABSB, LABM, LABW
       LOGICAL ADDLNK, BATCH, VAXVMS, WROTE, HARDPL, LGROUP
       LOGICAL REMESH, LONG
       LOGICAL EXODUSII, ISBARS
-C
+
       CHARACTER*8 CDUMH, CDUMS
       INTEGER CMPSIZ
 
@@ -120,19 +92,19 @@ C
       IZ = 0
       ADDLNK = .FALSE.
       REMESH = .FALSE.
-C
+
 C  ENTER THE MESH OPTION
-C
+
   100 CONTINUE
       IF (ICOM.GT.JCOM) THEN
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CALL FREFLD (IZ, IZ, 'ENTER MESH OPTION: ', MCOM, IOSTAT, JCOM,
      &      KIN, CIN, IIN, RIN)
          ICOM = 1
       END IF
-C
+
 C  RETURN FROM MESHING AFTER DELETING THE MESH
-C
+
       IF (CIN(ICOM)(1:1) .EQ. ' ') THEN
          ICOM = ICOM + 1
          IF (NPREGN.GT.0) THEN
@@ -184,31 +156,31 @@ C
             KKK = 0
          END IF
          RETURN
-C
+
 C  SPECIFY ExodusI (X1) or ExodusII (X2) database format
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'X') .OR.
      &        (CIN(ICOM)(1:1) .EQ. 'x')) THEN
          if (cin(icom)(2:2) .eq. '2') then
             exodusII = .TRUE.
-            call mesage ('Writing EXODUSII Format')
+            call message ('Writing EXODUSII Format')
          else if (cin(icom)(2:2) .eq. '1') then
             exodusII = .FALSE.
-            call mesage ('Writing EXODUSI/GENESIS Format')
+            call message ('Writing EXODUSI/GENESIS Format')
          end if
          ICOM = ICOM + 1
-C
+
 C  ENTER THE MESH GRAPHICS OPTION
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'G') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'g')) THEN
          ICOM = ICOM + 1
          IF (KKK.LE.0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE ('*    NO MESH HAS BEEN PROCESSED        *')
-            CALL MESAGE ('*        NO PLOTTING POSSIBLE          *')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE('*    NO MESH HAS BEEN PROCESSED        *')
+            CALL MESSAGE('*        NO PLOTTING POSSIBLE          *')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE(' ')
          ELSE
             CALL GMESH (NPNODE, NPELEM, MXNFLG, MXSFLG, NPNBC, NPSBC,
      &         MAXKXN, MR, NPREGN, MCOM, ICOM, JCOM, CIN, RIN, IIN, KIN,
@@ -221,74 +193,74 @@ C
      &         LABN, LABNB, LABSB, LABM, LABW, IDEV, ALPHA, DEV1, EIGHT,
      &         NINE, VAXVMS, VERSN, WROTE, TIME1, HARDPL, BATCH)
          END IF
-C
+
 C  TOGGLE OPTIMIZATION
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'O') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'o')) THEN
          ICOM = ICOM + 1
          IF (OPTIM) THEN
             OPTIM = .FALSE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('BANDWIDTH OPTIMIZATION - DISABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('BANDWIDTH OPTIMIZATION - DISABLED')
          ELSE
             OPTIM = .TRUE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('BANDWIDTH OPTIMIZATION - ENABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('BANDWIDTH OPTIMIZATION - ENABLED')
          END IF
-C
+
 C  TOGGLE THREE NODE BAR ELEMENTS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'T') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 't')) THEN
          ICOM = ICOM + 1
          IF (THREE) THEN
             THREE = .FALSE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('THREE NODE BAR GENERATION - DISABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('THREE NODE BAR GENERATION - DISABLED')
          ELSE
             THREE = .TRUE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('THREE NODE BAR GENERATION - ENABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('THREE NODE BAR GENERATION - ENABLED')
          END IF
          KKK = 0
-C
+
 C  TOGGLE EIGHT NODE ELEMENTS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EI') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ei')) THEN
          ICOM = ICOM + 1
          IF (EIGHT) THEN
             EIGHT = .FALSE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('EIGHT NODE QUAD GENERATION - DISABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('EIGHT NODE QUAD GENERATION - DISABLED')
          ELSE
             EIGHT = .TRUE.
             NINE = .FALSE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('EIGHT NODE QUAD GENERATION - ENABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('EIGHT NODE QUAD GENERATION - ENABLED')
          END IF
          KKK = 0
-C
+
 C  TOGGLE NINE NODE ELEMENT GENERATION
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'NI') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ni')) THEN
          ICOM = ICOM + 1
          IF (NINE) THEN
             NINE = .FALSE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('NINE NODE QUAD GENERATION - DISABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('NINE NODE QUAD GENERATION - DISABLED')
          ELSE
             NINE = .TRUE.
             EIGHT = .FALSE.
-            CALL MESAGE (' ')
-            CALL MESAGE ('NINE NODE QUAD GENERATION - ENABLED')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('NINE NODE QUAD GENERATION - ENABLED')
          END IF
          KKK = 0
-C
+
 C  EXIT OPTION - EXITS FASTQ
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EX') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ex')) THEN
          CALL STRLNG (CIN(ICOM), LEN)
@@ -308,17 +280,17 @@ C
      &         TIME1, BATCH, VERSN)
          ENDIF
          GOTO 100
-C
+
 C  ENTER LINE INTERVALS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'I') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'i')) THEN
          ICOM = ICOM + 1
          IF (ICOM.GT.JCOM) THEN
-            CALL MESAGE ('ENTER LINE INTERVALS IN THE FOLLOWING '//
+            CALL MESSAGE('ENTER LINE INTERVALS IN THE FOLLOWING '//
      &         'FORMAT:')
-            CALL MESAGE ('[ LINE NO. (OR NEG SIDE NO.),  INTERVALS ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('[ LINE NO. (OR NEG SIDE NO.),  INTERVALS ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
          END IF
   110    CONTINUE
          IF (ICOM.GT.JCOM) THEN
@@ -333,24 +305,24 @@ C
      &         NLPS, IFLINE, ILLIST, LINKL, LINKS, ADDLNK)
             GOTO 110
          END IF
-C
+
 C  SPAWN A PROCESS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SP') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'sp')) THEN
          ICOM = ICOM + 1
          CALL SPAWN (VAXVMS)
-C
+
 C  ENTER A NEW SIZE FOR A REGION
-C
+
       ELSE IF ((CIN(ICOM)(1:2)  .EQ.  'SI') .OR.
      &   (CIN(ICOM)(1:2)  .EQ.  'si')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('NOTE: ENTER A DEFAULT SIZE BY SPECIFYING')
-         CALL MESAGE ('      A SIZE WITH NO REGIONS.')
-         CALL MESAGE ('ENTER REGION SIZE DATA IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ SIZE, REGION 1, REGION 2, ..., REGION N ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('NOTE: ENTER A DEFAULT SIZE BY SPECIFYING')
+         CALL MESSAGE('      A SIZE WITH NO REGIONS.')
+         CALL MESSAGE('ENTER REGION SIZE DATA IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ SIZE, REGION 1, REGION 2, ..., REGION N ]')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   120    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -371,25 +343,25 @@ C
             END IF
             GO TO 120
          END IF
-C
+
 C  GENERATE THE MESH
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'p') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'S') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 's')) THEN
          DO 140 I = 1, 2
             IF (N(I).LE.0) THEN
-               CALL MESAGE ('***************************************')
+               CALL MESSAGE('***************************************')
                IF (I .EQ. 1) THEN
-                  CALL MESAGE
+                  CALL MESSAGE
      &               ('*    NO POINT CARDS IN DATABASE       *')
                ELSE
-                  CALL MESAGE
+                  CALL MESSAGE
      &               ('*     NO LINE CARDS IN DATABASE       *')
                END IF
-               CALL MESAGE ('*     NO MESH GENERATION POSSIBLE     *')
-               CALL MESAGE ('***************************************')
+               CALL MESSAGE('*     NO MESH GENERATION POSSIBLE     *')
+               CALL MESSAGE('***************************************')
                ICOM = ICOM + 1
                GOTO 100
             END IF
@@ -401,16 +373,16 @@ C
             STEP = .FALSE.
          END IF
          ICOM = ICOM + 1
-C
+
 C  OPEN THE TEMPORARY FILE
-C
+
          IUNIT = 99
          OPEN (UNIT = IUNIT, STATUS = 'scratch', FORM = 'unformatted',
      &      ACCESS = 'sequential')
          REWIND IUNIT
-C
+
 C  GENERATE THE MESH
-C
+
          IF (NPREGN.GT.0) THEN
             CALL MDDEL ('IPART')
             CALL MDDEL ('LSTNBC')
@@ -460,9 +432,9 @@ C
                STOP ' '
             END IF
             NPREGN = 0
-C
+
 C  SET UP THE ARRAYS FOR ADAPTIVE REMESHING
-C
+
          END IF
          IF (.NOT. REMESH) THEN
             CALL MDRSRV ('AMESUR', K(31), 1)
@@ -485,7 +457,7 @@ C
                STOP ' '
             END IF
          END IF
-C
+
          LGROUP = .FALSE.
          DO 150 I = 1, N(7)
             IF (IRGFLG(I) .GE. 1) THEN
@@ -508,18 +480,12 @@ C
      &      A(K(35)), A(K(36)), A(K(37)), A(K(38)), MLINK, NPROLD,
      &      NPNOLD, NPEOLD, NNXK, REMESH, REXMIN, REXMAX, REYMIN,
      &      REYMAX, IDIVIS, SIZMIN, EMAX, EMIN)
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO QMESH TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
          IF (REMESH) REMESH = .FALSE.
          IF (NPREGN.GT.0) THEN
-C
+
 C  SET UP THE NECESSARY DIMENSIONING FOR NUMBERING
-C
+
 C  A(K(1))  =  IPART   =  ARRAY OF BEGINNING/ENDING ELEMENT NUMBERS/REGION
 C  A(K(2))  =  LSTNBC  =  LIST OF NODAL BOUNDARY CONDITIONS
 C                      (REORDERED TO NODES)
@@ -571,7 +537,7 @@ C  A(K(37)) =  LISTEG  =  ELEMENT GRID LIST FOR ADAPTIVE MESHING
 C  A(K(38)) =  BMESUR  =  AMESUR VALUES AVERAGED AT THE NODES
 C  A(K(31)) =  CMESUR  =  SECOND ADAPTIVE MESHING VARIABLE
 C  A(K(40)) =  DMESUR  =  CMESUR VALUES AVERAGED AT THE NODES
-C
+
             IF (EIGHT) THEN
                NPNBC = NPNBC*2
                NPSBC = NPSBC*2
@@ -628,7 +594,7 @@ C ... The kxn array is used for a work array in renum and needs to hold npsbc it
                CALL MDEROR (6)
                STOP ' '
             END IF
-C
+
             if (n(5) .gt. 0) then
               isbars = .true.
             else
@@ -651,10 +617,10 @@ C
      &         LISTPB, IWTPBF, ILBF, NLPF, IFLB, LISTLB, IWTLBF, ISBF,
      &         NSPF, IFSB, LISTSB, IWTSBF, LINKPB, LINKLB, LINKSB,
      &         NUMBER, THREE, EIGHT, NINE, OPTIM, ISBARS)
-C
+
 C  AN ERROR HAS OCCURRED AND THUS THE DUMMY REMESH ARRAYS MUST BE
 C  DELETED IF NOT REMESHING
-C
+
          ELSEIF (.NOT. REMESH) THEN
             CALL MDDEL ('AMESUR')
             CALL MDDEL ('XNOLD')
@@ -672,18 +638,18 @@ C
                STOP ' '
             END IF
          END IF
-C
+
          CLOSE (IUNIT)
-C
+
 C  ENTER LINE FACTORS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'F') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'f')) THEN
          ICOM = ICOM + 1
          IF (ICOM.GT.JCOM) THEN
-            CALL MESAGE ('ENTER LINE FACTORS IN THE FOLLOWING FORMAT:')
-            CALL MESAGE ('[ LINE NO. (OR NEG. SIDE NO.),  FACTOR ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('ENTER LINE FACTORS IN THE FOLLOWING FORMAT:')
+            CALL MESSAGE('[ LINE NO. (OR NEG. SIDE NO.),  FACTOR ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
          END IF
   180    CONTINUE
          IF (ICOM.GT.JCOM) THEN
@@ -699,14 +665,14 @@ C
      &         NLPS, IFLINE, ILLIST, LINKL, LINKS, ADDLNK)
             GOTO 180
          END IF
-C
+
 C  CLEAR OUT ALL THE INTERVALS ASSIGNED TO LINES BY REGION
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'CI') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ci')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('CLEAR INTERVALS FROM REGIONS FROM <I1> TO <I2>')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('CLEAR INTERVALS FROM REGIONS FROM <I1> TO <I2>')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   200    CONTINUE
          IF (ICOM.GT.JCOM)THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -714,20 +680,20 @@ C
             ICOM = 1
          ENDIF
          CALL GETI12 (MCOM, ICOM, JCOM, CIN, IIN, KIN, I1, I2, IFOUND)
-C
+
          IF (IFOUND .GT. 0) THEN
             IF (I1 .GT. 0) THEN
                CALL CHECK (I1, I2, N (22))
-C
+
 C  REMOVE INTERVALS ON LINES ASSOCIATED WITH THE REGIONS
-C
+
                DO 230 I = I1, I2
                   CALL LTSORT (MR, LINKR, I, II, ADDLNK)
                   IF (II .GT. 0) THEN
                      DO 220 J = IFSIDE (II), IFSIDE (II) + NSPR (II)-1
-C
+
 C  FIRST REMOVE INTERVALS OF LINES ON SIDE DATA
-C
+
                         CALL LTSORT (MS, LINKS, ISLIST (J), JJ, ADDLNK)
                         IF ((ISLIST (J) .GT. 0) .AND. (JJ .GT. 0)) THEN
                            DO 210 KKK = IFLINE (JJ), IFLINE (JJ) +
@@ -736,9 +702,9 @@ C
      &                           ADDLNK)
                               IF (KK .GT. 0) NINT (KK) = 0
   210                      CONTINUE
-C
+
 C  NEXT REMOVE INTERVALS ON LINES ALONE
-C
+
                         ELSE
                            JJ = IABS (ISLIST (J))
                            CALL LTSORT (ML, LINKL, JJ, KK, ADDLNK)
@@ -750,19 +716,19 @@ C
                GOTO 200
             ENDIF
          ENDIF
-C
+
 C     ADJUST THE MESH
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'AD') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ad')) THEN
          ICOM = ICOM + 1
          IF (KKK.LE.0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*    NO MESH ADJUSTMENT POSSIBLE       *')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE('*      NO ELEMENTS IN DATABASE         *')
+            CALL MESSAGE('*    NO MESH ADJUSTMENT POSSIBLE       *')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE(' ')
             GOTO 100
          END IF
          CALL ADJMSH (MS, MR, NPNODE, NPELEM, MXNFLG, MXSFLG, NPREGN,
@@ -774,27 +740,27 @@ C
      &      NNLIST, NBCSID, NSLIST, NVLIST, NUMMAT, LINKM, TITLE, ERR,
      &      EIGHT, NINE, VERSN)
          IF (ERR) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('******************************************')
-            CALL MESAGE ('*         ERROR ADJUSTING MESH           *')
-            CALL MESAGE ('******************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('******************************************')
+            CALL MESSAGE('*         ERROR ADJUSTING MESH           *')
+            CALL MESSAGE('******************************************')
+            CALL MESSAGE(' ')
          END IF
-C
+
 C     CALCULATE A DISTORTION INDEX FOR THE REGIONS
-C
+
       ELSE IF (((CIN(ICOM)(1:1) .EQ. 'D') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'd')) .AND.
      &   (CIN(ICOM)(2:2) .NE. 'N') .AND.
      &   (CIN(ICOM)(2:2) .NE. 'n')) THEN
          ICOM = ICOM + 1
          IF (KKK.LE.0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*   NO DISTORTION INDEX CALCULATED     *')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE('*      NO ELEMENTS IN DATABASE         *')
+            CALL MESSAGE('*   NO DISTORTION INDEX CALCULATED     *')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE(' ')
             GOTO 100
          END IF
          CALL RGDSTR (NPNODE, NPELEM, KKK, NNXK, IA(K(14)),
@@ -805,12 +771,12 @@ C     Write out the mesh data into the genesis or exodusII data base
      &         (CIN(ICOM)(1:1) .EQ. 'w')) THEN
          ICOM = ICOM + 1
          IF (KKK.LE.0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE ('*       NO ELEMENTS IN DATABASE        *')
-            CALL MESAGE ('*  NO EXODUSII FILE WRITING POSSIBLE   *')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE('*       NO ELEMENTS IN DATABASE        *')
+            CALL MESSAGE('*  NO EXODUSII FILE WRITING POSSIBLE   *')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE(' ')
             GOTO 100
          END IF
          IUNIT = 9
@@ -868,16 +834,16 @@ C ... One final check to make sure we have a valid iows.
      &           TITLE, ERR, EIGHT, NINE, VERSN, A, IA, FNAME(:LN))
             IF (ERR) THEN
                IF (BATCH) THEN
-                  CALL MESAGE (' ')
-                  CALL MESAGE
+                  CALL MESSAGE(' ')
+                  CALL MESSAGE
      &                 ('******************************************')
-                  CALL MESAGE
+                  CALL MESSAGE
      &                 ('*  ERROR WRITING GENESIS DATABASE FILE   *')
-                  CALL MESAGE
+                  CALL MESSAGE
      &                 ('*         NO OUTPUT FILE SAVED           *')
-                  CALL MESAGE
+                  CALL MESSAGE
      &                 ('******************************************')
-                  CALL MESAGE (' ')
+                  CALL MESSAGE(' ')
                   STOP
                END IF
             END IF
@@ -897,35 +863,35 @@ C ... One final check to make sure we have a valid iows.
             IF (ERR) THEN
                CLOSE (UNIT = IUNIT, STATUS = 'DELETE')
                IF (BATCH) THEN
-                  CALL MESAGE (' ')
-                  CALL MESAGE
+                  CALL MESSAGE(' ')
+                  CALL MESSAGE
      &                 ('******************************************')
-                  CALL MESAGE
+                  CALL MESSAGE
      &                 ('*  ERROR WRITING GENESIS DATABASE FILE   *')
-                  CALL MESAGE
+                  CALL MESSAGE
      &                 ('*         NO OUTPUT FILE SAVED           *')
-                  CALL MESAGE
+                  CALL MESSAGE
      &                 ('******************************************')
-                  CALL MESAGE (' ')
+                  CALL MESSAGE(' ')
                   STOP
                END IF
             ELSE
                CLOSE (UNIT = IUNIT, STATUS = 'KEEP')
             end if
          end if
-C
+
 C     WRITE OUT THE MESH DATA INTO THE ERROR CODE DATA FORMAT
-C
+
       ELSE IF ((CIN (ICOM) (1:1) .EQ. 'J') .OR.
      &   (CIN (ICOM) (1:1) .EQ. 'j')) THEN
          ICOM = ICOM + 1
          IF (KKK.LE.0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*     NO FILE WRITING POSSIBLE        *')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE('*      NO ELEMENTS IN DATABASE         *')
+            CALL MESSAGE('*     NO FILE WRITING POSSIBLE        *')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE(' ')
             GOTO 100
          END IF
          IUNIT = 99
@@ -950,19 +916,19 @@ C
          ELSE
             CLOSE (UNIT = IUNIT, STATUS = 'KEEP')
          END IF
-C
+
 C     WRITE OUT THE MESH DATA INTO THE ABAQUS DATA FORMAT
-C
+
       ELSE IF ((CIN (ICOM) (1:1) .EQ. 'A') .OR.
      &   (CIN (ICOM) (1:1) .EQ. 'a')) THEN
          ICOM = ICOM + 1
          IF (KKK.LE.0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*     NO FILE WRITING POSSIBLE        *')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE('*      NO ELEMENTS IN DATABASE         *')
+            CALL MESSAGE('*     NO FILE WRITING POSSIBLE        *')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE(' ')
             GOTO 100
          END IF
          IUNIT = 99
@@ -988,9 +954,9 @@ C
          ELSE
             CLOSE (UNIT = IUNIT, STATUS = 'KEEP')
          END IF
-C
+
 C     WRITE OUT THE MESH DATA INTO THE NASTRAN DATA FORMAT
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'n') .OR. (CIN(ICOM)(1:2) .EQ. 'DN') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'DN')) THEN
@@ -1002,12 +968,12 @@ C
             LONG = .FALSE.
          ENDIF
          IF (KKK.LE.0) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE ('*      NO ELEMENTS IN DATABASE         *')
-            CALL MESAGE ('*     NO FILE WRITING POSSIBLE        *')
-            CALL MESAGE ('****************************************')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE('*      NO ELEMENTS IN DATABASE         *')
+            CALL MESSAGE('*     NO FILE WRITING POSSIBLE        *')
+            CALL MESSAGE('****************************************')
+            CALL MESSAGE(' ')
             GOTO 100
          END IF
          IUNIT = 99
@@ -1038,8 +1004,8 @@ C
          CALL HELP_FQ (12)
       END IF
       GOTO 100
-C
+
 10000 FORMAT (' REGION NO:', I5, ' IS NOT IN THE DATABASE', /,
      &   ' THUS NO SIZE CAN BE ENTERED')
-C
+
       END

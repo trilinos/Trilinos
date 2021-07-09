@@ -105,3 +105,17 @@ IF(KDD_INT_LONG OR KDD_INT_LONG_LONG OR KDD_INT_UNSIGNED)
    ENDIF()
 ENDIF()
 
+# Enable Build Status package and enable reporting the reporting test
+
+set(bulidStats "${${PROJECT_NAME}_ENABLE_BUILD_STATS}")
+if (
+    bulidStats
+    AND
+    ("${${PROJECT_NAME}_ENABLE_TrilinosBuildStats}" STREQUAL "")
+    )
+  message("-- " "Setting ${PROJECT_NAME}_ENABLE_TrilinosBuildStats=ON"
+    " by default because"
+    " ${PROJECT_NAME}_ENABLE_BUILD_STATS=${bulidStats}"
+    )
+  set(${PROJECT_NAME}_ENABLE_TrilinosBuildStats ON)
+endif()

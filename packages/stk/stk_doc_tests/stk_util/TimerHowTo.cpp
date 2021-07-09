@@ -33,10 +33,14 @@
 // 
 
 //BEGINTimerTests
-#include <gtest/gtest.h>
-#include <stk_util/diag/PrintTimer.hpp>
-#include <stk_util/diag/Timer.hpp>
-#include <stk_unit_test_utils/comparison/stringAndNumberComparisons.hpp>
+#include "gtest/gtest.h"
+#include "stk_unit_test_utils/stringAndNumberComparisons.hpp"  // for areStringsEqualWithToleran...
+#include "stk_util/diag/PrintTimer.hpp"                        // for printTimersTable
+#include "stk_util/diag/Timer.hpp"                             // for Timer, createRootTimer
+#include "stk_util/diag/TimerMetricTraits.hpp"                 // for METRICS_ALL
+#include <unistd.h>                                            // for usleep
+#include <iosfwd>                                              // for ostringstream
+#include <string>                                              // for string
 
 namespace
 {

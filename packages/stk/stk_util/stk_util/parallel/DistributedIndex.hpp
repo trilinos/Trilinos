@@ -35,14 +35,14 @@
 #ifndef stk_util_parallel_DistributedIndex_hpp
 #define stk_util_parallel_DistributedIndex_hpp
 
-#include <stk_util/stk_config.h>
-#include <stdint.h>                     // for uint64_t
-#include <cstddef>                      // for size_t
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <utility>                      // for pair
-#include <vector>                       // for vector
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, ompi_communicator_t
+#include <cstdint>                         // for uint64_t
+#include <cstddef>                         // for size_t
+#include <utility>                         // for pair
+#include <vector>                          // for vector
 
-class UnitTestSTKParallelDistributedIndex ;
+class UnitTestSTKParallelDistributedIndex;
+
 
 namespace stk {
 namespace parallel {

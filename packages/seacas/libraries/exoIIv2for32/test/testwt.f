@@ -1,45 +1,18 @@
-C    Copyright (c) 2005-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C        * Redistributions of source code must retain the above copyright
-C          notice, this list of conditions and the following disclaimer.
-C
-C        * Redistributions in binary form must reproduce the above
-C          copyright notice, this list of conditions and the following
-C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.
-C
-C        * Neither the name of NTESS nor the names of its
-C          contributors may be used to endorse or promote products derived
-C          from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
       program testwt
       implicit none
-c
+
 c This is a test program for the Fortran binding of the EXODUS II
 c database write routines.
-c
+
       include 'exodusII.inc'
 
-      integer*4 iin, iout, ierr
+      integer*4 iin, iout, ierr, id
       integer*4 exoid, num_dim,num_nodes,elem_map(5),num_elem
       integer*4 num_elem_blk,numattr(10)
       integer*4 num_elem_in_block(10), num_nodes_per_elem(10)
@@ -78,18 +51,17 @@ c
       write (iout,'("after exopts, error = ", i4)') ierr
       cpu_word_size = 4
       io_word_size = 4
-c
+
 c  create EXODUS II files
-c
+
       exoid = excre ("test.exo",
      1               EXCLOB, cpu_word_size, io_word_size, ierr)
       write (iout,'("after excre for test.exo, id: ", i4)') exoid
       write (iout,'("  cpu word size: ",i4," io word size: ",i4)')
      1                  cpu_word_size, io_word_size
       write (iout,'("after excre, error = ", i4)') ierr
-c
+
 c  initialize file with parameters
-c
 
       num_dim = 3
       num_nodes = 26
@@ -108,9 +80,8 @@ c
          call exit (0)
       endif
 
-c
 c  write nodal coordinates values and names to database
-c
+
 c  Quad #1
       x(1) = 0.0
       x(2) = 1.0
@@ -215,7 +186,6 @@ c  Wedge #1
          call exit (0)
       endif
 
-
       coord_names(1) = "xcoor"
       coord_names(2) = "ycoor"
       coord_names(3) = "zcoor"
@@ -228,10 +198,7 @@ c  Wedge #1
          call exit (0)
       endif
 
-
-c
 c write element order map
-c
 
       do 10 i = 1, num_elem
          elem_map(i) = i
@@ -244,9 +211,7 @@ c
          call exit (0)
       endif
 
-c
 c write element block parameters
-c
 
       num_elem_in_block(1) = 1
       num_elem_in_block(2) = 1
@@ -333,7 +298,8 @@ c  write element block properties
 
       prop_names(1) = "MATL"
       prop_names(2) = "DENSITY"
-      call exppn(exoid,EXEBLK,2,prop_names,ierr)
+      id = 2
+      call exppn(exoid,EXEBLK,id,prop_names,ierr)
       write (iout, '("after exppn, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -371,9 +337,7 @@ c  write element block properties
          call exit (0)
       endif
 
-c
 c write element connectivity
-c
 
       connect(1) = 1
       connect(2) = 2
@@ -441,9 +405,8 @@ c
          call exit (0)
       endif
 
-c
 c write element block attributes
-c
+
       attrib(1) = 3.14159
       call expeat (exoid, ebids(1), attrib, ierr)
       write (iout, '("after expeat, error = ", i4)' ) ierr
@@ -490,9 +453,8 @@ c
           call exit (0)
         endif
       end do
-c
+
 c write individual node sets
-c
 
       node_list(1) = 100
       node_list(2) = 101
@@ -506,19 +468,20 @@ c
       dist_fact(4) = 4.0
       dist_fact(5) = 5.0
 
-      call expnp (exoid, 20, 5, 5, ierr)
+      id = 20
+      call expnp (exoid, id, 5, 5, ierr)
       write (iout, '("after expnp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expns (exoid, 20, node_list, ierr)
+      call expns (exoid, id, node_list, ierr)
       write (iout, '("after expns, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expnsd (exoid, 20, dist_fact, ierr)
+      call expnsd (exoid, id, dist_fact, ierr)
       write (iout, '("after expnsd, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -533,29 +496,28 @@ c
       dist_fact(2) = 2.1
       dist_fact(3) = 3.1
 
-      call expnp (exoid, 21, 3, 3, ierr)
+      id = 21
+      call expnp (exoid, id, 3, 3, ierr)
       write (iout, '("after expnp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expns (exoid, 21, node_list, ierr)
+      call expns (exoid, id, node_list, ierr)
       write (iout, '("after expns, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expnsd (exoid, 21, dist_fact, ierr)
+      call expnsd (exoid, id, dist_fact, ierr)
       write (iout, '("after expnsd, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-c
 c write concatenated node sets; this produces the same information as
 c the above code which writes individual node sets
-c
 
       ids(1) = 20
       ids(2) = 21
@@ -604,18 +566,19 @@ c     write (iout, '("after expcns, error = ", i4)' ) ierr
          call exit (0)
       endif
 
-
 c     write node set properties
 
       prop_names(1) = "FACE"
-      call expp(exoid, EXNSET, 20, prop_names(1), 4, ierr)
+      id = 20
+      call expp(exoid, EXNSET, id, prop_names(1), 4, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXNSET, 21, prop_names(1), 5, ierr)
+      id = 21
+      call expp(exoid, EXNSET, id, prop_names(1), 5, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -633,9 +596,7 @@ c     write node set properties
          call exit (0)
       endif
 
-c
 c write individual side sets
-c
 
 c     side set #1 - quad
 
@@ -791,10 +752,8 @@ c     side set #5 - wedges
          call exit (0)
       endif
 
-
 c write concatenated side sets; this produces the same information as
 c the above code which writes individual side sets
-c
 
       ids(1) = 30
       ids(2) = 31
@@ -945,7 +904,6 @@ c     call excn2s(exoid, num_elem_per_set, num_nodes_per_set, elem_ind,
 c    1          node_ind, elem_list, node_list, side_list, ierr)
 c     write (iout, '("after excn2s, error = ", i4)' ) ierr
 
-
       num_df_per_set(1) = 4
       num_df_per_set(2) = 4
       num_df_per_set(3) = 0
@@ -970,14 +928,16 @@ c    2             ierr)
 c     write (iout, '("after expcss, error = ", i4)' ) ierr
 
       prop_names(1) = "COLOR"
-      call expp(exoid, EXSSET, 30, prop_names(1), 100, ierr)
+      id = 30
+      call expp(exoid, EXSSET, id, prop_names(1), 100, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXSSET, 31, prop_names(1), 101, ierr)
+      id = 31
+      call expp(exoid, EXSSET, id, prop_names(1), 101, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -996,10 +956,8 @@ c     write (iout, '("after expcss, error = ", i4)' ) ierr
          call exclos(exoid,ierr)
          call exit (0)
       endif
-c
-c
+
 c write QA records
-c
 
       num_qa_rec = 2
 
@@ -1019,10 +977,7 @@ c
          call exit (0)
       endif
 
-
-c
 c write information records
-c
 
       num_info = 3
 
@@ -1056,7 +1011,6 @@ c write results variables parameters and names
          call exit (0)
       endif
 
-
       num_nod_vars = 2
 
       var_names(1) = "nod_var0"
@@ -1074,7 +1028,6 @@ c write results variables parameters and names
          call exclos(exoid,ierr)
          call exit (0)
       endif
-
 
       num_ele_vars = 3
 
@@ -1095,9 +1048,7 @@ c write results variables parameters and names
          call exit (0)
       endif
 
-c
 c write element variable truth table
-c
 
       k = 0
 
@@ -1114,21 +1065,18 @@ c
          call exit (0)
       endif
 
-c
 c for each time step, write the analysis results;
 c the code below fills the arrays glob_var_vals,
 c nodal_var_vals, and elem_var_vals with values for debugging purposes;
 c obviously the analysis code will populate these arrays
-c
 
       whole_time_step = 1
       num_time_steps = 10
 
       do 110 i = 1, num_time_steps
         time_value = real(i)/100.
-c
+
 c write time value
-c
 
         call exptim (exoid, whole_time_step, time_value, ierr)
         write (iout, '("after exptim, error = ", i4)' ) ierr
@@ -1137,9 +1085,7 @@ c
            call exit (0)
         endif
 
-c
 c write global variables
-c
 
         do 50 j = 1, num_glo_vars
           glob_var_vals(j) = real(j+1) * time_value
@@ -1153,9 +1099,7 @@ c
            call exit (0)
         endif
 
-c
 c write nodal variables
-c
 
         do 70 k = 1, num_nod_vars
           do 60 j = 1, num_nodes
@@ -1174,9 +1118,7 @@ c
 
 70      continue
 
-c
 c write element variables
-c
 
         do 100 k = 1, num_ele_vars
           do 90 j = 1, num_elem_blk
@@ -1201,10 +1143,9 @@ c             write(iout,*)'elem_var_val(',m,'): ',elem_var_vals(m)
 
         whole_time_step = whole_time_step + 1
 
-c
 c update the data file; this should be done at the end of every time
 c step to ensure that no data is lost if the analysis dies
-c
+
         call exupda (exoid, ierr)
         write (iout, '("after exupda, error = ", i4)' ) ierr
         if (ierr .ne. 0) then
@@ -1214,9 +1155,8 @@ c
 
 110   continue
 
-c
 c close the EXODUS files
-c
+
       call exclos (exoid, ierr)
       write (iout, '("after exclos, error = ", i4)' ) ierr
 

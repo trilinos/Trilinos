@@ -1,0 +1,2 @@
+/* define if we have MueLu */
+#cmakedefine HAVE_ZOLTAN2SPHYNX_MUELU

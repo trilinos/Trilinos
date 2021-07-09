@@ -11,6 +11,7 @@
 
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 namespace Tempus {

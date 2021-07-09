@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/EntitySorterBase.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
 namespace {

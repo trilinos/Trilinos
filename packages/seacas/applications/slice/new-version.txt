@@ -1,8 +1,6 @@
 
 Assign elements to processors evenly  #elem/#proc --
 
-
-
 std::vector<std::vector<int>> node_to_proc(#node)
 blk = 1
 st_blk = 0
@@ -32,7 +30,6 @@ for each (proc) {
 ... Add the granularity of element blocks
     Each block has beg, end range, and connectivity size.
 
-
 ... Better to iterate by block:
 
 foreach (element block)
@@ -40,12 +37,9 @@ foreach (element block)
    find st_proc
    find end_proc
 
-
 proc for an element (0-based):
 
-
 proc = elem / elem-per-proc +
-
 
 elem-per-proc = #elem / #proc
 extra = #elem % #proc

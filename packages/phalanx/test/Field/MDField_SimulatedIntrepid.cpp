@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -60,40 +60,50 @@ PHX_EXTENT(Node)
 PHX_EXTENT(Point)
 PHX_EXTENT(Cell)
 
+/*
+ This test simulates an issue with the implementation of Intrepid. To
+ prevent a combinatorial explosion, Intrepid functions switch on rank
+ in a single function and require dynamic rank views.
+ */
+
+using namespace std;
+using namespace Teuchos;
+using namespace PHX;
+using namespace Kokkos;
+using size_type = PHX::MDField<double>::size_type;
+
 namespace phalanx_test {
 
   // ********************************************************
   template<typename VectorType>
-  void simulated_intrepid_integrate(VectorType& v)
-  {    
-    if (v.rank() == 3)
-      v(0,0,0) = 1.0;
-    else
-      v(0,0) = 1.0;
+  void simulated_intrepid_integrate(VectorType v)
+  {
+    parallel_for("simulated intrepid rank-3",
+		 RangePolicy<PHX::Device>(0,10),
+		 KOKKOS_LAMBDA (const int i)
+    {
+      if (v.rank() == 3) {
+	for (size_type j=0; j < v.extent(1); ++j)
+	  for (size_type k=0; k < v.extent(2); ++k)
+	    v(i,j,k) = double(i+j+k);
+      }
+      else {
+	for (size_type j=0; j < v.extent(1); ++j)
+	  v(i,j) = double(i+j);
+      }
+    });
   }
 
   // ********************************************************
   TEUCHOS_UNIT_TEST(mdfield, IntrepidIssue)
   {
-    using namespace std;
-    using namespace Teuchos;
-    using namespace PHX;
+    PHX::MDField<double> b2("density 2","QP Layout",10,4);
+    b2.deep_copy(2.0);
 
-    RCP<DataLayout> dl = rcp(new MDALayout<Cell,Quadrature,Dim>(10,4,3));
-    
-    // Compile time array fails, runtime array passes!
-    // typedef PHX::MDField<double,Cell,Node>::size_type size_type;
-    // PHX::MDField<double,Cell,Point,Dim> b("density",dl);
+    PHX::MDField<double> b3("density 3","QP Layout",10,4,3);
+    b3.deep_copy(3.0);
 
-    typedef PHX::MDField<double>::size_type size_type;
-    PHX::MDField<double> b("density",dl);
-    b.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(b.fieldTag()));
-    
-    for (size_type i=0; i < b.dimension(0); ++i)
-      for (size_type j=0; j < b.dimension(1); ++j)
-	for (size_type k=0; k < b.dimension(2); ++k)
-	  b(i,j,k) = 2.0;
- 	     
-    simulated_intrepid_integrate(b);
+    simulated_intrepid_integrate(b2.get_view());
+    simulated_intrepid_integrate(b3.get_view());
   }
 }

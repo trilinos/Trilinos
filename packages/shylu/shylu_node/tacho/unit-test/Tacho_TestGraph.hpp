@@ -20,8 +20,6 @@
 #include "Tacho_GraphTools_Metis.hpp"
 #endif
 
-#include "Tacho_GraphTools_CAMD.hpp"
-
 using namespace Tacho;
 
 typedef CrsMatrixBase<ValueType,HostDeviceType>   CrsMatrixBaseHostType;
@@ -123,47 +121,6 @@ TEST( Graph, metis ) {
     EXPECT_EQ(i, peri(perm(i)));
   }
   TEST_END;  
-}
-#endif
-
-#if defined(TACHO_HAVE_SCOTCH)
-TEST( Graph, camd ) {
-  TEST_BEGIN;
-  std::string inputfilename = MM_TEST_FILE + ".mtx";
-
-  CrsMatrixBaseHostType Ah;
-  MatrixMarket<ValueType>::read(inputfilename, Ah);
-
-  Graph G(Ah);
-  GraphTools_Scotch S(G);
-
-  const ordinal_type m = G.NumRows();
-  S.setTreeLevel(log2(m));
-  S.setStrategy( SCOTCH_STRATSPEED
-                 | SCOTCH_STRATSPEED
-                 | SCOTCH_STRATLEVELMAX
-                 | SCOTCH_STRATLEVELMIN
-                 | SCOTCH_STRATLEAFSIMPLE
-                 | SCOTCH_STRATSEPASIMPLE
-                 );
-  S.reorder();
-
-  GraphTools_CAMD C(G);
-  C.setConstraint(S.NumBlocks(), 
-                  S.RangeVector(), 
-                  S.InvPermVector());
-  C.reorder();
-
-  const auto perm = C.PermVector();
-  const auto peri = C.InvPermVector();
-  
-  ///
-  /// perm and invperm should be properly setup 
-  ///
-  for (ordinal_type i=0;i<m;++i) {
-    EXPECT_EQ(i, peri(perm(i)));
-  }
-  TEST_END;
 }
 #endif
 

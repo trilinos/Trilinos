@@ -56,7 +56,7 @@ MPDirectApplicInterface(
   model(model_),
   p_index(p_index_),
   g_index(g_index_),
-  orientation(EEME::DERIV_MV_BY_COL)
+  orientation(EEME::DERIV_MV_JACOBIAN_FORM)
 {
   out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
@@ -86,16 +86,16 @@ MPDirectApplicInterface(
     EEME::DerivativeSupport supportDgDp = 
       model->createOutArgs().supports(EEME::OUT_ARG_DgDp_mp, g_index, p_index);
     supportsSensitivities =
-      supportDgDp.supports(EEME::DERIV_TRANS_MV_BY_ROW) ||
-      supportDgDp.supports(EEME::DERIV_MV_BY_COL);
+      supportDgDp.supports(EEME::DERIV_MV_GRADIENT_FORM) ||
+      supportDgDp.supports(EEME::DERIV_MV_JACOBIAN_FORM);
     if (supportsSensitivities) {
       *out << "TriKota:: ModeEval supports gradients calculation." << std::endl;
-      if (supportDgDp.supports(EEME::DERIV_TRANS_MV_BY_ROW)) {
-        orientation = EEME::DERIV_TRANS_MV_BY_ROW;
+      if (supportDgDp.supports(EEME::DERIV_MV_GRADIENT_FORM)) {
+        orientation = EEME::DERIV_MV_GRADIENT_FORM;
         model_dgdp = model->create_p_mv_mp(p_index, numResponses);
       }
       else {
-        orientation = EEME::DERIV_MV_BY_COL;
+        orientation = EEME::DERIV_MV_JACOBIAN_FORM;
         model_dgdp = model->create_g_mv_mp(g_index, numParameters);
       }
     }
@@ -245,7 +245,7 @@ wait_local_evaluations(Dakota::PRPQueue& prp_queue)
 	  for (unsigned int j=0; j<numFns; j++) 
 	    fnVals[j]= (*model_g)[idx][j];
 	if (gradFlag)  {
-	  if (orientation == EEME::DERIV_MV_BY_COL) {
+	  if (orientation == EEME::DERIV_MV_JACOBIAN_FORM) {
 	    for (unsigned int i=0; i<numVars; i++)
 	      for (unsigned int j=0; j<numFns; j++)
 		fnGrads[j][i]= (*model_dgdp)[idx][i][j];

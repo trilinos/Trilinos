@@ -56,6 +56,16 @@ struct EntityAndProcs
     proc(p)
   {}
 
+  size_t get_num_procs() const
+  {
+    return proc<0 ? procs.size() : 1;
+  }
+
+  bool find_proc(int p) const
+  {
+    return (proc == p || std::find(procs.begin(), procs.end(), p) != procs.end());
+  }
+
   Entity entity;
   int proc;
   std::vector<int> procs;
@@ -154,13 +164,16 @@ public:
     return find(entityProc.first, entityProc.second);
   }
 
+  bool find(Entity entity) const
+  {
+    return (entityOffsets[entity.local_offset()] >= 0);
+  }
+
   size_t get_num_procs(Entity entity) const
   {
     const int offset = entityOffsets[entity.local_offset()];
-    if (offset >= 0) {
-      return (entitiesAndProcs[offset].entity == entity) &&
-             entitiesAndProcs[offset].proc < 0 ?
-                 entitiesAndProcs[offset].procs.size() : 1;
+    if (offset >= 0 && entitiesAndProcs[offset].entity == entity) {
+      return entitiesAndProcs[offset].get_num_procs();
     }
     return 0;
   }

@@ -32,14 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
-#include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/diag/String.hpp>     // for Identifier, String
-#include <stk_util/diag/StringUtil.hpp> // for demangle
-#include <stk_util/util/Writer.hpp>     // for operator<<, Writer
-#include "stk_util/parallel/MPI.hpp"    // for Loc, TempLoc
-
-
+#include "stk_util/diag/WriterExt.hpp"
+#include "stk_util/diag/String.hpp"      // for Identifier, String
+#include "stk_util/diag/StringUtil.hpp"  // for demangle
+#include "stk_util/parallel/MPI.hpp"     // for Loc
+#include "stk_util/stk_config.h"         // for STK_HAS_MPI
+#include "stk_util/util/Writer.hpp"      // for operator<<, Writer
 
 namespace stk {
 namespace diag {

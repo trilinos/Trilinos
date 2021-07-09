@@ -16,7 +16,11 @@
 #include "Tempus_IntegratorObserverSubcycling.hpp"
 
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperForwardEuler.hpp"
+#include "Tempus_StepperBackwardEuler.hpp"
 #include "Tempus_StepperSubcycling.hpp"
+#include "Tempus_StepperOperatorSplit.hpp"
+#include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -32,6 +36,7 @@ namespace Tempus_Test {
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -62,13 +67,13 @@ TEUCHOS_UNIT_TEST(Subcycling, ParameterList)
   // Test constructor IntegratorBasic(tempusPL, model)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(tempusPL, model);
+      Tempus::createIntegratorBasic<double>(tempusPL, model);
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
     RCP<const ParameterList> defaultPL =
       integrator->getStepper()->getValidParameters();
 
-    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
     if (!pass) {
       std::cout << std::endl;
       std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
@@ -80,13 +85,13 @@ TEUCHOS_UNIT_TEST(Subcycling, ParameterList)
   // Test constructor IntegratorBasic(model, stepperType)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(model, "Forward Euler");
+      Tempus::createIntegratorBasic<double>(model, "Forward Euler");
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
     RCP<const ParameterList> defaultPL =
       integrator->getStepper()->getValidParameters();
 
-    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
     if (!pass) {
       std::cout << std::endl;
       std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
@@ -105,17 +110,16 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
 
   // Setup the SinCosModel ------------------------------------
   auto model = rcp(new SinCosModel<double>());
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+  auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   stepper->setSubcyclingStepper(stepperFE);
 
   stepper->setSubcyclingMinTimeStep      (0.1);
   stepper->setSubcyclingInitTimeStep     (0.1);
   stepper->setSubcyclingMaxTimeStep      (0.1);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -123,20 +127,27 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
     Teuchos::rcp(new Tempus::IntegratorObserverSubcycling<double>()));
   stepper->setSubcyclingPrintDtChanges   (true);
 
-  stepper->initialize();
+  // Set subcycling strategy.
+  auto subStrategy = rcp(new Tempus::TimeStepControlStrategyConstant<double>(dt));
+  stepper->setSubcyclingTimeStepControlStrategy(subStrategy);
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
+  timeStepControl->setFinalIndex(10);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
   timeStepControl->setInitTimeStep(dt);
+
+  // Set TimeStepControl strategy.
+  auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
+  strategy->initialize();
+  timeStepControl->setTimeStepControlStrategy(strategy);
+
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = stepper->getModel()->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
@@ -151,13 +162,17 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
   solutionHistory->setStorageLimit(2);
   solutionHistory->addState(icState);
 
+  // Ensure ICs are consistent and stepper memory is set (e.g., xDot is set).
+  stepper->setInitialConditions(solutionHistory);
+  stepper->initialize();
+
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
+    Tempus::createIntegratorBasic<double>();
+  integrator->setStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
-  integrator->setScreenOutputIndexInterval(10);
+  integrator->setScreenOutputIndexInterval(1);
   //integrator->setObserver(...);
   integrator->initialize();
 
@@ -219,17 +234,16 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
 
     // Setup the SinCosModel ------------------------------------
     auto model = rcp(new SinCosModel<double>());
+    auto modelME=rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
     // Setup Stepper for field solve ----------------------------
     auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-    auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+    auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
     stepper->setSubcyclingStepper(stepperFE);
 
     stepper->setSubcyclingMinTimeStep      (dt/10.0);
     stepper->setSubcyclingInitTimeStep     (dt/10.0);
     stepper->setSubcyclingMaxTimeStep      (dt);
-    stepper->setSubcyclingStepType         ("Variable");
     stepper->setSubcyclingMaxFailures      (10);
     stepper->setSubcyclingMaxConsecFailures(5);
     stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -241,13 +255,11 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
     strategy->setMinEta(0.02);
     strategy->setMaxEta(0.04);
+    strategy->initialize();
     stepper->setSubcyclingTimeStepControlStrategy(strategy);
-
-    stepper->initialize();
 
     // Setup TimeStepControl ------------------------------------
     auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-    timeStepControl->setStepType ("Constant");
     timeStepControl->setInitIndex(0);
     timeStepControl->setInitTime (0.0);
     timeStepControl->setFinalTime(1.0);
@@ -257,8 +269,7 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     timeStepControl->initialize();
 
     // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+    auto inArgsIC = stepper->getModel()->getNominalValues();
     auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
     auto icState = Tempus::createSolutionStateX(icSolution);
     icState->setTime    (timeStepControl->getInitTime());
@@ -273,9 +284,13 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
     solutionHistory->setStorageLimit(2);
     solutionHistory->addState(icState);
 
+    // Ensure ICs are consistent and stepper memory is set (e.g., xDot is set).
+    stepper->setInitialConditions(solutionHistory);
+    stepper->initialize();
+
     // Setup Integrator -----------------------------------------
-    integrator = Tempus::integratorBasic<double>();
-    integrator->setStepperWStepper(stepper);
+    integrator = Tempus::createIntegratorBasic<double>();
+    integrator->setStepper(stepper);
     integrator->setTimeStepControl(timeStepControl);
     integrator->setSolutionHistory(solutionHistory);
     integrator->setScreenOutputIndexInterval(10);
@@ -385,15 +400,16 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
       tmpModel->getValidParameters());
     pl->set("Coeff epsilon", 0.1);
-    auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(pl));
-    auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(pl));
+    RCP<const Thyra::ModelEvaluator<double> > explicitModel =
+      rcp(new VanDerPol_IMEX_ExplicitModel<double>(pl));
+    RCP<const Thyra::ModelEvaluator<double> > implicitModel =
+      rcp(new VanDerPol_IMEX_ImplicitModel<double>(pl));
 
     // Setup Steppers for field solve ---------------------------
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
 
     // Explicit Subcycling Stepper
     auto stepperSC = rcp(new Tempus::StepperSubcycling<double>());
-    auto stepperFE = sf->createStepperForwardEuler(explicitModel,Teuchos::null);
+    auto stepperFE = Tempus::createStepperForwardEuler(explicitModel,Teuchos::null);
     stepperFE->setUseFSAL(false);
     stepperFE->initialize();
     stepperSC->setSubcyclingStepper(stepperFE);
@@ -408,23 +424,19 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     //  Teuchos::rcp(new Tempus::IntegratorObserverSubcycling<double>()));
     //stepperSC->setSubcyclingPrintDtChanges   (true);
 
-    //stepperSC->setSubcyclingStepType         ("Constant");
-    stepperSC->setSubcyclingStepType         ("Variable");
     auto strategySC = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
     strategySC->setMinEta(0.000001);
     strategySC->setMaxEta(0.01);
+    strategySC->initialize();
     stepperSC->setSubcyclingTimeStepControlStrategy(strategySC);
-    stepperSC->initialize();
 
     // Implicit Stepper
-    auto stepperBE =
-      sf->createStepperBackwardEuler(implicitModel, Teuchos::null);
+    auto stepperBE = Tempus::createStepperBackwardEuler(implicitModel, Teuchos::null);
 
     // Operator-Split Stepper
     auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
     stepper->addStepper(stepperSC);
     stepper->addStepper(stepperBE);
-    stepper->initialize();
 
     // Setup TimeStepControl ------------------------------------
     auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
@@ -433,24 +445,22 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     //timeStepControl->setFinalIndex(2);
     timeStepControl->setFinalTime(2.0);
     timeStepControl->setMinTimeStep (0.000001);
-    timeStepControl->setStepType ("Constant");
     timeStepControl->setInitTimeStep(dt);
     timeStepControl->setMaxTimeStep (dt);
 
-    //timeStepControl->setStepType ("Variable");
     //timeStepControl->setInitTimeStep(dt/2.0);
     //timeStepControl->setMaxTimeStep (dt);
     //auto strategy = rcp(new Tempus::TimeStepControlStrategyBasicVS<double>());
     //strategy->setMinEta(1.0e-6);
     //strategy->setMaxEta(5.0);
+    //strategy->initialize();
     //timeStepControl->getTimeStepControlStrategy()->clearObservers();
     //timeStepControl->getTimeStepControlStrategy()->addStrategy(strategy);
 
     timeStepControl->initialize();
 
     // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+    auto inArgsIC = stepper->getModel()->getNominalValues();
     auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
     auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
     auto icState = Tempus::createSolutionStateX(icX, icXDot);
@@ -468,9 +478,13 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     solutionHistory->setStorageLimit(3);
     solutionHistory->addState(icState);
 
+    // Ensure ICs are consistent and stepper memory is set (e.g., xDot is set).
+    stepperSC->setInitialConditions(solutionHistory);
+    stepper->initialize();
+
     // Setup Integrator -----------------------------------------
-    integrator = Tempus::integratorBasic<double>();
-    integrator->setStepperWStepper(stepper);
+    integrator = Tempus::createIntegratorBasic<double>();
+    integrator->setStepper(stepper);
     integrator->setTimeStepControl(timeStepControl);
     integrator->setSolutionHistory(solutionHistory);
     integrator->setScreenOutputIndexInterval(10);
@@ -494,12 +508,12 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(implicitModel->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == 0) or (n == nTimeStepSizes-1)) {
+    if ((n == 0) || (n == nTimeStepSizes-1)) {
       std::string fname = "Tempus_Subcycling_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_Subcycling_VanDerPol.dat";
       writeSolution(fname, integrator->getSolutionHistory());

@@ -94,7 +94,7 @@ namespace panzer
     ownedVector_ = create_Vector(ownedVector, ownedSpace_);
     isInitialized_ = true;
 
-    // Get the Kokkos::View corresponding to the ghosted vector.
+    // Get the PHX::View corresponding to the ghosted vector.
     ownedView_   = getView<Epetra_Vector>(*ownedVector_);
     ghostedView_ = getView<Epetra_Vector>(*getGhostedVector());
   } // end of initialize()

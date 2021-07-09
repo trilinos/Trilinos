@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, BallParabolic)
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>(pl, model);
+    Tempus::createIntegratorBasic<double>(pl, model);
 
   // Integrate to timeMax
   bool integratorStatus = integrator->advanceTime();
@@ -138,7 +138,6 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Default Integrator")
                            .sublist("Time Step Control");
-  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
   timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
   timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
   timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
@@ -146,8 +145,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
@@ -167,8 +165,8 @@ TEUCHOS_UNIT_TEST(HHTAlpha, ConstructingFromDefaults)
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
+    Tempus::createIntegratorBasic<double>();
+  integrator->setStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
   //integrator->setObserver(...);
@@ -215,7 +213,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 8;
+  const int nTimeStepSizes = 7;
   double time = 0.0;
 
   // Read params from .xml file
@@ -247,7 +245,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -319,7 +317,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_SecondOrder)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -360,7 +358,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 8;
+  const int nTimeStepSizes = 7;
   double time = 0.0;
 
   // Read params from .xml file
@@ -392,7 +390,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -464,7 +462,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);
@@ -482,15 +480,15 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_FirstOrder)
   double xSlope = 0.0;
   double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
-  double order = stepper->getOrder();
+  //double order = stepper->getOrder();
   writeOrderError("Tempus_HHTAlpha_SinCos_FirstOrder-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
                   solutionsDot, xDotErrorNorm, xDotSlope);
 
-  TEST_FLOATING_EQUALITY( xSlope,              order, 0.02   );
+  TEST_FLOATING_EQUALITY( xSlope,           0.977568, 0.02   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0],    0.048932, 1.0e-4 );
-  TEST_FLOATING_EQUALITY( xDotSlope,         1.18873, 0.01   );
+  TEST_FLOATING_EQUALITY( xDotSlope,          1.2263, 0.01   );
   TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.393504, 1.0e-4 );
 
 }
@@ -506,7 +504,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 8;
+  const int nTimeStepSizes = 7;
   double time = 0.0;
 
   // Read params from .xml file
@@ -538,7 +536,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
               << nTimeStepSizes-1 << "), dt = " << dt << "\n";
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -610,7 +608,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, SinCos_CD)
     Thyra::copy(*(integrator->getX()),solution.ptr());
     solutions.push_back(solution);
     auto solutionDot = Thyra::createMember(model->get_x_space());
-    Thyra::copy(*(integrator->getXdot()),solutionDot.ptr());
+    Thyra::copy(*(integrator->getXDot()),solutionDot.ptr());
     solutionsDot.push_back(solutionDot);
     if (n == nTimeStepSizes-1) {  // Add exact solution last in vector.
       StepSize.push_back(0.0);

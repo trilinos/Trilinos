@@ -61,32 +61,42 @@ namespace Xpetra {
   @class StridedMap
   @brief Class that stores a strided map
 
-  StridedMap extends the functionality of Xpetra::Map
+  \c StridedMap extends the functionality of \c Xpetra::Map .
 
-  It derives from Xpetra::Map and adds a std::vector, which contains the striding information.
-  E.g. for a strided map with 3dofs per node (2 velocity dofs, 1 pressure dof) the striding
-  information looks like:
+  It derives from \c Xpetra::Map and adds a \c std::vector, which contains the striding information.
+  E.g. for a strided map with 3 dofs per node (2 velocity dofs, 1 pressure dof),
+  the striding information looks like:
+
+  \code{.cpp}
   std::vector<size_t> stridingInformation;
-  stridingInformation.push_back(2); // 2 velocity dofs
-  stridingInformation.push_back(1); // 1 pressure dof
+  stridingInformation.push_back(2); // 2 velocity dofs per node
+  stridingInformation.push_back(1); // 1 pressure dof per node
+  \endcode
 
-  For this example the getFixedBlockSize() returns 3 (3 dofs per node).
-  Providing a stridedBlockId parameter in the constructor the strided map only contains dofs of
+  For this example, \c getFixedBlockSize() returns 3 (3 dofs per node).
+  When providing a stridedBlockId parameter in the constructor, the strided map only contains dofs of
   one strided block, e.g. with above stridingInformation the call
 
-  StridingMap M(33,0,stridiningInformation,comm,0); // striding block 0 (velocity dofs)
+  \code{.cpp}
+  StridedMap M(lib, 33, 0, stridiningInformation, comm, 0); // striding block 0 (velocity dofs)
+  \endcode
+
   returns a map with the gids
   0, 1, 3, 4, 6, 7, ... (which contains only the velocity dofs)
 
   and
-  StridingMap M(33,0,stridiningInformation,comm,1); // striding block 1 (pressure dofs)
+
+  \code{.cpp}
+  StridedMap M(lib, 33, 0, stridiningInformation, comm, 1); // striding block 1 (pressure dofs)
+  \endcode
+
   creates a map with only the pressure dofs
   2, 5, 8, ...
 
-  @note: there's no support for global offset, yet.
+  @note There's no support for global offset, yet.
 */
-template<class LocalOrdinal, 
-         class GlobalOrdinal, 
+template<class LocalOrdinal,
+         class GlobalOrdinal,
          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
 {
@@ -234,7 +244,7 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
 
     /// returns true, if this is a blocked map (i.e. more than 1 dof per node)
     /// either strided or just 1 block per node
-    bool isBlocked() const; 
+    bool isBlocked() const;
 
 
     GlobalOrdinal getOffset() const;
@@ -242,7 +252,7 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
 
     void setOffset(GlobalOrdinal offset);
 
-    
+
     // returns number of strided block id which gid belongs to.
     size_t GID2StridingBlockId(GlobalOrdinal gid) const;
 
@@ -259,9 +269,9 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
         using local_map_type = typename Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
 
         /// \brief Get the local Map for Kokkos kernels.
-        local_map_type getLocalMap() const 
-        { 
-            return map_->getLocalMap(); 
+        local_map_type getLocalMap() const
+        {
+            return map_->getLocalMap();
         }
     #else      // HAVE_XPETRA_TPETRA
         #ifdef __GNUC__
@@ -317,17 +327,23 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
 
   private:
 
-
     RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> map_;
 
-    std::vector<size_t> stridingInfo_;        //!< vector with size of strided blocks (dofs)
-    LocalOrdinal        stridedBlockId_;      //!< member variable denoting which dofs are stored in map
-                                              //     stridedBlock == -1: the full map (with all strided block dofs)
-                                              //     stridedBlock  > -1: only dofs of strided block with index "stridedBlockId" are
-                                              //     stored in this map
-    GlobalOrdinal offset_;         //!< offset for gids in map (default = 0)
-    GlobalOrdinal indexBase_;      //!< index base for the strided map (default = 0)
+    //! Vector with size of strided blocks (dofs)
+    std::vector<size_t> stridingInfo_;
 
+    /*! \brief Member variable denoting which dofs are stored in map
+
+        - stridedBlock == -1: the full map (with all strided block dofs)
+        - stridedBlock  > -1: only dofs of strided block with index "stridedBlockId" are stored in this map
+    */
+    LocalOrdinal        stridedBlockId_;
+
+    //! Offset for gids in map (default = 0)
+    GlobalOrdinal offset_;
+
+    //! Index base for the strided map (default = 0)
+    GlobalOrdinal indexBase_;
 
   public:
 
@@ -389,7 +405,7 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal>& GIDList,
                                     const Teuchos::ArrayView<int>&                 nodeIDList) const;
 
-    
+
     //! Return a list of the global indices owned by this node.
     Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const;
 
@@ -436,7 +452,7 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
 
 
     //! Print the object with some verbosity level to a FancyOStream object.
-    void describe(Teuchos::FancyOStream&         out,
+    void describe(Teuchos::FancyOStream& out,
                   const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
 
@@ -446,11 +462,7 @@ class StridedMap : public virtual Map<LocalOrdinal, GlobalOrdinal, Node>
 
 };      // StridedMap class
 
-
-
 }      // namespace Xpetra
 
 #define XPETRA_STRIDEDMAP_SHORT
-#endif      // XPETRA_STRIDEDMAP_DECL_HPP
-
-
+#endif // XPETRA_STRIDEDMAP_DECL_HPP

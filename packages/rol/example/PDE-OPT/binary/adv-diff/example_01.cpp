@@ -54,14 +54,14 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_PEBBL_Driver.hpp"
-#include "ROL_TeuchosBranchHelper_PEBBL.hpp"
+#include "ROL_PEBBL_BranchAndBound.hpp"
+#include "ROL_PEBBL_TeuchosBranchHelper.hpp"
 #include "branchHelper.hpp"
 
 #include "opfactory.hpp"
 
 int main(int argc, char *argv[]) {
-//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
 
   /*** Initialize communicator. ***/
@@ -88,23 +88,23 @@ int main(int argc, char *argv[]) {
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     bool useQP = parlist->sublist("Problem").get("Use Quadratic Program",false);
-    ROL::Ptr<ROL::OptimizationProblemFactory<RealT>> factory;
-    ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper;
+    ROL::Ptr<ROL::PEBBL::IntegerProblemFactory<RealT>> factory;
+    ROL::Ptr<ROL::PEBBL::BranchHelper<RealT>> bHelper;
     if (!useQP) {
       RealT intTol = parlist->sublist("Problem").get("Integrality Tolerance",1e-6);
       int method = parlist->sublist("Problem").get("Branching Method",0);
       factory = ROL::makePtr<BinaryAdvDiffFactory<RealT>>(*parlist,comm,outStream);
-      bHelper = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>(intTol,method);
+      bHelper = ROL::makePtr<AdvDiffBranchHelper<RealT>>(intTol,method);
     }
     else {
       factory = ROL::makePtr<BinaryAdvDiffQPFactory<RealT>>(*parlist,comm,outStream);
-      bHelper = ROL::makePtr<ROL::TeuchosBranchHelper_PEBBL<int,RealT>>();
+      bHelper = ROL::makePtr<ROL::PEBBL::TeuchosBranchHelper<int,RealT>>();
     }
 
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
+    ROL::PEBBL::BranchAndBound<RealT> pebbl(factory,parlist,bHelper,3,outStream);
     pebbl.solve(argc,argv,*outStream);
 
     //*outStream << "OPTIMAL CONTROLS" << std::endl;

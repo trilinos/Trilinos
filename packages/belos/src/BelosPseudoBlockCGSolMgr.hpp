@@ -60,7 +60,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -337,9 +336,16 @@ namespace Belos {
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
     static constexpr int defQuorum_default_ = 1;
+    static constexpr bool foldConvergenceDetectionIntoAllreduce_default_ = false;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
     static constexpr bool genCondEst_default_ = false;
 
     // Current solver values.
@@ -347,6 +353,7 @@ namespace Belos {
     int maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_, defQuorum_;
     bool assertPositiveDefiniteness_, showMaxResNormOnly_;
+    bool foldConvergenceDetectionIntoAllreduce_;
     std::string resScale_;
     bool genCondEst_;
     ScalarType condEstimate_;
@@ -373,6 +380,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::PseudoBlockCGSolMgr() :
   defQuorum_(defQuorum_default_),
   assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  foldConvergenceDetectionIntoAllreduce_(foldConvergenceDetectionIntoAllreduce_default_),
   resScale_(resScale_default_),
   genCondEst_(genCondEst_default_),
   condEstimate_(-Teuchos::ScalarTraits<ScalarType>::one()),
@@ -396,6 +404,7 @@ PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &probl
   defQuorum_(defQuorum_default_),
   assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  foldConvergenceDetectionIntoAllreduce_(foldConvergenceDetectionIntoAllreduce_default_),
   resScale_(resScale_default_),
   genCondEst_(genCondEst_default_),
   condEstimate_(-Teuchos::ScalarTraits<ScalarType>::one()),
@@ -469,6 +478,11 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
     // Update parameter in our list.
     params_->set ("Assert Positive Definiteness", assertPositiveDefiniteness_);
+  }
+
+  if (params->isParameter("Fold Convergence Detection Into Allreduce")) {
+    foldConvergenceDetectionIntoAllreduce_ = params->get("Fold Convergence Detection Into Allreduce",
+                                                         foldConvergenceDetectionIntoAllreduce_default_);
   }
 
   // Check to see if the timer label changed.
@@ -729,6 +743,9 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
             "name is deprecated; the new name is \"Implicit Residual Scaling\".");
     pl->set("Timer Label", static_cast<const char *>(label_default_),
       "The string to use as a prefix for the timer labels.");
+    pl->set("Fold Convergence Detection Into Allreduce",static_cast<bool>(foldConvergenceDetectionIntoAllreduce_default_),
+      "Merge the allreduce for convergence detection with the one for CG.\n"
+      "This saves one all-reduce, but incurs more computation.");
     validParams_ = pl;
   }
   return validParams_;
@@ -783,8 +800,10 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
   // Pseudo-Block CG solver
   Teuchos::RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   if (numRHS2Solve == 1) {
+    plist.set("Fold Convergence Detection Into Allreduce",
+              foldConvergenceDetectionIntoAllreduce_);
     block_cg_iter =
-      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));
+      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, convTest_, plist));
   } else {
     block_cg_iter =
       Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));

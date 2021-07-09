@@ -1,39 +1,13 @@
-C Copyright(C) 2011-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C * Redistributions of source code must retain the above copyright
-C    notice, this list of conditions and the following disclaimer.
-C
-C * Redistributions in binary form must reproduce the above
-C   copyright notice, this list of conditions and the following
-C   disclaimer in the documentation and/or other materials provided
-C   with the distribution.
-C
-C * Neither the name of NTESS nor the names of its
-C   contributors may be used to endorse or promote products derived
-C   from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C See packages/seacas/LICENSE for details
 
 C=======================================================================
       PROGRAM GREPOS
 C=======================================================================
-C
+
 C     --*** GREPOS *** (GREPOS) GENESIS Positioning Program
 C     --   Written by Greg Sjaardema - revised 03/07/89
 C     --   Modified from GEN3D
@@ -90,7 +64,7 @@ C... String containing name of common element topology in model
 C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
       character*(MXSTLN) comtop
 
-      LOGICAL EXODUS, NONQUD, ALLONE
+      LOGICAL EXODUS, NONQUD, ALLONE, ORDER
       LOGICAL SMOOTH, SWPSS, USRSUB, CENTRD
 
       LOGICAL ISATRB, EXECUT, L64BIT
@@ -669,7 +643,6 @@ C     --location of original numelb, isevok arrays
       RENEL = (I .LT. NELBLK)
       NUMEL1 = NUMEL
 
-
       if (renel .or. delnp) then
         CALL MDRSRV ('MSCR', KMSCR, MAX(NUMEL0, NUMNP0))
         if (exodus) then
@@ -695,7 +668,7 @@ C     old array contents into new (Only needed if EXODUS)
             IF (NERR .GT. 0) GOTO 40
             CALL CPYINT (NELBLK0, IA(KNELB),  IA(KNELB0))
             CALL CPYINT (NELBLK0, IA(KIDELB2), IA(KIDELB0))
-            CALL CPYINT (LIEVOK,  LA(KIEVOK), LA(KIEVOK0))
+            CALL CPYINT (LIEVOK,  IA(KIEVOK), IA(KIEVOK0))
          END IF
 
          CALL MDRSRV ('IXEL', KIXEL, NUMEL)
@@ -726,7 +699,7 @@ C     ... NUMEL changed in this block (if elements deleted)
 C     ... Fix up the truth table if the element block count changes...
          if (exodus .and. nvarel .gt. 0 .and. nelblk .ne. nelblk0) then
             call muntt(nelblk0, nelblk, nvarel,
-     $           la(kievok0), la(kievok), ia(kielbs))
+     $           ia(kievok0), ia(kievok), ia(kielbs))
          end if
 
          CALL MDDEL ('LINKO')
@@ -938,7 +911,6 @@ C     --"Munch" the element side sets
      &     IA(KLTESO), IA(KLTSSO), A(KFACS0), IA(KIXESO), IA(KIXDS0),
      &     IA(KNESO), IA(KNDS0), IA(KISCR), C(KNMSC), C(KNAMSS))
 
-
          CALL MDDEL ('LTEESO')
          CALL MDDEL ('LTSSO')
          CALL MDDEL ('FACS0')
@@ -1046,8 +1018,15 @@ C     --Write the coordinates
       call expcor (ndbout, a(kxn), a(kyn), a(kzn), ierr)
 
 C     --Write the node/element order maps
-      call expenm (ndbout, ia(kmapel), ierr)
-      call expnnm (ndbout, ia(kmapnn), ierr)
+C ... If the maps are 1..num, then don't write them...
+      call check_map(ia(kmapel), numel, order)
+      if (.not. order) then
+         call expenm (ndbout, ia(kmapel), ierr)
+      end if
+      call check_map(ia(kmapnn), numnp, order)
+      if (.not. order) then
+         call expnnm (ndbout, ia(kmapnn), ierr)
+      end if
 
 C     --Write the element block
       CALL DBOELB (NDBOUT, 1, NELBLK,
@@ -1277,18 +1256,13 @@ C     number element blocks, and truth table.
 10010 FORMAT (/, 4X, A,
      &     ' time steps have been written to the output database')
 
-      CALL MDDEL ('VARGL')
-      CALL MDDEL ('VARNP')
-      CALL MDDEL ('VAREL')
-      CALL MDDEL ('VARNS')
-      CALL MDDEL ('VARSS')
-
       GO TO 50
  40   CONTINUE
       CALL MEMERR
       GOTO 50
 
  50   CONTINUE
+      call mdfree()
       call exclos(ndbin, ierr)
       call exclos(ndbout, ierr)
 
@@ -1459,5 +1433,20 @@ C   This is currently used in the sideset mirroring code
       do i=1, nelblk
         idout(i) = idin(i)
       end do
+      return
+      end
+
+      subroutine check_map(map, length, order)
+      integer map(*)
+      integer length
+      logical order
+
+      do i = 1, length
+         if (map(i) .ne. i) then
+            order = .false.
+            return
+         end if
+      end do
+      order = .true.
       return
       end

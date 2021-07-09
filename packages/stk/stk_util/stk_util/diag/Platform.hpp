@@ -32,11 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_UTIL_DIAG_Platform_h
-#define STK_UTIL_DIAG_Platform_h
+#ifndef STK_UTIL_DIAG_Platform_hpp
+#define STK_UTIL_DIAG_Platform_hpp
 
-#include <stddef.h>                     // for size_t
-#include <string>                       // for string
+#include <cstddef>  // for size_t
+#include <string>   // for string
 
 namespace sierra {
 namespace Env {
@@ -221,4 +221,4 @@ bool path_read_access(const std::string &path);
 } // namespace Env
 } // namespace sierra
 
-#endif // STK_UTIL_DIAG_Platform_h
+#endif // STK_UTIL_DIAG_Platform_hpp

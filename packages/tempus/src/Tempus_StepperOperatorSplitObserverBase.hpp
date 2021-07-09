@@ -26,7 +26,10 @@ namespace Tempus {
  *  expected that users will NOT modify any of that data.  If the user
  *  wishes to modify the solution and/or stepper data during the
  *  Stepper::takeStep, they should use the Modifier class (with care!).
- *                                                                                           
+ *
+ *  The locations for these AppAction calls
+ *  (StepperOperatorSplitAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperBackwardEuler.
  */
 template<class Scalar>
 class StepperOperatorSplitObserverBase

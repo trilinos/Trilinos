@@ -1557,6 +1557,276 @@ namespace MueLuTests {
 
   } // ProlongatorGraphUncoupled
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, UncoupledAggSingleCoarseNode, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using magnitude_type        = typename TST::magnitudeType;
+    using TMT                   = Teuchos::ScalarTraits<magnitude_type>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, NO>;
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    Level fineLevel, coarseLevel;
+    test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
+    fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+    coarseLevel.SetFactoryManager(Teuchos::null);
+
+    // Set global geometric data
+    const std::string meshLayout = "Local Lexicographic";
+    const std::string coupling = "uncoupled";
+    LO numDimensions = 2;
+    Array<GO> meshData;
+    Array<LO> lNodesPerDir(3);
+    Array<GO> gNodesPerDir(3);
+    for(int dim = 0; dim < 3; ++dim) {
+      if(dim < numDimensions) {
+        // Use more nodes in 1D to have a reasonable number of nodes per procs
+        gNodesPerDir[dim] = 5;
+      } else {
+        gNodesPerDir[dim] = 1;
+      }
+    }
+
+    RCP<RealValuedMultiVector> Coordinates =
+      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
+                                                                 lNodesPerDir, meshData,
+                                                                 meshLayout);
+
+    // Since we are doing uncoupled aggregation we fill meshData with -1
+    for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
+      meshData[idx] = -1;
+    }
+
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx", gNodesPerDir[0]);
+    matrixList.set("matrixType", "Laplace2D");
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
+                                                           matrixList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    fineLevel.Request("A");
+    fineLevel.Set("A", A);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
+    fineLevel.Set("aggregation: mesh data", meshData);
+
+    // only one NS vector -> exercises manual orthogonalization
+    LocalOrdinal NSdim = 1;
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    nullSpace->putScalar(1.0);
+    fineLevel.Set("Nullspace",nullSpace);
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
+    StructuredAggFact->SetParameter("aggregation: mesh layout",
+                                    Teuchos::ParameterEntry(meshLayout));
+    StructuredAggFact->SetParameter("aggregation: mode",
+                                    Teuchos::ParameterEntry(coupling));
+    StructuredAggFact->SetParameter("aggregation: coarsening order",
+                                    Teuchos::ParameterEntry(0));
+    StructuredAggFact->SetParameter("aggregation: coarsening rate",
+                                    Teuchos::ParameterEntry(std::string("{2}")));
+    StructuredAggFact->SetParameter("aggregation: single coarse point",
+                                    Teuchos::ParameterEntry(true));
+
+    RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+    coarseMapFact->SetFactory("Aggregates", StructuredAggFact);
+    RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+    TentativePFact->SetFactory("Aggregates", StructuredAggFact);
+    TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    TentativePFact->SetFactory("CoarseMap", coarseMapFact);
+
+    coarseLevel.Request("P",TentativePFact.get());  // request Ptent
+    coarseLevel.Request("Nullspace",TentativePFact.get());
+    coarseLevel.Request(*TentativePFact);
+    TentativePFact->Build(fineLevel,coarseLevel);
+
+    RCP<Matrix> Ptent;
+    coarseLevel.Get("P",Ptent,TentativePFact.get());
+
+    RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",TentativePFact.get());
+
+    coarseLevel.Release("P",TentativePFact.get()); // release Ptent
+    coarseLevel.Release("Nullspace",TentativePFact.get());
+
+    // check normalization and orthogonality of prolongator columns
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > PtentTPtent = Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Ptent,true,*Ptent,false,out);
+    Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > diagVec = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(PtentTPtent->getRowMap());
+    PtentTPtent->getLocalDiagCopy(*diagVec);
+    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
+      TEST_FLOATING_EQUALITY(diagVec->norm1(), Teuchos::as<magnitude_type>(diagVec->getGlobalLength()), 100*TMT::eps());
+    TEST_FLOATING_EQUALITY(diagVec->normInf(), TMT::one(),  100*TMT::eps());
+    TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
+
+  } // UncoupledAggSingleCoarseNode
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation, UncoupledGraphSingleCoarseNode, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    using TST                   = Teuchos::ScalarTraits<SC>;
+    using real_type             = typename TST::coordinateType;
+    using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+    using test_factory          = TestHelpers::TestFactory<SC, LO, GO, Node>;
+
+    out << "version: " << MueLu::Version() << std::endl;
+    int interpolationOrder = 0;
+    out << "Tesing 7x6 grid with piece-wise "
+        << (interpolationOrder == 0 ? "constant" : "linear") << " interpolation" << std::endl;
+    Level fineLevel;
+    test_factory::createSingleLevelHierarchy(fineLevel);
+    fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+
+    // Set global geometric data
+    const std::string meshLayout = "Local Lexicographic";
+    const std::string coupling = "uncoupled";
+    LO numDimensions = 2;
+    Array<GO> meshData;
+    Array<LO> lNodesPerDir(3);
+    Array<GO> gNodesPerDir = {{7, 7, 1}};
+
+    RCP<RealValuedMultiVector> Coordinates =
+      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
+                                                                 lNodesPerDir, meshData,
+                                                                 meshLayout);
+
+    // Since we are doing uncoupled aggregation we fill meshData with -1
+    for(size_t idx = 0; idx < (size_t) meshData.size(); ++idx) {
+      meshData[idx] = -1;
+    }
+
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx", gNodesPerDir[0]);
+    matrixList.set("ny", gNodesPerDir[1]);
+    matrixList.set("matrixType", "Laplace2D");
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr = Galeri::Xpetra::
+      BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>("Laplace2D", Coordinates->getMap(),
+                                                           matrixList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    fineLevel.Request("A");
+    fineLevel.Set("A", A);
+    fineLevel.Set("Coordinates",   Coordinates);
+    fineLevel.Set("numDimensions", numDimensions);
+    fineLevel.Set("gNodesPerDim",  gNodesPerDir);
+    fineLevel.Set("lNodesPerDim",  lNodesPerDir);
+    fineLevel.Set("aggregation: mesh data", meshData);
+
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    RCP<StructuredAggregationFactory> StructuredAggFact = rcp(new StructuredAggregationFactory());
+    StructuredAggFact->SetFactory("Graph", dropFact);
+    StructuredAggFact->SetFactory("DofsPerNode", dropFact);
+    StructuredAggFact->SetParameter("aggregation: mesh layout",
+                                    Teuchos::ParameterEntry(meshLayout));
+    StructuredAggFact->SetParameter("aggregation: mode",
+                                    Teuchos::ParameterEntry(coupling));
+    StructuredAggFact->SetParameter("aggregation: output type",
+                                    Teuchos::ParameterEntry(std::string("Graph")));
+    StructuredAggFact->SetParameter("aggregation: coarsening order",
+                                    Teuchos::ParameterEntry(interpolationOrder));
+    StructuredAggFact->SetParameter("aggregation: coarsening rate",
+                                    Teuchos::ParameterEntry(std::string("{3}")));
+    StructuredAggFact->SetParameter("aggregation: single coarse point",
+                                    Teuchos::ParameterEntry(true));
+
+    fineLevel.Request("prolongatorGraph", StructuredAggFact.get());
+    fineLevel.Request(*StructuredAggFact);
+    StructuredAggFact->Build(fineLevel);
+
+    RCP<CrsGraph> prolongatorGraph;
+    fineLevel.Get("prolongatorGraph", prolongatorGraph, StructuredAggFact.get());
+
+    TEST_EQUALITY(prolongatorGraph != Teuchos::null, true);
+
+    int numErrors = 0;
+    const int numRanks = Coordinates->getMap()->getComm()->getSize();
+    TEST_EQUALITY(prolongatorGraph->getGlobalNumRows()    == 49, true);
+    TEST_EQUALITY(prolongatorGraph->getGlobalNumEntries() == 49, true);
+    if(numRanks == 1) {
+      TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  ==  9, true);
+      TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == 49, true);
+      TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    ==  9, true);
+      TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == 49, true);
+
+      ArrayView<const LO> rowIndices;
+      const LO indicesConstant[49] = {0, 0, 1, 1, 1, 2, 2,
+                                      0, 0, 1, 1, 1, 2, 2,
+                                      3, 3, 4, 4, 4, 5, 5,
+                                      3, 3, 4, 4, 4, 5, 5,
+                                      3, 3, 4, 4, 4, 5, 5,
+                                      6, 6, 7, 7, 7, 8, 8,
+                                      6, 6, 7, 7, 7, 8, 8};
+      for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+        prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+        if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+      }
+    } else if(numRanks == 4) {
+      const int myRank = Coordinates->getMap()->getComm()->getRank();
+      const Array<size_t> nodeNumRows    = {{16, 12, 12,  9}};
+      const Array<size_t> nodeNumCols    = {{ 4,  2,  2,  1}};
+
+      TEST_EQUALITY(prolongatorGraph->getGlobalNumCols()  == 9, true);
+      TEST_EQUALITY(prolongatorGraph->getNodeNumRows()    == nodeNumRows[myRank], true);
+      TEST_EQUALITY(prolongatorGraph->getNodeNumCols()    == nodeNumCols[myRank], true);
+      TEST_EQUALITY(prolongatorGraph->getNodeNumEntries() == nodeNumRows[myRank], true);
+
+      ArrayView<const LO> rowIndices;
+      if(myRank == 0) {
+        const LO indicesConstant[16] = {0, 0, 1, 1,
+                                        0, 0, 1, 1,
+                                        2, 2, 3, 3,
+                                        2, 2, 3, 3};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+          if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+        }
+      } else if(myRank == 1) {
+        const LO indicesConstant[12] = {0, 0, 0,
+                                        0, 0, 0,
+                                        1, 1, 1,
+                                        1, 1, 1};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+          if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+        }
+      } else if(myRank == 2) {
+        const LO indicesConstant[12] = {0, 0, 1, 1,
+                                        0, 0, 1, 1,
+                                        0, 0, 1, 1};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+          if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+        }
+      } else if(myRank == 3) {
+        const LO indicesConstant[ 9] = {0, 0, 0,
+                                        0, 0, 0,
+                                        0, 0, 0};
+        for(size_t rowIdx = 0; rowIdx < prolongatorGraph->getNodeNumRows(); ++rowIdx) {
+          prolongatorGraph->getLocalRowView(rowIdx, rowIndices);
+          if(rowIndices[0] != indicesConstant[rowIdx]) {++numErrors;}
+        }
+      }
+    }
+    TEST_EQUALITY(numErrors == 0, true);
+
+  } // UncoupledGraphSingleCoarseNode
+
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative1D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,GlobalLexiTentative2D,Scalar,LO,GO,Node) \
@@ -1568,7 +1838,9 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledLocalLexiTentative2D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledLocalLexiTentative3D,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledMultilevelScalar,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,ProlongatorGraphUncoupled,Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,ProlongatorGraphUncoupled,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledAggSingleCoarseNode,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredAggregation,UncoupledGraphSingleCoarseNode,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

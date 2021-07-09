@@ -1,59 +1,9 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: spring.f,v 1.2 1991/04/10 19:56:54 gdsjaar Exp $
-C $Log: spring.f,v $
-C Revision 1.2  1991/04/10 19:56:54  gdsjaar
-C Fixed some logical variables
-C
-c Revision 1.1.1.1  1990/11/30  11:16:28  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:16:27  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.QMESH]SPRING.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO SPRING TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
       SUBROUTINE SPRING (MP, ML, MS, MXNPER, MXND, MAXNBC, MAXSBC, L,
      &   IPOINT, COOR, IPBOUN, LINKP, ILINE, LTYPE, NINT, FACTOR, LCON,
      &   ILBOUN, ISBOUN, LINKL, NLPB, JFLINE, JLLIST, LINKPB, NPPF,
@@ -64,11 +14,11 @@ C
      &   NPEOLD, NNXK, REMESH, REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS,
      &   SIZMIN, EMAX, EMIN, GRAPH)
 C***********************************************************************
-C
+
 C  SUBROUTINE SPRING = GENERATES SPRING ELEMENTS FROM A BARSET
-C
+
 C***********************************************************************
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP), LINKP(2, MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML), LINKL(2, ML)
@@ -80,13 +30,13 @@ C
       DIMENSION LINKLB(2, ML), LINKSB(2, ML)
       DIMENSION X(MXNPER), Y(MXNPER), NID(MXNPER)
       DIMENSION XN(MXND), YN(MXND), NUID(MXND), LXK(4,MXND)
-C
+
       DIMENSION AMESUR(NPEOLD), XNOLD(NPNOLD), YNOLD(NPNOLD)
       DIMENSION NXKOLD(NNXK, NPEOLD), MMPOLD(3, NPROLD)
       DIMENSION LINKEG(2, MLINK), LISTEG(4 * NPEOLD), BMESUR(NPNOLD)
-C
+
       LOGICAL NOROOM, ERR, REAL, TEST, ADDLNK, COUNT, GRAPH
-C
+
       REAL = .TRUE.
       TEST = .FALSE.
       KKK = 0
@@ -94,13 +44,13 @@ C
       KNBC = 0
       KSBC = 0
       LLL = 1
-C
+
 C  CHECK THAT THE BARSET HAS ONLY TWO SIDES AND THAT THE SIDES HAVE
 C  EQUAL INTERVALS
-C
+
       IF (NLPB (L) .NE. 2) THEN
          ERR = .TRUE.
-         CALL MESAGE (' SPRINGS CAN ONLY BE GENERATED FOR 2 LINE BAR '//
+         CALL MESSAGE(' SPRINGS CAN ONLY BE GENERATED FOR 2 LINE BAR '//
      &      'SETS')
          GOTO 130
       ELSE
@@ -109,15 +59,15 @@ C
          CALL LTSORT (ML, LINKL, JLLIST(J1), KK1, ADDLNK)
          CALL LTSORT (ML, LINKL, JLLIST(J2), KK2, ADDLNK)
          IF (NINT (KK1) .NE. NINT (KK2)) THEN
-            CALL MESAGE ('SPRING BAR SETS MUST CONTAIN EQUAL '//
+            CALL MESSAGE('SPRING BAR SETS MUST CONTAIN EQUAL '//
      &         'INTERVALS ON OPPOSING SIDES')
             ERR = .TRUE.
             GOTO 130
          ENDIF
       ENDIF
-C
+
 C  NOW GENERATE THE NODES FOR THE FIRST LINE
-C
+
       CALL LTSORT (MP, LINKP, LCON(1, KK1), IP1, ADDLNK)
       CALL LTSORT (MP, LINKP, LCON(2, KK1), IP2, ADDLNK)
       IF (LCON(3, KK1) .GT. 0) THEN
@@ -129,13 +79,7 @@ C
       ELSE
          IP3 = 0
       END IF
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PLINE TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
       CALL PLINE (MP, ML, MXNPER, MAXNBC, MAXSBC, IPOINT,
      &   COOR, LINKP, ILINE(KK1), LTYPE(KK1), NINT(KK1),
      &   FACTOR(KK1), IP1, IP2, IP3, X, Y, NID,
@@ -147,12 +91,12 @@ C
      &   NPEOLD, NNXK, REMESH, REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS,
      &   SIZMIN, EMAX, EMIN, GRAPH, DXMAX)
       IF (ERR) THEN
-         CALL MESAGE ('PROBLEMS GENERATING NODES FOR FIRST SPRING LINE')
+         CALL MESSAGE('PROBLEMS GENERATING NODES FOR FIRST SPRING LINE')
          GOTO 130
       ENDIF
-C
+
 C  ADD THESE NODES TO THE CURRENT LIST
-C
+
       NNN0 = NNN + 1
       NNN = NNN + ABS(NINT(KK1)) + 1
       KOUNT = 0
@@ -162,16 +106,15 @@ C
          YN(I) = Y(KOUNT)
          NUID(I) = NID(KOUNT)
   100 CONTINUE
-C
+
 C  MARK THESE POINTS AND THE LINE AS BEING USED
-C
+
       NINT(KK1) = -ABS(NINT(KK1))
       IPOINT(IP1) = -ABS(IPOINT(IP1))
       IPOINT(IP2) = -ABS(IPOINT(IP2))
-C
-C
+
 C  NOW GENERATE THE NODES FOR THE SECOND LINE
-C
+
       CALL LTSORT (MP, LINKP, LCON(1, KK2), IP1, ADDLNK)
       CALL LTSORT (MP, LINKP, LCON(2, KK2), IP2, ADDLNK)
       IF (LCON(3, KK2) .GT. 0) THEN
@@ -183,13 +126,7 @@ C
       ELSE
          IP3 = 0
       END IF
-C
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/31/90
-CC* MODIFICATION: ADDED ARGUMENTS TO CALL TO PLINE TO PASS MINIMUM
-CC**              ELEMENT SIZE (SIZMIN) AND GETSIZ PARAMETERS OF
-CC**              EMIN AND EMAX
-C
+
       CALL PLINE (MP, ML, MXNPER, MAXNBC, MAXSBC, IPOINT,
      &   COOR, LINKP, ILINE(KK2), LTYPE(KK2), NINT(KK2),
      &   FACTOR(KK2), IP1, IP2, IP3, X, Y, NID,
@@ -201,12 +138,12 @@ C
      &   NPEOLD, NNXK, REMESH, REXMIN, REXMAX, REYMIN, REYMAX, IDIVIS,
      &   SIZMIN, EMAX, EMIN, GRAPH, DXMAX)
       IF (ERR) THEN
-         CALL MESAGE ('PROBLEMS GENERATING NODES FOR FIRST SPRING LINE')
+         CALL MESSAGE('PROBLEMS GENERATING NODES FOR FIRST SPRING LINE')
          GOTO 130
       ENDIF
-C
+
 C  ADD THESE NODES TO THE CURRENT LIST
-C
+
       NNN1 = NNN + 1
       NNN = NNN + ABS(NINT(KK2)) + 1
       KOUNT = 0
@@ -216,16 +153,16 @@ C
          YN(I) = Y(KOUNT)
          NUID(I) = NID(KOUNT)
   110 CONTINUE
-C
+
 C  MARK THESE POINTS AND THE LINE AS BEING USED
-C
+
       NINT(KK2) = -ABS(NINT(KK2))
       IPOINT(IP1) = -ABS(IPOINT(IP1))
       IPOINT(IP2) = -ABS(IPOINT(IP2))
-C
+
 C  NOW GENERATE THE ELEMENTS BY SEEING WHICH END OF THE LINE MATCHES
 C  UP THE CLOSEST.
-C
+
       DIST1 = SQRT ( (XN(NNN0) - XN(NNN1))**2 +
      &   (YN(NNN0) - YN(NNN1))**2 )
       DIST2= SQRT ( (XN(NNN0) - XN(NNN))**2 +
@@ -242,7 +179,7 @@ C
          LXK(3,KKK) = 0
          LXK(4,KKK) = 0
   120 CONTINUE
-C
+
   130 CONTINUE
-C
+
       END

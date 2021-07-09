@@ -44,6 +44,18 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_kk_spmv
+  SOURCES KokkosSparse_kk_spmv.cpp
+  )
+
+IF(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+  KOKKOSKERNELS_ADD_EXECUTABLE(
+    sparse_spmv_merge
+    SOURCES KokkosSparse_spmv_merge.cpp
+    )
+ENDIF()
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_sptrsv
   SOURCES KokkosSparse_sptrsv.cpp
   )
@@ -56,6 +68,11 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
 KOKKOSKERNELS_ADD_EXECUTABLE(
   sparse_sptrsv_superlu
   SOURCES KokkosSparse_sptrsv_superlu.cpp 
+  )
+
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  sparse_sptrsv_supernode
+  SOURCES KokkosSparse_sptrsv_supernode.cpp 
   )
 
 KOKKOSKERNELS_ADD_EXECUTABLE(

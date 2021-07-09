@@ -73,6 +73,11 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
+// For writing out residuals/Jacobians
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
+#include "Thyra_TpetraVector.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
 // Constructors/Initializers/Accessors
@@ -101,6 +106,10 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   , solverFactory_(solverFactory)
   , oneTimeDirichletBeta_on_(false)
   , oneTimeDirichletBeta_(0.0)
+  , build_volume_field_managers_(true)
+  , build_bc_field_managers_(true)
+  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
+  , write_matrix_count_(0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -153,6 +162,10 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
   , solverFactory_(solverFactory)
   , oneTimeDirichletBeta_on_(false)
   , oneTimeDirichletBeta_(0.0)
+  , build_volume_field_managers_(true)
+  , build_bc_field_managers_(true)
+  , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
+  , write_matrix_count_(0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -380,6 +393,20 @@ panzer::ModelEvaluator<Scalar>::initializeNominalValues() const
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
+buildVolumeFieldManagers(const bool value)
+{
+  build_volume_field_managers_ = value;
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+buildBCFieldManagers(const bool value)
+{
+  build_bc_field_managers_ = value;
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
 setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
            const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
            const std::vector<panzer::BC> & bcs,
@@ -394,41 +421,65 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
 {
   // First: build residual assembly engine
   /////////////////////////////////////////////////////////////////////////////////////////////////
+  PANZER_FUNC_TIME_MONITOR_DIFF("panzer::ModelEvaluator::setupModel()",setupModel);
 
   {
     // 1. build Field manager builder
     /////////////////////////////////////////////////////////////////////////////////////////////////
 
-    Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
-    fmb->setWorksetContainer(wc);
-    fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,*lof_,user_data);
-    fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,*lof_,user_data);
+    Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("allocate FieldManagerBuilder",allocFMB);
+      fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
+      fmb->setActiveEvaluationTypes(active_evaluation_types_);
+    }
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("fmb->setWorksetContainer()",setupWorksets);
+      fmb->setWorksetContainer(wc);
+    }
+    if (build_volume_field_managers_) {
+      PANZER_FUNC_TIME_MONITOR_DIFF("fmb->setupVolumeFieldManagers()",setupVolumeFieldManagers);
+      fmb->setupVolumeFieldManagers(physicsBlocks,volume_cm_factory,closure_models,*lof_,user_data);
+    }
+    if (build_bc_field_managers_) {
+      PANZER_FUNC_TIME_MONITOR_DIFF("fmb->setupBCFieldManagers()",setupBCFieldManagers);
+      fmb->setupBCFieldManagers(bcs,physicsBlocks,eqset_factory,bc_cm_factory,bc_factory,closure_models,*lof_,user_data);
+    }
 
     // Print Phalanx DAGs
     if (writeGraph){
-      fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
-      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+      if (build_volume_field_managers_)
+        fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
+      if (build_bc_field_managers_)
+        fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
     }
 
-    panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
-    ae_tm_.buildObjects(builder);
+    {
+      PANZER_FUNC_TIME_MONITOR_DIFF("AssemblyEngine_TemplateBuilder::buildObjects()",AETM_BuildObjects);
+      panzer::AssemblyEngine_TemplateBuilder builder(fmb,lof_);
+      ae_tm_.buildObjects(builder);
+    }
   }
 
   // Second: build the responses
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
+  {
+    PANZER_FUNC_TIME_MONITOR_DIFF("build response library",buildResponses);
 
-  buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
-  buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
-  buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DgDp_");
+    responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
-  do_fd_dfdp_ = false;
-  fd_perturb_size_ = 1.0e-7;
-  if (me_params.isParameter("FD Forward Sensitivities"))
-    do_fd_dfdp_ = me_params.get<bool>("FD Forward Sensitivities");
-  if (me_params.isParameter("FD Perturbation Size"))
-    fd_perturb_size_ = me_params.get<double>("FD Perturbation Size");
+    buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
+    buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
+    buildDistroParamDgDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DgDp_");
+
+    do_fd_dfdp_ = false;
+    fd_perturb_size_ = 1.0e-7;
+    if (me_params.isParameter("FD Forward Sensitivities"))
+      do_fd_dfdp_ = me_params.get<bool>("FD Forward Sensitivities");
+    if (me_params.isParameter("FD Perturbation Size"))
+      fd_perturb_size_ = me_params.get<double>("FD Perturbation Size");
+  }
 }
 
 template <typename Scalar>
@@ -1585,6 +1636,48 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // reset parameters back to nominal values
   resetParameters();
+
+  const bool writeToFile = false;
+  if (writeToFile && nonnull(W_out)) {
+    const auto check_blocked = Teuchos::rcp_dynamic_cast<::Thyra::BlockedLinearOpBase<double> >(W_out,false);
+    if (check_blocked) {
+      const int numBlocks = check_blocked->productDomain()->numBlocks();
+      const int rangeBlocks = check_blocked->productRange()->numBlocks();
+      TEUCHOS_ASSERT(numBlocks == rangeBlocks); // not true for optimization
+      for (int row=0; row < numBlocks; ++row) {
+        for (int col=0; col < numBlocks; ++col) {
+          using LO = panzer::LocalOrdinal;
+          using GO = panzer::GlobalOrdinal;
+          using NodeT = panzer::TpetraNodeType;
+          const auto thyraTpetraOperator = Teuchos::rcp_dynamic_cast<::Thyra::TpetraLinearOp<double,LO,GO,NodeT>>(check_blocked->getNonconstBlock(row,col),true);
+          const auto tpetraCrsMatrix = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);      
+          tpetraCrsMatrix->print(std::cout);
+          std::stringstream ss;
+          ss << "W_out_" << write_matrix_count_ << ".rank_" << tpetraCrsMatrix->getMap()->getComm()->getRank() << ".block_" << row << "_" << col << ".txt";
+          std::fstream fs(ss.str().c_str(),std::fstream::out|std::fstream::trunc);
+          Teuchos::FancyOStream fos(Teuchos::rcpFromRef(fs));
+          tpetraCrsMatrix->describe(fos,Teuchos::VERB_EXTREME);
+          fs.close();
+        }
+      }
+    }
+    else {
+      using LO = panzer::LocalOrdinal;
+      using GO = panzer::GlobalOrdinal;
+      using NodeT = panzer::TpetraNodeType;
+      const auto thyraTpetraOperator = Teuchos::rcp_dynamic_cast<::Thyra::TpetraLinearOp<double,LO,GO,NodeT>>(W_out,true);
+      const auto tpetraCrsMatrix = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);      
+      tpetraCrsMatrix->print(std::cout);
+      std::stringstream ss;
+      ss << "W_out_" << write_matrix_count_ << ".rank_" << tpetraCrsMatrix->getMap()->getComm()->getRank() << ".txt";
+      std::fstream fs(ss.str().c_str(),std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream fos(Teuchos::rcpFromRef(fs));
+      tpetraCrsMatrix->describe(fos,Teuchos::VERB_EXTREME);
+      fs.close();
+    }
+    ++write_matrix_count_;
+  }
+
 }
 
 template <typename Scalar>

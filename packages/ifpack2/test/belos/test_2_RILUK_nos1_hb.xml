@@ -1,7 +1,7 @@
 <ParameterList name="test_params">
   <Parameter name="hb_file" type="string" value="nos1.rsa"/>
 
-  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <Parameter name="solver_type" type="string" value="Block Gmres"/>
   <ParameterList name="Belos">
     <Parameter name="Num Blocks" type="int" value="300"/>
     <Parameter name="Verbosity" type="int" value="33"/>

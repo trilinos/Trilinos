@@ -21,6 +21,7 @@ ADD_SUBDIRECTORIES(
   ImportExport
   ImportExport2
   inout
+  KokkosIntegration
   Map
   MatrixMatrix
   Merge
@@ -31,7 +32,6 @@ ADD_SUBDIRECTORIES(
   Utils
   RowMatrixTransposer
   Tsqr
-  TypeStack
   )
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)

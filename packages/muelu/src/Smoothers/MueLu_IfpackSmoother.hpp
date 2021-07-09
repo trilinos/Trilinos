@@ -61,6 +61,7 @@ class Ifpack_Preconditioner;
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
+#include "MueLu_Aggregates_fwd.hpp"
 
 namespace MueLu {
 
@@ -182,6 +183,8 @@ namespace MueLu {
 
   private:
     void SetPrecParameters(const Teuchos::ParameterList& list = Teuchos::ParameterList()) const;
+
+    void SetupAggregate(Level& currentLevel);
 
   private:
 

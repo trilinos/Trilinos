@@ -10,6 +10,7 @@
 #include <Compadre_GMLS.hpp>
 #include <Compadre_Evaluator.hpp>
 #include "GMLS_Tutorial.hpp"
+#include "CommandLineProcessor.hpp"
 
 #ifdef COMPADRE_USE_MPI
 #include <mpi.h>
@@ -30,54 +31,16 @@ int main (int argc, char* args[])
 bool all_passed = true;
 
 {
-    // check if 7 arguments are given from the command line, the first being the program name
-    //  constraint_type used in solving each GMLS problem:
-    //      0 - No constraints used in solving each GMLS problem
-    //      1 - Neumann Gradient Scalar used in solving each GMLS problem
-    int constraint_type = 0; // No constraints by default
-    if (argc >= 7) {
-        int arg7toi = atoi(args[6]);
-        if (arg7toi > 0) {
-            constraint_type = arg7toi;
-        }
-    }
 
-    // check if 6 arguments are given from the command line, the first being the program name
-    // problem_type used in solving each GMLS problem:
-    //      0 - Standard GMLS problem
-    //      1 - Manifold GMLS problem
-    int problem_type = 0; // Standard by default
-    if (argc >= 6) {
-        int arg6toi = atoi(args[5]);
-        if (arg6toi > 0) {
-            problem_type = arg6toi;
-        }
-    }
-
-    // check if 5 arguments are given from the command line, the first being the program name
-    //  solver_type used for factorization in solving each GMLS problem:
-    //      0 - SVD used for factorization in solving each GMLS problem
-    //      1 - QR  used for factorization in solving each GMLS problem
-    //      2 - LU  used for factorization in solving each GMLS problem
-    int solver_type = 1; // QR by default
-    if (argc >= 5) {
-        int arg5toi = atoi(args[4]);
-        if (arg5toi >= 0) {
-            solver_type = arg5toi;
-        }
-    }
-
-    int dimension = 3;
-    if (argc >= 4) {
-        int arg4toi = atoi(args[3]);
-        if (arg4toi > 0) {
-            dimension = arg4toi;
-        }
-    }
+    CommandLineProcessor clp(argc, args);
+    auto order = clp.order;
+    auto dimension = clp.dimension;
+    auto number_target_coords = clp.number_target_coords;
+    auto constraint_name = clp.constraint_name;
+    auto solver_name = clp.solver_name;
+    auto problem_name = clp.problem_name;
 
     const double failure_tolerance = 1e-9;
-
-    const int order = atoi(args[1]); // 9
 
     const int offset = 15;
     std::mt19937 rng(50);
@@ -92,7 +55,6 @@ bool all_passed = true;
     Kokkos::Profiling::pushRegion("Setup");
 
 
-    const int number_target_coords = atoi(args[2]); // 200
     const int N = 40000;
     std::uniform_int_distribution<int> gen_neighbor_number(offset, N); // 0 to 10 are junk (part of test)
 
@@ -163,32 +125,6 @@ bool all_passed = true;
 
     Kokkos::Profiling::popRegion();
     timer.reset();
-
-    // solver name for passing into the GMLS class
-    std::string solver_name;
-    if (solver_type == 0) { // SVD
-        solver_name = "SVD";
-    } else if (solver_type == 1) { // QR
-        solver_name = "QR";
-    } else if (solver_type == 2) { // LU
-        solver_name = "LU";
-    }
-
-    // problem name for passing into the GMLS class
-    std::string problem_name;
-    if (problem_type == 0) { // Standard
-        problem_name = "STANDARD";
-    } else if (problem_type == 1) { // Manifold
-        problem_name = "MANIFOLD";
-    }
-
-    // boundary name for passing into the GMLS class
-    std::string constraint_name;
-    if (constraint_type == 0) { // No constraints
-        constraint_name = "NO_CONSTRAINT";
-    } else if (constraint_type == 1) { // Neumann Gradient Scalar
-        constraint_name = "NEUMANN_GRAD_SCALAR";
-    }
 
     GMLS my_GMLS(order, dimension,
                  solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),

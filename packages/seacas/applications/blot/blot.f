@@ -1,35 +1,9 @@
-C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C See packages/seacas/LICENSE for details
 
-C
 c=======================================================================
       PROGRAM BLOTII
 C=======================================================================
@@ -89,7 +63,6 @@ C   --Current author and code sponsor: John Glick
 C   --
 C   --Revision History:
 C   --   05/88  Added PATHLINE (Amy Gilkey)
-C   --   03/88  Added Master/Slave logic (Amy Gilkey)
 C   --   10/87  Added EXPLORE (Amy Gilkey)
 C   --   10/87  Converted from SEACO to EXODUS database (Amy Gilkey)
 C   --   07/87  Combined DETOUR, TPLOT, and SPLOT (Amy Gilkey)
@@ -267,7 +240,7 @@ C   --Open database file
         CALL PRTERR ('CMDSPEC',
      *    'Syntax is: "blot.dev [-basename basename] [-ps_option num]'//
      *    ' [-nomap node|element|all] filename"')
-        GOTO 170
+        GOTO 190
       end if
 
       CALL get_argument(narg,dbname, lfil)
@@ -446,7 +419,6 @@ C     Initialize element block integer arrays
       CALL INIINT(NELBLK, 0, IA(KNELB))
       CALL INIINT(NELBLK, 0, IA(KNLNKE))
       CALL INIINT(NELBLK, 0, IA(KNATR))
-
 
       CALL INISTR (NELBLK, ' ', C(KNMLB))
 
@@ -726,7 +698,7 @@ C   --Break 3D elements into faces, and sort faces by element block
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 160
 
-        CALL MSSURF (A, A(KLENE), A(KNLNKE), A(KLINKE),
+        CALL MSSURF (A, IA, A(KLENE), A(KNLNKE), A(KLINKE),
      &    A(KLENF), A(KNLNKF), KLINKF, KIF2EL, C(KNMLB))
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 160
@@ -773,7 +745,6 @@ C      --QNPICK uses NPFIND to find NPSURF
         CALL MDRSRV ('NPSURF', KNPSUR, NUMNPF)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 160
-
 
         IF (.NOT. IS3DIM) THEN
           CALL MAKSU2 (A(KLENL), A(KLNSET), MSHBOR,
@@ -1021,6 +992,7 @@ C   --Finish graphics
 
 C   --Close files
 
+      call MDFREE()
       CALL EXCLOS(NDB, IERR)
       IF (NEUOPN) THEN
         WRITE (NEU, 10030) 'xmax', wxmax
@@ -1032,6 +1004,8 @@ C   --Close files
       IF (ANYPRT) CLOSE (NPRT, IOSTAT=IDUM)
       IF (GRFOPN) CLOSE(NEUGRF)
       IF (CSVOPN) CLOSE(NCSV)
+
+ 190  continue
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
 

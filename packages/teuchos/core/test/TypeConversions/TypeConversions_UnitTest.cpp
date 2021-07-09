@@ -568,7 +568,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( asSafe, realToUnsignedIntTypeOverflow, RealTy
   TEST_THROW(val = asSafe<UnsignedIntType> (minusOne), std::range_error);
 
   // Only test overflow checks if overflow can actually take place.
-  if (maxUnsignedIntVal < maxVal) {
+  if (static_cast<RealType>(maxUnsignedIntVal) < maxVal) {
     TEST_THROW(val = asSafe<UnsignedIntType> (maxVal), std::range_error);
     try {
       std::cerr << std::endl

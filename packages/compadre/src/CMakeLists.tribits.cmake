@@ -24,6 +24,7 @@ list(REMOVE_ITEM HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/Compadre_Manifold_Functions.hpp
   )
 append_glob(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/basis/*.hpp)
+append_glob(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/constraints/*.hpp)
 append_glob(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/tpl/*.hpp)
 append_glob(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
@@ -36,3 +37,8 @@ tribits_add_library(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+# allows us to use flat directory includes when building, since that will be the file structure once installed
+target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/basis>)
+target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/constraints>)
+target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tpl>)

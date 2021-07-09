@@ -49,6 +49,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Vector.hpp"
 #include "TpetraExt_MMHelpers.hpp"
+#include "KokkosKernels_Handle.hpp"
 
 
 /*! \file TpetraExt_MatrixMatrix_decl.hpp
@@ -534,7 +535,7 @@ void setMaxNumEntriesPerRow(
 
   // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows
   template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalOrdinalViewType>
-  inline const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type 
+  inline const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type 
   merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
                  const LocalOrdinalViewType & Acol2Brow,
@@ -556,9 +557,9 @@ struct AddKernels
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   typedef typename Node::device_type device_type;
   typedef typename device_type::execution_space execution_space;
-  typedef typename execution_space::memory_space memory_space;
+  typedef typename device_type::memory_space memory_space;
   typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
-  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename crs_matrix_type::local_matrix_device_type KCRS;
   typedef typename KCRS::values_type::non_const_type values_array;
   typedef typename KCRS::row_map_type::non_const_type row_ptrs_array;
   typedef typename KCRS::row_map_type row_ptrs_array_const;
@@ -566,6 +567,8 @@ struct AddKernels
   typedef typename map_type::local_map_type local_map_type;
   typedef typename Kokkos::View<GlobalOrdinal*, device_type> global_col_inds_array;
   typedef Kokkos::RangePolicy<execution_space> range_type;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<size_t, LocalOrdinal, impl_scalar_type,
+              execution_space, memory_space, memory_space> KKH;
 
   /// \brief Given two matrices in CRS format, return their sum
   /// \pre A and B must both have column indices sorted within each row

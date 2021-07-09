@@ -9,6 +9,8 @@
 #include <stk_util/parallel/CommNeighbors.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
+#include <stk_util/diag/Timer.hpp>
+#include <stk_util/diag/PrintTimer.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_balance/balance.hpp>

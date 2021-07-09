@@ -43,7 +43,7 @@
 #define TPETRA_REPLACEDIAGONALCRSMATRIX_DECL_HPP
 
 /// \file Tpetra_replaceDiagonalCrsMatrix_decl.hpp
-/// \brief Declaration of Tpetra::repalceDiagonalCrsMatrix
+/// \brief Declaration of Tpetra::replaceDiagonalCrsMatrix
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
@@ -64,7 +64,8 @@ namespace Tpetra {
 ///   for requirements.
 ///
 /// \param[in/out] matrix Tpetra::CrsMatrix to be modified
-/// \paran[in] newDiag Tpetra::Vector with new values for the diagonal
+/// \param[in] newDiag Tpetra::Vector with new values for the diagonal; must have same Tpetra::Map as matrix's rowMap
+///
 ///
 /// \return Local number of successfully replaced diagonal entries
 template<class SC, class LO, class GO, class NT>

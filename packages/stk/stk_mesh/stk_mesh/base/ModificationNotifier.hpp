@@ -199,6 +199,22 @@ public:
         return typed_observers;
     }
 
+    void notify_relation_destroyed(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    {
+      for(std::shared_ptr<ModificationObserver>& observer : observers)
+      {
+          observer->relation_destroyed(from, to, ordinal);
+      }
+    }
+
+    void notify_relation_declared(Entity from, Entity to, ConnectivityOrdinal ordinal)
+    {
+      for(std::shared_ptr<ModificationObserver>& observer : observers)
+      {
+          observer->relation_declared(from, to, ordinal);
+      }
+    }
+
 private:
     std::vector< std::shared_ptr<ModificationObserver> > observers;
 

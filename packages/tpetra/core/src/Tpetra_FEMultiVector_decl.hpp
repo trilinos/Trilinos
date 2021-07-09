@@ -44,12 +44,6 @@
 
 /// \file Tpetra_FEMultiVector_decl.hpp
 /// \brief Declaration of the Tpetra::MultiVector class
-///
-/// If you want to use Tpetra::FEMultiVector, include "Tpetra_FEMultiVector.hpp"
-/// (a file which CMake generates and installs for you).  If you only want
-/// the declaration of Tpetra::FEMultiVector, include this file
-/// (Tpetra_FEMultiVector_decl.hpp).
-///
 
 #include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
@@ -66,6 +60,12 @@ namespace Tpetra {
   private:
     using base_type = ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     friend base_type;
+
+    //! Declare the beginning of a phase of owned+shared modifications.
+    void beginFill ();
+
+    //! Declare the end of a phase of owned+shared modifications.
+    void endFill ();
 
   public:
     //! @name Typedefs to facilitate template metaprogramming.
@@ -166,10 +166,13 @@ namespace Tpetra {
     //@{
 
     //! Declare the beginning of a phase of owned+shared modifications.
-    void beginFill ();
+    void beginAssembly ();
 
     //! Declare the end of a phase of owned+shared modifications.
-    void endFill ();
+    void endAssembly ();
+
+    void beginModify ();
+    void endModify ();
 
     /// \brief Declare the end of a phase of owned+shared
     ///   modifications; same as endFill().
@@ -204,6 +207,14 @@ namespace Tpetra {
       FE_ACTIVE_OWNED_PLUS_SHARED,
       FE_ACTIVE_OWNED
     };
+
+    enum class FillState
+    {
+      open,  // matrix is "open".  Values can freely summed in to and replaced
+      modify,  // matrix is open for modification.  *local* values can be replaced
+      closed
+    };
+    Teuchos::RCP<FillState> fillState_;
 
     //! Whichever MultiVector is <i>not</i> currently active.
     Teuchos::RCP<base_type> inactiveMultiVector_;

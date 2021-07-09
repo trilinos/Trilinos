@@ -32,14 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <sstream>
+#include "stk_util/diag/TimerMetricTraits.hpp"
+#include "stk_util/environment/CPUTime.hpp"           // for cpu_time
+#include "stk_util/environment/FormatMemorySize.hpp"  // for format_memory_size
+#include "stk_util/environment/FormatTime.hpp"        // for formatTime, TIMEFORMAT_HMS, TIMEFOR...
+#include "stk_util/environment/WallTime.hpp"          // for wall_time
+#include "stk_util/util/MallocUsed.h"                 // for malloc_used
+#include <sstream>                                    // for stringstream, basic_ostream
 
-#include <stk_util/diag/TimerMetricTraits.hpp>
-#include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/environment/WallTime.hpp>
-#include <stk_util/util/MallocUsed.h>
-#include <stk_util/environment/FormatTime.hpp>
-#include <stk_util/environment/FormatMemorySize.hpp>
 
 namespace stk {
 namespace diag {

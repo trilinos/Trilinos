@@ -60,20 +60,15 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_OptimizationProblem.hpp"
-#include "ROL_TpetraTeuchosBatchManager.hpp"
+#include "ROL_Solver.hpp"
+#include "ROL_BoundConstraint_SimOpt.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
 #include "../TOOLS/pdeobjective.hpp"
 #include "../TOOLS/pdevector.hpp"
-#include "../TOOLS/batchmanager.hpp"
 #include "pde_navier-stokes.hpp"
 #include "obj_navier-stokes.hpp"
-
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_BoundConstraint_SimOpt.hpp"
 
 typedef double RealT;
 
@@ -90,7 +85,7 @@ Real random(const Teuchos::Comm<int> &comm,
 }
 
 int main(int argc, char *argv[]) {
-//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -198,8 +193,6 @@ int main(int argc, char *argv[]) {
       = ROL::makePtr<StdObjective_NavierStokes<RealT>>(*parlist);
     ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,assembler);
-    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
-      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, true, false);
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
@@ -217,9 +210,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::BoundConstraint<RealT> > zbnd
       = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
     bool useBounds = parlist->sublist("Problem").get("Use bounds", false);
-    if (!useBounds) {
-      zbnd->deactivate();
-    }
+    if (!useBounds) zbnd->deactivate();
     // State bounds
     ROL::Ptr<Tpetra::MultiVector<> > ulo_ptr = assembler->createStateVector();
     ROL::Ptr<Tpetra::MultiVector<> > uhi_ptr = assembler->createStateVector();
@@ -236,10 +227,6 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
       = ROL::makePtr<ROL::BoundConstraint_SimOpt<RealT>>(ubnd,zbnd);
 
-    /*************************************************************************/
-    /***************** BUILD            PROBLEM ******************************/
-    /*************************************************************************/
-    ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
 
     /*************************************************************************/
     /***************** RUN VECTOR AND DERIVATIVE CHECKS **********************/
@@ -255,9 +242,6 @@ int main(int argc, char *argv[]) {
       con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
       con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
       con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
-      objReduced->checkGradient(*zp,*dzp,true,*outStream);
-      objReduced->checkHessVec(*zp,*dzp,true,*outStream);
-      opt.check(*outStream);
     }
 
     /*************************************************************************/
@@ -267,8 +251,12 @@ int main(int argc, char *argv[]) {
     up->setScalar(RealT(1));
     zp->randomize();//->setScalar(RealT(1));
     con->solve(*rp,*up,*zp,tol);    
-    ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), bnd, con, pp);
-    ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
+    ROL::Ptr<ROL::Problem<RealT>>
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(obj, makePtrFromRef(x));
+    optProb->addBoundConstraint(bnd);
+    optProb->addConstraint("PDE", con, pp);
+    optProb->finalize(false,true,*outStream);
+    ROL::Solver<RealT> optSolver(optProb, *parlist);
     optSolver.solve(*outStream);
     std::clock_t timer = std::clock();
     *outStream << "Optimization time: "

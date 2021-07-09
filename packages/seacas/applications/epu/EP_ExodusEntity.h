@@ -1,36 +1,9 @@
 /*
- * Copyright(C) 2010-2017, 2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 #ifndef SEACAS_ExodusEntity_H
 #define SEACAS_ExodusEntity_H
@@ -57,11 +30,12 @@ namespace Excn {
     size_t count(ObjectType type) const
     {
       switch (type) {
-      case EBLK: return blockCount;
-      case NSET: return nodesetCount;
-      case SSET: return sidesetCount;
-      case NODE: return nodeCount;
-      case ELEM: return elementCount;
+      case Excn::ObjectType::EBLK: return blockCount;
+      case Excn::ObjectType::NSET: return nodesetCount;
+      case Excn::ObjectType::SSET: return sidesetCount;
+      case Excn::ObjectType::NODE: return nodeCount;
+      case Excn::ObjectType::ELEM: return elementCount;
+      case Excn::ObjectType::ASSM: return assemblyCount;
       default: return 0;
       }
     }
@@ -75,8 +49,24 @@ namespace Excn {
     int         blockCount{0};
     int         nodesetCount{0};
     int         sidesetCount{0};
+    int         assemblyCount{0};
     bool        needNodeMap{true};
     bool        needElementMap{true};
+  };
+
+  class Assembly
+  {
+  public:
+    Assembly() = default;
+
+    size_t     entity_count() const { return entityCount; }
+    ObjectType entity_type() const { return type_; }
+
+    ex_entity_id         id{0};
+    std::string          name_{""};
+    ObjectType           type_{Excn::ObjectType::UNSET};
+    int                  entityCount{0};
+    std::vector<int64_t> entityList;
   };
 
   class Block
@@ -155,7 +145,7 @@ namespace Excn {
     }
   };
 
-  typedef std::pair<int64_t, int64_t> Side;
+  using Side = std::pair<int64_t, int64_t>;
   template <typename INT> class SideSet
   {
   public:

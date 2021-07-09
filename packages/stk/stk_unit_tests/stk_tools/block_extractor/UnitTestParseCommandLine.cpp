@@ -32,65 +32,131 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include <gtest/gtest.h>
+#include <stk_util/util/string_utils.hpp>
 #include <stk_tools/block_extractor/ParseCsv.hpp>
 
 namespace
 {
 
-class CommaSeparatedValues : public ::testing::Test
+template<typename T>
+void compare_result(const std::vector<T> & result, const std::vector<T> & expected)
 {
-protected:
-};
-
-TEST_F(CommaSeparatedValues, emptyString_emptyList)
-{
-    std::string input = "";
-    std::vector<std::string> separated = stk::tools::get_csv(input);
-    ASSERT_TRUE(separated.empty());
+  ASSERT_EQ(result.size(), expected.size());
+  for (size_t i = 0; i < result.size(); ++i) {
+    EXPECT_EQ(result[i], expected[i]);
+  }
 }
 
-TEST_F(CommaSeparatedValues, oneItem_stringsAreEqual)
+TEST(GetIdsFromStrings, empty)
 {
-    std::string input = "1";
-    std::vector<std::string> separated = stk::tools::get_csv(input);
-    ASSERT_EQ(1u, separated.size());
-    EXPECT_EQ(input, separated[0]);
+  std::vector<std::string> input = {};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {});
 }
 
-TEST_F(CommaSeparatedValues, twoItems_twoSeparatedStrings)
+TEST(GetIdsFromStrings, singleInteger)
 {
-    std::string input = "13,2";
-    std::vector<std::string> separated = stk::tools::get_csv(input);
-    ASSERT_EQ(2u, separated.size());
-    EXPECT_EQ("13", separated[0]);
-    EXPECT_EQ("2", separated[1]);
+  std::vector<std::string> input = {"5"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {5});
 }
 
-TEST_F(CommaSeparatedValues, tenItems_tenSeparatedStrings)
+TEST(GetIdsFromStrings, multipleIntegers)
 {
-    std::string input = "1,2,3,4,5,6,7,8,9,10";
-    std::vector<std::string> separated = stk::tools::get_csv(input);
-    ASSERT_EQ(10u, separated.size());
-    for(size_t i=0; i<10; i++)
-        EXPECT_EQ(std::to_string(i+1), separated[i]);
+  std::vector<std::string> input = {"1", "2", "3", "5", "8"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1, 2, 3, 5, 8});
 }
 
-TEST_F(CommaSeparatedValues, spaceInString_stripsSpaces)
+TEST(GetIdsFromStrings, nonInteger)
 {
-    std::string input = "5, 777";
-    std::vector<std::string> separated = stk::tools::get_csv(input);
-    ASSERT_EQ(2u, separated.size());
-    EXPECT_EQ("5", separated[0]);
-    EXPECT_EQ("777", separated[1]);
+  std::vector<std::string> input = {"1", "block_2"};
+  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::runtime_error);
 }
 
-TEST(VectorOfStrings, gettingBlockNames_addedBlockUnderscore)
+TEST(GetIdsFromStrings, singleRangeNonInteger)
 {
-    std::vector<std::string> input = {"5", "777"};
-    std::vector<std::string> output = stk::tools::get_block_names_given_ids(input);
-    ASSERT_EQ(2u, output.size());
-    EXPECT_EQ("block_5", output[0]);
-    EXPECT_EQ("block_777", output[1]);
+  std::vector<std::string> input = {"1:block_5"};
+  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::runtime_error);
+}
+
+TEST(GetIdsFromStrings, singleRangeTooManyFields)
+{
+  std::vector<std::string> input = {"1:5:2:2"};
+  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+}
+
+TEST(GetIdsFromStrings, singleRangeOutOfOrder)
+{
+  std::vector<std::string> input = {"5:1"};
+  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+}
+
+TEST(GetIdsFromStrings, singleRangeZeroLimit)
+{
+  std::vector<std::string> input = {"0:5"};
+  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+}
+
+TEST(GetIdsFromStrings, singleRangeNegativeLimit)
+{
+  std::vector<std::string> input = {"1:-5"};
+  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+}
+
+TEST(GetIdsFromStrings, singleRangeNegativeStride)
+{
+  std::vector<std::string> input = {"1:5:-1"};
+  EXPECT_THROW(stk::tools::get_ids_from_strings(input), std::logic_error);
+}
+
+TEST(GetIdsFromStrings, singleRangeNoStride)
+{
+  std::vector<std::string> input = {"1:5"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1, 2, 3, 4, 5});
+}
+
+TEST(GetIdsFromStrings, singleRangeStride1)
+{
+  std::vector<std::string> input = {"1:5:1"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1, 2, 3, 4, 5});
+}
+
+TEST(GetIdsFromStrings, singleRangeStride2)
+{
+  std::vector<std::string> input = {"1:5:2"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1, 3, 5});
+}
+
+TEST(GetIdsFromStrings, singleRangeStride3)
+{
+  std::vector<std::string> input = {"1:5:3"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1, 4});  // Not inclusive of range end
+}
+
+TEST(GetIdsFromStrings, singleRangeStrideTooBig)
+{
+  std::vector<std::string> input = {"1:5:5"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1});  // Only first value
+}
+
+TEST(GetIdsFromStrings, mixedIntsAndRanges)
+{
+  std::vector<std::string> input = {"1", "10:14:2", "20"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1, 10, 12, 14, 20});
+}
+
+TEST(GetIdsFromStrings, multipleRanges)
+{
+  std::vector<std::string> input = {"1:5", "10:14:2"};
+  std::vector<int> result = stk::tools::get_ids_from_strings(input);
+  compare_result(result, {1, 2, 3, 4, 5, 10, 12, 14});
 }
 
 }

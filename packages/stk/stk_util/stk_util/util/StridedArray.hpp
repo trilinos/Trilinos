@@ -34,7 +34,7 @@
 #ifndef STK_UTIL_UTIL_STRIDEDARRAY_HPP
 #define STK_UTIL_UTIL_STRIDEDARRAY_HPP
 
-#include <stk_util/stk_config.h>
+#include "stk_util/stk_config.h"
 
 namespace stk
 {

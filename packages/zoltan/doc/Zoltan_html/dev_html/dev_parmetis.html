@@ -58,8 +58,8 @@
 |&nbsp; <a href="dev_phg.html">Next</a>&nbsp; |&nbsp; <a href="dev_rib.html">Previous</a></i></b></div>
 
 <h2>
-Appendix: <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
-and <a href="http://www.gre.ac.uk/jostle">Jostle</a></h2>
+Appendix: <a href="https://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+and <a href="https://www.gre.ac.uk/jostle">Jostle</a></h2>
 
 <h3>
 Overview of structure (algorithm)</h3>
@@ -71,17 +71,17 @@ Each of these libraries contain several algorithms.
 <h4>
 Interface algorithm</h4>
 The structure of the code is as follows: Each package 
-(<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>,
-<a href="http://www.gre.ac.uk/jostle">Jostle</a>)
+(<a href="https://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>,
+<a href="https://www.gre.ac.uk/jostle">Jostle</a>)
 has its own wrapper routine that performs initialization and sets parameters.
 The main routine is <b>Zoltan_ParMetis_Jostle,</b> which constructs an appropriate
 graph data structure using Zoltan's query functions. After the graph structure
 has been constructed, the appropriate library is called and the import/export
 list is created and returned.
-<p>Please note that <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
-and <a href="http://www.gre.ac.uk/jostle">Jostle</a> are not integral parts
+<p>Please note that <a href="https://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+and <a href="https://www.gre.ac.uk/jostle">Jostle</a> are not integral parts
 of Zoltan. These libraries must be obtained and installed separately. 
-(<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+(<a href="https://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
 may be bundled with Zoltan, but it is an independent package developed
 at Univ. of Minnesota.) Zoltan merely provides an interface to these libraries.
 <p>The most complex task in the interface code is the construction of the
@@ -114,9 +114,7 @@ Note that for multidimensional weights, each weight component is scaled independ
 every time a graph-based method (ParMETIS or Jostle) is called. Incremental
 update of the graph structure may be supported in the future.
 <p>The graph construction code in <b>Zoltan_ParMetis_Jostle </b>can also be
-used to interface with other graph-based algorithms. Please contact the
-<a href="mailto:zoltan@cs.sandia.gov">Zoltan developers</a> if you have a parallel partitioning 
-or load-balancing code and would like assistance with interfacing it to Zoltan.
+used to interface with other graph-based algorithms. 
 <h4>
 Algorithms used in ParMETIS and Jostle libraries</h4>
 There are two main types of algorithms used in ParMETIS and Jostle. The
@@ -173,6 +171,6 @@ through either <b>Zoltan_ParMetis</b> or <b>Zoltan_Jostle</b>.
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_phg.html">Next:&nbsp;
 Hypergraph Partitioning</a>&nbsp; |&nbsp; <a href="dev_rib.html">Previous:&nbsp;
-Recursive Inertial Bisection (RIB)</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+Recursive Inertial Bisection (RIB)</a>&nbsp; |&nbsp; <a href="https://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
 </body>
 </html>

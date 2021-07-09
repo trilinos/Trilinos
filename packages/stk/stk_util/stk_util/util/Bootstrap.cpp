@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/util/Bootstrap.hpp>
+#include "stk_util/util/Bootstrap.hpp"
 
 namespace stk {
 

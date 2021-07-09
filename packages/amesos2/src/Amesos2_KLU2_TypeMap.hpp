@@ -65,86 +65,11 @@
 
 #include "Amesos2_TypeMap.hpp"
 
-
-/* The KLU2 comples headers file only need to be included if
-   complex has been enabled in Teuchos.  In addition we only need to
-   define the conversion and printing functions if complex has been
-   enabled. */
-   // TODO
 namespace KLU2 {
-
-typedef int int_t;
 
 #include "klu2_ext.hpp"	// for Dtype_t declaration
 
 } // end namespace KLU
-#ifdef HAVE_TEUCHOS_COMPLEX
-
-/* ==================== Conversion ==================== */
-namespace Teuchos {
-
-/**
- * \defgroup slu_conversion Conversion definitions for SLU types.
- *
- * Define specializations of Teuchos::as<> for the SLU types.
- *
- * These specializations are meant to work with any complex data type that
- * implements the same interface as the STL complex type.
- *
- * @{
- */
-template <>
-class ValueTypeConversionTraits<std::complex<double>, std::complex<float> >
-{
-public:
-  static std::complex<double> convert( const std::complex<float>  t )
-    {
-      std::complex<double> ret(Teuchos::as<double>(t.real()),
-                                 Teuchos::as<double>(t.imag()));
-      return( ret );
-    }
-
-  static std::complex<double> safeConvert( const std::complex<float>  t )
-    {
-      std::complex<double> ret(Teuchos::as<double>(t.real()),
-                                 Teuchos::as<double>(t.imag()));
-      return( ret );
-    }
-};
-
-
-// Also convert from KLU2 types
-template <>
-class ValueTypeConversionTraits<std::complex<float> , std::complex<double> >
-{
-public:
-  static std::complex<float>  convert( const std::complex<double> t )
-    {
-      float ret_r = Teuchos::as<float>( t.real() );
-      float ret_i = Teuchos::as<float>( t.imag() );
-      std::complex<float> ret (ret_r,  ret_i);
-      return (ret);
-    }
-
-  // No special checks for safe Convert
-  static std::complex<float>  safeConvert( const std::complex<double> t )
-    {
-      float ret_r = Teuchos::as<float>( t.real() );
-      float ret_i = Teuchos::as<float>( t.imag() );
-      std::complex<float> ret (ret_r,  ret_i);
-      return (ret);
-    }
-};
-
-
-
-//@}  End Conversion group
-
-
-} // end namespace Teuchos
-
-#endif	// HAVE_TEUCHOS_COMPLEX
-
 
 namespace Amesos2 {
 
@@ -158,40 +83,46 @@ template <class, class> class KLU2;
 template <>
 struct TypeMap<KLU2,float>
 {
-  static float dtype;
+  typedef float dtype;
   typedef float type;
-  typedef float magnitude_type;
 };
-
 
 template <>
 struct TypeMap<KLU2,double>
 {
-  static double dtype;
+  typedef double dtype;
   typedef double type;
-  typedef double magnitude_type;
 };
-
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 template <>
 struct TypeMap<KLU2,std::complex<float> >
 {
-  static std::complex<double> dtype;
-  typedef std::complex<double> type;
-  typedef double magnitude_type;
+  typedef std::complex<double> dtype;
+  typedef Kokkos::complex<double> type;
 };
-
 
 template <>
 struct TypeMap<KLU2,std::complex<double> >
 {
-  static std::complex<double> dtype;
-  typedef std::complex<double> type;
-  typedef double magnitude_type;
+  typedef std::complex<double> dtype;
+  typedef Kokkos::complex<double> type;
 };
 
+template <>
+struct TypeMap<KLU2,Kokkos::complex<float> >
+{
+  typedef std::complex<double> dtype;
+  typedef Kokkos::complex<double> type;
+};
+
+template <>
+struct TypeMap<KLU2,Kokkos::complex<double> >
+{
+  typedef std::complex<double> dtype;
+  typedef Kokkos::complex<double> type;
+};
 
 #endif  // HAVE_TEUCHOS_COMPLEX
 

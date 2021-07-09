@@ -135,7 +135,7 @@ public:
     set_level_maxrows(0);
     level_list = nnz_row_view_t("level_list", nrows_),
     level_idx  = nnz_lno_view_t("level_idx", nrows_),
-    level_ptr  = nnz_lno_view_t("level_ptr", nrows_),
+    level_ptr  = nnz_lno_view_t("level_ptr", nrows_+1),
     reset_symbolic_complete();
   }
 

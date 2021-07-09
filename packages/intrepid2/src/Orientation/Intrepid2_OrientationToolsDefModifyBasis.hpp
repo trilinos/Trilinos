@@ -53,67 +53,22 @@
 #pragma clang system_header
 #endif
 
+#include "Intrepid2_Orientation.hpp"
+
 namespace Intrepid2 {
 
-  template<typename SpT>
-  template<typename ptViewType>
-  KOKKOS_INLINE_FUNCTION
-  bool OrientationTools<SpT>::
-  isLeftHandedCell(const ptViewType pts) {
-#ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( pts.rank() != 2,  // npts x ndim
-                              ">>> ERROR (Intrepid::OrientationTools::isLeftHandedCell): " \
-                              "Point array is supposed to have rank 2.");
-#endif
-    typedef typename ptViewType::value_type value_type;
-
-    const auto dim = pts.extent(1);
-    value_type det = 0.0;
-    switch (dim) {
-    case 2: {
-      // need 3 points (origin, x end point, y end point)
-      const value_type v[2][2] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1) },
-                                   { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1) } };
-
-      det = (v[0][0]*v[1][1] - v[1][0]*v[0][1]);
-      break;
-    }
-    case 3: {
-      // need 4 points (origin, x end point, y end point, z end point)
-      const value_type v[3][3] = { { pts(1,0) - pts(0,0), pts(1,1) - pts(0,1), pts(1,2) - pts(0,2) },
-                                   { pts(2,0) - pts(0,0), pts(2,1) - pts(0,1), pts(2,2) - pts(0,2) },
-                                   { pts(3,0) - pts(0,0), pts(3,1) - pts(0,1), pts(3,2) - pts(0,2) } };
-
-      det = (v[0][0] * v[1][1] * v[2][2] +
-             v[0][1] * v[1][2] * v[2][0] +
-             v[0][2] * v[1][0] * v[2][1] -
-             v[0][2] * v[1][1] * v[2][0] -
-             v[0][0] * v[1][2] * v[2][1] -
-             v[0][1] * v[1][0] * v[2][2]);
-      break;
-    }
-    default:{
-      INTREPID2_TEST_FOR_ABORT( true,
-                                ">>> ERROR (Intrepid::Orientation::isLeftHandedCell): " \
-                                "Dimension of points must be 2 or 3");
-    }
-    }
-    return (det < 0.0);
-  }
-
-  template<typename SpT>
+  template<typename DT>
   template<typename elemOrtValueType, class ...elemOrtProperties,
            typename elemNodeValueType, class ...elemNodeProperties>
   void
-  OrientationTools<SpT>::
+  OrientationTools<DT>::
   getOrientation(      Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
                  const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                  const shards::CellTopology cellTopo) {
     // small meta data modification and it uses shards; let's do this on host
-    typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
-    auto elemOrtsHost = Kokkos::create_mirror_view(typename host_space_type::memory_space(), elemOrts);
-    auto elemNodesHost = Kokkos::create_mirror_view_and_copy(typename host_space_type::memory_space(), elemNodes);
-
+    auto elemOrtsHost = Kokkos::create_mirror_view(elemOrts);
+    auto elemNodesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), elemNodes);
+    
     const ordinal_type numCells = elemNodes.extent(0);
     for (auto cell=0;cell<numCells;++cell) {
       const auto nodes = Kokkos::subview(elemNodesHost, cell, Kokkos::ALL());
@@ -265,16 +220,16 @@ namespace Intrepid2 {
     }
   };
 
-  template<typename SpT>
+  template<typename DT>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties,
-           typename ortValueType,    class ...ortProperties,
+           typename OrientationViewType,
            typename BasisType>
   void
-  OrientationTools<SpT>::
+  OrientationTools<DT>::
   modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                            const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
-                           const Kokkos::DynRankView<ortValueType,   ortProperties...>    orts,
+                           const OrientationViewType orts,
                            const BasisType* basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -302,11 +257,8 @@ namespace Intrepid2 {
 #endif
 
     if (basis->requireOrientation()) {
-      auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofTags());
-      auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofOrdinal());
-
-      Kokkos::deep_copy(ordinalToTag, basis->getAllDofTags());
-      Kokkos::deep_copy(tagToOrdinal, basis->getAllDofOrdinal());
+      auto ordinalToTag = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofTags());
+      auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DT::memory_space(), basis->getAllDofOrdinal());
 
       const ordinal_type
         numCells  = output.extent(0),
@@ -323,19 +275,20 @@ namespace Intrepid2 {
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0),
         numFaces = cellTopo.getFaceCount();
 
-      const Kokkos::RangePolicy<SpT> policy(0, numCells);
+      const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
       typedef F_modifyBasisByOrientation
         <decltype(orts),
          decltype(output),decltype(input),
          decltype(ordinalToTag),decltype(tagToOrdinal),
          decltype(matData)> FunctorType;
-      Kokkos::parallel_for(policy,
-                           FunctorType(orts,
-                                       output, input,
-                                       ordinalToTag, tagToOrdinal,
-                                       matData,
-                                       cellDim, numVerts, numEdges, numFaces,
-                                       numPoints, dimBasis));
+      Kokkos::parallel_for
+        (policy,
+         FunctorType(orts,
+                     output, input,
+                     ordinalToTag, tagToOrdinal,
+                     matData,
+                     cellDim, numVerts, numEdges, numFaces,
+                     numPoints, dimBasis));
     } else {
       Kokkos::deep_copy(output, input);
     }

@@ -1,35 +1,9 @@
 #!/bin/bash
-# Copyright(C) 2005 National Technology & Engineering Solutions of
-# Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-# 
-# * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#           
-# * Redistributions in binary form must reproduce the above
-#   copyright notice, this list of conditions and the following
-#   disclaimer in the documentation and/or other materials provided
-#   with the distribution.
-#                         
-# * Neither the name of NTESS nor the names of its
-#   contributors may be used to endorse or promote products derived
-#   from this software without specific prior written permission.
-#                                                 
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# See packages/seacas/LICENSE for details
 
 ########################################################################
 function usage {
@@ -39,11 +13,11 @@ function usage {
     usage_new
   fi
 }
-  
+
 function usage_new {
 cat <<DECOMP_USAGE_EOF
 Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
-               [--root <root directory>] [--subdir <sub directory]
+               [--root <root directory>] [--subdir <sub directory>] [--spread_suffix <suffix>]
                [--multikl] [--spectral] [--inertial] [--linear]
                [--rcb] [--rcb_ignore_z] [--rib] [--hsfc] [--random] [--scattered]
                [...others...] meshfile.ext
@@ -52,7 +26,7 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
               (See chaco and/or zoltan documentation for more details)
  --multikl:   [3] Multilevel KL. Gives high quality partitions.
                   Slow, high memory use.
- --spectral:  [2] use eigenvectors of a matrix constructed from the 
+ --spectral:  [2] use eigenvectors of a matrix constructed from the
                   graph to partition the graph.
  --hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
  --rib:       [?] Recursive Inertial Bisection (uses Zoltan)
@@ -60,11 +34,11 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
  --rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan), ignoring the z dimension coordinates
  --inertial:  [1] (default) vertices divided into sets of equal mass by planes
                   orthogonal to the principle axis. Good, fast, medium memory
- --linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
+ --linear:    [0] vertices in order first n/p to proc 0, next to proc 1.
                   (fast and sometimes good).
- --random:    [0] vertices are assigned randomly to sets in a way that 
+ --random:    [0] vertices are assigned randomly to sets in a way that
                   preserves balance.
- --scattered: [0] vertices are handed out in order with the next vertex 
+ --scattered: [0] vertices are handed out in order with the next vertex
                   going to whichever set is smallest.
  --brick      [-] special decomposition method; not useful for general use.
  --zpinch     [-] special decomposition method; not useful for general use.
@@ -82,8 +56,9 @@ Other options:
 --processors #p    Specify number of processors (-p, -j)
 --root root_dir    Root directory to begin the path to on the separate disks (-R)
 --subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
+--spread_suffix x  Suffix for parallel files (default: meshfile suffix) (-X)
 --64               Force creation of 64-bit integer decomposed files (-6)
-   help-email: sierra-help@sandia.gov 
+   help-email: sierra-help@sandia.gov
 
 DECOMP_USAGE_EOF
 exit 1
@@ -92,7 +67,7 @@ exit 1
 function usage_old {
 cat <<DECOMP_USAGE_EOF
 Usage:  decomp [-h] -p <processor count> [-n <nemslice options>]
-               [-R <root directory>] [-S <sub directory]
+               [-R <root directory>] [-S <sub directory>] [-X <suffix>]
                [-l multikl] [-l spectral] [-l inertial] [-l linear]
                [-l rcb] [-l rcb_ignore_z] [-l rib] [-l hsfc] [-l random] [-l scattered]
                [...others...] meshfile.ext
@@ -101,7 +76,7 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
               (See chaco and/or zoltan documentation for more details)
  -l multikl:   [3] Multilevel KL. Gives high quality partitions.
                   Slow, high memory use.
- -l spectral:  [2] use eigenvectors of a matrix constructed from the 
+ -l spectral:  [2] use eigenvectors of a matrix constructed from the
                   graph to partition the graph.
  -l hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
  -l rib:       [?] Recursive Inertial Bisection (uses Zoltan)
@@ -109,11 +84,11 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
  -l rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan) ignoring the z dimension coordinates
  -l inertial:  [1] (default) vertices divided into sets of equal mass by planes
                   orthogonal to the principle axis. Good, fast, medium memory
- -l linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
+ -l linear:    [0] vertices in order first n/p to proc 0, next to proc 1.
                   (fast and sometimes good).
- -l random:    [0] vertices are assigned randomly to sets in a way that 
+ -l random:    [0] vertices are assigned randomly to sets in a way that
                   preserves balance.
- -l scattered: [0] vertices are handed out in order with the next vertex 
+ -l scattered: [0] vertices are handed out in order with the next vertex
                   going to whichever set is smallest.
  -l brick      [-] special decomposition method; not useful for general use.
  -l zpinch     [-] special decomposition method; not useful for general use.
@@ -126,12 +101,13 @@ Other options:
 -i          Optional nem_slice input file
 -s          Decompose sphere elements using linear method (matches old behavior)
 -p #p       Specify number of processors (or -j)
--R root_dir Root directory to begin the path to on the separate disks 
+-R root_dir Root directory to begin the path to on the separate disks
 -S sub_dir  Continuation of the path on the separate disks to the files
+-X suffix   Suffix for parallel files (default: meshfile suffix)
 -V          Output mesh showing processor distribution of elements
 -6          Force creation of 64-bit integer decomposed files
 
-   help-email: sierra-help@sandia.gov 
+   help-email: sierra-help@sandia.gov
 
 DECOMP_USAGE_EOF
 exit 1
@@ -188,14 +164,14 @@ function execute_loadbalance {
     date=`date '+%m/%d/%y'`
     time=`date '+%H:%M:%S'`
     prob_dir=`pwd | sed "s/.*\///g"`
-    
+
     if [ -n "$input" -a -e "$input" ]
     then
         echo ${txtblu}
         echo "Executing:"
         echo "   $LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis"
         echo ${txtrst}
-        ($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis) 
+        ($LAUNCH $NEM_SLICE $decomp_type $spheres $do_viz $decomp_method $nem_slice_flag -o $nemesis -m mesh=$processors -a $input $genesis)
         load_rc=$?
     else
         echo ${txtblu}
@@ -233,7 +209,7 @@ function execute_spread {
         echo
         return -1
     fi
-    
+
     if [ "$subdir" != "." ]
     then
         dir=$rootdir/$subdir
@@ -243,12 +219,12 @@ function execute_spread {
             mkdir -p $dir
         fi
     fi
-    
+
     if [ -e $pexsh ]
     then
         /bin/rm -rf $pexsh
     fi
-    
+
     echo "Input FEM file                   = $genesis"                  >  $pexsh
     echo "LB file                          = $nemesis"                  >> $pexsh
     echo "Parallel Results File Base Name  = $basename"                 >> $pexsh
@@ -263,7 +239,7 @@ function execute_spread {
     echo "------------------------------------------------------------" >> $pexsh
     echo "Parallel Disk Info= number=1, offset=1, zeros, nosubdirectory">> $pexsh
     echo "Parallel file location = root=$rootdir, subdir=$subdir"       >> $pexsh
-    
+
     echo ${txtblu}
     echo "Executing:"
     echo "   $NEM_SPREAD $use64 $pexsh"
@@ -297,6 +273,7 @@ decomp_method="-l inertial"
 nem_slice_flag="-c"
 rootdir="`pwd`/"
 subdir="."
+suffix_spread=''
 spheres="-S"
 do_viz=""
 curdir=`pwd`
@@ -324,10 +301,10 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=`getopt Hh6ENn:i:o:p:j:r:R:S:sl:vVd: $*`
+   TEMP=`getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: $*`
 else
-   TEMP=`getopt -o Hh6ENn:i:o:p:j:r:R:S:sl:vVd: -a \
-       --long input:,help,nem_slice_flag,64,processors:,rootdir:,subdir:,spheres_linear,viz_mesh,verbose,debug:,nodal,elemental \
+   TEMP=`getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: -a \
+       --long input:,help,nem_slice_flag,64,processors:,rootdir:,subdir:,spread_suffix:,spheres_linear,viz_mesh,verbose,debug:,nodal,elemental \
        --long multikl,rcb,rcb_ignore_z,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
        -n 'decomp' -- "$@"`
 fi
@@ -345,7 +322,7 @@ while true ; do
     (-v|--verbose)
         set -x ; shift ;;
     (-V|--viz_mesh)
-        do_viz="-y" ; shift ;; 
+        do_viz="-y" ; shift ;;
     (-d|--debug)
         debug_level="$2" ; shift 2 ;;
     (-n|--nem_slice_flag)
@@ -362,9 +339,11 @@ while true ; do
         rootdir=$2 ; shift 2 ;;
     (-S|--subdir)
         subdir=$2 ; shift 2 ;;
-    (-s|--spheres_linear) 
+    (-X|--spread_suffix)
+        suffix_spread=$2 ; shift 2 ;;
+    (-s|--spheres_linear)
         spheres="" ; shift ;;
-    (-6|--64) 
+    (-6|--64)
         use64="-64" ; shift ;;
     (--nolaunch)
         LAUNCH="nolaunch" ; shift ;;
@@ -389,7 +368,7 @@ while true ; do
     esac
 done
 
-# Figure out how to run nem_slice where we are. 
+# Figure out how to run nem_slice where we are.
 if [ "${LAUNCH:-}" == "nolaunch" ]
 then
     # Ensure launch is NOT used --nolaunch was passed.
@@ -406,7 +385,7 @@ else
         LAUNCH="$LAUNCH -n 1"
         # If the launch script doesn't work to run something simple, don't use it.
         $LAUNCH >/dev/null 2>&1 true || LAUNCH=
-    
+
         if [ -z "$PBS_JOBID" -a -z "$LSB_JOBID" -a -z "$SLURM_JOB_ID" ]
         then
             # Unset these if we we are NOT in an allocation.
@@ -414,7 +393,7 @@ else
             unset OMPI_MCA_btl_openib_ib_timeout
             export OMPI_MCA_mtl=^psm
             export OMPI_MCA_pml=^cm
-            export OMPI_MCA_btl=tcp,sm,self
+            export OMPI_MCA_btl=tcp,vader,self
             if [ -n "${SIERRA_LIBRARY_PATH}" ]
             then
                 export DYLD_LIBRARY_PATH=$SIERRA_LIBRARY_PATH
@@ -438,7 +417,10 @@ else
     then
         file=$1
         suffix_mesh=${file##*.}
-        suffix_spread=$suffix_mesh
+        if test -z "$suffix_spread"
+        then
+            suffix_spread=$suffix_mesh
+        fi
         basename=${file%.*}
     else
     echo ${txtred}
@@ -450,7 +432,7 @@ else
         echo ${txtrst}
         usage
     fi
-fi    
+fi
 
 if [ -n "$input" ]
 then

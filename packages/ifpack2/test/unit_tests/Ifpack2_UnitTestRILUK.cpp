@@ -69,10 +69,13 @@ namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
 
+struct IlukImplTypeDetails {
+  enum Enum { Serial, KSPILUK };
+};
 // Single-process unit tests for RILUK are located in the file Ifpack2_UnitTestSerialRILUK.cpp.
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
-static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > setupTest ()
+static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > setupTest (const IlukImplTypeDetails::Enum ilukimplType)
 {
   // Test that ILU(k) can be done on a parallel sparse matrix with noncontiguous row map.
   // See bug #6033.
@@ -121,7 +124,8 @@ static Teuchos::RCP<Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalO
   GlobalOrdinal lof=1;
   params.set("fact: iluk level-of-fill", lof);
   params.set("fact: iluk level-of-overlap", 0);
-
+  if (ilukimplType == IlukImplTypeDetails::KSPILUK)
+    params.set("fact: type", "KSPILUK");
   prec->setParameters(params);
   return prec;
 }
@@ -130,22 +134,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
 {
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
-
-  auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>();
-  prec->initialize();
-  prec->compute();
+  {
+    auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>(IlukImplTypeDetails::Serial);
+    prec->initialize();
+    prec->compute();
+  }
+  {
+    auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>(IlukImplTypeDetails::KSPILUK);
+    prec->initialize();
+    prec->compute();
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, ParallelReuse, Scalar, LocalOrdinal, GlobalOrdinal)
 {
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
-
-  auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>();
-  prec->initialize();
-  prec->compute();
-  // Pretend we've updated some of the numbers in the matrix, but not its structure.
-  prec->compute();
+  {
+    auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>(IlukImplTypeDetails::Serial);
+    prec->initialize();
+    prec->compute();
+    // Pretend we've updated some of the numbers in the matrix, but not its structure.
+    prec->compute();
+  }
+  {
+    auto prec = setupTest<Scalar, LocalOrdinal, GlobalOrdinal>(IlukImplTypeDetails::KSPILUK);
+    prec->initialize();
+    prec->compute();
+    // Pretend we've updated some of the numbers in the matrix, but not its structure.
+    prec->compute();
+  }
 }
 
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO ) \
@@ -162,4 +180,3 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
 IFPACK2_INSTANTIATE_SLG( UNIT_TEST_GROUP_SC_LO_GO )
 
 }//namespace <anonymous>
-

@@ -443,9 +443,9 @@ void MV_Tpetra(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_KK(const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A,  const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &x,   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &y) {
   typedef typename Node::device_type device_type;
-  const auto& AK = A.getLocalMatrix();
-  auto X_lcl = x.template getLocalView<device_type> ();
-  auto Y_lcl = y.template getLocalView<device_type> ();
+  const auto& AK = A.getLocalMatrixDevice();
+  auto X_lcl = x.getLocalViewDevice (Tpetra::Access::ReadOnly);
+  auto Y_lcl = y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose,Teuchos::ScalarTraits<Scalar>::one(),AK,X_lcl,Teuchos::ScalarTraits<Scalar>::zero(),Y_lcl);
 }
 #endif
@@ -525,7 +525,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("report_error_norms", "noreport_error_norms", &report_error_norms,   "Report L2 norms for the solution");
 
     std::ostringstream galeriStream;
-    std::string rhsFile,coordFile,nullFile, materialFile; //unused
+    std::string rhsFile,coordFile,coordMapFile,nullFile, materialFile; //unused
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
     typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
     RCP<RealValuedMultiVector> coordinates;
@@ -544,7 +544,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"The Kokkos-Kernels matvec kernel cannot be run with more than one rank.");
 
     // Load the matrix off disk (or generate it via Galeri), assuming only one right hand side is loaded.
-    MatrixLoad<SC,LO,GO,NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, nullFile, materialFile, map, A, coordinates, nullspace, material, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
+    MatrixLoad<SC,LO,GO,NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, map, A, coordinates, nullspace, material, x, b, 1, galeriParameters, xpetraParameters, galeriStream);
 
     #ifndef HAVE_MUELU_MKL
     if (do_mkl) {

@@ -1,42 +1,16 @@
 /*
- * Copyright(C) 2010-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 #include "EP_ExodusFile.h"
 #include "EP_Internals.h"
 #include "EP_ParallelDisks.h"
 #include "EP_SystemInterface.h"
+#include "fmt/color.h"
 #include "fmt/ostream.h"
 #include "smart_assert.h"
 #include <climits>
@@ -65,6 +39,7 @@ int                      Excn::ExodusFile::cpuWordSize_    = 0;
 int                      Excn::ExodusFile::mode64bit_      = 0;
 std::string              Excn::ExodusFile::outputFilename_;
 bool                     Excn::ExodusFile::keepOpen_          = false;
+bool                     Excn::ExodusFile::verifyValidFile_   = false;
 int                      Excn::ExodusFile::maximumNameLength_ = 32;
 
 Excn::ExodusFile::ExodusFile(int processor) : myProcessor_(processor)
@@ -128,6 +103,32 @@ void Excn::ExodusFile::close_all()
     ex_close(outputId_);
     outputId_ = -1;
   }
+
+  // We have had some issues with file corruption.  Everything seems to be
+  // working fine, but when the file is opened later after EPU has completed,
+  // one or more of the output files (in subcyle mode) report being invalid.
+  // Here, if the user requests, we try to reopen the file and report an
+  // error if there is a problem.  This might still not catch all bad files,
+  // but will hopefully catch some at the point that it happens...
+  if (verifyValidFile_) {
+    float version          = 0.0;
+    int   cpu_word_size    = cpuWordSize_;
+    int   io_word_size_var = ioWordSize_;
+    int   mode             = EX_READ;
+    mode |= mode64bit_;
+    int exoid = ex_open(outputFilename_.c_str(), mode, &cpu_word_size, &io_word_size_var, &version);
+    if (exoid < 0) {
+      ex_get_err(nullptr, nullptr, &exoid);
+      fmt::print(stderr, fmt::fg(fmt::color::red),
+                 "EPU: Exodus error ({}) {}.\n"
+                 "Output File verification failed for '{}'.  Could not reopen output file after "
+                 "closing it\n",
+                 exoid, ex_strerror(exoid), outputFilename_);
+    }
+    else {
+      ex_close(exoid);
+    }
+  }
 }
 
 void Excn::ExodusFile::unlink_temporary_files()
@@ -162,6 +163,8 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
     mode64bit_ |= EX_ALL_INT64_DB;
   }
 
+  verifyValidFile_ = si.verify_valid_file();
+
   // See if we can keep files open
   int max_files = get_free_descriptor_count();
   if (partCount_ <= max_files) {
@@ -191,8 +194,6 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   std::string sub_dir  = si.sub_dir();
 
   ParallelDisks disks;
-  disks.Raid_Offset(si.raid_offset());
-  disks.Number_of_Raids(si.raid_count());
 
   float version = 0.0;
 
@@ -220,7 +221,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       mode |= mode64bit_;
       int exoid = ex_open(filenames_[p].c_str(), mode, &cpu_word_size, &io_word_size_var, &version);
       if (exoid < 0) {
-        fmt::print(stderr, "Cannot open file '{}'\n", filenames_[p]);
+        fmt::print(stderr, fmt::fg(fmt::color::red), "Cannot open file '{}'\n", filenames_[p]);
         return false;
       }
 
@@ -255,7 +256,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       fileids_[p] =
           ex_open(filenames_[p].c_str(), mode, &cpuWordSize_, &io_word_size_var, &version);
       if (fileids_[p] < 0) {
-        fmt::print(stderr, "Cannot open file '{}'\n", filenames_[p]);
+        fmt::print(stderr, fmt::fg(fmt::color::red), "Cannot open file '{}'\n", filenames_[p]);
         return false;
       }
       ex_set_max_name_length(fileids_[p], maximumNameLength_);
@@ -306,12 +307,15 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   // Did user specify it via -netcdf4 or -large_model argument...
   int mode = 0;
 
-  if (si.compress_data() > 0) {
+  if (si.compress_data() > 0 || si.szip()) {
     // Force netcdf-4 if compression is specified...
     mode |= EX_NETCDF4;
   }
   else if (si.use_netcdf4()) {
     mode |= EX_NETCDF4;
+  }
+  else if (si.use_netcdf5()) {
+    mode |= EX_64BIT_DATA;
   }
   else if (ex_large_model(fileids_[0]) == 1) {
     mode |= EX_LARGE_MODEL;
@@ -336,11 +340,17 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);
   }
   if (outputId_ < 0) {
-    fmt::print(stderr, "Cannot open file '{}'\n", outputFilename_);
+    fmt::print(stderr, fmt::fg(fmt::color::red), "Cannot open file '{}'\n", outputFilename_);
     return false;
   }
 
-  if (si.compress_data() > 0) {
+  if (si.compress_data() > 0 || si.szip()) {
+    if (si.szip()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_SZIP);
+    }
+    else if (si.zlib()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_ZLIB);
+    }
     ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
     ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
   }
@@ -365,9 +375,7 @@ size_t Excn::ExodusFile::get_free_descriptor_count()
 {
 // Returns maximum number of files that one process can have open
 // at one time. (POSIX)
-#if defined(__PUMAGON__)
-  int fdmax = FOPEN_MAX;
-#elif defined(_WIN32)
+#if defined(_WIN32)
   int fdmax = _getmaxstdio();
 #else
   int fdmax = sysconf(_SC_OPEN_MAX);

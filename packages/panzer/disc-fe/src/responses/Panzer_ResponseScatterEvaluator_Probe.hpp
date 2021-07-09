@@ -196,7 +196,7 @@ void ProbeScatter<LO,GO>::scatterDerivative(
 {
 
   if (has_probe) {
-    Kokkos::View<const LO*, PHX::Device> LIDs = globalIndexer_->getElementLIDs(cell_index);
+    PHX::View<const LO*> LIDs = globalIndexer_->getElementLIDs(cell_index);
 
     // loop over basis functions
     for(std::size_t i=0; i<LIDs.size(); ++i) {

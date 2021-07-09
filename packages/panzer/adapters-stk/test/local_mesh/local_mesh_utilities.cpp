@@ -65,9 +65,7 @@ buildLocalMeshInfo(const std::vector<int> & N,   // Cells per dimension
                    const std::vector<double> &L) // Domain length per block
 {
   Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(N,B,L);
-  Teuchos::RCP<panzer::LocalMeshInfo> mesh_info(new panzer::LocalMeshInfo);
-  generateLocalMeshInfo(*mesh,*mesh_info);
-  return mesh_info;
+  return generateLocalMeshInfo(*mesh);
 }
 
 
@@ -80,9 +78,7 @@ TEUCHOS_UNIT_TEST(localMeshUtilities, basic)
   // Make sure if fails when you pass in a null mesh
   {
     panzer_stk::STK_Interface mesh;
-    panzer::LocalMeshInfo mesh_info;
-
-    TEST_THROW((generateLocalMeshInfo(mesh, mesh_info)),std::logic_error);
+    TEST_THROW((generateLocalMeshInfo(mesh)),std::logic_error);
   }
 
   // 1D Mesh test

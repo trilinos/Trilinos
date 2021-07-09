@@ -16,9 +16,9 @@ namespace KokkosBatched {
   /// A(m x m), B(m x n)
 
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)    
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)    
   template<typename ArgDiag>
   struct SerialTrsm<Side::Left,Uplo::Lower,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
     template<typename ScalarType,
@@ -111,9 +111,9 @@ namespace KokkosBatched {
   /// B := (alpha*B) inv(triu(A))
   /// A(n x n), B(m x n)
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<typename ArgDiag>
   struct SerialTrsm<Side::Right,Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
     template<typename ScalarType,
@@ -206,9 +206,9 @@ namespace KokkosBatched {
   /// B := inv(triu(A)) (alpha*B) 
   /// A(m x m), B(m x n)
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<typename ArgDiag>
   struct SerialTrsm<Side::Left,Uplo::Upper,Trans::NoTranspose,ArgDiag,Algo::Trsm::CompactMKL> {
     template<typename ScalarType,
@@ -302,9 +302,9 @@ namespace KokkosBatched {
   /// A(m x m), B(m x n)
 
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)    
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)    
   template<typename ArgDiag>
   struct SerialTrsm<Side::Left,Uplo::Lower,Trans::Transpose,ArgDiag,Algo::Trsm::CompactMKL> {
     template<typename ScalarType,
@@ -396,9 +396,9 @@ namespace KokkosBatched {
   /// B := inv(triu(AT)) (alpha*B) 
   /// A(m x m), B(m x n)
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   template<typename ArgDiag>
   struct SerialTrsm<Side::Left,Uplo::Upper,Trans::Transpose,ArgDiag,Algo::Trsm::CompactMKL> {
     template<typename ScalarType,

@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <limits>
+#include <array>
 #include <stk_math/StkVector.hpp>
 
 namespace stk {

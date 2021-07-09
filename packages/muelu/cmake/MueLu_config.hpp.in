@@ -59,11 +59,17 @@
 
 #cmakedefine HAVE_MUELU_KOKKOSCORE
 
+#cmakedefine HAVE_MUELU_KOKKOSKERNELS
+
 #cmakedefine HAVE_MUELU_ML
 
 #cmakedefine HAVE_MUELU_PAMGEN
 
 #cmakedefine HAVE_MUELU_TEKO
+
+#cmakedefine HAVE_MUELU_THYRA
+
+#cmakedefine HAVE_MUELU_THYRATPETRAADAPTERS
 
 #cmakedefine HAVE_MUELU_TPETRA
 
@@ -74,7 +80,11 @@
 
 #cmakedefine HAVE_MUELU_ZOLTAN
 
-#cmakedefine HAVE_MUELU_ZOLTAN2
+#cmakedefine HAVE_MUELU_ZOLTAN2CORE
+#ifdef HAVE_MUELU_ZOLTAN2CORE
+#  define HAVE_MUELU_ZOLTAN2
+#endif
+
 
 /* Optional TPL */
 

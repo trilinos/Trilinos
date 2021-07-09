@@ -208,7 +208,7 @@ GenericAlgorithm_update_coordinates(
 			unsigned numUnFixed = 0;
 			for(unsigned iNode=0;iNode<nodesVec.size();iNode++)
 			{
-			    std::pair<bool,int> fixed = get_fixed_flag_sgrid(nodesVec[iNode],m_rms->get_sgrid_select());
+			    Kokkos::pair<bool,int> fixed = get_fixed_flag_sgrid(nodesVec[iNode],m_rms->get_sgrid_select());
 		        if (!fixed.first) {
 		            unFixedNodes[numUnFixed] = nodesVec[iNode];
 		            numUnFixed++;

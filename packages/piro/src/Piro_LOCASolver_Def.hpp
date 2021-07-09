@@ -135,6 +135,8 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   if (piroParams_->isSublist("NOX") &&
       piroParams_->sublist("NOX").isSublist("Printing"))
     utils_.reset(piroParams_->sublist("NOX").sublist("Printing"));
+
+  this->setSensitivityMethod("Forward");
 }
 
 template<typename Scalar>
@@ -162,6 +164,13 @@ Teuchos::ParameterList &
 Piro::LOCASolver<Scalar>::getStepSizeParams()
 {
   return stepper_->getStepSizeParams();
+}
+
+template <typename Scalar>
+Teuchos::RCP<LOCA::Stepper>
+Piro::LOCASolver<Scalar>::getStepper()
+{
+  return stepper_;
 }
 
 template <typename Scalar>
@@ -224,7 +233,8 @@ Piro::LOCASolver<Scalar>::evalModelImpl(
       modelInArgs.set_p(l, p_inargs);
     }
 
-    this->evalConvergedModel(modelInArgs, outArgs);
+    Teuchos::ParameterList analysisParams;
+    this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs, analysisParams);
   }
 }
 

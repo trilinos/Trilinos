@@ -190,7 +190,7 @@ private:
     // one for the "primary" variable (first, even index), and the "virtual" variable (second, odd index)
 
     std::vector<Ptr<Vector<Real>>> vecs;
-    if(oldTimeIndex==-1 and timeRank==0) {
+    if(oldTimeIndex==-1 && timeRank==0) {
       auto val = initialCond_->clone();
       if(useInitialCond) 
         val->set(*initialCond_); 
@@ -609,7 +609,7 @@ public:
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
       pint_jv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));       // this is the virtual value
-      if(s+1<numSteps or lastRank)
+      if(s+1<numSteps || lastRank)
         pint_jv.getVectorPtr(2*s+1)->axpy(-1.0,*pint_v.getVectorPtr(2*s)); // this is the u value
       pint_jv.getVectorPtr(2*s+1)->scale(globalScale_);
     }
@@ -842,7 +842,7 @@ public:
        constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
 
        // this is the remainder of the constraint application
-       if(s+1<numSteps or lastRank) 
+       if(s+1<numSteps || lastRank) 
          pint_ajv.getVectorPtr(2*s)->axpy(-globalScale_,*pint_v.getVectorPtr(2*s+1));
 
        sendBuffer[0] = part_ajv->get(0);
@@ -1052,7 +1052,7 @@ public:
        constraint->applyInverseJacobian_1(*part_ijv,*part_v,*part_u,*part_z,tol);
 
        // satisfy the time continuity constraint, note that this just using the identity matrix
-       if(s+1<numSteps or lastRank) {
+       if(s+1<numSteps || lastRank) {
          pint_ijv.getVectorPtr(2*s+1)->set(*pint_ijv.getVectorPtr(2*s));    
          pint_ijv.getVectorPtr(2*s+1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(2*s+1));        
        }
@@ -1198,10 +1198,11 @@ public:
 
      // objective
      applyAdjointJacobian_1_leveled(*output_u,*input_v,u,z,tol,level);
-     output_u->axpy(1.0,*input_u);
+     output_u->axpy(1.0,*input_u); // TODO: Add Riesz scaling
 
      applyAdjointJacobian_2_leveled(*output_z,*input_v,u,z,tol,level);
      output_z->axpy(controlRegParam_,*input_z); // multiply by \alpha * I
+                                   // TODO: Add Riesz scaling
 
      // constraint
      applyJacobian_1_leveled(*output_v_tmp,*input_u,u,z,tol,level);
@@ -1293,22 +1294,34 @@ public:
      temp_z->zero();
      temp_v->zero();
  
+     // ==============================
      // [ I         0  J' * inv(J*J') ] [  I              ]
-     // [     I/alpha  K' * inv(J*J') ] [  0     I        ]
+     // [     I/alpha  K' * inv(J*J') ] [  0     I        ]  // why is there no alpha parameter on the K' term?????
      // [                  -inv(J*J') ] [ -J -K/alpha  I  ]
+    
+     // with riesz maps (TODO)
+     // ==============================
+     // [ iMu          0        iMu * J' * inv(J*iMu*J') ] [  I                      ]
+     // [      iMz/alpha  iMz * K' * inv(J*iMu*J')/alpha ] [  0           I          ]
+     // [                                 -inv(J*iMu*J') ] [ -J*iMu -K/alpha*iMz  I  ]
+     //
+     // iMu - state Riesz map
+     // iMz - control Riesz map
+     // ==============================
     
      // L Factor
      /////////////////////
      temp_u->axpy(1.0,*input_u);
-     temp_z->axpy(1.0/controlRegParam_,*input_z);
+     temp_z->axpy(1.0/controlRegParam_,*input_z); // controlRegParam seems like a bug...
+                                                  // its not! temp_z is not used or modified
  
-     // apply -J
+     // apply -J   TODO: Apply inverse Riesz map to temp_v
      if(not approx)
        applyJacobian_1_leveled(*temp_v,*input_u,u,z,tol,level);
      else
        applyJacobian_1_leveled_approx(*temp_v,*input_u,u,z,tol,level);
 
-     // apply -K ???? (not yet)
+     // apply -K (not yet, implies (2,1) block of L is not applied)
  
      temp_v->scale(-1.0);
      temp_v->axpy(1.0,*input_v);
@@ -1322,24 +1335,28 @@ public:
  
        if(not approx) {
          applyInverseJacobian_1_leveled(*temp_schur, *temp_v, u,z,tol,level);
+         // TODO: Apply inverse Riesz map
          applyInverseAdjointJacobian_1_leveled(*output_v,*temp_schur,u,z,tol,level);
        }
        else {
          invertTimeStepJacobian(*temp_schur, *temp_v, u,z,tol,level);
+         // TODO: Apply inverse Riesz map
          invertAdjointTimeStepJacobian(*output_v,*temp_schur,u,z,tol,level);
        }
        output_v->scale(-1.0);
      }
 
-     output_z->set(*temp_z);
- 
      if(not approx)
        applyAdjointJacobian_1_leveled(*output_u,*output_v,u,z,tol,level); 
      else 
        applyAdjointJacobian_1_leveled_approx(*output_u,*output_v,u,z,tol,level); 
+
+     output_z->set(*temp_z); // above temp_z scaling by control parameter is included
+     // TODO apply inverse Riesz map
  
      output_u->scale(-1.0);
      output_u->axpy(1.0,*temp_u);
+     // TODO apply inverse Riesz map
 
      timer->stop("applyWathenInverse"+levelStr); 
    }
@@ -1369,6 +1386,8 @@ public:
                           int level=0,
                           bool approx=true)
    {
+     // TODO: Protect for use of Riesz maps
+
      using PartitionedVector = PartitionedVector<Real>;
 
      auto timer = Teuchos::TimeMonitor::getStackedTimer();
@@ -1675,7 +1694,7 @@ public:
        // compute the residual
        applyAugmentedKKT(*residual,x,u,z,tol,level);
  
-       if(i<numSweeps-1 or computeFinalResidual or recordResidualReductions_) {
+       if(i<numSweeps-1 || computeFinalResidual || recordResidualReductions_) {
          residual->scale(-1.0);
          residual->axpy(1.0,b);
        }

@@ -63,7 +63,6 @@
 #include "BelosStatusTestOutput.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -150,7 +149,7 @@ public:
    *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 300
    *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 1000
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-   *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "DGKS"
+   *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "ICGS"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
    *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8
@@ -332,8 +331,14 @@ private:
   static constexpr const char * impResScale_default_ = "Norm of Preconditioned Initial Residual";
   static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
   static constexpr const char * label_default_ = "Belos";
-  static constexpr const char * orthoType_default_ = "DGKS";
-  static constexpr std::ostream * outputStream_default_ = &std::cout;
+  static constexpr const char * orthoType_default_ = "ICGS";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
+    static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
   // Current solver values.
   MagnitudeType convtol_, orthoKappa_, achievedTol_;
@@ -631,24 +636,15 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   }
 
   // Check if the orthogonalization changed.
+  bool changedOrthoType = false;
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
-      params_->set("Orthogonalization", orthoType_);
-      // Create orthogonalization manager
-      Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-      Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
-      if (orthoType_=="DGKS" && orthoKappa_ > 0) {
-        paramsOrtho->set ("depTol", orthoKappa_ );
-      }
-
-      ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, "Belos", paramsOrtho);
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (ortho_.get () == nullptr, std::runtime_error, "BlockGmres: Failed to "
-         "create (Mat)OrthoManager of type \"" << orthoType_ << "\".");
+      changedOrthoType = true;
     }
   }
+  params_->set("Orthogonalization", orthoType_);
 
   // Check which orthogonalization constant to use.
   if (params->isParameter("Orthogonalization Constant")) {
@@ -664,10 +660,21 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     // Update parameter in our list.
     params_->set("Orthogonalization Constant",orthoKappa_);
     if (orthoType_=="DGKS") {
-      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
+      if (orthoKappa_ > 0 && ortho_ != Teuchos::null && !changedOrthoType) {
         Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
       }
     }
+  }
+
+  // Create orthogonalization manager if we need to.
+  if (ortho_ == Teuchos::null || changedOrthoType) {
+    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+    if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho->set ("depTol", orthoKappa_ );
+    }
+
+    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, label_, paramsOrtho);
   }
 
   // Check for convergence tolerance
@@ -743,7 +750,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
     }
   }
 
-
   if (params->isParameter("Show Maximum Residual Norm Only")) {
     showMaxResNormOnly_ = Teuchos::getParameter<bool>(*params,"Show Maximum Residual Norm Only");
 
@@ -755,17 +761,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
       expConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
-  // Create orthogonalization manager if we need to.
-  if (ortho_ == Teuchos::null) {
-    params_->set("Orthogonalization", orthoType_);
-    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
-    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
-    if (orthoType_=="DGKS" && orthoKappa_ > 0) {
-      paramsOrtho->set ("depTol", orthoKappa_ );
-    }
-
-    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, "Belos", paramsOrtho);
-  }
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
@@ -898,8 +893,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   if (!isSet_) {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
-
-  Teuchos::BLAS<int,ScalarType> blas;
 
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,BlockGmresSolMgrLinearProblemFailure,
     "Belos::BlockGmresSolMgr::solve(): Linear problem is not a valid object.");

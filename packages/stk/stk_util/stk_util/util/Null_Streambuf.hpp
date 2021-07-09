@@ -35,8 +35,8 @@
 #ifndef STK_UTIL_UTIL_null_streambuf_hpp
 #define STK_UTIL_UTIL_null_streambuf_hpp
 
-#include <iostream>
-#include <cstdio>  /* Defines EOF */
+#include <cstdio>    // for EOF
+#include <iostream>  // for streambuf
 
 //: Specialize the ANSI Standard C++ streambuf class
 //: that throws away everything given to it without

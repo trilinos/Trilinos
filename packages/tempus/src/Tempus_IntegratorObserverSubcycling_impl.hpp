@@ -24,7 +24,8 @@ void IntegratorObserverSubcycling<Scalar>::
 observeStartIntegrator(const Integrator<Scalar>& integrator){
 
   const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  out->setOutputToRootOnly(0);
+  Teuchos::OSTab ostab(out, 0, "ScreenOutput");
   *out << "\n    Begin Subcycling -------------------------------------------------------\n";
     // << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
     // << std::endl;
@@ -57,8 +58,8 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
   using Teuchos::RCP;
   auto cs = integrator.getSolutionHistory()->getCurrentState();
 
-  if ((cs->getOutputScreen() == true) or
-      (cs->getOutput() == true) or
+  if ((cs->getOutputScreen() == true) ||
+      (cs->getOutput() == true) ||
       (cs->getTime() == integrator.getTimeStepControl()->getFinalTime())) {
 
      const Scalar steppertime = integrator.getStepperTimer()->totalElapsedTime();
@@ -66,7 +67,8 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
      integrator.getStepperTimer()->reset();
 
      const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
-     Teuchos::OSTab ostab(out,0,"ScreenOutput");
+     out->setOutputToRootOnly(0);
+     Teuchos::OSTab ostab(out, 0, "ScreenOutput");
      *out<<std::scientific
         <<std::setw( 6)<<std::setprecision(3)<<cs->getIndex()
         <<std::setw(11)<<std::setprecision(3)<<cs->getTime()
@@ -86,7 +88,8 @@ void IntegratorObserverSubcycling<Scalar>::
 observeEndIntegrator(const Integrator<Scalar>& integrator){
 
   const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  out->setOutputToRootOnly(0);
+  Teuchos::OSTab ostab(out, 0, "ScreenOutput");
   *out << "    End Subcycling ---------------------------------------------------------\n\n";
 }
 

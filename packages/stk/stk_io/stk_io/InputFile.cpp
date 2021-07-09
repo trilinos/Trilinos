@@ -253,7 +253,7 @@ namespace stk {
     {
       ThrowErrorMsgIf (Teuchos::is_null(m_region),
 		       "Attempt to read global variables before restart initialized.");
-      m_region->field_describe(Ioss::Field::TRANSIENT, &names);
+      m_region->field_describe(Ioss::Field::REDUCTION, &names);
     }
 
     FieldNameToPartVector InputFile::get_var_names(Ioss::EntityType type, const stk::mesh::MetaData& meta)

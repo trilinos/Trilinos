@@ -30,7 +30,7 @@ set (BUILD_SHARED_LIBS OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Tpetra_INST_SERIAL ON CACHE BOOL "Set by default for CUDA PR testing")
 set (Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Set by default for CUDA PR testing")
-set (Panzer_ENABLE_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING "Set by default for CUDA PR testing")
+set (Panzer_FADTYPE "Sacado::Fad::DFad<RealType>" CACHE STRING "Set by default for CUDA PR testing")
 set (Kokkos_ENABLE_Debug_Bounds_Check ON CACHE BOOL "Set by default for CUDA PR testing")
 set (KOKKOS_ENABLE_DEBUG ON CACHE BOOL "Set by default for CUDA PR testing")
 
@@ -73,9 +73,17 @@ set (TPL_ENABLE_BoostLib OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_ENABLE_Matio OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (TPL_DLlib_LIBRARIES "-ldl" CACHE FILEPATH "Set by default for CUDA PR testing")
 
+# The compile times for two Panzer files went up to over 6 hours. This
+# turns off one feature that allows these in about 24 minutes. Please remove
+# when issue #7532 is resolved.
+set (Sacado_NEW_FAD_DESIGN_IS_DEFAULT OFF CACHE BOOL "Temporary fix for issue #7532" )
+
 # Disable some packages that can't be tested with this PR build
 set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL
   "Can't test Tacho with CUDA without RDC" FORCE)
+
+# Force some tests to run in serial in this PR build (usually to resolve random timeouts that can occur under contention)
+set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_SET_RUN_SERIAL ON CACHE BOOL "Run serial for CUDA PR testing")
 
 # Temporary options to clean up build
 set (Teko_ModALPreconditioner_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
@@ -109,5 +117,11 @@ set (PanzerAdaptersSTK_PoissonInterfaceExample_3d_MPI_4_DISABLE ON CACHE BOOL "T
 set (PanzerMiniEM_MiniEM-BlockPrec_Augmentation_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (PanzerMiniEM_MiniEM-BlockPrec_RefMaxwell_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (ROL_example_PDE-OPT_poisson-boltzmann_example_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
+# Disable a couple of unit tests in test KokkosCore_UnitTest_Cuda_MPI_1 that
+# are randomly failing in PR test iterations (#6799)
+set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
+  "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
+  CACHE STRING "Temporary disable for CUDA PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

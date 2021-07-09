@@ -71,10 +71,11 @@ dummyTestModelEvaluator(
   const bool supports_x_dot,
   const bool supports_x_dot_dot,
   const bool supports_extended_inargs,
-  const bool supports_extended_outargs
+  const bool supports_extended_outargs,
+  const bool supports_derivatives
   )
 {
-  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>(x_size, p_sizes, g_sizes, supports_x_dot, supports_x_dot_dot,supports_extended_inargs,supports_extended_outargs));
+  return Teuchos::rcp(new DummyTestModelEvaluator<Scalar>(x_size, p_sizes, g_sizes, supports_x_dot, supports_x_dot_dot,supports_extended_inargs,supports_extended_outargs,supports_derivatives));
 }
 
 
@@ -89,7 +90,8 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   const bool supports_x_dot,
   const bool supports_x_dot_dot,
   const bool supports_extended_inargs,
-  const bool supports_extended_outargs
+  const bool supports_extended_outargs,
+  const bool supports_derivatives
   )
 {
   
@@ -114,7 +116,7 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
 
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(p_space_.size());
+  inArgs.set_Np_Ng(p_space_.size(),g_sizes.size());
   inArgs.setSupports(MEB::IN_ARG_x);
   if (supports_x_dot)
     inArgs.setSupports(MEB::IN_ARG_x_dot);
@@ -138,6 +140,15 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
   // test the removal of support
   if (!supports_extended_outargs)
     outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar> >(false);
+  if (supports_derivatives)
+  {
+    outArgs.setHessianSupports(true);
+
+    MEB::DerivativeSupport derivativeSupport(MEB::DERIV_MV_BY_COL);
+
+    for (int j=0; j<g_space_.size(); ++j)
+      outArgs.setSupports(MEB::OUT_ARG_DgDx,j,derivativeSupport);
+  }
   prototypeOutArgs_ = outArgs;
 
   nominalValues_ = inArgs;
@@ -340,7 +351,8 @@ void DummyTestModelEvaluator<Scalar>::evalModelImpl(
     const bool supports_x_dot, \
     const bool supports_x_dot_dot,              \
     const bool supports_extended_inargs,        \
-    const bool supports_extended_outargs        \
+    const bool supports_extended_outargs,       \
+    const bool supports_derivatives             \
     ); \
 
 

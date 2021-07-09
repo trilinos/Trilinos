@@ -68,7 +68,7 @@ namespace Sacado {
 
       //! Default constructor
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       StaticStorage(const S & x, SACADO_ENABLE_VALUE_CTOR_DECL) :
         val_(x), sz_(0) {}
 
@@ -76,7 +76,7 @@ namespace Sacado {
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       StaticStorage(const int sz, const T & x, const DerivInit zero_out = InitDerivArray) :
         val_(x), sz_(sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
@@ -88,7 +88,7 @@ namespace Sacado {
       }
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       StaticStorage(const StaticStorage& x) :
         val_(x.val_), sz_(x.sz_) {
         //ss_array<T>::copy(x.dx_, dx_, sz_);
@@ -97,11 +97,11 @@ namespace Sacado {
       }
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~StaticStorage() {}
 
       //! Assignment
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       StaticStorage& operator=(const StaticStorage& x) {
         if (this != &x) {
           val_ = x.val_;
@@ -114,15 +114,15 @@ namespace Sacado {
       }
 
       //! Returns number of derivative components
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return sz_;}
 
       //! Returns array length
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int length() const { return Num; }
 
       //! Resize the derivative array to sz
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resize(int sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz > Num)
@@ -136,7 +136,7 @@ namespace Sacado {
        * This method doest not preserve any existing derivative components but
        * sets any that are added to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz > Num)
@@ -152,7 +152,7 @@ namespace Sacado {
        * This method preserves any existing derivative components and
        * sets any that are added to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void expand(int sz) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (sz > Num)
@@ -165,31 +165,31 @@ namespace Sacado {
 
 
       //! Zero out derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void zero() { ss_array<T>::zero(dx_, sz_); }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& val() const { return val_; }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& val() { return val_; }
 
       //! Returns derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T* dx() const { return dx_;}
 
       //! Returns derivative component \c i with bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T dx(int i) const { return sz_ ? dx_[i] : T(0.); }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& fastAccessDx(int i) { return dx_[i];}
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& fastAccessDx(int i) const { return dx_[i];}
 
     protected:

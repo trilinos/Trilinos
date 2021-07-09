@@ -32,12 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "stk_util/diag/Option.hpp"
+#include <iomanip>   // for operator<<, operator>>, resetiosflags, setw
+#include <iostream>  // for operator<<, basic_ostream, endl, basic_istream, basic_istream<>::__i...
 #include <sstream>
-#include <iomanip>
-#include <map>
+#include <map>       // for _Rb_tree_const_iterator, map<>::const_iterator
 
-#include <stk_util/diag/Option.hpp>
-#include <iostream>
 
 namespace stk {
 namespace diag {

@@ -68,15 +68,21 @@ template void PointValues2<SCALAR>::copyPointCoords<Kokkos::DynRankView<SCALAR2,
 template void PointValues2<double>::copyPointCoords<Kokkos::DynRankView<double> >(const Kokkos::DynRankView<double> & in_node_coords);
 
 POINT_VALUES_INSTANTIATION(panzer::Traits::RealType)
-POINT_VALUES_INSTANTIATION(panzer::Traits::FadType)
+// Disabled FAD support due to long build times on cuda (in debug mode
+// it takes multiple hours on some platforms). If we need
+// sensitivities wrt coordinates, we can reenable.
+// POINT_VALUES_INSTANTIATION(panzer::Traits::FadType)
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 POINT_VALUES_INSTANTIATION(panzer::Traits::HessianType)
 #endif
 
 // This is very complicated for reasons I don't fully understand...
 POINT_VALUES_INSTANTIATION2(panzer::Traits::RealType,panzer::Traits::RealType)
-POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::RealType)
-POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::FadType)
+// Disabled FAD support due to long build times on cuda (in debug mode
+// it takes multiple hours on some platforms). If we need
+// sensitivities wrt coordinates, we can reenable.
+// POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::RealType)
+// POINT_VALUES_INSTANTIATION2(panzer::Traits::FadType,panzer::Traits::FadType)
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 POINT_VALUES_INSTANTIATION2(panzer::Traits::HessianType,panzer::Traits::RealType)
 #endif

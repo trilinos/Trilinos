@@ -11,12 +11,11 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperForwardEuler.hpp"
 
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperForwardEuler;
 
 /** \brief Application Action for StepperForwardEuler.
@@ -24,24 +23,12 @@ template<class Scalar> class StepperForwardEuler;
  *  This class provides a means to apply various actions with the ForwardEuler time step.
  *  The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
- *  the application to just observe this data (i.e., use but not change the
- *  data) to change any of it (USER BEWARE!).
+ *  the application to just observe this data, i.e., use but not change
+ *  any of it (USER BEWARE!).
  *
- *  Below is the ForwardEuler algorithm and includes the locations where the
- *  application can take actions (in italicized).
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Forward Euler with the locations of the application actions indicated.}
- *  \begin{algorithmic}[1]
- *    \State Start with $x_n$, $\Delta t_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Form $f(x_{n},t_{n})$
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *    \State Form $x_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations for these AppAction calls
+ *  (StepperForwardEulerAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperForwardEuler.
  */
 template<class Scalar>
 class StepperForwardEulerAppAction

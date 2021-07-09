@@ -228,17 +228,15 @@ INCLUDE(PrintVar)
 #
 #   ``RUN_SERIAL``
 #
-#     If specified then no other tests will be allowed to run while this test
-#     is running.  This is useful for devices (like CUDA cards) that require
-#     exclusive access for processes/threads.  This just sets the CTest test
-#     property ``RUN_SERIAL`` using the built-in CMake function
-#     ``SET_TESTS_PROPERTIES()``.
+#     If specified, then no other tests will be allowed to run while this test
+#     is running. See the ``RUN_SERIAL`` argument in the fucntion
+#     `TRIBITS_ADD_TEST()`_ for more details.
 #
 #   ``COMM [serial] [mpi]``
 #
 #     If specified, selects if the test will be added in serial and/or MPI
-#     mode.  See the ``COMM`` argument in the script
-#     `TRIBITS_ADD_TEST()`_ for more details.
+#     mode.  See the ``COMM`` argument in the function `TRIBITS_ADD_TEST()`_
+#     for more details.
 #
 #   ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``
 #
@@ -319,6 +317,7 @@ INCLUDE(PrintVar)
 #     (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
 # .. _TEST_<idx> EXEC/CMND Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
+#
 #
 # **TEST_<idx> EXEC/CMND Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
@@ -408,6 +407,10 @@ INCLUDE(PrintVar)
 #     If specified, then ``<numProcs>`` is the number of processors used for
 #     MPI executables.  If not specified, this will default to
 #     ``<overallNumProcs>`` from ``OVERALL_NUM_MPI_PROCS <overallNumProcs>``.
+#     If that is not specified, then the value is taken from
+#     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds
+#     (i.e. ``TPL_ENABLE_MPI=OFF``), passing in a value ``<numMpiProcs>`` >
+#     ``1`` will cause the entire test to not be added.
 #
 #   ``NUM_TOTAL_CORES_USED <numTotalCoresUsed>``
 #
@@ -522,11 +525,16 @@ INCLUDE(PrintVar)
 # below their ``TEST_<idx>`` argument and before the next test block (see
 # `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
-# **WARNING:** The current implementation limits the number of ``TEST_<idx>``
-# cases to just 20 (i.e. ``<idx>=0...19``).  And if more test cases are added
-# (e.g. ``TEST_20``), the current implementation can't detect that case and
-# the resulting behavior is undefined.  This restriction will be removed in a
-# future version of TriBITS.
+# **NOTE:** The current implementation limits the number of ``TEST_<idx>``
+# blocks to just 20 (i.e. for ``<idx>=0...19``).  If more test blocks are
+# added (e.g. ``TEST_20``), then an fatal error message will be printed and
+# processing will end.  To increase this max in a local scope, call::
+#
+#   set(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS <larger-num>)
+#
+# where ``<larger-num> > 20``.  This can be set in any scope in any
+# ``CMakeLists.txt`` file or inside of a function and it will impact all of
+# the future calls to ``TRIBITS_ADD_ADVANCED_TEST()`` in that scope.
 #
 # .. _TEST_<idx> COPY_FILES_TO_TEST_DIR Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 #
@@ -787,7 +795,7 @@ INCLUDE(PrintVar)
 # ``${PROJECT_NAME}_TRIBITS_DIR`` (pointing to the TriBITS location).  For example,
 # a valid project can be a simple as::
 #
-#   CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
+#   CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0)
 #   SET(PROJECT_NAME TAATDriver)
 #   PROJECT(${PROJECT_NAME} NONE)
 #   SET(${PROJECT_NAME}_TRACE_ADD_TEST TRUE)
@@ -836,7 +844,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   # commands we will have
   #
 
-  # Allow for a maximum of 20 (0 through 19) test commands
+  # Set maximum number of TEST_<idx> blocks
+  TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX_COMPUTE()
   SET(MAX_NUM_TEST_CMND_IDX ${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
 
   SET(TEST_IDX_LIST "")
@@ -856,6 +865,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      ${ARGN}
      )
+
+  TRIBITS_ADD_ADVANCED_TEST_CHECK_EXCEED_MAX_NUM_TEST_BLOCKS()
 
   IF(PARSE_ADDED_TEST_NAME_OUT)
     SET(${PARSE_ADDED_TEST_NAME_OUT} "" PARENT_SCOPE )
@@ -888,6 +899,11 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     RETURN()
   ENDIF()
 
+  TRIBITS_ADD_TEST_PROCESS_SKIP_CTEST_ADD_TEST(ADD_THE_TEST)
+  IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
+
   SET(ADD_THE_TEST FALSE)
   TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
   IF (NOT ADD_THE_TEST)
@@ -904,6 +920,9 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   IF (DISABLE_THIS_TEST)
     RETURN()
   ENDIF()
+
+  TRIBITS_SET_RUN_SERIAL(${TEST_NAME} "${PARSE_RUN_SERIAL}"
+    SET_RUN_SERIAL)
 
   TRIBITS_SET_DISABLED_AND_MSG(${TEST_NAME} "${PARSE_DISABLED}"
     SET_DISABLED_AND_MSG)  # Adds the test but sets DISABLED test prop!
@@ -1122,7 +1141,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
       LIST( LENGTH PARSE_CMND PARSE_CMND_LEN )
       IF (NOT PARSE_CMND_LEN EQUAL 1)
-        MESSAGE(SEND_ERROR "Error, TEST_${TEST_CMND_IDX} CMND = '${PARSE_CMND}'"
+        MESSAGE_WRAPPER(SEND_ERROR "Error, TEST_${TEST_CMND_IDX} CMND = '${PARSE_CMND}'"
           " must be a single command.  To add arguments use ARGS <arg1> <arg2> ...." )
       ENDIF()
 
@@ -1369,8 +1388,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     IF(NOT TRIBITS_ADD_TEST_ADD_TEST_UNITTEST)
       # Tell CTest to run our script for this test.  Pass the test-type
       # configuration name to the script in the TEST_CONFIG variable.
-      ADD_TEST( ${TEST_NAME}
-        ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
+      ADD_TEST( NAME ${TEST_NAME}
+        COMMAND ${CMAKE_COMMAND} "-DTEST_CONFIG=\${CTEST_CONFIGURATION_TYPE}"
         -P "${TEST_SCRIPT_FILE}")
     ENDIF()
 
@@ -1381,7 +1400,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     LIST(REMOVE_DUPLICATES TEST_EXE_LIST)
     TRIBITS_SET_TEST_PROPERTY(${TEST_NAME} PROPERTY REQUIRED_FILES ${TEST_EXE_LIST})
 
-    IF(PARSE_RUN_SERIAL)
+    IF(SET_RUN_SERIAL)
       TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES RUN_SERIAL ON)
     ENDIF()
 
@@ -1393,6 +1412,9 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
       TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
         PROCESSORS "${MAX_NUM_PROCESSORS_USED}")
     ENDIF()
+
+    TRIBITS_PRIVATE_ADD_TEST_ADD_ENVIRONMENT_AND_RESOURCE(${TEST_NAME}
+      ${MAX_NUM_PROCESSORS_USED})
 
     IF (SET_DISABLED_AND_MSG)
       TRIBITS_SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES DISABLED ON)
@@ -1423,7 +1445,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
     TRIBITS_PRIVATE_ADD_TEST_PRINT_ADDED(${TEST_NAME}
       "${PARSE_CATEGORIES}"  "${MAX_NUM_MPI_PROCS_USED_TO_PRINT}"
       "${MAX_NUM_PROCESSORS_USED}"  "${TIMEOUT_USED}"
-      "${SET_DISABLED_AND_MSG}")
+      "${SET_RUN_SERIAL}" "${SET_DISABLED_AND_MSG}")
 
     #
     # F.2) Write the cmake -P script
@@ -1468,6 +1490,10 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   
     IF (TRIBITS_ADD_ADVANCED_TEST_UNITTEST)
       GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS ${NUM_CMNDS})
+      # NOTE: This var only gets set if the advanced test gets added after
+      # applying all of the various logic.  Therefore, unit tests should only
+      # check this variable for being empty to determine that the test was not
+      # added.
     ENDIF()
   
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

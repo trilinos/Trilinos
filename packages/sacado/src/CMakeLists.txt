@@ -40,12 +40,14 @@ SET(HEADERS ${HEADERS}
   new_design/Sacado_Fad_Exp_SFad.hpp
   new_design/Sacado_Fad_Exp_ViewFad.hpp
   new_design/Sacado_Fad_Exp_DVFad.hpp
+  new_design/Sacado_Fad_Exp_Atomic.hpp
   )
 
 # FAD
 SET(HEADERS ${HEADERS}
   Sacado_Fad_GeneralFad.hpp
   Sacado_Fad_GeneralFadExpr.hpp
+  Sacado_Fad_GeneralFadTestingHelpers.hpp
   Sacado_Fad_ExpressionTraits.hpp
   Sacado_Fad_ExpressionFwd.hpp
   Sacado_Fad_Expression.hpp

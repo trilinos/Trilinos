@@ -231,6 +231,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string matrixFile;                             clp.setOption("matrix",                &matrixFile,        "matrix data file");
   std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
   std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
+  std::string coordMapFile;                           clp.setOption("coordsmap",             &coordMapFile,      "coordinates map data file");
   std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
   std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");
   int         numRebuilds       = 0;                  clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
@@ -355,7 +356,7 @@ MueLu::MueLu_AMGX_initialize_plugins();
   RCP<MultiVector> X, B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,materialFile,map,A,coordinates,nullspace,material,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
+  MatrixLoad<SC,LO,GO,NO>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,coordMapFile,nullFile,materialFile,map,A,coordinates,nullspace,material,X,B,numVectors,galeriParameters,xpetraParameters,galeriStream);
   comm->barrier();
   tm = Teuchos::null;
 

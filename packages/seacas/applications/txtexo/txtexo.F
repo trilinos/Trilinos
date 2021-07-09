@@ -1,35 +1,8 @@
-C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
 C=======================================================================
       PROGRAM TXTEXO
@@ -39,11 +12,8 @@ C=======================================================================
 cDEC$ OPTIMIZE:0
 #endif
 C     --*** TXTEXO *** (TXTEXO) TEXT to EXODUS translator
-C     --   Written by Amy Gilkey - revised 03/02/88
-C     --
 C     --TXTEXO reads a text file and writes an EXODUS database file.
-C     --
-C     --Expects the input text file on unit 20, the output database on unit 11.
+C     --Expects the input text file on unit 20, the output database on unit 12.
 
       include 'exodusII.inc'
       INCLUDE 'argparse.inc'
@@ -67,8 +37,8 @@ C     --A - the dynamic memory base array
 C     Program Information
 C.
       QAINFO(1) = 'txtexo                          '
-      QAINFO(2) = '2018/08/14                      '
-      QAINFO(3) = ' 2.01                           '
+      QAINFO(2) = '2021/01/28                      '
+      QAINFO(3) = ' 2.02                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
@@ -85,6 +55,9 @@ C.
       IF (NERR .GT. 0) GOTO 130
 
 C     --Open the database and write the initial variables
+      NTXT = 20
+      NDB = 12
+
       NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
@@ -95,9 +68,6 @@ C     --Open the database and write the initial variables
         CALL PRTERR ('FATAL', 'Syntax is: "txtexo text_file db_file"')
         GOTO 140
       end if
-
-      NTXT = 20
-      NDB = 12
 
       CALL get_argument(1,FILNAM, LFIL)
       open(unit=ntxt, file=filnam(:lfil), status='old', iostat=ierr)
@@ -342,7 +312,7 @@ C     --Read the database time steps
  140  CONTINUE
 
       CLOSE (NTXT, IOSTAT=IDUM)
-      call exclos(ndb, ierr)
+      if (ndb .ne. 12 .and. ndb .gt. 0) call exclos(ndb, ierr)
 
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))

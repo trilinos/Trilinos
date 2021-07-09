@@ -2,39 +2,32 @@ include_tribits_build()
 
 bob_config_header("${CMAKE_CURRENT_BINARY_DIR}/Compadre_Config.h")
 
-set(COMPADRE_HEADERS
-  "${CMAKE_CURRENT_BINARY_DIR}/Compadre_Config.h"
-  Compadre_Functors.hpp
-  Compadre_GMLS.hpp
-  Compadre_GMLS_ApplyTargetEvaluations.hpp
-  Compadre_GMLS_Basis.hpp
-  Compadre_GMLS_Targets.hpp
-  Compadre_KokkosParser.hpp
-  Compadre_LinearAlgebra_Declarations.hpp
-  Compadre_LinearAlgebra_Definitions.hpp
-  Compadre_Misc.hpp
-  Compadre_Operators.hpp
-  Compadre_ParallelManager.hpp
-  Compadre_PointCloudSearch.hpp
-  Compadre_Quadrature.hpp
-  Compadre_Typedefs.hpp
-  Compadre_Utilities.hpp
-  Compadre_Evaluator.hpp
-  USER_StandardTargetFunctionals.hpp
-  USER_ManifoldTargetFunctionals.hpp
-  basis/DivergenceFree3D.hpp
-  basis/CreateConstraints.hpp
-  )
+MACRO(COMPADRE_APPEND_GLOB VAR)
+  FILE(GLOB LOCAL_TMP_VAR ${ARGN})
+  LIST(APPEND ${VAR} ${LOCAL_TMP_VAR})
+ENDMACRO()
 
-
-set(COMPADRE_SOURCES
-  Compadre_GMLS.cpp
-  Compadre_KokkosParser.cpp
-  Compadre_LinearAlgebra.cpp
+set(COMPADRE_HEADERS "")
+set(COMPADRE_SOURCES "")
+set(COMPADRE_HEADERS ${COMPADRE_HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/Compadre_Config.h
   )
+compadre_append_glob(COMPADRE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+list(REMOVE_ITEM COMPADRE_HEADERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/Compadre_Manifold_Functions.hpp
+  )
+compadre_append_glob(COMPADRE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/basis/*.hpp)
+compadre_append_glob(COMPADRE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/constraints/*.hpp)
+compadre_append_glob(COMPADRE_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/tpl/*.hpp)
+compadre_append_glob(COMPADRE_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 add_library(compadre ${COMPADRE_SOURCES})
 bob_library_includes(compadre)
+
+# allows us to use flat directory includes when building, since that will be the file structure once installed
+target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/basis>)
+target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/constraints>)
+target_include_directories(compadre PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tpl>)
 
 # openmp if needed
 if (Compadre_USE_OPENMP)
@@ -62,15 +55,6 @@ elseif (KOKKOSKERNELS_BUILT_FOR_USER) # Kokkos-Kernels built for user by this pr
   target_link_libraries(compadre PUBLIC Kokkos::kokkoskernels)
 endif()
 
-# link to CUDA
-if (Compadre_USE_CUDA AND NOT(KOKKOS_IN_TRILINOS))
-  if (TARGET Kokkos::CUDA)
-    target_link_libraries(compadre PUBLIC "cusolver") # comes from Kokkos::CUBLAS
-  else()
-    MESSAGE(FATAL_ERROR "Compadre_USE_CUDA is ON, but CUBLAS not found by KokkosKernels.")
-  endif()
-endif()
-
 # link to MPI
 if (Compadre_USE_MPI)
   if (MPI_CXX_INCLUDE_PATH)
@@ -85,6 +69,9 @@ bob_export_target(compadre)
 
 set(COMPADRE_TPL
     tpl/nanoflann.hpp
+    tpl/KokkosBatched_SolveUTV_Decl_Compadre.hpp
+    tpl/KokkosBatched_SolveUTV_TeamVector_Impl_Compadre.hpp
+    tpl/KokkosBatched_SolveUTV_TeamVector_Internal_Compadre.hpp
 )
 
 install(FILES ${COMPADRE_TPL} DESTINATION include/tpl)

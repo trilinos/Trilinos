@@ -169,7 +169,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
    //                           "ScatterDirichletResidual_Epetra<Hessian> is not yet implemented"); // just in case
 
-  Kokkos::View<const int*, Kokkos::LayoutRight, PHX::Device> cLIDs, rLIDs;
+  PHX::View<const int*, Kokkos::LayoutRight, PHX::Device> cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;

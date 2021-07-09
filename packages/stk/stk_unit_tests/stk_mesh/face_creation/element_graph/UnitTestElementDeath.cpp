@@ -25,16 +25,8 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector, etc
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 
-
-
-
-
-
-
 namespace
 {
-
-
 
 void test_active_part_membership(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& skin_faces_of_elem2, stk::mesh::Part& active)
 {
@@ -138,7 +130,7 @@ TEST(ElementDeath, replicate_random_death_test)
         stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
         stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
 
-        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts));
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, elements_to_kill, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::Selector sel = death_1_part;
         stk::mesh::EntityVector faces;
@@ -158,7 +150,7 @@ TEST(ElementDeath, replicate_random_death_test)
         }
 
         ElemGraphTestUtils::deactivate_elements(elements_to_kill, bulkData,  active);
-        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts));
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, elements_to_kill, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
         ASSERT_EQ(20u, mesh_counts[stk::topology::FACE_RANK]);
@@ -234,7 +226,7 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
             stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
             stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
@@ -280,7 +272,7 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
             stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
             stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
             EXPECT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
@@ -376,7 +368,7 @@ std::cerr<<os.str();
             stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
             stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElemGraphTestUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
@@ -421,7 +413,7 @@ std::cerr<<os.str();
             stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
             stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 
             EXPECT_FALSE(bulkData.is_valid(face_between_elem2_and_elem3));
         }

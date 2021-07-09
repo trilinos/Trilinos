@@ -32,9 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/FormatTime.hpp>  // for formatTime, etc
-#include <gtest/gtest.h>
-#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"
+#include "stk_util/environment/FormatTime.hpp"  // for formatTime, TIMEFORMAT_HMS, TIMEFORMAT_MI...
+#include <string>                               // for operator==, string
 
 
 

@@ -49,6 +49,8 @@
 #ifndef Intrepid2_ViewIterator_h
 #define Intrepid2_ViewIterator_h
 
+#include "Intrepid2_Utils.hpp"
+
 namespace Intrepid2
 {
   /** \class  Intrepid2::ViewIterator
@@ -84,12 +86,12 @@ namespace Intrepid2
     :
     view_(view)
     {
-      for (unsigned d=0; d<view.rank(); d++)
+      for (unsigned d=0; d<getFunctorRank(view); d++)
       {
         dims_[d] = view.extent_int(d);
         index_[d] = 0;
       }
-      for (unsigned d=view.rank(); d<7; d++)
+      for (unsigned d=getFunctorRank(view); d<7; d++)
       {
         dims_[d] = 1;
         index_[d] = 0;
@@ -107,7 +109,7 @@ namespace Intrepid2
     //! Setter
     //! \param [in] value - the value to set at the current location
     KOKKOS_INLINE_FUNCTION
-    void set(ScalarType &value)
+    void set(const ScalarType &value)
     {
       view_.access(index_[0],index_[1],index_[2],index_[3],index_[4],index_[5],index_[6]) = value;
     }
@@ -117,7 +119,7 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     int nextIncrementRank()
     {
-      const auto rank = view_.rank();
+      const int rank = getFunctorRank(view_);
       for (int r=rank-1; r>=0; r--)
       {
         if (index_[r]+1 < dims_[r]) // can increment without going out of bounds in this dimension
@@ -134,7 +136,7 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     int increment()
     {
-      const auto rank = view_.rank();
+      const int rank = getFunctorRank(view_);
       for (int r=rank-1; r>=0; r--)
       {
         if (index_[r]+1 < dims_[r]) // can increment without going out of bounds in this dimension
@@ -195,6 +197,22 @@ namespace Intrepid2
       return index_1D;
     }
     
+    //! The enumeration index refers to a 1D enumeration of the entries in the View, with dimensions in order of their significance (dimension 0 is the slowest-moving).
+    //! \param [in] enumerationIndex - the index to which the location should be set
+    KOKKOS_INLINE_FUNCTION
+    void setEnumerationIndex(const int &enumerationIndex)
+    {
+      Kokkos::Array<int,7> location;
+      int remainder = enumerationIndex;
+      for (int d=6; d>=0; d--)
+      {
+        location[d] = remainder % dims_[d];
+        remainder  /= dims_[d];
+      }
+      
+      setLocation(location);
+    }
+    
     //! The index of the current location in the specified dimension.  (Indices in dimensions beyond the rank of the View, but less than 7, are defined to be 0.)
     //! \param [in] dimension - the dimension for which the current index should be returned.
     //! \return index in the specified dimension.
@@ -216,7 +234,7 @@ namespace Intrepid2
     //! Resets the location to index 0 in each dimension, starting from the specified dimension.
     //! \param [in] from_rank_number - the first dimension in which to set the index to 0.
     KOKKOS_INLINE_FUNCTION
-    void reset(int from_rank_number=0)
+    void reset(unsigned from_rank_number=0)
     {
       for (unsigned d=from_rank_number; d<view_.rank(); d++)
       {

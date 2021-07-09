@@ -37,7 +37,7 @@
 
 #include <execinfo.h>
 #include <cxxabi.h>
-#include <stk_util/stk_config.h>
+#include "stk_util/stk_config.h"
 #include <string>
 #include <iostream>
 

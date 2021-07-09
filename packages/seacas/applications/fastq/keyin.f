@@ -1,56 +1,9 @@
-C    Copyright(C) 2014-2017 National Technology & Engineering Solutions of
-C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
 
-C $Id: keyin.f,v 1.2 1998/07/14 18:19:15 gdsjaar Exp $
-C $Log: keyin.f,v $
-C Revision 1.2  1998/07/14 18:19:15  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:10:48  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:10:46  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]KEYIN.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE KEYIN (MP, ML, MS, MR, MSC, MA, MCOM, ICOM, JCOM, CIN,
      &   RIN, IIN, KIN, IDUMP, N, IPOINT, COOR, IPBOUN, ILINE, LTYPE,
      &   NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE,
@@ -63,18 +16,18 @@ C
      &   IRGFLG, ISCHM, SCHEME, NUMBER, DEFSCH, DEFSIZ, TITLE, OPTIM,
      &   THREE, EIGHT, NINE, NOROOM, VAXVMS, WROTE, TIME1, VERSN, BATCH)
 C***********************************************************************
-C
+
 C  SUBROUTINE KEYIN = INPUTS MESH DEFINITIONS FROM THE KEYBOARD
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     FASTQ = A PROGRAM TO QUICKLY GENERATE QUADRILATERAL MESHES
-C
+
 C***********************************************************************
-C
+
       PARAMETER (NIN = 80)
-C
+
       DIMENSION IPOINT(MP), COOR(2, MP), IPBOUN(MP)
       DIMENSION ILINE(ML), LTYPE(ML), NINT(ML), FACTOR(ML), LCON(3, ML)
       DIMENSION ILBOUN(ML), ISBOUN(ML)
@@ -97,38 +50,38 @@ C
       DIMENSION NUMBER(MSC)
       DIMENSION N(29), NOLD(29), III(1)
       DIMENSION KIN(MCOM), IIN(MCOM), RIN(MCOM), JIN(NIN)
-C
+
       CHARACTER*72 SCHEME, DEFSCH, CIN(MCOM), VERSN*9
       CHARACTER*72 TITLE, HOLD, NUMBER*80
-C
+
       LOGICAL IANS, OPTIM, NOROOM, ADDOLD, MERGE, NEWNUM, DOLINK, ADDLNK
       LOGICAL THREE, EIGHT, NINE, VAXVMS, WROTE, SIDEOK, BATCH
-C
+
       IZ = 0
       MERGE = .FALSE.
       DOLINK = .TRUE.
       NOROOM = .FALSE.
       ADDLNK = .FALSE.
-C
+
       DO 100 I = 1, 29
          NOLD(I) = N(I)
   100 CONTINUE
-C
+
   110 CONTINUE
       IF (ICOM .GT. JCOM) THEN
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CALL FREFLD (IZ, IZ, 'ENTER KEYIN OPTION: ', MCOM, IOSTAT,
      &      JCOM, KIN, CIN, IIN, RIN)
          ICOM = 1
       END IF
-C
+
 C  INPUT A POINT INTO THE DATABASE
-C
+
       IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR. (CIN(ICOM)(1:1) .EQ. 'p')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('ENTER POINT DATA IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ POINT NO., X, Y ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('ENTER POINT DATA IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ POINT NO., X, Y ]')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   120    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -144,33 +97,33 @@ C
             CALL INPOIN(MP, N(1), N(18), JJ, RIN(2), RIN(3), NHOLDP,
      &         IHOLDP, IPOINT, COOR, IPBOUN, LINKP, MERGE, NOROOM)
             IF (NOROOM) GO TO 400
-C
+
 C  REPLACE THE FLAGS OF A REDEFINED POINT
-C
+
             IF (IPNTR .GT. 0) THEN
                CALL LTSORT(MP, LINKP, JJ, JPNTR, ADDLNK)
                IPBOUN(JPNTR) = IPBOUN(IPNTR)
             END IF
             GO TO 120
          END IF
-C
+
 C  ENTER A LINE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'L') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'l')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('THE FOLLOWING LINE TYPES ARE AVAILABLE:')
-            CALL MESAGE ('     S*TRAIGHT = STRAIGHT LINE')
-            CALL MESAGE ('     CI*RCULAR = CIRCULAR CCW ARC ABOUT A '//
+            CALL MESSAGE(' ')
+            CALL MESSAGE('THE FOLLOWING LINE TYPES ARE AVAILABLE:')
+            CALL MESSAGE('     S*TRAIGHT = STRAIGHT LINE')
+            CALL MESSAGE('     CI*RCULAR = CIRCULAR CCW ARC ABOUT A '//
      &         'CENTER')
-            CALL MESAGE ('     3*CIRCULAR = CIRCULAR ARC WITH 3RD '//
+            CALL MESSAGE('     3*CIRCULAR = CIRCULAR ARC WITH 3RD '//
      &         'ARC POINT')
-            CALL MESAGE ('     R*CIRCULAR = CIRCULAR ARC WITH RADIUS')
-            CALL MESAGE ('     E*LIPSE    = CCW ELIPSE ABOUT A CENTER')
-            CALL MESAGE ('     CO*RNER    = 2 LINE SEGMENTS JOINED')
-            CALL MESAGE ('     P*ARABOLA  = PARABOLIC SHAPED LINE')
+            CALL MESSAGE('     R*CIRCULAR = CIRCULAR ARC WITH RADIUS')
+            CALL MESSAGE('     E*LIPSE    = CCW ELIPSE ABOUT A CENTER')
+            CALL MESSAGE('     CO*RNER    = 2 LINE SEGMENTS JOINED')
+            CALL MESSAGE('     P*ARABOLA  = PARABOLIC SHAPED LINE')
             CALL FREFLD (IZ, IZ, 'WHICH LINE TYPE WOULD YOU LIKE TO '//
      &         'ENTER:', MCOM, IOSTAT, JCOM, KIN, CIN, IIN, RIN)
             ICOM = 1
@@ -178,82 +131,82 @@ C
          IF ((CIN(ICOM)(1:1) .EQ. 'S') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 's')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('ENTER STRAIGHT LINE DATA IN THE FOLLOWING '//
+            CALL MESSAGE('ENTER STRAIGHT LINE DATA IN THE FOLLOWING '//
      &         'FORMAT:')
-            CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, NO. '//
+            CALL MESSAGE('[ LINE NO., POINT 1, POINT 2, NO. '//
      &         'INTERVALS, FACTOR ]')
             IT = 1
          ELSE IF ((CIN(ICOM)(1:2) .EQ. 'CI') .OR.
      &      (CIN(ICOM)(1:2) .EQ. 'ci')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('NOTE: IF A CW ARC IS DESIRED, ENTER')
-            CALL MESAGE ('      THE CENTER POINT AS NEGATIVE')
-            CALL MESAGE ('ENTER CIRCULAR ARC LINE DATA IN THE '//
+            CALL MESSAGE('NOTE: IF A CW ARC IS DESIRED, ENTER')
+            CALL MESSAGE('      THE CENTER POINT AS NEGATIVE')
+            CALL MESSAGE('ENTER CIRCULAR ARC LINE DATA IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, CENTER, NO. '//
+            CALL MESSAGE('[ LINE NO., POINT 1, POINT 2, CENTER, NO. '//
      &         'INTERVALS, FACTOR ]')
             IT = 3
          ELSE IF (CIN(ICOM)(1:1) .EQ. '3') THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('ENTER THIRD POINT ARC DATA IN THE '//
+            CALL MESSAGE('ENTER THIRD POINT ARC DATA IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
+            CALL MESSAGE('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
      &         'INTERVALS, FACTOR ]')
             IT = 4
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'R') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'r')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('NOTE: THE RADIUS IS ASSUMED TO BE CONTAINED')
-            CALL MESAGE ('      IN THE X COORDINATE OF POINT 3. THE')
-            CALL MESAGE ('      ARC CENTER IS ASSUMED TO THE LEFT OF A')
-            CALL MESAGE ('      LINE FROM POINT 1 TO POINT 2 (OPPOSITE')
-            CALL MESAGE ('      IF POINT 3 IS ENTERED NEGATIVE).')
-            CALL MESAGE ('ENTER CIRCULAR ARC W/RADIUS DATA IN THE '//
+            CALL MESSAGE('NOTE: THE RADIUS IS ASSUMED TO BE CONTAINED')
+            CALL MESSAGE('      IN THE X COORDINATE OF POINT 3. THE')
+            CALL MESSAGE('      ARC CENTER IS ASSUMED TO THE LEFT OF A')
+            CALL MESSAGE('      LINE FROM POINT 1 TO POINT 2 (OPPOSITE')
+            CALL MESSAGE('      IF POINT 3 IS ENTERED NEGATIVE).')
+            CALL MESSAGE('ENTER CIRCULAR ARC W/RADIUS DATA IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, CENTER, NO. '//
+            CALL MESSAGE('[ LINE NO., POINT 1, POINT 2, CENTER, NO. '//
      &         'INTERVALS, FACTOR ]')
             IT = 7
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'E') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'e')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('NOTE: THE TWO POINTS ON THE ELIPSE CANNOT'//
+            CALL MESSAGE('NOTE: THE TWO POINTS ON THE ELIPSE CANNOT'//
      &         ' BE COLINEAR WITH THE')
-            CALL MESAGE ('      CENTER POINT IN THIS DEFINITION.')
-            CALL MESAGE ('NOTE: IF A CW ARC IS DESIRED, ENTER')
-            CALL MESAGE ('      THE CENTER POINT AS NEGATIVE.')
-            CALL MESAGE ('ENTER ELIPSE ABOUT A CENTER DATA IN THE '//
+            CALL MESSAGE('      CENTER POINT IN THIS DEFINITION.')
+            CALL MESSAGE('NOTE: IF A CW ARC IS DESIRED, ENTER')
+            CALL MESSAGE('      THE CENTER POINT AS NEGATIVE.')
+            CALL MESSAGE('ENTER ELIPSE ABOUT A CENTER DATA IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
+            CALL MESSAGE('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
      &         'INTERVALS, FACTOR ]')
             IT = 7
          ELSE IF ((CIN(ICOM)(1:2) .EQ. 'CO') .OR.
      &      (CIN(ICOM)(1:2) .EQ. 'co')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('NOTE: A CORNER LINE CONTAINS TO STRAIGHT '//
+            CALL MESSAGE('NOTE: A CORNER LINE CONTAINS TO STRAIGHT '//
      &         'LINE')
-            CALL MESAGE ('      SEGMENTS JOINED AT POINT 3')
-            CALL MESAGE ('ENTER CORNER LINE DATA IN THE FOLLOWING '//
+            CALL MESSAGE('      SEGMENTS JOINED AT POINT 3')
+            CALL MESSAGE('ENTER CORNER LINE DATA IN THE FOLLOWING '//
      &         'FORMAT:')
-            CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
+            CALL MESSAGE('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
      &         'INTERVALS, FACTOR ]')
             IT = 2
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('NOTE: POINT 3 IS THE TIP OF THE PARABOLA, '//
+            CALL MESSAGE('NOTE: POINT 3 IS THE TIP OF THE PARABOLA, '//
      &         'AND')
-            CALL MESAGE ('      POINT 1 AND POINT 2 MUST BE EQUAL ARC')
-            CALL MESAGE ('      LENGTHS AWAY (ISOCELES TRIANGLE)')
-            CALL MESAGE ('ENTER PARABOLIC LINE DATA IN THE FOLLOWING '//
+            CALL MESSAGE('      POINT 1 AND POINT 2 MUST BE EQUAL ARC')
+            CALL MESSAGE('      LENGTHS AWAY (ISOCELES TRIANGLE)')
+            CALL MESSAGE('ENTER PARABOLIC LINE DATA IN THE FOLLOWING '//
      &         'FORMAT:')
-            CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
+            CALL MESSAGE('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
      &         'INTERVALS, FACTOR ]')
             IT = 5
          ELSE
             ICOM = ICOM + 1
             GO TO 110
          END IF
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   130    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -283,9 +236,9 @@ C
      &            NOROOM)
             END IF
             IF (NOROOM) GO TO 400
-C
+
 C  LINK UP THE OLD FLAGS TO THE NEW LINE
-C
+
             IF (IPNTR .GT. 0) THEN
                ADDLNK = .FALSE.
                CALL LTSORT(ML, LINKL, JJ, JPNTR, ADDLNK)
@@ -294,17 +247,17 @@ C
             END IF
             GO TO 130
          END IF
-C
+
 C  ENTER A REGION INTERVAL SIZE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'SIZ') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'siz')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('NOTE: ENTER A DEFAULT SIZE BY SPECIFYING')
-         CALL MESAGE ('      A SIZE WITH NO REGIONS.')
-         CALL MESAGE ('ENTER REGION SIZE DATA IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ SIZE, REGION 1, REGION 2, ..., REGION N ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('NOTE: ENTER A DEFAULT SIZE BY SPECIFYING')
+         CALL MESSAGE('      A SIZE WITH NO REGIONS.')
+         CALL MESSAGE('ENTER REGION SIZE DATA IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ SIZE, REGION 1, REGION 2, ..., REGION N ]')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   140    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -325,15 +278,15 @@ C
             END IF
             GO TO 140
          END IF
-C
+
 C  ENTER A SIDE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SI') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'si')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('ENTER SIDE DATA IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ SIDE NO., LINE 1, LINE 2, ..., LINE N ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('ENTER SIDE DATA IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ SIDE NO., LINE 1, LINE 2, ..., LINE N ]')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   160    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -353,15 +306,15 @@ C
             IF (NOROOM) GO TO 400
             GO TO 160
          END IF
-C
+
 C  ENTER A HOLE INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'HO') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ho')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('ENTER HOLE DATA IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ REGION NO., HOLE 1, HOLE 2, ..., HOLE N ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('ENTER HOLE DATA IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ REGION NO., HOLE 1, HOLE 2, ..., HOLE N ]')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   170    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -383,16 +336,16 @@ C
             IF (NOROOM) GO TO 400
             GO TO 170
          END IF
-C
+
 C  ENTER A BARSET INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'BA') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ba')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('ENTER BAR SET DATA IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ BAR SET NO., MAT NO., REFR. PNT., LINE 1, '//
+         CALL MESSAGE('ENTER BAR SET DATA IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ BAR SET NO., MAT NO., REFR. PNT., LINE 1, '//
      &      'LINE 2, ..., LINE N ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   180    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -413,19 +366,19 @@ C
             IF (NOROOM) GO TO 400
             GO TO 180
          END IF
-C
+
 C  INPUT A BODY DEFINITION INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'BOD') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'bod')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('NOTE: THE BODY CAN BE MADE UP OF ANY')
-         CALL MESAGE ('      COMBINATION OF REGIONS AND BAR SETS.')
-         CALL MESAGE ('      ENTER BAR SETS AS NEGATIVE REGIONS.')
-         CALL MESAGE ('ENTER REGIONS (& BAR SETS) IN THE BODY IN THE '//
+         CALL MESSAGE('NOTE: THE BODY CAN BE MADE UP OF ANY')
+         CALL MESSAGE('      COMBINATION OF REGIONS AND BAR SETS.')
+         CALL MESSAGE('      ENTER BAR SETS AS NEGATIVE REGIONS.')
+         CALL MESSAGE('ENTER REGIONS (& BAR SETS) IN THE BODY IN THE '//
      &      'FOLLOWING FORMAT')
-         CALL MESAGE ('[ REGION 1, REGION 2, ..., REGION N ]')
-         CALL MESAGE ('HIT A RETURN TO END INPUT')
+         CALL MESSAGE('[ REGION 1, REGION 2, ..., REGION N ]')
+         CALL MESSAGE('HIT A RETURN TO END INPUT')
          ICOM = JCOM + 1
   190    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -450,28 +403,28 @@ C
             IF (NOROOM) GO TO 400
             GO TO 190
          ELSE IF (IFOUND .GT. NIN) THEN
-            CALL MESAGE ('TOO MANY BODIES BEING INPUT A ONCE - TRY '//
+            CALL MESSAGE('TOO MANY BODIES BEING INPUT A ONCE - TRY '//
      &         'AGAIN')
             GO TO 190
          END IF
-C
+
 C  SPAWN A PROCESS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SP') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'sp')) THEN
          ICOM = ICOM + 1
          CALL SPAWN(VAXVMS)
-C
+
 C  INPUT A SCHEME INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'S') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 's')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('NOTE: ENTER A DEFAULT SCHEME BY SPECIFYING')
-         CALL MESAGE ('      THE REGION NUMBER AS ZERO')
-         CALL MESAGE ('ENTER A SCHEME IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ REGION NO., SCHEME ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('NOTE: ENTER A DEFAULT SCHEME BY SPECIFYING')
+         CALL MESSAGE('      THE REGION NUMBER AS ZERO')
+         CALL MESSAGE('ENTER A SCHEME IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ REGION NO., SCHEME ]')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   220    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -492,44 +445,44 @@ C
             IF (NOROOM) THEN
                N(10) = NOLD10
                N(24) = NOLD24
-               CALL MESAGE ('************************************')
-               CALL MESAGE ('NOT ENOUGH ROOM FOR SCHEME CARD')
-               CALL MESAGE ('NO DYNAMIC DIMENSIONING INCREASES')
-               CALL MESAGE ('AVAILABLE FOR CHARACTER STRINGS')
-               CALL MESAGE ('SCHEME INPUT IS THUS IGNORED')
-               CALL MESAGE ('************************************')
+               CALL MESSAGE('************************************')
+               CALL MESSAGE('NOT ENOUGH ROOM FOR SCHEME CARD')
+               CALL MESSAGE('NO DYNAMIC DIMENSIONING INCREASES')
+               CALL MESSAGE('AVAILABLE FOR CHARACTER STRINGS')
+               CALL MESSAGE('SCHEME INPUT IS THUS IGNORED')
+               CALL MESSAGE('************************************')
             END IF
             GO TO 220
          END IF
-C
+
 C  INPUT A BOUNDARY INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'B') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'b')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('THE FOLLOWING BOUNDARY FLAGS ARE AVAILABLE:')
-            CALL MESAGE ('        P*OINT FLAGS    - FOR NODES AT '//
+            CALL MESSAGE(' ')
+            CALL MESSAGE('THE FOLLOWING BOUNDARY FLAGS ARE AVAILABLE:')
+            CALL MESSAGE('        P*OINT FLAGS    - FOR NODES AT '//
      &         'POINTS')
-            CALL MESAGE ('        N*ODE FLAGS     - FOR NODES ON A '//
+            CALL MESSAGE('        N*ODE FLAGS     - FOR NODES ON A '//
      &         'BOUNDARY')
-            CALL MESAGE ('        E*LEMENT FLAGS  - FOR ELEMENT '//
+            CALL MESSAGE('        E*LEMENT FLAGS  - FOR ELEMENT '//
      &         'SIDES ON A BOUNDARY')
             CALL FREFLD (IZ, IZ, 'WHICH BOUNDARY FLAG WOULD YOU LIKE '//
      &         'TO ENTER: ', MCOM, IOSTAT, JCOM, KIN, CIN, IIN, RIN)
             ICOM = 1
          END IF
-C
+
 C  INPUT A POINT BOUNDARY INTO THE DATABASE
-C
+
          IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('INPUT POINT BOUNDARY FLAG DATA IN THE '//
+            CALL MESSAGE('INPUT POINT BOUNDARY FLAG DATA IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ FLAG NO., POINT 1, POINT 2, ..., POINT N ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('[ FLAG NO., POINT 1, POINT 2, ..., POINT N ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
             ICOM = JCOM + 1
   230       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -543,17 +496,17 @@ C
                IF (NOROOM) GO TO 400
                GO TO 230
             END IF
-C
+
 C  INPUT A NODE BOUNDARY INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'n')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('INPUT NODE BOUNDARY FLAG DATA IN THE '//
+            CALL MESSAGE('INPUT NODE BOUNDARY FLAG DATA IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ FLAG NO., LINE (OR NEG. SIDE) 1, LINE '//
+            CALL MESSAGE('[ FLAG NO., LINE (OR NEG. SIDE) 1, LINE '//
      &         '(OR NEG. SIDE) 2, ...]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
             ICOM = JCOM + 1
   240       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -567,17 +520,17 @@ C
                IF (NOROOM) GO TO 400
                GO TO 240
             END IF
-C
+
 C  INPUT AN ELEMENT BOUNDARY INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'E') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'e')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('INPUT ELEMENT BOUNDARY FLAG DATA IN THE '//
+            CALL MESSAGE('INPUT ELEMENT BOUNDARY FLAG DATA IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ FLAG NO., LINE (OR NEG. SIDE) 1, LINE '//
+            CALL MESSAGE('[ FLAG NO., LINE (OR NEG. SIDE) 1, LINE '//
      &         '(OR NEG. SIDE) 2, ...]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
             ICOM = JCOM + 1
   250       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -592,37 +545,37 @@ C
                GO TO 250
             END IF
          END IF
-C
+
 C  INPUT A BOUNDARY FLAG WEIGHTING INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'W') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'w')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('THE FOLLOWING BOUNDARY FLAGS CAN BE '//
+            CALL MESSAGE(' ')
+            CALL MESSAGE('THE FOLLOWING BOUNDARY FLAGS CAN BE '//
      &         'WEIGHTED:')
-            CALL MESAGE ('        P*OINT FLAGS    - FOR NODES AT '//
+            CALL MESSAGE('        P*OINT FLAGS    - FOR NODES AT '//
      &         'POINTS')
-            CALL MESAGE ('        N*ODE FLAGS     - FOR NODES ON A '//
+            CALL MESSAGE('        N*ODE FLAGS     - FOR NODES ON A '//
      &         'BOUNDARY')
-            CALL MESAGE ('        E*LEMENT FLAGS  - FOR ELEMENT '//
+            CALL MESSAGE('        E*LEMENT FLAGS  - FOR ELEMENT '//
      &         'SIDES ON A BOUNDARY')
             CALL FREFLD (IZ, IZ, 'WHICH BOUNDARY FLAG WOULD YOU LIKE '//
      &         'TO WEIGHT: ', MCOM, IOSTAT, JCOM, KIN, CIN, IIN, RIN)
             ICOM = 1
          END IF
-C
+
 C  INPUT A POINT BOUNDARY FLAG WEIGHT INTO THE DATABASE
-C
+
          IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('INPUT POINT BOUNDARY FLAG WEIGHTS IN THE '//
+            CALL MESSAGE('INPUT POINT BOUNDARY FLAG WEIGHTS IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ FLAG NO., WEIGHTING POINT, BOUNDARY '//
+            CALL MESSAGE('[ FLAG NO., WEIGHTING POINT, BOUNDARY '//
      &         'POINT ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
             ICOM = JCOM + 1
   260       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -638,18 +591,18 @@ C
                END IF
                GO TO 260
             END IF
-C
+
 C  INPUT A NODE BOUNDARY WEIGHT INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'n')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('INPUT NODE BOUNDARY FLAG WEIGHTS IN THE '//
+            CALL MESSAGE('INPUT NODE BOUNDARY FLAG WEIGHTS IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ FLAG NO., WEIGHTING SIDE (OR NEG. LINE) '//
+            CALL MESSAGE('[ FLAG NO., WEIGHTING SIDE (OR NEG. LINE) '//
      &         'NO., BEGINNING POINT NO., ')
-            CALL MESAGE ('  BEGINNING LINE NO. (OPTIONAL) ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('  BEGINNING LINE NO. (OPTIONAL) ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
             ICOM = JCOM + 1
   270       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -665,18 +618,18 @@ C
                END IF
                GO TO 270
             END IF
-C
+
 C  INPUT AN ELEMENT BOUNDARY WEIGHT INTO THE DATABASE
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'E') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'e')) THEN
             ICOM = ICOM + 1
-            CALL MESAGE ('INPUT ELEMENT BOUNDARY FLAG WEIGHTS IN THE '//
+            CALL MESSAGE('INPUT ELEMENT BOUNDARY FLAG WEIGHTS IN THE '//
      &         'FOLLOWING FORMAT:')
-            CALL MESAGE ('[ FLAG NO., WEIGHTING SIDE (OR NEG. LINE) NO.,
+            CALL MESSAGE('[ FLAG NO., WEIGHTING SIDE (OR NEG. LINE) NO.,
      &         BEGINNING POINT NO., ')
-            CALL MESAGE ('  BEGINNING LINE NO. (OPTIONAL) ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('  BEGINNING LINE NO. (OPTIONAL) ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
             ICOM = JCOM + 1
   280       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -693,49 +646,49 @@ C
                GO TO 280
             END IF
          END IF
-C
+
 C  TOGGLE THE BANDWIDTH OPTIMIZATION FLAG
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'O') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'o')) THEN
          ICOM = ICOM + 1
          IF (OPTIM) THEN
             OPTIM = .FALSE.
-            CALL MESAGE ('BANDWIDTH OPTIMIZER DISABLED')
+            CALL MESSAGE('BANDWIDTH OPTIMIZER DISABLED')
          ELSE
             OPTIM = .TRUE.
-            CALL MESAGE ('BANDWIDTH OPTIMIZER ENABLED')
+            CALL MESSAGE('BANDWIDTH OPTIMIZER ENABLED')
          END IF
-C
+
 C  FLAG THE BANDWIDTH OPTIMIZATION ROUTINES ON, AND READ A RENUM CARD
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'REN') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'ren')) THEN
          ICOM = ICOM + 1
          OPTIM = .TRUE.
-         CALL MESAGE (' ')
-         CALL MESAGE ('THE FOLLOWING RENUMBERING OPTIONS ARE '//
+         CALL MESSAGE(' ')
+         CALL MESSAGE('THE FOLLOWING RENUMBERING OPTIONS ARE '//
      &      'AVAILABLE:')
-         CALL MESAGE ('        P*-L-P = POINT LINE POINT STARTING LIST')
-         CALL MESAGE ('        X*, Y   = X, Y STARTING LOCATION')
-         CALL MESAGE ('        N*UID  = NODE UNIQUE ID STARTING LIST')
+         CALL MESSAGE('        P*-L-P = POINT LINE POINT STARTING LIST')
+         CALL MESSAGE('        X*, Y   = X, Y STARTING LOCATION')
+         CALL MESSAGE('        N*UID  = NODE UNIQUE ID STARTING LIST')
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, 'WHICH RENUMBER OPTION WOULD YOU '//
      &         'LIKE TO ENTER: ', MCOM, IOSTAT, JCOM, KIN, CIN, IIN,
      &         RIN)
             ICOM = 1
          END IF
-C
+
 C  ENTER A POINT-LINE-POINT RENUM CARD
-C
+
          IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'p')) THEN
             ICOM = ICOM + 1
             HOLD = 'P-L-P'
-            CALL MESAGE ('ENTER A POINT-LINE-POINT CARD IN THE '//
+            CALL MESSAGE('ENTER A POINT-LINE-POINT CARD IN THE '//
      &         'FOLLOWING FORMAT')
-            CALL MESAGE ('[ ENTER POINT, LINE, POINT, LINE, ... ]')
-            CALL MESAGE ('HIT A RETURN TO END INPUT')
+            CALL MESSAGE('[ ENTER POINT, LINE, POINT, LINE, ... ]')
+            CALL MESSAGE('HIT A RETURN TO END INPUT')
             ICOM = JCOM + 1
   290       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -746,16 +699,16 @@ C
                IF (NOROOM) GO TO 400
                GO TO 290
             END IF
-C
+
 C  ENTER A X, Y LOCATION RENUM CARD
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'X') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'x')) THEN
             ICOM = ICOM + 1
             HOLD = 'X-Y  '
-            CALL MESAGE ('ENTER X, Y PAIRS IN THE FOLLOWING FORMAT')
-            CALL MESAGE ('[ X , Y ]')
-            CALL MESAGE ('HIT A RETURN TO END INPUT')
+            CALL MESSAGE('ENTER X, Y PAIRS IN THE FOLLOWING FORMAT')
+            CALL MESSAGE('[ X , Y ]')
+            CALL MESSAGE('HIT A RETURN TO END INPUT')
             ICOM = JCOM + 1
   300       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -766,18 +719,18 @@ C
                IF (NOROOM) GO TO 400
                GO TO 300
             END IF
-C
+
 C  ENTER A NODE UNIQUE ID RENUM CARD
-C
+
          ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'n')) THEN
             ICOM = ICOM + 1
             HOLD = 'NODE '
-            CALL MESAGE ('NOTE: NODE UNIQUE ID NUMBERS (NUID) ARE')
-            CALL MESAGE ('      DEFINED IN THE DOCUMENTATION')
-            CALL MESAGE ('ENTER NUID CARDS IN THE FOLLOWING FORMAT:')
-            CALL MESAGE ('[ NUID 1, NUID 2, ..., NUID N ]')
-            CALL MESAGE ('HIT A RETURN TO END INPUT')
+            CALL MESSAGE('NOTE: NODE UNIQUE ID NUMBERS (NUID) ARE')
+            CALL MESSAGE('      DEFINED IN THE DOCUMENTATION')
+            CALL MESSAGE('ENTER NUID CARDS IN THE FOLLOWING FORMAT:')
+            CALL MESSAGE('[ NUID 1, NUID 2, ..., NUID N ]')
+            CALL MESSAGE('HIT A RETURN TO END INPUT')
             ICOM = JCOM + 1
   310       CONTINUE
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN,
@@ -789,28 +742,28 @@ C
                GO TO 310
             END IF
          END IF
-C
+
 C  ENTER A REGION INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'R') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'r')) THEN
          ICOM = ICOM + 1
          CALL INTRUP('ARE YOU USING SIDES IN DEFINING REGIONS', IANS,
      &      MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN)
          IF (IANS) THEN
-            CALL MESAGE ('NOTE: ENTER ANY LINES NEEDED IN THE REGION '//
+            CALL MESSAGE('NOTE: ENTER ANY LINES NEEDED IN THE REGION '//
      &         'AS')
-            CALL MESAGE ('      A NEGATIVE SIDE.')
-            CALL MESAGE ('ENTER REGION DATA IN THE FOLLOWING FORMAT:')
-            CALL MESAGE ('[ REGION NO., MATERIAL NO., SIDE 1, SIDE '//
+            CALL MESSAGE('      A NEGATIVE SIDE.')
+            CALL MESSAGE('ENTER REGION DATA IN THE FOLLOWING FORMAT:')
+            CALL MESSAGE('[ REGION NO., MATERIAL NO., SIDE 1, SIDE '//
      &         '2, ..., SIDE N ]')
          ELSE
-            CALL MESAGE ('ENTER REGION DATA IN THE FOLLOWING FORMAT:')
-            CALL MESAGE ('[ REGION NO., MATERIAL NO., LINE 1, LINE '//
+            CALL MESSAGE('ENTER REGION DATA IN THE FOLLOWING FORMAT:')
+            CALL MESSAGE('[ REGION NO., MATERIAL NO., LINE 1, LINE '//
      &         '2, ..., LINE N ]')
          END IF
          ICOM = JCOM + 1
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   320    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
      &      RIN)
@@ -838,18 +791,18 @@ C
             RSIZE(JJPNTR) = 0.
             GO TO 320
          END IF
-C
+
 C  ENTER A GROUP OF REGIONS INTO THE DATABASE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'G') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'g')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE
+         CALL MESSAGE
      &      ('ENTER GROUP OF REGIONS IN THE FOLLOWING FORMAT:')
-         CALL MESAGE
+         CALL MESSAGE
      &      ('[ GROUP NO., REGION 1, REGION 2, ..., REGION N ]')
          ICOM = JCOM + 1
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   340    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
      &      RIN)
@@ -868,26 +821,26 @@ C
             IF (NOROOM) GO TO 400
             GO TO 340
          END IF
-C
+
 C  ENTER A TITLE
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'T') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 't')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
             CALL GETINP(IUNIT, IDUMP, 'TITLE: ', TITLE, IOSTAT)
          END IF
-C
+
 C  ENTER LINE INTERVALS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'I') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'i')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE ('ENTER LINE INTERVALS IN THE FOLLOWING '//
+            CALL MESSAGE('ENTER LINE INTERVALS IN THE FOLLOWING '//
      &         'FORMAT:')
-            CALL MESAGE ('[ LINE NO. (OR NEG SIDE NO.), INTERVALS ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('[ LINE NO. (OR NEG SIDE NO.), INTERVALS ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
          END IF
   350    CONTINUE
          IF (ICOM .GT. JCOM) THEN
@@ -902,16 +855,16 @@ C
      &         IFLINE, ILLIST, LINKL, LINKS, ADDLNK)
             GO TO 350
          END IF
-C
+
 C  ENTER LINE FACTORS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'F') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'f')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE ('ENTER LINE FACTORS IN THE FOLLOWING FORMAT:')
-            CALL MESAGE ('[ LINE NO. (OR NEG. SIDE NO., ) FACTOR ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('ENTER LINE FACTORS IN THE FOLLOWING FORMAT:')
+            CALL MESSAGE('[ LINE NO. (OR NEG. SIDE NO., ) FACTOR ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
          END IF
   360    CONTINUE
          IF (ICOM .GT. JCOM) THEN
@@ -927,15 +880,15 @@ C
      &         NLPS, IFLINE, ILLIST, LINKL, LINKS, ADDLNK)
             GO TO 360
          END IF
-C
+
 C  ENTER MATERIAL NUMBERS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'M') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'm')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE ('ENTER REGION MATERIALS IN THE FOLLOWING FORMAT:')
-         CALL MESAGE ('[ REGION NO., MATERIAL NO. ]')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('ENTER REGION MATERIALS IN THE FOLLOWING FORMAT:')
+         CALL MESSAGE('[ REGION NO., MATERIAL NO. ]')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
          ICOM = JCOM + 1
   370    CONTINUE
          CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, IFOUND, KIN, CIN, IIN,
@@ -950,50 +903,50 @@ C
             END IF
             GO TO 370
          END IF
-C
+
 C  FLAG THE THREE-NODE ELEMENT OPTION
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'TH') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'th')) THEN
          ICOM = ICOM + 1
          IF (THREE) THEN
             THREE = .FALSE.
-            CALL MESAGE ('THREE NODE ELEMENT GENERATION - OFF')
+            CALL MESSAGE('THREE NODE ELEMENT GENERATION - OFF')
          ELSE
             THREE = .TRUE.
-            CALL MESAGE ('THREE NODE ELEMENT GENERATION - ON')
+            CALL MESSAGE('THREE NODE ELEMENT GENERATION - ON')
          END IF
-C
+
 C  FLAG THE EIGHT-NODE ELEMENT OPTION
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EI') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'ei')) THEN
          ICOM = ICOM + 1
          IF (EIGHT) THEN
             EIGHT = .FALSE.
-            CALL MESAGE ('EIGHT NODE ELEMENT GENERATION - OFF')
+            CALL MESSAGE('EIGHT NODE ELEMENT GENERATION - OFF')
          ELSE
             EIGHT = .TRUE.
             NINE = .FALSE.
-            CALL MESAGE ('EIGHT NODE ELEMENT GENERATION - ON')
+            CALL MESSAGE('EIGHT NODE ELEMENT GENERATION - ON')
          END IF
-C
+
 C  FLAG THE NINE-NODE ELEMENT OPTION
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'N') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'n')) THEN
          ICOM = ICOM + 1
          IF (NINE) THEN
             NINE = .FALSE.
-            CALL MESAGE ('NINE NODE ELEMENT GENERATION - OFF')
+            CALL MESSAGE('NINE NODE ELEMENT GENERATION - OFF')
          ELSE
             NINE = .TRUE.
             EIGHT = .FALSE.
-            CALL MESAGE ('NINE NODE ELEMENT GENERATION - ON')
+            CALL MESSAGE('NINE NODE ELEMENT GENERATION - ON')
          END IF
-C
+
 C  EXIT OPTION - EXITS FASTQ
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EX') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ex')) THEN
          ICOM = ICOM + 1
@@ -1006,14 +959,14 @@ C
      &         TIME1, BATCH, VERSN)
          ENDIF
          GO TO 110
-C
+
 C  LINK ALL NEW DATA AS NEEDED, AND RETURN FROM THE KEYIN OPTION
-C
+
       ELSE IF (CIN(ICOM)(1:1) .EQ. ' ') THEN
          ICOM = ICOM + 1
-C
+
 C  LINK UP THE POINTS AND LINES TO THEIR ASSOCIATED FLAGS
-C
+
          SIDEOK = .FALSE.
          CALL LINKBC(MP, MS, NOLD(11) + 1, N(11), N(1), N(25), N(11),
      &      N(12), N(20), IPBF, IFPB, NPPF, LISTPB, NLPS, IFLINE,
@@ -1031,10 +984,10 @@ C
      &      ILLIST, ISBOUN, LINKSB, IWTSBF, LINKL, LINKS, SIDEOK,
      &      NOROOM)
          IF (NOROOM) GO TO 400
-C
+
 C  IF NO BODY CARDS HAVE BEEN READ, ASSUME THE BODY IS ALL THE
 C  REGIONS AND ALL THE BAR SETS
-C
+
          IF (N(9) .EQ. NOLD(9)) THEN
             ADDOLD = .TRUE.
             IFOUND = 1
@@ -1057,24 +1010,24 @@ C
   390       CONTINUE
          END IF
          RETURN
-C
+
       ELSE
          ICOM = ICOM + 1
          CALL HELP_FQ(9)
       END IF
       GO TO 110
-C
+
 C  MORE ROOM IN DIMENSIONS NEEDED
-C
+
   400 CONTINUE
-      CALL MESAGE (' ')
-      CALL MESAGE ('DIMENSIONS MUST BE INCREASED - PLEASE WAIT')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('DIMENSIONS MUST BE INCREASED - PLEASE WAIT')
       DO 410 I = 1, 29
          N(I) = NOLD(I)
   410 CONTINUE
       NOROOM = .TRUE.
       RETURN
-C
+
 10000 FORMAT(' A POINT NO. OF:', I7, ' IS NOT ALLOWED', /,
      &   ' THIS POINT WILL NOT BE INPUT INTO DATABASE')
 10010 FORMAT(' A LINE NO. OF:', I7, ' IS NOT ALLOWED', /,
@@ -1113,5 +1066,5 @@ C
      &   /, ' THIS SCHEME WILL NOT BE INPUT INTO DATABASE')
 10170 FORMAT(' REGION NO:', I5, ' IS NOT IN THE DATABASE', /,
      &   ' THUS NO MATERIAL NUMBER CAN BE ENTERED')
-C
+
       END

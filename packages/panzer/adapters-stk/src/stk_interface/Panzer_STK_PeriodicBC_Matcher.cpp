@@ -135,7 +135,7 @@ getLocalSideIds(const STK_Interface & mesh,
    stk::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
 
    stk::mesh::EntityRank rank;
-   unsigned int offset = 0; // offset to avoid giving nodes, edges, faces the same sideId 
+   panzer::GlobalOrdinal offset = 0; // offset to avoid giving nodes, edges, faces the same sideId
    if(type_ == "coord"){
      rank = mesh.getNodeRank();
    } else if(type_ == "edge"){

@@ -44,7 +44,6 @@
 //
 // @HEADER
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -63,20 +62,10 @@
 #include "Xpetra_StridedMap.hpp"
 
 namespace {
-  using Teuchos::Array;
-  using Teuchos::as;
   using Teuchos::RCP;
-  using Teuchos::arcp;
   using Teuchos::rcp;
-  using Teuchos::outArg;
-  using Teuchos::Tuple;
-  using Teuchos::tuple;
   using Xpetra::global_size_t;
   using Xpetra::DefaultPlatform;
-  using std::sort;
-  using std::find;
-  using Teuchos::broadcast;
-  using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
 
   bool testMpi = true;

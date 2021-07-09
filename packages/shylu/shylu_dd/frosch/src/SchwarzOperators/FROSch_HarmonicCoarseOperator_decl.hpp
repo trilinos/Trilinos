@@ -58,45 +58,67 @@ namespace FROSch {
 
     protected:
 
-        using XMapPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
-        using ConstXMapPtr            = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
-        using XMapPtrVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
-        using XMapPtrVecPtr2D         = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr2D;
-        using ConstXMapPtrVecPtr2D    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
+        using XMapPtr                   = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtr;
+        using ConstXMapPtr              = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtr;
+        using XMapPtrVecPtr             = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr;
+        using XMapPtrVecPtr2D           = typename SchwarzOperator<SC,LO,GO,NO>::XMapPtrVecPtr2D;
+        using ConstXMapPtrVecPtr2D      = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMapPtrVecPtr2D;
 
-        using XMatrixPtr              = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
-        using ConstXMatrixPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
+        using XMatrixPtr                = typename SchwarzOperator<SC,LO,GO,NO>::XMatrixPtr;
+        using ConstXMatrixPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using XMultiVectorPtr         = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
-        using ConstXMultiVectorPtr    = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
-        using XMultiVectorPtrVecPtr   = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
+        using XMultiVectorPtr           = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr      = typename SchwarzOperator<SC,LO,GO,NO>::ConstXMultiVectorPtr;
+        using XMultiVectorPtrVecPtr     = typename SchwarzOperator<SC,LO,GO,NO>::XMultiVectorPtrVecPtr;
 
-        using ParameterListPtr        = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
+        using XCrsGraph                 = typename SchwarzOperator<SC,LO,GO,NO>::XCrsGraph;
+        using GraphPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::GraphPtr;
+        using ConstXCrsGraphPtr         = typename SchwarzOperator<SC,LO,GO,NO>::ConstXCrsGraphPtr;
 
-        using CoarseSpacePtr          = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
-        using CoarseSpacePtrVecPtr    = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr;
+        using ParameterListPtr          = typename SchwarzOperator<SC,LO,GO,NO>::ParameterListPtr;
 
-        using EntitySetPtr            = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
-        using EntitySetConstPtr       = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetConstPtr;
+        using TSerialDenseMatrixPtr     = typename SchwarzOperator<SC,LO,GO,NO>::TSerialDenseMatrixPtr;
 
-        using SubdomainSolverPtr      = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using TSerialQRDenseSolverPtr   = typename SchwarzOperator<SC,LO,GO,NO>::TSerialQRDenseSolverPtr;
 
-        using UN                      = typename SchwarzOperator<SC,LO,GO,NO>::UN;
-        using UNVec                   = typename SchwarzOperator<SC,LO,GO,NO>::UNVec;
-        using UNVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
-        using ConstUNVecView          = typename SchwarzOperator<SC,LO,GO,NO>::ConstUNVecView;
+        using CoarseSpacePtr            = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
+        using CoarseSpacePtrVecPtr      = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtrVecPtr;
 
-        using LOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
-        using LOVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
-        using LOVecPtr2D              = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
+        using EntitySetPtr              = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
+        using EntitySetConstPtr         = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetConstPtr;
+        using EntitySetPtrVecPtr        = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtrVecPtr;
+        using EntitySetPtrConstVecPtr   = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtrConstVecPtr;
 
-        using GOVec                   = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
-        using GOVecView               = typename SchwarzOperator<SC,LO,GO,NO>::GOVecView;
-        using GOVec2D                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D;
-        
-        using SCVec                   = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
-        using SCVecPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
-        using ConstSCVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
+        using InterfaceEntityPtr        = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtr;
+        using InterfaceEntityPtrVec     = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtrVec;
+        using InterfaceEntityPtrVecPtr  = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr;
+
+        using SolverPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::SolverPtr;
+        using SolverFactoryPtr          = typename SchwarzOperator<SC,LO,GO,NO>::SolverFactoryPtr;
+
+        using UN                        = typename SchwarzOperator<SC,LO,GO,NO>::UN;
+        using UNVec                     = typename SchwarzOperator<SC,LO,GO,NO>::UNVec;
+        using UNVecPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
+        using ConstUNVecView            = typename SchwarzOperator<SC,LO,GO,NO>::ConstUNVecView;
+
+        using IntVec                    = typename SchwarzOperator<SC,LO,GO,NO>::IntVec;
+        using IntVec2D                  = typename SchwarzOperator<SC,LO,GO,NO>::IntVec2D;
+
+        using LOVec                     = typename SchwarzOperator<SC,LO,GO,NO>::LOVec;
+        using LOVecPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr;
+        using ConstLOVecView            = typename SchwarzOperator<SC,LO,GO,NO>::ConstLOVecView;
+        using LOVecPtr2D                = typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D;
+
+        using GOVec                     = typename SchwarzOperator<SC,LO,GO,NO>::GOVec;
+        using GOVecView                 = typename SchwarzOperator<SC,LO,GO,NO>::GOVecView;
+        using GOVec2D                   = typename SchwarzOperator<SC,LO,GO,NO>::GOVec2D;
+
+        using SCVec                     = typename SchwarzOperator<SC,LO,GO,NO>::SCVec;
+        using SCVecPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::SCVecPtr;
+        using ConstSCVecPtr             = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecPtr;
+        using ConstSCVecView            = typename SchwarzOperator<SC,LO,GO,NO>::ConstSCVecView;
+
+        using ConstBoolVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstBoolVecPtr;
 
     public:
 
@@ -105,12 +127,35 @@ namespace FROSch {
 
         virtual int initialize() = 0;
 
+        XMapPtr assembleCoarseMap();
+
         XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
+
+        #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+        template<class GOIndView>
+        struct CopyPhiDataFunctor
+        {
+            CopyPhiDataFunctor(SCVecPtr data_out_, ConstSCVecPtr data_in_, GOIndView indices_) :
+            data_out(data_out_),
+            data_in (data_in_),
+            indices (indices_)
+            {}
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const int k) const {
+                data_out[indices[k]] = data_in[k];
+            }
+
+            SCVecPtr      data_out;
+            ConstSCVecPtr data_in;
+            GOIndView     indices;
+        };
+        #endif
 
     protected:
 
         int intializeCoarseMap();
-        
+
         int assembleInterfaceCoarseSpace();
 
         int addZeroCoarseSpaceBlock(ConstXMapPtr dofsMap);
@@ -130,15 +175,31 @@ namespace FROSch {
                                                        EntitySetConstPtr entitySet,
                                                        UN discardRotations = 0);
 
+        virtual LOVecPtr detectLinearDependencies(GOVecView indicesGammaDofsAll,
+                                                        ConstXMapPtr rowMap,
+                                                        ConstXMapPtr rangeMap,
+                                                        ConstXMapPtr repeatedMap,
+                                                        SC tresholdDropping,
+                                                        SC tresholdOrthogonalization);
+
         virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
-                                                  ConstXMapPtr coarseMap,
                                                   GOVecView indicesGammaDofsAll,
                                                   GOVecView indicesIDofsAll,
                                                   XMatrixPtr kII,
                                                   XMatrixPtr kIGamma);
 
+        virtual ConstXMatrixPtr removeCouplingBetweenDofs(ConstXMatrixPtr matrix,
+                                                          ConstXMapPtr map,
+                                                          TwoDArray<int> &couplingIDsToRemove);
 
-        SubdomainSolverPtr ExtensionSolver_;
+        virtual int buildElementNodeList();
+
+        virtual int buildGlobalGraph(Teuchos::RCP<DDInterface<SC,LO,GO,NO> > theDDInterface_);
+
+        virtual int buildCoarseGraph();
+
+
+        SolverPtr ExtensionSolver_;
 
         CoarseSpacePtrVecPtr InterfaceCoarseSpaces_ = CoarseSpacePtrVecPtr(0);
         CoarseSpacePtr AssembledInterfaceCoarseSpace_;
@@ -146,12 +207,16 @@ namespace FROSch {
         UNVecPtr Dimensions_ = UNVecPtr(0);
         UNVecPtr DofsPerNode_ = UNVecPtr(0);
 
-        LOVecPtr2D GammaDofs_ = GammaDofs_(0);
-        LOVecPtr2D IDofs_ = IDofs_(0);
+        LOVecPtr2D GammaDofs_ = LOVecPtr2D(0);
+        LOVecPtr2D IDofs_ = LOVecPtr2D(0);
 
-        ConstXMapPtrVecPtr2D DofsMaps_ = DofsMaps_(0); // notwendig??
+        ConstXMapPtrVecPtr2D DofsMaps_ = ConstXMapPtrVecPtr2D(0); // notwendig??
+
+        ConstXMapPtr KRowMap_; // AH: What is this?
 
         UN NumberOfBlocks_ = 0;
+
+        UN MaxNumNeigh_ = 0;
     };
 
 }

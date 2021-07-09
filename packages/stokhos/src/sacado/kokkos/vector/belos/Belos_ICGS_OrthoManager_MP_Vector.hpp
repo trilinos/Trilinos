@@ -58,8 +58,7 @@ namespace Belos {
 
   template<class Storage, class MV, class OP>
   class ICGSOrthoManager<Sacado::MP::Vector<Storage>,MV,OP> :
-    public MatOrthoManager<Sacado::MP::Vector<Storage>,MV,OP>,
-    public Teuchos::ParameterListAcceptorDefaultBase
+    public MatOrthoManager<Sacado::MP::Vector<Storage>,MV,OP>
   {
   private:
     typedef Sacado::MP::Vector<Storage> ScalarType;
@@ -209,7 +208,7 @@ namespace Belos {
       blk_tol_ = blkTol;
       sing_tol_ = singTol;
 
-      setMyParamList (params);
+      this->setMyParamList (params);
     }
 
     Teuchos::RCP<const Teuchos::ParameterList>
@@ -253,7 +252,7 @@ namespace Belos {
     //! Set parameter for block re-orthogonalization threshhold.
     void setBlkTol( const MagnitudeType blk_tol ) {
       // Update the parameter list as well.
-      Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
+      Teuchos::RCP<Teuchos::ParameterList> params = this->getNonconstParameterList();
       if (! params.is_null()) {
         // If it's null, then we haven't called setParameterList()
         // yet.  It's entirely possible to construct the parameter
@@ -267,7 +266,7 @@ namespace Belos {
     //! Set parameter for singular block detection.
     void setSingTol( const MagnitudeType sing_tol ) {
       // Update the parameter list as well.
-      Teuchos::RCP<Teuchos::ParameterList> params = getNonconstParameterList();
+      Teuchos::RCP<Teuchos::ParameterList> params = this->getNonconstParameterList();
       if (! params.is_null()) {
         // If it's null, then we haven't called setParameterList()
         // yet.  It's entirely possible to construct the parameter

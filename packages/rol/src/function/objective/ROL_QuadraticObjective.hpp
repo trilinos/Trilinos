@@ -64,47 +64,30 @@
     ---
 */
 
-
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class QuadraticObjective : public Objective<Real> {
 private:
   const Ptr<const LinearOperator<Real>> H_;
   const Ptr<const Vector<Real>> g_;
   const Real c_;
-  ROL::Ptr<Vector<Real>> tmp_;
+  Ptr<Vector<Real>> tmp_;
 
 public:
   QuadraticObjective(const Ptr<const LinearOperator<Real>> &H,
                      const Ptr<const Vector<Real>>         &g,
-                     const Real                             c = 0.0)
-    : H_(H), g_(g), c_(c) {
-    tmp_ = g_->clone();
-  }
+                     Real                                   c = Real(0));
 
-  Real value( const Vector<Real> &x, Real &tol ) {
-    H_->apply(*tmp_,x,tol);
-    tmp_->scale(static_cast<Real>(0.5));
-    tmp_->plus(*g_);
-    return x.dot(tmp_->dual()) + c_;
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    H_->apply(g,x,tol);
-    g.plus(*g_);
-  }
-
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    H_->apply(hv,v,tol);
-  }
-
-  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    H_->applyInverse(hv,v,tol);
-  }
+  Real value( const Vector<Real> &x, Real &tol ) override;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
 
 }; // class QuadraticObjective
 
 } // namespace ROL
+
+#include "ROL_QuadraticObjective_Def.hpp"
 
 #endif

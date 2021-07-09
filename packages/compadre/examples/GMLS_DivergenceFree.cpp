@@ -12,6 +12,7 @@
 #include <Compadre_PointCloudSearch.hpp>
 
 #include "GMLS_Tutorial.hpp"
+#include "CommandLineProcessor.hpp"
 
 #ifdef COMPADRE_USE_MPI
 #include <mpi.h>
@@ -41,79 +42,21 @@ bool all_passed = true;
 // code block to reduce scope for all Kokkos View allocations
 // otherwise, Views may be deallocating when we call Kokkos::finalize() later
 {
-    // check if 7 arguments are given from the command line, the first being the program name
-    //  constraint_type used in solving each GMLS problem:
-    //      0 - No constraints used in solving each GMLS problem
-    //      1 - Neumann Gradient Scalar used in solving each GMLS problem
-    int constraint_type = 0; // No constraints by default
-    if (argc >= 7) {
-        int arg7toi = atoi(args[6]);
-        if (arg7toi > 0) {
-            constraint_type = arg7toi;
-        }
-    }
 
-    // check if 6 arguments are given from the command line, the first being the program name
-    // problem_type used in solving each GMLS problem:
-    //      0 - Standard GMLS problem
-    //      1 - Manifold GMLS problem
-    int problem_type = 0; // Standard by default
-    if (argc >= 6) {
-        int arg6toi = atoi(args[5]);
-        if (arg6toi > 0) {
-            problem_type = arg6toi;
-        }
-    }
-
-    // check if 5 arguments are given from the command line, the first being the program name
-    //  solver_type used for factorization in solving each GMLS problem:
-    //      0 - SVD used for factorization in solving each GMLS problem
-    //      1 - QR  used for factorization in solving each GMLS problem
-    //      2 - LU  used for factorization in solving each GMLS problem
-    int solver_type = 1; // QR by default
-    if (argc >= 5) {
-        int arg5toi = atoi(args[4]);
-        if (arg5toi >= 0) {
-            solver_type = arg5toi;
-        }
-    }
-
-    // check if 4 arguments are given from the command line
-    //  dimension for the coordinates and the solution
-    int dimension = 3; // dimension 3 by default
-    if (argc >= 4) {
-        int arg4toi = atoi(args[3]);
-        if (arg4toi > 0) {
-            dimension = arg4toi;
-        }
-    }
-
-    // check if 3 arguments are given from the command line
-    //  set the number of target sites where we will reconstruct the target functionals at
-    int number_target_coords = 200; // 200 target sites by default
-    if (argc >= 3) {
-        int arg3toi = atoi(args[2]);
-        if (arg3toi > 0) {
-            number_target_coords = arg3toi;
-        }
-    }
-
-    // check if 2 arguments are given from the command line
-    //  set the number of target sites where we will reconstruct the target functionals at
-    int order = 3; // 3rd degree polynomial basis by default
-    if (argc >= 2) {
-        int arg2toi = atoi(args[1]);
-        if (arg2toi > 0) {
-            order = arg2toi;
-        }
-    }
+    CommandLineProcessor clp(argc, args);
+    auto order = clp.order;
+    auto dimension = clp.dimension;
+    auto number_target_coords = clp.number_target_coords;
+    auto constraint_name = clp.constraint_name;
+    auto solver_name = clp.solver_name;
+    auto problem_name = clp.problem_name;
 
     // the functions we will be seeking to reconstruct are in the span of the basis
     // of the reconstruction space we choose for GMLS, so the error should be very small
     const double failure_tolerance = 1e-9;
 
     // minimum neighbors for unisolvency is the same as the size of the polynomial basis
-    const int min_neighbors = Compadre::GMLS::getNP(order, dimension);
+    const int min_neighbors = Compadre::GMLS::getNP(order, dimension, DivergenceFreeVectorTaylorPolynomial);
 
     //! [Parse Command Line Arguments]
     Kokkos::Timer timer;
@@ -198,11 +141,9 @@ bool all_passed = true;
     Kokkos::deep_copy(target_coords_device, target_coords);
 
     // need Kokkos View storing true solution
-    Kokkos::View<double**, Kokkos::DefaultExecutionSpace> vector_sampling_data_device("samples of true vector solution",
+    Kokkos::View<double**, Kokkos::DefaultExecutionSpace> vector_sampling_span_basis_data_device("samples of true vector solution",
             source_coords_device.extent(0), dimension);
-    Kokkos::View<double**, Kokkos::DefaultExecutionSpace> curl_vector_sampling_data_device("samples of curl of true vector solution",
-            source_coords_device.extent(0), dimension);
-    Kokkos::View<double**, Kokkos::DefaultExecutionSpace> curlcurl_vector_sampling_data_device("samples of curl curl of true vector solution",
+    Kokkos::View<double**, Kokkos::DefaultExecutionSpace> vector_sampling_single_polynomial_data_device("samples of true vector solution",
             source_coords_device.extent(0), dimension);
 
     Kokkos::parallel_for("Sampling Manufactured Solutions", Kokkos::RangePolicy<Kokkos::DefaultExecutionSpace>
@@ -214,9 +155,8 @@ bool all_passed = true;
 
         // data for targets with vector input
         for (int j=0; j<dimension; ++j) {
-            vector_sampling_data_device(i, j) = divfreeTestSolution(xval, yval, zval, j, dimension);
-            curl_vector_sampling_data_device(i, j) = curldivfreeTestSolution(xval, yval, zval, j, dimension);
-            curlcurl_vector_sampling_data_device(i, j) = curlcurldivfreeTestSolution(xval, yval, zval, j, dimension);
+            vector_sampling_span_basis_data_device(i, j) = divfreeTestSolution_span_basis(xval, yval, zval, j, dimension, order);
+            vector_sampling_single_polynomial_data_device(i, j) = divfreeTestSolution_single_polynomial(xval, yval, zval, j, dimension);
         }
     });
 
@@ -251,7 +191,7 @@ bool all_passed = true;
     // query the point cloud to generate the neighbor lists using a kdtree to produce the n nearest neighbor
     // to each target site, adding (epsilon_multiplier-1)*100% to whatever the distance away the further neighbor used is from
     // each target to the view for epsilon
-    point_cloud_search.generateNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
+    point_cloud_search.generate2DNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
             epsilon, min_neighbors, epsilon_multiplier);
 
     //! [Performing Neighbor Search]
@@ -269,32 +209,6 @@ bool all_passed = true;
     // would be performed in the GMLS class
     Kokkos::deep_copy(neighbor_lists_device, neighbor_lists);
     Kokkos::deep_copy(epsilon_device, epsilon);
-
-    // solver name for passing into the GMLS class
-    std::string solver_name;
-    if (solver_type == 0) { // SVD
-        solver_name = "SVD";
-    } else if (solver_type == 1) { // QR
-        solver_name = "QR";
-    } else if (solver_type == 2) { // LU
-        solver_name = "LU";
-    }
-
-    // problem name for passing into the GMLS class
-    std::string problem_name;
-    if (problem_type == 0) { // Standard
-        problem_name = "STANDARD";
-    } else if (problem_type == 1) { // Manifold
-        problem_name = "MANIFOLD";
-    }
-
-    // boundary name for passing into the GMLS class
-    std::string constraint_name;
-    if (constraint_type == 0) { // No constraints
-        constraint_name = "NO_CONSTRAINT";
-    } else if (constraint_type == 1) { // Neumann Gradient Scalar
-        constraint_name = "NEUMANN_GRAD_SCALAR";
-    }
 
     // initialize an instance of the GMLS class
     // NULL in manifold order indicates non-manifold case
@@ -338,7 +252,7 @@ bool all_passed = true;
     vector_divfree_basis_gmls.setWeightingPower(2);
 
     // generate the alphas that to be combined with data for each target operation requested in lro
-    vector_divfree_basis_gmls.generateAlphas();
+    vector_divfree_basis_gmls.generateAlphas(15 /* # batches */);
 
     //! [Setting Up The GMLS Object]
 
@@ -362,13 +276,13 @@ bool all_passed = true;
     Evaluator gmls_evaluator_vector(&vector_divfree_basis_gmls);
 
     auto output_vector_evaluation = gmls_evaluator_vector.applyAlphasToDataAllComponentsAllTargetSites<double**, Kokkos::HostSpace>
-      (vector_sampling_data_device, VectorPointEvaluation, VectorPointSample);
+      (vector_sampling_span_basis_data_device, VectorPointEvaluation, VectorPointSample);
     auto output_curl_vector_evaluation = gmls_evaluator_vector.applyAlphasToDataAllComponentsAllTargetSites<double**, Kokkos::HostSpace>
-      (vector_sampling_data_device, CurlOfVectorPointEvaluation, VectorPointSample);
+      (vector_sampling_span_basis_data_device, CurlOfVectorPointEvaluation, VectorPointSample);
     auto output_curlcurl_vector_evaluation = gmls_evaluator_vector.applyAlphasToDataAllComponentsAllTargetSites<double**, Kokkos::HostSpace>
-      (vector_sampling_data_device, CurlCurlOfVectorPointEvaluation, VectorPointSample);
+      (vector_sampling_single_polynomial_data_device, CurlCurlOfVectorPointEvaluation, VectorPointSample);
     auto output_gradient_vector_evaluation = gmls_evaluator_vector.applyAlphasToDataAllComponentsAllTargetSites<double**, Kokkos::HostSpace>
-      (vector_sampling_data_device, GradientOfVectorPointEvaluation, VectorPointSample);
+      (vector_sampling_span_basis_data_device, GradientOfVectorPointEvaluation, VectorPointSample);
 
     //! [Apply GMLS Alphas To Data]
 
@@ -388,7 +302,7 @@ bool all_passed = true;
 
         // load curl of vector components from output
         double GMLS_Curl_DivFree_VectorX = output_curl_vector_evaluation(i, 0);
-        double GMLS_Curl_DivFree_VectorY = (dimension>1) ? output_curl_vector_evaluation(i, 1) : 0;
+        double GMLS_Curl_DivFree_VectorY = (dimension>2) ? output_curl_vector_evaluation(i, 1) : 0;
         double GMLS_Curl_DivFree_VectorZ = (dimension>2) ? output_curl_vector_evaluation(i, 2) : 0;
 
         // load curl curl of vector components from output
@@ -415,11 +329,11 @@ bool all_passed = true;
         // evaluation of vector exact solutions
         double actual_vector[3] = {0, 0, 0};
         if (dimension>=1) {
-            actual_vector[0] = divfreeTestSolution(xval, yval, zval, 0, dimension);
+            actual_vector[0] = divfreeTestSolution_span_basis(xval, yval, zval, 0, dimension, order);
             if (dimension>=2) {
-                actual_vector[1] = divfreeTestSolution(xval, yval, zval, 1, dimension);
+                actual_vector[1] = divfreeTestSolution_span_basis(xval, yval, zval, 1, dimension, order);
                 if (dimension==3) {
-                    actual_vector[2] = divfreeTestSolution(xval, yval, zval, 2, dimension);
+                    actual_vector[2] = divfreeTestSolution_span_basis(xval, yval, zval, 2, dimension, order);
                 }
             }
         }
@@ -427,23 +341,21 @@ bool all_passed = true;
         // evaluation of curl of vector exact solutions
         double actual_curl_vector[3] = {0, 0, 0};
         if (dimension>=1) {
-            actual_curl_vector[0] = curldivfreeTestSolution(xval, yval, zval, 0, dimension);
-            if (dimension>=2) {
-                actual_curl_vector[1] = curldivfreeTestSolution(xval, yval, zval, 1, dimension);
-                if (dimension==3) {
-                    actual_curl_vector[2] = curldivfreeTestSolution(xval, yval, zval, 2, dimension);
-                }
+            actual_curl_vector[0] = curldivfreeTestSolution_span_basis(xval, yval, zval, 0, dimension, order);
+            if (dimension==3) {
+                actual_curl_vector[1] = curldivfreeTestSolution_span_basis(xval, yval, zval, 1, dimension, order);
+                actual_curl_vector[2] = curldivfreeTestSolution_span_basis(xval, yval, zval, 2, dimension, order);
             }
         }
 
         // evaluation of curl of curl of vector exact solutions
         double actual_curlcurl_vector[3] = {0, 0, 0};
         if (dimension>=1) {
-            actual_curlcurl_vector[0] = curlcurldivfreeTestSolution(xval, yval, zval, 0, dimension);
+            actual_curlcurl_vector[0] = curlcurldivfreeTestSolution_single_polynomial(xval, yval, zval, 0, dimension);
             if (dimension>=2) {
-                actual_curlcurl_vector[1] = curlcurldivfreeTestSolution(xval, yval, zval, 1, dimension);
+                actual_curlcurl_vector[1] = curlcurldivfreeTestSolution_single_polynomial(xval, yval, zval, 1, dimension);
                 if (dimension==3) {
-                    actual_curlcurl_vector[2] = curlcurldivfreeTestSolution(xval, yval, zval, 2, dimension);
+                    actual_curlcurl_vector[2] = curlcurldivfreeTestSolution_single_polynomial(xval, yval, zval, 2, dimension);
                 }
             }
         }
@@ -451,11 +363,11 @@ bool all_passed = true;
         double actual_gradient_vector[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         if (dimension==3) {
             for (int axes = 0; axes < 9; ++axes)
-                actual_gradient_vector[axes] = gradientdivfreeTestSolution(xval, yval, zval, axes, dimension);
+                actual_gradient_vector[axes] = gradientdivfreeTestSolution_span_basis(xval, yval, zval, axes/dimension, axes%dimension, dimension, order);
         }
         if (dimension==2) {
             for (int axes = 0; axes < 4; ++axes) 
-                actual_gradient_vector[axes] = gradientdivfreeTestSolution(xval, yval, zval, axes, dimension);
+                actual_gradient_vector[axes] = gradientdivfreeTestSolution_span_basis(xval, yval, zval, axes/dimension, axes%dimension, dimension, order);
         }
 
         // check vector evaluation
@@ -477,20 +389,23 @@ bool all_passed = true;
         }
 
         // check curl of vector evaluation
-        if(std::abs(actual_curl_vector[0] - GMLS_Curl_DivFree_VectorX) > failure_tolerance) {
-            all_passed = false;
-            std::cout << i << " Failed curl VectorX by: " << std::abs(actual_curl_vector[0] - GMLS_Curl_DivFree_VectorX) << std::endl;
-            if (dimension>1) {
-                if(std::abs(actual_curl_vector[1] - GMLS_Curl_DivFree_VectorY) > failure_tolerance) {
-                    all_passed = false;
-                    std::cout << i << " Failed curl VectorY by: " << std::abs(actual_curl_vector[1] - GMLS_Curl_DivFree_VectorY) << std::endl;
-                }
+        if (dimension==2) {
+            if(std::abs(actual_curl_vector[0] - GMLS_Curl_DivFree_VectorX) > failure_tolerance) {
+                all_passed = false;
+                std::cout << i << " Failed curl VectorX by: " << std::abs(actual_curl_vector[2] - GMLS_Curl_DivFree_VectorX) << std::endl;
             }
-            if (dimension>2) {
-                if(std::abs(actual_curl_vector[2] - GMLS_Curl_DivFree_VectorZ) > failure_tolerance) {
-                    all_passed = false;
-                    std::cout << i << " Failed curl VectorZ by: " << std::abs(actual_curl_vector[2] - GMLS_Curl_DivFree_VectorZ) << std::endl;
-                }
+        } else if (dimension>2) {
+            if(std::abs(actual_curl_vector[0] - GMLS_Curl_DivFree_VectorX) > failure_tolerance) {
+                all_passed = false;
+                std::cout << i << " Failed curl VectorX by: " << std::abs(actual_curl_vector[0] - GMLS_Curl_DivFree_VectorX) << std::endl;
+            }
+            if(std::abs(actual_curl_vector[1] - GMLS_Curl_DivFree_VectorY) > failure_tolerance) {
+                all_passed = false;
+                std::cout << i << " Failed curl VectorY by: " << std::abs(actual_curl_vector[1] - GMLS_Curl_DivFree_VectorY) << std::endl;
+            }
+            if(std::abs(actual_curl_vector[2] - GMLS_Curl_DivFree_VectorZ) > failure_tolerance) {
+                all_passed = false;
+                std::cout << i << " Failed curl VectorZ by: " << std::abs(actual_curl_vector[2] - GMLS_Curl_DivFree_VectorZ) << std::endl;
             }
         }
 
@@ -498,17 +413,17 @@ bool all_passed = true;
         if(std::abs(actual_curlcurl_vector[0] - GMLS_CurlCurl_DivFree_VectorX) > failure_tolerance) {
             all_passed = false;
             std::cout << i << " Failed curl curl VectorX by: " << std::abs(actual_curlcurl_vector[0] - GMLS_CurlCurl_DivFree_VectorX) << std::endl;
-            if (dimension>1) {
-                if(std::abs(actual_curlcurl_vector[1] - GMLS_CurlCurl_DivFree_VectorY) > failure_tolerance) {
-                    all_passed = false;
-                    std::cout << i << " Failed curl curl VectorY by: " << std::abs(actual_curlcurl_vector[1] - GMLS_CurlCurl_DivFree_VectorY) << std::endl;
-                }
+        }
+        if (dimension>1) {
+            if(std::abs(actual_curlcurl_vector[1] - GMLS_CurlCurl_DivFree_VectorY) > failure_tolerance) {
+                all_passed = false;
+                std::cout << i << " Failed curl curl VectorY by: " << std::abs(actual_curlcurl_vector[1] - GMLS_CurlCurl_DivFree_VectorY) << std::endl;
             }
-            if (dimension>2) {
-                if(std::abs(actual_curlcurl_vector[2] - GMLS_CurlCurl_DivFree_VectorZ) > failure_tolerance) {
-                    all_passed = false;
-                    std::cout << i << " Failed curl curl VectorZ by: " << std::abs(actual_curlcurl_vector[2] - GMLS_CurlCurl_DivFree_VectorZ) << std::endl;
-                }
+        }
+        if (dimension>2) {
+            if(std::abs(actual_curlcurl_vector[2] - GMLS_CurlCurl_DivFree_VectorZ) > failure_tolerance) {
+                all_passed = false;
+                std::cout << i << " Failed curl curl VectorZ by: " << std::abs(actual_curlcurl_vector[2] - GMLS_CurlCurl_DivFree_VectorZ) << std::endl;
             }
         }
 

@@ -37,7 +37,6 @@
 #include <stk_simd_view/simd_view.hpp>
 #include <stk_simd_view/has_typedef.hpp>
 #include <stk_simd_view/simd_index.hpp>
-#include <impl/Kokkos_Timer.hpp>
 #include <typeinfo>
 
 namespace stk {

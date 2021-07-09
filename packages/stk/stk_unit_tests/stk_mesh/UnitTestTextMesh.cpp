@@ -9,6 +9,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 
 namespace {
 
@@ -59,6 +60,18 @@ protected:
 
       verify_part(blockPart);
       verify_elements_on_part(blockPart, gold.ids);
+    }
+  }
+
+  using PartNameId = std::pair<std::string, unsigned>;
+
+  void verify_part_ids(const std::vector<PartNameId>& golds)
+  {
+    for (const PartNameId& gold : golds) {
+      stk::mesh::Part* blockPart = get_meta().get_part(gold.first);
+
+      verify_part(blockPart);
+      EXPECT_EQ(blockPart->id(), gold.second);
     }
   }
 
@@ -132,7 +145,7 @@ private:
     void verify_num_nodes()
     {
       stk::mesh::EntityVector nodes;
-      bulk.get_entities(stk::topology::NODE_RANK, meta.universal_part(), nodes);
+      stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
       EXPECT_EQ(goldNodeIds.size(), nodes.size());
     }
 
@@ -336,6 +349,250 @@ TEST_F(TestTextMesh, threeTriShellsWithDefaultParts)
   verify_single_element(3u, stk::topology::SHELL_TRI_3, stk::mesh::EntityIdVector{2, 3, 5});
   verify_part_membership({{"block_SHELL_TRIANGLE_3", {1u, 2u, 3u}}});
 }
+
+
+TEST_F(TestTextMesh, partIds_oneDefaultPartOneElem)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_HEXAHEDRON_8", 1u}});
+}
+
+TEST_F(TestTextMesh, partIds_oneDefaultPartTwoElems)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_HEXAHEDRON_8", 1u}});
+}
+
+TEST_F(TestTextMesh, partIds_twoDefaultParts)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16\n"
+                         "0,3,SHELL_QUAD_4,17,18,19,20";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_HEXAHEDRON_8", 1u}, {"block_SHELL_QUADRILATERAL_4", 2u}});
+}
+
+TEST_F(TestTextMesh, partIds_oneDefaultPartOneUserSpecifiedPart)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,my_cool_part";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_HEXAHEDRON_8", 1u}, {"my_cool_part", 2u}});
+}
+
+TEST_F(TestTextMesh, partIds_samePartTwice)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,my_cool_part\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,my_cool_part";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"my_cool_part", 1u}});
+}
+
+TEST_F(TestTextMesh, partIds_orderingIsByLine)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,2,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partOne\n"
+                         "0,1,HEX_8,9,10,11,12,13,14,15,16,partTwo";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"partOne", 1u}, {"partTwo", 2u}});
+}
+
+TEST_F(TestTextMesh, partIds_respectExodusNamingConvention_onePart)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_101";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_101", 101u}});
+}
+
+TEST_F(TestTextMesh, partIds_respectExodusNamingConvention_twoParts)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,block_101\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,block_201";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_101", 101u}, {"block_201", 201u}});
+}
+
+TEST_F(TestTextMesh, partIds_respectExodusNamingConvention_withDefaultPartFirst)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,block_101";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_HEXAHEDRON_8", 1u}, {"block_101", 101u}});
+}
+
+TEST_F(TestTextMesh, partIds_respectExodusNamingConvention_withDefaultPartSecond)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,block_101\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_101", 101u}, {"block_HEXAHEDRON_8", 1u}});
+}
+
+TEST_F(TestTextMesh, partIds_respectExodusNamingConvention_withDefaultPartIdCollision)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,block_1";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_HEXAHEDRON_8", 2u}, {"block_1", 1u}});
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_onePart)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,partThree,3";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"partThree", 3u}});
+  verify_num_elements(1);
+  verify_single_element(1u, stk::topology::HEX_8, stk::mesh::EntityIdVector{1,2,3,4,5,6,7,8});
+  verify_part_membership({{"partThree", {1u}}});
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_twoParts)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partThree,3\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,partFive,5";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"partThree", 3u}, {"partFive", 5u}});
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_twoPartsSameId)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partFour,4\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,partFour,4";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"partFour", 4u}});
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_samePartDifferentIds)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partFour,4\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,partFour,5";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_withDefaultPartIdCollision)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,partOne,1";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"block_HEXAHEDRON_8", 2u}, {"partOne", 1u}});
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_withDefaultPart)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partThree,3\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"partThree", 3u}, {"block_HEXAHEDRON_8", 1u}});
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_withExodusPart)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partThree,3\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,block_4";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"partThree", 3u}, {"block_4", 4u}});
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_collidesWithExodusPart)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partThree,3\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,block_3";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_collidesWithPreviousSpec)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,partThreeA,3\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,partThreeB,3";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, partIds_userSpecifiedPartId_forExodusPart)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,block_2,3\n";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, partIds_shortPartNamesAreValid)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1, 2, 3, 4, 5, 6, 7, 8,a\n"
+                         "0,2,HEX_8,9,10,11,12,13,14,15,16,b,3";
+  stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+
+  verify_part_ids({{"a", 1u}, {"b", 3u}});
+}
+
+TEST_F(TestTextMesh, partIds_integerPartNamesAreInvalid)
+{
+  if (get_parallel_size() != 1) return;
+
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,9";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
 
 TEST_F(TestTextMesh, twoHexesParallel)
 {
@@ -766,6 +1023,34 @@ TEST_F(TestTextMesh1d, oneDimensionNotSupported)
 
   std::string meshDesc = "0,1,LINE_2_1D,1,2";
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+void test_get_mesh_spec(unsigned blockCountToDist, const std::vector<unsigned>& numProcs,
+                        const std::vector<std::vector<unsigned>>& expectedDist)
+{
+  EXPECT_EQ(numProcs.size(), expectedDist.size());
+
+  for(unsigned i = 0; i < numProcs.size(); i++) {
+    unsigned procCount = numProcs[i];
+    std::vector<unsigned> procs;
+    stk::unit_test_util::get_block_proc_distribution(blockCountToDist, procCount, procs);
+
+    EXPECT_EQ(expectedDist[i].size(), procs.size());
+    for(unsigned j = 0; j < procs.size(); j++) {
+      EXPECT_EQ(expectedDist[i][j], procs[j]) << "i,j: (" << i << ", " << j << ")";
+    }
+  }
+}
+
+TEST(GetMeshSpecTest, TestGetMeshSpecWithMultiProc)
+{
+  unsigned blockCountToDist = 6;
+  std::vector<unsigned> numProcs = {1,2,4,6};
+  std::vector<std::vector<unsigned>> expectedDist = { {0,0,0,0,0,0},
+                                                      {0,0,0,1,1,1},
+                                                      {0,0,1,1,2,3},
+                                                      {0,1,2,3,4,5} };
+  test_get_mesh_spec(blockCountToDist, numProcs, expectedDist);
 }
 
 } // namespace

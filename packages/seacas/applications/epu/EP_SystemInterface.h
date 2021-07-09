@@ -1,36 +1,9 @@
 /*
- * Copyright(C) 2010-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
@@ -43,7 +16,7 @@
 #include <vector>       // for vector
 
 namespace Excn {
-  typedef std::vector<std::pair<std::string, int>> StringIdVector;
+  using StringIdVector = std::vector<std::pair<std::string, int>>;
 
   class SystemInterface
   {
@@ -54,8 +27,6 @@ namespace Excn {
     bool parse_options(int argc, char **argv);
 
     int debug() const { return debugLevel_; }
-    int raid_offset() const { return raidOffset_; }
-    int raid_count() const { return raidCount_; }
     int processor_count() const { return processorCount_; }
     int start_part() const { return startPart_; }
     int part_count() const;
@@ -84,9 +55,12 @@ namespace Excn {
     std::string root_dir() const { return rootDirectory_; }
     std::string sub_dir() const { return subDirectory_; }
 
-    bool add_processor_id_field() const { return addProcessorId_; }
+    bool add_nodal_communication_map() const { return addNodalCommunicationMap_; }
+    bool add_processor_id_field() const { return addProcessorIdField_; }
+    bool add_processor_id_map() const { return addProcessorIdMap_; }
     bool sum_shared_nodes() const { return sumSharedNodes_; }
     bool use_netcdf4() const { return useNetcdf4_; }
+    bool use_netcdf5() const { return useNetcdf5_; }
     void set_use_netcdf4() const { useNetcdf4_ = true; }
     bool append() const { return append_; }
     bool map_element_ids() const { return mapIds_; }
@@ -95,10 +69,13 @@ namespace Excn {
     bool int64() const { return intIs64Bit_; }
     void set_int64() const { intIs64Bit_ = true; }
     int  compress_data() const { return compressData_; }
+    bool zlib() const { return zlib_; }
+    bool szip() const { return szip_; }
     bool subcycle_join() const { return subcycleJoin_; }
     bool output_shared_nodes() const { return outputSharedNodes_; }
     bool is_auto() const { return auto_; }
     bool keep_temporary() const { return keepTemporary_; }
+    bool verify_valid_file() const { return verifyValidFile_; }
     int  max_open_files() const
     {
       return maxOpenFiles_;
@@ -145,8 +122,6 @@ namespace Excn {
     mutable std::string outputFilename_{};
 
     int          myRank_{0};
-    int          raidOffset_{};
-    int          raidCount_{};
     int          processorCount_{1};
     int          startPart_{};
     int          partCount_{-1};
@@ -159,18 +134,24 @@ namespace Excn {
     int          cycle_{-1};
     int          compressData_{0};
     int          maxOpenFiles_{0};
+    bool         zlib_{true};
+    bool         szip_{false};
     bool         sumSharedNodes_{false};
-    bool         addProcessorId_{false};
+    bool         addProcessorIdField_{false};
+    bool         addProcessorIdMap_{false};
     bool         mapIds_{true};
     bool         omitNodesets_{false};
     bool         omitSidesets_{false};
     mutable bool useNetcdf4_{false};
+    bool         useNetcdf5_{false};
     bool         append_{false};
     mutable bool intIs64Bit_{false};
     bool         subcycleJoin_{false};
     bool         outputSharedNodes_{false};
     bool         auto_{false};
     bool         keepTemporary_{false};
+    bool         verifyValidFile_{false};
+    bool         addNodalCommunicationMap_{false};
 
     StringIdVector globalVarNames_;
     StringIdVector nodeVarNames_;

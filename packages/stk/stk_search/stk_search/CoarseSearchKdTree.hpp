@@ -42,6 +42,7 @@
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include "stk_util/environment/Env.hpp"
 #include "stk_util/environment/WallTime.hpp"
+#include "stk_util/parallel/ParallelReduce.hpp"
 #include <stk_search/CommonSearchUtil.hpp>
 #include <stk_search/Sphere.hpp>
 #include <stk_search/IdentProc.hpp>

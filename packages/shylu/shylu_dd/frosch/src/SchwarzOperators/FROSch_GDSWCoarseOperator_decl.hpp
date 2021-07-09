@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -81,7 +82,8 @@ namespace FROSch {
 
         using EntitySetPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::EntitySetPtr;
 
-        using SubdomainSolverPtr            = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using SolverPtr                     = typename SchwarzOperator<SC,LO,GO,NO>::SolverPtr;
+        using SolverFactoryPtr              = typename SchwarzOperator<SC,LO,GO,NO>::SolverFactoryPtr;
 
         using UN                            = typename SchwarzOperator<SC,LO,GO,NO>::UN;
         using UNVecPtr                      = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;
@@ -152,7 +154,13 @@ namespace FROSch {
         void describe(FancyOStream &out,
                       const EVerbosityLevel verbLevel=Describable::verbLevel_default) const;
 
-        std::string description() const;
+        string description() const;
+
+        // AH: Could this be moved to protected?
+        virtual XMapPtr BuildRepeatedMapCoarseLevel(ConstXMapPtr &nodesMap,
+                                                    UN dofsPerNode,
+                                                    ConstXMapPtrVecPtr dofsMaps,
+                                                    UN partitionType );
 
     protected:
 

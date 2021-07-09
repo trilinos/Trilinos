@@ -53,9 +53,6 @@ bool
 testScatter (bool& success, std::ostream& out,
              const int root, const Teuchos::Comm<int>& comm)
 {
-#ifdef HAVE_TEUCHOS_MPI
-  using Teuchos::MpiComm;
-#endif // HAVE_TEUCHOS_MPI
   using Teuchos::scatter;
   using Teuchos::TypeNameTraits;
   using std::endl;

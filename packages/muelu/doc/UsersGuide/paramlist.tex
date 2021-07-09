@@ -3,11 +3,17 @@
           
 \cbb{verbosity}{string}{"high"}{Control of the amount of printed information. Possible values: see Table~\ref{t:verbosity_types}.}
           
+\cbb{output filename}{string}{""}{Write MueLu output to a file instead of std out. Empty value disables file output.}
+          
 \cbb{number of equations}{int}{1}{Number of PDE equations at each grid node. Only constant block size is considered.}
           
 \cbb{max levels}{int}{10}{Maximum number of levels in a hierarchy.}
           
 \cbb{cycle type}{string}{"V"}{Multigrid cycle type. Possible values: "V", "W".}
+          
+\cbb{W cycle start level}{int}{0}{Level at which to start multigrid W cycle.}
+          
+\cbb{number of vectors}{int}{1}{Number of columns in multivectors that are cached for Hierarchy apply phase.}
           
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
           
@@ -52,7 +58,9 @@
           
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
           
-\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".}
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
+      aggregation. Possible values: "classical", "distance laplacian",
+      "unsupported vector smoothing"}
           
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
           
@@ -68,11 +76,20 @@
           
 \cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
           
+\cbb{aggregation: brick x Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the x-direction and the Dirichlet DOFs are not aggregated.}
+          
+\cbb{aggregation: brick y Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the y-direction and the Dirichlet DOFs are not aggregated.}
+          
+\cbb{aggregation: brick z Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the z-direction and the Dirichlet DOFs are not aggregated.}
+          
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
           
 \cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
           
-\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.}
+\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.}
           
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
           
@@ -98,7 +115,7 @@
           
 \cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
           
-\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
+\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory. There, possible values are 0 for piece-wise constant and 1 for piece-wise linear interpolation to transfer values from coarse points to fine points. }
           
 \cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
           
@@ -117,9 +134,13 @@
           
 \cbb{aggregate qualities: percentiles}{Array(double)}{{}}{Percentiles of aggregate qualities to report (in a [0,1] range).}
           
+\cbb{aggregate qualities: mode}{string}{eigenvalue}{Whether to compute eigenvalues (``eigenvalue''),
+      aggregates sizes (``size'') or
+      both (``both'').}
+          
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
-      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'', ``Aggregates'') of type \texttt{string}
       and value ``\{levels separated by commas\}''. A
       matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in
@@ -141,15 +162,22 @@
           
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
           
+\cbb{semicoarsen: piecewise constant}{bool}{false}{whether or not to use piecewise constant interpolation when semicoarsening.}
+          
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
           
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
           
-\cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
-          
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
           
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
+          
+\cbb{filtered matrix: use root stencil}{bool}{false}{Use root-node based sparsification of the filtered
+      matrix. This usually reduces operator complexity in the case of small aggregates.}
+          
+\cbb{filtered matrix: Dirichlet threshold}{double}{-1.0}{Dirichlet threshold to use for detecting zero
+      diagonals in the filtered matrix (which get replaced with a one).  Any negative number disables
+      the thresholding.}
           
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
           
@@ -162,6 +190,8 @@
 \cbb{emin: pattern}{string}{"AkPtent"}{Sparsity pattern to use for energy minimization. Possible values: "AkPtent".}
           
 \cbb{emin: pattern order}{int}{1}{Matrix order for the "AkPtent" pattern.}
+          
+\cbb{emin: use filtered matrix}{bool}{true}{Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
           
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
           
@@ -201,5 +231,5 @@
           
 \cbb{refmaxwell: subsolves on subcommunicators}{bool}{false}{Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).}
           
-\cbb{refmaxwell: ratio AH / A22 subcommunicators}{double}{1.0}{Ratio for the split into sub-communicators.}
+\cbb{refmaxwell: enable reuse}{bool}{false}{Prepare for solver reuse.}
           

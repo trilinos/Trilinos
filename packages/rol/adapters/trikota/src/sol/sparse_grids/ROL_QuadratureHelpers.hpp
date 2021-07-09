@@ -44,6 +44,7 @@
 #ifndef ROL_QUADRATUREHELPERS_HPP
 #define ROL_QUADRATUREHELPERS_HPP
 
+#include <set>
 #include "sandia_rules.hpp"
 
 namespace ROL {

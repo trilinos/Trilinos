@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-# ats2 jobs all use the same environmnet changes to the
+# ats2 jobs all use the same environment changes to the
 # sourced script below will impact jobs on both of those
 # machines. please be mindful of this when making changes
 
@@ -19,7 +19,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || \
   if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9
-    sparc_tpl_arch=pwr9
   else
     echo
     echo "***"
@@ -34,7 +33,6 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]] ; then
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Volta70" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9,Volta70
-    sparc_tpl_arch=v100
   else
     echo
     echo "***"
@@ -58,7 +56,6 @@ echo "Using $ATDM_CONFIG_SYSTEM_NAME compiler stack $ATDM_CONFIG_COMPILER to bui
 
 # Some basic settings
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
-export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=8 # Assume building on the shared login node!
 
 # Set ctest -j parallel level for non-CUDA builds
@@ -69,29 +66,27 @@ else
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
 fi
 
-# NOTE: We do *NOT* purge the modules first like on other systems because that
-# messes up the ATS-2 env.  Therefore, it is recommended that the user load a
-# new shell and then load one of these envs.
+# Purge then load StdEnv to get back to a fresh env in case previous other
+# modules were loaded.
+if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+  module purge --silent
+  module load StdEnv
+else
+  echo "NOTE: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 is set so using pre-loaded sparc-dev module!"
+fi
 
-# Load common modules for all builds
-module load git/2.20.0
-module load cmake/3.14.5
+# Load the sparc-dev/xxx module
+sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
+atdm_config_load_sparc_dev_module ${sparc_module_name}
 
-#
-# Load compiler modules, TPL modules, and point to SPARC TPL install base dirs
-#
+module unload cmake
+module load cmake/3.18.0
 
-if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24" ]]; then
-  module load gcc/7.3.1
-  module load lapack/3.8.0-gcc-4.9.3
+# Set up stuff related the the host compiler
 
-  export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
-  export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-gcc-4.9.3
+if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
+
   export COMPILER_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
-  export SPARC_HDF5=hdf5-1.10.5
-
-  # eharvey: TODO: remove COMPILER_ROOT and other unused exports below.
-  export PATH=${COMPILER_ROOT}/bin:${PATH}
   export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
   export BINUTILS_ROOT=${COMPILER_ROOT}
   export LIBRARY_PATH=${BINUTILS_ROOT}/lib
@@ -99,61 +94,37 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU-7.3.1_SPMPI-2019.06.24" ]]; then
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_gcc-7.3.1_spmpi-2019.06.24
-  else
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_gcc-7.3.1_spmpi-2019.06.24
-  fi
+  export ATDM_CONFIG_USE_NINJA=ON
 
-elif [[ "$ATDM_CONFIG_COMPILER" == *"XL-2019.08.20_SPMPI-2019.06.24_DISABLED" ]]; then
-  module load xl/2019.08.20
-  module load lapack/3.8.0-xl-2019.08.20
-  module load gmake/4.2.1
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
 
-  # Ninja not available for XL until cmake 3.17.0
-  export ATDM_CONFIG_USE_NINJA=OFF
-
-  export CBLAS_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
-  export LAPACK_ROOT=/usr/tcetmp/packages/lapack/lapack-3.8.0-P9-xl-2019.08.20
-  export COMPILER_ROOT=/usr/tce/packages/xl/xl-2019.08.20
-  export SPARC_HDF5=hdf5-1.8.20
-
-  # eharvey: TODO: remove COMPILER_ROOT and other exports below.
-  export PATH=${COMPILER_ROOT}/bin:${PATH}
-  export LD_LIBRARY_PATH=${COMPILER_ROOT}/lib:${LD_LIBRARY_PATH}
+  # Point to binutils root.
   export BINUTILS_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
+  export LD_LIBRARY_PATH=${BINUTILS_ROOT}/lib:${LD_LIBRARY_PATH}
   export LIBRARY_PATH=${BINUTILS_ROOT}/lib
-  export LIBRARY_PATH=${CBLAS_ROOT}/lib:${LIBRARY_PATH}
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+  export BLAS_ROOT=${CBLAS_ROOT}
 
-  if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
-    export LD_LIBRARY_PATH=${BINUTILS_ROOT}/rh/lib/gcc/ppc64le-redhat-linux/7:${LD_LIBRARY_PATH}
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_cuda-10.1.243_xl-2019.08.20_spmpi-2019.06.24
+  # Don't use ninja as the fortran compiler test is broken.
+  export ATDM_CONFIG_USE_NINJA=OFF
+
+  if [[ "CUDA" == "$ATDM_CONFIG_NODE_TYPE" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
   else
-    sparc_tpl_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20
-    sparc_tpl_mpi_ext=ats2-${sparc_tpl_arch}_xl-2019.08.20_spmpi-2019.06.24
+    export ATDM_CONFIG_CXX_FLAGS="-qxflag=disable__cplusplusOverride"
   fi
 
-else
-  echo
-  echo "***"
-  echo "*** ERROR: COMPILER=$ATDM_CONFIG_COMPILER is not supported on this system!"
-  echo "***"
-  return
-
+  # set the gcc compiler XL  will use for backend to one that handles c++14
+  export XLC_USR_CONFIG=/opt/ibm/xlC/16.1.1/etc/xlc.cfg.rhel.7.6.gcc.7.3.1.cuda.10.1.243
+  export XLF_USR_CONFIG=/opt/ibm/xlf/16.1.1/etc/xlf.cfg.rhel.7.5.gcc.7.3.1.cuda.10.1.243
 fi
 
-#
-# Load module and do other setup for CUDA bulids
-#
+# Set up stuff related to CUDA
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
+if [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
 
-  module load cuda/10.1.243
+  export CUDA_BIN_PATH=$CUDA_HOME
 
   # OpenMPI Settings
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
@@ -161,13 +132,9 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
       echo "No nvcc_wrapper found"
       return
   fi
-  export OMPI_CC=`which gcc`
-  export OMPI_FC=`which gfortran`
-  export LLNL_USE_OMPI_VARS="y"
+  # NOTE: The above export overrides the value set by the module load above
 
   # CUDA Settings
-  export CUDA_LAUNCH_BLOCKING=1
-  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
   if [[ ! -d /tmp/${USER} ]] ; then
     echo "Creating /tmp/${USER} for nvcc wrapper!"
     mkdir /tmp/${USER}
@@ -183,18 +150,8 @@ if [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_"* ]]; then
   export KOKKOS_NUM_DEVICES=4
 
   # CTEST Settings
-  # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by cmake/ctest/driver/atdm/ats2/local-driver.sh
+  # Trilinos_CTEST_RUN_CUDA_AWARE_MPI is used by ats2/local-driver.sh
   export Trilinos_CTEST_RUN_CUDA_AWARE_MPI=1
-
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
-
-  echo
-  echo "***"
-  echo "*** ERROR: CUDA version in COMPILER=$ATDM_CONFIG_COMPILER"
-  echo "*** is not supported on this system!  Only CUDA-10.1.243"
-  echo "*** is currently supported!"
-  echo "***"
-  return
 
 fi
 
@@ -202,11 +159,11 @@ fi
 # Final setup for all build configurations
 #
 
-# Common module - requires compiler to be loaded first
-module load spectrum-mpi/2019.06.24
-
 # Prepend path to ninja after all of the modules are loaded
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
+
+# Set a standard git so everyone has the same git
+module load git/2.20.0
 
 # ATDM specific config variables
 export ATDM_CONFIG_LAPACK_LIBS="-L${LAPACK_ROOT}/lib;-llapack;-lgfortran;-lgomp"
@@ -215,27 +172,12 @@ export ATDM_CONFIG_BLAS_LIBS="-L${BLAS_ROOT}/lib;-lblas;-lgfortran;-lgomp;-lm"
 # NOTE: Invalid libbfd.so requires below for Trilinos to compile
 export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_ROOT}/lib/libiberty.a"
 
-export ATDM_CONFIG_SPARC_TPL_BASE=/projects/sparc/tpls/ats2-${sparc_tpl_arch}
-
-sparc_tpl_base=${ATDM_CONFIG_SPARC_TPL_BASE}
-
-# Commont ROOT config variables
-export HDF5_ROOT=${sparc_tpl_base}/hdf5-1.10.5/00000000/${sparc_tpl_mpi_ext}
-export CGNS_ROOT=${sparc_tpl_base}/cgns-c09a5cd/27e5681f1b74c679b5dcb337ac71036d16c47977/${sparc_tpl_mpi_ext}
-export PNETCDF_ROOT=${sparc_tpl_base}/pnetcdf-1.10.0/6144dc67b2041e4093063a04e89fc1e33398bd09/${sparc_tpl_mpi_ext}
-export NETCDF_ROOT=${sparc_tpl_base}/netcdf-4.7.0/58bc48d95be2cc9272a18488fea52e1be1f0b42a/${sparc_tpl_mpi_ext}
-export PARMETIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
-export METIS_ROOT=${sparc_tpl_base}/parmetis-4.0.3/00000000/${sparc_tpl_mpi_ext}
-export SUPERLUDIST_ROOT=${sparc_tpl_base}/superlu_dist-5.4.0/a3121eaff44f7bf7d44e625c3b3d2a9911e58876/${sparc_tpl_mpi_ext}
-
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib64;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
-if [[ "${ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS}" == "" ]] ; then
-  export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
-  export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a"
-fi
+export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
+export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a"
 
 # Set common MPI wrappers
 export MPICC=`which mpicc`
@@ -247,27 +189,19 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
-# Set common default compilers
-export CC=mpicc
-export CXX=mpicxx
-export F77=mpifort
-export FC=mpifort
-export F90=mpifort
-
-# Default install location
-export ATDM_CONFIG_TRIL_CMAKE_INSTALL_PREFIX_DATE_BASE_DEFAULT=/projects/atdm_devops/trilinos_installs/
-
-# System-info for what ATS-2 system we are using
-if [[ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "vortex" ]] ; then
-  export ATDM_CONFIG_ATS2_LOGIN_NODE=vortex60
-  export ATDM_CONFIG_ATS2_LAUNCH_NODE=vortex59
-  # NOTE: If more login and launch nodes gets added to 'vortex', we will need
-  # to change this to a list of node names instead of just one.  But we will
-  # deal with that later if that occurs.
-else
-  echo "Error, the ats2 env on system '${ATDM_CONFIG_KNOWN_HOSTNAME}'"
-  return
+if [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] ; then
+  export ATDM_CONFIG_MPI_PRE_FLAGS="-M;-mca coll ^ibm"
+  # NOTE: We have to use the '-M' option name and not '--smpiarg' since
+  # 'trilinos_jsrun' has special logic
 fi
+
+# NOTE: We used to check for the launch node but at one point that changed
+# from 'vortex59' to 'vortex5' without warning.  That caused all of the tests
+# run with 'trilinos_jsrun' to fail on 2020-08-11 so we got no test results.
+# Therefore, we will not be checking for running on the launch node anymore in
+# order to avoid having all of the testing break when they change the launch
+# node again.  Therefore, we also removed checks for the login node as well.
+# This makes these scripts more robust to changes on 'vortex'.
 
 
 #
@@ -283,19 +217,6 @@ function atdm_ats2_get_allocated_compute_node_name() {
   fi
 }
 export -f atdm_ats2_get_allocated_compute_node_name
-
-
-function atdm_ats2_get_node_type() {
-  current_hostname=$(hostname)
-  if   [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LOGIN_NODE}" ]] ; then
-    echo "login_node"
-  elif [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LAUNCH_NODE}" ]] ; then
-    echo "launch_node"
-  else
-    echo "compute_node"
-  fi
-}
-export -f atdm_ats2_get_node_type
 
 
 #

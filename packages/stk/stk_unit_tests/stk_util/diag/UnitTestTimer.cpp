@@ -32,19 +32,20 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <chrono>
-#include <thread>
-#include <cmath>                        // for sin
-#include <iostream>                     // for ostringstream, etc
-#include <stk_util/diag/PrintTimer.hpp>  // for printTimersTable
-#include <stk_util/diag/Timer.hpp>      // for Timer, TimeBlock, etc
-#include <gtest/gtest.h>
-#include <mpi.h>
-#include <stk_unit_test_utils/getOption.h>
-#include <string>                       // for string, operator<<, etc
-#include <vector>                       // for vector
-#include "stk_util/diag/TimerMetricTraits.hpp"  // for LapCount (ptr only), etc
+#include "gtest/gtest.h"
+#include "stk_unit_test_utils/getOption.h"      // for get_command_line_option
+#include "stk_util/diag/PrintTimer.hpp"         // for printTimersTable
+#include "stk_util/diag/Timer.hpp"              // for Timer, TimeBlock, Timer::Metric, createRo...
+#include "stk_util/diag/TimerMetricTraits.hpp"  // for LapCount (ptr only), MetricTraits, Metric...
+#include "stk_util/parallel/Parallel.hpp"       // for MPI_COMM_WORLD
+#include <cstddef>                              // for size_t
+#include <chrono>                               // for milliseconds
+#include <cmath>                                // for sin
+#include <iostream>                             // for ostringstream, operator<<, basic_ostream
+#include <memory>                               // for allocator_traits<>::value_type
+#include <string>                               // for string, char_traits
+#include <thread>                               // for sleep_for
+#include <vector>                               // for vector
 
 using stk::unit_test_util::get_command_line_option;
 
@@ -183,7 +184,7 @@ TEST(UnitTestTimer, UnitTest)
     
     stk::diag::MetricTraits<stk::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.02, lap_time, millisecTolerance);
+    EXPECT_GE(lap_time, (0.02 - millisecTolerance));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
@@ -191,7 +192,7 @@ TEST(UnitTestTimer, UnitTest)
     
     lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    EXPECT_NEAR(0.04, lap_time, millisecTolerance);
+    EXPECT_GE(lap_time, (0.04 - millisecTolerance));
   }
 
   {
@@ -352,9 +353,19 @@ TEST(UnitTestTimer, YuugeNumberOfTimers)
     stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 }
 
+TEST(UnitTestTimer, lapCount_2start_1stop)
+{
+  stk::diag::TimerSet timerSet(TIMER_APP_3);
+  stk::diag::Timer rootTimer(stk::diag::createRootTimer("Root Timer", timerSet));
+  rootTimer.start();
+  rootTimer.start();
+  rootTimer.stop();
+  unsigned expectedLapCount = 1;
+  EXPECT_EQ(expectedLapCount, rootTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap());
+}
+
 TEST(UnitTestTimer, MultipleStarts)
 {
-  // To stk team: This fails also--seems like calling start or stop multiple times shouldn't break timers
   stk::diag::TimerSet timerSet(TIMER_APP_3);
   stk::diag::Timer rootTimer(stk::diag::createRootTimer("Root Timer", timerSet));
   stk::diag::TimeBlock root_time_block(rootTimer);
@@ -364,17 +375,21 @@ TEST(UnitTestTimer, MultipleStarts)
   
   {
     stk::diag::TimeBlock childBlock(childTimer);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   {
     childTimer.start();
     childTimer.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     childTimer.stop();
     childTimer.stop();
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  EXPECT_NEAR(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.04, millisecTolerance);
+  double expectedTime = 0.2;
+  double measuredTime = childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap();
+  double relativeError = (std::abs(expectedTime - measuredTime)/expectedTime);
+  double relativeTolerance = 0.1;
+  EXPECT_TRUE(relativeError < relativeTolerance);
   EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
   stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 }

@@ -58,45 +58,13 @@ namespace Sacado {
       using view_fad_type::view_fad_type;
 
       // Add overload of dereference operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       view_fad_type* operator->() { return this; }
 
       // Add overload of dereference operator
-      KOKKOS_INLINE_FUNCTION
-      view_fad_type& operator*() { *this; }
+      SACADO_INLINE_FUNCTION
+      view_fad_type& operator*() { return *this; }
     };
-
-#if defined(HAVE_SACADO_KOKKOSCORE)
-    // Overload of Kokkos::atomic_add for ViewFad types.
-    template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
-    KOKKOS_INLINE_FUNCTION
-    void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& xx) {
-      using Kokkos::atomic_add;
-
-      const typename Expr<T>::derived_type& x = xx.derived();
-
-      const int xsz = x.size();
-      const int sz = dst->size();
-
-      // We currently cannot handle resizing since that would need to be
-      // done atomically.
-      if (xsz > sz)
-        Kokkos::abort(
-          "Sacado error: Fad resize within atomic_add() not supported!");
-
-      if (xsz != sz && sz > 0 && xsz > 0)
-        Kokkos::abort(
-          "Sacado error: Fad assignment of incompatiable sizes!");
-
-
-      if (sz > 0 && xsz > 0) {
-        SACADO_FAD_DERIV_LOOP(i,sz)
-          atomic_add(&(dst->fastAccessDx(i)), x.fastAccessDx(i));
-      }
-      SACADO_FAD_THREAD_SINGLE
-        atomic_add(&(dst->val()), x.val());
-    }
-#endif
 
   } // namespace Exp
   } // namespace Fad
@@ -122,6 +90,25 @@ namespace Sacado {
   template <typename T, unsigned static_length, unsigned static_stride, typename U>
   struct BaseExprType< Fad::Exp::GeneralFad< Fad::Exp::ViewStorage<T,static_length,static_stride,U> > > {
     typedef U type;
+  };
+
+  //! Specialization of %ScalarType to ViewFad types
+  /*!
+   * This specialization overrides the one for GeneralFad to handle const
+   * value types so that resulting scalar type is still const.
+   */
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ScalarType< Fad::Exp::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef typename ScalarType<ValueT>::type type;
+  };
+
+  /*!
+   * This specialization overrides the one for GeneralFad to handle const
+   * value types so that resulting value type is still const.
+   */
+  template <typename ValueT, unsigned Size, unsigned Stride, typename Base>
+  struct ValueType< Fad::Exp::ViewFad<ValueT,Size,Stride,Base> > {
+    typedef ValueT type;
   };
 
 } // namespace Sacado

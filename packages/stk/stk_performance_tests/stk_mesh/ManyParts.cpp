@@ -41,6 +41,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_performance_tests/stk_mesh/timer.hpp>
 
 #include <sstream>
 
@@ -59,7 +60,8 @@ TEST(many_parts, many_parts)
   stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, oss.str());
   stk::mesh::MetaData& meta = fixture.getMetaData();
 
-  double start_time = stk::cpu_time();
+  stk::performance_tests::Timer timer(MPI_COMM_WORLD);
+  timer.start_timing();
 
   stk::mesh::Part& super1 = meta.declare_part("super1");
   stk::mesh::Part& super2 = meta.declare_part("super2");
@@ -72,7 +74,7 @@ TEST(many_parts, many_parts)
   stk::mesh::Part& sub4 = meta.declare_part("sub4");
 
   stk::mesh::PartVector parts;
-  unsigned num_parts = 50000;
+  unsigned num_parts = 5000;
   for(unsigned i=0; i<num_parts; ++i) {
     std::ostringstream ossname;
     ossname << "part_"<<i;
@@ -86,9 +88,6 @@ TEST(many_parts, many_parts)
     parts.push_back(&part);
   }
 
-  double part_create_time = stk::cpu_time() - start_time;
-  start_time = stk::cpu_time();
-
   typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
   VectorField& field = meta.declare_field<VectorField>(stk::topology::NODE_RANK, "field");
   for(size_t i=0; i<parts.size(); ++i) {
@@ -96,23 +95,11 @@ TEST(many_parts, many_parts)
     stk::mesh::put_field_on_mesh(field, part, 3, nullptr);
   }
 
-  double field_reg_time = stk::cpu_time() - start_time;
-  start_time = stk::cpu_time();
-
   for(size_t i=0; i<parts.size(); ++i) {
     meta.declare_part_subset(super4, *parts[i]);
     meta.declare_part_subset(*parts[i], sub4);
   }
 
-  double part_subset_time = stk::cpu_time() - start_time;
-
-  double total_time    = part_create_time + field_reg_time + part_subset_time;
-
-  static const int NUM_TIMERS = 4;
-  const double timers[NUM_TIMERS] = {part_create_time, field_reg_time, part_subset_time, total_time};
-  const char* timer_names[NUM_TIMERS] = {"Part create", "Field register", "Part subset", "Total time"};
-
-  stk::print_timers_and_memory(&timer_names[0], &timers[0], NUM_TIMERS);
-
-  stk::parallel_print_time_without_output_and_hwm(MPI_COMM_WORLD, total_time);
+  timer.update_timing();
+  timer.print_timing(num_parts);
 }

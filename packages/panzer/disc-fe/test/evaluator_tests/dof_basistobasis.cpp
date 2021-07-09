@@ -129,16 +129,18 @@ void
 DummyFieldEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
-{ 
-  fieldValue(0,0) = 1.0;
-  fieldValue(0,1) = 2.0;
-  fieldValue(0,2) = 2.0;
-  fieldValue(0,3) = 1.0;
+{
+  auto fieldValue_h = Kokkos::create_mirror_view(fieldValue.get_view());
+  fieldValue_h(0,0) = 1.0;
+  fieldValue_h(0,1) = 2.0;
+  fieldValue_h(0,2) = 2.0;
+  fieldValue_h(0,3) = 1.0;
   
-  fieldValue(1,0) = 2.0;
-  fieldValue(1,1) = 3.0;
-  fieldValue(1,2) = 3.0;
-  fieldValue(1,3) = 2.0;
+  fieldValue_h(1,0) = 2.0;
+  fieldValue_h(1,1) = 3.0;
+  fieldValue_h(1,2) = 3.0;
+  fieldValue_h(1,3) = 2.0;
+  Kokkos::deep_copy(fieldValue.get_view(), fieldValue_h);
 }
 
 //**********************************************************************
@@ -224,30 +226,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->getFieldData<EvalType>(s);
   fm->getFieldData<EvalType>(t);
 
-  typename Teuchos::ScalarTraits<ScalarT>::magnitudeType tol =
-    100.0 * Teuchos::ScalarTraits<ScalarT>::eps();
+  typename Teuchos::ScalarTraits<typename Sacado::ScalarType<ScalarT>::type>::magnitudeType tol =
+    100.0 * Teuchos::ScalarTraits<typename Sacado::ScalarType<ScalarT>::type>::eps();
 
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,0)),ScalarT(s(0,0)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,1)),ScalarT(s(0,1)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,2)),ScalarT(s(0,2)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,3)),ScalarT(s(0,3)),tol);
+  auto s_h = Kokkos::create_mirror_view(s.get_view());
+  Kokkos::deep_copy(s_h, s.get_view());
+  auto t_h = Kokkos::create_mirror_view(t.get_view());
+  Kokkos::deep_copy(t_h, t.get_view());
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,0)),ScalarT(s_h(0,0)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,1)),ScalarT(s_h(0,1)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,2)),ScalarT(s_h(0,2)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,3)),ScalarT(s_h(0,3)),tol);
 
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,0)),ScalarT(s(1,0)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,1)),ScalarT(s(1,1)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,2)),ScalarT(s(1,2)),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,3)),ScalarT(s(1,3)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,0)),ScalarT(s_h(1,0)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,1)),ScalarT(s_h(1,1)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,2)),ScalarT(s_h(1,2)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,3)),ScalarT(s_h(1,3)),tol);
 
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,4)),ScalarT(1.5),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,5)),ScalarT(2.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,6)),ScalarT(1.5),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,7)),ScalarT(1.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(0,8)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,4)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,5)),ScalarT(2.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,6)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,7)),ScalarT(1.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(0,8)),ScalarT(1.5),tol);
 
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,4)),ScalarT(2.5),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,5)),ScalarT(3.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,6)),ScalarT(2.5),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,7)),ScalarT(2.0),tol);
-  TEST_FLOATING_EQUALITY(ScalarT(t(1,8)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,4)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,5)),ScalarT(3.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,6)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,7)),ScalarT(2.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t_h(1,8)),ScalarT(2.5),tol);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

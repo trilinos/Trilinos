@@ -46,13 +46,6 @@
 #include "Ifpack_ConfigDefs.h"
 #ifdef HAVE_HYPRE
 
-#include "HYPRE_IJ_mv.h"
-#include "HYPRE_parcsr_ls.h"
-#include "krylov.h"
-#include "_hypre_parcsr_mv.h"
-#include "_hypre_IJ_mv.h"
-#include "HYPRE_parcsr_mv.h"
-#include "HYPRE.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Condest.h"
 #include "Ifpack_ScalingType.h"
@@ -68,7 +61,32 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "Epetra_MpiComm.h"
+
+
+#include <map>
+
+// Hypre forward declarations (to avoid downstream header pollution)
+
+struct hypre_IJMatrix_struct;
+typedef struct hypre_IJMatrix_struct *HYPRE_IJMatrix;
+struct hypre_IJVector_struct;
+typedef struct hypre_IJVector_struct *HYPRE_IJVector;
+struct hypre_ParCSRMatrix_struct;
+typedef struct hypre_ParCSRMatrix_struct* HYPRE_ParCSRMatrix;
+struct hypre_ParVector_struct;
+typedef struct hypre_ParVector_struct * HYPRE_ParVector;
+struct hypre_Solver_struct;
+typedef struct hypre_Solver_struct *HYPRE_Solver;
+struct hypre_ParVector_struct;
+typedef struct hypre_ParVector_struct hypre_ParVector;
+//struct hypre_Vector;
+
+// Will only work if Hypre is built with HYPRE_BIGINT=OFF
+typedef int HYPRE_Int;
+
+typedef HYPRE_Int (*HYPRE_PtrToParSolverFcn)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
 #ifndef HYPRE_ENUMS
 #define HYPRE_ENUMS
@@ -93,114 +111,7 @@ enum Hypre_Chooser{
 };
 #endif //HYPRE_ENUMS
 
-//! This class is used to help with passing parameters in the SetParameter() function. Use this class to call Hypre's internal parameters.
-class FunctionParameter{
-  public:
-    //! Single int constructor.
-    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int), int param1) :
-      chooser_(chooser),
-      option_(0),
-      int_func_(funct_name),
-      int_param1_(param1) {}
-
-    //! Single double constructor.
-    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, double), double param1):
-      chooser_(chooser),
-      option_(1),
-      double_func_(funct_name),
-      double_param1_(param1) {}
-
-    //! Single double, single int constructor.
-    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, double, int), double param1, int param2):
-      chooser_(chooser),
-      option_(2),
-      double_int_func_(funct_name),
-      int_param1_(param2),
-      double_param1_(param1) {}
-
-    //! Two ints constructor.
-    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int, int), int param1, int param2):
-      chooser_(chooser),
-      option_(3),
-      int_int_func_(funct_name),
-      int_param1_(param1),
-      int_param2_(param2) {}
-
-    //! Int pointer constructor.
-    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int*), int *param1):
-      chooser_(chooser),
-      option_(4),
-      int_star_func_(funct_name),
-      int_star_param_(param1) {}
-
-    //! Double pointer constructor.
-    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, double*), double* param1):
-      chooser_(chooser),
-      option_(5),
-      double_star_func_(funct_name),
-      double_star_param_(param1) {}
-
-    //! Integer pointer to list of integer pointers
-    FunctionParameter(Hypre_Chooser chooser, int (*funct_name)(HYPRE_Solver, int**), int ** param1):
-      chooser_(chooser),
-      option_(6),
-	  int_star_star_func_(funct_name),
-	  int_star_star_param_(param1) {}
-
-    //! Only method of this class. Calls the function pointer with the passed in HYPRE_Solver
-    int CallFunction(HYPRE_Solver solver, HYPRE_Solver precond){
-      if(chooser_ == Solver){
-          if(option_ == 0){
-            return int_func_(solver, int_param1_);
-          } else if(option_ == 1){
-            return double_func_(solver, double_param1_);
-          } else if(option_ == 2){
-            return double_int_func_(solver, double_param1_, int_param1_);
-          } else if (option_ == 3){
-            return int_int_func_(solver, int_param1_, int_param2_);
-          } else if (option_ == 4){
-            return int_star_func_(solver, int_star_param_);
-          } else if (option_ == 5){
-            return double_star_func_(solver, double_star_param_);
-          } else {
-            return int_star_star_func_(solver,int_star_star_param_);
-          }
-        } else {
-          if(option_ == 0){
-            return int_func_(precond, int_param1_);
-          } else if(option_ == 1){
-            return double_func_(precond, double_param1_);
-          } else if(option_ == 2){
-            return double_int_func_(precond, double_param1_, int_param1_);
-          } else if(option_ == 3) {
-            return int_int_func_(precond, int_param1_, int_param2_);
-          } else if(option_ == 4) {
-            return int_star_func_(precond, int_star_param_);
-          } else if (option_ == 5){
-            return double_star_func_(precond, double_star_param_);
-          } else {
-            return int_star_star_func_(precond,int_star_star_param_);
-          }
-      }
-    }
-
-  private:
-    Hypre_Chooser chooser_;
-    int option_;
-    int (*int_func_)(HYPRE_Solver, int);
-    int (*double_func_)(HYPRE_Solver, double);
-    int (*double_int_func_)(HYPRE_Solver, double, int);
-    int (*int_int_func_)(HYPRE_Solver, int, int);
-    int (*int_star_func_)(HYPRE_Solver, int*);
-    int (*double_star_func_)(HYPRE_Solver, double*);
-    int (*int_star_star_func_)(HYPRE_Solver, int **);
-    int int_param1_;
-    int int_param2_;
-    double double_param1_;
-    int *int_star_param_;
-    double *double_star_param_;
-    int ** int_star_star_param_;
-};
+class FunctionParameter;
 
 namespace Teuchos {
   class ParameterList;
@@ -383,6 +294,12 @@ public:
   */
     int SetParameter(Hypre_Chooser chooser) { SolveOrPrec_ = chooser; return 0;}
 
+  //! Set coordinates
+    int SetCoordinates(Teuchos::RCP<Epetra_MultiVector> coords);
+
+  //! Set discrete gradient
+    int SetDiscreteGradient(Teuchos::RCP<const Epetra_CrsMatrix> G);
+
   //! Call all the function pointers stored in this object.
     int CallFunctions() const;
 
@@ -479,12 +396,14 @@ public:
   const Epetra_RowMatrix& Matrix() const{ return(*A_);}
 
   //! Returns the Hypre matrix that was created upon construction.
+#if 0
   const HYPRE_IJMatrix& HypreMatrix()
   {
     if(IsInitialized() == false)
       Initialize();
     return(HypreA_);
   }
+#endif
 
   //! Prints on stream basic information about \c this object.
   virtual std::ostream& Print(std::ostream& os) const;
@@ -579,50 +498,42 @@ private:
   int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
 
   //! Create a BoomerAMG solver.
-  int Hypre_BoomerAMGCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
-    { return HYPRE_BoomerAMGCreate(solver);}
+  int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a ParaSails solver.
-  int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParaSailsCreate(comm, solver);}
+  int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a Euclid solver.
-  int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_EuclidCreate(comm, solver);}
+  int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create an AMS solver.
-  int Hypre_AMSCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
-    { return HYPRE_AMSCreate(solver);}
+  int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a Hybrid solver.
-  int Hypre_ParCSRHybridCreate(MPI_Comm /*comm*/, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRHybridCreate(solver);}
+  int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a PCG solver.
-  int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRPCGCreate(comm, solver);}
+  int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a GMRES solver.
-  int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRGMRESCreate(comm, solver);}
+  int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a FlexGMRES solver.
-  int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRFlexGMRESCreate(comm, solver);}
+  int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a LGMRES solver.
-  int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRLGMRESCreate(comm, solver);}
+  int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
   //! Create a BiCGSTAB solver.
-  int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver)
-    { return HYPRE_ParCSRBiCGSTABCreate(comm, solver);}
+  int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
 
+  //! Map generation function
+  Teuchos::RCP<const Epetra_Map> MakeContiguousColumnMap(Teuchos::RCP<const Epetra_RowMatrix> &Matrix) const;
   // @}
   // @{ Internal data
 
   //! Pointer to the Epetra_RowMatrix to factorize
-  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
+  Teuchos::RCP<Epetra_RowMatrix> A_;
   //! This objects copy of the ParameterList
   Teuchos::ParameterList List_;
   //! Needed to support Epetra_Operator abstract class
@@ -658,16 +569,31 @@ private:
   mutable HYPRE_IJMatrix HypreA_;
   //! Pointer to the CSR (same matrix)
   mutable HYPRE_ParCSRMatrix ParMatrix_;
+
+  //! Epetra copy of discrete gradient
+  Teuchos::RCP<const Epetra_CrsMatrix> G_;
+  //! The Hypre matrix created in SetDiscreteGradient)
+  mutable HYPRE_IJMatrix HypreG_;
+  //! Pointer to the CSR (same matrix)
+  mutable HYPRE_ParCSRMatrix ParMatrixG_;
+
   //! The Hypre Vector for input
   mutable HYPRE_IJVector XHypre_;
   //! The Hypre Vector for output
   mutable HYPRE_IJVector YHypre_;
   mutable HYPRE_ParVector ParX_;
   mutable HYPRE_ParVector ParY_;
-  mutable hypre_ParVector *XVec_;
-  mutable hypre_ParVector *YVec_;
-  mutable hypre_Vector *XLocal_;
-  mutable hypre_Vector *YLocal_;
+  mutable Teuchos::RCP<hypre_ParVector> XVec_;
+  mutable Teuchos::RCP<hypre_ParVector> YVec_;
+
+  Teuchos::RCP<Epetra_MultiVector> Coords_;
+  mutable HYPRE_IJVector xHypre_;
+  mutable HYPRE_IJVector yHypre_;
+  mutable HYPRE_IJVector zHypre_;
+  mutable HYPRE_ParVector xPar_;
+  mutable HYPRE_ParVector yPar_;
+  mutable HYPRE_ParVector zPar_;
+
   //! The Hypre Solver if doing a solve
   mutable HYPRE_Solver Solver_;
   //! The Hypre Solver if applying preconditioner
@@ -683,13 +609,15 @@ private:
   int (*PrecondSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
   int (*PrecondSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
-  bool *IsSolverSetup_;
-  bool *IsPrecondSetup_;
+  bool IsSolverCreated_;
+  bool IsPrecondCreated_;
   //! Is the system to be solved or apply preconditioner
   Hypre_Chooser SolveOrPrec_;
   //! These are linear maps that meet the needs of Hypre
   Teuchos::RCP<const Epetra_Map> GloballyContiguousRowMap_;
   Teuchos::RCP<const Epetra_Map> GloballyContiguousColMap_;
+  Teuchos::RCP<const Epetra_Map> GloballyContiguousNodeRowMap_;
+  Teuchos::RCP<const Epetra_Map> GloballyContiguousNodeColMap_;
   //! Counter of the number of parameters set
   int NumFunsToCall_;
   //! Which solver was chosen
@@ -700,6 +628,11 @@ private:
   bool UsePreconditioner_;
   //! This contains a list of function pointers that will be called in compute
   std::vector<Teuchos::RCP<FunctionParameter> > FunsToCall_;
+  //! Should information be dumped to files
+  bool Dump_;
+  //! Dummy vector for caching
+  mutable Teuchos::ArrayRCP<double> VectorCache_;
+
 };
 
 #endif // HAVE_HYPRE

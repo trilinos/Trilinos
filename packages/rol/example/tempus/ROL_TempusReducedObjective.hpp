@@ -49,7 +49,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorBasicOld.hpp"
 #include "Tempus_IntegratorForwardSensitivity.hpp"
 #include "Tempus_IntegratorAdjointSensitivity.hpp"
 #include "Tempus_IntegratorPseudoTransientForwardSensitivity.hpp"
@@ -369,9 +369,9 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     dxdp = integrator->getDxDp();
-    dxdotdp = integrator->getDxdotDp();
+    dxdotdp = integrator->getDXDotDp();
   }
   else if (dgdp != Teuchos::null && sensitivity_method_ == "Adjoint") {
     RCP<Tempus::IntegratorAdjointSensitivity<Real> > integrator =
@@ -383,7 +383,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     Thyra::assign(dgdp.ptr(), *(integrator->getDgDp()));
   }
   else if (dgdp != Teuchos::null &&
@@ -398,9 +398,9 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     dxdp = integrator->getDxDp();
-    dxdotdp = integrator->getDxdotDp();
+    dxdotdp = integrator->getDXDotDp();
   }
   else if (dgdp != Teuchos::null &&
            sensitivity_method_ == "Pseudotransient Adjoint") {
@@ -414,7 +414,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
     Thyra::assign(dgdp.ptr(), *(integrator->getDgDp()));
   }
   else if (dgdp != Teuchos::null) {
@@ -425,7 +425,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
       << " and Pseudotransient Adjoint.");
   }
   else {
-    RCP<Tempus::IntegratorBasic<Real> > integrator =
+    RCP<Tempus::IntegratorBasicOld<Real> > integrator =
       Tempus::integratorBasic<Real>(tempus_params_, wrapped_model);
     const bool integratorStatus = integrator->advanceTime();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -434,7 +434,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
     // Get final state
     t = integrator->getTime();
     x = integrator->getX();
-    x_dot = integrator->getXdot();
+    x_dot = integrator->getXDot();
   }
 
   // Evaluate response at final state

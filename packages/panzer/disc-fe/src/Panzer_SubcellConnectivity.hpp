@@ -161,19 +161,19 @@ protected:
   int _num_cells;
 
   /// Adjacency array for indexing into subcell_to_cells array
-  Kokkos::View<int*, PHX::Device> _subcell_to_cells_adj;
+  PHX::View<int*> _subcell_to_cells_adj;
 
   /// Mapping from subcells to cells
-  Kokkos::View<int*, PHX::Device> _subcell_to_cells;
+  PHX::View<int*> _subcell_to_cells;
 
   /// Mapping from subcell indexes to local subcell indexes
-  Kokkos::View<int*, PHX::Device> _subcell_to_local_subcells;
+  PHX::View<int*> _subcell_to_local_subcells;
 
   /// Adjacency array for indexing into cell_to_subcells array
-  Kokkos::View<int*, PHX::Device> _cell_to_subcells_adj;
+  PHX::View<int*> _cell_to_subcells_adj;
 
   /// Mapping from cells to subcells
-  Kokkos::View<int*, PHX::Device> _cell_to_subcells;
+  PHX::View<int*> _cell_to_subcells;
 
 };
 

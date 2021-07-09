@@ -7,6 +7,7 @@ addpath('../../bin')
 try
   A = laplacianfun([120, 120]);
   matlabProblem = muelu('setup', A, 'xml parameter file', 'matlabParams.xml');
+  muelu('cleanup');
   disp('Test passed by running to completion with reentrant call.');
   exit(0);
 catch me

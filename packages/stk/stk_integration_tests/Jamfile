@@ -59,6 +59,10 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
   stk_integration_tests
+  mock_aria
+  mock_salinas
+  mock_fuego
+  mock_sparc
   ;
 
 #
@@ -133,3 +137,48 @@ exe stk_integration_tests
     /sierra/stk_balance//stk_balance_lib
   : <tag>@sierra-exec-tag
   ;
+
+exe mock_sparc
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_sparc.cpp 
+    ]
+    /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_util//stk_util_parallel
+  : <tag>@sierra-exec-tag
+  ;
+
+exe mock_aria
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_aria.cpp 
+    ]
+    /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_util//stk_util_parallel
+  : <tag>@sierra-exec-tag
+  ;
+
+exe mock_salinas
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_salinas.cpp 
+    ]
+    /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_util//stk_util_parallel
+  : <tag>@sierra-exec-tag
+  ;
+
+exe mock_fuego
+  :
+    [ glob 
+        $(stk_integration_tests-root)/mock_apps/mock_fuego.cpp 
+    ]
+    /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
+    /sierra/stk_util//stk_util_parallel
+  : <tag>@sierra-exec-tag
+  ;
+

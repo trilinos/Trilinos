@@ -151,8 +151,7 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
     numEntitiesOwned = 0;
 
     const stk::mesh::BucketVector & nodeBuckets = stkMeshBulkData->get_buckets(stk::topology::NODE_RANK, meta_data.universal_part());
-    for(const stk::mesh::Bucket *bucket : nodeBuckets)
-    {
+    for(const stk::mesh::Bucket *bucket : nodeBuckets) {
         const unsigned bucketSize = bucket->size();
         numEntitiesUniversal += bucketSize;
 
@@ -205,11 +204,9 @@ template<class Scalar>
 void testFieldValidation(BLASFixture<Scalar> & Fixture, Scalar val1, Scalar val2, Scalar val3, stk::mesh::Selector selector, double tol=1.0e-5)
 {
     const stk::mesh::BucketVector& buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),selector);
-    for(size_t j = 0; j < buckets.size(); j++)
-    {
+    for(size_t j = 0; j < buckets.size(); j++) {
         const stk::mesh::Bucket& bucket = *buckets[j];
-        for(size_t i=0; i<bucket.size(); i++)
-        {
+        for(size_t i=0; i<bucket.size(); i++) {
             Scalar* field_value1 = reinterpret_cast<Scalar*>(stk::mesh::field_data(*Fixture.field1, bucket[i]));
             EXPECT_NEAR(val1,*field_value1,tol);
 
@@ -229,11 +226,9 @@ void testFieldValidation(BLASFixture<std::complex<Scalar> > & Fixture,
                          stk::mesh::Selector selector, double tol=1.0e-5)
 {
     const stk::mesh::BucketVector& buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),selector);
-    for(size_t j = 0; j < buckets.size(); j++)
-    {
+    for(size_t j = 0; j < buckets.size(); j++) {
         const stk::mesh::Bucket& bucket = *buckets[j];
-        for(size_t i=0; i<bucket.size(); i++)
-        {
+        for(size_t i=0; i<bucket.size(); i++) {
             std::complex<Scalar>* field_value1 = reinterpret_cast<std::complex<Scalar>* >(stk::mesh::field_data(*Fixture.field1, bucket[i]));
             EXPECT_LT(std::abs(val1-*field_value1),tol);
 
@@ -288,6 +283,45 @@ TEST(FieldBLAS,axpy_int)
     const int initial2 = -3;
     const int alpha    = 7;
     test_axpy(alpha,initial1,initial2);
+}
+
+template<class Scalar>
+void test_axpby(const Scalar alpha, const Scalar initial1, const Scalar beta, const Scalar initial2)
+{
+    BLASFixture<Scalar> Fixture (initial1,initial2);
+
+    stk::mesh::field_axpby(alpha,*Fixture.field1,beta,*Fixture.field2);
+    testFieldValidation(Fixture,initial1,alpha*initial1+beta*initial2,Scalar());
+
+    stk::mesh::field_axpby(alpha,*Fixture.fieldBase1,beta,*Fixture.fieldBase2);
+    testFieldValidation(Fixture,initial1,alpha*initial1*Scalar(2)+beta*initial2,Scalar());
+}
+
+TEST(FieldBLAS,axpby_double)
+{
+    const double initial1 = 4.27;
+    const double initial2 = -3.73;
+    const double alpha    = 7.11;
+    const double beta     = 1.0;
+    test_axpby(alpha,initial1,beta,initial2);
+}
+
+TEST(FieldBLAS,axpby_float)
+{
+    const float initial1 = 1.2;
+    const float initial2 = -3.1;
+    const float alpha    = 4.1;
+    const float beta     = 1.0;
+    test_axpby(alpha,initial1,beta,initial2);
+}
+
+TEST(FieldBLAS,axpby_complex)
+{
+    const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
+    const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
+    const std::complex<double> alpha    = std::complex<double>(-3.11,2.00);
+    const std::complex<double> beta     = std::complex<double>(1.0,0.0);
+    test_axpby(alpha,initial1,beta,initial2);
 }
 
 template<class Scalar>
@@ -578,21 +612,9 @@ void test_dot(const Scalar initial1,const Scalar initial2,const double TOL = 0.5
     BLASFixture<Scalar> Fixture (initial1,initial2);
 
     Scalar field_result = stk::mesh::field_dot(*Fixture.field1,*Fixture.field2);
-    EXPECT_NEAR(field_result,initial1*initial2*Scalar(Fixture.numEntitiesGlobal),TOL);
+    EXPECT_LT(std::abs(field_result-initial1*initial2*Scalar(Fixture.numEntitiesGlobal)),TOL);
 
     Scalar fieldBase_result;
-    stk::mesh::field_dot(fieldBase_result,*Fixture.fieldBase1,*Fixture.fieldBase2);
-    EXPECT_NEAR(fieldBase_result,initial1*initial2*Scalar(Fixture.numEntitiesGlobal),TOL);
-}
-
-template<class Scalar>
-void test_dot(const std::complex<Scalar> initial1,const std::complex<Scalar> initial2,const double TOL = 1.0e-1)
-{
-    BLASFixture<std::complex<Scalar> > Fixture (initial1,initial2);
-
-    std::complex<Scalar> field_result = stk::mesh::field_dot(*Fixture.field1,*Fixture.field2);
-    EXPECT_LT(std::abs(field_result-initial1*initial2*Scalar(Fixture.numEntitiesGlobal)),TOL);
-    std::complex<Scalar> fieldBase_result;
     stk::mesh::field_dot(fieldBase_result,*Fixture.fieldBase1,*Fixture.fieldBase2);
     EXPECT_LT(std::abs(fieldBase_result-initial1*initial2*Scalar(Fixture.numEntitiesGlobal)),TOL);
 }
@@ -631,29 +653,13 @@ void test_dot_selector(Scalar initial1,Scalar initial2,const double TOL = 1.0e-1
     BLASFixture<Scalar> Fixture (initial1,initial2);
 
     Scalar resultA=stk::mesh::field_dot(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA));
-    EXPECT_NEAR(initial1*initial2*Scalar(Fixture.numPartAEntitiesGlobal),resultA,TOL);
+    EXPECT_LT(std::abs(initial1*initial2*Scalar(Fixture.numPartAEntitiesGlobal)-resultA),TOL);
 
     Scalar resultB;
     stk::mesh::field_dot(resultB,*Fixture.fieldBase2,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
-    EXPECT_NEAR(initial1*initial2*Scalar(Fixture.numPartBEntitiesGlobal),resultB,TOL);
-
-    Scalar resultABc=stk::mesh::field_dot(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-    EXPECT_NEAR(initial1*initial2*Scalar(Fixture.numEntitiesGlobal-Fixture.numPartAEntitiesGlobal-Fixture.numPartBEntitiesGlobal),resultABc,TOL);
-}
-
-template<class Scalar>
-void test_dot_selector(std::complex<Scalar> initial1,std::complex<Scalar> initial2,const double TOL = 1.0e-1)
-{
-    BLASFixture<std::complex<Scalar> > Fixture (initial1,initial2);
-
-    std::complex<Scalar> resultA=stk::mesh::field_dot(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA));
-    EXPECT_LT(std::abs(initial1*initial2*Scalar(Fixture.numPartAEntitiesGlobal)-resultA),TOL);
-
-    std::complex<Scalar> resultB;
-    stk::mesh::field_dot(resultB,*Fixture.fieldBase2,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
     EXPECT_LT(std::abs(initial1*initial2*Scalar(Fixture.numPartBEntitiesGlobal)-resultB),TOL);
 
-    std::complex<Scalar> resultABc=stk::mesh::field_dot(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
+    Scalar resultABc=stk::mesh::field_dot(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
     EXPECT_LT(std::abs(initial1*initial2*Scalar(Fixture.numEntitiesGlobal-Fixture.numPartAEntitiesGlobal-Fixture.numPartBEntitiesGlobal)-resultABc),TOL);
 }
 
@@ -1881,8 +1887,7 @@ BLASFixture3d<A>::BLASFixture3d(A* init1_input, A* init2_input, A* init3_input)
     numEntitiesOwned     = 0;
     numEntitiesUniversal = 0;
     const stk::mesh::BucketVector & buckets = stkMeshBulkData->get_buckets(stk::topology::NODE_RANK, meta_data.universal_part());
-    for(const stk::mesh::Bucket *bucket : buckets)
-    {
+    for(const stk::mesh::Bucket *bucket : buckets) {
         numEntitiesUniversal += bucket->size();
         if (bucket->owned())
             numEntitiesOwned += bucket->size();
@@ -1903,16 +1908,12 @@ bool test3dfield(const stk::mesh::Field<A,T1,T2,T3,T4,T5,T6,T7> & field,const A*
 {
     bool result=true;
     const stk::mesh::BucketVector& buckets_init = field.get_mesh().get_buckets(field.entity_rank(),field.mesh_meta_data().universal_part() & stk::mesh::selectField(field));
-    for(size_t j = 0; j < buckets_init.size(); j++)
-    {
+    for(size_t j = 0; j < buckets_init.size(); j++) {
         const stk::mesh::Bucket& bucket = *buckets_init[j];
-        for(size_t i=0; i<bucket.size(); i++)
-        {
+        for(size_t i=0; i<bucket.size(); i++) {
             A* field_value = reinterpret_cast<A*>(stk::mesh::field_data(field,bucket[i]));
-            if (result)
-            {
-                for (unsigned int k=0;k<3u;k++)
-                {
+            if (result) {
+                for (unsigned int k=0;k<3u;k++) {
                     EXPECT_NEAR(expected_value[k],field_value[k],tol);
                     if (std::abs(expected_value[k]-field_value[k])>tol) result=false;
                 }
@@ -1927,16 +1928,12 @@ bool test3dfield(const stk::mesh::Field<std::complex<A>,T1,T2,T3,T4,T5,T6,T7> & 
 {
     bool result=true;
     const stk::mesh::BucketVector& buckets_init = field.get_mesh().get_buckets(field.entity_rank(),field.mesh_meta_data().universal_part() & stk::mesh::selectField(field));
-    for(size_t j = 0; j < buckets_init.size(); j++)
-    {
+    for(size_t j = 0; j < buckets_init.size(); j++) {
         const stk::mesh::Bucket& bucket = *buckets_init[j];
-        for(size_t i=0; i<bucket.size(); i++)
-        {
+        for(size_t i=0; i<bucket.size(); i++) {
             std::complex<A>* field_value = reinterpret_cast<std::complex<A>*>(stk::mesh::field_data(field,bucket[i]));
-            if (result)
-            {
-                for (unsigned int k=0;k<3u;k++)
-                {
+            if (result) {
+                for (unsigned int k=0;k<3u;k++) {
                     EXPECT_LT(std::abs(expected_value[k]-field_value[k]),tol);
                     if (std::abs(expected_value[k]-field_value[k])>tol) result=false;
                 }
@@ -2113,9 +2110,9 @@ TEST(FieldBLAS,coordinate_product_int)
 template<class Scalar>
 void test_coordinate_dot(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3)
 {
-    Scalar expected_result12=Scalar(0.0);
+    Scalar expected_result12(0.0);
     for (int i=0;i<3;i++) expected_result12+=fixture.init1[i]*fixture.init2[i];
-    Scalar expected_result23=Scalar(0.0);
+    Scalar expected_result23(0.0);
     for (int i=0;i<3;i++) expected_result23+=fixture.init2[i]*fixture.init3[i];
 
     Scalar field_result = stk::mesh::field_dot(*fixture.field1,*fixture.field2);
@@ -2359,7 +2356,6 @@ void test_coordinate_swap(BLASFixture3d<Scalar> &fixture)
     EXPECT_TRUE(test3dfield(*fixture.field3,fixture.init2));
 }
 
-
 TEST(FieldBLAS,coordinate_swap_double)
 {
     double init1 [3]   = {4.21,1.23,-2.13};
@@ -2402,10 +2398,10 @@ template<class Scalar>
 void test_coordinate_nrm2(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3)
 {
     double result1 = 0.0;
-    for (int i=0; i<3; i++) result1+=pow(std::abs(fixture.init1[i]),2.0);
+    for (int i=0; i<3; i++) result1+=pow(std::abs(fixture.init1[i]),2);
     result1=sqrt(result1);
     double result2=0.0;
-    for (int i=0; i<3; i++) result2+=pow(std::abs(fixture.init2[i]),2.0);
+    for (int i=0; i<3; i++) result2+=pow(std::abs(fixture.init2[i]),2);
     result2=sqrt(result2);
 
     EXPECT_LT(std::abs(stk::mesh::field_nrm2(*fixture.field1)-Scalar(result1*sqrt(double(fixture.numEntitiesGlobal)))),tol);
@@ -2413,7 +2409,6 @@ void test_coordinate_nrm2(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3
     stk::mesh::field_nrm2(tmp,*fixture.fieldBase2);
     EXPECT_LT(std::abs(tmp-Scalar(result2*sqrt(double(fixture.numEntitiesGlobal)))),tol);
 }
-
 
 TEST(FieldBLAS,coordinate_nrm2_double)
 {
@@ -2456,9 +2451,9 @@ TEST(FieldBLAS,coordinate_nrm2_int)
 template<class Scalar>
 void test_coordinate_asum(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3)
 {
-    Scalar result1=Scalar(0.0);
+    Scalar result1(0.0);
     for (int i=0;i<3;i++) result1+=std::abs(fixture.init1[i]);
-    Scalar result2=Scalar(0.0);
+    Scalar result2(0.0);
     for (int i=0;i<3;i++) result2+=std::abs(fixture.init2[i]);
 
     EXPECT_LT(std::abs(stk::mesh::field_asum(*fixture.field1)-result1*Scalar(fixture.numEntitiesGlobal)),tol);

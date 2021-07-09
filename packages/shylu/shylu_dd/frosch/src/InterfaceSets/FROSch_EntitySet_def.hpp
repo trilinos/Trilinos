@@ -47,9 +47,10 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
-    
+
     template<class SC,class LO,class GO,class NO>
     EntitySet<SC,LO,GO,NO>::EntitySet(EntityType type) :
     Type_ (type)
@@ -74,7 +75,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::addEntity(InterfaceEntityPtr entity)
     {
-        FROSCH_ASSERT(Type_==DefaultType||entity->getEntityType()==Type_,"FROSch::EntitySet : ERROR: Entity to add is of wrong type.");
+        FROSCH_ASSERT(Type_==DefaultType||entity->getEntityType()==Type_,"FROSch::EntitySet: Entity to add is of wrong type.");
         EntityVector_.push_back(entity);
         EntityMapIsUpToDate_ = false;
         return 0;
@@ -88,7 +89,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::deepCopy()
     {
@@ -166,7 +167,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::findRoots()
     {
@@ -174,18 +175,18 @@ namespace FROSch {
         for (UN i=0; i<getNumEntities(); i++) {
             EntitySetPtr tmpRoots = getEntity(i)->findRoots();
             if (tmpRoots.is_null()) {
-                FROSCH_ASSERT(getEntity(i)->getAncestors()->getNumEntities()==0,"FROSch::EntitySet : ERROR: getEntity(i)->getAncestors()->getNumEntities()!=0");
+                FROSCH_ASSERT(getEntity(i)->getAncestors()->getNumEntities()==0,"FROSch::EntitySet: getEntity(i)->getAncestors()->getNumEntities()!=0");
                 Roots->addEntity(getEntity(i));
             } else {
-                FROSCH_ASSERT(getEntity(i)->getAncestors()->getNumEntities()!=0,"FROSch::EntitySet : ERROR: getEntity(i)->getAncestors()->getNumEntities()==0");
-                FROSCH_ASSERT(tmpRoots->getNumEntities()>0,"FROSch::EntitySet : ERROR: tmpRoots->getNumEntities()<=0");
+                FROSCH_ASSERT(getEntity(i)->getAncestors()->getNumEntities()!=0,"FROSch::EntitySet: getEntity(i)->getAncestors()->getNumEntities()==0");
+                FROSCH_ASSERT(tmpRoots->getNumEntities()>0,"FROSch::EntitySet: tmpRoots->getNumEntities()<=0");
                 Roots->addEntitySet(tmpRoots);
             }
         }
         Roots->sortUnique();
         return Roots;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     typename EntitySet<SC,LO,GO,NO>::EntitySetPtr EntitySet<SC,LO,GO,NO>::findLeafs()
     {
@@ -225,7 +226,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::clearLeafs()
     {
@@ -289,7 +290,7 @@ namespace FROSch {
     int EntitySet<SC,LO,GO,NO>::flagStraightEntities(UN dimension,
                                                      ConstXMultiVectorPtr &nodeList)
     {
-        FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::EntitySet : ERROR: Inconsistent Dimension.");
+        FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::EntitySet: Inconsistent Dimension.");
 
         bool straight;
         LO length,j;
@@ -352,7 +353,7 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::removeEntity(UN iD)
     {
-        FROSCH_ASSERT(iD<getNumEntities(),"FROSch::EntitySet : ERROR: Cannot access Entity because iD>=getNumEntities().");
+        FROSCH_ASSERT(iD<getNumEntities(),"FROSch::EntitySet: Cannot access Entity because iD>=getNumEntities().");
         EntityVector_.erase(EntityVector_.begin()+iD);
         EntityMapIsUpToDate_ = false;
         return 0;
@@ -370,7 +371,7 @@ namespace FROSch {
                 UN k = 0;
                 while (k<dofsPerNode) {
                     GO dofGlobal = getEntity(i)->getGlobalDofID(itmp,k);
-                    if (std::binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
+                    if (binary_search(dirichletBoundaryDofs.begin(),dirichletBoundaryDofs.end(),dofGlobal)) {
                         getEntity(i)->removeNode(itmp);
                         break;
                     }
@@ -380,7 +381,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::removeEmptyEntities()
     {
@@ -403,7 +404,7 @@ namespace FROSch {
         }
 
         std::sort(EntityVector_.begin(),EntityVector_.end(),compareInterfaceEntities<SC,LO,GO,NO>);
-        EntityVector_.erase(std::unique(EntityVector_.begin(),EntityVector_.end(),equalInterfaceEntities<SC,LO,GO,NO>),EntityVector_.end());
+        EntityVector_.erase(unique(EntityVector_.begin(),EntityVector_.end(),equalInterfaceEntities<SC,LO,GO,NO>),EntityVector_.end());
         EntityMapIsUpToDate_ = false;
         return 0;
     }
@@ -436,7 +437,7 @@ namespace FROSch {
     bool EntitySet<SC,LO,GO,NO>::checkForStraightEdges(UN dimension,
                                                        ConstXMultiVectorPtr &nodeList)
     {
-        FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::EntitySet : ERROR: Inconsistent Dimension.");
+        FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::EntitySet: Inconsistent Dimension.");
 
         bool straight;
         LO length,j;
@@ -511,7 +512,7 @@ namespace FROSch {
         }
         return 0;
     }
-    
+
     template<class SC,class LO,class GO,class NO>
     int EntitySet<SC,LO,GO,NO>::setLeafID()
     {
@@ -556,14 +557,14 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::InterfaceEntityPtr EntitySet<SC,LO,GO,NO>::getEntity(UN iD) const
     {
-        FROSCH_ASSERT(iD<getNumEntities(),"FROSch::EntitySet : ERROR: Cannot access Entity because iD>=getNumEntities().");
+        FROSCH_ASSERT(iD<getNumEntities(),"FROSch::EntitySet: Cannot access Entity because iD>=getNumEntities().");
         return EntityVector_[iD];
     }
 
     template<class SC,class LO,class GO,class NO>
     const typename EntitySet<SC,LO,GO,NO>::XMapPtr EntitySet<SC,LO,GO,NO>::getEntityMap() const
     {
-        FROSCH_ASSERT(EntityMapIsUpToDate_,"FROSch::EntitySet : ERROR:  the entity map has not been built or is not up to date.");
+        FROSCH_ASSERT(EntityMapIsUpToDate_,"FROSch::EntitySet:  the entity map has not been built or is not up to date.");
         return EntityMap_;
     }
 
@@ -572,7 +573,7 @@ namespace FROSch {
                                                                                          ConstXMultiVectorPtr &nodeList,
                                                                                          UN iD) const
     {
-        FROSCH_ASSERT(iD<getNumEntities(),"FROSch::EntitySet : ERROR: Cannot access Entity because iD>=getNumEntities().");
+        FROSCH_ASSERT(iD<getNumEntities(),"FROSch::EntitySet: Cannot access Entity because iD>=getNumEntities().");
 
         if (getEntity(iD)->getEntityFlag()==StraightFlag) {
 
@@ -607,7 +608,7 @@ namespace FROSch {
                 j++;
             }
 
-            FROSCH_ASSERT(straight,"FROSch::EntitySet : ERROR: Edge is not straight!");
+            FROSCH_ASSERT(straight,"FROSch::EntitySet: Edge is not straight!");
 
             return dir1;
 
@@ -615,7 +616,7 @@ namespace FROSch {
 
             int length = getEntity(iD)->getNumNodes();
 
-            FROSCH_ASSERT(length==2,"FROSch::EntitySet : ERROR: Edge is not a short edge!");
+            FROSCH_ASSERT(length==2,"FROSch::EntitySet: Edge is not a short edge!");
 
             SCVec pt1(dimension);
             SCVecPtr dir1(dimension);
@@ -631,7 +632,7 @@ namespace FROSch {
             return dir1;
 
         } else {
-            FROSCH_ASSERT(false,"FROSch::EntitySet : ERROR: There is a problem while computing the direction of an edge!");
+            FROSCH_ASSERT(false,"FROSch::EntitySet: There is a problem while computing the direction of an edge!");
         }
     }
 }

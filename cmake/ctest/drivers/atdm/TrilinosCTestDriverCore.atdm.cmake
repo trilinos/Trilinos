@@ -34,7 +34,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # Always assume the PWD is the root directory
   SET(CTEST_DASHBOARD_ROOT PWD)
 
-  # Must set the Jenkins JOB_NAME which will be the CDash build name 
+  # Must set the Jenkins JOB_NAME which will be the CDash build name
   SET(CTEST_BUILD_NAME "$ENV{JOB_NAME}")
 
   # Add this script and the shiller env script to the notes
@@ -44,9 +44,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "${THIS_FILE_LIST_DIR}/$ENV{ATDM_CONFIG_SYSTEM_NAME}/drivers/$ENV{JOB_NAME}.sh"
     "${CMAKE_CURRENT_LIST_FILE}"
     )
-  
+
   SET(CTEST_PARALLEL_LEVEL "$ENV{ATDM_CONFIG_CTEST_PARALLEL_LEVEL}")
-  
+
   IF ($ENV{ATDM_CONFIG_USE_NINJA})
     SET(CTEST_CMAKE_GENERATOR Ninja)
     IF ("$ENV{ATDM_CONFIG_BUILD_COUNT}" GREATER "0")
@@ -62,7 +62,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   ATDM_SET_CACHE(CTEST_BUILD_FLAGS "${CTEST_BUILD_FLAGS}" CACHE STRING)
   # NOTE: Above, we need to set this as a cache var because this var is also
   # set as a cache var in ATDMDevEnvSettings.cmake that gets included below.
-  
+
   SET(EXTRA_CONFIGURE_OPTIONS)
 
   # See if to enable all of the packages
@@ -83,7 +83,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   PRINT_VAR(ATDM_CONFIGURE_OPTIONS_FILES)
 
   MESSAGE("Include the configure options files at the top level to influence what package get enabled or disabled ...")
-  FOREACH (CONFIG_OPTIONS_FILE ${ATDM_CONFIGURE_OPTIONS_FILES})
+  SPLIT("${ATDM_CONFIGURE_OPTIONS_FILES}" "," ATDM_CONFIGURE_OPTIONS_FILES_LIST)
+  FOREACH (CONFIG_OPTIONS_FILE ${ATDM_CONFIGURE_OPTIONS_FILES_LIST})
     SET(CONFIG_OPTIONS_FILE "${TRIBITS_PROJECT_ROOT}/${CONFIG_OPTIONS_FILE}")
     MESSAGE("Including ${CONFIG_OPTIONS_FILE} ...")
     INCLUDE("${CONFIG_OPTIONS_FILE}")
@@ -93,15 +94,17 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   STRING(REGEX MATCH "panzer" ATDM_PANZER_IN_JOB_NAME
     "${CTEST_BUILD_NAME}" )
 
-  IF (ATDM_ENABLE_ALL_PACKAGES)
+  IF (NOT "${Trilinos_PACKAGES}" STREQUAL "")
+    MESSAGE("Trilinos_PACKAGES is aleady set so use it!")
+  ELSEIF (ATDM_ENABLE_ALL_PACKAGES)
     MESSAGE("Enabling all packages by default!")
-    SET(Trilinos_PACKAGES)
+    SET(Trilinos_PACKAGES "")
   ELSEIF (ATDM_PANZER_IN_JOB_NAME)
     MESSAGE("Found 'panzer' in JOB_NAME, enabling only Panzer tests")
     SET(Trilinos_PACKAGES Panzer)
   ELSE()
     MESSAGE("Enabling all packages not otherwise disabled!")
-    SET(Trilinos_PACKAGES)
+    SET(Trilinos_PACKAGES "")
     # Implicitly allow the enable of all packages that are not otherwise
     # disabled by the (indirect) include of ATDMDisables.cmake.
   ENDIF()
@@ -139,7 +142,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # basis.
   SET_DEFAULT_AND_FROM_ENV(CTEST_TEST_TYPE Nightly)
   SET_DEFAULT(Trilinos_TRACK Specialized)
-  
+
   IF (CTEST_TEST_TYPE STREQUAL "Experimental")
     # For "Experimental" builds, set the CDash site name to the real hostname.
     # This is done so that using queryTests.php will not pick up tests from

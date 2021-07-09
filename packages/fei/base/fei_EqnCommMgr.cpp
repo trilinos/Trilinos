@@ -741,6 +741,11 @@ void EqnCommMgr::exchangeSoln()
 }
 
 //------------------------------------------------------------------------------
+// This works around an issue with the clang and ARMHPC compiler
+// Needs to be revisited with later versions
+#if defined (__clang__) && ! defined(__INTEL_CLANG_COMPILER)
+__attribute__((optnone))
+#endif
 int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
 {
   //Beginning assumption: we (the local processor) have a populated ProcEqns

@@ -346,6 +346,19 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
+                  Teuchos::ETransp mode,
+                  Scalar alpha,
+                  Scalar beta,
+                  bool sumInterfaceValues,
+                  const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+                  const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs
+  ) const{
+      matrixData_->apply(X,Y,mode,alpha,beta,sumInterfaceValues,regionInterfaceImporter,regionInterfaceLIDs);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
     return matrixData_->getDomainMap();
   }
@@ -433,10 +446,22 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrix () const {
-    return matrixData_->getLocalMatrix();
+    return getLocalMatrixDevice();
+  }
+#endif
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrixHost () const {
+    return matrixData_->getLocalMatrixHost();
+  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrixDevice () const {
+    return matrixData_->getLocalMatrixDevice();
   }
 #else
 #ifdef __GNUC__

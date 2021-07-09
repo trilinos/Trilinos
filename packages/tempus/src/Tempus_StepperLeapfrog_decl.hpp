@@ -11,8 +11,8 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#include "Tempus_StepperObserverComposite.hpp"
-#include "Tempus_StepperLeapfrogObserver.hpp"
+#include "Tempus_StepperLeapfrogAppAction.hpp"
+#include "Tempus_StepperLeapfrogAppActionComposite.hpp"
 
 
 namespace Tempus {
@@ -51,27 +51,46 @@ namespace Tempus {
  *  \f}
  *
  *  <b> Algorithm </b>
+ *  The single-timestep algorithm for Leapfrog is
  *
- *  Beginning with \f$(x_n,\dot{x}_{n+1/2})\f$ or \f$(x_n,\dot{x}_{n})\f$
- *  and/or ending with \f$(x_{n+1},\dot{x}_{n+3/2})\f$ or
- *  \f$(x_{n+1},\dot{x}_{n+1})\f$, the algorithm for Leapfrog is
- *   - if "startup"
- *     - \f$ \ddot{x}_{n} \leftarrow f(x_{n},t_{n}) \f$
- *     - \f$ \dot{x}_{n+1/2} \leftarrow
- *           \dot{x}_{n} + \frac{1}{2} \Delta t\, \ddot{x}_{n} \f$
- *   - \f$x_{n+1} \leftarrow x_{n} + \Delta t\, \dot{x}_{n+1/2} \f$
- *   - \f$\ddot{x}_{n+1} \leftarrow f(x_{n+1},t_{n+1}) \f$
- *   - if "ending"
- *     - \f$ \dot{x}_{n+1} \leftarrow
- *           \dot{x}_{n+1/2} +\frac{1}{2} \Delta t\, \ddot{x}_{n+1} \f$
- *   - else
- *     - \f$ \dot{x}_{n+3/2} \leftarrow
- *           \dot{x}_{n+1/2} + \Delta t\, \ddot{x}_{n+1} \f$
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Leapfrog \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf if (``Startup") then}
+ *            \hfill {\it * Take half-step startup.}
+ *      \item \quad  $\dot{x}_{n+1/2} = \dot{x}_n + \frac{1}{2}\Delta t \ddot{x}_n$
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_X\_UPDATE)}
+ *      \item $x_{n+1} = x_n + \Delta t \dot{x}_{n+1/2}$
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item $\ddot{x}_{n+1} = f(x_{n+1},t_{n+1})$
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_XDOT\_UPDATE)}
+ *      \item {\bf if (``Ending") then}
+ *            \hfill {\it * Take half-step to get solution at the same time level.}
+ *      \item \quad $\dot{x}_{n+1} \leftarrow
+ *                   \dot{x}_{n+1/2} +\frac{1}{2} \Delta t\, \ddot{x}_{n+1}$
+ *      \item {\bf else}
+ *      \item \quad  $\dot{x}_{n+3/2} \leftarrow
+ *                    \dot{x}_{n+1/2} + \Delta t\, \ddot{x}_{n+1}$
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
+ *  \f}
+ *  where one can begin with \f$(x_n,\dot{x}_{n+1/2})\f$ or \f$(x_n,\dot{x}_{n})\f$
+ *  and/or end with \f$(x_{n+1},\dot{x}_{n+3/2})\f$ or
+ *  \f$(x_{n+1},\dot{x}_{n+1})\f$.
  *
- *  The First-Step-As-Last (FSAL) principle is not used with Leapfrog
+ *  The First-Same-As-Last (FSAL) principle is not used with Leapfrog
  *  because of the algorithm's prescribed order of solution update.
- *  The default is to set useFSAL=false, however useFSAL=true will also
- *  work (i.e., no-op), but issue a warning that it will have no affect.
+ *  The default is to set useFSAL=false, and useFSAL=true will
+ *  issue a warning that it will have no affect.
  */
 template<class Scalar>
 class StepperLeapfrog : virtual public Tempus::StepperExplicit<Scalar>
@@ -88,18 +107,18 @@ public:
   /// Constructor
   StepperLeapfrog(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
-    bool ICConsistencyCheck);
+    bool ICConsistencyCheck,
+    const Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >& stepperLFAppAction);
 
   /// \name Basic stepper methods
   //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
+    virtual void setAppAction(
+      Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return this->stepperObserver_; }
+    virtual Teuchos::RCP<StepperLeapfrogAppAction<Scalar> > getAppAction() const
+     { return stepperLFAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -121,16 +140,11 @@ public:
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
-
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-
-  std::string getICConsistencyDefault() const { return "Consistent"; }
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -142,10 +156,19 @@ public:
 
 protected:
 
-  Teuchos::RCP<StepperObserverComposite<Scalar> >    stepperObserver_;
-  Teuchos::RCP<StepperLeapfrogObserver<Scalar> >     stepperLFObserver_;
+  Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >     stepperLFAppAction_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperLeapfrog<Scalar> >
+createStepperLeapfrog(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
 
 } // namespace Tempus
 

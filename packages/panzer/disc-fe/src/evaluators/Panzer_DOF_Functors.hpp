@@ -190,7 +190,7 @@ template <typename ScalarT,typename Array,int spaceDim>
 class EvaluateDOFFastSens_Vector {
   PHX::MDField<const ScalarT,Cell,Point> dof_basis;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_ip;
-  Kokkos::View<const int*,PHX::Device> offsets;
+  PHX::View<const int*> offsets;
   Array basis;
 
   const int numFields;
@@ -201,7 +201,7 @@ public:
 
   EvaluateDOFFastSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_basis,
                              PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_ip,
-                             Kokkos::View<const int*,PHX::Device> in_offsets,
+                             PHX::View<const int*> in_offsets,
                              Array in_basis)
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), offsets(in_offsets), basis(in_basis),
       numFields(in_basis.extent(1)),
@@ -236,7 +236,7 @@ template <typename ScalarT, typename Array>
 class EvaluateDOFFastSens_Scalar {
   PHX::MDField<const ScalarT,Cell,Point> dof_basis;
   PHX::MDField<ScalarT,Cell,Point> dof_ip;
-  Kokkos::View<const int*,PHX::Device> offsets;
+  PHX::View<const int*> offsets;
   Array basis;
 
   int numFields;
@@ -247,7 +247,7 @@ public:
 
   EvaluateDOFFastSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_basis,
                              PHX::MDField<ScalarT,Cell,Point> in_dof_ip,
-                             Kokkos::View<const int*,PHX::Device> in_offsets,
+                             PHX::View<const int*> in_offsets,
                              Array in_basis)
     : dof_basis(in_dof_basis), dof_ip(in_dof_ip), offsets(in_offsets), basis(in_basis)
   {

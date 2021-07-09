@@ -43,6 +43,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
@@ -96,6 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   using Teuchos::ScalarTraits;
   using Teuchos::tuple;
   using Teuchos::TypeNameTraits;
+  using namespace Tpetra::TestingUtilities;
   using std::endl;
 
 #if 0
@@ -221,17 +223,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   bool localGraphSuccess = true;
   std::ostringstream graphFailMsg;
   {
-    Array<GO> ind (2); // upper bound
+    using indices_type = typename crs_graph_type::nonconst_global_inds_host_view_type;
+    indices_type indView("indices",2);//upper bound
 
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
       size_t numEntries = 0; // output argument of below line.
-      graph->getGlobalRowCopy (globalRow, ind (), numEntries);
-
-      // Revise view based on numEntries.
-      ArrayView<GO> indView = ind.view (0, numEntries);
+      graph->getGlobalRowCopy (globalRow, indView, numEntries);
 
       // Sort the view.
-      std::sort (indView.begin (), indView.end ());
+      Tpetra::sort(indView, numEntries);
 
       if (globalRow == globalMinRow && globalRow > rowMap->getMinAllGlobalIndex ()) {
         if (numEntries != static_cast<size_t> (2)) {
@@ -339,19 +339,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   bool localSuccess = true;
   std::ostringstream failMsg;
   {
-    Array<GO> ind (2); // upper bound
-    Array<ST> val (2); // upper bound
+    using indices_type = typename CrsMatrixType::nonconst_global_inds_host_view_type;
+    using values_type = typename CrsMatrixType::nonconst_values_host_view_type;
+    indices_type indView("indices",2);//upper bound
+    values_type valView("values",2);//upper bound
 
     for (GO globalRow = globalMinRow; globalRow <= globalMaxRow; ++globalRow) {
       size_t numEntries = 0; // output argument of below line.
-      matrix->getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+      matrix->getGlobalRowCopy (globalRow, indView, valView, numEntries);
 
-      // Revise views based on numEntries.
-      ArrayView<GO> indView = ind.view (0, numEntries);
-      ArrayView<ST> valView = val.view (0, numEntries);
-
-      // Sort the views jointly by column index.
-      Tpetra::sort2 (indView.begin (), indView.end (), valView.begin ());
+      Tpetra::sort2(indView, numEntries, valView);
 
       if (globalRow == globalMinRow && globalRow > rowMap->getMinAllGlobalIndex ()) {
         if (numEntries != static_cast<size_t> (2)) {

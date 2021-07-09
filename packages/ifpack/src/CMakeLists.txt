@@ -14,6 +14,26 @@ TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 # src
 #
 
+# Parse the Hypre headers
+IF (${PACKAGE_NAME}_ENABLE_HYPRE)
+  IF (PYTHON_EXECUTABLE)
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../utils/parseHypre.py ${HYPRE_INCLUDE_DIRS} Ifpack_HypreParameterMap.h
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+      RESULT_VARIABLE RETURN_VALUE
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+  ELSE ()
+    MESSAGE(FATAL_ERROR "Python needed to parse Hypre headers")
+  ENDIF ()
+  IF (RETURN_VALUE EQUAL 0)
+    MESSAGE("-- Parsed Hypre headers")
+  ELSE ()
+    MESSAGE(FATAL_ERROR "Failed to parse Hypre headers")
+  ENDIF ()
+ENDIF ()
+
+
 SET(HEADERS)
 SET(SOURCES)
 

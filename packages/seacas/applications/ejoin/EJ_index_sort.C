@@ -1,34 +1,8 @@
-// Copyright(C) 2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// See packages/seacas/LICENSE for details
 /*!
  * The following 'indexed qsort' routine is modified from Sedgewicks
  * algorithm It selects the pivot based on the median of the left,
@@ -45,6 +19,7 @@
 
 #include <EJ_CodeTypes.h>
 #include <cstdint>
+#include <numeric>
 #include <unistd.h>
 
 #include "EJ_index_sort.h"
@@ -55,17 +30,14 @@ namespace {
   /* swap - interchange v[i] and v[j] */
   template <typename T, typename INT> void ex_swap(T *v, INT i, INT j)
   {
-    T temp;
-
-    temp = v[i];
-    v[i] = v[j];
-    v[j] = temp;
+    T temp = v[i];
+    v[i]   = v[j];
+    v[j]   = temp;
   }
 
-  template <typename T, typename INT> int ex_int_median3(T *v, INT iv[], size_t left, size_t right)
+  template <typename T, typename INT> INT ex_int_median3(T *v, INT iv[], size_t left, size_t right)
   {
-    size_t center;
-    center = (static_cast<ssize_t>(left) + static_cast<ssize_t>(right)) / 2;
+    size_t center = (static_cast<ssize_t>(left) + static_cast<ssize_t>(right)) / 2;
 
     if (v[iv[left]] > v[iv[center]]) {
       ex_swap(iv, left, center);
@@ -83,14 +55,10 @@ namespace {
 
   template <typename T, typename INT> void ex_int_iqsort(T *v, INT iv[], size_t left, size_t right)
   {
-    size_t pivot;
-    size_t i;
-    size_t j;
-
     if (left + EX_QSORT_CUTOFF <= right) {
-      pivot = ex_int_median3(v, iv, left, right);
-      i     = left;
-      j     = right - 1;
+      INT    pivot = ex_int_median3(v, iv, left, right);
+      size_t i     = left;
+      size_t j     = right - 1;
 
       for (;;) {
         while (v[iv[++i]] < v[pivot]) {
@@ -115,14 +83,14 @@ namespace {
 
   template <typename T, typename INT> void ex_int_iisort(T *v, INT iv[], size_t N)
   {
-    size_t ndx = 0;
-    size_t j;
-
     if (N == 0) {
       return;
     }
 
-    double small = v[iv[0]];
+    size_t ndx = 0;
+
+    using TT = typename std::remove_cv<T>::type;
+    TT small = v[iv[0]];
     for (size_t i = 1; i < N; i++) {
       if (v[iv[i]] < small) {
         small = v[iv[i]];
@@ -132,6 +100,7 @@ namespace {
     /* Put smallest value in slot 0 */
     ex_swap(iv, static_cast<size_t>(0), ndx);
 
+    size_t j;
     for (size_t i = 1; i < N; i++) {
       INT tmp = iv[i];
       for (j = i; v[tmp] < v[iv[j - 1]]; j--) {
@@ -175,10 +144,7 @@ void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, i
 template <typename INT> void index_sort(const std::vector<INT> &ids, std::vector<INT> &index)
 {
   index.resize(ids.size());
-  for (size_t i = 0; i < index.size(); i++) {
-    index[i] = i;
-  }
-
+  std::iota(index.begin(), index.end(), (INT)0);
   ex__iqsort(&ids[0], &index[0], index.size());
 }
 

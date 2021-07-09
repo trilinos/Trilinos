@@ -46,7 +46,7 @@ namespace KokkosBatched {
   };
 
   template<typename MemberType>
-  struct TeamEigendecomposition {
+  struct TeamVectorEigendecomposition {
     template<typename AViewType,
              typename EViewType,
              typename UViewType,

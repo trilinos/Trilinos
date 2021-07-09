@@ -73,8 +73,8 @@ int main (int argc, char *argv[]) {
   cudaProfilerStop();
 #endif
 
-  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type device_type;
-  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
 
   typedef TaskSchedulerType<typename device_type::execution_space> scheduler_type;
 
@@ -118,7 +118,7 @@ int main (int argc, char *argv[]) {
 #elif defined(TACHO_HAVE_SCOTCH)
     Tacho::GraphTools_Scotch T(G);
 #else
-    Tacho::GraphTools_CAMD T(G);
+    Tacho::GraphTools T(G);
 #endif
     T.reorder(verbose);
     
@@ -172,7 +172,12 @@ int main (int argc, char *argv[]) {
         S.SupernodesTreeRoots());
     N.printMemoryStat(verbose);
 
-    Tacho::LevelSetTools<value_type,scheduler_type> L(N);
+#if defined(TACHO_USE_LEVELSET_VARIANT)
+    constexpr int variant = TACHO_USE_LEVELSET_VARIANT;
+#else
+    constexpr int variant = 0;
+#endif
+    Tacho::LevelSetTools<value_type,scheduler_type,variant> L(N);
     L.initialize(device_level_cut, device_factor_thres, device_solve_thres, verbose);
     L.createStream(nstreams);
 

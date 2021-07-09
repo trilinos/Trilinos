@@ -141,6 +141,80 @@ namespace MueLuTests {
     TEST_EQUALITY(norms[0] < 1e-12, true);
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, EnforceConstraints, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC zero = STS::zero(), one = STS::one();
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    // construct two levels
+    Level fineLevel, coarseLevel;
+    TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+
+    // construct matrices
+    SC lambdaMax = 2;
+
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
+    Teuchos::ParameterList mp;
+    mp.set("matrixType","Star2D");
+    const GO nx = 6;
+    mp.set("nx", nx);
+    mp.set("ny", nx);
+    mp.set("a",  2.0);
+    mp.set("b", -1.0); mp.set("c", -1.0);
+    mp.set("d",  0.5); mp.set("e",  0.5);
+    mp.set("z1",-0.25); mp.set("z2",-0.25 );  mp.set("z3",-0.25);  mp.set("z4", -0.25);
+    RCP<Matrix> A= TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+    A->SetMaxEigenvalueEstimate(lambdaMax);
+    mp.set("a",  1.0);
+    mp.set("b",  1.0); mp.set("c",  1.0);
+    mp.set("d",  1.0); mp.set("e",  1.0);
+    mp.set("z1", 1.0); mp.set("z2", 1.0);  mp.set("z3", 1.0);  mp.set("z4", 1.0);
+    RCP<Matrix> Ptent = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(mp,lib);
+
+    // set level matrices
+    fineLevel  .Set("A", A);
+    coarseLevel.Set("P", Ptent);
+
+    // construct the factory to be tested
+    const double dampingFactor = 0.5;
+    RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+    ParameterList Pparams;
+    Pparams.set("sa: damping factor", dampingFactor);
+    Pparams.set("sa: enforce constraints", true);
+    Pparams.set("sa: max eigenvalue",(double) 2.0);
+    Pparams.set("tentative: calculate qr", false);
+
+    sapFactory->SetParameterList(Pparams);
+    sapFactory->SetFactory("A", MueLu::NoFactory::getRCP());
+    sapFactory->SetFactory("P", MueLu::NoFactory::getRCP());
+
+    // build the data
+    coarseLevel.Request("P", sapFactory.get());
+    sapFactory->Build(fineLevel, coarseLevel);
+
+    // fetch the data
+    RCP<Matrix> Pfact = coarseLevel.Get<RCP<Matrix>>("P", sapFactory.get());
+
+    // check that row sums are all one by checking the norm of the vector
+    RCP<MultiVector> X = MultiVectorFactory::Build(A->getDomainMap(), 1);
+    RCP<MultiVector> Bfact = MultiVectorFactory::Build(A->getRangeMap(),  1);
+    X->putScalar(one);
+    Pfact->apply(*X, *Bfact, Teuchos::NO_TRANS, one, zero);
+    Array<typename STS::magnitudeType> norms(1);
+    Bfact->norm2(norms);
+    out << "|| B_factory ones || = " << norms[0] << std::endl;
+    using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    using TMT            = Teuchos::ScalarTraits<magnitude_type>;
+    TEST_FLOATING_EQUALITY(STS::magnitude(norms[0]), STS::magnitude(as<Scalar>(6.0)), 100*TMT::eps());
+  }
+
   // FIXME_KOKKOS: uncomment the test when we get all corresponding factories ported to kokkos
 #if 0
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
@@ -349,7 +423,8 @@ namespace MueLuTests {
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Constructor, SC, LO, GO, NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Build,       SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, Build,       SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SaPFactory_kokkos, EnforceConstraints, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 

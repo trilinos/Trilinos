@@ -267,17 +267,23 @@ struct ResidualEvaluatorFunctor
   const local_map_type row_map_;
   const local_map_type col_map_;
   const int myRank_;
+  const scalar_type k_;
+  const scalar_type p4_;
 
   ResidualEvaluatorFunctor(const TpetraVectorType& f,
                            const TpetraVectorType& x,
                            const TpetraVectorType& u,
-                           const int& myRank) :
+                           const int& myRank,
+                           const typename TpetraVectorType::impl_scalar_type& k,
+                           const typename TpetraVectorType::impl_scalar_type& p4) :
     f_view_(f.getLocalViewDevice()),
     x_view_(x.getLocalViewDevice()),
     u_view_(u.getLocalViewDevice()),
     row_map_(f.getMap()->getLocalMap()),
     col_map_(u.getMap()->getLocalMap()),
-    myRank_(myRank)
+    myRank_(myRank),
+    k_(k),
+    p4_(p4)
   {}
 
   // Adds the contribution from element elt to the residual vector
@@ -306,7 +312,7 @@ struct ResidualEvaluatorFunctor
         const local_ordinal_type invalid = Tpetra::Details::OrdinalTraits<local_ordinal_type>::invalid();
 
         if (localRow != invalid) {
-          scalar_type value = basis.wt * basis.dz * (basis.uu * basis.uu * basis.phi[i]
+          scalar_type value = basis.wt * basis.dz * (basis.uu * basis.uu * basis.phi[i] * k_
             + (basis.duu * basis.dphide[i])/(basis.dz * basis.dz));
           Kokkos::atomic_add(&f_view_(localRow,0), value);
         }
@@ -315,7 +321,7 @@ struct ResidualEvaluatorFunctor
 
     // Correct for Dirichlet BCs
     if ((myRank_ == 0) && (elt == 0)) {
-      scalar_type value = u_view_(0,0) - 1.0;
+      scalar_type value = u_view_(0,0) - p4_;
       Kokkos::atomic_exchange(&f_view_(0,0), value);
     }
 
@@ -342,17 +348,20 @@ struct JacobianEvaluatorFunctor
   const local_map_type row_map_;
   const local_map_type col_map_;
   const int myRank_;
+  const scalar_type k_;
 
   JacobianEvaluatorFunctor(const TpetraMatrixType& J,
                            const TpetraVectorType& x,
                            const TpetraVectorType& u,
-                           const int& myRank) :
+                           const int& myRank,
+                           const typename TpetraVectorType::impl_scalar_type& k) :
     J_local_(J.getLocalMatrix()),
     x_view_(x.getLocalViewDevice()),
     u_view_(u.getLocalViewDevice()),
     row_map_(J.getRowMap()->getLocalMap()),
     col_map_(J.getColMap()->getLocalMap()),
-    myRank_(myRank)
+    myRank_(myRank),
+    k_(k)
   {}
 
   // Adds the contribution from element elt to the Jacobian matrix
@@ -386,7 +395,7 @@ struct JacobianEvaluatorFunctor
             const local_ordinal_type localColumn = elt + j;
             scalar_type value = basis.wt * basis.dz
               * ((basis.dphide[j]*basis.dphide[i])/(basis.dz*basis.dz)
-              + 2.0*basis.uu*basis.phi[j]*basis.phi[i]);
+              + 2.0*basis.uu*basis.phi[j]*basis.phi[i]*k_);
             // Do we need to set force_atomic true in this?
             J_local_.sumIntoValues(localRow, &localColumn, 1, &value);
           }
@@ -428,17 +437,20 @@ struct PreconditionerEvaluatorFunctor
   const local_map_type row_map_;
   const local_map_type col_map_;
   const int myRank_;
+  const scalar_type k_;
 
   PreconditionerEvaluatorFunctor(const TpetraMatrixType& M,
                                  const TpetraVectorType& x,
                                  const TpetraVectorType& u,
-                                 const int& myRank) :
+                                 const int& myRank,
+                                 const typename TpetraVectorType::impl_scalar_type& k) :
     M_local_(M.getLocalMatrix()),
     x_view_(x.getLocalViewDevice()),
     u_view_(u.getLocalViewDevice()),
     row_map_(M.getRowMap()->getLocalMap()),
     col_map_(M.getColMap()->getLocalMap()),
-    myRank_(myRank)
+    myRank_(myRank),
+    k_(k)
   {}
 
   // Adds the contribution from element elt to the preconditioner matrix
@@ -472,7 +484,7 @@ struct PreconditionerEvaluatorFunctor
             if (row_map_.getGlobalElement(localRow) == col_map_.getGlobalElement(localColumn)) {
               scalar_type value = basis.wt * basis.dz
                 * ((basis.dphide[j]*basis.dphide[i])/(basis.dz*basis.dz)
-                + 2.0*basis.uu*basis.phi[j]*basis.phi[i]);
+                + 2.0*basis.uu*basis.phi[j]*basis.phi[i]*k_);
               // Do we need to set force_atomic true in this?
               M_local_.sumIntoValues(localRow, &localColumn, 1, &value);
             }
@@ -487,6 +499,83 @@ struct PreconditionerEvaluatorFunctor
       local_ordinal_type column = 0;
       scalar_type value = 1.0;
       M_local_.replaceValues(row, &column, 1, &value);
+    }
+
+  }
+
+};
+
+//==================================================================
+
+template <class TpetraVectorType>
+struct DfDp2EvaluatorFunctor
+{
+  typedef typename TpetraVectorType::impl_scalar_type scalar_type;
+  typedef typename TpetraVectorType::local_ordinal_type local_ordinal_type;
+  typedef typename TpetraVectorType::map_type map_type;
+  typedef typename map_type::local_map_type local_map_type;
+  typedef typename TpetraVectorType::dual_view_type dual_view_type;
+  typedef typename dual_view_type::t_dev view_type;
+
+  const view_type f_view_;
+  const view_type x_view_;
+  const view_type u_view_;
+  const local_map_type row_map_;
+  const local_map_type col_map_;
+  const int myRank_;
+  const scalar_type k_;
+
+  DfDp2EvaluatorFunctor(const TpetraVectorType& f,
+                        const TpetraVectorType& x,
+                        const TpetraVectorType& u,
+                        const int& myRank,
+                        const typename TpetraVectorType::impl_scalar_type& k) :
+    f_view_(f.getLocalViewDevice()),
+    x_view_(x.getLocalViewDevice()),
+    u_view_(u.getLocalViewDevice()),
+    row_map_(f.getMap()->getLocalMap()),
+    col_map_(u.getMap()->getLocalMap()),
+    myRank_(myRank),
+    k_(k)
+  {}
+
+  // Adds the contribution from element elt to the residual vector
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const local_ordinal_type elt) const
+  {
+    // Get the solution and coordinates at the nodes
+    scalar_type xx[2];
+    xx[0] = x_view_(elt,0);
+    xx[1] = x_view_(elt+1,0);
+
+    scalar_type uu[2];
+    uu[0] = u_view_(elt,0);
+    uu[1] = u_view_(elt+1,0);
+
+    Basis<scalar_type, local_ordinal_type> basis;
+
+    // Loop Over Gauss Points
+    for(local_ordinal_type gp = 0; gp < 2; ++gp) {
+      // Calculate the basis function at the gauss point
+      basis.computeBasis(gp, xx, uu);
+
+      // Loop over nodes in element
+      for (local_ordinal_type i = 0; i < 2; ++i) {
+        local_ordinal_type localRow = row_map_.getLocalElement(col_map_.getGlobalElement(elt+i));
+        const local_ordinal_type invalid = Tpetra::Details::OrdinalTraits<local_ordinal_type>::invalid();
+
+        if (localRow != invalid) {
+          scalar_type value = basis.wt * basis.dz * (basis.uu * basis.uu * basis.phi[i]);
+            // + (basis.duu * basis.dphide[i])/(basis.dz * basis.dz));
+          Kokkos::atomic_add(&f_view_(localRow,0), value);
+        }
+      }
+    }
+
+    // Correct for Dirichlet BCs
+    if ((myRank_ == 0) && (elt == 0)) {
+      scalar_type value = 0.0;
+      Kokkos::atomic_exchange(&f_view_(0,0), value);
     }
 
   }

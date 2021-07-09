@@ -73,7 +73,6 @@
 #else
 #define NUM_ELEMENTS 100
 #endif
-const Tpetra::global_size_t numGlobalElements = NUM_ELEMENTS;
 
 TEUCHOS_UNIT_TEST(NOX_Tpetra_Heq, AnalyticJacobian_NoPrec)
 {
@@ -89,6 +88,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Heq, AnalyticJacobian_NoPrec)
 
   // Create the model evaluator object
   Scalar omega = 0.95;
+  const Tpetra::global_size_t numGlobalElements = NUM_ELEMENTS;
   Teuchos::RCP<EvaluatorTpetraHeq<Scalar,LO,GO,Node> > model =
     evaluatorTpetraHeq<Scalar,LO,GO,Node>(comm, numGlobalElements, omega);
 
@@ -184,6 +184,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Heq, JFNK_NoPrec)
 
   // Create the model evaluator object
   Scalar omega = 0.9;
+  const Tpetra::global_size_t numGlobalElements = NUM_ELEMENTS;
   Teuchos::RCP<EvaluatorTpetraHeq<Scalar,LO,GO,Node> > model =
     evaluatorTpetraHeq<Scalar,LO,GO,Node>(comm, numGlobalElements, omega);
 
@@ -302,6 +303,7 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Heq, JFNK_UserPrec)
 
   // Create the model evaluator object
   Scalar omega = 0.9;
+  const Tpetra::global_size_t numGlobalElements = NUM_ELEMENTS;
   Teuchos::RCP<EvaluatorTpetraHeq<Scalar,LO,GO,Node> > model =
     evaluatorTpetraHeq<Scalar,LO,GO,Node>(comm, numGlobalElements, omega);
 

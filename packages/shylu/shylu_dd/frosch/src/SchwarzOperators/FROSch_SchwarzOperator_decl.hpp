@@ -48,6 +48,9 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
+#include <Teuchos_SerialQRDenseSolver.hpp>
+#include <Teuchos_TwoDArray.hpp>
+
 #include <ShyLU_DDFROSch_config.h>
 
 #include <FROSch_DDInterface_def.hpp>
@@ -57,7 +60,7 @@
 #include <FROSch_InterfacePartitionOfUnity_def.hpp>
 #include <FROSch_LocalPartitionOfUnityBasis_def.hpp>
 
-#include <FROSch_SubdomainSolver_def.hpp>
+#include <FROSch_SolverFactory_def.hpp>
 
 // TODO: Auf const überprüfen
 // TODO: #ifndef überprüfen ??????
@@ -65,10 +68,9 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
-
-    class Solver;
 
     template <class SC = double,
               class LO = int,
@@ -112,6 +114,10 @@ namespace FROSch {
 
         using ParameterListPtr                  = RCP<ParameterList>;
 
+        using TSerialDenseMatrixPtr             = RCP<SerialDenseMatrix<LO,SC> >;
+
+        using TSerialQRDenseSolverPtr           = RCP<SerialQRDenseSolver<LO,SC> >;
+
         using DDInterfacePtr                    = RCP<DDInterface<SC,LO,GO,NO> >;
 
         using EntitySetPtr                      = RCP<EntitySet<SC,LO,GO,NO> >;
@@ -123,6 +129,8 @@ namespace FROSch {
         using CoarseSpacePtrVecPtr              = ArrayRCP<CoarseSpacePtr>;
 
         using InterfaceEntityPtr                = RCP<InterfaceEntity<SC,LO,GO,NO> >;
+        using InterfaceEntityPtrVec             = Array<InterfaceEntityPtr>;
+        using InterfaceEntityPtrVecPtr          = ArrayRCP<InterfaceEntityPtr>;
 
         using PartitionOfUnityPtr               = RCP<PartitionOfUnity<SC,LO,GO,NO> >;
         using InterfacePartitionOfUnityPtr      = RCP<InterfacePartitionOfUnity<SC,LO,GO,NO> >;
@@ -133,7 +141,8 @@ namespace FROSch {
         using SchwarzOperatorPtrVec             = Array<SchwarzOperatorPtr>;
         using SchwarzOperatorPtrVecPtr          = ArrayRCP<SchwarzOperatorPtr>;
 
-        using SubdomainSolverPtr                = RCP<SubdomainSolver<SC,LO,GO,NO> >;
+        using SolverPtr                         = RCP<Solver<SC,LO,GO,NO> >;
+        using SolverFactoryPtr                  = RCP<SolverFactory<SC,LO,GO,NO> >;
 
         using DofOrderingVecPtr                 = ArrayRCP<DofOrdering>;
 
@@ -142,6 +151,9 @@ namespace FROSch {
         using UNVec                             = Array<UN>;
         using UNVecPtr                          = ArrayRCP<UN>;
         using ConstUNVecView                    = ArrayView<const UN>;
+
+        using IntVec                            = Array<int>;
+        using IntVec2D                          = Array<IntVec>;
 
         using LOVec                             = Array<LO>;
         using LOVecPtr                          = ArrayRCP<LO>;
@@ -163,6 +175,7 @@ namespace FROSch {
 
         using BoolVec                           = Array<bool>;
         using BoolVecPtr                        = ArrayRCP<bool>;
+        using ConstBoolVecPtr                   = ArrayRCP<const bool>;
 
     public:
 
@@ -198,7 +211,7 @@ namespace FROSch {
         virtual void describe(FancyOStream &out,
                               const EVerbosityLevel verbLevel=Describable::verbLevel_default) const = 0;
 
-        virtual std::string description() const = 0;
+        virtual string description() const = 0;
 
         bool isInitialized() const;
 
@@ -206,7 +219,6 @@ namespace FROSch {
 
         int resetMatrix(ConstXMatrixPtr &k);
 
-      
         virtual void residual(const XMultiVector & X,
                               const XMultiVector & B,
                               XMultiVector& R) const;

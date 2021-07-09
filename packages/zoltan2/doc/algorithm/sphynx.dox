@@ -1,0 +1,76 @@
+/*! \page sphynxPage Graph partitioning with Sphynx
+
+\section sphynx_algorithm Algorithm Overview
+
+Sphynx is a hybrid distributed- and shared-memory-enabled parallel graph partitioner, which is the first graph partitioning tool that works on GPUs on distributed-memory settings. It is based on spectral partitioning and computes log2(K) eigenvectors on the Laplacian matrix of the original graph using the LOBPCG algorithm (from the Anasazi package), where K denotes the desired number of parts. The eigevectors are computed all at once on the original graph, so Sphynx is not recursive unlike the traditional spectral partitioners. Sphynx then uses the entries of the log2(K) eigenvectors as coordinates of the vertices and calls the multi-jagged (MJ) algorithm  (from the Zoltan2 package) to partition those coordinates. 
+
+The LOBPCG algorithm allows Sphynx to use any preconditioner. Currently, it supports three preconditioners: Jacobi (from the Ifpack2 package), polynomial (from the Belos package), and algebraic multigrid (from the MueLu package).   
+
+\section sphynx_build Building with Sphynx
+
+Sphynx is an optional subpackage of Zoltan2, so enabling Zoltan2 in Trilinos (by Trilinos_ENABLE_Zoltan2=ON) does not automatically enable it. Sphynx can be enabled by adding 
+
+    Trilinos_ENABLE_Zoltan2Sphynx=ON.
+
+Enabling MueLu is not a must for building and using Sphynx, so if you want to use MueLu as preconditioner (which we recommend for regular graphs), you should add Trilinos_ENABLE_MueLu=ON and Trilinos_ENABLE_Amesos2=ON.
+
+We provide a sample script for a CUDA-enabled Trilinos build on Summit in zoltan2/sampleScripts/configure_sphynx_summit. You can try Sphynx by using the test driver in $BUILD_DIR/packages/zoltan2/test/sphynx/Zoltan2_Sphynx.exe if you enable Zoltan2 tests (by Zoltan2_ENABLE_TESTS=ON).
+
+The last group of CMake flags in the sample script is strongly recommended as we observed that Sphynx is faster with those options.
+ 
+\section sphynx_input Input
+
+As input, Sphynx expects a Zoltan2::XpetraCrsGraphAdapter<GraphType> object, where GraphType=Tpetra::CrsGraph<>. One can create the graph adapter pointer using a Tpetra::CrsMatrix pointer called 'matrix' as follows:
+
+    using GraphAdapter = Zoltan2::XpetraCrsGraphAdapter<typename GraphType>;
+    Teuchos::RCP<GraphAdapter> adapter(new GraphAdapter(matrix->getCrsGraph(), nVwgts));
+
+Sphynx supports multiple weights for vertices. In the line above, nVwgts denotes the number of weights each vertex is assigned (i.e., the number of constraints in the graph partitioning problem). For each constraint c, where 0 <= c < nVwgts, the user can provide the weights array or just set the adapter->setVertexWeightIsDegree(c) to use the vertex degrees as weights. Unlike vertex weights, Sphynx does not support edge weights, which means each edge is assigned a unit cost.
+
+The Tpetra::CrsMatrix object (or equivalently the Tpetra::CrsGraph object) can be obtained by using Tpetra's matrix market reader  s follows:
+
+    using Reader = Tpetra::MatrixMarket::Reader<typename CrsMatrixType>;
+    Reader reader;
+    Teuchos::RCP<CrsMatrixType> matrix = reader.readSparseFile(mtxFile, comm); 
+
+Warnings:
+- Sphynx currently requires the graph of the input matrix to be connected. If you have a disconnected graph, you might want to consider using Sphynx on the largest connected component.
+- Sphynx requires the input matrix/graph to be structurally symmetric. The numerical values don't have to be symmetric as long as it is structurally symmetric.
+- Sphynx requires the input matrix (graph) to include all the diagonal entries (self loops in the graph).  
+- The user has to set params->set("sphynx_skip_preprocessing", true) to denote that the input graph satisfies these requirements.
+
+\section sphynx_parameters Parameters
+Sphynx enables the user to set various options which are passed by a Teuchos::ParameterList. 
+- To set the number of requested parts, nParts, use params->set("num_global_parts", nParts).
+- To set the preconditioner type, use params->set("sphynx_preconditioner_type", precType) where the valid values for precType are "jacobi", "polynomial", and "muelu". 
+- To set the eigenvalue problem, use params->set("sphynx_problem_type", problemType), where the valid values for problemType are "combinatorial", "generalized", and "normalized".
+- To set the convergence tolerance in LOBPCG, use params->set("sphynx_tolerance", tolerance).
+- To set whether the initial guess in LOBPCG is random or not, use params->set("sphynx_initial_guess", initialGuess), where the valid values are "random" and "constants". 
+
+
+\section sphynx_solution Solution
+
+To obtain the partitioning solution, you need to create a SphynxProblem first and then call its solve function as follows:
+
+    Zoltan2::SphynxProblem<SparseGraphAdapter> problem(adapter, params);
+    problem.solve();
+ 
+Then the entries of the resulting solution that are local to the current MPI rank can be accessed through the following parts array:
+
+    auto parts = problem.getSolution().getPartListView(); 
+
+\section sphynx_quality Quality Measures
+
+Sphynx tries to minimize the cutsize in the resulting partition. Since it does not support edge weights, minimizing the cutsize corresponds to minimizing the number of cut edges, i.e., the edges whose end vertices belong to different parts. While doing so, Sphynx also balances the part weights in the resulting partition. Recall that Sphynx supports multiple vertex weights.    
+
+\section sphynx_examples Paper(s)
+
+Refer to the paper for the details Sphynx:
+
+S. Acer, E. G. Boman and S. Rajamanickam, "SPHYNX: Spectral Partitioning for HYbrid aNd aXelerator-enabled systems," 2020 IEEE International Parallel and Distributed Processing Symposium Workshops (IPDPSW), New Orleans, LA, USA, 2020, pp. 440-449, doi: 10.1109/IPDPSW50202.2020.00082.
+
+\section sphynx_source Source
+
+Source code of Sphynx is located in zoltan2/sphynx/src/Zoltan2_Sphynx.hpp.
+
+*/

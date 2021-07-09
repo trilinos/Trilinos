@@ -279,7 +279,7 @@ namespace MueLu {
     // Sanity checking
     const ParameterList& pL = GetParameterList();
     const bool &doQRStep = pL.get<bool>("tentative: calculate qr");
-    const bool &constantColSums = pL.get<bool>("tentative: constant column sums");    
+    const bool &constantColSums = pL.get<bool>("tentative: constant column sums");
 
     TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && constantColSums,Exceptions::RuntimeError,
                                "MueLu::TentativePFactory::MakeTentative: cannot use 'constant column sums' and 'calculate qr' at the same time");
@@ -287,7 +287,7 @@ namespace MueLu {
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
     // same as LIDs in column map
-    bool goodMap = isGoodMap(*rowMap, *colMap);
+    bool goodMap = MueLu::Utilities<SC,LO,GO,NO>::MapsAreNested(*rowMap, *colMap);
 
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
     // aggStart is a pointer into aggToRowMapLO
@@ -375,7 +375,7 @@ namespace MueLu {
               bIsZeroNSColumn = false;
 
           TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError,
-                                     "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column");
+                                     "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column in NS column " << j);
         }
 
         // Calculate QR decomposition (standard)
@@ -527,7 +527,7 @@ namespace MueLu {
 
             const size_t rowStart = ia[localRow];
 
-            for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
+            for (size_t k = 0, lnnz = 0; k < NSDim; ++k) {
               // Skip zeros (there may be plenty of them, i.e., NSDim > 1 or boundary conditions)
               SC qr_jk = fineNS[k][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j])];
               if(constantColSums) qr_jk = qr_jk / (double)aggSizes[agg];
@@ -959,25 +959,7 @@ namespace MueLu {
     Ptentative->fillComplete(coarseMap, A->getDomainMap());
   }
 
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isGoodMap(const Map& rowMap, const Map& colMap) const {
-    ArrayView<const GO> rowElements = rowMap.getNodeElementList();
-    ArrayView<const GO> colElements = colMap.getNodeElementList();
 
-    const size_t numElements = rowElements.size();
-
-    if (size_t(colElements.size()) < numElements)
-      return false;
-
-    bool goodMap = true;
-    for (size_t i = 0; i < numElements; i++)
-      if (rowElements[i] != colElements[i]) {
-        goodMap = false;
-        break;
-      }
-
-    return goodMap;
-  }
 
 } //namespace MueLu
 

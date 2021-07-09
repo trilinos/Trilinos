@@ -91,6 +91,8 @@ protected:
 
    void addSideSets(STK_Interface & mesh) const;
    void addNodeSets(STK_Interface & mesh) const;
+   void addEdgeBlocks(STK_Interface & mesh) const;
+   void addFaceBlocks(STK_Interface & mesh) const;
 
    void buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
                        const Teuchos::Tuple<int,3> & element,

@@ -111,7 +111,8 @@ public:
 
   FE(const ROL::Ptr<Intrepid::FieldContainer<Real> >                            & cellNodes,
      const ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >    & basis,
-     const ROL::Ptr<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > & cubature) :
+     const ROL::Ptr<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > & cubature,
+     bool computeBdryDofs = true) :
        cellNodes_(cellNodes), basis_(basis), cubature_(cubature), sideId_(-1) {
 
     // Get base cell topology from basis.
@@ -254,17 +255,19 @@ public:
                                                   *cellTopo_);
 
     // Compute local degrees of freedom on reference cell sides.
-    int numSides = cellTopo_->getSideCount();
-    if (cellTopo_->getDimension() == 1) {
-      numSides = 2;
-    }
-    if ( numSides ) {
-      for (int i=0; i<numSides; ++i) {
-        sideDofs_.push_back(computeBoundaryDofs(i));
+    if (computeBdryDofs) {
+      int numSides = cellTopo_->getSideCount();
+      if (cellTopo_->getDimension() == 1) {
+        numSides = 2;
       }
-    }
-    else {
-      sideDofs_.push_back(computeBoundaryDofs(0));
+      if ( numSides ) {
+        for (int i=0; i<numSides; ++i) {
+          sideDofs_.push_back(computeBoundaryDofs(i));
+        }
+      }
+      else {
+        sideDofs_.push_back(computeBoundaryDofs(0));
+      }
     }
 
     // Get coordinates of DOFs in reference cell.

@@ -136,7 +136,7 @@ namespace panzer
     } // end loop over filteredPairs_
     isInitialized_ = true;
 
-    // Get the Kokkos::Views corresponding to the owned and ghosted vectors.
+    // Get the PHX::Views corresponding to the owned and ghosted vectors.
     ownedView_   = getView<const Epetra_Vector>(*ownedVector_);
     ghostedView_ = getView<Epetra_Vector>(*getGhostedVector());
   } // end of initialize()

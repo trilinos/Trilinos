@@ -59,25 +59,24 @@
 
 # To be safe, define your minimum CMake version.  This may be newer than the
 # min required by TriBITS.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
 
 # Must set the project name as a variable at very beginning before including anything else
 # We set the project name in a separate file so CTest scripts can use it.
-INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ProjectName.cmake)
 
 # CMake requires that you declare the CMake project in the top-level file and
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
-# Set default C++ standard to C++11
-SET(Trilinos_ENABLE_CXX11_DEFAULT ON)
+## set an env so we know we are in configure
+set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)
 
 #
 # B) Pull in the TriBITS system and execute
 #
 
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/TriBITS.cmake)
-
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/cmake/tribits/TriBITS.cmake)
 
 # Make Trilinos create <Package>Config.cmake files by default
 SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT ON)
@@ -86,8 +85,30 @@ SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
 # Don't allow disabled subpackages to be excluded from tarball
 SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE)
 
+# Set up C++ language standard selection (rest is handled by TriBITS)
+SET(${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT 14)
+SET(${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED "(14|17|20)")
+ADVANCED_SET(CMAKE_CXX_STANDARD ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT}
+  CACHE STRING
+  "C++ standard number with values ${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED} (default ${${PROJECT_NAME}_CMAKE_CXX_STANDARD_DEFAULT})")
+IF (NOT CMAKE_CXX_STANDARD MATCHES "^${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED}$")
+  MESSAGE(FATAL_ERROR
+    "CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD} is not in the allowed set "
+    "${${PROJECT_NAME}_CMAKE_CXX_STANDARDS_ALLOWED}")
+ENDIF ()
+# ToDo: We may want to warn about using a non-default version of C++ but
+# really Trilinos should support bulding with every newer C++ standard so we
+# should just be doing that instead.
+
+# Force off support for Makefile.export.* files while TriBITS is refactored to
+# remove this (#8498)
+SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES OFF CACHE BOOL
+  "Support being removed from TriBITS (see trilinos/Trilinos#8498)" FORCE)
+
 # Do all of the processing for this Tribits project
 TRIBITS_PROJECT()
+
+INSTALL_BUILD_STATS_SCRIPTS()
 
 # Install TriBITS so that other projects can use it.
 ADVANCED_SET(${PROJECT_NAME}_INSTALL_TriBITS ON CACHE BOOL
@@ -98,6 +119,7 @@ IF (${PROJECT_NAME}_INSTALL_TriBITS)
   INSTALL(
     DIRECTORY "${Trilinos_SOURCE_DIR}/cmake/tribits"
     DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake"
+    PATTERN "*.pyc" EXCLUDE
     )
 ENDIF()
 

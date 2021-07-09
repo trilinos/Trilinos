@@ -9,10 +9,6 @@
 
 
 #include "Sacado_trad.hpp"
-#ifdef _MSC_VER
-#include "winmath.h"
-#endif
-
 #include <cstdio>
 
 using std::printf;

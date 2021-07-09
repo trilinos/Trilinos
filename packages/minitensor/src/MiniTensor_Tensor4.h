@@ -143,7 +143,7 @@ public:
   ///
   virtual
   KOKKOS_INLINE_FUNCTION
-  ~Tensor4() final;
+  ~Tensor4();
 
   ///
   /// Indexing for constant 4th-order tensor

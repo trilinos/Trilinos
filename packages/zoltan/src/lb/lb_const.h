@@ -75,6 +75,10 @@ typedef void ZOLTAN_LB_FREE_DATA_FN(struct Zoltan_Struct *);
 
 typedef int ZOLTAN_LB_COPY_DATA_FN(struct Zoltan_Struct *to, struct Zoltan_Struct const *from);
 
+typedef size_t ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN(struct Zoltan_Struct const *);
+typedef void ZOLTAN_LB_SERIALIZE_DATA_FN(struct Zoltan_Struct const *, char **);
+typedef void ZOLTAN_LB_DESERIALIZE_DATA_FN(struct Zoltan_Struct *, char **);
+
 typedef int ZOLTAN_LB_POINT_ASSIGN_FN(struct Zoltan_Struct *, double *, int *, 
                                       int *);
 
@@ -86,7 +90,6 @@ typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *,
 /*
  *  Define the possible load balancing methods allowed.
  */
-
 typedef enum Zoltan_LB_Method {
   NONE = -1,
   BLOCK, 
@@ -188,6 +191,8 @@ struct Zoltan_LB_Struct {
                                       ProcDist[i] has the lowest part
                                       number of parts on processor i.  */
   ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */ 
+  char Method_Name[MAX_PARAM_STRING_LEN];   
+                                  /*  String for method to be used.  */ 
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
@@ -208,6 +213,15 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_COPY_DATA_FN *Copy_Structure;
                                   /*  Pointer to function that copies the
                                       Data_Structure                         */
+  ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN *Serialize_Structure_Size;
+                                  /*  Pointer to function that returns the 
+                                      buffer size to serialize the LB data   */
+  ZOLTAN_LB_SERIALIZE_DATA_FN *Serialize_Structure;
+                                  /*  Pointer to function that copies LB data
+                                      into a buffer to serialize the data    */
+  ZOLTAN_LB_DESERIALIZE_DATA_FN *Deserialize_Structure;
+                                  /*  Pointer to function that copies data from
+                                      a buffer to initialize the LB struct   */
   ZOLTAN_LB_POINT_ASSIGN_FN *Point_Assign;
                                   /*  Pointer to the function that performs
                                       Point_Assign; this ptr is set based on 
@@ -297,6 +311,10 @@ extern int Zoltan_LB_Build_PartDist(struct Zoltan_Struct *);
 extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
   int *, int);
 
+extern size_t Zoltan_LB_Serialize_Size(struct Zoltan_Struct const *);
+extern void Zoltan_LB_Serialize(struct Zoltan_Struct const *, char **);
+extern void Zoltan_LB_Deserialize(struct Zoltan_Struct *, char **);
+
 extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to, 
                                struct Zoltan_Struct const *from);
 extern int Zoltan_LB_Special_Free_Part(struct Zoltan_Struct *,
@@ -336,6 +354,16 @@ extern ZOLTAN_LB_COPY_DATA_FN Zoltan_RIB_Copy_Structure;
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_HSFC_Copy_Structure;
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_Hier_Copy_Structure;
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_PHG_Copy_Structure;
+
+/* SERIALIZE DATA_STRUCTURE FUNCTIONS */
+extern ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN Zoltan_RCB_Serialize_Structure_Size;
+extern ZOLTAN_LB_SERIALIZE_DATA_FN Zoltan_RCB_Serialize_Structure;
+extern ZOLTAN_LB_DESERIALIZE_DATA_FN Zoltan_RCB_Deserialize_Structure;
+
+extern ZOLTAN_LB_SERIALIZE_DATA_SIZE_FN
+       Zoltan_Serialize_Structure_Size_Not_Implemented;
+extern ZOLTAN_LB_SERIALIZE_DATA_FN Zoltan_Serialize_Structure_Not_Implemented;
+extern ZOLTAN_LB_DESERIALIZE_DATA_FN Zoltan_Deserialize_Structure_Not_Implemented;
 
 /* POINT_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;

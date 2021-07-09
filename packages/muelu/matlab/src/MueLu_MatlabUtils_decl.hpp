@@ -109,8 +109,8 @@ enum MuemexType
 };
 
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
-typedef int mm_LocalOrd;  //these are used for LocalOrdinal and GlobalOrdinal of all xpetra/tpetra templated types
-typedef int mm_GlobalOrd;
+typedef typename Tpetra::Map<>::local_ordinal_type mm_LocalOrd;  //these are used for LocalOrdinal and GlobalOrdinal of all xpetra/tpetra templated types
+typedef typename Tpetra::Map<>::global_ordinal_type mm_GlobalOrd;
 typedef std::complex<double> complex_t;
 typedef Tpetra::Map<> muemex_map_type;
 typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_double;

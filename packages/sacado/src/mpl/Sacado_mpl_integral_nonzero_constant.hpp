@@ -42,7 +42,7 @@ namespace Sacado {
       enum { value = T(v) };
       typedef T value_type ;
       typedef integral_nonzero_constant<T,v> type ;
-      KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & ) {}
+      SACADO_INLINE_FUNCTION integral_nonzero_constant( const T & ) {}
     };
 
     template< typename T , T zero >
@@ -51,7 +51,7 @@ namespace Sacado {
       const T value ;
       typedef T value_type ;
       typedef integral_nonzero_constant<T,0> type ;
-      KOKKOS_INLINE_FUNCTION integral_nonzero_constant( const T & v ) :
+      SACADO_INLINE_FUNCTION integral_nonzero_constant( const T & v ) :
         value(v) {}
     };
 

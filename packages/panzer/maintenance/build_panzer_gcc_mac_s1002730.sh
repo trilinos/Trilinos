@@ -62,7 +62,7 @@ cmake \
       -D Trilinos_ENABLE_Panzer:BOOL=ON \
       -D Phalanx_ENABLE_TESTS:BOOL=ON \
       -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
-      -D Panzer_ENABLE_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
+      -D Panzer_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
       -D Panzer_ENABLE_TESTS:BOOL=ON \
       -D Panzer_ENABLE_EXAMPLES:BOOL=ON \
       -D Trilinos_ENABLE_SECONDARY_TESTED_CODE:BOOL=ON \

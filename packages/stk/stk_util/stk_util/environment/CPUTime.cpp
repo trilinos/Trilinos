@@ -32,9 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/CPUTime.hpp>
-#include <sys/resource.h>               // for rusage, getrusage, etc
-#include <sys/time.h>                   // for timeval
+#include "stk_util/environment/CPUTime.hpp"
+#include <sys/resource.h>  // for rusage, getrusage, RUSAGE_SELF
+#include <sys/time.h>      // for timeval
 
 
 namespace stk {

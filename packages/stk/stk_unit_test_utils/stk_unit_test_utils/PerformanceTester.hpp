@@ -37,6 +37,8 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/perf_util.hpp>
+#include <stk_util/diag/Timer.hpp>
+#include <stk_util/diag/PrintTimer.hpp>
 
 namespace stk
 {

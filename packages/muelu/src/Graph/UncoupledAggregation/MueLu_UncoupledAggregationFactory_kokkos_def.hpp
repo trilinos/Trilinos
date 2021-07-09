@@ -105,6 +105,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: enable phase 2a");
     SET_VALID_ENTRY("aggregation: enable phase 2b");
     SET_VALID_ENTRY("aggregation: enable phase 3");
+    SET_VALID_ENTRY("aggregation: phase2a include root");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: preserve Dirichlet points");
@@ -239,7 +240,7 @@ namespace MueLu {
       MueLu_sumAll(comm, as<GO>(numRows), numGlobalRows);
 
     {
-      SubFactoryMonitor sfm(*this, "Algo \"Graph Coloring\"", currentLevel);
+      SubFactoryMonitor sfm(*this, "Algo Graph Coloring", currentLevel);
 
       // LBV on Sept 06 2019: the note below is a little worrisome,
       // can we guarantee that MueLu is never used on a non-symmetric
@@ -318,7 +319,7 @@ namespace MueLu {
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
-      SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
+      SubFactoryMonitor sfm(*this, "Algo " + phase, currentLevel);
 
       int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
       algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
@@ -354,7 +355,8 @@ namespace MueLu {
 
     Set(currentLevel, "Aggregates", aggregates);
 
-    GetOStream(Statistics1) << aggregates->description() << std::endl;
+    if (IsPrint(Statistics1))
+      GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

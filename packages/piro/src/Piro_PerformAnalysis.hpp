@@ -48,6 +48,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Piro_ROL_ObserverBase.hpp"
 
 namespace Piro {
 
@@ -60,7 +61,8 @@ namespace Piro {
   int PerformAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& analysisParams,
-     Teuchos::RCP< Thyra::VectorBase<double> >& result
+     Teuchos::RCP< Thyra::VectorBase<double> >& result,
+     Teuchos::RCP< ROL_ObserverBase<double> > observer = Teuchos::null
      );
   //@}
 
@@ -79,7 +81,8 @@ namespace Piro {
   int PerformROLAnalysis(
      Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& rolParams,
-     Teuchos::RCP< Thyra::VectorBase<double> >& p
+     Teuchos::RCP< Thyra::VectorBase<double> >& p,
+     Teuchos::RCP< ROL_ObserverBase<double> > observer = Teuchos::null
      );
   //@}
 

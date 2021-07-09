@@ -35,21 +35,19 @@
 #ifndef STK_UTIL_DIAG_Timer_hpp
 #define STK_UTIL_DIAG_Timer_hpp
 
-#include <stddef.h>                     // for size_t
-#include <list>                         // for list
-#include <stk_util/diag/Option.hpp>     // for OptionMask, etc
-#include <stk_util/diag/TimerMetricTraits.hpp>  // for MetricTraits, etc
-#include <stk_util/environment/FormatTime.hpp>  // for TimeFormat
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <string>                       // for string
-#include <vector>                       // for vector
+#include "stk_util/diag/Option.hpp"             // for OptionMask, OptionMaskParser, OptionMaskP...
+#include "stk_util/diag/TimerMetricTraits.hpp"  // for MetricTraits, MetricsMask, CPUTime (ptr o...
+#include "stk_util/environment/FormatTime.hpp"  // for TimeFormat
+#include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine, ompi_communicator_t
+#include <cstddef>                              // for size_t
+#include <list>                                 // for list
+#include <string>                               // for string
 
 namespace sierra { namespace Diag { class TimerParser; } }
 namespace stk { namespace diag { class Timer; } }
 namespace stk { namespace diag { class TimerImpl; } }
 namespace stk { namespace diag { class TimerSet; } }
 namespace stk { namespace diag { class Writer; } }
-
 
 ///
 /// @addtogroup DiagTimerDetail
@@ -58,7 +56,6 @@ namespace stk { namespace diag { class Writer; } }
 
 namespace stk {
 namespace diag {
-
 
 typedef unsigned TimerMask;        ///< Timer classification mask
 

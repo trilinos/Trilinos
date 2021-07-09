@@ -46,7 +46,8 @@
 
 
 namespace FROSch {
-    
+
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -200,7 +201,7 @@ namespace FROSch {
         LeafID_ = leafID;
         return 0;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     int InterfaceEntity<SC,LO,GO,NO>::setUniqueIDToFirstGlobalID()
     {
@@ -231,7 +232,7 @@ namespace FROSch {
             UN length = ancestors->getNumEntities();
             for (UN j=0; j<length; j++) {
                 tmpVector = ancestors->getEntity(length-1-j)->getSubdomainsVector();
-                if (ancestors->getEntity(length-1-j)->getMultiplicity()<=this->getMultiplicity() || !std::binary_search(tmpVector.begin(),tmpVector.end(),SubdomainsVector_[i])) {
+                if (ancestors->getEntity(length-1-j)->getMultiplicity()<=this->getMultiplicity() || !binary_search(tmpVector.begin(),tmpVector.end(),SubdomainsVector_[i])) {
                     ancestors->removeEntity(length-1-j);
                 }
             }
@@ -241,11 +242,11 @@ namespace FROSch {
             Ancestors_->addEntity(ancestors->getEntity(i));
         }
         Ancestors_->sortUnique();
-        
+
         // this is offspring of each ancestor
         for (UN i=0; i<Ancestors_->getNumEntities(); i++) {
             InterfaceEntityPtr thisEntity = rcpFromRef(*this);
-            FROSCH_ASSERT(!thisEntity.is_null(),"FROSch::InterfaceEntity : ERROR: thisEntity.is_null()");
+            FROSCH_ASSERT(!thisEntity.is_null(),"FROSch::InterfaceEntity: thisEntity.is_null()");
             Ancestors_->getEntity(i)->addOffspring(thisEntity);
         }
         return 0;
@@ -315,7 +316,7 @@ namespace FROSch {
         if (Roots_->getNumEntities()>0) {
             DistancesVector_.resize(getNumNodes());
             for (UN i=0; i<getNumNodes(); i++) {
-                DistancesVector_[i].resize(Roots_->getNumEntities()+1,std::numeric_limits<SC>::max());
+                DistancesVector_[i].resize(Roots_->getNumEntities()+1,numeric_limits<SC>::max());
             }
 
             switch (distanceFunction) {
@@ -327,8 +328,8 @@ namespace FROSch {
                     }
                     break;
                 case InverseEuclideanDistanceFunction:
-                    FROSCH_ASSERT(!nodeList.is_null(),"FROSch::InterfaceEntity : ERROR: The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
-                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::InterfaceEntity : ERROR: Inconsistent Dimension.");
+                    FROSCH_ASSERT(!nodeList.is_null(),"FROSch::InterfaceEntity: The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
+                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::InterfaceEntity: Inconsistent Dimension.");
                     for (UN i=0; i<Roots_->getNumEntities(); i++) {
                         for (UN j=0; j<Roots_->getEntity(i)->getNumNodes(); j++) {
                             // Coordinates of the nodes of the coarse node
@@ -345,8 +346,8 @@ namespace FROSch {
                                     distance += (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]) * (nodeList->getData(l)[this->getLocalNodeID(k)]-CN[l]);
                                 }
                                 // Compute inverse euclidean distance
-                                distance = std::sqrt(distance);
-                                DistancesVector_[k][i] = std::min(DistancesVector_[k][i],distance);
+                                distance = sqrt(distance);
+                                DistancesVector_[k][i] = min(DistancesVector_[k][i],distance);
                             }
                         }
                     }
@@ -357,7 +358,7 @@ namespace FROSch {
                     }
                     break;
                 default:
-                    FROSCH_ASSERT(false,"FROSch::InterfaceEntity : ERROR: Specify a valid Distance Function.");
+                    FROSCH_ASSERT(false,"FROSch::InterfaceEntity: Specify a valid Distance Function.");
                     break;
             }
 
@@ -449,7 +450,7 @@ namespace FROSch {
     {
         return RootID_;
     }
-    
+
     template <class SC,class LO,class GO,class NO>
     LO InterfaceEntity<SC,LO,GO,NO>::getLeafID() const
     {

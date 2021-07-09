@@ -94,7 +94,8 @@ int main(int argc, char* argv[])
       Dakota::Variables finalVariables = dakota.getFinalSolution();
       Dakota::RealVector finalValues = finalVariables.continuous_variables();
     
-      *out << "\nfinalValues =\n" << finalValues;
+      *out << "\nfinalValues =\n";
+      finalValues.print(*out);
 
       const double errorTol = 1e-12;
       const double finalError = std::sqrt(

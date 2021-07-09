@@ -53,16 +53,10 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosPseudoBlockGmresIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
-#ifdef HAVE_BELOS_TSQR
-#  include "BelosTsqrOrthoManager.hpp"
-#endif // HAVE_BELOS_TSQR
+#include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestFactory.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -507,7 +501,13 @@ namespace Belos {
     static constexpr const char * expResScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "ICGS";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_, achievedTol_;
@@ -683,78 +683,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
   }
 
-  // Check if the orthogonalization changed.
-  if (params->isParameter ("Orthogonalization")) {
-    std::string tempOrthoType = params->get ("Orthogonalization", orthoType_default_);
-#ifdef HAVE_BELOS_TSQR
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      tempOrthoType != "DGKS" && tempOrthoType != "ICGS" &&
-      tempOrthoType != "IMGS" && tempOrthoType != "TSQR",
-      std::invalid_argument,
-      "Belos::PseudoBlockGmresSolMgr::setParameters: "
-      "The \"Orthogonalization\" parameter must be one of \"DGKS\", \"ICGS\", "
-      "\"IMGS\", or \"TSQR\".");
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      tempOrthoType != "DGKS" && tempOrthoType != "ICGS" &&
-      tempOrthoType != "IMGS",
-      std::invalid_argument,
-      "Belos::PseudoBlockGmresSolMgr::setParameters: "
-      "The \"Orthogonalization\" parameter must be one of \"DGKS\", \"ICGS\", "
-      "or \"IMGS\".");
-#endif // HAVE_BELOS_TSQR
-
-    if (tempOrthoType != orthoType_) {
-      orthoType_ = tempOrthoType;
-      params_->set("Orthogonalization", orthoType_);
-      // Create orthogonalization manager
-      if (orthoType_ == "DGKS") {
-        typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
-        if (orthoKappa_ <= 0) {
-          ortho_ = rcp (new ortho_type (label_));
-        }
-        else {
-          ortho_ = rcp (new ortho_type (label_));
-          rcp_dynamic_cast<ortho_type> (ortho_)->setDepTol (orthoKappa_);
-        }
-      }
-      else if (orthoType_ == "ICGS") {
-        typedef ICGSOrthoManager<ScalarType, MV, OP> ortho_type;
-        ortho_ = rcp (new ortho_type (label_));
-      }
-      else if (orthoType_ == "IMGS") {
-        typedef IMGSOrthoManager<ScalarType, MV, OP> ortho_type;
-        ortho_ = rcp (new ortho_type (label_));
-      }
-#ifdef HAVE_BELOS_TSQR
-      else if (orthoType_ == "TSQR") {
-        typedef TsqrMatOrthoManager<ScalarType, MV, OP> ortho_type;
-        ortho_ = rcp (new ortho_type (label_));
-      }
-#endif // HAVE_BELOS_TSQR
-    }
-  }
-
-  // Check which orthogonalization constant to use.
-  if (params->isParameter ("Orthogonalization Constant")) {
-    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
-    }
-    else {
-      orthoKappa_ = params->get ("Orthogonalization Constant",
-                                 DefaultSolverParameters::orthoKappa);
-    }
-
-    // Update parameter in our list.
-    params_->set ("Orthogonalization Constant", orthoKappa_);
-    if (orthoType_ == "DGKS") {
-      if (orthoKappa_ > 0 && ! ortho_.is_null ()) {
-        typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
-        rcp_dynamic_cast<ortho_type> (ortho_)->setDepTol (orthoKappa_);
-      }
-    }
-  }
 
   // Check for a change in verbosity level
   if (params->isParameter ("Verbosity")) {
@@ -826,6 +754,49 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // Create output manager if we need to.
   if (printer_.is_null ()) {
     printer_ = rcp (new OutputManager<ScalarType> (verbosity_, outputStream_));
+  }
+
+  // Check if the orthogonalization changed.
+  bool changedOrthoType = false;
+  if (params->isParameter ("Orthogonalization")) {
+    std::string tempOrthoType = params->get ("Orthogonalization", orthoType_default_);
+    if (tempOrthoType != orthoType_) {
+      orthoType_ = tempOrthoType;
+      changedOrthoType = true; 
+    }
+  }
+  params_->set("Orthogonalization", orthoType_);
+
+  // Check which orthogonalization constant to use.
+  if (params->isParameter ("Orthogonalization Constant")) {
+    if (params->isType<MagnitudeType> ("Orthogonalization Constant")) {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 static_cast<MagnitudeType> (DefaultSolverParameters::orthoKappa));
+    }
+    else {
+      orthoKappa_ = params->get ("Orthogonalization Constant",
+                                 DefaultSolverParameters::orthoKappa);
+    }
+
+    // Update parameter in our list.
+    params_->set ("Orthogonalization Constant", orthoKappa_);
+    if (orthoType_ == "DGKS") {
+      if (orthoKappa_ > 0 && ! ortho_.is_null() && !changedOrthoType) {
+        typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
+        rcp_dynamic_cast<ortho_type> (ortho_)->setDepTol (orthoKappa_);
+      }
+    }
+  }
+
+  // Create orthogonalization manager if we need to.
+  if (ortho_.is_null() || changedOrthoType) {
+    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
+    if (orthoType_=="DGKS" && orthoKappa_ > 0) {
+      paramsOrtho->set ("depTol", orthoKappa_ );
+    }
+
+    ortho_ = factory.makeMatOrthoManager (orthoType_, Teuchos::null, printer_, label_, paramsOrtho);
   }
 
   // Convergence
@@ -1006,52 +977,6 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
     if (! expConvTest_.is_null ()) {
       expConvTest_->setQuorum (defQuorum_);
-    }
-  }
-
-  // Create orthogonalization manager if we need to.
-  if (ortho_.is_null ()) {
-    params_->set("Orthogonalization", orthoType_);
-    if (orthoType_ == "DGKS") {
-      typedef DGKSOrthoManager<ScalarType, MV, OP> ortho_type;
-      if (orthoKappa_ <= 0) {
-        ortho_ = rcp (new ortho_type (label_));
-      }
-      else {
-        ortho_ = rcp (new ortho_type (label_));
-        rcp_dynamic_cast<ortho_type> (ortho_)->setDepTol (orthoKappa_);
-      }
-    }
-    else if (orthoType_ == "ICGS") {
-      typedef ICGSOrthoManager<ScalarType, MV, OP> ortho_type;
-      ortho_ = rcp (new ortho_type (label_));
-    }
-    else if (orthoType_ == "IMGS") {
-      typedef IMGSOrthoManager<ScalarType, MV, OP> ortho_type;
-      ortho_ = rcp (new ortho_type (label_));
-    }
-#ifdef HAVE_BELOS_TSQR
-    else if (orthoType_ == "TSQR") {
-      typedef TsqrMatOrthoManager<ScalarType, MV, OP> ortho_type;
-      ortho_ = rcp (new ortho_type (label_));
-    }
-#endif // HAVE_BELOS_TSQR
-    else {
-#ifdef HAVE_BELOS_TSQR
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        orthoType_ != "ICGS" && orthoType_ != "DGKS" &&
-        orthoType_ != "IMGS" && orthoType_ != "TSQR",
-        std::logic_error,
-        "Belos::PseudoBlockGmresSolMgr::setParameters(): "
-        "Invalid orthogonalization type \"" << orthoType_ << "\".");
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        orthoType_ != "ICGS" && orthoType_ != "DGKS" &&
-        orthoType_ != "IMGS",
-        std::logic_error,
-        "Belos::PseudoBlockGmresSolMgr::setParameters(): "
-        "Invalid orthogonalization type \"" << orthoType_ << "\".");
-#endif // HAVE_BELOS_TSQR
     }
   }
 
@@ -1274,8 +1199,6 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
   if (!isSet_) { setParameters( params_ ); }
-
-  Teuchos::BLAS<int,ScalarType> blas;
 
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockGmresSolMgrLinearProblemFailure,
                      "Belos::PseudoBlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");

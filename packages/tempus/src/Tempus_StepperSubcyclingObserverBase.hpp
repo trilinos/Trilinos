@@ -27,18 +27,9 @@ namespace Tempus {
  *  wishes to modify the solution and/or stepper data during the
  *  Stepper::takeStep, they should use the Modifier class (with care!).
  *
- *  Below is the Subcycling algorithm with the locations of the observe calls
- *  italicized.
- *
- *  \f{algorithm}{                                                                               
- *  \renewcommand{\thealgorithm}{}                                                               
- *  \caption{Subcycling with the locations of the application actions indicated.}             
- *  \begin{algorithmic}[1]                                                                       
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}                      
- *    \State Compute $x_{n}$ from $x_{n-1}$, applying appActions from sub-steppers                       
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}  
- *  \end{algorithmic}                                                                            
- *  \f}                                                                                          
+ *  The locations for these AppAction calls
+ *  (StepperSubcyclingAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperSubcycling.
  */
 template<class Scalar>
 class StepperSubcyclingObserverBase

@@ -106,11 +106,11 @@ void gdbIn()
 int main(int argc,char * argv[])
 {
    bool status = false;
-   Kokkos::initialize(argc,argv);
 
    {
      // calls MPI_Init and MPI_Finalize
      Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+     Kokkos::initialize(argc,argv);
 
      // build MPI/Serial communicator
      #ifdef HAVE_MPI

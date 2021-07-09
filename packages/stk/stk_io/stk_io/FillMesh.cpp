@@ -67,5 +67,20 @@ void fill_mesh_save_step_info(const std::string& inFile, stk::mesh::BulkData& in
     save_step_info(stkIo, numSteps, maxTime);
 }
 
+void fill_mesh_with_fields(const std::string& inFile, stk::mesh::BulkData& bulk, stk::io::DatabasePurpose purpose)
+{
+    stk::io::StkMeshIoBroker stkIo;
+    fill_mesh_with_fields(inFile, stkIo, bulk, purpose);
+}
+
+void fill_mesh_with_fields(const std::string& inFile, stk::io::StkMeshIoBroker& ioBroker,
+                           stk::mesh::BulkData& bulk, stk::io::DatabasePurpose purpose)
+{
+    int numSteps;
+    double maxTime;
+    stk::io::fill_mesh_preexisting(ioBroker, inFile, bulk, purpose);
+    save_step_info(ioBroker, numSteps, maxTime);
+}
+
 }
 }

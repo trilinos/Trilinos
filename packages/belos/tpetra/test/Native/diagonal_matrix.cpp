@@ -109,9 +109,9 @@ public:
       auto X_j = X.getVector (j);
       auto Y_j = Y.getVectorNonConst (j);
 
-      auto X_j_lcl_2d = X_j->template getLocalView<device_type> ();
+      auto X_j_lcl_2d = X_j->template getLocalView<device_type> (Tpetra::Access::ReadOnly);
       auto X_j_lcl = Kokkos::subview (X_j_lcl_2d, Kokkos::ALL (), 0);
-      auto Y_j_lcl_2d = Y_j->template getLocalView<device_type> ();
+      auto Y_j_lcl_2d = Y_j->template getLocalView<device_type> (Tpetra::Access::ReadWrite);
       auto Y_j_lcl = Kokkos::subview (Y_j_lcl_2d, Kokkos::ALL (), 0);
 
       KokkosBlas::mult (static_cast<ISC> (beta), Y_j_lcl,
@@ -285,23 +285,8 @@ TEUCHOS_UNIT_TEST( TpetraNativeSolvers, Diagonal )
 
 } // namespace (anonymous)
 
-namespace BelosTpetra {
-namespace Impl {
-  extern void register_Cg (const bool verbose);
-  extern void register_Gmres (const bool verbose);
-  extern void register_GmresS (const bool verbose);  
-  extern void register_GmresSstep (const bool verbose);    
-} // namespace Impl
-} // namespace BelosTpetra
-
 int main (int argc, char* argv[])
 {
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
-
-  constexpr bool verbose = false;
-  BelosTpetra::Impl::register_Cg (verbose);
-  BelosTpetra::Impl::register_Gmres (verbose);
-  BelosTpetra::Impl::register_GmresS (verbose);
-  BelosTpetra::Impl::register_GmresSstep (verbose);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
 }

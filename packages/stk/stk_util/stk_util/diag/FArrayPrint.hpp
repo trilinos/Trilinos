@@ -38,8 +38,8 @@
 #include <ostream>
 #include <iomanip>
 
-#include <stk_util/util/FArray.hpp>
-#include <stk_util/util/Array.hpp>
+#include "stk_util/util/FArray.hpp"
+#include "stk_util/util/Array.hpp"
 
 namespace sierra {
 

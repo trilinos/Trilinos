@@ -109,39 +109,30 @@ VectorToScalar(const PHX::FieldTag & input,
 template<typename EvalT, typename Traits>
 void
 VectorToScalar<EvalT, Traits>::
-postRegistrationSetup(
-  typename Traits::SetupData  /* worksets */,
-  PHX::FieldManager<Traits>&  fm)
-{
-  for (std::size_t i=0; i < scalar_fields.size(); ++i)
-    this->utils.setFieldData(scalar_fields[i],fm);
-
-  this->utils.setFieldData(vector_field,fm);
-}
-
-//**********************************************************************
-template<typename EvalT, typename Traits>
-void
-VectorToScalar<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
 
-  typedef typename PHX::MDField<ScalarT,Cell,Point>::size_type size_type;
+  // Iteration bounds
+  const int num_points = vector_field.extent_int(1);
+  const int num_scalars = std::min(static_cast<int>(scalar_fields.size()),
+                                   vector_field.extent_int(2));
 
   // Need local copies for cuda, *this is not usable
   auto local_vector_field = vector_field;
-  // Loop over scalars
-  for (std::size_t sc = 0; sc < scalar_fields.size(); ++sc) {
+
+  // We parallelize over each scalar field
+  for (int sc = 0; sc < num_scalars; ++sc) {
     auto local_scalar_field = scalar_fields[sc];
-    // Loop over cells
-    Kokkos::parallel_for(workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
-      // Loop over points
-      for (size_type pt = 0; pt < local_vector_field.extent(1); ++pt) {
+    Kokkos::parallel_for(workset.num_cells, KOKKOS_LAMBDA (const int cell) {
+      for (int pt = 0; pt < num_points; ++pt)
         local_scalar_field(cell,pt) = local_vector_field(cell,pt,sc);
-      }
     });
   }
+
+  // If there are remaining fields, set them to zero
+  for(unsigned int sc = num_scalars; sc < scalar_fields.size(); ++sc)
+    Kokkos::deep_copy(scalar_fields[sc].get_static_view(), 0.);
 }
 
 //**********************************************************************

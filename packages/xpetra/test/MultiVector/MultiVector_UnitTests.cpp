@@ -543,7 +543,7 @@ namespace {
     #endif
     {
       if(!(is_same<typename MV::scalar_type, int>::value || is_same<typename MV::scalar_type, long long int>::value)) {
-        std::cout << "Running the norm tests!" << std::endl;
+        out << "Running the norm tests!" << std::endl;
         // we zeroed it out in the constructor; all norms should be zero
         Array<Magnitude> norms(numVecs), zeros(numVecs);
         std::fill(zeros.begin(),zeros.end(),ScalarTraits<Magnitude>::zero());
@@ -559,7 +559,7 @@ namespace {
     Scalar testValue = 2, sumValue = 3;
     LocalOrdinal  testLID = 7;
     GlobalOrdinal testGID = myRank*numLocal + testLID;
-    std::cout << "myRank: " << myRank << ", testGID=" << testGID << std::endl;
+    out << "myRank: " << myRank << ", testGID=" << testGID << std::endl;
     mvec.replaceLocalValue(testLID, 3, testValue);
     mvec.replaceLocalValue(testLID, 4, testValue);
     mvec.sumIntoLocalValue(testLID, 4, sumValue);

@@ -1,43 +1,14 @@
-C Copyright (c) 2007-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
 C=======================================================================
       PROGRAM EXOTXT
 C=======================================================================
 
-C   --*** EXO2TXT *** Renamed for ExodusIIv2 database
 C   --*** EXOTXT *** (EXOTXT) EXODUS to TEXT translator
-C   --   Written by Amy Gilkey - revised 03/02/88
 C   --   Modified for ExodusIIv2 database format
 C   --
 C   --EXOTXT reads either from an EXODUS database or from the user
@@ -47,7 +18,6 @@ C   --Expects the input database on unit 9, the output text file on unit 20.
 
       include 'exodusII.inc'
       INCLUDE 'argparse.inc'
-
 
 C     Input/Output File Arguments
 C     CPUWS - The word size in bytes of the floating point variables
@@ -75,12 +45,11 @@ C     C(1) dynamic memory base array for character data
       DIMENSION A(1)
       CHARACTER*1 C(1)
 
-
 C     Program Information
 C.
       QAINFO(1) = 'exotxt                          '
-      QAINFO(2) = '2018/08/14                      '
-      QAINFO(3) = ' 2.00                           '
+      QAINFO(2) = '2021/01/28                      '
+      QAINFO(3) = ' 2.01                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
@@ -325,7 +294,6 @@ C        Read the concatenated node sets
          END IF
       END IF
 
-
 C   --Read/write the element side sets
 
       IF (NUMESS .GT. 0) THEN
@@ -374,7 +342,6 @@ C        Convert sides to nodes
          CALL DBIGN (NDB, NUMESS, A(KIDSS), A(KNNSS),
      &               A(KIXNSS), A(KLTNSS), A(KLTNNN), IOERR)
          IF (IOERR .EQ. 1) GO TO 140
-
 
          CALL WRESS (NTXT, NUMESS, LESSEL, LESSNL, LESSDF,
      &        A(KIDSS), A(KNESS), A(KNDSS), A(KIXESS), A(KIDESS),
@@ -475,7 +442,6 @@ C************************************************************************
          ioerr = 1
       end if
 
-
 C   --Read the QA records
 C     QA and Information record number stored in dbnumq.blk
 C     Request the number of QA records.  Return the value
@@ -504,7 +470,6 @@ C     Reserve space to read the QA and information records
          CALL MEMERR
          GOTO 140
       END IF
-
 
 C   --Read the database names
 
@@ -616,12 +581,11 @@ C     Delete dynamic memory
   140 CONTINUE
 
       CLOSE (NTXT, IOSTAT=K)
-      call exclos(ndb, ierr)
+      if (ndb .ne. 11 .and. ndb .gt. 0) call exclos(ndb, ierr)
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
 
       END
-
 
 C ... Written as wrapper to get string lengths correct on coordinate
 C     name array which is dynamically allocated
@@ -632,4 +596,3 @@ C     name array which is dynamically allocated
       call exgcon(ndb, nameco, ierr)
       return
       end
-

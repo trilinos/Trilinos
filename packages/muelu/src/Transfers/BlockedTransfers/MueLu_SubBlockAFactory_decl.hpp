@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_SubBlockAFactory_decl.hpp
- *
- *  Created on: 02.01.2012
- *      Author: tobias
- */
 
 #ifndef MUELU_SUBBLOCKAFACTORY_DECL_HPP_
 #define MUELU_SUBBLOCKAFACTORY_DECL_HPP_
@@ -72,7 +66,7 @@ namespace MueLu {
     This is a very simple class to access a single matrix block in a blocked operator A.
 
     Example
-    \code
+    \code{.cpp}
     Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
     // ... let bOp be a 2x2 blocked operator ...
     bOp->fillComplete();
@@ -107,18 +101,18 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    SubBlockAFactory() { }
+    SubBlockAFactory() = default;
 
     //! Destructor.
-    virtual ~SubBlockAFactory() { }
+    virtual ~SubBlockAFactory() = default;
     //@}
 
     //! Input
     //@{
 
-    RCP<const ParameterList> GetValidParameterList() const;
+    RCP<const ParameterList> GetValidParameterList() const override;
 
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level &currentLevel) const override;
 
     //@}
 
@@ -138,10 +132,10 @@ namespace MueLu {
      *      If no, throw an exception
      *
      * For blocked operators with block maps one should use the striding
-     * information from the sub maps. for strided operators, the striding
+     * information from the sub maps. For strided operators, the striding
      * information of the full map is the best choice.
      */
-    void Build(Level & currentLevel) const;
+    void Build(Level & currentLevel) const override;
 
     //@}
 

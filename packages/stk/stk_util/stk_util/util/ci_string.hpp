@@ -35,8 +35,9 @@
 #ifndef STK_UTIL_UTIL_CI_STRING_H
 #define STK_UTIL_UTIL_CI_STRING_H
 
-#include <stk_util/util/ci_traits.hpp>
-#include <iosfwd>
+#include "stk_util/util/ci_traits.hpp"  // for ignorecase_traits
+#include <iosfwd>                       // for istream, ostream
+#include <string>                       // for string, basic_string
 
 typedef std::basic_string<char,ignorecase_traits> ci_string;
 

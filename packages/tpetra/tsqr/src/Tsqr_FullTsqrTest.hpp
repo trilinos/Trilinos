@@ -808,8 +808,11 @@ namespace TSQR {
         const ordinal_type numCols =
           testParams->get<ordinal_type>("numCols");
         const int numTrials = testParams->get<int>("numTrials");
-        const bool contiguousCacheBlocks =
+        /* const */ bool contiguousCacheBlocks =
           testParams->get<bool>("contiguousCacheBlocks");
+          // 9/2020  contiguousCacheBlocks should be const, but
+          // gcc7.2+cuda9 with std=c++14 fails when const is used;
+          // see https://github.com/trilinos/Trilinos/pull/8047
         const bool testFactorExplicit =
           testParams->get<bool>("testFactorExplicit");
         const bool testRankRevealing =

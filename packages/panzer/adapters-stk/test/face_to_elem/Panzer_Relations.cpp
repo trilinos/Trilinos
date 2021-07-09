@@ -121,7 +121,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
   graph_overlap.doImport(graph, imp, Tpetra::ADD);
 
 
-  face_to_elem_ = Kokkos::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getNodeNumElements());
+  face_to_elem_ = PHX::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getNodeNumElements());
   num_boundary_faces_=0;
   for (int i(0); i < face_to_elem_.extent_int(0); ++i)
   {
@@ -155,7 +155,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
     }
 
   }
-  face_to_node_ = Kokkos::View<GlobalOrdinal**>("face_to_node", face_to_elem_.extent(0), face_to_node[0].size());
+  face_to_node_ = PHX::View<GlobalOrdinal**>("face_to_node", face_to_elem_.extent(0), face_to_node[0].size());
   Kokkos::deep_copy(face_to_node_, -1);
   for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem) {
     const auto * connectivity = conn_->getConnectivity(ielem);
@@ -191,8 +191,8 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
     }
 
   }
-  face_normal_ = Kokkos::View<double***> ("FaceToElems::face_normal_", total_elements_, face_to_node.size(), dimension_ );
-  face_centroid_ = Kokkos::View<double***> ("FaceToElems::face_centroid_", total_elements_, face_to_node.size(), dimension_ );
+  face_normal_ = PHX::View<double***> ("FaceToElems::face_normal_", total_elements_, face_to_node.size(), dimension_ );
+  face_centroid_ = PHX::View<double***> ("FaceToElems::face_centroid_", total_elements_, face_to_node.size(), dimension_ );
 
   int num_worksets = worksets->size();
 
@@ -213,7 +213,7 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
       }
     }
     // Now lets compute the face normals
-    Kokkos::View<double**> edges("temp::Edges",40, dimension_);  // overkill on 40 size
+    PHX::View<double**> edges("temp::Edges",40, dimension_);  // overkill on 40 size
     for (int c=0; c<num_cells; ++c) {
 
       std::vector<double> center(3,0.);

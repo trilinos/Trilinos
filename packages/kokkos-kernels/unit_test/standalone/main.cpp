@@ -3,6 +3,9 @@
 #ifdef KOKKOS_ENABLE_DEFAULT_DEVICE_TYPE_CUDA
 #include<Test_Cuda.hpp>
 #endif
+#ifdef KOKKOS_ENABLE_DEFAULT_DEVICE_TYPE_HIP
+#include<Test_HIP.hpp>
+#endif
 #ifdef KOKKOS_ENABLE_DEFAULT_DEVICE_TYPE_SERIAL
 #include<Test_Serial.hpp>
 #endif

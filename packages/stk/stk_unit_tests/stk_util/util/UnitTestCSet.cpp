@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_util/util/CSet.hpp>       // for CSet
+#include "gtest/gtest.h"
+#include "stk_util/util/CSet.hpp"  // for CSet, stk
 
 
 namespace stk {

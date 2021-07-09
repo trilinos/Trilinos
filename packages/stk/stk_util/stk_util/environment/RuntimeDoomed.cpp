@@ -32,9 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/environment/RuntimeDoomed.hpp>
-#include <exception>                    // for exception
-#include "stk_util/environment/RuntimeMessage.hpp"
+#include "stk_util/environment/RuntimeDoomed.hpp"
+#include "stk_util/environment/RuntimeMessage.hpp"  // for MSG_DOOMED, report_message, MessageCode
+#include <exception>                                // for exception
+#include <string>                                   // for basic_string
 
 
 namespace stk {

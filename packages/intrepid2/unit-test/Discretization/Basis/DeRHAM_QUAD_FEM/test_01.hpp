@@ -142,10 +142,8 @@ int DeRHAM_QUAD_FEM_Test01(const bool verbose) {
       switch (comp) {
       case 0:
         return std::sin(x)*std::sin(y)+2.0*std::cos(x)*std::cos(y);
-        break;
       case 1:
         return std::exp(x)*std::exp(y);
-        break;
       default:
         return 0;
       }

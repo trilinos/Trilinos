@@ -127,7 +127,7 @@ private:
   PHX::MDField<ScalarT,Cell,Point> dof_curl_scalar;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl_vector;
 
-  Kokkos::View<const int*,PHX::Device> offsets_array;
+  PHX::View<const int*> offsets_array;
   std::vector<int> offsets;
 
   std::string basis_name;

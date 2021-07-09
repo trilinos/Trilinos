@@ -15,6 +15,7 @@
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 namespace Tempus {

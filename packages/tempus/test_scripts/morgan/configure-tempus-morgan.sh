@@ -32,7 +32,7 @@ cmake \
 -D Phalanx_KOKKOS_DEVICE_TYPE:STRING="${NODE_TYPE}" \
 -D Trilinos_ENABLE_Fortran:BOOL=ON \
 -D HAVE_INTREPID_KOKKOSCORE:BOOL=ON \
--D Panzer_ENABLE_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
+-D Panzer_FADTYPE:STRING="Sacado::Fad::DFad<RealType>" \
 -D Panzer_ENABLE_TESTS:BOOL=OFF \
 -D Trilinos_ENABLE_KokkosCore:BOOL=ON \
 -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON \

@@ -78,7 +78,11 @@ namespace MueLu {
       External        = 0x01000000, //!< Print external lib objects
       Debug           = 0x02000000, //!< Print additional debugging information
 
-      Test0           = 0x10000000, //!< Print skeleton for the run, i.e. factory calls and used parameters
+      Developer       = 0x04000000, //!< Print information primarily of interest to developers
+
+      // Print skeleton for the run
+      Test0           = 0x10000000, //!< Print factory calls
+      Test1           = 0x20000000, //!< Print used parameters
 
       // Predefined combinations of MsgType
       // Can be used in user code or examples. Do not used as input parameters of IsPrint() or GetOStream().
@@ -87,7 +91,8 @@ namespace MueLu {
       Parameters      = Parameters0 | Parameters1,                         //!< Print parameters
       Statistics      = Statistics0 | Statistics1 | Statistics2,           //!< Print all statistics
       Timings         = Timings0 | Timings1 | TimingsByLevel,              //!< Print all timing information
-      Test            = Test0 | Runtime0,
+      Test            = Test0 | Test1 | Runtime0,
+      InterfaceTest   = Test0 | Runtime0,
 
       //
       None    = 0,
@@ -95,9 +100,9 @@ namespace MueLu {
       Medium  = Errors | Warnings0 | Runtime0 | Parameters0 | Statistics0 | Statistics1 | Timings0,
       High    = Errors | Warnings  | Runtime  | Parameters  | Statistics0 | Statistics1  | Timings,
 #ifdef HAVE_MUELU_DEBUG
-      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External | Debug,
+      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External | Developer | Debug,
 #else
-      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External,
+      Extreme = Errors | Warnings  | Runtime  | Parameters  | Statistics  | Timings | External | Developer,
 #endif
       Default = High, // This is the default of print() methods. For VerboseObject, another default is set by VerboseObject::globalVerbLevel_ // TODO: move it to the VerboseObject class
 
@@ -107,8 +112,11 @@ namespace MueLu {
   //!
   typedef int VerbLevel;
 
-  //!
+  //! Translate Teuchos verbosity level to MueLu verbosity level
   VerbLevel toMueLuVerbLevel(const Teuchos::EVerbosityLevel verbLevel);
+
+  //!
+  MsgType toVerbLevel(const std::string& verbLevelStr);
 
 } // namespace MueLu
 

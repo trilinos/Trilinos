@@ -78,11 +78,9 @@ class ScalarToVector
   PHX::MDField<ScalarT,Cell,Point,Dim> vector_field;
 
 protected:
-  typedef Kokkos::View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device> KokkosScalarFields_t;
-  Kokkos::View<KokkosScalarFields_t*> internal_scalar_fields;
+  typedef PHX::View<const ScalarT**> KokkosScalarFields_t;
+  PHX::View<KokkosScalarFields_t*> internal_scalar_fields;
 public:
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const size_t &cell) const;
 
   /**
    * \brief Tag only constructor for this class.

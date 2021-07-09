@@ -79,7 +79,7 @@ namespace Tacho {
     ///
     template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void factorize(MemberType &member,
+    void factorize_var0(MemberType &member,
                    const supernode_type &s,
                    const value_type_matrix &ABR) const {
       const ordinal_type m = s.m, n = s.n, n_m = n-m;
@@ -97,6 +97,89 @@ namespace Tacho {
           member.team_barrier();
           Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
             ::invoke(member, minus_one, ATR, zero, ABR);
+        }
+      }
+    }
+
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void factorize_var1(MemberType &member,
+                        const supernode_type &s,
+                        const value_type_matrix &T, 
+                        const value_type_matrix &ABR) const {
+      const value_type one(1), minus_one(-1), zero(0);
+      const ordinal_type m = s.m, n = s.n, n_m = n-m;
+      if (m > 0) {
+        value_type *aptr = s.buf;
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
+        Chol<Uplo::Upper,CholAlgoType>::invoke(member, ATL);
+        
+        if (n_m > 0) {
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
+          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), one, ATL, ATR);
+          Copy<Algo::Internal>
+            ::invoke(member, T, ATL);
+          SetIdentity<Algo::Internal>
+            ::invoke(member, ATL, one);
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), one, T, ATL);
+          member.team_barrier();
+          Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
+            ::invoke(member, minus_one, ATR, zero, ABR);
+        } else {
+          member.team_barrier();
+          Copy<Algo::Internal>
+            ::invoke(member, T, ATL);
+          SetIdentity<Algo::Internal>
+            ::invoke(member, ATL, one);
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), one, T, ATL);
+        }
+      }
+    }
+
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void factorize_var2(MemberType &member,
+                        const supernode_type &s,
+                        const value_type_matrix &T,
+                        const value_type_matrix &ABR) const {
+      const value_type one(1), minus_one(-1), zero(0);
+      const ordinal_type m = s.m, n = s.n, n_m = n-m;
+      if (m > 0) {
+        value_type *aptr = s.buf;
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
+        Chol<Uplo::Upper,CholAlgoType>::invoke(member, ATL);
+
+        if (n_m > 0) {
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
+          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), one, ATL, ATR);          
+          member.team_barrier();
+          Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
+            ::invoke(member, minus_one, ATR, zero, ABR);
+          member.team_barrier();
+          /// additional things
+          Copy<Algo::Internal>
+            ::invoke(member, T, ATL);
+          member.team_barrier();
+          SetIdentity<Algo::Internal>::invoke(member, ATL, minus_one);
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);  
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), minus_one, T, AT);
+        } else {
+          /// additional things
+          Copy<Algo::Internal>
+            ::invoke(member, T, ATL);
+          member.team_barrier();
+          SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+          member.team_barrier();
+          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+            ::invoke(member, Diag::NonUnit(), one, T, ATL);
         }
       }
     }
@@ -129,7 +212,8 @@ namespace Tacho {
           const value_type *src = (value_type*)ABR.data();
           
           Kokkos::parallel_for
-            (Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
+            (Kokkos::TeamThreadRange(member, srcsize), 
+            [&, srcsize, src, tgt](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               const value_type *__restrict__ ss = src + j*srcsize;
               /* */ value_type *__restrict__ tt = tgt + j*srcsize;
               Kokkos::parallel_for
@@ -145,7 +229,8 @@ namespace Tacho {
       
       // loop over target
       //const size_type s2tsize = srcsize*sizeof(ordinal_type)*member.team_size();
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), 
+          [&, buf, srcsize](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
           ordinal_type *s2t = ((ordinal_type*)(buf)) + member.team_rank()*srcsize;
           const auto &s = info.supernodes(info.sid_block_colidx(i).first);
           {
@@ -155,7 +240,8 @@ namespace Tacho {
               tgtsize = tgtend - tgtbeg;
             
             const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), 
+              [&, t_colidx, s_colidx, tgtsize](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
                 s2t[k] = -1;
                 auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize-1], s_colidx[k], 
                                          [](ordinal_type left, ordinal_type right) { 
@@ -198,24 +284,37 @@ namespace Tacho {
       return;
     }
 
-    struct FactorizeTag {};
+    template<int Var> struct FactorizeTag { enum {variant = Var }; };
     struct UpdateTag {};
     struct DummyTag {};
 
-    template<typename MemberType>
+    template<typename MemberType, int Var>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const FactorizeTag &, const MemberType &member) const {
+    void operator()(const FactorizeTag<Var> &, const MemberType &member) const {
       const ordinal_type lid = member.league_rank();
       const ordinal_type p = _pbeg + lid;
       const ordinal_type sid = _level_sids(p);
       const ordinal_type mode = _compute_mode(sid);
       if (p < _pend && mode == 1) {
+        using factorize_tag_type = FactorizeTag<Var>;
+
         const auto &s = _info.supernodes(sid);
-        const ordinal_type n_m = s.n-s.m;
-        UnmanagedViewType<value_type_matrix> ABR(_buf.data()+_buf_ptr(lid), n_m, n_m);
-        factorize(member, s, ABR);
+        const ordinal_type m = s.m, n = s.n, n_m = n-m;
+        const auto bufptr = _buf.data()+_buf_ptr(lid);
+        if        (factorize_tag_type::variant == 0) { 
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          factorize_var0(member, s, ABR);
+        } else if (factorize_tag_type::variant == 1) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
+          factorize_var1(member, s, T, ABR);
+        } else if (factorize_tag_type::variant == 2) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr+ABR.span(), m, m);
+          factorize_var2(member, s, T, ABR);
+        }
       } else if (mode == -1) {
-        printf("Error: abort\n");
+        printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
       } else {
         // skip
       }

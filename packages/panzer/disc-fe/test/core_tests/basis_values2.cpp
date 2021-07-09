@@ -372,9 +372,9 @@ namespace panzer {
        double weight = int_values.cub_weights(i);
 
        // check reference values
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,0),-0.25*(y-1.0));
+       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,0),-0.5*(y-1.0));
        TEST_EQUALITY(basis_values.basis_ref_vector(0,i,1),0.0);
-       TEST_EQUALITY(basis_values.curl_basis_ref_scalar(0,i),0.25);
+       TEST_EQUALITY(basis_values.curl_basis_ref_scalar(0,i),0.5);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
@@ -496,11 +496,11 @@ namespace panzer {
        double weight = int_values.cub_weights(i);
 
        // check reference values
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,0),2.0*x);
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,1),2.0*(y-1.0));
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,2),2.0*z);
+       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,0),x);
+       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,1),(y-1.0));
+       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,2),z);
 
-       TEST_EQUALITY(basis_values.div_basis_ref(0,i),6.0);
+       TEST_EQUALITY(basis_values.div_basis_ref(0,i),3.0);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {

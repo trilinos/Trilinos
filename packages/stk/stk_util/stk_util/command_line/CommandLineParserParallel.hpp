@@ -35,7 +35,7 @@
 #define STK_UTIL_COMMANDLINEPARSERPARALLEL_HPP
 
 #include "CommandLineParser.hpp"
-#include <stk_util/parallel/Parallel.hpp>
+#include "stk_util/parallel/Parallel.hpp"
 
 namespace stk {
 

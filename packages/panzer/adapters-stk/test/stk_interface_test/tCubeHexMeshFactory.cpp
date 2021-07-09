@@ -145,6 +145,43 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, element_counts)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),4*2*5);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),2*4*(5+1)+2*5*(4+1)+4*5*(2+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getFaceRank()),2*4*(5+1)+2*5*(4+1)+4*5*(2+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
+}
+
+TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, disable_subcells)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+   using Teuchos::rcpFromRef;
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",1);
+   pl->set("Y Blocks",1);
+   pl->set("Z Blocks",1);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",4);
+   pl->set("Z Elements",5);
+   pl->set("Build Subcells",false);
+   
+   CubeHexMeshFactory factory; 
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   TEST_ASSERT(mesh!=Teuchos::null);
+ 
+   if(mesh->isWritable())
+      mesh->writeToExodus("CubeHex_disable_subcells.exo");
+
+   // minimal requirements
+   TEST_ASSERT(not mesh->isModifiable());
+
+   TEST_EQUALITY(mesh->getDimension(),3);
+   TEST_EQUALITY(mesh->getNumElementBlocks(),1);
+   TEST_EQUALITY(mesh->getNumSidesets(),6);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),4*2*5);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),2*4*2 + 2*5*2 + 4*5*2);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),0);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getFaceRank()),2*4*2 + 2*5*2 + 4*5*2);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 }
 

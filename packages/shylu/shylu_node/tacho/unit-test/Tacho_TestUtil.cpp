@@ -7,25 +7,14 @@
 
 using namespace Tacho;
 
-typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;
-typedef typename UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type DeviceType;
+typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type HostDeviceType;
+typedef typename UseThisDevice<Kokkos::DefaultExecutionSpace>::type DeviceType;
 
 #define TEST_BEGIN 
 #define TEST_END   
 
-#if defined(TACHO_USE_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::TaskScheduler<T>;
-static const char * scheduler_name = "TaskScheduler";
-#endif
-#if defined(TACHO_USE_TASKSCHEDULER_MULTIPLE)
 template<typename T> using TaskSchedulerType = Kokkos::TaskSchedulerMultiple<T>;
 static const char * scheduler_name = "TaskSchedulerMultiple";
-#endif
-#if defined(TACHO_USE_CHASELEV_TASKSCHEDULER)
-template<typename T> using TaskSchedulerType = Kokkos::ChaseLevTaskScheduler<T>;
-static const char * scheduler_name = "ChaseLevTaskScheduler";
-#endif
-
 
 TEST( Util, is_complex_type ) {
   TEST_BEGIN;

@@ -57,6 +57,7 @@
 
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 namespace Teuchos {
 
@@ -193,8 +194,18 @@ bool setCol( const SerialDenseVector<OrdinalType, ScalarType>& v,
 template <typename OrdinalType, typename ScalarType>
 void randomSyncedMatrix( Teuchos::SerialDenseMatrix<OrdinalType, ScalarType>& A )
 {
-  Teuchos::RCP<const Teuchos::Comm<OrdinalType> >
+  Teuchos::RCP<const Teuchos::Comm<OrdinalType> > comm;
+
+#ifdef HAVE_MPI
+  int mpiStarted = 0;
+  MPI_Initialized(&mpiStarted);
+  if (mpiStarted)
     comm = Teuchos::DefaultComm<OrdinalType>::getComm();
+  else 
+    comm = rcp(new Teuchos::SerialComm<OrdinalType>);
+#else
+  comm = Teuchos::DefaultComm<OrdinalType>::getComm();
+#endif
 
   const OrdinalType procRank = rank(*comm);
 

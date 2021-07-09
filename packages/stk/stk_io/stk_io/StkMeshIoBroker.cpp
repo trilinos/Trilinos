@@ -57,6 +57,7 @@
 #include <stk_mesh/base/Field.hpp>                   // for Field
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_util/environment/FileUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
 #include <utility>                                   // for pair, make_pair
@@ -86,7 +87,7 @@
 #include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_io/SidesetUpdater.hpp"
+#include "stk_mesh/base/SidesetUpdater.hpp"
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
@@ -158,7 +159,8 @@ StkMeshIoBroker::StkMeshIoBroker()
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
-  m_autoLoadDistributionFactorPerNodeSet(true)
+  m_autoLoadDistributionFactorPerNodeSet(true),
+  m_enableEdgeIO(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -168,7 +170,8 @@ StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm)
   m_activeMeshIndex(0),
   m_sidesetFaceCreationBehavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST),
   m_autoLoadAttributes(true),
-  m_autoLoadDistributionFactorPerNodeSet(true)
+  m_autoLoadDistributionFactorPerNodeSet(true),
+  m_enableEdgeIO(false)
 {
     Ioss::Init::Initializer::initialize_ioss();
 }
@@ -231,12 +234,17 @@ size_t StkMeshIoBroker::add_mesh_database(Teuchos::RCP<Ioss::Region> ioss_input_
 void StkMeshIoBroker::create_sideset_observer()
 {
     ThrowRequireMsg( !Teuchos::is_null(m_bulkData), "Bulk data not initialized");
-    if (!bulk_data().has_observer_type<SidesetUpdater>()) {
+    if (!bulk_data().has_observer_type<stk::mesh::SidesetUpdater>()) {
         stk::mesh::Selector activeSelector = get_active_selector();
         if (activeSelector == stk::mesh::Selector()) {
             activeSelector = !activeSelector;
         }
-        bulk_data().register_observer(std::make_shared<SidesetUpdater>(bulk_data(), activeSelector));
+
+        if(bulk_data().synchronized_count() > 0) {
+          bulk_data().register_observer(std::make_shared<stk::mesh::ReconstructionSidesetUpdater>(bulk_data(), activeSelector));
+        } else {
+          bulk_data().register_observer(std::make_shared<stk::mesh::IncrementalSidesetUpdater>(bulk_data(), activeSelector));
+        }
     }
 }
 
@@ -250,9 +258,7 @@ void StkMeshIoBroker::set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_
         m_metaData = Teuchos::rcpFromRef(bulk_data().mesh_meta_data());
     }
 
-#ifdef STK_BUILT_IN_SIERRA
     m_communicator = m_bulkData->parallel();
-#endif
     create_sideset_observer();
 }
 
@@ -429,12 +435,17 @@ void StkMeshIoBroker::create_surface_to_block_mapping()
 {
     IossBlockMembership blockMemberships = get_block_memberships(*this);
     for(IossBlockMembership::iterator iter = blockMemberships.begin(); iter != blockMemberships.end(); iter++) {
-        stk::mesh::Part* sidesetPart = meta_data().get_part(iter->first);
-        if(sidesetPart != nullptr && sidesetPart->primary_entity_rank() == meta_data().side_rank()) {
-            std::vector<const stk::mesh::Part*> blocks;
-            fill_block_parts_given_names(iter->second, meta_data(), blocks);
-            meta_data().set_surface_to_block_mapping(sidesetPart, blocks);
+      stk::mesh::Part* sidesetPart = meta_data().get_part(iter->first);
+      if (sidesetPart != nullptr) {
+        const stk::mesh::EntityRank sidesetPartRank = sidesetPart->primary_entity_rank();
+        if (sidesetPartRank == meta_data().side_rank() ||
+            (sidesetPartRank == stk::topology::EDGE_RANK && meta_data().spatial_dimension()==3))
+        {
+          std::vector<const stk::mesh::Part*> blocks;
+          fill_block_parts_given_names(iter->second, meta_data(), blocks);
+          meta_data().set_surface_to_block_mapping(sidesetPart, blocks);
         }
+      }
     }
 }
 
@@ -464,12 +475,17 @@ void StkMeshIoBroker::create_input_mesh()
     process_nodeblocks(*region,    meta_data());
     process_elementblocks(*region, meta_data());
     process_sidesets(*region,      meta_data());
+    process_face_blocks(*region,   meta_data());
+    process_edge_blocks(*region,   meta_data());
 
     if(m_autoLoadDistributionFactorPerNodeSet) {
         process_nodesets(*region,  meta_data());
     } else {
         process_nodesets_without_distribution_factors(*region, meta_data());
     }
+
+    process_assemblies(*region,   meta_data());
+    build_assembly_hierarchies(*region, meta_data());
 
     create_surface_to_block_mapping();
     store_attribute_field_ordering();
@@ -537,8 +553,8 @@ size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, Database
 
 void StkMeshIoBroker::update_sidesets() {
     if (m_bulkData->was_mesh_modified_since_sideset_creation()) {
-        std::vector<std::shared_ptr<SidesetUpdater> > updaters = m_bulkData->get_observer_type<SidesetUpdater>();
-        ThrowRequireMsg(!updaters.empty(), "ERROR, no SidesetUpdater found on stk::mesh::BulkData");
+        std::vector<std::shared_ptr<stk::mesh::SidesetUpdater> > updaters = m_bulkData->get_observer_type<stk::mesh::SidesetUpdater>();
+        ThrowRequireMsg(!updaters.empty(), "ERROR, no stk::mesh::SidesetUpdater found on stk::mesh::BulkData");
         updaters[0]->set_output_stream(std::cerr);
         std::vector<size_t> values;
         updaters[0]->fill_values_to_reduce(values);
@@ -556,6 +572,7 @@ void StkMeshIoBroker::write_output_mesh(size_t output_file_index)
 {
     validate_output_file_index(output_file_index);
     update_sidesets();
+    m_outputFiles[output_file_index]->set_enable_edge_io(m_enableEdgeIO);
     m_outputFiles[output_file_index]->write_output_mesh(*m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 
@@ -598,6 +615,7 @@ void StkMeshIoBroker::begin_output_step(size_t output_file_index, double time)
 {
     validate_output_file_index(output_file_index);
     update_sidesets();
+    m_outputFiles[output_file_index]->set_enable_edge_io(m_enableEdgeIO);
     m_outputFiles[output_file_index]->begin_output_step(time, *m_bulkData, attributeFieldOrderingByPartOrdinal);
 }
 
@@ -610,25 +628,16 @@ void StkMeshIoBroker::end_output_step(size_t output_file_index)
 template<typename INT>
 void populate_elements_and_nodes(Ioss::Region &region,
                                  stk::mesh::BulkData& bulkData,
-                                 stk::ParallelMachine communicator,
                                  const bool processAllInputNodes)
 {
     if(processAllInputNodes) {
-#ifdef STK_BUILT_IN_SIERRA
         process_nodeblocks<INT>(region,    bulkData);
-#else
-        process_nodeblocks<INT>(region,    bulkData, communicator);
-#endif
     }
 
     process_elementblocks<INT>(region, bulkData);
 
     if(!processAllInputNodes) {
-#ifdef STK_BUILT_IN_SIERRA
         process_node_sharing<INT>(region,    bulkData);
-#else
-        process_node_sharing<INT>(region,    bulkData, communicator);
-#endif
     }
 
     process_nodesets<INT>(region, bulkData);
@@ -645,7 +654,7 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
         bulk_data().deactivate_field_updating();
     }
 
-    toggle_sideset_updaters(bulk_data(), false);
+    stk::mesh::toggle_sideset_updaters(bulk_data(), false);
 
     bool i_started_modification_cycle = bulk_data().modification_begin("Mesh Read");
 
@@ -657,28 +666,56 @@ bool StkMeshIoBroker::populate_mesh_elements_and_nodes(bool delay_field_data_all
     }
 
     if (ints64bit) {
-        populate_elements_and_nodes<int64_t>(*region, bulk_data(), m_communicator, processAllInputNodes);
+        populate_elements_and_nodes<int64_t>(*region, bulk_data(), processAllInputNodes);
     } else {
-        populate_elements_and_nodes<int>(*region, bulk_data(), m_communicator, processAllInputNodes);
+        populate_elements_and_nodes<int>(*region, bulk_data(), processAllInputNodes);
     }
 
     stk_mesh_resolve_node_sharing();
 
-    toggle_sideset_updaters(bulk_data(), true);
+    stk::mesh::toggle_sideset_updaters(bulk_data(), true);
 
     return i_started_modification_cycle;
 }
 
-void StkMeshIoBroker::populate_mesh_sidesets(bool i_started_modification_cycle)
+void fill_cached_sideset_states(stk::mesh::BulkData& bulk, std::vector< std::pair<stk::mesh::SideSet*, bool>>& cachedStates)
+{
+  cachedStates.clear();
+
+  std::vector<stk::mesh::SideSet*> sidesets = bulk.get_sidesets();
+  for(stk::mesh::SideSet* sideset : sidesets) {
+    cachedStates.emplace_back(std::make_pair(sideset, sideset->get_accept_all_internal_non_coincident_entries()));
+  }
+}
+
+void toggle_cached_sideset_states(std::vector< std::pair<stk::mesh::SideSet*, bool>>& cachedStates, bool state)
+{
+  for(auto entry : cachedStates) {
+    entry.first->set_accept_all_internal_non_coincident_entries(state);
+  }
+}
+
+void restore_sideset_states(std::vector< std::pair<stk::mesh::SideSet*, bool> >& cachedStates)
+{
+  for(auto entry : cachedStates) {
+    entry.first->set_accept_all_internal_non_coincident_entries(entry.second);
+  }
+}
+
+void StkMeshIoBroker::populate_mesh_entitysets(bool i_started_modification_cycle)
 {
     validate_input_file_index(m_activeMeshIndex);
 
-    toggle_sideset_updaters(bulk_data(), false);
+    stk::mesh::toggle_sideset_updaters(bulk_data(), false);
 
     Ioss::Region *region = m_inputFiles[m_activeMeshIndex]->get_input_io_region().get();
     stk::mesh::EntityIdProcMap elemIdMovedToProc;
 
+    std::vector< std::pair<stk::mesh::SideSet*, bool>> cachedStates;
+
     if(m_sidesetFaceCreationBehavior!=STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
+        process_edge_blocks(*region, bulk_data());
+        process_face_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
         bool saveOption = bulk_data().use_entity_ids_for_resolving_sharing();
         bulk_data().set_use_entity_ids_for_resolving_sharing(true);
@@ -686,21 +723,27 @@ void StkMeshIoBroker::populate_mesh_sidesets(bool i_started_modification_cycle)
         bulk_data().set_use_entity_ids_for_resolving_sharing(saveOption);
     } else {
         bulk_data().initialize_face_adjacent_element_graph();
+        process_edge_blocks(*region, bulk_data());
+        process_face_blocks(*region, bulk_data());
         process_sidesets(*region, bulk_data(), elemIdMovedToProc, m_sidesetFaceCreationBehavior);
+
+        fill_cached_sideset_states(bulk_data(), cachedStates);
+        toggle_cached_sideset_states(cachedStates, false);
         stk_mesh_modification_end_after_node_sharing_resolution();
+        restore_sideset_states(cachedStates);
     }
 
     // Not sure if this is needed anymore. Don't think it'll be called with a nested modification cycle
     if(!i_started_modification_cycle)
         bulk_data().modification_begin();
 
-    toggle_sideset_updaters(bulk_data(), true);
+    stk::mesh::toggle_sideset_updaters(bulk_data(), true);
 }
 
 void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
 {
     bool i_started_modification_cycle = populate_mesh_elements_and_nodes(delay_field_data_allocation);
-    populate_mesh_sidesets(i_started_modification_cycle);
+    populate_mesh_entitysets(i_started_modification_cycle);
 }
 
 template<typename INT>

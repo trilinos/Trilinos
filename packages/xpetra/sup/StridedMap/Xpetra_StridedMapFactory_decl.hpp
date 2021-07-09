@@ -44,8 +44,6 @@
 //
 // @HEADER
 
-// WARNING: This code is experimental. Backwards compatibility should not be expected.
-
 #ifndef XPETRA_STRIDEDMAPFACTORY_DECL_HPP
 #define XPETRA_STRIDEDMAPFACTORY_DECL_HPP
 
@@ -55,13 +53,18 @@
 
 #include "Xpetra_StridedMap_decl.hpp"
 
-// This factory creates Xpetra::Map. User have to specify the exact class of
-// object that he want to create (ie: a Xpetra::TpetraMap or a Xpetra::EpetraMap).
-
 namespace Xpetra {
 
-template<class LocalOrdinal, 
-         class GlobalOrdinal, 
+/*!
+  @class StridedMapFactory
+  @brief This factory creates a \c Xpetra::StridedMap .
+
+  @tparam LocalOrdinal
+  @tparam GlobalOrdinal
+  @tparam Node
+*/
+template<class LocalOrdinal,
+         class GlobalOrdinal,
          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class StridedMapFactory
 {
@@ -72,14 +75,12 @@ class StridedMapFactory
   private:
 
     //! Private constructor. This is a static class.
-    StridedMapFactory();
+    StridedMapFactory() = delete;
 
   public:
 
     //! Map constructor with Xpetra-defined contiguous uniform distribution.
-
-
-    static RCP<Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node>> 
+    static RCP<Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node>>
     Build(UnderlyingLib                                 lib,
           global_size_t                                 numGlobalElements,
           GlobalOrdinal                                 indexBase,
@@ -91,9 +92,7 @@ class StridedMapFactory
 
 
     //! Map constructor with a user-defined contiguous distribution.
-
-
-    static RCP<StridedMap> 
+    static RCP<StridedMap>
     Build(UnderlyingLib                                 lib,
           global_size_t                                 numGlobalElements,
           size_t                                        numLocalElements,
@@ -103,26 +102,27 @@ class StridedMapFactory
           LocalOrdinal                                  stridedBlockId = -1,
           GlobalOrdinal                                 offset         = 0);
 
-
+    //! Build a strided map
     static RCP<StridedMap>
     Build(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0);
 
 
-    // special constructor for generating a given subblock of a strided map
-    static RCP<StridedMap> 
+    //! special constructor for generating a given subblock of a strided map
+    static RCP<StridedMap>
     Build(const RCP<const StridedMap>& map, LocalOrdinal stridedBlockId);
 
 
     //! Create copy of existing map (this just creates a copy of your map, it's not a clone in the sense of Tpetra)
-    static RCP<StridedMap> 
+    static RCP<StridedMap>
     Build(const StridedMap& map);
 
 
-    //! Map constructor with a user-defined contiguous distribution. 
-    //! (for experts only. There is no special check whether the generated strided maps are valid)
+    /*!
+      @brief Map constructor with a user-defined contiguous distribution.
 
-
-    static RCP<StridedMap> 
+      \warning For experts only. There is no special check whether the generated strided maps are valid.
+    */
+    static RCP<StridedMap>
     Build(UnderlyingLib                                  lib,
           global_size_t                                  numGlobalElements,
           const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
@@ -132,17 +132,13 @@ class StridedMapFactory
           LocalOrdinal                                   stridedBlockId = -1,      // FIXME (mfh 03 Sep 2014) This breaks if LocalOrdinal is unsigned
           GlobalOrdinal                                  /* offset */  = 0);
 
-};     // class StridedMapFactory
+}; // class StridedMapFactory
 
 
-}      // namespace Xpetra
+} // namespace Xpetra
 
 
 #define XPETRA_STRIDEDMAPFACTORY_SHORT
-
-#endif  // XPETRA_STRIDEDMAPFACTORY_DECL_HPP__
+#endif // XPETRA_STRIDEDMAPFACTORY_DECL_HPP
 
 // TODO: removed unused methods
-
-
-

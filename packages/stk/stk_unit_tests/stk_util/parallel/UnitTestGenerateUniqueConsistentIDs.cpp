@@ -32,14 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
-#include <gtest/gtest.h>
-#include <string>                       // for string
-#include <stk_util/util/ReportHandler.hpp>
-
+#include "gtest/gtest.h"
+#include "stk_util/parallel/GenerateParallelUniqueIDs.hpp"  // for generate_parallel_unique_ids
+#include "stk_util/parallel/Parallel.hpp"                   // for MPI_COMM_WORLD, MPI_Allreduce
+#include "stk_util/parallel/ParallelVectorConcat.hpp"       // for parallel_vector_concat
+#include <algorithm>                                        // for binary_search, sort
+#include <cstdint>                                          // for uint64_t
+#include <vector>                                           // for vector
 
 //-------------------------------------------------------------------------------------------------------------------
 // Verify that a result generated from the unique ids function meets all properties nessecary of unique ids

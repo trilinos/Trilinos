@@ -62,9 +62,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # Core headers
 #
 
-IF (TPL_ENABLE_MPI)
-ENDIF()
-
 #
 # C) Define the targets for package's library(s)
 #

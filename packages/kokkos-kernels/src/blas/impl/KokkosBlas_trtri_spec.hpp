@@ -48,7 +48,7 @@
 #include "Kokkos_Core.hpp"
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
-//#include<KokkosBlas_trtri_impl.hpp>
+#include<KokkosBlas_trtri_impl.hpp>
 #endif
 
 namespace KokkosBlas {
@@ -69,13 +69,13 @@ struct trtri_eti_spec_avail {
     struct trtri_eti_spec_avail< \
          Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-         Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
-                      Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-         > { enum : bool { value = false }; };
+         Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+                      Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
+         > { enum : bool { value = true }; };
 
 // Include the actual specialization declarations
 #include<KokkosBlas_trtri_tpl_spec_avail.hpp>
-//TODO: #include<generated_specializations_hpp/KokkosBlas_trtri_eti_spec_avail.hpp>
+#include<generated_specializations_hpp/KokkosBlas_trtri_eti_spec_avail.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -98,8 +98,7 @@ struct TRTRI{
         const AVIT& A);
 };
 
-// TODO: Fall-back ETI implementation of KokkosBlas::trtri.
-#if 0 && (!defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY)
+#if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
 template<class RVIT, class AVIT>
 struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   static void
@@ -116,12 +115,11 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY?"KokkosBlas::trtri[ETI]":"KokkosBlas::trtri[noETI]");
 
     typename AVIT::HostMirror host_A  = Kokkos::create_mirror_view(A);
+    typename RVIT::HostMirror host_R  = Kokkos::create_mirror_view(R);
 
     Kokkos::deep_copy(host_A, A);
 
-    // TODO: Why does this always execute in host space? kokkos parallel operations
-    // can execute in device space.
-    SerialTrtri_Invoke<RVIT, typename AVIT::HostMirror> (uplo, diag, host_A);
+    SerialTrtri_Invoke<typename RVIT::HostMirror, typename AVIT::HostMirror> (R, uplo, diag, host_A);
 
     Kokkos::deep_copy(A, host_A);
 
@@ -145,7 +143,7 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
 extern template struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+     Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      false, true>;
 
@@ -153,11 +151,11 @@ extern template struct TRTRI< \
 template struct TRTRI< \
      Kokkos::View<int, LAYOUTA, Kokkos::HostSpace, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
-     Kokkos::View<const SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
+     Kokkos::View<SCALAR**, LAYOUTA, Kokkos::Device<EXEC_SPACE, MEM_SPACE>, \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
      false, true>;
 
 #include<KokkosBlas_trtri_tpl_spec_decl.hpp>
-// TODO: #include<generated_specializations_hpp/KokkosBlas_trtri_eti_spec_decl.hpp>
+#include<generated_specializations_hpp/KokkosBlas_trtri_eti_spec_decl.hpp>
 
 #endif // KOKKOSBLAS_TRTRI_SPEC_HPP_

@@ -90,6 +90,7 @@ public:
       m_hasGhosting(false),
       m_hasAdaptivity(false),
       m_isSkinMesh(false),
+      m_enableEdgeIO(false),
       m_dbPurpose(db_type),
       m_inputRegion(input_region),
       m_subsetSelector(nullptr),
@@ -117,6 +118,7 @@ public:
       m_hasGhosting(false),
       m_hasAdaptivity(false),
       m_isSkinMesh(false),
+      m_enableEdgeIO(false),
       m_dbPurpose(db_type),
       m_inputRegion(input_region),
       m_subsetSelector(nullptr),
@@ -198,6 +200,8 @@ public:
     bool is_skin_mesh() const;
     void is_skin_mesh(bool skinMesh);
 
+    void set_enable_edge_io(bool enableEdgeIO);
+
     Ioss::DatabaseIO *get_output_database();
 
     std::vector<stk::mesh::Entity> get_output_entities(const stk::mesh::BulkData& bulk_data, const std::string &name);
@@ -227,6 +231,7 @@ private:
     bool m_hasGhosting;
     bool m_hasAdaptivity;
     bool m_isSkinMesh;
+    bool m_enableEdgeIO;
     DatabasePurpose m_dbPurpose;
     const Ioss::Region* m_inputRegion;
     Teuchos::RCP<stk::mesh::Selector> m_subsetSelector;

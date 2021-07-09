@@ -52,19 +52,11 @@
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_Vector.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_SubBlockAFactory.hpp"
-#include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
+#include "MueLu_SubBlockAFactory.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLuTests {
 
@@ -126,7 +118,7 @@ namespace MueLuTests {
           Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
           Teuchos::tuple<Scalar>(a) );
 
-    } //for (LocalOrdinal i = 0; i < NumMyElements; ++i)
+    }
 
     mtx->fillComplete(map,map);
 
@@ -138,6 +130,18 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<SubBlockAFactory> subBlockAFactory = rcp(new SubBlockAFactory());
+    TEST_EQUALITY(subBlockAFactory != Teuchos::null, true);
+  } // Constructor
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SubBlockAFactory, ExtractMainDiagBlocks, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -145,20 +149,17 @@ namespace MueLuTests {
     /**********************************************************************************/
     /* CREATE INITIAL MATRIX                                                          */
     /**********************************************************************************/
-    RCP<const Map> bigMap;
-    RCP<const Map> map1;
-    RCP<const Map> map2;
-    GO numElements = 500;
-    GO numElements1 = 400;
-    GO numElements2 = 100;
+    const GO numElements = 500;
+    const GO numElements1 = 400;
+    const GO numElements2 = 100;
 
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
     std::vector<size_t> stridingInfo;
     stridingInfo.push_back(1);
 
-    map1   = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
-    map2   = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
+    RCP<const Map> map1 = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
+    RCP<const Map> map2 = StridedMapFactory::Build(lib, numElements2, numElements1, stridingInfo, comm);
 
     std::vector<GlobalOrdinal> localGids; // vector with all local GIDs on cur proc
     Teuchos::ArrayView< const GlobalOrdinal > map1eleList = map1->getNodeElementList(); // append all local gids from map1 and map2
@@ -166,21 +167,21 @@ namespace MueLuTests {
     Teuchos::ArrayView< const GlobalOrdinal > map2eleList = map2->getNodeElementList();
     localGids.insert(localGids.end(), map2eleList.begin(), map2eleList.end());
     Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0],localGids.size());
-    bigMap = MapFactory::Build(lib, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
+    RCP<const Map> bigMap = MapFactory::Build(lib, numElements, eleList, 0, comm); // create full big map (concatenation of map1 and map2)
 
     std::vector<Teuchos::RCP<const Map> > maps;
-    maps.push_back(map1); maps.push_back(map2);
+    maps.push_back(map1);
+    maps.push_back(map2);
 
-    Teuchos::RCP<const Xpetra::MapExtractor<Scalar, LO, GO, Node> > mapExtractor = Xpetra::MapExtractorFactory<Scalar,LO,GO,Node>::Build(bigMap, maps);
+    RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(bigMap, maps);
 
-    RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map1,2,-1,-1);
-    RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map2,3,-2,-1);
+    RCP<CrsMatrixWrap> Op11 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map1, 2, -1, -1);
+    RCP<CrsMatrixWrap> Op22 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map2, 3, -2, -1);
 
     // build blocked operator
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node>(mapExtractor,mapExtractor,10));
-
-    bOp->setMatrix(0,0,Op11);
-    bOp->setMatrix(1,1,Op22);
+    RCP<BlockedCrsMatrix> bOp = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
+    bOp->setMatrix(0, 0, Op11);
+    bOp->setMatrix(1, 1, Op22);
     bOp->fillComplete();
     TEST_EQUALITY(bOp!=Teuchos::null, true);
 
@@ -190,46 +191,50 @@ namespace MueLuTests {
 
     // define sub block factories for blocked operator "A"
     RCP<SubBlockAFactory> A11Fact = Teuchos::rcp(new SubBlockAFactory());
-    A11Fact->SetFactory("A",MueLu::NoFactory::getRCP());
-    A11Fact->SetParameter("block row",Teuchos::ParameterEntry(0));
-    A11Fact->SetParameter("block col",Teuchos::ParameterEntry(0));
+    A11Fact->SetFactory("A", MueLu::NoFactory::getRCP());
+    A11Fact->SetParameter("block row", Teuchos::ParameterEntry(0));
+    A11Fact->SetParameter("block col", Teuchos::ParameterEntry(0));
     RCP<SubBlockAFactory> A22Fact = Teuchos::rcp(new SubBlockAFactory());
-    A22Fact->SetFactory("A",MueLu::NoFactory::getRCP());
-    A22Fact->SetParameter("block row",Teuchos::ParameterEntry(1));
-    A22Fact->SetParameter("block col",Teuchos::ParameterEntry(1));
+    A22Fact->SetFactory("A", MueLu::NoFactory::getRCP());
+    A22Fact->SetParameter("block row", Teuchos::ParameterEntry(1));
+    A22Fact->SetParameter("block col", Teuchos::ParameterEntry(1));
 
-    // request subblocks of A
+    // Test the request mechanism
     levelOne->Request("A", A11Fact.get(), MueLu::NoFactory::get());
     levelOne->Request("A", A22Fact.get(), MueLu::NoFactory::get());
     TEST_EQUALITY(levelOne->IsRequested("A", A11Fact.get()),true);
     TEST_EQUALITY(levelOne->IsRequested("A", A22Fact.get()),true);
 
-    RCP<Matrix> A11 = levelOne->Get<RCP<Matrix> >("A",A11Fact.get());
-    RCP<Matrix> A22 = levelOne->Get<RCP<Matrix> >("A",A22Fact.get());
-    TEST_EQUALITY(levelOne->IsAvailable("A", A11Fact.get()),true);
-    TEST_EQUALITY(levelOne->IsAvailable("A", A22Fact.get()),true);
+    // Test availability of subblocks of A
+    RCP<Matrix> A11 = levelOne->Get<RCP<Matrix> >("A", A11Fact.get());
+    RCP<Matrix> A22 = levelOne->Get<RCP<Matrix> >("A", A22Fact.get());
+    TEST_EQUALITY(levelOne->IsAvailable("A", A11Fact.get()), true);
+    TEST_EQUALITY(levelOne->IsAvailable("A", A22Fact.get()), true);
 
+    // Test the release mechanism
     levelOne->Release("A", A11Fact.get());
     levelOne->Release("A", A22Fact.get());
+    TEST_EQUALITY(levelOne->IsAvailable("A", A11Fact.get()), false);
+    TEST_EQUALITY(levelOne->IsAvailable("A", A22Fact.get()), false);
 
-    TEST_EQUALITY(levelOne->IsAvailable("A", A11Fact.get()),false);
-    TEST_EQUALITY(levelOne->IsAvailable("A", A22Fact.get()),false);
+    // A11 is supposed to match Op11
     TEST_EQUALITY(A11->getRowMap()->isSameAs(*(Op11->getRowMap())), true);
     TEST_EQUALITY(A11->getColMap()->isSameAs(*(Op11->getColMap())), true);
     TEST_EQUALITY(A11->getRangeMap()->isSameAs(*(Op11->getRangeMap())), true);
     TEST_EQUALITY(A11->getDomainMap()->isSameAs(*(Op11->getDomainMap())), true);
     TEST_EQUALITY(A11->getNodeNumEntries(),Op11->getNodeNumEntries());
+
+    // A22 is supposed to match Op22
     TEST_EQUALITY(A22->getRowMap()->isSameAs(*(Op22->getRowMap())), true);
     TEST_EQUALITY(A22->getColMap()->isSameAs(*(Op22->getColMap())), true);
     TEST_EQUALITY(A22->getRangeMap()->isSameAs(*(Op22->getRangeMap())), true);
     TEST_EQUALITY(A22->getDomainMap()->isSameAs(*(Op22->getDomainMap())), true);
-    TEST_EQUALITY(A22->getNodeNumEntries(),Op22->getNodeNumEntries());
-
-    //levelOne->print(out,Teuchos::VERB_EXTREME);
-  } //Constructor
+    TEST_EQUALITY(A22->getNodeNumEntries(), Op22->getNodeNumEntries());
+  } // ExtractMainDiagBlocks
 
 #  define MUELU_ETI_GROUP(SC, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SubBlockAFactory, Constructor, SC, LO, GO, Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(SubBlockAFactory, ExtractMainDiagBlocks, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 }

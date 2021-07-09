@@ -66,7 +66,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
 
   # Retrieve the Mpi4Py version
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} -c "import mpi4py; print mpi4py.__version__"
+    ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.__version__)"
     OUTPUT_VARIABLE Mpi4Py_VERSION
     ERROR_VARIABLE  Mpi4Py_VERSION_ERROR
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -76,7 +76,7 @@ ELSE(NOT PYTHON_EXECUTABLE)
   # now look for the Mpi4Py include directory
   IF(NOT Mpi4Py_VERSION_ERROR)
     EXECUTE_PROCESS(COMMAND
-      ${PYTHON_EXECUTABLE} -c "import mpi4py; print mpi4py.get_include()"
+      ${PYTHON_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_include())"
       OUTPUT_VARIABLE Mpi4Py_INCLUDE_DIR
       ERROR_VARIABLE  Mpi4Py_INCLUDE_ERROR
       OUTPUT_STRIP_TRAILING_WHITESPACE

@@ -93,7 +93,7 @@ char *yo = "Zoltan_Create";
 ZZ *zz;
 int proc;
 
-    MPI_Comm_rank(communicator, &proc);
+  MPI_Comm_rank(communicator, &proc);
 
   /*
    * Allocate storage for the Zoltan structure.
@@ -373,6 +373,97 @@ static void Zoltan_Init(ZZ* zz)
 
   zz->Order.needfree = 0;
   zz->TPL_Order.needfree = 0;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+size_t Zoltan_Serialize_Size(struct Zoltan_Struct const *zz) 
+{
+  /* Compute size of buffer needed to serialize Zoltan_Struct */
+  size_t bufSize = 0;
+  /* Copy 11 integers from Zoltan_Struct */
+  bufSize += sizeof(int) * 11;
+  bufSize += Zoltan_Serialize_Params_Size(zz);
+  bufSize += Zoltan_LB_Serialize_Size(zz);
+  return bufSize;
+}
+
+/*****************************************************************************/
+int Zoltan_Serialize(ZZ const *zz, size_t bufSize, char *buf)
+{
+  int ierr = ZOLTAN_OK;
+  char *bufptr = buf;
+
+  /* Copy 11 integers; if add more, update Zoltan_Serialize_Size */
+  int *intptr = (int *) bufptr;
+  *intptr = zz->Num_GID; intptr++;
+  *intptr = zz->Num_LID; intptr++;
+  *intptr = zz->Debug_Level; intptr++;
+  *intptr = zz->Debug_Proc; intptr++;
+  *intptr = zz->Fortran; intptr++;
+  *intptr = zz->Tflops_Special; intptr++;
+  *intptr = *((int*) &(zz->Seed)); intptr++;
+  *intptr = zz->Deterministic; intptr++;
+  *intptr = zz->Obj_Weight_Dim; intptr++;
+  *intptr = zz->Edge_Weight_Dim; intptr++;
+  *intptr = zz->Timer; intptr++;
+  bufptr = (char *) intptr;
+
+  /* Need some params to set pointers on receiving side; advance bufptr */
+  Zoltan_Serialize_Params(zz, &bufptr);
+
+  /* Serialize LB information; advance bufptr */
+  Zoltan_LB_Serialize(zz, &bufptr);
+
+  if (bufptr - buf > bufSize) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Serialize", 
+                       "Buffer provided is too small; Zoltan just overwrote "
+                       "your memory.");
+    ierr = ZOLTAN_MEMERR;
+  }
+  return ierr;
+}
+
+/*****************************************************************************/
+int Zoltan_Deserialize(struct Zoltan_Struct *zz, size_t bufSize, char *buf)
+{
+  int ierr = ZOLTAN_OK;
+  char *bufptr = buf;
+  
+  /* Copy 11 integers */
+  int *intptr = (int *) bufptr;
+  zz->Num_GID = *intptr; intptr++;
+  zz->Num_LID = *intptr; intptr++;
+  zz->Debug_Level = *intptr; intptr++;
+  zz->Debug_Proc = *intptr; intptr++;
+  zz->Fortran = *intptr; intptr++;
+  zz->Tflops_Special = *intptr; intptr++;
+  zz->Seed = *((unsigned int *)(intptr)); intptr++;
+  zz->Deterministic = *intptr; intptr++;
+  zz->Obj_Weight_Dim = *intptr; intptr++;
+  zz->Edge_Weight_Dim = *intptr; intptr++;
+  zz->Timer = *intptr; intptr++;
+  bufptr = (char *) intptr;
+
+  /* Consistent with Zoltan defaults, set default LB_METHOD to RCB; doing so
+   * sets the various function pointers for RCB. 
+   * Method and function pointers will be reset if parameter LB_METHOD has
+   * been provided by user. */
+  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+  Zoltan_Deserialize_Params(zz, &bufptr);
+
+  /* Deserialize LB information; advance bufptr */
+  Zoltan_LB_Deserialize(zz, &bufptr);
+
+  if (bufptr - buf > bufSize) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, "Zoltan_Deserialize", 
+                       "Buffer provided is too small; Zoltan just copied "
+                       "garbage memory.");
+    ierr = ZOLTAN_MEMERR;
+  }
+
+  return ierr;
 }
 
 #ifdef __cplusplus

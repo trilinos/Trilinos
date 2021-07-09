@@ -67,6 +67,7 @@
 #endif
 
 #include "Tpetra_Details_residual.hpp"
+#include "KokkosSparse_spmv_impl.hpp"
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_OverlappingRowMatrix.hpp>
@@ -113,11 +114,11 @@ typedef Tpetra::global_size_t GST;
 
 
 /***********************************************************************************/
-template<class MatrixClass, class MultiVectorClass>
+template<class MatrixClass, class MultiVectorClass, class ConstMultiVectorClass>
 void localReducedMatvec(const MatrixClass & A_lcl,
-                        const MultiVectorClass & X_lcl,
+                        const ConstMultiVectorClass & X_lcl,
                         const int userNumRows,
-                        MultiVectorClass & Y_lcl) {
+                        const MultiVectorClass & Y_lcl) {
   using Teuchos::NO_TRANS;
 
   using execution_space = typename MatrixClass::execution_space;
@@ -133,8 +134,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
   int64_t numLocalRows = userNumRows;
   int64_t myNnz = A_lcl.nnz();
 
-  int64_t rows_per_team = 
-    Tpetra::Details::residual_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
+  int64_t rows_per_team = KokkosSparse::Impl::spmv_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
   int64_t worksets = (X_lcl.extent (0) + rows_per_team - 1) / rows_per_team;
 
   using policy_type = typename Kokkos::TeamPolicy<execution_space>;
@@ -184,7 +184,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
         // NOTE: It looks like I should be able to get this data up above, but if I try to
         // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
         const LO numVectors = static_cast<LO>(X_lcl.extent(1));
-        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO loop) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[=] (const LO loop) {
             const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
             
             if (lclRow >= numLocalRows) {
@@ -228,10 +228,10 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   if(overlapLevel >= (int) hstarts.size()) 
     throw std::runtime_error("reducedMatvec: Exceeded available overlap");
 
-  auto undA_lcl = undA->getLocalMatrix ();
-  auto extA_lcl = extA->getLocalMatrix ();
-  auto X_lcl = X.getLocalViewDevice ();
-  auto Y_lcl = Y.getLocalViewDevice ();
+  auto undA_lcl = undA->getLocalMatrixDevice ();
+  auto extA_lcl = extA->getLocalMatrixDevice ();
+  auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
+  auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   
   // Do the "Local part"
   auto numLocalRows = undA->getNodeNumRows();
@@ -626,10 +626,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
     reducedMatvec(ovA,temp1,1,temp2);
     reducedMatvec(ovA,temp2,0,ovY);
 
-    // And yes, that int cast is really necessary
-    auto ovY_lcl = ovY.getLocalViewDevice();
-    auto Y_lcl = y_overlap.getLocalViewDevice();
-    auto ovYsub = Kokkos::subview(ovY_lcl,std::make_pair(0,(int)Y_lcl.extent(0)), Kokkos::ALL);
+    auto Y_lcl = y_overlap.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+    auto ovY_lcl = ovY.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto ovYsub = Kokkos::subview(ovY_lcl, std::make_pair<int, int>(0, Y_lcl.extent(0)), Kokkos::ALL);
     Kokkos::deep_copy(Y_lcl,ovYsub);
 
   }

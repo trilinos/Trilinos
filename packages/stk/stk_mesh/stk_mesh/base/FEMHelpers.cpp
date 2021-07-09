@@ -68,7 +68,7 @@ void verify_declare_element_edge(
     stk::topology invalid = stk::topology::INVALID_TOPOLOGY;
     stk::topology edge_top =
             (elem_top != stk::topology::INVALID_TOPOLOGY && local_edge_id < elem_top.num_edges() )
-            ? elem_top.edge_topology() : invalid;
+            ? elem_top.edge_topology(local_edge_id) : invalid;
 
     ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_edge_id >= elem_top.num_edges(),
             "For elem " << mesh.identifier(elem) << ", local_edge_id " << local_edge_id << ", " <<
@@ -142,7 +142,7 @@ Entity declare_element_edge(
     verify_declare_element_edge(mesh, elem, local_edge_id);
 
     stk::topology elem_top = mesh.bucket(elem).topology();
-    stk::topology edge_top = elem_top.edge_topology();
+    stk::topology edge_top = elem_top.edge_topology(local_edge_id);
 
     PartVector empty_parts;
     if(mesh.mesh_meta_data().spatial_dimension() == 2)
@@ -270,6 +270,47 @@ get_ordinal_and_permutation(const stk::mesh::BulkData& mesh,
     return get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, pFilter);
 }
 
+bool element_side_polarity(const BulkData& mesh,
+                           const Entity elem ,
+                           const Entity side , unsigned local_side_id )
+{
+    // 09/14/10:  TODO:  tscoffe:  Will this work in 1D??
+    const bool is_side = mesh.entity_rank(side) != stk::topology::EDGE_RANK;
+    stk::topology elem_top = mesh.bucket(elem).topology();
+
+    const unsigned side_count = ! (elem_top != stk::topology::INVALID_TOPOLOGY) ? 0 : (
+        is_side ? elem_top.num_sides()
+            : elem_top.num_edges() );
+
+    ThrowErrorMsgIf( elem_top == stk::topology::INVALID_TOPOLOGY,
+        "For Element[" << mesh.identifier(elem) << "], element has no defined topology");
+
+    ThrowErrorMsgIf( static_cast<unsigned>(side_count) <= local_side_id,
+        "For Element[" << mesh.identifier(elem) << "], " <<
+        "side: " << mesh.identifier(side) << ", " <<
+        "local_side_id = " << local_side_id <<
+        " ; unsupported local_side_id");
+
+    stk::topology side_top =
+        is_side ? elem_top.side_topology( local_side_id )
+            : elem_top.sub_topology( stk::topology::EDGE_RANK, local_side_id );
+
+    std::vector<unsigned> side_map(side_top.num_nodes());
+    elem_top.side_node_ordinals( local_side_id, side_map.data());
+
+    Entity const *elem_nodes = mesh.begin_nodes(elem);
+    Entity const *side_nodes = mesh.begin_nodes(side);
+    const unsigned n = side_top.num_nodes();
+    bool good = false ;
+    for ( unsigned i = 0 ; !good && i < n ; ++i ) {
+        good = true;
+        for ( unsigned j = 0; good && j < n ; ++j ) {
+          good = side_nodes[(j+i)%n] == elem_nodes[ side_map[j] ];
+        }    
+    }    
+    return good ;
+}
+
 stk::EquivalentPermutation sub_rank_equivalent(const stk::mesh::BulkData& mesh,
                                             stk::mesh::Entity element,
                                             unsigned ordinal,
@@ -338,7 +379,7 @@ EquivAndPositive is_shell_edge_equivalent_and_positive(const stk::mesh::BulkData
     EquivAndPositive result = {false, false};
     stk::topology elemTopology = mesh.bucket(element).topology();
     stk::topology subTopology = elemTopology.sub_topology(mesh.mesh_meta_data().side_rank(), 0);
-    stk::topology edgeTopology = subTopology.sub_topology(stk::topology::EDGE_RANK, 0);
+    stk::topology edgeTopology = subTopology.edge_topology(0);
     sub_topology_check(candidateSideNodes, elemTopology, edgeTopology);
 
     const stk::mesh::Entity* elemNodes = mesh.begin_nodes(element);
@@ -443,7 +484,7 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
         }
 
 // valid ranks fall within the dimension of the cell topology
-        const bool bad_rank = subcell_rank >= celltopology.dimension();
+        const bool bad_rank = static_cast<unsigned>(subcell_rank) >= celltopology.dimension();
         ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
 
 // subcell_identifier must be less than the subcell count

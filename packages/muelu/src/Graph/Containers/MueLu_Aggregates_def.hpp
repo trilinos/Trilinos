@@ -140,6 +140,17 @@ namespace MueLu {
 
     if (verbLevel & Statistics1)
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
+
+    if(verbLevel == Teuchos::VERB_EXTREME) {
+      for(size_t j=0; j <vertex2AggId_->getNumVectors(); j++) {
+        auto data = vertex2AggId_->getData(j);
+        for(size_t i=0; i<vertex2AggId_->getLocalLength(); i++) {
+          out<<i<<" : "<< data[i] <<std::endl;
+        }
+        out<<std::endl;
+      }
+    }
+    
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -153,6 +164,45 @@ namespace MueLu {
   const RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetMap() const {
     return vertex2AggId_->getMap();
   }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeNodesInAggregate(Array<LO> & aggPtr, Array<LO> & aggNodes, Array<LO> & unaggregated) const {
+    LO numAggs  = GetNumAggregates();
+    LO numNodes = vertex2AggId_->getLocalLength();
+    Teuchos::ArrayRCP<const LO> vertex2AggId = vertex2AggId_->getData(0);
+    Teuchos::ArrayRCP<LO> aggSizes = ComputeAggregateSizes(true);
+    LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+    aggPtr.resize(numAggs+1);
+    Array<LO> aggCurr(numAggs+1);
+    aggNodes.resize(numNodes);
+    unaggregated.resize(numNodes);
+
+    LO currNumUnaggregated=0;
+
+    // Construct the "rowptr" and the counter
+    aggPtr[0] = 0; 
+    for(LO i=0; i<numAggs; i++) {
+      aggPtr[i+1] = aggSizes[i] + aggPtr[i];
+      aggCurr[i] = aggPtr[i];
+    }
+					           
+    // Stick the nodes in each aggregate's spot
+    for(LO i=0; i<numNodes; i++) {
+      LO aggregate = vertex2AggId[i];
+      if(aggregate !=INVALID) {
+	aggNodes[aggCurr[aggregate]] = i;
+	aggCurr[aggregate]++;
+      }
+      else {
+	unaggregated[currNumUnaggregated] = i;
+	currNumUnaggregated++;
+      }
+    }
+    unaggregated.resize(currNumUnaggregated);
+
+  }
+
 
 } //namespace MueLu
 

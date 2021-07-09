@@ -5,7 +5,6 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
-#include "KokkosBatched_Vector.hpp"
 
 namespace KokkosBatched {
 
@@ -20,7 +19,7 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     static int
     invoke(const AViewType &A,
-           /* */ BViewType &B);
+           const BViewType &B);
   };
 
   ///
@@ -29,6 +28,21 @@ namespace KokkosBatched {
 
   template<typename MemberType, typename ArgTrans>
   struct TeamCopy {
+    template<typename AViewType,
+             typename BViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member,
+           const AViewType &A,
+           const BViewType &B);
+  };
+
+  ///
+  /// TeamVector Copy
+  ///
+
+  template<typename MemberType, typename ArgTrans>
+  struct TeamVectorCopy {
     template<typename AViewType,
              typename BViewType>
     KOKKOS_INLINE_FUNCTION
@@ -58,6 +72,8 @@ namespace KokkosBatched {
         r_val = SerialCopy<ArgTrans>::invoke(A, B);
       } else if (std::is_same<ArgMode,Mode::Team>::value) {
         r_val = TeamCopy<MemberType,ArgTrans>::invoke(member, A, B);
+      } else if (std::is_same<ArgMode,Mode::TeamVector>::value) {
+        r_val = TeamVectorCopy<MemberType,ArgTrans>::invoke(member, A, B);
       } 
       return r_val;
     }
@@ -65,6 +81,7 @@ namespace KokkosBatched {
 
 }
 
+#include "KokkosBatched_Copy_Impl.hpp"
 
 #define KOKKOSBATCHED_SERIAL_COPY_MATRIX_NO_TRANSPOSE_INTERNAL_INVOKE(M,N,A,AS0,AS1,B,BS0,BS1) \
   KokkosBatched::SerialCopyInternal                                     \

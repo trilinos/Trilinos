@@ -79,7 +79,7 @@ struct BlockTriDiContainerTester {
     const auto col_map = g.getColMap();
     const auto gid = row_map->getGlobalElement(row_lid_to_match);
     const auto col_lid = col_map->getLocalElement(gid);
-    auto block = A.getLocalBlock(row_lid, col_lid);
+    auto block = A.getLocalBlockHostNonConst(row_lid, col_lid);
     const Int bs = block.extent(1);
     for (Int bi = 0; bi < bs; ++bi)
       for (Int bj = 0; bj < bs; ++bj)
@@ -242,7 +242,7 @@ struct BlockTriDiContainerTester {
         T_bare->initialize();
         T_bare->compute(T_bare->createDefaultComputeParameters());
       }
-      auto apply = [&] (const Tpetra_MultiVector& B, Tpetra_MultiVector& X,
+      auto apply = [=] (const Tpetra_MultiVector& B, Tpetra_MultiVector& X,
                         const bool norm_based) -> int {
         if ( ! T_br.is_null()) {
           T_br->apply(B, X);

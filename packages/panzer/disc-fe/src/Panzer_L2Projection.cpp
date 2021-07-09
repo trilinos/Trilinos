@@ -93,7 +93,6 @@ namespace panzer {
     ownedMatrix->setAllToScalar(0.0);
     ghostedMatrix->resumeFill();
     ghostedMatrix->setAllToScalar(0.0);
-    PHX::Device().fence();
 
     auto M = ghostedMatrix->getLocalMatrix();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
@@ -125,11 +124,9 @@ namespace panzer {
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
 
-          PHX::Device().fence();
-
           // Local Ids
-          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
-                                                  targetGlobalIndexer_->getElementBlockGIDCount(block));
+          PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+              targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
           const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
@@ -227,14 +224,12 @@ namespace panzer {
           for(const auto& i : offsets)
             kOffsets(i) = offsets[i];
 
-          PHX::Device().fence();
-
           // Local Ids
-          Kokkos::View<panzer::LocalOrdinal**,PHX::Device> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
+          PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
                                                   targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+          const PHX::View<const int*> cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
 
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
@@ -268,7 +263,6 @@ namespace panzer {
         }
       }
     }
-    PHX::exec_space().fence();
 
     {
       PANZER_FUNC_TIME_MONITOR_DIFF("Exporting of mass matrix",ExportMM);
@@ -412,7 +406,6 @@ namespace panzer {
 
     ghostedMatrix->setAllToScalar(0.0);
     ownedMatrix->setAllToScalar(0.0);
-    PHX::Device().fence();
 
     // *******************
     // Fill ghosted matrix
@@ -429,8 +422,8 @@ namespace panzer {
 
         // Sources can be any basis
         const auto& sourceBasisValues = workset.getBasisValues(sourceBasisDescriptor,integrationDescriptor_);
-        Kokkos::View<const double***,PHX::Device> sourceUnweightedScalarBasis;
-        Kokkos::View<const double****,PHX::Device> sourceUnweightedVectorBasis;
+        PHX::View<const double***> sourceUnweightedScalarBasis;
+        PHX::View<const double****> sourceUnweightedVectorBasis;
         bool useRankThreeBasis = false; // default to gradient or vector basis
         if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") || (sourceBasisDescriptor.getType() == "HVol") ) {
           if (directionIndex == -1) { // Project dof value
@@ -446,9 +439,9 @@ namespace panzer {
         }
 
         // Get the element local ids
-        Kokkos::View<panzer::LocalOrdinal**,PHX::Device> targetLocalIds("buildRHSMatrix: targetLocalIds", workset.numOwnedCells(),
+        PHX::View<panzer::LocalOrdinal**> targetLocalIds("buildRHSMatrix: targetLocalIds", workset.numOwnedCells(),
                                                       targetGlobalIndexer_->getElementBlockGIDCount(block));
-        Kokkos::View<panzer::LocalOrdinal**,PHX::Device> sourceLocalIds("buildRHSMatrix: sourceLocalIds", workset.numOwnedCells(),
+        PHX::View<panzer::LocalOrdinal**> sourceLocalIds("buildRHSMatrix: sourceLocalIds", workset.numOwnedCells(),
                                                       sourceGlobalIndexer.getElementBlockGIDCount(block));
         {
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
@@ -458,19 +451,18 @@ namespace panzer {
         }
 
         // Get the offsets
-        Kokkos::View<panzer::LocalOrdinal*,PHX::Device> targetFieldOffsets;
+        PHX::View<panzer::LocalOrdinal*> targetFieldOffsets;
         {
           const auto fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
-          targetFieldOffsets = Kokkos::View<panzer::LocalOrdinal*,PHX::Device>("L2Projection:buildRHS:targetFieldOffsets",offsets.size());
+          targetFieldOffsets = PHX::View<panzer::LocalOrdinal*>("L2Projection:buildRHS:targetFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(targetFieldOffsets);
           for(size_t i=0; i < offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(targetFieldOffsets,hostOffsets);
-          PHX::Device().fence();
         }
 
-        Kokkos::View<panzer::LocalOrdinal*,PHX::Device> sourceFieldOffsets;
+        PHX::View<panzer::LocalOrdinal*> sourceFieldOffsets;
         {
           const auto fieldIndex = sourceGlobalIndexer.getFieldNum(sourceFieldName);
           const std::vector<panzer::LocalOrdinal>& offsets = sourceGlobalIndexer.getGIDFieldOffsets(block,fieldIndex);
@@ -478,12 +470,11 @@ namespace panzer {
                                      "ERROR: panzer::L2Projection::buildRHSMatrix() - The source field, \""
                                      << sourceFieldName << "\", does not exist in element block \""
                                      << block << "\"!");
-          sourceFieldOffsets = Kokkos::View<panzer::LocalOrdinal*,PHX::Device>("L2Projection:buildRHS:sourceFieldOffsets",offsets.size());
+          sourceFieldOffsets = PHX::View<panzer::LocalOrdinal*>("L2Projection:buildRHS:sourceFieldOffsets",offsets.size());
           const auto hostOffsets = Kokkos::create_mirror_view(sourceFieldOffsets);
           for(size_t i=0; i <offsets.size(); ++i)
             hostOffsets(i) = offsets[i];
           Kokkos::deep_copy(sourceFieldOffsets,hostOffsets);
-          PHX::Device().fence();
         }
 
         const auto localMatrix = ghostedMatrix->getLocalMatrix();

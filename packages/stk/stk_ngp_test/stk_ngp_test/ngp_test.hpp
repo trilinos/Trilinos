@@ -9,6 +9,7 @@ struct NgpTestEnvironment {
   NgpTestEnvironment(int* argc, char** argv);
   ~NgpTestEnvironment();
   int run_all_tests();
+  void finalize();
 };
 
 class Test : public ::testing::Test {

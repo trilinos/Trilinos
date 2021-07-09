@@ -38,8 +38,9 @@
 #include <cmath>
 
 namespace stk {
-namespace {
-    
+namespace simd {
+namespace impl {
+ 
 // length
 
 template <typename FloatType>
@@ -62,11 +63,19 @@ struct SimdLength<simd::Float> {
   static constexpr int length = simd::nfloats;
 };
 
+}
+}
+
 // bools (get bool type from real type)
 
 template <typename T>
 struct BoolT {
   typedef simd::Bool type;
+};
+
+template <>
+struct BoolT<long double> {
+  typedef bool type;
 };
 
 template <>
@@ -205,8 +214,6 @@ struct BaseT<simd::Bool> {
   typedef bool type;
 };
 
-}
-
 template <typename Type>
 struct Traits {
   // convert between real and bool types
@@ -231,7 +238,7 @@ struct Traits {
   static const bool_type FALSE_VAL;
   static const bool_type TRUE_VAL;
 
-  static constexpr int length = SimdLength<Type>::length;
+  static constexpr int length = simd::impl::SimdLength<Type>::length;
 };
 
 template<typename Type> const typename Traits<Type>::real_type Traits<Type>::ZERO(0.0);

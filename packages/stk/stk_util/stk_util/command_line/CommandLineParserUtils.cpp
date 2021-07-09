@@ -1,12 +1,14 @@
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/command_line/CommandLineParser.hpp>
-#include <stk_util/command_line/CommandLineParserParallel.hpp>
-#include <stk_util/command_line/CommandLineParserUtils.hpp>
-#include <stk_util/registry/ProductRegistry.hpp>
-#include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/util/string_utils.hpp>
-#include <fstream>
-#include <string>
+#include "stk_util/command_line/CommandLineParserUtils.hpp"
+#include "stk_util/command_line/CommandLineParser.hpp"          // for CommandLineParser, Comman...
+#include "stk_util/command_line/CommandLineParserParallel.hpp"  // for CommandLineParserParallel
+#include "stk_util/environment/Env.hpp"                         // for outputP0
+#include "stk_util/parallel/Parallel.hpp"                       // for MPI_Finalize, parallel_ma...
+#include "stk_util/registry/ProductRegistry.hpp"                // for get_version
+#include "stk_util/util/ReportHandler.hpp"                      // for ThrowRequireMsg
+#include "stk_util/util/string_utils.hpp"                       // for tailname
+#include <cstdlib>                                              // for exit
+#include <fstream>                                              // for endl, basic_ostream, ostream
+#include <string>                                               // for allocator, string, operator+
 
 namespace stk {
 
@@ -34,8 +36,7 @@ void parse_command_line(int argc,
         std::string usage = quickExample + commandLine.get_usage() + longExample;
         stk::parallel::print_and_exit(usage, comm);
     }
-    stk::parallel::require(state == stk::CommandLineParser::ParseComplete,
-                           stk::get_quick_error(execName, quickExample), comm);
+    ThrowRequireMsg(state == stk::CommandLineParser::ParseComplete, stk::get_quick_error(execName, quickExample));
 }
 
 namespace parallel {
@@ -43,30 +44,9 @@ namespace parallel {
 void print_and_exit(const std::string &msg, MPI_Comm comm)
 {
     if(stk::parallel_machine_rank(comm) == 0)
-        std::cerr << msg << std::endl;
-    MPI_Finalize();
+        sierra::Env::outputP0() << msg << std::endl;
+    stk::parallel_machine_finalize();
     std::exit(0);
-}
-
-void require(bool requirement, const std::string &msg, MPI_Comm comm)
-{
-    if(!requirement)
-        print_and_exit(msg, comm);
-}
-
-bool does_file_exist(const std::string& filename)
-{
-    bool exists = true;
-    if(!std::ifstream(filename))
-        exists = false;
-    return exists;
-}
-
-void require_file_exists(const std::string& inFile, const std::string& execName, const std::string& quickExample, MPI_Comm comm)
-{
-    require(does_file_exist(inFile),
-                           "Error: input file does not exist.\n" + stk::get_quick_error(execName, quickExample),
-                           comm);
 }
 
 }

@@ -13,6 +13,7 @@
 #include <Compadre_KokkosParser.hpp>
 
 #include "GMLS_Tutorial.hpp"
+#include "CommandLineProcessor.hpp"
 
 #ifdef COMPADRE_USE_MPI
 #include <mpi.h>
@@ -43,81 +44,15 @@ bool all_passed = true;
 // otherwise, Views may be deallocating when we call Kokkos finalize() later
 {
 
-    // check if 8 arguments are given from the command line, the first being the program name
-    int number_of_batches = 1; // 1 batch by default
-    if (argc >= 8) {
-        int arg8toi = atoi(args[7]);
-        if (arg8toi > 0) {
-            number_of_batches = arg8toi;
-        }
-    }
-
-    // check if 7 arguments are given from the command line, the first being the program name
-    //  constraint_type used in solving each GMLS problem:
-    //      0 - No constraints used in solving each GMLS problem
-    //      1 - Neumann Gradient Scalar used in solving each GMLS problem
-    int constraint_type = 0; // No constraints by default
-    if (argc >= 7) {
-        int arg7toi = atoi(args[6]);
-        if (arg7toi > 0) {
-            constraint_type = arg7toi;
-        }
-    }
-
-    // check if 6 arguments are given from the command line, the first being the program name
-    // problem_type used in solving each GMLS problem:
-    //      0 - Standard GMLS problem
-    //      1 - Manifold GMLS problem
-    int problem_type = 0; // Standard by default
-    if (argc >= 6) {
-        int arg6toi = atoi(args[5]);
-        if (arg6toi > 0) {
-            problem_type = arg6toi;
-        }
-    }
-    
-    // check if 5 arguments are given from the command line, the first being the program name
-    //  solver_type used for factorization in solving each GMLS problem:
-    //      0 - SVD used for factorization in solving each GMLS problem
-    //      1 - QR  used for factorization in solving each GMLS problem
-    //      2 - LU  used for factorization in solving each GMLS problem
-    int solver_type = 1; // QR by default
-    if (argc >= 5) {
-        int arg5toi = atoi(args[4]);
-        if (arg5toi >= 0) {
-            solver_type = arg5toi;
-        }
-    }
-    
-    // check if 4 arguments are given from the command line
-    //  dimension for the coordinates and the solution
-    int dimension = 3; // dimension 3 by default
-    if (argc >= 4) {
-        int arg4toi = atoi(args[3]);
-        if (arg4toi > 0) {
-            dimension = arg4toi;
-        }
-    }
-    
-    // check if 3 arguments are given from the command line
-    //  set the number of target sites where we will reconstruct the target functionals at
-    int number_target_coords = 200; // 200 target sites by default
-    if (argc >= 3) {
-        int arg3toi = atoi(args[2]);
-        if (arg3toi > 0) {
-            number_target_coords = arg3toi;
-        }
-    }
-    
-    // check if 2 arguments are given from the command line
-    //  set the number of target sites where we will reconstruct the target functionals at
-    int order = 3; // 3rd degree polynomial basis by default
-    if (argc >= 2) {
-        int arg2toi = atoi(args[1]);
-        if (arg2toi > 0) {
-            order = arg2toi;
-        }
-    }
+    CommandLineProcessor clp(argc, args);
+    auto order = clp.order;
+    auto dimension = clp.dimension;
+    auto number_target_coords = clp.number_target_coords;
+    auto constraint_name = clp.constraint_name;
+    auto solver_name = clp.solver_name;
+    auto problem_name = clp.problem_name;
+    auto number_of_batches = clp.number_of_batches;
+    bool keep_coefficients = number_of_batches==1;
     
     // the functions we will be seeking to reconstruct are in the span of the basis
     // of the reconstruction space we choose for GMLS, so the error should be very small
@@ -262,15 +197,19 @@ bool all_passed = true;
     // CreatePointCloudSearch constructs an object of type PointCloudSearch, but deduces the templates for you
     auto point_cloud_search(CreatePointCloudSearch(source_coords, dimension));
 
-    // each row is a neighbor list for a target site, with the first column of each row containing
-    // the number of neighbors for that rows corresponding target site
-    double epsilon_multiplier = 1.5;
-    int estimated_upper_bound_number_neighbors = 
-        point_cloud_search.getEstimatedNumberNeighborsUpperBound(min_neighbors, dimension, epsilon_multiplier);
+    double epsilon_multiplier = 1.4;
 
-    Kokkos::View<int**, Kokkos::DefaultExecutionSpace> neighbor_lists_device("neighbor lists", 
-            number_target_coords, estimated_upper_bound_number_neighbors); // first column is # of neighbors
-    Kokkos::View<int**>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+    // neighbor_lists_device will contain all neighbor lists (for each target site) in a compressed row format
+    // Initially, we do a dry-run to calculate neighborhood sizes before actually storing the result. This is 
+    // why we can start with a neighbor_lists_device size of 0.
+    Kokkos::View<int*> neighbor_lists_device("neighbor lists", 
+            0); // first column is # of neighbors
+    Kokkos::View<int*>::HostMirror neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
+    // number_of_neighbors_list must be the same size as the number of target sites so that it can be populated
+    // with the number of neighbors for each target site.
+    Kokkos::View<int*> number_of_neighbors_list_device("number of neighbor lists", 
+            number_target_coords); // first column is # of neighbors
+    Kokkos::View<int*>::HostMirror number_of_neighbors_list = Kokkos::create_mirror_view(number_of_neighbors_list_device);
     
     // each target site has a window size
     Kokkos::View<double*, Kokkos::DefaultExecutionSpace> epsilon_device("h supports", number_target_coords);
@@ -279,9 +218,18 @@ bool all_passed = true;
     // query the point cloud to generate the neighbor lists using a kdtree to produce the n nearest neighbor
     // to each target site, adding (epsilon_multiplier-1)*100% to whatever the distance away the further neighbor used is from
     // each target to the view for epsilon
-    point_cloud_search.generateNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
-            epsilon, min_neighbors, epsilon_multiplier);
+    //
+    // This dry run populates number_of_neighbors_list with neighborhood sizes
+    size_t storage_size = point_cloud_search.generateCRNeighborListsFromKNNSearch(true /*dry run*/, target_coords, neighbor_lists, 
+            number_of_neighbors_list, epsilon, min_neighbors, epsilon_multiplier);
+
+    // resize neighbor_lists_device so as to be large enough to contain all neighborhoods
+    Kokkos::resize(neighbor_lists_device, storage_size);
+    neighbor_lists = Kokkos::create_mirror_view(neighbor_lists_device);
     
+    // query the point cloud a second time, but this time storing results into neighbor_lists
+    point_cloud_search.generateCRNeighborListsFromKNNSearch(false /*not dry run*/, target_coords, neighbor_lists, 
+            number_of_neighbors_list, epsilon, min_neighbors, epsilon_multiplier);
     
     //! [Performing Neighbor Search]
     
@@ -297,33 +245,8 @@ bool all_passed = true;
     // and used these instead, and then the copying of data to the device
     // would be performed in the GMLS class
     Kokkos::deep_copy(neighbor_lists_device, neighbor_lists);
+    Kokkos::deep_copy(number_of_neighbors_list_device, number_of_neighbors_list);
     Kokkos::deep_copy(epsilon_device, epsilon);
-    
-    // solver name for passing into the GMLS class
-    std::string solver_name;
-    if (solver_type == 0) { // SVD
-        solver_name = "SVD";
-    } else if (solver_type == 1) { // QR
-        solver_name = "QR";
-    } else if (solver_type == 2) { // LU
-        solver_name = "LU";
-    }
-
-    // problem name for passing into the GMLS class
-    std::string problem_name;
-    if (problem_type == 0) { // Standard
-        problem_name = "STANDARD";
-    } else if (problem_type == 1) { // Manifold
-        problem_name = "MANIFOLD";
-    }
-
-    // boundary name for passing into the GMLS class
-    std::string constraint_name;
-    if (constraint_type == 0) { // No constraints
-        constraint_name = "NO_CONSTRAINT";
-    } else if (constraint_type == 1) { // Neumann Gradient Scalar
-        constraint_name = "NEUMANN_GRAD_SCALAR";
-    }
     
     // initialize an instance of the GMLS class 
     GMLS my_GMLS(VectorOfScalarClonesTaylorPolynomial, VectorPointSample,
@@ -331,11 +254,14 @@ bool all_passed = true;
                  solver_name.c_str(), problem_name.c_str(), constraint_name.c_str(),
                  2 /*manifold order*/);
     
-    // pass in neighbor lists, source coordinates, target coordinates, and window sizes
+    // pass in neighbor lists, number of neighbor lists, source coordinates, target coordinates, and window sizes
     //
-    // neighbor lists have the format:
-    //      dimensions: (# number of target sites) X (# maximum number of neighbors for any given target + 1)
-    //                  the first column contains the number of neighbors for that rows corresponding target index
+    // neighbor lists has a compressed row format and is a 1D view:
+    //      dimensions: ? (determined by neighbor search, but total size of the sum of the number of neighbors over all target sites)
+    //
+    // number of neighbors list is a 1D view:
+    //      dimensions: (# number of target sites) 
+    //                  each entry contains the number of neighbors for a target site
     //
     // source coordinates have the format:
     //      dimensions: (# number of source sites) X (dimension)
@@ -345,7 +271,7 @@ bool all_passed = true;
     //      dimensions: (# number of target sites) X (dimension)
     //                  # of target sites is same as # of rows of neighbor lists
     //
-    my_GMLS.setProblemData(neighbor_lists_device, source_coords_device, target_coords_device, epsilon_device);
+    my_GMLS.setProblemData(neighbor_lists_device, number_of_neighbors_list_device, source_coords_device, target_coords_device, epsilon_device);
     
     // create a vector of target operations
     std::vector<TargetOperation> lro(5);
@@ -365,7 +291,7 @@ bool all_passed = true;
     my_GMLS.setWeightingPower(2);
     
     // generate the alphas that to be combined with data for each target operation requested in lro
-    my_GMLS.generateAlphas(number_of_batches);
+    my_GMLS.generateAlphas(number_of_batches, keep_coefficients /* keep polynomial coefficients, only needed for a test later in this program */);
     
     
     //! [Setting Up The GMLS Object]

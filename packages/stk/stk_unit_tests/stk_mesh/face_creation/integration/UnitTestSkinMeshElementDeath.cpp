@@ -57,7 +57,7 @@ void kill_element(stk::mesh::Entity element, stk::mesh::BulkData& bulkData, stk:
     stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
     stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
 
-    stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
+    stk::mesh::process_killed_elements(bulkData, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 }
 
 stk::mesh::EntityVector get_entities(stk::mesh::BulkData& bulkData, const stk::mesh::ConstPartVector& parts)

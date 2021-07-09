@@ -1,63 +1,36 @@
-C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
       SUBROUTINE SHLSRC(
      *  NDIM,     NPTS,     NPSRF,    NFSRF,    NISR,
      *  NRSR,     NRSS,     XYZSRF,   XYZPTS,   LINKSRF,
      *  ISRCHR,   RSRCHR,   NN,      IFSRF,     TOLSRCH,
      *  IERR    )
-C
+
 C-----------------------------------------------------------------------
-C
+
 C DESCRIPTION:
-C
+
 C THIS SUBROUTINE CALCULATES THE CLOSEST POINT PROBLEM
 C BETWEEN 'KOUNTS' PAIRS OF POINTS AND SURFACES.
-C
+
 C-----------------------------------------------------------------------
-C
+
 C FORMAL PARAMETERS
-C
+
 C MEMORY      : P=PERMANENT, S=SCRATCH
 C NAME        : IMPLICIT A-H,O-Z REAL, I-N INTEGER
 C TYPE        : INPUT_STATUS/OUTPUT_STATUS (I=INPUT,O=OUTPUT,P=PASSED,
 C               U=UNMODIFIED,-=UNDEFINED)
 C DESCRIPTION : DESCRIPTION OF VARIABLE
-C
+
 C-----------------------------------------------------------------------
-C
+
 C CALLING ARGUMENTS
-C
+
 C MEMORY NAME     TYPE   DESCRIPTION
 C ---    ----     ---    -----------
 C  P     NDIM     I/U    DIMENSION OF PROBLEM=3
@@ -77,16 +50,16 @@ C  P     NN       I/U    POINT PAIRED WITH SURFACE IFSRF
 C  P     IFSRF   I/U     SURFACE PAIRED WITH POINT NN
 C  S     CTRCL    -/-    TRACKING ARRAY FOR KOUNTS POINT-SURFACE PAIRS
 C  P     TOLSRCH  I/U    PROXIMITY TOLERANCE FOR POINT-TO-SURFACE SEARCH
-C
+
 C-----------------------------------------------------------------------
-C
+
 C INPUT/OUTPUT ARRAYS
       DIMENSION
      *  XYZPTS(NPTS,NDIM)   ,XYZSRF(NPSRF,NDIM)  ,LINKSRF(4,NFSRF)    ,
      *  ISRCHR(NISR,NPTS)   ,RSRCHR(NRSR,NPTS)
 C SCRATCH ARRAYS
       DIMENSION CTRCL(10)
-C
+
 C ... Eliminate uninitialized variable warning...
       do i=1, 10
         ctrcl(i) = 0.0
@@ -98,7 +71,7 @@ C ... Eliminate uninitialized variable warning...
       ENDIF
       ZERO = 0
       ONE = 1
-C
+
 C COMPUTE SURFACE NORMALS AND STORE
       N1 = LINKSRF(1,IFSRF)
       N2 = LINKSRF(2,IFSRF)
@@ -117,7 +90,7 @@ C COMPUTE SURFACE NORMALS AND STORE
       CTRCL(8)  = PMX / PMAG
       CTRCL(9)  = PMY / PMAG
       CTRCL(10) = PMZ / PMAG
-C
+
 C SURFACE NORMAL
       A4I = CTRCL(8)
       A4J = CTRCL(9)
@@ -183,7 +156,7 @@ C AREA COORDS
         IF( ABS(XCOORD) .GT. 1 .OR. ABS(ECOORD) .GT. 1 )
      *    CTRCL(1) = -CTRCL(1)
       ENDIF
-C
+
 C SURFACE NORMAL
       A4I = CTRCL(8)
       A4J = CTRCL(9)
@@ -241,7 +214,7 @@ C  RECOMPUTE LOCAL COORDS
         CTRCL(6) = VCS12Y/DISPS
         CTRCL(7) = VCS12Z/DISPS
       ENDIF
-C
+
 C SURFACE NORMAL
       A4I = CTRCL(8)
       A4J = CTRCL(9)
@@ -299,7 +272,7 @@ C  RECOMPUTE LOCAL COORDS
         CTRCL(6) = VCS12Y/DISPS
         CTRCL(7) = VCS12Z/DISPS
       ENDIF
-C
+
 C SURFACE NORMAL
       A4I = CTRCL(8)
       A4J = CTRCL(9)
@@ -357,7 +330,7 @@ C  RECOMPUTE LOCAL COORDS
         CTRCL(6) = VCS12Y/DISPS
         CTRCL(7) = VCS12Z/DISPS
       ENDIF
-C
+
 C SURFACE NORMAL
       A4I = CTRCL(8)
       A4J = CTRCL(9)
@@ -415,11 +388,11 @@ C  RECOMPUTE LOCAL COORDS
         CTRCL(6) = VCS12Y/DISPS
         CTRCL(7) = VCS12Z/DISPS
       ENDIF
-C
+
 C SELECT THE CLOSEST SURFACE
-C
+
       IF( NINT(CTRCL(1)) .NE. 0 )THEN
-C
+
 C STORE CURRENT SEARCH RESULTS
         IF( ISRCHR(1,NN) .EQ. 0 )THEN
 C STORE INTEGER SEARCH RESULTS
@@ -456,9 +429,7 @@ C STORE INTEGER SEARCH RESULTS
           ENDIF
         ENDIF
       ENDIF
-C
+
       RETURN
       END
-C
-
 

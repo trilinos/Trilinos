@@ -47,7 +47,6 @@ import sys
 from FindGeneralScriptSupport import *
 from GeneralScriptSupport import *
 
-
 #
 # Default file locations
 #
@@ -242,6 +241,22 @@ class TribitsDependencies:
     return len(self.__packagesList)
 
 
+  def getPackagesNamesList(self, onlyTopLevelPackages=True):
+    packagesNamesList = []
+    for packageDep in self.__packagesList:
+      #print ("packageDep.packageName = "+packageDep.packageName)
+      #print ("packageDep.parentPackage = "+packageDep.parentPackage)
+      if packageDep.parentPackage == "":
+        addPackage = True
+      elif not onlyTopLevelPackages:
+        addPackage = True
+      else:
+        addPackage = False
+      if addPackage:
+        packagesNamesList.append(packageDep.packageName)
+    return packagesNamesList
+
+
   def packageNameToID(self, packageName):
     return self.__packagesNameToID.get(packageName, -1)
 
@@ -262,6 +277,7 @@ class TribitsDependencies:
     return None
 
 
+  # Note: Path must contain ending "/"
   def getPackageNameFromPath(self, fullPath):
     for packageDep in self.__packagesList:
       regexFilePath = packageDep.packageDir+"/"
@@ -275,6 +291,7 @@ class TribitsDependencies:
     # packages because subpackages are listed before packages!
 
 
+  # Returns the paraent package name given a test name
   def getPackageNameFromTestName(self, testName):
     for packageDep in self.__packagesList:
       startTestName = packageDep.packageName+"_"

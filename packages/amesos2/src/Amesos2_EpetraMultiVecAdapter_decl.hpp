@@ -185,7 +185,7 @@ namespace Amesos2 {
         EDistribution distribution) const;
 
     template<typename KV>
-    void get1dCopy_kokkos_view( KV & A,
+    bool get1dCopy_kokkos_view(bool bInitialize, KV & A,
                     size_t lda,
                     Teuchos::Ptr<
                       const Tpetra::Map<local_ordinal_t,
@@ -194,7 +194,9 @@ namespace Amesos2 {
                     EDistribution distribution) const {
       Kokkos::View<double**, Kokkos::LayoutLeft, Kokkos::HostSpace> host_new_data;
       get1dCopy_kokkos_view_host(host_new_data, lda, distribution_map, distribution);
-      deep_copy_or_assign_view(A, host_new_data);
+      bool bAssigned;
+      deep_copy_or_assign_view(bInitialize, A, host_new_data, bAssigned);
+      return false; // currently Epetra and prior get1dCopy_kokkos_view_host call cannot get direct assignment so always return false
     }
 
     void get1dCopy_kokkos_view_host(

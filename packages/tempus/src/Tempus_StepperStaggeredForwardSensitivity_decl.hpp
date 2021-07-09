@@ -9,8 +9,10 @@
 #ifndef Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 #define Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
+
 
 namespace Tempus {
 
@@ -80,19 +82,12 @@ public:
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel();
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
 
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return stateStepper_->getSolver(); }
-
-    /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -113,14 +108,14 @@ public:
       {return Scalar(1.0e+99);}
 
     virtual bool isExplicit()         const
-      {return stateStepper_->isExplicit() or sensitivityStepper_->isExplicit();}
+      {return stateStepper_->isExplicit() || sensitivityStepper_->isExplicit();}
     virtual bool isImplicit()         const
-      {return stateStepper_->isImplicit() or sensitivityStepper_->isImplicit();}
+      {return stateStepper_->isImplicit() || sensitivityStepper_->isImplicit();}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
 
     virtual bool isOneStepMethod()   const
-      {return stateStepper_->isOneStepMethod() and
+      {return stateStepper_->isOneStepMethod() &&
               sensitivityStepper_->isOneStepMethod();}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 

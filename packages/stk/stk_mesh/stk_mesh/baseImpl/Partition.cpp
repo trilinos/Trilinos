@@ -173,13 +173,28 @@ void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
   }
 }
 
-void Partition::delete_bucket(Bucket * bucket)
+void Partition::delete_bucket(Bucket* bucket)
 {
-    m_size -= bucket->size();
+  m_size -= bucket->size();
 
-    auto iter = std::find(m_buckets.begin(), m_buckets.end(), bucket);
-    m_repository->deallocate_bucket(bucket);
-    m_buckets.erase(iter, iter+1);
+  auto iter = std::find(m_buckets.begin(), m_buckets.end(), bucket);
+  m_repository->deallocate_bucket(bucket);
+  m_buckets.erase(iter, iter+1);
+}
+
+void Partition::remove_bucket(Bucket* bucket)
+{
+  m_size -= bucket->size();
+
+  auto iter = std::find(m_buckets.begin(), m_buckets.end(), bucket);
+  m_buckets.erase(iter, iter+1);
+}
+
+void Partition::add_bucket(Bucket* bucket)
+{
+    m_size += bucket->size();
+    bucket->m_partition = this;
+    stk::util::insert_keep_sorted_and_unique(bucket, m_buckets);
 }
 
 void Partition::remove_impl()
@@ -217,11 +232,16 @@ void Partition::remove_impl()
   internal_check_invariants();
 }
 
-void Partition::default_sort_if_needed()
+void Partition::reset_partition_key(const std::vector<unsigned>& newKey)
+{
+  m_extPartitionKey = newKey;
+}
+
+void Partition::default_sort_if_needed(bool mustSortFacesByNodeIds)
 {
   if (!empty() && m_updated_since_sort)
   {
-      sort(GlobalIdEntitySorter());
+      sort(GlobalIdEntitySorter(mustSortFacesByNodeIds));
   }
 }
 
@@ -356,19 +376,3 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
   return bucket;
 }
 
-size_t Partition::field_data_footprint(const FieldBase& f) const
-{
-  size_t retval = 0;
-
-  size_t num_bkts = m_buckets.size();
-  for (size_t i = 0; i < num_bkts; ++i)
-  {
-    Bucket *b_ptr = m_buckets[i];
-    if (b_ptr)
-    {
-      retval += b_ptr->capacity() * field_bytes_per_entity(f, *b_ptr);
-    }
-  }
-
-  return retval;
-}

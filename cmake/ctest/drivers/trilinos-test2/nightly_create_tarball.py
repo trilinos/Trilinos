@@ -78,7 +78,6 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("EpetraExt", True),
   ("FEApp", False),
   ("FEI", True),
-  ("ForTrilinos", False),
   ("Galeri", True),
   ("Ifpack", True),
   ("Ifpack2", True),

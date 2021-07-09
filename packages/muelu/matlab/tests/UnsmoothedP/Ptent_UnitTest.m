@@ -14,6 +14,7 @@ try
   %Get the final, smoothed prolongators (just Ptent with a smoother applied)
   mueluP = muelu('get', mueluProblem, 1, 'P');
   matlabP = muelu('get', matlabProblem, 1, 'P');
+  muelu('cleanup');
   %Modify mueluP so that all nonzero values are set to 1.
   %It's contrived but it will make the test pass without a more complicated
   %Ptent function in matlab.

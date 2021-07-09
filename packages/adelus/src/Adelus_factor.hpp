@@ -240,7 +240,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
   View1DHostPinnType h_row3  ( "h_row3",   my_cols + blksz + nrhs );
 #endif
 
-  Kokkos::fence();
+  //Kokkos::fence();
   for (j=0; j<ncols_matrix; j++) {
     c_owner = col_owner(j); r_owner = row_owner(j);
     ringdist = mesh_col(me) - mesh_col(c_owner);
@@ -914,17 +914,19 @@ void factor(ZDView& ZV,                    // matrix and rhs
 
 #ifdef GET_TIMING
   totalfactortime = MPI_Wtime() - t2;
-#endif
-#ifdef GET_TIMING
+
   localpivtime = iamaxtime+getlocalpivtime;
   msgtime      = xpivmsgtime+bcastpivstime+bcastpivrtime+bcastcolstime+bcastcolrtime+bcastrowtime+sendrowtime+recvrowtime;
   copytime     = pivotswaptime+copycoltime+copyrowtime+copyrow1time+copypivrowtime+copypivrow1time;
   dgemmtime    = updatetime+colupdtime+rowupdtime+scaltime;
+#ifdef ADELUS_SHOW_TIMING_DETAILS
   showtime("Time to do iamax",&iamaxtime);
   showtime("Time to get local pivot",&getlocalpivtime);
+#endif
   showtime("Total finding local pivot time",&localpivtime);
   double tmp = 100*localpivtime/totalfactortime;
   showtime("Percent finding local pivot time",&tmp);
+#ifdef ADELUS_SHOW_TIMING_DETAILS
   showtime("Time to xchgpivot",&xpivmsgtime);
   showtime("Time to do send in bcast pivot",&bcastpivstime);
   showtime("Time to do recv in bcast pivot",&bcastpivrtime);
@@ -939,6 +941,7 @@ void factor(ZDView& ZV,                    // matrix and rhs
   showtime("Time to bcast piv row",&bcastrowtime);
   showtime("Time to send cur row",&sendrowtime);
   showtime("Time to recv cur row",&recvrowtime);
+#endif
   showtime("Total msg passing time",&msgtime);
   tmp = 100*msgtime/totalfactortime;
   showtime("Percent msg passing time",&tmp);
@@ -947,18 +950,22 @@ void factor(ZDView& ZV,                    // matrix and rhs
   tmp = 100*copyhostpinnedtime/totalfactortime;
   showtime("Percent copy between host pinned mem and dev mem time",&tmp);  
 #endif
+#ifdef ADELUS_SHOW_TIMING_DETAILS
   showtime("Time to swap pivot",&pivotswaptime);
   showtime("Time to copy cur col",&copycoltime);
   showtime("Time to copy cur row to sav row",&copyrowtime);
   showtime("Time to copy piv row to sav piv",&copypivrowtime);
   showtime("Time to copy sav row to cur row",&copyrow1time);
   showtime("Time to copy sav piv  to piv row",&copypivrow1time);
+#endif
   showtime("Total copying time",&copytime);
   tmp = 100*copytime/totalfactortime;
   showtime("Percent copying time",&tmp);
+#ifdef ADELUS_SHOW_TIMING_DETAILS
   showtime("Time to scale cur col",&scaltime);
   showtime("Time to update cur col",&colupdtime);
   showtime("Time to update piv row",&rowupdtime);
+#endif
   showtime("Time to update matrix",&updatetime);
   showtime("Total update time",&dgemmtime);
   tmp = 100*dgemmtime/totalfactortime;

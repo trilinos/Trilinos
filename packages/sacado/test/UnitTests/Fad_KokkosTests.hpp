@@ -1575,6 +1575,92 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+#ifdef SACADO_NEW_FAD_DESIGN_IS_DEFAULT
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, ConstViewAssign, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType*,Layout,Device> ViewType;
+  typedef Kokkos::View<const FadType,Layout,Device> ConstViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ViewType::execution_space exec_space;
+
+  const size_type num_rows = global_num_rows;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill view
+#if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  ViewType v1("view1", num_rows);
+#else
+  ViewType v1("view1", num_rows, fad_size+1);
+#endif
+  host_view_type h_v1 = Kokkos::create_mirror_view(v1);
+  for (size_type i=0; i<num_rows; ++i) {
+    FadType f = generate_fad<FadType>(num_rows, size_type(1), fad_size, i,
+                                      size_type(0));
+    h_v1(i) = f;
+  }
+  Kokkos::deep_copy(v1, h_v1);
+
+#if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  ViewType v2("view2", num_rows);
+#else
+  ViewType v2("view2", num_rows, fad_size+1);
+#endif
+
+  static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
+#if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
+  const bool use_team =
+    std::is_same<exec_space, Kokkos::Cuda>::value &&
+    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+      ( stride > 1 );
+#elif defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+  const bool use_team =
+    std::is_same<exec_space, Kokkos::Cuda>::value &&
+    ( Kokkos::is_view_fad_contiguous<ViewType>::value ||
+      Kokkos::is_dynrankview_fad_contiguous<ViewType>::value ) &&
+    is_dfad<typename ViewType::non_const_value_type>::value;
+#else
+  const bool use_team = false;
+#endif
+
+  if (use_team) {
+    typedef Kokkos::TeamPolicy<exec_space> team_policy;
+    Kokkos::parallel_for(team_policy(num_rows, 1, stride),
+                         KOKKOS_LAMBDA(typename team_policy::member_type team)
+    {
+      const int i = team.league_rank();
+      typename ConstViewType::reference_type x = v1(i);
+      v2(i) = x;
+    });
+  }
+  else {
+    Kokkos::parallel_for(Kokkos::RangePolicy<exec_space>(0,num_rows),
+                         KOKKOS_LAMBDA(const int i)
+    {
+      typename ConstViewType::reference_type x = v1(i);
+      v2(i) = x;
+    });
+  }
+
+  // Copy back
+  host_view_type h_v2 = Kokkos::create_mirror_view(v2);
+  Kokkos::deep_copy(h_v2, v2);
+
+  // Check
+  success = true;
+  for (size_type i=0; i<num_rows; ++i) {
+    FadType f = generate_fad<FadType>(num_rows, size_type(1), fad_size, i,
+                                      size_type(0));
+    success = success && checkFads(f, h_v2(i), out);
+  }
+}
+#else
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, ConstViewAssign, FadType, Layout, Device ) {}
+#endif
+
 // Tests that require view spec
 
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
@@ -2159,7 +2245,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SubdynrankviewRow, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SubdynrankviewScalar, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Subview, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ConstViewAssign, F, L, D )
 
 #define VIEW_FAD_TESTS_SFLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SFadNoSizeArg, F, L, D )

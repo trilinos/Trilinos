@@ -39,7 +39,7 @@
 
 # Define the TriBITS minimum required CMake version
 
-SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 3.10.0)
+SET(TRIBITS_CMAKE_MINIMUM_REQUIRED 3.17.0)
 
 MACRO(TRIBITS_ASESRT_MINIMUM_CMAKE_VERSION)
 
@@ -53,6 +53,8 @@ ENDMACRO()
 # Misc constants
 
 SET(${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES TRUE)
+# NOTE: This is left to maintain backward compatiblity after upgrade to CMake
+# 3.17 but this option is now hard-coded to TRUE in the implementation.
 
 # File names for TriBITS system
 

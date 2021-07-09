@@ -66,7 +66,7 @@ typedef void ZOLTAN_VOID_FN(void);
 extern "C" {
 #endif
 
-#define ZOLTAN_VERSION_NUMBER   3.83
+#define ZOLTAN_VERSION_NUMBER   3.90
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the
@@ -3364,6 +3364,70 @@ extern int Zoltan_Generate_Files(struct Zoltan_Struct *zz, char *fname, int base
  *   Return value  -- sizeof(ZOLTAN_ID_TYPE)
  */
 extern int Zoltan_get_global_id_type(char **name);
+
+/*****************************************************************************/
+/* 
+ * Routine specifying the number of bytes needed to serialize a Zoltan_Struct.
+ * This value can be used to allocate a serialization buffer.
+ *
+ * This is an expert function; its implementation may be incomplete for all
+ * partitioning methods.  
+ * Currently supported for partitioning method RCB.
+ * 
+ * Input:
+ *  zz                   -- Zoltan_Struct to be serialized
+ *   
+ * Returned value:       -- Number of bytes needed to allocate a buffer
+ */
+
+extern size_t Zoltan_Serialize_Size(
+  struct Zoltan_Struct const *zz
+);
+
+/*****************************************************************************/
+/* 
+ * Routine to serialize a Zoltan_Struct into a buffer for communication.
+ *
+ * This is an expert function; its implementation may be incomplete for all
+ * partitioning methods.  
+ * Currently supported for partitioning method RCB.
+ * 
+ * Input:
+ *  zz                   -- Zoltan_Struct to be serialized
+ *  bufsize              -- size (number of bytes allocated) of the buffer 
+ *  buf                  -- buffer into which zz should be serialized;
+ *                          the user must allocate and own this memory
+ *   
+ * Returned value:       --  Error code
+ */
+
+extern int Zoltan_Serialize(
+  struct Zoltan_Struct const *zz,
+  size_t bufsize,
+  char *buf
+);
+
+/*****************************************************************************/
+/* 
+ * Routine to deserialize a buffer into a Zoltan_Struct.
+ *
+ * This is an expert function; its implementation may be incomplete for all
+ * partitioning methods.  
+ * Currently supported for partitioning method RCB.
+ * 
+ * Input:
+ *  zz                   -- Zoltan_Struct into which buf is serialized
+ *  bufsize              -- size (number of bytes allocated) of the buffer 
+ *  buf                  -- buffer with data to be deserialized
+ *
+ * Returned value:       --  Error code
+ */
+
+extern int Zoltan_Deserialize(
+  struct Zoltan_Struct *zz,
+  size_t bufsize,
+  char *buf
+);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

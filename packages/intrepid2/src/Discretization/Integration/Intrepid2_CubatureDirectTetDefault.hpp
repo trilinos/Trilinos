@@ -57,17 +57,17 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureDirectTetDefault
       \brief Defines direct integration rules on a tetrahedron.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubatureDirectTetDefault
-    : public CubatureDirect<ExecSpaceType,pointValueType,weightValueType> {
+    : public CubatureDirect<DeviceType,pointValueType,weightValueType> {
   public:
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureDataStatic CubatureDataStatic;
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureData       CubatureData;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::CubatureDataStatic CubatureDataStatic;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::CubatureData       CubatureData;
 
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::PointViewType  PointViewType;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
   private:
 
@@ -91,7 +91,7 @@ namespace Intrepid2 {
      */
     virtual
     const char* 
-    getName() const {
+    getName() const override {
       return "CubatureDirectTetDefault";
     }
   }; 

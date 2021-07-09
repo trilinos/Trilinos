@@ -378,12 +378,12 @@ namespace MueLuTests {
       TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
       TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
 
-      out << "solve with random initial guess" << std::endl;
+      out << "solve with zero initial guess, and unreliable nonzeroed vector X" << std::endl;
       X->randomize();
       X->norm2(initialNorms);
       out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
 
-      jacSmoother->Apply(*X, *RHS, false); //nonzero initial guess
+      jacSmoother->Apply(*X, *RHS, true); //zero initial guess with nonzero X
 
       X->norm2(finalNorms);
       Teuchos::Array<magnitude_type> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
@@ -393,8 +393,24 @@ namespace MueLuTests {
       TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
       TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
 
+      out << "solve with random initial guess" << std::endl;
+      X->randomize();
+      X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      jacSmoother->Apply(*X, *RHS, false); //nonzero initial guess
+
+      X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm3 = Utilities::ResidualNorm(*A, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm3[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      TEUCHOS_TEST_COMPARE(residualNorm3[0], <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+
       if (comm->getSize() == 1) {
-        TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
+        TEST_EQUALITY(residualNorm1[0] == residualNorm2[0], true);
+        TEST_EQUALITY(residualNorm1[0] != residualNorm3[0], true);
       } else {
         out << "Pass/Fail is only checked in serial." << std::endl;
       }
@@ -504,12 +520,12 @@ namespace MueLuTests {
       TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 5e-15, out, success);
       TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
 
-      out << "solve with random initial guess" << std::endl;
+      out << "solve with zero initial guess, and unreliable nonzeroed vector X" << std::endl;
       X->randomize();
       X->norm2(initialNorms);
       out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
 
-      bgsSmoother->Apply(*X, *RHS, false); //nonzero initial guess
+      bgsSmoother->Apply(*X, *RHS, true);  //zero initial guess with nonzero X
 
       X->norm2(finalNorms);
       Teuchos::Array<magnitude_type> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
@@ -519,8 +535,24 @@ namespace MueLuTests {
       TEUCHOS_TEST_COMPARE(residualNorm2[0], <, 5e-15, out, success);
       TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
 
+      out << "solve with random initial guess" << std::endl;
+      X->randomize();
+      X->norm2(initialNorms);
+      out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << initialNorms[0] << std::endl;
+
+      bgsSmoother->Apply(*X, *RHS, false); //nonzero initial guess
+
+      X->norm2(finalNorms);
+      Teuchos::Array<magnitude_type> residualNorm3 = Utilities::ResidualNorm(*A, *X, *RHS);
+      out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm3[0] << std::endl;
+      out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
+
+      TEUCHOS_TEST_COMPARE(residualNorm3[0], <, 5e-15, out, success);
+      TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, 5e-15, out, success);
+
       if (comm->getSize() == 1) {
-        TEST_EQUALITY(residualNorm1[0] != residualNorm2[0], true);
+        TEST_EQUALITY(residualNorm1[0] == residualNorm2[0], true);
+        TEST_EQUALITY(residualNorm1[0] != residualNorm3[0], true);
       } else {
         out << "Pass/Fail is only checked in serial." << std::endl;
       }

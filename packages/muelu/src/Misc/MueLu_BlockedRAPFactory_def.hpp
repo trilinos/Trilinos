@@ -50,8 +50,6 @@
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_Vector.hpp>
 
 #include "MueLu_BlockedRAPFactory_decl.hpp"
 
@@ -155,17 +153,6 @@ namespace MueLu {
       CheckMainDiagonal(bAc);
 
     GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*bAc, "Ac (blocked)");
-
-    // static int run = 1;
-    // RCP<CrsMatrixWrap> A11 = rcp(new CrsMatrixWrap(bAc->getMatrix(0,0)));
-    // Utils::Write(toString(run) + "_A_11.mm", *A11);
-    // if (!bAc->getMatrix(1,1).is_null()) {
-      // RCP<CrsMatrixWrap> A22 = rcp(new CrsMatrixWrap(bAc->getMatrix(1,1)));
-      // Utils::Write(toString(run) + "_A_22.mm", *A22);
-    // }
-    // RCP<CrsMatrixWrap> Am = rcp(new CrsMatrixWrap(bAc->Merge()));
-    // Utils::Write(toString(run) + "_A.mm", *Am);
-    // run++;
 
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 

@@ -77,6 +77,9 @@ void print_options(std::ostream &os, const char *app_name, unsigned int indent =
 #if defined(KOKKOS_ENABLE_CUDA)
        << spaces << "      --cuda <id>         Use CUDA (device $id)" << std::endl
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+       << spaces << "      --hip <id>          Use HIP (device $id)" << std::endl
+#endif
        << std::endl
        << spaces << "  Required Parameters:" << std::endl
        << spaces << "      --amtx <filename>   Input file in Matrix Market format (.mtx)." << std::endl
@@ -130,6 +133,9 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     }
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       params.use_cuda = 1 + atoi(getNextArg(i, argc, argv));
+    }
+    else if ( 0 == strcasecmp( argv[i] , "--hip" ) ) {
+      params.use_hip = 1 + atoi(getNextArg(i, argc, argv));
     }
     else if ( 0 == strcasecmp( argv[i] , "--repeat" ) ) {
       params.repeat = atoi(getNextArg(i, argc, argv));
@@ -212,7 +218,7 @@ int parse_inputs (KokkosKernels::Experiment::Parameters &params, int argc, char 
     print_options(std::cout, argv[0]);
   return 1;
   }
-  if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda)
+  if(!params.use_serial && !params.use_threads && !params.use_openmp && !params.use_cuda && !params.use_hip)
   {
     print_options(std::cout, argv[0]);
     return 1;
@@ -539,7 +545,7 @@ int main (int argc, char ** argv){
   std::cout << "Sizeof(idx):" << sizeof(idx) << " sizeof(size_type):" << sizeof(size_type) << std::endl;
 
   const int num_threads = params.use_openmp; // Assumption is that use_openmp variable is provided as number of threads
-  const int device_id = 0;
+  const int device_id = std::max(params.use_cuda, params.use_hip) - 1;
   Kokkos::initialize( Kokkos::InitArguments( num_threads, -1, device_id ) );
   Kokkos::print_configuration(std::cout);
 
@@ -577,6 +583,15 @@ int main (int argc, char ** argv){
 #endif
   }
 
+#endif
+
+#if defined( KOKKOS_ENABLE_HIP )
+  if (params.use_hip) {
+    KokkosKernels::Experiment::run_multi_mem_experiment
+    <size_type, idx, Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace, Kokkos::Experimental::HIPSpace>(
+        params
+        );
+  }
 #endif
 
 #if defined( KOKKOS_ENABLE_SERIAL )

@@ -105,9 +105,14 @@ build_problem_mm (Teuchos::ParameterList& test_params,
 
   std::string tifpack_precond("not specified");
   Ifpack2::getParameter (test_params, "Ifpack2::Preconditioner", tifpack_precond);
+  std::string prec_side("Left");
+  Ifpack2::getParameter (test_params, "Preconditioner Side", prec_side);
   if (tifpack_precond != "not specified") {
     Teuchos::RCP<TOP> precond = build_precond<Scalar,LocalOrdinal,GlobalOrdinal,Node> (test_params, A);
-    problem->setLeftPrec (precond);
+    if (prec_side == "Left")
+      problem->setLeftPrec (precond);
+    else if (prec_side == "Right")
+      problem->setRightPrec (precond);
   }
 
   problem->setProblem ();
@@ -206,8 +211,10 @@ build_problem (Teuchos::ParameterList& test_params,
     // new matrix.
     RCP<crs_matrix_type> A_constGraph (new crs_matrix_type (A->getCrsGraph ()));
     // Copy the values row by row from A into A_constGraph.
-    ArrayView<const LO> ind;
-    ArrayView<const Scalar> val;
+    using lids_type = typename crs_matrix_type::local_inds_host_view_type;
+    using vals_type = typename crs_matrix_type::values_host_view_type;
+    lids_type ind;
+    vals_type val;
     const LO numLocalRows = static_cast<LO> (A->getNodeNumRows ());
     for (LO localRow = 0; localRow < numLocalRows; ++localRow) {
       A->getLocalRowView (localRow, ind, val);

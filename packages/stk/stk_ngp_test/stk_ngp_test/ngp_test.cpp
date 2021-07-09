@@ -18,7 +18,12 @@ NgpTestEnvironment::NgpTestEnvironment(int* argc, char** argv) {
 
 inline
 NgpTestEnvironment::~NgpTestEnvironment() {
-  Kokkos::finalize_all();
+  finalize();
+}
+
+inline
+void NgpTestEnvironment::finalize() {
+  if(Kokkos::is_initialized()) Kokkos::finalize_all();
 }
 
 inline

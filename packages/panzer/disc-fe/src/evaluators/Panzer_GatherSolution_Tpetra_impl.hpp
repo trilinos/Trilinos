@@ -137,12 +137,12 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-    scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
       scratch_offsets_[fd](i) = offsets[i];
   }
 
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
+  scratch_lids_ = PHX::View<LO**>("lids",gatherFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
@@ -435,7 +435,7 @@ GatherSolution_Tpetra(
     this->setName(n);
   }
   else {
-    std::string n = "GatherSolution (Tpetra): "+firstName+" ("+PHX::print<EvalT>()+") ";
+    std::string n = "GatherSolution (Tpetra): "+firstName+" (Jacobian) ";
     this->setName(n);
   }
 }
@@ -460,12 +460,12 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-    scratch_offsets_[fd] = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
       scratch_offsets_[fd](i) = offsets[i];
   }
 
-  scratch_lids_ = Kokkos::View<LO**,PHX::Device>("lids",gatherFields_[0].extent(0),
+  scratch_lids_ = PHX::View<LO**>("lids",gatherFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
 
   indexerNames_.clear();  // Don't need this anymore
@@ -575,6 +575,16 @@ evaluateFields(typename TRAITS::EvalData workset)
    if(!applySensitivities_)
       seed_value = 0.0;
 
+   // Interface worksets handle DOFs from two element blocks.  The
+   // derivative offset for the other element block must be shifted by
+   // the derivative side of my element block.
+   functor_data.dos = 0;
+   if (this->wda.getDetailsIndex() == 1)
+   {
+     // Get the DOF count for my element block.
+     functor_data.dos = globalIndexer_->getElementBlockGIDCount(workset.details(0).block_id);
+   }
+
    // switch to a faster assembly
    bool use_seed = true;
    if(seed_value==0.0)
@@ -616,8 +626,12 @@ operator()(const int worksetCellIndex) const
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 
     // set the value and seed the FAD object
-    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
-    functor_data.field(worksetCellIndex,basis).fastAccessDx(offset) = functor_data.seed_value;
+    if (functor_data.dos == 0)
+      functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
+    else // Interface conditions need to zero out derivative array
+      functor_data.field(worksetCellIndex,basis) = ScalarT(functor_data.x_data(lid,0));
+
+    functor_data.field(worksetCellIndex,basis).fastAccessDx(functor_data.dos + offset) = functor_data.seed_value;
   }
 }
 

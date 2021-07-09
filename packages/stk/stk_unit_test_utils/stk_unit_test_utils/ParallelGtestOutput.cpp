@@ -5,6 +5,9 @@
 #include <gtest/gtest-message.h>
 #include <stdarg.h>                 // for va_end, va_list, va_start
 #include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelVectorConcat.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <string>                   // for string
 #include "gtest/gtest-test-part.h"  // for TestPartResult
 
@@ -90,34 +93,66 @@ private:
     {
         if(mProcId == 0)
         {
+#ifdef STK_BUILT_IN_SIERRA
             printf("*** Starting test %s.%s from %s:%d\n",
                    test_info.test_case_name(),
                    test_info.name(),
                    get_filename_for_print(test_info.file()).c_str(),
                    test_info.line());
+#else
+//older versions of gtest don't have TestInfo::file() nor TestInfo::line()
+            printf("*** Starting test %s.%s\n",
+                   test_info.test_case_name(),
+                   test_info.name());
+#endif
         }
+    }
+
+    std::string test_result_string(const ::testing::TestPartResult & test_part_result) const
+    {
+        if (test_part_result.skipped())
+        {
+            return "*** Skipped";
+        }
+        else if(test_part_result.failed())
+        {
+          return  "*** Failure";
+        }
+        else return "*** Success";
     }
 
     // Called after a failed assertion or a SUCCEED() invocation.
     virtual void OnTestPartResult(
             const ::testing::TestPartResult& test_part_result)
     {
-//        if(mProcId == 0)
+        printf("%s on proc %d in %s:%d\n%s\n",
+                test_result_string(test_part_result).c_str(),
+                mProcId,
+                test_part_result.file_name(),
+                test_part_result.line_number(),
+                test_part_result.summary());
+    }
+
+    bool test_has_failed(const ::testing::TestInfo & test_info)
+    {
+        if (test_info.result() == nullptr) 
         {
-            printf("%s on proc %d in %s:%d\n%s\n",
-                    test_part_result.failed() ? "*** Failure" : "*** Success",
-                    mProcId,
-                    test_part_result.file_name(),
-                    test_part_result.line_number(),
-                    test_part_result.summary());
+            return true;
         }
+
+        if (test_info.result()->Skipped() || test_info.result()->Passed())
+        {
+            return false;
+        }
+
+        return true;
     }
 
     // Called after a test ends.
     virtual void OnTestEnd(const ::testing::TestInfo& test_info)
     {
         int numFailuresThisProc = 0;
-        if(!test_info.result()->Passed())
+        if(test_has_failed(test_info))
         {
             numFailuresThisProc = 1;
         }
@@ -132,17 +167,19 @@ private:
             }
             else
             {
-                int numProcs = -1;
-                MPI_Comm_size(m_comm, &numProcs);
-                ColoredPrintf(COLOR_RED, "[  FAILED  ] ");
-                printf("on %d of %d procs ", numTotalFailures, numProcs);
+                int numProcs = stk::parallel_machine_size(m_comm);
+                print_failed("on " + std::to_string(numTotalFailures) + " of " + std::to_string(numProcs) + " procs ");
                 mNumFails++;
             }
             printf("%s.%s", test_info.test_case_name(), test_info.name());
             if ( should_print_time() )
             {
-                printf(" (%s ms)\n", ::testing::internal::StreamableToString(
-                     test_info.result()->elapsed_time()).c_str());
+#ifdef STK_BUILT_IN_SIERRA
+                size_t millis = test_info.result() != nullptr ? test_info.result()->elapsed_time() : 0;
+#else
+                size_t millis = 0;
+#endif
+                printf(" (%s ms)\n", ::testing::internal::StreamableToString(millis).c_str());
             }
             else
             {
@@ -154,16 +191,17 @@ private:
 
     void OnTestIterationEnd(const ::testing::UnitTest& unit_test, int iteration)
     {
+        std::vector<std::string> failedTestNames = get_failed_test_names(unit_test);
+        collect_failed_test_names_from_all_procs(failedTestNames);
+
         if(mProcId == 0)
         {
-            ColoredPrintf(COLOR_GREEN, "[  PASSED  ] ");
-            printf("%d tests.\n", unit_test.test_to_run_count() - mNumFails);
-
+            print_passed(std::to_string(unit_test.test_to_run_count() - mNumFails) + " tests.");
             if(mNumFails > 0)
             {
-                ColoredPrintf(COLOR_RED, "[  FAILED  ] ");
-                printf("%d tests:\n", mNumFails);
-                print_failed_tests(unit_test);
+                print_failed(std::to_string(mNumFails) + " tests:");
+                for(const std::string & testName : failedTestNames)
+                    print_failed("--gtest_filter=" + testName);
             }
             if ( should_print_time() )
             {
@@ -174,30 +212,48 @@ private:
         }
     }
 
-    void print_failed_tests(const ::testing::UnitTest& unit_test)
+    std::vector<std::string> get_failed_test_names(const ::testing::UnitTest& unit_test)
     {
+        std::vector<std::string> failedTestNames;
         for(int i = 0; i < unit_test.total_test_case_count(); i++)
         {
             const ::testing::TestCase* testCase = unit_test.GetTestCase(i);
             if(testCase->Failed())
-                print_failed_tests_in_case(testCase);
+                append_failed_test_names_for_case(testCase, failedTestNames);
         }
+        return failedTestNames;
     }
 
-    void print_failed_tests_in_case(const ::testing::TestCase* testCase)
+    void append_failed_test_names_for_case(const ::testing::TestCase* testCase, std::vector<std::string>& failedTestNames)
     {
         for(int j = 0; j < testCase->total_test_count(); j++)
         {
             const ::testing::TestInfo* testInfo = testCase->GetTestInfo(j);
             if(testInfo->result()->Failed())
-                print_failed_test_name(testCase, testInfo);
+                failedTestNames.push_back(std::string {testCase->name()} + "." + testInfo->name());
         }
     }
 
-    void print_failed_test_name(const ::testing::TestCase* testCase, const ::testing::TestInfo* testInfo)
+    void collect_failed_test_names_from_all_procs(std::vector<std::string>& failedTestNames)
+    {
+        if(stk::parallel_machine_size(m_comm) > 1)
+        {
+            std::vector<std::string> localNames {failedTestNames};
+            stk::parallel_vector_concat(m_comm, localNames, failedTestNames);
+            stk::util::sort_and_unique(failedTestNames);
+        }
+    }
+
+    void print_failed(const std::string &message)
     {
         ColoredPrintf(COLOR_RED, "[  FAILED  ] ");
-        printf("--gtest_filter=%s.%s\n", testCase->name(), testInfo->name());
+        printf("%s\n", message.c_str());
+    }
+
+    void print_passed(const std::string &message)
+    {
+        ColoredPrintf(COLOR_GREEN, "[  PASSED  ] ");
+        printf("%s\n", message.c_str());
     }
 };
 
@@ -210,9 +266,7 @@ void create_parallel_output_with_comm(int procId, MPI_Comm comm)
 
 void create_parallel_output(int procId)
 {
-    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
-    listeners.Append(new MinimalistPrinter(procId, MPI_COMM_WORLD));
-    delete listeners.Release(listeners.default_result_printer());
+    create_parallel_output_with_comm(procId, MPI_COMM_WORLD);
 }
 
 }

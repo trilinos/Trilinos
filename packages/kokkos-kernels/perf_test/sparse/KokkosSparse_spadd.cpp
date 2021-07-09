@@ -60,7 +60,7 @@
 void print_options(){
   std::cerr << "Options\n" << std::endl;
 
-  std::cerr << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]'" << std::endl;
+  std::cerr << "\t[Required] BACKEND: '--threads[numThreads]' | '--openmp [numThreads]' | '--cuda [cudaDeviceIndex]' | '--hip [hipDeviceIndex]'" << std::endl;
 
   std::cerr << "\t[Required] --amtx <path> :: 1st input matrix" << std::endl;
   std::cerr << "\t[Required] --bmtx <path> :: 2nd input matrix" << std::endl;

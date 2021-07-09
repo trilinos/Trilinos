@@ -17,6 +17,14 @@ KOKKOSKERNELS_FEATURE_DEPENDS_ON_TPLS(
   SUPERNODAL_SPTRSV
     CHOLMOD
     SUPERLU
-    LAPACKE
-    CBLAS
+    BLAS
 )
+
+# ==================================================================
+# Fortran Complex BLAS
+# ==================================================================
+
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL OR KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+  INCLUDE(CheckHostBlasReturnComplex.cmake)
+  CHECK_HOST_BLAS_RETURN_COMPLEX(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
+ENDIF()

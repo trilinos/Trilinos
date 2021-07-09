@@ -105,7 +105,7 @@ namespace Xpetra {
     }
 
     //! MultiVector copy constructor.
-    EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
+    EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::DataAccess copyOrView=Teuchos::Copy) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
@@ -279,51 +279,6 @@ namespace Xpetra {
     //! Set seed for Random function.
     void setSeed(unsigned int seed) {  }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
-
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
-    ///          with the Xpetra::EpetraMultiVector object. To write a code which is independent
-    ///          from the underlying linear algebra package you should always use the abstract class,
-    ///          i.e. Xpetra::MultiVector!
-    ///
-    /// \warning Be aware that the view on the multivector data is non-persisting, i.e.
-    ///          only valid as long as the multivector does not run of scope!
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<
-        typename dual_view_type::t_dev_um::execution_space::memory_space,
-        typename TargetDeviceType::memory_space>::value,
-        typename dual_view_type::t_dev_um,
-        typename dual_view_type::t_host_um>::type
-    getLocalView () const {
-      typename Kokkos::Impl::if_c<
-            std::is_same<
-              typename dual_view_type::t_dev_um::execution_space::memory_space,
-              typename TargetDeviceType::memory_space>::value,
-              typename dual_view_type::t_dev_um,
-              typename dual_view_type::t_host_um>::type dummy;
-      return dummy;
-    }
-
-    typename dual_view_type::t_host_um getHostLocalView () const {
-      return typename dual_view_type::t_host_um();
-    }
-
-    typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      throw std::runtime_error("Epetra does not support device views!");
-#ifndef __NVCC__ //prevent nvcc warning
-      typename dual_view_type::t_dev_um ret;
-#endif
-      TEUCHOS_UNREACHABLE_RETURN(ret);
-    }
-
-#endif
-
     //@}
 
   protected:
@@ -355,8 +310,17 @@ namespace Xpetra {
       : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra<GlobalOrdinal,Node>(map), Teuchos::as<int>(NumVectors), zeroOut))) { }
 
     //! MultiVector copy constructor.
-    EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
-      : vec_(Teuchos::rcp(new Epetra_MultiVector(toEpetra<GlobalOrdinal,Node>(source)))) { }
+    EpetraMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::DataAccess copyOrView=Teuchos::Copy) {
+      if (copyOrView == Teuchos::Copy)
+        vec_ = Teuchos::rcp(new Epetra_MultiVector(toEpetra<GlobalOrdinal,Node>(source)));
+      else {
+        int* indices = new int [source.getNumVectors()];
+        for (size_t i = 0; i < source.getNumVectors(); i++)
+          indices[i] = i;
+        vec_ =  Teuchos::rcp(new Epetra_MultiVector(View, toEpetra<GlobalOrdinal,Node>(source), indices, source.getNumVectors()));
+        delete [] indices;
+      }
+    }
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).
     EpetraMultiVectorT(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map, const Teuchos::ArrayView< const Teuchos::ArrayView< const Scalar > > &ArrayOfPtrs, size_t NumVectors) {
@@ -653,28 +617,15 @@ namespace Xpetra {
 
     typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
-    ///          with the Xpetra::EpetraMultiVector object. To write a code which is independent
-    ///          from the underlying linear algebra package you should always use the abstract class,
-    ///          i.e. Xpetra::MultiVector!
-    ///
-    /// \warning Be aware that the view on the multivector data is non-persisting, i.e.
-    ///          only valid as long as the multivector does not run of scope!
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<
-        typename dual_view_type::t_dev_um::execution_space::memory_space,
-        typename TargetDeviceType::memory_space>::value,
-        typename dual_view_type::t_dev_um,
-        typename dual_view_type::t_host_um>::type
-    getLocalView () const {
-      return this->MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>();
-    }
+    typename dual_view_type::t_host_const_um getHostLocalView (Access::ReadOnlyStruct) const override { return getHostLocalView(Access::ReadWrite);}
 
-    typename dual_view_type::t_host_um getHostLocalView () const {
+    typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const override { return getDeviceLocalView(Access::ReadWrite);}
+
+    typename dual_view_type::t_host_um getHostLocalView (Access::OverwriteAllStruct) const override { return getHostLocalView(Access::ReadWrite);}
+
+    typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const override { return getDeviceLocalView(Access::ReadWrite);}
+
+    typename dual_view_type::t_host_um getHostLocalView (Access::ReadWriteStruct) const override {
       typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
                     Kokkos::LayoutLeft,
                     typename dual_view_type::t_host::device_type ,
@@ -694,8 +645,8 @@ namespace Xpetra {
       return ret;
     }
 
-    typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      throw std::runtime_error("Epetra does not support device views!");
+    typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const override {
+      throw std::runtime_error("Epetra does not support device views! in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
 #ifndef __NVCC__ //prevent nvcc warning
       typename dual_view_type::t_dev_um ret;
 #endif
@@ -1062,61 +1013,6 @@ namespace Xpetra {
       Teuchos::ScalarTraits< Scalar >::seedrandom(seed);
       vec_->SetSeed(seed);
     }
-
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
-
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
-    ///          with the Xpetra::EpetraMultiVector object. To write a code which is independent
-    ///          from the underlying linear algebra package you should always use the abstract class,
-    ///          i.e. Xpetra::MultiVector!
-    ///
-    /// \warning Be aware that the view on the multivector data is non-persisting, i.e.
-    ///          only valid as long as the multivector does not run of scope!
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<
-        typename dual_view_type::t_dev_um::execution_space::memory_space,
-        typename TargetDeviceType::memory_space>::value,
-        typename dual_view_type::t_dev_um,
-        typename dual_view_type::t_host_um>::type
-    getLocalView () const {
-      return this->MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>();
-    }
-
-    typename dual_view_type::t_host_um getHostLocalView () const {
-      typedef Kokkos::View< typename dual_view_type::t_host::data_type ,
-                    Kokkos::LayoutLeft,
-                    typename dual_view_type::t_host::device_type ,
-                    Kokkos::MemoryUnmanaged> epetra_view_type;
-
-      // access Epetra multivector data
-      double* data = NULL;
-      int myLDA;
-      vec_->ExtractView(&data, &myLDA);
-      int localLength = vec_->MyLength();
-      int numVectors  = getNumVectors();
-
-      // create view
-      epetra_view_type test = epetra_view_type(data, localLength, numVectors);
-      typename dual_view_type::t_host_um ret = subview(test, Kokkos::ALL(), Kokkos::ALL());
-
-      return ret;
-    }
-
-    typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      throw std::runtime_error("Epetra does not support device views!");
-#ifndef __NVCC__ //prevent nvcc warning
-      typename dual_view_type::t_dev_um ret;
-#endif
-      TEUCHOS_UNREACHABLE_RETURN(ret);
-    }
-
-#endif
 
     //@}
 

@@ -84,7 +84,10 @@
 #cmakedefine HAVE_IFPACK2_XPETRA
 
 /* Define if we have Zoltan2 */
-#cmakedefine HAVE_IFPACK2_ZOLTAN2
+#cmakedefine HAVE_IFPACK2_ZOLTAN2CORE
+#ifdef HAVE_IFPACK2_ZOLTAN2CORE
+#  define HAVE_IFPACK2_ZOLTAN2
+#endif
 
 /* Define if we have ShyLU/HTS */
 #cmakedefine HAVE_IFPACK2_SHYLU_NODEHTS
@@ -104,6 +107,10 @@
 
 /* Define if we have the QD extended-precision TPL */
 #cmakedefine HAVE_IFPACK2_QD
+
+/* Define if want to build with hypre enabled */
+#cmakedefine HAVE_IFPACK2_HYPRE
+
 
 /* Define if we have ShyLU FastILU (an inner preconditioner for Additive Schwarz) */
 #cmakedefine HAVE_IFPACK2_SHYLU_NODEFASTILU

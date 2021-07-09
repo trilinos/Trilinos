@@ -62,7 +62,7 @@
 #include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
 #include "Intrepid2_CubatureDirectTetDefault.hpp"
-#include "Intrepid2_CubatureTensorPyr.hpp"
+//#include "Intrepid2_CubatureTensorPyr.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -83,7 +83,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     };                                                                  \
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int Integration_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -97,6 +97,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -119,17 +120,16 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
-      typedef CubatureDirectLineGauss        <DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
-      typedef CubatureDirectLineGaussJacobi20<DeviceSpaceType,pointValueType,weightValueType> CubatureLineJacobiType;
-      typedef CubatureDirectTriDefault       <DeviceSpaceType,pointValueType,weightValueType> CubatureTriType;
-      typedef CubatureDirectTetDefault       <DeviceSpaceType,pointValueType,weightValueType> CubatureTetType;
-      typedef CubatureTensor                 <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
-      typedef CubatureTensorPyr              <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorPyrType;
+      typedef CubatureDirectLineGauss        <DeviceType,pointValueType,weightValueType> CubatureLineType;
+      typedef CubatureDirectTriDefault       <DeviceType,pointValueType,weightValueType> CubatureTriType;
+      typedef CubatureDirectTetDefault       <DeviceType,pointValueType,weightValueType> CubatureTetType;
+      typedef CubatureTensor                 <DeviceType,pointValueType,weightValueType> CubatureTensorType;
+      //typedef CubatureTensorPyr              <DeviceType,pointValueType,weightValueType> CubatureTensorPyrType;
 
       const auto tol = 100.0 * tolerence();
 
@@ -391,46 +391,27 @@ namespace Intrepid2 {
             }
         }
         
-        *outStream << "-> Pyramid testing: over-integration by 2 (due to duffy transformation) \n\n";
-        {
-          for (auto deg=0;deg<=Parameters::MaxCubatureDegreePyr;++deg) {
-            const auto xy_line = CubatureLineType(deg);
-            const auto z_line  = CubatureLineJacobiType(deg);
-            CubatureTensorPyrType cub( xy_line, xy_line, z_line );
-            cub.getCubature(cubPoints, cubWeights);
-            const auto npts = cub.getNumPoints();
+        // *outStream << "-> Pyramid testing: over-integration by 2 (due to duffy transformation) \n\n";
+        // {
+        //   for (auto deg=0;deg<=Parameters::MaxCubatureDegreePyr;++deg) {
+        //     const auto xy_line = CubatureLineType(deg);
+        //     const auto z_line  = CubatureLineJacobiType(deg);
+        //     CubatureTensorPyrType cub( xy_line, xy_line, z_line );
+        //     cub.getCubature(cubPoints, cubWeights);
+        //     const auto npts = cub.getNumPoints();
             
-            const auto testVol = computeRefVolume(npts, cubWeights);
-            const auto refVol  = 4.0/3.0;
-            if (std::abs(testVol - refVol) > tol) {              
-              *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
-                std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+        //     const auto testVol = computeRefVolume(npts, cubWeights);
+        //     const auto refVol  = 4.0/3.0;
+        //     if (std::abs(testVol - refVol) > tol) {              
+        //       *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
+        //         std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
               
-              ++errorFlag;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            }
-          }
-        }
-
-        *outStream << "-> Hypercube testing\n\n";
-        // later.... refVol = 32
-        // for (int deg=0; deg<=20; deg++) {
-        //   Teuchos::RCP<CubatureLineType > lineCub = Teuchos::rcp(new CubatureLineType(deg));
-        //   CubatureTensorType hypercubeCub(lineCub, 5);
-        //   int numCubPoints = hypercubeCub.getNumPoints();
-        //   FieldContainer<DeviceSpaceType> cubPoints( numCubPoints, hypercubeCub.getDimension() );
-        //   FieldContainer<DeviceSpaceType> cubWeights( numCubPoints );
-        //   hypercubeCub.getCubature(cubPoints, cubWeights);
-        //   testVol = 0;
-        //   for (int i=0; i<numCubPoints; i++)
-        //     testVol += cubWeights(i);
-        //   *outStream << std::setw(30) << "5-D Hypercube volume --> " << std::setw(10) << std::scientific << testVol <<
-        //     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[8]) << "\n";
-        //   if (std::abs(testVol - volumeList[8])/std::abs(testVol) > tol) {
-        //     errorFlag = 1;
-        //     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        //       ++errorFlag;
+        //       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        //     }
         //   }
         // }
+
       }  catch (std::logic_error &err) {
         *outStream << err.what() << "\n";
         errorFlag = -1;

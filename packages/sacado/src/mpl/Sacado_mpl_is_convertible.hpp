@@ -30,6 +30,19 @@
 #ifndef SACADO_MPL_IS_CONVERTIBLE_HPP
 #define SACADO_MPL_IS_CONVERTIBLE_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef HAVE_SACADO_CXX11
+
+#include <type_traits>
+namespace Sacado {
+  namespace mpl {
+    using std::is_convertible;
+  }
+}
+
+#else
+
 namespace Sacado {
 
   namespace mpl {
@@ -68,5 +81,7 @@ namespace Sacado {
   }
 
 }
+
+#endif
 
 #endif // SACADO_MPL_IS_CONVERTIBLE_HPP

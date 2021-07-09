@@ -1,35 +1,8 @@
-// Copyright (c) 2014-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-//       notice, this list of conditions and the following disclaimer.
-//
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
-//
-//     * Neither the name of NTESS nor the names of its
-//       contributors may be used to endorse or promote products derived
-//       from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+// See packages/seacas/LICENSE for details
 
 #include "apr_builtin.h"
 
@@ -522,6 +495,13 @@ namespace SEAMS {
   double do_cols(const array *arr) { return arr->cols; }
 
   // --------------------------STRING FUNCTIONS------------------------
+  const char *do_version()
+  {
+    char *tmp;
+    new_string(SEAMS::Aprepro::version().c_str(), &tmp);
+    return tmp;
+  }
+
   const char *do_get_date()
   {
     char *       tmp;
@@ -602,7 +582,7 @@ namespace SEAMS {
 
     SEAMS::symrec *format;
     format = aprepro->getsym("_FORMAT");
-    (void)sprintf(tmpstr, format->value.svar.c_str(), x);
+    sprintf(tmpstr, format->value.svar.c_str(), x);
     new_string(tmpstr, &tmp);
     return (tmp);
   }
@@ -809,7 +789,7 @@ namespace SEAMS {
       return (tmp);
     }
 
-    (void)sprintf(tmpstr, "%d", static_cast<int>(intval));
+    sprintf(tmpstr, "%d", static_cast<int>(intval));
     new_string(tmpstr, &tmp);
     return (tmp);
   }
@@ -967,13 +947,13 @@ namespace SEAMS {
 
   array *do_make_array(double rows, double cols)
   {
-    auto array_data = new array(rows, cols);
+    auto array_data = aprepro->make_array(rows, cols);
     return array_data;
   }
 
   array *do_make_array_init(double rows, double cols, double init)
   {
-    auto array_data = new array(rows, cols);
+    auto array_data = aprepro->make_array(rows, cols);
     int  isize      = (int)rows * int(cols);
     for (int i = 0; i < isize; i++) {
       array_data->data[i] = init;
@@ -985,7 +965,7 @@ namespace SEAMS {
   {
     int  i;
     int  isize      = size;
-    auto array_data = new array(size, size);
+    auto array_data = aprepro->make_array(size, size);
 
     for (i = 0; i < isize; i++) {
       array_data->data[i * isize + i] = 1.0;
@@ -998,7 +978,7 @@ namespace SEAMS {
     // Create 1D array with `count` rows and 1 column.
     // Values are linearly spaced from `init` to `final`
     int  isize      = count;
-    auto array_data = new array(count, 1);
+    auto array_data = aprepro->make_array(count, 1);
 
     double inc = (final - init) / (count - 1);
     for (int i = 0; i < isize; i++) {
@@ -1010,7 +990,7 @@ namespace SEAMS {
   array *do_transpose(const array *a)
   {
     int  i, j;
-    auto array_data = new array(a->cols, a->rows);
+    auto array_data = aprepro->make_array(a->cols, a->rows);
 
     for (i = 0; i < a->rows; i++) {
       for (j = 0; j < a->cols; j++) {
@@ -1042,7 +1022,7 @@ namespace SEAMS {
         }
       }
 
-      auto array_data = new array(rows - rows_to_skip, cols);
+      auto array_data = aprepro->make_array(rows - rows_to_skip, cols);
 
       // Read file again storing entries in array_data->data
       file->clear();
@@ -1089,7 +1069,7 @@ namespace SEAMS {
         }
       }
 
-      auto array_data = new array(rows, cols);
+      auto array_data = aprepro->make_array(rows, cols);
 
       // Read file again storing entries in array_data->data
       file->clear();
@@ -1121,7 +1101,7 @@ namespace SEAMS {
   array *do_array_from_string(const char *string, const char *delm)
   {
     auto tokens     = SEAMS::tokenize(string, delm);
-    auto array_data = new array(tokens.size(), 1);
+    auto array_data = aprepro->make_array(tokens.size(), 1);
 
     int idx = 0;
     for (const auto &token : tokens) {

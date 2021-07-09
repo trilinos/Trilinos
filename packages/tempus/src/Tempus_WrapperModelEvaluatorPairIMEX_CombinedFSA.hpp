@@ -9,6 +9,7 @@
 #ifndef Tempus_ModelEvaluatorPairIMEX_CombinedFSA_hpp
 #define Tempus_ModelEvaluatorPairIMEX_CombinedFSA_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
 #include "Tempus_CombinedForwardSensitivityModelEvaluator.hpp"

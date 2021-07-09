@@ -59,16 +59,16 @@
  // Enable supernodal sptrsv
  #include "KokkosBlas2_gemv.hpp"
  #include "KokkosBlas2_team_gemv.hpp"
+ #include "KokkosBlas3_trsm.hpp"
  #include "KokkosSparse_spmv.hpp"
 
  #include "KokkosBatched_Util.hpp"
 
- #include "KokkosBatched_Trsv_Decl.hpp"
- #include "KokkosBatched_Trsv_Serial_Impl.hpp"
-
  #include "KokkosBatched_Gemv_Decl.hpp"
  #include "KokkosBatched_Gemv_Team_Impl.hpp"
  #include "KokkosBatched_Gemv_Serial_Impl.hpp"
+
+ #include "KokkosBatched_Trsm_Team_Impl.hpp"
 #endif
 
 //#define SERIAL_FOR_LOOP
@@ -604,24 +604,27 @@ struct LowerTriLvlSchedTP2SolverFunctor
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV)
 // -----------------------------------------------------------
 // Helper functors for Lower-triangular solve with SpMV 
-template <class LHSType, class NGBLType>
+template <class TriSolveHandle, class LHSType, class NGBLType>
 struct SparseTriSupernodalSpMVFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  //using execution_space = typename LHSType::execution_space;
+  //using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type = Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
 
   using scalar_t = typename LHSType::non_const_value_type;
 
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   int flag;
   long node_count;
   NGBLType nodes_grouped_by_level;
 
   const int *supercols;
+  const int *workoffset;
 
   LHSType X;
   work_view_t work;
@@ -631,10 +634,11 @@ struct SparseTriSupernodalSpMVFunctor
                                  long  node_count_,
                                  const NGBLType &nodes_grouped_by_level_,
                                  const int *supercols_,
+                                 const int *workoffset_,
                                  LHSType &X_,
                                  work_view_t work_) :
     flag(flag_), node_count(node_count_), nodes_grouped_by_level(nodes_grouped_by_level_), supercols(supercols_),
-    X(X_), work(work_) {
+    workoffset(workoffset_), X(X_), work(work_) {
   }
 
   // operator
@@ -649,23 +653,30 @@ struct SparseTriSupernodalSpMVFunctor
 
     // copy vector elements for the diagonal to input vector (work)
     // and zero out the corresponding elements in output (X)
+    int w1 = workoffset[s];
     int j1 = supercols[s];
-    int j2 = supercols[s+1];
-    int nscol = j2 - j1 ;       // number of columns in the s-th supernode column
-    if (flag == -1) {
+    // number of columns in the s-th supernode column
+    int nscol = supercols[s+1] - j1 ;
+
+    if (flag == -2) {
+      // copy X to work
+      for (int j = team_rank; j < nscol; j += team_size) {
+        work (w1 + j) = X (j1 + j);
+      }    
+    } else if (flag == -1) {
       // copy work to X
       for (int j = team_rank; j < nscol; j += team_size) {
-        X (j1 + j) = work (j1 + j);
+        X (j1 + j) = work (w1 + j);
       }
     } else if (flag == 1) {
       for (int j = team_rank; j < nscol; j += team_size) {
-        work (j1 + j) = X (j1 + j);
+        work (w1 + j) = X (j1 + j);
         X (j1 + j) = zero;
       }
     } else {
       // reinitialize work to zero
       for (int j = team_rank; j < nscol; j += team_size) {
-        work (j1 + j) = zero;
+        work (w1 + j) = zero;
       }
     }
     team.team_barrier ();
@@ -675,11 +686,11 @@ struct SparseTriSupernodalSpMVFunctor
 
 // -----------------------------------------------------------
 // Functor for Lower-triangular solve
-template <class ColptrView, class RowindType, class ValuesType, class LHSType, class NGBLType>
+template <class TriSolveHandle, class ColptrView, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct LowerTriSupernodalFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type =  Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
@@ -687,11 +698,13 @@ struct LowerTriSupernodalFunctor
   using scalar_t = typename ValuesType::non_const_value_type;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   using range_type = Kokkos::pair<int, int>;
 
-  bool invert_offdiagonal;
+  const bool unit_diagonal;
+  const bool invert_diagonal;
+  const bool invert_offdiagonal;
   const int *supercols;
   ColptrView colptr;
   RowindType rowind;
@@ -709,10 +722,11 @@ struct LowerTriSupernodalFunctor
   NGBLType nodes_grouped_by_level;
 
   long node_count;
-  long node_groups;
 
   // constructor
   LowerTriSupernodalFunctor (// supernode info
+                             const bool unit_diagonal_,
+                             const bool invert_diagonal_,
                              const bool invert_offdiagonal_,
                              const int *supercols_,
                              // L in CSC
@@ -730,13 +744,12 @@ struct LowerTriSupernodalFunctor
                              integer_view_t &work_offset_,
                              //
                              const NGBLType &nodes_grouped_by_level_,
-                             long  node_count_,
-                             long  node_groups_ = 0) :
-    invert_offdiagonal(invert_offdiagonal_), supercols(supercols_),
-    colptr(colptr_), rowind(rowind_), values(values_),
+                             long  node_count_) :
+    unit_diagonal(unit_diagonal_), invert_diagonal(invert_diagonal_), invert_offdiagonal(invert_offdiagonal_),
+    supercols(supercols_), colptr(colptr_), rowind(rowind_), values(values_),
     level(level_), kernel_type(kernel_type_), diag_kernel_type(diag_kernel_type_),
     X(X_), work(work_), work_offset(work_offset_),
-    nodes_grouped_by_level(nodes_grouped_by_level_), node_count(node_count_), node_groups(node_groups_) {
+    nodes_grouped_by_level(nodes_grouped_by_level_), node_count(node_count_) {
   }
 
   // operator
@@ -754,30 +767,29 @@ struct LowerTriSupernodalFunctor
     auto s = nodes_grouped_by_level (node_count + league_rank);
 
     // supernodal column size
-    int j1 = supercols[s];
-    int j2 = supercols[s+1];
-    int nscol = j2 - j1 ;       // number of columns in the s-th supernode column
-
-    int i1 = colptr (j1);
-    int i2 = colptr (j1+1);
-    int nsrow  = i2 - i1;       // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-    int nsrow2 = nsrow - nscol; // "total" number of rows in all the off-diagonal supernodes
+    const int j1 = supercols[s];
+    const int j2 = supercols[s+1];
+    // > number of columns in the s-th supernode column
+    const int nscol = j2 - j1;
+    // "total" number of rows in all the supernodes (diagonal+off-diagonal)
+    const int i1 = colptr (j1);
+    const int nsrow = colptr (j1+1) - i1;
 
     // create a view for the s-th supernocal column
     scalar_t *dataL = const_cast<scalar_t*> (values.data ());
     Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> viewL (&dataL[i1], nsrow, nscol);
 
     // extract part of the solution, corresponding to the diagonal block
-    auto Xj = subview (X, range_type(j1, j2));
+    auto Xj = Kokkos::subview (X, range_type(j1, j2));
 
     // workspace
-    int workoffset = work_offset (s);
-    auto Z = subview (work, range_type(workoffset+nscol, workoffset+nsrow)); 
+    const int workoffset = work_offset (s);
+    auto Z = Kokkos::subview (work, range_type(workoffset+nscol, workoffset+nsrow));
 
     if (diag_kernel_type (level) != 3) { // not a device-level TRSM-solve
       if (invert_offdiagonal) {
         // combined TRSM solve with diagonal + GEMV update with off-diagonal
-        auto Y = subview (work, range_type(workoffset, workoffset+nsrow));  // needed for gemv instead of trmv/trsv
+        auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nsrow));  // needed for gemv instead of trmv/trsv
         auto Ljj = Kokkos::subview (viewL, range_type (0, nsrow), Kokkos::ALL ());
         KokkosBatched::TeamGemv<member_type,
                                 KokkosBatched::Trans::NoTranspose,
@@ -792,17 +804,38 @@ struct LowerTriSupernodalFunctor
         /* TRSM with diagonal block */
         // extract diagonal and off-diagonal blocks of L
         auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ());
-        // workspace
-        auto Y = subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
-        for (int ii = team_rank; ii < nscol; ii += team_size) {
-          Y(ii) = Xj(ii);
+        if (invert_diagonal) {
+          // workspace
+          auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
+          for (int ii = team_rank; ii < nscol; ii += team_size) {
+            Y(ii) = Xj(ii);
+          }
+          team.team_barrier ();
+          // calling team-level "Unblocked" gemv on small-size diagonal in KokkosBatched
+          KokkosBatched::TeamGemv<member_type,
+                                  KokkosBatched::Trans::NoTranspose,
+                                  KokkosBatched::Algo::Gemv::Unblocked>
+            ::invoke(team, one, Ljj, Y, zero, Xj);
+        } else {
+          Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
+          if (unit_diagonal) {
+            KokkosBatched::TeamTrsm<member_type,
+                                    KokkosBatched::Side::Left,
+                                    KokkosBatched::Uplo::Lower,
+                                    KokkosBatched::Trans::NoTranspose,
+                                    KokkosBatched::Diag::Unit,
+                                    KokkosBatched::Algo::Trsm::Unblocked>
+              ::invoke(team, one, Ljj, Xjj);
+          } else {
+            KokkosBatched::TeamTrsm<member_type,
+                                    KokkosBatched::Side::Left,
+                                    KokkosBatched::Uplo::Lower,
+                                    KokkosBatched::Trans::NoTranspose,
+                                    KokkosBatched::Diag::NonUnit,
+                                    KokkosBatched::Algo::Trsm::Unblocked>
+              ::invoke(team, one, Ljj, Xjj);
+          }
         }
-        team.team_barrier ();
-        // calling team-level "Unblocked" gemv on small-size diagonal in KokkosBatched
-        KokkosBatched::TeamGemv<member_type,
-                                KokkosBatched::Trans::NoTranspose,
-                                KokkosBatched::Algo::Gemv::Unblocked>
-          ::invoke(team, one, Ljj, Y, zero, Xj);
         team.team_barrier ();
 
         /* GEMM to update with off diagonal blocks */
@@ -816,10 +849,11 @@ struct LowerTriSupernodalFunctor
     }
 
     /* scatter vectors back into X */
-    int ps2 = i1 + nscol ;     // offset into rowind 
+    int i2 = i1 + nscol;   // offset into rowind 
+    int nsrow2 = nsrow - nscol;   // "total" number of rows in all the off-diagonal supernodes
     Kokkos::View<scalar_t*, memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::Atomic> > Xatomic(X.data(), X.extent(0));
     for (int ii = team_rank; ii < nsrow2; ii += team_size) {
-      int i = rowind (ps2 + ii);
+      int i = rowind (i2 + ii);
       Xatomic (i) -= Z (ii);
     }
     team.team_barrier();
@@ -829,11 +863,11 @@ struct LowerTriSupernodalFunctor
 
 // -----------------------------------------------------------
 // Functor for Upper-triangular solve in CSR
-template <class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
+template <class TriSolveHandle, class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct UpperTriSupernodalFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type = Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
@@ -841,13 +875,14 @@ struct UpperTriSupernodalFunctor
   using scalar_t = typename ValuesType::non_const_value_type;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   using SupernodeView = typename Kokkos::View<scalar_t**, Kokkos::LayoutLeft,
                                               memory_space, Kokkos::MemoryUnmanaged>;
 
   using range_type = Kokkos::pair<int, int>;
 
+  bool invert_diagonal;
   const int *supercols;
   ColptrType colptr;
   RowindType rowind;
@@ -865,10 +900,10 @@ struct UpperTriSupernodalFunctor
   NGBLType nodes_grouped_by_level;
 
   long node_count;
-  long node_groups;
 
   // constructor
   UpperTriSupernodalFunctor (// supernode info
+                             bool invert_diagonal_,
                              const int *supercols_,
                              // U in CSR
                              const ColptrType &colptr_,
@@ -885,13 +920,12 @@ struct UpperTriSupernodalFunctor
                              integer_view_t &work_offset_,
                              //
                              const NGBLType &nodes_grouped_by_level_,
-                             long  node_count_,
-                             long  node_groups_ = 0) :
-    supercols(supercols_),
+                             long  node_count_) :
+    invert_diagonal(invert_diagonal_), supercols(supercols_),
     colptr(colptr_), rowind(rowind_), values(values_),
     level(level_), kernel_type(kernel_type_), diag_kernel_type(diag_kernel_type_),
     X(X_), work(work_), work_offset(work_offset_),
-    nodes_grouped_by_level(nodes_grouped_by_level_), node_count(node_count_), node_groups(node_groups_) {
+    nodes_grouped_by_level(nodes_grouped_by_level_), node_count(node_count_) {
   }
 
   // operator
@@ -909,64 +943,71 @@ struct UpperTriSupernodalFunctor
 
     auto s = nodes_grouped_by_level (node_count + league_rank);
 
+    // number of columns in the s-th supernode column
     int j1 = supercols[s];
     int j2 = supercols[s+1];
-    int nscol = j2 - j1;         // number of columns in the s-th supernode column
-
+    int nscol = j2 - j1;
+    // "total" number of rows in all the supernodes (diagonal+off-diagonal)
     int i1 = colptr (j1);
-    int i2 = colptr (j1+1);
-    int nsrow = i2 - i1 ;        // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-    int nsrow2 = nsrow - nscol;  // "total" number of rows in all the off-diagonal supernodes
+    int nsrow = colptr (j1+1) - i1 ;
 
     // create a view of the s-th supernocal row of U
     scalar_t *dataU = const_cast<scalar_t*> (values.data ());
     SupernodeView viewU (&dataU[i1], nsrow, nscol);
 
     // extract part of solution, corresponding to the diagonal block U(s, s)
-    auto Xj = subview (X, range_type(j1, j2));
+    auto Xj = Kokkos::subview (X, range_type(j1, j2));
 
     // workspaces
     int workoffset = work_offset (s);
 
-    if (nsrow2 > 0) {
-      /* gather vector into Z */
-      int ps2 = i1 + nscol;     // offset into rowind 
-      auto Z = subview(work, range_type(workoffset+nscol, workoffset+nsrow));  // needed with gemv for update&scatter
-      for (int ii = team_rank; ii < nsrow2 ; ii += team_size) {
-        int i = rowind (ps2 + ii);
-        Z (ii) = X (i);
-      }
-      team.team_barrier();
-      /* GEMM to update with off diagonal blocks, Xj = -Uij^T * Z */
-      if (diag_kernel_type (level) != 3) {
-        // not device-level GEMV-udpate
-        auto Uij = Kokkos::subview (viewU, range_type (nscol, nsrow), Kokkos::ALL ());
-        KokkosBatched::TeamGemv<member_type,
-                                KokkosBatched::Trans::Transpose,
-                                KokkosBatched::Algo::Gemv::Unblocked>
-          ::invoke(team, -one, Uij, Z, one, Xj);
-        team.team_barrier();
-      }
+    // "total" number of rows in all the off-diagonal supernodes
+    int nsrow2 = nsrow - nscol;
+    /* gather vector into Z */
+    int i2 = i1 + nscol;     // offset into rowind 
+    auto Z = Kokkos::subview(work, range_type(workoffset+nscol, workoffset+nsrow));  // needed with gemv for update&scatter
+    for (int ii = team_rank; ii < nsrow2 ; ii += team_size) {
+      int i = rowind (i2 + ii);
+      Z (ii) = X (i);
     }
-
-    /* TRSM with diagonal block */
+    team.team_barrier();
+    /* GEMM to update with off diagonal blocks, Xj = -Uij^T * Z */
     if (diag_kernel_type (level) != 3) {
-      // not device-level TRSM-solve
-      // extract diagonal and off-diagonal blocks of U
-      auto Ujj = Kokkos::subview (viewU, range_type (0, nscol), Kokkos::ALL ());
-
-      // workspace
-      auto Y = subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
-      for (int ii = team_rank; ii < nscol; ii += team_size) {
-        Y (ii) = Xj (ii);
-      }
-      team.team_barrier();
-
-      // caling team-level kernel in KokkosBatched on a small-size diagonal
+      // not device-level GEMV-udpate
+      auto Uij = Kokkos::subview (viewU, range_type (nscol, nsrow), Kokkos::ALL ());
       KokkosBatched::TeamGemv<member_type,
                               KokkosBatched::Trans::Transpose,
                               KokkosBatched::Algo::Gemv::Unblocked>
-        ::invoke(team, one, Ujj, Y, zero, Xj);
+        ::invoke(team, -one, Uij, Z, one, Xj);
+      team.team_barrier();
+
+      /* TRSM with diagonal block */
+      // extract diagonal and off-diagonal blocks of U
+      auto Ujj = Kokkos::subview (viewU, range_type (0, nscol), Kokkos::ALL ());
+
+      if (invert_diagonal) {
+        // workspace
+        auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
+        for (int ii = team_rank; ii < nscol; ii += team_size) {
+          Y (ii) = Xj (ii);
+        }
+        team.team_barrier();
+
+        // caling team-level kernel in KokkosBatched on a small-size diagonal
+        KokkosBatched::TeamGemv<member_type,
+                                KokkosBatched::Trans::Transpose,
+                                KokkosBatched::Algo::Gemv::Unblocked>
+          ::invoke(team, one, Ujj, Y, zero, Xj);
+      } else {
+        Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
+        KokkosBatched::TeamTrsm<member_type,
+                                KokkosBatched::Side::Left,
+                                KokkosBatched::Uplo::Lower,
+                                KokkosBatched::Trans::Transpose,
+                                KokkosBatched::Diag::NonUnit,
+                                KokkosBatched::Algo::Trsm::Unblocked>
+          ::invoke(team, one, Ujj, Xjj);
+      }
       team.team_barrier();
     }
   }
@@ -975,11 +1016,11 @@ struct UpperTriSupernodalFunctor
 
 // -----------------------------------------------------------
 // Functor for Upper-triangular solve in CSC
-template <class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
+template <class TriSolveHandle, class ColptrType, class RowindType, class ValuesType, class LHSType, class NGBLType>
 struct UpperTriTranSupernodalFunctor
 {
-  using execution_space = typename LHSType::execution_space;
-  using memory_space = typename execution_space::memory_space;
+  using execution_space = typename TriSolveHandle::HandleExecSpace;
+  using memory_space = typename TriSolveHandle::HandleTempMemorySpace;
 
   using policy_type = Kokkos::TeamPolicy<execution_space>;
   using member_type = typename policy_type::member_type;
@@ -987,10 +1028,11 @@ struct UpperTriTranSupernodalFunctor
   using scalar_t = typename ValuesType::non_const_value_type;
 
   using integer_view_t = Kokkos::View<int*, memory_space>;
-  using work_view_t = typename Kokkos::View<scalar_t*, memory_space>;
+  using work_view_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, memory_space>>;
 
   using range_type =  Kokkos::pair<int, int>;
 
+  const bool invert_diagonal;
   const bool invert_offdiagonal;
   const int *supercols;
   ColptrType colptr;
@@ -1009,34 +1051,34 @@ struct UpperTriTranSupernodalFunctor
   NGBLType nodes_grouped_by_level;
 
   long node_count;
-  long node_groups;
 
   // constructor
   UpperTriTranSupernodalFunctor (// supernode info
+                                 const bool invert_diagonal_,
                                  const bool invert_offdiagonal_,
                                  const int *supercols_,
+
                                  // U in CSC
                                  const ColptrType &colptr_,
                                  const RowindType &rowind_,
                                  const ValuesType &values_,
                                  // options to pick kernel type
-                                 int level_,
-                                 integer_view_t &kernel_type_,
-                                 integer_view_t &diag_kernel_type_,
+                                 const int level_,
+                                 const integer_view_t &kernel_type_,
+                                 const integer_view_t &diag_kernel_type_,
                                  // right-hand-side (input), solution (output)
-                                 LHSType &X_,
+                                 const LHSType &X_,
                                  // workspace
-                                 work_view_t &work_,
-                                 integer_view_t &work_offset_,
+                                 const work_view_t &work_,
+                                 const integer_view_t &work_offset_,
                                  //
                                  const NGBLType &nodes_grouped_by_level_,
-                                 long  node_count_,
-                                 long  node_groups_ = 0) :
-    invert_offdiagonal(invert_offdiagonal_), supercols(supercols_),
-    colptr(colptr_), rowind(rowind_), values(values_),
+                                 const long  node_count_) :
+    invert_diagonal(invert_diagonal_), invert_offdiagonal(invert_offdiagonal_),
+    supercols(supercols_), colptr(colptr_), rowind(rowind_), values(values_),
     level(level_), kernel_type(kernel_type_), diag_kernel_type(diag_kernel_type_),
     X(X_), work(work_), work_offset(work_offset_),
-    nodes_grouped_by_level(nodes_grouped_by_level_), node_count(node_count_), node_groups(node_groups_) {
+    nodes_grouped_by_level(nodes_grouped_by_level_), node_count(node_count_) {
   }
 
   // operator
@@ -1054,21 +1096,22 @@ struct UpperTriTranSupernodalFunctor
 
     auto s = nodes_grouped_by_level (node_count + league_rank);
 
-    int j1 = supercols[s];
-    int j2 = supercols[s+1];
-    int nscol = j2 - j1;         // number of columns in the s-th supernode column
-
-    int i1 = colptr (j1);
-    int i2 = colptr (j1+1);
-    int nsrow = i2 - i1 ;        // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-    int nsrow2 = nsrow - nscol;  // "total" number of rows in all the off-diagonal supernodes
+    // number of columns in the s-th supernode column
+    const int j1 = supercols[s];
+    const int j2 = supercols[s+1];
+    const int nscol = j2 - j1;
+    // "total" number of rows in all the supernodes (diagonal+off-diagonal)
+    const int i1 = colptr (j1);
+    const int nsrow = colptr (j1+1) - i1 ;
+    // "total" number of rows in all the off-diagonal supernodes
+    const int nsrow2 = nsrow - nscol;
 
     // create a view of the s-th supernocal column of U
     scalar_t *dataU = const_cast<scalar_t*> (values.data ());
     Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> viewU (&dataU[i1], nsrow, nscol);
 
     // extract part of solution, corresponding to the diagonal block U(s, s)
-    auto Xj = subview (X, range_type(j1, j2));
+    auto Xj = Kokkos::subview (X, range_type(j1, j2));
 
     // workspaces
     int workoffset = work_offset (s);
@@ -1076,10 +1119,9 @@ struct UpperTriTranSupernodalFunctor
     /* TRSM with diagonal block */
     if (diag_kernel_type (level) != 3) {
       // not device-level TRSM-solve
-      team.team_barrier();
       if (invert_offdiagonal) {
         // extract diagonal + off-diagonal blocks of U
-        auto Y = subview(work, range_type(workoffset, workoffset+nsrow));  // needed with gemv for update&scatter
+        auto Y = Kokkos::subview(work, range_type(workoffset, workoffset+nsrow));  // needed with gemv for update&scatter
         auto Uij = Kokkos::subview (viewU, range_type (0, nsrow), Kokkos::ALL ());
         KokkosBatched::TeamGemv<member_type,
                                 KokkosBatched::Trans::NoTranspose,
@@ -1092,25 +1134,35 @@ struct UpperTriTranSupernodalFunctor
         }
       } else {
         // extract diagonal block of U (stored on top)
-        auto Y = subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
         auto Ujj = Kokkos::subview (viewU, range_type (0, nscol), Kokkos::ALL ());
-        for (int ii = team_rank; ii < nscol; ii += team_size) {
-          Y (ii) = Xj (ii);
+        if (invert_diagonal) {
+          auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
+          for (int ii = team_rank; ii < nscol; ii += team_size) {
+            Y (ii) = Xj (ii);
+          }
+          team.team_barrier();
+          KokkosBatched::TeamGemv<member_type,
+                                  KokkosBatched::Trans::NoTranspose,
+                                  KokkosBatched::Algo::Gemv::Unblocked>
+            ::invoke(team, one, Ujj, Y, zero, Xj);
+        } else {
+          Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
+          KokkosBatched::TeamTrsm<member_type,
+                                  KokkosBatched::Side::Left,
+                                  KokkosBatched::Uplo::Upper,
+                                  KokkosBatched::Trans::NoTranspose,
+                                  KokkosBatched::Diag::NonUnit,
+                                  KokkosBatched::Algo::Trsm::Unblocked>
+            ::invoke(team, one, Ujj, Xjj);
         }
-        team.team_barrier();
-        KokkosBatched::TeamGemv<member_type,
-                                KokkosBatched::Trans::NoTranspose,
-                                KokkosBatched::Algo::Gemv::Unblocked>
-          ::invoke(team, one, Ujj, Y, zero, Xj);
       }
       team.team_barrier();
     }
-
     if (nsrow2 > 0) {
       /* GEMM to update off diagonal blocks, Z = Uij * Xj */
-      auto Z = subview(work, range_type(workoffset+nscol, workoffset+nsrow));  // needed with gemv for update&scatter
+      auto Z = Kokkos::subview(work, range_type(workoffset+nscol, workoffset+nsrow));
       if (!invert_offdiagonal && diag_kernel_type (level) != 3) {
-        // not device-level GEMV-udpate
+        // not device-level TRSM-solve
         auto Uij = Kokkos::subview (viewU, range_type (nscol, nsrow), Kokkos::ALL ());
         KokkosBatched::TeamGemv<member_type,
                                 KokkosBatched::Trans::NoTranspose,
@@ -1118,11 +1170,12 @@ struct UpperTriTranSupernodalFunctor
           ::invoke(team, one, Uij, Xj, zero, Z);
         team.team_barrier();
       }
+
       /* scatter vector into Z */
-      int ps2 = i1 + nscol;     // offset into rowind 
+      int i2 = i1 + nscol;     // offset into rowind 
       Kokkos::View<scalar_t*, memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::Atomic> > Xatomic(X.data(), X.extent(0));
       for (int ii = team_rank; ii < nsrow2 ; ii += team_size) {
-        int i = rowind (ps2 + ii);
+        int i = rowind (i2 + ii);
         Xatomic (i) -= Z (ii);
       }
       team.team_barrier();
@@ -2411,6 +2464,23 @@ struct ReturnRangePolicyType<Kokkos::Cuda> {
   }
 };
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+template <>
+struct ReturnRangePolicyType<Kokkos::Experimental::HIP> {
+  using PolicyType = Kokkos::RangePolicy<Kokkos::Experimental::HIP>;
+
+  static inline
+  PolicyType get_policy(int nt, int ts) {
+    return PolicyType(nt,ts);
+  }
+
+  template <class ExecInstanceType>
+  static inline
+  PolicyType get_policy(int nt, int ts, ExecInstanceType stream) {
+    return PolicyType(stream,nt,ts);
+  }
+};
+#endif
 
 template < class TriSolveHandle, class RowMapType, class EntriesType, class ValuesType, class RHSType, class LHSType >
 void lower_tri_solve_cg( TriSolveHandle & thandle, const RowMapType row_map, const EntriesType entries, const ValuesType values, const RHSType & rhs, LHSType &lhs) {
@@ -2563,7 +2633,9 @@ cudaProfilerStop();
   Kokkos::deep_copy (row_map_host, row_map);
 
   // inversion options
+  const bool invert_diagonal = thandle.get_invert_diagonal ();
   const bool invert_offdiagonal = thandle.get_invert_offdiagonal ();
+  const bool unit_diagonal = thandle.is_unit_diagonal ();
 
   // supernode sizes
   const int* supercols = thandle.get_supercols ();
@@ -2579,11 +2651,15 @@ cudaProfilerStop();
   // workspaces
   integer_view_t work_offset = thandle.get_work_offset ();
   integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
-  Kokkos::View<scalar_t*, memory_space> work = thandle.get_workspace ();
+  auto work = thandle.get_workspace ();
 #endif
 
   size_type node_count = 0;
 
+  #ifdef profile_supernodal_etree
+  Kokkos::Timer sptrsv_timer;
+  sptrsv_timer.reset();
+  #endif
   for ( size_type lvl = 0; lvl < nlevels; ++lvl ) {
    {
     size_type lvl_nodes = hnodes_per_level(lvl);
@@ -2644,34 +2720,47 @@ cudaProfilerStart();
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_ETREE ||
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG) {
 
-        //#define profile_supernodal_etree
         #ifdef profile_supernodal_etree
+        size_t flops = 0;
         Kokkos::Timer timer;
         timer.reset();
         #endif
 
+        using team_policy_type = Kokkos::TeamPolicy<execution_space>;
+        using supernode_view_type = Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged>;
         if (diag_kernel_type_host (lvl) == 3) {
           // using device-level kernels (functor is called to scatter the results)
           scalar_t *dataL = const_cast<scalar_t*> (values.data ());
 
-          for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+          if (invert_diagonal && !invert_offdiagonal) {
+            // copy diagonals to workspaces
+            const int* work_offset_data = work_offset.data ();
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+              sptrsv_init_functor (-2, node_count, nodes_grouped_by_level, supercols, work_offset_data, lhs, work);
+            Kokkos::parallel_for ("parfor_tri_supernode_spmv", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+          }
+
+          for (size_type league_rank = 0; league_rank < lvl_nodes; league_rank++) {
 
             auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
             // supernodal column size
             int j1 = supercols_host[s];
             int j2 = supercols_host[s+1];
-            int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
-
+            // number of columns in the s-th supernode column
+            int nscol = j2 - j1;
+            // "total" number of rows in all the supernodes (diagonal+off-diagonal)
             int i1 = row_map_host (j1);
-            int i2 = row_map_host (j1+1);
-            int nsrow = i2 - i1;         // "total" number of rows in all the supernodes (diagonal+off-diagonal)
+            int nsrow = row_map_host (j1+1) - i1;
+            #ifdef profile_supernodal_etree
+            flops += 2*(nscol*nsrow);
+            #endif
 
             // workspace  (needed for gemv instead of trmv/trsv)
             int workoffset = work_offset_host (s);
 
             // create a view for the s-th supernocal block column
-            Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> viewL (&dataL[i1], nsrow, nscol);
+            supernode_view_type viewL (&dataL[i1], nsrow, nscol);
 
             // "triangular-solve" to compute Xj
             if (invert_offdiagonal) {
@@ -2682,17 +2771,23 @@ cudaProfilerStart();
               gemv("N", one,  Ljj,
                               Xj,
                         zero, Y);
-              Kokkos::deep_copy(Xj, Y);
             } else {
-              auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));
               auto Xj = Kokkos::subview (lhs, range_type (j1, j2));                      // part of the solution, corresponding to the diagonal block
               auto Ljj = Kokkos::subview (viewL, range_type (0, nscol), Kokkos::ALL ()); // diagonal block of s-th supernocal column of L
-              Kokkos::deep_copy(Y, Xj);
-              KokkosBlas::
-              gemv("N", one,  Ljj,
-                              Y,
-                        zero, Xj);
-
+              if (invert_diagonal) {
+                auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));
+                KokkosBlas::
+                gemv("N", one,  Ljj,
+                                Y,
+                          zero, Xj);
+              } else {
+                char unit_diag = (unit_diagonal ? 'U' : 'N');
+                Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
+                KokkosBlas::
+                trsm("L", "L", "N", &unit_diag,
+                     one,  Ljj, Xjj);
+                Kokkos::fence();
+              }
               // update off-diagonal blocks
               int nsrow2 = nsrow - nscol;  // "total" number of rows in all the off-diagonal supernodes
               if (nsrow2 > 0) {
@@ -2705,19 +2800,27 @@ cudaProfilerStart();
               }
             }
           }
+          if (invert_offdiagonal) {
+            // copy diagonals from workspaces
+            const int* work_offset_data = work_offset.data ();
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+              sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, work_offset_data, lhs, work);
+            Kokkos::parallel_for ("parfor_tri_supernode_spmv", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+          }
         }
 
         // launching sparse-triangular solve functor
-        typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
-        LowerTriSupernodalFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
-          sptrsv_functor (invert_offdiagonal, supercols, row_map, entries, values, lvl, kernel_type, diag_kernel_type, lhs,
+        LowerTriSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
+          sptrsv_functor (unit_diagonal, invert_diagonal, invert_offdiagonal,
+                          supercols, row_map, entries, values, lvl, kernel_type, diag_kernel_type, lhs,
                           work, work_offset, nodes_grouped_by_level, node_count);
-        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_functor);
+        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_functor);
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
         double time_seconds = timer.seconds ();
         std::cout << " > SUPERNODAL LowerTri: " << lvl << " " << time_seconds
+                  << " flop count: " << flops
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
@@ -2731,7 +2834,7 @@ cudaProfilerStart();
         #endif
 
         // initialize input & output vectors
-        typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
+        using team_policy_type = Kokkos::TeamPolicy<execution_space>;
 
         // update with spmv (one or two SpMV)
         bool transpose_spmv = ((!thandle.transpose_spmv() &&  thandle.is_column_major ()) ||
@@ -2745,14 +2848,14 @@ cudaProfilerStart();
                           lhs,
                      one, work);
           // copy from work to lhs corresponding to diagonal blocks
-          SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-            sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, lhs, work);
-          Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+          SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
+            sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, supercols, lhs, work);
+          Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
         } else {
           // copy lhs corresponding to diagonal blocks to work and zero out in lhs
-          SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-            sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
-          Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+          SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
+            sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, supercols, lhs, work);
+          Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
         }
         // update off-diagonals (potentiall combined with solve with diagonals)
         auto submat = thandle.get_submatrix (lvl);
@@ -2762,9 +2865,9 @@ cudaProfilerStart();
                    one, lhs);
 
         // reinitialize workspace
-        SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-          sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, lhs, work);
-        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_finalize_functor);
+        SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
+          sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, supercols, lhs, work);
+        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_finalize_functor);
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
@@ -2784,6 +2887,13 @@ cudaProfilerStop();
    } // scope for if-block
 
   } // end for lvl
+  #ifdef profile_supernodal_etree
+  Kokkos::fence();
+  double sptrsv_time_seconds = sptrsv_timer.seconds ();
+  std::cout << " + Execution space   : " << execution_space::name () << std::endl;
+  std::cout << " + Memory space      : " << memory_space::name () << std::endl;
+  std::cout << " + SpTrsv(lower) time: " << sptrsv_time_seconds << std::endl << std::endl;
+  #endif
 
 } // end lower_tri_solve
 
@@ -2835,6 +2945,7 @@ cudaProfilerStop();
   const int* supercols_host = thandle.get_supercols_host ();
 
   // inversion option
+  const bool invert_diagonal = thandle.get_invert_diagonal ();
   const bool invert_offdiagonal = thandle.get_invert_offdiagonal ();
 
   // kernel types
@@ -2847,12 +2958,16 @@ cudaProfilerStop();
   // workspace
   integer_view_t work_offset = thandle.get_work_offset ();
   integer_view_host_t work_offset_host = thandle.get_work_offset_host ();
-  Kokkos::View<scalar_t*, memory_space> work = thandle.get_workspace ();
+  auto work = thandle.get_workspace ();
 #endif
 
   size_type node_count = 0;
 
   // This must stay serial; would be nice to try out Cuda's graph stuff to reduce kernel launch overhead
+  #ifdef profile_supernodal_etree
+  Kokkos::Timer sptrsv_timer;
+  sptrsv_timer.reset();
+  #endif
   for ( size_type lvl = 0; lvl < nlevels; ++lvl ) {
     size_type lvl_nodes = hnodes_per_level(lvl);
 
@@ -2915,16 +3030,26 @@ cudaProfilerStart();
                thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG) {
 
         #ifdef profile_supernodal_etree
+        size_t flops = 0;
         Kokkos::Timer timer;
         timer.reset();
         #endif
 
+        using team_policy_type = Kokkos::TeamPolicy<execution_space>;
         if (thandle.is_column_major ()) { // U stored in CSC
           if (diag_kernel_type_host (lvl) == 3) {
             // using device-level kernels (functor is called to gather the input into workspace)
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
-            for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+            if (invert_diagonal && !invert_offdiagonal) {
+              // copy diagonals to workspaces
+              const int* work_offset_data = work_offset.data ();
+              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+                sptrsv_init_functor (-2, node_count, nodes_grouped_by_level, supercols, work_offset_data, lhs, work);
+              Kokkos::parallel_for ("parfor_tri_supernode_spmv", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
+            }
+            for (size_type league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+
               auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
               // supernodal column size
@@ -2936,6 +3061,9 @@ cudaProfilerStart();
               int i2 = row_map_host (j1+1);
               int nsrow = i2 - i1;         // "total" number of rows in all the supernodes (diagonal+off-diagonal)
               int nsrow2 = nsrow - nscol;  // "total" number of rows in all the off-diagonal supernodes
+              #ifdef profile_supernodal_etree
+              flops += 2*(nscol*nsrow);
+              #endif
 
               // workspace
               int workoffset = work_offset_host (s);
@@ -2951,23 +3079,25 @@ cudaProfilerStart();
                 gemv("N", one,  Uij,
                                 Xj,
                           zero, Z);
-
-                auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
-                Kokkos::deep_copy(Xj, Y);
               } else {
                 // extract part of the solution, corresponding to the diagonal block
                 auto Xj = Kokkos::subview (lhs, range_type(j1, j2));
-                auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
 
                 // "triangular-solve" to compute Xj
                 // extract the diagonal block of s-th supernocal column of U
                 auto Ujj = Kokkos::subview (viewU, range_type (0, nscol), Kokkos::ALL ());
-                Kokkos::deep_copy(Y, Xj);
-                KokkosBlas::
-                gemv("N", one,  Ujj,
-                                Y,
-                          zero, Xj);
-
+                if (invert_diagonal) {
+                  auto Y = Kokkos::subview (work, range_type(workoffset, workoffset+nscol));  // needed for gemv instead of trmv/trsv
+                  KokkosBlas::
+                  gemv("N", one,  Ujj,
+                                  Y,
+                            zero, Xj);
+                } else {
+                  Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
+                  KokkosBlas::
+                  trsm("L", "U", "N", "N",
+                       one,  Ujj, Xjj);
+                }
                 // update off-diagonal blocks
                 if (nsrow2 > 0) {
                   // extract the off-diagonal blocks of s-th supernodal column of U
@@ -2980,29 +3110,37 @@ cudaProfilerStart();
                 }
               }
             }
+            if (invert_offdiagonal) {
+              // copy diagonals from workspaces
+              const int* work_offset_data = work_offset.data ();
+              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+                sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, work_offset_data, lhs, work);
+              Kokkos::parallel_for ("parfor_tri_supernode_spmv", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
+            }
           }
 
           // launching sparse-triangular solve functor
-          UpperTriTranSupernodalFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
-            sptrsv_functor (invert_offdiagonal, supercols, row_map, entries, values,lvl, kernel_type, diag_kernel_type, lhs,
+          UpperTriTranSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
+            sptrsv_functor (invert_diagonal, invert_offdiagonal, supercols, row_map, entries, values,lvl, kernel_type, diag_kernel_type, lhs,
                             work, work_offset, nodes_grouped_by_level, node_count);
 
-          typedef Kokkos::TeamPolicy<execution_space> policy_type;
+          using policy_type = Kokkos::TeamPolicy<execution_space>;
           Kokkos::parallel_for ("parfor_usolve_tran_supernode", policy_type (lvl_nodes , Kokkos::AUTO), sptrsv_functor);
         } else { // U stored in CSR
           // launching sparse-triangular solve functor
-          UpperTriSupernodalFunctor<RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
-            sptrsv_functor (supercols, row_map, entries, values,lvl, kernel_type, diag_kernel_type, lhs,
+          UpperTriSupernodalFunctor<TriSolveHandle, RowMapType, EntriesType, ValuesType, LHSType, NGBLType> 
+            sptrsv_functor (invert_diagonal, supercols, row_map, entries, values,lvl, kernel_type, diag_kernel_type, lhs,
                             work, work_offset, nodes_grouped_by_level, node_count);
 
-          typedef Kokkos::TeamPolicy<execution_space> policy_type;
+          using policy_type = Kokkos::TeamPolicy<execution_space>;
           Kokkos::parallel_for ("parfor_usolve_supernode", policy_type (lvl_nodes , Kokkos::AUTO), sptrsv_functor);
 
           if (diag_kernel_type_host (lvl) == 3) {
             // using device-level kernels (functor is called to gather the input into workspace)
             scalar_t *dataU = const_cast<scalar_t*> (values.data ());
 
-            for (int league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+            for (size_type league_rank = 0; league_rank < lvl_nodes; league_rank++) {
+
               auto s = nodes_grouped_by_level_host (node_count + league_rank);
 
               // supernodal column size
@@ -3010,10 +3148,12 @@ cudaProfilerStart();
               int j2 = supercols_host[s+1];
               int nscol = j2 - j1 ;        // number of columns in the s-th supernode column
 
+              // "total" number of rows in all the supernodes (diagonal+off-diagonal)
               int i1 = row_map_host (j1);
               int i2 = row_map_host (j1+1);
-              int nsrow = i2 - i1;         // "total" number of rows in all the supernodes (diagonal+off-diagonal)
-              int nsrow2 = nsrow - nscol;  // "total" number of rows in all the off-diagonal supernodes
+              int nsrow = i2 - i1;
+              // "total" number of rows in all the off-diagonal supernodes
+              int nsrow2 = nsrow - nscol;
 
               // workspace
               int workoffset = work_offset_host (s);
@@ -3039,11 +3179,24 @@ cudaProfilerStart();
               // "triangular-solve" to compute Xj
               // extract the diagonal block of s-th supernocal column of U
               auto Ujj = Kokkos::subview (viewU, range_type (0, nscol), Kokkos::ALL ());
-              Kokkos::deep_copy(Y, Xj);
-              KokkosBlas::
-              gemv("T", one,  Ujj,
-                              Y,
-                        zero, Xj);
+              if (invert_diagonal) {
+                KokkosBlas::
+                gemv("T", one,  Ujj,
+                                Xj,
+                          zero, Y);
+              } else {
+                Kokkos::View<scalar_t**, Kokkos::LayoutLeft, memory_space, Kokkos::MemoryUnmanaged> Xjj (Xj.data (), nscol, 1);
+                KokkosBlas::
+                trsm("L", "L", "T", "N",
+                     one,  Ujj, Xjj);
+              }
+            }
+            if (invert_diagonal) {
+              // copy diagonals from workspaces
+              const int* work_offset_data = work_offset.data ();
+              SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType>
+                sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, work_offset_data, lhs, work);
+              Kokkos::parallel_for ("parfor_tri_supernode_spmv", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
             }
           }
         }
@@ -3051,6 +3204,7 @@ cudaProfilerStart();
         Kokkos::fence();
         double time_seconds = timer.seconds ();
         std::cout << " > SUPERNODAL UpperTri: " << lvl << " " << time_seconds
+                  << " flop count: " << flops
                   << " kernel-type: " << kernel_type_host (lvl)
                   << " # of supernodes: " << lvl_nodes << std::endl;
         #endif
@@ -3064,7 +3218,7 @@ cudaProfilerStart();
         #endif
 
         // initialize input & output vectors
-        typedef Kokkos::TeamPolicy<execution_space> team_policy_type;
+        using team_policy_type = Kokkos::TeamPolicy<execution_space>;
 
         // update with one, or two, spmv
         bool transpose_spmv = ((!thandle.transpose_spmv() &&  thandle.is_column_major ()) ||
@@ -3079,14 +3233,14 @@ cudaProfilerStart();
                             lhs,
                        one, work);
             // copy from work to lhs corresponding to diagonal blocks
-            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-              sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, lhs, work);
-            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
+              sptrsv_init_functor (-1, node_count, nodes_grouped_by_level, supercols, supercols, lhs, work);
+            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
           } else {
             // zero out lhs corresponding to diagonal blocks in lhs, and copy to work
-            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-              sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
-            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
+              sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, supercols, lhs, work);
+            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
           }
           // update with off-diagonals (potentiall combined with diagonal solves)
           auto submat = thandle.get_submatrix (lvl);
@@ -3097,9 +3251,9 @@ cudaProfilerStart();
         } else {
           if (!invert_offdiagonal) {
             // zero out lhs corresponding to diagonal blocks in lhs, and copy to work
-            SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-              sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, lhs, work);
-            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_init_functor);
+            SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
+              sptrsv_init_functor (1, node_count, nodes_grouped_by_level, supercols, supercols, lhs, work);
+            Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_init_functor);
 
             // update with off-diagonals
             auto submat = thandle.get_submatrix (lvl);
@@ -3115,13 +3269,13 @@ cudaProfilerStart();
                             work,
                        one, lhs);
           } else {
-            printf( " ** invert_offdiag with U in CSR not supported **\n" );
+            std::cout << " ** invert_offdiag with U in CSR not supported **" << std::endl;
           }
         }
         // reinitialize workspace
-        SparseTriSupernodalSpMVFunctor<LHSType, NGBLType> 
-          sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, lhs, work);
-        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes , Kokkos::AUTO), sptrsv_finalize_functor);
+        SparseTriSupernodalSpMVFunctor<TriSolveHandle, LHSType, NGBLType> 
+          sptrsv_finalize_functor (0, node_count, nodes_grouped_by_level, supercols, supercols, lhs, work);
+        Kokkos::parallel_for ("parfor_lsolve_supernode", team_policy_type(lvl_nodes, Kokkos::AUTO), sptrsv_finalize_functor);
 
         #ifdef profile_supernodal_etree
         Kokkos::fence();
@@ -3139,6 +3293,13 @@ cudaProfilerStop();
 #endif
     } // end if
   } // end for lvl
+  #ifdef profile_supernodal_etree
+  Kokkos::fence();
+  double sptrsv_time_seconds = sptrsv_timer.seconds ();
+  std::cout << " + SpTrsv(uppper) time: " << sptrsv_time_seconds << std::endl << std::endl;
+  std::cout <<"  + Execution space    : " << execution_space::name () << std::endl;
+  std::cout << " + Memory space       : " << memory_space::name () << std::endl;
+  #endif
 
 } // end upper_tri_solve
 

@@ -5,7 +5,9 @@
           
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
           
-\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".}
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
+      aggregation. Possible values: "classical", "distance laplacian",
+      "unsupported vector smoothing"}
           
 \cbb{aggregation: drop tol}{double}{0.0}{Connectivity dropping threshold for a graph used in aggregation.}
           
@@ -21,11 +23,20 @@
           
 \cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
           
+\cbb{aggregation: brick x Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the x-direction and the Dirichlet DOFs are not aggregated.}
+          
+\cbb{aggregation: brick y Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the y-direction and the Dirichlet DOFs are not aggregated.}
+          
+\cbb{aggregation: brick z Dirichlet}{bool}{false}{Asserts that Dirichlet conditions are applied in
+        the z-direction and the Dirichlet DOFs are not aggregated.}
+          
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
           
 \cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
           
-\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.}
+\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.}
           
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
           
@@ -51,5 +62,5 @@
           
 \cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
           
-\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
+\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory. There, possible values are 0 for piece-wise constant and 1 for piece-wise linear interpolation to transfer values from coarse points to fine points. }
           

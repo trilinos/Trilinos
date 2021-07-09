@@ -72,7 +72,7 @@ namespace Sacado {
   template <typename T>
   struct Value< ELRFad::Expr<T> > {
     typedef typename ValueType< ELRFad::Expr<T> >::type value_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const value_type& eval(const ELRFad::Expr<T>& x) {
       return x.val(); }
   };
@@ -82,7 +82,7 @@ namespace Sacado {
   struct ScalarValue< ELRFad::Expr<T> > {
     typedef typename ValueType< ELRFad::Expr<T> >::type value_type;
     typedef typename ScalarType< ELRFad::Expr<T> >::type scalar_type;
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     static const scalar_type& eval(const ELRFad::Expr<T>& x) {
       return ScalarValue<value_type>::eval(x.val()); }
   };

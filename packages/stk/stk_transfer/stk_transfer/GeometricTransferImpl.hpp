@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <vector>
 #include <stk_util/environment/Env.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 
 namespace stk {
 namespace transfer {
@@ -122,10 +124,10 @@ void call_copy_entities(T & ... t)
 }
 
 template <class INTERPOLATE>
-void print_expansion_warnings(stk::ParallelMachine shared_comm, int not_empty_count, size_t range_vector_size) {
+void print_expansion_warnings(stk::ParallelMachine comm, int not_empty_count, size_t range_vector_size) {
   // sum and provide message to user
   size_t g_range_vector_size = 0;
-  stk::all_reduce_max( shared_comm, &range_vector_size, &g_range_vector_size, 1);
+  stk::all_reduce_max( comm, &range_vector_size, &g_range_vector_size, 1);
   sierra::Env::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: " << g_range_vector_size
       << " after expanding bounding boxes: " << not_empty_count << " time(s)" << std::endl;
   sierra::Env::outputP0() << "...will now expand the set of candidate bounding boxes and re-attempt the coarse search" << std::endl;
@@ -133,7 +135,7 @@ void print_expansion_warnings(stk::ParallelMachine shared_comm, int not_empty_co
 
 template <class INTERPOLATE>
 void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec   &range_to_domain,
-    stk::ParallelMachine shared_comm,
+    stk::ParallelMachine comm,
     const typename INTERPOLATE::MeshA             * mesha,
     const typename INTERPOLATE::MeshB             * meshb,
     const stk::search::SearchMethod search_method,
@@ -146,6 +148,12 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec   &range_to_
 
   if (mesha)
     mesha->bounding_boxes(domain_vector);
+
+  const bool domainVectorEmpty = stk::is_true_on_all_procs(comm, domain_vector.empty());
+  if (domainVectorEmpty) {
+    return;
+  }
+
   if (meshb)
     meshb->bounding_boxes(range_vector);
 
@@ -157,15 +165,14 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec   &range_to_
   // check track of how many times the coarse search needs to exercise the expanstion_factor
   int not_empty_count = 0;
 
-  unsigned range_vector_not_empty = !range_vector.empty();
-  stk::all_reduce( shared_comm, stk::ReduceSum<1>(&range_vector_not_empty));
-  while (range_vector_not_empty) { // Keep going until all range points are processed.
+  bool range_vector_empty = stk::is_true_on_all_procs(comm, range_vector.empty());
+  while (!range_vector_empty) { // Keep going until all range points are processed.
     // Slightly confusing: coarse_search documentation has domain->range
     // relations sorted by domain key.  We want range->domain type relations
     // sorted on range key. It might appear we have the arguments revered
     // in coarse_search call, but really, this is what we want.
     typename INTERPOLATE::EntityProcRelationVec rng_to_dom;
-    search::coarse_search(range_vector, domain_vector, search_method, shared_comm, rng_to_dom);
+    search::coarse_search(range_vector, domain_vector, search_method, comm, rng_to_dom);
 
     // increment how many times we are within the while loop
     not_empty_count++;
@@ -175,14 +182,13 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec   &range_to_
 
     impl::delete_range_points_found<INTERPOLATE>(range_vector, rng_to_dom);
 
-    range_vector_not_empty = !range_vector.empty();
-    stk::all_reduce( shared_comm, stk::ReduceSum<1>(&range_vector_not_empty));
+    range_vector_empty = stk::is_true_on_all_procs(comm, range_vector.empty());
 
     if (expansion_factor <= 1.0) {
-        if (range_vector_not_empty) {
+        if (!range_vector_empty) {
             size_t range_vector_size = range_vector.size();
             size_t g_range_vector_size = 0;
-            stk::all_reduce_max( shared_comm, &range_vector_size, &g_range_vector_size, 1);
+            stk::all_reduce_max( comm, &range_vector_size, &g_range_vector_size, 1);
             sierra::Env::outputP0() << "GeometricTransfer<INTERPOLATE>::coarse_search(): Number of points not found: "
                                     << g_range_vector_size
                                     << " in initial coarse search" << std::endl;
@@ -191,17 +197,17 @@ void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec   &range_to_
         break;
     }
 
-    if (range_vector_not_empty) {
-      for (typename std::vector<BoundingBoxB>::iterator i=range_vector.begin(); i!=range_vector.end(); ++i) {
+    if (!range_vector_empty) {
+      for (BoundingBoxB& rangeBox : range_vector) {
         // If points were missed, increase search radius.
-        search::scale_by(i->first, expansion_factor);
+        search::scale_by(rangeBox.first, expansion_factor);
       }
       // If points were missed, increase search radius; extract the number of these points and tell the user
-      for (typename std::vector<BoundingBoxA>::iterator i=domain_vector.begin(); i!=domain_vector.end(); ++i) {
-        search::scale_by(i->first, expansion_factor);
+      for (BoundingBoxA& domainBox : domain_vector) {
+        search::scale_by(domainBox.first, expansion_factor);
       }
 
-      print_expansion_warnings<INTERPOLATE>(shared_comm, not_empty_count, range_vector.size());
+      print_expansion_warnings<INTERPOLATE>(comm, not_empty_count, range_vector.size());
     }
   }
   sort (range_to_domain.begin(), range_to_domain.end());

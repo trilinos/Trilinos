@@ -177,7 +177,7 @@ template <typename ScalarT,typename Array,int spaceDim>
 class EvaluateCurlFastSens_Vector {
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof_curl;
-  Kokkos::View<const int*,PHX::Device> offsets;
+  PHX::View<const int*> offsets;
   Array curl_basis;
 
   int numFields;
@@ -188,7 +188,7 @@ public:
 
   EvaluateCurlFastSens_Vector(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point,Dim> in_dof_curl,
-                              Kokkos::View<const int*,PHX::Device> in_offsets,
+                              PHX::View<const int*> in_offsets,
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
   {
@@ -246,7 +246,7 @@ template <typename ScalarT,typename Array>
 class EvaluateCurlFastSens_Scalar {
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
   PHX::MDField<ScalarT,Cell,Point> dof_curl;
-  Kokkos::View<const int*,PHX::Device> offsets;
+  PHX::View<const int*> offsets;
   Array curl_basis;
 
   int numFields;
@@ -257,7 +257,7 @@ public:
 
   EvaluateCurlFastSens_Scalar(PHX::MDField<const ScalarT,Cell,Point> in_dof_value,
                               PHX::MDField<ScalarT,Cell,Point> in_dof_curl,
-                              Kokkos::View<const int*,PHX::Device> in_offsets,
+                              PHX::View<const int*> in_offsets,
                               Array in_curl_basis) 
     : dof_value(in_dof_value), dof_curl(in_dof_curl), offsets(in_offsets), curl_basis(in_curl_basis)
   {
@@ -447,8 +447,8 @@ DOFCurl(const Teuchos::ParameterList & p) :
     offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
 
     // allocate and copy offsets vector to Kokkos array
-    Kokkos::View<int*,PHX::Device> offsets_array_nc
-        = Kokkos::View<int*,PHX::Device>("offsets",offsets.size());
+    PHX::View<int*> offsets_array_nc
+        = PHX::View<int*>("offsets",offsets.size());
     for(std::size_t i=0;i<offsets.size();i++)
       offsets_array_nc(i) = offsets[i];
     offsets_array = offsets_array_nc;

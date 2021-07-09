@@ -2011,10 +2011,10 @@ namespace Sacado {
       if (n <= 0)
         return x;
       else if (n > d) {
-        Taylor<T> y(0);
+        CacheTaylor<T> y(0);
         return y;
       }
-      CacheTaylor<T> y(d-n);
+      CacheTaylor<T> y(d-n, 0);
       int c = 1;
       for (int i=1; i<=n; ++i)
         c *= i;

@@ -305,6 +305,10 @@ public:
     }
   }
 
+  int mapToFieldPattern(int f) const {
+    return mapToFieldPattern_[f];
+  }
+
   void transformToFieldPattern(const ROL::Ptr<Intrepid::FieldContainer<Real> > &array) const {
     if ( array != ROL::nullPtr ) {
       int rank = array->rank();
@@ -533,7 +537,11 @@ private:
     for (int f=0; f<numBases_; ++f) { 
       int basisDeg = intrepidBasis_[f]->getDegree();
       if (cellDim_ == 1) {
-        if (basisDeg == 1) {
+        if (basisDeg == 0) {
+          map2IP[f] = {0};
+          map2FP[f] = {0};
+        }
+        else if (basisDeg == 1) {
           map2IP[f] = {0, 1};
           map2FP[f] = {0, 1};
         }
@@ -547,7 +555,11 @@ private:
         }
       }
       else if (cellDim_ == 2) {
-        if (basisDeg == 1) {
+        if (basisDeg == 0) {
+          map2IP[f] = {0};
+          map2FP[f] = {0};
+        }
+        else if (basisDeg == 1) {
           map2IP[f].resize(nv);
           map2FP[f].resize(nv);
           for (int i = 0; i < nv; ++i) {
@@ -574,7 +586,11 @@ private:
         }
       }
       else if (cellDim_ == 3) {
-        if (basisDeg == 1) {
+        if (basisDeg == 0) {
+          map2IP[f] = {0};
+          map2FP[f] = {0};
+        }
+        else if (basisDeg == 1) {
           map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
           map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
         }

@@ -96,17 +96,17 @@ namespace Sacado {
       // them here.
 
       //! Constructor with supplied storage \c s
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad(const StorageType& s) :
         ExprType(s) {}
 
       //! View-specific constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad(ValueT* v, const int arg_size = 0, const int arg_stride = 0) :
         ExprType( StorageType(v,arg_size,arg_stride) ) {}
 
       //! View-specific constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad(ValueT* dx_ptr, ValueT* val_ptr, const int arg_size = 0,
               const int arg_stride = 0) :
         ExprType( StorageType(dx_ptr,val_ptr,arg_size,arg_stride) ) {}
@@ -114,19 +114,19 @@ namespace Sacado {
       //@}
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~ViewFad() {}
 
       //! Assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator=(const S& v) {
         GeneralFadType::operator=(v);
         return *this;
       }
 
       //! Assignment operator with ViewFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad& operator=(const ViewFad& x) {
         GeneralFadType::operator=(static_cast<const GeneralFadType&>(x));
         return *this;
@@ -134,7 +134,7 @@ namespace Sacado {
 
       //! Assignment operator with any expression right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator=(const Expr<S>& x)
       {
         GeneralFadType::operator=(x);
@@ -150,7 +150,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator += (const S& x) {
         GeneralFadType::operator+=(x);
         return *this;
@@ -158,7 +158,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator -= (const S& x) {
         GeneralFadType::operator-=(x);
         return *this;
@@ -166,7 +166,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator *= (const S& x) {
         GeneralFadType::operator*=(x);
         return *this;
@@ -174,35 +174,35 @@ namespace Sacado {
 
       //! Division-assignment operator with constant right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_VALUE_FUNC(ViewFad&) operator /= (const S& x) {
         GeneralFadType::operator/=(x);
         return *this;
       }
 
       //! Addition-assignment operator with ViewFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad& operator += (const ViewFad& x) {
         GeneralFadType::operator+=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
       //! Subtraction-assignment operator with ViewFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad& operator -= (const ViewFad& x) {
         GeneralFadType::operator-=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
       //! Multiplication-assignment operator with ViewFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad& operator *= (const ViewFad& x) {
         GeneralFadType::operator*=(static_cast<const GeneralFadType&>(x));
         return *this;
       }
 
       //! Division-assignment operator with ViewFad right-hand-side
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFad& operator /= (const ViewFad& x) {
         GeneralFadType::operator/=(static_cast<const GeneralFadType&>(x));
         return *this;
@@ -210,7 +210,7 @@ namespace Sacado {
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator += (const Expr<S>& x) {
         GeneralFadType::operator+=(x);
         return *this;
@@ -218,7 +218,7 @@ namespace Sacado {
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator -= (const Expr<S>& x) {
         GeneralFadType::operator-=(x);
         return *this;
@@ -226,7 +226,7 @@ namespace Sacado {
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator *= (const Expr<S>& x) {
         GeneralFadType::operator*=(x);
         return *this;
@@ -234,14 +234,14 @@ namespace Sacado {
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(ViewFad&) operator /= (const Expr<S>& x) {
         GeneralFadType::operator/=(x);
         return *this;
       }
 
       // Overload of addressof operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ViewFadPtr<ValueT,length,stride,BaseFadT> operator&() const {
         return ViewFadPtr<ValueT,length,stride,BaseFadT>(
           this->dx_, this->val_, this->sz_.value, this->stride_.value);
@@ -263,18 +263,18 @@ namespace Sacado {
       using view_fad_type::view_fad_type;
 
       // Add overload of dereference operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       view_fad_type* operator->() { return this; }
 
       // Add overload of dereference operator
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       view_fad_type& operator*() { *this; }
     };
 
 #if defined(HAVE_SACADO_KOKKOSCORE)
     // Overload of Kokkos::atomic_add for ViewFad types.
     template <typename ValT, unsigned sl, unsigned ss, typename U, typename T>
-    KOKKOS_INLINE_FUNCTION
+    SACADO_INLINE_FUNCTION
     void atomic_add(ViewFadPtr<ValT,sl,ss,U> dst, const Expr<T>& x) {
       using Kokkos::atomic_add;
 

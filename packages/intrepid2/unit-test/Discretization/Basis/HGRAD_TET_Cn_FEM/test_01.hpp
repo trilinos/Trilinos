@@ -78,7 +78,7 @@ namespace Test {
     }
 
 
-template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -92,10 +92,11 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  //typedef typename Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+  using DeviceSpaceType = typename DeviceType::execution_space;
+  typedef typename Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-  //  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  //  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream
   << "===============================================================================\n"
@@ -110,10 +111,10 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   //typedef Kokkos::DynRankView<PointValueType,HostSpaceType>   DynRankViewHostPointValueType;
 
 
@@ -127,7 +128,7 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
   typedef OutValueType outputValueType;
   typedef PointValueType pointValueType;
 
-  typedef Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
+  typedef Basis_HGRAD_TET_Cn_FEM<DeviceType,outputValueType,pointValueType> TetBasisType;
 
   constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
   const ordinal_type dim = 3;
@@ -153,7 +154,7 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
 
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
 
-    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+    RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , np_lattice);
     tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
@@ -241,7 +242,7 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
     DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_WARPBLEND);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+    RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(dbasisAtLattice, polydim , np_lattice , dim);
     tetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_GRAD);
@@ -284,7 +285,7 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
     DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
     tetBasis.getDofCoords(lattice_scalar);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+    RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
     int deriv_order = 2;
     DynRankViewOutValueType ConstructWithLabelOutView(dbasisAtLattice, polydim , np_lattice , (deriv_order+1)*(deriv_order+2)/2);
     tetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_D2);

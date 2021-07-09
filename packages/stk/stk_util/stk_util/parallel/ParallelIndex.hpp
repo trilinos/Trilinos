@@ -40,10 +40,10 @@
 #include <algorithm>
 
 #include <stdint.h>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/util/PairIter.hpp>
+#include "stk_util/parallel/Parallel.hpp"
+#include "stk_util/parallel/ParallelComm.hpp"
+#include "stk_util/parallel/CommSparse.hpp"
+#include "stk_util/util/PairIter.hpp"
 
 namespace stk {
 namespace util {

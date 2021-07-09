@@ -368,9 +368,9 @@ setupInOutArgs_() const
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
     outArgs.set_Np_Ng(Np_,Ng_);
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
-                         Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+                         Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM );
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,4,
-                         Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+                         Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM );
     outArgs_ = outArgs;
   }
 

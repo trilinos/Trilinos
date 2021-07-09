@@ -6,6 +6,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  FECrs_MatrixMatrix_UnitTests
+  SOURCES
+  FECrs_MatrixMatrix_UnitTests.cpp
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  )
+
 IF (KokkosKernels_ENABLE_Experimental)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrixKernels_UnitTests

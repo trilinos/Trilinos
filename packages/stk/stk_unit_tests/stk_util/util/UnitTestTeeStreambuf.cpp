@@ -32,10 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <sstream>                      // for ostringstream, ostream
-#include <gtest/gtest.h>
-#include <stk_util/util/TeeStreambuf.hpp>  // for tee_streambuf
-#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"
+#include "stk_util/util/TeeStreambuf.hpp"  // for tee_streambuf
+#include <sstream>                         // for ostringstream, basic_ostringstream<>::__string...
+#include <string>                          // for operator==, allocator, operator<<, operator+
 
 
 TEST(UnitTestTeeStreambuf, UnitTest)

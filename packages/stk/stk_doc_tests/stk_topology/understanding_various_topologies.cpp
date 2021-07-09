@@ -99,6 +99,18 @@ void setUpMappingsToTest(std::vector<TopologyMapper>& topologyMappings)
     iossTopologyName="hex20";
     stkTopology=stk::topology::HEXAHEDRON_20;
     topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology));
+
+    exodusName="quad";
+    exodusNumNodes=6;
+    iossTopologyName="quad6";
+    stkTopology=stk::topology::QUAD_6;
+    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology));
+
+    exodusName="wedge";
+    exodusNumNodes=12;
+    iossTopologyName="wedge12";
+    stkTopology=stk::topology::WEDGE_12;
+    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology));
 }
 
 TEST(Understanding, sierra_topologies)

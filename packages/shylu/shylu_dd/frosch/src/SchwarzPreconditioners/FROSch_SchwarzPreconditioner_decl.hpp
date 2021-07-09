@@ -45,16 +45,12 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include <FROSch_SumOperator_def.hpp>
-#include <FROSch_MultiplicativeOperator_def.hpp>
-#include <FROSch_AlgebraicOverlappingOperator_def.hpp>
-#include <FROSch_GDSWCoarseOperator_def.hpp>
-#include <FROSch_RGDSWCoarseOperator_def.hpp>
-#include <FROSch_IPOUHarmonicCoarseOperator_def.hpp>
+#include <FROSch_SchwarzOperators_fwd.hpp>
 
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -137,7 +133,7 @@ namespace FROSch {
         virtual void describe(FancyOStream &out,
                               const EVerbosityLevel verbLevel=Describable::verbLevel_default) const = 0;
 
-        virtual std::string description() const = 0;
+        virtual string description() const = 0;
 
         bool isInitialized() const;
 

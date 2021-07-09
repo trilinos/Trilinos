@@ -302,6 +302,12 @@ namespace MueLu {
     LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
     Scalar omega = pL.get<Scalar>("Damping factor");
 
+
+    // Clear solution from previos V cycles in case it is still stored
+    if( InitialGuessIsZero==true )
+      rcpX->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+
+
     // outer Richardson loop
     for (LocalOrdinal run = 0; run < nSweeps; ++run) {
       // one BGS sweep
@@ -313,7 +319,6 @@ namespace MueLu {
         residual->update(1.0,*rcpB,0.0); // r = B
         if(InitialGuessIsZero == false || i > 0 || run > 0)
           bA->bgs_apply(*rcpX, *residual, i, Teuchos::NO_TRANS, -1.0, 1.0);
-          //A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
         // extract corresponding subvectors from X and residual
         bool bRangeThyraMode =  rangeMapExtractor_->getThyraMode();
@@ -328,8 +333,6 @@ namespace MueLu {
         // update vector
         Xi->update(omega,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
 
-        // update corresponding part of rhs and lhs
-        domainMapExtractor_->InsertVector(Xi, i, rcpX, bDomainThyraMode); // TODO wrong! fix me
       }
     }
 

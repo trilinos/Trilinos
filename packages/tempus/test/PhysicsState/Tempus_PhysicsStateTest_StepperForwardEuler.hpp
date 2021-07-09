@@ -32,16 +32,13 @@ public:
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
   {
     this->setStepperType(        this->description());
-    this->setUseFSAL(            this->getUseFSALDefault());
-    this->setICConsistency(      this->getICConsistencyDefault());
-    this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+    this->setUseFSAL(            false);
+    this->setICConsistency(      "None");
+    this->setICConsistencyCheck( false);
 
     this->setModel(appModel);
   }
 
-  void setObserver(Teuchos::RCP<Tempus::StepperObserver<Scalar> > /*obs*/) {}
-  virtual Teuchos::RCP<Tempus::StepperObserver<Scalar> > getObserver() const
-  { return Teuchos::null; }
   void initialize() {}
   Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState()
   { return Teuchos::null; }

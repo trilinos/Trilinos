@@ -73,8 +73,9 @@ namespace Intrepid2 {
         Teuchos testings and std::vectors
   */
 
-  template<typename ExecSpaceType = void>
+  template<typename DeviceType>
   class ArrayTools {
+    using ExecSpaceType = typename DeviceType::execution_space;
   public:
 
     /** \brief Contracts the "point" dimension P of two rank-3 containers with

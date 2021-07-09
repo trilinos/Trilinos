@@ -62,13 +62,9 @@
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_Cholmod_TypeMap.hpp"
 
+#include "cholmod.h"
 
 namespace Amesos2 {
-
-  namespace CHOL {
-#   include "cholmod.h"
-  }
-
   
   template <>
   struct FunctionMap<Cholmod,double>
@@ -76,13 +72,13 @@ namespace Amesos2 {
     
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
 				    int sorted, void *p, void *x, void *i,
-				    CHOL::cholmod_sparse *sparse)
+				    cholmod_sparse *sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_REAL;
@@ -93,7 +89,7 @@ namespace Amesos2 {
     }
 
     static void cholmod_init_dense(int nrow, int ncol, int d, void *x,
-				   CHOL::cholmod_dense *dense)
+				   cholmod_dense *dense)
     {
       dense->nrow = nrow;
       dense->ncol = ncol;
@@ -111,13 +107,13 @@ namespace Amesos2 {
   {
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
 				    int sorted, void *p, void *x, void*i,
-				    CHOL::cholmod_sparse* sparse)
+				    cholmod_sparse* sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_REAL;
@@ -129,7 +125,7 @@ namespace Amesos2 {
 
 
     static void cholmod_init_dense(int nrow, int ncol, int d, void *x,
-				   CHOL::cholmod_dense *dense)
+				   cholmod_dense *dense)
     {
       dense->nrow = nrow;
       dense->ncol = ncol;
@@ -149,13 +145,13 @@ namespace Amesos2 {
 
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
 				    int sorted, void *p, void *x, void *i,
-				    CHOL::cholmod_sparse* sparse)
+				    cholmod_sparse* sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_COMPLEX;
@@ -167,7 +163,7 @@ namespace Amesos2 {
     }
   
     static void cholmod_init_dense(int nrow, int ncol, int d, void *x,
-				   CHOL::cholmod_dense *dense)
+				   cholmod_dense *dense)
     {
       dense->nrow = nrow;
       dense->ncol = ncol;
@@ -186,13 +182,13 @@ namespace Amesos2 {
 
     static void cholmod_init_sparse(size_t nrow, size_t ncol, size_t nzmax,
             int sorted, void *p, void *x, void *i,
-            CHOL::cholmod_sparse* sparse)
+            cholmod_sparse* sparse, int cholmod_itype)
     {
       sparse->nrow = nrow;
       sparse->ncol = ncol;
       sparse->nzmax = nzmax;
       sparse->stype = 1;
-      sparse->itype = CHOLMOD_LONG;
+      sparse->itype = cholmod_itype;
       sparse->sorted = 0;
       sparse->packed = 1;
       sparse->xtype = CHOLMOD_COMPLEX;
@@ -204,7 +200,7 @@ namespace Amesos2 {
     }
 
     static void cholmod_init_dense(int nrow, int ncol, int d, void *x,
-           CHOL::cholmod_dense *dense)
+           cholmod_dense *dense)
     {
       dense->nrow = nrow;
       dense->ncol = ncol;

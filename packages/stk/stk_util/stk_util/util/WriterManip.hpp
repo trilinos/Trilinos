@@ -35,9 +35,9 @@
 #ifndef STK_UTIL_DIAG_MANIP_HPP
 #define STK_UTIL_DIAG_MANIP_HPP
 
-#include <iomanip>                      // for ios_base, etc
-namespace stk { namespace diag { class Writer; } }
+#include <iomanip>  // for ios_base, ios_base::fmtflags
 
+namespace stk { namespace diag { class Writer; } }
 
 namespace stk {
 namespace diag {

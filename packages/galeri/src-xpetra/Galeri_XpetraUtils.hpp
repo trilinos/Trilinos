@@ -89,10 +89,28 @@ namespace Galeri {
       real_type ly = Teuchos::as<real_type>(list.get<double>("ly", 1) * list.get<double>("stretchy", 1));
       real_type lz = Teuchos::as<real_type>(list.get<double>("lz", 1) * list.get<double>("stretchz", 1));
 
-      GlobalOrdinal nx = list.get<GlobalOrdinal>("nx", -1);
-      GlobalOrdinal ny = list.get<GlobalOrdinal>("ny", -1);
-      GlobalOrdinal nz = list.get<GlobalOrdinal>("nz", -1);
+      GlobalOrdinal nx = -1;
+      GlobalOrdinal ny = -1;
+      GlobalOrdinal nz = -1;
 
+      if (list.isParameter("nx")) {
+        if (list.isType<int>("nx"))
+          nx = Teuchos::as<GlobalOrdinal>(list.get<int>("nx"));
+        else
+          nx = list.get<GlobalOrdinal>("nx");
+      }
+      if (list.isParameter("ny")) {
+        if (list.isType<int>("ny"))
+          ny = Teuchos::as<GlobalOrdinal>(list.get<int>("ny"));
+        else
+          ny = list.get<GlobalOrdinal>("ny");
+      }
+      if (list.isParameter("nz")) {
+        if (list.isType<int>("nz"))
+          nz = Teuchos::as<GlobalOrdinal>(list.get<int>("nz"));
+        else
+          nz = list.get<GlobalOrdinal>("nz");
+      }
 
       size_t NumMyElements = map->getNodeNumElements();
       Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
@@ -159,18 +177,19 @@ namespace Galeri {
 
     template <typename GlobalOrdinal>
     static void getSubdomainData(GlobalOrdinal n, GlobalOrdinal m, GlobalOrdinal i, GlobalOrdinal& start, GlobalOrdinal& end) {
-      if (i >= m)
-        throw Exception(__FILE__, __LINE__,
-                        "Incorrect input parameter to getSubdomainData",
-                        "m = " + toString(m) + ", i = " + toString(i));
+      TEUCHOS_TEST_FOR_EXCEPTION(i>=m, std::runtime_error, "Incorrect input parameter to getSubdomainData: m = " + toString(m) + ", i = " + toString(i));
 
       // If the number of points is not multiple of the number of subdomains, we assign
       // extra points to the first few subdomains
       GlobalOrdinal minWidth = Teuchos::as<GlobalOrdinal>(floor(Teuchos::as<double>(n)/m));
-      GlobalOrdinal numWides = n - m*minWidth;
-
-      if   (i < numWides) { start = i       *(minWidth+1);                           end = start + minWidth+1;  }
-      else                { start = numWides*(minWidth+1) + (i - numWides)*minWidth; end = start + minWidth;    }
+      GlobalOrdinal numWides = n - m * minWidth;
+      if (i < numWides) {
+        start = i * (minWidth + 1);
+        end = start + minWidth + 1;
+      } else {
+        start = numWides * (minWidth + 1) + (i - numWides) * minWidth;
+        end = start + minWidth;
+      }
     }
 
   }; // class Utils

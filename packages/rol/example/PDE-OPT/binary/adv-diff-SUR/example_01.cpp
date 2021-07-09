@@ -54,12 +54,12 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "opfactory.hpp"
 #include "hilbert.hpp"
 
 int main(int argc, char *argv[]) {
-//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
 
   /*** Initialize communicator. ***/
@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     ROL::Ptr<BinaryAdvDiffFactory<RealT>> factory;
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
-    ROL::Ptr<ROL::OptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem;
+    ROL::Ptr<ROL::Solver<RealT>> solver;
     ROL::Ptr<ROL::Vector<RealT>> z, omega, uomega, uz, du;
     RealT err(0);
     int order = parlist->sublist("Problem").get("Hilbert Curve Order",6);
@@ -101,10 +101,11 @@ int main(int argc, char *argv[]) {
       /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
       /*************************************************************************/
       problem = factory->build();
-      if (checkDeriv) problem->check(*outStream);
-      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem, *parlist);
+      problem->finalize(false,true,*outStream);
+      if (checkDeriv) problem->check(true,*outStream);
+      solver = ROL::makePtr<ROL::Solver<RealT>>(problem, *parlist);
       solver->solve(*outStream);
-      z = problem->getSolutionVector();
+      z = problem->getPrimalOptimizationVector();
       factory->getState(uz,z);
 
       // Sum Up Rounding
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]) {
       xfile.open(xname.str());
       yfile.open(yname.str());
       int x(0), y(0);
-      for (unsigned j = 0; j < n*n; ++j) {
+      for (int j = 0; j < n*n; ++j) {
         zfile << zdata[j] << std::endl;
         ofile << odata[j] << std::endl;
         hilbert::d2xy(i+1, j, x, y);

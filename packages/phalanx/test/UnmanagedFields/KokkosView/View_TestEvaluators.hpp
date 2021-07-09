@@ -60,18 +60,18 @@ namespace PHX {
     Tag<double> tag_b;
     Tag<double> tag_c;
     Tag<double> tag_d;
-    Kokkos::View<double**,PHX::Device> a; // static evaluated
-    Kokkos::View<const double**,PHX::Device> b; // static dependent
-    Kokkos::View<double**,PHX::Device> c; // dynamic evalauted
-    Kokkos::View<const double**,PHX::Device> d; // dynamic dependent
+    PHX::View<double**> a; // static evaluated
+    PHX::View<const double**> b; // static dependent
+    PHX::View<double**> c; // dynamic evalauted
+    PHX::View<const double**> d; // dynamic dependent
   PHX_EVALUATOR_CLASS_END
 
   // Dummy to satisfy dependent unmanaged fields
   PHX_EVALUATOR_CLASS(EvalDummy)
     Tag<double> tag_b;
     Tag<double> tag_d;
-    Kokkos::View<double**,PHX::Device> b;
-    Kokkos::View<double**,PHX::Device> d;
+    PHX::View<double**> b;
+    PHX::View<double**> d;
   PHX_EVALUATOR_CLASS_END
 
 }

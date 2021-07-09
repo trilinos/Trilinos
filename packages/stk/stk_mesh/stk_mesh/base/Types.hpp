@@ -82,7 +82,7 @@ typedef std::vector< FieldBase * >  FieldVector;
 typedef std::vector< unsigned >     OrdinalVector;
 typedef std::vector< unsigned >     PermutationIndexVector;
 typedef std::vector<Entity>         EntityVector;
-
+typedef std::vector<EntityKey>      EntityKeyVector;
 
 template< typename Scalar = void ,
           class Tag1 = void , class Tag2 = void ,
@@ -153,12 +153,10 @@ typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
 typedef stk::topology::rank_t EntityRank ;
 
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
-typedef std::map<std::pair<EntityRank, Selector>, BucketVector> SelectorBucketMap;
+typedef std::map<Selector, BucketVector> SelectorBucketMap;
 typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;
-typedef std::vector<std::pair<EntityKey,Entity> >::const_iterator const_entity_iterator;
-typedef std::vector<std::pair<EntityKey,Entity> >::iterator entity_iterator;
 
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
@@ -209,15 +207,17 @@ struct RelationType
  */
 
 /** \brief  Pairing of an entity with a processor rank */
-typedef std::pair<Entity , int> EntityProc ;
-typedef std::vector<EntityProc>     EntityProcVec ;
+using EntityProc    = std::pair<Entity, int>;
+using EntityProcVec = std::vector<EntityProc>;
+using EntityProcMap = std::map<Entity, int>;
 
-typedef std::pair<EntityKey, int> EntityKeyProc;
+using EntityIdProc    = std::pair<EntityId, int>;
+using EntityIdProcVec = std::vector<EntityIdProc>;
+using EntityIdProcMap = std::map<EntityId, int>;
 
-typedef std::pair<EntityId, int> EntityIdProc;
-typedef std::vector<EntityIdProc> EntityIdProcVec;
-
-typedef std::map<EntityId, int> EntityIdProcMap;
+using EntityKeyProc    = std::pair<EntityKey, int>;
+using EntityKeyProcVec = std::vector<EntityKeyProc>;
+using EntityKeyProcMap = std::map<EntityKey, int>;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *

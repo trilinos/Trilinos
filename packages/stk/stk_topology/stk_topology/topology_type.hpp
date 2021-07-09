@@ -64,7 +64,6 @@ struct topology::topology_type
   static const bool is_valid                  = data::is_valid;
   static const rank_t rank                    = data::rank;
   static const rank_t side_rank               = data::side_rank;
-  static const topology_t edge_topology       = data::edge_topology;
   static const bool has_homogeneous_faces     = data::has_homogeneous_faces;
   static const bool is_shell                  = data::is_shell;
   static const unsigned dimension                  = data::dimension;
@@ -95,6 +94,30 @@ struct topology::topology_type
     default: break;
     }
     return false;
+  }
+
+  /// the topology of the edge at the given ordinal
+  STK_FUNCTION
+  static topology edge_topology(unsigned edge_ordinal = 0)
+  {
+    switch (edge_ordinal)
+    {
+      case 0:   return topology_detail::edge_topology_<data, 0 >();
+      case 1:   return topology_detail::edge_topology_<data, 1 >();
+      case 2:   return topology_detail::edge_topology_<data, 2 >();
+      case 3:   return topology_detail::edge_topology_<data, 3 >();
+      case 4:   return topology_detail::edge_topology_<data, 4 >();
+      case 5:   return topology_detail::edge_topology_<data, 5 >();
+      case 6:   return topology_detail::edge_topology_<data, 6 >();
+      case 7:   return topology_detail::edge_topology_<data, 7 >();
+      case 8:   return topology_detail::edge_topology_<data, 8 >();
+      case 9:   return topology_detail::edge_topology_<data, 9 >();
+      case 10:  return topology_detail::edge_topology_<data, 10>();
+      case 11:  return topology_detail::edge_topology_<data, 11>();
+      default: break;
+    }
+
+    return INVALID_TOPOLOGY;
   }
 
   /// the topology of the face at the given ordinal

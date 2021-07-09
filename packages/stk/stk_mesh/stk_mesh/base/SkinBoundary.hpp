@@ -47,17 +47,17 @@ namespace stk { namespace mesh {
  * API interface to skin the boundary.
  *
  */
-void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto);
-void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const stk::mesh::PartVector& partToPutSidesInto, const stk::mesh::Selector& air);
-void create_interior_block_boundary_sides(BulkData&, const Selector& blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto);
-void create_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &blocksToConsider, const stk::mesh::PartVector& partToPutSidesInto, bool connect_faces_to_edges);
+void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const PartVector& partToPutSidesInto);
+void create_exposed_block_boundary_sides(BulkData &bulkData, const Selector& blocksToSkin, const PartVector& partToPutSidesInto, const Selector& air);
+void create_interior_block_boundary_sides(BulkData&, const Selector& blocksToConsider, const PartVector& partToPutSidesInto);
+void create_all_sides(BulkData &bulkData, const Selector &blocksToConsider, const PartVector& partToPutSidesInto=PartVector(), bool connect_faces_to_edges=true);
 
-bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, stk::mesh::Part& skinnedPart);
-bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, stk::mesh::Part& skinnedPart, std::ostream &stream);
-bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart);
-bool check_interior_block_boundary_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part &skinnedPart, std::ostream &stream);
-bool check_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part& skinnedPart);
-bool check_all_sides(stk::mesh::BulkData &bulkData, const stk::mesh::Selector &skinnedBlock, stk::mesh::Part& skinnedPart, std::ostream &stream);
+bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart);
+bool check_exposed_block_boundary_sides(BulkData &bulkData, const Selector& skinnedBlock, Part& skinnedPart, std::ostream &stream);
+bool check_interior_block_boundary_sides(BulkData &bulkData, const Selector &skinnedBlock, Part &skinnedPart);
+bool check_interior_block_boundary_sides(BulkData &bulkData, const Selector &skinnedBlock, Part &skinnedPart, std::ostream &stream);
+bool check_all_sides(BulkData &bulkData, const Selector &skinnedBlock, Part& skinnedPart);
+bool check_all_sides(BulkData &bulkData, const Selector &skinnedBlock, Part& skinnedPart, std::ostream &stream);
 
 }} // namespace stk::mesh
 #endif

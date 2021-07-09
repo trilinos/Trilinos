@@ -36,6 +36,8 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Mapvar      applications/mapvar     PT  OPTIONAL
   Mapvar-kd   applications/mapvar-kd  PT  OPTIONAL
   Mat2exo     applications/mat2exo    ST  OPTIONAL
+  Nas2exo     applications/nas2exo    PT  OPTIONAL
+  Zellij      applications/zellij     ST  OPTIONAL
   Nemslice    applications/nem_slice  PT  OPTIONAL
   Nemspread   applications/nem_spread PT  OPTIONAL
   Numbers     applications/numbers    PT  OPTIONAL

@@ -72,7 +72,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-  template<typename ValueType, typename DeviceSpaceType>
+  template<typename ValueType, typename DeviceType>
   int HGRAD_TET_C2_FEM_Test01(const bool verbose) {
 
     Teuchos::RCP<std::ostream> outStream;
@@ -86,6 +86,7 @@ namespace Test {
     Teuchos::oblackholestream oldFormatState;
     oldFormatState.copyfmt(std::cout);
 
+    using DeviceSpaceType = typename DeviceType::execution_space;
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -111,7 +112,7 @@ namespace Test {
     << "|                                                                             |\n"
     << "===============================================================================\n";
 
-    typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+    typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
     typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -121,7 +122,7 @@ namespace Test {
     // for virtual function, value and point types are declared in the class
     typedef ValueType outputValueType;
     typedef ValueType pointValueType;
-    Basis_HGRAD_TET_C2_FEM<DeviceSpaceType,outputValueType,pointValueType> tetBasis;
+    Basis_HGRAD_TET_C2_FEM<DeviceType,outputValueType,pointValueType> tetBasis;
 
   *outStream
     << "\n"
@@ -400,7 +401,7 @@ namespace Test {
     tetNodesHost(8,0) =  0.5;  tetNodesHost(8,1) =  0.0;  tetNodesHost(8,2) =  0.5;  
     tetNodesHost(9,0) =  0.0;  tetNodesHost(9,1) =  0.5;  tetNodesHost(9,2) =  0.5;  
 
-    auto tetNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetNodesHost);
+    auto tetNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), tetNodesHost);
     Kokkos::deep_copy(tetNodes, tetNodesHost);
         
     // Dimensions for the output arrays:

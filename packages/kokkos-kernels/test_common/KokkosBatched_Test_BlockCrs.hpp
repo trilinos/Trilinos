@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "KokkosBatched_Util.hpp"
-#if defined(__KOKKOSBATCHED_INTEL_MKL__)
+#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__)
 #include "mkl.h"
 #endif
 
@@ -1040,9 +1040,9 @@ namespace KokkosBatched {
       // Test Block TriDiag Factorization
       if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
 	  ValueType,
 	  DeviceArrayLayout,
@@ -1090,9 +1090,9 @@ namespace KokkosBatched {
                                                     blocksize);
         if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
           SolveBlockTridiagMatrices<DeviceSpace,
 	    ValueType,
 	    DeviceArrayLayout,
@@ -1241,9 +1241,9 @@ namespace KokkosBatched {
       double t_factorize = 0.0, f_factorize = 0.0;
       if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
         FactorizeBlockTridiagMatrices<DeviceSpace,
 	  ValueType,
 	  DeviceArrayLayout,
@@ -1311,9 +1311,9 @@ namespace KokkosBatched {
                                                     blocksize);
         if (test_tpl) {
 #if                                                     \
-  defined(__KOKKOSBATCHED_INTEL_MKL__) &&               \
-  defined(__KOKKOSBATCHED_INTEL_MKL_BATCHED__) &&       \
-  defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL__) &&               \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__) &&       \
+  defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
           SolveBlockTridiagMatrices<DeviceSpace,
 	    ValueType, 
 	    DeviceArrayLayout,

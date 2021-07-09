@@ -1304,6 +1304,70 @@ Epetra_MultiVector* ML_Epetra::Build_Edge_Nullspace(const Epetra_CrsMatrix & D0_
   return nullspace;
 }/*end BuildNullspace*/
 
+// ================================================ ====== ==== ==== == =
+// Build the edge nullspace
+Epetra_CrsMatrix* ML_Epetra::Build_Pi_Matrix(const Epetra_CrsMatrix & D0_Clean_Matrix,  const Teuchos::ArrayRCP<int> BCedges, Teuchos::ParameterList & List_,bool verbose_) {
+ 
+  int N_edges = D0_Clean_Matrix.NumMyRows();  
+  int N_nodes = D0_Clean_Matrix.DomainMap().NumMyElements();  
+  int IndexBase = D0_Clean_Matrix.DomainMap().IndexBase();
+  const Epetra_Map & row_map = D0_Clean_Matrix.RowMap();
+  
+  // Start with an edge nullspace
+  Epetra_MultiVector *epetra_nullspace = Build_Edge_Nullspace(D0_Clean_Matrix,BCedges,List_,verbose_);
+  int dim = epetra_nullspace->NumVectors();
 
+  // Do we need to apply BCs to this guy?
+  Teuchos::Array<bool> zeroRows(N_edges,false);
+  for(int i=0; i<(int)BCedges.size(); i++)
+    zeroRows[BCedges[i]] = true;
+
+  // Make the domain Map
+  Teuchos::Array<int> MyGlobalElements(N_nodes*dim);
+  for(int i=0; i<N_nodes; i++) {
+    int base_gid = D0_Clean_Matrix.DomainMap().GID(i) - IndexBase;
+    for(int j=0; j<dim; j++)
+      MyGlobalElements[i*dim+j] = base_gid*dim + j + IndexBase;    
+  }
+ 
+  Epetra_Map P_domain_map(-1,MyGlobalElements.size(),MyGlobalElements.data(),IndexBase,D0_Clean_Matrix.DomainMap().Comm());
+
+  // Build the prolongator
+  Epetra_CrsMatrix *P = new Epetra_CrsMatrix(Copy,D0_Clean_Matrix.RowMap(),dim*2);  
+  int max_entries = D0_Clean_Matrix.MaxNumEntries();
+  Teuchos::Array<int> new_indices(dim*max_entries);
+  Teuchos::Array<double> new_values(dim*max_entries);
+  for(int i=0; i<N_edges; i++) {
+    int GlobalRow = row_map.GID(i);
+    int NumEntries;
+    int * old_indices;
+    double * old_values;
+    D0_Clean_Matrix.ExtractMyRowView(i,NumEntries,old_values,old_indices);
+    if(NumEntries != 2)
+      throw std::runtime_error("Build_Pi_Matrix: Don't know how to something other than 2 entries per row in D0");
+    for(int j=0; j<NumEntries; j++) {
+      int old_gcid = D0_Clean_Matrix.GCID(old_indices[j]) - IndexBase;
+      
+      for(int k=0; k<dim; k++) {
+        double entry = zeroRows[i] ? 0.0 : (*epetra_nullspace)[k][i] / NumEntries;
+        new_indices[j*dim+k] = old_gcid*dim + k + IndexBase;
+        new_values[j*dim+k]  = entry;
+
+      }
+    }
+    P->InsertGlobalValues(GlobalRow,NumEntries*dim,new_values.data(),new_indices.data());
+        
+  }
+
+  // Cleanup
+  delete epetra_nullspace;
+
+  // Fill Complete
+  P->FillComplete(P_domain_map,D0_Clean_Matrix.RowMap());
+
+
+
+  return P;
+}
 
 #endif

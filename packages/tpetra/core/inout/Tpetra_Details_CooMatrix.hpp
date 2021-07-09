@@ -1005,7 +1005,8 @@ protected:
    const Kokkos::DualView<const LO*,
      buffer_device_type>& permuteToLIDs,
    const Kokkos::DualView<const LO*,
-     buffer_device_type>& permuteFromLIDs)
+     buffer_device_type>& permuteFromLIDs,
+   const CombineMode /* CM */)
   {
     using std::endl;
     using this_type = CooMatrix<SC, LO, GO, NT>;

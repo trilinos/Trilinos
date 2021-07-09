@@ -70,8 +70,8 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
 
   std::vector<double> elem_centroid(spatial_dim, 0);
 
-  const VectorField& coord_field = *meta.get_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
-  ThrowAssert(&coord_field != NULL);
+  const VectorField * coord_field = meta.get_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
+  ThrowAssert(coord_field != nullptr);
 
   Selector local = meta.locally_owned_part();
 
@@ -98,7 +98,7 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
       for(; node_rel_itr != node_rels_end; ++node_rel_itr)
       {
         Entity node = *node_rel_itr;
-        double* node_coords = stk::mesh::field_data(coord_field, node);
+        double* node_coords = stk::mesh::field_data(*coord_field, node);
         elem_node_coords[offset++] = node_coords[0];
         elem_node_coords[offset++] = node_coords[1];
         elem_node_coords[offset++] = node_coords[2];

@@ -151,9 +151,9 @@ Scalar defaultSmallNumber()
  *
  * \ingroup teuchos_testing_grp
  */
-template <class Scalar>
-typename ScalarTraits<Scalar>::magnitudeType
-relErr( const Scalar &s1, const Scalar &s2 );
+template <class Scalar1, class Scalar2>
+typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType
+relErr( const Scalar1 &s1, const Scalar2 &s2 );
 
 
 /** \brief Compute, check and optionally print the relative error in two scalars.
@@ -162,19 +162,62 @@ relErr( const Scalar &s1, const Scalar &s2 );
  *
  * \ingroup Thyra_Op_Vec_test_tools_code_grp
  */
-template<class Scalar>
-bool testRelErr(
-  const std::string &v1_name,
-  const Scalar &v1,
-  const std::string &v2_name,
-  const Scalar &v2,
-  const std::string &maxRelErr_error_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
-  const std::string &maxRelErr_warning_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
-  const Ptr<std::ostream> &out
-  );
+template <typename T1, typename T2, typename Enabled = void>
+struct TestRelErr {
+  typedef typename Teuchos::ScalarTraits<T1>::magnitudeType magType1;
+  typedef typename Teuchos::ScalarTraits<T2>::magnitudeType magType2;
+  typedef typename std::common_type<magType1,magType2>::type magnitudeType;
+  static bool eval(
+    const std::string &v1_name,
+    const T1 &v1,
+    const std::string &v2_name,
+    const T2 &v2,
+    const std::string &maxRelErr_error_name,
+    const magnitudeType &maxRelErr_error,
+    const std::string &maxRelErr_warning_name,
+    const magnitudeType &maxRelErr_warning,
+    const Ptr<std::ostream> &out
+  )
+  {
+    using std::endl;
+    typedef ScalarTraits<magnitudeType> SMT;
+    const magnitudeType rel_err = relErr( v1, v2 );
+    const bool success = ( !SMT::isnaninf(rel_err) && !SMT::isnaninf(maxRelErr_error)
+      && rel_err <= maxRelErr_error );
+    if (!is_null(out)) {
+      *out
+        << endl
+        << "Check: rel_err(" << v1_name << ", " << v2_name << ")\n"
+        << "       = rel_err(" << v1 << ", " << v2 << ") "
+        << "= " << rel_err << endl
+        << "         <= " << maxRelErr_error_name
+        << " = " << maxRelErr_error << " : " << passfail(success) << endl;
+      if( success && rel_err >= maxRelErr_warning ) {
+        *out
+          << "Warning! rel_err(" << v1_name << ", " << v2_name << ")\n"
+          << "       = rel_err(" << v1 << ", " << v2 << ") "
+          << "= " << rel_err << endl
+          << "         >= " << maxRelErr_warning_name
+          << " = " << maxRelErr_warning << "!\n";
+      }
+    }
+    return success;
+  }
+};
 
+template <typename T1, typename T2>
+bool testRelErr(
+    const std::string &v1_name,
+    const T1 &v1,
+    const std::string &v2_name,
+    const T2 &v2,
+    const std::string &maxRelErr_error_name,
+    const typename TestRelErr<T1,T2>::magnitudeType &maxRelErr_error,
+    const std::string &maxRelErr_warning_name,
+    const typename TestRelErr<T1,T2>::magnitudeType &maxRelErr_warning,
+    const Ptr<std::ostream> &out) {
+  return TestRelErr<T1,T2>::eval(v1_name, v1, v2_name,v2, maxRelErr_error_name, maxRelErr_error, maxRelErr_warning_name, maxRelErr_warning, out);
+}
 
 /** \brief Compare if two array objects are the same or not.
  *
@@ -583,10 +626,11 @@ Teuchos::passfail(const bool result)
 }
 
 
-template <class Scalar>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Teuchos::relErr( const Scalar &s1, const Scalar &s2 )
+template <class Scalar1, class Scalar2>
+typename Teuchos::ScalarTraits< typename std::common_type<Scalar1,Scalar2>::type >::magnitudeType
+Teuchos::relErr( const Scalar1 &s1, const Scalar2 &s2 )
 {
+  typedef typename std::common_type<Scalar1,Scalar2>::type Scalar;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return
     ST::magnitude( s1 - s2 )
@@ -596,47 +640,6 @@ Teuchos::relErr( const Scalar &s1, const Scalar &s2 )
         )
       + std::max( ST::magnitude(s1), ST::magnitude(s2) )
       );
-}
-
-
-template<class Scalar>
-bool Teuchos::testRelErr(
-  const std::string &v1_name,
-  const Scalar &v1,
-  const std::string &v2_name,
-  const Scalar &v2,
-  const std::string &maxRelErr_error_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
-  const std::string &maxRelErr_warning_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
-  const Ptr<std::ostream> &out
-  )
-{
-  using std::endl;
-  typedef ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
-  typedef ScalarTraits<ScalarMag> SMT;
-  const ScalarMag rel_err = relErr( v1, v2 );
-  const bool success = ( !SMT::isnaninf(rel_err) && !SMT::isnaninf(maxRelErr_error)
-    && rel_err <= maxRelErr_error );
-  if (!is_null(out)) {
-    *out
-      << endl
-      << "Check: rel_err(" << v1_name << ", " << v2_name << ")\n"
-      << "       = rel_err(" << v1 << ", " << v2 << ") "
-      << "= " << rel_err << endl
-      << "         <= " << maxRelErr_error_name
-      << " = " << maxRelErr_error << " : " << passfail(success) << endl;
-    if( success && rel_err >= maxRelErr_warning ) {
-      *out
-        << "Warning! rel_err(" << v1_name << ", " << v2_name << ")\n"
-        << "       = rel_err(" << v1 << ", " << v2 << ") "
-        << "= " << rel_err << endl
-        << "         >= " << maxRelErr_warning_name
-        << " = " << maxRelErr_warning << "!\n";
-    }
-  }
-  return success;
 }
 
 

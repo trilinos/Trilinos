@@ -105,6 +105,10 @@ int main(int argc, char* argv[]) {
     comm->barrier();
 #endif
 
+#ifdef HAVE_TEUCHOS_STACKTRACE
+    Teuchos::print_stack_on_segfault();
+#endif
+
     // Comment this line to get rid of MueLu output
     MueLu::VerboseObject::SetDefaultVerbLevel(MueLu::High);
 

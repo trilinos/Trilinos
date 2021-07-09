@@ -360,6 +360,7 @@ template<class MatrixType>
 void ILUT<MatrixType>::initialize ()
 {
   Teuchos::Time timer ("ILUT::initialize");
+  double startTime = timer.wallTime();
   {
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -381,7 +382,7 @@ void ILUT<MatrixType>::initialize ()
     IsInitialized_ = true;
     ++NumInitialize_;
   }
-  InitializeTime_ += timer.totalElapsedTime ();
+  InitializeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -432,6 +433,7 @@ void ILUT<MatrixType>::compute ()
   }
 
   Teuchos::Time timer ("ILUT::compute");
+  double startTime = timer.wallTime();
   { // Timer scope for timing compute()
     Teuchos::TimeMonitor timeMon (timer, true);
     const scalar_type zero = STS::zero ();
@@ -489,18 +491,17 @@ void ILUT<MatrixType>::compute ()
     // =================== //
     // start factorization //
     // =================== //
-
-    ArrayRCP<local_ordinal_type> ColIndicesARCP;
-    ArrayRCP<scalar_type>       ColValuesARCP;
+    nonconst_local_inds_host_view_type ColIndicesARCP;
+    nonconst_values_host_view_type ColValuesARCP;
     if (! A_local_->supportsRowViews ()) {
       const size_t maxnz = A_local_->getNodeMaxNumRowEntries ();
-      ColIndicesARCP.resize (maxnz);
-      ColValuesARCP.resize (maxnz);
+      Kokkos::resize(ColIndicesARCP,maxnz);
+      Kokkos::resize(ColValuesARCP,maxnz);
     }
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
-      ArrayView<const local_ordinal_type> ColIndicesA;
-      ArrayView<const scalar_type> ColValuesA;
+      local_inds_host_view_type  ColIndicesA;
+      values_host_view_type ColValuesA;
       size_t RowNnz;
 
       if (A_local_->supportsRowViews ()) {
@@ -508,9 +509,9 @@ void ILUT<MatrixType>::compute ()
         RowNnz = ColIndicesA.size ();
       }
       else {
-        A_local_->getLocalRowCopy (row_i, ColIndicesARCP (), ColValuesARCP (), RowNnz);
-        ColIndicesA = ColIndicesARCP (0, RowNnz);
-        ColValuesA = ColValuesARCP (0, RowNnz);
+        A_local_->getLocalRowCopy (row_i, ColIndicesARCP, ColValuesARCP, RowNnz);
+        ColIndicesA = Kokkos::subview(ColIndicesARCP,std::make_pair((size_t)0, RowNnz));
+        ColValuesA  = Kokkos::subview(ColValuesARCP,std::make_pair((size_t)0, RowNnz));
       }
 
       // Always include the diagonal in the U factor. The value should get
@@ -610,7 +611,7 @@ void ILUT<MatrixType>::compute ()
       // Put indices and values for L into arrays and then into the L_ matrix.
 
       //   first, the original entries from the L section of A:
-      for (size_type i = 0; i < ColIndicesA.size (); ++i) {
+      for (size_type i = 0; i < (size_type)ColIndicesA.size (); ++i) {
         if (ColIndicesA[i] < row_i) {
           L_tmp_idx[row_i].push_back(ColIndicesA[i]);
           L_tmpv[row_i].push_back(cur_row[ColIndicesA[i]]);
@@ -703,6 +704,13 @@ void ILUT<MatrixType>::compute ()
     // Now allocate and fill the matrices
     Array<size_t> nnzPerRow(myNumRows);
 
+    // Make sure to release the old memory for L & U prior to recomputing to
+    // avoid bloating the high-water mark.
+    L_ = Teuchos::null;
+    U_ = Teuchos::null;
+    L_solver_->setMatrix(Teuchos::null);
+    U_solver_->setMatrix(Teuchos::null);
+
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
       nnzPerRow[row_i] = L_tmp_idx[row_i].size();
     }
@@ -737,7 +745,7 @@ void ILUT<MatrixType>::compute ()
     U_solver_->initialize ();
     U_solver_->compute ();
   }
-  ComputeTime_ += timer.totalElapsedTime ();
+  ComputeTime_ += (timer.wallTime() - startTime);
   IsComputed_ = true;
   ++NumCompute_;
 }
@@ -771,6 +779,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   const scalar_type zero = STS::zero ();
 
   Teuchos::Time timer ("ILUT::apply");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer, true);
 
@@ -810,7 +819,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
   }//end timing
 
   ++NumApply_;
-  ApplyTime_ += timer.totalElapsedTime ();
+  ApplyTime_ += (timer.wallTime() - startTime);
 }
 
 

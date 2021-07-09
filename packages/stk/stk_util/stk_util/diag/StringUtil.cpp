@@ -34,15 +34,14 @@
 // 
  */
 
-#include <stk_util/diag/StringUtil.hpp>
-#include <iomanip>                      // for operator<<, setprecision
-#include <iosfwd>                       // for ostringstream, ostream, etc
-#include <sstream>                      // for operator<<, basic_ostream, etc
-#include <string>                       // for basic_string, string, etc
-#include "stk_util/diag/String.hpp"     // for String
+#include "stk_util/diag/StringUtil.hpp"
+#include <cstdlib>   // for free
+#include <iomanip>   // for operator<<, setprecision
+#include <sstream>   // for operator<<, basic_ostream, ostream, basic_ostream::operator<<, ostri...
+#include <string>    // for basic_string, string, basic_string<>::const_iterator, char_traits
 
 #if __GNUC__ >= 3
-#include <cxxabi.h>
+#include <cxxabi.h>  // for __cxa_demangle
 #endif
 
 //----------------------------------------------------------------------

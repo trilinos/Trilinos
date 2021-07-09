@@ -101,7 +101,7 @@ namespace MueLu {
 
     //@}
 
-  }; //class TransPFactory
+  }; //class GenericRFactory
 
 } //namespace MueLu
 

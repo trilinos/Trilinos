@@ -837,8 +837,9 @@ log_rotation(Tensor<T, N> const & R)
 
   //firewalls, make sure R \in SO(N)
   assert(norm(dot_t(R,R) - eye<T, N>(dimension)) <
-      100.0 * machine_epsilon<T>());
-  assert(std::abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
+         std::max(1.0e-12 * norm(R), 1.0e-12));
+  assert(std::abs(det(R) - 1.0) <
+         std::max(1.0e-12 * norm(R), 1.0e-12));
   // acos requires input between -1 and +1
   T
   cosine = 0.5 * (trace(R) - 1.0);
@@ -1054,7 +1055,7 @@ Tensor<T, N>
 exp_skew_symmetric(Tensor<T, N> const & r)
 {
   // Check whether skew-symmetry holds
-  assert(norm(sym(r)) < machine_epsilon<T>());
+  assert(norm(sym(r)) < std::max(1.0e-12 * norm(r), 1.0e-12));
 
   Index const
   dimension = r.get_dimension();

@@ -39,20 +39,19 @@
 #include <stk_topology/topology.hpp>
 #include "stk_mesh/base/Field.hpp"  // for field_data
 #include "stk_mesh/base/FieldBase.hpp"
+#include "stk_balance/setup/DefaultSettings.hpp"
 #include <memory>
 
 namespace stk
 {
 namespace balance
 {
-//rcb, multijagged, rib, hsfc, patoh, phg, metis, parmetis, parma, scotch, ptscotch, block, cyclic, random, zoltan, nd
 
 class FaceSearchTolerance;
 
-typedef std::vector<int> ElementDecomposition;
-typedef stk::mesh::Field<double> DoubleFieldType;
-
-constexpr double defaultFaceSearchTolerance = 0.0001;
+using ElementDecomposition = std::vector<int>;
+using DoubleFieldType =  stk::mesh::Field<double>;
+using BlockWeightMultipliers =  std::map<std::string, double>;
 
 class DecompositionChangeList
 {
@@ -94,7 +93,7 @@ public:
     virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
     virtual GraphOption getGraphOption() const;
 
-    // Graph (parmetis) based options only
+    // Graph based options only
     virtual bool includeSearchResultsInGraph() const;
     virtual void setIncludeSearchResultsInGraph(bool doContactSearch);
 
@@ -111,11 +110,12 @@ public:
     virtual bool getEdgesForParticlesUsingSearch() const;
     virtual double getVertexWeightMultiplierForVertexInSearch() const;
 
+    virtual void setVertexWeightBlockMultiplier(const std::string & blockName, double multiplier);
+    virtual const BlockWeightMultipliers & getVertexWeightBlockMultipliers() const;
+
     virtual bool isIncrementalRebalance() const;
     virtual bool isMultiCriteriaRebalance() const;
 
-    virtual bool areVertexWeightsProvidedInAVector() const;
-    virtual std::vector<double> getVertexWeightsViaVector() const;
     virtual bool areVertexWeightsProvidedViaFields() const;
 
     virtual double getImbalanceTolerance() const;
@@ -123,7 +123,6 @@ public:
     virtual void setDecompMethod(const std::string& method) ;
     virtual std::string getDecompMethod() const ;
 
-    virtual void setInitialDecompMethod(const std::string& method) ;
     virtual std::string getInitialDecompMethod() const ;
 
     virtual std::string getCoordinateFieldName() const ;
@@ -145,16 +144,35 @@ public:
 
     virtual bool shouldFixMechanisms() const;
     virtual bool shouldFixSpiders() const;
-    virtual std::string getSpiderConnectivityCountFieldName() const;
-    virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
-    virtual bool useLocalIds() const;
+    virtual std::string getSpiderBeamConnectivityCountFieldName() const;
+    virtual std::string getSpiderVolumeConnectivityCountFieldName() const;
+    virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
+    virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
+    virtual bool usingColoring() const;
 
     virtual bool useNodeBalancer() const;
     virtual double getNodeBalancerTargetLoadBalance() const;
     virtual unsigned getNodeBalancerMaxIterations() const;
 
+    virtual void set_input_filename(const std::string& filename);
+    virtual std::string get_input_filename() const;
+
+    virtual void set_output_filename(const std::string& filename);
+    virtual std::string get_output_filename() const;
+
+    virtual void setShouldFixSpiders(bool fixSpiders) { }
+    virtual void setEdgeWeightForSearch(double w) { }
+    virtual void setVertexWeightMultiplierForVertexInSearch(double w) { }
+    virtual void setToleranceForFaceSearch(double tol) { }
+
+protected:
+    const DefaultSettings defaults;
+
 private:
-    std::string initialDecompMethod;
+    std::string m_initialDecompMethod;
+    std::string m_inputFilename;
+    std::string m_outputFilename;
+    BlockWeightMultipliers m_vertexWeightBlockMultipliers;
 };
 
 class BasicGeometricSettings : public BalanceSettings
@@ -166,23 +184,31 @@ public:
 class GraphCreationSettings : public BalanceSettings
 {
 public:
-    GraphCreationSettings(): GraphCreationSettings(defaultFaceSearchTolerance, 3, 15, "parmetis", 5.0)
-    {}
-
-    GraphCreationSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch)
-      : mToleranceForFaceSearch(faceSearchTol),
-        mToleranceForParticleSearch(particleSearchTol),
-        edgeWeightForSearch (edgeWeightSearch),
-        method(decompMethod),
-        vertexWeightMultiplierForVertexInSearch(multiplierVWSearch),
+    GraphCreationSettings()
+      : mToleranceForFaceSearch(defaults.faceSearchAbsTol),
+        mToleranceForParticleSearch(defaults.particleSearchTol),
+        edgeWeightForSearch(defaults.faceSearchEdgeWeight),
+        method(defaults.decompMethod),
+        vertexWeightMultiplierForVertexInSearch(defaults.faceSearchVertexMultiplier),
         m_UseConstantToleranceForFaceSearch(true),
         m_shouldFixSpiders(false),
-        m_spiderConnectivityCountField(nullptr),
-        m_includeSearchResultInGraph(true),
+        m_spiderBeamConnectivityCountField(nullptr),
+        m_spiderVolumeConnectivityCountField(nullptr),
+        m_includeSearchResultInGraph(defaults.useContactSearch),
         m_useNodeBalancer(false),
         m_nodeBalancerTargetLoadBalance(1.0),
         m_nodeBalancerMaxIterations(5)
     {}
+
+    GraphCreationSettings(double faceSearchTol, double particleSearchTol, double edgeWeightSearch, const std::string& decompMethod, double multiplierVWSearch)
+      : GraphCreationSettings()
+    {
+      mToleranceForFaceSearch = faceSearchTol;
+      mToleranceForParticleSearch = particleSearchTol;
+      edgeWeightForSearch = edgeWeightSearch;
+      method = decompMethod;
+      vertexWeightMultiplierForVertexInSearch = multiplierVWSearch;
+    }
 
     virtual ~GraphCreationSettings() = default;
 
@@ -213,15 +239,16 @@ public:
     virtual std::string getDecompMethod() const override;
 
     virtual void setDecompMethod(const std::string& input_method) override;
-    virtual void setToleranceForFaceSearch(double tol);
+    virtual void setToleranceForFaceSearch(double tol) override;
     virtual void setToleranceForParticleSearch(double tol);
-    virtual void setEdgeWeightForSearch(double w);
-    virtual void setVertexWeightMultiplierForVertexInSearch(double w);
-    virtual void setShouldFixSpiders(bool fixSpiders);
+    virtual void setEdgeWeightForSearch(double w) override;
+    virtual void setVertexWeightMultiplierForVertexInSearch(double w) override;
+    virtual void setShouldFixSpiders(bool fixSpiders) override;
 
     virtual bool shouldFixMechanisms() const override;
     virtual bool shouldFixSpiders() const override;
-    virtual const stk::mesh::Field<int> * getSpiderConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
+    virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
+    virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const override;
 
     virtual void setUseNodeBalancer(bool useBalancer);
     virtual void setNodeBalancerTargetLoadBalance(double targetLoadBalance);
@@ -241,7 +268,8 @@ protected:
     double vertexWeightMultiplierForVertexInSearch;
     bool m_UseConstantToleranceForFaceSearch;
     bool m_shouldFixSpiders;
-    mutable const stk::mesh::Field<int> * m_spiderConnectivityCountField;
+    mutable const stk::mesh::Field<int> * m_spiderBeamConnectivityCountField;
+    mutable const stk::mesh::Field<int> * m_spiderVolumeConnectivityCountField;
     std::shared_ptr<stk::balance::FaceSearchTolerance> m_faceSearchToleranceFunction;
     bool m_includeSearchResultInGraph;
     bool m_useNodeBalancer;
@@ -288,32 +316,6 @@ public:
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
 };
 
-class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings
-{
-public:
-    UserSpecifiedVertexWeightsSetting()
-    {
-      m_includeSearchResultInGraph = false;
-    }
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool areVertexWeightsProvidedInAVector() const { return true; }
-    void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
-    virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
-    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const { return 1.0; }
-    //virtual double getImbalanceTolerance() const { return 1.05; }
-    virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
-    virtual std::string getDecompMethod() const { return method; }
-    void setCoordinateFieldName(const std::string& field_name) { m_field_name = field_name; }
-    virtual std::string getCoordinateFieldName() const { return m_field_name; }
-    virtual bool shouldFixMechanisms() const { return false; }
-
-private:
-    std::vector<double> vertex_weights;
-    std::string method = std::string("parmetis");
-    std::string m_field_name = std::string("coordinates");
-};
-
 class GraphCreationSettingsForZoltan2 : public GraphCreationSettingsWithCustomTolerances
 {
 public:
@@ -330,12 +332,12 @@ public:
         m_weightField(weightField),
         m_defaultWeight(defaultWeight) 
         { 
+            method = "parmetis";
             m_includeSearchResultInGraph = false;
         }
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool areVertexWeightsProvidedInAVector() const { return false; }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.05; }
@@ -351,14 +353,13 @@ public:
     }
 
 protected:
-    FieldVertexWeightSettings() = default;
+    FieldVertexWeightSettings() = delete;
     FieldVertexWeightSettings(const FieldVertexWeightSettings&) = delete;
     FieldVertexWeightSettings& operator=(const FieldVertexWeightSettings&) = delete;
 
     const stk::mesh::BulkData & m_stkMeshBulkData;
     const DoubleFieldType &m_weightField;
     const double m_defaultWeight;
-    std::string method = std::string("parmetis");
 };
 
 class MultipleCriteriaSettings : public GraphCreationSettings
@@ -409,7 +410,7 @@ public:
     }
 
 protected:
-    MultipleCriteriaSettings() = default;
+    MultipleCriteriaSettings() = delete;
     MultipleCriteriaSettings(const MultipleCriteriaSettings&) = delete;
     MultipleCriteriaSettings& operator=(const MultipleCriteriaSettings&) = delete;
     const std::vector<const stk::mesh::Field<double>*> m_critFields;
@@ -438,27 +439,66 @@ public:
     }
 };
 
+class M2NBalanceSettings : public GraphCreationSettings
+{
+public:
+    M2NBalanceSettings()
+      : GraphCreationSettings(),
+        m_numOutputProcs(0),
+        m_useNestedDecomp(false)
+    {}
+
+    M2NBalanceSettings(const std::string & inputFileName,
+                       unsigned numOutputProcs,
+                       bool useNestedDecomp = false)
+      : GraphCreationSettings(),
+        m_numOutputProcs(numOutputProcs),
+        m_useNestedDecomp(useNestedDecomp)
+    {
+      set_input_filename(inputFileName);
+    }
+
+    ~M2NBalanceSettings() = default;
+
+    void set_num_output_processors(unsigned numOutputProcs) { m_numOutputProcs = numOutputProcs; }
+    unsigned get_num_output_processors() const { return m_numOutputProcs; }
+
+    void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
+    bool get_use_nested_decomp() const { return m_useNestedDecomp; }
+
+protected:
+    unsigned m_numOutputProcs;
+    bool m_useNestedDecomp;
+};
+
 class GraphEdge
 {
 public:
-    GraphEdge(const stk::mesh::Entity element1, const stk::mesh::EntityId element2, int vertex2ProcOwner, double edgeWeight, bool isEdgeFromSearchArg = false) :
-        mVertex1(element1), mVertex2(element2), mVertex2OwningProc(vertex2ProcOwner), mWeight(edgeWeight), mIsEdgeFromSearch(isEdgeFromSearchArg)
+    GraphEdge() = default;
+
+    GraphEdge(const stk::mesh::Entity & element1, const stk::mesh::EntityId & element2Id,
+              int vertex2ProcOwner, double edgeWeight, bool isEdgeFromSearchArg = false)
+      : m_vertex1(element1),
+        m_vertex2Id(element2Id),
+        m_vertex2OwningProc(vertex2ProcOwner),
+        m_weight(edgeWeight),
+        m_isEdgeFromSearch(isEdgeFromSearchArg)
     {}
 
-    ~GraphEdge() {}
+    ~GraphEdge() = default;
 
-    stk::mesh::Entity vertex1() const { return mVertex1; }
-    stk::mesh::EntityId vertex2() const { return mVertex2; }
-    int vertex2OwningProc() const { return mVertex2OwningProc; }
-    double weight() const { return mWeight; }
-    bool isEdgeFromSearch() const { return mIsEdgeFromSearch; }
+    stk::mesh::Entity vertex1() const { return m_vertex1; }
+    stk::mesh::EntityId vertex2_id() const { return m_vertex2Id; }
+    int vertex2_owning_proc() const { return m_vertex2OwningProc; }
+    double weight() const { return m_weight; }
+    bool is_edge_from_search() const { return m_isEdgeFromSearch; }
 
 private:
-    stk::mesh::Entity mVertex1;
-    stk::mesh::EntityId mVertex2;
-    int mVertex2OwningProc;
-    double mWeight;
-    bool mIsEdgeFromSearch;
+    stk::mesh::Entity m_vertex1;
+    stk::mesh::EntityId m_vertex2Id;
+    int m_vertex2OwningProc;
+    double m_weight;
+    bool m_isEdgeFromSearch;
 };
 
 inline bool operator<(const GraphEdge &a, const GraphEdge &b)
@@ -466,8 +506,8 @@ inline bool operator<(const GraphEdge &a, const GraphEdge &b)
     bool aLessB = (a.vertex1().m_value < b.vertex1().m_value);
     if(a.vertex1().m_value == b.vertex1().m_value)
     {
-        aLessB = (a.vertex2() < b.vertex2());
-        if(a.vertex2() == b.vertex2())
+        aLessB = (a.vertex2_id() < b.vertex2_id());
+        if(a.vertex2_id() == b.vertex2_id())
         {
             aLessB = (a.weight() < b.weight());
         }
@@ -477,7 +517,7 @@ inline bool operator<(const GraphEdge &a, const GraphEdge &b)
 
 inline bool operator==(const GraphEdge &a, const GraphEdge &b)
 {
-    return (a.vertex1().m_value == b.vertex1().m_value) && (a.vertex2() == b.vertex2());
+    return (a.vertex1().m_value == b.vertex1().m_value) && (a.vertex2_id() == b.vertex2_id());
 }
 
 const std::string& get_coloring_part_base_name();

@@ -53,9 +53,6 @@ bool
 testReduceSum (bool& success, std::ostream& out,
                const int root, const Teuchos::Comm<int>& comm)
 {
-#ifdef HAVE_TEUCHOS_MPI
-  using Teuchos::MpiComm;
-#endif // HAVE_TEUCHOS_MPI
   using Teuchos::reduce;
   using Teuchos::TypeNameTraits;
   using std::endl;

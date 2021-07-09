@@ -83,7 +83,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
     std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
-    const int nTimeStepSizes = 3; // 7 for error plots
+    const int nTimeStepSizes = 2; // 7 for error plots
     double dt = 0.05;
     double order = 0.0;
     for (int n=0; n<nTimeStepSizes; n++) {

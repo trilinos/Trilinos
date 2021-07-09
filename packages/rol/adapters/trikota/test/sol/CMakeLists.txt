@@ -1,14 +1,16 @@
 
 IF(${PROJECT_NAME}_ENABLE_TriKota)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SparseGridBurgersControl
-    SOURCES test_01.cpp
-    ARGS PrintItAll
-    COMM serial mpi  
-    PASS_REGULAR_EXPRESSION "TEST PASSED"
-    ADD_DIR_TO_NAME
-    )
+  INCLUDE_DIRECTORIES(${ROL_SOURCE_DIR}/adapters/teuchos/src/sol)
+
+  #TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  #  SparseGridBurgersControl
+  #  SOURCES test_01.cpp
+  #  ARGS PrintItAll
+  #  COMM serial mpi  
+  #  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  #  ADD_DIR_TO_NAME
+  #  )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SparseGridQuadratureTest

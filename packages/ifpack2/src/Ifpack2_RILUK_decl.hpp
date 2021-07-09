@@ -46,6 +46,8 @@
 #ifndef IFPACK2_CRSRILUK_DECL_HPP
 #define IFPACK2_CRSRILUK_DECL_HPP
 
+#include "KokkosSparse_spiluk.hpp"
+
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Tpetra_CrsMatrix_decl.hpp"
@@ -266,6 +268,12 @@ class RILUK:
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
+  //! The Kokkos device type of the input MatrixType.
+  typedef typename node_type::device_type device_type;
+
+  //! The Kokkos execution space of the input MatrixType.
+  typedef typename node_type::execution_space execution_space;
+
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
@@ -281,8 +289,36 @@ class RILUK:
                             global_ordinal_type,
                             node_type> crs_matrix_type;
 
+  //! Scalar type stored in Kokkos::Views (CrsMatrix and MultiVector)
+  typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
+
   template <class NewMatrixType> friend class RILUK;
 
+  typedef typename crs_matrix_type::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename crs_matrix_type::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename crs_matrix_type::values_host_view_type values_host_view_type;
+
+
+  typedef typename crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
+
+  //@}
+  //! \name Implementation of Kokkos Kernels ILU(k).
+  //@{
+
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
+    <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+  
   /// \brief Constructor that takes a Tpetra::RowMatrix.
   ///
   /// \param A_in [in] The input matrix.
@@ -303,15 +339,6 @@ class RILUK:
   RILUK (const RILUK<MatrixType> & src);
 
  public:
-  /// \brief Clone preconditioner to a new node type.
-  ///
-  /// This method makes a deep copy of the original preconditioner
-  /// (and matrix), into objects with the Node type
-  /// <tt>NewMatrixType::node_type</tt>.
-  template <typename NewMatrixType>
-  Teuchos::RCP< RILUK< NewMatrixType > >
-  clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const;
-
   //! Destructor (declared virtual for memory safety).
   virtual ~RILUK ();
 
@@ -521,7 +548,9 @@ public:
   }
 
   //! Return the Ifpack2::IlukGraph associated with this factored matrix.
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > getGraph () const {
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
+                                                   global_ordinal_type,
+                                                   node_type>, kk_handle_type> > getGraph () const {
     return Graph_;
   }
 
@@ -565,11 +594,14 @@ protected:
   //! The ILU(k) graph.
   Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
                                                    global_ordinal_type,
-                                                   node_type> > > Graph_;
+                                                   node_type>, kk_handle_type> > Graph_;
   /// \brief The matrix whos numbers are used to to compute ILU(k). The graph
   /// may be computed using a crs_matrix_type that initialize() constructs
   /// temporarily.
   Teuchos::RCP<const row_matrix_type> A_local_;
+  lno_row_view_t A_local_rowmap_; 
+  lno_nonzero_view_t A_local_entries_; 
+  scalar_nonzero_view_t A_local_values_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;
@@ -579,6 +611,7 @@ protected:
   Teuchos::RCP<crs_matrix_type> U_;
   //! Sparse triangular solver for U
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > U_solver_;
+
   //! The diagonal entries of the ILU(k) factorization.
   Teuchos::RCP<vec_type> D_;
 
@@ -601,6 +634,9 @@ protected:
   magnitude_type Athresh_;
   magnitude_type Rthresh_;
 
+  //! Optional KokkosKernels implementation.
+  bool isKokkosKernelsSpiluk_;
+  Teuchos::RCP<kk_handle_type> KernelHandle_;
 };
 
 // NOTE (mfh 11 Feb 2015) This used to exist in order to deal with
@@ -618,52 +654,6 @@ namespace detail {
     }
   };
 } // namespace detail
-
-template <class MatrixType>
-template <typename NewMatrixType>
-Teuchos::RCP<RILUK<NewMatrixType> >
-RILUK<MatrixType>::
-clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
-{
-  using Teuchos::ParameterList;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  typedef typename NewMatrixType::scalar_type new_scalar_type;
-  typedef typename NewMatrixType::local_ordinal_type new_local_ordinal_type;
-  typedef typename NewMatrixType::global_ordinal_type new_global_ordinal_type;
-  typedef typename NewMatrixType::node_type new_node_type;
-  typedef Tpetra::RowMatrix<new_scalar_type, new_local_ordinal_type,
-    new_global_ordinal_type, new_node_type> new_row_matrix_type;
-  typedef RILUK<new_row_matrix_type> new_riluk_type;
-
-  RCP<new_riluk_type> new_riluk = rcp (new new_riluk_type (A_newnode));
-
-  RCP<ParameterList> plClone = Teuchos::parameterList ();
-  plClone = detail::setLocalSolveParams<NewMatrixType, new_node_type>::setParams (plClone);
-
-  new_riluk->L_ = rcp(new crs_matrix_type(L_, Teuchos::Copy));
-  new_riluk->U_ = rcp(new crs_matrix_type(U_, Teuchos::Copy));
-  new_riluk->D_ = rcp(new crs_matrix_type(D_, Teuchos::Copy));
-
-  new_riluk->LevelOfFill_ = LevelOfFill_;
-  new_riluk->Overalloc_ = Overalloc_;
-
-  new_riluk->isAllocated_ = isAllocated_;
-  new_riluk->isInitialized_ = isInitialized_;
-  new_riluk->isComputed_ = isComputed_;
-
-  new_riluk->numInitialize_ = numInitialize_;
-  new_riluk->numCompute_ = numCompute_;
-  new_riluk->numApply_ =  numApply_;
-
-  new_riluk->RelaxValue_ = RelaxValue_;
-  new_riluk->Athresh_ = Athresh_;
-  new_riluk->Rthresh_ = Rthresh_;
-
-
-  return new_riluk;
-}
 
 } // namespace Ifpack2
 

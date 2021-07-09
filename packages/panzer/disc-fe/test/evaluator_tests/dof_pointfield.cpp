@@ -374,12 +374,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   TEST_EQUALITY(refField.size(),dofPointField1.size());
 
   // check the results
+  auto refField_h = Kokkos::create_mirror_view(refField.get_view());
+  Kokkos::deep_copy(refField_h, refField.get_view());
+  auto dofPointField0_h = Kokkos::create_mirror_view(dofPointField0.get_view());
+  Kokkos::deep_copy(dofPointField0_h, dofPointField0.get_view());
+  auto dofPointField1_h = Kokkos::create_mirror_view(dofPointField1.get_view());
+  Kokkos::deep_copy(dofPointField1_h, dofPointField1.get_view());
   for(int cell=0;cell<refField.extent_int(0);cell++) {
     for(int pt=0;pt<refField.extent_int(1);pt++) {
-      TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField0(cell,pt)),1e-15);
-      TEST_FLOATING_EQUALITY(SV::eval(refField(cell,pt)),SV::eval(dofPointField1(cell,pt)),1e-15);
-      // TEST_EQUALITY(refField(cell,pt),dofPointField0(cell,pt));
-      // TEST_EQUALITY(refField(cell,pt),dofPointField1(cell,pt));
+      TEST_FLOATING_EQUALITY(SV::eval(refField_h(cell,pt)),SV::eval(dofPointField0_h(cell,pt)),1e-15);
+      TEST_FLOATING_EQUALITY(SV::eval(refField_h(cell,pt)),SV::eval(dofPointField1_h(cell,pt)),1e-15);
+      // TEST_EQUALITY(refField_h(cell,pt),dofPointField0_h(cell,pt));
+      // TEST_EQUALITY(refField_h(cell,pt),dofPointField1_h(cell,pt));
     }
   }
 }

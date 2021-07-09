@@ -44,6 +44,7 @@ TRIBITS_ADD_TEST(
 	COMM mpi serial
 	NUM_MPI_PROCS 1
 	ARGS "CreateEdgeFace -pcab -pcset -pvpax"
+        ADDED_TESTS_NAMES_OUT CreateEdgeFaceWithConcatsAddedName
 )
 
 TRIBITS_ADD_TEST(
@@ -52,14 +53,13 @@ TRIBITS_ADD_TEST(
 	COMM mpi serial
 	NUM_MPI_PROCS 1
 	ARGS ReadEdgeFace
+        ADDED_TESTS_NAMES_OUT ReadEdgeFaceWithConcatsAddedName
 )
 
-# Should be a better way to do this, but...
-if (TPL_ENABLE_MPI)
-  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats_MPI_1 APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats_MPI_1)
-ELSE()
-  set_property(TEST ${PACKAGE_NAME}_ReadEdgeFaceWithConcats APPEND PROPERTY DEPENDS ${PACKAGE_NAME}_CreateEdgeFaceWithConcats)
-ENDIF()
+if (CreateEdgeFaceWithConcatsAddedName AND ReadEdgeFaceWithConcatsAddedName)
+  set_property(TEST ${ReadEdgeFaceWithConcatsAddedName}
+   APPEND PROPERTY DEPENDS ${CreateEdgeFaceWithConcatsAddedName})
+endif()
 
 # ===============================================
 
@@ -102,6 +102,11 @@ IF ( NETCDF_NCDUMP_BINARY )
     testwt-compress
     testwt-results
     testwt-oned
+    testwt-assembly
+    testrd-assembly
+    test-add-assembly
+    testwt-blob
+    testrd-blob
   )
 
   IF (SEACASExodus_ENABLE_THREADSAFE)
@@ -119,16 +124,24 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/testall.in
-    ${CMAKE_CURRENT_BINARY_DIR}/testall
+    ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/testall
     @ONLY
   )
+  # now copy the temporary into the final destination, setting the permissions
+  file(COPY ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/testall
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
   if ( TPL_Netcdf_Enables_Netcdf4 )
   CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/testnc4.in
-    ${CMAKE_CURRENT_BINARY_DIR}/testnc4
+    ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/testnc4
     @ONLY
   )
+  # now copy the temporary into the final destination, setting the permissions
+  file(COPY ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/testnc4
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
   endif()
 
   # NOTE: The "LINKER_LANGUAGE CXX" is used to workaround an issue with
@@ -138,58 +151,51 @@ IF ( NETCDF_NCDUMP_BINARY )
 
   FOREACH ( testName ${cbind_OLDTESTS} )
     TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX)
+    set_property(TARGET ${testName} PROPERTY C_STANDARD 99)
   ENDFOREACH ( testName )
 
   TRIBITS_ADD_EXECUTABLE( testwt-localization NOEXEPREFIX NOEXESUFFIX SOURCES testwt-localization.C LINKER_LANGUAGE CXX)
 
   IF (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-  TRIBITS_ADD_ADVANCED_TEST(
-   exodus_unit_tests
-   TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
-	  OUTPUT_FILE exodus_unit_tests.out
-	  PASS_ANY
-   TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS}
-		         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
+  TRIBITS_ADD_TEST(
+   testall
+   NOEXEPREFIX
+   NOEXESUFFIX
+   NAME exodus_unit_tests
    COMM mpi serial
-   OVERALL_NUM_MPI_PROCS 1
-   FINAL_PASS_REGULAR_EXPRESSION
+   NUM_MPI_PROCS 1
   )
 
   if ( TPL_Netcdf_Enables_Netcdf4 )
-    TRIBITS_ADD_ADVANCED_TEST(
-     exodus_unit_tests_nc4_env
-     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf4
-	    OUTPUT_FILE exodus_unit_tests.out
-	    PASS_ANY
-     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS}
-                           ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
+    TRIBITS_ADD_TEST(
+     testall
+     NOEXEPREFIX
+     NOEXESUFFIX
+     NAME exodus_unit_tests_nc4_env
+     ARGS netcdf4
      COMM mpi serial
-     FINAL_PASS_REGULAR_EXPRESSION
+     NUM_MPI_PROCS 1
     )
 
-    TRIBITS_ADD_ADVANCED_TEST(
-     exodus_nc4_unit_tests
-     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testnc4
-	    OUTPUT_FILE exodus_nc4_unit_tests.out
-	    PASS_ANY
-     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_nc4_unit_tests.gold
-		           ${CMAKE_CURRENT_BINARY_DIR}/exodus_nc4_unit_tests.out
+    TRIBITS_ADD_TEST(
+     testnc4
+     NOEXEPREFIX
+     NOEXESUFFIX
+     NAME exodus_nc4_unit_tests
      COMM mpi serial
-     OVERALL_NUM_MPI_PROCS 1
-     FINAL_PASS_REGULAR_EXPRESSION
+     NUM_MPI_PROCS 1
     )
   endif()
 
 #  if ( TPL_Netcdf_Enables_Netcdf5 )
-    TRIBITS_ADD_ADVANCED_TEST(
-     exodus_unit_tests_nc5_env
-     TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall netcdf5
-	    OUTPUT_FILE exodus_unit_tests.out
-	    PASS_ANY
-     TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold${TS}
-                           ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
-     COMM mpi serial
-     FINAL_PASS_REGULAR_EXPRESSION
+    TRIBITS_ADD_TEST(
+      testall
+      NOEXEPREFIX
+      NOEXESUFFIX
+      NAME exodus_unit_tests_nc5_env
+      ARGS netcdf5
+      COMM mpi serial
+      NUM_MPI_PROCS 1
     )
 #  endif()
    endif()

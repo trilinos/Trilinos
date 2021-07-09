@@ -43,32 +43,24 @@
 */
 
 #include <KokkosKernels_config.h>
-#if defined(KOKKOSKERNELS_INST_DOUBLE) &&  \
-    defined(KOKKOSKERNELS_INST_OFFSET_SIZE_T) && \
-    defined(KOKKOSKERNELS_INST_ORDINAL_INT)
 #include "KokkosSparse_pcg.hpp"
 
 #include "KokkosKernels_Utils.hpp"
-#include <iostream>
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosKernels_default_types.hpp"
+#include <iostream>
 
 #define MAXVAL 1
 
-#define SIZE_TYPE size_t
-#define INDEX_TYPE int
-#define SCALAR_TYPE double
-
-
-
 template<typename scalar_view_t>
-scalar_view_t create_x_vector(INDEX_TYPE nv, SCALAR_TYPE max_value = 1.0){
+scalar_view_t create_x_vector(default_lno_t nv, default_scalar max_value = 1.0){
   scalar_view_t kok_x ("X", nv);
 
   typename scalar_view_t::HostMirror h_x =  Kokkos::create_mirror_view (kok_x);
 
 
-  for (INDEX_TYPE i = 0; i < nv; ++i){
-    SCALAR_TYPE r = static_cast <SCALAR_TYPE> (rand()) / static_cast <SCALAR_TYPE> (RAND_MAX / max_value);
+  for (default_lno_t i = 0; i < nv; ++i){
+    default_scalar r = static_cast <default_scalar> (rand()) / static_cast <default_scalar> (RAND_MAX / max_value);
     h_x(i) = r;
   }
   Kokkos::deep_copy (kok_x, h_x);
@@ -98,7 +90,7 @@ void run_experiment(
   typedef typename lno_view_t::value_type size_type;
   typedef typename scalar_view_t::value_type scalar_t;
 
-  INDEX_TYPE nv = crsmat.numRows();
+  default_lno_t nv = crsmat.numRows();
   scalar_view_t kok_x_original = create_x_vector<scalar_view_t>(nv, MAXVAL);
   scalar_view_t kok_b_vector = create_y_vector(crsmat, kok_x_original);
 
@@ -255,25 +247,70 @@ void run_experiment(
   */
 }
 
-
-
-
 enum { CMD_USE_THREADS = 0
      , CMD_USE_NUMA
      , CMD_USE_CORE_PER_NUMA
      , CMD_USE_CUDA
+     , CMD_USE_HIP
      , CMD_USE_OPENMP
-     , CMD_USE_CUDA_DEV
+     , CMD_DEVICE
      , CMD_BIN_MTX
      , CMD_CLUSTER_SIZE
      , CMD_USE_SEQUENTIAL_SGS
      , CMD_ERROR
      , CMD_COUNT };
 
+template<typename execution_space>
+void run_pcg(int* cmdline, const char* mtx_file)
+{
+  default_lno_t nv = 0, ne = 0;
+  default_lno_t *xadj, *adj;
+  default_scalar *ew;
+
+  KokkosKernels::Impl::read_matrix<default_lno_t,default_lno_t, default_scalar> (&nv, &ne, &xadj, &adj, &ew, mtx_file);
+
+  typedef typename KokkosSparse::CrsMatrix<default_scalar, default_lno_t, execution_space, void, default_size_type> crsMat_t;
+
+  typedef typename crsMat_t::StaticCrsGraphType graph_t;
+  typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
+  typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
+  typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+  row_map_view_t rowmap_view("rowmap_view", nv+1);
+  cols_view_t columns_view("colsmap_view", ne);
+  values_view_t values_view("values_view", ne);
+
+  {
+    typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+    typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+    typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+    for (default_lno_t i = 0; i <= nv; ++i){
+      hr(i) = xadj[i];
+    }
+
+    for (default_lno_t i = 0; i < ne; ++i){
+      hc(i) = adj[i];
+      hv(i) = ew[i];
+    }
+    Kokkos::deep_copy (rowmap_view , hr);
+    Kokkos::deep_copy (columns_view , hc);
+    Kokkos::deep_copy (values_view , hv);
+  }
+  graph_t static_graph (columns_view, rowmap_view);
+  crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+
+  delete [] xadj;
+  delete [] adj;
+  delete [] ew;
+
+  run_experiment<execution_space, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE], cmdline[CMD_USE_SEQUENTIAL_SGS]);
+}
+
 int main (int argc, char ** argv){
 
   int cmdline[ CMD_COUNT ] ;
-  char *mtx_bin_file = NULL;
+  char *mtx_file = NULL;
   for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
 
   for ( int i = 1 ; i < argc ; ++i ) {
@@ -283,17 +320,22 @@ int main (int argc, char ** argv){
     else if ( 0 == strcasecmp( argv[i] , "--openmp" ) ) {
       cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
     }
+    /*
     else if ( 0 == strcasecmp( argv[i] , "--cores" ) ) {
+      //Note BMK: specifying #NUMA regions isn't supported by initialize
       sscanf( argv[++i] , "%dx%d" ,
               cmdline + CMD_USE_NUMA ,
               cmdline + CMD_USE_CORE_PER_NUMA );
     }
+    */
     else if ( 0 == strcasecmp( argv[i] , "--cuda" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
     }
-    else if ( 0 == strcasecmp( argv[i] , "--cuda-dev" ) ) {
-      cmdline[ CMD_USE_CUDA ] = 1 ;
-      cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
+    else if ( 0 == strcasecmp( argv[i] , "--hip" ) ) {
+      cmdline[ CMD_USE_HIP ] = 1 ;
+    }
+    else if ( 0 == strcasecmp( argv[i] , "--device-id" ) ) {
+      cmdline[ CMD_DEVICE ] = atoi( argv[++i] ) ;
     }
     else if ( 0 == strcasecmp( argv[i] , "--cluster-size" ) ) {
       cmdline[CMD_CLUSTER_SIZE] = atoi(argv[++i]);
@@ -303,12 +345,12 @@ int main (int argc, char ** argv){
     }
 
     else if ( 0 == strcasecmp( argv[i] , "--mtx" ) ) {
-      mtx_bin_file = argv[++i];
+      mtx_file = argv[++i];
     }
     else {
       cmdline[ CMD_ERROR ] = 1 ;
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
+      std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--hip\n\t--device-id[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
 
       return 0;
     }
@@ -317,190 +359,43 @@ int main (int argc, char ** argv){
   if(cmdline[CMD_CLUSTER_SIZE] == 0)
     cmdline[CMD_CLUSTER_SIZE] = 1;
 
-  if (mtx_bin_file == NULL){
-    std::cerr << "Provide a mtx binary file" << std::endl ;
-    std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--cuda-dev[DeviceIndex]\n\t--mtx[binary_mtx_file]" << std::endl;
+  if (mtx_file == NULL){
+    std::cerr << "Provide a matrix file" << std::endl ;
+    std::cerr << "OPTIONS\n\t--threads [numThreads]\n\t--openmp [numThreads]\n\t--cuda\n\t--hip\n\t--device-id[DeviceIndex]\n\t--mtx[matrix]" << std::endl;
 
     return 0;
   }
 
+  Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
 
+  init_args.device_id = cmdline[ CMD_DEVICE ];
+  if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
+    init_args.num_threads = std::max(cmdline[ CMD_USE_THREADS ], cmdline [ CMD_USE_OPENMP ]);
+    init_args.num_numa = cmdline[ CMD_USE_NUMA ];
+  }
+  else {
+    init_args.num_threads = cmdline[ CMD_USE_THREADS ];
+  }
+
+  Kokkos::initialize( init_args );
+  {
 #if defined( KOKKOS_ENABLE_THREADS )
-
-    if ( cmdline[ CMD_USE_THREADS ] ) {
-
-      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        init_args.num_threads = cmdline[ CMD_USE_THREADS ];
-        init_args.num_numa = cmdline[ CMD_USE_NUMA ];
-        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ]; // How to get this to initialize() without using impl_initialize()?
-      }
-      else {
-        init_args.num_threads = cmdline[ CMD_USE_THREADS ];
-      }
-
-      Kokkos::initialize( init_args );
-      Kokkos::print_configuration(std::cout);
-      {
-        INDEX_TYPE nv = 0, ne = 0;
-        INDEX_TYPE *xadj, *adj;
-        SCALAR_TYPE *ew;
-
-        KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
-
-        typedef Kokkos::Threads myExecSpace;
-        typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
-
-        typedef typename crsMat_t::StaticCrsGraphType graph_t;
-        typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
-        typedef typename graph_t::entries_type::non_const_type   cols_view_t;
-        typedef typename crsMat_t::values_type::non_const_type values_view_t;
-
-        row_map_view_t rowmap_view("rowmap_view", nv+1);
-        cols_view_t columns_view("colsmap_view", ne);
-        values_view_t values_view("values_view", ne);
-
-        KokkosKernels::Impl::copy_vector<SCALAR_TYPE * , values_view_t, myExecSpace>(ne, ew, values_view);
-        KokkosKernels::Impl::copy_vector<INDEX_TYPE * , cols_view_t, myExecSpace>(ne, adj, columns_view);
-        KokkosKernels::Impl::copy_vector<INDEX_TYPE * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
-
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
-
-        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE], cmdline[CMD_USE_SEQUENTIAL_SGS]);
-      }
-
-      Kokkos::finalize();
-    }
+    if(cmdline[CMD_USE_THREADS])
+      run_pcg<Kokkos::Threads>(cmdline, mtx_file);
 #endif
-
 #if defined( KOKKOS_ENABLE_OPENMP )
-
-    if ( cmdline[ CMD_USE_OPENMP ] ) {
-
-      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
-        init_args.num_numa = cmdline[ CMD_USE_NUMA ];
-        //const int core_per_numa = cmdline[ CMD_USE_CORE_PER_NUMA ];
-      }
-      else {
-        init_args.num_threads = cmdline[ CMD_USE_OPENMP ];
-      }
-
-      Kokkos::initialize( init_args );
-      Kokkos::print_configuration(std::cout);
-      {
-        INDEX_TYPE nv = 0, ne = 0;
-        INDEX_TYPE *xadj, *adj;
-        SCALAR_TYPE *ew;
-
-        KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
-
-
-        typedef Kokkos::OpenMP myExecSpace;
-        typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
-
-        typedef typename crsMat_t::StaticCrsGraphType graph_t;
-        typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
-        typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
-        typedef typename crsMat_t::values_type::non_const_type values_view_t;
-
-        row_map_view_t rowmap_view("rowmap_view", nv+1);
-        cols_view_t columns_view("colsmap_view", ne);
-        values_view_t values_view("values_view", ne);
-
-        KokkosKernels::Impl::copy_vector<SCALAR_TYPE * , values_view_t, myExecSpace>(ne, ew, values_view);
-        KokkosKernels::Impl::copy_vector<INDEX_TYPE * , cols_view_t, myExecSpace>(ne, adj, columns_view);
-        KokkosKernels::Impl::copy_vector<INDEX_TYPE * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
-
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
-
-        //crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
-
-        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE], cmdline[CMD_USE_SEQUENTIAL_SGS]);
-      }
-      Kokkos::finalize();
-    }
+    if(cmdline[CMD_USE_OPENMP])
+      run_pcg<Kokkos::OpenMP>(cmdline, mtx_file);
 #endif
-
 #if defined( KOKKOS_ENABLE_CUDA )
-    if ( cmdline[ CMD_USE_CUDA ] ) {
-
-      Kokkos::InitArguments init_args; // Construct with default args, change members based on exec space
-
-      // Use the last device:
-      init_args.device_id = cmdline[ CMD_USE_CUDA_DEV ];
-
-      Kokkos::initialize( init_args );
-      Kokkos::print_configuration(std::cout);
-      {
-        INDEX_TYPE nv = 0, ne = 0;
-        INDEX_TYPE *xadj, *adj;
-        SCALAR_TYPE *ew;
-
-        KokkosKernels::Impl::read_matrix<INDEX_TYPE,INDEX_TYPE, SCALAR_TYPE> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
-
-
-        typedef Kokkos::Cuda myExecSpace;
-        typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, myExecSpace, void, SIZE_TYPE > crsMat_t;
-
-        typedef typename crsMat_t::StaticCrsGraphType graph_t;
-        typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
-        typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
-        typedef typename crsMat_t::values_type::non_const_type values_view_t;
-
-        row_map_view_t rowmap_view("rowmap_view", nv+1);
-        cols_view_t columns_view("colsmap_view", ne);
-        values_view_t values_view("values_view", ne);
-
-
-        {
-          typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
-          typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
-          typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
-
-          for (INDEX_TYPE i = 0; i <= nv; ++i){
-            hr(i) = xadj[i];
-          }
-
-          for (INDEX_TYPE i = 0; i < ne; ++i){
-            hc(i) = adj[i];
-            hv(i) = ew[i];
-          }
-          Kokkos::deep_copy (rowmap_view , hr);
-          Kokkos::deep_copy (columns_view , hc);
-          Kokkos::deep_copy (values_view , hv);
-
-
-        }
-        graph_t static_graph (columns_view, rowmap_view);
-        crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
-
-  //      typedef typename KokkosSparse::CrsMatrix<SCALAR_TYPE, INDEX_TYPE, Kokkos::Cuda> crsMat_t;
-  //      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
-        delete [] xadj;
-        delete [] adj;
-        delete [] ew;
-
-        run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[CMD_CLUSTER_SIZE], cmdline[CMD_USE_SEQUENTIAL_SGS]);
-      }
-      Kokkos::finalize();
-    }
+    if(cmdline[CMD_USE_CUDA])
+      run_pcg<Kokkos::Cuda>(cmdline, mtx_file);
 #endif
-
+#if defined( KOKKOS_ENABLE_HIP )
+    if(cmdline[CMD_USE_HIP])
+      run_pcg<Kokkos::Experimental::HIP>(cmdline, mtx_file);
+#endif
+  }
+  Kokkos::finalize();
   return 0;
 }
-#else
-int main() {
-}
-#endif

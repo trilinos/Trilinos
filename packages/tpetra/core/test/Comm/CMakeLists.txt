@@ -27,14 +27,51 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
   idot
   SOURCES
     idot
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  NUM_MPI_PROCS 1-4
+  COMM serial mpi)
+
+TRIBITS_ADD_TEST(
+  idot
+  NAME idot
   COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+)
+
+TRIBITS_ADD_TEST(
+  idot
+  NAME idot
+  COMM mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 4
+)
+
+# If we have CUDA, and we have CUDA-aware MPI, also test idot
+# with CUDA-aware MPI explicitly turned off at runtime.
+# This exercises a different code path in idot.
+IF (Tpetra_ENABLE_CUDA AND Tpetra_INST_CUDA AND TPETRA_ASSUME_CUDA_AWARE_MPI)
+  TRIBITS_ADD_TEST(
+    idot
+    NAME idot_no_cuda_aware
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    ENVIRONMENT TPETRA_ASSUME_CUDA_AWARE_MPI=OFF
   )
+
+  TRIBITS_ADD_TEST(
+    idot
+    NAME idot_no_cuda_aware
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 4
+    ENVIRONMENT TPETRA_ASSUME_CUDA_AWARE_MPI=OFF
+  )
+ENDIF ()
 
 ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 ASSERT_DEFINED (Tpetra_INST_CUDA)

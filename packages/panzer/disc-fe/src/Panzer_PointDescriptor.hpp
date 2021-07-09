@@ -74,6 +74,13 @@ public:
   /// Destructor
   virtual ~PointDescriptor() = default;
 
+  /**
+   * \brief Check if the point descriptor has a generator for generating point values
+   */
+  bool
+  hasGenerator() const
+  {return _generator != Teuchos::null;}
+
   /** Build a generator class that generates any reference points on 
     * a specified topology.
     *

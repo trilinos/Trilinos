@@ -524,11 +524,11 @@ setupInOutArgs_() const
     if (acceptModelParams_) {
       outArgs.set_Np_Ng(Np_,Ng_);
       outArgs.setSupports( MEB::OUT_ARG_DfDp,0,
-                           MEB::DERIV_MV_BY_COL );
+                           MEB::DERIV_MV_JACOBIAN_FORM );
       outArgs.setSupports( MEB::OUT_ARG_DgDp,0,0,
-                           MEB::DERIV_MV_BY_COL );
+                           MEB::DERIV_MV_JACOBIAN_FORM );
       outArgs.setSupports( MEB::OUT_ARG_DgDx,0,
-                           MEB::DERIV_TRANS_MV_BY_ROW );
+                           MEB::DERIV_MV_GRADIENT_FORM );
     }
     outArgs_ = outArgs;
   }

@@ -274,7 +274,7 @@ public:
   ///
   virtual
   KOKKOS_INLINE_FUNCTION
-  ~Vector() final;
+  ~Vector();
 
   ///
   /// Indexing for constant vector

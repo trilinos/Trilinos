@@ -15,7 +15,7 @@ Notes on this version of SUPES:
 	    in the C programming language.  This was done for a number of
             reasons.  Among them are that we will now be able to run with
             only one version of the source for all of the architectures that we
-            will be supporting, and the ease in which a port will be made 
+            will be supporting, and the ease in which a port will be made
             possible.  The former case is made possible through the liberal
 	    use of C Preprocessor compiler directives while the latter by
 	    comparison with the existing code itself.
@@ -35,38 +35,38 @@ Notes on this version of SUPES:
 
 		#if defined (unix)
 		# if defined (sun)
-		
+
 		#     include <sys/time.h>
 		      extime_( string, len )
 		      char string[];
 		      long int len;
-		
+
 		# else				/* Not Sun */
 		#  if defined (CRAY)
-		
+
 		#     include <time.h>
 		#     include <fortran.h>
 		      EXTIME( string )
 		      _fcd string;
-		
+
 		#  endif			/* Unicos */
 		# endif				/* Sun */
 		#else				/* Not UNIX */
 		# if defined (VMS)
-		
+
 		#     include time
 		#     include descrip
 		      extime( string )
 		      struct dsc$descriptor_s *string;
-		
+
 		# else				/* not VMS */
-		
+
 		# endif				/* VMS */
 		#endif				/* UNIX */
-----------------------------------		
+----------------------------------
 	    Again, there are a number of observations to be made here:
 	       a) The string passing mechanisms are different for each
-                  architecture.  
+                  architecture.
 	       b) The convention of including ``header''  files is
 		  addressed on a machine to machine basis.  I found that
 	          this was the most expedient way to handle them.

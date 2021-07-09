@@ -93,7 +93,6 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, simple)
   b.deep_copy(2.0);
   MDField<Scalar,CELL,QP,DIM> c = allocateUnmanagedMDField<Scalar,CELL,QP,DIM>("c",cdl);
   c.deep_copy(3.0);
-  Kokkos::fence();
 
   PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
   tester.setEvaluatorToTest(e);
@@ -130,7 +129,6 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, DuplicateField)
   b.deep_copy(2.0);
   MDField<Scalar,CELL,QP,DIM> c = allocateUnmanagedMDField<Scalar,CELL,QP,DIM>("c",cdl);
   c.deep_copy(3.0);
-  Kokkos::fence();
 
   PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
   tester.setEvaluatorToTest(e);
@@ -181,7 +179,6 @@ TEUCHOS_UNIT_TEST(evaluator_unit_tester, AllRanks)
   f4.deep_copy(4.0);
   f5.deep_copy(5.0);
   f6.deep_copy(6.0);
-  Kokkos::fence();
 
   PHX::EvaluatorUnitTester<EvalType,MyTraits> tester;
   tester.setEvaluatorToTest(e);

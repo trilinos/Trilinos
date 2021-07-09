@@ -83,7 +83,7 @@ namespace {
       stkIo.populate_mesh();
 
       //+ Application would call mesh modification here.
-      //+ for example, create_edges() or create_faces().
+      //+ for example, create_edges().
 
       //+ Mesh modifications complete, allocate field data.
       stkIo.populate_field_data();

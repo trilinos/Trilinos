@@ -4,7 +4,7 @@
 
 The Compadre Toolkit provides a performance portable solution for the parallel evaluation of computationally dense kernels. The toolkit specifically targets the Generalized Moving Least Squares (GMLS) approach, which requires the inversion of small dense matrices. The result is a set of weights that provide the information needed for remap or entries that constitute the rows of some globally sparse matrix.
 
-This toolkit focuses on the 'on-node' aspects of meshless PDE solution and remap, namely the parallel construction of small dense matrices and their inversion. What it does **not** provide is the tools for managing fields, inverting globally sparse matrices, or neighbor search that requires orchestration over many MPI processes. This toolkit is designed to be easily dropped-in to an existing MPI (or serial) based framework for PDE solution or remap, with minimal dependencies ([Kokkos](https://github.com/kokkos/kokkos) and either [Cuda Toolkit](https://developer.nvidia.com/cuda-toolkit) or [LAPACK](http://www.netlib.org/lapack/)).
+This toolkit focuses on the 'on-node' aspects of meshless PDE solution and remap, namely the parallel construction of small dense matrices and their inversion. What it does **not** provide is the tools for managing fields, inverting globally sparse matrices, or neighbor search that requires orchestration over many MPI processes. This toolkit is designed to be easily dropped-in to an existing MPI (or serial) based framework for PDE solution or remap, with minimal dependencies ([Kokkos](https://github.com/kokkos/kokkos) and [KokkosKernels](https://github.com/kokkos/kokkos-kernels)).
 
 ### Generalized Moving Least Squares (GMLS)
 
@@ -33,29 +33,42 @@ Details about building and using the Compadre toolkit can be found on the [Wiki]
 [Installation of Compadre](https://github.com/SNLComputation/compadre/wiki/Building-Compadre)
 
 ## Documentation and Tutorials
-The toolkit is documented by Doxygen. <b>[Documentation is available online](https://snlcomputation.github.io/compadre/doc/html/index.html)</b> or can be compiled from source.
+The toolkit is documented by Doxygen. <b>[Documentation is available online](https://snlcomputation.github.io/compadre/index.html)</b> or can be compiled from source.
 To compile from source: 1.) install doxygen software on your computer, 2.) execute '>> make doc' after having installed the Compadre Toolkit. HTML and Latex documentation will be generated in the <b>doc/</b> folder, in-source. 
 
 ## Citing the Software
 
-If you write a paper using results obtained with the help of the Compadre Toolkit, please cite the following reference:
+If you write a paper using results obtained with the help of the Compadre Toolkit, please cite the following reference which is applicable to every version of the Compadre Toolkit:
 
 ```
-@software{paul_kuberry_2020_3703333,
+@software{compadre_toolkit,
   author       = {Paul Kuberry and
                   Peter Bosler and
                   Nathaniel Trask},
   title        = {Compadre Toolkit},
-  month        = mar,
-  year         = 2020,
-  publisher    = {Zenodo},
-  version      = {v1.0.3},
-  doi          = {10.5281/zenodo.3703333},
-  url          = {https://doi.org/10.5281/zenodo.3703333}
+  month        = jan, 
+  year         = 2019,
+  doi          = {10.11578/dc.20190411.1},
+  url          = {https://github.com/SNLComputation/compadre}
 }
 ```
 
-If you would like to export the reference information to either CSL, DataCite, Dublin, Core, JSON, JSON-LD, MARCXML, or Mendeley, please find the export section at the bottom-right corner once you follow the link below:
+If you are using a particular release of the Compadre Toolkit and would like to help others to reproduce your results, please cite that release specifically. A reference to the most recent release is:
+```
+@software{compadre_toolkit_v1_3_0,
+  author       = {Paul Kuberry and
+                  Peter Bosler and
+                  Nathaniel Trask},
+  title        = {Compadre Toolkit},
+  month        = feb,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {v1.3.0},
+  doi          = {10.5281/zenodo.4499105},
+  url          = {https://doi.org/10.5281/zenodo.4499105}
+}
+```
 
-<a href="https://doi.org/10.5281/zenodo.3338664" target="_blank"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3703333.svg"></a>
-
+```diff
+! DOI: 10.11578/dc.20190411.1
+```

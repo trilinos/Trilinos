@@ -1,5 +1,9 @@
-# Allow full output to go to CDash
-SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 0)
-SET(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 0)
-# WARNING!  This could be a lot of output and could overwhelm CDash and the
-# MySQL DB so this might not be a good idea!
+# Increase the amount of output being produced
+SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 54321)
+SET(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 123456)
+# NOTE: Above, we use these numbers to make it easy to determine that these
+# values are getting read correctly in various modes of running
+# tribits_ctest_driver().  In a real project, you could set something like:
+#
+#   SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 50000)
+#   SET(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 5000000)

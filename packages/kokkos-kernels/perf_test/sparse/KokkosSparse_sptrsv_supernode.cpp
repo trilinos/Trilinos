@@ -43,8 +43,10 @@
 */
 
 #include "Kokkos_Random.hpp"
-#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosKernels_SparseUtils.hpp"
 #include "KokkosSparse_spmv.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+
 #include "KokkosSparse_sptrsv.hpp"
 #include "KokkosSparse_sptrsv_supernode.hpp"
 
@@ -57,6 +59,7 @@
 #include "KokkosSparse_sptrsv_aux.hpp"
 
 using namespace KokkosKernels;
+using namespace KokkosKernels::Impl;
 using namespace KokkosKernels::Experimental;
 using namespace KokkosSparse;
 using namespace KokkosSparse::Experimental;
@@ -90,7 +93,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& lower_f
                         <size_type, ordinal_type, scalar_type, execution_space, memory_space, memory_space >;
 
   //
-  using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_type, ordinal_type, host_execution_space, void, size_type>;
+  using host_crsmat_t = typename KernelHandle::SPTRSVHandleType::host_crsmat_t;
 
   //
   using host_scalar_view_t = Kokkos::View< scalar_type*, host_memory_space >;
@@ -128,32 +131,22 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& lower_f
       using row_map_view_t = typename host_graph_t::row_map_type::non_const_type;
       using    cols_view_t = typename host_graph_t::entries_type::non_const_type;
       using  values_view_t = typename host_crsmat_t::values_type::non_const_type;
+      using in_row_map_view_t = typename host_graph_t::row_map_type;
+      using in_cols_view_t    = typename host_graph_t::entries_type;
+      using in_values_view_t  = typename host_crsmat_t::values_type;
 
       size_type nnzL = row_mapM (nrows);
       row_map_view_t row_map ("rowmap_view", nrows+1);
       cols_view_t    entries ("colmap_view", nnzL);
       values_view_t  values  ("values_view", nnzL);
-      for (int i = 0; i < nrows; i++) {
-        for (int k = row_mapM (i); k < row_mapM (i+1); k++) {
-            row_map (entriesM (k) + 1) ++;
-        }
-      }
-      for (int i = 0; i < nrows; i++) {
-        row_map (i+1) += row_map (i);
-      }
+      // transpose L
+      transpose_matrix <in_row_map_view_t, in_cols_view_t, in_values_view_t,
+                           row_map_view_t,    cols_view_t,    values_view_t, 
+                        row_map_view_t, host_execution_space>
+        (nrows, nrows, row_mapM, entriesM, valuesM,
+                       row_map,  entries,  values);
 
-      for (int i = 0; i < nrows; i++) {
-        for (int k = row_mapM (i); k < row_mapM (i+1); k++) {
-            entries (row_map (entriesM (k))) = i;
-            values  (row_map (entriesM (k))) = valuesM (k);
-            row_map (entriesM (k)) ++;
-        }
-      }
-      for (int i = nrows; i > 0; i--) {
-        row_map (i) = row_map (i-1);
-      }
-      row_map (0)  = 0;
-
+      // store L in CSC
       host_graph_t static_graph(entries, row_map);
       host_crsmat_t T ("CrsMatrix", nrows, values, static_graph);
     //}
@@ -229,7 +222,7 @@ int test_sptrsv_perf (std::vector<int> tests, bool verbose, std::string& lower_f
           // do symbolic analysis (preprocssing, e.g., merging supernodes, inverting diagonal/offdiagonal blocks,
           // and scheduling based on graph/dag)
           khU.get_sptrsv_handle ()->set_column_major (!khL.get_sptrsv_handle ()->is_column_major ());
-          sptrsv_supernodal_symbolic<scalar_type, ordinal_type, size_type> (nsuper, supercols.data (), etree, L.graph, &khL, L.graph, &khU);
+          sptrsv_supernodal_symbolic (nsuper, supercols.data (), etree, L.graph, &khL, L.graph, &khU);
 
           // ==============================================
           // do numeric compute (copy numerical values from SuperLU data structure to our sptrsv data structure)

@@ -10,8 +10,11 @@
 #define Tempus_StepperSubcyclingModifierDefault_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperSubcyclingModifierBase.hpp"
+
+// Applications can uncomment this include in their implementation,
+// if they need access to the stepper methods.
+//#include "Tempus_StepperSubcycling.hpp"
 
 
 namespace Tempus {
@@ -20,6 +23,9 @@ namespace Tempus {
  *
  *  The default modifier provides no-op functionality for the modifier.
  *  See StepperSubcyclingModifierBase for details on the algorithm.
+ *
+ *  Applications can copy this implementation, rename, implement their
+ *  action, and set on the stepper to get app-specific functionality.
  */
 template<class Scalar>
 class StepperSubcyclingModifierDefault

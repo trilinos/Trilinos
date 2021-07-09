@@ -373,6 +373,8 @@ struct hash<panzer::WorksetDescriptor>
     std::size_t seed = 0;
 
     panzer::hash_combine(seed,wd.getElementBlock());
+    panzer::hash_combine(seed,wd.requiresPartitioning());
+    panzer::hash_combine(seed,wd.getWorksetSize());
     if(wd.useSideset()) {
       // optionally hash on side set and side assembly
       panzer::hash_combine(seed,wd.getSideset());

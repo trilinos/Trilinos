@@ -984,7 +984,9 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
+  Kokkos::fence();
   Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
+  Kokkos::fence();
 }
 
 // Overload of deep_copy for Fad views intializing to a constant Fad
@@ -1004,7 +1006,9 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
+  Kokkos::fence();
   Kokkos::Impl::DynRankViewFill< DynRankView<DT,DP...> >( view , value );
+  Kokkos::fence();
 }
 
 template< class DstType , class SrcType >
@@ -1041,10 +1045,10 @@ void deep_copy
   typedef typename src_type::memory_space     src_memory_space ;
 
   enum { DstExecCanAccessSrc =
-   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename dst_execution_space::memory_space , src_memory_space >::value };
+   Kokkos::Impl::SpaceAccessibility< typename dst_execution_space::memory_space, src_memory_space >::accessible };
 
   enum { SrcExecCanAccessDst =
-   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename src_execution_space::memory_space , dst_memory_space >::value };
+   Kokkos::Impl::SpaceAccessibility< typename src_execution_space::memory_space, dst_memory_space >::accessible };
 
   if ( (void *) dst.data() != (void*) src.data() ) {
 
@@ -1056,7 +1060,9 @@ void deep_copy
     {
       typedef typename dst_type::value_type::value_type value_type ;
       const size_t nbytes = sizeof(value_type) * dst.span() ;
+      Kokkos::fence();
       Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
+      Kokkos::fence();
     }
     else if ( std::is_same< typename DstType::traits::value_type ,
                        typename SrcType::traits::non_const_value_type >::value &&
@@ -1094,8 +1100,9 @@ void deep_copy
       //const size_t nbytes = sizeof(typename dst_type::scalar_array_type) * dst.span() ;
       const size_t nbytes = sizeof(typename dst_type::value_type::value_type) * dst.span() ; 
       //dst_type::value_type is outer FAD type, dst_type::value_type::value_type is inner FAD type
-
+      Kokkos::fence();
       Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
+      Kokkos::fence();
     }
     else if ( std::is_same< typename DstType::traits::value_type ,
                             typename SrcType::traits::non_const_value_type >::value &&
@@ -1135,20 +1142,28 @@ void deep_copy
          ) {
 
       const size_t nbytes = sizeof(typename dst_type::value_type::value_type) * dst.span() ; 
-
+      Kokkos::fence();
       Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
+      Kokkos::fence();
     }
     else if ( DstExecCanAccessSrc ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
+      Kokkos::fence();
       Kokkos::Impl::DynRankViewRemap< dst_type , src_type >( dst , src );
+      Kokkos::fence();
     }
     else if ( SrcExecCanAccessDst ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
+      Kokkos::fence();
       Kokkos::Impl::DynRankViewRemap< dst_type , src_type , src_execution_space >( dst , src );
+      Kokkos::fence();
     }
     else {
       Kokkos::Impl::throw_runtime_exception("deep_copy given views that would require a temporary allocation");
     }
+  }
+  else {
+    Kokkos::fence();
   }
 }
 

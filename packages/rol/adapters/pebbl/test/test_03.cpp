@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
       *outStream << "  " << alpha[i];
     }
     *outStream << std::endl << std::endl;
-    ROL::Ptr<ROL::Objective<RealT> > obj
+    ROL::Ptr<ROL::Objective<RealT>> obj
       = ROL::makePtr<Objective_SimpleBinary<RealT>>(alpha);
     /**********************************************************************************************/
     /************************* ENUMERATE SOLUTION *************************************************/

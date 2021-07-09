@@ -30,12 +30,10 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#define SACADO_TEST_DFAD 1
 #include "Fad_KokkosTests.hpp"
 
-#include "Kokkos_Core.hpp"
-
 // Instantiate tests for OpenMP device
-#define SACADO_TEST_DFAD 1
 using Kokkos::OpenMP;
 VIEW_FAD_TESTS_D( OpenMP )
 

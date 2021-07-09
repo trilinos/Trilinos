@@ -33,12 +33,16 @@
 //
 
 #include <stk_util/stk_config.h>
+#ifdef STK_HAVE_KOKKOSCORE
 #include <Kokkos_Core.hpp>
+#endif
 #include <gtest/gtest.h>                // for InitGoogleTest, etc
 #ifdef STK_HAVE_STKNGP_TEST
 #include <stk_ngp_test/ngp_test.hpp>
 #endif
+#ifdef STK_HAS_MPI
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
+#endif
 #include <stk_util/parallel/Parallel.hpp>
 
 int gl_argc = 0;
@@ -46,11 +50,17 @@ char** gl_argv = 0;
 
 int main(int argc, char **argv)
 {
-    stk::parallel_machine_init(&argc, &argv);
+  stk::parallel_machine_init(&argc, &argv);
 
+  int returnVal = -1;
+ 
+  {
 #ifdef STK_HAVE_STKNGP_TEST
     ngp_testing::NgpTestEnvironment testEnv(&argc, argv);
 #else
+#ifdef STK_HAVE_KOKKOSCORE
+    Kokkos::initialize(argc, argv);
+#endif
     testing::InitGoogleTest(&argc, argv);
 #endif
 
@@ -63,12 +73,17 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef STK_HAVE_STKNGP_TEST
-    int returnVal = testEnv.run_all_tests();
+    returnVal = testEnv.run_all_tests();
+    testEnv.finalize();
 #else
-    int returnVal = RUN_ALL_TESTS();
+    returnVal = RUN_ALL_TESTS();
+#ifdef STK_HAVE_KOKKOSCORE
+    Kokkos::finalize_all();
 #endif
+#endif
+  }
 
-    stk::parallel_machine_finalize();
+  stk::parallel_machine_finalize();
 
-    return returnVal;
+  return returnVal;
 }

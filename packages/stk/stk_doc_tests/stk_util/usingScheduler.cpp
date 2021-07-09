@@ -34,8 +34,8 @@
 // 
 
 //BEGINSchedulerExample
-#include <gtest/gtest.h>
-#include <stk_util/environment/Scheduler.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/environment/Scheduler.hpp"  // for Scheduler, Time, Step
 
 namespace
 {

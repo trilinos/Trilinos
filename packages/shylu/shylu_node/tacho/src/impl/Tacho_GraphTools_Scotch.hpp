@@ -4,8 +4,9 @@
 /// \file Tacho_GraphTools_Scotch.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#if defined(TACHO_HAVE_SCOTCH)
 #include "Tacho_Util.hpp"
+
+#if defined(TACHO_HAVE_SCOTCH)
 #include "Tacho_Graph.hpp"
 
 #include "scotch.h"

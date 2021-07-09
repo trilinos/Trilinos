@@ -37,7 +37,6 @@
 #include <stk_io/IossBridge.hpp>        // for is_part_io_part
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>
 #include <string>                       // for string
@@ -58,7 +57,29 @@
 #include <Ioss_EntityType.h>            // for EntityType
 #include <Ioss_ElementBlock.h>
 #include <Ioss_SideSet.h>
+#include <Ioss_SideBlock.h>
+#include <Ioss_ConcreteVariableType.h>
+#include <init/Ionit_Initializer.h>
+#include <Ioss_IOFactory.h>
+#include <Ioss_DBUsage.h>
 #include <stk_unit_test_utils/TextMesh.hpp>
+
+TEST(MeshGroupingEntity, universalSideset_get_entity_rank)
+{
+  Ioss::Init::Initializer init;
+  Ioss::PropertyManager properties;
+  Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("generated", "1x1x32", Ioss::READ_MODEL, MPI_COMM_WORLD, properties);
+  Ioss::Region* ioRegion = new Ioss::Region(db_io, "IO_Region");
+
+  Ioss::SideSet* usideset = new Ioss::SideSet(db_io, "universal_sideset");
+  Ioss::SideBlock* usideblk = new Ioss::SideBlock(db_io, "universal_sideset", "unknown", "unknown", 1);
+  usideset->add(usideblk);
+  stk::mesh::MetaData meta(3);
+  EXPECT_EQ(stk::topology::FACE_RANK, stk::io::get_entity_rank(usideset, meta));
+  EXPECT_EQ(stk::topology::FACE_RANK, stk::io::get_entity_rank(usideblk, meta));
+  delete usideset;
+  delete ioRegion;
+}
 
 TEST(MeshGroupingEntity, getElementBlockFromPart)
 {

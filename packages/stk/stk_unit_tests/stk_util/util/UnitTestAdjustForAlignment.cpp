@@ -32,8 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/util/AdjustForAlignment.hpp>
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "stk_util/util/AdjustForAlignment.hpp"  // for adjust_up_to_alignment_boundary
+#include <cstddef>                               // for size_t
 
 namespace
 {

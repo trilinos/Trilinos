@@ -32,14 +32,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/parallel/GenerateParallelConsistentIDs.hpp>
-#include <gtest/gtest.h>
-#include <string>                       // for string
-#include <stk_util/util/ReportHandler.hpp>
-#include <stdint.h>
+#include "gtest/gtest.h"
+#include "stk_util/parallel/GenerateParallelConsistentIDs.hpp"  // for generate_parallel_consist...
+#include "stk_util/parallel/Parallel.hpp"                       // for MPI_COMM_WORLD, MPI_Allre...
+#include "stk_util/parallel/ParallelVectorConcat.hpp"           // for parallel_vector_concat
+#include "stk_util/util/ReportHandler.hpp"                      // for ThrowRequireMsg
+#include <algorithm>                                            // for sort, binary_search
+#include <cstdint>                                              // for uint64_t
+#include <memory>                                               // for allocator_traits<>::value...
+#include <utility>                                              // for pair
+#include <vector>                                               // for vector
 
 
 //-------------------------------------------------------------------------------------------------------------------

@@ -175,7 +175,7 @@ namespace MueLuTests {
         GO numGlobalElements; //global_size_t
         if (matrixType == "Laplace1D")
           numGlobalElements = nx;
-        else if (matrixType == "Laplace2D")
+        else if (matrixType == "Laplace2D" || matrixType == "Star2D")
           numGlobalElements = nx*ny;
         else if (matrixType == "Laplace3D")
           numGlobalElements = nx*ny*nz;

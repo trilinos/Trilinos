@@ -72,6 +72,7 @@ TEST_F(MeshWithTwoBlocks, extractBlock2_onlyHaveBlock2)
 {
     stk::mesh::Part &block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
     setup_mesh("generated:1x1x4", stk::mesh::BulkData::AUTO_AURA);
+
     stk::mesh::Part &block1 = *get_meta().get_part("block_1");
     switch_half_mesh_to_part(block2, block1);
 
@@ -84,6 +85,87 @@ TEST_F(MeshWithTwoBlocks, extractBlock2_onlyHaveBlock2)
 
     expect_num_elems_in_part(newBulk, 0, block1);
     expect_num_elems_in_part(newBulk, 2, block2);
+}
+
+TEST_F(MeshWithTwoBlocks, getNodesetPartsAndNames)
+{
+
+    setup_mesh("generated:1x1x4|nodeset:xX", stk::mesh::BulkData::AUTO_AURA);
+
+
+    std::vector<std::string> ns_names = stk::tools::find_nodeset_names_from_id(get_bulk(), {2,1});
+
+    std::vector<std::string> ns_names_expected = {"nodelist_2","nodelist_1"};
+
+    ASSERT_EQ(ns_names.size(), ns_names_expected.size() );
+
+    for(size_t k = 0 ; k < ns_names_expected.size(); ++k)
+    EXPECT_EQ(ns_names[k], ns_names_expected[k] );
+
+    std::vector<stk::mesh::Part*> parts;
+    stk::tools::GetPartsByName( parts,get_bulk(),ns_names);
+    ASSERT_EQ(static_cast<size_t>(2), (parts.size()) );
+    stk::mesh::Part &ns1 = *get_meta().get_part("nodelist_1");
+    EXPECT_EQ(ns1, *(parts[1]) );
+
+    stk::mesh::Part &ns2 = *get_meta().get_part("nodelist_2");
+    EXPECT_EQ(ns2, *(parts[0]) );
+
+}
+
+TEST_F(MeshWithTwoBlocks, getBlockPartsAndNames)
+{
+
+    stk::mesh::Part &block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+    setup_mesh("generated:1x1x4|nodeset:xX", stk::mesh::BulkData::AUTO_AURA);
+
+    stk::mesh::Part &block1 = *get_meta().get_part("block_1");
+    switch_half_mesh_to_part(block2, block1);
+
+    std::vector<std::string> blk_names = stk::tools::GetBlockNamesFromIDs(get_bulk(), {1,-1});
+
+
+    std::vector<std::string> blk_names_expected = {"block_1","block_2"};
+
+    ASSERT_EQ(blk_names.size(), blk_names_expected.size() );
+
+    for(size_t k = 0 ; k < blk_names_expected.size(); ++k)
+    EXPECT_EQ(blk_names[k], blk_names_expected[k] );
+
+    std::vector<stk::mesh::Part*> parts;
+    stk::tools::GetPartsByName( parts,get_bulk(),blk_names);
+    ASSERT_EQ(static_cast<size_t>(2), (parts.size()) );
+    stk::mesh::Part &blk1 = *get_meta().get_part("block_1");
+    EXPECT_EQ(blk1, *(parts[0]) );
+
+    stk::mesh::Part &blk2 = *get_meta().get_part("block_2");
+      EXPECT_EQ(blk2, *(parts[1]) );
+
+}
+
+TEST_F(MeshWithTwoBlocks, getOneBlockAndOneNodeset)
+{
+
+    stk::mesh::Part &block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+    setup_mesh("generated:1x1x4|nodeset:xX", stk::mesh::BulkData::AUTO_AURA);
+
+    stk::mesh::Part &block1 = *get_meta().get_part("block_1");
+    switch_half_mesh_to_part(block2, block1);
+
+    // apparently that block two gets constructed with ID=-1...
+    std::vector<std::string> blk_names = stk::tools::GetBlockNamesFromIDs(get_bulk(), {-1});
+    std::vector<std::string> ns_names = stk::tools::find_nodeset_names_from_id(get_bulk(), {1});
+
+    stk::mesh::Selector theSelector = stk::tools::GetBlockAndNodesetSelector(get_bulk(), ns_names, blk_names);
+
+    std::vector<size_t> counts;
+    stk::mesh::comm_mesh_counts(get_bulk(), counts, &theSelector);
+    size_t expectedNumElem = 2; // two elements in block 2
+    size_t expectedNumNode = 16; // 12 nodes associated with 2 elems in block 2, then 4 nodes from nodeset 1
+
+    EXPECT_EQ(expectedNumElem, counts[stk::topology::ELEM_RANK]);
+    EXPECT_EQ(expectedNumNode, counts[stk::topology::NODE_RANK]);
+
 }
 
 class MeshWithOneBlock : public stk::unit_test_util::MeshFixture

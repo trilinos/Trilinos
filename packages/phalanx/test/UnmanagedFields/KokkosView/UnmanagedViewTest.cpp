@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//        Phalanx: A Partial Differential Equation Field Evaluation 
+//        Phalanx: A Partial Differential Equation Field Evaluation
 //       Kernel for Flexible Management of Complex Dependency Chains
 //                    Copyright 2008 Sandia Corporation
 //
@@ -73,7 +73,7 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
   FieldManager<MyTraits> fm;
 
   RCP<DataLayout> dl = rcp(new Layout("H-Grad<CELL,BASIS>",100,4));
-  
+
   Tag<double> tag_a("a",dl);
   Tag<double> tag_b("b",dl);
   Tag<double> tag_c("c",dl);
@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
     }
     {
       using ED = EvalDummy<MyTraits::Residual,MyTraits>;
-      auto plist = Teuchos::parameterList("EvalDummy"); 
+      auto plist = Teuchos::parameterList("EvalDummy");
       plist->set("dl",dl);
       RCP<ED> e = rcp(new ED(*plist));
       e->setName("EvalDummy");
@@ -103,10 +103,10 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
     // Require fields
     {
       fm.requireField<MyTraits::Residual>(tag_a);
-      
+
       fm.requireField<MyTraits::Residual>(tag_c);
     }
-    
+
     Kokkos::View<double**,typename PHX::DevLayout<double>::type,PHX::Device> unmanaged_a("a",dl->extent(0),dl->extent(1));
     Kokkos::View<double**,typename PHX::DevLayout<double>::type,PHX::Device> unmanaged_b("b",dl->extent(0),dl->extent(1));
     Kokkos::View<double**,typename PHX::DevLayout<double>::type,PHX::Device> unmanaged_c("c",dl->extent(0),dl->extent(1));
@@ -116,15 +116,24 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
     Kokkos::deep_copy(unmanaged_c,0.0);
     Kokkos::deep_copy(unmanaged_d,6.0);
 
+    auto host_a = Kokkos::create_mirror_view(unmanaged_a);
+    auto host_b = Kokkos::create_mirror_view(unmanaged_b);
+    auto host_c = Kokkos::create_mirror_view(unmanaged_c);
+    auto host_d = Kokkos::create_mirror_view(unmanaged_d);
+    Kokkos::deep_copy(host_a,unmanaged_a);
+    Kokkos::deep_copy(host_b,unmanaged_b);
+    Kokkos::deep_copy(host_c,unmanaged_c);
+    Kokkos::deep_copy(host_d,unmanaged_d);
+
     for (int cell = 0; cell < unmanaged_a.extent_int(0); ++cell) {
       for (int basis = 0; basis < unmanaged_a.extent_int(1); ++basis) {
-        TEST_FLOATING_EQUALITY(unmanaged_a(cell,basis),0.0,tol);
-        TEST_FLOATING_EQUALITY(unmanaged_b(cell,basis),5.0,tol);
-        TEST_FLOATING_EQUALITY(unmanaged_c(cell,basis),0.0,tol);
-        TEST_FLOATING_EQUALITY(unmanaged_d(cell,basis),6.0,tol);
+        TEST_FLOATING_EQUALITY(host_a(cell,basis),0.0,tol);
+        TEST_FLOATING_EQUALITY(host_b(cell,basis),5.0,tol);
+        TEST_FLOATING_EQUALITY(host_c(cell,basis),0.0,tol);
+        TEST_FLOATING_EQUALITY(host_d(cell,basis),6.0,tol);
       }
     }
-    
+
     // Register some unmanaged fields before postRegistrationSetup()
     // is called and some unmanaged fields after. There are two
     // branches through the code base depending on whether
@@ -136,13 +145,18 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
     fm.setUnmanagedField<MyTraits::Residual>(tag_c,unmanaged_c);
     fm.setUnmanagedField<MyTraits::Residual>(tag_d,unmanaged_d);
     fm.evaluateFields<MyTraits::Residual>(0);
-    
+
+    Kokkos::deep_copy(host_a,unmanaged_a);
+    Kokkos::deep_copy(host_b,unmanaged_b);
+    Kokkos::deep_copy(host_c,unmanaged_c);
+    Kokkos::deep_copy(host_d,unmanaged_d);
+
     for (int cell = 0; cell < unmanaged_a.extent_int(0); ++cell) {
       for (int basis = 0; basis < unmanaged_a.extent_int(1); ++basis) {
-        TEST_FLOATING_EQUALITY(unmanaged_a(cell,basis),5.0,tol);
-        TEST_FLOATING_EQUALITY(unmanaged_b(cell,basis),5.0,tol);
-        TEST_FLOATING_EQUALITY(unmanaged_c(cell,basis),6.0,tol);
-        TEST_FLOATING_EQUALITY(unmanaged_d(cell,basis),6.0,tol);
+        TEST_FLOATING_EQUALITY(host_a(cell,basis),5.0,tol);
+        TEST_FLOATING_EQUALITY(host_b(cell,basis),5.0,tol);
+        TEST_FLOATING_EQUALITY(host_c(cell,basis),6.0,tol);
+        TEST_FLOATING_EQUALITY(host_d(cell,basis),6.0,tol);
       }
     }
   }
@@ -160,12 +174,21 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
   fm.getFieldData<MyTraits::Residual>(tag_c,c);
   fm.getFieldData<MyTraits::Residual>(tag_d,d);
 
+  auto host_a = Kokkos::create_mirror_view(a);
+  auto host_b = Kokkos::create_mirror_view(b);
+  auto host_c = Kokkos::create_mirror_view(c);
+  auto host_d = Kokkos::create_mirror_view(d);
+  Kokkos::deep_copy(host_a,a);
+  Kokkos::deep_copy(host_b,b);
+  Kokkos::deep_copy(host_c,c);
+  Kokkos::deep_copy(host_d,d);
+
   for (int cell = 0; cell < a.extent_int(0); ++cell) {
     for (int basis = 0; basis < a.extent_int(1); ++basis) {
-      TEST_FLOATING_EQUALITY(a(cell,basis),5.0,tol);
-      TEST_FLOATING_EQUALITY(b(cell,basis),5.0,tol);
-      TEST_FLOATING_EQUALITY(c(cell,basis),6.0,tol);
-      TEST_FLOATING_EQUALITY(d(cell,basis),6.0,tol);
+      TEST_FLOATING_EQUALITY(host_a(cell,basis),5.0,tol);
+      TEST_FLOATING_EQUALITY(host_b(cell,basis),5.0,tol);
+      TEST_FLOATING_EQUALITY(host_c(cell,basis),6.0,tol);
+      TEST_FLOATING_EQUALITY(host_d(cell,basis),6.0,tol);
     }
   }
 

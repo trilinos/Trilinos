@@ -29,9 +29,11 @@ export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 # Machine specific environment
 #
+. /etc/profile
 
-export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
-export http_proxy="http://sonproxy.sandia.gov:80"
+export TDD_HTTP_PROXY=$http_proxy
+export TDD_HTTPS_PROXY=$https_proxy
+
 export TDD_FORCE_CMAKE_INSTALL=0
 export CUDA_LAUNCH_BLOCKING=1
 export OMP_NUM_THREADS=2
@@ -53,7 +55,7 @@ export OMP_NUM_THREADS=2
 # load OpenMPI 1.6.4 (standard in RHEL 7)
 #module load mpi/openmpi-x86_64
 module load sems-env
-module load sems-cmake/3.10.3
+module load sems-cmake/3.17.1
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3

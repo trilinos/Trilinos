@@ -10,8 +10,6 @@
 #include "mpi.h"
 #include "Tpetra_Details_extractMpiCommFromTeuchos.hpp"
 
-namespace { // (anonymous)
-
 bool isMpiInitialized ()
 {
   int mpiInitializedInt = 0;
@@ -89,6 +87,10 @@ void testMain (bool& success, int argc, char* argv[])
       "before Kokkos::initialize was called." << endl;
     return;
   }
+
+  { // GlobalMPISession is in local scope so we can check MPI_Finalize
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv); // before Kokkos::initialize
   Kokkos::initialize (argc, argv);
   if (! Kokkos::is_initialized ()) {
     success = false;
@@ -170,12 +172,16 @@ void testMain (bool& success, int argc, char* argv[])
   if (myRank == 0) {
     cout << "Called Tpetra::finalize" << endl;
   }
-  // Since Tpetra is responsible for calling MPI_Finalize,
-  // Tpetra::finalize MUST have called MPI_Finalize.
-  if (! isMpiFinalized ()) {
+
+  // Tpetra::finalize is not responsible for calling
+  // MPI_Finalize because GlobalMPISession was called first.
+  if (isMpiFinalized ()) {
     success = false;
-    cout << "Tpetra::finalize() did not call MPI_Finalize." << endl;
+    cout << "Tpetra::finalize called MPI_Finalize "
+         << "but should not have since GlobalMPISession controlled it."
+         << endl;
   }
+
   // Kokkos is like Tpetra; Kokkos::is_initialized() means "was
   // initialized and was not finalized."  That differs from MPI, where
   // MPI_Initialized only refers to MPI_Init and MPI_Finalized only
@@ -202,32 +208,17 @@ void testMain (bool& success, int argc, char* argv[])
     cout << "Kokkos::is_initialized() is false "
       "even after calling Kokkos::finalize." << endl;
   }
+
+  } // end of GlobalMPISession scope
+
+  // Since GlobalMPISession's destructor was responsible for calling
+  // MPI_Finalize, the destructor MUST have called MPI_Finalize.
+  if (! isMpiFinalized ()) {
+    success = false;
+    cout << "GlobalMPISession::~GlobalMPISession did not call MPI_Finalize."
+         << endl;
+  }
 }
-
-class CaptureOstream {
-public:
-  CaptureOstream (std::ostream& stream) :
-    originalStream_ (stream),
-    originalBuffer_ (stream.rdbuf ())
-  {
-    originalStream_.rdbuf (tempStream_.rdbuf ());
-  }
-
-  std::string getCapturedOutput () const {  
-    return tempStream_.str ();
-  }
-
-  ~CaptureOstream () {
-    originalStream_.rdbuf (originalBuffer_);
-  }
-private:
-  std::ostream& originalStream_;
-  std::ostringstream tempStream_;
-  using buf_ptr_type = decltype (originalStream_.rdbuf ());  
-  buf_ptr_type originalBuffer_;
-};
-
-} // namespace (anonymous)  
 
 int main (int argc, char* argv[])
 {
@@ -235,18 +226,7 @@ int main (int argc, char* argv[])
   using std::endl;
  
   bool success = true;
-  {
-    // Capture std::cerr output, so we can tell if Tpetra::initialize
-    // printed a warning message.
-    CaptureOstream captureCerr (std::cerr);
-    testMain (success, argc, argv);
-    const std::string capturedOutput = captureCerr.getCapturedOutput ();
-    cout << "Captured output: " << capturedOutput << endl;
-    if (capturedOutput.size () != 0) {
-      success = false; // should NOT have printed in this case
-      cout << "Captured output is empty!" << endl;
-    }
-  }
+  testMain (success, argc, argv);
   
   cout << "End Result: TEST " << (success ? "PASSED" : "FAILED") << endl;
   return EXIT_SUCCESS;

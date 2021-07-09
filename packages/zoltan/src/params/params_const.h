@@ -44,6 +44,7 @@
  * @HEADER
  */
 
+#include <stdlib.h>
 
 #ifndef __PARAMS_CONST_H
 #define __PARAMS_CONST_H
@@ -118,6 +119,12 @@ extern int Zoltan_Check_Param(const char *, const char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
 extern void Zoltan_Free_Params(PARAM_LIST **);
 extern int Zoltan_Copy_Params(PARAM_LIST **to, PARAM_LIST const *from);
+
+/* Functions to serialize; need forward declaration of Zoltan_Struct */
+struct Zoltan_Struct;
+extern size_t Zoltan_Serialize_Params_Size(struct Zoltan_Struct const *);
+extern int Zoltan_Serialize_Params(struct Zoltan_Struct const *, char **);
+extern int Zoltan_Deserialize_Params(struct Zoltan_Struct *, char **);
 
 
 #ifdef __cplusplus

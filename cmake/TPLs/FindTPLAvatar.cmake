@@ -56,6 +56,6 @@
 
 
 TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Avatar
-  REQUIRED_HEADERS avatar_api.h fc.h
-  REQUIRED_LIBS_NAMES avatar;fclib
+  REQUIRED_HEADERS avatar_api.h
+  REQUIRED_LIBS_NAMES avatar
   )

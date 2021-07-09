@@ -95,6 +95,14 @@
 #ifndef __INTREPID2_POLYLIB_DEF_HPP__
 #define __INTREPID2_POLYLIB_DEF_HPP__
 
+#if defined(_MSC_VER) || defined(_WIN32) && defined(__ICL)
+// M_PI, M_SQRT2, etc. are hidden in MSVC by #ifdef _USE_MATH_DEFINES
+  #ifndef _USE_MATH_DEFINES
+  #define _USE_MATH_DEFINES
+  #endif
+  #include <math.h>
+#endif
+
 namespace Intrepid2 {
 
   // -----------------------------------------------------------------------

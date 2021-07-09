@@ -514,7 +514,7 @@ namespace TSQR {
                 const LocalOrdinal ldb) const
     {
       auto B_copy =
-        Impl::get_contiguous_device_mat_view (matrixStorage_,
+        Impl::get_contiguous_device_mat_view (matrixStorageB_,
                                               nrows_and_ncols,
                                               nrows_and_ncols);
       // Use copy_from_host, which knows how to avoid the
@@ -1050,6 +1050,7 @@ namespace TSQR {
     mutable work_type work_;
     mutable Impl::info_type info_;
     mutable Impl::device_vector_type<kokkos_value_type> matrixStorage_;
+    mutable Impl::device_vector_type<kokkos_value_type> matrixStorageB_;
     mutable Impl::host_vector_type<kokkos_value_type> hostMatrixStorage_;
   };
 

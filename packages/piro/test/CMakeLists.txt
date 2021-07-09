@@ -82,6 +82,21 @@ IF (Piro_ENABLE_NOX)
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ThyraSolverTpetra
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_ROL
+    EXCLUDE_IF_NOT_TRUE ${PACKAGE_NAME}_ENABLE_Ifpack2
+    SOURCES
+      Main_ThyraSolver_Tpetra.cpp
+      MockModelEval_A_Tpetra.cpp
+      MockModelEval_A_Tpetra.hpp
+    NUM_MPI_PROCS 1-4
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADDED_EXE_TARGET_NAME_OUT ThyraSolver_NAME
+    ADDED_TESTS_NAMES_OUT ThyraSolverTpetra_NAME
+  )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     AnalysisDriver
     SOURCES
     Main_AnalysisDriver.cpp
@@ -101,6 +116,8 @@ IF (Piro_ENABLE_NOX)
       Main_AnalysisDriver_Tpetra.cpp
       MockModelEval_A_Tpetra.cpp
       MockModelEval_A_Tpetra.hpp
+      MockModelEval_B_Tpetra.cpp
+      MockModelEval_B_Tpetra.hpp
     NUM_MPI_PROCS 1-4
     ARGS -v
     PASS_REGULAR_EXPRESSION "TEST PASSED"
@@ -161,6 +178,7 @@ IF (Piro_ENABLE_NOX)
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_NOX_2.xml
                  input_Solve_NOX_3.xml
+                 input_Solve_NOX_4.xml
 		 input_Solve_NOX_Adjoint.xml
                  input_Solve_LOCA_1.xml
                  input_Solve_Rythmos_1.xml
@@ -171,12 +189,11 @@ IF (Piro_ENABLE_NOX)
                  input_Solve_TR.xml
                  input_Solve_NB.xml
           input_Analysis_Dakota.xml dak.in
-          input_Analysis_ROL.xml
-          input_Analysis_ROL_OldReducedSpace_Tpetra.xml
+          input_Analysis_ROL_Tpetra.xml
           input_Analysis_ROL_ReducedSpace_NOXSolver_Tpetra.xml
           input_Analysis_ROL_ReducedSpace_Tpetra.xml
           input_Analysis_ROL_FullSpace_Tpetra.xml
-          input_Analysis_ROL_AdjointSensitivities.xml
+          input_Analysis_ROL_AdjointSensitivities_Tpetra.xml
           input_Analysis_ROL_AdjointSensitivities_ReducedSpace_NOXSolver_Tpetra.xml
           input_Analysis_ROL_AdjointSensitivities_FullSpace_Tpetra.xml
           input_Solve_RythmosMatrixFree_Fails.xml
@@ -184,6 +201,7 @@ IF (Piro_ENABLE_NOX)
 	  input_problem1.xml input_problem2.xml input_coupled.xml
 	  input_problem1_sg.xml input_problem2_sg.xml input_coupled_sg.xml
 	  input_SGAnalysis.xml dakota_sg.in dakota_sg_target.txt
+          input_Tempus_BackwardEuler_SinCos.xml 
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
     EXEDEPS ${ThyraSolver_EXENAME} AnalysisDriver ${AnalysisDriverTpetra_EXENAME} UnitTests NOXSolver_UnitTests
@@ -226,6 +244,33 @@ IF (Piro_ENABLE_Tempus)
     Piro_Test_ThyraSupport.hpp
     MockModelEval_A.hpp
     MockModelEval_A.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_SensitivityUnitTests
+    SOURCES
+    Piro_TempusSolver_SensitivityUnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A.hpp
+    MockModelEval_A.cpp
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_TEST(
+    TempusSolver_SensitivityUnitTests
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_SensitivitySinCosUnitTests
+    SOURCES
+    Piro_TempusSolver_SensitivitySinCosUnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    SinCosModel.cpp
+    SinCosModel.hpp
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
   )

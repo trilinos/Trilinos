@@ -93,7 +93,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
       
      worksets.resize(1);
      std::vector<panzer::Workset>::iterator i = worksets.begin();
-     i->num_cells = 0;
+     i->setNumberOfCells(0,0,0);
      i->block_id = elementBlock;
      i->ir_degrees = ir_degrees;
      i->basis_names = basis_names;
@@ -139,10 +139,10 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     worksets.resize(num_worksets);
     std::vector<panzer::Workset>::iterator i;
     for (i = worksets.begin(); i != worksets.end(); ++i)
-      i->num_cells = workset_size;
+      i->setNumberOfCells(workset_size,0,0);
 	 
     if (!last_set_is_full) {
-      worksets.back().num_cells = last_workset_size;
+      worksets.back().setNumberOfCells(last_workset_size,0,0);
     }
   }
 
@@ -154,7 +154,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     local_begin = end_iter;
     wkst->cell_local_ids.assign(begin_iter,end_iter);
 
-    Kokkos::View<int*,PHX::Device> cell_local_ids_k = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->cell_local_ids.size());
+    PHX::View<int*> cell_local_ids_k = PHX::View<int*>("Workset:cell_local_ids",wkst->cell_local_ids.size());
     for(std::size_t i=0;i<wkst->cell_local_ids.size();i++)
       cell_local_ids_k(i) = wkst->cell_local_ids[i];
     wkst->cell_local_ids_k = cell_local_ids_k;
@@ -258,7 +258,7 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
         }
     }
 
-    Kokkos::View<int*,PHX::Device> cell_local_ids_k = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",worksets[side->first].cell_local_ids.size());
+    PHX::View<int*> cell_local_ids_k = PHX::View<int*>("Workset:cell_local_ids",worksets[side->first].cell_local_ids.size());
     for(std::size_t i=0;i<worksets[side->first].cell_local_ids.size();i++)
       cell_local_ids_k(i) = worksets[side->first].cell_local_ids[i];
     worksets[side->first].cell_local_ids_k = cell_local_ids_k;
@@ -596,7 +596,7 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
       workset_size = remaining_cells;
 
     // this is the true number of cells in this workset
-    wkst->num_cells = workset_size;
+    wkst->setNumberOfCells(workset_size,0,0);
     wkst->details(0).cell_local_ids.resize(workset_size);
     wkst->details(1).cell_local_ids.resize(workset_size);
 
@@ -613,8 +613,8 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
       }
     }
 
-    Kokkos::View<int*,PHX::Device> cell_local_ids_k_0 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details(0).cell_local_ids.size());
-    Kokkos::View<int*,PHX::Device> cell_local_ids_k_1 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details(1).cell_local_ids.size());
+    PHX::View<int*> cell_local_ids_k_0 = PHX::View<int*>("Workset:cell_local_ids",wkst->details(0).cell_local_ids.size());
+    PHX::View<int*> cell_local_ids_k_1 = PHX::View<int*>("Workset:cell_local_ids",wkst->details(1).cell_local_ids.size());
     for(std::size_t i=0;i<wkst->details(0).cell_local_ids.size();i++) 
       cell_local_ids_k_0(i) = wkst->details(0).cell_local_ids[i];
     for(std::size_t i=0;i<wkst->details(1).cell_local_ids.size();i++) 

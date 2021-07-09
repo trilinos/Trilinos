@@ -203,6 +203,7 @@ private:
   device_value_type_array device_nzvals_view_;
   device_size_type_array device_row_ptr_view_;
   device_ordinal_type_array device_cols_view_;
+  size_t sorted_nnz;
 
   // data for reordering
   typedef Kokkos::View<ordinal_type*, device_type> permute_array_t;

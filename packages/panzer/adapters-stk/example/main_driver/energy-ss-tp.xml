@@ -120,7 +120,7 @@
 
         <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="left"/> 
+            <Parameter name="Sideset ID" type="string" value="top"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
             <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>
@@ -131,7 +131,7 @@
 
         <ParameterList>
             <Parameter name="Type" type="string" value="Dirichlet"/> 
-            <Parameter name="Sideset ID" type="string" value="right"/> 
+            <Parameter name="Sideset ID" type="string" value="bottom"/> 
             <Parameter name="Element Block ID" type="string" value="eblock-0_0"/> 
             <Parameter name="Equation Set Name" type="string" value="TEMPERATURE"/> 
             <Parameter name="Strategy" type="string" value="Constant"/>

@@ -34,16 +34,14 @@
 // 
  */
 
-#include <stk_util/util/SignalHandler.hpp>
-#include <signal.h>                     // for sigaction, SIGALRM, SIGFPE, etc
-#include <time.h>                       // for NULL, ctime, time, time_t
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stdexcept>                    // for runtime_error, logic_error
-#include <utility>                      // for pair
-#include <vector>                       // for vector, etc
-#include "stk_util/util/Callback.hpp"   // for CallbackBase, Callback
-
-
+#include "stk_util/util/SignalHandler.hpp"
+#include "stk_util/util/Callback.hpp"  // for CallbackBase, Callback
+#include <time.h>                      // for NULL, ctime, time, time_t
+#include <csignal>                     // for sigaction, sigemptyset, SIGALRM, SIGFPE, SIGHUP
+#include <iostream>                    // for operator<<, basic_ostream, basic_ostream::operator<<
+#include <stdexcept>                   // for runtime_error, logic_error
+#include <utility>                     // for pair
+#include <vector>                      // for vector, vector<>::const_iterator
 
 extern "C" {
   static void signal_handler(int signal, siginfo_t *sip, void *ucp)

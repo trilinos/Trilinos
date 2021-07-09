@@ -561,7 +561,15 @@ public:
     return Zoltan_Set_Hier_Part_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
+  /// Version that returns only part assignment
+  int LB_Point_PP_Assign ( double * const coords,
+                           int &part )
+  {
+    return Zoltan_LB_Point_PP_Assign( ZZ_Ptr, coords, NULL, &part );
+  }
+
   ///--------------------------
+  /// Version that returns part assignment and mapping to proc as well
   int LB_Point_PP_Assign ( double * const coords,
                            int &proc,
                            int &part )
@@ -569,6 +577,7 @@ public:
     return Zoltan_LB_Point_PP_Assign( ZZ_Ptr, coords, &proc, &part );
   }
 
+  ///--------------------------
   int LB_Box_PP_Assign ( const double &xmin,
                          const double &ymin,
                          const double &zmin,
@@ -587,6 +596,7 @@ public:
                                     parts, &numparts );
   }
 
+  ///--------------------------
   int Invert_Lists             ( const int &num_known,
                                  ZOLTAN_ID_PTR const known_global_ids,
                                  ZOLTAN_ID_PTR const known_local_ids,
@@ -605,6 +615,7 @@ public:
                                 &found_procs, &found_to_part );
   }
 
+  ///--------------------------
   int Migrate          ( const int &num_import,
                          ZOLTAN_ID_PTR const import_global_ids,
                          ZOLTAN_ID_PTR const import_local_ids,
@@ -623,6 +634,7 @@ public:
                            export_procs, export_to_part );
   }
 
+  ///--------------------------
   int Generate_Files( std::string & fname,
                       const int &base_index,
                       const int &gen_geom,
@@ -647,6 +659,22 @@ public:
     return rc;
   }
 
+  //---------------------------------------------------
+  // Expert functions; see zoltan.h for details
+
+  int Serialize_Size() {
+    return Zoltan_Serialize_Size( ZZ_Ptr );
+  }
+
+  int Serialize(size_t bufSize, char *buf) {
+    return Zoltan_Serialize( ZZ_Ptr, bufSize, buf);
+  }
+
+  int Deserialize(size_t bufSize, char *buf) {
+    return Zoltan_Deserialize( ZZ_Ptr, bufSize, buf);
+  }
+
+  //---------------------------------------------------
   // Access to the "C" language structure, required for use of
   // Zoltan "C" functions.  (Deprecated "C" functions were not
   // included in the C++ interface.)

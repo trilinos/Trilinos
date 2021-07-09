@@ -54,10 +54,11 @@ inline void check_side_node_ordinals(stk::topology topology, std::vector<std::ve
 
 inline void check_edge_node_ordinals(stk::topology topology, std::vector<std::vector<unsigned>> & gold_edge_node_ordinals)
 {
-  stk::topology edgeTopo = topology.edge_topology();
-  unsigned numEdgeNodes = edgeTopo.num_nodes();
-  std::vector<unsigned> edge_node_ordinals(numEdgeNodes);
+  std::vector<unsigned> edge_node_ordinals;
   for (unsigned edge = 0; edge < topology.num_edges(); ++edge) {
+    stk::topology edgeTopo = topology.edge_topology(edge);
+    unsigned numEdgeNodes = edgeTopo.num_nodes();
+    edge_node_ordinals.resize(numEdgeNodes);
     topology.edge_node_ordinals(edge, edge_node_ordinals.data());
     EXPECT_EQ(gold_edge_node_ordinals[edge], edge_node_ordinals);
   }
@@ -171,10 +172,10 @@ template <unsigned MAX_NODES>
 STK_INLINE_FUNCTION
 void check_edge_node_ordinals_ngp(stk::topology topology, unsigned gold_edge_node_ordinals[][MAX_NODES])
 {
-  stk::topology edgeTopo = topology.edge_topology();
-  unsigned numEdgeNodes = edgeTopo.num_nodes();
   unsigned edge_node_ordinals[MAX_NODES];
   for (unsigned edge = 0; edge < topology.num_edges(); ++edge) {
+    stk::topology edgeTopo = topology.edge_topology(edge);
+    unsigned numEdgeNodes = edgeTopo.num_nodes();
     topology.edge_node_ordinals(edge, edge_node_ordinals);
     for (unsigned edge_node = 0; edge_node < numEdgeNodes; ++edge_node) {
       NGP_EXPECT_EQ(gold_edge_node_ordinals[edge][edge_node], edge_node_ordinals[edge_node]);
@@ -275,10 +276,11 @@ inline void check_edge_nodes(stk::topology topology, std::vector<std::vector<uns
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
 
-  stk::topology edgeTopo = topology.edge_topology();
-  unsigned numEdgeNodes = edgeTopo.num_nodes();
-  std::vector<unsigned> edgeNodes(numEdgeNodes);
+  std::vector<unsigned> edgeNodes;
   for (unsigned edge = 0; edge < topology.num_edges(); ++edge) {
+    stk::topology edgeTopo = topology.edge_topology(edge);
+    unsigned numEdgeNodes = edgeTopo.num_nodes();
+    edgeNodes.resize(numEdgeNodes);
     topology.edge_nodes(allElemNodes.data(), edge, edgeNodes.data());
     for (unsigned edgeNodeOrdinal = 0; edgeNodeOrdinal < numEdgeNodes; ++edgeNodeOrdinal) {
       EXPECT_EQ(gold_edge_node_ordinals[edge][edgeNodeOrdinal] + 100, edgeNodes[edgeNodeOrdinal]);
@@ -358,10 +360,10 @@ void check_edge_nodes_ngp(stk::topology topology, unsigned gold_edge_node_ordina
     allElemNodes[nodeOrdinal] = nodeOrdinal + 100;
   }
 
-  stk::topology edgeTopo = topology.edge_topology();
-  unsigned numEdgeNodes = edgeTopo.num_nodes();
   unsigned edgeNodes[MAX_NODES];
   for (unsigned edge = 0; edge < topology.num_edges(); ++edge) {
+    stk::topology edgeTopo = topology.edge_topology(edge);
+    unsigned numEdgeNodes = edgeTopo.num_nodes();
     topology.edge_nodes(allElemNodes, edge, edgeNodes);
     for (unsigned edgeNodeOrdinal = 0; edgeNodeOrdinal < numEdgeNodes; ++edgeNodeOrdinal) {
       NGP_EXPECT_EQ(gold_edge_node_ordinals[edge][edgeNodeOrdinal] + 100, edgeNodes[edgeNodeOrdinal]);

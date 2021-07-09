@@ -8,10 +8,6 @@
 #--------------------------------------------------------------------
 
 #
-# The signature for Boost.build rules is described here:
-#
-# http://www.boost.org/build/doc/html/bbv2/overview/targets.html
-#
 #function-name main-target-name
 #    : sources
 #    : requirements

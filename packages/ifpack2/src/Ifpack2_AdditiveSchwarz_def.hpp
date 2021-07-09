@@ -367,6 +367,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
   }
+  double startTime = timer->wallTime();
 
   { // Start timing here.
     TimeMonitor timeMon (*timer);
@@ -617,9 +618,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
   ++NumApply_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ApplyTime_ = timer->totalElapsedTime ();
+  ApplyTime_ += (timer->wallTime() - startTime);
 }
 
 template<class MatrixType,class LocalInverseType>
@@ -935,6 +934,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
   }
+  double startTime = timer->wallTime();
 
   { // Start timing here.
     TimeMonitor timeMon (*timer);
@@ -992,9 +992,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
   IsInitialized_ = true;
   ++NumInitialize_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  InitializeTime_ = timer->totalElapsedTime ();
+  InitializeTime_ += (timer->wallTime() - startTime);
 }
 
 
@@ -1036,6 +1034,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
   }
+  double startTime = timer->wallTime();
 
   { // Start timing here.
     TimeMonitor timeMon (*timer);
@@ -1047,9 +1046,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::compute ()
   IsComputed_ = true;
   ++NumCompute_;
 
-  // timer->totalElapsedTime() returns the total time over all timer
-  // calls.  Thus, we use = instead of +=.
-  ComputeTime_ = timer->totalElapsedTime ();
+  ComputeTime_ += (timer->wallTime() - startTime);
 }
 
 //==============================================================================

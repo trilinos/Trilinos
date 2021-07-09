@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -54,14 +55,14 @@ namespace FROSch {
     SumOperator<SC,LO,GO,NO>::SumOperator(CommPtr comm) :
     SchwarzOperator<SC,LO,GO,NO> (comm)
     {
-        FROSCH_TIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
     }
 
     template <class SC,class LO,class GO,class NO>
     SumOperator<SC,LO,GO,NO>::SumOperator(SchwarzOperatorPtrVecPtr operators) :
     SchwarzOperator<SC,LO,GO,NO> (operators[0]->getRangeMap()->getComm())
     {
-        FROSCH_TIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(sumOperatorTime,"SumOperator::SumOperator");
         FROSCH_ASSERT(operators.size()>0,"operators.size()<=0");
         OperatorVector_.push_back(operators[0]);
         for (unsigned i=1; i<operators.size(); i++) {
@@ -152,9 +153,9 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string SumOperator<SC,LO,GO,NO>::description() const
+    string SumOperator<SC,LO,GO,NO>::description() const
     {
-        std::string labelString = "Sum operator: ";
+        string labelString = "Sum operator: ";
 
         for (UN i=0; i<OperatorVector_.size(); i++) {
             labelString += OperatorVector_[i]->description();
@@ -168,15 +169,15 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)
     {
-        FROSCH_TIMER_START_LEVELID(addOperatorTime,"SumOperator::addOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(addOperatorTime,"SumOperator::addOperator");
         int ret = 0;
         if (OperatorVector_.size()>0) {
             if (!op->getDomainMap()->isSameAs(*OperatorVector_[0]->getDomainMap())) {
-                if (this->Verbose_) std::cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
+                if (this->Verbose_) cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
                 ret -= 1;
             }
-            if (!op->getRangeMap()->isSameAs(*OperatorVector_[0]->getRangeMap())){
-                if (this->Verbose_) std::cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
+            if (!op->getRangeMap()->isSameAs(*OperatorVector_[0]->getRangeMap())) {
+                if (this->Verbose_) cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
                 ret -= 10;
             }
             //FROSCH_ASSERT(op->OperatorDomainMap().SameAs(OperatorVector_[0]->OperatorDomainMap()),"The DomainMaps of the operators are not identical.");
@@ -190,7 +191,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int SumOperator<SC,LO,GO,NO>::addOperators(SchwarzOperatorPtrVecPtr operators)
     {
-        FROSCH_TIMER_START_LEVELID(addOperatorsTime,"SumOperator::addOperators");
+        FROSCH_DETAILTIMER_START_LEVELID(addOperatorsTime,"SumOperator::addOperators");
         int ret = 0;
         for (UN i=1; i<operators.size(); i++) {
             if (0>addOperator(operators[i])) ret -= pow(10,i);
@@ -202,15 +203,15 @@ namespace FROSch {
     int SumOperator<SC,LO,GO,NO>::resetOperator(UN iD,
                                                 SchwarzOperatorPtr op)
     {
-        FROSCH_TIMER_START_LEVELID(resetOperatorTime,"SumOperator::resetOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(resetOperatorTime,"SumOperator::resetOperator");
         FROSCH_ASSERT(iD<OperatorVector_.size(),"iD exceeds the length of the OperatorVector_");
         int ret = 0;
         if (!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())) {
-            if (this->Verbose_) std::cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
+            if (this->Verbose_) cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getDomainMap().isSameAs(OperatorVector_[0]->getDomainMap())\n";
             ret -= 1;
         }
-        if (!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())){
-            if (this->Verbose_) std::cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
+        if (!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())) {
+            if (this->Verbose_) cerr << "SumOperator<SC,LO,GO,NO>::addOperator(SchwarzOperatorPtr op)\t\t!op->getRangeMap().isSameAs(OperatorVector_[0]->getRangeMap())\n";
             ret -= 10;
         }
         OperatorVector_[iD] = op;
@@ -221,7 +222,7 @@ namespace FROSch {
     int SumOperator<SC,LO,GO,NO>::enableOperator(UN iD,
                                                  bool enable)
   {
-      FROSCH_TIMER_START_LEVELID(enableOperatorTime,"SumOperator::enableOperatorOperator");
+      FROSCH_DETAILTIMER_START_LEVELID(enableOperatorTime,"SumOperator::enableOperatorOperator");
       EnableOperators_[iD] = enable;
       return 0;
   }

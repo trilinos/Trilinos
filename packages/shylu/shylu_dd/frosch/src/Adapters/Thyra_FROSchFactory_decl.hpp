@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef THYRA_FROSCH_XPETRA_FACTORY_DECL_HPP
-#define THYRA_FROSCH_XPETRA_FACTORY_DECL_HPP
+#ifndef _THYRA_FROSCH_FACTORY_DECL_HPP
+#define _THYRA_FROSCH_FACTORY_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 
@@ -83,19 +83,16 @@
 #endif
 
 //FROSch
-#include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
-#include <FROSch_GDSWPreconditioner_def.hpp>
-#include <FROSch_RGDSWPreconditioner_def.hpp>
-#include <FROSch_OneLevelPreconditioner_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
-#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 #include <Thyra_FROSchLinearOp_def.hpp>
 #include <FROSch_Tools_def.hpp>
+
+#include <FROSch_SchwarzPreconditioners_fwd.hpp>
 
 
 namespace Thyra {
 
     using namespace FROSch;
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -106,15 +103,15 @@ namespace Thyra {
     class FROSchFactory : public Thyra::PreconditionerFactoryBase<SC> {
 
     protected:
-        
+
         using CommPtr                       = RCP<const Comm<int> >;
-        
+
         using LinearOpBasePtr               = RCP<LinearOpBase<SC> >;
         using ConstLinearOpBasePtr          = RCP<const LinearOpBase<SC> >;
         using ConstLinearOpSourceBasePtr    = RCP<const LinearOpSourceBase<SC> >;
-        
+
         using ConstVectorSpaceBasePtr       = RCP<const VectorSpaceBase<SC> >;
-        
+
         using PreconditionerBasePtr         = RCP<PreconditionerBase<SC> >;
 
         using XMap                          = Map<LO,GO,NO>;
@@ -127,19 +124,21 @@ namespace Thyra {
         using XMatrix                       = Matrix<SC,LO,GO,NO>;
         using XMatrixPtr                    = RCP<XMatrix>;
         using ConstXMatrixPtr               = RCP<const XMatrix>;
-        
+
         using XCrsMatrix                    = CrsMatrix<SC,LO,GO,NO>;
         using XCrsMatrixPtr                 = RCP<XCrsMatrix>;
         using ConstXCrsMatrixPtr            = RCP<const XCrsMatrix>;
-        
+
         using XMultiVector                  = MultiVector<SC,LO,GO,NO>;
         using ConstXMultiVector             = const XMultiVector;
         using XMultiVectorPtr               = RCP<XMultiVector>;
         using ConstXMultiVectorPtr          = RCP<ConstXMultiVector>;
-        
+        using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
+        using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
+
         using ParameterListPtr              = RCP<ParameterList>;
         using ConstParameterListPtr         = RCP<const ParameterList>;
-        
+
         using DofOrderingVecPtr             = ArrayRCP<DofOrdering>;
 
         using UN                            = unsigned;
@@ -180,19 +179,19 @@ namespace Thyra {
 
         ConstParameterListPtr getValidParameters() const;
 
-        std::string description() const;
+        string description() const;
 
     private:
-        
+
         ConstXMapPtr extractRepeatedMap(CommPtr comm,
                                         UnderlyingLib lib) const;
-        
+
         ConstXMultiVectorPtr extractCoordinatesList(CommPtr comm,
                                                     UnderlyingLib lib) const;
-        
+
         ConstXMultiVectorPtr extractNullSpace(CommPtr comm,
                                               UnderlyingLib lib) const;
-        
+
 
         ParameterListPtr paramList_ = rcp(new ParameterList());
     };
@@ -200,5 +199,3 @@ namespace Thyra {
 }
 
 #endif
-
-

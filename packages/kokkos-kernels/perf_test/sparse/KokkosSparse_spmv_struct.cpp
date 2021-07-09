@@ -64,10 +64,6 @@
 enum {STRUCT, UNSTR};
 enum {AUTO, DYNAMIC, STATIC};
 
-typedef default_scalar Scalar;
-typedef default_lno_t lno_t;
-typedef default_size_type size_type;
-
 void print_help() {
   printf("SPMV_struct benchmark code written by Luc Berger-Vergiat.\n");
   printf("Options:\n");
@@ -141,6 +137,9 @@ int main(int argc, char **argv)
 
   Kokkos::initialize(argc,argv);
   {
+    typedef default_size_type size_type;
+    typedef default_lno_t lno_t;
+    typedef default_scalar Scalar;
     typedef KokkosSparse::CrsMatrix<Scalar,lno_t,Kokkos::DefaultExecutionSpace,void,size_type> matrix_type;
     typedef typename Kokkos::View<Scalar**,Kokkos::LayoutLeft> mv_type;
     // typedef typename Kokkos::View<Scalar*,Kokkos::LayoutLeft,Kokkos::MemoryRandomAccess > mv_random_read_type;

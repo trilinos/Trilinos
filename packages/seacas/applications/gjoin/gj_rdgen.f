@@ -1,37 +1,9 @@
-C Copyright (c) 2008-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
-C $Id: rdgen.f,v 1.14 2004/08/12 20:46:08 gdsjaar Exp $
 C=======================================================================
       SUBROUTINE RDGEN (A, IA, C, FIRST, FILNAM,
      &   TITLE, NDIM, NUMNP, NUMEL, NELBLK,
@@ -40,7 +12,8 @@ C=======================================================================
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
-     &   kltsnc, kfacss, NQAREC, QAREC, NINFO, INFREC, KNMLB, USESDF, *)
+     &   kltsnc, kfacss, NQAREC, QAREC, NINFO, INFREC, KNMLB,
+     $   KNMBK, KNMNS, KNMSS, USESDF, *)
 C=======================================================================
 
 C   --*** RDGEN *** (GJOIN) Read the GENESIS database
@@ -93,6 +66,7 @@ C   --   NAMELB - OUT - names of the element blocks
 
       include 'exodusII.inc'
       include 'gj_params.blk'
+      include 'gj_namlen.blk'
 
       DIMENSION A(*), IA(*)
       CHARACTER*1 C(*)
@@ -258,12 +232,20 @@ C   --Read in the element block ID array
          goto 960
       endif
 
+C   --Determine size of entity names...
+      if (namlen .eq. 0) then
+         call exinq(netid, EXDBMXUSNM, namlen, dummy, cdummy, ierr)
+         if (namlen .lt. 32) namlen = 32
+      end if
+      call exmxnm(netid, namlen, ierr)
+
 C   --Read the element blocks
 
       CALL MDLONG ('NUMELB', KNELB, LOLD+NELBLK)
       CALL MDLONG ('NUMLNK', KNLNK, LOLD+NELBLK)
       CALL MDLONG ('NUMATR', KNATR, LOLD+NELBLK)
       CALL MCLONG ('NAMELB', KNMLB, (LOLD+NELBLK)*MXSTLN)
+      CALL MCLONG ('NAMBK',  KNMBK, (LOLD+NELBLK)*namlen)
       call mdfind ('LINK', klink, loldlk)
       call mdfind ('ATRIB', katrib, loldat)
 
@@ -331,6 +313,8 @@ C ... Wrapper to deal with character*1 'C' array
          endif
  50   continue
 
+      call getnam(NETID, 1, nelblk, C(KNMBK+(lold*namlen)))
+
 C   --Read the node sets
 
       CALL MDFIND ('IDNPS', KIDNS, LOLD)
@@ -343,6 +327,7 @@ C   --Read the node sets
       CALL MDLONG ('LTNNPS', KLTNNS, LOLD2+LNPSNL)
       CALL MDLONG ('FACNPS', KFACNS, LOLD2+LNPSNL)
       call mdlong ('CFACNP', kcfacn, lnpsnl) ! Compressed df list array
+      CALL MCLONG ('NAMNS',  KNMNS, (LOLD+NUMNPS)*namlen)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 950
 
@@ -373,6 +358,10 @@ C     necessary.
          endif
  80   continue
 
+      if (numnps .gt. 0) then
+         call getnam(NETID, 2, numnps, C(KNMNS+(lold*namlen)))
+      end if
+
 C   --Read the side sets
 
       CALL MDFIND ('IDESS', KIDSS, LOLD)
@@ -387,6 +376,7 @@ C   --Read the side sets
       call mdlong ('LTSSNC', kltsnc, lold2+lessel)
       call mdfind ('FACESS', KFACSS, LOLD3)
       call mdlong ('FACESS', kfacss, lold3+lessdl)    ! Compressed dist factors list
+      CALL MCLONG ('NAMSS',  KNMSS, (LOLD+NUMESS)*namlen)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 950
 
@@ -431,6 +421,8 @@ C   --Read the side sets
          if (ntot .ne. lessdl .and. lessdl .gt. 0) then
            stop 'internal nodecount error'
          end if
+
+         call getnam(NETID, 3, numess, C(KNMSS+(lold*namlen)))
       endif
 
 C   --Read the QA and information records
@@ -527,3 +519,14 @@ C     df count for this list
       real df(*)
       return
       end
+
+      subroutine getnam(ndb, itype, isiz, names)
+      include 'gj_namlen.blk'
+      
+      character*(namlen) names(*)
+
+      call exgnams(ndb, itype, isiz, names, ierr)
+      return
+      end
+
+      

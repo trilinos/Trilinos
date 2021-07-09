@@ -87,7 +87,7 @@ alias install-targets
 #
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile
-                         install-user-bin install-user-include ;
+                         install-user-bin install-user-include install-user-lib ;
 
 # Dependencies listed in this target are always installed for end users.
 # This should include only those executables and any other files needed by end-users.
@@ -121,17 +121,29 @@ install install-user-include
     <install-source-root>$(stk_math-root)
   ;
 
+explicit install-user-lib ;
+install install-user-lib
+  : stk_math
+  : <location>$(install-root)/stk/stk_math/lib
+  ;
+
 explicit install-exe-targets ;
 alias install-exe-targets : ;
 
-alias stk_math_headers
-  : # No sources defined for header-only libraries
-  : # No build requirements
-  : # No default build
-  :
-    <include>$(stk_math-root)
-  ;
-
+lib stk_math
+   :
+     [ ifdevbuild
+         [ glob $(stk_math-root)/stk_math/*.cpp ]
+     ]
+     /sierra/stk_util//stk_util_util
+   :
+     [ ifuserbuild
+         <file>$(stk_math-root)/lib/libstk_math.a
+     ]
+     [ ifdevbuild
+         <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
+     ]
+   ;
 
 #
 # SECTION 4: Build configuration
@@ -139,9 +151,12 @@ alias stk_math_headers
 
 exe stk_math_utest
   :
-    [ glob $(stk_math-root)/unit_tests/*.cpp ]
+    [ glob $(stk_math-root)/../stk_unit_tests/stk_math/*.cpp ]
+    /sierra/stk_math//stk_math
+    /sierra/stk_unit_test_utils//stk_unit_main
     /tpl/trilinos//kokkoscore
     /tpl/gtest//gtest
+
   : <tag>@sierra-exec-tag
   ;
 

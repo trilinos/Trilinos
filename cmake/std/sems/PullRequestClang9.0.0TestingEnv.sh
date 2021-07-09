@@ -9,13 +9,14 @@
 # $ module purge
 # or Trilinos/cmake/unload_sems_dev_env.sh
 
+module purge
+
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 module load sems-git/2.10.1
 module load sems-gcc/5.3.0
 module load sems-clang/9.0.0
 module load sems-openmpi/1.10.1
-module load sems-python/2.7.9
 module load sems-boost/1.63.0/base
 module load sems-zlib/1.2.8/base
 module load sems-hdf5/1.10.6/parallel
@@ -23,13 +24,12 @@ module load sems-netcdf/4.7.3/parallel
 module load sems-parmetis/4.0.3/parallel
 module load sems-scotch/6.0.3/nopthread_64bit_parallel
 module load sems-superlu/4.3/base
-module load sems-cmake/3.12.2
 
 # Load the SEMS CMake Module
 # - One of the SEMS modules will load CMake 3.4.x also,
 #   so this will pull in the SEMS cmake 3.10.3 version
 #   for Trilinos compatibility.
-module load sems-cmake/3.12.2
+module load sems-cmake/3.17.1
 
 # Using CMake and Ninja modules from the ATDM project space.
 # SEMS does not yet supply a recent enough version of CMake
@@ -40,6 +40,10 @@ module load sems-cmake/3.12.2
 module load atdm-env
 #module load atdm-cmake/3.10.1
 module load atdm-ninja_fortran/1.7.2
+
+module unload sems-python
+module load sems-python/3.5.2
+
 
 # add the OpenMP environment variable we need
 export OMP_NUM_THREADS=2

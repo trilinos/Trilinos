@@ -35,9 +35,8 @@
 #ifndef STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP
 #define STK_UTIL_REGISTRY_PRODUCTREGISTRY_HPP
 
-#include <stddef.h>                     // for size_t
-#include <map>                          // for map, map<>::const_iterator, etc
-#include <string>                       // for string, operator<
+#include <map>     // for map, map<>::const_iterator, map<>::value_compare
+#include <string>  // for string
 
 namespace stk {
 

@@ -82,7 +82,7 @@ namespace Intrepid2 {
       }
     }
 
-    template<typename SpT,
+    template<typename DT,
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
     void
@@ -92,7 +92,7 @@ namespace Intrepid2 {
                const EOperator operatorType )  {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
       const auto loopSize = inputPoints.extent(0);
@@ -129,8 +129,8 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename SpT, typename OT, typename PT>
-  Basis_HVOL_C0_FEM<SpT,OT,PT>::
+  template<typename DT, typename OT, typename PT>
+  Basis_HVOL_C0_FEM<DT,OT,PT>::
   Basis_HVOL_C0_FEM(const shards::CellTopology cellTopo) {
     const ordinal_type spaceDim = cellTopo.getDimension();
 
@@ -165,14 +165,12 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_, spaceDim), cellVerts("cellVerts", spaceDim);
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
+      dofCoords("dofCoordsHost", this->basisCardinality_, spaceDim);
 
-    CellTools<SpT>::getReferenceCellCenter(Kokkos::subview(dofCoords, 0, Kokkos::ALL()),
-                                           cellVerts,
-                                           cellTopo);
+    CellTools<Kokkos::HostSpace>::getReferenceCellCenter(Kokkos::subview(dofCoords, 0, Kokkos::ALL()), cellTopo);
 
-    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
 

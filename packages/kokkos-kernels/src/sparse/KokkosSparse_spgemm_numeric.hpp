@@ -84,54 +84,50 @@ void spgemm_numeric(
 
 
 
-  static_assert (std::is_same<typename clno_row_view_t_::value_type,
-      typename clno_row_view_t_::non_const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: Output matrix rowmap must be non-const.");
-
   static_assert (std::is_same<typename clno_nnz_view_t_::value_type,
       typename clno_nnz_view_t_::non_const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: Output matrix entriesView must be non-const.");
+      "KokkosSparse::spgemm_numeric: Output matrix entriesView must be non-const.");
 
   static_assert (std::is_same<typename cscalar_nnz_view_t_::value_type,
       typename cscalar_nnz_view_t_::non_const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: Output matrix scalar view must be non-const.");
+      "KokkosSparse::spgemm_numeric: Output matrix scalar view must be non-const.");
 
   static_assert (std::is_same<typename KernelHandle::const_size_type,
       typename alno_row_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: Size type of left handside matrix should be same as kernelHandle sizetype.");
+      "KokkosSparse::spgemm_numeric: Size type of left handside matrix should be same as kernelHandle sizetype.");
 
   static_assert (std::is_same<typename KernelHandle::const_size_type,
       typename blno_row_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: Size type of right handside matrix should be same as kernelHandle sizetype.");
+      "KokkosSparse::spgemm_numeric: Size type of right handside matrix should be same as kernelHandle sizetype.");
 
   static_assert (std::is_same<typename KernelHandle::const_size_type,
       typename clno_row_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: Size type of output matrix should be same as kernelHandle sizetype.");
+      "KokkosSparse::spgemm_numeric: Size type of output matrix should be same as kernelHandle sizetype.");
 
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
       typename alno_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: lno type of left handside matrix should be same as kernelHandle lno_t.");
+      "KokkosSparse::spgemm_numeric: lno type of left handside matrix should be same as kernelHandle lno_t.");
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
       typename blno_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: lno type of right handside matrix should be same as kernelHandle lno_t.");
+      "KokkosSparse::spgemm_numeric: lno type of right handside matrix should be same as kernelHandle lno_t.");
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_lno_t,
       typename clno_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: lno type of output matrix should be same as kernelHandle lno_t.");
+      "KokkosSparse::spgemm_numeric: lno type of output matrix should be same as kernelHandle lno_t.");
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
       typename ascalar_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: scalar type of left handside matrix should be same as kernelHandle scalar.");
+      "KokkosSparse::spgemm_numeric: scalar type of left handside matrix should be same as kernelHandle scalar.");
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
       typename bscalar_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: scalar type of right handside matrix should be same as kernelHandle scalar.");
+      "KokkosSparse::spgemm_numeric: scalar type of right handside matrix should be same as kernelHandle scalar.");
 
   static_assert (std::is_same<typename KernelHandle::const_nnz_scalar_t,
       typename cscalar_nnz_view_t_::const_value_type>::value,
-      "KokkosSparse::spgemm_symbolic: scalar type of output matrix should be same as kernelHandle scalar.");
+      "KokkosSparse::spgemm_numeric: scalar type of output matrix should be same as kernelHandle scalar.");
 
 
   if (transposeA || transposeB){
@@ -192,9 +188,9 @@ void spgemm_numeric(
       UniformDevice_t, //       typename bscalar_nnz_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_bscalar_nnz_view_t_;
 
-  //static assert clno_row_view_t_ cannot be const type.
+  //static assert clno_row_view_t_ can be const type (row map is fixed after symbolic phase).
   typedef Kokkos::View<
-      typename clno_row_view_t_::non_const_value_type*,
+      typename clno_row_view_t_::value_type*,
       typename KokkosKernels::Impl::GetUnifiedLayout<clno_row_view_t_>::array_layout,
       UniformDevice_t, //       typename clno_row_view_t_::device_type,
       Kokkos::MemoryTraits<Kokkos::Unmanaged> > Internal_clno_row_view_t_;

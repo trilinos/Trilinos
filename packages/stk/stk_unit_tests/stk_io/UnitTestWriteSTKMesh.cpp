@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <exo_fpp/Iofx_DatabaseIO.h>
 #include "mpi.h"
+#include <Ioss_IOFactory.h>
 #include <Ioss_Region.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_PropertyManager.h>
@@ -21,6 +21,7 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/SideSetUtil.hpp>
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
@@ -41,7 +42,7 @@
 namespace
 {
 
-Iofx::DatabaseIO* create_output_db_io(const std::string &filename)
+Ioss::DatabaseIO* create_output_db_io(const std::string &filename)
 {
     Ioss::Init::Initializer init_db;
 
@@ -52,7 +53,8 @@ Iofx::DatabaseIO* create_output_db_io(const std::string &filename)
     properties.add(Ioss::Property("INTEGER_SIZE_DB",  8));
     properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
 
-    Iofx::DatabaseIO *db_io = new Iofx::DatabaseIO(NULL, filename, db_usage, communicator, properties);
+    Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus", filename, db_usage,
+						      communicator, properties);
     return db_io;
 }
 
@@ -70,7 +72,7 @@ TEST(StkIo, write_stk_mesh_to_file)
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
 
-        Iofx::DatabaseIO* db_io = create_output_db_io(file_written);
+        Ioss::DatabaseIO* db_io = create_output_db_io(file_written);
         Ioss::Region output_region(db_io);
         EXPECT_TRUE(db_io->ok());
 
@@ -270,9 +272,11 @@ TEST(StkIo, check_memory)
 class StkIoResultsOutput : public stk::unit_test_util::MeshFixture
 {
 protected:
-    void setup_mesh(const std::string & meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void setup_mesh(const std::string & meshSpec,
+                    stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                    unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity) override
     {
-        setup_empty_mesh(auraOption);
+        setup_empty_mesh(auraOption, bucketCapacity);
 
         stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "nodal_field");
         const int initValue = 0;
@@ -341,7 +345,7 @@ TEST_F(StkIoResultsOutput, no_reconstruct_on_input)
     const stk::mesh::BulkData& bulk = get_bulk();
     EXPECT_TRUE(bulk.does_sideset_exist(*surface_1));
 
-    EXPECT_FALSE( stk::io::should_reconstruct_sideset(bulk, *surface_1) );
+    EXPECT_FALSE( stk::mesh::should_reconstruct_sideset(bulk, *surface_1) );
 }
 
 TEST_F(StkIoResultsOutput, reconstruct_on_creating_sideset)
@@ -357,11 +361,11 @@ TEST_F(StkIoResultsOutput, reconstruct_on_creating_sideset)
     stk::mesh::BulkData& bulk = get_bulk();
     EXPECT_FALSE(bulk.does_sideset_exist(surface_part));
 
-    EXPECT_TRUE( stk::io::should_reconstruct_sideset(bulk, surface_part) );
+    EXPECT_TRUE( stk::mesh::should_reconstruct_sideset(bulk, surface_part) );
 
     bulk.create_sideset(surface_part);
 
-    EXPECT_FALSE( stk::io::should_reconstruct_sideset(bulk, surface_part) );
+    EXPECT_FALSE( stk::mesh::should_reconstruct_sideset(bulk, surface_part) );
 
     stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
     EXPECT_TRUE(bulk.is_valid(elem));
@@ -377,7 +381,7 @@ TEST_F(StkIoResultsOutput, reconstruct_on_creating_sideset)
     EXPECT_EQ(elem, entry.element);
     EXPECT_EQ(1, entry.side);
 
-    EXPECT_FALSE( stk::io::should_reconstruct_sideset(bulk, surface_part) );
+    EXPECT_FALSE( stk::mesh::should_reconstruct_sideset(bulk, surface_part) );
 }
 
 TEST(TestStkIo, readWrite)

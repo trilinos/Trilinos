@@ -35,13 +35,14 @@
 #ifndef STK_UTIL_DIAG_WRITER_HPP
 #define STK_UTIL_DIAG_WRITER_HPP
 
-#include <ostream>
-#include <string>
-#include <vector>
-#include <utility>
-#include <stdint.h>
+#include "stk_util/util/Writer_fwd.hpp"  // for PrintMask, LOG_MEMBERS, LOG_TRACE, LOG_ALWAYS
+#include <memory>                        // for allocator_traits<>::value_type
+#include <ostream>                       // for ostream, ios_base, streambuf
+#include <string>                        // for string
+#include <utility>                       // for pair
+#include <vector>                        // for vector
 
-#include <stk_util/util/Writer_fwd.hpp>
+namespace stk { namespace diag { class Writer; } }
 
 namespace stk {
 namespace diag {
@@ -781,7 +782,7 @@ Writer &operator<<(Writer &dout, const c_ptr_func_<T, R> &c) {
 } // namespace diag
 } // namespace stk
 
-#include <stk_util/util/WriterManip.hpp>
+#include "stk_util/util/WriterManip.hpp"
 
 namespace sierra {
 

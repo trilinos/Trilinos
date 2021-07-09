@@ -82,7 +82,7 @@ std::vector<stk::balance::GraphEdge> get_graph_edges_using_graph_settings(stk::m
     graphData.set_spatial_dim(bulk.mesh_meta_data().spatial_dimension());
 
     graphData.createGraphEdgesUsingNodeConnectivity(bulk,
-                                                    bulk.mesh_meta_data().locally_owned_part(),
+                                                    bulk.mesh_meta_data().universal_part(),
                                                     graphSettings,
                                                     graphData.get_num_global_elements(),
                                                     graphEdges,
@@ -114,7 +114,7 @@ bool is_edge_in_graph(const Edge &edge, const std::vector<stk::balance::GraphEdg
 
 bool are_edges_equal(const Edge &edge, const stk::balance::GraphEdge &graphEdge)
 {
-    return (graphEdge.vertex1() == edge.first && graphEdge.vertex2() == edge.second);
+    return (graphEdge.vertex1() == edge.first && graphEdge.vertex2_id() == edge.second);
 }
 
 Edge get_cross_processor_edge_given_proc_id(const stk::mesh::BulkData &bulk)

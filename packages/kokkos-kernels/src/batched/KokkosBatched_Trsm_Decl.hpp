@@ -43,6 +43,24 @@ namespace KokkosBatched {
            const BViewType &B);
   };
 
+  template<typename MemberType,
+           typename ArgSide,
+           typename ArgUplo,
+           typename ArgTrans,
+           typename ArgDiag,
+           typename ArgAlgo>
+  struct TeamVectorTrsm {
+    template<typename ScalarType,
+             typename AViewType,
+             typename BViewType>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(const MemberType &member,
+           const ScalarType alpha,
+           const AViewType &A,
+           const BViewType &B);
+  };
+
   ///
   /// Selective Interface
   ///
@@ -74,5 +92,8 @@ namespace KokkosBatched {
 
 }
 
+#include "KokkosBatched_Trsm_Serial_Impl.hpp"
+#include "KokkosBatched_Trsm_Team_Impl.hpp"
+#include "KokkosBatched_Trsm_TeamVector_Impl.hpp"
 
 #endif

@@ -39,14 +39,11 @@
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, OrdinalVector, etc
 #include <vector>                       // for vector
-#include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class EntitySorterBase; } }
 namespace stk { namespace mesh { namespace impl { class Partition; } } }
-namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
-
 
 namespace stk {
 namespace mesh {
@@ -66,7 +63,6 @@ public:
   BucketRepository(
       BulkData & mesh,
       unsigned entity_rank_count,
-      const ConnectivityMap & connectivity_map,
       unsigned bucket_capacity = default_bucket_capacity
       );
 
@@ -97,11 +93,8 @@ public:
 
   BulkData& mesh() const { return m_mesh; }
 
-  //------------------------------------
-  size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const;
-
   void set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting);
-  void internal_default_sort_bucket_entities();
+  void internal_default_sort_bucket_entities(bool mustSortFacesByNodeIds=false);
   void internal_custom_sort_bucket_entities(const EntitySorterBase& sorter);
 
   Bucket *get_bucket(EntityRank entity_rank, int bucket_id) const;
@@ -115,7 +108,6 @@ public:
   ////
 
   friend class Partition;
-  friend struct stk::mesh::utest::SyncToPartitions;
 
   void add_entity_with_part_memberships(const Entity entity,
                                         const EntityRank arg_entity_rank,
@@ -128,6 +120,18 @@ public:
   Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
                                      const OrdinalVector &parts);
 
+  Partition *get_partition(const EntityRank arg_entity_rank ,
+                           const OrdinalVector &parts,
+                           std::vector<Partition*>::iterator& ik,
+                           PartOrdinal* keyPtr,
+                           PartOrdinal* keyEnd);
+
+  Partition *create_partition(const EntityRank arg_entity_rank ,
+                              const OrdinalVector &parts,
+                              std::vector<Partition*>::iterator& ik,
+                              PartOrdinal* keyPtr,
+                              PartOrdinal* keyEnd);
+
   // For use by BulkData::internal_modification_end().
   void internal_modification_end();
 
@@ -138,11 +142,15 @@ public:
   // Used in unit tests.  Returns the current partitions.
   std::vector<Partition *> get_partitions(EntityRank rank) const;
 
+  Partition* get_partition(const EntityRank arg_entity_rank, const OrdinalVector &parts);
+
   bool being_destroyed() const { return m_being_destroyed; }
 
   unsigned get_bucket_capacity() const { return m_bucket_capacity; }
 
   void delete_bucket(Bucket * bucket);
+
+  void set_need_sync_from_partitions(EntityRank entityRank) { m_need_sync_from_partitions[entityRank] = true; }
 
 private:
   BucketRepository();
@@ -157,6 +165,10 @@ private:
 
   void ensure_data_structures_sized();
 
+  void fill_key_ptr(const OrdinalVector& parts, PartOrdinal** keyPtr, PartOrdinal** keyEnd,
+                    const unsigned maxKeyTmpBufferSize, PartOrdinal* keyTmpBuffer, OrdinalVector& keyTmpVec);
+
+
   BulkData & m_mesh ; // Associated Bulk Data Aggregate
 
   // Vector of bucket pointers by rank.  This is now a cache and no longer the primary
@@ -166,10 +178,7 @@ private:
   std::vector<std::vector<Partition *> > m_partitions;
   std::vector<bool> m_need_sync_from_partitions;
 
-  ConnectivityMap m_connectivity_map;
-
   unsigned m_bucket_capacity;
-
   bool m_being_destroyed;
 };
 
@@ -180,8 +189,6 @@ Bucket *BucketRepository::get_bucket(EntityRank entity_rank, int bucket_id) cons
   ThrowAssert(static_cast<size_t>(bucket_id) < all_buckets_for_rank.size());
   return all_buckets_for_rank[bucket_id];
 }
-
-#undef RANK_DEPENDENT_GET_BUCKET_FN_DEF
 
 } // namespace impl
 } // namespace mesh

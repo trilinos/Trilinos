@@ -101,6 +101,7 @@ bool debug = false;
   int maxrestarts = 15;      // number of restarts allowed
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;           // relative residual tolerance
+  std::string ortho = "ICGS";// orthogonalization method
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -113,6 +114,7 @@ bool debug = false;
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
   cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
+  cmdp.setOption("ortho",&ortho,"Orthogonalization being used by GMRES solver.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -155,6 +157,7 @@ bool debug = false;
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Orthogonalization", ortho );           // Orthogonalization used by iterative solver
   int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
     verbosity += Belos::TimingDetails + Belos::StatusTestDetails;

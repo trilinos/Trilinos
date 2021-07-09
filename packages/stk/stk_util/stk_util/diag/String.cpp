@@ -34,11 +34,9 @@
 // 
  */
 
-#include <stk_util/diag/String.hpp>
-#include <cctype>                       // for isspace
-#include <cstddef>                      // for size_t
-#include <iostream>                     // for operator<<
-#include <stdexcept>                    // for runtime_error, logic_error
+#include "stk_util/diag/String.hpp"
+#include <cctype>    // for isspace
+#include <iostream>  // for operator<<
 
 //----------------------------------------------------------------------
 

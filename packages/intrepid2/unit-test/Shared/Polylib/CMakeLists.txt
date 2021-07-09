@@ -11,5 +11,3 @@ ENDIF()
 IF(Kokkos_ENABLE_CUDA)
   ADD_SUBDIRECTORY(Cuda)
 ENDIF()
-
-ADD_SUBDIRECTORY(LegendreJacobiPolynomials)

@@ -132,7 +132,6 @@ TEST( stk_search_sphere_hier, KDTreeSpheresFromSpheres) {
   using namespace stk::search;
   typedef float                             num_type;
   typedef Sphere<num_type>                  sphere_type;
-  typedef typename sphere_type::point_type  point_type;
 
   const int numSpheres_X = 4;
   const int numSpheres_Y = 3;

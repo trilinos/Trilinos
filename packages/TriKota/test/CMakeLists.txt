@@ -31,24 +31,26 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TriKotaSimpleCopyDakotaIn
   EXEDEPS  SimpleEpetraExtME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SimpleThyraME
-  SOURCES 
-  Main_SimpleThyraME.cpp
-  Simple_EpetraExtME.cpp
-  Simple_EpetraExtME.hpp
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  ARGS -v
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  )
+IF(${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SimpleThyraME
+    SOURCES 
+    Main_SimpleThyraME.cpp
+    Simple_EpetraExtME.cpp
+    Simple_EpetraExtME.hpp
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(TriKotaThyraMECopyDakotaIn
-  DEST_FILES   dakota.in
-  SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
-  SOURCE_PREFIX "_"
-  EXEDEPS  SimpleThyraME
-  )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TriKotaThyraMECopyDakotaIn
+    DEST_FILES   dakota.in
+    SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
+    SOURCE_PREFIX "_"
+    EXEDEPS  SimpleThyraME
+    )
+ENDIF(${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ParallelDiagonalThyraME 

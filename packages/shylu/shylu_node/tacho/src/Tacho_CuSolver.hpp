@@ -17,12 +17,12 @@ namespace Tacho {
   public:
     typedef double value_type;
 
-    typedef typename UseThisDevice<Kokkos::Cuda>::device_type device_type;
+    typedef typename UseThisDevice<Kokkos::Cuda>::type device_type;
 
     typedef typename device_type::execution_space exec_space;
     typedef typename device_type::memory_space exec_memory_space;    
     
-    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;    
+    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;    
     typedef typename host_device_type::execution_space host_space;
     typedef typename host_device_type::memory_space host_memory_space;    
 
@@ -172,8 +172,8 @@ namespace Tacho {
         printf("             total time spent:                                %10.6f s\n", (t_alloc+t_factor));
         printf("\n");
         printf("  Workspace\n");
-        printf("             internal data in MB:                          %10.2f MB\n", double(internalDataInBytes)/1.e6);
-        printf("             workspace in MB:                              %10.2f MB\n", double(workspaceInBytes)/1.e6);
+        printf("             internal data in MB:                          %10.3f MB\n", double(internalDataInBytes)/1.e6);
+        printf("             workspace in MB:                              %10.3f MB\n", double(workspaceInBytes)/1.e6);
         printf("\n");
       }
 

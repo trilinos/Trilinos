@@ -383,6 +383,15 @@ getKokkosExtendedDataTypeDimensions() const
 
 // **************************************************************
 template<typename Traits>
+template<typename EvalT>
+const PHX::DagManager<Traits>&
+PHX::FieldManager<Traits>::getDagManager() const
+{
+  return m_eval_containers.template getAsObject<EvalT>()->getDagManager();
+}
+
+// **************************************************************
+template<typename Traits>
 inline
 typename PHX::FieldManager<Traits>::iterator
 PHX::FieldManager<Traits>::begin()

@@ -137,7 +137,10 @@ namespace MueLu {
         comm->barrier();
       }
 
-      GetOStream(Test) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
+      if (IsPrint(Test1))
+        GetOStream(Test1) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;
+      else
+        RemoveFactoriesFromList(GetParameterList())->print(GetOStream(Test0), Teuchos::ParameterList::PrintOptions().indent(0).showFlags(true).showDefault(false));
 
       if (oldRank != -1)
         SetProcRankVerbose(oldRank);

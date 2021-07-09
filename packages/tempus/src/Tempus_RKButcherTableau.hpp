@@ -14,16 +14,11 @@
 #pragma clang system_header
 #endif
 
-#include "Tempus_String_Utilities.hpp"
-
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
+
+#include "Tempus_config.hpp"
+#include "Tempus_String_Utilities.hpp"
 
 
 namespace Tempus {
@@ -146,6 +141,15 @@ class RKButcherTableau :
     virtual bool isDIRK() const { return isDIRK_; }
     /** \brief Return true if the RK method has embedded capabilities */
     virtual bool isEmbedded() const { return isEmbedded_; }
+    /** \brief Return true if the RK method is TVD */
+    virtual bool isTVD() const { return isTVD_; }
+    /** \brief Return TVD coefficient of RK method */
+    virtual Scalar getTVDCoeff() const { return tvdCoeff_; }
+    /** \brief set TVD coefficient of RK method */
+    virtual void setTVDCoeff(const Scalar a) { tvdCoeff_ = a; }
+    virtual void setTVD(bool a) { isTVD_ = a; }
+    virtual void setEmbedded(bool a) { isEmbedded_ = a; }
+
 
     /* \brief Redefined from Teuchos::Describable */
     //@{
@@ -154,6 +158,8 @@ class RKButcherTableau :
       virtual void describe( Teuchos::FancyOStream &out,
                              const Teuchos::EVerbosityLevel verbLevel) const
       {
+        out.setOutputToRootOnly(0);
+
         if (verbLevel != Teuchos::VERB_NONE) {
           out << this->description() << std::endl;
           out << "number of Stages = " << this->numStages() << std::endl;
@@ -167,9 +173,44 @@ class RKButcherTableau :
           out << "isImplicit = " << this->isImplicit() << std::endl;
           out << "isDIRK     = " << this->isDIRK()     << std::endl;
           out << "isEmbedded = " << this->isEmbedded() << std::endl;
+          if (this->isTVD())
+            out << "TVD Coeff = " << this->getTVDCoeff() << std::endl;
         }
       }
     //@}
+
+    bool operator == (const RKButcherTableau & t) const {
+      const Scalar relTol = 1.0e-15;
+      if ( A_->numRows() != t.A_->numRows() ||
+           A_->numCols() != t.A_->numCols()    ) {
+        return false;
+      } else {
+        int i, j;
+        for(i = 0; i < A_->numRows(); i++) {
+          for(j = 0; j < A_->numCols(); j++) {
+            if(std::abs((t.A_(i,j) - A_(i,j))/A_(i,j)) > relTol) return false;
+          }
+        }
+      }
+
+      if ( b_->length() != t.b_->length() ||
+           b_->length() != t.c_->length() ||
+           b_->length() != t.bstar_->length() ) {
+        return false;
+      } else {
+        int i;
+        for(i = 0; i < A_->numRows(); i++) {
+          if(std::abs((t.b_(i) - b_(i))/b_(i)) > relTol) return false;
+          if(std::abs((t.c_(i) - c_(i))/c_(i)) > relTol) return false;
+          if(std::abs((t.bstar_(i) - bstar_(i))/bstar_(i)) > relTol) return false;
+        }
+      }
+      return true;
+    }
+
+    bool operator != (const RKButcherTableau & t) const {
+      return !((*this) == t);
+    }
 
   private:
 
@@ -207,7 +248,9 @@ class RKButcherTableau :
     bool isImplicit_;
     bool isDIRK_;
     bool isEmbedded_;
+    bool isTVD_ = false;
     Teuchos::SerialDenseVector<int,Scalar> bstar_;
+    Scalar tvdCoeff_ = 0;
 };
 
 

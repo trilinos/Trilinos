@@ -121,7 +121,7 @@ void array_stride_to_fortran_indices(
 {
   if ( 0 < rank ) {
     array_traits::int_t tmp = offset ;
-    for ( array_traits::int_t i = rank - 1 ; 0 < i ; ) {
+    for ( array_traits::int_t i = rank - 1 ; 0 < i ; i--) {
       indices[i] = tmp / stride[i-1] ;
       tmp %= stride[i-1] ;
     }

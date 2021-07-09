@@ -50,7 +50,7 @@ MESSAGE("*******************************")
 MESSAGE("")
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
 
 SET(THIS_CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
@@ -347,12 +347,14 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # * ``${PROJECT_NAME}_EXTRAREPOS_BRANCH`` (`Repository Updates (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_EXTRAREPOS_FILE`` (`Determining what TriBITS repositories are included (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_EXTRA_REPOSITORIES`` (`Determining what TriBITS repositories are included (TRIBITS_CTEST_DRIVER())`_)
-# * ``${PROJECT_NAME}_PACKAGES`` (`Determining What Packages Get Tested (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`` (`Setting variables in the inner CMake configure (TRIBITS_CTEST_DRIVER())`_)
+# * ``${PROJECT_NAME}_INNER_ENABLE_TESTS`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
+# * ``${PROJECT_NAME}_PACKAGES`` (`Determining What Packages Get Tested (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_PRE_REPOSITORIES`` (`Determining what TriBITS repositories are included (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_REPOSITORY_BRANCH`` (`Repository Updates (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_REPOSITORY_LOCATION`` (`Repository Updates (TRIBITS_CTEST_DRIVER())`_)
-# * ``${PROJECT_NAME}_TESTING_TRACK`` (`Determining how the results are displayed on CDash (TRIBITS_CTEST_DRIVER())`_)
+# * ``${PROJECT_NAME}_SKIP_CTEST_ADD_TEST`` (`Determining what testing-related actions are performed (TRIBITS_CTEST_DRIVER())`_)
+# * ``${PROJECT_NAME}_TRACK`` (`Determining how the results are displayed on CDash (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_TRIBITS_DIR`` (`Source and Binary Directory Locations (TRIBITS_CTEST_DRIVER())`_)
 # * ``${PROJECT_NAME}_VERBOSE_CONFIGURE`` (`Other CTest Driver options (TRIBITS_CTEST_DRIVER())`_)
 # * ``COMPILER_VERSION`` (`Determining how the results are displayed on CDash (TRIBITS_CTEST_DRIVER())`_)
@@ -569,6 +571,21 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     (e.g. ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE=FALSE``.  The
 #     default value is empty "".
 #
+#  ``${PROJECT_NAME}_PACKAGE_ENABLES_FILE=<filepath>``
+#
+#    A file that is expected to define a set to `set()` statements to enable a
+#    set of packages.  The set of packages enabled will determine what
+#    packages are specifically processed and tested (according to other
+#    options as well).  NOTE: To get this set of enables passed to inner
+#    configure, also list this file in the inner configure cache variable
+#    `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_ (see passing such options
+#    through in `Setting variables in the inner CMake configure
+#    (TRIBITS_CTEST_DRIVER())`_).  This is used instead of the variable
+#    ``${PROJECT_NAME}_PACKAGES`` to specify the set of packages to enable and
+#    test.  (If both ``${PROJECT_NAME}_PACKAGES`` and
+#    ``${PROJECT_NAME}_PACKAGE_ENABLES_FILE`` are both set, then a fatal error
+#    will occur.  The default value is empty "".
+#
 #   .. _${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES:
 #
 #   ``${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=[TRUE|FALSE]``
@@ -686,13 +703,16 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # * ``${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE``: Set to empty if
 #   ``CTEST_GENERATE_DEPS_XML_OUTPUT_FILE==FALSE``
 # * ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE``: Direct pass-through
+# * ``${PROJECT_NAME}_ENABLE_TESTS``: Set the the same value as
+#   `${PROJECT_NAME}_INNER_ENABLE_TESTS`_ set in the outer ctest -S driver script
+# * ``${PROJECT_NAME}_SKIP_CTEST_ADD_TEST``: Direct pass-through
 # * ``MPI_EXEC_MAX_NUMPROCS``: Direct pass-through
 # * ``${PROJECT_NAME}_ENABLE_COVERAGE_TESTING``: Set to ``ON`` if
 #   ``CTEST_DO_COVERAGE_TESTING==TRUE``
 # * ``${PROJECT_NAME}_EXTRAREPOS_FILE``: Set to empty if
 #   ``${PROJECT_NAME}_EXTRAREPOS_FILE=NONE``. Otherwise, passed through.
 # * ``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE``: Direct pass-through
-# * `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_: Oly passed down if 
+# * `${PROJECT_NAME}_GENERATE_VERSION_DATE_FILES`_: Only passed down if
 #   non-empty value is set (default empty "")
 #
 # Arbitrary options can be set to be passed into the inner CMake configure
@@ -882,6 +902,39 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     ``CTEST_TEST()`` AND ``CTEST_MEMCHECK()``.  The default value is ``1``
 #     (one).
 #
+#   .. _${PROJECT_NAME}_INNER_ENABLE_TESTS:
+#
+#   ``${PROJECT_NAME}_INNER_ENABLE_TESTS``
+#
+#     If ``OFF``, then ``${PROJECT_NAME}_ENABLE_TESTS=OFF`` will be passed to
+#     the inner CMake configure.  This will avoid building of all tests and
+#     examples for the enabled packages and also no CTest tests will be
+#     defined using calls to ``add_test()`` in the inner project configure.
+#     This results in just the building of the libraries and non-test,
+#     non-example executables (which will be much faster for some projects).
+#     The default value is ``ON`` (in which case all of the test and example
+#     executable and other targets will get built for all of the explicitly
+#     enabled packages and the associated ctest tests will be defined and
+#     run).
+#
+#   .. _${PROJECT_NAME}_SKIP_CTEST_ADD_TEST:
+#
+#   ``${PROJECT_NAME}_SKIP_CTEST_ADD_TEST``:
+#
+#     If set to ``TRUE``, then ``${PROJECT_NAME}_SKIP_CTEST_ADD_TEST=TRUE`` is
+#     passed in to the inner CMake configure.  This will result in all of the
+#     test and example executables for the enabled packages to be built but no
+#     ctest tests will get defined and run by skipping the inner CMake calls
+#     to ``add_test()``.  Setting this to ``TRUE`` allows all of the
+#     libraries, production executables and the test and example executables
+#     and other targets to get built, but no tests will be run.  However, when
+#     ``CTEST_DO_TEST=ON``, the ``ctest_test()`` command will still be run and
+#     test results will still be submitted to CDash which will report zero
+#     tests.  This avoids the test results being reported as missing on CDash
+#     for tools like ``ctest_analyze_and_report.py``.  The default value is
+#     ``FALSE`` (in which case any enabled tests or examples in the explicitly
+#     enabled packages will get run).
+#
 #   .. _CTEST_DO_COVERAGE_TESTING:
 #
 #   ``CTEST_DO_COVERAGE_TESTING=[TRUE|FALSE]``
@@ -892,7 +945,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     ``-D${PROJECT_NAME}_ENABLE_COVERAGE_TESTING=ON`` getting passed down to
 #     the inner CMake configure of the project (i.e. so that the executables
 #     are instrumented to generate coverage data when run by the tests in the
-#     ``CTEST_TEST()`` command).
+#     ``CTEST_TEST()`` command).  (Default is ``OFF``)
 #
 #   .. _CTEST_COVERAGE_COMMAND:
 #
@@ -966,31 +1019,45 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # and other results and submitted and displayed on CDash (but not what CDash
 # site(s) or project(s) they are submitted to).  These options can all be set
 # in the CTest -S script using ``SET()`` statements before
-# ``TRIBITS_CTEST_DRIVER()`` is called and can be overridden in the env.
+# ``TRIBITS_CTEST_DRIVER()`` is called and can be overridden in the env when
+# running the CTest -S driver script.
 #
 #   .. _CTEST_TEST_TYPE:
 #
 #   ``CTEST_TEST_TYPE=[Nightly|Continuous|Experimental]``
 #
-#     Determines the type of build.  This value is passed in as the first
+#     Determines the model for build.  This value is passed in as the first
 #     argument to the built-in CTest function ``CTEST_START()``.  Valid values
-#     include ``Nightly``, ``Continuous``, and ``Experimental``.  This also
-#     defines the default value for `${PROJECT_NAME}_TESTING_TRACK`_ as well
-#     as defines the default value for
+#     include ``Nightly``, ``Continuous``, and ``Experimental``.  As far as
+#     CTest is concerned, the only real impact this CTest "Model" has is on
+#     setting the time stamp in the build stamp field (which is stored in the
+#     file ``Testing/TAG``).  For the model ``Nightly``, the time stamp in the
+#     build stamp is taken from the variable ``CTEST_NIGHTLY_START_TIME`` read
+#     in from the file `<projectDir>/CTestConfig.cmake`_ file.  Otherwise, the
+#     time stamp used is the current build start time.  (The reason this is
+#     significant is that builds on CDash that have the same site, buildname,
+#     and build stamp are considered the same build and will combine results.)
+#     This also defines the default value for `${PROJECT_NAME}_TRACK`_ (see
+#     below) as well as defines the default value for
 #     ``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE``.  The default value
 #     is ``Experimental``.
 #
-#   .. _${PROJECT_NAME}_TESTING_TRACK:
+#   .. _${PROJECT_NAME}_TRACK:
 #
-#   ``${PROJECT_NAME}_TESTING_TRACK=<track-name>``
+#   ``${PROJECT_NAME}_TRACK=<cdash-group>``
 #
-#     Specifies the testing track on CDash for which results are displayed
-#     under (i.e. the "Group" filter field on CDash).  This is the value used
-#     for the ``TRACK`` argument of the built-in CTest function
-#     ``CTEST_START()``.  It is given the default value of
-#     ``${CTEST_TEST_TYPE}``.  However, if ``CTEST_TEST_TYPE==Experimental``
-#     (or ``EXPERIMENTAL``), then ``${PROJECT_NAME}_TESTING_TRACK`` is forced
-#     to ``Experimental``, even if it was set to a different value.
+#     Specifies the testing track that specifies the CDash group for which
+#     results are displayed under (i.e. the "Group" filter field on CDash).
+#     This is the value used for the (deprecated) ``TRACK`` argument (renamed
+#     ``GROUP`` in CMake/CTest versions 3.16+) of the built-in CTest function
+#     ``CTEST_START()``.  The default value is set to ``${CTEST_TEST_TYPE}``.
+#     However, if ``CTEST_TEST_TYPE==Experimental`` (or ``EXPERIMENTAL``),
+#     then ``${PROJECT_NAME}_TRACK`` is forced to ``Experimental``, even if it
+#     was set to a different value.  The default value can also be set in the
+#     ctest -S driver script itself by setting ``SET(${PROJECT_NAME}_TRACK
+#     <cdash-group>)``.  And, of course, if the environment variable ``export
+#     <Project>_TRACK=<cdash-group>`` is set, then that value will be used for
+#     the CDash Track/Group to submit results to.
 #
 #   .. _CTEST_SITE:
 #
@@ -1133,16 +1200,9 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # packages and therefore is more robust.  But the package-by-package mode is
 # more expensive in several respects for many projects.
 #
-# For versions of CMake 3.10.0 and above and newer versions of CDash, the
+# For versions of CMake 3.17.0 and above and newer versions of CDash, the
 # CDash server for the all-at-once mode will break down build and test results
 # on a package-by-package basis on CDash together.
-#
-# **NOTE:** It has been confirmed that older versions of CDash can accept and
-# display results from newer CMake/CTest versions when
-# ``${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES`` set to ``TRUE``.  It is just
-# that for older versions of CDash that it will not break down results on a
-# package-by-package basis on CDash and all of the build warnings and errors
-# and tests will be all globed together on CDash.
 #
 # .. _Mutiple ctest -S invocations (TRIBITS_CTEST_DRIVER()):
 #
@@ -1509,11 +1569,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Flags used on update when doing a Git update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "")
-
-  # If doing all-at-one approach, use new CMake/CTest/CDash features to allow
-  # it to split out results into different rows on CDash like the
-  # package-by-packages approach.
-  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES  FALSE )
  
   # Do all-at-once configure, build, test and submit (or package-by-package)
   IF ("${${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT}" STREQUAL "")
@@ -1547,6 +1602,12 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Do the tests or not (Note: must be true for coverage testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
 
+  # Pass through
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_INNER_ENABLE_TESTS ON )
+
+  # Pass through
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_SKIP_CTEST_ADD_TEST FALSE )
+
   # Maximum number of procs an mpi test can request (if more are requested,
   # the test will be skipped).  Value of 0 means no override (determined
   # internally).
@@ -1559,7 +1620,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "" )
 
   # Do coverage testing or not
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING OFF )
 
   # Command to run to get coverage results
   SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
@@ -1638,6 +1699,21 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # available).  This will override any disabled packages but not those
   # disabled by ${PROJECT_NAME}_EXCLUDE_PACKAGES.
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_PACKAGES "" )
+
+  # Also allow the package enables to be set in a CMake fragment file
+  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_PACKAGE_ENABLES_FILE "" )
+
+  IF (
+      (NOT "${${PROJECT_NAME}_PACKAGES}" STREQUAL "")
+      AND
+      (NOT "${${PROJECT_NAME}_PACKAGE_ENABLES_FILE}" STREQUAL "")
+    )
+    MESSAGE(FATAL_ERROR "ERROR: Both"
+      " ${PROJECT_NAME}_PACKAGES and ${PROJECT_NAME}_PACKAGE_ENABLES_FILE"
+      " cannot be non-empty!  Set one or the other to select the set of"
+      " packages to be processed/tested.")
+  ENDIF()
+
   SET(${PROJECT_NAME}_PACKAGES_USER_SELECTED ${${PROJECT_NAME}_PACKAGES})
   SPLIT("${${PROJECT_NAME}_PACKAGES_USER_SELECTED}" ","
     ${PROJECT_NAME}_PACKAGES_USER_SELECTED)
@@ -1646,6 +1722,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # backward compatibility of this CTest script but we want to let
   # ${PROJECT_NAME}_PACKAGES always be the full set of packages as defined by
   # the basic readin process.
+
 
   # Set the file that the extra repos will be read from
   #
@@ -1725,6 +1802,9 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
     "\n***\n")
 
   SET_DEFAULT_AND_FROM_ENV( CTEST_DEPENDENCY_HANDLING_UNIT_TESTING FALSE )
+
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_UNIT_TESTING_MODE
+    ${CTEST_DEPENDENCY_HANDLING_UNIT_TESTING} )
 
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_RETURN_VAL 0 )
 
@@ -1966,6 +2046,8 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   MESSAGE("\nCalling ctest_start(${CTEST_START_ARGS})... \n\n")
   CTEST_START(${CTEST_START_ARGS})
 
+  TRIBITS_REMEMBER_IF_CONFIGURE_ATTEMPTED()
+
   MESSAGE(
     "\n***"
     "\n*** Update the source code repositories ..."
@@ -1986,7 +2068,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       RETURN_VALUE  CTEST_UPDATE_RETURN_VAL)
     MESSAGE("CTEST_UPDATE(...) returned '${CTEST_UPDATE_RETURN_VAL}' [ rtn >= 0: num files; rnt == -1: error ]")
 
-    IF ("${UPDATE_FAILED}" STREQUAL "-1")
+    IF ("${CTEST_UPDATE_RETURN_VAL}" STREQUAL "-1")
       SET(UPDATE_FAILED TRUE)
     ENDIF()
 
@@ -2009,6 +2091,10 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       # ... ORIG_HEAD..HEAD` when doing an update and not after the initial
       # clone.  That is because ORIG_HEAD will not exist for the base git repo
       # after the initial clone.
+    ENDIF()
+
+    IF (UPDATE_FAILED)
+      MESSAGE("Update FAILED!")
     ENDIF()
 
   ELSE()
@@ -2052,7 +2138,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
       "\n***\n")
     ENABLE_ONLY_MODIFIED_PACKAGES()
   ENDIF()
-
 
   MESSAGE(
     "\n***"
@@ -2163,13 +2248,12 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # packages to enable or not and otherwise exit the script!
 
   IF (UPDATE_FAILED)
-    MESSAGE("The VC update failed so submitting update and stopping ...")
+    MESSAGE(SEND_ERROR
+      "The VC update failed so submitting update so don't perform any extra actions!")
     IF (CTEST_DO_SUBMIT)
       SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES_WO_CACHE}")
       TRIBITS_CTEST_SUBMIT( PARTS update notes )
     ENDIF()
-    REPORT_QUEUED_ERRORS()
-    RETURN()
   ENDIF()
 
   IF (CTEST_DO_SUBMIT AND EXISTS ${CDASH_SUBPROJECT_XML_FILE})
@@ -2187,7 +2271,11 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(${PROJECT_NAME}_FAILED_PACKAGES)
 
-  IF (
+  IF (UPDATE_FAILED)
+
+    MESSAGE("\nUpdate failed so skipping any further actions!\n")
+
+  ELSEIF(
     CTEST_DO_CONFIGURE
     OR
     CTEST_DO_BUILD
@@ -2239,7 +2327,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # ToDo: Above: We would love to provide the buildID to point to the exact
   # URL but CTest does not currently give that to you.
 
-  IF ("${${PROJECT_NAME}_FAILED_PACKAGES}" STREQUAL "")
+  IF ((NOT UPDATE_FAILED) AND ("${${PROJECT_NAME}_FAILED_PACKAGES}" STREQUAL ""))
     MESSAGE(
       "${SEE_CDASH_LINK_STR}\n"
       "TRIBITS_CTEST_DRIVER: OVERALL: ALL PASSED\n")

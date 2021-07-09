@@ -566,7 +566,7 @@ struct Zoltan_Struct {
   /***************************************************************************/
   struct Zoltan_LB_Struct LB;          /* Struct with info for load balancing */
   struct Zoltan_Order_Struct  Order;   /* Struct with info for ordering       */
-  struct Zoltan_TPL_Order_Struct  TPL_Order;   /* Struct with info for ordering       */
+  struct Zoltan_TPL_Order_Struct  TPL_Order; /* Struct with info for ordering */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */
 };
 

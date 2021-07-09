@@ -32,12 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>                     // for operator<<, ostringstream, etc
-#include <stdexcept>                    // for runtime_error
-#include <stk_util/environment/RuntimeWarning.hpp>
-#include <stk_util/util/ReportHandler.hpp>
-#include <gtest/gtest.h>
-#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"
+#include "stk_util/environment/RuntimeMessage.hpp"  // for MessageCode
+#include "stk_util/environment/RuntimeWarning.hpp"  // for RuntimeWarningAdHoc
+#include "stk_util/util/ReportHandler.hpp"          // for set_report_handler
+#include <iostream>                                 // for operator<<, endl, basic_ostream, basi...
+#include <string>                                   // for char_traits, string
 
 
 static std::ostringstream s_os;

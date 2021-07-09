@@ -52,18 +52,24 @@
 
 #cmakedefine HAVE_STK_CUDA
 
-#cmakedefine STK_KOKKOS_SIMD
-
 #cmakedefine STK_VOLATILE_SIMD
 
 /* Non-typical "not" macro for optional dependence on SEACASAprepro_lib (See
  * STK #17354) */
+#ifndef NOT_HAVE_STK_SEACASAPREPRO_LIB
 #cmakedefine NOT_HAVE_STK_SEACASAPREPRO_LIB
+#endif
 
+#ifndef FORTRAN_NO_UNDERSCORE
 #cmakedefine FORTRAN_NO_UNDERSCORE
+#endif
 
+#ifndef FORTRAN_ONE_UNDERSCORE
 #cmakedefine FORTRAN_ONE_UNDERSCORE
+#endif
 
+#ifndef FORTRAN_TWO_UNDERSCORES
 #cmakedefine FORTRAN_TWO_UNDERSCORES
+#endif
 
 #define SIERRA_MIGRATION

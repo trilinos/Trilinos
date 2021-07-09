@@ -3099,7 +3099,7 @@
     percept::MyPairIterRelation parent_elem_nodes (eMesh, parent_elem,  stk::topology::NODE_RANK );
     for (unsigned i = 0; i < parent_elem_nodes.size(); i++)
       {
-        if (checkInShared && !eMesh.get_bulk_data()->in_shared(eMesh.key(parent_elem_nodes[i].entity()))) continue;
+        if (checkInShared && !eMesh.get_bulk_data()->in_shared(parent_elem_nodes[i].entity())) continue;
 
         bool found = false;
         percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::topology::NODE_RANK );
@@ -3126,7 +3126,7 @@
       }
     for (unsigned i = 0; i < child_elem_nodes.size(); i++)
       {
-        if (checkInShared && !eMesh.get_bulk_data()->in_shared(eMesh.key(child_elem_nodes[i].entity()))) continue;
+        if (checkInShared && !eMesh.get_bulk_data()->in_shared(child_elem_nodes[i].entity())) continue;
 
         bool found = false;
         percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::topology::NODE_RANK );
@@ -3156,7 +3156,7 @@
         percept::MyPairIterRelation ft_level_0_nodes (eMesh, family_tree_level_0,  stk::topology::NODE_RANK );
         for (unsigned i = 0; i < ft_level_0_nodes.size(); i++)
           {
-            if (checkInShared && !eMesh.get_bulk_data()->in_shared(eMesh.key(ft_level_0_nodes[i].entity()))) continue;
+            if (checkInShared && !eMesh.get_bulk_data()->in_shared(ft_level_0_nodes[i].entity())) continue;
 
             bool found = false;
             percept::MyPairIterRelation ft_nodes (eMesh, family_tree,  stk::topology::NODE_RANK );

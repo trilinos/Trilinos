@@ -226,7 +226,7 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > RiskMeasureFactory(ROL::ParameterList &parlist) {
+  inline Ptr<RandVarFunctional<Real>> RiskMeasureFactory(ParameterList &parlist) {
     std::string risk = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
     ERiskMeasure ed = StringToERiskMeasure(risk);
     switch(ed) {

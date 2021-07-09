@@ -5,6 +5,7 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 
 #include "KokkosBatched_Set_Internal.hpp"
 #include "KokkosBatched_Scale_Internal.hpp"
@@ -114,7 +115,7 @@ namespace KokkosBatched {
       /// case host: team size is small and blocksize (mb,nb) is large
             
       ///
-      /// case cuda: team size is large and blocksize (mb,nb) is small
+      /// case GPU: team size is large and blocksize (mb,nb) is small
       InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);
       InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
             
@@ -195,7 +196,6 @@ namespace KokkosBatched {
          const ScalarType alpha,
          const ValueType *__restrict__ A, const int as0, const int as1,
          /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-
     const ScalarType one(1.0), zero(0.0);
 
     // note that parallel range is different ( m*n vs m-1*n);        
@@ -223,13 +223,15 @@ namespace KokkosBatched {
         }
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,iend*jend),[&](const int &ij) {
-#if							\
-  defined (KOKKOS_ENABLE_CUDA) &&                       \
-  defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
-            const int i = ij%iend, j = ij/iend;
-#else
-            const int i = ij/jend, j = ij%jend;
-#endif
+            int i, j;
+            if(KokkosKernels::Impl::kk_is_gpu_exec_space<typename MemberType::execution_space>()) {
+              i = ij%iend;
+              j = ij/iend;
+            }
+            else {
+              i = ij/jend;
+              j = ij%jend;
+            }
             B0[i*bs0+j*bs1] -= a01[i*as0] * b1t[j*bs1];
           });          
       }

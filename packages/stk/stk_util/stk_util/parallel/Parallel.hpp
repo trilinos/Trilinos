@@ -38,7 +38,7 @@
 // stk_config.h resides in the build directory and contains the
 // complete set of #define macros for build-dependent features.
 
-#include <stk_util/stk_config.h>
+#include "stk_util/stk_config.h"
 
 //----------------------------------------------------------------------
 // Parallel machine

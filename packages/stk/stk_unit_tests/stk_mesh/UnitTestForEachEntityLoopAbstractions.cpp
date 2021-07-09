@@ -11,7 +11,7 @@
 #include "stk_io/FillMesh.hpp"
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"
-#include "stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp"
+#include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_util/parallel/Parallel.hpp"
 namespace stk { namespace mesh { struct MeshIndex; } }
@@ -37,7 +37,7 @@ TEST(ForEntityFunctionInMeshImplUtils, test_counting_nodes_using_raw_bucket_loop
         {
             unsigned numNodes = 0;
             stk::mesh::impl::for_each_selected_entity_run_no_threads(bulkData, stk::topology::NODE_RANK, metaData.universal_part(),
-                [&numNodes](stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
+                [&numNodes](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
                 {
                     stk::mesh::Entity entity = stk::mesh::impl::get_entity(meshIndex);
                     if(mesh.is_valid(entity))
@@ -68,18 +68,16 @@ TEST(ForEntityFunctionInMeshImplUtils, test_counting_nodes_using_raw_bucket_loop
             ASSERT_EQ(16u, numNodes);
             std::vector<unsigned> localIds(numNodes);
             unsigned index = 0;
-            stk::mesh::impl::for_each_entity_run_no_threads(bulkData, stk::topology::NODE_RANK,
-                [&index](stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
-                {
-                    stk::mesh::Entity node = stk::mesh::impl::get_entity(meshIndex);
-                    if(mesh.is_valid(node))
-                    {
-                        mesh.set_local_id(node, index);
-                        index++;
-                    }
+            const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::NODE_RANK, metaData.universal_part());
+            for(const stk::mesh::Bucket* bptr : buckets) {
+              for(stk::mesh::Entity node : *bptr) {
+                if (bulkData.is_valid(node)) {
+                  bulkData.set_local_id(node, index);
+                  ++index;
                 }
-            );
-            stk::mesh::impl::for_each_entity_run(bulkData, stk::topology::NODE_RANK,
+              }
+            }
+            stk::mesh::for_each_entity_run(bulkData, stk::topology::NODE_RANK,
                 [&localIds](const stk::mesh::BulkData & mesh, const stk::mesh::MeshIndex & meshIndex)
                 {
                     stk::mesh::Entity node = stk::mesh::impl::get_entity(meshIndex);

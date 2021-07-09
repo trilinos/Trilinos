@@ -61,7 +61,7 @@ Thyra::convertTpetraToThyraComm(const RCP<const Teuchos::Comm<int> > &tpetraComm
   const RCP<const Teuchos::MpiComm<int> > tpetraMpiComm = 
     rcp_dynamic_cast<const Teuchos::MpiComm<int> >(tpetraComm);
   if (nonnull(tpetraMpiComm)) {
-    return Teuchos::createMpiComm<Ordinal>(tpetraMpiComm->getRawMpiComm());
+    return Teuchos::createMpiComm<Ordinal>(tpetraMpiComm->getRawMpiComm(),tpetraMpiComm->getTag());
   }
 #endif // HAVE_MPI
 

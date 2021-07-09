@@ -71,7 +71,7 @@ namespace MueLu {
   @class AmalgamationInfo
   @brief minimal container class for storing amalgamation information
 
-  Helps create a mapping between global node id on current processor to global DOFs ids on
+  Helps create a mapping between local node id on current processor to local DOFs ids on
   current processor.  That mapping is used for unamalgamation.
 */
 
@@ -85,11 +85,12 @@ namespace MueLu {
 
   public:
 
+    /// Constructor
     AmalgamationInfo(RCP<Array<LO> > rowTranslation,
                      RCP<Array<LO> > colTranslation,
                      RCP<const Map> nodeRowMap,
                      RCP<const Map> nodeColMap,
-                     RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > const &columnMap,
+                     RCP<const Map> const &columnMap,
                      LO fullblocksize, GO offset, LO blockid, LO nStridedOffset, LO stridedblocksize) :
                      rowTranslation_(rowTranslation),
                      colTranslation_(colTranslation),
@@ -104,14 +105,13 @@ namespace MueLu {
                      indexBase_(columnMap->getIndexBase())
     {}
 
+    /// Destructor
     virtual ~AmalgamationInfo() {}
 
     /// Return a simple one-line description of this object.
     std::string description() const { return "AmalgamationInfo"; }
 
     //! Print the object with some verbosity level to an FancyOStream object.
-    //using MueLu::Describable::describe; // overloading, not hiding
-    //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;
     void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
     RCP<const Map> getNodeRowMap() const { return nodeRowMap_; } //! < returns the node row map for the graph
@@ -130,7 +130,7 @@ namespace MueLu {
 
     /*! @brief UnamalgamateAggregates
 
-       Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
+      Puts all dofs for aggregate \c i in aggToRowMap[\c i].  Also calculate aggregate sizes.
     */
     void UnamalgamateAggregates(const Aggregates& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const;
     void UnamalgamateAggregatesLO(const Aggregates& aggregates, Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const;
@@ -141,13 +141,27 @@ namespace MueLu {
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
     /*! @brief ComputeGlobalDOF
-     * return global dof id associated with global node id gNodeID and dof index k
+     *
+     * Return global dof id associated with global node id gNodeID and dof index k
+     *
+     * \note We assume that \c indexBase_ is valid for both the node and the dof map.
      *
      * @param (GO): global node id
      * @param (LO): local dof index within node
      * @return (GO): global dof id
      */
     GO ComputeGlobalDOF(GO const &gNodeID, LO const &k=0) const;
+
+    /*! @brief ComputeLocalDOF
+     * return locbal dof id associated with local node id lNodeID and dof index k
+     *
+     * @param (LO): local node id
+     * @param (LO): local dof index within node
+     * @return (LO): local dof id
+     */
+    LO ComputeLocalDOF(LocalOrdinal const &lNodeID, LocalOrdinal const &k) const;
+
+    LO ComputeLocalNode(LocalOrdinal const &ldofID) const;
 
     /*! Access routines */
 
@@ -168,17 +182,19 @@ namespace MueLu {
     //! @name amalgamation information variables
     //@{
 
-    // arrays containing local node ids given local dof ids
+    //! Arrays containing local node ids given local dof ids
     RCP<Array<LO> > rowTranslation_;
     RCP<Array<LO> > colTranslation_;
 
-    // node row and column map of graph (built from row and column map of A)
+    //! node row and column map of graph (built from row and column map of A)
     RCP<const Map> nodeRowMap_;
     RCP<const Map> nodeColMap_;
 
-    //! @brief DOF map (really column map of A)
-    // keep an RCP on the column map to make sure that the map is still valid when it is used
-    Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > columnMap_;
+    /*! @brief DOF map (really column map of A)
+
+    We keep a RCP on the column map to make sure that the map is still valid when it is used.
+    */
+    RCP<const Map> columnMap_;
 
     //@}
 

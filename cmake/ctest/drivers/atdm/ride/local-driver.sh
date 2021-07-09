@@ -1,11 +1,9 @@
 #!/bin/bash -l
 
+set +x
+
 if [ "${BSUB_CTEST_TIME_LIMIT}" == "" ] ; then
   export BSUB_CTEST_TIME_LIMIT=12:00
-fi
-
-if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
-  export Trilinos_CTEST_DO_ALL_AT_ONCE=TRUE
 fi
 
 if [ "${EXCLUDE_NODES_FROM_BSUB}" == "" ] ; then

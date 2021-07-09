@@ -77,6 +77,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: start level");
+    SET_VALID_ENTRY("repartition: use map");
     SET_VALID_ENTRY("repartition: node repartition level");
     SET_VALID_ENTRY("repartition: min rows per proc");
     SET_VALID_ENTRY("repartition: target rows per proc");
@@ -86,6 +87,7 @@ namespace MueLu {
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Map", Teuchos::null, "Factory of the map Map");
     validParamList->set< RCP<const FactoryBase> >("Node Comm", Teuchos::null, "Generating factory of the node level communicator");
 
     return validParamList;
@@ -93,8 +95,15 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
-    Input(currentLevel, "A");
-    const Teuchos::ParameterList & pL = GetParameterList();    
+    const Teuchos::ParameterList & pL = GetParameterList();
+    if(pL.isParameter("repartition: use map")) {
+      const bool useMap = pL.get<bool>("repartition: use map");
+      if (useMap)
+        Input(currentLevel, "Map");
+      else
+        Input(currentLevel, "A");
+    } else
+      Input(currentLevel, "A");
     if(pL.isParameter("repartition: node repartition level")) {
       const int nodeRepartLevel = pL.get<int>("repartition: node repartition level");
       if(currentLevel.GetLevelID() == nodeRepartLevel) {
@@ -117,6 +126,7 @@ namespace MueLu {
           LO     minRowsPerThread     = pL.get<LO>    ("repartition: min rows per thread");
           LO     targetRowsPerThread  = pL.get<LO>    ("repartition: target rows per thread");
     const double nonzeroImbalance     = pL.get<double>("repartition: max imbalance");
+    const bool   useMap               = pL.get<bool>  ("repartition: use map");
 
     int thread_per_mpi_rank = 1;
 #if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
@@ -146,19 +156,26 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(nodeRepartLevel >= startLevel, Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): If 'repartition: node repartition level' is set, it must be less than or equal to 'repartition: start level'");
 
 
-    RCP<const FactoryBase> Afact = GetFactory("A");
-    if(!Afact.is_null() && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
-       Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
-       Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null) {
-      GetOStream(Warnings) <<
-        "MueLu::RepartitionHeuristicFactory::Build: The generation factory for A must " \
-        "be a RAPFactory or a SubBlockAFactory providing the non-rebalanced matrix information! " \
-        "It specifically must not be of type Rebalance(Blocked)AcFactory or similar. " \
-        "Please check the input. Make also sure that \"number of partitions\" is provided to " \
-        "the Interface class and the RepartitionFactory instance.  Instead, we have a "<<Afact->description() << std::endl;
-    }
-    // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
-    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix> A;
+    RCP<const FactoryBase> Afact;
+    RCP<const Map> map;
+    if (!useMap) {
+      Afact = GetFactory("A");
+      if(!Afact.is_null() && Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
+         Teuchos::rcp_dynamic_cast<const BlockedRAPFactory>(Afact) == Teuchos::null &&
+         Teuchos::rcp_dynamic_cast<const SubBlockAFactory>(Afact) == Teuchos::null) {
+        GetOStream(Warnings) <<
+          "MueLu::RepartitionHeuristicFactory::Build: The generation factory for A must " \
+          "be a RAPFactory or a SubBlockAFactory providing the non-rebalanced matrix information! " \
+          "It specifically must not be of type Rebalance(Blocked)AcFactory or similar. " \
+          "Please check the input. Make also sure that \"number of partitions\" is provided to " \
+          "the Interface class and the RepartitionFactory instance.  Instead, we have a "<<Afact->description() << std::endl;
+      }
+      // TODO: We only need a CrsGraph. This class does not have to be templated on Scalar types.
+      A = Get< RCP<Matrix> >(currentLevel, "A");
+      map = A->getRowMap();
+    } else
+      map = Get< RCP<const Map> >(currentLevel, "Map");
 
     // ======================================================================================================
     // Determine whether partitioning is needed
@@ -168,19 +185,19 @@ namespace MueLu {
     // rebalance an operator. So, it would probably be beneficial to do and report *all* tests.
 
     // Test0: Should we do node repartitioning? 
-    if (currentLevel.GetLevelID() == nodeRepartLevel && A->getMap()->getComm()->getSize() > 1) {
+    if (currentLevel.GetLevelID() == nodeRepartLevel && map->getComm()->getSize() > 1) {
       RCP<const Teuchos::Comm<int> > NodeComm = Get< RCP<const Teuchos::Comm<int> > >(currentLevel, "Node Comm");
       TEUCHOS_TEST_FOR_EXCEPTION(NodeComm.is_null(), Exceptions::RuntimeError, "MueLu::RepartitionHeuristicFactory::Build(): NodeComm is null.");
 
       // If we only have one node, then we don't want to pop down to one rank
-      if(NodeComm()->getSize() != A->getMap()->getComm()->getSize()) {
+      if(NodeComm()->getSize() != map->getComm()->getSize()) {
         GetOStream(Statistics1) << "Repartitioning?  YES: \n  Within node only"<<std::endl;
         int nodeRank = NodeComm->getRank();
         
         // Do a reduction to get the total number of nodes
         int isZero = (nodeRank == 0);
         int numNodes=0;
-        Teuchos::reduceAll(*A->getMap()->getComm(), Teuchos::REDUCE_SUM, isZero, Teuchos::outArg(numNodes));
+        Teuchos::reduceAll(*map->getComm(), Teuchos::REDUCE_SUM, isZero, Teuchos::outArg(numNodes));
         Set(currentLevel, "number of partitions", numNodes);
         return;
       }
@@ -198,9 +215,7 @@ namespace MueLu {
       return;
     }
 
-    RCP<const Map> rowMap = A->getRowMap();
-
-    RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
+    RCP<const Teuchos::Comm<int> > origComm = map->getComm();
     RCP<const Teuchos::Comm<int> > comm     = origComm;
 
     // Test 2: check whether A is actually distributed, i.e. more than one processor owns part of A
@@ -218,7 +233,7 @@ namespace MueLu {
       }
 
       int numActiveProcesses = 0;
-      MueLu_sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
+      MueLu_sumAll(comm, Teuchos::as<int>((map->getNodeNumElements() > 0) ? 1 : 0), numActiveProcesses);
 
       if (numActiveProcesses == 1) {
         GetOStream(Statistics1) << "Repartitioning?  NO:" <<
@@ -235,7 +250,7 @@ namespace MueLu {
     // Test3: check whether number of rows on any processor satisfies the minimum number of rows requirement
     // NOTE: Test2 ensures that repartitionning is not done when there is only one processor (it may or may not satisfy Test3)
     if (minRowsPerProcess > 0) {
-      LO numMyRows = Teuchos::as<LO>(A->getNodeNumRows()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
+      LO numMyRows = Teuchos::as<LO>(map->getNodeNumElements()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
       LO haveFewRows = (numMyRows < minRowsPerProcess ? 1 : 0), numWithFewRows = 0;
       MueLu_sumAll(comm, haveFewRows, numWithFewRows);
       MueLu_minAll(comm, (numMyRows > 0 ? numMyRows : LOMAX), minNumRows);
@@ -251,15 +266,19 @@ namespace MueLu {
 
     // Test4: check whether the balance in the number of nonzeros per processor is greater than threshold
     if (!test3) {
-      GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getNodeNumEntries());
-      MueLu_maxAll(comm, numMyNnz,                           maxNnz);
-      MueLu_minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
-      double imbalance = Teuchos::as<double>(maxNnz)/minNnz;
+      if (useMap)
+        msg4 = "";
+      else {
+        GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getNodeNumEntries());
+        MueLu_maxAll(comm, numMyNnz,                           maxNnz);
+        MueLu_minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
+        double imbalance = Teuchos::as<double>(maxNnz)/minNnz;
 
-      if (imbalance > nonzeroImbalance)
-        test4 = true;
+        if (imbalance > nonzeroImbalance)
+          test4 = true;
 
-      msg4 = "\n  nonzero imbalance = " + Teuchos::toString(imbalance) + ", max allowable = " + Teuchos::toString(nonzeroImbalance);
+        msg4 = "\n  nonzero imbalance = " + Teuchos::toString(imbalance) + ", max allowable = " + Teuchos::toString(nonzeroImbalance);
+      }
     }
 
     if (!test3 && !test4) {
@@ -283,7 +302,7 @@ namespace MueLu {
     // is used. The "number of partitions" variable serves as basic communication between the RepartitionFactory (which
     // requests a certain number of partitions) and the *Interface classes which call the underlying partitioning algorithms
     // and produce the "Partition" array with the requested number of partitions.
-    const auto globalNumRows = Teuchos::as<GO>(A->getGlobalNumRows());
+    const auto globalNumRows = Teuchos::as<GO>(map->getGlobalNumElements());
     int numPartitions = 1;
     if (globalNumRows >= targetRowsPerProcess) {
       // Make sure that each CPU thread has approximately targetRowsPerProcess

@@ -2,7 +2,7 @@
 TriBITS Developers Guide and Reference
 =======================================
 
-:Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
+:Author: Roscoe A. Bartlett (rabartl@sandia.gov)
 :Date: |date|
 :Version: .. include:: TribitsGitVersion.txt
 
@@ -56,8 +56,6 @@ needs to understand how CMake defines and uses targets for various qualities
 like libraries, executables, etc.  Without this basic understanding of CMake,
 one will have trouble resolving problems when they occur.
 
-.. jfrye: Below paragraph is redundant with table of contents above?
-
 The remainder of this documented is structured as follows.  First, there is
 some additional `Background`_ material provided.  Then, a detailed
 specification of `TriBITS Project Structure`_ is given which lists and defines
@@ -75,10 +73,11 @@ material for TriBITS is given in the section `TriBITS Detailed Reference
 Documentation`_.  Finally, several bits of information are provided in the
 `Appendix`_.
 
+
 Background
 ==========
 
-In order to easily find the most appropriate documentation, see the 'TriBITS 
+In order to easily find the most appropriate documentation, see the `TriBITS
 Developer and User Roles`_ guide.  This guide describes the different roles 
 that users of TriBITS may play and offers links to relevant sections of the
 documentation.  Additionally, the reader may wish to review the `CMake Language 
@@ -779,7 +778,7 @@ the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` (the current minimum version
 of CMake required by TriBITS is given at in `Getting set up to use CMake`_) .
 For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
 
-  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 3.10.0)
+  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 3.17.0)
   CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED}
     FATAL_ERROR)
 
@@ -982,9 +981,6 @@ are set.  This file in Trilinos looked like::
     IF (NOT KOKKOS_ARCH STREQUAL "None")
     
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KOKKOS_CXX_FLAGS}")
-    
-      MESSAGE("-- " "Skip adding flags for C++11 because Kokkos flags does that ...")
-      SET(${PROJECT_NAME}_CXX11_FLAGS " ")
     
       MESSAGE("-- " "Skip adding flags for OpenMP because Kokkos flags does that ...")
       SET(OpenMP_CXX_FLAGS_OVERRIDE " ")
@@ -1785,6 +1781,8 @@ Once all of the TriBITS SE package's ``Dependencies.cmake`` files have been
 processed, the following *TriBITS Package Top-Level Local Variables* are
 defined:
 
+  .. _${PACKAGE_NAME}_SOURCE_DIR:
+
   ``${PACKAGE_NAME}_SOURCE_DIR``
 
     The absolute path to the package's base source directory.  CMake code, for
@@ -1794,6 +1792,18 @@ defined:
     defined for all declared packages that exist, independent of whether they
     are enabled or not.  This variable is set as soon as it is known if the
     given package exists or not.
+
+  .. _${PACKAGE_NAME}_REL_SOURCE_DIR:
+
+  ``${PACKAGE_NAME}_REL_SOURCE_DIR``
+
+    The **relative path** to the package's base source directory, relative to
+    the projects base source directory `${PROJECT_NAME}_SOURCE_DIR`_.  This is
+    used in various contexts such as processing the packages
+    `<packageDir>/CMakeLists.txt`_ file and generating the projects
+    `<Project>PackageDependencies.xml`_ file where relative paths are needed.
+
+  .. _${PACKAGE_NAME}_BINARY_DIR:
 
   ``${PACKAGE_NAME}_BINARY_DIR``
 
@@ -2122,6 +2132,13 @@ to refer to its parent package where a top-level package does not have a
 parent package.  The extra variables that are defined when processing a
 subpackage's files are:
 
+  .. _${PACKAGE_NAME}_PARENT_PACKAGE:
+
+  ``${PACKAGE_NAME}_PARENT_PACKAGE``
+
+    The name of the parent package.  (NOTE: If this is empty "", then
+    ``${PACKAGE_NAME}`` is actually a parent package and not a subpackage.)
+
   .. _PARENT_PACKAGE_NAME:
 
   ``PARENT_PACKAGE_NAME``
@@ -2161,6 +2178,7 @@ testing.  This is a type of "all for one and all for one" when it comes to the
 relationship between the subpackages within a single parent package.  These
 are some of the issues to consider when breaking up software into packages and
 subpackages that will be mentioned in other sections as well.
+
 
 TriBITS TPL
 +++++++++++
@@ -2210,7 +2228,7 @@ module which is currently:
 Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 ``FIND_PACKAGE()`` and a standard CMake package find module to fill in the
 guts of finding at TPL which is perfectly fine.  In this case, the purpose for
-the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
+the wrapping ``FindTPL${TPL_NAME}.cmake`` file is to standardize the output
 variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
 For more details on properly using ``FIND_PACKAGE()`` to define a
 ``FindTPL${TPL_NAME}.cmake`` file, see `How to use FIND_PACKAGE() for a
@@ -2218,6 +2236,8 @@ TriBITS TPL`_.
 
 Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
 defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
+
+  .. _${PACKAGE_NAME}_FINDMOD:
 
   .. _${TPL_NAME}_FINDMOD:
 
@@ -2251,6 +2271,10 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
     be used.  Therefore, the project can override the test group for a given
     TPL if desired.
 
+As noted above, it is allowed for the same TPL to be listed in multiple
+`<repoDir>/TPLsList.cmake`_ files.  In this case, the rules for overrides of
+the find module and the test group as as described above.
+
 The specification given in `Enabling support for an optional Third-Party
 Library (TPL)`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ describes
 how the a ``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to
@@ -2268,6 +2292,7 @@ The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
 `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ need to be defined.  For more
 details, see `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
+
 
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
@@ -2347,10 +2372,10 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 |   7)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_ ``)``
 |       * Call macro ``TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()``
-|   9)  Call ``TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()``:
+|   9)  Call `TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()`_:
 |     a)  For each ``<repoDir>`` in all defined TriBITS repositories:
-|         * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)`` and process list
 |         * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)`` and process list
+|         * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)`` and process list
 |     b)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |         * ``INCLUDE(`` `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ ``)``
 |     c)  ``INCLUDE(`` `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ ``)``
@@ -2411,8 +2436,8 @@ is described below.
 | 2. ``INCLUDE(`` `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ ``)``
 | 3.  Call ``TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()``:
 |   a)  For each ``<repoDir>`` in all defined TriBITS repositories:
-|       * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
 |       * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)``
+|       * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
 |   b)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ ``)``
 |   c)  ``INCLUDE(`` `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ ``)``
@@ -4569,10 +4594,10 @@ Test Test Category         ``BASIC``           (`Test Test Category BASIC`_)
 =========================  ==================  ====================================
 
 Typically a TriBITS project will define a "standard development environment"
-which is comprised of a standard compiler (e.g. GCC 4.6.1), TPL versions
-(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 3.10.0, git
-1.8.2, etc.).  This standard development environment is expected to be used to
-test changes to the project's code before any push.  By using a standard
+which is comprised of a standard compiler (e.g. GCC 8.3.0), TPL versions
+(e.g. OpenMPI 4.0.5, Boost 4.9, etc.), and other tools (e.g. cmake 3.17.0, git
+2.10.1, etc.).  This standard development environment is expected to be used
+to test changes to the project's code before any push.  By using a standard
 development environment, if the code builds and all the tests pass for the
 "default" pre-push builds for one developer, then that maximizes the
 probability that the code will also build and all tests will pass for every
@@ -6307,6 +6332,41 @@ The following steps describe how to submit results to a CDash site using the
   .. the other cloned and updated by the CTest driver script.
 
 
+How to submit testing results to a custom CDash Group
+-----------------------------------------------------
+
+Following up on `How to submit testing results to a CDash site`_, to submit
+build and test results to a custom "Group" on CDash (instead of just
+"Nightly", "Continuous" or "Experimental"), one just has to create the new
+group on CDash using the CDash GUI interface and then tell the ctest -S local
+driver to submit results to that CDash group.  The steps for doing this are
+given below.
+
+1. Create the new CDash group ``<special_group>`` for CDash project
+   ``<ProjectName>`` on the targeted CDash site.
+
+   If the CDash group ``<special_group>`` is not already created, then one can
+   create it by first logging into CDash with an account that can modify the
+   CDash project ``<ProjectName>``.  Once logged in, go to the project edit
+   page and select "Settings" and "Groups".  From there, create the new group
+   ``<special_group>``.  Set the "Build Type" to either "Daily" or "Latest".
+
+2. Set ``${PROJECT_NAME}_TRACK=<special_group>`` with the CTest -S driver
+   script.
+
+   One can either do that by setting ``SET(${PROJECT_NAME}_TRACK
+   <special_group>)`` in the CTest -S ``*.cmake`` driver script itself or can
+   set it in the environment when running the ctest -S driver script.  For
+   example::
+ 
+     $ env <Project>_TRACK=<special_group> ... \
+       ctest -V -S <ctest_driver>.cmake
+ 
+   If the "build type" for the CDash group ``<special_group>`` was set to
+   "Daily", then set `CTEST_TEST_TYPE`_ to ``Nightly``.  Otherwise,
+   ``CTEST_TEST_TYPE`` can be set to ``Continuous`` or ``Experimental``.
+
+
 Additional Topics
 =================
 
@@ -6369,11 +6429,11 @@ after all is the whole goal of CMake).
 While the TriBITS Core functionality to configure, build, test, and install
 software is written using only raw CMake, the more sophisticated development
 tools needed to implement the full TriBITS development environment require
-Python 2.4 (or higher, but not Python 3.x) (see `Python Support`_).  Python is
-needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition, these
-python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated testing
-and submits to CDash.  Also note that ``git`` is the chosen version control
-tool for the TriBITS software development tools and all the VC-related
+Python 2.7 (or higher including Python 3.x) (see `Python Support`_).  Python
+is needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition,
+these python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated
+testing and submits to CDash.  Also note that ``git`` is the chosen version
+control tool for the TriBITS software development tools and all the VC-related
 functionality in TriBITS.  But none of this is required for doing the most
 basic building, testing, or installation of a project using TriBITS Core.
 
@@ -6383,13 +6443,13 @@ Python Support
 
 TriBITS Core does not require anything other than raw CMake.  However, Python
 Utils, TriBITS CI Support, and other extended TriBITS components require
-Python.  These extra TriBITS tools only require Python 2.4+.  By default, when
-a TriBITS project starts to configure using CMake, it will try to find Python
-2.4+ on the system (see `Full Processing of TriBITS Project Files`_).  If
-Python is found, it will set the global cache variable ``PYTHON_EXECUTABLE``.
-If it is not found, then it will print a warning and ``PYTHON_EXECUTABLE``
-will be empty.  With this default behavior, if Python is found, then the
-TriBITS project can use it.  Otherwise, it can do without it.
+Python.  These extra TriBITS tools only require Python 2.7+ (and 3.x).  By
+default, when a TriBITS project starts to configure using CMake, it will try
+to find Python 2.7+ on the system (see `Full Processing of TriBITS Project
+Files`_).  If Python is found, it will set the global cache variable
+``PYTHON_EXECUTABLE``.  If it is not found, then it will print a warning and
+``PYTHON_EXECUTABLE`` will be empty.  With this default behavior, if Python is
+found, then the TriBITS project can use it.  Otherwise, it can do without it.
 
 While the default behavior for finding Python described above is useful for
 many TriBITS project (such as Trilinos), some TriBITS projects need different
@@ -6403,11 +6463,11 @@ behavior such as:
    can't be found.  In this case, the TriBITS project would set
    `${PROJECT_NAME}_REQUIRES_PYTHON`_ to ``TRUE``.
 
-3. Some TriBITS projects may require a version of Python more recent than 2.4.
+3. Some TriBITS projects may require a version of Python more recent than 2.7.
    In this case, the TriBITS project would set `PythonInterp_FIND_VERSION`_ to
-   some value higher than ``2.4``.  For example, may newer systems have Python
-   2.6.6 or higher versions installed by default and projects developed on
-   such a system typically requires this version or higher.
+   some value higher than ``2.7``.  For example, may newer systems have only
+   Python 3.5.2 or higher versions installed by default and projects developed
+   on such a system typically requires this version or higher.
 
 
 Project-Specific Build Reference
@@ -6508,7 +6568,6 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 * ``INCLUDE(`` `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_ ``)``
 * Find Perl (sets ``PERL_EXECUTABLE``)
 * Determine mixed language C/Fortran linking
-* Set up C++11 (`${PROJECT_NAME}_ENABLE_CXX11`_)
 * Set up OpenMP (with ``FIND_PACKAGE(OpenMP)``)
 * Set up optional Windows support
 * Find Doxygen (sets ``DOXYGEN_EXECUTABLE``)
@@ -6517,6 +6576,91 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 At the completion of this part of the processing, the TriBITS CMake project is
 ready to compile code.  All of the major variables set as part of this process
 are printed to the ``cmake`` stdout when the project is configured.
+
+
+Installation considerations
+---------------------------
+
+For the most part, installation is pretty straightforward with a TriBITS-based
+CMake project.  TriBITS automatically puts in appropriate default
+``install()`` commands to install header files, libraries, executables, and
+other commonly installed artifacts (such as TriBITS-autogenerated
+``<Package>Config.cmake`` files).  And packages can add their own custom
+``install()`` commands to install items under ``CMAKE_INSTALL_PREFIX`` (or the
+subdirs under ``CMAKE_INSTALL_PREFIX`` mentioned in `Setting the install
+prefix`_).  However, there are some special situations that need to be
+addressed and some tweaks to built-in CMake support that need to be made.
+
+One issue that can occur is that there are cases where a Unix/Linux system is
+set up not to honor the group sticky bit and therefore one cannot control what
+group owns the created installed files and directories (i.e. the default group
+will be used).  Also, there are cases were one cannot easily control the
+default file or directory creation permissions using ``umask``.  And there are
+cases where one would like to recursively install a set of directories and
+files where some of these files may be scripts that need to have the execute
+permission set on them for them to work.  The only to flexiable accomplish
+that with CMake (if one does not know the exist list of those files or
+extensions of those files) is to pass in the ``SOURCE_PERMISSIONS`` option to
+the ``install(DIRECTORY ...)`` command.  An example of this is shown in:
+
+* ``TribitsExampleProject/packages/with_subpackages/b/CMakeLists.txt``
+
+that has::
+
+  INSTALL( DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/stuff"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/share/${PACKAGE_NAME}"
+    USE_SOURCE_PERMISSIONS PATTERN "*~" EXCLUDE )
+
+In this case, CMake will preserve the execute permission on any of the scripts
+contained under the ``stuff/`` subdirectory but ``group`` and ``other``
+permissions will not be set based on ``umask`` or the default CMake install
+permissions.  Instead, these permissions are set based on the source directory
+permissions (which is often set to ``700`` or ``rwx------``).
+
+To address cases like this, TriBITS can automatically run ``chgrp`` and
+``chmod`` on the created files and directories that are created during the
+``install`` target as described in `Setting install ownership and
+permissions`_.  This is completely automatic and requires nothing for the
+TriBITS Project developers to do to enable support for this (other than to
+note the below warning).
+
+**WARNING**: Do not add any ``install()`` commands after the
+`TRIBITS_PROJECT()`_ command completes.  Otherwise, any extra files or
+directories will not have their group and permissions fixed by these special
+TriBITS-added ``chgrp`` and ``chmod`` commands run at install time.  Instead,
+try to put all ``install()`` commands inside of a package's
+`<packageDir>/CMakeLists.txt`_ file.  Currently, there really is no good place
+to add repo-level or project-level ``install()`` commands.  But if one had to
+sneak them in, they could add various ``install()`` commands to files like
+`<projectDir>/CMakeLists.txt`_ (before the ``TRIBITS_PROJECT_()`` command),
+`<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_,
+`<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_ and/or
+`<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake`_.  (Note that
+install commands from the former two files are run before install commands for
+the enabled packages while install commands from the latter two files are run
+after.)
+
+One can also change what compilers are written into the generated
+``<Project>Config.cmake`` and ``<Package>Config.cmake`` files for the build
+and the install trees.  By default, the compilers pointed to in these
+``Config.cmake`` files will be ``CMAKE_<LANG>_COMPILER`` where ``<LANG>`` =
+``CXX``, ``C``, and ``Fortran``.  But one can change this by setting any of
+the following::
+
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+
+before the ``Config.cmake`` files are generated.  These can also be set in the
+CMake cache using, for example,
+``-DCMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR:FILEPATH=<path>``.
+
+This is used, for example, when compiler wrappers are used for the build tree
+and are set to ``CMAKE_<LANG>_COMPILER`` but when one wants to point to the
+original underlying compilers for the installed ``Config.cmake`` files.
 
 
 RPATH Handling
@@ -6620,14 +6764,14 @@ exclude, it will exclude every file in the entire source tree that has
 trailing ``".*"`` means "match any character zero or more times" and
 ``"someFile"`` can match anywhere in the file name path.  Also, note that if
 you add in an exclude like ``"*.pyc"`` (i.e. trying to exclude all of the
-generated Python bite code files) that it will exclude every file that has
+generated Python byte code files) that it will exclude every file that has
 ``"pyc"`` in the name and **not** just those with the file extension
 ``"pyc"``.  For example, the exclude ``".pyc"`` would exclude the files
 ``"puppyc"``, ``"lpycso"``, etc.  If you want to exclude all files with
-extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!  One's
-lack of understanding of this fact will cost someone hours of lost time
+extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!
+One's lack of understanding of this fact will cost someone hours of lost time
 debugging what happens when random files are missing when one tries to
-configure what is left.  Somethings, what is left will actually configure and
+configure what is left.  Sometimes, what is left will actually configure and
 might almost build!
 
 **NOTE:** As warned in `TriBITS Package Core Files`_ and `TriBITS Subpackage
@@ -8077,7 +8221,6 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES`_
 * `${PROJECT_NAME}_ELEVATE_ST_TO_PT`_
 * `${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`_
-* `${PROJECT_NAME}_ENABLE_CXX11`_
 * `${PROJECT_NAME}_ENABLE_CXX`_
 * `${PROJECT_NAME}_ENABLE_C`_
 * `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_
@@ -8091,6 +8234,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE`_
 * `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_
 * `${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`_
+* `${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE`_
 * `${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE`_
 * `${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS`_
 * `${PROJECT_NAME}_REQUIRES_PYTHON`_
@@ -8264,12 +8408,11 @@ These options are described below.
   `<projectDir>/CMakeLists.txt`_ file because the latter is not directly
   processed in CTest -S driver scripts using ``TRIBITS_CTEST_DRIVER()``.)
 
-  In general, a project should change the default to ``TRUE`` when the minimum
-  CMake version being used with the project is CMake 3.10+ and when using a
-  newer CDash installation that can accomidate the results coming from ctest
-  -S and display them package-by-package very nicely.  Otherwise, most
-  projects are better off with package-by-package mode since it results in
-  nicer display on CDash.
+  In general, a project should change the default to ``TRUE`` when using a
+  newer CDash installation with CDash versions 3.0+ that can accomidate the
+  results coming from ctest -S and display them package-by-package very
+  nicely.  Otherwise, most projects are better off with package-by-package
+  mode since it results in nicer display on CDash for older CDash versions.
 
 .. _${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
 
@@ -8313,17 +8456,6 @@ These options are described below.
   with CPack.  However, this default can be changed by setting::
 
     SET(${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT ON)
-
-.. _${PROJECT_NAME}_ENABLE_CXX11:
-  
-**${PROJECT_NAME}_ENABLE_CXX11**
-  
-  If ``${PROJECT_NAME}_ENABLE_CXX11`` is ``ON``, then C++ compiler options
-  that turn on C++11 support will be searched for.  By default, TriBITS sets
-  this to ``OFF`` for all systems.  However, if project requires C++11 support
-  by default, then the project should set the default:
-  
-    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)
 
 .. _${PROJECT_NAME}_ENABLE_CXX:
   
@@ -8546,29 +8678,39 @@ These options are described below.
 
 .. _${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE:
 
+.. _${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE:
+
 .. _${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE:
 
 **${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE**
+**${PROJECT_NAME}_MAKE_INSTALL_GROUP_WRITABLE**
 **${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE**
 
-  Determines the permissions for directories created during the execution of
-  the of the ``install`` target.  The default permissions are those for the
-  user running the ``install`` target.  For CMake versions 3.11.0+, the user
-  can change these permissions explicitly by setting the CMake vars
-  ``${PROJECT_NAME}_MAKE_INSTALL_GROUP_READABLE`` and/or
-  ``${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE``.
-
-  To make the created directories by world readable for the project by
-  default, set::
-
-    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+  Determines the permissions for directories and files created during the
+  execution of the of the ``install`` and ``isntall_package_by_package``
+  targets.
 
   To make the created directories by only group readable for the project by
   default, set::
 
     SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
 
-  These can be set in the `<projectDir>/ProjectName.cmake`_ file.
+  To make the created directories by only group writable (and readable) for
+  the project by default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_WRITABLE_DEFAULT TRUE)
+
+  To make the created directories by world readable for the project by
+  default, set::
+
+    SET(${PROJECT_NAME}_MAKE_INSTALL_WORLD_READABLE_DEFAULT TRUE)
+
+  On non-Windows systems, these set permissions for all files and directories
+  from the the user-set base directory
+  ``${PROJECT_NAME}_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR`` on down.
+  For more details see `Installation considerations`_.
+
+  These defaults can be set in the `<projectDir>/ProjectName.cmake`_ file.
 
 .. _${PROJECT_NAME}_MUST_FIND_ALL_TPL_LIBS:
 
@@ -8815,16 +8957,16 @@ These options are described below.
 **PythonInterp_FIND_VERSION**
 
   Determines the version of Python that is looked for.  TriBITS requires at
-  least version "2.4".  A particular TriBITS project can require a higher
+  least version "2.7".  A particular TriBITS project can require a higher
   version of TriBITS and this is set using, for example:
 
-    SET(PythonInterp_FIND_VERSION_DEFAULT "2.6.6")
+    SET(PythonInterp_FIND_VERSION_DEFAULT "3.5.2")
 
   in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
-  default is version "2.4".  The user can force a more recent version of
+  default is version "2.7".  The user can force a more recent version of
   Python by configuring with, for example::
 
-    -D PythonInterp_FIND_VERSION="2.7.3"
+    -D PythonInterp_FIND_VERSION="3.6.2"
 
 
 TriBITS Macros and Functions
@@ -9165,6 +9307,20 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
    :literal:
 
 
+TriBITS System Maintainers Guide
+================================
+
+In this last section, information for maintainers of the TriBITS system itself
+is contained.  This information is meant to make it easier to understand and
+manipulate the internal implementation of TriBITS.
+
+
+.. include:: ../../core/package_arch/TribitsSystemDataStructuresMacrosFunctions.rst
+
+
+.. include:: TribitsSystemMacroFunctionDoc.rst
+
+
 
 .. ***
 .. *** Common references
@@ -9227,7 +9383,9 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. _make dashboard: TribitsBuildReference.html#dashboard-submissions
 
-.. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
+.. _Setting the install prefix: TribitsBuildReference.html#setting-the-install-prefix
+
+.. _Setting install ownership and permissions: TribitsBuildReference.html#setting-install-ownership-and-permissions
 
 .. _TRIBITS_2ND_CTEST_DROP_SITE: TribitsBuildReference.html#tribits-2nd-ctest-drop-site
 
@@ -9250,7 +9408,7 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. Common references to raw CMake commands:
 
-.. _CONFIGURE_FILE(): https://cmake.org/cmake/help/v3.10/command/configure_file.html
+.. _CONFIGURE_FILE(): https://cmake.org/cmake/help/v3.17/command/configure_file.html
 
 .. Other references
 

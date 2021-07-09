@@ -51,6 +51,8 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Import.hpp"
 
+#include "Kokkos_DynRankView.hpp"
+
 #include <sstream>
 #include <cmath>
 
@@ -71,11 +73,14 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    int fieldNum = ugi.getFieldNum(fieldName);
    const std::vector<panzer::LocalOrdinal> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
-   
+
    TEUCHOS_TEST_FOR_EXCEPTION(data.extent(0)!=elements.size(),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: data cell dimension does not match up with block cell count");
 
    int rank = data.rank();
+   auto dataVector_host = dataVector.getLocalViewHost(Tpetra::Access::ReadWrite);
+   auto data_host = Kokkos::create_mirror_view(data);
+   Kokkos::deep_copy(data_host,data);
 
    if(rank==2) {
       // loop over elements distributing relevent data to vector
@@ -85,7 +90,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    
          for(std::size_t f=0;f<fieldOffsets.size();f++) {
             std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
-            dataVector.replaceLocalValue(localIndex,0,data(e,f));
+            dataVector_host(localIndex,0) = data_host(e,f);
          }
       }
    }
@@ -103,7 +108,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
          for(std::size_t f=0;f<fieldOffsets.size();f++) {
             std::size_t localIndex = dataMap->getLocalElement(gids[fieldOffsets[f]]); // hash table lookup
             for(std::size_t v=0;v<entries;v++)
-               dataVector.replaceLocalValue(localIndex,v,data(e,f,v));
+              dataVector_host(localIndex,v) = data_host(e,f,v);
          }
       }
    }
@@ -178,6 +183,7 @@ ArrayToFieldVector::getGhostedDataVector(const std::string & fieldName,const std
    // do import from finalReducedVec
    Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> importer(reducedMap,map);
    finalVec->doImport(*finalReducedVec,importer,Tpetra::INSERT);
+   PHX::Device::execution_space().fence();
 
    return finalVec;
 }
@@ -207,6 +213,7 @@ ArrayToFieldVector::getDataVector(const std::string & fieldName,const std::map<s
    // do import
    Tpetra::Import<int,panzer::GlobalOrdinal> importer(sourceVec->getMap(),destMap);
    destVec->doImport(*sourceVec,importer,Tpetra::INSERT); 
+   PHX::Device::execution_space().fence();
 
    return destVec;
 }

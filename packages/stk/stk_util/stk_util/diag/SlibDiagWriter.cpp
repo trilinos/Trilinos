@@ -32,15 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/diag/SlibDiagWriter.hpp>
-#include <stdlib.h>                     // for getenv
-#include <iosfwd>                       // for ostream
-#include <stk_util/diag/WriterRegistry.hpp>  // for registerWriter
-#include <stk_util/environment/OutputLog.hpp>  // for dwout
-#include <stk_util/util/Bootstrap.hpp>  // for Bootstrap
-#include "stk_util/diag/WriterParser.hpp"  // for WriterParser
-#include "stk_util/util/Writer.hpp"     // for Writer
-#include "stk_util/util/Writer_fwd.hpp"  // for PrintMask, etc
+#include "stk_util/diag/SlibDiagWriter.hpp"
+#include "stk_util/diag/WriterParser.hpp"      // for WriterParser
+#include "stk_util/diag/WriterRegistry.hpp"    // for registerWriter
+#include "stk_util/environment/OutputLog.hpp"  // for dwout
+#include "stk_util/util/Bootstrap.hpp"         // for Bootstrap
+#include "stk_util/util/Writer.hpp"            // for Writer
+#include "stk_util/util/Writer_fwd.hpp"        // for PrintMask, LOG_GLOBAL_VARIABLE, LOG_MEMORY
+#include <cstdlib>                             // for getenv
+#include <iosfwd>                              // for ostream
 
 
 

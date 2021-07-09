@@ -65,7 +65,7 @@ public:
     LocalIdMapperT(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, const stk::mesh::Selector& sel)
     : entityToLocalId()
     {
-        set_local_ids(bulk, rank, sel);
+        set_local_ids(bulk, rank, sel & bulk.mesh_meta_data().locally_owned_part());
     }
 
     const LocalIDType INVALID_LOCAL_ID = std::numeric_limits<LocalIDType>::max();
@@ -86,7 +86,8 @@ public:
         if(bulk.mesh_meta_data().entity_rank_count() >= rank)
         {
             stk::mesh::EntityVector entities;
-            stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
+            const bool sortByGlobalID = true;
+            stk::mesh::get_entities(bulk, rank, selector, entities, sortByGlobalID);
             for(size_t i=0; i<entities.size(); ++i)
             {
                 add_new_entity_with_local_id(entities[i], i);
@@ -133,7 +134,6 @@ public:
     {
         entityToLocalId[elem.local_offset()] = INVALID_LOCAL_ID;
     }
-
 private:
     std::vector<LocalIDType> entityToLocalId;
 };
@@ -220,6 +220,11 @@ public:
     {
         localIdToElement[entity_to_local(elem)] = stk::mesh::Entity::InvalidEntity;
         elementToLocalIdMapper.clear_local_id_for_elem(elem);
+    }
+
+    size_t size() const
+    {
+      return localIdToElement.size();
     }
 private:
     stk::mesh::EntityVector localIdToElement;

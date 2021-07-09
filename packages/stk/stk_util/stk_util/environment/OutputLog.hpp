@@ -35,11 +35,12 @@
 #ifndef STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 #define STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 
-#include <streambuf>                    // for ostream, etc
-#include <string>                       // for string, char_traits, etc
+#include <streambuf>  // for ostream, basic_streambuf<>::int_type, streamsize
+#include <string>     // for string, char_traits
+
 namespace stk { template <class Ch, class Tr> class basic_tee_streambuf; }
 
-// #include <stk_util/util/TeeStreambuf.hpp>
+// #include "stk_util/util/TeeStreambuf.hpp"
 
 namespace stk {
 

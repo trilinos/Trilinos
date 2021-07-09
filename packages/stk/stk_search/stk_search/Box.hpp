@@ -108,7 +108,7 @@ public:
     set_max_corner(b.max_corner());
   }
 
-  KOKKOS_FUNCTION ~Box() = default;
+  KOKKOS_DEFAULTED_FUNCTION ~Box() = default;
 
 private:
   point_type m_min_corner;

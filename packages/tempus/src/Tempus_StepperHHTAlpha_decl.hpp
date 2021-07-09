@@ -9,8 +9,10 @@
 #ifndef Tempus_StepperHHTAlpha_decl_hpp
 #define Tempus_StepperHHTAlpha_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
+#include "Tempus_StepperHHTAlphaAppAction.hpp"
 
 namespace Tempus {
 
@@ -37,7 +39,7 @@ namespace Tempus {
  * the Newmark Beta stepper, the linear solve for the explicit version of
  * this scheme has not been optimized (the mass matrix is not lumped).
  *
- *  The First-Step-As-Last (FSAL) principle is not used with the
+ *  The First-Same-As-Last (FSAL) principle is not used with the
  *  HHT-Alpha method.
  */
 template<class Scalar>
@@ -55,7 +57,6 @@ public:
   /// Constructor
   StepperHHTAlpha(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
     bool useFSAL,
     std::string ICConsistency,
@@ -65,18 +66,19 @@ public:
     Scalar beta,
     Scalar gamma,
     Scalar alpha_f_,
-    Scalar alpha_m_);
+    Scalar alpha_m_,
+    const Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> >& stepperHHTAlphaAppAction);
 
   /// \name Basic stepper methods
   //@{
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
+    virtual void setAppAction(
+      Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
+    virtual Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > getAppAction() const
+    { return stepperHHTAlphaAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -98,10 +100,9 @@ public:
     virtual bool isExplicit()         const {return false;}
     virtual bool isImplicit()         const {return true;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
@@ -161,6 +162,8 @@ public:
 
 private:
 
+  Teuchos::RCP<StepperHHTAlphaAppAction<Scalar> > stepperHHTAlphaAppAction_;
+
   std::string schemeName_;
   Scalar beta_;
   Scalar gamma_;
@@ -170,6 +173,17 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperHHTAlpha<Scalar> >
+createStepperHHTAlpha(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperHHTAlpha_decl_hpp

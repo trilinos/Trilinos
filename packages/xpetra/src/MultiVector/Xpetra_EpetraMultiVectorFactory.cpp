@@ -118,6 +118,29 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>&              map,
 }
 
 
+Teuchos::RCP<MultiVector<double, int, int, EpetraNode>>
+MultiVectorFactory<double, int, int, EpetraNode>::
+Build(const Teuchos::RCP<const MultiVector<double, int, int, EpetraNode> > &source,
+      Teuchos::DataAccess copyOrView)
+{
+    XPETRA_MONITOR("MultiVectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(source->getMap()->lib() == UseTpetra)
+    {
+      return rcp(new TpetraMultiVector<double, int, int, EpetraNode>(*source, copyOrView));
+    }
+#endif
+
+    if(source->getMap()->lib() == UseEpetra)
+    {
+        return rcp(new EpetraMultiVectorT<int, EpetraNode>(*source, copyOrView));
+    }
+
+    XPETRA_FACTORY_END;
+}
+
+
 MultiVectorFactory<int, int, int, EpetraNode>::
 MultiVectorFactory()
 {
@@ -176,6 +199,28 @@ Build(const Teuchos::RCP<const Map<int, int, EpetraNode>>&           map,
     XPETRA_FACTORY_END;
 }
 
+
+Teuchos::RCP<MultiVector<int, int, int, EpetraNode>>
+MultiVectorFactory<int, int, int, EpetraNode>::
+Build(const Teuchos::RCP<const MultiVector<int, int, int, EpetraNode> > &source,
+      Teuchos::DataAccess copyOrView)
+{
+    XPETRA_MONITOR("MultiVectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(source->getMap()->lib() == UseTpetra)
+    {
+      return rcp(new TpetraMultiVector<int, int, int, EpetraNode>(*source, copyOrView));
+    }
+#endif
+
+    if(source->getMap()->lib() == UseEpetra)
+    {
+        return rcp(new EpetraIntMultiVectorT<int, EpetraNode>(*source, copyOrView));
+    }
+
+    XPETRA_FACTORY_END;
+}
 
 
 // we need the Epetra specialization only if Epetra is enabled
@@ -241,6 +286,29 @@ Build(const Teuchos::RCP<const Map<int, long long, EpetraNode>>&        map,
 }
 
 
+Teuchos::RCP<MultiVector<double, int, long long, EpetraNode>>
+MultiVectorFactory<double, int, long long, EpetraNode>::
+Build(const Teuchos::RCP<const MultiVector<double, int, long long, EpetraNode> > &source,
+      Teuchos::DataAccess copyOrView)
+{
+    XPETRA_MONITOR("MultiVectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(source->getMap()->lib() == UseTpetra)
+    {
+      return rcp(new TpetraMultiVector<double, int, long long, EpetraNode>(*source, copyOrView));
+    }
+#endif
+
+    if(source->getMap()->lib() == UseEpetra)
+    {
+        return rcp(new EpetraMultiVectorT<long long, EpetraNode>(*source, copyOrView));
+    }
+
+    XPETRA_FACTORY_END;
+}
+
+
 MultiVectorFactory<int, int, long long, EpetraNode>::
 MultiVectorFactory()
 {
@@ -296,6 +364,29 @@ Build(const Teuchos::RCP<const Map<int, long long, Node>>&           map,
     if(map->lib() == UseEpetra)
     {
         return rcp(new EpetraIntMultiVectorT<long long, EpetraNode>(map, ArrayOfPtrs, NumVectors));
+    }
+
+    XPETRA_FACTORY_END;
+}
+
+
+Teuchos::RCP<MultiVector<int, int, long long, EpetraNode>>
+MultiVectorFactory<int, int, long long, EpetraNode>::
+Build(const Teuchos::RCP<const MultiVector<int, int, long long, EpetraNode> > &source,
+      Teuchos::DataAccess copyOrView)
+{
+    XPETRA_MONITOR("MultiVectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(source->getMap()->lib() == UseTpetra)
+    {
+      return rcp(new TpetraMultiVector<int, int, long long, EpetraNode>(*source, copyOrView));
+    }
+#endif
+
+    if(source->getMap()->lib() == UseEpetra)
+    {
+        return rcp(new EpetraIntMultiVectorT<long long, EpetraNode>(*source, copyOrView));
     }
 
     XPETRA_FACTORY_END;

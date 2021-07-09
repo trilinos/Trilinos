@@ -66,12 +66,6 @@
 
 enum {STRUCT, UNSTR};
 
-#ifdef INT64
-typedef long long int LocalOrdinalType;
-#else
-typedef int LocalOrdinalType;
-#endif
-
 void print_help() {
   printf("SPMV_struct benchmark code written by Luc Berger-Vergiat.\n");
   printf("Options:\n");
@@ -482,6 +476,73 @@ int main(int argc, char **argv)
 
     if(compare_cusparse) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+#ifdef CUSPARSE_VERSION
+      KokkosKernels::Experimental::Controls controls;
+
+      cusparseIndexType_t myCusparseOffsetType = CUSPARSE_INDEX_32I;
+      cusparseIndexType_t myCusparseEntryType  = CUSPARSE_INDEX_32I;
+      cudaDataType        myCudaDataType       = CUDA_R_64F;
+
+      /* create matrix */
+      cusparseSpMatDescr_t A_cusparse;
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateCsr(&A_cusparse, A.numRows(), A.numCols(), A.nnz(),
+						  (void*) A.graph.row_map.data(),
+						  (void*) A.graph.entries.data(),
+						  (void*) A.values.data(),
+						  myCusparseOffsetType,
+						  myCusparseEntryType,
+						  CUSPARSE_INDEX_BASE_ZERO,
+						  myCudaDataType));
+
+      /* create lhs and rhs */
+      cusparseDnVecDescr_t vecX, vecY;
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecX, x1.extent_int(0), (void*) x1.data(), myCudaDataType));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseCreateDnVec(&vecY, y1.extent_int(0), (void*) y1.data(), myCudaDataType));
+
+      const double alpha = 1.0, beta = 1.0;
+      size_t bufferSize     = 0;
+      void*  dBuffer        = NULL;
+      cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV_bufferSize(controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
+							&alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
+							alg, &bufferSize));
+      CUDA_SAFE_CALL(cudaMalloc(&dBuffer, bufferSize));
+
+      /* perform SpMV */
+      Kokkos::Profiling::pushRegion("cuSparse spmv test");
+      double min_time = 1.0e32;
+      double max_time = 0.0;
+      double ave_time = 0.0;
+      for(int i=0;i<loop;i++) {
+	Kokkos::Timer timer;
+	KOKKOS_CUSPARSE_SAFE_CALL(cusparseSpMV(controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE,
+					       &alpha, A_cusparse, vecX, &beta, vecY, myCudaDataType,
+					       alg, dBuffer));
+	Kokkos::fence();
+	double time = timer.seconds();
+	ave_time += time;
+	if(time>max_time) max_time = time;
+	if(time<min_time) min_time = time;
+      }
+
+      // Performance Output
+      double matrix_size = 1.0*((A.nnz()*(sizeof(Scalar)+sizeof(int)) + A.numRows()*sizeof(int)))/1024/1024;
+      double vector_size = 2.0*A.numRows()*sizeof(Scalar)/1024/1024;
+      double vector_readwrite = (A.nnz() + A.numCols())*sizeof(Scalar)/1024/1024;
+
+      double problem_size = matrix_size+vector_size;
+      printf("cusp   %i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf %6.3lf ) ( %8.5lf %8.5lf %8.5lf )\n",
+	     A.nnz(), A.numRows(),A.numCols(), problem_size,
+	     (matrix_size+vector_readwrite)/ave_time*loop/1024, (matrix_size+vector_readwrite)/max_time/1024,(matrix_size+vector_readwrite)/min_time/1024,
+	     2.0*A.nnz()*loop/ave_time/1e9, 2.0*A.nnz()/max_time/1e9, 2.0*A.nnz()/min_time/1e9,
+	     ave_time/loop*1000, max_time*1000, min_time*1000);
+      Kokkos::Profiling::popRegion();
+
+      CUDA_SAFE_CALL(cudaFree(dBuffer));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
+      KOKKOS_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
+#else
       // The data needs to be reformatted for cusparse before launching the kernel.
       // Step one, extract raw data
       using graph_type = typename matrix_type::StaticCrsGraphType;
@@ -563,6 +624,7 @@ int main(int argc, char **argv)
       // Clean-up cusparse and cublas contexts
       cusparseDestroy(cusparseHandle);
       // cublasDestroy(cublasHandle);
+#endif
 #else
       printf("Kokkos was not configure with cusparse, the comparison with cusparse_matvec is not perfromed!\n");
 #endif

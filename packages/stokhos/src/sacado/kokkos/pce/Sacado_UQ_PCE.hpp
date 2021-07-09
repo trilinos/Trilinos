@@ -116,7 +116,7 @@ namespace Sacado {
       /*!
        * May not intialize the coefficient array.
        */
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION 
       PCE() = default;
 
       //! Constructor with supplied value \c x
@@ -179,7 +179,7 @@ namespace Sacado {
         cijk_(), s_(l.size(), l.begin()) {}
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      KOKKOS_DEFAULTED_FUNCTION
       ~PCE() = default;
 
       //! Initialize coefficients to value

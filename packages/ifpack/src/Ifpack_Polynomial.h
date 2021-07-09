@@ -147,7 +147,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual inline int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Applies the preconditioner to X, returns the result in Y.
   /*!

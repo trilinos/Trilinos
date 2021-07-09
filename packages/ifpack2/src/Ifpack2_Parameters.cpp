@@ -73,6 +73,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("chebyshev: min eigenvalue", 30.0);
   params.set("chebyshev: degree", 1);
   params.set("chebyshev: eigenvalue max iterations", 10);
+  params.set("chebyshev: eigenvalue relative tolerance", 0.0);
+  params.set("chebyshev: eigenvalue keep vector", false);
   params.set("chebyshev: assume matrix does not change", false);
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
   params.set("chebyshev: min diagonal value", STS::eps());
@@ -130,6 +132,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: banded container superdiagonals", -1);
   params.set("relaxation: banded container subdiagonals", -1);
   params.set("relaxation: mtgs cluster size", 1);
+  params.set("relaxation: long row threshold", 0);
 
   // Ifpack2_SPARSKIT.cpp
   // ap 25 May 2016: all SPARSKIT for backwards compatibility ONLY
@@ -180,6 +183,19 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: PDE equations", 1);
   Teuchos::RCP<Tpetra::MultiVector<> > dummy;
   params.set("partitioner: coordinates",dummy);
+
+  // Ifpack2_Hypre.hpp
+  params.set("hypre: Solver", "PCG");
+  params.set("hypre: Preconditioner", "Euclid");
+  params.set("hypre: SolveOrPrecondition", "Solver");
+  params.sublist("hypre: Solver functions").disableRecursiveValidation();
+
+  params.sublist("hypre: Preconditioner functions").disableRecursiveValidation();
+  params.sublist("Operators").disableRecursiveValidation();
+  params.sublist("Coordinates").disableRecursiveValidation();
+  params.set("hypre: Dump", false);
+  params.set("hypre: SetPreconditioner", false);
+  params.set("hypre: NumFunctions", 0);
 }
 
 }//namespace Ifpack2

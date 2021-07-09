@@ -1,5 +1,25 @@
 INCLUDE(TrilinosCreateClientTemplateHeaders)
 
+# Parse the Hypre headers
+IF (${PACKAGE_NAME}_ENABLE_HYPRE)
+  IF (PYTHON_EXECUTABLE)
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../utils/parseHypre.py ${HYPRE_INCLUDE_DIRS} Ifpack2_HypreParameterMap.hpp
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+      RESULT_VARIABLE RETURN_VALUE
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+  ELSE ()
+    MESSAGE(FATAL_ERROR "Python needed to parse Hypre headers")
+  ENDIF ()
+  IF (RETURN_VALUE EQUAL 0)
+    MESSAGE("-- Parsed Hypre headers")
+  ELSE ()
+    MESSAGE(FATAL_ERROR "Failed to parse Hypre headers")
+  ENDIF ()
+ENDIF ()
+
+
 # Function to generate ETI (explicit template instantiation) files
 # from a template and list of class names
 FUNCTION(IFPACK2_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE PROCESSED_FILE SOURCES_LIST)
@@ -42,16 +62,23 @@ FUNCTION(IFPACK2_SCALAR_MACRO_NAME NAME_OUT NAME_IN)
       IF(IS_COMPLEX_DOUBLE)
         SET(${NAME_OUT} "COMPLEX_DOUBLE" PARENT_SCOPE)
       ELSE()
-        # Convert to upper case, convert double colons to underscores,
-        # and hope for the best.
-        #
-        # It would be nice if CMake were consistent about where output
-        # arguments go.  Alas, this is not to be.  TOUPPER puts the
-        # output argument last; REPLACE puts it after the search and
-        # substitute strings, before the input string.
-        STRING(TOUPPER "${NAME_IN}" TMP0)
-        STRING(REPLACE "::" "_" TMP1 "${TMP0}")
-        SET(${NAME_OUT} ${TMP1} PARENT_SCOPE)
+	#long double is a special name; add _ to macro name
+        STRING(COMPARE EQUAL "${NAME_IN}" "long double" IS_LONG_DOUBLE)
+	IF(IS_LONG_DOUBLE) 
+	  SET(${NAME_OUT} "LONG_DOUBLE" PARENT_SCOPE)
+        ELSE()
+          # Convert to upper case, convert double colons to underscores,
+          # and hope for the best.
+          #
+          # It would be nice if CMake were consistent about where output
+          # arguments go.  Alas, this is not to be.  TOUPPER puts the
+          # output argument last; REPLACE puts it after the search and
+          # substitute strings, before the input string.
+          STRING(TOUPPER "${NAME_IN}" TMP0)
+          STRING(REPLACE "::" "_" TMP1 "${TMP0}")
+          STRING(REPLACE " " "_" TMP2 "${TMP1}")
+          SET(${NAME_OUT} ${TMP2} PARENT_SCOPE)
+        ENDIF()
       ENDIF()
     ENDIF()
   ENDIF()
@@ -93,7 +120,7 @@ FUNCTION(IFPACK2_NODE_MACRO_NAME NAME_OUT NAME_IN)
     IF(IS_THREADS)
       SET(${NAME_OUT} "PTHREAD" PARENT_SCOPE)
     ELSE()
-      # The other cases (Cuda, Serial, OpenMP) are easy.
+      # The other cases (Cuda, HIP, Serial, OpenMP) are easy.
       STRING(TOUPPER "${KOKKOS_EXEC_SPACE}" NAME_OUT_TMP)
       SET(${NAME_OUT} ${NAME_OUT_TMP} PARENT_SCOPE)
     ENDIF()
@@ -225,6 +252,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Details::ChebyshevKernel
     Details::DenseSolver
     Details::Factory
+    Details::InverseDiagonalKernel
     Details::LinearSolver
     Details::OneLevelFactory
     Details::ScaledDampedResidual
@@ -247,6 +275,12 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       Details::Fic
       Details::Fildl
     )
+  ENDIF()
+
+  IF(Ifpack2_ENABLE_HYPRE)
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
+      Hypre
+      )
   ENDIF()
 
   # Set the list of Ifpack2 classes templated on <LO, GO, Node> for
@@ -335,6 +369,22 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       "${IFPACK2_ETI_LO_GO_CLASSES}"
       Ifpack2_ETI_LO_GO_Cuda.tmpl
       "Ifpack2_CLASS_FILE_NAME_Cuda.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+  ENDIF()
+
+  # ETI for the Kokkos::HIP device.
+  IF (Tpetra_INST_HIP)
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_CLASSES}"
+      Ifpack2_ETI_SC_LO_GO_HIP.tmpl
+      "Ifpack2_CLASS_FILE_NAME_HIP.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_LO_GO_CLASSES}"
+      Ifpack2_ETI_LO_GO_HIP.tmpl
+      "Ifpack2_CLASS_FILE_NAME_HIP.cpp"
       IFPACK2_SRCS)
     LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()

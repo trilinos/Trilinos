@@ -34,7 +34,7 @@
 // 
  */
 
-#include <stk_util/util/Null_Streambuf.hpp>
+#include "stk_util/util/Null_Streambuf.hpp"
 
 /*--------------------------------------------------------------------*/
 

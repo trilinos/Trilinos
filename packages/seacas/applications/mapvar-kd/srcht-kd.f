@@ -1,67 +1,40 @@
-C Copyright (c) 2007-2017 National Technology & Engineering Solutions of
-C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
       SUBROUTINE SRCHT (
      *  NPSRF,   NFSRF,   LINKSRF, XYZSRF,
      *  NPTS,    XYZPTS,  TOLSRCH,
      *  NISR,    NRSR,    NISS,    NRSS,    ISRCHR,  RSRCHR,
      *  LIST,    IERR)
-C
+
 C-----------------------------------------------------------------------
-C
+
 C DESCRIPTION:
-C
+
 C THIS SUBROUTINE CALCULATES THE CLOSEST POINT PROBLEM
 C BETWEEN NPTS POINTS AND NFSRF SURFACES AND RETURNS RESULTS OF
 C SEARCH IN ISRCHR,RSRCHR
-C
+
 C USED HERE FOR FINDING LOCATION OF EITHER NODE OR ELEMENT CENTROID
 C FROM MESH-B IN TET-8 ELEMENT OF MESH-A
-C
+
 C-----------------------------------------------------------------------
-C
+
 C FORMAL PARAMETERS
-C
+
 C MEMORY      : P=PERMANENT, S=SCRATCH
 C NAME        : IMPLICIT A-H,O-Z REAL, I-N INTEGER
 C TYPE        : INPUT_STATUS/OUTPUT_STATUS (I=INPUT,O=OUTPUT,P=PASSED,
 C               U=UNMODIFIED,-=UNDEFINED)
 C DESCRIPTION : DESCRIPTION OF VARIABLE
-C
+
 C-----------------------------------------------------------------------
-C
+
 C CALLING ARGUMENTS:
-C
+
 C MEMORY NAME     TYPE   DESCRIPTION
 C ---    ----     ---    -----------
 C  P     NPSRF    I/U    NUMBER OF POINTS THAT DEFINE THE SURFACE
@@ -80,14 +53,14 @@ C  P     ISRCHR   -/O    INTEGER SEARCH RESULTS
 C  P     RSRCHR   -/O    REAL SEARCH RESULTS
 C  S     LIST     -/-    LIST OF POTENTIAL CONTACTS FOR A SURFACE
 C  P     IERR     -/O    ERROR FLAG
-C
+
 C-----------------------------------------------------------------------
-C
+
       include 'tapes.blk'
       include 'debg.blk'
-C
+
 C INPUT/OUTPUT ARRAYS
-C
+
 C ... Needed to interact with C routines on 64-bit systems which have
 C     8-byte integers in Fortran and 4-byte integers in C.
       INTEGER*4 NPTS4, NDIM4, NLIST, LIST(*)
@@ -98,9 +71,9 @@ C     8-byte integers in Fortran and 4-byte integers in C.
      *  ISRCHR(NISR,NPTS),  RSRCHR(NRSR,NPTS)
       DIMENSION
      *  XMIN(3), XMAX(3), GXMIN(3), GXMAX(3)
-C
+
 C ISRCHR and RSRCHR must be initialized to zero
-C
+
       DO 1 I = 1, NPTS
         DO 2 J = 1, NISR
           ISRCHR(J,I) = 0
@@ -109,7 +82,7 @@ C
           RSRCHR(K,I) = 0.
  3      CONTINUE
  1    CONTINUE
-C
+
       IF( NISR .LT. 1 .OR. NRSR .LT. 3 .OR. NISS .LT. 5 .OR.
      *  NRSS .LT. 10 )THEN
         IERR = 1
@@ -151,7 +124,7 @@ C Build KD Tree
         write(nout, *) '        Out of kdBuildTree', t2-t1
         write(ntpout, *) '      Out of kdBuildTree', t2-t1
       end if
-C
+
 C LOOP OVER SURFACES AND SEARCH FOR POINTS WITHIN CAPTURE BOX
       qt = 0.0
       j = 0
@@ -167,7 +140,7 @@ C CONSTRUCT THE BOUNDING BOX FOR NE SURFACES
         NJ = LINKSRF(2,IFSRF)
         NK = LINKSRF(3,IFSRF)
         NL = LINKSRF(4,IFSRF)
-C
+
         XMINMS = MIN(XYZSRF(NI,1),XYZSRF(NJ,1),
      *               XYZSRF(NK,1),XYZSRF(NL,1))
         XMAXMS = MAX(XYZSRF(NI,1),XYZSRF(NJ,1),
@@ -190,7 +163,7 @@ C
         TOLER = TOLSRCH * (ZMAXMS - ZMINMS)
         XMIN(3) = ZMINMS - TOLER
         XMAX(3) = ZMAXMS + TOLER
-C
+
 C ... Build a list of points in the query region...
         j = j + 1
 C ... Skip past points that are outside search domain.
@@ -234,7 +207,7 @@ C ... Debugging statistics.  Also give user an idea that calculation is progress
      *      IERR   )
  140    CONTINUE
  100  CONTINUE
-C
+
 C ... More debugging stats
       if (idebug .ge. 2) then
         call excpus(t3)

@@ -46,7 +46,7 @@ namespace Sacado {
               class Iter2 = typename mpl::end<Seq>::type>
     struct for_each {
       template <typename Op>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       for_each(const Op& op) {
         op(typename mpl::deref<Iter1>::type());
         for_each<Seq, typename mpl::next<Iter1>::type, Iter2> f(op);
@@ -56,11 +56,11 @@ namespace Sacado {
     template <class Seq, class Iter1>
     struct for_each<Seq, Iter1, Iter1> {
       template <typename Op>
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       for_each(const Op& op) {}
     };
 
-    // Same as for_each above, but without KOKKOS_INLINE_FUNCTION for functors
+    // Same as for_each above, but without SACADO_INLINE_FUNCTION for functors
     // that aren't meant to run inside kokkos kernels.
     template <class Seq,
               class Iter1 = typename mpl::begin<Seq>::type,

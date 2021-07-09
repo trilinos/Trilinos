@@ -28,7 +28,6 @@
 
 #include <stk_mesh/base/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Stencils.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <percept/ShardsInterfaceTable.hpp>

@@ -58,18 +58,18 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureTensor
       \brief Defines tensor-product cubature (integration) rules in Intrepid.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubatureTensor
-    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
+    : public Cubature<DeviceType,pointValueType,weightValueType> {
   private:
 
     /** \brief Array of cubature rules.
      */
     ordinal_type numCubatures_;
 
-    CubatureDirect<ExecSpaceType,pointValueType,weightValueType> cubatures_[Parameters::MaxDimension];
+    CubatureDirect<DeviceType,pointValueType,weightValueType> cubatures_[Parameters::MaxTensorComponents];
 
     /** \brief Dimension of integration domain.
      */
@@ -83,24 +83,78 @@ namespace Intrepid2 {
     getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                      Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
 
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    using PointViewType             = typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewType;
+    using weightViewType            = typename Cubature<DeviceType,pointValueType,weightValueType>::weightViewType;
 
-    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
+    /// KK: following should be updated with nate's tensor work
+    using PointViewTypeAllocatable  = typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewTypeAllocatable;
+    using WeightViewTypeAllocatable = typename Cubature<DeviceType,pointValueType,weightValueType>::WeightViewTypeAllocatable;
+    using TensorPointDataType       = typename Cubature<DeviceType,pointValueType,weightValueType>::TensorPointDataType;
+    using TensorWeightDataType      = typename Cubature<DeviceType,pointValueType,weightValueType>::TensorWeightDataType;
+
+    using Cubature<DeviceType,pointValueType,weightValueType>::getCubature;
 
     virtual
     void
     getCubature( PointViewType  cubPoints,
-                 weightViewType cubWeights ) const {
+                 weightViewType cubWeights ) const override {
       getCubatureImpl( cubPoints,
                        cubWeights );
+    }
+      
+    /** \brief Returns a points container appropriate for passing to getCubature().
+
+        \return cubPoints  - Data structure sized for the cubature points.
+    */
+    virtual TensorPointDataType allocateCubaturePoints() const override
+    {
+      std::vector< PointViewTypeAllocatable > cubaturePointComponents(numCubatures_);
+      
+      for (ordinal_type i=0;i<numCubatures_;++i)
+      {
+        cubaturePointComponents[i] = PointViewTypeAllocatable("cubature points", cubatures_[i].getNumPoints(), cubatures_[i].getDimension());
+      }
+      
+      return TensorPointDataType(cubaturePointComponents);
+    }
+    
+    /** \brief Returns a weight container appropriate for passing to getCubature().
+
+        \return cubWeights  - Data structure sized for the cubature weights.
+    */
+    virtual TensorWeightDataType allocateCubatureWeights() const override
+    {
+      using WeightDataType = Data<weightValueType,DeviceType>;
+      
+      std::vector< WeightDataType > cubatureWeightComponents(numCubatures_);
+      for (ordinal_type i=0;i<numCubatures_;++i)
+      {
+        cubatureWeightComponents[i] = WeightDataType(WeightViewTypeAllocatable("cubature weights", cubatures_[i].getNumPoints()));
+      }
+      
+      return TensorWeightDataType(cubatureWeightComponents);
+    }
+    
+    /** \brief Returns tensor cubature points and weights.  For non-tensor cubatures, the tensor structures are trivial, thin wrappers around the data returned by getCubature().  The provided containers should be pre-allocated through calls to allocateCubaturePoints() and allocateCubatureWeights().
+
+        \param cubPoints       [out]   - TensorPoints structure containing the cubature points.
+        \param cubWeights      [out]  - TensorData structure containing cubature weights.
+    */
+    virtual
+    void
+    getCubature( const TensorPointDataType & tensorCubPoints,
+                 const TensorWeightDataType & tensorCubWeights) const override {
+      for (ordinal_type i=0;i<numCubatures_;++i)
+      {
+        cubatures_[i].getCubature(tensorCubPoints.getTensorComponent(i), tensorCubWeights.getTensorComponent(i).getUnderlyingView());
+      }
     }
 
     /** \brief Returns the number of cubature points.
      */
     virtual
     ordinal_type
-    getNumPoints() const {
+    getNumPoints() const override {
       ordinal_type numCubPoints = 1;
       for (ordinal_type i=0;i<numCubatures_;++i)
         numCubPoints *= cubatures_[i].getNumPoints();
@@ -111,7 +165,7 @@ namespace Intrepid2 {
      */
     virtual
     ordinal_type
-    getDimension() const {
+    getDimension() const override {
       return dimension_;
     }
 
@@ -119,13 +173,13 @@ namespace Intrepid2 {
      */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "CubatureTensor";
     }
 
     virtual
     ordinal_type 
-    getAccuracy() const {
+    getAccuracy() const override {
       ordinal_type r_val = 0;
       for (ordinal_type i=0;i<numCubatures_;++i)
         r_val = Util<ordinal_type>::max(r_val, cubatures_[i].getAccuracy());
@@ -190,6 +244,20 @@ namespace Intrepid2 {
       cubatures_[2] = cubature2;
     }
 
+    /** \brief Constructor for extending an existing CubatureTensor object with an additional direct cubature rule.
+
+        \param cubatureTensor    [in] - Existing CubatureTensor object.
+        \param cubatureExtension [in] - The direct cubature rule to use to extend in the new dimension.
+    */
+    template<typename DirectCubature>
+    CubatureTensor( const CubatureTensor cubatureTensor,
+                    const DirectCubature cubatureExtension )
+      : numCubatures_(cubatureTensor.getNumCubatures()+1),
+        dimension_(cubatureTensor.getDimension()+cubatureExtension.getDimension()) {
+      for (ordinal_type i=0;i<cubatureTensor.getNumCubatures();++i)
+        cubatures_[i] = cubatureTensor.cubatures_[i];
+      cubatures_[cubatureTensor.getNumCubatures()] = cubatureExtension;
+    }
   };
 
 

@@ -26,7 +26,13 @@ SET(Trilinos_REPOS_URL_BASE  https://github.com/trilinos/
 # it here.
 SET(TRILINOS_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR}/../)
 
-INCLUDE("${TRIBITS_PROJECT_ROOT}/cmake/tribits/ctest_driver/TribitsCTestDriverCore.cmake")
+IF (NOT "$ENV{Trilinos_TRIBITS_DIR_OVERRIDE}" STREQUAL "")
+  SET(Trilinos_TRIBITS_DIR "$ENV{Trilinos_TRIBITS_DIR_OVERRIDE}")
+ELSE()
+  SET(Trilinos_TRIBITS_DIR "${TRIBITS_PROJECT_ROOT}/cmake/tribits")
+ENDIF()
+
+INCLUDE("${Trilinos_TRIBITS_DIR}/ctest_driver/TribitsCTestDriverCore.cmake")
 
 macro(TRILINOS_CTEST_DRIVER)
   TRIBITS_CTEST_DRIVER()

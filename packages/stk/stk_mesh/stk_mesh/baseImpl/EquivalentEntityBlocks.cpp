@@ -23,12 +23,13 @@ bool are_entity_element_blocks_equivalent(const stk::mesh::BulkData& bulkData, s
 
 void get_element_block_part_ordinals(stk::mesh::Entity element, const stk::mesh::BulkData& bulkData, std::vector<PartOrdinal>& partOrdinalsElementBlock)
 {
-    partOrdinalsElementBlock.clear();
-    std::pair<const unsigned*,const unsigned*> partOrdinals = bulkData.bucket(element).superset_part_ordinals();
-    for(; partOrdinals.first < partOrdinals.second; ++partOrdinals.first) {
-        if (stk::mesh::is_element_block(bulkData.mesh_meta_data().get_part(*partOrdinals.first)))
-            partOrdinalsElementBlock.push_back(*partOrdinals.first);
+  partOrdinalsElementBlock.clear();
+  const stk::mesh::PartVector& parts = bulkData.bucket(element).supersets();
+  for(const stk::mesh::Part* part : parts) {
+    if (stk::mesh::is_element_block(*part)) {
+      partOrdinalsElementBlock.push_back(part->mesh_meta_data_ordinal());
     }
+  }
 }
 
 }

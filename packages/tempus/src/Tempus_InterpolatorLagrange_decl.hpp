@@ -9,6 +9,7 @@
 #ifndef Tempus_InterpolatorLagrange_decl_hpp
 #define Tempus_InterpolatorLagrange_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_Interpolator.hpp"
 
 namespace Tempus {
@@ -47,7 +48,10 @@ public:
   std::string description() const { return "Tempus::InterpolatorLagrange"; }
   void describe(Teuchos::FancyOStream &out,
                 const Teuchos::EVerbosityLevel /* verbLevel */) const
-  { out << description() << "::describe" << std::endl; }
+  {
+    out.setOutputToRootOnly(0);
+    out << description() << "::describe" << std::endl;
+  }
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -69,7 +73,7 @@ private:
 
 };
 
-// non-member constructor
+// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<InterpolatorLagrange<Scalar> > lagrangeInterpolator()
 {

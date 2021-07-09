@@ -1,56 +1,9 @@
-C Copyright (C) 2009-2017 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
-C Redistribution and use in source and binary forms, with or without
-C modification, are permitted provided that the following conditions are
-C met:
-C
-C     * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C     * Redistributions in binary form must reproduce the above
-C       copyright notice, this list of conditions and the following
-C       disclaimer in the documentation and/or other materials provided
-C       with the distribution.
-C
-C     * Neither the name of NTESS nor the names of its
-C       contributors may be used to endorse or promote products derived
-C       from this software without specific prior written permission.
-C
-C THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C See packages/seacas/LICENSE for details
 
-C $Id: pltlax.F,v 1.4 2000/10/25 13:36:38 gdsjaar Exp $
-C $Log: pltlax.F,v $
-C Revision 1.4  2000/10/25 13:36:38  gdsjaar
-C Modified intrinsic functions to use generic versions to avoid warnings on SGI 64-bit compiles
-C
-C Revision 1.3  1998/04/01 22:26:36  gdsjaar
-C Added missing needsdoubleescape
-C
-C Revision 1.2  1998/03/24 17:53:11  gdsjaar
-C Missed a couple places where double escapes are needed
-C
-C Revision 1.1  1997/09/10 15:38:05  gdsjaar
-C Some of the axis labelling code needed the 'NeedsDoubleEscape' ifdefs
-C for the Sun (and presumably other) systems. This removes the
-C extraneous trailing '-' on the plot labels.  Needed to change to .f
-C file to .F files and add the necessary code to the Imakefile.
-C
-C Revision 1.1  1993/07/16 16:48:34  gdsjaar
-C Changed plt to library rather than single source file.
-C
 C=======================================================================
       SUBROUTINE PLTLAX(X,Y,XLENG,YLENG,TYPE,MINEXP,MAXEXP,LABEL,UNITS)
       REAL DEVCAP(23)
@@ -106,7 +59,7 @@ C=======================================================================
 
       IF (FIRST) THEN
          DO 2530 I = 1,8
-            LOGTAB(I) = LOG10(FLOAT(I+1))
+            LOGTAB(I) = LOG10(DBLE(I+1))
  2530    CONTINUE
          FIRST = .FALSE.
       END IF

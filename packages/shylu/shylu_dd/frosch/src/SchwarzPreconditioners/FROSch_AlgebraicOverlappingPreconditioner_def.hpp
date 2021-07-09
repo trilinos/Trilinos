@@ -47,6 +47,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -57,7 +58,7 @@ namespace FROSch {
     K_ (k),
     SumOperator_ (new SumOperator<SC,LO,GO,NO>(k->getRangeMap()->getComm()))
     {
-        FROSCH_TIMER_START_LEVELID(algebraicOverlappingPreconditionerTime,"AlgebraicOverlappingPreconditioner::AlgebraicOverlappingPreconditioner");
+        FROSCH_DETAILTIMER_START_LEVELID(algebraicOverlappingPreconditionerTime,"AlgebraicOverlappingPreconditioner::AlgebraicOverlappingPreconditioner");
         // Set the LevelID in the sublist
         parameterList->sublist("AlgebraicOverlappingOperator").set("Level ID",this->LevelID_);
         OverlappingOperator_.reset(new AlgebraicOverlappingOperator<SC,LO,GO,NO>(k,sublist(parameterList,"AlgebraicOverlappingOperator")));
@@ -116,7 +117,7 @@ namespace FROSch {
     }
 
     template <class SC,class LO,class GO,class NO>
-    std::string AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::description() const
+    string AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::description() const
     {
         return "Algebraic Overlapping Preconditioner";
     }
@@ -124,7 +125,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int AlgebraicOverlappingPreconditioner<SC,LO,GO,NO>::resetMatrix(ConstXMatrixPtr &k)
     {
-        FROSCH_TIMER_START_LEVELID(resetMatrixTime,"TwoLevelPreconditioner::resetMatrix");
+        FROSCH_DETAILTIMER_START_LEVELID(resetMatrixTime,"TwoLevelPreconditioner::resetMatrix");
         this->K_ = k;
         OverlappingOperator_->resetMatrix(this->K_);
         return 0;

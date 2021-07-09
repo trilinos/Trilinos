@@ -97,6 +97,10 @@ typedef Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Operator;
 typedef Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraOperator;
 #endif
 
+#ifdef XPETRA_TPETRAHALFPRECISIONOPERATOR_SHORT
+typedef Xpetra::TpetraHalfPrecisionOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraHalfPrecisionOperator;
+#endif
+
 #ifdef XPETRA_BLOCKEDCRSMATRIX_SHORT
 typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
 #endif

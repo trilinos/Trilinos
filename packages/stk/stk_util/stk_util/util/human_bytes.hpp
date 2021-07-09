@@ -35,7 +35,8 @@
 #ifndef STK_HUMAN_BYTES_H
 #define STK_HUMAN_BYTES_H
 
-#include <string>
+#include <cstddef>  // for size_t
+#include <string>   // for string
 
 namespace stk {
 

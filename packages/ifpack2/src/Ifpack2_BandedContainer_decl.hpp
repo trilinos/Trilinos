@@ -136,6 +136,8 @@ private:
 
   using typename Container<MatrixType>::HostView;
   using typename ContainerImpl<MatrixType, LSC>::HostSubviewLocal;
+  using typename ContainerImpl<MatrixType, LSC>::ConstHostSubviewLocal;
+  using typename ContainerImpl<MatrixType,LSC>::block_crs_matrix_type;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
@@ -244,9 +246,9 @@ private:
   /// linear system with the diagonal block.
   ///
   /// \param X [in] Subset permutation of the input X of apply().
-  /// \param Y [in] Subset permutation of the input/output Y of apply().
+  /// \param Y [in/out] Subset permutation of the input/output Y of apply().
   void
-  solveBlock(HostSubviewLocal X,
+  solveBlock(ConstHostSubviewLocal X,
              HostSubviewLocal Y,
              int blockIndex,
              Teuchos::ETransp mode,

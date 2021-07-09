@@ -145,12 +145,8 @@ namespace {
       //+ Get all nodes attached and not attached to shells.
       std::vector<stk::mesh::Entity> shell_nodes;
       std::vector<stk::mesh::Entity> other_nodes;
-      stk::mesh::get_selected_entities(shell_subset,
-				       stkIo.bulk_data().buckets(stk::topology::NODE_RANK),
-				       shell_nodes);
-      stk::mesh::get_selected_entities(!shell_subset,
-				       stkIo.bulk_data().buckets(stk::topology::NODE_RANK),
-				       other_nodes);
+      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, shell_subset, shell_nodes);
+      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, !shell_subset, other_nodes);
       
       // Calculate number of nodes on surface of the mesh...
       size_t expected_nodes = 6 * num_nodes_per_edge*num_nodes_per_edge;

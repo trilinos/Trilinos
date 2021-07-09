@@ -7,7 +7,7 @@
 # After the environment is no longer needed, it can be purged using
 # $ module purge
 # or Trilinos/cmake/unload_sems_dev_env.sh
- 
+
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
 
 module load sems-gcc/4.8.4
@@ -25,7 +25,7 @@ module load sems-superlu/4.3/base
 # - One of the SEMS modules will load CMake 3.4.x also,
 #   so this will pull in the SEMS cmake 3.10.3 version
 #   for Trilinos compatibility.
-module load sems-cmake/3.10.3
+module load sems-cmake/3.17.1
 module load sems-ninja_fortran/1.8.2
 
 # we will have implicitly gotten the sems python from
@@ -37,4 +37,4 @@ export PATH=/projects/sierra/linux_rh7/install/Python/2.7.15/bin:${PATH}
 PATH=/projects/sierra/linux_rh7/install/Python/extras/bin:${PATH}
 export PYTHONPATH=/projects/sierra/linux_rh7/install/Python/extras/lib/python2.7/site-packages:${PYTHONPATH}
 export MANPATH=/projects/sierra/linux_rh7/install/Python/2.7.15/share/man:${MANPATH}
-unset PYTHONHOME 
+unset PYTHONHOME

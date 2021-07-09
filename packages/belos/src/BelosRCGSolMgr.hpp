@@ -53,15 +53,11 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosRCGIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -376,7 +372,13 @@ namespace Belos {
     static constexpr int outputStyle_default_ = Belos::General;
     static constexpr int outputFreq_default_ = -1;
     static constexpr const char * label_default_ = "Belos";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
     //
     // Current solver values.

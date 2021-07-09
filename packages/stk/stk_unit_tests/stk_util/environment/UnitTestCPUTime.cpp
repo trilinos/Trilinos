@@ -32,9 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>                     // for ostringstream, etc
-#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+#include "stk_util/environment/CPUTime.hpp"  // for cpu_time
+#include <iostream>                          // for endl, ostringstream, basic_ostream, basic_os...
 
 
 

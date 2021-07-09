@@ -1,46 +1,19 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
-C    Redistribution and use in source and binary forms, with or without
-C    modification, are permitted provided that the following conditions are
-C    met:
-C
-C    * Redistributions of source code must retain the above copyright
-C       notice, this list of conditions and the following disclaimer.
-C
-C    * Redistributions in binary form must reproduce the above
-C      copyright notice, this list of conditions and the following
-C      disclaimer in the documentation and/or other materials provided
-C      with the distribution.
-C
-C    * Neither the name of NTESS nor the names of its
-C      contributors may be used to endorse or promote products derived
-C      from this software without specific prior written permission.
-C
-C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-C    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-C    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-C    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-C    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-C    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-C    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C
+C    See packages/seacas/LICENSE for details
       SUBROUTINE MXLIST (UNIT, OFFSET,
      *   DICT, DPOINT, LDICT, NNAMES,
      *   VOID, LVOID, NVOIDS, CHRCOL)
-C
+
       IMPLICIT INTEGER (A-Z)
-C
+
 C     This routine lists the contents of the tables of the
 C     memory manager.
-C
+
 C***********************************************************************
-C
+
 C     UNIT     Output unit number
 C     OFFSET   Offset to internal reference vector
 C     DICT     Dictionary table
@@ -54,11 +27,11 @@ C     LVOID    Dimension of void table
 C     NVOIDS   Number of voids
                DIMENSION VOID(LVOID,CHRCOL,2), NVOIDS(2)
 C     CHRCOL   Column number for character tables
-C
+
 C***********************************************************************
-C
+
       CHARACTER*8 TNAME1, TNAME2
-C
+
       TOFF = OFFSET
       DO 290 ICOL = 1, CHRCOL
          IF (ICOL .EQ. 2) THEN
@@ -66,7 +39,7 @@ C
             WRITE (UNIT, 10090)
          END IF
 C        DICTIONARY.
-C
+
          MNDICT = 0
          MCDICT = 0
          DO 100 I = 1, NNAMES(ICOL)
@@ -85,9 +58,9 @@ C
             END IF
   110    CONTINUE
          WRITE (UNIT,10040) MNDICT, MCDICT
-C
+
 C        VOID TABLE.
-C
+
          MNVOID = 0
          DO 120 I = 1, NVOIDS(ICOL)
             MNVOID = MNVOID + VOID(I,ICOL,2)
@@ -96,12 +69,12 @@ C
          WRITE (UNIT,10060) (I,VOID(I,ICOL,1)+TOFF,
      *      VOID(I,ICOL,2),I=1,NVOIDS(ICOL))
          WRITE (UNIT,10050) MNVOID
-C
+
 C        OUTPUT ORDERED LIST OF TABLES.
-C
+
 C        First sort dictionary into location order with unresolved
 C        allocations first.
-C
+
          JSTRT = 2
          DO 150 I = 1, NNAMES(ICOL)-1
             IF (DPOINT(I,ICOL,2) .GE. 0) THEN
@@ -152,9 +125,9 @@ C
                END IF
   190       CONTINUE
   200    CONTINUE
-C
+
 C        STARTING STUFF FOR LOOP
-C
+
          DO 210 IDICT = 1, NNAMES(ICOL)
             IF (DPOINT(IDICT,ICOL,2) .GE. 0) GO TO 220
   210    CONTINUE
@@ -169,12 +142,12 @@ C
             NXTLOC = 0
          END IF
          IVOID = 1
-C
+
          WRITE (UNIT, 10080)
          ILIST = 0
-C
+
 C        Deferred space names first.
-C
+
          DTOT = 0
          DCTOT = 0
          DO 230 IDICT = 1, NNAMES(ICOL)
@@ -192,9 +165,9 @@ C
   240    CONTINUE
          IF (IDICT .GT. 1) WRITE (UNIT, 10030)
      *      'DEFERRED TOTAL', DTOT, DCTOT
-C
+
 C        LOOP
-C
+
          TOTAL = 0
          SUBTOT = 0
          CSTOT = 0
@@ -268,9 +241,9 @@ C
          WRITE (UNIT, 10030) 'BLOCK SIZE', SUBTOT, CSTOT
          WRITE (UNIT, 10030) 'ALLOCATED TOTAL', TOTAL, CTOT
          WRITE (UNIT, 10030) '    GRAND TOTAL', TOTAL+DTOT, CTOT+DCTOT
-C
+
 C        SORT DICTIONARY BACK INTO NAME ORDER
-C
+
          DO 280 I = 1, NNAMES(ICOL)-1
             DO 270 J = I+1, NNAMES(ICOL)
                IF (DICT(J,ICOL) .LT. DICT(I,ICOL)) THEN
@@ -292,21 +265,21 @@ C
   280    CONTINUE
   290 CONTINUE
       RETURN
-10000 FORMAT(//1X,50('*')//,7('* '),
+10000 FORMAT(//1X,50('*')/1X,7('* '),
      *   ' D I C T I O N A R Y  ',7('* ')//
-     *   T33, 'NUMERIC', T43, 'CHARACTER'/
-     *   T10,'NAME      LOCATION      LENGTH      LENGTH'/)
-10010 FORMAT((1X,I4,2X,A8,3(2X,I10)))
-10020 FORMAT((1X,I4,2X,A8,12X,2(2X,I10)))
-10030 FORMAT (1X, A, T30, I10, 2X, I10/)
-10040 FORMAT(/,T10,'TOTAL',T30,I10, 2X, I10)
-10050 FORMAT(/,T10,'TOTAL',T24,I10)
-10060 FORMAT((1X,I6,2(3X,I10)))
+     *   T45, 'NUMERIC', T61, 'CHARACTER'/
+     *   T10,'NAME      LOCATION',t45, 'LENGTH', T61,'LENGTH'/)
+10010 FORMAT((1X,I4,2X,A8,3(2X,I16)))
+10020 FORMAT((1X,I4,2X,A8,12X,2(2X,I16)))
+10030 FORMAT (1X, A, T36, I16, 2X, I16/)
+10040 FORMAT(/,T10,'TOTAL',T36,I16, 2X, I16)
+10050 FORMAT(/,T10,'TOTAL',T24,I16)
+10060 FORMAT((1X,I6,2(3X,I16)))
 10070 FORMAT(///' * * * V O I D   T A B L E * * *'//
      *   '           LOCATION       LENGTH'/)
-10080 FORMAT(//1X,50('*')/'0 ',6('* '),
+10080 FORMAT(//1X,50('*')/1X,6('* '),
      *   ' O R D E R E D   L I S T  ',6('* ')//
-     *   ,T33, 'NUMERIC', T43, 'CHARACTER'/
-     *   T10,'NAME      LOCATION      LENGTH      LENGTH'/)
+     *   ,T45, 'NUMERIC', T61, 'CHARACTER'/
+     *   T10,'NAME      LOCATION',t45, 'LENGTH', T61,'LENGTH'/)
 10090 FORMAT(//1X,79('*')//,' SPLIT CHARACTER STORAGE'//1X,79('*')//)
       END

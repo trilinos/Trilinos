@@ -1,6 +1,4 @@
-
 TRIBITS_SUBPACKAGE(Chaco)
-
 
 SET(CHACO_VERSION_MAJOR "3")
 SET(CHACO_VERSION_MINOR "0")
@@ -51,7 +49,6 @@ endfunction()
 FOREACH ( dir ${chaco_SUBDIRS} )
   add_subdirectory(${dir})
 ENDFOREACH ( dir )
-
 
 get_property(SOURCES GLOBAL PROPERTY chaco_SRCS)
 TRIBITS_ADD_LIBRARY(

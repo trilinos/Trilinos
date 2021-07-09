@@ -1,4 +1,4 @@
-IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor AND ${PROJECT_NAME}_ENABLE_CXX11)
+IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})

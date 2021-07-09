@@ -1339,7 +1339,7 @@ const Scalar sourceTerm(Scalar& x, Scalar& y){
 
   Scalar u;
   Scalar grad_u[2];
-  Scalar flux[2];
+  Scalar flux[2] = {0.0, 0.0};
   Scalar material[2][2];
   Scalar f = 0.;
 

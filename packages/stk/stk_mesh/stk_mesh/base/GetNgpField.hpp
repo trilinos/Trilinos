@@ -35,28 +35,37 @@
 #define GETNGPFIELD_HPP
 
 #include "stk_mesh/base/NgpField.hpp"
+#include "stk_mesh/base/NgpFieldSyncDebugger.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 
 namespace stk {
 namespace mesh {
 
-template <typename T>
-NgpField<T> & get_updated_ngp_field(const FieldBase & stkField)
+template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const ExecSpace& execSpace)
 {
-  NgpFieldBase * ngpField = stkField.get_ngp_field();
+  NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T>(stkField.get_mesh(), stkField);
-    stkField.set_ngp_field(ngpField);
+    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, execSpace, true);
+    impl::set_ngp_field(stkField, ngpField);
   }
   else {
     if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField = new NgpField<T>(stkField.get_mesh(), stkField);
-      stkField.set_ngp_field(ngpField);
+      ngpField->set_execution_space(execSpace);
+      ngpField->update_field();
     }
   }
 
-  return dynamic_cast< NgpField<T>& >(*ngpField);
+  return dynamic_cast< NgpField<T, NgpDebugger>& >(*ngpField);
+}
+
+template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+NgpField<T, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
+{
+  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpDebugger>(stkField, Kokkos::DefaultExecutionSpace());
+  impl::internal_fence_no_sync_to_host(ngpFieldRef);
+  return ngpFieldRef;
 }
 
 }}

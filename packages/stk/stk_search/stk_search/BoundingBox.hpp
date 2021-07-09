@@ -36,8 +36,11 @@
 #ifndef STK_SEARCH_BOUNDINGBOX_HPP
 #define STK_SEARCH_BOUNDINGBOX_HPP
 
+#include "Kokkos_Macros.hpp"
+#include <array>
 #include <stk_math/StkVector.hpp>
 #include <stk_search/Box.hpp>
+#include <stk_search/Plane.hpp>
 #include <stk_search/Point.hpp>
 #include <stk_search/Sphere.hpp>
 #include <stk_math/StkMath.hpp>          // for stk::math::max, stk::math::min
@@ -236,7 +239,8 @@ inline bool intersects(Box<T1> const& a, Sphere<T2> const& b)
 
 // intersects: Box,Box
 template <typename T1, typename T2>
-inline bool intersects(Box<T1> const& a, Box<T2> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Box<T1> const& a, Box<T2> const& b)
 {
   Point<T1> const& amin = a.min_corner();
   Point<T1> const& amax = a.max_corner();
@@ -249,6 +253,35 @@ inline bool intersects(Box<T1> const& a, Box<T2> const& b)
         || (amax[1] < bmin[1]) || (bmax[1] < amin[1])
         || (amax[2] < bmin[2]) || (bmax[2] < amin[2]));
 
+}
+
+// intersects: Plane,Box
+template <typename T1, typename T2>
+inline bool intersects(Plane<T1> const& p, Box<T2> const& b)
+{
+
+  std::array<T2,6> points = {b.get_x_min(), b.get_x_max(), b.get_y_min(), b.get_y_max(), b.get_z_min(), b.get_z_max()};
+  int previousWhichSide = p.WhichSide(Point<T2>(points[0], points[0], points[0]));
+  for (int x=0; x<2; ++x){
+    for (int y=0; y<2; ++y){
+      for (int z=0; z<2; ++z){
+        int whichSide = p.WhichSide(Point<T2>(points[x], points[y], points[z]));
+        if (whichSide != previousWhichSide){
+          return true;
+        }
+        else if(whichSide == 0){
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+template <typename T1, typename T2>
+inline bool intersects(Box<T1> const& b, Plane<T2> const& p)
+{
+  return intersects(p,b);
 }
 
 template <typename T, typename U>

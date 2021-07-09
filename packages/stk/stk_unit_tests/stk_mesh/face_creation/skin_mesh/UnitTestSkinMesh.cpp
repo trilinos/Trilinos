@@ -38,9 +38,8 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/ioUtils.hpp"
-#include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture
-#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
-#include "stk_unit_test_utils/stk_mesh_fixtures/TetFixture.hpp"  // for QuadFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"
+#include "stk_unit_test_utils/stk_mesh_fixtures/TetFixture.hpp"
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include <algorithm>
 #include <array>
@@ -53,50 +52,6 @@
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
-
-//void put_all_faces_in_io_part(stk::mesh::BulkData &mesh, stk::mesh::Selector locally_owned, stk::mesh::Part& face_output_part)
-//{
-//    mesh.modification_begin();
-//    stk::mesh::PartVector part_vector;
-//    part_vector.push_back(&face_output_part);
-//    stk::mesh::EntityVector stk_faces;
-//    stk::mesh::get_entities(mesh, stk::topology::FACE_RANK, stk_faces);
-//    for(size_t count = 0; count < stk_faces.size(); ++count)
-//    {
-//        if(locally_owned(mesh.bucket(stk_faces[count])))
-//        {
-//            mesh.change_entity_parts(stk_faces[count], part_vector);
-//        }
-//    }
-//    mesh.modification_end();
-//}
-
-//void put_all_elements_in_io_part(stk::mesh::BulkData &mesh, stk::mesh::Selector locally_owned, stk::mesh::Part& element_output_part)
-//{
-//    mesh.modification_begin();
-//    stk::mesh::PartVector part_vector;
-//    part_vector.push_back(&element_output_part);
-//    stk::mesh::EntityVector stk_elements;
-//    stk::mesh::get_entities(mesh, stk::topology::ELEMENT_RANK, stk_elements);
-//    for(size_t count = 0; count < stk_elements.size(); ++count)
-//    {
-//        if(locally_owned(mesh.bucket(stk_elements[count])))
-//        {
-//            mesh.change_entity_parts(stk_elements[count], part_vector);
-//        }
-//    }
-//    mesh.modification_end();
-//}
-
-//void writeStkDebuggingFile(stk::io::StkMeshIoBroker &stkMeshIoBroker, stk::mesh::BulkData &mesh, const std::string &output_name)
-//{
-//    stk::mesh::Part & face_output_part = mesh.mesh_meta_data().declare_part_with_topology("output_face_name", stk::topology::TRI_3);
-//    stk::io::put_io_part_attribute(face_output_part);
-//    put_all_faces_in_io_part(mesh, mesh.mesh_meta_data().locally_owned_part(), face_output_part);
-//
-//    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(output_name, stk::io::WRITE_RESULTS);
-//    stkMeshIoBroker.write_output_mesh(resultFileIndex);
-//}
 
 template <std::size_t SIZE>
 bool check_if_one_owned_face_with_these_nodes_exists(const std::array <uint64_t, SIZE> &nodes, stk::mesh::BulkData &mesh)

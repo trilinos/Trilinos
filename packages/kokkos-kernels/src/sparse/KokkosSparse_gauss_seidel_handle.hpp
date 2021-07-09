@@ -57,20 +57,16 @@ namespace KokkosSparse{
 
   enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM, GS_CLUSTER, GS_TWOSTAGE};
   enum GSDirection{GS_FORWARD, GS_BACKWARD, GS_SYMMETRIC};
-  enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_BALLOON, CLUSTER_CUTHILL_MCKEE, CLUSTER_DO_NOTHING, NUM_CLUSTERING_ALGORITHMS};
+  enum ClusteringAlgorithm{CLUSTER_DEFAULT, CLUSTER_MIS2, CLUSTER_BALLOON, NUM_CLUSTERING_ALGORITHMS};
 
   inline const char* getClusterAlgoName(ClusteringAlgorithm ca)
   {
     switch(ca)
     {
-      case CLUSTER_DEFAULT:
-        return "Default";
       case CLUSTER_BALLOON:
         return "Balloon";
-      case CLUSTER_CUTHILL_MCKEE:
-        return "Cuthill-McKee";
-      case CLUSTER_DO_NOTHING:
-        return "No-op";
+      case CLUSTER_MIS2:
+        return "MIS(2)";
       default:;
     }
     return "INVALID CLUSTERING ALGORITHM";
@@ -139,8 +135,6 @@ namespace KokkosSparse{
     //getters
     GSAlgorithm get_algorithm_type() const {return this->algorithm_type;}
 
-    virtual bool is_owner_of_coloring() const {return false;}
-
     nnz_lno_persistent_work_host_view_t get_color_xadj() const {
       return this->color_xadj;
     }
@@ -192,12 +186,8 @@ namespace KokkosSparse{
         return;
       }
       else {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-        KokkosKernels::Impl::get_suggested_vector_team_size<size_type, ExecutionSpace>(max_allowed_team_size, suggested_vector_size_, suggested_team_size_, nr, nnz);
-#else
         KokkosKernels::Impl::get_suggested_vector_size<size_type, ExecutionSpace>(suggested_vector_size_, nr, nnz);
         KokkosKernels::Impl::get_suggested_team_size<ExecutionSpace>(max_allowed_team_size, suggested_vector_size_, suggested_team_size_);
-#endif
         this->suggested_team_size = suggested_vector_size_;
         this->suggested_vector_size = suggested_vector_size_;
 
@@ -253,11 +243,18 @@ namespace KokkosSparse{
     scalar_persistent_work_view_t permuted_inverse_diagonal;
     nnz_lno_t block_size; //this is for block sgs
 
-    nnz_lno_t max_nnz_input_row;
-
     nnz_lno_t num_values_in_l1, num_values_in_l2, num_big_rows;
     size_t level_1_mem, level_2_mem;
-    bool owner_of_coloring;
+
+    //Option set by user: rows with at least this many nonzeros are handled by a separate kernel
+    nnz_lno_t long_row_threshold;
+    //Number of long rows per color set. They are all grouped at the end of each color set.
+    nnz_lno_persistent_work_host_view_t long_rows_per_color;
+    //Maximum row length in each color set.
+    nnz_lno_persistent_work_host_view_t max_row_length_per_color;
+    //Temporary space for matvec over long rows - size is only max num long rows in a color.
+    scalar_persistent_work_view_t long_row_x;
+
   public:
 
     /**
@@ -268,67 +265,21 @@ namespace KokkosSparse{
       permuted_xadj(), permuted_adj(), permuted_adj_vals(), old_to_new_map(),
       permuted_y_vector(), permuted_x_vector(),
       permuted_inverse_diagonal(), block_size(1),
-      max_nnz_input_row(-1),
       num_values_in_l1(-1), num_values_in_l2(-1),num_big_rows(0), level_1_mem(0), level_2_mem(0),
-      owner_of_coloring(false)
+      long_row_threshold(0)
     {
       if (gs == GS_DEFAULT)
         this->choose_default_algorithm();
     }
 
-    bool is_owner_of_coloring() const override {return this->owner_of_coloring;}
-    void set_owner_of_coloring(bool owner = true) {this->owner_of_coloring = owner;}
-
     void set_block_size(nnz_lno_t bs){this->block_size = bs; }
     nnz_lno_t get_block_size() const {return this->block_size;}
 
-    /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
-     */
     void choose_default_algorithm(){
-#if defined( KOKKOS_ENABLE_SERIAL )
-      if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
-        this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "Serial Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_THREADS )
-      if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
-        this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "PTHREAD Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_OPENMP )
-      if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-        this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "OpenMP Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_CUDA )
-      if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+      if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
         this->algorithm_type = GS_TEAM;
-#ifdef VERBOSE
-        std::cout << "Cuda Execution Space, Default Algorithm: GS_TEAM" << std::endl;
-#endif
-      }
-#endif
-
-#if defined( KOKKOS_ENABLE_QTHREAD)
-      if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+      else
         this->algorithm_type = GS_PERMUTED;
-#ifdef VERBOSE
-        std::cout << "Qthread Execution Space, Default Algorithm: GS_PERMUTED" << std::endl;
-#endif
-      }
-#endif
     }
 
     ~PointGaussSeidelHandle() = default;
@@ -413,14 +364,44 @@ namespace KokkosSparse{
       return this->num_big_rows;
     }
 
-    nnz_lno_t get_max_nnz() const {
-      if(max_nnz_input_row == static_cast<nnz_lno_t>(-1))
-        throw std::runtime_error("Requested max nnz per input row, but this has not been set in the PointGS handle.");
-      return this->max_nnz_input_row;
+    nnz_lno_t get_long_row_threshold() const
+    {
+      return long_row_threshold;
     }
 
-    void set_max_nnz(nnz_lno_t num_result_nnz_) {
-      this->max_nnz_input_row = num_result_nnz_;
+    void set_long_row_threshold(nnz_lno_t lrt)
+    {
+      long_row_threshold = lrt;
+    }
+
+    nnz_lno_persistent_work_host_view_t get_long_rows_per_color() const
+    {
+      return long_rows_per_color;
+    }
+
+    void set_long_rows_per_color(const nnz_lno_persistent_work_host_view_t& long_rows_per_color_)
+    {
+      long_rows_per_color = long_rows_per_color_;
+    }
+
+    nnz_lno_persistent_work_host_view_t get_max_row_length_per_color() const
+    {
+      return max_row_length_per_color;
+    }
+
+    void set_max_row_length_per_color(const nnz_lno_persistent_work_host_view_t& max_row_length_per_color_)
+    {
+      max_row_length_per_color = max_row_length_per_color_;
+    }
+
+    scalar_persistent_work_view_t get_long_row_x() const
+    {
+      return long_row_x;
+    }
+
+    void set_long_row_x(const scalar_persistent_work_view_t& long_row_x_)
+    {
+      long_row_x = long_row_x_;
     }
 
     void allocate_x_y_vectors(nnz_lno_t num_rows, nnz_lno_t num_cols, nnz_lno_t num_vecs){
@@ -449,13 +430,8 @@ namespace KokkosSparse{
         return;
       }
       else {
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-        KokkosKernels::Impl::get_suggested_vector_team_size<size_type, ExecutionSpace>(
-                                                                                       max_allowed_team_size, suggested_vector_size_, suggested_team_size_, nr, nnz);
-#else
         KokkosKernels::Impl::get_suggested_vector_size<size_type, ExecutionSpace>(suggested_vector_size_, nr, nnz);
         KokkosKernels::Impl::get_suggested_team_size<ExecutionSpace>(max_allowed_team_size, suggested_vector_size_, suggested_team_size_);
-#endif
         this->suggested_team_size = suggested_vector_size_;
         this->suggested_vector_size = suggested_vector_size_;
 
@@ -569,36 +545,10 @@ namespace KokkosSparse{
         throw std::runtime_error("inverse diagonal does not exist until after numeric setup.");
       return inverse_diagonal;
     }
-    
+
     bool use_teams() const
     {
-      bool return_value = false;
-#if defined( KOKKOS_ENABLE_SERIAL )
-      if (std::is_same< Kokkos::Serial , ExecutionSpace >::value) {
-        return_value = false;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_THREADS )
-      if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
-        return_value = false;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_OPENMP )
-      if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-        return_value = false;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_CUDA )
-      if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-        return_value = true;
-      }
-#endif
-#if defined( KOKKOS_ENABLE_QTHREAD)
-      if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-        return_value = false;
-      }
-#endif
-      return return_value;
+      return KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>();
     }
 
     ~ClusterGaussSeidelHandle() = default;
@@ -654,8 +604,13 @@ namespace KokkosSparse{
     nrhs (1),
     direction (GS_SYMMETRIC),
     two_stage (true),
-    num_inner_sweeps (1)
-    {}
+    compact_form (false),
+    num_inner_sweeps (1),
+    num_outer_sweeps (1)
+    {
+      const scalar_t one (1.0);
+      inner_omega = one;
+    }
 
     // Sweep direction
     void setSweepDirection (GSDirection direction_) {
@@ -673,6 +628,22 @@ namespace KokkosSparse{
       return this->two_stage;
     }
 
+    // specify whether to use compact form of recurrence
+    void setCompactForm (bool compact_form_) {
+      this->compact_form = compact_form_;
+    }
+    bool isCompactForm () {
+      return this->compact_form;
+    }
+
+    // Number of outer sweeps
+    void setNumOuterSweeps (int num_outer_sweeps_) {
+      this->num_outer_sweeps = num_outer_sweeps_;
+    }
+    int getNumOuterSweeps () {
+      return this->num_outer_sweeps;
+    }
+
     // Number of inner sweeps
     void setNumInnerSweeps (int num_inner_sweeps_) {
       this->num_inner_sweeps = num_inner_sweeps_;
@@ -681,26 +652,56 @@ namespace KokkosSparse{
       return this->num_inner_sweeps;
     }
 
-    // workspaces
+    // Inner damping factor
+    void setInnerDampFactor (scalar_t inner_omega_) {
+      this->inner_omega = inner_omega_;
+    }
+    scalar_t getInnerDampFactor () {
+      return this->inner_omega;
+    }
+
+    // Workspaces
+    // > diagonal (inverse)
     void setD (values_view_t D_) {
       this->D = D_;
     }
     values_view_t getD () {
       return this->D;
     }
-
+    // > Lower part of diagonal block
     void setL (crsmat_t L) {
       this->crsmatL = L;
     }
     crsmat_t getL () {
       return this->crsmatL;
     }
-
+    // > Upper part of diagonal block
     void setU (crsmat_t U) {
       this->crsmatU = U;
     }
     crsmat_t getU () {
       return this->crsmatU;
+    }
+    // > Complement of U
+    void setLa (crsmat_t La) {
+      this->crsmatLa = La;
+    }
+    crsmat_t getLa () {
+      return this->crsmatLa;
+    }
+    // > Complement of L
+    void setUa (crsmat_t Ua) {
+      this->crsmatUa = Ua;
+    }
+    crsmat_t getUa () {
+      return this->crsmatUa;
+    }
+    // > diagonal (not-inverse)
+    void setDa (values_view_t Da_) {
+      this->Da = Da_;
+    }
+    values_view_t getDa () {
+      return this->Da;
     }
 
     void initVectors (int nrows_, int nrhs_) {
@@ -731,6 +732,11 @@ namespace KokkosSparse{
     values_view_t D;
     crsmat_t crsmatL;
     crsmat_t crsmatU;
+    // > complements for compact form of recurrence
+    //   where La = A - U and Ua = A - L
+    values_view_t Da;
+    crsmat_t crsmatLa;
+    crsmat_t crsmatUa;
 
     // > residual vector for outer GS, Rk = B-A*Xk
     vector_view_t localR;
@@ -742,7 +748,10 @@ namespace KokkosSparse{
     // solver parameters
     GSDirection direction;
     bool two_stage;
+    bool compact_form;
     int num_inner_sweeps;
+    int num_outer_sweeps;
+    scalar_t inner_omega;
   };
   // -------------------------------------
 }

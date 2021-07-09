@@ -36,48 +36,48 @@
 
 #include <vector>
 #include <string>
-#include <sstream>
-#include <iostream>
+#include "stk_util/util/string_utils.hpp"
+#include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace tools {
 
-std::string strip_string(const std::string &token)
+int string_to_integer(const std::string &input)
 {
-    std::string tmp(token);
-    tmp.erase(0, tmp.find_first_not_of(" "));
-    tmp.erase(tmp.find_last_not_of(" ")+1);
-    return tmp;
+  int convertedInt = 0;
+
+  try {
+    convertedInt = std::stoi(input);
+  }
+  catch (std::exception &) {
+    ThrowErrorMsg("Could not convert argument '" << input << "' to an integer");
+  }
+
+  return convertedInt;
 }
 
-std::vector<std::string> get_csv(const std::string &input)
-{
-    std::vector<std::string> separated;
-    std::istringstream iss(input);
-    std::string token;
-    while(std::getline(iss, token, ','))
-        separated.push_back(strip_string(token));
-    return separated;
-}
 
-std::vector<std::string> get_block_names_given_ids(const std::vector<std::string> &ids)
+std::vector<int> get_ids_from_strings(const std::vector<std::string> & inputSegments)
 {
-    std::vector<std::string> names(ids.size());
-    for(size_t i=0; i<ids.size(); i++)
-    {
-        names[i] = "block_" + ids[i];
+  std::vector<int> ids;
+  for (const std::string & inputSegment : inputSegments)
+  {
+    const std::vector<std::string> splitInput = stk::split_string(stk::trim_string(inputSegment), ':');
+    ThrowRequireMsg((splitInput.size() > 0) && (splitInput.size() <= 3),
+                    "Incorrect number of fields for range (" << inputSegment << ").  Syntax is first:last:stride");
+
+    const int first = string_to_integer(stk::trim_string(splitInput[0]));
+    const int last = (splitInput.size() > 1) ? string_to_integer(stk::trim_string(splitInput[1])) : first;
+    const int stride = (splitInput.size() > 2) ? string_to_integer(stk::trim_string(splitInput[2])) : 1;
+
+    ThrowRequireMsg((first > 0) && (last > 0) && (stride > 0) && (last >= first),
+                    "Invalid integers provided for range (" << inputSegment << ").  Syntax is first:last:stride");
+
+    for (int i = first; i <= last; i += stride) {
+      ids.push_back(i);
     }
-    return names;
-}
-
-std::vector<std::string> get_nodeset_names_given_ids(const std::vector<std::string> &ids)
-{
-    std::vector<std::string> names(ids.size());
-    for(size_t i=0; i<ids.size(); i++)
-    {
-        names[i] = "nodelist_" + ids[i];
-    }
-    return names;
+  }
+  return ids;
 }
 
 }}

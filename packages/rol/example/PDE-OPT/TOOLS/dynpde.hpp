@@ -271,12 +271,19 @@ public:
   }
 
   virtual std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() = 0;
+  virtual std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields2() {
+    return getFields();
+  }
 
   virtual void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &cellNodes,
                             const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
                             const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) = 0;
 
-  virtual void setFieldPattern(const std::vector<std::vector<int>> & fieldPattern) {}
+  virtual void setFieldPattern(const std::vector<std::vector<int>> &fieldPattern) {}
+  virtual void setFieldPattern(const std::vector<std::vector<int>> &fieldPattern1,
+                               const std::vector<std::vector<int>> &fieldPattern2) {
+    setFieldPattern(fieldPattern1);
+  }
 
 private:
   std::vector<Real> param_;

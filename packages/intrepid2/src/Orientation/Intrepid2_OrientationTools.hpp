@@ -109,7 +109,7 @@ namespace Intrepid2 {
   namespace Impl {
 
     /**
-     \brief Tools to compute orientations for degrees-of-freedom
+       \brief Tools to compute orientations for degrees-of-freedom
     */ 
     class OrientationTools {
     public:
@@ -240,8 +240,8 @@ namespace Intrepid2 {
       inline
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
-                             const shards::CellTopology cellTopo,
-                             const ordinal_type cellOrt);
+                                  const shards::CellTopology cellTopo,
+                                  const ordinal_type cellOrt);
 
       /** \brief  Computes jacobian of the parameterization maps of 1- and 2-subcells with orientation.
 
@@ -253,260 +253,221 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
-                             const unsigned cellTopoKey,
-                             const ordinal_type cellOrt);
+                                  const unsigned cellTopoKey,
+                                  const ordinal_type cellOrt);
+
+
+      /** \brief  Computes the (oriented) subCell tangents
+          \param  tangents        [out] - rank-2 (scD,D), tangents of the subcell. scD: subCell dimension, D: parent cell dimension
+          \param  subcellParam    [in]  - rank-2 (N, scD+1), subCells parametrization. N:number of subcells, scD: subCell dimension
+          \param  cellTopoKey     [in]  - key of the cell topology of the parameterized domain (1- and 2-subcells)
+          \param  subCellOrd      [in]  - position of the subCell among subCells of a given dimension
+          \param  ort             [in]  - subCell orientation number
+      */
+      template<typename TanViewType, typename ParamViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void getRefSubcellTangents(TanViewType tangents,
+                                        const ParamViewType subCellParametrization,
+                                        const unsigned subcellTopoKey,
+                                        const ordinal_type subCellOrd,
+                                        const ordinal_type ort);
+
+
+      /** \brief  Computes the (oriented) tangents and normal of the side subCell
+          The normals are only defined for sides (subCells of dimension D-1) and it
+          requires the computation of tangents
+
+          \param  tangentsAndNormal [out] - rank-2 (D,D), (D-1) tangents and 1 normal. D: parent cell dimension
+          \param  subcellParam      [in]  - rank-2 (N, scD+1), subCells parametrization. N:number of subcells, scD: subCell dimension
+          \param  cellTopoKey       [in]  - key of the cell topology of the parameterized domain (1- and 2-subcells)
+          \param  subCellOrd        [in]  - position of the subCell among subCells of a given dimension
+          \param  ort               [in]  - subCell orientation number
+      */
+      template<typename TanNormViewType, typename ParamViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void getRefSideTangentsAndNormal(TanNormViewType tangentsAndNormal,
+                                              const ParamViewType subCellParametrization,
+                                              const unsigned subcellTopoKey,
+                                              const ordinal_type subCellOrd,
+                                              const ordinal_type ort);
+
+
+      /** \brief  Maps points defined on the subCell manifold into the parent Cell
+
+          \param  cellCoords        [out] - rank-2 (P, D), P points mapped in the parent cell manifold.
+          \param  subCellCoords     [in]  - rank-2 (P, scD), P points defined on the subCell manifold, scD: subCell dimension
+          \param  subcellParam      [in]  - rank-2 (N, scD+1), subCells parametrization. N:number of subCells, scD: subCell dimension
+          \param  cellTopoKey       [in]  - key of the cell topology of the parameterized domain (1- and 2-subCells)
+          \param  subCellOrd        [in]  - position of the subCell among subCells of a given dimension
+          \param  ort               [in]  - subCell orientation number
+      */
+      template<typename coordsViewType, typename subcellCoordsViewType, typename ParamViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void mapSubcellCoordsToRefCell(coordsViewType cellCoords,
+                                            const subcellCoordsViewType subCellCoords,
+                                            const ParamViewType subcellParametrization,
+                                            const unsigned subcellTopoKey,
+                                            const ordinal_type subCellOrd,
+                                            const ordinal_type ort);
 
       // -----------------------------------------------------------------------------
       // Coefficient Matrix
       //
       //
       
-      /** \brief  Compute coefficient matrix for HGRAD by collocating point values
+      /** \brief  Compute orientation matrix for HGRAD basis for a given subcell
+          and its reference basis
           
           \param  output      [out]  - rank 2 coefficient matrix
-          \param  subcellBasis [in]  - subcell basis function 
+          \param  subcellBasis [in]  - reference subcell basis function
           \param  cellBasis    [in]  - cell basis function
           \param  subcellId    [in]  - subcell Id in the cell topology
           \param  subcellOrt   [in]  - orientation number between 0 and 1
 
       */
       template<typename OutputViewType,
-               typename subcellBasisType,
-               typename cellBasisType>
+               typename subcellBasisHostType,
+               typename cellBasisHostType>
       inline
       static void
       getCoeffMatrix_HGRAD(OutputViewType &output,
-                           const subcellBasisType subcellBasis,
-                           const cellBasisType cellBasis,
+                           const subcellBasisHostType& subcellBasis,
+                           const cellBasisHostType& cellBasis,
                            const ordinal_type subcellId,
                            const ordinal_type subcellOrt);
 
-      /** \brief  Compute coefficient matrix for HCURL by collocating point values
+      /** \brief  Compute orientation matrix for HCURL basis for a given subcell
+          and its reference basis
           
           \param  output      [out]  - rank 2 coefficient matrix
-          \param  subcellBasis [in]  - subcell basis function 
+          \param  subcellBasis [in]  - reference subcell basis function
           \param  cellBasis    [in]  - cell basis function
           \param  subcellId    [in]  - subcell Id in the cell topology
           \param  subcellOrt   [in]  - orientation number between 0 and 1
 
       */
       template<typename OutputViewType,
-               typename subcellBasisType,
-               typename cellBasisType>
+               typename subcellBasisHostType,
+               typename cellBasisHostType>
       inline
       static void
       getCoeffMatrix_HCURL(OutputViewType &output,
-                           const subcellBasisType subcellBasis,
-                           const cellBasisType cellBasis,
+                           const subcellBasisHostType& subcellBasis,
+                           const cellBasisHostType& cellBasis,
                            const ordinal_type subcellId,
                            const ordinal_type subcellOrt);
 
-      /** \brief  Compute coefficient matrix for HDIV by collocating point values
+
+      /** \brief  Compute orientation matrix for HDIV basis for a given subcell
+          and its reference basis
           
-          \param  output      [out]  - rank 2 coefficient matrix
-          \param  subcellBasis [in]  - subcell basis function 
+          \param  output      [out]  - rank 2 orientation matrix
+          \param  subcellBasis [in]  - reference subcell basis
           \param  cellBasis    [in]  - cell basis function
           \param  subcellId    [in]  - subcell Id in the cell topology
           \param  subcellOrt   [in]  - orientation number between 0 and 1
 
       */
       template<typename OutputViewType,
-               typename subcellBasisType,
-               typename cellBasisType>
+               typename subcellBasisHostType,
+               typename cellBasisHostType>
       inline
       static void
       getCoeffMatrix_HDIV(OutputViewType &output,
-                          const subcellBasisType subcellBasis,
-                          const cellBasisType cellBasis,
+                          const subcellBasisHostType& subcellBasis,
+                          const cellBasisHostType& cellBasis,
                           const ordinal_type subcellId,
                           const ordinal_type subcellOrt);
     };
   }
 
   /**
-    \brief Tools to compute orientations for degrees-of-freedom
+     \brief Tools to compute orientations for degrees-of-freedom
   */ 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   class OrientationTools {
   public:
+
     /** \brief  subcell ordinal, orientation, matrix m x n
-    */
-    typedef Kokkos::View<double****,ExecSpaceType> CoeffMatrixDataViewType;
+     */
+    typedef Kokkos::View<double****,DeviceType> CoeffMatrixDataViewType;
 
     // 
     /** \brief  key :: basis name, order, value :: matrix data view type 
-    */
+     */
     static std::map<std::pair<std::string,ordinal_type>,CoeffMatrixDataViewType> ortCoeffData;
     
   private:
 
-    template<typename BasisType>
+    template<typename BasisHostType>
     inline 
-    static CoeffMatrixDataViewType createCoeffMatrixInternal(const BasisType* basis);
+    static CoeffMatrixDataViewType createCoeffMatrixInternal(const BasisHostType* basis);
     
-    //
-    // High order elements transformation matrices for HGRAD
-    // 
 
-    template<typename BasisType>
+    /** \brief  Compute orientation matrix for HGRAD basis
+     */
+    template<typename BasisHostType>
     inline
-    static void init_HGRAD_QUAD(CoeffMatrixDataViewType matData,
-                               BasisType const *cellBasis);
+    static void init_HGRAD(CoeffMatrixDataViewType matData,
+                           BasisHostType const *cellBasis);
 
-    template<typename BasisType>
+    /** \brief  Compute orientation matrix for HCURL basis
+     */
+    template<typename BasisHostType>
     inline
-    static void init_HGRAD_HEX(CoeffMatrixDataViewType matData,
-                               BasisType const *cellBasis);
+    static void init_HCURL(CoeffMatrixDataViewType matData,
+                           BasisHostType const *cellBasis);
 
-    template<typename BasisType>
+    /** \brief  Compute orientation matrix for HDIV basis
+     */
+    template<typename BasisHostType>
     inline
-    static void init_HGRAD_TRI(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-    
-    template<typename BasisType>
-    inline
-    static void init_HGRAD_TET(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-
-    //
-    // High order elements transformation matrices for HCURL
-    // 
-
-    template<typename BasisType>
-    inline
-    static void init_HCURL_QUAD(CoeffMatrixDataViewType matData,
-                                BasisType const *cellBasis);
-
-    template<typename BasisType>
-    inline
-    static void init_HCURL_HEX(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-
-    template<typename BasisType>
-    inline
-    static void init_HCURL_TRI(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-
-    template<typename BasisType>
-    inline
-    static void init_HCURL_TET(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-
-    //
-    // High order elements transformation matrices for HDIV
-    // 
-    
-    template<typename BasisType>
-    inline
-    static void init_HDIV_QUAD(CoeffMatrixDataViewType matData,
-                               BasisType const *cellBasis);
-
-
-    template<typename BasisType>
-    inline
-    static void init_HDIV_HEX(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-
-    template<typename BasisType>
-    inline
-    static void init_HDIV_TRI(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-
-    template<typename BasisType>
-    inline
-    static void init_HDIV_TET(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
-
-    //
-    // I1 element specialization
-    //
-    
-    inline
-    static void init_EDGE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
-                                         const ordinal_type edgeId);
-    
-    inline
-    static void init_TRI_FACE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
-                                             const ordinal_type faceId);
-    
-    inline
-    static void init_QUAD_FACE_ELEMENT_I1_FEM(CoeffMatrixDataViewType matData,
-                                              const ordinal_type faceId);
+    static void init_HDIV(CoeffMatrixDataViewType matData,
+                          BasisHostType const *cellBasis);
     
   public:
 
     /** \brief  Create coefficient matrix.
-          \param  basis      [in]  - basis type
+        \param  basis      [in]  - basis type
     */
     template<typename BasisType>
     inline 
     static CoeffMatrixDataViewType createCoeffMatrix(const BasisType* basis);
 
     /** \brief  Clear coefficient matrix
-    */
+     */
     inline 
     static void clearCoeffMatrix();
 
-    /** \brief  Check if left-handed. If an element is alinged left, it is an error.
-          \param  pts      [in]  - points
-    */
-    template<typename ptViewType>
-    KOKKOS_INLINE_FUNCTION
-    static bool 
-    isLeftHandedCell(const ptViewType pts);
-
     /** \brief  Compute orientations of cells in a workset
-          \param  elemOrts      [out]  - cell orientations
-          \param  elemNodes      [in]  - node coordinates
-          \param  cellTopo       [in]  - shards cell topology
+        \param  elemOrts      [out]  - cell orientations
+        \param  elemNodes      [in]  - node coordinates
+        \param  cellTopo       [in]  - shards cell topology
     */
     template<typename elemOrtValueType, class ...elemOrtProperties,
              typename elemNodeValueType, class ...elemNodeProperties>
     inline 
     static void
-    getOrientation(      Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+    getOrientation(Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
                    const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                    const shards::CellTopology cellTopo);
 
     /** \brief  Modify basis due to orientation
-          \param  output        [out]  - output array
-          \param  input          [in]  - input array
-          \param  orts           [in]  - orientations
-          \param  basis          [in]  - basis type
+        \param  output        [out]  - output array
+        \param  input          [in]  - input array
+        \param  orts           [in]  - orientations
+        \param  basis          [in]  - basis type
     */
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties,
-             typename ortValueType,    class ...ortProperties,
+             typename OrientationViewType,
              typename BasisType>
     inline
     static void
-    modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
+    modifyBasisByOrientation(Kokkos::DynRankView<outputValueType,outputProperties...> output,
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
-                             const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
-                             const BasisType*  basis);
-
-    template<typename ExecutionSpaceType, typename dofCoordsValueType,
-             typename dofCoeffsValueType, typename BasisType>
-    inline
-    static void
-    getSubCellBases(/**/
-      Teuchos::RCP<Basis<ExecutionSpaceType, dofCoeffsValueType,dofCoordsValueType> >* faceBases,
-      Teuchos::RCP<Basis<ExecutionSpaceType, dofCoeffsValueType,dofCoordsValueType> >& edgeBasis,
-      const BasisType&  basis,
-      EPointType pointType = POINTTYPE_EQUISPACED);
-
-    template<typename dofCoordsValueType, class ...dofCoordsProperties,
-             typename dofCoeffsValueType, class ...dofCoeffsProperties,
-             typename ortValueType,       class ...ortProperties,
-             typename BasisType>
-    inline
-    static void
-    getModifiedDofs(/**/  Kokkos::DynRankView<dofCoordsValueType,dofCoordsProperties...> orientedDofCoords,
-      Kokkos::DynRankView<dofCoeffsValueType,dofCoeffsProperties...> orientedDofCoeffs,
-      const Kokkos::DynRankView<ortValueType,   ortProperties...>    orts,
-      const BasisType& basis,
-      EPointType pointType = POINTTYPE_EQUISPACED);
-
+                             const OrientationViewType orts,
+                             const BasisType * basis);
   };
   
   template<typename T> 
@@ -523,67 +484,3 @@ namespace Intrepid2 {
 #include "Intrepid2_OrientationToolsDefModifyBasis.hpp"
 
 #endif
-
-
-
-
-
-  //   class CoeffMatrix {
-  //   private:
-  //     ordinal_type _m, _n;
-
-  //     Kokkos::View<size_type*,ExecSpaceType> _ap;      //!< pointers to column index and values
-  //     Kokkos::View<ordinal_type*,ExecSpaceType> _aj;   //!< column index compressed format
-  //     Kokkos::View<double*,ExecSpaceType> _ax;         //!< values
-
-  //     inline 
-  //     void createInternalArrays(const ordinal_type m,
-  //                               const ordinal_type n,
-  //                               const size_type nnz) {
-  //       _m = m;
-  //       _n = n;
-        
-  //       _ap = Kokkos::View<size_type*,   SpT>("OrientationTools::CoeffMatrix::RowPtrArray", m+1);
-  //       _aj = Kokkos::View<ordinal_type*,SpT>("OrientationTools::CoeffMatrix::ColsArray",   nnz);
-  //       _ax = Kokkos::View<double*,      SpT>("OrientationTools::CoeffMAtrix::ValuesArray", nnz);
-  //     }
-
-  //   public:
-  //     KOKKOS_INLINE_FUNCTION
-  //     CoeffMatrix()
-  //       : _m(0), _n(0), _ap(), _aj(), _ax() { }
-      
-  //     KOKKOS_INLINE_FUNCTION
-  //     CoeffMatrix(const CoeffMatrix &b) = default;
-
-  //     KOKKOS_INLINE_FUNCTION
-  //     ordinal_type NumRows() const { 
-  //       return _m; 
-  //     }
-
-  //     KOKKOS_INLINE_FUNCTION
-  //     ordinal_type NumCols() const { 
-  //       return _n; 
-  //     }
-
-  //     KOKKOS_INLINE_FUNCTION
-  //     size_type RowPtr(const ordinal_type i) const { 
-  //       return _ap(i); 
-  //     }
-
-  //     KOKKOS_INLINE_FUNCTION
-  //     Kokkos::View<ordinal_type*,ExecSpaceType> ColsInRow(const ordinal_type i) const {
-  //       return Kokkos::subview(_aj, Kokkos::pair<ordinal_type,ordinal_type>(_ap(i), _ap(i+1)));
-  //     }
-
-  //     KOKKOS_INLINE_FUNCTION
-  //     Kokkos::View<double*,ExecSpaceType> ValuesInRow(const ordinal_type i) const {
-  //       return Kokkos::subview(_ax, Kokkos::pair<ordinal_type,ordinal_type>(_ap(i), _ap(i+1)));
-  //     }
-
-  //     KOKKOS_INLINE_FUNCTION
-  //     ordinal_type NumNonZerosInRow(const ordinal_type i) const {
-  //       return (_ap(i+1) - _ap(i));
-  //     }
-  //   };
-

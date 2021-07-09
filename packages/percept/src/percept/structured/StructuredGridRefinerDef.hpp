@@ -47,8 +47,8 @@ namespace percept {
 
     const SGridSizes input_sizes;
     SGridSizes output_sizes;
-    const std::array<UInt,3> loop_ordering; // loop ordering
-    const std::array<UInt,3> access_ordering; // access ordering
+    const int L0, L1, L2; // loop ordering
+    const int A0, A1, A2; // access ordering 
     const Array4D input_xyz;
     Array4D output_xyz;
     int debug;
@@ -64,8 +64,12 @@ namespace percept {
        output_block(output_block_in),
        input_sizes( input_block->m_sizes),
       output_sizes(output_block->m_sizes),
-        loop_ordering(std::move(input_block->m_loop_ordering)),
-      access_ordering(std::move(input_block->m_access_ordering)),
+      L0(input_block->m_loop_ordering[0]),
+      L1(input_block->m_loop_ordering[1]),
+      L2(input_block->m_loop_ordering[2]),
+      A0(input_block->m_access_ordering[0]),
+      A1(input_block->m_access_ordering[1]),
+      A2(input_block->m_access_ordering[2]),
        input_xyz( input_block->m_sgrid_coords),
       output_xyz(output_block->m_sgrid_coords),
       debug(debug_in)
@@ -86,8 +90,6 @@ namespace percept {
     
     void refine()
     {
-      const int L0 = loop_ordering[0], L1 = loop_ordering[1], L2 = loop_ordering[2];
-
       const UInt totalNumNodes =
                          (1+ input_sizes.node_max[L0] - input_sizes.node_min[L0])
                         *(1+ input_sizes.node_max[L1] - input_sizes.node_min[L1])
@@ -102,9 +104,8 @@ namespace percept {
     //    well as coordinates.
 
     KOKKOS_INLINE_FUNCTION
-    void multi_dim_indices_from_index(const UInt& index, std::array<UInt,3>& indx) const
+    void multi_dim_indices_from_index(const UInt& index, UInt indx[3]) const
     {
-      const int L0 = loop_ordering[0], L1 = loop_ordering[1], L2 = loop_ordering[2];
       const UInt sizes[3] = {
         1+ input_sizes.node_max[L0] - input_sizes.node_min[L0],
         1+ input_sizes.node_max[L1] - input_sizes.node_min[L1],
@@ -126,10 +127,8 @@ namespace percept {
       bool ldebug = debug == 3;
       bool ldebug1 = debug == 4;
 
-      std::array<UInt,3> indx{{0,0,0}};
+      UInt indx[3];
       
-      const int A0 = access_ordering[0], A1 = access_ordering[1], A2 = access_ordering[2];
-  
       multi_dim_indices_from_index(index, indx);
 
       UInt oindx[3]{2*(indx[0]-m_index_base)+m_index_base, 2*(indx[1]-m_index_base)+m_index_base, 2*(indx[2]-m_index_base)+m_index_base};

@@ -27,22 +27,9 @@ namespace Tempus {
  *  wishes to modify the solution and/or stepper data during the
  *  Stepper::takeStep, they should use the Modifier class (with care!).
  *
- *  Below is the BackwardEuler algorithm with the locations of the observe calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{DIRK Backward Euler with observe calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
- *    \State \quad {\it observer.observe(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
- *    \State \quad {\it observer.observe(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations for these AppAction calls
+ *  (StepperBackwardEulerAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperBackwardEuler.
  */
 template<class Scalar>
 class StepperBackwardEulerObserverBase

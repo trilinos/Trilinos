@@ -10,6 +10,7 @@
 #define Tempus_WrapperModelEvaluatorBasic_decl_hpp
 
 #include <functional>
+#include "Tempus_config.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 
 namespace Tempus {
@@ -89,7 +90,7 @@ public:
       { return appModel_->get_f_space(); }
 
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int p) const
-      { return appModel_->get_p_space(p); };
+      { return appModel_->get_p_space(p); }
 
     Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int p) const
       { return appModel_->get_p_names(p); }

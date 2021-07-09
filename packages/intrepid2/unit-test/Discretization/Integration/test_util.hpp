@@ -63,8 +63,11 @@ namespace Intrepid2 {
     computeRefVolume(const ordinal_type      numPoints,
                      const cubWeightViewType cubWeights) {
       typename cubWeightViewType::value_type r_val = 0.0;
-      for (auto i=0;i<numPoints;++i)
-        r_val += cubWeights(i);
+      Kokkos::fence();
+      auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
+      for (auto i=0;i<numPoints;++i) {
+        r_val += cubWeights_host(i);
+      }
 
       return r_val;
     }
@@ -81,10 +84,15 @@ namespace Intrepid2 {
                               const ordinal_type zDeg = 0) {
       ValueType r_val = 1.0;
       const ordinal_type polydeg[3] = { xDeg, yDeg, zDeg };
-
       const auto dim = p.extent(0);
+      Kokkos::fence();
+      
+      Kokkos::DynRankView<typename PointViewType::non_const_value_type,
+                          typename PointViewType::execution_space> p_device("p_device", p.extent(0));
+      Kokkos::deep_copy(p_device, p);
+      auto p_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), p_device);
       for (size_type i=0;i<dim;++i) 
-        r_val *= std::pow(p(i),polydeg[i]);
+        r_val *= std::pow(p_host(i),polydeg[i]);
       
       return r_val;
     }
@@ -104,6 +112,8 @@ namespace Intrepid2 {
 
       // get cubature 
       cub.getCubature(cubPoints, cubWeights);
+      auto cubWeights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), cubWeights);
+      Kokkos::fence();
 
       const auto dim  = cub.getDimension();
       const auto npts = cub.getNumPoints();
@@ -111,7 +121,7 @@ namespace Intrepid2 {
 
       for (auto i=0;i<npts;++i) {
         const auto pt = Kokkos::subdynrankview(cubPoints, i, range_type(0, dim));
-        r_val += computeMonomial<ValueType>(pt, xDeg, yDeg, zDeg)*cubWeights(i);
+        r_val += computeMonomial<ValueType>(pt, xDeg, yDeg, zDeg)*cubWeights_host(i);
       }
 
       return r_val;

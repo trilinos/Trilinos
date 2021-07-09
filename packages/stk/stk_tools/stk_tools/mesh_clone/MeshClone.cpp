@@ -143,7 +143,8 @@ void copy_relations(const stk::mesh::BulkData& oldBulk,
                     stk::mesh::Entity newEntity,
                     stk::mesh::BulkData& outputBulk)
 {
-    for(stk::mesh::EntityRank relationRank = stk::topology::NODE_RANK; relationRank < outputBulk.mesh_meta_data().entity_rank_count(); relationRank++)
+    stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(outputBulk.mesh_meta_data().entity_rank_count());
+    for(stk::mesh::EntityRank relationRank = stk::topology::NODE_RANK; relationRank < endRank; relationRank++)
     {
         unsigned numConnected = oldBulk.num_connectivity(oldEntity, relationRank);
         const stk::mesh::Entity* connected = oldBulk.begin(oldEntity, relationRank);
@@ -192,7 +193,7 @@ void copy_relations(const stk::mesh::BulkData& oldBulk,
                     stk::mesh::EntityRank relationRank,
                     stk::mesh::BulkData& outputBulk)
 {
-
+    stk::mesh::OrdinalVector scratch1, scratch2, scratch3;
     for(const stk::mesh::Bucket* bucket : oldBulk.get_buckets(rank, oldSelector))
     {
         if(should_copy_bucket(bucket, outputBulk))
@@ -203,18 +204,21 @@ void copy_relations(const stk::mesh::BulkData& oldBulk,
                 const stk::mesh::Entity* connected = oldBulk.begin(oldEntity, relationRank);
                 const stk::mesh::ConnectivityOrdinal *oldOrds = oldBulk.begin_ordinals(oldEntity, relationRank);
                 const stk::mesh::Permutation *oldPerms = oldBulk.begin_permutations(oldEntity, relationRank);
+                stk::mesh::Entity newEntity = outputBulk.get_entity(oldBulk.entity_key(oldEntity));
                 for(unsigned conIndex = 0; conIndex < numConnected; conIndex++)
                 {
                     if(oldSelector(oldBulk.bucket(connected[conIndex])))
                     {
                         stk::mesh::Entity to = outputBulk.get_entity(oldBulk.entity_key(connected[conIndex]));
-                        stk::mesh::Entity newEntity = outputBulk.get_entity(oldBulk.entity_key(oldEntity));
                         if(outputBulk.is_valid(to) && outputBulk.is_valid(newEntity))
                         {
                             if(oldPerms != nullptr)
-                                outputBulk.declare_relation(newEntity, to, oldOrds[conIndex], oldPerms[conIndex]);
+                                outputBulk.declare_relation(newEntity, to, oldOrds[conIndex],
+                                              oldPerms[conIndex], scratch1, scratch2, scratch3);
                             else
-                                outputBulk.declare_relation(newEntity, to, oldOrds[conIndex]);
+                                outputBulk.declare_relation(newEntity, to, oldOrds[conIndex],
+                                                            stk::mesh::INVALID_PERMUTATION,
+                                                            scratch1, scratch2, scratch3);
                         }
                     }
                 }

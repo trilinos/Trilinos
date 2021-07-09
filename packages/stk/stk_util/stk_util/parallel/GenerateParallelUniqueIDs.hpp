@@ -36,21 +36,24 @@
 #ifndef stk_util_parallel_GenerateParallelUniqueIDs_hpp
 #define stk_util_parallel_GenerateParallelUniqueIDs_hpp
 
-#include "stk_util/parallel/ParallelVectorConcat.hpp" 
-#include "stk_util/parallel/Parallel.hpp" 
-#include "stk_util/parallel/ParallelIndexGapFinder.hpp"
-#include <vector> 
-#include <algorithm> 
-#include <stdexcept>     
-#include <string>                       // for string
-#include <sstream>   
-#include "mpi.h"  
-#include <assert.h>
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+#include <cstdint>                         // for uint64_t
+#include <vector>                          // for vector
 
 namespace stk {
 
+void compute_global_sum_and_max(ParallelMachine comm,
+                                uint64_t numLocalIds,
+                                uint64_t& globalSumNumIds,
+                                uint64_t& globalMaxNumIds);
 
-
+void generate_parallel_ids_above_existing_max(ParallelMachine comm,
+                                              uint64_t numNewIdsLocal,
+                                              uint64_t globalNumIdsRequested,
+                                              uint64_t maxIdsRequested,
+                                              uint64_t availableIds,
+                                              uint64_t globalMaxId,
+                                              std::vector<uint64_t>& newIds);
 
   //--------------------------------------------------------------------------------------------
   //

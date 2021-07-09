@@ -118,8 +118,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
         "-DTPL_ENABLE_MPI=ON"
             "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
-        "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so.3.2.1"
-        "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so.3.2.1"
+        "-DTPL_BLAS_LIBRARIES=/usr/lib64/libblas.so"
+        "-DTPL_LAPACK_LIBRARIES=/usr/lib64/liblapack.so"
        )
 
     #NUMA memory binding doesn't work on rocketman currently; TODO: get libnumactl and enable binding again

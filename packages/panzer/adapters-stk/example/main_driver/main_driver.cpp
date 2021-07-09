@@ -80,12 +80,11 @@
 
 int main(int argc, char *argv[])
 {
-  Kokkos::initialize(argc,argv);
-
   int status = 0;
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, &blackhole);
+  Kokkos::initialize(argc,argv);
 
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
   Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));

@@ -598,39 +598,6 @@ Xpetra_randomize()
     }
 }
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-#if 0
-    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<std::is_same<typename dev_execution_space::memory_space,
-                                                      typename TargetDeviceType::memory_space>::value,
-                                typename dual_view_type::t_dev_um,
-                                typename dual_view_type::t_host_um>::type
-    BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    getLocalView() const
-    {
-        if(std::is_same<typename host_execution_space::memory_space, typename TargetDeviceType::memory_space>::value)
-        {
-            return getHostLocalView();
-        }
-        else
-        {
-            return getDeviceLocalView();
-        }
-    }
-#endif
-
-//    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-//    virtual typename dual_view_type::
-//    t_dev_um BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDeviceLocalView() const
-//    {
-//        typename dual_view_type::t_dev_um test;
-//        return test;
-//    }
-#endif      // HAVE_XPETRA_KOKKOS_REFACTOR
-
-
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
     BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::

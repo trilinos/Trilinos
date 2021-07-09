@@ -123,13 +123,13 @@ public:
 protected:
 
   /**
-   *  \brief The `Kokkos::View` of the owned vector.
+   *  \brief The `PHX::View` of the owned vector.
    */
   typename panzer::kokkos_utils::VectorToViewTraits<Epetra_Vector>::
   View ownedView_;
 
   /**
-   *  \brief The `Kokkos::View` of the ghosted vector.
+   *  \brief The `PHX::View` of the ghosted vector.
    */
   typename panzer::kokkos_utils::VectorToViewTraits<Epetra_Vector>::View
   ghostedView_;

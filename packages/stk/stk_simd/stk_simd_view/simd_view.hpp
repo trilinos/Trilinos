@@ -300,8 +300,8 @@ class View
                                                                               arg_N4 , arg_N5 , arg_N6 , arg_N7 )
     {}
 
-  ~View() {}  
-  
+  KOKKOS_DEFAULTED_FUNCTION ~View() = default;
+
   #define VALID_SIMD_ERROR_MSG "When calling simd::View with a simd::Index on a platform with a simd length not equal to 1, layouts other that simd::LayoutRight<double/float> and simd::LayoutLeft<double/float> result in undefined behavior."
   #define VALID_INDEX_ERROR_MSG "In operator(Index1, Index2, ...) only Index1 may be of simd::Index type.  All other indices must be an integer type."
   #define VALID_NUM_INDICES_ERROR_MSG "Must call simd::View operator(simd::Index, ...) with the same number of arguments as the rank of the simd::View."

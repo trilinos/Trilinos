@@ -422,7 +422,7 @@ namespace {
    */
 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, NonContgGID, SCALAR, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ShyLUBasker, NonContigGID, SCALAR, LO, GO )
   {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef ScalarTraits<SCALAR> ST;
@@ -463,8 +463,7 @@ namespace {
           std::logic_error,
           "ShyLUBasker NonContigGID Test: The non-contiguous map claims to be contiguous.");
 
-      //RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
-      RCP<MAT> A = rcp( new MAT(map,0) );
+      RCP<MAT> A = rcp( new MAT(map,3) );
       A->setObjectLabel("A");
 
       /*

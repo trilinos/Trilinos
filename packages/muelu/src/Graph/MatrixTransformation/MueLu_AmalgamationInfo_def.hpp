@@ -65,14 +65,14 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::UnamalgamateAggregates(const Aggregates& aggregates,
         Teuchos::ArrayRCP<LocalOrdinal>& aggStart, Teuchos::ArrayRCP<GlobalOrdinal>& aggToRowMap) const {
-    int myPid = aggregates.GetMap()->getComm()->getRank();
+    const int myPid = aggregates.GetMap()->getComm()->getRank();
     Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getNodeElementList();
     Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
     Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    LO size = procWinner.size();
-    GO numAggregates = aggregates.GetNumAggregates();
+    const LO size = procWinner.size();
+    const GO numAggregates = aggregates.GetNumAggregates();
 
-    std::vector<LO> sizes(numAggregates);
+    Array<LO> sizes(numAggregates);
     if (stridedblocksize_ == 1) {
       for (LO lnode = 0; lnode < size; ++lnode) {
         LO myAgg = vertex2AggId[lnode];
@@ -93,7 +93,7 @@ namespace MueLu {
       }
     }
     aggStart = ArrayRCP<LO>(numAggregates+1,0);
-    aggStart[0]=0;
+    aggStart[0] = Teuchos::ScalarTraits<LO>::zero();
     for (GO i=0; i<numAggregates; ++i) {
       aggStart[i+1] = aggStart[i] + sizes[i];
     }
@@ -143,7 +143,7 @@ namespace MueLu {
 
 
     // FIXME: Do we need to compute size here? Or can we use existing?
-    LO size = procWinner.size();
+    const LO size = procWinner.size();
 
     std::vector<LO> sizes(numAggregates);
     if (stridedblocksize_ == 1) {
@@ -196,7 +196,34 @@ namespace MueLu {
     }
     // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
 
-  } //UnamalgamateAggregates
+  } //UnamalgamateAggregatesLO
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out,
+      const VerbLevel verbLevel) const
+  {
+    if (!(verbLevel & Debug))
+      return;
+
+    out << "AmalgamationInfo -- Striding information:"
+        << "\n  fullBlockSize = " << fullblocksize_
+        << "\n  blockID = " << blockid_
+        << "\n  stridingOffset = " << nStridedOffset_
+        << "\n  stridedBlockSize = " << stridedblocksize_
+        << "\n  indexBase = " << indexBase_
+        << std::endl;
+
+    out << "AmalgamationInfo -- DOFs to nodes mapping:\n"
+        << "  Mapping of row DOFs to row nodes:" << *rowTranslation_()
+        << "\n\n  Mapping of column DOFs to column nodes:" << *colTranslation_()
+        << std::endl;
+
+    out << "AmalgamationInfo -- row node map:" << std::endl;
+    nodeRowMap_->describe(out, Teuchos::VERB_EXTREME);
+
+    out << "AmalgamationInfo -- column node map:" << std::endl;
+    nodeColMap_->describe(out, Teuchos::VERB_EXTREME);
+  }
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -231,10 +258,20 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeGlobalDOF(GlobalOrdinal const &gNodeID, LocalOrdinal const &k) const {
-    // here, the assumption is, that the node map has the same indexBase as the dof map
-    //                            this is the node map index base                    this is the dof map index base
     GlobalOrdinal gDofIndex = offset_ + (gNodeID-indexBase_)*fullblocksize_ + nStridedOffset_ + k + indexBase_;
     return gDofIndex;
+  }
+
+ template <class LocalOrdinal, class GlobalOrdinal, class Node>
+ LocalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeLocalDOF(LocalOrdinal const &lNodeID, LocalOrdinal const &k) const  {
+   LocalOrdinal lDofIndex = lNodeID*fullblocksize_ + k;
+   return lDofIndex;
+  }
+
+  
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  LocalOrdinal AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>::ComputeLocalNode(LocalOrdinal const &ldofID) const {
+    return (ldofID - ldofID%fullblocksize_) / fullblocksize_;
   }
 
 } //namespace

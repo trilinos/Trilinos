@@ -71,7 +71,7 @@
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
-//  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -150,8 +150,8 @@ int main(int argc, char *argv[]) {
       = ROL::makePtr<StdObjective_ThermalFluids<RealT>>(*parlist);
     ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
       = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,assembler);
-    ROL::Ptr<ROL::SimController<RealT> > stateStore
-      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::VectorController<RealT> > stateStore
+      = ROL::makePtr<ROL::VectorController<RealT>>();
     ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj
       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, stateStore, up, zp, pp, true, false);
 

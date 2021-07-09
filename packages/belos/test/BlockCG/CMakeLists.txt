@@ -39,6 +39,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     "--verbose --filename=A.hb"
     "--verbose --filename=A.hb --pseudo"
     "--verbose --filename=A.hb --use-single-red"
+    "--verbose --filename=A.hb --combine-conv-inner"
+    "--verbose --filename=A.hb --pseudo --combine-conv-inner"
     "--verbose --filename=A.hb --use-single-red --combine-conv-inner"
     )
 

@@ -13,7 +13,15 @@
 #include "Tempus_StepperOperatorSplit_impl.hpp"
 
 namespace Tempus {
+
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperOperatorSplit)
+
+  // Nonmember constructor
+  template Teuchos::RCP<StepperOperatorSplit<double> >
+  createStepperOperatorSplit(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<double> > > appModels,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
+
 }
 
 #endif

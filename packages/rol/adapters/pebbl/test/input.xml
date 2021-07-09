@@ -6,6 +6,7 @@
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />
@@ -26,6 +27,15 @@
       <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
       <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+    </ParameterList>
+    <!-- ===========  POLYHEDRAL PROJECTION INPUTS  =========== -->
+    <ParameterList name="Polyhedral Projection">
+      <Parameter name="Type"               type="string" value="Dai-Fletcher" />
+      <Parameter name="Iteration Limit"    type="int"    value="1000"         />
+      <!--
+      <Parameter name="Absolute Tolerance" type="double" value="1.e-4"   />
+      <Parameter name="Relative Tolerance" type="double" value="1.e-2"   />
+      -->
     </ParameterList>
   </ParameterList>
 
@@ -67,8 +77,9 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
-      <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
+      <Parameter name="Subproblem Model"                     type="string" value="Lin-More"     />
+      <Parameter name="Initial Radius"                       type="double" value="2e1"          />
+      <Parameter name="Maximum Radius"                       type="double" value="5.e8"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
       <Parameter name="Radius Growing Threshold"             type="double" value="0.9"          />
@@ -76,6 +87,24 @@
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
       <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
+      <ParameterList name="Lin-More">
+        <Parameter name="Maximum Number of Minor Iterations" type="int"    value="10"   />
+        <Parameter name="Sufficient Decrease Parameter"      type="double" value="1e-2" />
+        <Parameter name="Relative Tolerance Exponent"        type="double" value="1.1"  />
+        <ParameterList name="Cauchy Point">
+          <Parameter name="Maximum Number of Reduction Steps" type="int"    value="10"    />
+          <Parameter name="Maximum Number of Expansion Steps" type="int"    value="10"    />
+          <Parameter name="Initial Step Size"                 type="double" value="1.0"   />
+          <Parameter name="Normalize Initial Step Size"       type="bool"   value="true"  />
+          <Parameter name="Reduction Rate"                    type="double" value="0.1"   />
+          <Parameter name="Expansion Rate"                    type="double" value="5.0"   />
+          <Parameter name="Decrease Tolerance"                type="double" value="1e-8"  />
+        </ParameterList>
+        <ParameterList name="Projected Search">
+          <Parameter name="Backtracking Rate"       type="double" value="0.5"  />
+          <Parameter name="Maximum Number of Steps" type="int"    value="20"   />
+        </ParameterList>
+      </ParameterList>
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
         <!-- ===========  INEXACT OBJECTIVE VALUE UPDATE  =========== -->
@@ -175,8 +204,8 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"  />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-6"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
     <Parameter name="Iteration Limit"      type="int"    value="200"    />
   </ParameterList>

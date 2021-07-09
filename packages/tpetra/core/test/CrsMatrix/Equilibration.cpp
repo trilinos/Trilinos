@@ -148,8 +148,8 @@ deepCopyFillCompleteCrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
     (! A.isFillComplete (), std::invalid_argument,
      "deepCopyFillCompleteCrsMatrix: Input matrix A must be fillComplete.");
   RCP<crs_matrix_type> A_copy (new crs_matrix_type (A.getCrsGraph ()));
-  auto A_copy_lcl = A_copy->getLocalMatrix ();
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_copy_lcl = A_copy->getLocalMatrixDevice ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   Kokkos::deep_copy (A_copy_lcl.values, A_lcl.values);
   A_copy->fillComplete (A.getDomainMap (), A.getRangeMap ());
   return A_copy;
@@ -166,15 +166,12 @@ testCrsMatrixEquality (bool& success,
   using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
   const mag_type toleranceFactor = 10.0; // factor of eps
 
-  auto A_expected_lcl = A_expected.getLocalMatrix ();
-  auto ptr_h = Kokkos::create_mirror_view (A_expected_lcl.graph.row_map);
-  Kokkos::deep_copy (ptr_h, A_expected_lcl.graph.row_map);
+  auto A_expected_lcl = A_expected.getLocalMatrixHost ();
+  auto ptr_h = A_expected_lcl.graph.row_map;
+  auto expected_val_h = A_expected_lcl.values;
 
-  auto expected_val_h = Kokkos::create_mirror_view (A_expected_lcl.values);
-  Kokkos::deep_copy (expected_val_h, A_expected_lcl.values);
-
-  auto A_actual_lcl = A_actual.getLocalMatrix ();
-  auto actual_val_h = Kokkos::create_mirror_view (A_actual_lcl.values);
+  auto A_actual_lcl = A_actual.getLocalMatrixHost ();
+  auto actual_val_h = A_actual_lcl.values;
   Kokkos::deep_copy (actual_val_h, A_actual_lcl.values);
 
   using size_type = typename decltype (A_actual_lcl.graph)::size_type;
@@ -1074,7 +1071,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1237,7 +1234,7 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1388,18 +1385,21 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
     Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
     auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
     Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+    // Work-around gcc/7.2.0 bug, see PR
+    // https://github.com/trilinos/Trilinos/pull/8031
+    const int myRank_ = myRank;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       using size_type = typename decltype (A_lcl.graph)::size_type;
       for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
-        const val_type expectedUnscaledVal = myRank == 1 ? 0.0 : 1.0;
+        const val_type expectedUnscaledVal = myRank_ == 1 ? 0.0 : 1.0;
         const mag_type rowNorm = gblRowNorms[lclRow];
         const mag_type scalingFactor = assumeSymmetric ?
           KAM::sqrt (rowNorm) : rowNorm;
@@ -1472,7 +1472,7 @@ makeMatrixTestWithExplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1623,7 +1623,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1710,7 +1710,7 @@ makeMatrixTestWithImplicitZeroDiag (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
@@ -1873,22 +1873,25 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);
     Kokkos::deep_copy (ptr_h, A_lcl.graph.row_map);
     auto ind_h = Kokkos::create_mirror_view (A_lcl.graph.entries);
     Kokkos::deep_copy (ind_h, A_lcl.graph.entries);
+    // Work-around gcc/7.2.0 bug, see PR
+    // https://github.com/trilinos/Trilinos/pull/8031
+    const int myRank_ = myRank;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       using size_type = typename decltype (A_lcl.graph)::size_type;
       for (size_type k = ptr_h[lclRow]; k < ptr_h[lclRow+1]; ++k) {
         val_type expectedUnscaledVal = 1.0;
-        if (myRank == 1) {
+        if (myRank_ == 1) {
           expectedUnscaledVal = NaughtyValues<val_type>::infinity ();
         }
-        else if (myRank == 2) {
+        else if (myRank_ == 2) {
           expectedUnscaledVal = NaughtyValues<val_type>::quiet_NaN ();
         }
         const mag_type rowNorm = gblRowNorms[lclRow];
@@ -1992,7 +1995,7 @@ makeMatrixTestWithExplicitInfAndNan (Teuchos::FancyOStream& out,
     Teuchos::RCP<crs_matrix_type> A_copy = deepCopyFillCompleteCrsMatrix (*A);
     A_copy->resumeFill ();
 
-    auto A_lcl = A_copy->getLocalMatrix ();
+    auto A_lcl = A_copy->getLocalMatrixDevice ();
     auto val_h = Kokkos::create_mirror_view (A_lcl.values);
     Kokkos::deep_copy (val_h, A_lcl.values);
     auto ptr_h = Kokkos::create_mirror_view (A_lcl.graph.row_map);

@@ -114,7 +114,7 @@ TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
     stk::mesh::EntityVector nodes;
-    stk::mesh::get_selected_entities(boundaryNodesSelector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), nodes);
+    stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, boundaryNodesSelector, nodes);
 
     double prescribedTemperatureValue = 2.0;
     std::set<stk::mesh::EntityId> boundaryNodeIds;

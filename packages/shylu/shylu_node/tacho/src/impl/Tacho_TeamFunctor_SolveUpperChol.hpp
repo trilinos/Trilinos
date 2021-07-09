@@ -121,7 +121,7 @@ namespace Tacho {
           const ordinal_type goffset = s.gid_col_begin + s.m;
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, n_m),
-             [&](const ordinal_type &i) {
+             [&, goffset](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               //for (ordinal_type i=0;i<n;++i) {
               const ordinal_type row = _gid_colidx(i+goffset);
               for (ordinal_type j=0;j<_nrhs;++j)
@@ -144,16 +144,16 @@ namespace Tacho {
           value_type *aptr = s.buf;
 
           const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
-          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
-          auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
+          const UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs); bptr += m*_nrhs;
 
           const ordinal_type offm = s.row_begin;
           const auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
 
           if (n_m > 0) {
             // update
-            const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-            auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
+            const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); 
+            const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs); 
+
             Gemv<Trans::NoTranspose,GemvAlgoType>
               ::invoke(member, minus_one, AR, bB, one, tT);
             member.team_barrier();
@@ -164,7 +164,7 @@ namespace Tacho {
           // copy to t
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, m*_nrhs),
-             [&](const ordinal_type &k) {
+             [&, m](const ordinal_type &k) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               const ordinal_type i = k%m, j = k/m;
               tT(i,j) = bT(i,j);
             });
@@ -178,14 +178,13 @@ namespace Tacho {
       {
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
         if (n_m > 0) {
-          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
-          auto bB = Kokkos::subview(b, range_type(m, n), Kokkos::ALL());
+          UnmanagedViewType<value_type_matrix> bB(bptr+m*_nrhs, n_m, _nrhs);
 
           // update
           const ordinal_type goffset = s.gid_col_begin + s.m;
           Kokkos::parallel_for
             (Kokkos::TeamVectorRange(member, n_m),
-             [&](const ordinal_type &i) {
+             [&, goffset](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               //for (ordinal_type i=0;i<n;++i) {
               const ordinal_type row = _gid_colidx(i+goffset);
               for (ordinal_type j=0;j<_nrhs;++j)
@@ -203,26 +202,18 @@ namespace Tacho {
     void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
       const value_type one(1), zero(0);
       {
-        const ordinal_type m = s.m, n = s.n; //, n_m = n-m;
+        const ordinal_type m = s.m, n = s.n;
         if (m > 0 && n > 0) {
           value_type *aptr = s.buf;
-          UnmanagedViewType<value_type_matrix> A(aptr, m, n); // aptr += m*n;
-          UnmanagedViewType<value_type_matrix> t(bptr, n, _nrhs); bptr += n*_nrhs;
-          UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
-          Gemv<Trans::NoTranspose,GemvAlgoType>
-            ::invoke(member, one, A, t, zero, b);
-          member.team_barrier();
+
+          const UnmanagedViewType<value_type_matrix> A(aptr, m, n); 
+          const UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs); 
 
           const ordinal_type offm = s.row_begin;
-          auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
+          const auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
 
-          // copy to t
-          Kokkos::parallel_for
-            (Kokkos::TeamVectorRange(member, m*_nrhs),
-             [&](const ordinal_type &k) {
-              const ordinal_type i = k%m, j = k/m;
-              tT(i,j) = b(i,j);
-            });
+          Gemv<Trans::NoTranspose,GemvAlgoType>
+            ::invoke(member, one, A, b, zero, tT);
         }
       }
     }
@@ -231,36 +222,23 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void update_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
       {
-        const ordinal_type m = s.m, n = s.n, n_m = n-m;
-        if (m > 0) {
-          UnmanagedViewType<value_type_matrix> t(bptr, n, _nrhs); bptr += n*_nrhs;
-
-          auto tT = Kokkos::subview(t, range_type(0, m), Kokkos::ALL());
-
+        const ordinal_type m = s.m, n = s.n;
+        UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
+        if (n > 0) {
           const ordinal_type offm = s.row_begin;
-          auto tT_src = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
-
-          // copy to t
+          const ordinal_type goffset = s.gid_col_begin + s.m;
           Kokkos::parallel_for
-            (Kokkos::TeamVectorRange(member, m*_nrhs),
-             [&](const ordinal_type &k) {
-              const ordinal_type i = k%m, j = k/m;
-              tT(i,j) = tT_src(i,j);
+            (Kokkos::TeamVectorRange(member, n),
+             [&,m,goffset,offm](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+              for (ordinal_type j=0;j<_nrhs;++j) {
+                if (i < m) {
+                  b(i,j) = _t(offm+i,j);
+                } else {
+                  const ordinal_type row = _gid_colidx(i-m+goffset);
+                  b(i,j) = _t(row,j);
+                }
+              }
             });
-
-          if (n_m > 0) {
-            auto tB = Kokkos::subview(t, range_type(m, n), Kokkos::ALL());
-            // update
-            const ordinal_type goffset = s.gid_col_begin + s.m;
-            Kokkos::parallel_for
-              (Kokkos::TeamVectorRange(member, n_m),
-               [&](const ordinal_type &i) {
-                //for (ordinal_type i=0;i<n;++i) {
-                const ordinal_type row = _gid_colidx(i+goffset);
-                for (ordinal_type j=0;j<_nrhs;++j)
-                  tB(i,j) = _t(row,j);
-              });
-          }
         }
       }
     }
@@ -282,9 +260,10 @@ namespace Tacho {
         if      (solve_tag_type::variant == 0) solve_var0(member, s, bptr);
         else if (solve_tag_type::variant == 1) solve_var1(member, s, bptr);
         else if (solve_tag_type::variant == 2) solve_var2(member, s, bptr);
-        else printf("Error: abort\n");
+        else 
+          printf("Error: TeamFunctorSolveUpperChol::SolveTag, algorithm variant is not supported\n"); 
       } else if (mode == -1) {
-        printf("Error: abort\n");
+        printf("Error: TeamFunctorSolveUpperChol::SolveTag, computing mode is not determined\n");
       } else {
         // skip
       }
@@ -302,7 +281,8 @@ namespace Tacho {
         if      (update_tag_type::variant == 0) update_var0(member, s, bptr);
         else if (update_tag_type::variant == 1) update_var1(member, s, bptr);
         else if (update_tag_type::variant == 2) update_var2(member, s, bptr);
-        else printf("Error: abort\n");
+        else 
+          printf("Error: TeamFunctorUpdateUpperChol::SolveTag, algorithm variant is not supported\n"); 
       } else {
         // skip
       }
@@ -319,34 +299,3 @@ namespace Tacho {
 }
 
 #endif
-
-
-
-
-// template<typename MemberType>
-// KOKKOS_INLINE_FUNCTION
-// void solve_and_update_recursive(MemberType &member, const ordinal_type sid) const {
-//   update(member, sid);
-//   solve(member, sid);
-
-//   const auto &s = _supernodes(sid);
-//   for (ordinal_type i=0;i<s.nchildren;++i)
-//     solve_and_update_recursive(member, s.children[i]);
-// }
-
-// template<typename MemberType>
-// KOKKOS_INLINE_FUNCTION
-// void operator()(const SolveUpdateTag &, const MemberType &member) const {
-//   const ordinal_type p = _pbeg + member.league_rank();
-//   const ordinal_type sid = _level_sids(p);
-//   const ordinal_type mode = _compute_mode(sid);
-
-//   // supernodes below this level are all solved and updated
-//   if (p < _pend && mode == 2) {
-//     solve_and_update_recursive(member, sid);
-//   } else if (mode == -1) {
-//     printf("Error: abort\n");
-//   } else {
-//     // skip
-//   }
-// }

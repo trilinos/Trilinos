@@ -95,15 +95,20 @@ initialize(const Teuchos::RCP<const GlobalIndexer> & ugi,
   ownedFiltered.putScalar(0.0);
   ghostedFiltered.putScalar(0.0);
 
-  for(panzer::GlobalOrdinal f : filtered) {
-    bool isOwned = std::find(baseOwned.begin(),baseOwned.end(),f)!=baseOwned.end();
-    bool isGhosted = std::find(baseGhosted.begin(),baseGhosted.end(),f)!=baseGhosted.end();
- 
-    if(isOwned)
-      ownedFiltered.replaceGlobalValue(f,1.0);
-    else if(isGhosted)
-      ghostedFiltered.replaceGlobalValue(f,1.0);
-    // else no one cares...
+  {
+    auto ownedFiltered_host = ownedFiltered.getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto ghostedFiltered_host = ghostedFiltered.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+    for(panzer::GlobalOrdinal f : filtered) {
+      bool isOwned = std::find(baseOwned.begin(),baseOwned.end(),f)!=baseOwned.end();
+      bool isGhosted = std::find(baseGhosted.begin(),baseGhosted.end(),f)!=baseGhosted.end();
+
+      if(isOwned)
+        ownedFiltered_host(ownedMap->getLocalElement(f),0) = 1.0;
+      else if(isGhosted)
+        ghostedFiltered_host(ghostedMap->getLocalElement(f),0) = 1.0;
+      // else no one cares...
+    }
   }
 
   Export exporter(ghostedMap,ownedMap);

@@ -1,0 +1,132 @@
+#!/bin/sh
+
+#
+# Configured inputs
+#
+
+# Base install dir and subdirs where last element in array gives CMAKE_INSTALL_PREFIX
+SET(projectInstallBaseDir "@PROJECT_SET_GROUP_AND_PERMISSIONS_ON_INSTALL_BASE_DIR@")
+SET(projectSubdirPathsArray "@PROJECT_SUBDIR_PATHS_ARRAY@")
+# Group and permissions
+SET(PROJECT_MAKE_INSTALL_GROUP "@PROJECT_MAKE_INSTALL_GROUP@")
+SET(PROJECT_MAKE_INSTALL_PERMS_CHANGE "@PROJECT_MAKE_INSTALL_PERMS_CHANGE@")
+
+#
+# Helper functions
+#
+
+
+SET(CHMOD_CHGRP_IDX 0)
+
+
+FUNCTION(ECHO_AND_RUN_CMND)
+  STRING(REPLACE ";" " " CMND_STR "${ARGN}")
+  MESSAGE(STATUS "${CHMOD_CHGRP_IDX}: Running: ${CMND_STR}")
+  EXECUTE_PROCESS(COMMAND ${ARGN} RESULT_VARIABLE RTN_CODE)
+  IF (NOT RTN_CODE EQUAL 0)
+    MESSAGE(SEND_ERROR "ERROR: Above command failed!")
+  ENDIF()
+ENDFUNCTION()
+
+
+FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
+
+  IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    SET(STAT_ARGS "-f%Su")  # MacOSX stat
+  ELSE()
+    SET(STAT_ARGS "-c%U")  # BinUtils stat
+  ENDIF()
+  # NOTE: Above, we can't have a space between the '-f' and '%Su' strings or
+  # the '-c' and '%U' strings.  If you do, then you get a single space at the
+  # beginning of the returned owner name as ' <dirOwner>' instead of
+  # '<dirOwner>'.  The automated tests on Linux and MacOSX don't pass if you
+  # don't have it this way.
+
+  EXECUTE_PROCESS(COMMAND stat ${STAT_ARGS} "${dirPath}"
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE  dirOwner)
+
+  IF (NOT "${dirOwner}" STREQUAL "${CURRENT_USER_RUNNING_INSTALL}")
+
+    MESSAGE(STATUS "${CHMOD_CHGRP_IDX}: NOTE: Not calling chgrp and chmod on ${dirPath} since owner '${dirOwner}' != current owner '${CURRENT_USER_RUNNING_INSTALL}'!")
+
+  ELSE()
+
+    IF (NOT "${PROJECT_MAKE_INSTALL_GROUP}" STREQUAL "")
+      ECHO_AND_RUN_CMND(
+        chgrp ${recurseFlag} ${PROJECT_MAKE_INSTALL_GROUP} "${dirPath}")
+    ENDIF()
+
+    IF (NOT "${PROJECT_MAKE_INSTALL_PERMS_CHANGE}" STREQUAL "")
+      ECHO_AND_RUN_CMND(
+        chmod ${recurseFlag} ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} "${dirPath}")
+    ENDIF()
+
+  ENDIF()
+
+  MATH(EXPR CHMOD_CHGRP_IDX "${CHMOD_CHGRP_IDX}+1")
+  SET(CHMOD_CHGRP_IDX ${CHMOD_CHGRP_IDX} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# Executable script
+#
+
+
+IF (EXISTS "${projectInstallBaseDir}")
+
+  EXECUTE_PROCESS(COMMAND whoami
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE  CURRENT_USER_RUNNING_INSTALL)
+
+  LIST(LENGTH projectSubdirPathsArray numSubDirs)
+
+  # Get projectSubdirPathsArrayLessOne and cmakeInstallPrefix
+  SET(projectSubdirPathsArrayLessOne "${projectSubdirPathsArray}")
+  IF (numSubDirs GREATER 0)
+    LIST(REMOVE_AT projectSubdirPathsArrayLessOne -1)
+  ENDIF()
+
+  # Loop over base dirs and set group and permissions and set cmakeInstallPrefix
+  SET(dirPath "${projectInstallBaseDir}")
+  IF (numSubDirs EQUAL 0)
+    # The base dir is cmakeInstallPrefix
+    SET(cmakeInstallPrefix "${dirPath}")
+  ELSE()
+    # Non-recursive set of the group and permissions
+    SET_DIR_OWNER_AND_PERMS("${dirPath}" "")
+    FOREACH(subDirEle ${projectSubdirPathsArrayLessOne})
+      SET(dirPath "${dirPath}/${subDirEle}")
+      SET_DIR_OWNER_AND_PERMS("${dirPath}" "")
+    ENDFOREACH()
+    # Append last subdir which gives cmakeInstallPrefix
+    LIST(GET projectSubdirPathsArray -1 lastSubdir)
+    SET(cmakeInstallPrefix "${dirPath}/${lastSubdir}")
+ ENDIF()
+
+  # Recursive set of group and permsisions on cmakeInstallPrefix
+  SET_DIR_OWNER_AND_PERMS("${cmakeInstallPrefix}" "-R")
+
+ELSE()
+
+  MESSAGE(FATAL_ERROR
+    ""
+    "*** ERROR: The directory:"
+    "***"
+    "***   ${projectInstallBaseDir}"
+    "***"
+    "*** does not exist so can't fix group and permissions!"
+    "***"
+    ""
+    )
+
+ENDIF()
+
+# NOTE: Above, we had to change from using the var name 'CMAKE_INSTALL_PREFIX'
+# as the local variable name to 'cmakeinstallPrefix' because it turns out that
+# the 'cmake_install.cmake' script that CMake generates also uses and sets the
+# variable 'CMAKE_INSTALL_PREFIX'!  Or, we could have created a function and
+# run this code in a function and that would avoid the global namespace as
+# well.

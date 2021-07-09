@@ -45,7 +45,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
-#include "stk_mesh/base/NgpField.hpp"
+#include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include "stk_util/util/SortAndUnique.hpp"
 
@@ -292,26 +292,35 @@ void FieldBaseImpl::verify_and_clean_restrictions(const Part& superset, const Pa
   //with another restriction.
   //If they are, make sure they are compatible and remove the subset restrictions.
   PartVector scratch1, scratch2;
+  const FieldRestriction* restrData = restrs.data();
+  std::vector<unsigned> scratch;
   for (size_t r = 0; r < restrs.size(); ++r) {
-    FieldRestriction const& curr_restriction = restrs[r];
+    FieldRestriction const& curr_restriction = restrData[r];
 
     if (curr_restriction.selector()(subset)) {
-      bool delete_me = false;
-      for (size_t i = 0, ie = restrs.size(); i < ie; ++i) {
-        FieldRestriction const& check_restriction = restrs[i];
-        if (i != r &&
-            check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity() &&
-            check_restriction.selector()(subset) &&
-            is_subset(curr_restriction.selector(), check_restriction.selector(), scratch1, scratch2)) {
-          ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
-                           "Incompatible field restrictions for parts "<< superset.name() << " and "<< subset.name());
-          delete_me = true;
-          break;
-        }
+      scratch.push_back(r);
+    }
+  }
+
+  for (size_t r = 0; r < scratch.size(); ++r) {
+    FieldRestriction const& curr_restriction = restrData[scratch[r]];
+
+    bool delete_me = false;
+    for (size_t i = 0, ie = scratch.size(); i < ie; ++i) {
+      FieldRestriction const& check_restriction = restrData[scratch[i]];
+      if (i != r &&
+          check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity() &&
+          is_subset(curr_restriction.selector(), check_restriction.selector(), scratch1, scratch2)) {
+        ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
+                         "Incompatible field restrictions for parts "<< superset.name() << " and "<< subset.name());
+        delete_me = true;
+        break;
       }
-      if (delete_me) {
-        restrs.erase(restrs.begin() + r);
-        --r;
+    }
+    if (delete_me) {
+      restrs.erase(restrs.begin() + scratch[r]);
+      for(unsigned j=r+1; j<scratch.size(); ++j) {
+        --scratch[j];
       }
     }
   }
@@ -378,6 +387,22 @@ FieldBaseImpl::modify_on_device() const
 }
 
 void
+FieldBaseImpl::modify_on_host(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_host(s);
+  }
+}
+
+void
+FieldBaseImpl::modify_on_device(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_device(s);
+  }
+}
+
+void
 FieldBaseImpl::sync_to_host() const
 {
   if (m_ngpField != nullptr) {
@@ -393,6 +418,30 @@ FieldBaseImpl::sync_to_device() const
   }
 }
 
+void
+FieldBaseImpl::clear_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_sync_state();
+  }
+}
+
+void
+FieldBaseImpl::clear_host_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_host_sync_state();
+  }
+}
+
+void
+FieldBaseImpl::clear_device_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_device_sync_state();
+  }
+}
+
 NgpFieldBase *
 FieldBaseImpl::get_ngp_field() const
 {
@@ -402,10 +451,17 @@ FieldBaseImpl::get_ngp_field() const
 void
 FieldBaseImpl::set_ngp_field(NgpFieldBase * ngpField) const
 {
-  if (m_ngpField != nullptr) {
-    delete m_ngpField;
-  }
+  ThrowRequireMsg(m_ngpField == nullptr || m_ngpField == ngpField,
+                  "Error: Only one NgpField may be set on a StkField(" << m_name << ")");
   m_ngpField = ngpField;
+}
+
+void
+FieldBaseImpl::fence() const
+{
+  if(m_ngpField != nullptr) {
+    m_ngpField->fence();
+  }
 }
 
 size_t
@@ -432,6 +488,7 @@ FieldBaseImpl::increment_num_syncs_to_device() const
   ++m_numSyncsToDevice;
 }
 
+
 //----------------------------------------------------------------------
 
 std::ostream & operator << ( std::ostream & s , const FieldBaseImpl & field )
@@ -448,23 +505,6 @@ std::ostream & operator << ( std::ostream & s , const FieldBaseImpl & field )
   s << "\" , #states = " ;
   s << field.number_of_states();
   s << " ]" ;
-  return s ;
-}
-
-std::ostream & print( std::ostream & s ,
-                      const char * const b ,
-                      const FieldBase & field )
-{
-  const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
-  s << field.name() ;
-  s << " {" ;
-  for ( FieldBase::RestrictionVector::const_iterator
-        i = rMap.begin() ; i != rMap.end() ; ++i ) {
-    s << std::endl << b << "  " ;
-    i->print( s, i->selector(), field.field_array_rank() );
-    s << std::endl;
-  }
-  s << std::endl << b << "}" ;
   return s ;
 }
 

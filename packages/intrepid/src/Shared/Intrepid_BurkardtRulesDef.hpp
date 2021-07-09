@@ -48,10 +48,6 @@
     \author Created by D. Kouri and D. Ridzal.
  */
 
-#ifdef _MSC_VER
-#include "winmath.h"
-#endif
-
 //# include <cstdlib>
 //# include <iomanip>
 //# include <iostream>

@@ -416,8 +416,8 @@ ENDFUNCTION()
 # By default, an install target for the library is created using
 # ``INSTALL(TARGETS <libTargetName> ...)`` to install into the directory
 # ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
-# ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
-# time`_).  However, this install target will not get created if
+# ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix`_).
+# However, this install target will not get created if
 # `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE`` and
 # ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
 # target will get added.  Also, this install target will *not* get added if
@@ -430,10 +430,9 @@ ENDFUNCTION()
 # `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE``.  If this
 # install target is added, then the headers get installed into the flat
 # directory ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/`` (default is
-# ``${CMAKE_INSTALL_PREFIX}/include/``, see `Setting the install prefix at
-# configure time`_).  If ``HEADERS_INSTALL_SUBDIR`` is set, then the headers
-# will be installed under
-# ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/<headerssubdir>/``.
+# ``${CMAKE_INSTALL_PREFIX}/include/``, see `Setting the install prefix`_).
+# If ``HEADERS_INSTALL_SUBDIR`` is set, then the headers will be installed
+# under ``${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/<headerssubdir>/``.
 #
 # Note that an install target will *not* get created for the headers listed in
 # ``NOINSTALLHEADERS``.
@@ -863,6 +862,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     ENDIF()
 
     TARGET_LINK_LIBRARIES(${LIBRARY_NAME}  ${LINK_LIBS})
+
+    IF (${PROJECT_NAME}_CXX_STANDARD_FEATURE)
+      TARGET_COMPILE_FEATURES(${LIBRARY_NAME} PUBLIC "${${PROJECT_NAME}_CXX_STANDARD_FEATURE}")
+    ENDIF ()
 
     # Add to the install target
 

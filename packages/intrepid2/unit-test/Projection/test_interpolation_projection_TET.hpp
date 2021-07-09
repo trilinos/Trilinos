@@ -84,6 +84,9 @@
 
 #define Intrepid2_Experimental
 
+//this allows to reduce cost of the tests.
+//undefine when debugging/developing
+#define RANDOMLY_PICK_ELEM_PERMUTATION
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -108,10 +111,14 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename ValueType, typename DeviceType>
 int InterpolationProjectionTet(const bool verbose) {
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+  using ExecSpaceType = typename DeviceType::execution_space;
+  using MemSpaceType = typename DeviceType::memory_space;
+
+  using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
+
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;
@@ -125,16 +132,29 @@ int InterpolationProjectionTet(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-  typedef Kokkos::DynRankView<ordinal_type,HostSpaceType> DynRankViewIntHost;
+  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
 
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  using DynRankViewIntHost = Kokkos::DynRankView<ordinal_type,HostSpaceType>;
+
+  *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
   *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
   *outStream << "\n";
 
   int errorFlag = 0;
   const ValueType tol = tolerence();
+
+  bool pickTest = false;
+  int elemPermutation=0, sharedSidePermutation=0;
+
+#ifdef  RANDOMLY_PICK_ELEM_PERMUTATION
+  pickTest = true;
+  /* initialize random seed: */
+  std::srand (std::time(NULL));
+  int configuration = std::rand() % 12;
+  elemPermutation = configuration % 4;
+  sharedSidePermutation = configuration/4;
+  *outStream << "Randomly picked configuration (tet premutation, shared face permutation): (" << elemPermutation << ", " <<sharedSidePermutation << ")" << std::endl;
+#endif
 
   //target functions and their derivatives
 
@@ -194,11 +214,12 @@ int InterpolationProjectionTet(const bool verbose) {
 
   typedef std::array<ordinal_type,2> edgeType;
   typedef std::array<ordinal_type,3> faceType;
-  typedef CellTools<DeviceSpaceType> ct;
-  typedef OrientationTools<DeviceSpaceType> ots;
-  typedef Experimental::ProjectionTools<DeviceSpaceType> pts;
-  typedef FunctionSpaceTools<DeviceSpaceType> fst;
-  typedef Experimental::LagrangianInterpolation<DeviceSpaceType> li;
+  typedef CellTools<DeviceType> ct;
+  typedef OrientationTools<DeviceType> ots;
+  typedef Experimental::ProjectionTools<DeviceType> pts;
+  typedef FunctionSpaceTools<DeviceType> fst;
+  typedef Experimental::LagrangianInterpolation<DeviceType> li;
+  using  basisType = Basis<DeviceType,ValueType,ValueType>;
 
   constexpr ordinal_type dim = 3;
   constexpr ordinal_type numCells = 2;
@@ -206,12 +227,19 @@ int InterpolationProjectionTet(const bool verbose) {
   constexpr ordinal_type numTotalVertexes = 5;
 
   ValueType  vertices_orig[numTotalVertexes][dim] = {{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,1,1}};
-  ordinal_type tets_orig[numCells][numElemVertexes] = {{0,1,2,3},{1,2,3,4}};  //common face is {1,2,3}
-  ordinal_type tets_rotated[numCells][numElemVertexes];
+  ordinal_type cells_orig[numCells][numElemVertexes] = {{0,1,2,3},{1,2,3,4}};  //common face is {1,2,3}
+  ordinal_type cells_rotated[numCells][numElemVertexes];
   faceType common_face = {{1,2,3}};
   std::set<edgeType> common_edges;
   common_edges.insert(edgeType({{1,2}})); common_edges.insert(edgeType({{1,3}})); common_edges.insert(edgeType({{2,3}}));
   const ordinal_type max_degree = 4;
+
+  //using CG_NBasis = NodalBasisFamily<DeviceType,ValueType,ValueType>;
+  using CG_DNBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
+  std::vector<basisType*> basis_set;
+
+  shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >());
+  ordinal_type numNodesPerElem = cellTopo.getNodeCount();
 
   *outStream
   << "===============================================================================\n"
@@ -227,21 +255,27 @@ int InterpolationProjectionTet(const bool verbose) {
 
     ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4};
 
+    int sharedSideCount = 0;
     do {
+      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+        continue;
+
       ordinal_type orderback[numTotalVertexes];
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
       ValueType vertices[numTotalVertexes][dim];
-      ordinal_type tets[numCells][numElemVertexes];
-      std::copy(&tets_orig[0][0], &tets_orig[0][0]+numCells*numElemVertexes, &tets_rotated[0][0]);
+      ordinal_type cells[numCells][numElemVertexes];
+      std::copy(&cells_orig[0][0], &cells_orig[0][0]+numCells*numElemVertexes, &cells_rotated[0][0]);
 
-      for (ordinal_type shift=0; shift<1; ++shift) {
-        std::rotate_copy(&tets_orig[0][0], &tets_orig[0][0]+shift, &tets_orig[0][0]+4, &tets_rotated[0][0]);
+      for (ordinal_type shift=0; shift<4; ++shift) {
+        std::rotate_copy(&cells_orig[0][0], &cells_orig[0][0]+shift, &cells_orig[0][0]+4, &cells_rotated[0][0]);
+        if(pickTest && (shift != elemPermutation))
+          continue;
 
         for(ordinal_type i=0; i<numCells;++i)
           for(ordinal_type j=0; j<numElemVertexes;++j)
-            tets[i][j] = reorder[tets_rotated[i][j]];
+            cells[i][j] = reorder[cells_rotated[i][j]];
 
         for(ordinal_type i=0; i<numTotalVertexes;++i)
           for(ordinal_type d=0; d<dim;++d)
@@ -249,22 +283,20 @@ int InterpolationProjectionTet(const bool verbose) {
 
         *outStream <<  "Considering Tet 0: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[0][j] << " ";
+          *outStream << cells[0][j] << " ";
         *outStream << "] and Tet 1: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[1][j] << " ";
+          *outStream << cells[1][j] << " ";
         *outStream << "]\n";
 
-        shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-        shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
-        shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
-
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, tet.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, numNodesPerElem, dim);
+        auto hostPhysVertexes = Kokkos::create_mirror_view(physVertexes);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+          for(ordinal_type j=0; j<numNodesPerElem; ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[tets[i][j]][k];
+              hostPhysVertexes(i,j,k) = vertices[cells[i][j]][k];
+        deep_copy(physVertexes, hostPhysVertexes);
 
         //computing common face and edges
         ordinal_type faceIndex[numCells];
@@ -276,16 +308,16 @@ int InterpolationProjectionTet(const bool verbose) {
           //bool faceOrientation[numCells][4];
           for(ordinal_type i=0; i<numCells; ++i) {
             //compute faces' tangents
-            for (std::size_t is=0; is<tet.getSideCount(); ++is) {
-              for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
-                face[k]= tets_rotated[i][tet.getNodeMap(2,is,k)];
+            for (std::size_t is=0; is<cellTopo.getSideCount(); ++is) {
+              for (std::size_t k=0; k<cellTopo.getNodeCount(2,is); ++k)
+                face[k]= cells_rotated[i][cellTopo.getNodeMap(2,is,k)];
               std::sort(face.begin(),face.end());
               if(face == common_face) faceIndex[i]=is;
             }
             //compute edges' tangents
-            for (std::size_t ie=0; ie<tet.getEdgeCount(); ++ie) {
-              for (std::size_t k=0; k<tet.getNodeCount(1,ie); ++k)
-                edge[k]= tets_rotated[i][tet.getNodeMap(1,ie,k)];
+            for (std::size_t ie=0; ie<cellTopo.getEdgeCount(); ++ie) {
+              for (std::size_t k=0; k<cellTopo.getNodeCount(1,ie); ++k)
+                edge[k]= cells_rotated[i][cellTopo.getNodeMap(1,ie,k)];
               std::sort(edge.begin(),edge.end());
               auto it=common_edges.find(edge);
               if(it !=common_edges.end()){
@@ -297,339 +329,403 @@ int InterpolationProjectionTet(const bool verbose) {
         }
 
         // compute orientations for cells (one time computation)
-        DynRankViewIntHost elemNodes(&tets[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-        ots::getOrientation(elemOrts, elemNodes, tet);
+        DynRankViewIntHost elemNodesHost(&cells[0][0], numCells, numElemVertexes);
+        auto elemNodes = Kokkos::create_mirror_view_and_copy(MemSpaceType(),elemNodesHost);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
+        ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
         for (ordinal_type degree=1; degree <= max_degree; degree++) {
-
-          Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType>> basisPtr;
-
+          basis_set.clear();
           if(degree==1)
-            basisPtr = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          else
-            basisPtr = Teuchos::rcp(new Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType>(degree));
+            basis_set.push_back(new Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType>());
+          //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(degree));
+          basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(degree,POINTTYPE_WARPBLEND));
 
-          ordinal_type basisCardinality = basisPtr->getCardinality();
+          for (auto basisPtr:basis_set) {
 
-          //compute DofCoords Oriented
-          DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
-          DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
-          DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
+            auto name = basisPtr->getName();
+            *outStream << " " << name <<  ": " << degree << std::endl;
+            ordinal_type basisCardinality = basisPtr->getCardinality();
 
-          //compute Lagrangian Interpolation of fun
-          {
-            li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr.get(), POINTTYPE_EQUISPACED, elemOrts);
-            Kokkos::fence();
-                *outStream << "\n\nFunction DOFs for Tet 0 are:";
-                for(ordinal_type j=0;j<basisCardinality;j++)
-                  *outStream << " " << j << " " << dofCoeffsPhys(0,j) << " (" << dofCoordsOriented(0,j,0) << ", " << dofCoordsOriented(0,j,1) << ", " << dofCoordsOriented(0,j,2) <<").   ";
-                *outStream << "\nFunction DOFs for Tet 1 are:";
-                for(ordinal_type j=0;j<basisCardinality;j++)
-                  *outStream << " " << j << " " << dofCoeffsPhys(1,j) << " (" << dofCoordsOriented(1,j,0) << ", " << dofCoordsOriented(1,j,1) << ", " << dofCoordsOriented(1,j,2) <<").   ";
-            //Compute physical Dof Coordinates
+            //compute DofCoords Oriented
+            DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
+            DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
+            DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
+
+            //compute Lagrangian Interpolation of fun
             {
-              Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-              DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
-              for(ordinal_type i=0; i<numCells; ++i)
-                for(ordinal_type d=0; d<dim; ++d) {
-                  auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-                  auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-                  tetLinearBasis.getValues(outView, inView);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffsPhys, basisPtr, elemOrts);
 
-                  for(ordinal_type j=0; j<basisCardinality; ++j)
-                    for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                      physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
-                }
-            }
-
-            Fun fun;
-
-            for(ordinal_type i=0; i<numCells; ++i) {
-              for(ordinal_type j=0; j<basisCardinality; ++j)
-                funAtDofCoords(i,j) += fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2));
-            }
-
-            li::getBasisCoeffs(basisCoeffsLI, funAtDofCoords, dofCoeffsPhys);
-            Kokkos::fence();
-          }
-
-          //Testing Kronecker property of basis functions
-          {
-            for(ordinal_type i=0; i<numCells; ++i) {
-              DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
-              DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-              DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-              auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-              auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
-              basisPtr->getValues(outView, inView);
-
-              // modify basis values to account for orientations
-              ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                  basisValuesAtDofCoords,
-                  elemOrts,
-                  basisPtr.get());
-
-              // transform basis values
-              fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
-                  basisValuesAtDofCoordsOriented);
-
-
-              for(ordinal_type k=0; k<basisCardinality; ++k) {
+              //Compute physical Dof Coordinates
+              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &i) {
+                Fun fun;
+                auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
                 for(ordinal_type j=0; j<basisCardinality; ++j){
-                  ValueType dofValue = transformedBasisValuesAtDofCoordsOriented(i,k,j) * dofCoeffsPhys(i,j);
-                  if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
-                  }
-                  if ( k!=j && std::abs( dofValue ) > tol ) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+                  auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
+                  Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
+                  for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                    for(ordinal_type d=0; d<dim; ++d)
+                      physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+
+                  funAtDofCoords(i,j) += fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2));
+                }
+              });
+
+              li::getBasisCoeffs(basisCoeffsLI, funAtDofCoords, dofCoeffsPhys);
+              Kokkos::fence();
+            }
+
+            //Testing Kronecker property of basis functions
+            {
+              for(ordinal_type i=0; i<numCells; ++i) {
+                DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
+                DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+                DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+                auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
+                auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
+                basisPtr->getValues(outView, inView);
+
+                // modify basis values to account for orientations
+                ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                    basisValuesAtDofCoords,
+                    elemOrts,
+                    basisPtr);
+
+                // transform basis values
+                fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
+                    basisValuesAtDofCoordsOriented);
+
+
+                auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), transformedBasisValuesAtDofCoordsOriented);
+                auto hostDofCoeffsPhys = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffsPhys);
+                ExecSpaceType().fence();
+                for(ordinal_type k=0; k<basisCardinality; ++k) {
+                  for(ordinal_type j=0; j<basisCardinality; ++j){
+                    ValueType dofValue = hostBasisValues(i,k,j) * hostDofCoeffsPhys(i,j);
+                    if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
+                      errorFlag++;
+                      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                      *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
+                    }
+                    if ( k!=j && std::abs( dofValue ) > tol ) {
+                      errorFlag++;
+                      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                      *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+                    }
                   }
                 }
               }
             }
-          }
 
-          //check that fun values are consistent on common face dofs
-          {
-            bool areDifferent(false);
-            auto numFaceDOFs = basisPtr->getDofCount(2,0);
-            for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
-            }
-
-            if(areDifferent) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-              *outStream << "Function DOFs for Tet 0 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-              *outStream << "\nFunction DOFs for Tet 1 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
-              *outStream << std::endl;
-            }
-          }
-
-          //check that fun values are consistent on common edges dofs
-          {
-            bool areDifferent(false);
-            auto numEdgeDOFs = basisPtr->getDofCount(1,0);
-            for(std::size_t iEdge=0;iEdge<common_edges.size();iEdge++) {
-              for(ordinal_type j=0;j<numEdgeDOFs && !areDifferent;j++) {
-                areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j))
-                    - basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
+            //check that fun values are consistent on common face dofs
+            auto hostBasisCoeffsLI = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsLI);
+            {
+              bool areDifferent(false);
+              auto numFaceDOFs = basisPtr->getDofCount(2,0);
+              for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
+                areDifferent = std::abs(hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
+                    - hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
               }
-              if(areDifferent)
-              {
+
+              if(areDifferent) {
+                auto hostPhysDofCoords = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), physDofCoords);
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                //*outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-                //*outStream << "Function DOFs for Tet 0 are:";
-                //for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                //  *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
-                //*outStream << "\nFunction DOFs for Tet 1 are:";
-                //for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                //  *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
-                //*outStream << std::endl;
+                *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
+                *outStream << "Function DOFs for Tet 0 are:";
+                for(ordinal_type j=0;j<numFaceDOFs;j++)
+                  *outStream << " " << hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
+                *outStream << "\nFunction DOFs for Tet 1 are:";
+                for(ordinal_type j=0;j<numFaceDOFs;j++)
+                  *outStream << " " << hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
+                *outStream << std::endl;
               }
             }
-          }
 
-          //check that fun values at reference points coincide with those computed using basis functions
-          DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-          DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-          DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
-
-          for (ordinal_type ic = 0; ic < numCells; ++ic)
-            basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
-
-          // modify basis values to account for orientations
-          ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-              basisValuesAtDofCoordsCells,
-              elemOrts,
-              basisPtr.get());
-
-          // transform basis values
-          // transform basis values
-          fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
-              basisValuesAtDofCoordsOriented);
-
-          DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality);
-          for(ordinal_type i=0; i<numCells; ++i) {
-            ValueType error=0;
-            for(ordinal_type j=0; j<basisCardinality; ++j) {
-              for(ordinal_type k=0; k<basisCardinality; ++k)
-                funAtDofCoordsOriented(i,j) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j);
-
-              error = std::max(std::abs( funAtDofCoords(i,j) - funAtDofCoordsOriented(i,j)), error);
+            //check that fun values are consistent on common edges dofs
+            {
+              bool areDifferent(false);
+              auto numEdgeDOFs = basisPtr->getDofCount(1,0);
+              for(std::size_t iEdge=0;iEdge<common_edges.size();iEdge++) {
+                for(ordinal_type j=0;j<numEdgeDOFs && !areDifferent;j++) {
+                  areDifferent = std::abs(hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j))
+                      - hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
+                }
+                if(areDifferent)
+                {
+                  errorFlag++;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                  *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
+                  *outStream << "Function DOFs for Tet 0 are:";
+                  for(ordinal_type j=0;j<numEdgeDOFs;j++)
+                    *outStream << " " << hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
+                  *outStream << "\nFunction DOFs for Tet 1 are:";
+                  for(ordinal_type j=0;j<numEdgeDOFs;j++)
+                    *outStream << " " << hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
+                  *outStream << std::endl;
+                }
+              }
             }
 
-            if(error>100*tol) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function values at reference points differ from those computed using basis functions of Tet " << i << "\n";
-              *outStream << "Function values at reference points are:\n";
+            //check that fun values at reference points coincide with those computed using basis functions
+            DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+            DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+            DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
+
+            for (ordinal_type ic = 0; ic < numCells; ++ic)
+              basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+
+            // modify basis values to account for orientations
+            ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                basisValuesAtDofCoordsCells,
+                elemOrts,
+                basisPtr);
+
+            // transform basis (pullback)
+            fst::HGRADtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
+                basisValuesAtDofCoordsOriented);
+
+            DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality);
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &i) {
               for(ordinal_type j=0; j<basisCardinality; ++j)
-                *outStream << " (" << funAtDofCoords(i,j)  << ")";
-              *outStream << "\nFunction values at reference points computed using basis functions are\n";
-              for(ordinal_type j=0; j<basisCardinality; ++j)
-                *outStream << " (" << funAtDofCoordsOriented(i,j)  << ")";
-              *outStream << std::endl;
+                for(ordinal_type k=0; k<basisCardinality; ++k)
+                  funAtDofCoordsOriented(i,j) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j);
+            });
+
+            auto hostFunAtDofCoordsOriented = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoordsOriented);
+            auto hostFunAtDofCoords = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoords);
+            for(ordinal_type i=0; i<numCells; ++i) {
+              ValueType error=0;
+              for(ordinal_type j=0; j<basisCardinality; ++j) {
+                error = std::max(std::abs( hostFunAtDofCoords(i,j) - hostFunAtDofCoordsOriented(i,j)), error);
+              }
+
+              if(error>100*tol) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "Function values at reference points differ from those computed using basis functions of Tet " << i << "\n";
+                *outStream << "Function values at reference points are:\n";
+                for(ordinal_type j=0; j<basisCardinality; ++j)
+                  *outStream << " (" << hostFunAtDofCoords(i,j)  << ")";
+                *outStream << "\nFunction values at reference points computed using basis functions are\n";
+                for(ordinal_type j=0; j<basisCardinality; ++j)
+                  *outStream << " (" << hostFunAtDofCoordsOriented(i,j)  << ")";
+                *outStream << std::endl;
+              }
             }
-          }
+
+            //compute projection-based interpolation of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsHGrad, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createHGradProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+              DynRankView ConstructWithLabel(evaluationGradPoints, numCells, numGradPoints, dim);
 
 
-#ifndef KOKKOS_ENABLE_CUDA
-          //compute projection-based interpolation of the Lagrangian interpolation
-          DynRankView ConstructWithLabel(basisCoeffsHGrad, numCells, basisCardinality);
-          {
-            ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree());
-
-            Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createHGradProjectionStruct(basisPtr.get(), targetCubDegree, targetDerivCubDegree);
-
-            ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
-            DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-            DynRankView ConstructWithLabel(evaluationGradPoints, numCells, numGradPoints, dim);
-
-
-            pts::getHGradEvaluationPoints(evaluationPoints,
-                evaluationGradPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-
-
-            DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
-            DynRankView ConstructWithLabel(targetGradAtEvalPoints, numCells, numGradPoints, dim);
-
-            DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-            DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-            for(int ic=0; ic<numCells; ic++)
-              basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-            ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
-                hgradBasisAtEvaluationPointsNonOriented,
-                elemOrts,
-                basisPtr.get());
-
-            DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPoints, numCells, basisCardinality , numGradPoints, dim);
-            if(numGradPoints>0) {
-              DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numGradPoints, dim);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(gradOfHGradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationGradPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_GRAD);
-              ots::modifyBasisByOrientation(gradOfHGradBasisAtEvaluationPoints,
-                  gradOfHGradBasisAtEvaluationPointsNonOriented,
+              pts::getHGradEvaluationPoints(evaluationPoints,
+                  evaluationGradPoints,
                   elemOrts,
-                  basisPtr.get());
-            }
+                  basisPtr,
+                  &projStruct);
 
 
-            for(int ic=0; ic<numCells; ic++) {
-              for(int i=0;i<numPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hgradBasisAtEvaluationPoints(ic,k,i);
-              }
-              for(int i=0;i<numGradPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  for(int d=0;d<dim;d++)
-                    targetGradAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*gradOfHGradBasisAtEvaluationPoints(ic,k,i,d);//funHGradCoeffs(k)
-              }
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+              DynRankView ConstructWithLabel(targetGradAtEvalPoints, numCells, numGradPoints, dim);
 
-            }
-
-            pts::getHGradBasisCoeffs(basisCoeffsHGrad,
-                targetAtEvalPoints,
-                targetGradAtEvalPoints,
-                evaluationPoints,
-                evaluationGradPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-          }
-
-          //check that the basis coefficients of the Lagrangian nterpolation are the same as those of the projection-based interpolation
-          {
-            ValueType diffErr(0);
-
-            for(int k=0;k<basisCardinality;k++) {
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
               for(int ic=0; ic<numCells; ic++)
-                diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsHGrad(ic,k)));
+                basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
+                  hgradBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPoints, numCells, basisCardinality , numGradPoints, dim);
+              if(numGradPoints>0) {
+                DynRankView ConstructWithLabel(gradOfHGradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numGradPoints, dim);
+                for(int ic=0; ic<numCells; ic++)
+                  basisPtr->getValues(Kokkos::subview(gradOfHGradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationGradPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_GRAD);
+                ots::modifyBasisByOrientation(gradOfHGradBasisAtEvaluationPoints,
+                    gradOfHGradBasisAtEvaluationPointsNonOriented,
+                    elemOrts,
+                    basisPtr);
+              }
+
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hgradBasisAtEvaluationPoints(ic,k,i);
+                }
+                for(int i=0;i<numGradPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetGradAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*gradOfHGradBasisAtEvaluationPoints(ic,k,i,d);//funHGradCoeffs(k)
+                }
+              });
+
+              pts::getHGradBasisCoeffs(basisCoeffsHGrad,
+                  targetAtEvalPoints,
+                  targetGradAtEvalPoints,
+                  evaluationPoints,
+                  evaluationGradPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
             }
 
-            if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "HGRAD_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
-                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
-            }
-          }
+            //check that the basis coefficients of the Lagrangian nterpolation are the same as those of the projection-based interpolation
+            {
+              ValueType diffErr(0);
+              auto hostBasisCoeffsHGrad = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsHGrad);
 
-          //compute L2 projection of the Lagrangian interpolation
-          DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
-          {
-            ordinal_type targetCubDegree(basisPtr->getDegree());
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsHGrad(ic,k)));
+              }
 
-            Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
-
-            ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-            DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-
-
-            DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
-            DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-            DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-            for(int ic=0; ic<numCells; ic++)
-              basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-            ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
-                hgradBasisAtEvaluationPointsNonOriented,
-                elemOrts,
-                basisPtr.get());
-
-
-            for(int ic=0; ic<numCells; ic++) {
-              for(int i=0;i<numPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hgradBasisAtEvaluationPoints(ic,k,i);
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HGRAD_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
               }
             }
 
-            pts::getL2BasisCoeffs(basisCoeffsL2,
-                targetAtEvalPoints,
-                evaluationPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-          }
-          //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
-          {
-            ValueType diffErr =0;
-            for(int k=0;k<basisCardinality;k++) {
+            //compute L2 projection of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2EvaluationPoints(evaluationPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
               for(int ic=0; ic<numCells; ic++)
-                diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2(ic,k)));
+                basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
+                  hgradBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hgradBasisAtEvaluationPoints(ic,k,i);
+                }
+              });
+
+              pts::getL2BasisCoeffs(basisCoeffsL2,
+                  targetAtEvalPoints,
+                  evaluationPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+            }
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr =0;
+              auto hostBasisCoeffsL2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2);
+
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2(ic,k)));
+              }
+
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HGRAD_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
             }
 
-            if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "HGRAD_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
-                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+            //compute DG L2 projection of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2DGEvaluationPoints(evaluationPoints,
+                  basisPtr,
+                  &projStruct);
+
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+              DynRankView ConstructWithLabel(hgradBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
+              for(int ic=0; ic<numCells; ic++)
+                basisPtr->getValues(Kokkos::subview(hgradBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hgradBasisAtEvaluationPoints,
+                  hgradBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hgradBasisAtEvaluationPoints(ic,k,i);
+                }
+              });
+
+              pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+                  targetAtEvalPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
             }
+
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr =0;
+              auto hostBasisCoeffsL2DG = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2DG);
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2DG(ic,k)));
+              }
+
+              if(diffErr > 1e4*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HGRAD_C" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
+            }
+            delete basisPtr;
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -655,21 +751,27 @@ int InterpolationProjectionTet(const bool verbose) {
 
     ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4};
 
+    int sharedSideCount = 0;
     do {
+      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+        continue;
       ordinal_type orderback[numTotalVertexes];
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
       ValueType vertices[numTotalVertexes][dim];
-      ordinal_type tets[numCells][numElemVertexes];
-      std::copy(&tets_orig[0][0], &tets_orig[0][0]+numCells*numElemVertexes, &tets_rotated[0][0]);
+      ordinal_type cells[numCells][numElemVertexes];
+      std::copy(&cells_orig[0][0], &cells_orig[0][0]+numCells*numElemVertexes, &cells_rotated[0][0]);
 
-      for (ordinal_type shift=0; shift<1; ++shift) {
-        std::rotate_copy(&tets_orig[0][0], &tets_orig[0][0]+shift, &tets_orig[0][0]+4, &tets_rotated[0][0]);
+      for (ordinal_type shift=0; shift<4; ++shift) {
+        if(pickTest && (shift != elemPermutation))
+          continue;
+
+        std::rotate_copy(&cells_orig[0][0], &cells_orig[0][0]+shift, &cells_orig[0][0]+4, &cells_rotated[0][0]);
 
         for(ordinal_type i=0; i<numCells;++i)
           for(ordinal_type j=0; j<numElemVertexes;++j)
-            tets[i][j] = reorder[tets_rotated[i][j]];
+            cells[i][j] = reorder[cells_rotated[i][j]];
 
         for(ordinal_type i=0; i<numTotalVertexes;++i)
           for(ordinal_type d=0; d<dim;++d){
@@ -679,24 +781,20 @@ int InterpolationProjectionTet(const bool verbose) {
 
         *outStream <<  "Considering Tet 0: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[0][j] << " ";
+          *outStream << cells[0][j] << " ";
         *outStream << "] and Tet 1: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[1][j] << " ";
+          *outStream << cells[1][j] << " ";
         *outStream << "]\n";
 
-        shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-        shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
-        shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
-
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, tet.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, numNodesPerElem, dim);
+        auto hostPhysVertexes = Kokkos::create_mirror_view(physVertexes);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+          for(ordinal_type j=0; j<numNodesPerElem; ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[tets[i][j]][k];
-
-
+              hostPhysVertexes(i,j,k) = vertices[cells[i][j]][k];
+        deep_copy(physVertexes, hostPhysVertexes);
 
         //computing edges and tangents
         ordinal_type faceIndex[numCells];
@@ -708,9 +806,9 @@ int InterpolationProjectionTet(const bool verbose) {
           //bool faceOrientation[numCells][4];
           for(ordinal_type i=0; i<numCells; ++i) {
             //compute faces' tangents
-            for (std::size_t is=0; is<tet.getSideCount(); ++is) {
-              for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
-                face[k]= tets_rotated[i][tet.getNodeMap(2,is,k)];
+            for (std::size_t is=0; is<cellTopo.getSideCount(); ++is) {
+              for (std::size_t k=0; k<cellTopo.getNodeCount(2,is); ++k)
+                face[k]= cells_rotated[i][cellTopo.getNodeMap(2,is,k)];
 
               //sort face and compute common face
               std::sort(face.begin(),face.end());
@@ -718,9 +816,9 @@ int InterpolationProjectionTet(const bool verbose) {
               if(face == common_face) faceIndex[i]=is;
             }
             //compute edges' tangents
-            for (std::size_t ie=0; ie<tet.getEdgeCount(); ++ie) {
-              for (std::size_t k=0; k<tet.getNodeCount(1,ie); ++k)
-                edge[k]= tets_rotated[i][tet.getNodeMap(1,ie,k)];
+            for (std::size_t ie=0; ie<cellTopo.getEdgeCount(); ++ie) {
+              for (std::size_t k=0; k<cellTopo.getNodeCount(1,ie); ++k)
+                edge[k]= cells_rotated[i][cellTopo.getNodeMap(1,ie,k)];
 
               //compute common edge        
               std::sort(edge.begin(),edge.end());
@@ -734,340 +832,417 @@ int InterpolationProjectionTet(const bool verbose) {
         }
 
         // compute orientations for cells (one time computation)
-        DynRankViewIntHost elemNodes(&tets[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-        ots::getOrientation(elemOrts, elemNodes, tet);
+        DynRankViewIntHost elemNodesHost(&cells[0][0], numCells, numElemVertexes);
+        auto elemNodes = Kokkos::create_mirror_view_and_copy(MemSpaceType(),elemNodesHost);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
+        ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
         for (ordinal_type degree=1; degree <= max_degree; degree++) {
 
-          Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType> > basisPtr;
+          basis_set.clear();
           if(degree==1)
-            basisPtr = Teuchos::rcp(new Basis_HCURL_TET_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          else
-            basisPtr = Teuchos::rcp(new Basis_HCURL_TET_In_FEM<DeviceSpaceType,ValueType,ValueType>(degree, POINTTYPE_WARPBLEND));
+            basis_set.push_back(new Basis_HCURL_TET_I1_FEM<DeviceType,ValueType,ValueType>());
+          //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(degree));
+          basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(degree,POINTTYPE_EQUISPACED));
 
-          ordinal_type basisCardinality = basisPtr->getCardinality();
+          for (auto basisPtr:basis_set) {
 
-          //compute DofCoords Oriented
-          DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
+            auto name = basisPtr->getName();
+            *outStream << " " << name <<  ": " << degree << std::endl;
 
-          //compute Lagrangian Interpolation of fun
-          {
-            li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr.get(), POINTTYPE_WARPBLEND, elemOrts);
+            ordinal_type basisCardinality = basisPtr->getCardinality();
 
-            //Compute physical Dof Coordinates
+            //compute DofCoords Oriented
+            DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
 
+            //compute Lagrangian Interpolation of fun
             {
-              Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-              DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
-              for(ordinal_type i=0; i<numCells; ++i)
-                for(ordinal_type d=0; d<dim; ++d) {
-                  auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-                  auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-                  tetLinearBasis.getValues(outView, inView);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented, dofCoeffs, basisPtr, elemOrts);
 
-                  for(ordinal_type j=0; j<basisCardinality; ++j)
-                    for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                      physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
-                }
-            }
+              //Compute physical Dof Coordinates
 
-            DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
-            ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
+              DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
+              ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
 
-            FunCurl fun;
-            DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality, dim);
-            for(ordinal_type i=0; i<numCells; ++i) {
-              for(ordinal_type j=0; j<basisCardinality; ++j) {
-                for(ordinal_type k=0; k<dim; ++k)
-                  funAtDofCoords(i,j,k) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2), k);
-                for(ordinal_type k=0; k<dim; ++k)
-                  for(ordinal_type d=0; d<dim; ++d)
-                    fwdFunAtDofCoords(i,j,k) += jacobian(i,j,d,k)*funAtDofCoords(i,j,d);
-              }
-            }
-
-            li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffs);
-          }
-
-
-          //Testing Kronecker property of basis functions
-          {
-            for(ordinal_type i=0; i<numCells; ++i) {
-              DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
-              DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-              auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-              auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-              basisPtr->getValues(outView, inView);
-
-              // modify basis values to account for orientations
-              ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                  basisValuesAtDofCoords,
-                  elemOrts,
-                  basisPtr.get());
-
-              for(ordinal_type k=0; k<basisCardinality; ++k) {
+              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+              DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality, dim);
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &i) {
+                FunCurl fun;
+                auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
                 for(ordinal_type j=0; j<basisCardinality; ++j){
-                  ValueType dofValue=0;
-                  for(ordinal_type d=0; d<dim; ++d)
-                    dofValue += basisValuesAtDofCoordsOriented(i,k,j,d) * dofCoeffs(i,j,d);
-                  if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
-                  }
-                  if ( k!=j && std::abs( dofValue ) > tol ) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+                  auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
+                  Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
+                  for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                    for(ordinal_type d=0; d<dim; ++d)
+                      physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+
+                  for(ordinal_type k=0; k<dim; ++k)
+                    funAtDofCoords(i,j,k) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2), k);
+                  for(ordinal_type k=0; k<dim; ++k)
+                    for(ordinal_type d=0; d<dim; ++d)
+                      fwdFunAtDofCoords(i,j,k) += jacobian(i,j,d,k)*funAtDofCoords(i,j,d);
+                }
+              });
+
+              li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffs);
+            }
+
+
+            //Testing Kronecker property of basis functions
+            {
+              for(ordinal_type i=0; i<numCells; ++i) {
+                DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
+                DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
+                auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
+                auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+                basisPtr->getValues(outView, inView);
+
+                // modify basis values to account for orientations
+                ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                    basisValuesAtDofCoords,
+                    elemOrts,
+                    basisPtr);
+
+                auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
+                auto hostDofCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffs);
+                for(ordinal_type k=0; k<basisCardinality; ++k) {
+                  for(ordinal_type j=0; j<basisCardinality; ++j){
+                    ValueType dofValue=0;
+                    for(ordinal_type d=0; d<dim; ++d)
+                      dofValue += hostBasisValues(i,k,j,d) * hostDofCoeffs(i,j,d);
+                    if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
+                      errorFlag++;
+                      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                      *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
+                    }
+                    if ( k!=j && std::abs( dofValue ) > tol ) {
+                      errorFlag++;
+                      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                      *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+                    }
                   }
                 }
               }
             }
-          }
 
-          //check that fun values are consistent on common edges dofs
-          {
-            bool areDifferent(false);
-            auto numEdgeDOFs = basisPtr->getDofCount(1,0);
-            for(std::size_t iEdge=0;iEdge<common_edges.size();iEdge++) {
-              for(ordinal_type j=0;j<numEdgeDOFs && !areDifferent;j++) {
-                areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j))
-                    - basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
+            //check that fun values are consistent on common edges dofs
+            auto hostBasisCoeffsLI = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsLI);
+            {
+              bool areDifferent(false);
+              auto numEdgeDOFs = basisPtr->getDofCount(1,0);
+              for(std::size_t iEdge=0;iEdge<common_edges.size();iEdge++) {
+                for(ordinal_type j=0;j<numEdgeDOFs && !areDifferent;j++) {
+                  areDifferent = std::abs(hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j))
+                      - hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j))) > 10*tol;
+                }
+                if(areDifferent) {
+                  errorFlag++;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                  *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
+                  *outStream << "Function DOFs for Tet 0 are:";
+                  for(ordinal_type j=0;j<numEdgeDOFs;j++)
+                    *outStream << " " << hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
+                  *outStream << "\nFunction DOFs for Tet 1 are:";
+                  for(ordinal_type j=0;j<numEdgeDOFs;j++)
+                    *outStream << " " << hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
+                  *outStream << std::endl;
+                }
               }
+            }
+
+            //check that fun values are consistent on common face dofs
+            {
+              bool areDifferent(false);
+              auto numFaceDOFs = basisPtr->getDofCount(2,0);
+              for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
+                areDifferent = std::abs(hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
+                    - hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
+              }
+
               if(areDifferent) {
+                auto hostPhysDofCoords = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), physDofCoords);
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
+                *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
                 *outStream << "Function DOFs for Tet 0 are:";
-                for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                  *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(1,edgeIndexes[0][iEdge],j));
+                for(ordinal_type j=0;j<numFaceDOFs;j++)
+                  *outStream << " " << hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
                 *outStream << "\nFunction DOFs for Tet 1 are:";
-                for(ordinal_type j=0;j<numEdgeDOFs;j++)
-                  *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(1,edgeIndexes[1][iEdge],j));
+                for(ordinal_type j=0;j<numFaceDOFs;j++)
+                  *outStream << " " << hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
                 *outStream << std::endl;
               }
             }
-          }
 
-          //check that fun values are consistent on common face dofs
-          {
-            bool areDifferent(false);
-            auto numFaceDOFs = basisPtr->getDofCount(2,0);
-            for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
-            }
+            //check that fun values at reference points coincide with those computed using basis functions
+            DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
+            DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
+            DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
 
-            if(areDifferent) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-              *outStream << "Function DOFs for Tet 0 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-              *outStream << "\nFunction DOFs for Tet 1 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
-              *outStream << std::endl;
-            }
-          }
+            for (ordinal_type ic = 0; ic < numCells; ++ic)
+              basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
 
-          //check that fun values at reference points coincide with those computed using basis functions
-          DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-          DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-          DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
+            // modify basis values to account for orientations
+            ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                basisValuesAtDofCoordsCells,
+                elemOrts,
+                basisPtr);
 
-          for (ordinal_type ic = 0; ic < numCells; ++ic)
-            basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+            // transform basis values
+            DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
+            DynRankView ConstructWithLabel(jacobianAtDofCoords_inv, numCells, basisCardinality, dim, dim);
+            ct::setJacobian(jacobianAtDofCoords, dofCoordsOriented, physVertexes, cellTopo);
+            ct::setJacobianInv (jacobianAtDofCoords_inv, jacobianAtDofCoords);
+            fst::HCURLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
+                jacobianAtDofCoords_inv,
+                basisValuesAtDofCoordsOriented);
+            DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality, dim);
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+            KOKKOS_LAMBDA (const int &i) {
+              for(ordinal_type j=0; j<basisCardinality; ++j)
+                for(ordinal_type d=0; d<dim; ++d) {
+                  for(ordinal_type k=0; k<basisCardinality; ++k)
+                    funAtDofCoordsOriented(i,j,d) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j,d);
+                }
+            });
 
-          // modify basis values to account for orientations
-          ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-              basisValuesAtDofCoordsCells,
-              elemOrts,
-              basisPtr.get());
-
-          // transform basis values
-          DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
-          DynRankView ConstructWithLabel(jacobianAtDofCoords_inv, numCells, basisCardinality, dim, dim);
-          ct::setJacobian(jacobianAtDofCoords, dofCoordsOriented, physVertexes, tet);
-          ct::setJacobianInv (jacobianAtDofCoords_inv, jacobianAtDofCoords);
-          fst::HCURLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
-              jacobianAtDofCoords_inv,
-              basisValuesAtDofCoordsOriented);
-          DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality, dim);
-          for(ordinal_type i=0; i<numCells; ++i) {
-            ValueType error=0;
-            for(ordinal_type j=0; j<basisCardinality; ++j)
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(ordinal_type k=0; k<basisCardinality; ++k)
-                  funAtDofCoordsOriented(i,j,d) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j,d);
-
-                error = std::max(std::abs( funAtDofCoords(i,j,d) - funAtDofCoordsOriented(i,j,d)), error);
+            auto hostFunAtDofCoordsOriented = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoordsOriented);
+            auto hostFunAtDofCoords = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoords);
+            for(ordinal_type i=0; i<numCells; ++i) {
+              ValueType error=0;
+              for(ordinal_type j=0; j<basisCardinality; ++j) {
+                for(ordinal_type d=0; d<dim; ++d)
+                  error = std::max(std::abs( hostFunAtDofCoords(i,j,d) - hostFunAtDofCoordsOriented(i,j,d)), error);
               }
 
-            if(error>100*tol) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function values at reference points differ from those computed using basis functions of Hex " << i << "\n";
-              *outStream << "Function values at reference points are:\n";
-              for(ordinal_type j=0; j<basisCardinality; ++j)
-                *outStream << " (" << funAtDofCoords(i,j,0) << "," << funAtDofCoords(i,j,1) << ", " << funAtDofCoords(i,j,2) << ")";
-              *outStream << "\nFunction values at reference points computed using basis functions are\n";
-              for(ordinal_type j=0; j<basisCardinality; ++j)
-                *outStream << " (" << funAtDofCoordsOriented(i,j,0) << "," << funAtDofCoordsOriented(i,j,1) << ", " << funAtDofCoordsOriented(i,j,2) << ")";
-              *outStream << std::endl;
+              if(error>100*tol) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "Function values at reference points differ from those computed using basis functions of Tet " << i << "\n";
+                *outStream << "Function values at reference points are:\n";
+                for(ordinal_type j=0; j<basisCardinality; ++j)
+                  *outStream << " (" << hostFunAtDofCoords(i,j,0) << "," << hostFunAtDofCoords(i,j,1) << ", " << hostFunAtDofCoords(i,j,2) << ")";
+                *outStream << "\nFunction values at reference points computed using basis functions are\n";
+                for(ordinal_type j=0; j<basisCardinality; ++j)
+                  *outStream << " (" << hostFunAtDofCoordsOriented(i,j,0) << "," << hostFunAtDofCoordsOriented(i,j,1) << ", " << hostFunAtDofCoordsOriented(i,j,2) << ")";
+                *outStream << std::endl;
+              }
             }
-          }
-
-#ifndef KOKKOS_ENABLE_CUDA
-          //compute projection-based interpolation of the Lagrangian interpolation
-          DynRankView ConstructWithLabel(basisCoeffsHCurl, numCells, basisCardinality);
-          {
-            ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
-
-            Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createHCurlProjectionStruct(basisPtr.get(), targetCubDegree, targetDerivCubDegree);
-
-            ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
-            DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-            DynRankView ConstructWithLabel(evaluationCurlPoints, numCells, numCurlPoints, dim);
-
-            pts::getHCurlEvaluationPoints(evaluationPoints,
-                evaluationCurlPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
 
 
-            DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
-            DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numCells, numCurlPoints, dim);
+            //compute projection-based interpolation of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsHCurl, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
 
-            DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-            DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-            for(int ic=0; ic<numCells; ic++)
-              basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-            ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
-                hcurlBasisAtEvaluationPointsNonOriented,
-                elemOrts,
-                basisPtr.get());
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createHCurlProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
 
-            DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPoints, numCells, basisCardinality , numCurlPoints, dim);
-            if(numCurlPoints>0) {
-              DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numCurlPoints, dim);
-              for(int ic=0; ic<numCells; ic++)
-                basisPtr->getValues(Kokkos::subview(curlOfHCurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationCurlPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_CURL);
-              ots::modifyBasisByOrientation(curlOfHCurlBasisAtEvaluationPoints,
-                  curlOfHCurlBasisAtEvaluationPointsNonOriented,
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+              DynRankView ConstructWithLabel(evaluationCurlPoints, numCells, numCurlPoints, dim);
+
+              pts::getHCurlEvaluationPoints(evaluationPoints,
+                  evaluationCurlPoints,
                   elemOrts,
-                  basisPtr.get());
-            }
+                  basisPtr,
+                  &projStruct);
 
 
-            for(int ic=0; ic<numCells; ic++){
-              for(int i=0;i<numPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  for(int d=0;d<dim;d++)
-                    targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hcurlBasisAtEvaluationPoints(ic,k,i,d);
-              }
-              for(int i=0;i<numCurlPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  for(int d=0;d<dim;d++)
-                    targetCurlAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*curlOfHCurlBasisAtEvaluationPoints(ic,k,i,d);//funHCurlCoeffs(k)
-              }
-            }
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+              DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numCells, numCurlPoints, dim);
 
-            pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
-                targetAtEvalPoints,
-                targetCurlAtEvalPoints,
-                evaluationPoints,
-                evaluationCurlPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-          }
-
-          //check that the basis coefficients of the Lagrangian interpolation are the same as those of the projection-based interpolation
-          {
-            ValueType diffErr(0);
-
-            for(int k=0;k<basisCardinality;k++) {
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
               for(int ic=0; ic<numCells; ic++)
-                diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsHCurl(ic,k)));
+                basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
+                  hcurlBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPoints, numCells, basisCardinality , numCurlPoints, dim);
+              if(numCurlPoints>0) {
+                DynRankView ConstructWithLabel(curlOfHCurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numCurlPoints, dim);
+                for(int ic=0; ic<numCells; ic++)
+                  basisPtr->getValues(Kokkos::subview(curlOfHCurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationCurlPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_CURL);
+                ots::modifyBasisByOrientation(curlOfHCurlBasisAtEvaluationPoints,
+                    curlOfHCurlBasisAtEvaluationPointsNonOriented,
+                    elemOrts,
+                    basisPtr);
+              }
+
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hcurlBasisAtEvaluationPoints(ic,k,i,d);
+                }
+                for(int i=0;i<numCurlPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetCurlAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*curlOfHCurlBasisAtEvaluationPoints(ic,k,i,d);//funHCurlCoeffs(k)
+                }
+              });
+
+              pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
+                  targetAtEvalPoints,
+                  targetCurlAtEvalPoints,
+                  evaluationPoints,
+                  evaluationCurlPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
             }
 
-            if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "HCURL_I" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
-                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
-            }
-          }
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the projection-based interpolation
+            {
+              ValueType diffErr(0);
+              auto hostBasisCoeffsHCurl = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsHCurl);
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsHCurl(ic,k)));
+              }
 
-          //compute L2 projection of the Lagrangian interpolation
-          DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
-          {
-            ordinal_type targetCubDegree(basisPtr->getDegree());
-
-            Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
-
-            ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-            DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-
-
-            DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
-
-            DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-            DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-            for(int ic=0; ic<numCells; ic++)
-              basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-            ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
-                hcurlBasisAtEvaluationPointsNonOriented,
-                elemOrts,
-                basisPtr.get());
-
-            for(int ic=0; ic<numCells; ic++){
-              for(int i=0;i<numPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  for(int d=0;d<dim;d++)
-                    targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hcurlBasisAtEvaluationPoints(ic,k,i,d);
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HCURL_I" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
               }
             }
 
-            pts::getL2BasisCoeffs(basisCoeffsL2,
-                targetAtEvalPoints,
-                evaluationPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-          }
+            //compute L2 projection of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
-          {
-            ValueType diffErr = 0;
-            for(int k=0;k<basisCardinality;k++) {
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2EvaluationPoints(evaluationPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
               for(int ic=0; ic<numCells; ic++)
-                diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2(ic,k)));
+                basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
+                  hcurlBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hcurlBasisAtEvaluationPoints(ic,k,i,d);
+                }
+              });
+
+              pts::getL2BasisCoeffs(basisCoeffsL2,
+                  targetAtEvalPoints,
+                  evaluationPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
             }
 
-            if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "HCURL_I" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
-                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr = 0;
+              auto hostBasisCoeffsL2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2);
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2(ic,k)));
+              }
+
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HCURL_I" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
             }
+
+            //compute L2DG projection of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2DGEvaluationPoints(evaluationPoints,
+                  basisPtr,
+                  &projStruct);
+
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hcurlBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
+              for(int ic=0; ic<numCells; ic++)
+                basisPtr->getValues(Kokkos::subview(hcurlBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hcurlBasisAtEvaluationPoints,
+                  hcurlBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hcurlBasisAtEvaluationPoints(ic,k,i,d);
+                }
+              });
+
+              pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+                  targetAtEvalPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+            }
+
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr = 0;
+              auto hostBasisCoeffsL2DG = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2DG);
+              for(int k=0;k<basisCardinality;k++) {
+                for(int ic=0; ic<numCells; ic++)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2DG(ic,k)));
+              }
+
+              if(diffErr > 1e4*tol) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HCURL_I" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
+            }
+
+            delete basisPtr;
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1092,21 +1267,27 @@ int InterpolationProjectionTet(const bool verbose) {
 
     ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4};
 
+    int sharedSideCount = 0;
     do {
+      if((sharedSideCount++ != sharedSidePermutation) && pickTest)
+        continue;
       ordinal_type orderback[numTotalVertexes];
       for(ordinal_type i=0;i<numTotalVertexes;++i) {
         orderback[reorder[i]]=i;
       }
       ValueType vertices[numTotalVertexes][dim];
-      ordinal_type tets[numCells][numElemVertexes];
-      std::copy(&tets_orig[0][0], &tets_orig[0][0]+numCells*numElemVertexes, &tets_rotated[0][0]);
+      ordinal_type cells[numCells][numElemVertexes];
+      std::copy(&cells_orig[0][0], &cells_orig[0][0]+numCells*numElemVertexes, &cells_rotated[0][0]);
 
-      for (ordinal_type shift=0; shift<1; ++shift) {
-        std::rotate_copy(&tets_orig[0][0], &tets_orig[0][0]+shift, &tets_orig[0][0]+4, &tets_rotated[0][0]);
+      for (ordinal_type shift=0; shift<4; ++shift) {
+        if(pickTest && (shift != elemPermutation))
+          continue;
+
+        std::rotate_copy(&cells_orig[0][0], &cells_orig[0][0]+shift, &cells_orig[0][0]+4, &cells_rotated[0][0]);
 
         for(ordinal_type i=0; i<numCells;++i)
           for(ordinal_type j=0; j<numElemVertexes;++j)
-            tets[i][j] = reorder[tets_rotated[i][j]];
+            cells[i][j] = reorder[cells_rotated[i][j]];
 
         for(ordinal_type i=0; i<numTotalVertexes;++i)
           for(ordinal_type d=0; d<dim;++d)
@@ -1114,22 +1295,20 @@ int InterpolationProjectionTet(const bool verbose) {
 
         *outStream <<  "Considering Tet 0: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[0][j] << " ";
+          *outStream << cells[0][j] << " ";
         *outStream << "] and Tet 1: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[1][j] << " ";
+          *outStream << cells[1][j] << " ";
         *outStream << "]\n";
 
-        shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-        shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
-        shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
-
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, tet.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, numNodesPerElem, dim);
+        auto hostPhysVertexes = Kokkos::create_mirror_view(physVertexes);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+          for(ordinal_type j=0; j<numNodesPerElem; ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[tets[i][j]][k];
+              hostPhysVertexes(i,j,k) = vertices[cells[i][j]][k];
+        deep_copy(physVertexes, hostPhysVertexes);
 
 
         //computing edges and tangents
@@ -1139,9 +1318,9 @@ int InterpolationProjectionTet(const bool verbose) {
           faceType face={};          //bool faceOrientation[numCells][4];
           for(ordinal_type i=0; i<numCells; ++i) {
             //compute faces' normals
-            for (std::size_t is=0; is<tet.getSideCount(); ++is) {
-              for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
-                face[k]= tets_rotated[i][tet.getNodeMap(2,is,k)];
+            for (std::size_t is=0; is<cellTopo.getSideCount(); ++is) {
+              for (std::size_t k=0; k<cellTopo.getNodeCount(2,is); ++k)
+                face[k]= cells_rotated[i][cellTopo.getNodeMap(2,is,k)];
               std::sort(face.begin(),face.end());
               if(face == common_face) faceIndex[i]=is;
             }
@@ -1149,351 +1328,403 @@ int InterpolationProjectionTet(const bool verbose) {
         }
 
         // compute orientations for cells (one time computation)
-        DynRankViewIntHost elemNodes(&tets[0][0], numCells, numElemVertexes);
-        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-        ots::getOrientation(elemOrts, elemNodes, tet);
+        DynRankViewIntHost elemNodesHost(&cells[0][0], numCells, numElemVertexes);
+        auto elemNodes = Kokkos::create_mirror_view_and_copy(MemSpaceType(),elemNodesHost);
+        Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
+        ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
         for (ordinal_type degree=1; degree <= max_degree; degree++) {
 
-          Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType> > basisPtr;
+          basis_set.clear();
           if(degree==1)
-            basisPtr = Teuchos::rcp(new Basis_HDIV_TET_I1_FEM<DeviceSpaceType,ValueType,ValueType>());
-          else
-            basisPtr = Teuchos::rcp(new Basis_HDIV_TET_In_FEM<DeviceSpaceType,ValueType,ValueType>(degree));
+            basis_set.push_back(new Basis_HDIV_TET_I1_FEM<DeviceType,ValueType,ValueType>());
+          //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(degree,POINTTYPE_WARPBLEND));
+          basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(degree));
 
-          ordinal_type basisCardinality = basisPtr->getCardinality();
+          for (auto basisPtr:basis_set) {
 
-          //compute DofCoords Oriented
+            auto name = basisPtr->getName();
+            *outStream << " " << name << ": "<< degree << std::endl;
+            ordinal_type basisCardinality = basisPtr->getCardinality();
 
-          DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality, dim);
-          DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
+            //compute DofCoords Oriented
 
-          //compute Lagrangian Interpolation of fun
-          {
+            DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(dofCoeffs, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality, dim);
+            DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
 
-            li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr.get(), POINTTYPE_EQUISPACED, elemOrts);
+            //compute Lagrangian Interpolation of fun
+            {
 
-            //Compute physical Dof Coordinates
-            Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
-            for(ordinal_type i=0; i<numCells; ++i)
-              for(ordinal_type d=0; d<dim; ++d) {
-                auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-                auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-                tetLinearBasis.getValues(outView, inView);
+              li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffs, basisPtr, elemOrts);
 
-                for(ordinal_type j=0; j<basisCardinality; ++j)
-                  for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                    physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
-              }
-
-            //need to transform dofCoeff to physical space (they transform as normals)
-            DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
-            DynRankView ConstructWithLabel(jacobian_inv, numCells, basisCardinality, dim, dim);
-            DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-            ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
-            ct::setJacobianInv (jacobian_inv, jacobian);
-            ct::setJacobianDet (jacobian_det, jacobian);
-
-
-            FunDiv fun;
-            DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality, dim);
-            for(ordinal_type i=0; i<numCells; ++i) {
-              for(ordinal_type j=0; j<basisCardinality; ++j){
-                for(ordinal_type k=0; k<dim; ++k)
-                  funAtDofCoords(i,j,k) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2), k);
-                for(ordinal_type k=0; k<dim; ++k)
-                  for(ordinal_type d=0; d<dim; ++d)
-                    fwdFunAtDofCoords(i,j,k) += jacobian_det(i,j)*jacobian_inv(i,j,k,d)*funAtDofCoords(i,j,d);
-
-              }
-            }
-            li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffs);
-          }
-
-          //Testing Kronecker property of basis functions
-          {
-            for(ordinal_type i=0; i<numCells; ++i) {
-              DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
-              DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-              auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-              auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-              basisPtr->getValues(outView, inView);
-
-              // modify basis values to account for orientations
-              ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-                  basisValuesAtDofCoords,
-                  elemOrts,
-                  basisPtr.get());
-
+              //need to transform dofCoeff to physical space (they transform as normals)
               DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
+              DynRankView ConstructWithLabel(jacobian_inv, numCells, basisCardinality, dim, dim);
               DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-              ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
+              ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+              ct::setJacobianInv (jacobian_inv, jacobian);
               ct::setJacobianDet (jacobian_det, jacobian);
-
-              for(ordinal_type k=0; k<basisCardinality; ++k) {
+              
+              //Compute physical Dof Coordinates
+              DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+              DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality, dim);
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &i) {
+                FunDiv fun;
+                auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
                 for(ordinal_type j=0; j<basisCardinality; ++j){
-                  ValueType dofValue=0;
-                  for(ordinal_type d=0; d<dim; ++d)
-                    dofValue += basisValuesAtDofCoordsOriented(i,k,j,d) * dofCoeffs(i,j,d);
-                  if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
-                  }
-                  if ( k!=j && std::abs( dofValue ) > tol ) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+                  auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
+                  Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
+                  for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                    for(ordinal_type d=0; d<dim; ++d)
+                      physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+
+                  for(ordinal_type k=0; k<dim; ++k)
+                    funAtDofCoords(i,j,k) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2), k);
+                  for(ordinal_type k=0; k<dim; ++k)
+                    for(ordinal_type d=0; d<dim; ++d)
+                      fwdFunAtDofCoords(i,j,k) += jacobian_det(i,j)*jacobian_inv(i,j,k,d)*funAtDofCoords(i,j,d);
+                }
+              });
+
+              li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffs);
+            }
+
+            //Testing Kronecker property of basis functions
+            {
+              for(ordinal_type i=0; i<numCells; ++i) {
+                DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality, dim);
+                DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
+                auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
+                auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+                basisPtr->getValues(outView, inView);
+
+                // modify basis values to account for orientations
+                ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                    basisValuesAtDofCoords,
+                    elemOrts,
+                    basisPtr);
+
+                DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
+                DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
+                ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+                ct::setJacobianDet (jacobian_det, jacobian);
+
+                auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
+                auto hostDofCoeffs = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffs);
+                for(ordinal_type k=0; k<basisCardinality; ++k) {
+                  for(ordinal_type j=0; j<basisCardinality; ++j){
+                    ValueType dofValue=0;
+                    for(ordinal_type d=0; d<dim; ++d)
+                      dofValue += hostBasisValues(i,k,j,d) * hostDofCoeffs(i,j,d);
+                    if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
+                      errorFlag++;
+                      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                      *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
+                    }
+                    if ( k!=j && std::abs( dofValue ) > tol ) {
+                      errorFlag++;
+                      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                      *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+                    }
                   }
                 }
               }
             }
-          }
 
-          //check that fun values are consistent on common face dofs
-          {
-            bool areDifferent(false);
-            auto numFaceDOFs = basisPtr->getDofCount(2,0);
-            for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
-            }
-
-            if(areDifferent) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-              *outStream << "Function DOFs for Tet 0 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-              *outStream << "\nFunction DOFs for Tet 1 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
-              *outStream << std::endl;
-            }
-          }
-
-          //check that fun values are consistent on common face dofs
-          {
-            bool areDifferent(false);
-            auto numFaceDOFs = basisPtr->getDofCount(2,0);
-            for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
-              areDifferent = std::abs(basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
-                  - basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
-            }
-
-            if(areDifferent) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-              *outStream << "Function DOFs for Tet 0 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-              *outStream << "\nFunction DOFs for Tet 1 are:";
-              for(ordinal_type j=0;j<numFaceDOFs;j++)
-                *outStream << " " << basisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
-              *outStream << std::endl;
-            }
-          }
-
-          //check that fun values at reference points coincide with those computed using basis functions
-          DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-          DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
-          DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
-
-          for (ordinal_type ic = 0; ic < numCells; ++ic)
-            basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
-
-          // modify basis values to account for orientations
-          ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-              basisValuesAtDofCoordsCells,
-              elemOrts,
-              basisPtr.get());
-
-          // transform basis values
-          DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
-          DynRankView ConstructWithLabel(jacobianAtDofCoords_det, numCells, basisCardinality);
-          ct::setJacobian(jacobianAtDofCoords, dofCoordsOriented, physVertexes, tet);
-          ct::setJacobianDet (jacobianAtDofCoords_det, jacobianAtDofCoords);
-          fst::HDIVtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
-              jacobianAtDofCoords,
-              jacobianAtDofCoords_det,
-              basisValuesAtDofCoordsOriented);
-          DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality, dim);
-          for(ordinal_type i=0; i<numCells; ++i) {
-            ValueType error=0;
-            for(ordinal_type j=0; j<basisCardinality; ++j)
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(ordinal_type k=0; k<basisCardinality; ++k)
-                  funAtDofCoordsOriented(i,j,d) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j,d);
-
-                error = std::max(std::abs( funAtDofCoords(i,j,d) - funAtDofCoordsOriented(i,j,d)), error);
+            //check that fun values are consistent on common face dofs
+            auto hostBasisCoeffsLI = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsLI);
+            {
+              bool areDifferent(false);
+              auto numFaceDOFs = basisPtr->getDofCount(2,0);
+              for(ordinal_type j=0;j<numFaceDOFs && !areDifferent;j++) {
+                areDifferent = std::abs(hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j))
+                    - hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))) > 10*tol;
               }
 
-            if(error>100*tol) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function values at reference points differ from those computed using basis functions of Hex " << i << "\n";
-              *outStream << "Function values at reference points are:\n";
-              for(ordinal_type j=0; j<basisCardinality; ++j)
-                *outStream << " (" << funAtDofCoords(i,j,0) << "," << funAtDofCoords(i,j,1) << ", " << funAtDofCoords(i,j,2) << ")";
-              *outStream << "\nFunction values at reference points computed using basis functions are\n";
-              for(ordinal_type j=0; j<basisCardinality; ++j)
-                *outStream << " (" << funAtDofCoordsOriented(i,j,0) << "," << funAtDofCoordsOriented(i,j,1) << ", " << funAtDofCoordsOriented(i,j,2) << ")";
-              *outStream << std::endl;
+              if(areDifferent) {
+                errorFlag++;
+                auto hostPhysDofCoords = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), physDofCoords);
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
+                *outStream << "Function DOFs for Tet 0 are:";
+                for(ordinal_type j=0;j<numFaceDOFs;j++)
+                  *outStream << " " << hostBasisCoeffsLI(0,basisPtr->getDofOrdinal(2,faceIndex[0],j)) << " | (" << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),0) << "," << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),1) << ", " << hostPhysDofCoords(0,basisPtr->getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
+                *outStream << "\nFunction DOFs for Tet 1 are:";
+                for(ordinal_type j=0;j<numFaceDOFs;j++)
+                  *outStream << " " << hostBasisCoeffsLI(1,basisPtr->getDofOrdinal(2,faceIndex[1],j))<< " | (" << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),0) << "," << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),1) << ", " << hostPhysDofCoords(1,basisPtr->getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
+                *outStream << std::endl;
+              }
             }
-          }
 
-#ifndef KOKKOS_ENABLE_CUDA
-          //compute projection-based interpolation of the Lagrangian interpolation
-          DynRankView ConstructWithLabel(basisCoeffsHDiv, numCells, basisCardinality);
-          {
-            ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
+            //check that fun values at reference points coincide with those computed using basis functions
+            DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
+            DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality, dim);
+            DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality, dim);
 
-            Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createHDivProjectionStruct(basisPtr.get(), targetCubDegree, targetDerivCubDegree);
+            for (ordinal_type ic = 0; ic < numCells; ++ic)
+              basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
 
-            ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
-
-            DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-            DynRankView ConstructWithLabel(evaluationDivPoints, numCells, numDivPoints, dim);
-
-            pts::getHDivEvaluationPoints(evaluationPoints,
-                evaluationDivPoints,
+            // modify basis values to account for orientations
+            ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                basisValuesAtDofCoordsCells,
                 elemOrts,
-                basisPtr.get(),
-                &projStruct);
+                basisPtr);
 
-            DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
-            DynRankView ConstructWithLabel(targetDivAtEvalPoints, numCells, numDivPoints);
+            // transform basis values
+            DynRankView ConstructWithLabel(jacobianAtDofCoords, numCells, basisCardinality, dim, dim);
+            DynRankView ConstructWithLabel(jacobianAtDofCoords_det, numCells, basisCardinality);
+            ct::setJacobian(jacobianAtDofCoords, dofCoordsOriented, physVertexes, cellTopo);
+            ct::setJacobianDet (jacobianAtDofCoords_det, jacobianAtDofCoords);
+            fst::HDIVtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
+                jacobianAtDofCoords,
+                jacobianAtDofCoords_det,
+                basisValuesAtDofCoordsOriented);
+            DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality, dim);
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+            KOKKOS_LAMBDA (const int &i) {
+              for(ordinal_type j=0; j<basisCardinality; ++j) {
+                for(ordinal_type d=0; d<dim; ++d)
+                  for(ordinal_type k=0; k<basisCardinality; ++k)
+                    funAtDofCoordsOriented(i,j,d) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j,d);
+              }
+            });
 
-            DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-            DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-            for(ordinal_type ic=0; ic<numCells; ++ic)
-              basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-            ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
-                hdivBasisAtEvaluationPointsNonOriented,
-                elemOrts,
-                basisPtr.get());
+            auto hostFunAtDofCoordsOriented = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoordsOriented);
+            auto hostFunAtDofCoords = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoords);
+            for(ordinal_type i=0; i<numCells; ++i) {
+              ValueType error=0;
+              for(ordinal_type j=0; j<basisCardinality; ++j) {
+                for(ordinal_type d=0; d<dim; ++d)
+                  error = std::max(std::abs( hostFunAtDofCoords(i,j,d) - hostFunAtDofCoordsOriented(i,j,d)), error);
+              }
 
-            DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPoints, numCells, basisCardinality , numDivPoints);
-            if(numDivPoints>0) {
-              DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numDivPoints);
-              for(ordinal_type ic=0; ic<numCells; ++ic)
-                basisPtr->getValues(Kokkos::subview(divOfHDivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationDivPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_DIV);
-              ots::modifyBasisByOrientation(divOfHDivBasisAtEvaluationPoints,
-                  divOfHDivBasisAtEvaluationPointsNonOriented,
+              if(error>100*tol) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "Function values at reference points differ from those computed using basis functions of Tet " << i << "\n";
+                *outStream << "Function values at reference points are:\n";
+                for(ordinal_type j=0; j<basisCardinality; ++j)
+                  *outStream << " (" << hostFunAtDofCoords(i,j,0) << "," << hostFunAtDofCoords(i,j,1) << ", " << hostFunAtDofCoords(i,j,2) << ")";
+                *outStream << "\nFunction values at reference points computed using basis functions are\n";
+                for(ordinal_type j=0; j<basisCardinality; ++j)
+                  *outStream << " (" << hostFunAtDofCoordsOriented(i,j,0) << "," << hostFunAtDofCoordsOriented(i,j,1) << ", " << hostFunAtDofCoordsOriented(i,j,2) << ")";
+                *outStream << std::endl;
+              }
+            }
+
+            //compute projection-based interpolation of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsHDiv, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree()),targetDerivCubDegree(basisPtr->getDegree()-1);
+
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createHDivProjectionStruct(basisPtr, targetCubDegree, targetDerivCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
+
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+              DynRankView ConstructWithLabel(evaluationDivPoints, numCells, numDivPoints, dim);
+
+              pts::getHDivEvaluationPoints(evaluationPoints,
+                  evaluationDivPoints,
                   elemOrts,
-                  basisPtr.get());
-            }
+                  basisPtr,
+                  &projStruct);
 
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+              DynRankView ConstructWithLabel(targetDivAtEvalPoints, numCells, numDivPoints);
 
-
-            for(ordinal_type ic=0; ic<numCells; ++ic) {
-              for(int i=0;i<numPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  for(int d=0;d<dim;d++)
-                    targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hdivBasisAtEvaluationPoints(ic,k,i,d);
-              }
-              for(int i=0;i<numDivPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  targetDivAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*divOfHDivBasisAtEvaluationPoints(ic,k,i);//basisCoeffsLI(k)
-              }
-            }
-
-            pts::getHDivBasisCoeffs(basisCoeffsHDiv,
-                targetAtEvalPoints,
-                targetDivAtEvalPoints,
-                evaluationPoints,
-                evaluationDivPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-          }
-
-          //check that the basis coefficients of the Lagrangian interpolation are the same as those of the projection-based interpolation
-          {
-            ValueType diffErr(0);
-            for(int k=0;k<basisCardinality;k++) {
-              //std::cout << "["<< basisCoeffsLI(0,k) << " " <<  basisCoeffsHDiv(0,k) << "] [" << basisCoeffsLI(1,k) << " " <<  basisCoeffsHDiv(1,k) << "]" <<std::endl;
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
               for(ordinal_type ic=0; ic<numCells; ++ic)
-                diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsHDiv(ic,k)));
+                basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
+                  hdivBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPoints, numCells, basisCardinality , numDivPoints);
+              if(numDivPoints>0) {
+                DynRankView ConstructWithLabel(divOfHDivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numDivPoints);
+                for(ordinal_type ic=0; ic<numCells; ++ic)
+                  basisPtr->getValues(Kokkos::subview(divOfHDivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationDivPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_DIV);
+                ots::modifyBasisByOrientation(divOfHDivBasisAtEvaluationPoints,
+                    divOfHDivBasisAtEvaluationPointsNonOriented,
+                    elemOrts,
+                    basisPtr);
+              }
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hdivBasisAtEvaluationPoints(ic,k,i,d);
+                }
+                for(int i=0;i<numDivPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    targetDivAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*divOfHDivBasisAtEvaluationPoints(ic,k,i);//basisCoeffsLI(k)
+                }
+              });
+
+              pts::getHDivBasisCoeffs(basisCoeffsHDiv,
+                  targetAtEvalPoints,
+                  targetDivAtEvalPoints,
+                  evaluationPoints,
+                  evaluationDivPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
             }
 
-            if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "HDIV_I" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
-                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
-            }
-          }
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the projection-based interpolation
+            {
+              ValueType diffErr(0);
+              auto hostBasisCoeffsHDiv = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsHDiv);
+              for(int k=0;k<basisCardinality;k++) {
+                //std::cout << "["<< basisCoeffsLI(0,k) << " " <<  basisCoeffsHDiv(0,k) << "] [" << basisCoeffsLI(1,k) << " " <<  basisCoeffsHDiv(1,k) << "]" <<std::endl;
+                for(ordinal_type ic=0; ic<numCells; ++ic)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsHDiv(ic,k)));
+              }
 
-
-          //compute L2 projection interpolation of the Lagrangian interpolation
-          DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
-          {
-            ordinal_type targetCubDegree(basisPtr->getDegree());
-
-            Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-            projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
-
-            ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-
-            DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-            pts::getL2EvaluationPoints(evaluationPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-
-            DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
-
-            DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
-            DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
-            for(ordinal_type ic=0; ic<numCells; ++ic)
-              basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-            ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
-                hdivBasisAtEvaluationPointsNonOriented,
-                elemOrts,
-                basisPtr.get());
-
-            for(ordinal_type ic=0; ic<numCells; ++ic) {
-              for(int i=0;i<numPoints;i++) {
-                for(int k=0;k<basisCardinality;k++)
-                  for(int d=0;d<dim;d++)
-                    targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hdivBasisAtEvaluationPoints(ic,k,i,d);
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HDIV_I" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
               }
             }
 
-            pts::getL2BasisCoeffs(basisCoeffsL2,
-                targetAtEvalPoints,
-                evaluationPoints,
-                elemOrts,
-                basisPtr.get(),
-                &projStruct);
-          }
+            //compute L2 projection interpolation of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
 
-          //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
-          {
-            ValueType diffErr = 0;
-            for(int k=0;k<basisCardinality;k++) {
-              //std::cout << "["<< basisCoeffsLI(0,k) << " " <<  basisCoeffsHDiv(0,k) << "] [" << basisCoeffsLI(1,k) << " " <<  basisCoeffsHDiv(1,k) << "]" <<std::endl;
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2EvaluationPoints(evaluationPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
               for(ordinal_type ic=0; ic<numCells; ++ic)
-                diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2(ic,k)));
+                basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
+                  hdivBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hdivBasisAtEvaluationPoints(ic,k,i,d);
+                }
+              });
+
+              pts::getL2BasisCoeffs(basisCoeffsL2,
+                  targetAtEvalPoints,
+                  evaluationPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
             }
 
-            if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "HDIV_I" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the function."<<
-                  "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr = 0;
+              auto hostBasisCoeffsL2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2);
+              for(int k=0;k<basisCardinality;k++) {
+                //std::cout << "["<< basisCoeffsLI(0,k) << " " <<  basisCoeffsHDiv(0,k) << "] [" << basisCoeffsLI(1,k) << " " <<  basisCoeffsHDiv(1,k) << "]" <<std::endl;
+                for(ordinal_type ic=0; ic<numCells; ++ic)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2(ic,k)));
+              }
+
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HDIV_I" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the function."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
             }
+
+            //compute DG L2 projection interpolation of the Lagrangian interpolation
+            DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+            {
+              ordinal_type targetCubDegree(basisPtr->getDegree());
+
+              Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+              projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+              ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+
+              DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+              pts::getL2DGEvaluationPoints(evaluationPoints,
+                  basisPtr,
+                  &projStruct);
+
+              DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints, dim);
+
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPoints, numCells, basisCardinality , numPoints, dim);
+              DynRankView ConstructWithLabel(hdivBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints, dim);
+              for(ordinal_type ic=0; ic<numCells; ++ic)
+                basisPtr->getValues(Kokkos::subview(hdivBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+              ots::modifyBasisByOrientation(hdivBasisAtEvaluationPoints,
+                  hdivBasisAtEvaluationPointsNonOriented,
+                  elemOrts,
+                  basisPtr);
+                  
+              Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+              KOKKOS_LAMBDA (const int &ic) {
+                for(int i=0;i<numPoints;i++) {
+                  for(int k=0;k<basisCardinality;k++)
+                    for(int d=0;d<dim;d++)
+                      targetAtEvalPoints(ic,i,d) += basisCoeffsLI(ic,k)*hdivBasisAtEvaluationPoints(ic,k,i,d);
+                }
+              });
+
+              pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+                  targetAtEvalPoints,
+                  elemOrts,
+                  basisPtr,
+                  &projStruct);
+            }
+
+            //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+            {
+              ValueType diffErr = 0;
+              auto hostBasisCoeffsL2DG = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2DG);
+              for(int k=0;k<basisCardinality;k++) {
+                //std::cout << "["<< basisCoeffsLI(0,k) << " " <<  basisCoeffsHDiv(0,k) << "] [" << basisCoeffsLI(1,k) << " " <<  basisCoeffsHDiv(1,k) << "]" <<std::endl;
+                for(ordinal_type ic=0; ic<numCells; ++ic)
+                  diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2DG(ic,k)));
+              }
+
+              if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << "HDIV_I" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the function."<<
+                    "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+              }
+            }
+
+            delete basisPtr;
           }
-#endif
         }
       }
     } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
@@ -1503,8 +1734,6 @@ int InterpolationProjectionTet(const bool verbose) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
-
-
 
   *outStream
   << "===============================================================================\n"
@@ -1518,11 +1747,11 @@ int InterpolationProjectionTet(const bool verbose) {
 
 
     ValueType vertices[numTotalVertexes][dim];
-    ordinal_type tets[numCells][numElemVertexes];
+    ordinal_type cells[numCells][numElemVertexes];
 
     for(ordinal_type i=0; i<numCells;++i)
       for(ordinal_type j=0; j<numElemVertexes;++j)
-        tets[i][j] = tets_orig[i][j];
+        cells[i][j] = cells_orig[i][j];
 
     for(ordinal_type i=0; i<numTotalVertexes;++i)
       for(ordinal_type d=0; d<dim;++d)
@@ -1530,284 +1759,357 @@ int InterpolationProjectionTet(const bool verbose) {
 
     *outStream <<  "Considering Tet 0: [ ";
     for(ordinal_type j=0; j<numElemVertexes;++j)
-      *outStream << tets[0][j] << " ";
+      *outStream << cells[0][j] << " ";
     *outStream << "] and Tet 1: [ ";
     for(ordinal_type j=0; j<numElemVertexes;++j)
-      *outStream << tets[1][j] << " ";
+      *outStream << cells[1][j] << " ";
     *outStream << "]\n";
 
-    shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-    shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
-    shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
-
     //computing vertices coords
-    DynRankView ConstructWithLabel(physVertexes, numCells, tet.getNodeCount(), dim);
+    DynRankView ConstructWithLabel(physVertexes, numCells, numNodesPerElem, dim);
+    auto hostPhysVertexes = Kokkos::create_mirror_view(physVertexes);
     for(ordinal_type i=0; i<numCells; ++i)
-      for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+      for(ordinal_type j=0; j<numNodesPerElem; ++j)
         for(ordinal_type k=0; k<dim; ++k)
-          physVertexes(i,j,k) = vertices[tets[i][j]][k];
+          hostPhysVertexes(i,j,k) = vertices[cells[i][j]][k];
+    deep_copy(physVertexes, hostPhysVertexes);
 
     // compute orientations for cells (one time computation)
-    DynRankViewIntHost elemNodes(&tets[0][0], numCells, numElemVertexes);
-    Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-    ots::getOrientation(elemOrts, elemNodes, tet);
+    DynRankViewIntHost elemNodesHost(&cells[0][0], numCells, numElemVertexes);
+    auto elemNodes = Kokkos::create_mirror_view_and_copy(MemSpaceType(),elemNodesHost);
+    Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
+    ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
     for (ordinal_type degree=1; degree <= max_degree; degree++) {
 
-      Teuchos::RCP<Basis<DeviceSpaceType,ValueType,ValueType> > basisPtr;
+      basis_set.clear();
       if(degree==1)
-        basisPtr = Teuchos::rcp(new Basis_HVOL_C0_FEM<DeviceSpaceType,ValueType,ValueType>(tet));
-      else
-        basisPtr = Teuchos::rcp(new Basis_HVOL_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType>(degree, POINTTYPE_WARPBLEND));
-      ordinal_type basisCardinality = basisPtr->getCardinality();
+        basis_set.push_back(new Basis_HVOL_C0_FEM<DeviceType,ValueType,ValueType>(cellTopo));
+      //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(degree));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(degree,POINTTYPE_WARPBLEND));
 
-      //compute DofCoords Oriented
-      DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
-      DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
-      DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
-      DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
-      DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
+      for (auto basisPtr:basis_set) {
 
-      //compute Lagrangian Interpolation of fun
-      {
-        li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr.get(), POINTTYPE_WARPBLEND, elemOrts);
+        auto name = basisPtr->getName();
+        *outStream << " " << name << ": "<< degree << std::endl;
 
-        //Compute physical Dof Coordinates
+        ordinal_type basisCardinality = basisPtr->getCardinality();
+
+        //compute DofCoords Oriented
+        DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
+        DynRankView ConstructWithLabel(dofCoeffsPhys, numCells, basisCardinality);
+        DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
+        DynRankView ConstructWithLabel(funAtDofCoords, numCells, basisCardinality);
+        DynRankView ConstructWithLabel(basisCoeffsLI, numCells, basisCardinality);
+
+        //compute Lagrangian Interpolation of fun
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
-          for(ordinal_type i=0; i<numCells; ++i)
-            for(ordinal_type d=0; d<dim; ++d) {
-              auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-              auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-              tetLinearBasis.getValues(outView, inView);
+          li::getDofCoordsAndCoeffs(dofCoordsOriented,  dofCoeffsPhys, basisPtr, elemOrts);
 
-              for(ordinal_type j=0; j<basisCardinality; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
+          //need to transform dofCoeff to physical space (they transform as normals)
+          DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
+          DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
+          ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
+          ct::setJacobianDet (jacobian_det, jacobian);
+
+          //Compute physical Dof Coordinates
+          DynRankView ConstructWithLabel(linearBasisValuesAtDofCoord, numCells, numNodesPerElem);
+          DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality);
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &i) {
+            Fun fun;
+            auto basisValuesAtEvalDofCoord = Kokkos::subview(linearBasisValuesAtDofCoord,i,Kokkos::ALL());
+            for(ordinal_type j=0; j<basisCardinality; ++j){
+              auto evalPoint = Kokkos::subview(dofCoordsOriented,i,j,Kokkos::ALL());
+              Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDofCoord, evalPoint);
+              for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                for(ordinal_type d=0; d<dim; ++d)
+                  physDofCoords(i,j,d) += physVertexes(i,k,d)*basisValuesAtEvalDofCoord(k);
+
+              funAtDofCoords(i,j) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2));
+              fwdFunAtDofCoords(i,j) = jacobian_det(i,j)*funAtDofCoords(i,j);
             }
+          });
+
+          li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffsPhys);
         }
 
-        //need to transform dofCoeff to physical space (they transform as normals)
+        //Testing Kronecker property of basis functions
+        {
+          for(ordinal_type i=0; i<numCells; ++i) {
+            DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
+            DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+            auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
+            auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
+            basisPtr->getValues(outView, inView);
+
+            // modify basis values to account for orientations
+            ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+                basisValuesAtDofCoords,
+                elemOrts,
+                basisPtr);
+
+            auto hostBasisValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesAtDofCoordsOriented);
+            auto hostDofCoeffsPhys = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dofCoeffsPhys);
+            for(ordinal_type k=0; k<basisCardinality; ++k) {
+              for(ordinal_type j=0; j<basisCardinality; ++j){
+                ValueType dofValue = hostBasisValues(i,k,j) * hostDofCoeffsPhys(i,j);
+                if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
+                  errorFlag++;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                  *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
+                }
+                if ( k!=j && std::abs( dofValue ) > tol ) {
+                  errorFlag++;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                  *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+                }
+              }
+            }
+          }
+        }
+
+        //check that fun values at reference points coincide with those computed using basis functions
+        DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+        DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
+        DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
+
+        for (ordinal_type ic = 0; ic < numCells; ++ic)
+          basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
+
+        // modify basis values to account for orientations
+        ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
+            basisValuesAtDofCoordsCells,
+            elemOrts,
+            basisPtr);
+
+        // transform basis values
         DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
         DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-        ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
+        ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, cellTopo);
         ct::setJacobianDet (jacobian_det, jacobian);
+        fst::HVOLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
+            jacobian_det,
+            basisValuesAtDofCoordsOriented);
 
-        Fun fun;
-
-        DynRankView ConstructWithLabel(fwdFunAtDofCoords, numCells, basisCardinality);
-        for(ordinal_type i=0; i<numCells; ++i)
+        DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality);
+        Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+        KOKKOS_LAMBDA (const int &i) {
           for(ordinal_type j=0; j<basisCardinality; ++j) {
-            funAtDofCoords(i,j) = fun(degree, physDofCoords(i,j,0), physDofCoords(i,j,1), physDofCoords(i,j,2));
-            fwdFunAtDofCoords(i,j) = jacobian_det(i,j)*funAtDofCoords(i,j);
+            for(ordinal_type k=0; k<basisCardinality; ++k)
+              funAtDofCoordsOriented(i,j) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j);
           }
+        });
 
-        li::getBasisCoeffs(basisCoeffsLI, fwdFunAtDofCoords, dofCoeffsPhys);
-      }
-
-      //Testing Kronecker property of basis functions
-      {
+        auto hostFunAtDofCoordsOriented = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoordsOriented);
+        auto hostFunAtDofCoords = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), funAtDofCoords);
         for(ordinal_type i=0; i<numCells; ++i) {
-          DynRankView ConstructWithLabel(basisValuesAtDofCoords, numCells, basisCardinality, basisCardinality);
-          DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-          auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-          auto outView =Kokkos::subview( basisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL());
-          basisPtr->getValues(outView, inView);
+          ValueType error=0;
+          for(ordinal_type j=0; j<basisCardinality; ++j) {
+            error = std::max(std::abs( hostFunAtDofCoords(i,j) - hostFunAtDofCoordsOriented(i,j)), error);
+          }
 
-          // modify basis values to account for orientations
-          ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-              basisValuesAtDofCoords,
+          if(error>100*tol) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << "Function values at reference points differ from those computed using basis functions of Tet " << i << "\n";
+            *outStream << "Function values at reference points are:\n";
+            for(ordinal_type j=0; j<basisCardinality; ++j)
+              *outStream << " (" << hostFunAtDofCoords(i,j)  << ")";
+            *outStream << "\nFunction values at reference points computed using basis functions are\n";
+            for(ordinal_type j=0; j<basisCardinality; ++j)
+              *outStream << " (" << hostFunAtDofCoordsOriented(i,j)  << ")";
+            *outStream << std::endl;
+          }
+        }
+
+        //compute projection-based interpolation of the Lagrangian interpolation
+        DynRankView ConstructWithLabel(basisCoeffsHVol, numCells, basisCardinality);
+        {
+          ordinal_type targetCubDegree(basisPtr->getDegree());
+
+          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          projStruct.createHVolProjectionStruct(basisPtr, targetCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+
+          pts::getHVolEvaluationPoints(evaluationPoints,
               elemOrts,
-              basisPtr.get());
+              basisPtr,
+              &projStruct);
 
-          for(ordinal_type k=0; k<basisCardinality; ++k) {
-            for(ordinal_type j=0; j<basisCardinality; ++j){
-              ValueType dofValue = basisValuesAtDofCoordsOriented(i,k,j) * dofCoeffsPhys(i,j);
-              if ( k==j && std::abs( dofValue - 1.0 ) > 100*tol ) {
-                errorFlag++;
-                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
-              }
-              if ( k!=j && std::abs( dofValue ) > tol ) {
-                errorFlag++;
-                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << " Basis function " << k << " of cell " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
-              }
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
+          for(int ic=0; ic<numCells; ic++)
+            basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
+              hvolBasisAtEvaluationPointsNonOriented,
+              elemOrts,
+              basisPtr);
+
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &ic) {
+            for(int i=0;i<numPoints;i++) {
+              for(int k=0;k<basisCardinality;k++)
+                targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hvolBasisAtEvaluationPoints(ic,k,i);
             }
+          });
+
+          pts::getHVolBasisCoeffs(basisCoeffsHVol,
+              targetAtEvalPoints,
+              evaluationPoints,
+              elemOrts,
+              basisPtr,
+              &projStruct);
+        }
+
+        //check that the basis coefficients of the Lagrangian interpolation are the same as those of the projection-based interpolation
+        auto hostBasisCoeffsLI = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsLI);
+        {
+          ValueType diffErr(0);
+          auto hostBasisCoeffsHVol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsHVol);
+          for(int k=0;k<basisCardinality;k++) {
+            for(int ic=0; ic<numCells; ic++)
+              diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsHVol(ic,k)));
           }
-        }
-      }
 
-      //check that fun values at reference points coincide with those computed using basis functions
-      DynRankView ConstructWithLabel(basisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-      DynRankView ConstructWithLabel(transformedBasisValuesAtDofCoordsOriented, numCells, basisCardinality, basisCardinality);
-      DynRankView basisValuesAtDofCoordsCells("inValues", numCells, basisCardinality, basisCardinality);
-
-      for (ordinal_type ic = 0; ic < numCells; ++ic)
-        basisPtr->getValues(Kokkos::subview(basisValuesAtDofCoordsCells, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(dofCoordsOriented, ic, Kokkos::ALL(), Kokkos::ALL()));
-
-      // modify basis values to account for orientations
-      ots::modifyBasisByOrientation(basisValuesAtDofCoordsOriented,
-          basisValuesAtDofCoordsCells,
-          elemOrts,
-          basisPtr.get());
-
-      // transform basis values
-      DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
-      DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-      ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
-      ct::setJacobianDet (jacobian_det, jacobian);
-      fst::HVOLtransformVALUE(transformedBasisValuesAtDofCoordsOriented,
-          jacobian_det,
-          basisValuesAtDofCoordsOriented);
-
-      DynRankView ConstructWithLabel(funAtDofCoordsOriented, numCells, basisCardinality);
-      for(ordinal_type i=0; i<numCells; ++i) {
-        ValueType error=0;
-        for(ordinal_type j=0; j<basisCardinality; ++j) {
-          for(ordinal_type k=0; k<basisCardinality; ++k)
-            funAtDofCoordsOriented(i,j) += basisCoeffsLI(i,k)*transformedBasisValuesAtDofCoordsOriented(i,k,j);
-
-          error = std::max(std::abs( funAtDofCoords(i,j) - funAtDofCoordsOriented(i,j)), error);
-        }
-
-        if(error>100*tol) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "Function values at reference points differ from those computed using basis functions of Tet " << i << "\n";
-          *outStream << "Function values at reference points are:\n";
-          for(ordinal_type j=0; j<basisCardinality; ++j)
-            *outStream << " (" << funAtDofCoords(i,j)  << ")";
-          *outStream << "\nFunction values at reference points computed using basis functions are\n";
-          for(ordinal_type j=0; j<basisCardinality; ++j)
-            *outStream << " (" << funAtDofCoordsOriented(i,j)  << ")";
-          *outStream << std::endl;
-        }
-      }
-
-#ifndef KOKKOS_ENABLE_CUDA
-      //compute projection-based interpolation of the Lagrangian interpolation
-      DynRankView ConstructWithLabel(basisCoeffsHVol, numCells, basisCardinality);
-      {
-        ordinal_type targetCubDegree(basisPtr->getDegree());
-
-        Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createHVolProjectionStruct(basisPtr.get(), targetCubDegree);
-
-        ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-        DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-
-        pts::getHVolEvaluationPoints(evaluationPoints,
-            elemOrts,
-            basisPtr.get(),
-            &projStruct);
-
-
-        DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
-
-        DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-        DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-        for(int ic=0; ic<numCells; ic++)
-          basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-        ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
-            hvolBasisAtEvaluationPointsNonOriented,
-            elemOrts,
-            basisPtr.get());
-
-        for(int ic=0; ic<numCells; ic++) {
-          for(int i=0;i<numPoints;i++) {
-            for(int k=0;k<basisCardinality;k++)
-              targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hvolBasisAtEvaluationPoints(ic,k,i);
+          //Check that the two representations of the gradient of ifun are consistent
+          if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << "HVOL_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
+                "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
           }
         }
 
-        pts::getHVolBasisCoeffs(basisCoeffsHVol,
-            targetAtEvalPoints,
-            evaluationPoints,
-            elemOrts,
-            basisPtr.get(),
-            &projStruct);
-      }
+        //compute L2 projection of the Lagrangian interpolation
+        DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
+        {
+          ordinal_type targetCubDegree(basisPtr->getDegree());
 
-      //check that the basis coefficients of the Lagrangian interpolation are the same as those of the projection-based interpolation
-      {
-        ValueType diffErr(0);
-        for(int k=0;k<basisCardinality;k++) {
+          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          projStruct.createL2ProjectionStruct(basisPtr, targetCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+
+          pts::getL2EvaluationPoints(evaluationPoints,
+              elemOrts,
+              basisPtr,
+              &projStruct);
+
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
           for(int ic=0; ic<numCells; ic++)
-            diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsHVol(ic,k)));
+            basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
+              hvolBasisAtEvaluationPointsNonOriented,
+              elemOrts,
+              basisPtr);
+
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &ic) {
+            for(int i=0;i<numPoints;i++) {
+              for(int k=0;k<basisCardinality;k++)
+                targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hvolBasisAtEvaluationPoints(ic,k,i);
+            }
+          });
+
+          pts::getL2BasisCoeffs(basisCoeffsL2,
+              targetAtEvalPoints,
+              evaluationPoints,
+              elemOrts,
+              basisPtr,
+              &projStruct);
         }
 
-        //Check that the two representations of the gradient of ifun are consistent
-        if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "HGRAD_C" << degree << ": The weights recovered with the optimization are different than the one used for generating the functon."<<
-              "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
-        }
-      }
+        //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+        {
+          ValueType diffErr = 0;
+          auto hostBasisCoeffsL2 = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2);
+          for(int k=0;k<basisCardinality;k++) {
+            for(int ic=0; ic<numCells; ic++)
+              diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2(ic,k)));
+          }
 
-      //compute L2 projection of the Lagrangian interpolation
-      DynRankView ConstructWithLabel(basisCoeffsL2, numCells, basisCardinality);
-      {
-        ordinal_type targetCubDegree(basisPtr->getDegree());
-
-        Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-        projStruct.createL2ProjectionStruct(basisPtr.get(), targetCubDegree);
-
-        ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
-        DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
-
-
-        pts::getL2EvaluationPoints(evaluationPoints,
-            elemOrts,
-            basisPtr.get(),
-            &projStruct);
-
-
-        DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
-
-        DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
-        DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
-        for(int ic=0; ic<numCells; ic++)
-          basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
-        ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
-            hvolBasisAtEvaluationPointsNonOriented,
-            elemOrts,
-            basisPtr.get());
-
-        for(int ic=0; ic<numCells; ic++) {
-          for(int i=0;i<numPoints;i++) {
-            for(int k=0;k<basisCardinality;k++)
-              targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hvolBasisAtEvaluationPoints(ic,k,i);
+          if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << "HVOL_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
+                "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
           }
         }
 
-        pts::getL2BasisCoeffs(basisCoeffsL2,
-            targetAtEvalPoints,
-            evaluationPoints,
-            elemOrts,
-            basisPtr.get(),
-            &projStruct);
-      }
+        //compute DG L2 projection of the Lagrangian interpolation
+        DynRankView ConstructWithLabel(basisCoeffsL2DG, numCells, basisCardinality);
+        {
+          ordinal_type targetCubDegree(basisPtr->getDegree());
 
-      //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
-      {
-        ValueType diffErr = 0;
-        for(int k=0;k<basisCardinality;k++) {
+          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          projStruct.createL2DGProjectionStruct(basisPtr, targetCubDegree);
+
+          ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
+          DynRankView ConstructWithLabel(evaluationPoints, numCells, numPoints, dim);
+
+
+          pts::getL2DGEvaluationPoints(evaluationPoints,
+              basisPtr,
+              &projStruct);
+
+
+          DynRankView ConstructWithLabel(targetAtEvalPoints, numCells, numPoints);
+
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPoints, numCells, basisCardinality , numPoints);
+          DynRankView ConstructWithLabel(hvolBasisAtEvaluationPointsNonOriented, numCells, basisCardinality , numPoints);
           for(int ic=0; ic<numCells; ic++)
-            diffErr = std::max(diffErr, std::abs(basisCoeffsLI(ic,k) - basisCoeffsL2(ic,k)));
+            basisPtr->getValues(Kokkos::subview(hvolBasisAtEvaluationPointsNonOriented, ic, Kokkos::ALL(), Kokkos::ALL()), Kokkos::subview(evaluationPoints, ic, Kokkos::ALL(), Kokkos::ALL()), OPERATOR_VALUE);
+          ots::modifyBasisByOrientation(hvolBasisAtEvaluationPoints,
+              hvolBasisAtEvaluationPointsNonOriented,
+              elemOrts,
+              basisPtr);
+
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numCells),
+          KOKKOS_LAMBDA (const int &ic) {
+            for(int i=0;i<numPoints;i++) {
+              for(int k=0;k<basisCardinality;k++)
+                targetAtEvalPoints(ic,i) += basisCoeffsLI(ic,k)*hvolBasisAtEvaluationPoints(ic,k,i);
+            }
+          });
+
+          pts::getL2DGBasisCoeffs(basisCoeffsL2DG,
+              targetAtEvalPoints,
+              basisPtr,
+              &projStruct);
         }
 
-        if(diffErr > pow(7, degree-1)*tol) { //heuristic relation on how round-off error depends on degree
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "HGRAD_C" << degree << ": The weights recovered with the L2 optimization are different than the one used for generating the functon."<<
-              "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+        //check that the basis coefficients of the Lagrangian interpolation are the same as those of the L2 projection
+        {
+          ValueType diffErr = 0;
+          auto hostBasisCoeffsL2DG = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisCoeffsL2DG);
+          for(int k=0;k<basisCardinality;k++) {
+            for(int ic=0; ic<numCells; ic++)
+              diffErr = std::max(diffErr, std::abs(hostBasisCoeffsLI(ic,k) - hostBasisCoeffsL2DG(ic,k)));
+          }
+
+          if(diffErr > pow(20, degree)*tol) { //heuristic relation on how round-off error depends on degree
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << "HVOL_C" << degree << ": The weights recovered with the L2DG optimization are different than the one used for generating the functon."<<
+                "\nThe max The infinite norm of the difference between the weights is: " <<  diffErr << std::endl;
+          }
         }
+
+        delete basisPtr;
       }
-#endif
     }
   } catch (std::exception &err) {
     std::cout << " Exeption\n";

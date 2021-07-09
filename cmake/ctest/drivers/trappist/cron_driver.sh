@@ -26,10 +26,11 @@ export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 # Machine specific environment
 #
-export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
-export TDD_HTTPS_PROXY="https://sonproxy.sandia.gov:80"
-export http_proxy="http://sonproxy.sandia.gov:80"
-export https_proxy="https://sonproxy.sandia.gov:80"
+. /etc/profile
+
+export TDD_HTTP_PROXY=$http_proxy
+export TDD_HTTPS_PROXY=$https_proxy
+
 
 . ~/.bashrc
 
@@ -39,7 +40,7 @@ export https_proxy="https://sonproxy.sandia.gov:80"
 
 # ===========================================================================
 export CTEST_CONFIGURATION="default"
-module load sems-cmake/3.10.3
+module load sems-cmake/3.17.1
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base
@@ -61,11 +62,11 @@ $SCRIPT_DIR/../cron_driver.py
 module unload sems-superlu/4.3/base
 module unload sems-openmpi/1.10.1
 module unload sems-gcc/5.3.0
-module unload sems-cmake/3.10.3
+module unload sems-cmake/3.17.1
 # ===========================================================================
 export CTEST_CONFIGURATION="clang"
-module load sems-cmake/3.10.3
-module load sems-clang/3.9.0
+module load sems-cmake/3.17.1
+module load sems-clang/10.0.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base
 
@@ -85,8 +86,8 @@ $SCRIPT_DIR/../cron_driver.py
 
 module unload sems-superlu/4.3/base
 module unload sems-openmpi/1.10.1
-module unload sems-clang/3.9.0
-module unload sems-cmake/3.10.3
+module unload sems-clang/10.0.0
+module unload sems-cmake/3.17.1
 # ===========================================================================
 
 echo

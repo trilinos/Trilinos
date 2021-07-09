@@ -44,6 +44,13 @@
 
 #include <FROSch_SchwarzPreconditioner_decl.hpp>
 
+#include <FROSch_SumOperator_def.hpp>
+#include <FROSch_MultiplicativeOperator_def.hpp>
+#include <FROSch_AlgebraicOverlappingOperator_def.hpp>
+#include <FROSch_GDSWCoarseOperator_def.hpp>
+#include <FROSch_RGDSWCoarseOperator_def.hpp>
+#include <FROSch_IPOUHarmonicCoarseOperator_def.hpp>
+
 
 namespace FROSch {
 
@@ -82,7 +89,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     void SchwarzPreconditioner<SC,LO,GO,NO>::residual(const XMultiVector & X,
                                                       const XMultiVector & B,
-                                                      XMultiVector& R) const 
+                                                      XMultiVector& R) const
     {
         SC one = Teuchos::ScalarTraits<SC>::one(), negone = -one;
         apply(X,R);

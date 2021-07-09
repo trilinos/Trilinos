@@ -71,7 +71,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename ValueType, typename DeviceType>
 int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -84,7 +84,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
+  using DeviceSpaceType = typename DeviceType::execution_space;  
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -108,7 +108,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+  typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
   typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -118,7 +118,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
   // for virtual function, value and point types are declared in the class
   typedef ValueType outputValueType;
   typedef ValueType pointValueType;
-  Basis_HDIV_WEDGE_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> wedgeBasis;
+  Basis_HDIV_WEDGE_I1_FEM<DeviceType,outputValueType,pointValueType> wedgeBasis;
 
   *outStream
   << "\n"
@@ -274,38 +274,38 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
 
   // VALUE: Each row pair gives the 5x3 correct basis set values at an evaluation point
   double basisValues[] = {
-      0, -0.500000, 0, 0, 0, 0, -0.500000, 0, 0, 0, 0, -2.00000, 0, 0, 0, \
-      0.500000, -0.500000, 0, 0.500000, 0, 0, 0, 0, 0, 0, 0, -2.00000, 0, \
-      0, 0, 0, 0, 0, 0, 0.500000, 0, -0.500000, 0.500000, 0, 0, 0, \
-      -2.00000, 0, 0, 0, 0, -0.500000, 0, 0, 0, 0, -0.500000, 0, 0, 0, 0, \
-      0, 0, 0, 2.00000, 0.500000, -0.500000, 0, 0.500000, 0, 0, 0, 0, 0, 0, \
-      0, 0, 0, 0, 2.00000, 0, 0, 0, 0, 0.500000, 0, -0.500000, 0.500000, 0, \
-      0, 0, 0, 0, 0, 2.00000, 0.125000, -0.250000, 0, 0.125000, 0.250000, \
-      0, -0.375000, 0.250000, 0, 0, 0, -2.00000, 0, 0, 0, 0.250000, \
-      -0.375000, 0, 0.250000, 0.125000, 0, -0.250000, 0.125000, 0, 0, 0, \
-      -1.00000, 0, 0, 1.00000, 0.125000, -0.375000, 0, 0.125000, 0.125000, \
-      0, -0.375000, 0.125000, 0, 0, 0, 0, 0, 0, 2.00000, 0.125000, \
-      -0.500000, 0, 0.125000, 0, 0, -0.375000, 0, 0, 0, 0, -0.250000, 0, 0, \
-      1.75000, 0, -0.250000, 0, 0, 0.250000, 0, -0.500000, 0.250000, 0, 0, \
-      0, -1.25000, 0, 0, 0.750000, 0.250000, -0.250000, 0, 0.250000, \
-      0.250000, 0, -0.250000, 0.250000, 0, 0, 0, -1.00000, 0, 0, 1.00000};
+      0, -2.0, 0, 0, 0, 0, -2.0, 0, 0, 0, 0, -1.0, 0, 0, 0, \
+      2.0, -2.0, 0, 2.0, 0, 0, 0, 0, 0, 0, 0, -1.0, 0, \
+      0, 0, 0, 0, 0, 0, 2.0, 0, -2.0, 2.0, 0, 0, 0, \
+      -1.0, 0, 0, 0, 0, -2.0, 0, 0, 0, 0, -2.0, 0, 0, 0, 0, \
+      0, 0, 0, 1.0, 2.0, -2.0, 0, 2.0, 0, 0, 0, 0, 0, 0, \
+      0, 0, 0, 0, 1.0, 0, 0, 0, 0, 2.0, 0, -2.0, 2.0, 0, \
+      0, 0, 0, 0, 0, 1.0, 0.5, -1.0, 0, 0.5, 1.0, \
+      0, -1.5, 1.0, 0, 0, 0, -1.0, 0, 0, 0, 1.0, \
+      -1.5, 0, 1.0, 0.5, 0, -1.0, 0.5, 0, 0, 0, \
+      -0.5, 0, 0, 0.5, 0.5, -1.5, 0, 0.5, 0.5, \
+      0, -1.5, 0.5, 0, 0, 0, 0, 0, 0, 1.0, 0.5, \
+      -2.0, 0, 0.5, 0, 0, -1.5, 0, 0, 0, 0, -0.125, 0, 0, \
+      0.875, 0, -1.0, 0, 0, 1.0, 0, -2.0, 1.0, 0, 0, \
+      0, -0.625, 0, 0, 0.375, 1.0, -1.0, 0, 1.0, \
+      1.0, 0, -1.0, 1.0, 0, 0, 0, -0.5, 0, 0, 0.5};
 
   // DIV: each row pair gives the 5 correct values of the divergence of the 5 basis functions
   double basisDivs[] = {   
       // 6 vertices
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
       // 6 other points
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0,
-      1.0, 1.0, 1.0, 1.0, 1.0
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5,
+      4.0, 4.0, 4.0, 0.5, 0.5
   };
 
   try{
@@ -325,7 +325,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
     wedgeNodesHost(10,0)=  0.0;  wedgeNodesHost(10,1)=  0.5;  wedgeNodesHost(10,2)= -0.25;
     wedgeNodesHost(11,0)=  0.5;  wedgeNodesHost(11,1)=  0.5;  wedgeNodesHost(11,2)=  0.0;
 
-    const auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), wedgeNodesHost);
+    const auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), wedgeNodesHost);
     Kokkos::deep_copy(wedgeNodes, wedgeNodesHost);
 
     // Dimensions for the output arrays:
@@ -377,7 +377,7 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " ";*outStream << j << " ";
             *outStream << "}  computed divergence component: " << vals_host(i,j)
-                   << " but reference divergence component: " << basisDivs[l] << "\n";
+                   << " but reference divergence component: " << l << " " << basisDivs[l] << "\n";
           }
         }
       }
@@ -428,11 +428,11 @@ int HDIV_WEDGE_I1_FEM_Test01(const bool verbose) {
 
     // Check mathematical correctness
     DynRankViewHost ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
-    normals(0,0)  =  0.0; normals(0,1)  = -2.0; normals(0,2)  =  0.0;
-    normals(1,0)  =  2.0; normals(1,1)  =  2.0; normals(1,2)  =  0.0;
-    normals(2,0)  = -2.0; normals(2,1)  =  0.0; normals(2,2)  =  0.0;
-    normals(3,0)  =  0.0; normals(3,1)  =  0.0; normals(3,2)  = -0.5;
-    normals(4,0)  =  0.0; normals(4,1)  =  0.0; normals(4,2)  =  0.5;
+    normals(0,0)  =  0.0; normals(0,1)  = -0.5; normals(0,2)  =  0.0;
+    normals(1,0)  =  0.5; normals(1,1)  =  0.5; normals(1,2)  =  0.0;
+    normals(2,0)  = -0.5; normals(2,1)  =  0.0; normals(2,2)  =  0.0;
+    normals(3,0)  =  0.0; normals(3,1)  =  0.0; normals(3,2)  = -1.0;
+    normals(4,0)  =  0.0; normals(4,1)  =  0.0; normals(4,2)  =  1.0;
 
     auto cvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals);
     Kokkos::deep_copy(cvals_host, cvals);

@@ -28,7 +28,7 @@ tool, so it may take a while to get up to speed.
 The Zoltan library is a C library that you can link with your C,
 C++ or Fortran application.  Details of the C++ and Fortran bindings
 are provided in the User's Guide 
-(\url{http://www.cs.sandia.gov/Zoltan/ug_html/ug.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug_html/ug.html}).
 Because Zoltan uses MPI for communication, you must link your application
 with the Zoltan library and with MPI. (It is actually possible to build
 Zoltan without MPI, using the bundled serial MPI library, siMPI,
@@ -74,7 +74,7 @@ partitioning instance that is created with \textbf{Zoltan\_Create} must be freed
 the end with \textbf{Zoltan\_Destroy}.  And all lists returned by
 Zoltan must be freed with \textbf{Zoltan\_LB\_Free\_Part}.  These functions
 are defined in the User's Guide at
-\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_init.html}
+\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_init.html}
 and they are are illustrated in each of the examples in chapter ~\ref{cha:ex}.
 
 \section{Application defined query functions}
@@ -95,7 +95,7 @@ algorithms require only two additional callback functions, which return the numb
 of edges per object and edge lists for objects.
 
 The User's Guide 
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_query.html})
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_query.html})
 provides detailed prototypes for application defined query functions.
 Several working examples of query functions can be found in this document,
 for example in the Recursive Coordinate Bisection section (\ref{sec:rcb});
@@ -111,7 +111,7 @@ These parameters can be set by calls to \textbf{Zoltan\_Set\_Param}. Reasonable
 default values for all parameters are specified by Zoltan. Many of the parameters 
 are specific to individual algorithms, and are listed in the descriptions of those 
 algorithms in the User's Guide 
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_param.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_param.html}).
 
 Each example in the next chapter (\ref{cha:ex}) includes code that sets 
 general parameters and parameters for specific algorithms.
@@ -151,7 +151,7 @@ after computing the new partitioning, or the application can explicitly call
 \textbf{Zoltan\_Migrate} to perform the migration.  
 Details and examples can be
 found in the User's Guide
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_mig.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_mig.html}).
 
 
 \item [Distributed directory utility]
@@ -162,7 +162,7 @@ of memory and processing time) and avoids the bottle neck of a centralized direc
 This distributed directory module may be used alone or in conjunction with Zoltan's 
 load balancing capability and memory and communication services.
 Details of this feature can be found in the User's Guide
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_util\_dd.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_util\_dd.html}).
 
 \item [Timers]
 \textbf{Zoltan\_Timer\_Create} is a useful function 
@@ -181,7 +181,7 @@ communication plans upon completion. The package has proved useful in a
 variety of different applications. For this reason, it is maintained as a separate 
 library and can be used independently from Zoltan.
 Details of this feature can be found in the User's Guide
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_util\_comm.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_util\_comm.html}).
 
 \item [Memory allocation wrappers]
 This package consists of wrappers around the standard C memory allocation and 
@@ -189,19 +189,19 @@ deallocation routines which add error-checking and debugging capabilities. These
 routines are packaged separately from Zoltan to allow their independent use in other 
 applications. 
 They are described more fully in the User's Guide
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_util\_mem.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_util\_mem.html}).
 
 \item [Parallel ordering]
 With the \textbf{Zoltan\_Order} function,
 Zoltan provides limited capability for ordering a set of objects, typically 
 given as a graph.
 This feature is described more fully in the User's Guide
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_order.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_order.html}).
 
 \item [Parallel coloring]
 Zoltan provides limited capability for coloring a set of objects, typically given 
 as a graph. In graph coloring, each vertex is assigned an integer label such 
 that no two adjacent vertices have the same label. 
 This feature is described more fully in the User's Guide
-(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_color.html}).
+(\url{http://cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_color.html}).
 \end{description}

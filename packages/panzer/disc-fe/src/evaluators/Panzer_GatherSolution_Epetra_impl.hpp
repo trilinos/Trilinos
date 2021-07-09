@@ -132,8 +132,7 @@ GatherSolution_Epetra(
   string firstName("<none>");
   if (numFields > 0)
     firstName = names[0];
-  string n("GatherSolution (Epetra): " + firstName + " (" +
-    print<EvalT>() + ")");
+  string n("GatherSolution (Epetra): " + firstName + " (Residual)");
   this->setName(n);
 } // end of Initializing Constructor (Residual Specialization)
 
@@ -624,7 +623,7 @@ GatherSolution_Epetra(
     firstName = names[0];
   if (disableSensitivities_)
     n += ", No Sensitivities";
-  n += "): " + firstName + " (" + print<EvalT>() + ")";
+  n += "): " + firstName + " (Jacobian)";
   this->setName(n);
 } // end of Initializing Constructor (Jacobian Specialization)
 
@@ -854,6 +853,7 @@ evaluateFields(
         {
           // Seed the FAD object.
           int offset(elmtOffset[basis]);
+
           field(cell, basis).fastAccessDx(dos + offset) = seedValue;
         } // end loop over the basis functions
       } // end loop over localCellIds

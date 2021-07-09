@@ -1,12 +1,8 @@
 Clearing old data (if any)
 Level 0
 Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
-keep smoother data = 0   [default]
-PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
-PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
 smoother -> 
  [empty list]
-
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

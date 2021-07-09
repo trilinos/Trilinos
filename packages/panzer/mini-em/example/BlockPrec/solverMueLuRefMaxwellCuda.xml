@@ -17,8 +17,8 @@
                   <Parameter name="tentative: calculate qr" type="bool" value="false"/>
                   <Parameter name="rap: triple product" type="bool" value="false"/>
 
-                  <Parameter name="repartition: target rows per proc" type="int" value="100000"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="40000"/>
+                  <Parameter name="repartition: target rows per thread" type="int" value="95000"/>
+                  <Parameter name="repartition: min rows per thread" type="int" value="10000"/>
 
                 </ParameterList>
 
@@ -26,8 +26,8 @@
                   <Parameter name="use kokkos refactor" type="bool" value="false"/>
                   <Parameter name="rap: triple product" type="bool" value="false"/>
 
-                  <Parameter name="repartition: target rows per proc" type="int" value="100000"/>
-                  <Parameter name="repartition: min rows per proc" type="int" value="40000"/>
+                  <Parameter name="repartition: target rows per thread" type="int" value="180000"/>
+                  <Parameter name="repartition: min rows per thread" type="int" value="10000"/>
 
                 </ParameterList>
 

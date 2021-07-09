@@ -78,7 +78,9 @@ namespace BlockCrsTest {
   typedef Tpetra::RowMatrix<value_type> tpetra_rowmatrix_type;
   typedef Tpetra::BlockCrsMatrix<value_type> tpetra_blockcrs_matrix_type;
 
-  typedef Kokkos::DefaultExecutionSpace exec_space;
+  typedef typename node_type::device_type device_type;
+  typedef typename node_type::execution_space exec_space;
+  typedef typename node_type::memory_space mem_space;
   typedef Kokkos::DefaultHostExecutionSpace host_space;
 
   typedef Kokkos::pair<local_ordinal_type,local_ordinal_type> local_ordinal_range_type;
@@ -314,7 +316,7 @@ namespace BlockCrsTest {
     StructuredProcGrid _grid;
     StructuredBlockPart _owned;
 
-    typedef Kokkos::View<GO*,exec_space> global_ordinal_view_type;
+    typedef Kokkos::View<GO*,device_type> global_ordinal_view_type;
     typedef Kokkos::View<GO*,host_space> global_ordinal_view_host_type;
 
     global_ordinal_view_host_type _element_gids;
@@ -470,7 +472,7 @@ namespace BlockCrsTest {
     local_ordinal_range_type _remote_range_j;
     local_ordinal_range_type _remote_range_k;
 
-    typedef typename tpetra_crs_graph_type::local_graph_type::row_map_type::non_const_type rowptr_view_type;
+    typedef typename tpetra_crs_graph_type::local_graph_device_type::row_map_type::non_const_type rowptr_view_type;
     rowptr_view_type _rowptr;
 
     typedef typename rowptr_view_type::non_const_value_type scan_value_type;
@@ -536,8 +538,8 @@ namespace BlockCrsTest {
 
   struct LocalGraphFill {
   private:
-    typedef typename tpetra_crs_graph_type::local_graph_type::row_map_type::non_const_type rowptr_view_type;
-    typedef typename tpetra_crs_graph_type::local_graph_type::entries_type colidx_view_type;
+    typedef typename tpetra_crs_graph_type::local_graph_device_type::row_map_type::non_const_type rowptr_view_type;
+    typedef typename tpetra_crs_graph_type::local_graph_device_type::entries_type colidx_view_type;
 
     MeshDatabase::StructuredBlock _sb;
     MeshDatabase::global_ordinal_view_type _owned_gids;

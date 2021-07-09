@@ -120,7 +120,7 @@ trtri (const char uplo[],
   }
 
   // Create A matrix view type alias
-  using AViewInternalType = Kokkos::View<typename AViewType::const_value_type**,
+  using AViewInternalType = Kokkos::View<typename AViewType::non_const_value_type**,
                            typename AViewType::array_layout,
                            typename AViewType::device_type,
                            Kokkos::MemoryTraits<Kokkos::Unmanaged> >;

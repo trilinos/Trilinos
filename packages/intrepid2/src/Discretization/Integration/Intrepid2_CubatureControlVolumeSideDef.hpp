@@ -51,8 +51,8 @@
 
 namespace Intrepid2 {
 
-  template <typename SpT, typename PT, typename WT>
-  CubatureControlVolumeSide<SpT,PT,WT>::
+  template <typename DT, typename PT, typename WT>
+  CubatureControlVolumeSide<DT,PT,WT>::
   CubatureControlVolumeSide(const shards::CellTopology cellTopology) {
 
     // define primary cell topology with given one
@@ -87,18 +87,18 @@ namespace Intrepid2 {
       for (ordinal_type j=0;j<sideNodeMapHost(i,0);++j)
         sideNodeMapHost(i,j+1) = subcvCellTopo_.getNodeMap(sideDim, side, j);
     }
-    sideNodeMap_ = Kokkos::create_mirror_view(typename SpT::memory_space(), sideNodeMapHost);
+    sideNodeMap_ = Kokkos::create_mirror_view(typename DT::memory_space(), sideNodeMapHost);
     Kokkos::deep_copy(sideNodeMap_, sideNodeMapHost);
 
-    Kokkos::DynRankView<PT,SpT> sideCenterLocal("CubatureControlVolumeSide::sideCenterLocal",
+    Kokkos::DynRankView<PT,DT> sideCenterLocal("CubatureControlVolumeSide::sideCenterLocal",
                                                 1, sideDim);
 
     // map to reference subcell function relies on uvm; some utility functions in cell tools still need uvm
-    sidePoints_ = Kokkos::DynRankView<PT,SpT>("CubatureControlVolumeSide::sidePoints", numSideNodeMaps, spaceDim);
+    sidePoints_ = Kokkos::DynRankView<PT,DT>("CubatureControlVolumeSide::sidePoints", numSideNodeMaps, spaceDim);
     for (ordinal_type i=0;i<numSideNodeMaps;++i) {
       const auto sideRange = Kokkos::pair<ordinal_type,ordinal_type>(i, i+1);
       auto sidePoint = Kokkos::subdynrankview(sidePoints_, sideRange, Kokkos::ALL());
-      CellTools<SpT>::mapToReferenceSubcell(sidePoint,
+      CellTools<DT>::mapToReferenceSubcell(sidePoint,
                                             sideCenterLocal,
                                             sideDim,
                                             sideOrd[i],
@@ -106,9 +106,9 @@ namespace Intrepid2 {
     }
   }
   
-  template <typename SpT, typename PT, typename WT>
+  template <typename DT, typename PT, typename WT>
   void
-  CubatureControlVolumeSide<SpT,PT,WT>::
+  CubatureControlVolumeSide<DT,PT,WT>::
   getCubature( PointViewType  cubPoints,
                weightViewType cubWeights,
                PointViewType  cellCoords ) const {
@@ -129,7 +129,7 @@ namespace Intrepid2 {
                                   static_cast<ordinal_type>(cubPoints.extent(2)) != getDimension(), std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolumeSide): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
-    typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
+    typedef Kokkos::DynRankView<PT,DT> tempPointViewType;
 
     // get array dimensions
     const auto numCells = cellCoords.extent(0);
@@ -139,7 +139,7 @@ namespace Intrepid2 {
     const auto numNodesPerSubcv = subcvCellTopo_.getNodeCount();
     tempPointViewType subcvCoords("CubatureControlVolumeSide::subcvCoords",
                                   numCells, numNodesPerCell, numNodesPerSubcv, spaceDim);
-    CellTools<SpT>::getSubcvCoords(subcvCoords,
+    CellTools<DT>::getSubcvCoords(subcvCoords,
                                    cellCoords,
                                    primaryCellTopo_);
 
@@ -187,21 +187,21 @@ namespace Intrepid2 {
         auto subcvCoordsNode      = Kokkos::subdynrankview(subcvCoords,     Kokkos::ALL(), node, Kokkos::ALL(), Kokkos::ALL());
         auto subcvSideNormalNode  = Kokkos::subdynrankview(subcvSideNormal, Kokkos::ALL(), node, Kokkos::ALL(), Kokkos::ALL());      
 
-        CellTools<SpT>::setJacobian(subcvJacobianNode,    // C, P, D, D
+        CellTools<DT>::setJacobian(subcvJacobianNode,    // C, P, D, D
                                     sidePoint,            //    P, D
                                     subcvCoordsNode,      // C, N, D
                                     subcvCellTopo_);
         
-        CellTools<SpT>::getPhysicalSideNormals(subcvSideNormalNode,  // C, P, D
+        CellTools<DT>::getPhysicalSideNormals(subcvSideNormalNode,  // C, P, D
                                                subcvJacobianNode,
                                                sideOrd[i],
                                                subcvCellTopo_);    // C, P, D, D
       }
       
-      typedef Kokkos::View<ordinal_type*,SpT> mapViewType;
+      typedef Kokkos::View<ordinal_type*,DT> mapViewType;
       const auto sideNodeMap = Kokkos::subview(sideNodeMap_, i, Kokkos::ALL());
       
-      typedef typename ExecSpace<typename PointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+      typedef typename ExecSpace<typename PointViewType::execution_space,DT>::ExecSpaceType ExecSpaceType;
     
       const auto loopSize = numCells;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

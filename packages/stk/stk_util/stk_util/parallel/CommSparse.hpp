@@ -35,10 +35,11 @@
 #ifndef stk_util_parallel_CommSparse_hpp
 #define stk_util_parallel_CommSparse_hpp
 
-#include <cstddef>                      // for size_t, ptrdiff_t
-#include <vector>
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer etc
+#include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/parallel/Parallel.hpp"      // for ParallelMachine, parallel_machine_null
+#include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
+#include <cstddef>                             // for size_t
+#include <vector>                              // for vector
 
 //------------------------------------------------------------------------
 
@@ -90,27 +91,21 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBuffer & send_buffer( int p )
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("send_buffer",p); }
-#endif
+    ThrowAssertMsg(p < m_size,"CommSparse::send_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     return m_send[p] ;
   }
 
   /** Obtain the message buffer for a given processor */
   CommBuffer & recv_buffer( int p )
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("recv_buffer",p); }
-#endif
+    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     return m_recv[p] ;
   }
 
   /** Obtain the message buffer for a given processor */
   const CommBuffer & recv_buffer( int p ) const
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("recv_buffer",p); }
-#endif
+    ThrowAssertMsg(p < m_size,"CommSparse::recv_buffer: "<<p<<" out of range [0:"<<m_size<<")");
     return m_recv[p] ;
   }
 
@@ -139,6 +134,8 @@ public:
   {
   }
 
+  CommSparse(const CommSparse&) = delete;
+
   /** Allocate communication buffers based upon
    *  sizing from the surrogate send buffer packing.
    *  Returns true if the local processor is actually
@@ -156,6 +153,14 @@ public:
 
   /** Communicate send buffers to receive buffers.  */
   void communicate();
+
+  /** Communicate send buffers to receive buffers, interleave unpacking with
+   *    caller-provided functor.  */
+  template<typename UNPACK_ALGORITHM>
+  void communicate_with_unpack(const UNPACK_ALGORITHM & alg)
+  {
+    communicate_with_unpacker(alg);
+  }
 
   /** Swap send and receive buffers leading to reversed communication. */
   void swap_send_recv();
@@ -190,9 +195,9 @@ private:
       m_recv_procs()
   {}
 
-  void rank_error( const char * , int ) const ;
-
   void allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsigned char>& data);
+  void verify_send_buffers_filled();
+  void communicate_with_unpacker(const std::function<void(int fromProc, CommBuffer& buf)>& functor);
 
   ParallelMachine m_comm ;
   int             m_size ;
@@ -206,7 +211,7 @@ private:
 };
 
 template<typename COMM, typename PACK_ALGORITHM>
-void pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
+bool pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
 {
     algorithm();
     const bool actuallySendingOrReceiving = comm.allocate_buffers();
@@ -214,6 +219,7 @@ void pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
         algorithm();
         comm.communicate();
     }
+    return actuallySendingOrReceiving;
 }
 
 template<typename COMM, typename UNPACK_ALGORITHM>
@@ -232,21 +238,15 @@ void unpack_communications(COMM & comm, const UNPACK_ALGORITHM & algorithm)
 }
 
 template <typename T>
-void pack_vector_to_proc(stk::CommSparse& comm, const T& data, int otherProc)
+void pack_vector_to_proc(stk::CommSparse& comm, const std::vector<T>& data, int otherProc)
 {
-    comm.send_buffer(otherProc).pack<unsigned>(data.size());
-    for(size_t i=0; i<data.size(); ++i)
-        comm.send_buffer(otherProc).pack<typename T::value_type>(data[i]);
+  comm.send_buffer(otherProc).pack(data);
 }
 
 template <typename T>
-void unpack_vector_from_proc(stk::CommSparse& comm, T& data, int fromProc)
+void unpack_vector_from_proc(stk::CommSparse& comm, std::vector<T>& data, int fromProc)
 {
-    unsigned num_items = 0;
-    comm.recv_buffer(fromProc).unpack<unsigned>(num_items);
-    data.resize(num_items);
-    for(unsigned i=0;i<num_items;++i)
-        comm.recv_buffer(fromProc).unpack<typename T::value_type>(data[i]);
+  comm.recv_buffer(fromProc).unpack(data);
 }
 
 }

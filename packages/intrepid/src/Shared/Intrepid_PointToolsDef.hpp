@@ -45,10 +45,6 @@
     \brief  Definition file for utilities for barycentric coordinates and lattices
     \author Created by R. Kirby
 */
-#ifdef _MSC_VER
-#include "winmath.h"
-#endif
-
 
 namespace Intrepid {
 

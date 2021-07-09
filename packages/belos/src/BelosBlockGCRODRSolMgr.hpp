@@ -59,7 +59,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -158,7 +157,7 @@ public:
    * - "Num Recycled Blocks": an \c int specifying the number of blocks allocated for the Krylov basis. Default: 5.
    * - "Maximum Iterations": an \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 5000.
    * - "Maximum Restarts": an \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 100.
-   * - "Orthogonalization": an \c std::string specifying the desired orthogonalization. Currently supported values: "DGKS", "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR support). Default: "DGKS".
+   * - "Orthogonalization": an \c std::string specifying the desired orthogonalization. Currently supported values: "DGKS", "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR support). Default: "ICGS".
    * - "Orthogonalization Parameters": a ParameterList or RCP<(const) ParameterList> of parameters specific to the type of orthogonalization used. Defaults are set automatically.
    * - "Verbosity": a sum of MsgType specifying the verbosity. Default: Belos::Errors.
    * - "Output Style": a OutputType specifying the style of output. Default: Belos::General.
@@ -575,7 +574,7 @@ private:
        const std::string impResScale ("Norm of Preconditioned Initial Residual");
        const std::string expResScale ("Norm of Initial Residual");
        const std::string timerLabel ("Belos");
-       const std::string orthoType ("DGKS");
+       const std::string orthoType ("ICGS");
        RCP<const ParameterList> orthoParams = orthoFactory_.getDefaultParameters (orthoType);
        //const MagnitudeType orthoKappa = SCT::magnitude (SCT::eps());
        //

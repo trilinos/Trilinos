@@ -167,7 +167,8 @@ private:
   PoolType pool_type;
 
 public:
-
+  using execution_space = typename MyExecSpace::execution_space;
+  using memory_space = typename MyExecSpace::memory_space;
 
   /**
    * \brief UniformMemoryPool constructor.

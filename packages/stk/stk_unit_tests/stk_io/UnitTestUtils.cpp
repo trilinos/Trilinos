@@ -33,6 +33,9 @@
 //
 
 #include "stk_io/StkIoUtils.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_io/FillMesh.hpp"
+#include "stk_io/IossBridge.hpp"
+#include <stk_util/parallel/Parallel.hpp>
 #include <gtest/gtest.h>
 
 namespace {
@@ -70,5 +73,25 @@ namespace {
         EXPECT_THROW(stk::io::construct_filename_for_serial_or_parallel(fileName, 107, 130), std::exception);
 
     }
+
+TEST(CheckElemBlockTopology, validTopology)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh("generated:2x2x2", bulk);
+  EXPECT_NO_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(meta, "test"));
+}
+
+TEST(CheckElemBlockTopology, invalidTopology)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  stk::mesh::MetaData meta(3);
+  stk::mesh::Part& block2 = meta.declare_part("block_2", stk::topology::ELEM_RANK);
+  stk::io::put_io_part_attribute(block2);
+  EXPECT_THROW(stk::io::throw_if_any_elem_block_has_invalid_topology(meta, "test"), std::runtime_error);
+}
 
 }

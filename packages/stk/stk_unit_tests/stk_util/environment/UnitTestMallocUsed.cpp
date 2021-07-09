@@ -32,13 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stddef.h>                     // for size_t, ptrdiff_t
-#include <stdlib.h>                     // for free, malloc, rand, realloc
-#include <string.h>                     // for memset
-#include <iomanip>                      // for operator<<, setw
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace
 {

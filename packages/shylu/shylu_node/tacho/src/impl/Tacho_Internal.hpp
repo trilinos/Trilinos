@@ -5,7 +5,7 @@
 /// \brief Main header file
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "ShyLU_NodeTacho_config.h"
+#include "Tacho_config.h"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -21,7 +21,7 @@
 #include "Tacho_MatrixMarket.hpp"           
 
 #include "Tacho_Graph.hpp"
-#include "Tacho_GraphTools_CAMD.hpp"        
+#include "Tacho_GraphTools.hpp"       
 #include "Tacho_GraphTools_Metis.hpp"       
 #include "Tacho_GraphTools_Scotch.hpp"      
 
@@ -34,10 +34,30 @@
 #include "Tacho_Blas_External.hpp"
 #include "Tacho_Blas_Team.hpp"
 
+#include "Tacho_Copy.hpp"
+#include "Tacho_Copy_Internal.hpp"
+
+#include "Tacho_Symmetrize.hpp"
+#include "Tacho_Symmetrize_Internal.hpp"
+
+#include "Tacho_SetIdentity.hpp"
+#include "Tacho_SetIdentity_Internal.hpp"
+
+#include "Tacho_ApplyPermutation.hpp"
+#include "Tacho_ApplyPermutation_Internal.hpp"
+
+#include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
+#include "Tacho_Scale2x2_BlockInverseDiagonals_Internal.hpp"
+
 #include "Tacho_Chol.hpp"
 #include "Tacho_Chol_External.hpp"
 #include "Tacho_Chol_Internal.hpp"
 #include "Tacho_Chol_ByBlocks.hpp"
+
+#include "Tacho_LDL.hpp"
+#include "Tacho_LDL_External.hpp"
+#include "Tacho_LDL_Internal.hpp"
+//#include "Tacho_LDL_ByBlocks.hpp"
 
 #include "Tacho_Trsm.hpp"
 #include "Tacho_Trsm_External.hpp"
@@ -53,6 +73,11 @@
 #include "Tacho_Gemm_External.hpp"
 #include "Tacho_Gemm_Internal.hpp"
 #include "Tacho_Gemm_ByBlocks.hpp"
+
+#include "Tacho_GemmTriangular.hpp"
+#include "Tacho_GemmTriangular_External.hpp"
+#include "Tacho_GemmTriangular_Internal.hpp"
+//#include "Tacho_GemmTriangular_OnDevice.hpp"
 
 #include "Tacho_Trsv.hpp"
 #include "Tacho_Trsv_External.hpp"
@@ -77,6 +102,11 @@
 #include "Tacho_NumericTools.hpp"
 #include "Tacho_LevelSetTools.hpp"
 #include "Tacho_TriSolveTools.hpp"
+
+// refactoring
+#include "Tacho_NumericTools_Base.hpp"
+#include "Tacho_NumericTools_Serial.hpp"
+#include "Tacho_NumericTools_LevelSet.hpp"
 
 // Do not include this. 
 // In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.

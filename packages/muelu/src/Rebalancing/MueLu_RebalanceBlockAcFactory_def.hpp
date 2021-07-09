@@ -71,9 +71,6 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RebalanceBlockAcFactory() {  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
@@ -133,8 +130,8 @@ namespace MueLu {
     subBlockADomainMaps.reserve(bA->Cols());
 
     // store map extractors
-    Teuchos::RCP<const MapExtractorClass> rangeMapExtractor  = bA->getRangeMapExtractor();
-    Teuchos::RCP<const MapExtractorClass> domainMapExtractor = bA->getDomainMapExtractor();
+    RCP<const MapExtractor> rangeMapExtractor = bA->getRangeMapExtractor();
+    RCP<const MapExtractor> domainMapExtractor = bA->getDomainMapExtractor();
 
     // check if GIDs for full maps have to be sorted:
     // For the Thyra mode ordering they do not have to be sorted since the GIDs are
@@ -262,7 +259,7 @@ namespace MueLu {
               nodeRangeMapii,
               rebAii->getRangeMap()->getIndexBase(),
               stridingData,
-              rebalancedComm, /*rebAii->getRangeMap()->getComm(),*/ /* restricted communicator */
+              rebalancedComm,
               orig_stridedRgMap->getStridedBlockId(),
               orig_stridedRgMap->getOffset());
         }
@@ -277,7 +274,7 @@ namespace MueLu {
               nodeDomainMapii,
               rebAii->getDomainMap()->getIndexBase(),
               stridingData,
-              rebalancedComm, /*rebAii->getDomainMap()->getComm(), *//* restricted communicator */
+              rebalancedComm,
               orig_stridedDoMap->getStridedBlockId(),
               orig_stridedDoMap->getOffset());
         }
@@ -338,7 +335,7 @@ namespace MueLu {
               fullRangeMapGIDs,
               rangeIndexBase,
               stridedData,
-              rebalancedComm, /*bA->getRangeMap()->getComm(),*/ //bA->getRangeMap()->getComm(),
+              rebalancedComm,
               stridedRgFullMap->getStridedBlockId(),
               stridedRgFullMap->getOffset());
     } else {
@@ -348,7 +345,7 @@ namespace MueLu {
               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
               fullRangeMapGIDs,
               rangeIndexBase,
-              rebalancedComm /*bA->getRangeMap()->getComm()*/); //bA->getRangeMap()->getComm());
+              rebalancedComm);
     }
     Teuchos::ArrayView<GO> fullDomainMapGIDs(fullDomainMapVector.size() ? &fullDomainMapVector[0] : 0,fullDomainMapVector.size());
 
@@ -364,7 +361,7 @@ namespace MueLu {
               fullDomainMapGIDs,
               domainIndexBase,
               stridedData2,
-              rebalancedComm, /*bA->getDomainMap()->getComm(), *///bA->getDomainMap()->getComm(),
+              rebalancedComm,
               stridedDoFullMap->getStridedBlockId(),
               stridedDoFullMap->getOffset());
     } else {
@@ -375,7 +372,7 @@ namespace MueLu {
               Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
               fullDomainMapGIDs,
               domainIndexBase,
-              rebalancedComm/*bA->getDomainMap()->getComm()*/); //bA->getDomainMap()->getComm());
+              rebalancedComm);
     }
 
     if(bRestrictComm) {
@@ -384,23 +381,25 @@ namespace MueLu {
     }
 
     // build map extractors
-    Teuchos::RCP<const MapExtractorClass> rebRangeMapExtractor  = MapExtractorFactoryClass::Build(fullRangeMap, subBlockARangeMaps, bThyraRangeGIDs);
-    Teuchos::RCP<const MapExtractorClass> rebDomainMapExtractor = MapExtractorFactoryClass::Build(fullDomainMap, subBlockADomainMaps, bThyraDomainGIDs);
+    RCP<const MapExtractor> rebRangeMapExtractor = MapExtractorFactory::Build(fullRangeMap, subBlockARangeMaps, bThyraRangeGIDs);
+    RCP<const MapExtractor> rebDomainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockADomainMaps, bThyraDomainGIDs);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(rangeMapExtractor->NumMaps()  != rebRangeMapExtractor->NumMaps(), Exceptions::BadCast, "MueLu::RebalanceBlockedAc::Build: Rebalanced RangeMapExtractor has " << rebRangeMapExtractor << " sub maps. Original RangeMapExtractor has " << rangeMapExtractor->NumMaps() << ". They must match!");
-    TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->NumMaps() != rebDomainMapExtractor->NumMaps(), Exceptions::BadCast, "MueLu::RebalanceBlockedAc::Build: Rebalanced DomainMapExtractor has " << rebDomainMapExtractor << " sub maps. Original DomainMapExtractor has " << domainMapExtractor->NumMaps() << ". They must match!");
+    TEUCHOS_TEST_FOR_EXCEPTION(rangeMapExtractor->NumMaps() != rebRangeMapExtractor->NumMaps(), Exceptions::RuntimeError,
+        "MueLu::RebalanceBlockedAc::Build: Rebalanced RangeMapExtractor has " << rebRangeMapExtractor->NumMaps()
+        << " sub maps. Original RangeMapExtractor has " << rangeMapExtractor->NumMaps() << ". They must match!");
+    TEUCHOS_TEST_FOR_EXCEPTION(domainMapExtractor->NumMaps() != rebDomainMapExtractor->NumMaps(), Exceptions::RuntimeError,
+        "MueLu::RebalanceBlockedAc::Build: Rebalanced DomainMapExtractor has " << rebDomainMapExtractor->NumMaps()
+        << " sub maps. Original DomainMapExtractor has " << domainMapExtractor->NumMaps() << ". They must match!");
 
     Teuchos::RCP<BlockedCrsMatrix> reb_bA = Teuchos::rcp(new BlockedCrsMatrix(rebRangeMapExtractor,rebDomainMapExtractor,10));
     for(size_t i=0; i<bA->Rows(); i++) {
       for(size_t j=0; j<bA->Cols(); j++) {
-       //Teuchos::RCP<const CrsMatrixWrap> crsOpij = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(subBlockRebA[i*bA->Cols() + j]);
        reb_bA->setMatrix(i,j,subBlockRebA[i*bA->Cols() + j]);
       }
     }
 
     reb_bA->fillComplete();
 
-    //reb_bA->describe(*out,Teuchos::VERB_EXTREME);
     coarseLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(reb_bA), this);
     // rebalance additional data:
     // be aware, that we just call the rebalance factories without switching to local
@@ -419,11 +418,6 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RebalanceBlockAcFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddRebalanceFactory(const RCP<const FactoryBase>& factory) {
-
-    /*TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
-                               "MueLu::RAPFactory::AddTransferFactory: Transfer factory is not derived from TwoLevelFactoryBase. "
-                               "This is very strange. (Note: you can remove this exception if there's a good reason for)");
-    TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::RAPFactory::AddTransferFactory: Factory is being added after we have already declared input");*/
     rebalanceFacts_.push_back(factory);
   } //AddRebalanceFactory()
 

@@ -639,6 +639,9 @@ namespace MueLuTests {
     }
 
     CellTools::mapToPhysicalFrame(cellDofCoords, refDofCoords, cellWorkset, cellTopo);
+
+    Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
+
     UniqueNumbering globalNumbering(spaceDim, pointTol);
     globalNumbering.getIDs<ArrayScalar,ArrayOrdinal>(cellDofCoords,cellDofIDs);
 
@@ -1832,6 +1835,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
     {
       CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
+      //UVM used here, accessing vertex coordinates on host that were populated on device.
+      Kokkos::fence();
       for (int d=0; d<spaceDim; d++)
       {
         refCellVertices(vertexOrdinal,d) = refCellVertex(d);
@@ -2033,6 +2038,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
             CellTools::mapToPhysicalFrame(lo_physDofCoords, lo_DofCoords, physCellVerticesPermuted, cellTopo);
             CellTools::mapToPhysicalFrame(hi_physDofCoords, hi_DofCoords, physCellVerticesPermuted, cellTopo);
+
+            Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
+
             int cell1Side = searchForX1Side(1);
 
             /*
