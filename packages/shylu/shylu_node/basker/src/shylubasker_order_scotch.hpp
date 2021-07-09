@@ -2,6 +2,7 @@
 #define SHYLUBASKER_ORDER_SCOTCH_HPP
 
 #include "shylubasker_types.hpp"
+#include "shylubasker_sswrapper.hpp"
 
 #ifdef HAVE_SHYLU_NODEBASKER_SCOTCH
   #include "scotch.h"
@@ -186,8 +187,8 @@ namespace BaskerNS
         METIS_1DARRAY metis_colidx (KOKKOS_NOINIT("metis_colidx"), metis_nnz);
 
         METIS_1DARRAY metis_part_k  (KOKKOS_NOINIT("metis_part_k"),  metis_size);
-        METIS_1DARRAY metis_permtab (KOKKOS_NOINIT("metis_permtab"), metis_size);
-        METIS_1DARRAY metis_peritab (KOKKOS_NOINIT("metis_peritab"), metis_size);
+        METIS_1DARRAY metis_perm_k  (KOKKOS_NOINIT("metis_iperm_k"), metis_size);
+        METIS_1DARRAY metis_iperm_k (KOKKOS_NOINIT("metis_iperm_k"), metis_size);
 
         // to find vertex cover/separator
         using METIS_2DARRAY = Kokkos::View<idx_t**, BASKER_EXE_SPACE>;
@@ -275,7 +276,12 @@ namespace BaskerNS
           sg.rangtab[i] = 0;
         }
         sg.rangtab[num_doms] = M.nrow;
-        for (Int level = 0; level < num_levels; level++) {
+        Int last_level = num_levels - 1;
+        if (Options.run_nd_on_leaves) {
+          // level goes to num_leaves so that we can call ND on the final leaf nodes
+          last_level = num_levels;
+        }
+        for (Int level = 0; level <= last_level; level++) {
           Int num_leaves = pow(2.0, (double)(level));       // number of leaves at this level
           Int first_sep  = pow(2.0, (double)(level)) - 1;   // id of the first leaf at this level
           Int first_leaf = pow(2.0, (double)(1+level)) - 1; // id of the first new leaf at the next level
@@ -370,263 +376,318 @@ namespace BaskerNS
               std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
               return BASKER_ERROR; // TODO: what to do here?
             }
-            bool use_metis_kway = false;
-            timer_metis.reset();
-            if (use_metis_kway) {
-              // compute two-way partition
+            if (level == num_levels) {
+              // ===============================================
+              // calling ND on final leaves (fill-reducing)
+              timer_metis.reset();
+              bool amd_on_leaf = true;
               if (Options.verbose == BASKER_TRUE) {
-                std::cout << std::endl << " > calling METIS_PartGraphKway on leaf " << leaf_id
-                          << " at level " << level << " < " << std::endl;
+                std::cout << std::endl << " > calling " << (amd_on_leaf ? "Basker_AMD" : "METIS_NodeND" ) << " on leaf " << leaf_id
+                          << " at final level " << level << ", size = " << metis_size_k
+                          << " < " << std::endl;
               }
-              idx_t num_constraints = 1;
-              idx_t num_parts = 2;
-              idx_t objval = -1;
+              if (amd_on_leaf) {
+                double l_nnz, lu_work;
+                info = BaskerSSWrapper<Int>::amd_order(metis_size_k,
+                                                       &(metis_rowptr(0)),
+                                                       &(metis_colidx(0)),
+                                                       &(metis_perm_k(0)),
+                                                       l_nnz, lu_work, Options.verbose);
 
-              idx_t *vwgt = nullptr;    // contraints (n * num_constraints)
-              idx_t *vsize = nullptr;   // for total comm vol
-              idx_t *adjwgt = nullptr;  // for reducing cut
+                if (info != TRILINOS_AMD_OUT_OF_MEMORY && info != TRILINOS_AMD_INVALID) {
+                  for(Int i = 0; i < metis_size_k; i++) {
+                    metis_iperm_k(metis_perm_k(i)) = i;
+                  }
+                  info = METIS_OK;
+                } else {
+                  std::cout << std::endl << " > Basker AMD failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
+                }
+              } else {
+                // perm(i) of the original matrix is i-th row in the new matrix
+                info = METIS_NodeND(&metis_size_k,
+                                    &(metis_rowptr(0)),
+                                    &(metis_colidx(0)),
+                                     nullptr,
+                                     options,
+                                    &(metis_perm_k(0)),
+                                    &(metis_iperm_k(0)));
+                if (info != METIS_OK) {
+                  std::cout << std::endl << " > METIS_NodeND failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
+                }
+              }
 
-              real_t *tpwgts = nullptr; // weights for eachh partition              (num_parts * num_constraints)
-              real_t *ubvec = nullptr;  // imbalance tolerance for each constraints (num_constraints)
-              info = METIS_PartGraphKway(&metis_size_k,
-                                         &num_constraints,
-                                         &(metis_rowptr(0)),
-                                         &(metis_colidx(0)),
-                                          vwgt,
-                                          vsize,
-                                          adjwgt,
-                                         &num_parts,
-                                          tpwgts,
-                                          ubvec,
-                                          options,
-                                         &objval,
-                                         &(metis_part_k(0)));
-              // look for edge separator
+              // update perm/
               for(Int i = 0; i < metis_size_k; i++) {
-                Int con1 = 0;
-                Int con2 = 0;
-                for (idx_t k = metis_rowptr(i); k < metis_rowptr(i+1); k++) {
-                  if (metis_part_k(metis_colidx(k)) == 0 || metis_part_k(metis_colidx(k)) == -2) {
-                    con1 ++;
-                  } else {
-                    con2 ++;
-                  }
-                }
-                if (con1 > 0 && con2) {
-                  if (metis_part_k(i) == 0) {
-                    metis_part_k(i) = -2;
-                  } else {
-                    metis_part_k(i) = 2;
-                  }
-                }  
-              }
-              #if 0
-              for(Int i = 0; i < metis_size_k; i++) {
-                if (metis_part_k(i) == -2) {
-                  // put it to edge separator
-                  metis_part_k(i) = 2;
-                }
-              }
-              #else
-              // look for vertex cover/separator
-              // > look for edges within edge separator
-              Int num_edges = 0;
-              for(Int i = 0; i < metis_size_k; i++) {
-                if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
-                  metis_vc_score(i) = 0;
-                }
+                // metis_part_k[i] is the original global index before ND
+                metis_part_k[i] = sg.peritab[frow + metis_perm_k[i]];
               }
               for(Int i = 0; i < metis_size_k; i++) {
-                if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
+                sg.peritab[frow + i] = metis_part_k[i];
+                sg.permtab[sg.peritab[frow + i]] = frow + i;
+              }
+            } else {
+              // ===============================================
+              // finding separator on the current leaves (ND)
+              bool use_metis_kway = false;
+              timer_metis.reset();
+              if (use_metis_kway) {
+                // compute two-way partition
+                if (Options.verbose == BASKER_TRUE) {
+                  std::cout << std::endl << " > calling METIS_PartGraphKway on leaf " << leaf_id
+                            << " at level " << level << " < " << std::endl;
+                }
+                idx_t num_constraints = 1;
+                idx_t num_parts = 2;
+                idx_t objval = -1;
+
+                idx_t *vwgt = nullptr;    // contraints (n * num_constraints)
+                idx_t *vsize = nullptr;   // for total comm vol
+                idx_t *adjwgt = nullptr;  // for reducing cut
+
+                real_t *tpwgts = nullptr; // weights for eachh partition              (num_parts * num_constraints)
+                real_t *ubvec = nullptr;  // imbalance tolerance for each constraints (num_constraints)
+                info = METIS_PartGraphKway(&metis_size_k,
+                                           &num_constraints,
+                                           &(metis_rowptr(0)),
+                                           &(metis_colidx(0)),
+                                            vwgt,
+                                            vsize,
+                                            adjwgt,
+                                           &num_parts,
+                                            tpwgts,
+                                            ubvec,
+                                            options,
+                                           &objval,
+                                           &(metis_part_k(0)));
+                // look for edge separator
+                for(Int i = 0; i < metis_size_k; i++) {
+                  Int con1 = 0;
+                  Int con2 = 0;
                   for (idx_t k = metis_rowptr(i); k < metis_rowptr(i+1); k++) {
-                    if (metis_part_k(metis_colidx(k)) == 2 || metis_part_k(metis_colidx(k)) == -2) {
-                      metis_vc(num_edges, 0) = i;
-                      metis_vc(num_edges, 1) = metis_colidx(k);
-                      metis_vc(num_edges, 2) = 0;
-                      num_edges ++;
-
-                      metis_vc_score(i) ++;
-                      metis_vc_score(metis_colidx(k)) ++;
+                    if (metis_part_k(metis_colidx(k)) == 0 || metis_part_k(metis_colidx(k)) == -2) {
+                      con1 ++;
+                    } else {
+                      con2 ++;
+                    }
+                  }
+                  if (con1 > 0 && con2) {
+                    if (metis_part_k(i) == 0) {
+                      metis_part_k(i) = -2;
+                    } else {
+                      metis_part_k(i) = 2;
                     }
                   }
                 }
-              }
-              //for (Int i = 0; i < num_edges; i++) std::cout << " edge(" << metis_vc(i, 0) << ", " << metis_vc(i, 1) << ")" << std::endl;
-              // > look for vertex cover/separator
-              Int num_edges_left = num_edges;
-              while (num_edges_left > 0) {
-                // look for un-processed edge
-                Int next_edge = 0;
                 #if 0
-                while (metis_vc(next_edge, 2) != 0) {
-                  next_edge ++;
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == -2) {
+                    // put it to edge separator
+                    metis_part_k(i) = 2;
+                  }
                 }
                 #else
-                Int max_score = 0;
-                for (Int i = 0; i < num_edges; i++) {
-                  Int v1 = metis_vc(i, 0);
-                  Int v2 = metis_vc(i, 1);
-                  Int score = metis_vc_score(v1) + metis_vc_score(v2);
-                  if (metis_vc(i, 2) == 0 && score > max_score) { 
-                    next_edge = i;
+                // look for vertex cover/separator
+                // > look for edges within edge separator
+                Int num_edges = 0;
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
+                    metis_vc_score(i) = 0;
+                  }
+                }
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
+                    for (idx_t k = metis_rowptr(i); k < metis_rowptr(i+1); k++) {
+                      if (metis_part_k(metis_colidx(k)) == 2 || metis_part_k(metis_colidx(k)) == -2) {
+                        metis_vc(num_edges, 0) = i;
+                        metis_vc(num_edges, 1) = metis_colidx(k);
+                        metis_vc(num_edges, 2) = 0;
+                        num_edges ++;
+
+                        metis_vc_score(i) ++;
+                        metis_vc_score(metis_colidx(k)) ++;
+                      }
+                    }
+                  }
+                }
+                //for (Int i = 0; i < num_edges; i++) std::cout << " edge(" << metis_vc(i, 0) << ", " << metis_vc(i, 1) << ")" << std::endl;
+                // > look for vertex cover/separator
+                Int num_edges_left = num_edges;
+                while (num_edges_left > 0) {
+                  // look for un-processed edge
+                  Int next_edge = 0;
+                  #if 0
+                  while (metis_vc(next_edge, 2) != 0) {
+                    next_edge ++;
+                  }
+                  #else
+                  Int max_score = 0;
+                  for (Int i = 0; i < num_edges; i++) {
+                    Int v1 = metis_vc(i, 0);
+                    Int v2 = metis_vc(i, 1);
+                    Int score = metis_vc_score(v1) + metis_vc_score(v2);
+                    if (metis_vc(i, 2) == 0 && score > max_score) {
+                      next_edge = i;
+                    }
+                  }
+                  #endif
+                  num_edges_left --;
+                  Int v1 = metis_vc(next_edge, 0);
+                  Int v2 = metis_vc(next_edge, 1);
+                  metis_part_k(v1) = 3;
+                  metis_part_k(v2) = 3;
+                  metis_vc_score(v1) --;
+                  metis_vc_score(v2) --;
+                  //std::cout << " >> next edge = " << next_edge << ": edges left = " << num_edges_left << std::endl;
+                  // > remove all the incidental edges
+                  metis_vc(next_edge, 2) = 2;
+                  for (Int i = 0; i < num_edges; i++) {
+                    bool edge_removed = false;
+                    if (metis_vc(i, 0) == v1 || metis_vc(i, 0) == v2) {
+                      if (metis_vc(i, 2) == 0) {
+                        num_edges_left --;
+                      }
+                      //std::cout << "   ++ incident edge = " << i << std::endl;
+                      metis_vc(i, 2) ++;
+                      edge_removed = true;
+                    }
+                    if (metis_vc(i, 1) == v1 || metis_vc(i, 1) == v2) {
+                      if (metis_vc(i, 2) == 0) {
+                        num_edges_left --;
+                      }
+                      //std::cout << "   -- incident edge = " << i << std::endl;
+                      metis_vc(i, 2) ++;
+                      edge_removed = true;
+                    }
+                    if (edge_removed) {
+                      metis_vc_score(metis_vc(i, 0)) --;
+                      metis_vc_score(metis_vc(i, 1)) --;
+                    }
+                  }
+                }
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == -2) {
+                    // put it back to dom-0
+                    metis_part_k(i) = 0;
+                  }
+                  if (metis_part_k(i) == 2) {
+                    // put it back to dom-1
+                    metis_part_k(i) = 1;
+                  }
+                  if (metis_part_k(i) == 3) {
+                    // put it to vertex separator
+                    metis_part_k(i) = 2;
                   }
                 }
                 #endif
-                num_edges_left --;
-                Int v1 = metis_vc(next_edge, 0);
-                Int v2 = metis_vc(next_edge, 1);
-                metis_part_k(v1) = 3;
-                metis_part_k(v2) = 3;
-                metis_vc_score(v1) --;
-                metis_vc_score(v2) --;
-                //std::cout << " >> next edge = " << next_edge << ": edges left = " << num_edges_left << std::endl;
-                // > remove all the incidental edges
-                metis_vc(next_edge, 2) = 2;
-                for (Int i = 0; i < num_edges; i++) {
-                  bool edge_removed = false;
-                  if (metis_vc(i, 0) == v1 || metis_vc(i, 0) == v2) {
-                    if (metis_vc(i, 2) == 0) {
-                      num_edges_left --;
-                    }
-                    //std::cout << "   ++ incident edge = " << i << std::endl;
-                    metis_vc(i, 2) ++;
-                    edge_removed = true;
-                  }
-                  if (metis_vc(i, 1) == v1 || metis_vc(i, 1) == v2) {
-                    if (metis_vc(i, 2) == 0) {
-                      num_edges_left --;
-                    }
-                    //std::cout << "   -- incident edge = " << i << std::endl;
-                    metis_vc(i, 2) ++;
-                    edge_removed = true;
-                  }
-                  if (edge_removed) {
-                    metis_vc_score(metis_vc(i, 0)) --;
-                    metis_vc_score(metis_vc(i, 1)) --;
-                  }
+              } else {
+                // find vertex separator
+                if (Options.verbose == BASKER_TRUE) {
+                  std::cout << std::endl << " > calling METIS_ComputeVertexSeparator on leaf " << leaf_id
+                            << " at level " << level << " < " << std::endl;
+                }
+                info = METIS_ComputeVertexSeparator(&metis_size_k,
+                                                    &(metis_rowptr(0)),
+                                                    &(metis_colidx(0)),
+                                                     nullptr,
+                                                     options,
+                                                    &sepsize,
+                                                    &(metis_part_k(0)));
+                if (info != METIS_OK) {
+                  std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
                 }
               }
+              time_metis += timer_metis.seconds();
+
+              Int dom1 = 0;
+              Int dom2 = 0;
+              Int sep  = 0;
+              for(Int i = 0; i < metis_size_k; i++)
+              {
+                if (metis_part_k[i] == 0) {
+                  dom1 ++;
+                } else if (metis_part_k[i] == 1) {
+                  dom2 ++;
+                } else {
+                  sep ++;
+                }
+              }
+              if(Options.verbose == BASKER_TRUE) {
+                std::cout << " METIS: info = " << info << "(okay = " << METIS_OK << ")"
+                          << " size = " << metis_size_k << " sepsize = " << sepsize << std::endl;
+                std::cout << " dom1=(id=" << dom_id1 << ", size=" << dom1 << "),"
+                          << " dom2=(id=" << dom_id2 << ", size=" << dom2 << "),"
+                          << "  sep=(id=" << sep_id  << ", size=" << sep  << ")" << std::endl;
+                if (dom1 == 0 || dom2 == 0) {
+                  std::cout << std::endl << " > METIS returned an empty domain  "
+                                         << dom1 << " + " << dom2 << " + " << sep
+                                         << " (n = " << M.nrow << ")"
+                                         << std::endl << std::endl;
+                }
+              }
+
+              // update num doms
+              if (dom1 > 0) {
+                sg.cblk ++;
+              }
+              if (dom2 > 0) {
+                sg.cblk ++;
+              }
+              if (sep == 0) {
+                sg.cblk --;
+              }
+              // update permtab, permtab maps original to ND order (permtab[i] is the new row index after nd)
+              sep  = frow + dom1 + dom2;
+              dom2 = frow + dom1;
+              dom1 = frow + 0;
+              for(Int i = 0; i < metis_size_k; i++)
+              {
+                // i_g is the original global index before ND
+                Int i_g = sg.peritab[frow + i];
+                if (metis_part_k[i] == 0) {
+                  sg.permtab[i_g] = dom1;
+                  dom1 ++;
+                } else if (metis_part_k[i] == 1) {
+                  sg.permtab[i_g] = dom2;
+                  dom2 ++;
+                } else {
+                  sg.permtab[i_g] = sep;
+                  sep ++;
+                }
+              }
+
+              // update global part
               for(Int i = 0; i < metis_size_k; i++) {
-                if (metis_part_k(i) == -2) {
-                  // put it back to dom-0
-                  metis_part_k(i) = 0;
-                }
-                if (metis_part_k(i) == 2) {
-                  // put it back to dom-1
-                  metis_part_k(i) = 1;
-                }
-                if (metis_part_k(i) == 3) {
-                  // put it to vertex separator
-                  metis_part_k(i) = 2;
+                Int i_g = sg.peritab[frow + i];
+                if (metis_part_k[i] == 0) {
+                  metis_part[i_g] = dom_id1;
+                } else if (metis_part_k[i] == 1) {
+                  metis_part[i_g] = dom_id2;
+                } else {
+                  metis_part[i_g] = sep_id;
                 }
               }
-              #endif
-            } else {
-              // find vertex separator
-              if (Options.verbose == BASKER_TRUE) {
-                std::cout << std::endl << " > calling METIS_ComputeVertexSeparator on leaf " << leaf_id
-                          << " at level " << level << " < " << std::endl;
-              }
-              info = METIS_ComputeVertexSeparator(&metis_size_k,
-                                                  &(metis_rowptr(0)),
-                                                  &(metis_colidx(0)),
-                                                   nullptr,
-                                                   options,
-                                                  &sepsize,
-                                                  &(metis_part_k(0)));
-              if (info != METIS_OK) {
-                std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
-                return BASKER_ERROR; // TODO: what to do here?
-              }
-            }
-            time_metis += timer_metis.seconds();
 
-            Int dom1 = 0;
-            Int dom2 = 0;
-            Int sep  = 0;
-            for(Int i = 0; i < metis_size_k; i++)
-            {
-              if (metis_part_k[i] == 0) {
-                dom1 ++;
-              } else if (metis_part_k[i] == 1) {
-                dom2 ++;
-              } else {
-                sep ++;
+              // update peritab
+              for(Int i = 0; i < sg.m; i++)
+              {
+                sg.peritab[sg.permtab[i]] = i;
               }
-            }
-            if(Options.verbose == BASKER_TRUE) {
-              std::cout << " METIS: info = " << info << "(okay = " << METIS_OK << ")"
-                        << " size = " << metis_size_k << " sepsize = " << sepsize << std::endl;
-              std::cout << " dom1=(id=" << dom_id1 << ", size=" << dom1 << "),"
-                        << " dom2=(id=" << dom_id2 << ", size=" << dom2 << "),"
-                        << "  sep=(id=" << sep_id  << ", size=" << sep  << ")" << std::endl;
-              if (dom1 == 0 || dom2 == 0) {
-                std::cout << std::endl << " > METIS returned an empty domain  "
-                                       << dom1 << " + " << dom2 << " + " << sep
-                                       << " (n = " << M.nrow << ")"
-                                       << std::endl << std::endl;
-              }
-            }
 
-            // update num doms
-            if (dom1 > 0) {
-              sg.cblk ++;
-            }
-            if (dom2 > 0) {
-              sg.cblk ++;
-            }
-            if (sep == 0) {
-              sg.cblk --;
-            }
-            // update permtab, permtab maps original to ND order (permtab[i] is the new row index after nd)
-            sep  = frow + dom1 + dom2;
-            dom2 = frow + dom1;
-            dom1 = frow + 0;
-            for(Int i = 0; i < metis_size_k; i++)
-            {
-              // i_g is the original global index before ND
-              Int i_g = sg.peritab[frow + i];
-              if (metis_part_k[i] == 0) {
-                sg.permtab[i_g] = dom1;
-                dom1 ++;
-              } else if (metis_part_k[i] == 1) {
-                sg.permtab[i_g] = dom2;
-                dom2 ++;
-              } else {
-                sg.permtab[i_g] = sep;
-                sep ++;
-              }
-            }
+              // update rangtab
+              sg.rangtab[dom_id1+1] = dom1;
+              sg.rangtab[dom_id2+1] = dom2;
+              sg.rangtab[sep_id+1] = sep;
 
-            // update global part
-            for(Int i = 0; i < metis_size_k; i++) {
-              Int i_g = sg.peritab[frow + i];
-              if (metis_part_k[i] == 0) {
-                metis_part[i_g] = dom_id1;
-              } else if (metis_part_k[i] == 1) {
-                metis_part[i_g] = dom_id2;
-              } else {
-                metis_part[i_g] = sep_id;
-              }
-            }
-
-            // update peritab
-            for(Int i = 0; i < sg.m; i++)
-            {
-              sg.peritab[sg.permtab[i]] = i;
-            }
-
-            // update rangtab
-            sg.rangtab[dom_id1+1] = dom1;
-            sg.rangtab[dom_id2+1] = dom2;
-            sg.rangtab[sep_id+1] = sep;
-
-            // update postorder tree
-            sg.treetab[dom_id1] = sep_id;
-            sg.treetab[dom_id2] = sep_id;
-            //printf( " -> rangtab[%d] = %d, rangtab[%d] = %d, rangtab[%d]=%d\n",dom_id1+1,dom1,dom_id2+1,dom2,sep_id+1,sep);
-          }
-        }
+              // update postorder tree
+              sg.treetab[dom_id1] = sep_id;
+              sg.treetab[dom_id2] = sep_id;
+              //printf( " -> rangtab[%d] = %d, rangtab[%d] = %d, rangtab[%d]=%d\n",dom_id1+1,dom1,dom_id2+1,dom2,sep_id+1,sep);
+            } // if level == num_levels
+          } // for each leaves at this level
+        } // for each level
 
         // --------------------------------------------------- 
         // done with ND using METIS

@@ -1,4 +1,4 @@
-#ifndef SHYLUBASKER_SSWRAPER_HPP
+#ifndef SHYLUBASKER_SSWRAPPER_HPP
 #define SHYLUBASKER_SSWRAPPER_HPP
 
 #include "shylubasker_types.hpp"
