@@ -386,6 +386,8 @@ namespace BaskerNS
                           << " at final level " << level << ", size = " << metis_size_k
                           << " < " << std::endl;
               }
+              #if 0
+              // TODO: Int and idx_t mismatch
               if (amd_on_leaf) {
                 double l_nnz, lu_work;
                 info = BaskerSSWrapper<Int>::amd_order(metis_size_k,
@@ -403,7 +405,9 @@ namespace BaskerNS
                   std::cout << std::endl << " > Basker AMD failed < " << std::endl << std::endl;
                   return BASKER_ERROR; // TODO: what to do here?
                 }
-              } else {
+              } else
+              #endif
+              {
                 // perm(i) of the original matrix is i-th row in the new matrix
                 info = METIS_NodeND(&metis_size_k,
                                     &(metis_rowptr(0)),
