@@ -478,9 +478,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
                 //DERIV_MV_GRADIENT_FORM, the map is the responses, and the columns are the parameters; for 
                 //DERIV_MV_JACOBIAN_FORM, the map is the parameters, and the columns are the responses.
 		//Note that Case 2, which assumes distributed parameters, would not get called for forward sensitivities
-		//and therefore should not be relevant.  Therefore really only Case 3 should be relevant for 
-		//forward sensitivities.  
-		//IKT TODO: throw an error for this case to prevent confusion?
+		//as it would be slow, but it could be called in theory. 
                 const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
 	        //IKT, question: is it worth throwing if dgdp_mv == null, or this cannot happen?
                 if (Teuchos::nonnull(dgdp_mv)) {
