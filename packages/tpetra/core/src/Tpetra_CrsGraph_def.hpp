@@ -6745,7 +6745,7 @@ namespace Tpetra {
 
     TEUCHOS_ASSERT(this->isSorted ());
     if (isFillComplete ()) {
-      auto lclGraph = this->getLocalGraph ();
+      auto lclGraph = this->getLocalGraphDevice ();
       ::Tpetra::Details::getGraphOffRankOffsets (k_offRankOffsets_,
                                                  lclColMap, lclDomMap,
                                                  lclGraph);
