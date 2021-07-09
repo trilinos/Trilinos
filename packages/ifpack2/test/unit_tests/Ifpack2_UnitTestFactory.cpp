@@ -175,13 +175,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
 
   RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm ();
 
-  RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
-    tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
+    tif_utest::create_tridiag_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
   RCP<block_crs_matrix_type> bcrsmatrix =
     Teuchos::rcp_const_cast<block_crs_matrix_type, const block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
 
   RCP<const row_matrix_type> rowmatrix = bcrsmatrix;
+
 
   Ifpack2::Factory factory;
   RCP<prec_type> prec_relax = factory.create<row_matrix_type> ("RELAXATION", rowmatrix);

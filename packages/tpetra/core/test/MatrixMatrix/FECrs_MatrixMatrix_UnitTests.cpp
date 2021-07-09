@@ -186,7 +186,7 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
   using FEG = Tpetra::FECrsGraph<LO,GO,NT>;
 
   Teuchos::RCP<FEG> feg(new FEG(mesh.uniqueMap,mesh.overlapMap,9,mesh.overlapMap));
-  feg->beginFill();
+  feg->beginAssembly();
   for (const auto& elem_dofs : mesh.element2node) {
     for (const GO gid_i : elem_dofs) {
       for (const GO gid_j : elem_dofs) {
@@ -194,7 +194,7 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
       }
     }
   }
-  feg->endFill();
+  feg->endAssembly();
 
   return feg;
 }
@@ -205,13 +205,13 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
 // Note that such matrix is strictly diagonally dominant.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,  
-               Tpetra::CrsMatrix<ST,LO,GO,NT>& mat,  
+fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,
+               Tpetra::CrsMatrix<ST,LO,GO,NT>& mat,
                const MeshInfo<4,LO,GO,NT>& mesh)
 {
   const ST zero = Teuchos::ScalarTraits<ST>::zero();
 
-  fe_mat.beginFill();
+  fe_mat.beginAssembly();
   mat.resumeFill();
 
   fe_mat.setAllToScalar(zero);
@@ -230,13 +230,13 @@ fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,
       }
     }
   }
-  fe_mat.endFill();
+  fe_mat.endAssembly();
   mat.fillComplete();
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
 bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
-                       const Tpetra::CrsMatrix<ST,LO,GO,NT>& B, 
+                       const Tpetra::CrsMatrix<ST,LO,GO,NT>& B,
                        Teuchos::FancyOStream &out)
 {
   // They should have the same row/range/domain maps
@@ -334,7 +334,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
 
   // get a comm
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  
+
   // Generate a mesh
   const int numCells1D = 4;
   MeshInfo<4,LO,GO,NT> mesh;
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
     for (bool transB : {false, true}) {
       Teuchos::RCP<Teuchos::ParameterList> params1(new Teuchos::ParameterList());
       Teuchos::RCP<Teuchos::ParameterList> params2(new Teuchos::ParameterList());
-      params2->set("MM_TAFC_OptimizationCoreCount",1);  
+      params2->set("MM_TAFC_OptimizationCoreCount",1);
       for (auto params : {params1, params2}) {
 
         // A and feA should have the same row map, so pick one.

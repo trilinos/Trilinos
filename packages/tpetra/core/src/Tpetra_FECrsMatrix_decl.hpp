@@ -229,10 +229,77 @@ public:
     void globalAssemble () {endFill();}
 
     //! Migrates data to the owned mode
-    void endFill();
+    void endAssembly();
 
     //! Activates the owned+shared mode for assembly
+    void beginAssembly();
+
+    //! Closes modification phase
+    void endModify();
+
+    //! Activates the owned mode for modifying local values
+    void beginModify();
+
+  private:
+
+    //! Called by beginAssembly, endAssembly.
+    void endFill();
     void beginFill();
+
+    /// \brief Whether sumIntoLocalValues and sumIntoGlobalValues
+    ///   should use atomic updates by default.
+    ///
+    /// \warning This is an implementation detail.
+    static const bool useAtomicUpdatesByDefault =
+#ifdef KOKKOS_ENABLE_SERIAL
+      ! std::is_same<execution_space, Kokkos::Serial>::value;
+#else
+      true;
+#endif // KOKKOS_ENABLE_SERIAL
+
+  protected:
+
+    //! Overloads of modification methods
+    LocalOrdinal
+    replaceGlobalValuesImpl (impl_scalar_type rowVals[],
+                             const crs_graph_type& graph,
+                             const RowInfo& rowInfo,
+                             const GlobalOrdinal inds[],
+                             const impl_scalar_type newVals[],
+                             const LocalOrdinal numElts);
+
+    LocalOrdinal
+    replaceLocalValuesImpl (impl_scalar_type rowVals[],
+                            const crs_graph_type& graph,
+                            const RowInfo& rowInfo,
+                            const LocalOrdinal inds[],
+                            const impl_scalar_type newVals[],
+                            const LocalOrdinal numElts);
+
+    LocalOrdinal
+    sumIntoGlobalValuesImpl (impl_scalar_type rowVals[],
+                             const crs_graph_type& graph,
+                             const RowInfo& rowInfo,
+                             const GlobalOrdinal inds[],
+                             const impl_scalar_type newVals[],
+                             const LocalOrdinal numElts,
+                             const bool atomic = useAtomicUpdatesByDefault);
+
+    LocalOrdinal
+    sumIntoLocalValuesImpl (impl_scalar_type rowVals[],
+                            const crs_graph_type& graph,
+                            const RowInfo& rowInfo,
+                            const LocalOrdinal inds[],
+                            const impl_scalar_type newVals[],
+                            const LocalOrdinal numElts,
+                            const bool atomic = useAtomicUpdatesByDefault);
+
+    void
+    insertGlobalValuesImpl (crs_graph_type& graph,
+                            RowInfo& rowInfo,
+                            const GlobalOrdinal gblColInds[],
+                            const impl_scalar_type vals[],
+                            const size_t numInputEnt);
 
   protected:
     /// \brief Migrate data from the owned+shared to the owned matrix
@@ -263,6 +330,14 @@ public:
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsMatrix_;
     // This is in RCP to make shallow copies of the FECrsMatrix work correctly
     Teuchos::RCP<FEWhichActive> activeCrsMatrix_;
+
+    enum class FillState
+    {
+      open,  // matrix is "open".  Values can freely summed in to and replaced
+      modify,  // matrix is open for modification.  *local* values can be replaced
+      closed
+    };
+    Teuchos::RCP<FillState> fillState_;
 
 };    // end class FECrsMatrix
 
