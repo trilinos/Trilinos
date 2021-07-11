@@ -300,6 +300,14 @@ isLocallyComplete () const {
 }
 
 template <class LO, class GO, class NT>
+bool
+Transfer<LO, GO, NT>::
+isLocallyFitted () const {
+  return (getNumSameIDs() == std::min(getSourceMap()->getNodeNumElements(),
+                                      getTargetMap()->getNodeNumElements()));
+}
+
+template <class LO, class GO, class NT>
 void
 Transfer<LO, GO, NT>::
 detectRemoteExportLIDsContiguous () const {

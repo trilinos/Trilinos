@@ -715,7 +715,7 @@ void MakeInterfaceScalingFactors(const int numLevels,
     RCP<const Map> regRowMap      = regMat->getRowMap();
     RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporters = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
     // initialize region vector with all ones.
-    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings = VectorFactory::Build(regRowMap);
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regInterfaceScalings = VectorFactory::Build(regRowMap);
     regInterfaceScalings->putScalar(SC_ONE);
 
     // transform to composite layout while adding interface values via the Export() combine mode
@@ -730,7 +730,7 @@ void MakeInterfaceScalingFactors(const int numLevels,
                         regInterfaceScalings,
                         regRowMap, regRowImporters);
 
-    level->Set<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > >("regInterfaceScalings", regInterfaceScalings);
+    level->Set<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("regInterfaceScalings", regInterfaceScalings);
   }
 } // MakeInterfaceScalingFactors
 
@@ -829,7 +829,7 @@ void createRegionHierarchy(const int numDimensions,
     RCP<Matrix> regMatrix = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
     RCP<const Map>    regRowMap = regMatrix->getRowMap();
     RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporter = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
-    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > >("regInterfaceScalings");
+    RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("regInterfaceScalings");
 
     smootherParams[levelIdx]->set("smoother: level", levelIdx);
     smootherSetup(smootherParams[levelIdx], regRowMap,
@@ -953,7 +953,7 @@ void vCycle(const int l, ///< ID of current level
   RCP<Matrix>    regMatrix      = level->Get<RCP<Matrix> >("A", MueLu::NoFactory::get());
   RCP<const Map> regRowMap      = regMatrix->getRowMap();
   RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > regRowImporter = level->Get<RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> > >("rowImport");
-  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal> > >("regInterfaceScalings");
+  RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regInterfaceScalings = level->Get<RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("regInterfaceScalings");
 
   int cycleCount = 1;
   if(cycleType == "W" && l > 0) // W cycle and not on finest level

@@ -167,7 +167,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   Teuchos::Array<global_ordinal_type> global_ids_in_row(4);
 
   // for each element in the mesh...
-  Tpetra::beginFill(*fe_graph);
+  Tpetra::beginAssembly(*fe_graph);
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
     // Populate global_ids_in_row:
@@ -196,7 +196,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // Call fillComplete on the fe_graph to 'finalize' it.
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Graph)"));
-    Tpetra::endFill(*fe_graph);
+    Tpetra::endAssembly(*fe_graph);
   }
 
   // Print out verbose information about the fe_graph.
@@ -255,7 +255,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
     // Loop over elements
-    Tpetra::beginFill(*fe_matrix,*rhs);
+    Tpetra::beginAssembly(*fe_matrix,*rhs);
     for (size_t element_gidx = 0;
          element_gidx < mesh.getNumOwnedElements ();
          ++element_gidx) {
@@ -292,13 +292,13 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)"));
-    Tpetra::endFill(*fe_matrix);
+    Tpetra::endAssembly(*fe_matrix);
   }
 
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
-    Tpetra::endFill(*rhs);
+    Tpetra::endAssembly(*rhs);
   }
 
   Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
@@ -392,7 +392,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       (*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)"));
 
     // for each element in the mesh...
-    Tpetra::beginFill(*fe_graph);
+    Tpetra::beginAssembly(*fe_graph);
     for (size_t element_gidx = 0;
          element_gidx < mesh.getNumOwnedElements ();
          ++element_gidx) {
@@ -424,7 +424,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // Call fillComplete on the fe_graph to 'finalize' it.
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Graph)"));
-    Tpetra::endFill(*fe_graph);
+    Tpetra::endAssembly(*fe_graph);
   }
 
   // Print out verbose information about the fe_graph.
@@ -491,7 +491,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       (*TimeMonitor::getNewTimer ("3.2) ElementLoop  (Matrix)"));
 
     // Loop over elements
-    Tpetra::beginFill(*fe_matrix,*rhs);
+    Tpetra::beginAssembly(*fe_matrix,*rhs);
     Kokkos::parallel_for
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
@@ -534,13 +534,13 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)"));
-    Tpetra::endFill(*fe_matrix);
+    Tpetra::endAssembly(*fe_matrix);
   }
 
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
-    Tpetra::endFill(*rhs);
+    Tpetra::endAssembly(*rhs);
   }
 
   Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();

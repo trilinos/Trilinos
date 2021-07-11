@@ -236,6 +236,21 @@ namespace MueLu {
     }
 #endif
 
+#ifdef CMS_DUMP
+    {
+      int rank = graph->GetDomainMap()->getComm()->getRank();
+
+      printf("[%d,%d] num colors %d\n",rank,currentLevel.GetLevelID(),numColors);
+
+      std::ofstream ofs(std::string("m_colors_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
+      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+      *fancy << myColors();
+    }
+    {
+      A->getRowMap()->getComm()->barrier();
+    }
+
+#endif
 
     /* ============================================================= */
     /* Phase 2 : Mark the C-Points                                   */

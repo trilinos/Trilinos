@@ -317,7 +317,7 @@ FUNCTION(TPETRA_PROCESS_ALL_LGN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
       FOREACH(LO ${LOCALORDINAL_TYPES})
         TPETRA_MANGLE_TEMPLATE_PARAMETER(LO_MANGLED "${LO}")
         TPETRA_SLG_MACRO_NAME(LO_MACRO_NAME "${LO}")
-        
+
         TPETRA_PROCESS_ONE_LGN_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
           "${CLASS_NAME}" "${CLASS_MACRO_NAME}"
           "${LO_MANGLED}" "${GO_MANGLED}" "${NT_MANGLED}"
@@ -619,7 +619,7 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       "${TpetraCore_ETI_NODES}"
       TRUE)
     LIST(APPEND SOURCES ${LOCALDEEPCOPYROWMATRIX_OUTPUT_FILES})
-  
+
     # Generate ETI .cpp files for the RowMatrix -> CrsMatrix overload of
     # Tpetra::createDeepCopy.  Do this only for non-integer Scalar
     # types, since we really only need this function for linear solvers.
@@ -634,7 +634,7 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       FALSE)
     LIST(APPEND SOURCES ${CREATEDEEPCOPY_CRSMATRIX_OUTPUT_FILES})
   ENDIF ()
-  
+
   # Generate ETI .cpp files for Tpetra::LocalCrsMatrixOperator.
   TPETRA_PROCESS_ALL_SN_TEMPLATES(LOCALCRSMATRIXOPERATOR_OUTPUT_FILES
     "Tpetra_ETI_SC_NT.tmpl" "LocalCrsMatrixOperator"
@@ -777,5 +777,5 @@ SET_PROPERTY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Here's another change, another, and another.
+# Here's another change, another, and another and yet another.
 #

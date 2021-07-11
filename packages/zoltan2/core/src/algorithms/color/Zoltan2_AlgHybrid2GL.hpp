@@ -648,7 +648,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 			   const std::unordered_map<lno_t, std::vector<int>>& procs_to_send,
                            gno_t& total_sent, gno_t& total_recvd){
       
-      auto femvColors = femv->getLocalViewHost();
+      auto femvColors = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
       auto colors = subview(femvColors, Kokkos::ALL, 0);
       //create vectors to hold send information
       int nprocs = comm->getSize();
@@ -1335,7 +1335,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       interior_time = timer() - interior_time;
       comp_time = interior_time;
       //get the color view from the FEMultiVector
-      auto femvColors = femv->getLocalViewDevice();
+      auto femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
       auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
 
       //ghost_colors holds the colors of only ghost vertices.
@@ -1538,7 +1538,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //Now we do a similar coloring loop to before, 
       //but using only host views in a serial execution space.
       while(recoloringSize_host(0) > 0 || !done){
-	auto femvColors_host = femv->getLocalViewHost();
+	auto femvColors_host = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
 	auto colors_host = subview(femvColors_host, Kokkos::ALL, 0);
 	if(distributedRounds < numStatisticRecordingRounds){
 	  vertsPerRound[distributedRounds] = recoloringSize_host(0);

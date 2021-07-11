@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -34,69 +35,33 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
+*/
 
-#ifndef TPETRA_ASSEMBLY_HELPERS_HPP
-#define TPETRA_ASSEMBLY_HELPERS_HPP
+#include "TpetraCore_config.h"
+
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
+
+// We protect the contents of this file with macros, to assist
+// applications that circumvent Trilinos' build system.  (We do NOT
+// recommend this.)  That way, they can still build this file, but as
+// long as the macros have correct definitions, they won't build
+// anything that's not enabled.
+
+#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Tpetra_Details_getGraphOffRankOffsets_decl.hpp"
+#include "Tpetra_Details_getGraphOffRankOffsets_def.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
 namespace Tpetra {
 
-namespace Impl {
-// Helper function to to apply an operation to each member of  a
-// c++11 parameter pack since parameter expansion only happens
-// within functions, constructors, and initializer_lists
-template <typename... Args>
-inline void foreach_pack(Args &&... args) {}
-} // namespace Impl
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  TPETRA_INSTANTIATE_LGN( TPETRA_DETAILS_IMPL_GETGRAPHOFFRANKOFFSETS_INSTANT )
 
-template <typename... Args>
-void beginAssembly(Args &&... args)
-{
-  // use the comma operator to transform a potentially void function call
-  // into a argument to allow proper parameter expansion for c++11
-  Impl::foreach_pack( (args.beginAssembly(),1)... );
+} // namespace Tpetra
 
-  // using c++17 the code would be
-  // (args.beginAssembly()...);
-}
-
-template <typename... Args>
-void endAssembly(Args &&... args)
-{
-  // use the comma operator to transform a potentially void function call
-  // into a argument to allow proper parameter expansion for c++11
-  Impl::foreach_pack( (args.endAssembly(),1)... );
-
-  // using c++17 the code would be
-  // (args.endAssembly()...);
-
-}
-
-template <typename... Args>
-void beginModify(Args &&... args)
-{
-  // use the comma operator to transform a potentially void function call
-  // into a argument to allow proper parameter expansion for c++11
-  Impl::foreach_pack( (args.beginModify(),1)... );
-
-  // using c++17 the code would be
-  // (args.beginModify()...);
-}
-
-template <typename... Args>
-void endModify(Args &&... args)
-{
-  // use the comma operator to transform a potentially void function call
-  // into a argument to allow proper parameter expansion for c++11
-  Impl::foreach_pack( (args.endModify(),1)... );
-
-  // using c++17 the code would be
-  // (args.endModify()...);
-
-}
-
-}// namespace Tpetra
-
-#endif // TPETRA_ASSEMBLY_HELPERS_HPP
+#endif // Whether we should build this specialization

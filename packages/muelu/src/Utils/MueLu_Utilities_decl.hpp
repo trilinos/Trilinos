@@ -673,9 +673,8 @@ namespace MueLu {
           tpOp.resumeFill();
 
         if (Op.isLocallyIndexed() == true) {
-          Teuchos::ArrayView<const LocalOrdinal> cols;
-          Teuchos::ArrayView<const Scalar> vals;
-
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type cols;
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             tpOp.getLocalRowView(i, cols, vals);
             size_t nnz = tpOp.getNumEntriesInLocalRow(i);
@@ -687,14 +686,15 @@ namespace MueLu {
               scaledVals[j] = vals[j]*scalingVector[i];
 
             if (nnz > 0) {
+	      Teuchos::ArrayView<const LocalOrdinal> cols_view(cols.data(), nnz);
               Teuchos::ArrayView<const Scalar> valview(&scaledVals[0], nnz);
-              tpOp.replaceLocalValues(i, cols, valview);
+              tpOp.replaceLocalValues(i, cols_view, valview);
             }
           } //for (size_t i=0; ...
 
         } else {
-          Teuchos::ArrayView<const GlobalOrdinal> cols;
-          Teuchos::ArrayView<const Scalar> vals;
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type cols;
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             GlobalOrdinal gid = rowMap->getGlobalElement(i);
@@ -709,8 +709,9 @@ namespace MueLu {
               scaledVals[j] = vals[j]*scalingVector[i]; //FIXME i or gid?
 
             if (nnz > 0) {
+	      Teuchos::ArrayView<const LocalOrdinal> cols_view(cols.data(), nnz);
               Teuchos::ArrayView<const Scalar> valview(&scaledVals[0], nnz);
-              tpOp.replaceGlobalValues(gid, cols, valview);
+              tpOp.replaceGlobalValues(gid, cols_view, valview);
             }
           } //for (size_t i=0; ...
         }

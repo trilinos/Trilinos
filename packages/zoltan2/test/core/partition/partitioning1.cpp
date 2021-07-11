@@ -261,12 +261,12 @@ int main(int narg, char** arg)
       size_t maxnzrow = origMatrix->getNodeMaxNumRowEntries();
       ewgts = new zscalar_t[nEwgts * nnz];
       size_t cnt = 0;
-      Array<z2TestGO> egids(maxnzrow);
-      Array<zscalar_t> evals(maxnzrow);
+      typename SparseMatrix::nonconst_global_inds_host_view_type  egids("egids", maxnzrow);
+      typename SparseMatrix::nonconst_values_host_view_type evals("evals", maxnzrow);
       for (size_t i = 0; i < nrows; i++) {
         size_t nnzinrow;
         z2TestGO gid = origMatrix->getRowMap()->getGlobalElement(i);
-        origMatrix->getGlobalRowCopy(gid, egids(), evals(), nnzinrow);
+        origMatrix->getGlobalRowCopy(gid, egids, evals, nnzinrow);
         for (size_t k = 0; k < nnzinrow; k++) {
           ewgts[cnt] = (gid < egids[k] ? gid : egids[k]);
           if (nEwgts > 1) ewgts[cnt+nnz] = (gid < egids[k] ? egids[k] : gid);
