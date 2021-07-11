@@ -177,7 +177,7 @@ public:
 
     struct _variable
     {
-      Variable *variable;
+      Variable* variable;
     } variable;
 
     struct _function
@@ -949,10 +949,7 @@ parseRValue(
 
 } // namespace Parser
 
-Eval::Eval(
-  VariableMap::Resolver & resolver,
-  const std::string & expression,
-  Variable::ArrayOffset arrayOffsetType)
+Eval::Eval(VariableMap::Resolver & resolver, const std::string & expression, Variable::ArrayOffset arrayOffsetType)
   : m_variableMap(resolver),
     m_expression(expression),
     m_syntaxStatus(false),
@@ -961,9 +958,7 @@ Eval::Eval(
     m_arrayOffsetType(arrayOffsetType)
 {}
 
-Eval::Eval(
-  const std::string & expression,
-  Variable::ArrayOffset arrayOffsetType)
+Eval::Eval(const std::string & expression, Variable::ArrayOffset arrayOffsetType)
   : m_variableMap(VariableMap::getDefaultResolver()),
     m_expression(expression),
     m_syntaxStatus(false),
@@ -972,21 +967,25 @@ Eval::Eval(
     m_arrayOffsetType(arrayOffsetType)
 {}
 
-Eval::~Eval()
-{
-  auto& myThreadData = m_nodes.getMyThreadEntry();
-  for (auto& node : myThreadData) {
-    delete node;
-  }
-}
+Eval::Eval(const Eval& otherEval) 
+  : m_variableMap(otherEval.m_variableMap),
+    m_expression(otherEval.m_expression),
+    m_syntaxStatus(otherEval.m_syntaxStatus),
+    m_parseStatus(otherEval.m_parseStatus),
+    m_headNode(otherEval.m_headNode),
+    m_nodes(otherEval.m_nodes),
+    m_arrayOffsetType(otherEval.m_arrayOffsetType)
+{} 
 
-Node *
-Eval::newNode(
-  int           opcode)
+Eval::~Eval() 
+{}
+
+Node*
+Eval::newNode(int opcode)
 {
   auto& myThreadData = m_nodes.getMyThreadEntry();
-  myThreadData.push_back(new Node(static_cast<Opcode>(opcode), this));
-  return myThreadData.back();
+  myThreadData.push_back(std::make_shared<Node>(static_cast<Opcode>(opcode), this));
+  return myThreadData.back().get();
 }
 
 std::size_t concurrency() {
@@ -1091,6 +1090,65 @@ Eval::undefinedFunction() const
     if (myThreadData[i]->m_data.function.undefinedFunction) return true;
   }
   return false;
+}
+
+bool 
+Eval::is_constant_expression() const
+{
+  auto& variableMap = m_variableMap.getMyThreadEntry();
+  return variableMap.empty();
+}
+
+bool 
+Eval::is_variable(const std::string& variableName) const
+{
+  auto& variableMap = m_variableMap.getMyThreadEntry();
+  return (variableMap.count(variableName) > 0);
+}
+
+std::vector<std::string> 
+Eval::get_variable_names() const
+{
+  std::vector<std::string> variableList;
+  auto& variableMap = m_variableMap.getMyThreadEntry();
+  for(auto& currentVariable : variableMap) {
+    std::string variableName = currentVariable.first;
+    variableList.push_back(variableName);
+  }
+  
+  return variableList;
+}
+
+std::vector<std::string> 
+Eval::get_dependent_variable_names() const
+{
+  std::vector<std::string> dependentVariableList;
+  auto& variableMap = m_variableMap.getMyThreadEntry();
+  for(auto& currentVariable : variableMap) {
+    std::string variableName = currentVariable.first;
+    stk::expreval::Variable* variable = currentVariable.second.get();
+    if (variable->isDependent()) {
+      dependentVariableList.push_back(variableName);
+    }
+  }
+  
+  return dependentVariableList;
+}
+
+std::vector<std::string> 
+Eval::get_independent_variable_names() const
+{
+  std::vector<std::string> independentVariableList;
+  auto& variableMap = m_variableMap.getMyThreadEntry();
+  for(auto& currentVariable : variableMap) {
+    std::string variableName = currentVariable.first;
+    stk::expreval::Variable* variable = currentVariable.second.get();
+    if (!(variable->isDependent())) {
+      independentVariableList.push_back(variableName);
+    }
+  }
+  
+  return independentVariableList;
 }
 
 } // namespace expreval
