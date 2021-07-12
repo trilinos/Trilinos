@@ -917,6 +917,14 @@ struct MinTempLoc
   }
 };
 
+struct NO_OP 
+{
+  template <typename T>
+  inline NO_OP(T * dest, const T *source) {
+    *dest = *source;
+  }
+};
+
 /**
  * @brief Member function <code>ReduceSum</code> ...
  */
