@@ -102,6 +102,19 @@ public:
   int getTag(const int pathTag) const;
 
   size_t createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs);
+  void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
+                               const Teuchos::ArrayView<const int>& remoteProcIDs);
+
+  size_t getNumReceives() const { return numReceives_; }
+  size_t getNumSends() const { return numSendsToOtherProcs_; }
+  bool hasSelfMessage() const { return sendMessageToSelf_; }
+  size_t getMaxSendLength() const { return maxSendLength_; }
+  size_t getTotalReceiveLength() const { return totalReceiveLength_; }
+  Teuchos::ArrayView<const int> getProcsFrom() const { return procsFrom_; }
+  Teuchos::ArrayView<const int> getProcsTo() const { return procIdsToSendTo_; }
+  Teuchos::ArrayView<const size_t> getLengthsFrom() const { return lengthsFrom_; }
+  Teuchos::ArrayView<const size_t> getLengthsTo() const { return lengthsTo_; }
+  Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
 
   /// \brief Compute receive info from sends.
   ///

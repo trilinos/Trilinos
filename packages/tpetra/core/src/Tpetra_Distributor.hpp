@@ -366,8 +366,8 @@ namespace Tpetra {
     ///
     /// This is an implementation detail of Tpetra.  Please do not
     /// call this method or rely on it existing in your code.
-    Details::EDistributorHowInitialized howInitialized () const {
-      return plan_.howInitialized_;
+    Details::EDistributorHowInitialized howInitialized() const {
+      return plan_.howInitialized();
     }
 
     //@}

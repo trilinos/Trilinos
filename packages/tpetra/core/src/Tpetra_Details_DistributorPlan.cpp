@@ -386,6 +386,192 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   return totalReceiveLength_;
 }
 
+void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
+                                              const Teuchos::ArrayView<const int>& remoteProcIDs)
+{
+  // note the exportProcIDs and remoteProcIDs _must_ be a list that has
+  // an entry for each GID. If the export/remoteProcIDs is taken from
+  // the getProcs{From|To} lists that are extracted from a previous distributor,
+  // it will generate a wrong answer, because those lists have a unique entry
+  // for each processor id. A version of this with lengthsTo and lengthsFrom
+  // should be made.
+
+  howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
+
+
+  int myProcID = comm_->getRank ();
+  int numProcs = comm_->getSize();
+
+  const size_t numExportIDs = exportProcIDs.size();
+  Teuchos::Array<size_t> starts (numProcs + 1, 0);
+
+  size_t numActive = 0;
+  int needSendBuff = 0; // Boolean
+
+  for(size_t i = 0; i < numExportIDs; i++ )
+  {
+    if( needSendBuff==0 && i && (exportProcIDs[i] < exportProcIDs[i-1]) )
+      needSendBuff = 1;
+    if( exportProcIDs[i] >= 0 )
+    {
+      ++starts[ exportProcIDs[i] ];
+      ++numActive;
+    }
+  }
+
+  sendMessageToSelf_ = ( starts[myProcID] != 0 ) ? 1 : 0;
+
+  numSendsToOtherProcs_ = 0;
+
+  if( needSendBuff ) //grouped by processor, no send buffer or indicesTo_ needed
+  {
+    if (starts[0] == 0 ) {
+      numSendsToOtherProcs_ = 0;
+    }
+    else {
+      numSendsToOtherProcs_ = 1;
+    }
+    for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
+        im1=starts.begin();
+        i != starts.end(); ++i)
+    {
+      if (*i != 0) ++numSendsToOtherProcs_;
+      *i += *im1;
+      im1 = i;
+    }
+    // starts[i] now contains the number of exports to procs 0 through i
+
+    for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
+        i=starts.rbegin()+1;
+        i != starts.rend(); ++i)
+    {
+      *ip1 = *i;
+      ip1 = i;
+    }
+    starts[0] = 0;
+    // starts[i] now contains the number of exports to procs 0 through
+    // i-1, i.e., all procs before proc i
+
+    indicesTo_.resize(numActive);
+
+    for (size_t i = 0; i < numExportIDs; ++i) {
+      if (exportProcIDs[i] >= 0) {
+        // record the offset to the sendBuffer for this export
+        indicesTo_[starts[exportProcIDs[i]]] = i;
+        // now increment the offset for this proc
+        ++starts[exportProcIDs[i]];
+      }
+    }
+    for (int proc = numProcs-1; proc != 0; --proc) {
+      starts[proc] = starts[proc-1];
+    }
+    starts.front() = 0;
+    starts[numProcs] = numActive;
+    procIdsToSendTo_.resize(numSendsToOtherProcs_);
+    startsTo_.resize(numSendsToOtherProcs_);
+    lengthsTo_.resize(numSendsToOtherProcs_);
+    maxSendLength_ = 0;
+    size_t snd = 0;
+    for (int proc = 0; proc < numProcs; ++proc ) {
+      if (starts[proc+1] != starts[proc]) {
+        lengthsTo_[snd] = starts[proc+1] - starts[proc];
+        startsTo_[snd] = starts[proc];
+        // record max length for all off-proc sends
+        if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
+          maxSendLength_ = lengthsTo_[snd];
+        }
+        procIdsToSendTo_[snd] = proc;
+        ++snd;
+      }
+    }
+  }
+  else {
+    // grouped by proc, no send buffer or indicesTo_ needed
+    numSendsToOtherProcs_ = 0;
+    // Count total number of sends, i.e., total number of procs to
+    // which we are sending.  This includes myself, if applicable.
+    for (int i = 0; i < numProcs; ++i) {
+      if (starts[i]) {
+        ++numSendsToOtherProcs_;
+      }
+    }
+
+    // Not only do we not need these, but we must clear them, as
+    // empty status of indicesTo is a flag used later.
+    indicesTo_.resize(0);
+    // Size these to numSendsToOtherProcs_; note, at the moment, numSendsToOtherProcs_
+    // includes self sends.  Set their values to zeros.
+    procIdsToSendTo_.assign(numSendsToOtherProcs_,0);
+    startsTo_.assign(numSendsToOtherProcs_,0);
+    lengthsTo_.assign(numSendsToOtherProcs_,0);
+
+    // set startsTo to the offset for each send (i.e., each proc ID)
+    // set procsTo to the proc ID for each send
+    // in interpreting this code, remember that we are assuming contiguity
+    // that is why index skips through the ranks
+    {
+      size_t index = 0, procIndex = 0;
+      for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
+        while (exportProcIDs[procIndex] < 0) {
+          ++procIndex; // skip all negative proc IDs
+        }
+        startsTo_[i] = procIndex;
+        int procID = exportProcIDs[procIndex];
+        procIdsToSendTo_[i] = procID;
+        index     += starts[procID];
+        procIndex += starts[procID];
+      }
+    }
+    // sort the startsTo and proc IDs together, in ascending order, according
+    // to proc IDs
+    if (numSendsToOtherProcs_ > 0) {
+      sort2(procIdsToSendTo_.begin(), procIdsToSendTo_.end(), startsTo_.begin());
+    }
+    // compute the maximum send length
+    maxSendLength_ = 0;
+    for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
+      int procID = procIdsToSendTo_[i];
+      lengthsTo_[i] = starts[procID];
+      if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
+        maxSendLength_ = lengthsTo_[i];
+      }
+    }
+  }
+
+
+  numSendsToOtherProcs_ -= sendMessageToSelf_;
+  std::vector<int> recv_list;
+  recv_list.reserve(numSendsToOtherProcs_); //reserve an initial guess for size needed
+
+  int last_pid=-2;
+  for(int i=0; i<remoteProcIDs.size(); i++) {
+    if(remoteProcIDs[i]>last_pid) {
+      recv_list.push_back(remoteProcIDs[i]);
+      last_pid = remoteProcIDs[i];
+    }
+    else if (remoteProcIDs[i]<last_pid)
+      throw std::runtime_error("Tpetra::Distributor:::createFromSendsAndRecvs expected RemotePIDs to be in sorted order");
+  }
+  numReceives_ = recv_list.size();
+  if(numReceives_) {
+    procsFrom_.assign(numReceives_,0);
+    lengthsFrom_.assign(numReceives_,0);
+    indicesFrom_.assign(numReceives_,0);
+    startsFrom_.assign(numReceives_,0);
+  }
+  for(size_t i=0,j=0; i<numReceives_; ++i) {
+    int jlast=j;
+    procsFrom_[i]  = recv_list[i];
+    startsFrom_[i] = j;
+    for( ; j<(size_t)remoteProcIDs.size() &&
+        remoteProcIDs[jlast]==remoteProcIDs[j]  ; j++){;}
+    lengthsFrom_[i] = j-jlast;
+  }
+  totalReceiveLength_ = remoteProcIDs.size();
+  indicesFrom_.clear ();
+  numReceives_-=sendMessageToSelf_;
+}
+
 void DistributorPlan::computeReceives()
 {
   using Teuchos::Array;
