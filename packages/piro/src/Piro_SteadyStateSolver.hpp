@@ -123,12 +123,13 @@ class SteadyStateSolver
   void evalConvergedModelResponsesAndSensitivities(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
-      Teuchos::ParameterList& analysisParams) const;
+      Teuchos::ParameterList& appParams) const;
 
   /** \brief . */
   void evalReducedHessian(
       const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
-      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const;
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
+      Teuchos::ParameterList& appParams) const;
   //@}
 
   private:
