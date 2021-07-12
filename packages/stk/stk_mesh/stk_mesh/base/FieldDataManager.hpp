@@ -39,7 +39,7 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
 #include <stk_util/util/PageAlignedAllocator.hpp>
 #include <vector>                       // for vector
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
 namespace stk { namespace mesh { class FieldBase; } }
 
 namespace stk {
@@ -90,9 +90,9 @@ public:
     virtual void allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, const std::vector< FieldBase * > & field_set) = 0;
     virtual void reallocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, FieldBase & currentField, const std::vector<FieldBase *> & allFields) = 0;
     virtual size_t get_num_bytes_allocated_on_field(const unsigned field_index) const = 0;
-    virtual void add_field_data_for_entity(const std::vector<FieldBase *> &allFields,EntityRank dst_rank,unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord ) = 0;
-    virtual void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &allFields) = 0;
-    virtual void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields) = 0;
+    virtual void add_field_data_for_entity(const std::vector<FieldBase *> &allFields,EntityRank dst_rank,unsigned dst_bucket_id, unsigned dst_bucket_ord ) = 0;
+    virtual void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &allFields) = 0;
+    virtual void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &fields) = 0;
     virtual void swap_fields(const int field1, const int field2) = 0;
 };
 
@@ -135,9 +135,9 @@ public:
     void allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, const std::vector< FieldBase * > & field_set) override;
     void reallocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, FieldBase & currentField, const std::vector<FieldBase *> & allFields) override;
     size_t get_num_bytes_allocated_on_field(const unsigned field_index) const override { return m_num_bytes_allocated_per_field[field_index]; }
-    void add_field_data_for_entity(const std::vector<FieldBase *> &allFields,EntityRank dst_rank,unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord ) override;
-    void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &allFields) override;
-    void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields) override;
+    void add_field_data_for_entity(const std::vector<FieldBase *> &allFields,EntityRank dst_rank,unsigned dst_bucket_id, unsigned dst_bucket_ord ) override;
+    void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &allFields) override;
+    void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &fields) override;
     void swap_fields(const int field1, const int field2) override { }
 
 private:
@@ -196,9 +196,9 @@ public:
     void allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, const std::vector< FieldBase * > & field_set) override;
     void reallocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, FieldBase & currentField, const std::vector<FieldBase *> & allFields) override;
     size_t get_num_bytes_allocated_on_field(const unsigned field_index) const override { return m_num_bytes_allocated_per_field[field_index]; }
-    void add_field_data_for_entity(const std::vector<FieldBase *> &allFields,EntityRank dst_rank,unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord ) override;
-    void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &allFields) override;
-    void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord, const std::vector<FieldBase *> &fields) override;
+    void add_field_data_for_entity(const std::vector<FieldBase *> &allFields,EntityRank dst_rank,unsigned dst_bucket_id, unsigned dst_bucket_ord ) override;
+    void remove_field_data_for_entity(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &allFields) override;
+    void initialize_entity_field_data(EntityRank rank, unsigned bucket_id, unsigned bucket_ord, const std::vector<FieldBase *> &fields) override;
     void swap_fields(const int field1, const int field2) override;
 
     const std::vector<unsigned char*> &get_field_raw_data() const {return m_field_raw_data;}

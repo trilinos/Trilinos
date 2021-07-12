@@ -35,9 +35,10 @@
 #ifndef stk_util_CommNeighbors_hpp
 #define stk_util_CommNeighbors_hpp
 
+#include "stk_util/stk_config.h"              // for STK_HAS_MPI
 #include "stk_util/parallel/CommBufferV.hpp"  // for CommBufferV
 #include "stk_util/parallel/Parallel.hpp"     // for ParallelMachine, OMPI_MAJOR_VERSION, ompi_c...
-#include "stk_util/stk_config.h"              // for STK_HAS_MPI
+#include "stk_util/util/ReportHandler.hpp"
 #include <vector>                             // for vector
 
 //------------------------------------------------------------------------
@@ -106,18 +107,14 @@ public:
   /** Obtain the message buffer for a given processor */
   CommBufferV & send_buffer( int p )
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("send_buffer",p); }
-#endif
+    ThrowAssertMsg(m_size > p, "CommNeighbors::send_buffer p="<<p<<" out of range.");
     return m_send[p] ;
   }
 
   /** Obtain the message buffer for a given processor */
   CommBufferV & recv_buffer( int p )
   {
-#ifndef NDEBUG
-    if ( m_size <= p ) { rank_error("recv_buffer",p); }
-#endif
+    ThrowAssertMsg(m_size > p, "CommNeighbors::recv_buffer p="<<p<<" out of range.");
     return m_recv[p] ;
   }
 
@@ -174,7 +171,6 @@ protected:
   CommNeighbors( const CommNeighbors & );
   CommNeighbors & operator = ( const CommNeighbors & );
 
-  void rank_error( const char * , int ) const ;
   void sort_procs_and_resize_buffers();
 
   stk::ParallelMachine m_comm ;

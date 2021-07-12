@@ -41,69 +41,25 @@
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/FixtureNodeSharing.hpp"
-namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { class Selector; } }
-namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
-namespace stk { namespace mesh { struct EntityKey; } }
-
 
 using stk::mesh::Part;
-using stk::mesh::Bucket;
-using stk::mesh::PairIterRelation;
-using stk::mesh::PairIterEntityComm;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
-using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::PairIterRelation;
 using stk::mesh::EntityProc;
 using stk::mesh::Entity;
 using stk::mesh::EntityId;
-using stk::mesh::EntityKey;
 using stk::mesh::EntityVector;
-using stk::mesh::EntityRank;
-using stk::mesh::BucketVector;
-using stk::mesh::fixtures::BoxFixture;
 
-namespace {
-const EntityRank NODE_RANK = stk::topology::NODE_RANK;
-} // empty namespace
-
-
-void printBuckets(std::ostringstream& msg, BulkData& mesh)
+TEST(UnitTestingOfBulkData, aura1DRing_RestoreDeletedAuraEntity)
 {
-  const BucketVector & buckets = mesh.buckets(NODE_RANK);
-  for (unsigned i=0; i < buckets.size(); i++)
-    {
-      const Bucket& bucket = *buckets[i];
-      msg << " bucket[" << i << "] = ";
-      size_t bucket_size = bucket.size();
-      for (unsigned ie=0; ie < bucket_size; ie++)
-        {
-          msg << mesh.identifier(bucket[ie]) << ", ";
-        }
-    }
-}
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 3) { GTEST_SKIP(); }
 
-static void checkBuckets( BulkData& mesh)
-{
-  const BucketVector & buckets = mesh.buckets(NODE_RANK);
-  for (unsigned i=0; i < buckets.size(); i++)
-    {
-      Bucket* bucket = buckets[i];
-      ASSERT_TRUE(bucket->assert_correct());
-    }
-}
-
-TEST(UnitTestingOfBulkData, test_other_ghosting_2)
-{
   //
   // testing if modification flags propagate properly for ghosted entities
   //
@@ -144,9 +100,6 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   meta_data.commit();
   BulkData mesh(meta_data, pm);
   int p_rank = mesh.parallel_rank();
-  int p_size = mesh.parallel_size();
-
-  if (p_size != 3) return;
 
   // Build map for node sharing
   stk::mesh::fixtures::NodeToProcsMMap nodes_to_procs;
@@ -208,11 +161,6 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   mesh.change_entity_owner( change );
 
-  checkBuckets(mesh);
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
-
   // attempt to delete a node and its elems but on a ghosted proc
   mesh.modification_begin();
 
@@ -231,13 +179,14 @@ TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
   mesh.modification_end();
 
-  checkBuckets(mesh);
-
-  // this node should no longer exist anywhere
+  // The node that we deleted on proc 2 was an aura node. so modification_end
+  // should have restored the node (and also restored the aura elements we deleted).
+  // The way this mesh is arranged, every proc has every element.
   node1 = mesh.get_entity(stk::topology::NODE_RANK, 21);
-
-  // uncomment to force failure of test
-  // ASSERT_TRUE(node1 == 0);
-
+  ASSERT_TRUE(mesh.is_valid(node1));
+  elem = mesh.get_entity(stk::topology::ELEM_RANK, 201);
+  ASSERT_TRUE(mesh.is_valid(elem));
+  elem = mesh.get_entity(stk::topology::ELEM_RANK, 100);
+  ASSERT_TRUE(mesh.is_valid(elem));
 }
 
