@@ -28,7 +28,7 @@ C***********************************************************************
 
       KOUNT = KOUNT + 1
       IF (KOUNT .GT. NLOOP) THEN
-         CALL MESAGE('PROBLEMS IN SETLOP WITH LOOP NOT CLOSING')
+         CALL MESSAGE('PROBLEMS IN SETLOP WITH LOOP NOT CLOSING')
          ERR = .TRUE.
          GOTO 110
       ENDIF

@@ -247,7 +247,7 @@ template <typename INT> void indexed_sort(INT v[], INT iv[], size_t N)
   }
 
 #if DEBUG_SORT
-  fmt::print(stderr, "Checking sort of {:n} values\n", count + 1);
+  fmt::print(stderr, "Checking sort of {:L} values\n", count + 1);
   for (size_t i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
   }
@@ -263,7 +263,7 @@ template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t N)
   gds_iisort(v, iv, N);
 
 #if defined(DEBUG_QSORT)
-  fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
+  fmt::print(stderr, "Checking sort of {:L} values\n", N + 1);
   size_t i;
   for (i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
@@ -280,7 +280,7 @@ template <typename INT> void gds_qsort(INT v[], size_t N)
   gds_isort(v, N);
 
 #if defined(DEBUG_QSORT)
-  fmt::print(stderr, "Checking sort of {:n} values\n", N + 1);
+  fmt::print(stderr, "Checking sort of {:L} values\n", N + 1);
   for (size_t i = 1; i < N; i++) {
     assert(v[i - 1] <= v[i]);
   }

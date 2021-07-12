@@ -56,6 +56,7 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
+#include <Thyra_MueLuPreconditionerFactory.hpp>
 #ifdef HAVE_MUELU_TPETRA
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
@@ -94,9 +95,6 @@
 #include <list>
 
 namespace Thyra {
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool replaceWithXpetra(ParameterList& paramList, std::string parameterName);
 
   /** @brief Concrete preconditioner factory subclass for Thyra based on MueLu.
       @ingroup MueLuAdapters
@@ -283,7 +281,7 @@ namespace Thyra {
       // rebuild preconditioner if startingOver == true
       // reuse preconditioner if startingOver == false
       const bool startingOver = (thyra_precOp.is_null() || !paramList.isParameter("refmaxwell: enable reuse") || !paramList.get<bool>("refmaxwell: enable reuse"));
-      const bool useHalfPrecision = paramList.get<bool>("refmaxwell: half precision", false) && bIsTpetra;
+      const bool useHalfPrecision = paramList.get<bool>("half precision", false) && bIsTpetra;
 
       RCP<XpOp> xpPrecOp;
       if (startingOver == true) {

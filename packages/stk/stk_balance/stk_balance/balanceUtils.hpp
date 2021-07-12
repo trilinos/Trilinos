@@ -46,7 +46,6 @@ namespace stk
 {
 namespace balance
 {
-//rcb, multijagged, rib, hsfc, patoh, phg, metis, parmetis, parma, scotch, ptscotch, block, cyclic, random, zoltan, nd
 
 class FaceSearchTolerance;
 
@@ -94,7 +93,7 @@ public:
     virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index = 0) const ;
     virtual GraphOption getGraphOption() const;
 
-    // Graph (parmetis) based options only
+    // Graph based options only
     virtual bool includeSearchResultsInGraph() const;
     virtual void setIncludeSearchResultsInGraph(bool doContactSearch);
 
@@ -438,6 +437,38 @@ public:
     {
         return BalanceSettings::COLOR_MESH_BY_TOPOLOGY;
     }
+};
+
+class M2NBalanceSettings : public GraphCreationSettings
+{
+public:
+    M2NBalanceSettings()
+      : GraphCreationSettings(),
+        m_numOutputProcs(0),
+        m_useNestedDecomp(false)
+    {}
+
+    M2NBalanceSettings(const std::string & inputFileName,
+                       unsigned numOutputProcs,
+                       bool useNestedDecomp = false)
+      : GraphCreationSettings(),
+        m_numOutputProcs(numOutputProcs),
+        m_useNestedDecomp(useNestedDecomp)
+    {
+      set_input_filename(inputFileName);
+    }
+
+    ~M2NBalanceSettings() = default;
+
+    void set_num_output_processors(unsigned numOutputProcs) { m_numOutputProcs = numOutputProcs; }
+    unsigned get_num_output_processors() const { return m_numOutputProcs; }
+
+    void set_use_nested_decomp(bool useNestedDecomp) { m_useNestedDecomp = useNestedDecomp; }
+    bool get_use_nested_decomp() const { return m_useNestedDecomp; }
+
+protected:
+    unsigned m_numOutputProcs;
+    bool m_useNestedDecomp;
 };
 
 class GraphEdge

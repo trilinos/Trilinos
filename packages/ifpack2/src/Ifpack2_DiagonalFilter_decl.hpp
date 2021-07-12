@@ -79,9 +79,17 @@ public:
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
   typedef typename MatrixType::node_type Node;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef typename MatrixType::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename MatrixType::values_host_view_type values_host_view_type;
 
-  typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+  typedef typename MatrixType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef typename row_matrix_type::mag_type mag_type;
 
   static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::value, "Ifpack2::DiagonalFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
@@ -186,10 +194,17 @@ public:
     with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
+  virtual void
+  getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                   nonconst_global_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow,
                                 const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                                 const Teuchos::ArrayView<Scalar> &Values,
                                 size_t &NumEntries) const;
+#endif
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -202,11 +217,17 @@ public:
     with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
+  virtual void
+  getLocalRowCopy (LocalOrdinal LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getLocalRowCopy(LocalOrdinal LocalRow,
                                const Teuchos::ArrayView<LocalOrdinal> &Indices,
                                const Teuchos::ArrayView<Scalar> &Values,
                                size_t &NumEntries) const ;
-
+#endif
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
@@ -217,10 +238,15 @@ public:
 
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
+  virtual void
+  getGlobalRowView (GlobalOrdinal GlobalRow,
+                    global_inds_host_view_type &indices,
+                    values_host_view_type &values) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
                                 Teuchos::ArrayView<const GlobalOrdinal> &indices,
                                 Teuchos::ArrayView<const Scalar> &values) const;
-
+#endif
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -231,10 +257,15 @@ public:
 
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
+  virtual void
+  getLocalRowView (LocalOrdinal LocalRow,
+                   local_inds_host_view_type & indices,
+                   values_host_view_type & values) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getLocalRowView(LocalOrdinal LocalRow,
                                Teuchos::ArrayView<const LocalOrdinal> &indices,
                                Teuchos::ArrayView<const Scalar> &values) const;
-
+#endif
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */

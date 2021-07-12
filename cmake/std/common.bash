@@ -182,7 +182,7 @@ function get_md5sum() {
 #
 #    get_pip_args=(
 #        --user
-#        --proxy="http://user:nopass@wwwproxy.sandia.gov:80"
+#        --proxy="http://user:nopass@proxy.sandia.gov:80"
 #        --no-setuptools
 #        --no-wheel
 #    )

@@ -48,6 +48,7 @@ namespace Tacho {
     using base_type::_nsupernodes;
     using base_type::_supernodes;
     using base_type::_stree_roots;
+    using base_type::_superpanel_buf;
     using base_type::_piv;
     using base_type::_diag; 
     using base_type::_info;
@@ -375,6 +376,8 @@ namespace Tacho {
                                  std::logic_error, 
                                  "Serial interface works on host device only");
       }
+      /// reset the supernode buffer for potential reuse cases
+      Kokkos::deep_copy(_superpanel_buf, value_type(0));
       switch (this->getSolutionMethod()) {
       case 1: { /// Cholesky
         // if (_nb > 0) {

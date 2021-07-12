@@ -1,11 +1,10 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Utils.h"
 #include "skinner_interface.h"
@@ -14,24 +13,6 @@
 #include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for char_traits, string
-
-namespace {
-  std::string get_type_from_file(const std::string &filename)
-  {
-    Ioss::FileInfo file(filename);
-    auto           extension = file.extension();
-    if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
-      return "exodus";
-    }
-    else if (extension == "cgns") {
-      return "cgns";
-    }
-    else {
-      // "exodus" is default...
-      return "exodus";
-    }
-  }
-} // namespace
 
 Skinner::Interface::Interface() { enroll_options(); }
 
@@ -318,10 +299,10 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
 
   // If inFileType and/or outFileType not specified, see if can infer from file suffix type...
   if (inFiletype_ == "unknown") {
-    inFiletype_ = get_type_from_file(inputFile_);
+    inFiletype_ = Ioss::Utils::get_type_from_file(inputFile_);
   }
   if (!noOutput_ && outFiletype_ == "unknown") {
-    outFiletype_ = get_type_from_file(outputFile_);
+    outFiletype_ = Ioss::Utils::get_type_from_file(outputFile_);
   }
   return true;
 }

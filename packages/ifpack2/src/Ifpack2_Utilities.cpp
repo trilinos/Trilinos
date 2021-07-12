@@ -49,9 +49,8 @@ namespace Details {
     // precTypeUpper is the upper-case version of precType.
     std::string precTypeUpper (precType);
     if (precTypeUpper.size () > 0) {
-      std::locale locale;
       for (size_t k = 0; k < precTypeUpper.size (); ++k) {
-        precTypeUpper[k] = std::toupper<char> (precTypeUpper[k], locale);
+        precTypeUpper[k] = ::toupper(precTypeUpper[k]);
       }
     }
     return precTypeUpper;

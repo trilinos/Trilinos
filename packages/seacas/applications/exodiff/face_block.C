@@ -57,7 +57,7 @@ template <typename INT> void Face_Block<INT>::entity_load_params()
   if (num_faces_per_elmt < 0 || num_attr < 0) {
     Error(fmt::format(
         "Face_Block<INT>::entity_load_params(): Data appears corrupt for face block {}!\n"
-        "\tnum elmts          = {:n}\n"
+        "\tnum elmts          = {:L}\n"
         "\tnum faces per elmt = {}\n"
         "\tnum attributes     = {}\n"
         " ... Aborting...\n",

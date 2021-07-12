@@ -528,7 +528,7 @@ namespace Xpetra {
 #endif
 #ifdef HAVE_XPETRA_EPETRA
       if(rowMap->lib() == UseEpetra)
-        return rcp( new EpetraCrsMatrixT<long long,Node>(rowMap));
+        return rcp( new EpetraCrsMatrixT<long long,Node>(rowMap,0));
 #endif
       XPETRA_FACTORY_END;
     }

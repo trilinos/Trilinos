@@ -80,7 +80,7 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return scIntegrator_->getStepper()->getModel();}
+      getModel() const {return scIntegrator_->getStepper()->getModel();}
 
     virtual void setAppAction(
       Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > appAction = Teuchos::null);

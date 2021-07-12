@@ -1,0 +1,13 @@
+SET(SOURCES "")
+
+FILE(GLOB SOURCES *.cpp)
+
+SET(LIBRARIES intrepid2)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DataCombinationPerformance
+  SOURCES ${SOURCES}
+  ARGS 
+  NUM_MPI_PROCS 1
+  ADD_DIR_TO_NAME
+  )

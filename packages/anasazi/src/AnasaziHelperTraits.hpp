@@ -213,30 +213,30 @@ namespace Anasazi {
       \ingroup anasazi_opvec_interfaces
     */
     template <class T>
-    class HelperTraits<ANSZI_CPLX_CLASS<T> >
+    class HelperTraits<std::complex<T> >
     {
         public:
           static void sortRitzValues( 
               const std::vector<T>& rRV, 
               const std::vector<T>& iRV,
-              std::vector<Value<ANSZI_CPLX_CLASS<T> > >* RV, 
+              std::vector<Value<std::complex<T> > >* RV, 
               std::vector<int>* RO, std::vector<int>* RI );
 
             static void scaleRitzVectors( 
                 const std::vector<T>& iRV,
-                Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<T> >* S );
+                Teuchos::SerialDenseMatrix<int, std::complex<T> >* S );
 
             static void computeRitzResiduals( 
                 const std::vector<T>& iRV,
-                const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<T> >& S,
+                const Teuchos::SerialDenseMatrix<int, std::complex<T> >& S,
                 std::vector<T>* RR );
     };
 
     template<class T>
-    void HelperTraits<ANSZI_CPLX_CLASS<T> >::sortRitzValues( 
+    void HelperTraits<std::complex<T> >::sortRitzValues( 
             const std::vector<T>& rRV, 
             const std::vector<T>& iRV,
-            std::vector<Value<ANSZI_CPLX_CLASS<T> > >* RV, 
+            std::vector<Value<std::complex<T> > >* RV, 
             std::vector<int>* RO, std::vector<int>* RI )
     {
         (void)RO;
@@ -255,12 +255,12 @@ namespace Anasazi {
     }
 
     template<class T>
-    void HelperTraits<ANSZI_CPLX_CLASS<T> >::scaleRitzVectors( 
+    void HelperTraits<std::complex<T> >::scaleRitzVectors( 
             const std::vector<T>& iRV,
-            Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<T> >* S )
+            Teuchos::SerialDenseMatrix<int, std::complex<T> >* S )
     {
       (void)iRV;
-      typedef ANSZI_CPLX_CLASS<T> ST;
+      typedef std::complex<T> ST;
       ST ST_ONE = Teuchos::ScalarTraits<ST>::one();
 
       Teuchos::BLAS<int,ST> blas;
@@ -276,18 +276,18 @@ namespace Anasazi {
     }
 
     template<class T>
-    void HelperTraits<ANSZI_CPLX_CLASS<T> >::computeRitzResiduals( 
+    void HelperTraits<std::complex<T> >::computeRitzResiduals( 
             const std::vector<T>& iRV,
-            const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<T> >& S,
+            const Teuchos::SerialDenseMatrix<int, std::complex<T> >& S,
             std::vector<T>* RR )
     {
         (void)iRV;
-        Teuchos::BLAS<int,ANSZI_CPLX_CLASS<T> > blas;
+        Teuchos::BLAS<int,std::complex<T> > blas;
 
         int s_stride = S.stride();
         int s_rows = S.numRows();
         int s_cols = S.numCols();
-        ANSZI_CPLX_CLASS<T>* s_ptr = S.values();
+        std::complex<T>* s_ptr = S.values();
 
         for (int i=0; i<s_cols; ++i ) {
             (*RR)[i] = blas.NRM2(s_rows, s_ptr + i*s_stride, 1);

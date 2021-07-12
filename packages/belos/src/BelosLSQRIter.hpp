@@ -55,9 +55,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
-//#include "BelosMatOrthoManager.hpp"  (needed for blocks)
 
-//#include "Teuchos_BLAS.hpp"  (needed for blocks)
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"

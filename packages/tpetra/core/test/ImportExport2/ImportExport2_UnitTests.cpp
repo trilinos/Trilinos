@@ -49,6 +49,7 @@
 #include <Teuchos_Tuple.hpp>
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
@@ -94,6 +95,7 @@ namespace {
   using Tpetra::createContigMap;
   using Tpetra::CrsGraph;
   using Tpetra::CrsMatrix;
+  using Tpetra::MultiVector;
   using Tpetra::Export;
   using Tpetra::Import;
   using Tpetra::INSERT;
@@ -285,7 +287,7 @@ namespace {
       }
       row = 0;
       for (size_t i = 0; i < tgt_map->getNodeNumElements (); ++i, ++row) {
-        ArrayView<const LO> rowview;
+        typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
         tgt_graph->getLocalRowView( row, rowview );
         TEST_EQUALITY(rowview.size(), 1);
         TEST_EQUALITY(rowview[0], row);
@@ -358,9 +360,9 @@ namespace {
              globalrow <= tgt_map->getMaxGlobalIndex ();
              ++globalrow) {
           LO localrow = tgt_map->getLocalElement (globalrow);
-          ArrayView<const LO> rowview;
+          typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
           tgt_graph->getLocalRowView (localrow, rowview);
-          TEST_EQUALITY(rowview.size(), globalrow+1);
+          TEST_EQUALITY((size_t)rowview.size(), (size_t)globalrow+1);
 
           // The target graph doesn't necessarily promise sorted
           // order.  Thus, we copy out the local row view, convert to
@@ -396,6 +398,7 @@ namespace {
   {
     typedef Tpetra::global_size_t GST;
     typedef Map<LO, GO> map_type;
+    typedef CrsMatrix<Scalar, LO, GO> crs_type;
 
     out << "(CrsMatrixImportExport,doImport) test" << endl;
     OSTab tab1 (out); // Add one tab level
@@ -475,8 +478,8 @@ namespace {
              ++gblRow) {
           const LO lclRow = tgt_map->getLocalElement (gblRow);
 
-          ArrayView<const LO> lclInds;
-          ArrayView<const Scalar> lclVals;
+          typename crs_type::local_inds_host_view_type lclInds;
+          typename crs_type::values_host_view_type lclVals;
           tgt_mat->getLocalRowView (lclRow, lclInds, lclVals);
           TEST_EQUALITY_CONST(lclInds.size(), 1);
           TEST_EQUALITY_CONST(lclVals.size(), 1);
@@ -523,11 +526,13 @@ namespace {
       // together, so we make a rough guess.
       const magnitude_type tol =
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
-
-      Array<LO> tgtRowInds;
-      Array<Scalar>  tgtRowVals;
-      Array<LO> tgt2RowInds;
-      Array<Scalar>  tgt2RowVals;
+      typedef typename CrsMatrix<Scalar, LO, GO>::nonconst_local_inds_host_view_type lids_type;
+      typedef typename CrsMatrix<Scalar,LO,GO>::nonconst_values_host_view_type vals_type;
+ 
+      lids_type tgtRowInds;
+      vals_type tgtRowVals;
+      lids_type tgt2RowInds;
+      vals_type tgt2RowVals;
       for (LO localrow = tgt_map->getMinLocalIndex();
            localrow <= tgt_map->getMaxLocalIndex();
            ++localrow)
@@ -539,21 +544,21 @@ namespace {
         TEST_EQUALITY(tgtNumEntries, tgt2NumEntries);
 
         if (tgtNumEntries > as<size_t> (tgtRowInds.size ())) {
-          tgtRowInds.resize (tgtNumEntries);
-          tgtRowVals.resize (tgtNumEntries);
+          Kokkos::resize(tgtRowInds,tgtNumEntries);
+          Kokkos::resize(tgtRowVals,tgtNumEntries);
         }
         if (tgt2NumEntries > as<size_t> (tgt2RowInds.size ())) {
-          tgt2RowInds.resize (tgt2NumEntries);
-          tgt2RowVals.resize (tgt2NumEntries);
+          Kokkos::resize(tgt2RowInds,tgt2NumEntries);
+          Kokkos::resize(tgt2RowVals,tgt2NumEntries);
         }
-        tgt_mat->getLocalRowCopy (localrow, tgtRowInds(), tgtRowVals(), tgtNumEntries);
-        A_tgt2->getLocalRowCopy (localrow, tgt2RowInds(), tgt2RowVals(), tgt2NumEntries);
+        tgt_mat->getLocalRowCopy (localrow, tgtRowInds, tgtRowVals, tgtNumEntries);
+        A_tgt2->getLocalRowCopy (localrow, tgt2RowInds, tgt2RowVals, tgt2NumEntries);
 
         // Entries should be sorted, but let's sort them by column
         // index just in case.  This is why we got a row copy instead
         // of a row view.
-        Tpetra::sort2 (tgtRowInds.begin(), tgtRowInds.end(), tgtRowVals.begin());
-        Tpetra::sort2 (tgt2RowInds.begin(), tgt2RowInds.end(), tgt2RowVals.begin());
+        Tpetra::sort2 (tgtRowInds, tgtRowInds.extent(0), tgtRowVals);
+        Tpetra::sort2 (tgt2RowInds, tgt2RowInds.extent(0), tgt2RowVals);
 
         // Now that the entries are sorted, compare to make sure they
         // have the same column indices and values.  In the fully
@@ -634,11 +639,12 @@ namespace {
         for (GO globalrow=tgt_map->getMinGlobalIndex();
              globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow) {
           LO localrow = tgt_map->getLocalElement(globalrow);
-          ArrayView<const LO> rowinds;
-          ArrayView<const Scalar> rowvals;
+          typename CrsMatrix<Scalar,LO,GO>::local_inds_host_view_type rowinds;
+          typename CrsMatrix<Scalar,LO,GO>::values_host_view_type rowvals;
+
           tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
-          TEST_EQUALITY(rowinds.size(), globalrow);
-          TEST_EQUALITY(rowvals.size(), globalrow);
+          TEST_EQUALITY(rowinds.extent(0), (size_t)globalrow);
+          TEST_EQUALITY(rowvals.extent(0), (size_t)globalrow);
 
           // The target graph doesn't necessarily promise sorted
           // order.  Thus, we copy out the local row view, convert to
@@ -672,6 +678,195 @@ namespace {
       Tpetra::Details::gathervPrint (out, err.str (), *comm);
       out << "Above test failed; aborting further tests" << endl;
       return;
+    }
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVectorImport, doImport, LO, GO, Scalar )
+  {
+    typedef Tpetra::global_size_t GST;
+    typedef Map<LO, GO> map_type;
+    typedef MultiVector<Scalar, LO, GO> mv_type;
+
+    out << "(MultiVectorImport,doImport) test" << endl;
+    OSTab tab1 (out); // Add one tab level
+
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+
+    if (numImages < 2) {
+      out << "This test is only meaningful if running with multiple MPI "
+        "processes, but you ran it with only 1 process." << endl;
+      return;
+    }
+
+    for (int collectRank = 0; collectRank < 2; collectRank++) {
+      std::ostringstream err;
+      int lclErr = 0;
+      int gblErr = 0;
+
+      OSTab tab2 (out);
+      const GO indexBase = 0;
+      const LO src_num_local_elements = 3;
+      const LO tgt_num_local_elements = (myImageID == collectRank) ?
+        static_cast<LO> (numImages*src_num_local_elements) :
+        static_cast<LO> (0);
+
+      // Create maps for the source and target
+      RCP<const map_type> src_map =
+        rcp (new map_type (INVALID,
+                           static_cast<size_t> (src_num_local_elements),
+                           indexBase, comm));
+      RCP<const map_type> tgt_map =
+        rcp (new map_type (INVALID,
+                           static_cast<size_t> (tgt_num_local_elements),
+                           indexBase, comm));
+
+      // Create CrsMatrix objects.
+      RCP<mv_type> src_mv = rcp(new mv_type(src_map, 1));
+      RCP<mv_type> tgt_mv = rcp(new mv_type(tgt_map, 1));
+      RCP<mv_type> tgt_mv_reference = rcp(new mv_type(tgt_map, 1));
+
+      src_mv->randomize();
+      tgt_mv->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
+      tgt_mv_reference->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
+
+      try {
+        // Create the importer
+        Import<LO, GO> importer (src_map, tgt_map, getImportParameterList ());
+
+        // Do the import
+        tgt_mv->doImport (*src_mv, importer, INSERT);
+
+        // When collectRank == 0, rank 0 has the GIDs the source map owns ordered first.
+        // When collectRank == 1, rank 1 has the GIDs of rank 0 ordered first.
+        // On all other ranks, there are no remote LIDs.
+        if ((collectRank == 0) || (myImageID != collectRank)) {
+          TEUCHOS_ASSERT(importer.areRemoteLIDsContiguous());
+        }
+        else {
+          TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
+        }
+
+        // When there are remote LIDs and they are contiguous, and
+        // MV::imports_ and MV::view_ have the same memory space, the
+        // imports_ view is aliased to the data view of the target MV.
+        if ((myImageID == collectRank) && (myImageID == 0)) {
+          if (mv_type::dual_view_type::impl_dualview_is_single_device::value)
+            TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
+          // else {
+          //   We do not know if copyAndPermute was run on host or device.
+          // }
+        }
+        else {
+          TEUCHOS_ASSERT(!tgt_mv->importsAreAliased());
+        }
+
+        // produce a reference solution that uses the classical code path
+        expertSetRemoteLIDsContiguous(importer, false);
+        // Do the import
+        tgt_mv_reference->doImport (*src_mv, importer, INSERT);
+        TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
+        TEUCHOS_ASSERT(!tgt_mv_reference->importsAreAliased());
+
+        // Loop through tgt_mv and make sure the import worked.
+        if (tgt_num_local_elements != 0) {
+          auto data = tgt_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
+          auto data_reference = tgt_mv_reference->getLocalViewHost(Tpetra::Access::ReadOnly);
+          for (GO gblRow = tgt_map->getMinGlobalIndex ();
+               gblRow <= tgt_map->getMaxGlobalIndex ();
+               ++gblRow) {
+            const LO lclRow = tgt_map->getLocalElement (gblRow);
+
+            TEST_EQUALITY(data(lclRow,0), data_reference(lclRow,0));
+          }
+        }
+
+        tgt_mv_reference->update(-Teuchos::ScalarTraits<Scalar>::one (), *tgt_mv, Teuchos::ScalarTraits<Scalar>::one ());
+        TEUCHOS_ASSERT(tgt_mv_reference->getVector(0)->norm2()<=Teuchos::ScalarTraits<Scalar>::eps());
+      }
+      catch (std::exception& e) { // end of the first test
+        err << "Proc " << myImageID << ": " << e.what () << endl;
+        lclErr = 1;
+      }
+
+      reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+      TEST_EQUALITY_CONST( gblErr, 0 );
+      if (gblErr != 0) {
+        Tpetra::Details::gathervPrint (out, err.str (), *comm);
+        out << "Above test failed; aborting further tests" << endl;
+        return;
+      }
+
+      tgt_mv->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
+      tgt_mv_reference->putScalar(Teuchos::ScalarTraits<Scalar>::zero ());
+
+      try{
+        // Create the exporter
+        Export<LO, GO> exporter (tgt_map, src_map, getImportParameterList ());
+
+        // Do the import using reverse mode
+        tgt_mv->doImport (*src_mv, exporter, INSERT);
+
+        // When collectRank == 0, rank 0 has the GIDs the source map owns ordered first.
+        // When collectRank == 1, rank 1 has the GIDs of rank 0 ordered first.
+        // On all other ranks, there are no remote LIDs.
+        if ((collectRank == 0) || (myImageID != collectRank)) {
+          TEUCHOS_ASSERT(exporter.areExportLIDsContiguous());
+        }
+        else {
+          TEUCHOS_ASSERT(!exporter.areExportLIDsContiguous());
+        }
+
+        // When there are export LIDs and they are contiguous, and
+        // MV::imports_ and MV::view_ have the same memory space, the
+        // imports_ view is aliased to the data view of the target MV.
+        if ((myImageID == collectRank) && (myImageID == 0)) {
+          if (mv_type::dual_view_type::impl_dualview_is_single_device::value)
+            TEUCHOS_ASSERT(tgt_mv->importsAreAliased());
+          // else {
+          //   We do not know if copyAndPermute was run on host or device.
+          // }
+        }
+        else {
+          TEUCHOS_ASSERT(!tgt_mv->importsAreAliased());
+        }
+
+        // produce a reference solution that uses the classical code path
+        expertSetExportLIDsContiguous(exporter, false);
+        // Do the import
+        tgt_mv_reference->doImport (*src_mv, exporter, INSERT);
+        TEUCHOS_ASSERT(!exporter.areExportLIDsContiguous());
+        TEUCHOS_ASSERT(!tgt_mv_reference->importsAreAliased());
+
+        // Loop through tgt_mv and make sure the import worked.
+        if (tgt_num_local_elements != 0) {
+          auto data = tgt_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
+          auto data_reference = tgt_mv_reference->getLocalViewHost(Tpetra::Access::ReadOnly);
+          for (GO gblRow = tgt_map->getMinGlobalIndex ();
+               gblRow <= tgt_map->getMaxGlobalIndex ();
+               ++gblRow) {
+            const LO lclRow = tgt_map->getLocalElement (gblRow);
+
+            TEST_EQUALITY(data(lclRow,0), data_reference(lclRow,0));
+          }
+        }
+
+      }
+      catch (std::exception& e) { // end of the first test
+        err << "Proc " << myImageID << ": " << e.what () << endl;
+        lclErr = 1;
+      }
+
+      reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+      TEST_EQUALITY_CONST( gblErr, 0 );
+      if (gblErr != 0) {
+        Tpetra::Details::gathervPrint (out, err.str (), *comm);
+        out << "Above test failed; aborting further tests" << endl;
+        return;
+      }
     }
   }
 
@@ -721,7 +916,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
   if (errors != 0) return false;
 
   for (LO i=0; i<static_cast<LO>(G1->getNodeNumRows()); i++) {
-    ArrayView<const LO> V1, V2;
+    typename Graph::local_inds_host_view_type V1, V2;
     G1->getLocalRowView(i, V1);
     G2->getLocalRowView(i, V2);
     if (V1.size() != V2.size()) {
@@ -731,7 +926,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
       continue;
     }
     int jerr = 0;
-    for (LO j=0; static_cast<LO>(j<V1.size()); j++) {
+    for (LO j=0; j<static_cast<LO>(V1.size()); j++) {
       if (V1[j] != V2[j])
         jerr++;
     }
@@ -2516,11 +2711,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
     Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(P);
     R = transposer.createTranspose();
 
-    ArrayRCP<const size_t> rowptr;
-    ArrayRCP<const LO> colind;
-    ArrayRCP<const Scalar> vals;
-    R->getAllValues(rowptr,colind,vals);
-
     // Form AP
     AP = rcp (new CrsMatrixType(A->getRowMap(),0));
     Tpetra::MatrixMatrix::Multiply(*A,false,*P,false,*AP);
@@ -2848,6 +3038,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
 
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixImportExport, doImport, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorImport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, MueLuStyle, LO, GO, SC )

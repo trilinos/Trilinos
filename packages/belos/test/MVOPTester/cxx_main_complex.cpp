@@ -101,24 +101,7 @@ int main(int argc, char *argv[])
       return -1;
     }
 
-#ifdef HAVE_COMPLEX
     typedef std::complex<double> ST;
-#elif HAVE_COMPLEX_H
-    typedef std::complex<double> ST;
-#else
-    typedef double ST;
-    // no std::complex. quit with failure.
-    if (verbose && MyPID==0) {
-      std::cout << "Not compiled with std::complex support." << std::endl;
-      if (verbose && MyPID==0) {
-        std::cout << "End Result: TEST FAILED" << std::endl;
-      }
-#ifdef HAVE_MPI
-      MPI_Finalize();
-#endif
-      return -1;
-    }
-#endif
 
     // Issue several useful typedefs;
     typedef Belos::MultiVec<ST> MV;

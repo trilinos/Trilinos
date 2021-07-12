@@ -460,13 +460,26 @@ Teuchos::ParameterList::values
 {
   /******************************************************************/
   // Dictionary constructor
-  ParameterList(PyObject * dict, string name = string("ANONYMOUS"))
+  ParameterList(PyObject * dict, const string & name = string("ANONYMOUS"))
   {
     Teuchos::ParameterList * plist =
       PyTrilinos::pyDictToNewParameterList(dict, PyTrilinos::raiseError);
     if (plist == NULL) goto fail;
 
     plist->setName(name);
+    return plist;
+  fail:
+    return NULL;
+  }
+
+  /******************************************************************/
+  // String constructor (required because in C++, this constructor has
+  // an optional ParameterListModifier, and we are ignoring
+  // ParameterListModifiers
+  ParameterList(const string & name)
+  {
+    Teuchos::ParameterList * plist = new Teuchos::ParameterList(name);
+    if (plist == NULL) goto fail;
     return plist;
   fail:
     return NULL;
@@ -933,18 +946,19 @@ Teuchos::ParameterList::values
   }
 }    // %extend ParameterList
 
-%{
-  using Teuchos::Array;
-  using Teuchos::null;
-  using Teuchos::ParameterListModifier;
-%}
-
+%ignore Teuchos::ParameterList::ParameterList(const std::string &,
+                                              RCP<const ParameterListModifier> const &);
 %ignore Teuchos::ParameterList::set;
 %ignore Teuchos::ParameterList::setEntry;
+%ignore Teuchos::ParameterList::setModifier;
 %ignore Teuchos::ParameterList::get;
 %ignore Teuchos::ParameterList::getPtr;
 %ignore Teuchos::ParameterList::getEntryPtr;
+%ignore Teuchos::ParameterList::getModifier;
 %ignore Teuchos::ParameterList::sublist(const std::string &) const;
+%ignore Teuchos::ParameterList::sublist(const std::string &,
+                                        RCP<const ParameterListModifier> const &,
+                                        const std::string &);
 %ignore Teuchos::ParameterList::isType(const std::string &) const;
 %ignore Teuchos::ParameterList::isType(const std::string &, any*) const;
 %ignore Teuchos::ParameterList::unused(ostream &) const;
@@ -967,10 +981,3 @@ typedef ParameterList::PrintOptions PrintOptions;
 // Teuchos::ParameterListAcceptor support //
 ////////////////////////////////////////////
 %include "Teuchos_ParameterListAcceptor.hpp"
-
-////////////////////////////////////////////
-// Teuchos::ParameterListModifier support //
-////////////////////////////////////////////
-%teuchos_rcp(Teuchos::ParameterListModifier)
-%include "Teuchos_ParameterListModifier.hpp"
-

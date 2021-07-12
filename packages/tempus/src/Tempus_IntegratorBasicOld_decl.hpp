@@ -90,6 +90,8 @@ public:
     /// Get Status
     virtual Status getStatus() const override
     {return integratorStatus_;}
+    /// Set Status
+    virtual void setStatus(const Status st) override { integratorStatus_ = st; }
     /// Get the Stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     {return stepper_;}
@@ -110,6 +112,9 @@ public:
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
     /// Get the SolutionHistory
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override
+      {return solutionHistory_;}
+    /// Get the SolutionHistory
+    virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override
       {return solutionHistory_;}
     /// Set the SolutionHistory
     virtual void setSolutionHistory(

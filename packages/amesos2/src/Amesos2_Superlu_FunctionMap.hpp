@@ -79,6 +79,19 @@ namespace SLU {
 #include "slu_util.h"
 #include "superlu_enum_consts.h"
 
+void
+at_plus_a(
+          const int n,      /* number of columns in matrix A. */
+          const int nz,     /* number of nonzeros in matrix A */
+          int *colptr,      /* column pointer of size n+1 for matrix A. */
+          int *rowind,      /* row indices of size nz for matrix A. */
+          int *bnz,         /* out - on exit, returns the actual number of
+                               nonzeros in matrix A'*A. */
+          int **b_colptr,   /* out - size n+1 */
+          int **b_rowind    /* out - size *bnz */
+          );
+
+
     namespace S {               // single-precision real definitions
 
 #ifdef HAVE_AMESOS2_SUPERLU5_API

@@ -87,6 +87,6 @@ class TestPhactoriDataArtifactMetaDataControl(unittest.TestCase):
     subprocess.run(["rm", test_pdamdc.artifactListCsvFileName])
 
 if __name__ == '__main__':
+    cc = Cone()
+    rr = Show()
     unittest.main()
-
-

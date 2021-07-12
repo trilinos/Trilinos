@@ -548,39 +548,39 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "========================================================================================="
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Vertices " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(19) << "Vertices " << " | " << setw(19) << "Translations " << right
                     << " | " << setw(41) << boolalpha << useVertexTranslations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "ShortEdges " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(19) << "ShortEdges " << " | " << setw(19) << "Translations " << right
                     << " | " << setw(41) << boolalpha << useShortEdgeTranslations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "ShortEdges " << " | " << setw(19) << " Rotations" << right
+                    << "| " << left << setw(19) << "ShortEdges " << " | " << setw(19) << "Rotations " << right
                     << " | " << setw(41) << boolalpha << useShortEdgeRotations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "StraightEdges " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(19) << "StraightEdges " << " | " << setw(19) << "Translations " << right
                     << " | " << setw(41) << boolalpha << useStraightEdgeTranslations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "StraightEdges " << " | " << setw(19) << " Rotations" << right
+                    << "| " << left << setw(19) << "StraightEdges " << " | " << setw(19) << "Rotations " << right
                     << " | " << setw(41) << boolalpha << useStraightEdgeRotations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Edges " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(19) << "Edges " << " | " << setw(19) << "Translations " << right
                     << " | " << setw(41) << boolalpha << useEdgeTranslations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Edges " << " | " << setw(19) << " Rotations" << right
+                    << "| " << left << setw(19) << "Edges " << " | " << setw(19) << "Rotations " << right
                     << " | " << setw(41) << boolalpha << useEdgeRotations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Faces " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(19) << "Faces " << " | " << setw(19) << "Translations " << right
                     << " | " << setw(41) << boolalpha << useFaceTranslations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Faces " << " | " << setw(19) << " Rotations" << right
+                    << "| " << left << setw(19) << "Faces " << " | " << setw(19) << "Rotations " << right
                     << " | " << setw(41) << boolalpha << useFaceRotations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "

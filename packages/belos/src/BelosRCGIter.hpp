@@ -56,7 +56,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
@@ -167,16 +166,6 @@ namespace Belos {
    */
   class RCGIterFailure : public BelosError {public:
     RCGIterFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief RCGIterOrthoFailure is thrown when the RCGIter object is unable to
-   * compute independent direction vectors in the RCGIter::iterate() routine.
-   *
-   * This std::exception is thrown from the RCGIter::iterate() method.
-   *
-   */
-  class RCGIterOrthoFailure : public BelosError {public:
-    RCGIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
   /** \brief RCGIterLAPACKFailure is thrown when a nonzero return value is passed back

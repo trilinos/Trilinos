@@ -31,8 +31,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-#ifndef _BucketTesterr_hpp_
-#define _BucketTesterr_hpp_
+#ifndef _stk_mesh_unit_test_utils_BucketTester_hpp_
+#define _stk_mesh_unit_test_utils_BucketTester_hpp_
 
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -43,34 +43,30 @@ class BucketTester : public stk::mesh::Bucket
 {
 public:
 
-//    BucketTester(stk::mesh::Bucket& bucket)
-//    {
-//    }
-
     virtual ~BucketTester()
     {
     }
 
-    void my_change_exisiting_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes)
+    void my_change_connected_nodes(unsigned bucket_ordinal, Entity* new_nodes)
     {
         this->change_existing_connectivity(bucket_ordinal, new_nodes);
     }
 
-    void my_change_exisiting_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity,
-            unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut)
+    void my_change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity,
+            ConnectivityOrdinal elem_connectivity_ordinal, Permutation permut)
     {
         this->change_existing_permutation_for_connected_element(bucket_ordinal_of_lower_ranked_entity,
                 elem_connectivity_ordinal, permut);
     }
 
-    void my_change_exisiting_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned edge_connectivity_ordinal,
-            stk::mesh::Permutation permut)
+    void my_change_existing_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, ConnectivityOrdinal edge_connectivity_ordinal,
+            Permutation permut)
     {
         this->change_existing_permutation_for_connected_edge(bucket_ordinal_of_higher_ranked_entity, edge_connectivity_ordinal, permut);
     }
 
-    void my_change_exisiting_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned face_connectivity_ordinal,
-            stk::mesh::Permutation permut)
+    void my_change_existing_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, ConnectivityOrdinal face_connectivity_ordinal,
+            Permutation permut)
     {
         this->change_existing_permutation_for_connected_face(bucket_ordinal_of_higher_ranked_entity, face_connectivity_ordinal, permut);
     }

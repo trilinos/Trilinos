@@ -23,7 +23,7 @@ C***********************************************************************
             ELSEIF (NXL (2, ILL) .EQ. NODE) THEN
                NTEST = NXL (1, ILL)
             ELSE
-               CALL MESAGE ('** PROBLEMS IN GETFRM **')
+               CALL MESSAGE('** PROBLEMS IN GETFRM **')
                GOTO 110
             ENDIF
             IF ((NTEST .NE. N0) .AND. (NTEST .NE. N2)) THEN

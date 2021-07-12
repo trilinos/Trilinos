@@ -36,7 +36,6 @@
 // clang-format off
 #include <stk_io/IossBridge.hpp>
 #include <Ioss_IOFactory.h>                          // for IOFactory
-#include <Ioss_NullEntity.h>                         // for NullEntity
 #include <assert.h>                                  // for assert
 #include <math.h>                                    // for log10
 #include <Shards_Array.hpp>                          // for ArrayDimension
@@ -218,11 +217,11 @@ namespace {
                                      std::vector<stk::mesh::Entity> &entities,
                                      Ioss::GroupingEntity *io_entity)
   {
-    size_t field_component_count = io_field.transformed_storage()->component_count();
+    size_t iossNumFieldComponents = io_field.transformed_storage()->component_count();
 
     std::vector<T> io_field_data;
     size_t io_entity_count = io_entity->get_field_data(io_field.get_name(), io_field_data);
-    assert(io_field_data.size() == entities.size() * field_component_count);
+    assert(io_field_data.size() == entities.size() * iossNumFieldComponents);
 
     size_t entity_count = entities.size();
 
@@ -243,8 +242,10 @@ namespace {
       if (mesh.is_valid(entities[i])) {
         T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
         if (fld_data !=nullptr) {
-          for(size_t j=0; j<field_component_count; ++j) {
-            fld_data[j] = io_field_data[i*field_component_count+j];
+          const size_t stkNumFieldComponents = stk::mesh::field_scalars_per_entity(*field, entities[i]);
+          const size_t len = std::min(stkNumFieldComponents, iossNumFieldComponents);
+          for(size_t j=0; j<len; ++j) {
+            fld_data[j] = io_field_data[i*iossNumFieldComponents+j];
           }
         }
       }
@@ -1027,12 +1028,15 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         return is_part_io_part(part);
     }
 
+    struct IossPartAttribute
+    {
+      bool value;
+    };
+
     void put_io_part_attribute(mesh::Part & part)
     {
       if (!is_part_io_part(part)) {
-        mesh::MetaData & meta = mesh::MetaData::get(part);
-        Ioss::GroupingEntity *attr = new Ioss::NullEntity();
-        meta.declare_attribute_with_delete(part, attr);
+        set_ioss_part_attribute<IossPartAttribute>(part, true);
       }
     }
 
@@ -1160,21 +1164,11 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void remove_io_part_attribute(mesh::Part & part)
     {
-      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-      if (entity != nullptr) {
+      const IossPartAttribute* ioPartAttr = part.attribute<IossPartAttribute>();
+      if (ioPartAttr != nullptr) {
         mesh::MetaData & meta = mesh::MetaData::get(part);
-        bool success = meta.remove_attribute(part, entity);
-        if (!success) {
-          std::string msg = "stk::io::remove_io_part_attribute( ";
-          msg += part.name();
-          msg += " ) FAILED:";
-          msg += " meta.remove_attribute(..) returned failure.";
-          throw std::runtime_error( msg );
-        }
-
-        if (entity->type() == Ioss::INVALID_TYPE) {
-          delete entity;
-        }
+        bool success = meta.remove_attribute(part, ioPartAttr);
+        ThrowRequireMsg(success, "stk::io::remove_io_part_attribute(" << part.name() << ") FAILED.");
       }
     }
 
@@ -1410,6 +1404,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return false;
     }
 
+    void sort_by_descending_field_size(stk::mesh::PartVector& parts,
+                                       const stk::mesh::FieldBase& field)
+    {
+      auto compare_field_size = [&field](stk::mesh::Part* lhs, stk::mesh::Part* rhs)
+      {
+        const stk::mesh::FieldBase::Restriction &lhsRestriction = stk::mesh::find_restriction(field, field.entity_rank(), *lhs);
+        const stk::mesh::FieldBase::Restriction &rhsRestriction = stk::mesh::find_restriction(field, field.entity_rank(), *rhs);
+        return lhsRestriction.num_scalars_per_entity() > rhsRestriction.num_scalars_per_entity();
+      };
+
+      std::sort(parts.begin(), parts.end(), compare_field_size);
+    }
+
     void ioss_add_fields_for_subpart(const stk::mesh::Part &part,
                                      const stk::mesh::EntityRank part_type,
                                      Ioss::GroupingEntity *entity,
@@ -1417,8 +1424,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                                      const Ioss::Field::RoleType filter_role)
     {
         stk::mesh::EntityRank part_rank = part_primary_entity_rank(part);
-        const stk::mesh::PartVector &blocks = part.subsets();
+        stk::mesh::PartVector blocks = part.subsets();
         const stk::mesh::FieldBase *f = namedField.field();
+        sort_by_descending_field_size(blocks, *f);
 
         for (size_t j = 0; j < blocks.size(); j++) {
             mesh::Part & side_block_part = *blocks[j];
@@ -1846,7 +1854,6 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     {
         /// \todo REFACTOR Need some additional compatibility checks between
         /// Ioss field and stk::mesh::Field; better error messages...
-
         if (field != nullptr && io_entity->field_exists(io_fld_name)) {
             const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
             if (field->type_is<double>()) {
@@ -2551,11 +2558,13 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           io_cs->property_add(Ioss::Property(s_internal_selector_name, select));
 
           // Update global node and element count...
-          std::vector<size_t> entityCounts;
-          stk::mesh::comm_mesh_counts(bulk, entityCounts);
+          if (!io_region.property_exists("global_node_count") || !io_region.property_exists("global_element_count")) {
+            std::vector<size_t> entityCounts;
+            stk::mesh::comm_mesh_counts(bulk, entityCounts);
 
-          io_region.property_add(Ioss::Property("global_node_count",    static_cast<int64_t>(entityCounts[stk::topology::NODE_RANK])));
-          io_region.property_add(Ioss::Property("global_element_count", static_cast<int64_t>(entityCounts[stk::topology::ELEMENT_RANK])));
+            io_region.property_add(Ioss::Property("global_node_count",    static_cast<int64_t>(entityCounts[stk::topology::NODE_RANK])));
+            io_region.property_add(Ioss::Property("global_element_count", static_cast<int64_t>(entityCounts[stk::topology::ELEMENT_RANK])));
+          }
         }
       }
 
@@ -3412,7 +3421,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     bool is_part_io_part(const stk::mesh::Part &part)
     {
-      return nullptr != part.attribute<Ioss::GroupingEntity>();
+      return has_ioss_part_attribute<IossPartAttribute>(part);
     }
 
     // TODO: NOTE: The use of "FieldBase" here basically eliminates the use of the attribute

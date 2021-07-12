@@ -403,7 +403,7 @@ C  CALCULATE AREA AND C.G. OF ELEMENT
                   IF (LOOKUP .GT. MAXKXN*NNXK) LOOKUP = 1
                   KLOOK = KLOOK + 1
                   IF (KLOOK .GT. MAXKXN*NNXK) THEN
-                     CALL MESAGE ('LOOKUP TABLE TOO FULL')
+                     CALL MESSAGE ('LOOKUP TABLE TOO FULL')
                      GO TO 330
                   END IF
                   GO TO 290

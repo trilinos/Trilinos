@@ -11,7 +11,7 @@ TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/ifpack.tag=$(TRILINOS_HOME)/packages/ifpack/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ml.tag=$(TRILINOS_HOME)/packages/ml/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/nox.tag=$(TRILINOS_HOME)/packages/nox/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/ml.tag=$(TRILINOS_HOME)/packages/phalanx/doc/html
+  $(TRILINOS_HOME)/packages/common/tag_files/phalanx.tag=$(TRILINOS_HOME)/packages/phalanx/doc/html
 #
 # Package options
 #

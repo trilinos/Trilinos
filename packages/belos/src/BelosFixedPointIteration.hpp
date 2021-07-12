@@ -100,26 +100,6 @@ namespace Belos {
     FixedPointIterateFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
-  /** \brief FixedPointIterationOrthoFailure is thrown when the FixedPointIteration object is unable to
-   * compute independent direction vectors in the FixedPointIteration::iterate() routine. 
-   *
-   * This std::exception is thrown from the FixedPointIteration::iterate() method.
-   *
-   */
-  class FixedPointIterationOrthoFailure : public BelosError {public:
-    FixedPointIterationOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief FixedPointIterationLAPACKFailure is thrown when a nonzero return value is passed back
-   * from an LAPACK routine.
-   *
-   * This std::exception is thrown from the FixedPointIteration::iterate() method.
-   *
-   */
-  class FixedPointIterationLAPACKFailure : public BelosError {public:
-    FixedPointIterationLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
   //@}
 
 

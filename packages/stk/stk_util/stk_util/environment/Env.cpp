@@ -280,9 +280,10 @@ output_flush()
 
 
 void
-request_shutdown(bool shutdown)
+request_shutdown(bool shutdown, const std::string shutdownReason)
 {
   stk::EnvData::instance().m_shutdownRequested = shutdown;
+  stk::EnvData::instance().m_shutdownReason = shutdownReason;
 }
 
 bool

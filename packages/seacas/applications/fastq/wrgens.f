@@ -60,9 +60,9 @@ C  NAMES WILL BE WRITTEN.
 C  CHECK TO MAKE SURE THAT THERE IS ENOUGH ROOM FOR ELEMENT NAMES
 
       IF (NUMMAT.GT.IGUESS) THEN
-         CALL MESAGE ('WARNING:  THE NUMBER OF ELEMENT BLOCKS EXCEEDS')
-         CALL MESAGE ('          THE CAPACITY TO NAME EACH BLOCK.')
-         CALL MESAGE ('          NO ELEMENT NAMES WILL BE WRITTEN.')
+         CALL MESSAGE('WARNING:  THE NUMBER OF ELEMENT BLOCKS EXCEEDS')
+         CALL MESSAGE('          THE CAPACITY TO NAME EACH BLOCK.')
+         CALL MESSAGE('          NO ELEMENT NAMES WILL BE WRITTEN.')
       ENDIF
 
 C  WRITE OUT HEADER INFORMATION
@@ -110,9 +110,9 @@ C  WRITE OUT ELEMENT BLOCKS
             NATTR = 1
             ATTR = 1.
             IF (I.LE.IGUESS)ENAME (I) = 'BEAM'
-            CALL MESAGE ('NOTE:  The connectivity numbering for 3-node')
-            CALL MESAGE ('       beams/trusses has been fixed to')
-            CALL MESAGE ('       conform to EXODUS convention (1-3-2)')
+            CALL MESSAGE('NOTE:  The connectivity numbering for 3-node')
+            CALL MESSAGE('       beams/trusses has been fixed to')
+            CALL MESSAGE('       conform to EXODUS convention (1-3-2)')
          ELSEIF (EIGHT) THEN
             INODE = 8
             NATTR = 0
@@ -231,18 +231,18 @@ C  WRITE THE COORDINATE NAMES AND ELEMENT NAMES
 
 C  SUCCESSFUL WRITE COMPLETED
 
-      CALL MESAGE (' ')
-      CALL MESAGE (' ')
-      CALL MESAGE ('GENESIS OUTPUT FILE SUCCESSFULLY WRITTEN')
-      CALL MESAGE (' ')
+      CALL MESSAGE(' ')
+      CALL MESSAGE(' ')
+      CALL MESSAGE('GENESIS OUTPUT FILE SUCCESSFULLY WRITTEN')
+      CALL MESSAGE(' ')
       ERR = .FALSE.
       RETURN
 
 C  ERR DURING WRITE PROBLEMS
 
   110 CONTINUE
-      CALL MESAGE ('ERR DURING WRITE TO OUTPUT FILE')
-      CALL MESAGE ('      - NO FILE SAVED -')
+      CALL MESSAGE('ERR DURING WRITE TO OUTPUT FILE')
+      CALL MESSAGE('      - NO FILE SAVED -')
       RETURN
 
       END

@@ -26,7 +26,7 @@
 #include "/usr/netpub/valgrind-3.8.1/include/valgrind/callgrind.h"
 #endif
 
-#define DO_ALT_TIMER 1
+#define DO_ALT_TIMER 0
 
 #define TIMING(code) code
 #define TIMER(name) stk::diag::Timer timer ## name ( #name, Base::rootTimer());  stk::diag::TimeBlock tbTimer ## name (timer ## name)

@@ -186,7 +186,7 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
   using FEG = Tpetra::FECrsGraph<LO,GO,NT>;
 
   Teuchos::RCP<FEG> feg(new FEG(mesh.uniqueMap,mesh.overlapMap,9,mesh.overlapMap));
-  feg->beginFill();
+  feg->beginAssembly();
   for (const auto& elem_dofs : mesh.element2node) {
     for (const GO gid_i : elem_dofs) {
       for (const GO gid_j : elem_dofs) {
@@ -194,7 +194,7 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
       }
     }
   }
-  feg->endFill();
+  feg->endAssembly();
 
   return feg;
 }
@@ -205,13 +205,13 @@ generate_fecrs_graph (const MeshInfo<4,LO,GO,NT>& mesh)
 // Note that such matrix is strictly diagonally dominant.
 template<typename ST, typename LO, typename GO, typename NT>
 void
-fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,  
-               Tpetra::CrsMatrix<ST,LO,GO,NT>& mat,  
+fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,
+               Tpetra::CrsMatrix<ST,LO,GO,NT>& mat,
                const MeshInfo<4,LO,GO,NT>& mesh)
 {
   const ST zero = Teuchos::ScalarTraits<ST>::zero();
 
-  fe_mat.beginFill();
+  fe_mat.beginAssembly();
   mat.resumeFill();
 
   fe_mat.setAllToScalar(zero);
@@ -230,13 +230,13 @@ fill_matrices (Tpetra::FECrsMatrix<ST,LO,GO,NT>& fe_mat,
       }
     }
   }
-  fe_mat.endFill();
+  fe_mat.endAssembly();
   mat.fillComplete();
 }
 
 template<typename ST, typename LO, typename GO, typename NT>
 bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
-                       const Tpetra::CrsMatrix<ST,LO,GO,NT>& B, 
+                       const Tpetra::CrsMatrix<ST,LO,GO,NT>& B,
                        Teuchos::FancyOStream &out)
 {
   // They should have the same row/range/domain maps
@@ -264,17 +264,20 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
     return false;
   }
 
-  auto findLID = [](const Teuchos::ArrayView<const LO>& lids, const LO lid) -> int {
-    auto it = std::find(lids.begin(),lids.end(),lid);
-    if (it==lids.end()) {
+  typedef typename Tpetra::CrsMatrix<ST,LO,GO,NT> crs_matrix_type;
+  auto findLID = [](
+       const typename crs_matrix_type::local_inds_host_view_type& lids,
+       const LO lid) -> int {
+    auto it = std::find(lids.data(),lids.data()+lids.extent(0),lid);
+    if (it==lids.data()+lids.extent(0)) {
       return -1;
     } else {
-      return std::distance(lids.begin(),it);
+      return std::distance(lids.data(),it);
     }
   };
 
-  Teuchos::ArrayView<const ST> valsA, valsB;
-  Teuchos::ArrayView<const LO> colsA, colsB;
+  typename crs_matrix_type::values_host_view_type  valsA, valsB;
+  typename crs_matrix_type::local_inds_host_view_type colsA, colsB;
   const LO invLO = Teuchos::OrdinalTraits<LO>::invalid();
   const auto& colMapA = *gA.getColMap();
   const auto& colMapB = *gB.getColMap();
@@ -293,7 +296,7 @@ bool compare_matrices (const Tpetra::CrsMatrix<ST,LO,GO,NT>& A,
     }
 
     // Loop over rows entries
-    for (int j=0; j<numEntries; ++j) {
+    for (size_t j=0; j<numEntries; ++j) {
       const LO lidA = colsA[j];
       const GO gid = colMapA.getGlobalElement(lidA);
       const LO lidB = colMapB.getLocalElement(gid);
@@ -331,7 +334,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
 
   // get a comm
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  
+
   // Generate a mesh
   const int numCells1D = 4;
   MeshInfo<4,LO,GO,NT> mesh;
@@ -356,7 +359,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
     for (bool transB : {false, true}) {
       Teuchos::RCP<Teuchos::ParameterList> params1(new Teuchos::ParameterList());
       Teuchos::RCP<Teuchos::ParameterList> params2(new Teuchos::ParameterList());
-      params2->set("MM_TAFC_OptimizationCoreCount",1);  
+      params2->set("MM_TAFC_OptimizationCoreCount",1);
       for (auto params : {params1, params2}) {
 
         // A and feA should have the same row map, so pick one.
@@ -381,6 +384,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL (Tpetra_MatMat, FECrsMatrix, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+// FIXME_SYCL
+#ifndef KOKKOS_ENABLE_SYCL
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_SC_LO_GO_NO )
+#endif
 
 } // anonymous namespace

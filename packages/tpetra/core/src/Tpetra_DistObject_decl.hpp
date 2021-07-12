@@ -515,6 +515,54 @@ namespace Tpetra {
               const CombineMode CM,
               const bool restrictedMode = false);
 
+    void
+    beginImport(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    beginExport(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    beginImport(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    beginExport(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                const CombineMode CM,
+                const bool restrictedMode = false);
+
+    void
+    endImport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
+    void
+    endExport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
+    void
+    endImport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
+    void
+    endExport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+              const CombineMode CM,
+              const bool restrictedMode = false);
+
     //@}
     //! @name Attribute accessor methods
     //@{
@@ -721,22 +769,40 @@ namespace Tpetra {
     /// LID DualViews come from the Transfer object given to
     /// doTransfer.  They are <i>always</i> sync'd on both host and
     /// device.  Users must never attempt to modify or sync them.
-    virtual void
-    doTransferNew (const SrcDistObject& src,
-                   const CombineMode CM,
-                   const size_t numSameIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteToLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteFromLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& remoteLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& exportLIDs,
-                   Distributor& distor,
-                   const ReverseOption revOp,
-                   const bool commOnHost,
-                   const bool restrictedMode);
+    void beginTransfer(const SrcDistObject& src,
+                       const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                       const char modeString[],
+                       const ReverseOption revOp,
+                       const CombineMode CM,
+                       const bool restrictedMode);
+
+    void endTransfer(const SrcDistObject& src,
+                     const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                     const char modeString[],
+                     const ReverseOption revOp,
+                     const CombineMode CM,
+                     const bool restrictedMode);
+
+    void doPosts(Distributor& distor,
+                 size_t constantNumPackets,
+                 bool commOnHost,
+                 ReverseOption revOp,
+                 std::shared_ptr<std::string> prefix,
+                 const bool canTryAliasing,
+                 const CombineMode CM);
+
+    void doWaits(Distributor& distor,
+                 ReverseOption revOp);
+
+    void doPackAndPrepare(const SrcDistObject& src,
+                          const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+                          size_t& constantNumPackets,
+                          Distributor& distor);
+
+    void doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
+                            size_t constantNumPackets,
+                            Distributor& distor,
+                            CombineMode CM);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
@@ -933,10 +999,12 @@ namespace Tpetra {
     /// <tt>exports_</tt> always gets passed into packAndPrepare()
     /// by nonconst reference.  Thus, that method can resize the
     /// DualView without needing to call other DistObject methods.
-    bool
+    virtual bool
     reallocImportsIfNeeded (const size_t newSize,
                             const bool verbose,
-                            const std::string* prefix);
+                            const std::string* prefix,
+                            const bool remoteLIDsContiguous=false,
+                            const CombineMode CM=INSERT);
 
     /// \brief Number of packets to receive for each receive operation.
     ///

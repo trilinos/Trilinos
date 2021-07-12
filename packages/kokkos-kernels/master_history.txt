@@ -12,3 +12,5 @@ tag: 3.1.01     date: 05/04/2020  master: 43773523    release: 6fce7502
 tag: 3.2.00     date: 08/19/2020  master: 07a60bcc    release: ea3f2b77
 tag: 3.3.00     date: 12/16/2020  master: 42defc56    release: e5279e55
 tag: 3.3.01     date: 01/18/2021  master: f64b1c57    release: 4e1cc00b
+tag: 3.4.00     date: 04/26/2021  master: fe439b21    release: d3c33910
+tag: 3.4.01     date: 05/20/2021  master: 564dccb3    release: 4c62eb86

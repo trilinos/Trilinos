@@ -158,10 +158,10 @@ void SolutionHistory<Scalar>::removeState(
       if (state->getTime() == (*state_it)->getTime()) break;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(state_it == history_->rend(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      state_it == history_->rend(), std::logic_error,
       "Error - removeState() Could not remove state = "
-      // << state_it->describe()
-      );
+       << (*state_it)->description());
 
     // Need to be careful when erasing a reverse iterator.
     history_->erase(std::next(state_it).base());
@@ -394,10 +394,10 @@ SolutionHistory<Scalar>::getStateTimeIndexN(bool warn) const
   const int m = history_->size();
   if ( m < 1 ) {
     if ( warn ) {
-       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-       Teuchos::OSTab ostab(out,1,"SolutionHistory::getStateTimeIndexN");
-       *out << "Warning - getStateTimeIndexN() No states in SolutionHistory!"
-            << std::endl;
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"SolutionHistory::getStateTimeIndexN");
+      *out << "Warning - getStateTimeIndexN() No states in SolutionHistory!"
+           << std::endl;
     }
   } else {
     state = (*history_)[m-1];
@@ -514,7 +514,7 @@ SolutionHistory<Scalar>::getStateTimeIndex(int index, bool warn) const
 template<class Scalar>
 std::string SolutionHistory<Scalar>::description() const
 {
-  return ("Tempus::SolutionHistory - name = '" + name_ + "'");
+  return ("Tempus::SolutionHistory - '" + name_ + "'");
 }
 
 
@@ -523,24 +523,30 @@ void SolutionHistory<Scalar>::describe(
   Teuchos::FancyOStream          &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "\n--- " << this->description() << " ---" << std::endl;
+
   if ((Teuchos::as<int>(verbLevel)==Teuchos::as<int>(Teuchos::VERB_DEFAULT)) ||
       (Teuchos::as<int>(verbLevel)>=Teuchos::as<int>(Teuchos::VERB_LOW)    )  ){
-    out << description() << std::endl;
-    //out << "interpolator     = " << interpolator->description() << std::endl;
-    out << "storageLimit     = " << storageLimit_ << std::endl;
-    out << "storageType      = " << getStorageTypeString() << std::endl;
-    out << "number of states = " << history_->size() << std::endl;
-    out << "time range       = (" << history_->front()->getTime() << ", "
-                                  << history_->back()->getTime() << ")"
-                                  << std::endl;
+    //*l_out << "  interpolator     = " << interpolator->description() << std::endl;
+    *l_out << "  storageLimit     = " << storageLimit_ << std::endl;
+    *l_out << "  storageType      = " << getStorageTypeString() << std::endl;
+    *l_out << "  number of states = " << history_->size() << std::endl;
+    if ( history_->size() > 0 ) {
+      *l_out<<"  time range       = (" << history_->front()->getTime() << ", "
+                                       << history_->back()->getTime() << ")"
+                                       << std::endl;
+    }
   }
 
   if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
-    for (int i=0; i<(int)history_->size() ; ++i) {
-      out << "SolutionState[" << i << "] -- ";
-      (*history_)[i]->describe(out, verbLevel);
-    }
+    for (int i=0; i<(int)history_->size() ; ++i)
+      (*history_)[i]->describe(*l_out, verbLevel);
   }
+  *l_out << std::string(this->description().length()+8, '-') << std::endl;
 }
 
 
@@ -683,10 +689,21 @@ void SolutionHistory<Scalar>::initialize() const
 // ------------------------------------------------------------------------
 
 template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistory()
+{
+  auto sh = rcp(new SolutionHistory<Scalar>());
+  sh->setName("From createSolutionHistory");
+
+  return sh;
+}
+
+
+template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> > createSolutionHistoryPL(
   Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto sh = rcp(new SolutionHistory<Scalar>());
+  sh->setName("From createSolutionHistoryPL");
 
   if (pl == Teuchos::null) return sh;  // Return default SolutionHistory.
 

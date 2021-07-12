@@ -211,6 +211,10 @@ struct InputTraits {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
+#ifdef _MSC_VER
+  typedef SSIZE_T ssize_t;
+#endif
+
 // This combination of macros is used to define a single line
 // Z2_STATIC_ASSERT_TYPES for each InputTraits with custom template types
 #define Z2_ISSAME(s,type) (std::is_same< s, type >::value)

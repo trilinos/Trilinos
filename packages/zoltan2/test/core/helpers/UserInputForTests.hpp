@@ -637,14 +637,14 @@ RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
 
   size_t maxRow = M_->getNodeMaxNumRowEntries();
   Array<int> colGids(maxRow);
-  ArrayView<const int> colLid;
 
+  typename tcrsGraph_t::local_inds_host_view_type colLid;
   eG_ = rcp(new Epetra_CrsGraph(Copy, erowMap,
                                 rowSize.getRawPtr(), true));
 
   for (int i=0; i < nMyElts; i++){
     tgraph->getLocalRowView(i, colLid);
-    for (int j=0; j < colLid.size(); j++)
+    for (size_t j=0; j < colLid.extent(0); j++)
       colGids[j] = tcolMap->getGlobalElement(colLid[j]);
     eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
   }
@@ -664,17 +664,16 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
   const Epetra_BlockMap &rowMap = egraph->RowMap();
   const Epetra_BlockMap &colMap = egraph->ColMap();
   Array<int> colGid(maxRow);
-
   for (int i=0; i < nrows; i++){
-    ArrayView<const int> colLid;
-    ArrayView<const zscalar_t> nz;
+    typename tcrsMatrix_t::local_inds_host_view_type colLid;
+    typename tcrsMatrix_t::values_host_view_type nz;
     M_->getLocalRowView(i, colLid, nz);
     size_t rowSize = colLid.size();
     int rowGid = rowMap.GID(i);
     for (size_t j=0; j < rowSize; j++){
       colGid[j] = colMap.GID(colLid[j]);
     }
-    eM_->InsertGlobalValues(rowGid, (int)rowSize, nz.getRawPtr(), colGid.getRawPtr());
+    eM_->InsertGlobalValues(rowGid, (int)rowSize, nz.data(), colGid.getRawPtr());
   }
   eM_->FillComplete();
   return eM_;
@@ -1071,8 +1070,8 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
   size_t rowLen = inMatrix->getNodeMaxNumRowEntries();
   RCP<tcrsMatrix_t> outMatrix = rcp(new tcrsMatrix_t(outMap, rowLen));
 
-  Teuchos::Array<zgno_t> indices(rowLen);
-  Teuchos::Array<zscalar_t> values(rowLen);
+  typename tcrsMatrix_t::nonconst_global_inds_host_view_type  indices("Indices", rowLen);
+  typename tcrsMatrix_t::nonconst_values_host_view_type values("Values", rowLen);
 
   for (size_t i = 0; i < nRows; i++) {
     size_t nEntries;
@@ -1082,8 +1081,10 @@ RCP<tcrsMatrix_t> UserInputForTests::modifyMatrixGIDs(
       indices[j] = newID(indices[j]);
 
     zgno_t outGid = outMap->getGlobalElement(i);
-    outMatrix->insertGlobalValues(outGid, indices(0, nEntries),
-                                          values(0, nEntries));
+    ArrayView<zgno_t> Indices(indices.data(), nEntries);
+    ArrayView<zscalar_t> Values(values.data(), nEntries);
+    outMatrix->insertGlobalValues(outGid, Indices(0, nEntries),
+                                          Values(0, nEntries));
   }
   outMatrix->fillComplete();
 
@@ -1900,8 +1901,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     edgWeights_ = rcp(new tMVector_t(toMap, nEwgts));
 
     size_t maxSize = M_->getNodeMaxNumRowEntries();
-    Array<zlno_t> colind(maxSize);
-    Array<zscalar_t> vals(maxSize);
+    tcrsMatrix_t::nonconst_local_inds_host_view_type colind("colind", maxSize);
+    tcrsMatrix_t::nonconst_values_host_view_type vals("values", maxSize);
     size_t nEntries;
 
     for (size_t i = 0, idx = 0; i < M_->getNodeNumRows(); i++) {
@@ -2869,13 +2870,13 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   {
     zgno_t gid = rowMapElementList[ii];
     size_t numEntriesInRow = A->getNumEntriesInGlobalRow (gid);
-    Array<zscalar_t> rowvals (numEntriesInRow);
-    Array<zgno_t> rowinds (numEntriesInRow);
+    typename tcrsMatrix_t::nonconst_global_inds_host_view_type rowinds("Indices", numEntriesInRow);
+    typename tcrsMatrix_t::nonconst_values_host_view_type rowvals("Values", numEntriesInRow);
 
     // modified
     Array<zscalar_t> mod_rowvals;
     Array<zgno_t> mod_rowinds;
-    A->getGlobalRowCopy (gid, rowinds (), rowvals (), numEntriesInRow);
+    A->getGlobalRowCopy (gid, rowinds, rowvals, numEntriesInRow);
     for (size_t i = 0; i < numEntriesInRow; i++) {
 //      if (rowvals[i] == 2*(this->pamgen_mesh->num_dim-1))
 //      {

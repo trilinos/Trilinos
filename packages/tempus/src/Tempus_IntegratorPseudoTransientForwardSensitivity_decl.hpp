@@ -116,6 +116,8 @@ public:
   virtual int getIndex() const override;
   /// Get Status
   virtual Status getStatus() const override;
+  /// Set Status
+  virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
   /// Return a copy of the Tempus ParameterList
@@ -123,6 +125,8 @@ public:
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
+  /// Get the SolutionHistory
+  virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
   virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;

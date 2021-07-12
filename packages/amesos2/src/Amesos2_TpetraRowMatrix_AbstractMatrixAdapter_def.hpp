@@ -51,7 +51,9 @@
 namespace Amesos2 {
 
   using Teuchos::RCP;
+  #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   using Teuchos::ArrayView;
+  #endif
 
   template <typename Scalar,
             typename LocalOrdinal,
@@ -70,6 +72,7 @@ namespace Amesos2 {
   }
 
   // implementation functions
+  #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <typename Scalar,
             typename LocalOrdinal,
             typename GlobalOrdinal,
@@ -88,7 +91,29 @@ namespace Amesos2 {
     {
       this->mat_->getGlobalRowCopy(row, indices, vals, nnz);
     }
+  #endif
 
+  template <typename Scalar,
+            typename LocalOrdinal,
+            typename GlobalOrdinal,
+            typename Node,
+            class DerivedMat>
+  template <typename KV_GO, typename KV_S>
+  void
+  AbstractConcreteMatrixAdapter<
+    Tpetra::RowMatrix<Scalar,
+                      LocalOrdinal,
+                      GlobalOrdinal,
+                      Node>,
+    DerivedMat>::getGlobalRowCopy_kokkos_view_impl(global_ordinal_t row,
+                                                   KV_GO & indices,
+                                                   KV_S & vals,
+                                                   size_t& nnz) const
+    {
+      this->mat_->getGlobalRowCopy(row, indices, vals, nnz);
+    }
+
+  #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <typename Scalar,
             typename LocalOrdinal,
             typename GlobalOrdinal,
@@ -110,6 +135,7 @@ namespace Amesos2 {
                         "Column access to row-based object not yet supported.  "
                         "Please contact the Amesos2 developers." );
   }
+  #endif
 
 
   template <typename Scalar,
@@ -222,6 +248,7 @@ namespace Amesos2 {
   }
 
 
+  #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <typename Scalar,
             typename LocalOrdinal,
             typename GlobalOrdinal,
@@ -281,6 +308,7 @@ namespace Amesos2 {
     typename super_t::local_matrix_t lm = this->mat_->getLocalMatrix();
     return lm.values.data();
   }
+  #endif
 
 
   template <typename Scalar,

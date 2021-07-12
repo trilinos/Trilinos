@@ -198,9 +198,6 @@ public:
   /** \brief  The allocation size, in bytes, of this bucket */
   unsigned allocation_size() const { return 0 ; }
 
-  /** \brief  A method to assist in unit testing - accesses private data as necessary. */
-  bool assert_correct() const;
-
   bool is_empty() const { return size() == 0; }
 
   impl::Partition *getPartition() const { return m_partition; }
@@ -213,88 +210,88 @@ public:
   /// Entity member functions are moved here:
   ///
 
-  int parallel_owner_rank(size_type ordinal) const;
+  int parallel_owner_rank(unsigned ordinal) const;
 
   void check_size_invariant() const;
 
   //generic rank connectivity calls
-  Entity const* begin(size_type bucket_ordinal, EntityRank rank) const
+  Entity const* begin(unsigned bucket_ordinal, EntityRank rank) const
   { RANK_SWITCH(rank, begin, s, bucket_ordinal) }
-  ConnectivityOrdinal const* begin_ordinals(size_type bucket_ordinal, EntityRank rank) const
+  ConnectivityOrdinal const* begin_ordinals(unsigned bucket_ordinal, EntityRank rank) const
   { RANK_SWITCH(rank, begin, _ordinals, bucket_ordinal) }
-  Permutation const* begin_permutations(size_type bucket_ordinal, EntityRank rank) const
+  Permutation const* begin_permutations(unsigned bucket_ordinal, EntityRank rank) const
   { RANK_SWITCH(rank, begin, _permutations, bucket_ordinal) }
 
-  Entity const* end(size_type bucket_ordinal, EntityRank rank) const
+  Entity const* end(unsigned bucket_ordinal, EntityRank rank) const
   { RANK_SWITCH(rank, end, s, bucket_ordinal) }
-  ConnectivityOrdinal const* end_ordinals(size_type bucket_ordinal, EntityRank rank) const
+  ConnectivityOrdinal const* end_ordinals(unsigned bucket_ordinal, EntityRank rank) const
   { RANK_SWITCH(rank, end, _ordinals, bucket_ordinal) }
-  Permutation const* end_permutations(size_type bucket_ordinal, EntityRank rank) const
+  Permutation const* end_permutations(unsigned bucket_ordinal, EntityRank rank) const
   { RANK_SWITCH(rank, end, _permutations, bucket_ordinal) }
 
-  unsigned num_connectivity(size_type bucket_ordinal, EntityRank rank) const;
+  unsigned num_connectivity(unsigned bucket_ordinal, EntityRank rank) const;
 
-  Entity const* begin_nodes(size_type bucket_ordinal) const
+  Entity const* begin_nodes(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.begin(bucket_ordinal), m_dynamic_node_connectivity.begin(bucket_ordinal), true) }
-  Entity const* begin_edges(size_type bucket_ordinal) const
+  Entity const* begin_edges(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_edge_kind, m_fixed_edge_connectivity.begin(bucket_ordinal), m_dynamic_edge_connectivity.begin(bucket_ordinal), true) }
-  Entity const* begin_faces(size_type bucket_ordinal) const
+  Entity const* begin_faces(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_face_kind, m_fixed_face_connectivity.begin(bucket_ordinal), m_dynamic_face_connectivity.begin(bucket_ordinal), true) }
-  Entity const* begin_elements(size_type bucket_ordinal) const
+  Entity const* begin_elements(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.begin(bucket_ordinal), m_dynamic_element_connectivity.begin(bucket_ordinal), true) }
 
-  ConnectivityOrdinal const* begin_node_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* begin_node_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.begin_ordinals(bucket_ordinal), m_dynamic_node_connectivity.begin_ordinals(bucket_ordinal), true) }
-  ConnectivityOrdinal const* begin_edge_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* begin_edge_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_edge_kind, m_fixed_edge_connectivity.begin_ordinals(bucket_ordinal), m_dynamic_edge_connectivity.begin_ordinals(bucket_ordinal), true) }
-  ConnectivityOrdinal const* begin_face_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* begin_face_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_face_kind, m_fixed_face_connectivity.begin_ordinals(bucket_ordinal), m_dynamic_face_connectivity.begin_ordinals(bucket_ordinal), true) }
-  ConnectivityOrdinal const* begin_element_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* begin_element_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.begin_ordinals(bucket_ordinal), m_dynamic_element_connectivity.begin_ordinals(bucket_ordinal), true) }
 
-  Permutation const* begin_node_permutations(size_type bucket_ordinal) const
+  Permutation const* begin_node_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.begin_permutations(bucket_ordinal), m_dynamic_node_connectivity.begin_permutations(bucket_ordinal), true) }
-  Permutation const* begin_edge_permutations(size_type bucket_ordinal) const
+  Permutation const* begin_edge_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_edge_kind, m_fixed_edge_connectivity.begin_permutations(bucket_ordinal), m_dynamic_edge_connectivity.begin_permutations(bucket_ordinal), true) }
-  Permutation const* begin_face_permutations(size_type bucket_ordinal) const
+  Permutation const* begin_face_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_face_kind, m_fixed_face_connectivity.begin_permutations(bucket_ordinal), m_dynamic_face_connectivity.begin_permutations(bucket_ordinal), true) }
-  Permutation const* begin_element_permutations(size_type bucket_ordinal) const
+  Permutation const* begin_element_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.begin_permutations(bucket_ordinal), m_dynamic_element_connectivity.begin_permutations(bucket_ordinal), true) }
 
-  unsigned num_nodes(size_type bucket_ordinal) const
+  unsigned num_nodes(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.num_connectivity(bucket_ordinal), m_dynamic_node_connectivity.num_connectivity(bucket_ordinal), false) }
-  unsigned num_edges(size_type bucket_ordinal) const
+  unsigned num_edges(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_edge_kind, m_fixed_edge_connectivity.num_connectivity(bucket_ordinal), m_dynamic_edge_connectivity.num_connectivity(bucket_ordinal), false) }
-  unsigned num_faces(size_type bucket_ordinal) const
+  unsigned num_faces(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_face_kind, m_fixed_face_connectivity.num_connectivity(bucket_ordinal), m_dynamic_face_connectivity.num_connectivity(bucket_ordinal), false) }
-  unsigned num_elements(size_type bucket_ordinal) const
+  unsigned num_elements(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.num_connectivity(bucket_ordinal), m_dynamic_element_connectivity.num_connectivity(bucket_ordinal), false) }
 
-  Entity const* end_nodes(size_type bucket_ordinal) const
+  Entity const* end_nodes(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.end(bucket_ordinal), m_dynamic_node_connectivity.end(bucket_ordinal), true) }
-  Entity const* end_edges(size_type bucket_ordinal) const
+  Entity const* end_edges(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_edge_kind, m_fixed_edge_connectivity.end(bucket_ordinal), m_dynamic_edge_connectivity.end(bucket_ordinal), true) }
-  Entity const* end_faces(size_type bucket_ordinal) const
+  Entity const* end_faces(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_face_kind, m_fixed_face_connectivity.end(bucket_ordinal), m_dynamic_face_connectivity.end(bucket_ordinal), true) }
-  Entity const* end_elements(size_type bucket_ordinal) const
+  Entity const* end_elements(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.end(bucket_ordinal), m_dynamic_element_connectivity.end(bucket_ordinal), true) }
 
-  ConnectivityOrdinal const* end_node_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* end_node_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.end_ordinals(bucket_ordinal), m_dynamic_node_connectivity.end_ordinals(bucket_ordinal), true) }
-  ConnectivityOrdinal const* end_edge_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* end_edge_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_edge_kind, m_fixed_edge_connectivity.end_ordinals(bucket_ordinal), m_dynamic_edge_connectivity.end_ordinals(bucket_ordinal), true) }
-  ConnectivityOrdinal const* end_face_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* end_face_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_face_kind, m_fixed_face_connectivity.end_ordinals(bucket_ordinal), m_dynamic_face_connectivity.end_ordinals(bucket_ordinal), true) }
-  ConnectivityOrdinal const* end_element_ordinals(size_type bucket_ordinal) const
+  ConnectivityOrdinal const* end_element_ordinals(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.end_ordinals(bucket_ordinal), m_dynamic_element_connectivity.end_ordinals(bucket_ordinal), true) }
 
-  Permutation const* end_node_permutations(size_type bucket_ordinal) const
+  Permutation const* end_node_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_node_kind, m_fixed_node_connectivity.end_permutations(bucket_ordinal), m_dynamic_node_connectivity.end_permutations(bucket_ordinal), true) }
-  Permutation const* end_edge_permutations(size_type bucket_ordinal) const
+  Permutation const* end_edge_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_edge_kind, m_fixed_edge_connectivity.end_permutations(bucket_ordinal), m_dynamic_edge_connectivity.end_permutations(bucket_ordinal), true) }
-  Permutation const* end_face_permutations(size_type bucket_ordinal) const
+  Permutation const* end_face_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_face_kind, m_fixed_face_connectivity.end_permutations(bucket_ordinal), m_dynamic_face_connectivity.end_permutations(bucket_ordinal), true) }
-  Permutation const* end_element_permutations(size_type bucket_ordinal) const
+  Permutation const* end_element_permutations(unsigned bucket_ordinal) const
   { CONNECTIVITY_TYPE_SWITCH(m_element_kind, m_fixed_element_connectivity.end_permutations(bucket_ordinal), m_dynamic_element_connectivity.end_permutations(bucket_ordinal), true) }
 
   bool has_permutation(EntityRank rank) const;
@@ -360,31 +357,31 @@ private:
 
   bool destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id );
 
-  bool declare_relation(size_type bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation);
+  bool declare_relation(unsigned bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation);
 
   // The following *_other* functions should not be made available externally, in
   // order to avoid external confusion with "constraint" and "other" connectivities.
   // They are currently used within this class to provide connectivities
   // externally through another interface.
-  Entity const* begin_others(size_type bucket_ordinal) const {
+  Entity const* begin_others(unsigned bucket_ordinal) const {
     return m_dynamic_other_connectivity.begin(bucket_ordinal);
   }
-  ConnectivityOrdinal const* begin_other_ordinals(size_type bucket_ordinal) const {
+  ConnectivityOrdinal const* begin_other_ordinals(unsigned bucket_ordinal) const {
     return m_dynamic_other_connectivity.begin_ordinals(bucket_ordinal);
   }
-  Permutation const* begin_other_permutations(size_type bucket_ordinal) const {
+  Permutation const* begin_other_permutations(unsigned bucket_ordinal) const {
     return m_dynamic_other_connectivity.begin_permutations(bucket_ordinal);
   }
-  unsigned num_other(size_type bucket_ordinal) const {
+  unsigned num_other(unsigned bucket_ordinal) const {
     return m_dynamic_other_connectivity.num_connectivity(bucket_ordinal);
   }
-  Entity const* end_others(size_type bucket_ordinal) const {
+  Entity const* end_others(unsigned bucket_ordinal) const {
     return m_dynamic_other_connectivity.end(bucket_ordinal);
   }
-  ConnectivityOrdinal const* end_other_ordinals(size_type bucket_ordinal) const {
+  ConnectivityOrdinal const* end_other_ordinals(unsigned bucket_ordinal) const {
     return m_dynamic_other_connectivity.end_ordinals(bucket_ordinal);
   }
-  Permutation const* end_other_permutations(size_type bucket_ordinal) const {
+  Permutation const* end_other_permutations(unsigned bucket_ordinal) const {
     return m_dynamic_other_connectivity.end_permutations(bucket_ordinal);
   }
 
@@ -438,15 +435,15 @@ private:
   // bucket[to_ordinal] = entity;
   // whatever was there before is lost
   //  With optional fields argument only copy listed fields
-  void overwrite_entity(size_type to_ordinal, Entity entity, const std::vector<FieldBase*>* fields = nullptr);
+  void overwrite_entity(unsigned to_ordinal, Entity entity, const std::vector<FieldBase*>* fields = nullptr);
 
-  void initialize_slot(size_type ordinal, Entity entity);
+  void initialize_slot(unsigned ordinal, Entity entity);
   //  Optional fields argument, only copy listed fields
-  void reset_entity_location(Entity entity, size_type to_ordinal, const std::vector<FieldBase*>* fields = nullptr);
+  void reset_entity_location(Entity entity, unsigned to_ordinal, const std::vector<FieldBase*>* fields = nullptr);
 
-  size_type get_others_begin_index(size_type bucket_ordinal, EntityRank rank) const;
-  size_type get_others_end_index(size_type bucket_ordinal, EntityRank rank) const;
-  size_type get_others_index_count(size_type bucket_ordinal, EntityRank rank) const;
+  unsigned get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) const;
+  unsigned get_others_end_index(unsigned bucket_ordinal, EntityRank rank) const;
+  unsigned get_others_index_count(unsigned bucket_ordinal, EntityRank rank) const;
 
   template <typename T>
   void modify_connectivity(T& callable, EntityRank rank);
@@ -590,7 +587,7 @@ bool Bucket::member_all( const OrdinalVector& parts ) const
 }
 
 inline
-unsigned Bucket::num_connectivity(size_type bucket_ordinal, EntityRank rank) const
+unsigned Bucket::num_connectivity(unsigned bucket_ordinal, EntityRank rank) const
 {
   switch(rank) {
   case stk::topology::NODE_RANK:    return num_nodes(bucket_ordinal);

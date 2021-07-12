@@ -862,6 +862,108 @@ namespace Intrepid2 {
                                   ">>> ERROR: (Intrepid2::getValues_HGRAD_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
   }
 
+  template<typename Device,
+            typename outputValueType,
+            typename pointValueType>
+  Kokkos::DynRankView<outputValueType,Device>
+  Basis<Device,outputValueType,pointValueType>::allocateOutputView( const int numPoints, const EOperator operatorType) const
+  {
+    const bool operatorIsDk = (operatorType >= OPERATOR_D1) && (operatorType <= OPERATOR_D10);
+    const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV) || operatorIsDk;
+    INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateOutputView()");
+    
+    const int numFields = this->getCardinality();
+    const int spaceDim  = basisCellTopology_.getDimension();
+    
+    using OutputViewAllocatable = Kokkos::DynRankView<outputValueType,DeviceType>;
+    
+    switch (functionSpace_)
+    {
+      case FUNCTION_SPACE_HGRAD:
+        if (operatorType == OPERATOR_VALUE)
+        {
+          // scalar-valued container
+          OutputViewAllocatable dataView("BasisValues HGRAD VALUE data", numFields, numPoints);
+          return dataView;
+        }
+        else if (operatorType == OPERATOR_GRAD)
+        {
+          OutputViewAllocatable dataView("BasisValues HGRAD GRAD data", numFields, numPoints, spaceDim);
+          return dataView;
+        }
+        else if (operatorIsDk)
+        {
+          ordinal_type dkCardinality = getDkCardinality(operatorType, spaceDim);
+          OutputViewAllocatable dataView("BasisValues HGRAD Dk data", numFields, numPoints, dkCardinality);
+          return dataView;
+        }
+        else
+        {
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+        }
+      case FUNCTION_SPACE_HDIV:
+        if (operatorType == OPERATOR_VALUE)
+        {
+          // vector-valued container
+          OutputViewAllocatable dataView("BasisValues HDIV VALUE data", numFields, numPoints, spaceDim);
+          return dataView;
+        }
+        else if (operatorType == OPERATOR_DIV)
+        {
+          // scalar-valued curl
+          OutputViewAllocatable dataView("BasisValues HDIV DIV data", numFields, numPoints);
+          return dataView;
+        }
+        else
+        {
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+        }
+      case FUNCTION_SPACE_HCURL:
+        if (operatorType == OPERATOR_VALUE)
+        {
+          OutputViewAllocatable dataView("BasisValues HCURL VALUE data", numFields, numPoints, spaceDim);
+          return dataView;
+        }
+        else if (operatorType == OPERATOR_CURL)
+        {
+          if (spaceDim != 2)
+          {
+            // vector-valued curl
+            OutputViewAllocatable dataView("BasisValues HCURL CURL data", numFields, numPoints, spaceDim);
+            return dataView;
+          }
+          else
+          {
+            // scalar-valued curl
+            OutputViewAllocatable dataView("BasisValues HCURL CURL data (scalar)", numFields, numPoints);
+            return dataView;
+          }
+        }
+        else
+        {
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+        }
+      case FUNCTION_SPACE_HVOL:
+        if (operatorType == OPERATOR_VALUE)
+        {
+          // vector-valued container
+          OutputViewAllocatable dataView("BasisValues HVOL VALUE data", numFields, numPoints);
+          return dataView;
+        }
+        else if (operatorIsDk)
+        {
+          ordinal_type dkCardinality = getDkCardinality(operatorType, spaceDim);
+          OutputViewAllocatable dataView("BasisValues HVOL Dk data", numFields, numPoints, dkCardinality);
+          return dataView;
+        }
+        else
+        {
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+        }
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "operator/space combination not supported by allocateOutputView()");
+    }
+  }
 }
 
 #endif

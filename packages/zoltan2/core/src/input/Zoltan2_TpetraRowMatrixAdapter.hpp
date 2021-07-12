@@ -255,12 +255,13 @@ template <typename User, typename UserCoord>
   offset_.resize(nrows+1, 0);
   columnIds_.resize(nnz);
   values_.resize(nnz);
-  ArrayRCP<lno_t> indices(maxnumentries); // Diff from CrsMatrix
-  ArrayRCP<scalar_t> nzs(maxnumentries);  // Diff from CrsMatrix
+  typename User::nonconst_local_inds_host_view_type  indices("indices", maxnumentries);
+  typename User::nonconst_values_host_view_type  nzs("nzs", maxnumentries);
+
   lno_t next = 0;
   for (size_t i=0; i < nrows; i++){
     lno_t row = i;
-    matrix_->getLocalRowCopy(row, indices(), nzs(), nnz); // Diff from CrsMatrix
+    matrix_->getLocalRowCopy(row, indices, nzs, nnz); // Diff from CrsMatrix
     for (size_t j=0; j < nnz; j++){
       values_[next] = nzs[j];
       // TODO - this will be slow

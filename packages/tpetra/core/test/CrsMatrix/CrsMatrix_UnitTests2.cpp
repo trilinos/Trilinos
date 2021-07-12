@@ -427,7 +427,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
 
     // test the constructors based on 4 maps + local matri_crsx
-    RCP<MAT> tri_crs_2 = rcp(new MAT(tri_crs->getLocalMatrix(), tri_crs->getRowMap(),
+    RCP<MAT> tri_crs_2 = rcp(new MAT(tri_crs->getLocalMatrixDevice(), tri_crs->getRowMap(),
                                      tri_crs->getColMap(), tri_crs->getDomainMap(), tri_crs->getRangeMap()));
     TEST_EQUALITY(tri_crs_2->isFillComplete(), true);
     auto exporter = tri_crs_2->getGraph()->getExporter();

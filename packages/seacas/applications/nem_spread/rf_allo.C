@@ -193,7 +193,7 @@ static void *smalloc(size_t n, char *filename, int lineno)
   if (pntr == nullptr && n != 0) {
     fmt::print(stderr,
                "{} (from {},{}) Out of space - number of bytes "
-               "requested = {:n}\n",
+               "requested = {:L}\n",
                __func__, filename, lineno, n);
     exit(0);
   }

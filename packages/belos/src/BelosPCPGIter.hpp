@@ -56,8 +56,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -156,8 +154,6 @@ namespace Belos {
     PCPGIterateFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-
-  
   /** \brief PCPGIterOrthoFailure is thrown when the PCPGIter object is unable to
    * compute independent direction vectors in the PCPGIter::iterate() routine.
    *
@@ -167,20 +163,7 @@ namespace Belos {
   class PCPGIterOrthoFailure : public BelosError {public:
     PCPGIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-  
-  /** \brief PCPGIterLAPACKFailure is thrown when a nonzero return value is passed back
-   * from an LAPACK routine.
-   *
-   * This std::exception is thrown from the PCPGIter::iterate() method.
-   *
-   */
-  class PCPGIterLAPACKFailure : public BelosError {public:
-    PCPGIterLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  //@}
-  
-  
+
   template<class ScalarType, class MV, class OP>
   class PCPGIter : virtual public Iteration<ScalarType,MV,OP> {
     
@@ -233,7 +216,7 @@ namespace Belos {
      * -# the search direction P is projected into a complement of the seed space U.
      *
      * The status test is queried at the beginning of the iteration.
-     * Potential CG exceptions include IterationInit, Iterate and IterationLAPACKFailure
+     * Potential CG exceptions include IterationInit, Iterate
      *
      */
     void iterate();

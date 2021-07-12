@@ -803,7 +803,7 @@ namespace {
   }
 
   bool compare_nodeblock(const Ioss::Region &input_region_1, const Ioss::Region &input_region_2,
-                         const Ioss::MeshCopyOptions &options)
+                         const Ioss::MeshCopyOptions &/* options */)
   {
     bool overall_result = true;
 
@@ -833,7 +833,7 @@ namespace {
   template <typename T>
   bool compare_blocks(const std::vector<T *> &     in_blocks_1,
                       const std::vector<T *> &     in_blocks_const_2,
-                      const Ioss::MeshCopyOptions &options)
+                      const Ioss::MeshCopyOptions &/* options */)
   {
     bool overall_result = true;
 
@@ -866,7 +866,6 @@ namespace {
         }
       }
     }
-
     return overall_result;
   }
 
@@ -908,7 +907,7 @@ namespace {
 
   bool compare_structuredblocks(const Ioss::Region &         input_region_1,
                                 const Ioss::Region &         input_region_2,
-                                const Ioss::MeshCopyOptions &options)
+                                const Ioss::MeshCopyOptions &/* options */)
   {
     bool overall_result = true;
 
@@ -950,7 +949,7 @@ namespace {
 
   template <typename T>
   bool compare_sets(const std::vector<T *> &in_sets_1, const std::vector<T *> &in_sets_const_2,
-                    const Ioss::MeshCopyOptions &options)
+                    const Ioss::MeshCopyOptions &/* options */)
   {
     bool overall_result = true;
 
@@ -1052,7 +1051,7 @@ namespace {
   }
 
   bool compare_commsets(const Ioss::Region &input_region_1, const Ioss::Region &input_region_2,
-                        const Ioss::MeshCopyOptions &options)
+                        const Ioss::MeshCopyOptions &/* options */)
   {
     bool overall_result = true;
 
@@ -1093,7 +1092,7 @@ namespace {
 
   bool compare_coordinate_frames(const Ioss::Region &         input_region_1,
                                  const Ioss::Region &         input_region_2,
-                                 const Ioss::MeshCopyOptions &options)
+                                 const Ioss::MeshCopyOptions &/* options */)
   {
     bool overall_result = true;
 

@@ -34,6 +34,7 @@
 #include "M2NParser.hpp"
 #include "stk_util/command_line/CommandLineParserUtils.hpp"
 #include "stk_util/util/string_utils.hpp"
+#include "stk_balance/balanceUtils.hpp"
 
 namespace stk {
 namespace balance {
@@ -67,15 +68,15 @@ M2NParser::M2NParser(MPI_Comm comm)
   add_options_to_parser();
 }
 
-void M2NParser::parse_command_line_options(int argc, const char** argv, M2NParsedOptions& options)
+void M2NParser::parse_command_line_options(int argc, const char** argv, M2NBalanceSettings& settings)
 {
   setup_messages(argv);
 
   stk::parse_command_line(argc, argv, m_quickExample, m_longExamples, m_commandLineParser, m_comm);
 
-  set_filename(options);
-  set_num_procs(options);
-  set_use_nested_decomp(options);
+  set_filename(settings);
+  set_num_procs(settings);
+  set_use_nested_decomp(settings);
 }
 
 std::string M2NParser::get_quick_error() const
@@ -108,23 +109,25 @@ void M2NParser::setup_messages(const char** argv)
   m_quickError = stk::get_quick_error(m_execName, m_quickExample);
 }
 
-void M2NParser::set_filename(M2NParsedOptions& options) const
+void M2NParser::set_filename(M2NBalanceSettings& settings) const
 {
-  options.inFile = m_commandLineParser.get_option_value<std::string>(m_optionNames.infile);
+  settings.set_input_filename(m_commandLineParser.get_option_value<std::string>(m_optionNames.infile));
 }
 
-void M2NParser::set_num_procs(M2NParsedOptions& options) const
+void M2NParser::set_num_procs(M2NBalanceSettings& settings) const
 {
-  options.targetNumProcs = m_commandLineParser.get_option_value<int>(m_optionNames.nprocs);
-  ThrowRequireMsg(options.targetNumProcs > 0, "Please specify a valid target processor count.");
+  const unsigned numOutputProcs = m_commandLineParser.get_option_value<unsigned>(m_optionNames.nprocs);
+  ThrowRequireMsg(numOutputProcs > 0, "Please specify a valid target processor count.");
+  settings.set_num_output_processors(numOutputProcs);
 }
 
-void M2NParser::set_use_nested_decomp(M2NParsedOptions& options) const
+void M2NParser::set_use_nested_decomp(M2NBalanceSettings& settings) const
 {
-  options.useNestedDecomp = m_commandLineParser.is_option_provided(m_optionNames.useNestedDecomp);
-  if (options.useNestedDecomp) {
+  const bool useNestedDecomp = m_commandLineParser.is_option_provided(m_optionNames.useNestedDecomp);
+  settings.set_use_nested_decomp(useNestedDecomp);
+  if (useNestedDecomp) {
     const int initialNumProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-    const int finalNumProcs = options.targetNumProcs;
+    const int finalNumProcs = settings.get_num_output_processors();
     const bool isValidProcCount = (finalNumProcs % initialNumProcs) == 0;
     ThrowRequireMsg(isValidProcCount, "Final number of processors (" << finalNumProcs << ") must be an integer "
                     << "multiple of initial processors (" << initialNumProcs << ") to use a nested decomposition.");

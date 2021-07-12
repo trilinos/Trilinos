@@ -461,8 +461,12 @@ public:
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-  /// \brief Access the underlying local Kokkos::CrsMatrix object
-  local_matrix_type getLocalMatrix () const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual local_matrix_type getLocalMatrix () const;
+#endif
+
+  virtual local_matrix_type getLocalMatrixDevice () const;
+  virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."

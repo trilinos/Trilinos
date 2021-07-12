@@ -215,6 +215,15 @@ public:
     return rawMpiRequest_ == MPI_REQUEST_NULL;
   }
 
+  bool isReady() {
+    MPI_Status rawMpiStatus;
+    int flag = 0;
+
+    MPI_Test(&rawMpiRequest_, &flag, &rawMpiStatus);
+
+    return (flag != 0);
+  }
+
   /// \brief Wait on this communication request to complete.
   ///
   /// This is a blocking operation.  The user is responsible for

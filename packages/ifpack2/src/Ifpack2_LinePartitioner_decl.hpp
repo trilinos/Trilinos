@@ -82,6 +82,8 @@ public:
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type>  row_graph_type;
   typedef Tpetra::MultiVector<double,local_ordinal_type, global_ordinal_type, node_type>  multivector_type;
 
+  typedef typename row_graph_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename row_graph_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
 
   //! Constructor.
   LinePartitioner(const Teuchos::RCP<const row_graph_type>& graph);

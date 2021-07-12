@@ -112,7 +112,7 @@ C  THE FLAG HAS BEEN FOUND
                   CALL LINKEN (MDIM, JJ, IFLAG1, IFLAG, IFLIST, NEPS,
      &               LIST, LINKF, LINKE, IBOUN, ADDLNK)
                ELSE
-                  CALL MESAGE ('PROBLEMS ELIMINATING SIDES IN LINKBC')
+                  CALL MESSAGE('PROBLEMS ELIMINATING SIDES IN LINKBC')
                ENDIF
   140       CONTINUE
          ELSE

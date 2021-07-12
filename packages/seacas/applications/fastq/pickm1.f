@@ -108,9 +108,9 @@ C
          ENDIF
  150  CONTINUE
       IF ( (REAL) .AND. (BADANG .GT. 2.62)) THEN
-         CALL MESAGE (' **  WARNING: CORNER (S) OF THE REGION HAVE  **')
-         CALL MESAGE (' **           LARGE ANGLES  (> 150 DEGREES.) **')
-         CALL MESAGE (' **           POORLY FORMED MESH MAY RESULT  **')
+         CALL MESSAGE(' **  WARNING: CORNER (S) OF THE REGION HAVE  **')
+         CALL MESSAGE(' **           LARGE ANGLES  (> 150 DEGREES.) **')
+         CALL MESSAGE(' **           POORLY FORMED MESH MAY RESULT  **')
       ENDIF
 C
       RETURN

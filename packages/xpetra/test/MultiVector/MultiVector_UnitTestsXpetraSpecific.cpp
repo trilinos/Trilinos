@@ -153,7 +153,7 @@ namespace {
     }
 
     // get a view of the multivector data on the host memory
-    typename dual_view_type::t_host_um hostView = mv->getHostLocalView ();
+    typename dual_view_type::t_host_um hostView = mv->getHostLocalView (Xpetra::Access::ReadWrite);
 
     TEST_EQUALITY(hostView.extent(0), numLocal);
     TEST_EQUALITY(hostView.extent(1), 3);

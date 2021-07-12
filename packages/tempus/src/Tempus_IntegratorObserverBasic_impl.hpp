@@ -76,7 +76,7 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
 
      const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
      out->setOutputToRootOnly(0);
-     Teuchos::OSTab ostab(out,0,"ScreenOutput");
+     Teuchos::OSTab ostab(out, 0, "ScreenOutput");
      *out<<std::scientific
         <<std::setw( 6)<<std::setprecision(3)<<cs->getIndex()
         <<std::setw(11)<<std::setprecision(3)<<cs->getTime()

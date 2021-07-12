@@ -45,7 +45,7 @@
 #
 
 cmakeBaseName = "cmake"
-cmakeDefaultVersion = "3.13.4"
+cmakeDefaultVersion = "3.17.4"
 
 
 #

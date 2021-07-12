@@ -40,6 +40,8 @@
 #ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
 #define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
 /// \file Tpetra_Details_localDeepCopyRowMatrix_decl.hpp
 /// \brief Declaration of function for making a deep copy of a
 ///   Tpetra::RowMatrix's local matrix.
@@ -59,11 +61,14 @@ KokkosSparse::CrsMatrix<
     typename NT::device_type,
     void,
     size_t>
+TPETRA_DEPRECATED
 localDeepCopyLocallyIndexedRowMatrix
   (const RowMatrix<SC, LO, GO, NT>& A,
    const char label[]);
 
 } // namespace Details
 } // namespace Tpetra
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #endif // TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DECL_HPP

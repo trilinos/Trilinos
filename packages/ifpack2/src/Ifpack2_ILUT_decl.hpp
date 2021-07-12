@@ -123,6 +123,14 @@ public:
                             global_ordinal_type,
                             node_type> row_matrix_type;
 
+  typedef typename row_matrix_type::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename row_matrix_type::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename row_matrix_type::values_host_view_type values_host_view_type;
+
+  typedef typename row_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename row_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename row_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::ILUT: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
   //! Type of the Tpetra::CrsMatrix specialization that this class uses for the L and U factors.

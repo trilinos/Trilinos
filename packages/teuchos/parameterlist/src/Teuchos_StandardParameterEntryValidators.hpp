@@ -1335,6 +1335,17 @@ public:
   static inline unsigned short defaultPrecision() { return 100; }
 };
 
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
+template<>
+class EnhancedNumberTraits<long double>{
+public:
+  static inline long double min() { return -std::numeric_limits<long double>::max(); }
+  static inline long double max() { return std::numeric_limits<long double>::max(); }
+  static inline long double defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 100; }
+};
+#endif
+
 template<>
 class EnhancedNumberTraits<float>{
 public:

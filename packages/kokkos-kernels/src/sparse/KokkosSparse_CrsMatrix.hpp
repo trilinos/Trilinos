@@ -554,7 +554,37 @@ public:
              OrdinalType* rowmap,
              OrdinalType* cols)
   {
-    ctor_impl (label, nrows, ncols, annz, val, rowmap, cols);
+    using Kokkos::Unmanaged;
+    using HostRowmap = Kokkos::View<SizeType*, Kokkos::HostSpace>;
+    using UnmanagedRowmap = Kokkos::View<const SizeType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
+    using UnmanagedEntries = Kokkos::View<const OrdinalType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
+    using UnmanagedValues = Kokkos::View<const ScalarType*, Kokkos::HostSpace, Kokkos::MemoryTraits<Unmanaged>>;
+    //Allocate device rowmap, entries, values views
+    typename row_map_type::non_const_type rowmapDevice(Kokkos::ViewAllocateWithoutInitializing("rowmap"), nrows + 1);
+    index_type entriesDevice(Kokkos::ViewAllocateWithoutInitializing("entries"), annz);
+    //given rowmap in ordinal_type, so may need to convert to size_type explicitly
+    HostRowmap rowmapConverted;
+    UnmanagedRowmap rowmapRaw;
+    if(!std::is_same<OrdinalType, SizeType>::value)
+    {
+      rowmapConverted = HostRowmap(Kokkos::ViewAllocateWithoutInitializing("rowmap raw"), nrows + 1);
+      for(OrdinalType i = 0; i <= nrows; i++)
+        rowmapConverted(i) = rowmap[i];
+      rowmapRaw = rowmapConverted;
+    }
+    else
+    {
+      rowmapRaw = UnmanagedRowmap((const SizeType*) rowmap, nrows + 1);
+    }
+    Kokkos::deep_copy(rowmapDevice, rowmapRaw);
+    UnmanagedEntries entriesRaw(cols, annz);
+    Kokkos::deep_copy(entriesDevice, entriesRaw);
+    //Construct graph and populate all members
+    this->numCols_ = ncols;
+    this->graph = StaticCrsGraphType(entriesDevice, rowmapDevice);
+    this->values = values_type(Kokkos::ViewAllocateWithoutInitializing("values"), annz);
+    UnmanagedValues valuesRaw(val, annz);
+    Kokkos::deep_copy(this->values, valuesRaw);
 
     // FIXME (mfh 09 Aug 2013) Specialize this on the Device type.
     // Only use cuSPARSE for the Cuda Device.
@@ -645,15 +675,6 @@ public:
     cusparseCreateMatDescr (&cusparse_descr);
 #endif // KOKKOS_USE_CUSPARSE
   }
-
-  void
-  ctor_impl (const std::string &label,
-          const OrdinalType nrows,
-          const OrdinalType ncols,
-          const size_type annz,
-          ScalarType* val,
-          OrdinalType* rows,
-          OrdinalType* cols);
 
   KOKKOS_INLINE_FUNCTION
   OrdinalType
@@ -883,50 +904,5 @@ private:
   ordinal_type numCols_;
 };
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-template< typename ScalarType , typename OrdinalType, class Device, class MemoryTraits, typename SizeType >
-void
-CrsMatrix<ScalarType , OrdinalType, Device, MemoryTraits, SizeType >::
-ctor_impl (const std::string &label,
-           const OrdinalType nrows,
-           const OrdinalType ncols,
-           const size_type annz,
-           ScalarType* val,
-           OrdinalType* rows,
-           OrdinalType* cols)
-{
-  std::string str = label;
-  values = values_type (str.append (".values"), annz);
-
-  numCols_ = ncols;
-
-  // FIXME (09 Aug 2013) CrsArray only takes std::vector for now.
-  // We'll need to fix that.
-  std::vector<int> row_lengths (nrows, 0);
-
-  // FIXME (mfh 21 Jun 2013) This calls for a parallel_for kernel.
-  for (OrdinalType i = 0; i < nrows; ++i) {
-    row_lengths[i] = rows[i + 1] - rows[i];
-  }
-
-  graph = Kokkos::create_staticcrsgraph<staticcrsgraph_type> (str.append (".graph"), row_lengths);
-  typename values_type::HostMirror h_values = Kokkos::create_mirror_view (values);
-  typename index_type::HostMirror h_entries = Kokkos::create_mirror_view (graph.entries);
-
-  // FIXME (mfh 21 Jun 2013) This needs to be a parallel copy.
-  // Furthermore, why are the arrays copied twice? -- once here, to a
-  // host view, and once below, in the deep copy?
-  for (size_type i = 0; i < annz; ++i) {
-    if (val) {
-      h_values(i) = val[i];
-    }
-    h_entries(i) = cols[i];
-  }
-
-  Kokkos::deep_copy (values, h_values);
-  Kokkos::deep_copy (graph.entries, h_entries);
-}
 }
 #endif

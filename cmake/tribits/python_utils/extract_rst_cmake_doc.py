@@ -218,12 +218,16 @@ def getLineEntityTypeAndName(line, fileNameAndLinePrefix, currentRstDocBlockType
 
 
 # Format file name and line number
+def getFileNameLineNum(fileName, lineNum):
+  return fileName+":"+str(lineNum)
+
+
+# Format file name and line number as prefix
 def getFileNameLineNumPrefix(fileName, lineNum):
-  return fileName+":"+str(lineNum)+": "
+  return getFileNameLineNum(fileName, lineNum)+": "
 
 
-#
-# Extract a set of RST doc blocks from the given text block (from a file?)
+# Extract a set of RST doc blocks from the given text block (read from a file).
 #
 def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtraction=False \
   ):
@@ -270,6 +274,7 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
           inRstDocBlock = splitOnColon[1].strip()
           #print("inRstDocBlock = '" + inRstDocBlock + "'")
           #print("currentRstDocBlockType = '" + currentRstDocBlockType + "'")
+          inRstDocBlockFileNameLineNum = getFileNameLineNum(fileName, line_i)
           if traceExtraction:
             print("Extracting '" + blockType + "' block '" + inRstDocBlock + "'"
                   + " from " + getFileNameLineNumPrefix(fileName, line_i))
@@ -313,8 +318,9 @@ def extractRstDocBlocksFromText(rawText, rstBlockTypes, fileName, traceExtractio
       rstDocBlocks.update( {
         inRstDocBlock : {
           "type" : currentRstDocBlockType,
-          "body" : currentRstBlockBody
-           }
+          "body" : currentRstBlockBody,
+          "fileNameLineNum" : inRstDocBlockFileNameLineNum,
+          }
         } )
       # Finally, rest to look for the next RST block
       inRstDocBlock = ""
@@ -355,17 +361,22 @@ def removeEmtpyElements(arrayIn):
   return arrayOut
 
 
-#
 # Replace references to RST blocks with sections
 #
 def replaceWithRstDocBlocksInText(textToReplace, rstBlockTypes, rstDocBlocks, fileName, \
-  traceReplacements=False \
+  traceReplacements=False, fileNamePathBaseDir="", includeFileNameLineNum=False \
   ):
 
   replacedText = ""
 
   textToReplaceLines = textToReplace.splitlines()
   numTextToReplaceLines = len(textToReplaceLines)
+
+  if not fileNamePathBaseDir == "":
+    fileNamePathBaseDirAndSepLen = len(fileNamePathBaseDir)
+    if not fileNamePathBaseDir.endswith("/"): fileNamePathBaseDirAndSepLen += 1
+  else:
+    fileNamePathBaseDirAndSepLen = 0
 
   line_i = 0
 
@@ -417,6 +428,13 @@ def replaceWithRstDocBlocksInText(textToReplace, rstBlockTypes, rstDocBlocks, fi
         replacedText += (rstBlockName+"\n")
         replacedText += (rstSecStr+"\n")
         replacedText += rstDocBlock.get("body")
+        if includeFileNameLineNum:
+          fileNameLineNum = rstDocBlock.get("fileNameLineNum")
+          if fileNamePathBaseDirAndSepLen > 0:
+            relFileNameLineNum = fileNameLineNum[fileNamePathBaseDirAndSepLen:]
+          else:
+            relFileNameLineNum = fileNameLineNum
+          replacedText += "\nIn: "+relFileNameLineNum + "\n\n"
         replacedRstBlock = True
         break
 
@@ -467,12 +485,15 @@ def extractRstDocBlocksFromFileList(fileList, rstBlockTypes, traceExtraction=Fal
 
 # Make substitutions in a template file and produce a target file
 def replaceWithRstDocBlocksInTemplateFileList(rstFilesList, rstBlockTypes,
-  rstDocBlocks, traceReplacements=False \
+  rstDocBlocks, traceReplacements=False, fileNamePathBaseDir="",
+  includeFileNameLineNum=False \
   ):
   for (templateFileName, fileName) in rstFilesList:
     templateFileStr =   open(templateFileName, 'r').read()
     fileStr = replaceWithRstDocBlocksInText(templateFileStr, rstBlockTypes,
-      rstDocBlocks, templateFileName, traceReplacements)
+      rstDocBlocks, templateFileName, traceReplacements=traceReplacements,
+      fileNamePathBaseDir=fileNamePathBaseDir,
+      includeFileNameLineNum=includeFileNameLineNum )
     open(fileName, 'w').write(fileStr)
  
   
@@ -496,16 +517,6 @@ def runCmnd(options, cmnd):
 
 
 if __name__ == '__main__':
-
-  
-  #
-  # Helper functions
-  #
-  
-
-  #
-  # Script exectuable statements
-  #
 
   #
   # A) Get command-line options
@@ -533,7 +544,20 @@ if __name__ == '__main__':
     "--rst-file-pairs", dest="rstFilePairs", type="string",
     default="",
     help="List (comma separated) files of the form '<name>Template.rst:<name>.rst,...'"+\
-    " that gives sets of template files to to have comment blocks inserted into.")
+    " that gives sets of template files to have comment blocks inserted into.")
+
+  clp.add_option(
+    "--show-file-name-line-num", dest="showFileNameLineNum", action="store_true",
+    help="Include the relative file name path and line number for each documentation block.")
+  clp.add_option(
+    "--no-show-file-name-line-num", dest="showFileNameLineNum", action="store_false", default=False,
+    help="Include the relative file name path and line number for each documentation block. [default]" )
+
+  clp.add_option(
+    "--file-name-path-base-dir", dest="fileNamePathBaseDir", type="string",
+    default="",
+    help="Base path stripped off of file names reported when --show-file-name-line-num is set."+\
+      "  NOTE: This path should be relative to the paths in --extract-from and may be realtive paths." )
 
   clp.add_option(
     "--dump-rst-blocks", dest="dumpRstBlocks", action="store_true",
@@ -561,6 +585,11 @@ if __name__ == '__main__':
     print("  --extract-from='" + options.extractFrom + "' \\")
     print("  --file-extensions='" + options.fileExtensions + "' \\")
     print("  --rst-file-pairs='" + options.rstFilePairs + "' \\")
+    if options.showFileNameLineNum:
+      print("  --show-file-name-line-num \\")
+    else:
+      print("  --no-show-file-name-line-num \\")
+    print("  --file-name-path-base-dir='" + options.fileNamePathBaseDir + "' \\")
     if options.dumpRstBlocks:
       print("  --dump-rst-blocks \\")
     else:
@@ -603,4 +632,6 @@ if __name__ == '__main__':
     print("\nReplacing RST documentation blocks in RST files in --rst-file-pairs:")
   rstFilesList = getRstFilesList(options)
   replaceWithRstDocBlocksInTemplateFileList(rstFilesList, rstBlockTypes,
-    rstDocBlocks, options.doTrace)
+    rstDocBlocks, traceReplacements=options.doTrace,
+    fileNamePathBaseDir=options.fileNamePathBaseDir,
+    includeFileNameLineNum=options.showFileNameLineNum )

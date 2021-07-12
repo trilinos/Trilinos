@@ -58,16 +58,14 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
-/** \example BiCGStab/BiCGStabEpetraExFile.cpp
+/** \example BiCGStab/BiCGStabExFile.cpp
     This is an example of how to use the Belos::BiCGStabSolMgr solver manager.
 */
-/** \example BiCGStab/PseudoBlockPrecCGEpetraExFile.cpp
+/** \example BiCGStab/PrecBiCGStabExFile.cpp
     This is an example of how to use the Belos::BiCGStabSolMgr solver manager with an Ifpack preconditioner.
 */
 
@@ -93,16 +91,6 @@ namespace Belos {
    */
   class BiCGStabSolMgrLinearProblemFailure : public BelosError {public:
     BiCGStabSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief BiCGStabSolMgrOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the initial basis vectors.
-   *
-   * This std::exception is thrown from the BiCGStabSolMgr::solve() method.
-   *
-   */
-  class BiCGStabSolMgrOrthoFailure : public BelosError {public:
-    BiCGStabSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
   template<class ScalarType, class MV, class OP>
@@ -284,7 +272,13 @@ namespace Belos {
     static constexpr int defQuorum_default_ = 1;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
     // Current solver values.
     MagnitudeType convtol_,achievedTol_;
@@ -629,8 +623,6 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
   if (! isSet_) {
     setParameters (params_);
   }
-
-  Teuchos::BLAS<int,ScalarType> blas;
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (! problem_->isProblemSet (), BiCGStabSolMgrLinearProblemFailure,

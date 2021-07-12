@@ -70,6 +70,10 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    // For Zoltan2 compatibility
+    using lno_t  = LocalOrdinal;
+    using gno_t  = GlobalOrdinal;
+    using node_t = Node;
 
     //! @name Constructors/Destructors.
     //@{

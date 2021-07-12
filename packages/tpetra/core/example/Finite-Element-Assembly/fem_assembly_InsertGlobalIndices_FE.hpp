@@ -139,10 +139,10 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const map_type> row_map =
-    rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs(),
+    rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                      0, comm));
   RCP<const map_type> owned_plus_shared_map =
-    rcp(new map_type(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs(),
+    rcp(new map_type(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                      0, comm));
 
   if(opts.verbose) row_map->describe(out);
@@ -156,7 +156,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
@@ -167,7 +167,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   Teuchos::Array<global_ordinal_type> global_ids_in_row(4);
 
   // for each element in the mesh...
-  Tpetra::beginFill(*fe_graph);
+  Tpetra::beginAssembly(*fe_graph);
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
     // Populate global_ids_in_row:
@@ -176,7 +176,8 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     //   each row associated with this element's contribution.
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-      global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
+      global_ids_in_row[element_node_idx] = 
+	owned_element_to_node_ids(element_gidx, element_node_idx);
     }
 
     // Add the contributions from the current row into the graph.
@@ -195,7 +196,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // Call fillComplete on the fe_graph to 'finalize' it.
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Graph)"));
-    Tpetra::endFill(*fe_graph);
+    Tpetra::endAssembly(*fe_graph);
   }
 
   // Print out verbose information about the fe_graph.
@@ -247,14 +248,14 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     fe_matrix = rcp(new fe_matrix_type(fe_graph));
     rhs = rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
-    Kokkos::View<local_ordinal_type[4][4], execution_space> element_matrix ("element_matrix");
+    Kokkos::View<local_ordinal_type[4][4], deviceType> element_matrix ("element_matrix");
     Teuchos::Array<Scalar> element_rhs(4);
 
     Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list
     Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
     // Loop over elements
-    Tpetra::beginFill(*fe_matrix,*rhs);
+    Tpetra::beginAssembly(*fe_matrix,*rhs);
     for (size_t element_gidx = 0;
          element_gidx < mesh.getNumOwnedElements ();
          ++element_gidx) {
@@ -262,12 +263,11 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
       ReferenceQuad4(element_matrix);
       ReferenceQuad4RHS(element_rhs);
 
-      // Fill the global column ids array for this element
       for (size_t element_node_idx=0;
-           element_node_idx < owned_element_to_node_ids.extent(1);
-           ++element_node_idx) {
-        column_global_ids[element_node_idx] =
-          owned_element_to_node_ids(element_gidx, element_node_idx);
+	   element_node_idx < owned_element_to_node_ids.extent(1);
+	   ++element_node_idx) {
+	column_global_ids[element_node_idx] =
+	  owned_element_to_node_ids(element_gidx, element_node_idx);
       }
 
       // For each node (row) on the current element:
@@ -275,16 +275,16 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
       // - add the values to the fe_matrix.
       // Note: hardcoded 4 here because we're using quads.
       for (size_t element_node_idx = 0; element_node_idx < 4;
-           ++element_node_idx) {
-        global_ordinal_type global_row_id =
-          owned_element_to_node_ids(element_gidx, element_node_idx);
+	   ++element_node_idx) {
+	global_ordinal_type global_row_id =
+	  owned_element_to_node_ids(element_gidx, element_node_idx);
+	
+	for(size_t col_idx=0; col_idx<4; col_idx++) {
+	  column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
+	}
 
-        for(size_t col_idx=0; col_idx<4; col_idx++) {
-          column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
-        }
-
-        fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-        rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+	fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+	rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
       }
     }
   } // timerElementLoopMatrix
@@ -292,13 +292,13 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)"));
-    Tpetra::endFill(*fe_matrix);
+    Tpetra::endAssembly(*fe_matrix);
   }
 
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
-    Tpetra::endFill(*rhs);
+    Tpetra::endAssembly(*rhs);
   }
 
   Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
@@ -357,10 +357,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const map_type> row_map =
-    rcp (new map_type (GO_INVALID, mesh.getOwnedNodeGlobalIDs (),
+    rcp (new map_type (GO_INVALID, mesh.getOwnedNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                        0, comm));
   RCP<const map_type> owned_plus_shared_map =
-    rcp (new map_type (GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs (),
+    rcp (new map_type (GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                        0, comm));
 
   if (opts.verbose) {
@@ -376,7 +376,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
 
@@ -392,7 +392,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       (*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)"));
 
     // for each element in the mesh...
-    Tpetra::beginFill(*fe_graph);
+    Tpetra::beginAssembly(*fe_graph);
     for (size_t element_gidx = 0;
          element_gidx < mesh.getNumOwnedElements ();
          ++element_gidx) {
@@ -424,7 +424,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // Call fillComplete on the fe_graph to 'finalize' it.
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Graph)"));
-    Tpetra::endFill(*fe_graph);
+    Tpetra::endAssembly(*fe_graph);
   }
 
   // Print out verbose information about the fe_graph.
@@ -471,7 +471,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   RCP<fe_multivector_type> rhs =
     rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
-  auto localMatrix  = fe_matrix->getLocalMatrix();
+  auto localMatrix  = fe_matrix->getLocalMatrixDevice();
   auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
   auto localMap     = owned_plus_shared_map->getLocalMap();
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
@@ -482,7 +482,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   pair_type alln = pair_type(0,nperel);
   scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
   scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*numOwnedElements);
-  local_ordinal_view_type  all_lcids("all_lids",nperel*numOwnedElements);
+  local_ordinal_single_view_type  all_lcids("all_lids",nperel*numOwnedElements);
 
   timerElementLoopMemory=Teuchos::null;
 
@@ -491,7 +491,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
       (*TimeMonitor::getNewTimer ("3.2) ElementLoop  (Matrix)"));
 
     // Loop over elements
-    Tpetra::beginFill(*fe_matrix,*rhs);
+    Tpetra::beginAssembly(*fe_matrix,*rhs);
     Kokkos::parallel_for
       ("Assemble FE matrix and right-hand side",
        Kokkos::RangePolicy<execution_space, int> (0, numOwnedElements),
@@ -518,7 +518,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         // - add the values to the fe_matrix.
         for (int element_node_idx = 0; element_node_idx < nperel; ++element_node_idx) {
           const local_ordinal_type local_row_id =
-            localMap.getLocalElement (owned_element_to_node_ids(element_gidx, element_node_idx));
+            localMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
           auto row_values = Kokkos::subview(element_matrix, element_node_idx, alln);
           // Force atomics on sums
           for (int col_idx = 0; col_idx < nperel; ++col_idx) {
@@ -534,13 +534,13 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   {
     TimeMonitor timer(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)"));
-    Tpetra::endFill(*fe_matrix);
+    Tpetra::endAssembly(*fe_matrix);
   }
 
   {
     // Global assemble the RHS
     TimeMonitor timer(*TimeMonitor::getNewTimer("5) GlobalAssemble (RHS)"));
-    Tpetra::endFill(*rhs);
+    Tpetra::endAssembly(*rhs);
   }
 
   Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();

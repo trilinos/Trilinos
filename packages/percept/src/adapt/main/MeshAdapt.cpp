@@ -2352,7 +2352,7 @@ void MeshAdapt::initialize_m2g_geometry(std::string input_geometry)
       bool toDeclare = true;
 
       int lowestRank = std::numeric_limits<int>::max();
-      std::vector<stk::mesh::EntityKey> keysToCheck;
+      std::vector<stk::mesh::Entity> entitiesToCheck;
      
       procsSharedTo.clear(); //std::vector<int> procsSharedTo;
 
@@ -2361,11 +2361,10 @@ void MeshAdapt::initialize_m2g_geometry(std::string input_geometry)
 
         cur_node = bd->get_entity(stk::topology::NODE_RANK, shellNodeIDs[j]);
 
-        stk::mesh::EntityKey key = bd->entity_key(cur_node);
-        keysToCheck.push_back(key);
+        entitiesToCheck.push_back(cur_node);
       }
 
-      bd->shared_procs_intersection(keysToCheck, procsSharedTo);
+      bd->shared_procs_intersection(entitiesToCheck, procsSharedTo);
       procsSharedTo.push_back(THIS_PROC_NUM);//find all processes that either own or have these nodes shared to them
       for (size_t iii = 0; iii < procsSharedTo.size(); iii++) {
         if (procsSharedTo[iii] < lowestRank)

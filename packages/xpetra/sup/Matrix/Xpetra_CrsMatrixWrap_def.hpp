@@ -446,10 +446,22 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
   CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrix () const {
-    return matrixData_->getLocalMatrix();
+    return getLocalMatrixDevice();
+  }
+#endif
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrixHost () const {
+    return matrixData_->getLocalMatrixHost();
+  }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
+  CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalMatrixDevice () const {
+    return matrixData_->getLocalMatrixDevice();
   }
 #else
 #ifdef __GNUC__

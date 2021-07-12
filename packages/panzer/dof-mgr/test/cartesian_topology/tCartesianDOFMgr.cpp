@@ -89,7 +89,7 @@ std::string getElementBlock(const Triplet & element,
                                     const CartesianConnManager<int,panzer::GlobalOrdinal> & connManager)
                                     
 {
-  int localElmtId = connManager.computeLocalElementIndex(element); 
+  int localElmtId = connManager.computeLocalBrickElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
 
@@ -165,8 +165,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   out << std::endl << "Mesh Topology: " << std::endl;
   printMeshTopology(out,*dofManager);
 
-  auto myOffset   = connManager->getMyOffsetTriplet();
-  auto myElements = connManager->getMyElementsTriplet();
+  auto myOffset   = connManager->getMyBrickOffsetTriplet();
+  auto myElements = connManager->getMyBrickElementsTriplet();
 
   out << "My Offset   = " << myOffset.x << " " << myOffset.y << " " << myOffset.z << std::endl;
   out << "My myElements = " << myElements.x << " " << myElements.y << " " << myElements.z << std::endl;
@@ -181,10 +181,10 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 
     out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
-    int localElmtId    = connManager->computeLocalElementIndex(element);
-    int localElmtId_px = connManager->computeLocalElementIndex(Triplet(element.x+1,element.y,element.z));
-    int localElmtId_py = connManager->computeLocalElementIndex(Triplet(element.x,element.y+1,element.z));
-    int localElmtId_pz = connManager->computeLocalElementIndex(Triplet(element.x,element.y,element.z+1));
+    int localElmtId    = connManager->computeLocalBrickElementIndex(element);
+    int localElmtId_px = connManager->computeLocalBrickElementIndex(Triplet(element.x+1,element.y,element.z));
+    int localElmtId_py = connManager->computeLocalBrickElementIndex(Triplet(element.x,element.y+1,element.z));
+    int localElmtId_pz = connManager->computeLocalBrickElementIndex(Triplet(element.x,element.y,element.z+1));
 
     TEST_ASSERT(localElmtId>=0);
     TEST_ASSERT(localElmtId_px>=0);
@@ -276,8 +276,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
     element_r.y = myOffset.y + myElements.y/2;
     element_r.z = myOffset.z + myElements.z/2;
 
-    int localElmtId_l    = connManager->computeLocalElementIndex(element_l);
-    int localElmtId_r    = connManager->computeLocalElementIndex(element_r);
+    int localElmtId_l    = connManager->computeLocalBrickElementIndex(element_l);
+    int localElmtId_r    = connManager->computeLocalBrickElementIndex(element_r);
 
     TEST_ASSERT(localElmtId_l>=0);
     TEST_ASSERT(localElmtId_r>=0);

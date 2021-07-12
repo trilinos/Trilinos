@@ -5,7 +5,7 @@ if [[ "${SALLOC_CTEST_TIME_LIMIT_MINUTES}" == "" ]] ; then
 fi
 
 if [ "${Trilinos_TRACK}" == "" ] ; then
-  export Trilinos_TRACK=ATDM
+  export Trilinos_TRACK=SecondaryATDM
 fi
 
 $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/tlcc2/local-driver.sh

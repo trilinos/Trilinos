@@ -832,16 +832,18 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Make some vectors
     RCP<MV> toScale2 = rcp(new MV(map,1));
     RCP<MV> toScale4 = rcp(new MV(map,1)); 
-    auto v2 = toScale2->getDataNonConst(0);
-    auto v4 = toScale4->getDataNonConst(0);
-    for(size_t i=0; i<numLocal; i++){
-      if(i%2 == 0) {
-        v2[i] = SC_one;
-        v4[i] = SC_one;
-      }
-      else {        
-        v2[i] = SC_one+SC_one;
-        v4[i] = SC_one+SC_one;
+    {
+      auto v2 = toScale2->getDataNonConst(0);
+      auto v4 = toScale4->getDataNonConst(0);
+      for(size_t i=0; i<numLocal; i++){
+        if(i%2 == 0) {
+          v2[i] = SC_one;
+          v4[i] = SC_one;
+        }
+        else {        
+          v2[i] = SC_one+SC_one;
+          v4[i] = SC_one+SC_one;
+        }
       }
     }    
     
@@ -929,18 +931,20 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Make some vectors
     RCP<MV> toScale2 = rcp(new MV(map,1));
     RCP<MV> toScale4 = rcp(new MV(map,1)); 
-    auto v2 = toScale2->getDataNonConst(0);
-    auto v4 = toScale4->getDataNonConst(0);
-    for(size_t i=0; i<numLocal; i++){
-      if(i%2 == 0) {
-        v2[i] = SC_one;
-        v4[i] = SC_one;
-      }
-      else {        
-        v2[i] = SC_one+SC_one;
-        v4[i] = SC_one+SC_one;
-      }
-    }    
+    {
+      auto v2 = toScale2->getDataNonConst(0);
+      auto v4 = toScale4->getDataNonConst(0);
+      for(size_t i=0; i<numLocal; i++){
+        if(i%2 == 0) {
+          v2[i] = SC_one;
+          v4[i] = SC_one;
+        }
+        else {        
+          v2[i] = SC_one+SC_one;
+          v4[i] = SC_one+SC_one;
+        }
+      }    
+    }
 
     // Now, let's rescale some vectors
     Tpetra::Details::inverseScaleBlockDiagonal(*diag2,true,*toScale2);
@@ -976,7 +980,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef Map<LO,GO,Node> MAP;
     typedef typename ST::magnitudeType Mag;
-    using values_type = typename MAT::local_matrix_type::values_type;
+    using values_type = typename MAT::local_matrix_device_type::values_type;
     using range_policy = Kokkos::RangePolicy<typename Node::device_type::execution_space>;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -992,13 +996,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const MAP> map = A1->getRowMap();
 
     /* Now take the same thing, but multiply the entries by 2*/
-    values_type A1_values = A1->getLocalMatrix().values;
+    auto lclMtx1 = A1->getLocalMatrixDevice();
+    values_type A1_values = lclMtx1.values;
     values_type A2_values("values",A1_values.extent(0));
     Kokkos::parallel_for( range_policy(0,A1_values.extent(0)),KOKKOS_LAMBDA(const int i){
         A2_values[i] = A1_values[i] + A1_values[i];
       });
 
-    RCP<MAT> A2 = rcp(new MAT(map,A1->getColMap(),A1->getLocalMatrix().graph.row_map,A1->getLocalMatrix().graph.entries,A2_values));
+    RCP<MAT> A2 = rcp(new MAT(map,A1->getColMap(),lclMtx1.graph.row_map,lclMtx1.graph.entries,A2_values));
     A2->expertStaticFillComplete(A1->getDomainMap(),A1->getRangeMap(),A1->getGraph()->getImporter(),A1->getGraph()->getExporter());
 
     /* Allocate multivectors */

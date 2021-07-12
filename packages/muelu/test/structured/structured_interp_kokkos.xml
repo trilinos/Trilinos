@@ -38,7 +38,7 @@
     <ParameterList name="myProlongatorFact">
       <Parameter name="factory"                             type="string" value="GeometricInterpolationPFactory_kokkos"/>
       <Parameter name="interp: build coarse coordinates"    type="bool"   value="true"/>
-      <Parameter name="interp: interpolation order"         type="int"    value="0"/>
+      <Parameter name="structuredInterpolationOrder"        type="string" value="myAggregationFact"/>
       <Parameter name="prolongatorGraph"                    type="string" value="myAggregationFact"/>
       <Parameter name="indexManager"                        type="string" value="myAggregationFact"/>
     </ParameterList>

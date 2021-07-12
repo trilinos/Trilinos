@@ -83,7 +83,7 @@ C  ENTER GRAPHICS OPTION
 
   100 CONTINUE
       IF (ICOM .GT. JCOM) THEN
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CALL FREFLD (IZ, IZ, 'ENTER GRAPHICS OPTION: ', MCOM,
      &      IOSTAT, JCOM, KIN, CIN, IIN, RIN)
          ICOM = 1
@@ -96,10 +96,10 @@ C  TOGGLE DRAWING OF THE AXIS
          ICOM = ICOM + 1
          IF (AXISD) THEN
             AXISD = .FALSE.
-            CALL MESAGE ('AXIS DRAWING - OFF')
+            CALL MESSAGE('AXIS DRAWING - OFF')
          ELSE
             AXISD = .TRUE.
-            CALL MESAGE ('AXIS DRAWING - ON')
+            CALL MESSAGE('AXIS DRAWING - ON')
          ENDIF
 
 C  TOGGLE THE FACTOR NUMBERS
@@ -109,10 +109,10 @@ C  TOGGLE THE FACTOR NUMBERS
          ICOM = ICOM + 1
          IF (LABF) THEN
             LABF = .FALSE.
-            CALL MESAGE ('FACTOR LABELS - OFF')
+            CALL MESSAGE('FACTOR LABELS - OFF')
          ELSE
             LABF = .TRUE.
-            CALL MESAGE ('FACTOR LABELS - ON')
+            CALL MESSAGE('FACTOR LABELS - ON')
          ENDIF
 
 C  TOGGLE THE FULL DISPLAY OF PROPERTIES
@@ -122,10 +122,10 @@ C  TOGGLE THE FULL DISPLAY OF PROPERTIES
          ICOM = ICOM + 1
          IF (FULL) THEN
             FULL = .FALSE.
-            CALL MESAGE ('FULL DISPLAY OF PROPERTIES - OFF')
+            CALL MESSAGE('FULL DISPLAY OF PROPERTIES - OFF')
          ELSE
             FULL = .TRUE.
-            CALL MESAGE ('FULL DISPLAY OF PROPERTIES - ON')
+            CALL MESSAGE('FULL DISPLAY OF PROPERTIES - ON')
          ENDIF
 
 C  TOGGLE THE SCHEME DISPLAY
@@ -135,10 +135,10 @@ C  TOGGLE THE SCHEME DISPLAY
          ICOM = ICOM + 1
          IF (LABSC) THEN
             LABSC = .FALSE.
-            CALL MESAGE ('SCHEME LABELS - OFF')
+            CALL MESSAGE('SCHEME LABELS - OFF')
          ELSE
             LABSC = .TRUE.
-            CALL MESAGE ('SCHEME LABELS - ON')
+            CALL MESSAGE('SCHEME LABELS - ON')
          ENDIF
 
 C  TOGGLE THE SCHEME DISPLAY
@@ -148,10 +148,10 @@ C  TOGGLE THE SCHEME DISPLAY
          ICOM = ICOM + 1
          IF (LABSZ) THEN
             LABSZ = .FALSE.
-            CALL MESAGE ('ELEMENT SIZE LABELS - OFF')
+            CALL MESSAGE('ELEMENT SIZE LABELS - OFF')
          ELSE
             LABSZ = .TRUE.
-            CALL MESAGE ('ELEMENT SIZE LABELS - ON')
+            CALL MESSAGE('ELEMENT SIZE LABELS - ON')
          ENDIF
 
 C  TOGGLE THE MATERIAL NUMBERS
@@ -161,10 +161,10 @@ C  TOGGLE THE MATERIAL NUMBERS
          ICOM = ICOM + 1
          IF (LABMD) THEN
             LABMD = .FALSE.
-            CALL MESAGE ('MATERIAL LABELS - OFF')
+            CALL MESSAGE('MATERIAL LABELS - OFF')
          ELSE
             LABMD = .TRUE.
-            CALL MESAGE ('MATERIAL LABELS - ON')
+            CALL MESSAGE('MATERIAL LABELS - ON')
          ENDIF
 
 C  ENTER LINE INTERVALS
@@ -173,10 +173,10 @@ C  ENTER LINE INTERVALS
      &   (CIN (ICOM) (1:2) .EQ. 'ii')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE ('ENTER LINE INTERVALS IN THE FOLLOWING '//
+            CALL MESSAGE('ENTER LINE INTERVALS IN THE FOLLOWING '//
      &         'FORMAT:')
-            CALL MESAGE ('[ LINE NO.  (OR NEG SIDE NO.),  INTERVALS ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('[ LINE NO.  (OR NEG SIDE NO.),  INTERVALS ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
          ENDIF
   110    CONTINUE
          IF (ICOM .GT. JCOM) THEN
@@ -198,9 +198,9 @@ C  ENTER LINE FACTORS
      &   (CIN (ICOM) (1:2) .EQ. 'if')) THEN
          ICOM = ICOM + 1
          IF (ICOM .GT. JCOM) THEN
-            CALL MESAGE ('ENTER LINE FACTORS IN THE FOLLOWING FORMAT:')
-            CALL MESAGE ('[ LINE NO.  (OR NEG. SIDE NO., ) FACTOR ]')
-            CALL MESAGE ('HIT RETURN TO END INPUT')
+            CALL MESSAGE('ENTER LINE FACTORS IN THE FOLLOWING FORMAT:')
+            CALL MESSAGE('[ LINE NO.  (OR NEG. SIDE NO., ) FACTOR ]')
+            CALL MESSAGE('HIT RETURN TO END INPUT')
          ENDIF
   120    CONTINUE
          IF (ICOM .GT. JCOM) THEN
@@ -224,10 +224,10 @@ C  TOGGLE THE INTERVAL NUMBERS
          ICOM = ICOM + 1
          IF (LABI) THEN
             LABI = .FALSE.
-            CALL MESAGE ('INTERVAL LABELS - OFF')
+            CALL MESSAGE('INTERVAL LABELS - OFF')
          ELSE
             LABI = .TRUE.
-            CALL MESAGE ('INTERVAL LABELS - ON')
+            CALL MESSAGE('INTERVAL LABELS - ON')
          ENDIF
 
 C  TOGGLE THE NODE BOUNDARY NUMBERS
@@ -237,10 +237,10 @@ C  TOGGLE THE NODE BOUNDARY NUMBERS
          ICOM = ICOM + 1
          IF (LABLB) THEN
             LABLB = .FALSE.
-            CALL MESAGE ('LINE BOUNDARY LABELS - OFF')
+            CALL MESSAGE('LINE BOUNDARY LABELS - OFF')
          ELSE
             LABLB = .TRUE.
-            CALL MESAGE ('LINE BOUNDARY LABELS - ON')
+            CALL MESSAGE('LINE BOUNDARY LABELS - ON')
          ENDIF
 
 C  FLAG LINES TO BE PROCESSED
@@ -259,8 +259,8 @@ C  FLAG LINES TO BE PROCESSED
          CALL FLAGD (ML, N (19), LINKL, ILINE, FLAG)
          CALL FLAGD (MR, N (22), LINKR, IREGN, FLAG)
          GOPLOT = .FALSE.
-         CALL MESAGE ('PLOT LINES FROM <I1> TO <I2>')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('PLOT LINES FROM <I1> TO <I2>')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   130    CONTINUE
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -312,7 +312,7 @@ C  FLAG ALL DATA ASSOCIATED WITH THE LINES
 C  PLOT THE LINE DATA THAT HAS BEEN FLAGGED
 
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
+               CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            'TERMINAL')
             ELSE
                CALL PDATA (MP, ML, MR, MSC, IPOINT, COOR, IPBOUN,
@@ -342,10 +342,10 @@ C  TOGGLE THE LINE NUMBERS
          ICOM = ICOM + 1
          IF (LABL) THEN
             LABL = .FALSE.
-            CALL MESAGE ('LINE LABELS - OFF')
+            CALL MESSAGE('LINE LABELS - OFF')
          ELSE
             LABL = .TRUE.
-            CALL MESAGE ('LINE LABELS - ON')
+            CALL MESSAGE('LINE LABELS - ON')
          ENDIF
 
 C  TOGGLE THE POINT BOUNDARY NUMBERS
@@ -355,10 +355,10 @@ C  TOGGLE THE POINT BOUNDARY NUMBERS
          ICOM = ICOM + 1
          IF (LABPB) THEN
             LABPB = .FALSE.
-            CALL MESAGE ('POINT BOUNDARY LABELS - OFF')
+            CALL MESSAGE('POINT BOUNDARY LABELS - OFF')
          ELSE
             LABPB = .TRUE.
-            CALL MESAGE ('POINT BOUNDARY LABELS - ON')
+            CALL MESSAGE('POINT BOUNDARY LABELS - ON')
          ENDIF
 
 C  TOGGLE THE SIDE BOUNDARY NUMBERS
@@ -368,10 +368,10 @@ C  TOGGLE THE SIDE BOUNDARY NUMBERS
          ICOM = ICOM + 1
          IF (LABSBD) THEN
             LABSBD = .FALSE.
-            CALL MESAGE ('ELEMENT BOUNDARY LABELS - OFF')
+            CALL MESSAGE('ELEMENT BOUNDARY LABELS - OFF')
          ELSE
             LABSBD = .TRUE.
-            CALL MESAGE ('ELEMENT BOUNDARY LABELS - ON')
+            CALL MESSAGE('ELEMENT BOUNDARY LABELS - ON')
          ENDIF
 
 C  TOGGLE THE POINT NUMBERS
@@ -381,10 +381,10 @@ C  TOGGLE THE POINT NUMBERS
          ICOM = ICOM + 1
          IF (LABP) THEN
             LABP = .FALSE.
-            CALL MESAGE ('POINT LABELS - OFF')
+            CALL MESSAGE('POINT LABELS - OFF')
          ELSE
             LABP = .TRUE.
-            CALL MESAGE ('POINT LABELS - ON')
+            CALL MESSAGE('POINT LABELS - ON')
          ENDIF
 
 C  TOGGLE THE REGION NUMBERS
@@ -394,10 +394,10 @@ C  TOGGLE THE REGION NUMBERS
          ICOM = ICOM + 1
          IF (LABR) THEN
             LABR = .FALSE.
-            CALL MESAGE ('REGION LABELS - OFF')
+            CALL MESSAGE('REGION LABELS - OFF')
          ELSE
             LABR = .TRUE.
-            CALL MESAGE ('REGION LABELS - ON')
+            CALL MESSAGE('REGION LABELS - ON')
          ENDIF
 
 C  SPAWN A PROCESS
@@ -427,8 +427,8 @@ C  FLAG SIDES TO BE PROCESSED
          CALL FLAGD (ML, N (19), LINKL, ILINE, FLAG)
          CALL FLAGD (MR, N (22), LINKR, IREGN, FLAG)
          GOPLOT = .FALSE.
-         CALL MESAGE ('PLOT SIDES FROM <I1> TO <I2>')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('PLOT SIDES FROM <I1> TO <I2>')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   160    CONTINUE
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -483,7 +483,7 @@ C  FLAG ALL DATA ASSOCIATED WITH THE SIDES
 C  PLOT THE SIDE DATA THAT HAS BEEN FLAGGED
 
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC ' //
+               CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC ' //
      &            'TERMINAL')
             ELSE
                CALL PDATA (MP, ML, MR, MSC, IPOINT, COOR, IPBOUN,
@@ -511,81 +511,81 @@ C  SHOW STATUS OF ALL TOGGLES
       ELSEIF ( (CIN (ICOM) (1:1) .EQ. 'S') .OR.
      &   (CIN (ICOM) (1:1) .EQ. 's')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE (' ')
-         CALL MESAGE ('THE CURRENT STATUS OF ALL PLOTTING TOGGLES IS:')
+         CALL MESSAGE(' ')
+         CALL MESSAGE('THE CURRENT STATUS OF ALL PLOTTING TOGGLES IS:')
          IF (AXISD) THEN
-            CALL MESAGE ('   AXIS PLOTTING                - ON')
+            CALL MESSAGE('   AXIS PLOTTING                - ON')
          ELSE
-            CALL MESAGE ('   AXIS PLOTTING                - OFF')
+            CALL MESSAGE('   AXIS PLOTTING                - OFF')
          ENDIF
          IF (LABP) THEN
-            CALL MESAGE ('   LABELING OF POINTS           - ON')
+            CALL MESSAGE('   LABELING OF POINTS           - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF POINTS           - OFF')
+            CALL MESSAGE('   LABELING OF POINTS           - OFF')
          ENDIF
          IF (LABPB) THEN
-            CALL MESAGE ('   LABELING OF POINBC FLAGS     - ON')
+            CALL MESSAGE('   LABELING OF POINBC FLAGS     - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF POINBC FLAGS     - OFF')
+            CALL MESSAGE('   LABELING OF POINBC FLAGS     - OFF')
          ENDIF
          IF (LABL) THEN
-            CALL MESAGE ('   LABELING OF LINES            - ON')
+            CALL MESSAGE('   LABELING OF LINES            - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF LINES            - OFF')
+            CALL MESSAGE('   LABELING OF LINES            - OFF')
          ENDIF
          IF (LABI) THEN
-            CALL MESAGE ('   LABELING OF LINE INTERVALS   - ON')
+            CALL MESSAGE('   LABELING OF LINE INTERVALS   - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF LINE INTERVALS   - OFF')
+            CALL MESSAGE('   LABELING OF LINE INTERVALS   - OFF')
          ENDIF
          IF (LABF) THEN
-            CALL MESAGE ('   LABELING OF LINE FACTORS     - ON')
+            CALL MESSAGE('   LABELING OF LINE FACTORS     - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF LINE FACTORS     - OFF')
+            CALL MESSAGE('   LABELING OF LINE FACTORS     - OFF')
          ENDIF
          IF (LABLB) THEN
-            CALL MESAGE ('   LABELING OF NODEBC FLAGS     - ON')
+            CALL MESSAGE('   LABELING OF NODEBC FLAGS     - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF NODEBC FLAGS     - OFF')
+            CALL MESSAGE('   LABELING OF NODEBC FLAGS     - OFF')
          ENDIF
          IF (LABSBD) THEN
-            CALL MESAGE ('   LABELING OF ELEMBC FLAGS     - ON')
+            CALL MESSAGE('   LABELING OF ELEMBC FLAGS     - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF ELEMBC FLAGS     - OFF')
+            CALL MESSAGE('   LABELING OF ELEMBC FLAGS     - OFF')
          ENDIF
          IF (LABR) THEN
-            CALL MESAGE ('   LABELING OF REGIONS          - ON')
+            CALL MESSAGE('   LABELING OF REGIONS          - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF REGIONS          - OFF')
+            CALL MESSAGE('   LABELING OF REGIONS          - OFF')
          ENDIF
          IF (LABMD) THEN
-            CALL MESAGE ('   LABELING OF BLOCK ID  (MAT)   - ON')
+            CALL MESSAGE('   LABELING OF BLOCK ID  (MAT)   - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF BLOCK ID  (MAT)   - OFF')
+            CALL MESSAGE('   LABELING OF BLOCK ID  (MAT)   - OFF')
          ENDIF
          IF (LABSC) THEN
-            CALL MESAGE ('   LABELING OF REGION SCHEMES   - ON')
+            CALL MESSAGE('   LABELING OF REGION SCHEMES   - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF REGION SCHEMES   - OFF')
+            CALL MESSAGE('   LABELING OF REGION SCHEMES   - OFF')
          ENDIF
          IF (LABSZ) THEN
-            CALL MESAGE ('   LABELING OF REGION ELEM SIZE - ON')
+            CALL MESSAGE('   LABELING OF REGION ELEM SIZE - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF REGION ELEM SIZE - OFF')
+            CALL MESSAGE('   LABELING OF REGION ELEM SIZE - OFF')
          ENDIF
          IF (FULL) THEN
-            CALL MESAGE ('   FULL LABELING OF PROPERTIES  - ON')
+            CALL MESSAGE('   FULL LABELING OF PROPERTIES  - ON')
          ELSE
-            CALL MESAGE ('   FULL LABELING OF PROPERTIES  - OFF')
+            CALL MESSAGE('   FULL LABELING OF PROPERTIES  - OFF')
          ENDIF
-         CALL MESAGE ('*-------------------- NOTE -------------------*')
-         CALL MESAGE ('    PLOTTING ORDER AT POINTS IS:               ')
-         CALL MESAGE ('        POINT NO./POINBC FLAG                  ')
-         CALL MESAGE ('    PLOTTING ORDER AT LINE CENTERS IS:         ')
-         CALL MESAGE ('       LINE NO./INTERVALS/FACTORS/NODEBC/ELEMBC')
-         CALL MESAGE ('    PLOTTING ORDER AT REGION CENTERS IS:       ')
-         CALL MESAGE ('        REGION NO./BLOCK ID NO./SCHEME         ')
-         CALL MESAGE ('*-------------------- NOTE -------------------*')
+         CALL MESSAGE('*-------------------- NOTE -------------------*')
+         CALL MESSAGE('    PLOTTING ORDER AT POINTS IS:               ')
+         CALL MESSAGE('        POINT NO./POINBC FLAG                  ')
+         CALL MESSAGE('    PLOTTING ORDER AT LINE CENTERS IS:         ')
+         CALL MESSAGE('       LINE NO./INTERVALS/FACTORS/NODEBC/ELEMBC')
+         CALL MESSAGE('    PLOTTING ORDER AT REGION CENTERS IS:       ')
+         CALL MESSAGE('        REGION NO./BLOCK ID NO./SCHEME         ')
+         CALL MESSAGE('*-------------------- NOTE -------------------*')
 
 C  FLAG REGIONS TO BE PROCESSED
 
@@ -606,8 +606,8 @@ C  FLAG REGIONS TO BE PROCESSED
          CALL FLAGD (MR, N (21), LINKB, IBARST, FLAG)
          CALL FLAGD (MR, N (22), LINKR, IREGN, FLAG)
          GOPLOT = .FALSE.
-         CALL MESAGE ('PLOT REGIONS FROM <I1> TO <I2>')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('PLOT REGIONS FROM <I1> TO <I2>')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   200    CONTINUE
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -690,7 +690,7 @@ C  FLAG LINE DATA
 C  PLOT THE REGION DATA THAT HAS BEEN FLAGGED
 
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHA-NUMERIC'//
+               CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHA-NUMERIC'//
      &            ' TERMINAL')
             ELSE
                CALL PDATA (MP, ML, MR, MSC, IPOINT, COOR, IPBOUN,
@@ -732,8 +732,8 @@ C  FLAG BARSETS TO BE PLOTTED
          CALL FLAGD (MR, N (21), LINKB, IBARST, FLAG)
          CALL FLAGD (MR, N (22), LINKR, IREGN, FLAG)
          GOPLOT = .FALSE.
-         CALL MESAGE ('PLOT BARSETS FROM <I1> TO <I2>')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('PLOT BARSETS FROM <I1> TO <I2>')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   260    CONTINUE
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN,
@@ -782,7 +782,7 @@ C  FLAG ALL LINES ASSOCIATED WITH THE BARSETS
 C  PLOT THE BARSET DATA THAT HAS BEEN FLAGGED
 
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
+               CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            'TERMINAL')
             ELSE
                CALL PDATA (MP, ML, MR, MSC, IPOINT, COOR, IPBOUN,
@@ -843,10 +843,10 @@ C GENERATE A HARDCOPY QMS PLOT
      &         LABF, LABPB, LABLB, LABSBD, LABSC, LABSZ, AXISD, TITLE,
      &         XMIN, XMAX, YMIN, YMAX, XX1, YY1, XX2, YY2, 'XXX', VERSN)
             IF (.NOT.ALPHA)CALL VDESCP (10001, 0, 0)
-            CALL MESAGE ('HARDCOPY PLOT GENERATED')
+            CALL MESSAGE('HARDCOPY PLOT GENERATED')
             HARDPL = .TRUE.
          ELSE
-            CALL MESAGE ('HARDCOPY DEVICE NOT AVAILABLE')
+            CALL MESSAGE('HARDCOPY DEVICE NOT AVAILABLE')
          ENDIF
 
 C  PLOT THE CURRENT ACTIVE ITEMS
@@ -855,7 +855,7 @@ C  PLOT THE CURRENT ACTIVE ITEMS
      &   (CIN (ICOM) (1:1) .EQ. 'p')) THEN
          ICOM = ICOM + 1
          IF (ALPHA) THEN
-            CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
+            CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &         'TERMINAL')
          ELSE
             CALL PDATA (MP, ML, MR, MSC, IPOINT, COOR, IPBOUN, ILINE,

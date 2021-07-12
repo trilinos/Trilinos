@@ -5,8 +5,11 @@
  *
  * See packages/seacas/LICENSE for details
  */
+#ifndef SORT_UTILS_H
+#define SORT_UTILS_H
 template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t N);
 
 template <typename INT> void gds_qsort(INT v[], size_t N);
 
 template <typename INT> void indexed_sort(INT v[], INT iv[], size_t N);
+#endif

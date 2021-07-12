@@ -83,22 +83,14 @@ struct fill_ordinal_container< std::vector<T,A> >
   typename std::vector<T,A>::iterator m_itr;
 
 };
-
-template <typename NodeArray, typename NodeOutputIterator>
-struct host_fill_node_container {
-
-  template <typename Ordinal>
-  void operator()(Ordinal i)
-  { *m_itr = m_nodes[i]; ++m_itr; }
-
-  host_fill_node_container( const NodeArray & nodes, NodeOutputIterator itr)
-    : m_nodes(nodes)
-    , m_itr(itr)
-  {}
-
-  const NodeArray    & m_nodes;
-  NodeOutputIterator   m_itr;
-};
+ 
+#ifdef __GNUC__
+# if (__GNUC__ == 11)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Warray-bounds"
+#   define SIERRA_GCC_POP_DIAG
+# endif
+#endif
 
 template <typename NodeArray, typename NodeOutputIterator>
 struct fill_node_container {
@@ -117,6 +109,10 @@ struct fill_node_container {
   const NodeArray    & m_nodes;
   NodeOutputIterator   m_itr;
 };
+ 
+#ifdef SIERRA_GCC_POP_DIAG
+#pragma GCC diagnostic pop
+#endif
 
 template <typename NodeArray, typename T, typename A>
 struct fill_node_container<NodeArray, std::vector<T,A> > {

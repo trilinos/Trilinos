@@ -233,14 +233,14 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     int hypercubeComponentNodeNumber(int hypercubeNodeNumber, int d) const;
     
-    //! Initialize the internal orientations_ member with the orientations of each member cell.  These are used for projected geometry, and have a nominal shape (C).
+    //! Initialize the internal orientations_ member with the orientations of each member cell.  These are used for projected geometry, and have a logical shape (C).
     void initializeOrientations();
     
-    //! Returns the nominal extent of the container in the specified dimension; the shape of CellGeometry is always (C,N,D), where C is the number of cells, N is the number of nodes per cell (may be more than the number of vertices, in the case of curvilinear geometry), and D is the spatial dimension.
+    //! Returns the logical extent of the container in the specified dimension; the shape of CellGeometry is always (C,N,D), where C is the number of cells, N is the number of nodes per cell (may be more than the number of vertices, in the case of curvilinear geometry), and D is the spatial dimension.
     KOKKOS_INLINE_FUNCTION
     size_t extent(const int& r) const;
     
-    //! Returns the nominal extent of the container in the specified dimension as an int; the shape of CellGeometry is always (C,N,D), where C is the number of cells, N is the number of nodes per cell (may be more than the number of vertices, in the case of curvilinear geometry), and D is the spatial dimension.
+    //! Returns the logical extent of the container in the specified dimension as an int; the shape of CellGeometry is always (C,N,D), where C is the number of cells, N is the number of nodes per cell (may be more than the number of vertices, in the case of curvilinear geometry), and D is the spatial dimension.
     template <typename iType>
     KOKKOS_INLINE_FUNCTION
     typename std::enable_if<std::is_integral<iType>::value, int>::type
@@ -273,7 +273,7 @@ namespace Intrepid2
     KOKKOS_INLINE_FUNCTION
     PointScalar gridCellCoordinate(const int &gridCellOrdinal, const int &localNodeNumber, const int &dim) const;
     
-    //! Returns the nominal rank of this container.  This is always 3.
+    //! Returns the logical rank of this container.  This is always 3.
     KOKKOS_INLINE_FUNCTION
     unsigned rank() const;
     

@@ -157,7 +157,7 @@ C  NOT SHARED BY ANY OTHER ELEMENT.
                   JC = IC + 1
                   IF (JC .EQ. 5) JC = 1
                   IF ((IC .EQ. JCIN) .AND. (JC .EQ. ICIN)) THEN
-                     CALL MESAGE ('** ERROR WITH ELEMENT SIDE FOUND'//
+                     CALL MESSAGE('** ERROR WITH ELEMENT SIDE FOUND'//
      &                  ' BEING INTERIOR TO MESH IN GETSIZ **')
                      INSIDE = .FALSE.
                      GOTO 160
@@ -198,7 +198,7 @@ C  THIS LEVEL
 
 C  ERROR HAS OCCURRED IN FINDING THE ELEMENT
 
-         CALL MESAGE ('** ERROR - ENCLOSING ELEMENT NOT FOUND IN '//
+         CALL MESSAGE('** ERROR - ENCLOSING ELEMENT NOT FOUND IN '//
      &      'GETSIZ **')
       ENDIF
 

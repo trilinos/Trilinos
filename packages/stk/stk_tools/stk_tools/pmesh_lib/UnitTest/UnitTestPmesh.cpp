@@ -28,15 +28,12 @@ TEST(PMESH, a)
     int ncuts_x = 1, ncuts_y = 1, ncuts_z = 1;
     size_t num_elem_per_edge = 10;
     double lenx = 1.0, leny = 1.0, lenzi = 1.0;
-    int numraid = 1;
     const std::string rootdir="";
-    const std::string subdir="";
-
-    stk_tools::MakeParFile(my_proc_id, num_procs, ncuts_x, ncuts_y, ncuts_z, num_elem_per_edge, lenx, leny, lenzi, numraid, rootdir.c_str(), subdir.c_str());
+    stk_tools::MakeParFile(my_proc_id, num_procs, ncuts_x, ncuts_y, ncuts_z, num_elem_per_edge, lenx, leny, lenzi, rootdir.c_str());
 
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
-    stk::io::fill_mesh("1/cube.par.1.0", bulk);
+    stk::io::fill_mesh("cube.exo.1.0", bulk);
 
     size_t numElements = stk::mesh::count_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK));
     EXPECT_EQ(num_elem_per_edge*num_elem_per_edge*num_elem_per_edge, numElements);

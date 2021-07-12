@@ -104,23 +104,7 @@ int main(int argc, char *argv[])
 
   MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
 
-#ifdef HAVE_COMPLEX
-  typedef std::complex<float> ST;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<float> ST;
-#else
-  typedef double ST;
-  // no complex. quit with failure.
-  MyOM->stream(Anasazi::Warning)
-    << "Not compiled with complex support." << endl
-    << "End Result: TEST FAILED" << endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-#endif
-
+  typedef std::complex<float>                 ST;
   typedef ScalarTraits<ST>                   SCT;
   typedef SCT::magnitudeType                  MT;
   typedef Anasazi::MultiVec<ST>               MV;

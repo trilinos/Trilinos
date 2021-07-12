@@ -79,7 +79,6 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
     block_crs_matrix_type;
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef Kokkos::Details::ArithTraits<IST> KAT;
-  typedef typename block_crs_matrix_type::device_type::memory_space device_memory_space;
   typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
   typedef typename block_crs_matrix_type::little_block_type little_blk_type;
 
@@ -102,14 +101,12 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
   // Get the matrix values.  Blocks are stored contiguously, each
   // block in row-major order (Kokkos::LayoutRight).
-  auto val = A.getValuesHost ();
+  auto val = A.getValuesHostNonConst ();
 
   auto gblGraph = A.getCrsGraph ();
-  auto lclGraph = G.getLocalGraph ();
-  auto ptrHost = Kokkos::create_mirror_view (lclGraph.row_map);
-  Kokkos::deep_copy (ptrHost, lclGraph.row_map);
-  auto indHost = Kokkos::create_mirror_view (lclGraph.entries);
-  Kokkos::deep_copy (indHost, lclGraph.entries);
+  auto lclGraph = G.getLocalGraphHost ();
+  auto ptrHost = lclGraph.row_map;
+  auto indHost = lclGraph.entries;
   Teuchos::Array<IST> localMem (blockSize);
   little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
 
@@ -496,7 +493,6 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   using Teuchos::rcp;
   using std::endl;
   typedef Tpetra::BlockCrsMatrix<> matrix_type;
-  typedef matrix_type::device_type device_type;
   typedef matrix_type::impl_scalar_type SC;
   typedef Kokkos::Details::ArithTraits<SC> KAT;
   typedef Tpetra::Map<>::local_ordinal_type LO;
@@ -566,7 +562,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   // Fill in the block sparse matrix.
   out << "Fill the BlockCrsMatrix" << endl;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) { // for each of my rows
-    Teuchos::ArrayView<const LO> lclColInds;
+    Tpetra::CrsGraph<>::local_inds_host_view_type lclColInds;
     graph->getLocalRowView (lclRow, lclColInds);
 
     // Put some entries in the matrix.

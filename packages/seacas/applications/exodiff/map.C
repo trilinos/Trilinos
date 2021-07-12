@@ -191,8 +191,8 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
         // Check that the element types are the same.
         if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt()) {
           Error(fmt::format("Files are different.\n"
-                            " In File 1: Element {:n} in Block {} has {}  and\n"
-                            " In File 2: Element {:n} in Block {} has {}\n",
+                            " In File 1: Element {:L} in Block {} has {}  and\n"
+                            " In File 2: Element {:L} in Block {} has {}\n",
                             i + 1, file1.Block_Id(b), num_nodes_per_elmt, l2 + 1,
                             file2.Block_Id(b2), block2->Num_Nodes_per_Elmt()));
           exit(1);
@@ -247,9 +247,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
                                !interFace.coord_tol.Diff(y2a, y2b) &&
                                !interFace.coord_tol.Diff(z2a, z2b));
                   Error(fmt::format("No unique node mapping possible.\n"
-                                    "\tFile 1, Node {:n} at ({}, {}, {}) maps to both:\n"
-                                    "\tFile 2, Node {:n} at ({}, {}, {}) and\n"
-                                    "\tFile 2, Node {:n} at ({}, {}, {})\n\n",
+                                    "\tFile 1, Node {:L} at ({}, {}, {}) maps to both:\n"
+                                    "\tFile 2, Node {:L} at ({}, {}, {}) and\n"
+                                    "\tFile 2, Node {:L} at ({}, {}, {})\n\n",
                                     node1, x1a, y1a, z1a, n1, x2a, y2a, z2a, n2, x2b, y2b, z2b));
                   exit(1);
                 }
@@ -266,22 +266,22 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
             fmt::print(
                 out,
                 "\nexodiff: ERROR: Cannot find a match for node at position {} in first element.\n"
-                "\tFile 1: Element {:n} in Block {} nodes:\n",
+                "\tFile 1: Element {:L} in Block {} nodes:\n",
                 ln1 + 1, i + 1, file1.Block_Id(b));
             for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
               double x_val = x1_f[conn1[l1] - 1];
               double y_val = dim > 1 ? y1_f[conn1[l1] - 1] : 0.0;
               double z_val = dim > 2 ? z1_f[conn1[l1] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:n}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1, conn1[l1], x_val,
+              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1, conn1[l1], x_val,
                          y_val, z_val);
             }
-            fmt::print(out, "\tFile 2: Element {:n} in Block {} nodes:\n", l2 + 1,
+            fmt::print(out, "\tFile 2: Element {:L} in Block {} nodes:\n", l2 + 1,
                        file1.Block_Id(b));
             for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
               double x_val = x2_f[conn2[l3] - 1];
               double y_val = dim > 1 ? y2_f[conn2[l3] - 1] : 0.0;
               double z_val = dim > 2 ? z2_f[conn2[l3] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:n}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1, conn2[l3], x_val,
+              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1, conn2[l3], x_val,
                          y_val, z_val);
             }
             fmt::print(out, "Coordinates compared using tolerance: {} ({}), floor: {}\n",
@@ -503,8 +503,8 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
         // Check that the element types are the same.
         if (num_nodes_per_elmt != block2->Num_Nodes_per_Elmt()) {
           Error(fmt::format("Files are different.\n"
-                            " In File 1: Element {:n} in Block {} has {}  and\n"
-                            " In File 2: Element {:n} in Block {} has {}\n",
+                            " In File 1: Element {:L} in Block {} has {}  and\n"
+                            " In File 2: Element {:L} in Block {} has {}\n",
                             i + 1, file1.Block_Id(b), num_nodes_per_elmt, l2 + 1,
                             file2.Block_Id(b2), block2->Num_Nodes_per_Elmt()));
           exit(1);
@@ -540,22 +540,22 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
             fmt::print(
                 out,
                 "\nexodiff: ERROR: Cannot find a match for node at position {} in first element.\n"
-                "\tFile 1: Element {:n} in Block {} nodes:\n",
+                "\tFile 1: Element {:L} in Block {} nodes:\n",
                 ln1 + 1, i + 1, file1.Block_Id(b));
             for (size_t l1 = 0; l1 < num_nodes_per_elmt; ++l1) {
               double x_val = x1_f[conn1[l1] - 1];
               double y_val = dim > 1 ? y1_f[conn1[l1] - 1] : 0.0;
               double z_val = dim > 2 ? z1_f[conn1[l1] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:n}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1, conn1[l1], x_val,
+              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l1 + 1, conn1[l1], x_val,
                          y_val, z_val);
             }
-            fmt::print(out, "\tFile 2: Element {:n} in Block {} nodes:\n", l2 + 1,
+            fmt::print(out, "\tFile 2: Element {:L} in Block {} nodes:\n", l2 + 1,
                        file1.Block_Id(b));
             for (size_t l3 = 0; l3 < num_nodes_per_elmt; ++l3) {
               double x_val = x2_f[conn2[l3] - 1];
               double y_val = dim > 1 ? y2_f[conn2[l3] - 1] : 0.0;
               double z_val = dim > 2 ? z2_f[conn2[l3] - 1] : 0.0;
-              fmt::print(out, "\t({})\t{:n}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1, conn2[l3], x_val,
+              fmt::print(out, "\t({})\t{:L}\t{:.9e}\t{:.9e}\t{:.9e}\n", l3 + 1, conn2[l3], x_val,
                          y_val, z_val);
             }
             fmt::print(out, "Coordinates compared using tolerance: {} ({}), floor: {}\n",
@@ -574,7 +574,7 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   } // End of loop on file1 blocks.
   if (!first) {
-    fmt::print("\nPartial Map selected -- {:n} elements unmatched\n", unmatched);
+    fmt::print("\nPartial Map selected -- {:L} elements unmatched\n", unmatched);
   }
   else {
     if (num_elmts1 == num_elmts2 && num_nodes1 == num_nodes2) {
@@ -805,7 +805,7 @@ namespace {
     // message and exit.
     if (count_1 != count_2) {
       Error(fmt::format("Files are different (free node count in file1 is "
-                        "{:n} but file2 free node count is {:n})\n",
+                        "{:L} but file2 free node count is {:L})\n",
                         count_1, count_2));
       exit(1);
     }
@@ -850,7 +850,7 @@ namespace {
 
     // Check that all nodes were matched.
     if (matched != count_1) {
-      Error(fmt::format("Unable to match all free nodes in the model.  There are {:n}"
+      Error(fmt::format("Unable to match all free nodes in the model.  There are {:L}"
                         " unmatched nodes remaining.\n",
                         count_1 - matched));
       exit(1);
@@ -922,8 +922,8 @@ namespace {
           double z2 = dim > 2 ? z[id[index]] : 0.0;
 
           Error(fmt::format("Two elements in file 2 have the same midpoint (within tolerance).\n"
-                            "\tLocal element {:n} at ({}, {}, {}) and\n"
-                            "\tLocal element {:n} at ({}, {}, {})\n"
+                            "\tLocal element {:L} at ({}, {}, {}) and\n"
+                            "\tLocal element {:L} at ({}, {}, {})\n"
                             "\tNo unique element mapping possible.\n",
                             id[i] + 1, x1, y1, z1, id[index] + 1, x2, y2, z2));
           return -1;

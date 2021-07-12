@@ -67,8 +67,6 @@ namespace Details {
 template<class MultiVectorType>        
 void inverseScaleBlockDiagonal(MultiVectorType & blockDiagonal, bool doTranspose, MultiVectorType & multiVectorToBeScaled) {
   using LO             = typename MultiVectorType::local_ordinal_type;
-  using local_mv_type  = typename MultiVectorType::dual_view_type::t_dev;
-  using local_mv_type_um  = typename MultiVectorType::dual_view_type::t_dev_um;
   using range_type     = Kokkos::RangePolicy<typename MultiVectorType::node_type::execution_space, LO>;
   using namespace KokkosBatched;
   typename MultiVectorType::impl_scalar_type SC_one = Teuchos::ScalarTraits<typename MultiVectorType::impl_scalar_type>::one();

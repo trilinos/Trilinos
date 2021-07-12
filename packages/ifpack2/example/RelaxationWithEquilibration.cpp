@@ -913,26 +913,23 @@ densifyGatheredCrsMatrix (LO& errCode,
 {
   const LO numRows = LO (A.getRangeMap ()->getNodeNumElements ());
   const LO numCols = LO (A.getDomainMap ()->getNodeNumElements ());
+  using lids_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::local_inds_host_view_type;
+  using vals_type = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::values_host_view_type;
 
   using dense_matrix_type = HostDenseMatrix<SC, LO, GO, NT>;
   dense_matrix_type A_dense (label, numRows, numCols);
 
   for (LO lclRow = 0; lclRow < numRows; ++lclRow) {
-    LO numEnt = 0;
-    const LO* lclColInds = nullptr;
-    const SC* vals = nullptr;
-    const LO curErrCode = A.getLocalRowView (lclRow, numEnt, vals, lclColInds);
-    if (errCode != 0) {
-      errCode = curErrCode;
-    }
-    else {
-      for (LO k = 0; k < numEnt; ++k) {
-        const LO lclCol = lclColInds[k];
-        using impl_scalar_type =
-          typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
-        A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
-      }
-    }
+    lids_type lclColInds;
+    vals_type vals;
+    A.getLocalRowView (lclRow, lclColInds, vals);
+    LO numEnt = vals.size();
+    for (LO k = 0; k < numEnt; ++k) {
+      const LO lclCol = lclColInds[k];
+      using impl_scalar_type =
+        typename Tpetra::CrsMatrix<SC, LO, GO, NT>::impl_scalar_type;
+      A_dense(lclRow, lclCol) += impl_scalar_type (vals[k]);
+    }   
   }
 
   return A_dense;
@@ -1125,8 +1122,8 @@ deepCopyFillCompleteCrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
     (! A.isFillComplete (), std::invalid_argument,
      "deepCopyFillCompleteCrsMatrix: Input matrix A must be fillComplete.");
   RCP<crs_matrix_type> A_copy (new crs_matrix_type (A.getCrsGraph ()));
-  auto A_copy_lcl = A_copy->getLocalMatrix ();
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_copy_lcl = A_copy->getLocalMatrixDevice ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   Kokkos::deep_copy (A_copy_lcl.values, A_lcl.values);
   A_copy->fillComplete (A.getDomainMap (), A.getRangeMap ());
   return A_copy;

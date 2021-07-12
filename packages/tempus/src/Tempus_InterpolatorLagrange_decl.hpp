@@ -48,7 +48,10 @@ public:
   std::string description() const { return "Tempus::InterpolatorLagrange"; }
   void describe(Teuchos::FancyOStream &out,
                 const Teuchos::EVerbosityLevel /* verbLevel */) const
-  { out << description() << "::describe" << std::endl; }
+  {
+    out.setOutputToRootOnly(0);
+    out << description() << "::describe" << std::endl;
+  }
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor

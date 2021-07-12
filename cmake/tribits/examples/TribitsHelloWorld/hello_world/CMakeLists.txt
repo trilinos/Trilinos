@@ -1,9 +1,9 @@
-TRIBITS_PACKAGE(HelloWorld)
-TRIBITS_ADD_LIBRARY(hello_world_lib
+tribits_package(HelloWorld)
+tribits_add_library(hello_world_lib
   HEADERS hello_world_lib.hpp SOURCES hello_world_lib.cpp)
-TRIBITS_ADD_EXECUTABLE(hello_world NOEXEPREFIX SOURCES hello_world_main.cpp
+tribits_add_executable(hello_world NOEXEPREFIX SOURCES hello_world_main.cpp
   INSTALLABLE)
-TRIBITS_ADD_TEST(hello_world NOEXEPREFIX PASS_REGULAR_EXPRESSION "Hello World")
-TRIBITS_ADD_EXECUTABLE_AND_TEST(unit_tests SOURCES hello_world_unit_tests.cpp
+tribits_add_test(hello_world NOEXEPREFIX PASS_REGULAR_EXPRESSION "Hello World")
+tribits_add_executable_and_test(unit_tests SOURCES hello_world_unit_tests.cpp
   PASS_REGULAR_EXPRESSION "All unit tests passed")
-TRIBITS_PACKAGE_POSTPROCESS()
+tribits_package_postprocess()

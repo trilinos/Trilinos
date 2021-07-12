@@ -13,9 +13,7 @@ void MakeParFile(
 		 const double& lenx,
 		 const double& leny,
 		 const double& lenzi,
-		 const int& numraid,
-		 const char* rootdir,
-		 const char* subdir );
+		 const char* rootdir);
 
 }
 

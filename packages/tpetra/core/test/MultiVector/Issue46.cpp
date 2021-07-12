@@ -193,12 +193,6 @@ void issue46Test (bool& success, Teuchos::FancyOStream& out)
   typedef typename MV::global_ordinal_type GO;
   typedef typename MV::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
-  typedef typename MV::impl_scalar_type IST;
-  typedef typename MV::dual_view_type::array_layout array_layout;
-  typedef typename MV::device_type device_type;
-  typedef typename device_type::memory_space dev_memory_space;
-  typedef typename Kokkos::View<IST**, array_layout,
-    device_type>::HostMirror::memory_space host_memory_space;
 
   out << "Test Github Issue #46 (offset view of an offset view of a "
     "Tpetra::MultiVector)" << endl;

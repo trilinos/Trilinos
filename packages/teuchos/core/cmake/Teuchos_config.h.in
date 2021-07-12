@@ -105,6 +105,8 @@
 
 #cmakedefine HAVE_TEUCHOS_FLOAT
 
+#cmakedefine HAVE_TEUCHOS_LONG_DOUBLE
+
 #define TEUCHOS_ORDINAL_TYPE @Teuchos_ORDINAL_TYPE@
 
 #cmakedefine HAVE_TEUCHOS_COMPLEX

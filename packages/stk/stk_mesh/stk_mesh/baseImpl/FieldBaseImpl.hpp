@@ -179,6 +179,7 @@ public:
 
   NgpFieldBase * get_ngp_field() const;
   void set_ngp_field(NgpFieldBase * ngpField) const;
+  void fence() const;
 
   size_t num_syncs_to_host() const;
   size_t num_syncs_to_device() const;
@@ -214,11 +215,6 @@ private:
 
 /** \brief  Print the field type, text name, and number of states. */
 std::ostream & operator << ( std::ostream & , const FieldBaseImpl & );
-
-/** \brief  Print field and field restrictions on new lines. */
-std::ostream & print( std::ostream & ,
-                      const char * const , const FieldBase & );
-
 
 } // namespace impl
 } // namespace mesh

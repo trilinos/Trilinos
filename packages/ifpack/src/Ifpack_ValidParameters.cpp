@@ -127,6 +127,7 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
   List.set("partitioner: type", "greedy");
   List.set("partitioner: local parts", (int)1);
   List.set("partitioner: overlap", (int)0);
+  List.set("partitioner: keep singletons",false);
 
   // Ifpack_METISPartitioner.h
   List.set("partitioner: use symmetric graph", true);

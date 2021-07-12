@@ -521,15 +521,16 @@ namespace MueLuTests {
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
-    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
-    if(comm->getRank() == 0) {
-      for(LO i = 0; i < 3; ++i) {
-        for(LO j = 0; j < 3; ++j) {
-          coarse_data[3*i + j] = 2.0*i + j;
-        }
+    {
+      ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+	for(LO i = 0; i < 3; ++i) {
+	  for(LO j = 0; j < 3; ++j) {
+	    coarse_data[3*i + j] = 2.0*i + j;
+	  }
+	}
       }
     }
-
     PCrs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
                 Teuchos::ScalarTraits<SC>::zero());
 
@@ -537,6 +538,7 @@ namespace MueLuTests {
     bool is_linear = true, is_injected = true;
     Array<LO> fine_inds(9);
     Array<LO> coarse_inds(9);
+    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     if(comm->getRank() == 0) {
       fine_inds[0] = 0;
       fine_inds[1] = 2;
@@ -729,12 +731,14 @@ namespace MueLuTests {
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
-    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
-    if(comm->getRank() == 0) {
-      for(LO i = 0; i < 3; ++i) {
-        for(LO j = 0; j < 3; ++j) {
-          coarse_data[3*i + j] = 2.0*i + j;
-        }
+    {
+      ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+	for(LO i = 0; i < 3; ++i) {
+	  for(LO j = 0; j < 3; ++j) {
+	    coarse_data[3*i + j] = 2.0*i + j;
+	  }
+	}
       }
     }
 
@@ -745,6 +749,7 @@ namespace MueLuTests {
     bool is_constant = true, is_injected = true;
     Array<LO> fine_inds(9);
     Array<LO> coarse_inds(9);
+    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     if(comm->getRank() == 0) {
       fine_inds[0] = 0;
       fine_inds[1] = 2;
@@ -937,35 +942,37 @@ namespace MueLuTests {
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getDomainMap(),1);
-    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     std::vector<LO> coarse_inds(8);
-    if(comm->getSize() == 1) {
-      coarse_inds[0] =  0;
-      coarse_inds[1] =  1;
-      coarse_inds[2] =  5;
-      coarse_inds[3] =  6;
-      coarse_inds[4] = 25;
-      coarse_inds[5] = 26;
-      coarse_inds[6] = 30;
-      coarse_inds[7] = 31;
-    } else if(comm->getSize() == 4 && comm->getRank() == 0) {
-      coarse_inds[0] =  0;
-      coarse_inds[1] =  1;
-      coarse_inds[2] =  5;
-      coarse_inds[3] =  6;
-      coarse_inds[4] = 15;
-      coarse_inds[5] = 16;
-      coarse_inds[6] = 20;
-      coarse_inds[7] = 21;
+    {
+      ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
+      if(comm->getSize() == 1) {
+	coarse_inds[0] =  0;
+	coarse_inds[1] =  1;
+	coarse_inds[2] =  5;
+	coarse_inds[3] =  6;
+	coarse_inds[4] = 25;
+	coarse_inds[5] = 26;
+	coarse_inds[6] = 30;
+	coarse_inds[7] = 31;
+      } else if(comm->getSize() == 4 && comm->getRank() == 0) {
+	coarse_inds[0] =  0;
+	coarse_inds[1] =  1;
+	coarse_inds[2] =  5;
+	coarse_inds[3] =  6;
+	coarse_inds[4] = 15;
+	coarse_inds[5] = 16;
+	coarse_inds[6] = 20;
+	coarse_inds[7] = 21;
+      }
+      coarse_data[coarse_inds[0]] = 5;
+      coarse_data[coarse_inds[1]] = 1;
+      coarse_data[coarse_inds[2]] = 7;
+      coarse_data[coarse_inds[3]] = 8;
+      coarse_data[coarse_inds[4]] = 0;
+      coarse_data[coarse_inds[5]] = 4;
+      coarse_data[coarse_inds[6]] = 0;
+      coarse_data[coarse_inds[7]] = 9;
     }
-    coarse_data[coarse_inds[0]] = 5;
-    coarse_data[coarse_inds[1]] = 1;
-    coarse_data[coarse_inds[2]] = 7;
-    coarse_data[coarse_inds[3]] = 8;
-    coarse_data[coarse_inds[4]] = 0;
-    coarse_data[coarse_inds[5]] = 4;
-    coarse_data[coarse_inds[6]] = 0;
-    coarse_data[coarse_inds[7]] = 9;
 
     P1Crs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
                 Teuchos::ScalarTraits<SC>::zero());
@@ -993,6 +1000,7 @@ namespace MueLuTests {
         fine_inds[6] = 108;
         fine_inds[7] = 110;
       }
+      ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
       for(LO i = 0; i < 8; ++i) {
         if(std::abs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
           is_injected_lvl1 = false;
@@ -1015,7 +1023,6 @@ namespace MueLuTests {
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector3
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getDomainMap(),1);
-    coarse_data = vector3->getDataNonConst(0);
     if(comm->getSize() == 1) {
       coarse_inds[0] =  0;
       coarse_inds[1] =  1;
@@ -1035,15 +1042,18 @@ namespace MueLuTests {
       coarse_inds[6] =  9;
       coarse_inds[7] = 10;
     }
-    coarse_data[coarse_inds[0]] = 5;
-    coarse_data[coarse_inds[1]] = 1;
-    coarse_data[coarse_inds[2]] = 7;
-    coarse_data[coarse_inds[3]] = 8;
-    coarse_data[coarse_inds[4]] = 0;
-    coarse_data[coarse_inds[5]] = 4;
-    coarse_data[coarse_inds[6]] = 0;
-    coarse_data[coarse_inds[7]] = 9;
-    
+    {
+      ArrayRCP<SC> coarse_data = vector3->getDataNonConst(0);
+      coarse_data[coarse_inds[0]] = 5;
+      coarse_data[coarse_inds[1]] = 1;
+      coarse_data[coarse_inds[2]] = 7;
+      coarse_data[coarse_inds[3]] = 8;
+      coarse_data[coarse_inds[4]] = 0;
+      coarse_data[coarse_inds[5]] = 4;
+      coarse_data[coarse_inds[6]] = 0;
+      coarse_data[coarse_inds[7]] = 9;
+    }
+
     P2Crs->apply(*vector3, *vector2, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
                 Teuchos::ScalarTraits<SC>::zero());
 
@@ -1069,6 +1079,7 @@ namespace MueLuTests {
         fine_inds[6] = 40;
         fine_inds[7] = 42;
       }
+      ArrayRCP<SC> coarse_data = vector3->getDataNonConst(0);
       for(LO i = 0; i < 8; ++i) {
         if(std::abs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
           is_injected_lvl2 = false;
@@ -1283,12 +1294,14 @@ namespace MueLuTests {
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
       = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
-    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
-    if(comm->getRank() == 0) {
-      for(LO i = 0; i < 3; ++i) {
-        for(LO j = 0; j < 3; ++j) {
-          coarse_data[3*i + j] = 2.0*i + j;
-        }
+    {
+      ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
+      if(comm->getRank() == 0) {
+	for(LO i = 0; i < 3; ++i) {
+	  for(LO j = 0; j < 3; ++j) {
+	    coarse_data[3*i + j] = 2.0*i + j;
+	  }
+	}
       }
     }
 
@@ -1299,6 +1312,7 @@ namespace MueLuTests {
     bool is_constant = true, is_injected = true;
     Array<LO> fine_inds(9);
     Array<LO> coarse_inds(9);
+    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     if(comm->getRank() == 0) {
       fine_inds[0] = 0;
       fine_inds[1] = 2;

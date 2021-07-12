@@ -92,6 +92,11 @@ namespace FROSch {
         }
 
         ThyraPreconditioner_->getUnspecifiedPrecOp()->apply(tMode,*xThyra,yThyra.ptr(),alpha,beta);
+
+        // It seems that we have to convert the Thyra vector back to Xpetra. Is there a cheaper/more elegant way?
+        // Same for ThyraSolver
+        XMultiVectorPtr yXpetra = ThyraUtils<SC,LO,GO,NO>::toXpetra(yThyra,y.getMap()->getComm());
+        y = *yXpetra;
     }
 
     template<class SC,class LO,class GO,class NO>

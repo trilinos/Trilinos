@@ -68,7 +68,9 @@ namespace KokkosClassic {
   /// \endcode
   class DefaultNode {
   public:
-#if defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
+#if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
+    typedef ::Kokkos::Compat::KokkosSYCLWrapperNode DefaultNodeType;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosHIPWrapperNode DefaultNodeType;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
     typedef ::Kokkos::Compat::KokkosCudaWrapperNode DefaultNodeType;

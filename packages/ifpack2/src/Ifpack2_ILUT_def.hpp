@@ -491,18 +491,17 @@ void ILUT<MatrixType>::compute ()
     // =================== //
     // start factorization //
     // =================== //
-
-    ArrayRCP<local_ordinal_type> ColIndicesARCP;
-    ArrayRCP<scalar_type>       ColValuesARCP;
+    nonconst_local_inds_host_view_type ColIndicesARCP;
+    nonconst_values_host_view_type ColValuesARCP;
     if (! A_local_->supportsRowViews ()) {
       const size_t maxnz = A_local_->getNodeMaxNumRowEntries ();
-      ColIndicesARCP.resize (maxnz);
-      ColValuesARCP.resize (maxnz);
+      Kokkos::resize(ColIndicesARCP,maxnz);
+      Kokkos::resize(ColValuesARCP,maxnz);
     }
 
     for (local_ordinal_type row_i = 0 ; row_i < myNumRows ; ++row_i) {
-      ArrayView<const local_ordinal_type> ColIndicesA;
-      ArrayView<const scalar_type> ColValuesA;
+      local_inds_host_view_type  ColIndicesA;
+      values_host_view_type ColValuesA;
       size_t RowNnz;
 
       if (A_local_->supportsRowViews ()) {
@@ -510,9 +509,9 @@ void ILUT<MatrixType>::compute ()
         RowNnz = ColIndicesA.size ();
       }
       else {
-        A_local_->getLocalRowCopy (row_i, ColIndicesARCP (), ColValuesARCP (), RowNnz);
-        ColIndicesA = ColIndicesARCP (0, RowNnz);
-        ColValuesA = ColValuesARCP (0, RowNnz);
+        A_local_->getLocalRowCopy (row_i, ColIndicesARCP, ColValuesARCP, RowNnz);
+        ColIndicesA = Kokkos::subview(ColIndicesARCP,std::make_pair((size_t)0, RowNnz));
+        ColValuesA  = Kokkos::subview(ColValuesARCP,std::make_pair((size_t)0, RowNnz));
       }
 
       // Always include the diagonal in the U factor. The value should get
@@ -612,7 +611,7 @@ void ILUT<MatrixType>::compute ()
       // Put indices and values for L into arrays and then into the L_ matrix.
 
       //   first, the original entries from the L section of A:
-      for (size_type i = 0; i < ColIndicesA.size (); ++i) {
+      for (size_type i = 0; i < (size_type)ColIndicesA.size (); ++i) {
         if (ColIndicesA[i] < row_i) {
           L_tmp_idx[row_i].push_back(ColIndicesA[i]);
           L_tmpv[row_i].push_back(cur_row[ColIndicesA[i]]);

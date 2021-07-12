@@ -57,11 +57,7 @@ std::ostream & operator << ( std::ostream & s , const FieldBase & field )
   }
   s << ">" ;
 
-  s << "[ name: \"" ;
-  s << field.name() ;
-  s << "\" , #states: " ;
-  s << field.number_of_states();
-  s << " ]" ;
+  s << "[\"" << field.name() << "\", #states: " << field.number_of_states() << "]" ;
   return s ;
 }
 

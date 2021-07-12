@@ -27,7 +27,7 @@
 void write_blob();
 bool read_blob();
 
-std::vector<double> generate_data(double time, size_t global_size, double offset, size_t local_size,
+std::vector<double> generate_data(double time, size_t /* global_size */, double offset, size_t local_size,
                                   size_t proc_offset)
 {
   // Determine this ranks portion of the data

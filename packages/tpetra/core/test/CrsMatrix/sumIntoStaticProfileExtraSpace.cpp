@@ -112,8 +112,8 @@ TEUCHOS_UNIT_TEST( CrsMatrix, sumIntoStaticProfileExtraSpace )
       const size_t newNumEnt = A.getNumEntriesInLocalRow (lclRow);
       TEST_ASSERT( newNumEnt == 2 );
 
-      Teuchos::ArrayView<const LO> inds_av;
-      Teuchos::ArrayView<const double> vals_av;
+      typename crs_matrix_type::local_inds_host_view_type inds_av;
+      typename crs_matrix_type::values_host_view_type vals_av;;
       A.getLocalRowView (lclRow, inds_av, vals_av);
       TEST_ASSERT( inds_av.size () == ptrdiff_t (2) );
       TEST_ASSERT( vals_av.size () == ptrdiff_t (2) );

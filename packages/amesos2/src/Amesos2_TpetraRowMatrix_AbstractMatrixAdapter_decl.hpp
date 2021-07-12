@@ -117,6 +117,12 @@ namespace Amesos2 {
   public:			// these functions should technically be private
 
     // implementation functions
+    template<typename KV_GO, typename KV_S>
+    void getGlobalRowCopy_kokkos_view_impl(global_ordinal_t row,
+			                   KV_GO & indices,
+			                   KV_S & vals,
+			                   size_t& nnz) const;
+
     void getGlobalRowCopy_impl(global_ordinal_t row,
 			       const Teuchos::ArrayView<global_ordinal_t>& indices,
 			       const Teuchos::ArrayView<scalar_t>& vals,
@@ -175,25 +181,27 @@ namespace Amesos2 {
     // hands off implementation to the adapter for the subclass
     RCP<const super_t> get_impl(const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > map, EDistribution distribution = ROOTED) const;
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     typename super_t::spmtx_ptr_t  getSparseRowPtr() const;
 
     typename super_t::spmtx_idx_t  getSparseColInd() const;
 
     typename super_t::spmtx_vals_t getSparseValues() const;
+    #endif
 
     template<class KV>
     void getSparseRowPtr_kokkos_view(KV & view) const {
-      deep_copy_or_assign_view(view, this->mat_->getLocalMatrix().graph.row_map);
+      deep_copy_or_assign_view(view, this->mat_->getLocalMatrixDevice().graph.row_map);
     }
 
     template<class KV>
     void  getSparseColInd_kokkos_view(KV & view) const {
-      deep_copy_or_assign_view(view, this->mat_->getLocalMatrix().graph.entries);
+      deep_copy_or_assign_view(view, this->mat_->getLocalMatrixDevice().graph.entries);
     }
 
     template<class KV>
     void getSparseValues_kokkos_view(KV & view) const {
-      deep_copy_or_assign_view(view, this->mat_->getLocalMatrix().values);
+      deep_copy_or_assign_view(view, this->mat_->getLocalMatrixDevice().values);
     }
 
   };

@@ -10,6 +10,12 @@ ATDM_SET_CACHE(Trilinos_CUDA_SLOTS_PER_GPU 2 CACHE STRING)
 # Disables across multiple builds on 'ats2'
 #
 
+IF (ATDM_NODE_TYPE STREQUAL "CUDA")
+  # Adelus always needs -M -gpu passed to jsrun, but trilinos_jsrun cannot support this
+  # for single rank MPI processes without breaking the invocation of other Trilinos tests
+  ATDM_SET_ENABLE(Adelus_vector_random_MPI_1_DISABLE ON)
+ENDIF()
+
 IF (ATDM_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
 
   # Disable some expensive KokkosKernels tests in pure debug builds (#6464)

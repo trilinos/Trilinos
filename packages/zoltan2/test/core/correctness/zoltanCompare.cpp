@@ -209,7 +209,8 @@ static void zhg(void *data, int ngid, int nLists, int nPins, int format,
     size_t nEntries = graph->getNumEntriesInLocalRow(i);
     offsets[i+1] = offsets[i] + nEntries;
 
-    Teuchos::ArrayView<const zlno_t> colind;
+    
+    typename tMatrix_t::local_inds_host_view_type colind;
     graph->getLocalRowView(i, colind);
 
     for (size_t j = 0; j < nEntries; j++) {

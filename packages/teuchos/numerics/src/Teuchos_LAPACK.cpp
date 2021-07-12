@@ -47,6 +47,10 @@
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
 #  include "Teuchos_Details_Lapack128.hpp" // impl for __float128
 #endif // HAVE_TEUCHOSCORE_QUADMATH
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
+#  include "Teuchos_Details_LapackLongDouble.hpp" // impl for long double
+#endif // HAVE_TEUCHOS_LONG_DOUBLE
+#include "Teuchos_TestForException.hpp"
 
 /* for INTEL_CXML, the second arg may need to be changed to 'one'.  If so
 the appropriate declaration of one will need to be added back into
@@ -1911,5 +1915,182 @@ namespace Teuchos
   // END int, __float128 SPECIALIZATION IMPLEMENTATION //
 
 #endif // HAVE_TEUCHOSCORE_QUADMATH
+
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
+
+  // BEGIN int, long double SPECIALIZATION IMPLEMENTATION //
+
+  void LAPACK<int, long double>::
+  GESV(const int& n, const int& nrhs, long double* A, const int& lda, int* IPIV, long double* B, const int& ldb, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GESV not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::  
+  GTTRS(const char& TRANS, const int& n, const int& nrhs, const long double* dl, const long double* d, const long double* du, const long double* du2, const int* IPIV, long double* B, const int& ldb, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GTTRS not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::  
+  GTTRF(const int& n, long double* dl, long double* d, long double* du, long double* du2, int* IPIV, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GTTRF not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::  
+  SYGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, long double* A, const int& lda, long double* B, const int& ldb, long double* W, long double* WORK, const int& lwork, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GESV not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::
+  GEEV(const char& JOBVL, const char& JOBVR, const int& n, long double* A, const int& lda, long double* WR, long double* WI, long double* VL, const int& ldvl, long double* VR, const int& ldvr, long double* WORK, const int& lwork, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GEEV not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::
+  GEEV(const char& JOBVL, const char& JOBVR, const int& n, long double* A, const int& lda, long double* WR, long double* WI, long double* VL, const int& ldvl, long double* VR, const int& ldvr, long double* WORK, const int& lwork, long double* /* RWORK */, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GEEV not implemented for long double scalar type!");
+  }
+  void LAPACK<int,long double>::
+  GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, long double* A, const int& lda, long double* B, const int& ldb, long double* ALPHAR, long double* ALPHAI, long double* BETA, long double* VL, const int& ldvl, long double* VR, const int& ldvr, int* ilo, int* ihi, long double* lscale, long double* rscale, long double* abnrm, long double* bbnrm, long double* RCONDE, long double* RCONDV, long double* WORK, const int& lwork, int* IWORK, int* BWORK, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GGEVX not implemented for long double scalar type!");
+  }
+  void LAPACK<int,long double>::
+  GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, long double* A, const int& lda, long double* B, const int& ldb, long double* ALPHAR, long double* ALPHAI, long double* BETA, long double* VL, const int& ldvl, long double* VR, const int& ldvr, int* ilo, int* ihi, long double* lscale, long double* rscale, long double* abnrm, long double* bbnrm, long double* RCONDE, long double* RCONDV, long double* WORK, const int& lwork, long double* /* RWORK */, int* IWORK, int* BWORK, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: GGEVX not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::
+  PORFS(const char& UPLO, const int& n, const int& nrhs, long double* A, const int& lda, const long double* AF, const int& ldaf, const long double* B, const int& ldb, long double* X, const int& ldx, long double* FERR, long double* BERR, long double* WORK, int* IWORK, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: PORFS not implemented for long double scalar type!");
+  }
+  void LAPACK<int,long double>::
+  PTEQR(const char& COMPZ, const int& n, long double* D, long double* E, long double* Z, const int& ldz, long double* WORK, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: PTEQR not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::
+  POTRF(const char& UPLO, const int& n, long double* A, const int& lda, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: POTRF not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::
+  POTRS(const char& UPLO, const int& n, const int& nrhs, const long double* A, const int& lda, long double* B, const int& ldb, int* info) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: POTRS not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::
+  POEQU(const int& n, const long double* A, const int& lda, long double* S, long double* scond, long double* amax, int* info) const 
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ERROR in Teuchos::LAPACK: POEQU not implemented for long double scalar type!");
+  }
+  void LAPACK<int, long double>::
+  GEQRF(const int& m, const int& n, long double* A, const int& lda, long double* TAU, long double* WORK, const int& lwork, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.GEQRF (m, n, A, lda, TAU, WORK, lwork, info);
+  }
+
+  void LAPACK<int, long double>::
+  GEQR2(const int& m, const int& n, long double A[], const int& lda, long double TAU[], long double WORK[], int* const info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.GEQR2 (m, n, A, lda, TAU, WORK, info);
+  }
+
+  void LAPACK<int, long double>::
+  GETRF(const int& m, const int& n, long double* A, const int& lda, int* IPIV, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.GETRF (m, n, A, lda, IPIV, info);
+  }
+
+  void LAPACK<int, long double>::
+  GETRS(const char& TRANS, const int& n, const int& nrhs, const long double* A, const int& lda, const int* IPIV, long double* B, const int& ldb, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.GETRS (TRANS, n, nrhs, A, lda, IPIV, B, ldb, info);
+  }
+
+  void LAPACK<int, long double>::
+  GETRI (const int& n, long double* A, const int& lda, const int* IPIV, long double* WORK, const int& lwork, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.GETRI (n, A, lda, const_cast<int*> (IPIV), WORK, lwork, info);
+  }
+
+  void LAPACK<int, long double>::
+  LASWP (const int& N, long double A[], const int& LDA, const int& K1, const int& K2, const int IPIV[], const int& INCX) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.LASWP (N, A, LDA, K1, K2, IPIV, INCX);
+  }
+
+  void LAPACK<int, long double>::
+  ORM2R(const char& SIDE, const char& TRANS, const int& m, const int& n, const int& k, const long double A[], const int& lda, const long double TAU[], long double C[], const int& ldc, long double WORK[], int* const info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.ORM2R (SIDE, TRANS, m, n, k, A, lda, TAU, C, ldc, WORK, info);
+  }
+
+  void LAPACK<int, long double>::
+  ORGQR(const int& m, const int& n, const int& k, long double* A, const int& lda, const long double* TAU, long double* WORK, const int& lwork, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.ORGQR (m, n, k, A, lda, TAU, WORK, lwork, info);
+  }
+
+  void LAPACK<int, long double>::
+  UNGQR(const int& m, const int& n, const int& k, long double* A, const int& lda, const long double* TAU, long double* WORK, const int& lwork, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.UNGQR (m, n, k, A, lda, TAU, WORK, lwork, info);
+  }
+
+  void LAPACK<int, long double>::
+  LARFG( const int& n, long double* alpha, long double* x, const int& incx, long double* tau ) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    lapack.LARFG (n, alpha, x, incx, tau);
+  }
+
+  long double LAPACK<int, long double>::
+  LAPY2 (const long double x, const long double y) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    return lapack.LAPY2 (x, y);
+  }
+
+  void LAPACK<int, long double>::
+  GBTRF (const int& m, const int& n, const int& kl, const int& ku,
+         long double* A, const int& lda, int* IPIV, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    return lapack.GBTRF (m, n, kl, ku, A, lda, IPIV, info);
+  }
+
+  void LAPACK<int, long double>::
+  GBTRS (const char& TRANS, const int& n, const int& kl, const int& ku,
+         const int& nrhs, const long double* A, const int& lda, const int* IPIV,
+         long double* B, const int& ldb, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    return lapack.GBTRS (TRANS, n, kl, ku, nrhs, A, lda, IPIV, B, ldb, info);
+  }
+
+  void LAPACK<int, long double>::
+  LASCL (const char& TYPE, const int& kl, const int& ku, const long double cfrom,
+         const long double cto, const int& m, const int& n, long double* A,
+         const int& lda, int* info) const
+  {
+    Teuchos::Details::LapackLongDouble lapack;
+    return lapack.LASCL (TYPE, kl, ku, cfrom, cto, m, n, A, lda, info);
+  }
+
+  // END int, long double SPECIALIZATION IMPLEMENTATION //
+
+#endif // HAVE_TEUCHOS_LONG_DOUBLE
+
 
 } // namespace Teuchos

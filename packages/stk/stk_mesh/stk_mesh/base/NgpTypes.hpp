@@ -58,6 +58,9 @@ using MeshIndexType             = Kokkos::View<const FastMeshIndex*, MemSpace, K
 template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, MemSpace>;
 template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, HostPinnedSpace>;
 
+template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
 #ifdef KOKKOS_ENABLE_CUDA
 #define ORDER_INDICES(i,j) j,i
 #else

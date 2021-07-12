@@ -914,7 +914,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     }
 
     fmt::print(
-        "Step {:{}n}/{:n},  time {:.4e}  (Part {:{}}/{},  step {:{}n})   Active Elem: {:{}n}",
+        "Step {:{}L}/{:L},  time {:.4e}  (Part {:{}}/{},  step {:{}L})   Active Elem: {:{}L}",
         time_step + 1, step_width, num_time_steps, time_val, p + 1, part_width, part_count,
         global_times[time_step].localStepNumber + 1, loc_step_width,
         local_mesh[p].count(Excn::ObjectType::ELEM), element_width);
@@ -1255,7 +1255,7 @@ namespace {
         blocks[p][b].offset_ = local_order_entity_count[local_order];
 
         if (debug_level & 4) {
-          fmt::print("\tBlock {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
+          fmt::print("\tBlock {}, Id = {}, Name = '{}', Elements = {:12L}, Nodes/element = {}, "
                      "Attributes = {}, Position = {}, Offset = {}\n",
                      b, glob_blocks[b].id, blocks[p][b].name_, blocks[p][b].entity_count(),
                      blocks[p][b].nodesPerElement, blocks[p][b].attributeCount,
@@ -1282,7 +1282,7 @@ namespace {
 
       if (debug_level & 4) {
         fmt::print("\nOutput element block info for...\n"
-                   "Block {}, Id = {}, Name = '{}', Elements = {:12n}, Nodes/element = {}, "
+                   "Block {}, Id = {}, Name = '{}', Elements = {:12L}, Nodes/element = {}, "
                    "Attributes = {}\n",
                    b, glob_blocks[b].id, glob_blocks[b].name_, glob_blocks[b].entity_count(),
                    glob_blocks[b].nodesPerElement, glob_blocks[b].attributeCount);
@@ -2014,12 +2014,12 @@ namespace {
   {
     // Write out Mesh info
     fmt::print(" Title: {}\n\n", mesh.title);
-    fmt::print(" Number of coordinates per node ={:14n}\n", mesh.count(Excn::ObjectType::DIM));
-    fmt::print(" Number of nodes                ={:14n}\n", mesh.count(Excn::ObjectType::NODE));
-    fmt::print(" Number of elements             ={:14n}\n", mesh.count(Excn::ObjectType::ELEM));
-    fmt::print(" Number of element blocks       ={:14n}\n", mesh.count(Excn::ObjectType::EBLK));
-    fmt::print(" Number of nodal point sets     ={:14n}\n", mesh.count(Excn::ObjectType::NSET));
-    fmt::print(" Number of element side sets    ={:14n}\n", mesh.count(Excn::ObjectType::SSET));
+    fmt::print(" Number of coordinates per node ={:14L}\n", mesh.count(Excn::ObjectType::DIM));
+    fmt::print(" Number of nodes                ={:14L}\n", mesh.count(Excn::ObjectType::NODE));
+    fmt::print(" Number of elements             ={:14L}\n", mesh.count(Excn::ObjectType::ELEM));
+    fmt::print(" Number of element blocks       ={:14L}\n", mesh.count(Excn::ObjectType::EBLK));
+    fmt::print(" Number of nodal point sets     ={:14L}\n", mesh.count(Excn::ObjectType::NSET));
+    fmt::print(" Number of element side sets    ={:14L}\n", mesh.count(Excn::ObjectType::SSET));
   }
 
   template <typename INT>

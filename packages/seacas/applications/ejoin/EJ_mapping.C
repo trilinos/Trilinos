@@ -163,7 +163,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
           auto iter = std::lower_bound(global_node_map.begin(), global_node_map.end(), global_node);
           if (iter == global_node_map.end()) {
             INT n = global_node;
-            fmt::print("{:n}\n", n);
+            fmt::print("{:L}\n", n);
             SMART_ASSERT(iter != global_node_map.end());
           }
           cur_pos = iter;

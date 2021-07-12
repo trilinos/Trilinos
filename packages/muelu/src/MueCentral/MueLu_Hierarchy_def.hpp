@@ -1301,6 +1301,8 @@ namespace MueLu {
         oss << "\n--------------------------------------------------------------------------------\n";
         oss << "---                            Multigrid Summary "  << std::setw(28) << std::left << label << "---\n";
         oss << "--------------------------------------------------------------------------------" << std::endl;
+        if (verbLevel & Parameters1)
+          oss << "Scalar              = " << Teuchos::ScalarTraits<Scalar>::name() << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
@@ -1442,7 +1444,7 @@ namespace MueLu {
     boost::put("label", dp, boost_vertex, legend.str());
 #endif
 
-    std::ofstream out(dumpFile_.c_str() +std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
+    std::ofstream out(dumpFile_.c_str()+std::string("_")+std::to_string(dumpLevel_)+std::string("_")+std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
     out.close();
     call_id++;

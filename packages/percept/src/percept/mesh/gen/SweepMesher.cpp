@@ -27,7 +27,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Stencils.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>

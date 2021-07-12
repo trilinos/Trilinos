@@ -1916,8 +1916,8 @@ namespace percept {
               VERIFY_OP_ON(y_surface_set.Type(), ==, YAML::NodeType::Map, "bad surface_set data");
               for (YAML::const_iterator i = y_surface_set.begin(); i != y_surface_set.end(); ++i)
                 {
-                  const YAML::Node & key   = i->first;
-                  const YAML::Node & value = i->second;
+                  const YAML::Node key   = i->first;
+                  const YAML::Node value = i->second;
                   std::string v_key;
                   v_key = key.as<std::string>();
                   VERIFY_OP_ON(value.Type(), ==, YAML::NodeType::Sequence, "bad surface_set value data in [surfaceSetName: [s1,s2...]]");
@@ -1938,8 +1938,8 @@ namespace percept {
           VERIFY_OP_ON(y_angle_map.Type(), ==, YAML::NodeType::Map, "bad angle_map data in yaml file");
           for (YAML::const_iterator i = y_angle_map.begin(); i != y_angle_map.end(); ++i)
             {
-              const YAML::Node & key   = i->first;
-              const YAML::Node & value = i->second;
+              const YAML::Node key   = i->first;
+              const YAML::Node value = i->second;
               std::string v_key = key.as<std::string>();
               double v_value = value.as<double>();
               m_angleMap[v_key] = v_value;

@@ -59,7 +59,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
@@ -378,7 +377,13 @@ namespace Belos {
     static constexpr int outputFreq_default_ = -1;
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "ICGS";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
     //
     // Current solver values.
@@ -738,7 +743,6 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   // Set the current parameters if are not set already.
   if (!isSet_) { setParameters( params_ ); }
 
-  Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();

@@ -115,7 +115,7 @@
           
 \cbb{aggregation: number of spatial dimensions}{int}{3}{The number of spatial dimensions in the problem.}
           
-\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory.}
+\cbb{aggregation: coarsening order}{int}{0}{The interpolation order used while constructing these aggregates, this value will be passed to the prolongator factory. There, possible values are 0 for piece-wise constant and 1 for piece-wise linear interpolation to transfer values from coarse points to fine points. }
           
 \cbb{aggregate qualities: check symmetry}{bool}{false}{Whether to check symmetry and use nonsymmetric aggregate quality estimate if necessary.}
           
@@ -162,11 +162,11 @@
           
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
           
+\cbb{semicoarsen: piecewise constant}{bool}{false}{whether or not to use piecewise constant interpolation when semicoarsening.}
+          
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
           
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
-          
-\cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
           
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
           

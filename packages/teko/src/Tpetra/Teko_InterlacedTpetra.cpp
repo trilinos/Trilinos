@@ -244,8 +244,8 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    LO maxNumEntries = A->getGlobalMaxNumRowEntries();
 
    // for extraction
-   std::vector<GO> indices(maxNumEntries);
-   std::vector<ST> values(maxNumEntries);
+   auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_global_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
+   auto values = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
 
    // for counting row sizes
    std::vector<size_t> numEntriesPerRow(numMyRows,0);
@@ -262,10 +262,10 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
       TEUCHOS_ASSERT(contigRow>=0);
 
       // extract a global row copy
-      localA.getGlobalRowCopy(globalRow, Teuchos::ArrayView<GO>(indices), Teuchos::ArrayView<ST>(values), numEntries);
+      localA.getGlobalRowCopy(globalRow, indices, values, numEntries);
       LO numOwnedCols = 0;
       for(size_t localCol=0;localCol<numEntries;localCol++) {
-         GO globalCol = indices[localCol];
+         GO globalCol = indices(localCol);
 
          // determinate which block this column ID is in
          int block = globalCol / numGlobalVars;
@@ -302,10 +302,10 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
       TEUCHOS_ASSERT(contigRow>=0);
 
       // extract a global row copy
-      localA.getGlobalRowCopy(globalRow, Teuchos::ArrayView<GO>(indices), Teuchos::ArrayView<ST>(values), numEntries);
+      localA.getGlobalRowCopy(globalRow, indices, values, numEntries);
       LO numOwnedCols = 0;
       for(size_t localCol=0;localCol<numEntries;localCol++) {
-         GO globalCol = indices[localCol];
+        GO globalCol = indices(localCol);
 
          // determinate which block this column ID is in
          int block = globalCol / numGlobalVars;
@@ -321,7 +321,7 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
             GO familyOffset = globalCol-(block*numGlobalVars+colBlockOffset);
 
             colIndices[numOwnedCols] = block*colFamilyCnt + familyOffset;
-            colValues[numOwnedCols] = values[localCol];
+            colValues[numOwnedCols] = values(localCol);
 
             numOwnedCols++;
          }
@@ -383,8 +383,8 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
    GO maxNumEntries = A->getGlobalMaxNumRowEntries();
 
    // for extraction
-   std::vector<GO> indices(maxNumEntries);
-   std::vector<ST> values(maxNumEntries);
+   auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_global_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
+   auto values = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
 
    // for insertion
    std::vector<GO> colIndices(maxNumEntries);
@@ -403,11 +403,11 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
       TEUCHOS_ASSERT(contigRow>=0);
 
       // extract a global row copy
-      localA.getGlobalRowCopy(globalRow, Teuchos::ArrayView<GO>(indices), Teuchos::ArrayView<ST>(values), numEntries);
+      localA.getGlobalRowCopy(globalRow, indices, values, numEntries);
 
       LO numOwnedCols = 0;
       for(size_t localCol=0;localCol<numEntries;localCol++) {
-         GO globalCol = indices[localCol];
+        GO globalCol = indices(localCol);
 
          // determinate which block this column ID is in
          int block = globalCol / numGlobalVars;
@@ -423,7 +423,7 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
             GO familyOffset = globalCol-(block*numGlobalVars+colBlockOffset);
 
             colIndices[numOwnedCols] = block*colFamilyCnt + familyOffset;
-            colValues[numOwnedCols] = values[localCol];
+            colValues[numOwnedCols] = values(localCol);
 
             numOwnedCols++;
          }

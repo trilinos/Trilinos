@@ -218,23 +218,44 @@ namespace { // (anonymous)
       for (LO lclNumRows : lclNumRowsVals) {
         for (LO numCols : numColsVals) {
           for (bool modify_MV_on_host : {false, true}) {
-            Teuchos::SerialDenseMatrix<int, ST> Y (lclNumRows, numCols);
-            serialDenseMatrixIota (Y, startValue);
+            for (bool take_subvector : {false, true}) {
+              const GO gblNumRows = static_cast<GO> (comm->getSize ()) *
+                static_cast<GO> (lclNumRows);
+              RCP<const map_type> map =
+                rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
+              MV entireX (map, numCols);
+              MV X;
 
-            const GO gblNumRows = static_cast<GO> (comm->getSize ()) *
-              static_cast<GO> (lclNumRows);
-            RCP<const map_type> map =
-              rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
-            MV X (map, numCols);
+              if (take_subvector && lclNumRows > 0) {
+                const LO subLclNumRows = lclNumRows-1;
+                const GO subGblNumRows = static_cast<GO> (comm->getSize ()) *
+                  static_cast<GO> (lclNumRows-1);
+                RCP<const map_type> subMap = 
+                  rcp (new map_type (subGblNumRows, subLclNumRows,
+                                     indexBase, comm));
+                 X = *(entireX.offsetView(subMap, 0));
+              }
+              else {
+                X = entireX;
+              }
+              Teuchos::SerialDenseMatrix<int, ST> Y (X.getLocalLength(),
+                                                     numCols);
+              serialDenseMatrixIota (Y, startValue);
 
-            if (modify_MV_on_host) {
-              Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::OverwriteAll), flagValue);
+
+              if (modify_MV_on_host) {
+                Kokkos::deep_copy (
+                        X.getLocalViewHost(Tpetra::Access::OverwriteAll), 
+                        flagValue);
+              }
+              else {
+                Kokkos::deep_copy (
+                        X.getLocalViewDevice(Tpetra::Access::OverwriteAll), 
+                        flagValue);
+              }
+              Tpetra::deep_copy (X, Y);
+              TEST_ASSERT( serialDenseMatrix_multiVector_same (X, Y) );
             }
-            else {
-              Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::OverwriteAll), flagValue);
-            }
-            Tpetra::deep_copy (X, Y);
-            TEST_ASSERT( serialDenseMatrix_multiVector_same (X, Y) );
           }
         }
       }

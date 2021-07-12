@@ -46,7 +46,7 @@ namespace expreval {
 
   namespace bmp  = boost::math::policies;
 
-  using weibull_dist = boost::math::weibull_distribution< double, boost::math::policies::policy< bmp::overflow_error<bmp::ignore_error> > >;
+  using weibull_dist = boost::math::weibull_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
   using gamma_dist   = boost::math::gamma_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
   using normal_dist  = boost::math::normal_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
 

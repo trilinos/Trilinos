@@ -314,7 +314,6 @@ setMatrix (const Teuchos::RCP<const operator_type>& A)
     A_op_ = A;
 
     // We'll (re)allocate these on demand.
-    X_colMap_ = std::unique_ptr<vector_type> (nullptr);
     V1_ = std::unique_ptr<multivector_type> (nullptr);
 
     using Teuchos::rcp_dynamic_cast;
@@ -324,6 +323,7 @@ setMatrix (const Teuchos::RCP<const operator_type>& A)
       A_crs_ = Teuchos::null;
       imp_ = Teuchos::null;
       exp_ = Teuchos::null;
+      X_colMap_ = nullptr;
     }
     else {
       TEUCHOS_ASSERT( A_crs->isFillComplete () );
@@ -331,6 +331,13 @@ setMatrix (const Teuchos::RCP<const operator_type>& A)
       auto G = A_crs->getCrsGraph ();
       imp_ = G->getImporter ();
       exp_ = G->getExporter ();
+      if (!imp_.is_null ()) {
+        if (X_colMap_.get () == nullptr ||
+            !X_colMap_->getMap()->isSameAs (*(imp_->getTargetMap ()))) {
+          X_colMap_ = std::unique_ptr<vector_type> (new vector_type (imp_->getTargetMap ()));
+        }
+      } else
+        X_colMap_ = nullptr;
     }
   }
 }
@@ -371,10 +378,6 @@ importVector (vector_type& X_domMap)
     return X_domMap;
   }
   else {
-    if (X_colMap_.get () == nullptr) {
-      using V = vector_type;
-      X_colMap_ = std::unique_ptr<V> (new V (imp_->getTargetMap ()));
-    }
     X_colMap_->doImport (X_domMap, *imp_, Tpetra::REPLACE);
     return *X_colMap_;
   }
@@ -436,7 +439,7 @@ fusedCase (vector_type& W,
   using Impl::chebyshev_kernel_vector;
   using STS = Teuchos::ScalarTraits<SC>;
 
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   //D_inv, B, X and W are all Vectors, so it's safe to take the first column only
   auto Dinv_lcl = Kokkos::subview(D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   auto B_lcl = Kokkos::subview(B.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);

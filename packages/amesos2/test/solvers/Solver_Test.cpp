@@ -1024,8 +1024,11 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
     // perturb the values just a bit (element-wise square of first row)
     size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
-    Array<LocalOrdinal> indices(l_fst_row_nnz);
-    Array<Scalar> values(l_fst_row_nnz);
+    //Array<LocalOrdinal> indices(l_fst_row_nnz);
+    //Array<Scalar> values(l_fst_row_nnz);
+    typename MAT::nonconst_local_inds_host_view_type indices ("indices", l_fst_row_nnz);
+    typename MAT::nonconst_values_host_view_type     values  ("values",  l_fst_row_nnz);
+
     A2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
     for( size_t i = 0; i < l_fst_row_nnz; ++i ){
       values[i] = values[i] * values[i];

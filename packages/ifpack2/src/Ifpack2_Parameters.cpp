@@ -132,6 +132,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: banded container superdiagonals", -1);
   params.set("relaxation: banded container subdiagonals", -1);
   params.set("relaxation: mtgs cluster size", 1);
+  params.set("relaxation: long row threshold", 0);
 
   // Ifpack2_SPARSKIT.cpp
   // ap 25 May 2016: all SPARSKIT for backwards compatibility ONLY

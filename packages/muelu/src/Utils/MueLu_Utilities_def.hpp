@@ -400,49 +400,45 @@ namespace MueLu {
       if (maxRowSize == Teuchos::as<size_t>(-1)) // hasn't been determined yet
         maxRowSize = 20;
 
-      std::vector<Scalar> scaledVals(maxRowSize);
+
       if (tpOp.isFillComplete())
         tpOp.resumeFill();
 
       if (Op.isLocallyIndexed() == true) {
-        Teuchos::ArrayView<const LocalOrdinal> cols;
-        Teuchos::ArrayView<const Scalar> vals;
+	typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type cols;
+	typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
         for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
           tpOp.getLocalRowView(i, cols, vals);
+
           size_t nnz = tpOp.getNumEntriesInLocalRow(i);
-          if (nnz > maxRowSize) {
-            maxRowSize = nnz;
-            scaledVals.resize(maxRowSize);
-          }
-          for (size_t j = 0; j < nnz; ++j)
-            scaledVals[j] = vals[j]*scalingVector[i];
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::nonconst_values_host_view_type scaledVals("ScaledVals",nnz);
+
+          for (size_t j = 0; j < nnz; ++j) {
+	    scaledVals[j] = scalingVector[i]*vals[j];
+	  }
 
           if (nnz > 0) {
-            Teuchos::ArrayView<const Scalar> valview(&scaledVals[0], nnz);
-            tpOp.replaceLocalValues(i, cols, valview);
+            tpOp.replaceLocalValues(i, cols, scaledVals);
           }
         } //for (size_t i=0; ...
 
       } else {
-        Teuchos::ArrayView<const GlobalOrdinal> cols;
-        Teuchos::ArrayView<const Scalar> vals;
+	typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_inds_host_view_type cols;
+	typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
         for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
           GlobalOrdinal gid = rowMap->getGlobalElement(i);
           tpOp.getGlobalRowView(gid, cols, vals);
           size_t nnz = tpOp.getNumEntriesInGlobalRow(gid);
-          if (nnz > maxRowSize) {
-            maxRowSize = nnz;
-            scaledVals.resize(maxRowSize);
-          }
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::nonconst_values_host_view_type scaledVals("ScaledVals",nnz);
+
           // FIXME FIXME FIXME FIXME FIXME FIXME
           for (size_t j = 0; j < nnz; ++j)
-            scaledVals[j] = vals[j]*scalingVector[i]; //FIXME i or gid?
+            scaledVals[j] = scalingVector[i]*vals[j]; //FIXME i or gid?
 
           if (nnz > 0) {
-            Teuchos::ArrayView<const Scalar> valview(&scaledVals[0], nnz);
-            tpOp.replaceGlobalValues(gid, cols, valview);
+            tpOp.replaceGlobalValues(gid, cols, scaledVals);
           }
         } //for (size_t i=0; ...
       }

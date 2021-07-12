@@ -128,7 +128,7 @@ localRowOffsetsFromFillCompleteCrsGraph (const CrsGraph<LO, GO, NT>& G)
   using offsets_type = typename result_type::offsets_type;
   using offset_type = typename result_type::offset_type;
 
-  auto G_lcl = G.getLocalGraph ();
+  auto G_lcl = G.getLocalGraphDevice ();
   offsets_type ptr (view_alloc ("ptr", WithoutInitializing),
                     G_lcl.row_map.extent (0));
   Kokkos::deep_copy (ptr, G_lcl.row_map);

@@ -53,7 +53,7 @@ C  ITERATION LOOP
 
       DO 160 IT = 1, NIT
          IF (IT .EQ. NIT) THEN
-            CALL MESAGE ('THE ROWSMO ROUTINE IS NOT CONVERGING')
+            CALL MESSAGE('THE ROWSMO ROUTINE IS NOT CONVERGING')
          ENDIF
          BIG = .FALSE.
 
@@ -102,7 +102,7 @@ C                           NTEST = NXL (2, ILL)
 C                        ELSEIF (NXL (2, ILL) .EQ. NODE) THEN
 C                           NTEST = NXL (1, ILL)
 C                        ELSE
-C                           CALL MESAGE ('** PROBLEMS IN ROWSMO **')
+C                           CALL MESSAGE('** PROBLEMS IN ROWSMO **')
 C                           GOTO 110
 C                        ENDIF
 C                        NODES(IL) = NTEST
@@ -115,7 +115,7 @@ C                              LTEST = LXN (2, NTEST)
 C                           ELSEIF (LXN (2, NTEST) .EQ. ILL) THEN
 C                              LTEST = LXN (1, NTEST)
 C                           ELSE
-C                              CALL MESAGE ('** PROBLEMS IN ROWSMO **')
+C                              CALL MESSAGE('** PROBLEMS IN ROWSMO **')
 C                              GOTO 110
 C                           ENDIF
 C                           IF (NXL (1, LTEST) .EQ. NTEST) THEN
@@ -123,7 +123,7 @@ C                              NTEST = NXL (2, LTEST)
 C                           ELSEIF (NXL (2, LTEST) .EQ. NTEST) THEN
 C                              NTEST = NXL (1, LTEST)
 C                           ELSE
-C                              CALL MESAGE ('** PROBLEMS IN ROWSMO **')
+C                              CALL MESSAGE('** PROBLEMS IN ROWSMO **')
 C                              GOTO 110
 C                           ENDIF
 C                           IF ((LXN (3, NTEST) .GT. 0) .AND.

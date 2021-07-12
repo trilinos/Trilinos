@@ -688,21 +688,23 @@ namespace Tpetra {
       }
 
     private:
-       template<class S>
-       static void miniFE_vector_generate_block(S* vec, int nx, S a, S b, int& count,int start,int end){
+       template<class Vec, class S>
+       static void miniFE_vector_generate_block(Vec& vec, int nx, S a, S b, int& count,int start,int end){
          if((count>=start) && (count<end))
-         vec[count++ - start] = 0;
+           vec.replaceGlobalValue(count++ - start, 0.0);
          for(int i=0; i<nx-2; i++)
+         {
            if((count>=start) && (count<end))
-             vec[count++ - start] = a/nx/nx/nx;
+             vec.replaceGlobalValue(count++ - start, a/nx/nx/nx);
+         }
          if((count>=start) && (count<end))
-         vec[count++ - start] = a/nx/nx/nx + b/nx;
+           vec.replaceGlobalValue(count++ - start, a/nx/nx/nx + b/nx);
          if((count>=start) && (count<end))
-         vec[count++ - start] = 1;
+           vec.replaceGlobalValue(count++ - start, 1.0);
        }
 
-       template<class S>
-       static void miniFE_vector_generate_superblock(S* vec, int nx, S a,S b,S c, int& count,int start,int end){
+       template<class Vec, class S>
+       static void miniFE_vector_generate_superblock(Vec& vec, int nx, S a,S b,S c, int& count,int start,int end){
          miniFE_vector_generate_block(vec,nx,0.0,0.0,count,start,end);
          miniFE_vector_generate_block(vec,nx,a,b,count,start,end);
          for(int i = 0;i<nx-3;i++)
@@ -731,7 +733,7 @@ namespace Tpetra {
          //typedef Teuchos::ScalarTraits<ST> STS; // unused
          //typedef typename STS::magnitudeType MT; // unused
          //typedef Teuchos::ScalarTraits<MT> STM; // unused
-         typedef Tpetra::Vector<ST, LO, GO, NT> MV;
+         typedef Tpetra::Vector<ST, LO, GO, NT> Vec;
 
          Tuple<GO, 3> dims;
          dims[0] = (nx+1)*(nx+1)*(nx+1);
@@ -740,22 +742,18 @@ namespace Tpetra {
          const global_size_t numRows = static_cast<global_size_t> (dims[0]);
          // const size_t numCols = static_cast<size_t> (dims[1]);
 
-         RCP<const map_type> map = createUniformContigMapWithNode<LO, GO, NT> (numRows, pComm
-         );
-         int start = map->getMinGlobalIndex();
-         int end = map->getMaxGlobalIndex()+1;
+         RCP<const map_type> map = createUniformContigMapWithNode<LO, GO, NT> (numRows, pComm);
+         int start = map->getIndexBase();
+         int end = start + map->getGlobalNumElements();
 
-         // Make a multivector X owned entirely by Proc 0.
-         RCP<MV> X = createVector<ST, LO, GO, NT> (map);
-         ArrayRCP<ST> X_view = X->get1dViewNonConst ();
-         ST* vec = &X_view[0];
+         RCP<Vec> X = createVector<ST, LO, GO, NT> (map);
          int count = 0;
-         miniFE_vector_generate_superblock(vec,nx,0.0,0.0,0.0,count,start,end);
-         miniFE_vector_generate_superblock(vec,nx,1.0,5.0/12,8.0/12,count,start,end);
+         miniFE_vector_generate_superblock(*X,nx,0.0,0.0,0.0,count,start,end);
+         miniFE_vector_generate_superblock(*X,nx,1.0,5.0/12,8.0/12,count,start,end);
          for(int i = 0; i<nx-3; i++)
-           miniFE_vector_generate_superblock(vec,nx,1.0,8.0/12,1.0,count,start,end);
-         miniFE_vector_generate_superblock(vec,nx,1.0,5.0/12,8.0/12,count,start,end);
-         miniFE_vector_generate_superblock(vec,nx,0.0,0.0,0.0,count,start,end);
+           miniFE_vector_generate_superblock(*X,nx,1.0,8.0/12,1.0,count,start,end);
+         miniFE_vector_generate_superblock(*X,nx,1.0,5.0/12,8.0/12,count,start,end);
+         miniFE_vector_generate_superblock(*X,nx,0.0,0.0,0.0,count,start,end);
 
          return X;
        }

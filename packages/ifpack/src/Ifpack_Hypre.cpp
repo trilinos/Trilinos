@@ -53,6 +53,7 @@
 #include "HYPRE_parcsr_ls.h"
 #include "krylov.h"
 #include "_hypre_parcsr_mv.h"
+#include "_hypre_parcsr_ls.h"
 #include "_hypre_IJ_mv.h"
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE.h"
@@ -791,6 +792,40 @@ int Ifpack_Hypre::Compute(){
   } else {
     IFPACK_CHK_ERR(PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_));
   }
+
+  // Dump Hierarchy here for BoomerAMG Preconditioner
+  if(Dump_ && PrecondSolvePtr_ == &HYPRE_BoomerAMGSolve) {
+    hypre_ParAMGData   *amg_data = (hypre_ParAMGData*) Preconditioner_;
+    hypre_ParCSRMatrix    **A_array = hypre_ParAMGDataAArray(amg_data);
+    hypre_ParCSRMatrix    **P_array = hypre_ParAMGDataPArray(amg_data);
+    HYPRE_Int     **CF_marker_array = hypre_ParAMGDataCFMarkerArray(amg_data);
+    HYPRE_Int num_levels = hypre_ParAMGDataNumLevels(amg_data);
+
+    char ofs[80];
+    for(int k=0; k<num_levels; k++) {
+      // A 
+      sprintf(ofs,"A_matrix.bmg.%d.dat",k);
+      HYPRE_ParCSRMatrixPrint(A_array[k], ofs);
+      if(k!=num_levels-1) {
+        // P       
+        sprintf(ofs,"P_matrix.bmg.%d.dat",k);
+        HYPRE_ParCSRMatrixPrint(P_array[k], ofs);
+
+        // CF
+        // Note: Hypre outputs "-1" for F Points and "1" for C Points
+        HYPRE_Int local_size = hypre_CSRMatrixNumRows(hypre_ParCSRMatrixDiag(A_array[k]));
+        sprintf(ofs,"cf_marker.bmg.%d.dat.%d",k,Comm().MyPID());
+        FILE * f = fopen(ofs,"w");
+        fprintf(f,"%%%%MatrixMarket matrix array real general\n");
+        fprintf(f,"%d 1\n",local_size);
+        for(int i=0; i<local_size; i++)
+          fprintf(f,"%d\n",(int)CF_marker_array[k][i]);
+        fclose(f);
+      }
+
+    }
+  }//end dump for BoomerAMG
+
 
   IsComputed_ = true;
   NumCompute_ = NumCompute_ + 1;

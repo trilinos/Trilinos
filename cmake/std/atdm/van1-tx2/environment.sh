@@ -193,6 +193,14 @@ export ATMD_CONFIG_MPI_USE_COMPILER_WRAPPERS=ON
 
 export ATDM_CONFIG_WCID_ACCOUNT_DEFAULT=fy150090
 
+# Print deprecation warning
+if [[ "$ATDM_CONFIG_COMPILER" != "ARM-20.1_OPENMPI-4.0.5" ]]; then
+    echo "***"
+    echo "*** DEPRECATION NOTICE:"
+    echo "****   WARNING: \"$ATDM_CONFIG_COMPILER\" will no longer be supported on 07-15-2021."
+    echo "***"
+fi
+
 #
 # Done
 #

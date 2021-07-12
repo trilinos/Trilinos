@@ -103,7 +103,7 @@ namespace MueLu {
         }
       }
 
-    } else if ( valuestr == "chebyshev" ) {
+    } else if (( valuestr == "chebyshev" ) || ( valuestr == "mls" )) {
        std::string my_name = "\"" + pname + "\"";
        mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"CHEBYSHEV\"/>" << std::endl;
 
@@ -161,6 +161,16 @@ namespace MueLu {
       else { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"2\"/>" << std::endl; }
       if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
       else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
+    }
+
+    // MLS
+    if ( valuestr == "mls") {
+      if ( paramList.isParameter("smoother: MLS polynomial order") ) { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("smoother: MLS polynomial order") << "\"/>" << std::endl; adaptingParamList.remove("smoother: MLS polynomial order",false); }
+      else if ( paramList.isParameter("smoother: polynomial order") ) { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"" << paramList.get<int>("smoother: polynomial order") << "\"/>" << std::endl; adaptingParamList.remove("smoother: polynomial order",false); }
+      else { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"2\"/>" << std::endl; }
+      if ( paramList.isParameter("smoother: MLS alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: MLS alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: MLS alpha",false); }
+      else if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
+      else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; }
     }
 
     // parameters for ILU based preconditioners

@@ -189,6 +189,7 @@ namespace Amesos2 {
   }
 
   // implementation functions
+  #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
   void
   ConcreteMatrixAdapter<
@@ -202,7 +203,25 @@ namespace Amesos2 {
                         "getGlobalRowCopy_impl not implemented for Kokkos CrsMatrix yet.  "
                         "Please contact the Amesos2 developers." );
     }
+  #endif
 
+  template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+  template <typename KV_GO, typename KV_S>
+  void
+  ConcreteMatrixAdapter<
+    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>>::getGlobalRowCopy_kokkos_view_impl(global_ordinal_t row,
+                                                   KV_GO & indices,
+                                                   KV_S & vals,
+                                                   size_t& nnz) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION( true,
+                        std::runtime_error,
+                        "getGlobalRowCopy_kokkos_view_impl not implemented for Kokkos CrsMatrix yet.  "
+                        "Please contact the Amesos2 developers." );
+    }
+
+
+  #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
   void
   ConcreteMatrixAdapter<
@@ -237,6 +256,7 @@ namespace Amesos2 {
   {
     return this->mat_->values.data();
   }
+  #endif
 
 } // end namespace Amesos2
 

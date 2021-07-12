@@ -58,6 +58,14 @@ LineGeometry::LineGeometry(const stk::math::Vector3d & n0,
   : SideGeometry(2),
     m_nodeData{n0, n1}
 {}
+ 
+#ifdef __GNUC__
+# if (__GNUC__ == 11)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Warray-bounds"
+#   define SIERRA_GCC_POP_DIAG
+# endif
+#endif
 
 const stk::math::Vector3d &
 LineGeometry::node(int index) const
@@ -65,6 +73,10 @@ LineGeometry::node(int index) const
   ThrowAssert(index>=0 && index < 2);
   return m_nodeData[index];
 }
+ 
+#ifdef SIERRA_GCC_POP_DIAG
+#pragma GCC diagnostic pop
+#endif
 
 stk::math::Vector3d
 LineGeometry::centroid() const

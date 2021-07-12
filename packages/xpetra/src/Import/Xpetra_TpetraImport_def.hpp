@@ -74,6 +74,15 @@ TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::~TpetraImport()
 {  }
 
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >   
+TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const {
+  Teuchos::RCP<const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node> > newImport = import_->createRemoteOnlyImport(toTpetra(remoteTarget));
+  return Teuchos::rcp(new TpetraImport<LocalOrdinal,GlobalOrdinal,Node>(newImport));
+}
+
+
+
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t TpetraImport<LocalOrdinal,GlobalOrdinal,Node>::getNumSameIDs() const
 { XPETRA_MONITOR("TpetraImport::getNumSameIDs"); return import_->getNumSameIDs(); }
 
@@ -178,6 +187,13 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
     //! Destructor.
     ~TpetraImport() {  }
 
+
+    //! Special "constructor"
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const {
+      return Teuchos::null;
+    }
+
     //@}
 
     //! @name Import Attribute Methods
@@ -280,6 +296,12 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
 
     //! Destructor.
     ~TpetraImport() {  }
+    
+    //! Special "constructor"
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const {
+      return Teuchos::null;
+    }
 
     //@}
 

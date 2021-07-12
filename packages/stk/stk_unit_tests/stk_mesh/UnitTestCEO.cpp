@@ -51,9 +51,6 @@
 #include "UnitTestCEO4ElemEdge.hpp"
 #include "UnitTestCEO4ElemRotate.hpp"
 #include "UnitTestCEO8Elem.hpp"
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
-#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
-#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -193,7 +190,7 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
     int psize = stk::parallel_machine_size(communicator);
     int prank = stk::parallel_machine_rank(communicator);
     if(psize == 3)
-    { // Skip unless we're on 2 processors
+    { // Skip unless we're on 3 processors
 
         const int spatialDim = 3;
         std::vector<std::string> rankNames;
@@ -201,31 +198,14 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
         rankNames.push_back("edge");
         rankNames.push_back("face");
         rankNames.push_back("elem");
-        rankNames.push_back("comst");
+        rankNames.push_back("const");
 
         stk::mesh::MetaData stkMeshMetaData(spatialDim, rankNames);
-        //stk::mesh::Part &part = stkMeshMetaData.declare_part("constraints", stk::topology::CONSTRAINT_RANK);
 
         stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator, autoAuraOption);
         const std::string generatedMeshSpecification = "generated:1x1x6";
 
-        // STK IO module will be described in separate chapter.
-        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
-        // The order of the following lines in {} are important
-        {
-            stk::io::StkMeshIoBroker exodusFileReader(communicator);
-
-            // Inform STK IO which STK Mesh objects to populate later
-            exodusFileReader.set_bulk_data(stkMeshBulkData);
-
-            exodusFileReader.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-
-            // Populate the MetaData which has the descriptions of the Parts and Fields.
-            exodusFileReader.create_input_mesh();
-
-            // Populate entities in STK Mesh from Exodus file
-            exodusFileReader.populate_bulk_data();
-        }
+        stk::io::fill_mesh(generatedMeshSpecification, stkMeshBulkData);
 
         /////////////////////////
         stkMeshBulkData.modification_begin();
@@ -263,6 +243,7 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
         {
             stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
             EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
+            EXPECT_TRUE(stkMeshBulkData.in_receive_ghost(ghosting, node1));
         }
 
         if(prank==0 || prank==2)
@@ -292,6 +273,11 @@ void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::A
         {
             stk::mesh::Entity elem1 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, 1);
             EXPECT_TRUE(stkMeshBulkData.parallel_owner_rank(elem1) == 2);
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            ASSERT_TRUE(stkMeshBulkData.is_valid(node1));
+            EXPECT_FALSE(stkMeshBulkData.in_receive_ghost(ghosting, node1));
+            stk::mesh::Part& ghostingPart = stkMeshBulkData.ghosting_part(ghosting);
+            EXPECT_FALSE(stkMeshBulkData.bucket(node1).member(ghostingPart));
         }
     }
 }

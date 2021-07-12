@@ -21,7 +21,7 @@ C***********************************************************************
       IF (VAXVMS) THEN
          continue
       ELSE
-         CALL MESAGE ('SPAWNING POSSIBLE ONLY ON VAXVMS SYSTEM')
+         CALL MESSAGE('SPAWNING POSSIBLE ONLY ON VAXVMS SYSTEM')
       ENDIF
 
       END

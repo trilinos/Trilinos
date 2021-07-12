@@ -549,6 +549,29 @@ bool Behavior::hierarchicalUnpack ()
                                                    defaultValue);
 }
 
+bool Behavior::skipCopyAndPermuteIfPossible ()
+{
+  constexpr char envVarName[] = "TPETRA_SKIP_COPY_AND_PERMUTE";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+bool Behavior::overlapCommunicationAndComputation ()
+{
+  constexpr char envVarName[] = "TPETRA_OVERLAP";
+  constexpr bool defaultValue(false);
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+}
+
+
 } // namespace Details
 } // namespace Tpetra
 

@@ -53,6 +53,14 @@
 #ifndef FLEXINT_H
 #define FLEXINT_H
 
+#if defined(_MSC_VER)
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t long
+#endif
+#endif
+
 /* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
@@ -1032,7 +1040,7 @@ bool   switch_skip_to_endcase      = false;
 double switch_condition            = 0.0; // Value specified in "switch(condition)"
 
 // For substitution history
-size_t      curr_index = 0;
+ssize_t     curr_index = 0;
 std::string history_string;
 size_t      hist_start = 0;
 
@@ -2101,7 +2109,7 @@ YY_DECL
       {
         // Check if we need to save the substitution history first.
         if (aprepro.ap_options.keep_history && (aprepro.ap_file_list.top().name != "_string_")) {
-          if (curr_index > (size_t)yyleng)
+          if (curr_index > (ssize_t)yyleng)
             hist_start = curr_index - yyleng;
           else
             hist_start = 0;

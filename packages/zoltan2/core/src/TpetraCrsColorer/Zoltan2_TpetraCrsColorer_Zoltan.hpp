@@ -427,7 +427,7 @@ ZoltanCrsColorer<CrsMatrixType>::get_edge_list(
     const int num_nbr = zoltan_data->graph->getNumEntriesInLocalRow(lid);
     const auto colMap = zoltan_data->graph->getColMap();
 
-    ArrayView<const lno_t> lcl_ids;
+    typename CrsMatrixType::local_inds_host_view_type lcl_ids;
     zoltan_data->graph->getLocalRowView(lid, lcl_ids);
 
     for (int j = 0; j < num_nbr; ++j) {
@@ -442,7 +442,7 @@ ZoltanCrsColorer<CrsMatrixType>::get_edge_list(
           zoltan_data->trans_graph->getNumEntriesInLocalRow(lid-num_local_rows);
     const auto colMap = zoltan_data->trans_graph->getColMap();
 
-    ArrayView<const lno_t> lcl_ids;
+    typename CrsMatrixType::local_inds_host_view_type lcl_ids;
     zoltan_data->trans_graph->getLocalRowView(lid - num_local_rows, lcl_ids);
     for (int j = 0; j < num_nbr; ++j)
     {
@@ -533,7 +533,7 @@ ZoltanCrsColorer<CrsMatrixType>::sym_get_edge_list(
   const ZOLTAN_ID_TYPE lid = *local_id;
   const int num_nbr = zoltan_data->graph->getNumEntriesInLocalRow(lid);
 
-  ArrayView<const lno_t> lcl_ids;
+  typename CrsMatrixType::local_inds_host_view_type lcl_ids;
   zoltan_data->graph->getLocalRowView(lid, lcl_ids);
   const auto colMap = zoltan_data->graph->getColMap();
 

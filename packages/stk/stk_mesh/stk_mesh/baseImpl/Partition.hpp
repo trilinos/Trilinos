@@ -47,6 +47,7 @@
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
 
 namespace stk {
 namespace mesh {
@@ -173,19 +174,6 @@ private:
   {
 #ifndef NDEBUG
     internal_check_no_null_buckets_invariant();
-    internal_check_size_invariant();
-#endif
-  }
-
-  void internal_check_size_invariant() const
-  {
-#ifndef NDEBUG
-    size_t sum = 0;
-    for (size_t i = 0, e = m_buckets.size(); i < e; ++i) {
-      sum += m_buckets[i]->size();
-      m_buckets[i]->check_size_invariant();
-    }
-    ThrowAssertMsg(sum == m_size, "Inconsistent sizes, bucket sum is " << sum << ", m_size is " << m_size);
 #endif
   }
 

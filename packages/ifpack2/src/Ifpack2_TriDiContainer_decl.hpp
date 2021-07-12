@@ -138,7 +138,7 @@ private:
   using HostViewLocal = typename Kokkos::View<LSC**, Kokkos::HostSpace>;
   using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubviewLocal;
   using typename ContainerImpl<MatrixType, LocalScalarType>::ConstHostSubviewLocal;
-
+  using typename ContainerImpl<MatrixType, LocalScalarType>::block_crs_matrix_type;
   static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
                  "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
 

@@ -347,6 +347,11 @@ protected:
 };
 
 
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistory();
+
 /// Nonmember constructor from a ParameterList
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >

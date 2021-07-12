@@ -274,6 +274,14 @@ public:
     return ::Thyra::dot<Real>(*thyra_vec_, *ex.thyra_vec_);
   }
 
+  /** \brief Apply \f$\mathtt{*this}\f$ to a dual vector.  This is equivalent
+             to the call \f$\mathtt{this->dot(x.dual())}\f$.
+  */
+  Real apply( const Vector<Real> &x ) const {
+    const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
+    return ::Thyra::dot<Real>(*thyra_vec_, *ex.thyra_vec_);
+  }
+
   /** \brief Returns \f$ \| y \| \f$ where \f$y = \mbox{*this}\f$.
   */
   Real norm() const {

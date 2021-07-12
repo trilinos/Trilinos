@@ -198,6 +198,7 @@ createStepper(
   else {
     Teuchos::RCP<Teuchos::FancyOStream> out =
       Teuchos::VerboseObjectBase::getDefaultOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"StepperFactory::createStepper");
     *out
     << "Unknown Stepper Type!  ('"+stepperType+"').\n"

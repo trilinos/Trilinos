@@ -29,9 +29,7 @@
 int main(int argc, char **argv)
 {
   int  exoid;
-  int  num_assembly;
   int  error;
-  int *ids;
   int  CPU_word_size;
   int  IO_word_size;
   int  idum;
@@ -85,8 +83,6 @@ int main(int argc, char **argv)
     printf("num_node_sets = %" PRId64 "\n", par.num_node_sets);
     printf("num_side_sets = %" PRId64 "\n", par.num_side_sets);
 
-    num_assembly = par.num_assembly;
-
     /* Check that ex_inquire gives same title */
     EXCHECK(ex_inquire(exoid, EX_INQ_TITLE, &idum, &fdum, title_chk));
     if (strcmp(par.title, title_chk) != 0) {
@@ -95,8 +91,6 @@ int main(int argc, char **argv)
   }
 
   /* See if we can add a new assembly to an existing file... */
-  ids = (int *)calloc(num_assembly, sizeof(int));
-  EXCHECK(ex_get_ids(exoid, EX_ASSEMBLY, ids));
   {
     int64_t     list_222[] = {100, 200, 300, 400};
     ex_assembly assembly   = {222, "NewAssembly", EX_ASSEMBLY, 4, NULL};
@@ -105,8 +99,6 @@ int main(int argc, char **argv)
     assembly.entity_list = list_222;
     EXCHECK(ex_put_assembly(exoid, assembly));
   }
-
-  /*  free(block_names[i]); */
   EXCHECK(ex_close(exoid));
   return 0;
 }

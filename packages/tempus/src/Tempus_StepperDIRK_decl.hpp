@@ -161,11 +161,15 @@ public:
   /// \name Basic stepper methods
   //@{
     /// Initialize after construction and changing input parameters.
-    virtual void initialize();
+    virtual void initialize() override;
+
+    /// Set the model
+    virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) override;
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
 
     /// Set parameter so that the initial guess is reset at the beginning of each timestep.
     virtual void setResetInitialGuess(bool reset_guess)
@@ -175,26 +179,26 @@ public:
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
 
     /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState() override;
 
-    virtual bool isExplicit() const
+    virtual bool isExplicit() const override
     {
       const int numStages = this->tableau_->numStages();
       Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
       bool isExplicit = false;
       for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
-      return isExplicit;
+      return isExplicit && this->tableau_->isDIRK();
     }
-    virtual bool isImplicit()         const {return true;}
-    virtual bool isExplicitImplicit() const
+    virtual bool isImplicit()         const override {return true;}
+    virtual bool isExplicitImplicit() const override
       {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod()   const {return true;}
-    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+    virtual bool isOneStepMethod()   const override {return true;}
+    virtual bool isMultiStepMethod() const override {return !isOneStepMethod();}
 
-    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+    virtual OrderODE getOrderODE()   const override {return FIRST_ORDER_ODE;}
 
     virtual std::string getDescription() const = 0;
   //@}
@@ -203,25 +207,38 @@ public:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;}
 
   /// Return alpha = d(xDot)/dx.
-  virtual Scalar getAlpha(const Scalar dt) const
+  virtual Scalar getAlpha(const Scalar dt) const override
   {
+    const int numStages = this->tableau_->numStages();
     const Teuchos::SerialDenseMatrix<int,Scalar> & A=this->tableau_->A();
-    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+    Scalar aii = A(0,0);
+    for (int i=0; i<numStages; ++i) {
+      if (A(i,i) != 0.0) aii = A(i,i);
+      break;
+    }
+    return (aii == 0.0) ? std::numeric_limits<Scalar>::infinity() : Scalar(1.0)/(dt*aii);
   }
   /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+  virtual Scalar getBeta (const Scalar   ) const override { return Scalar(1.0); }
 
-  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  /// Return alpha = d(xDot)/dx for stage i.
+  virtual Scalar getAlpha(const Scalar dt, int i) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=this->tableau_->A();
+    return (A(i,i) == 0.0) ? std::numeric_limits<Scalar>::infinity() : Scalar(1.0)/(dt*A(i,i));
+  }
+
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicDIRK() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
     virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+                          const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
 
   /// Set StepperDIRK member data from the ParameterList.
   virtual void setStepperDIRKValues(Teuchos::RCP<Teuchos::ParameterList> pl)
@@ -257,6 +274,9 @@ protected:
     const Teuchos::RCP<StepperRKAppAction<Scalar> >& stepperRKAppAction);
 
   virtual void setupTableau() = 0;
+
+  virtual void setEmbeddedMemory() override;
+
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;

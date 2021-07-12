@@ -1,36 +1,22 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
 #include "Ioss_CodeTypes.h"
-#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
+#include "Ioss_Utils.h"
 #include "fmt/ostream.h"
 #include "info_interface.h"
+
 #include <cstddef>  // for nullptr
 #include <cstdlib>  // for exit, EXIT_SUCCESS, getenv
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for char_traits, string
 
 namespace {
-  std::string get_type_from_file(const std::string &filename)
-  {
-    Ioss::FileInfo file(filename);
-    auto           extension = file.extension();
-    if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
-      return "exodus";
-    }
-    else if (extension == "cgns") {
-      return "cgns";
-    }
-    else {
-      // "exodus" is default...
-      return "exodus";
-    }
-  }
 } // namespace
 
 Info::Interface::Interface() { enroll_options(); }
@@ -323,7 +309,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
 
     if (filetype_ == "unknown") {
-      filetype_ = get_type_from_file(filename_);
+      filetype_ = Ioss::Utils::get_type_from_file(filename_);
     }
   }
 

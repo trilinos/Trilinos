@@ -58,7 +58,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -85,16 +84,6 @@ namespace Belos {
    */
   class PseudoBlockStochasticCGSolMgrLinearProblemFailure : public BelosError {public:
     PseudoBlockStochasticCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief PseudoBlockStochasticCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the initial basis vectors.
-   *
-   * This std::exception is thrown from the PseudoBlockStochasticCGSolMgr::solve() method.
-   *
-   */
-  class PseudoBlockStochasticCGSolMgrOrthoFailure : public BelosError {public:
-    PseudoBlockStochasticCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
   template<class ScalarType, class MV, class OP>
@@ -266,7 +255,13 @@ namespace Belos {
     static constexpr int defQuorum_default_ = 1;
     static constexpr const char * resScale_default_ = "Norm of Initial Residual";
     static constexpr const char * label_default_ = "Belos";
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
     // Current solver values.
     MagnitudeType convtol_;
@@ -628,8 +623,6 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().
   if (!isSet_) { setParameters( params_ ); }
-
-  Teuchos::BLAS<int,ScalarType> blas;
 
   TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockStochasticCGSolMgrLinearProblemFailure,
                      "Belos::PseudoBlockStochasticCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");

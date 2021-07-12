@@ -484,7 +484,7 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
         }
 
 // valid ranks fall within the dimension of the cell topology
-        const bool bad_rank = subcell_rank >= celltopology.dimension();
+        const bool bad_rank = static_cast<unsigned>(subcell_rank) >= celltopology.dimension();
         ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
 
 // subcell_identifier must be less than the subcell count

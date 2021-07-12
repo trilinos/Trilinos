@@ -296,7 +296,7 @@ Build(const Teuchos::RCP<const MultiVector<double, int, long long, EpetraNode> >
 #ifdef HAVE_XPETRA_TPETRA
     if(source->getMap()->lib() == UseTpetra)
     {
-      return rcp(new TpetraMultiVector<int, int, long long, EpetraNode>(*source, copyOrView));
+      return rcp(new TpetraMultiVector<double, int, long long, EpetraNode>(*source, copyOrView));
     }
 #endif
 

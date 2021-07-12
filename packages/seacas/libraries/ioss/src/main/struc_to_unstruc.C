@@ -176,7 +176,7 @@ namespace {
     int step_count = region.get_optional_property("state_count", 0);
     if (step_count > 0) {
       if (rank == 0) {
-        fmt::print(stderr, "\n Number of time steps on database     = {:12n}\n\n",
+        fmt::print(stderr, "\n Number of time steps on database     = {:12L}\n\n",
                    step_count);
       }
 
@@ -455,8 +455,8 @@ namespace {
       nb->put_field_data("owning_processor", owning_processor);
     }
 
-    fmt::print("P[{}] Number of coordinates per node = {:12n}\n", rank, degree);
-    fmt::print("P[{}] Number of nodes                = {:12n}\n", rank, num_nodes);
+    fmt::print("P[{}] Number of coordinates per node = {:12L}\n", rank, degree);
+    fmt::print("P[{}] Number of nodes                = {:12L}\n", rank, num_nodes);
   }
 
   void transfer_elementblocks(Ioss::Region &region, Ioss::Region &output_region)
@@ -475,7 +475,7 @@ namespace {
       total_entities += count;
     }
     fmt::print(
-        "P[{}] Number of Element Blocks       = {:12n}, Number of elements (cells) = {:12n}\n",
+        "P[{}] Number of Element Blocks       = {:12L}, Number of elements (cells) = {:12L}\n",
         rank, blocks.size(), total_entities);
   }
 
@@ -506,7 +506,7 @@ namespace {
       output_region.add(surf);
     }
     fmt::print(
-        "P[{}] Number of SideSets             = {:12n}, Number of cell faces       = {:12n}\n",
+        "P[{}] Number of SideSets             = {:12L}, Number of cell faces       = {:12L}\n",
         rank, ssets.size(), total_sides);
   }
 

@@ -141,33 +141,13 @@ namespace { // (anonymous)
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO lclCol = colMap->getLocalElement (gblRow);
 
-        Teuchos::ArrayView<const LO> lclIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::local_inds_host_view_type lclIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getLocalRowView (lclRow, lclIndsT, valsT);
         TEST_EQUALITY( lclIndsT[0], lclCol );
         TEST_EQUALITY( valsT[0], SIX );
 
-        LO rawNumEnt = 0;
-        const Scalar* rawValsT = NULL;
-        const LO* rawLclIndsT = NULL;
-        const LO err = matrix.getLocalRowView (lclRow, rawNumEnt, rawValsT, rawLclIndsT);
-        TEST_EQUALITY( err, static_cast<LO> (0) );
-        if (err == 0) {
-          TEST_EQUALITY( rawNumEnt, static_cast<LO> (lclIndsT.size ()) );
-          if (rawNumEnt == static_cast<LO> (lclIndsT.size ())) {
-            TEST_ASSERT( rawLclIndsT != NULL );
-            if (rawLclIndsT != NULL) {
-              TEST_EQUALITY( rawLclIndsT[0], lclIndsT[0] );
-            }
-          }
-          if (rawNumEnt == static_cast<LO> (valsT.size ())) {
-            TEST_ASSERT( rawValsT != NULL );
-            if (rawValsT != NULL) {
-              TEST_EQUALITY( rawValsT[0], valsT[0] );
-            }
-          }
-        }
       }
     }
 
@@ -195,8 +175,8 @@ namespace { // (anonymous)
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO lclCol = colMap->getLocalElement (gblRow);
 
-        Teuchos::ArrayView<const LO> lclIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::local_inds_host_view_type lclIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getLocalRowView (lclRow, lclIndsT, valsT);
         TEST_EQUALITY( lclIndsT[0], lclCol );
@@ -308,8 +288,8 @@ namespace { // (anonymous)
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO gblCol = gblRow;
 
-        Teuchos::ArrayView<const GO> gblIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::global_inds_host_view_type gblIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getGlobalRowView (gblRow, gblIndsT, valsT);
         TEST_EQUALITY( gblIndsT[0], gblCol );
@@ -369,8 +349,8 @@ namespace { // (anonymous)
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         const LO lclCol = colMap->getLocalElement (gblRow);
 
-        Teuchos::ArrayView<const LO> lclIndsT;
-        Teuchos::ArrayView<const Scalar> valsT;
+        typename crs_matrix_type::local_inds_host_view_type lclIndsT;
+        typename crs_matrix_type::values_host_view_type valsT;
 
         matrix.getLocalRowView (lclRow, lclIndsT, valsT);
         TEST_EQUALITY( lclIndsT[0], lclCol );

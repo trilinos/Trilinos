@@ -49,6 +49,7 @@
 #include <Teuchos_DefaultSerialComm.hpp>
 
 #include <Teuchos_SerialQRDenseSolver.hpp>
+#include <Teuchos_TwoDArray.hpp>
 
 #include <ShyLU_DDFROSch_config.h>
 

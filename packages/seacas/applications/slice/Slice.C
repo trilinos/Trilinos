@@ -288,7 +288,7 @@ namespace {
 
   template <typename INT>
   void create_adjacency_list(const Ioss::Region &region, std::vector<idx_t> &pointer,
-                             std::vector<idx_t> &adjacency, INT /*dummy*/)
+                             std::vector<idx_t> &adjacency, INT dummy)
   {
     progress(__func__);
     // Size of pointer list is element count + 1;
@@ -1558,7 +1558,7 @@ namespace {
     fmt::print(stderr, "Processor count per node histogram:\n");
     for (size_t i = 1; i < proc_histo.size(); i++) {
       if (proc_histo[i] > 0) {
-        fmt::print(stderr, "\tNodes on {:2n} processors = {:12n}\t({:2})%\n", i, proc_histo[i],
+        fmt::print(stderr, "\tNodes on {:2L} processors = {:12L}\t({:2})%\n", i, proc_histo[i],
                    (proc_histo[i] * 100 + node_count / 2) / node_count);
       }
     }

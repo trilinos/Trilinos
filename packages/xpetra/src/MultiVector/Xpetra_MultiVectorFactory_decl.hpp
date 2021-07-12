@@ -50,7 +50,7 @@
 #include "Xpetra_MultiVector_decl.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include "Xpetra_TpetraMultiVector_decl.hpp"
+#include "Xpetra_TpetraMultiVector.hpp"
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA

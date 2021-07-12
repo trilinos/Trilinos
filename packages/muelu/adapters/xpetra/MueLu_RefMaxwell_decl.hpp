@@ -421,6 +421,7 @@ namespace MueLu {
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> PreSmoother_, PostSmoother_;
+    Teuchos::RCP<SmootherPrototype> PreSmootherData_, PostSmootherData_;
 #if defined(MUELU_REFMAXWELL_CAN_USE_HIPTMAIR)
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif

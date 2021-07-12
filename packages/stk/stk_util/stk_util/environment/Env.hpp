@@ -312,7 +312,7 @@ void output_flush();
  */
 void output_flush(std::ostream &stream);
 
-void request_shutdown(bool shutdown = true);
+void request_shutdown(bool shutdown = true, const std::string shutdownReason = "");
 
 bool is_shutdown_requested();
 

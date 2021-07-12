@@ -27,6 +27,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+
 // Test Integrator construction from ParameterList and ModelEvaluator.
 TEUCHOS_UNIT_TEST(IntegratorBasic, PL_ME_Construction)
 {
@@ -60,7 +61,7 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, PL_ME_Construction)
 }
 
 
-// Test integator construction, and then setParameterList, setStepper, and
+// Test integrator construction, and then setParameterList, setStepper, and
 // initialization.
 TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
 {
@@ -101,5 +102,50 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
   }
   TEST_ASSERT(pass)
 }
+
+
+TEUCHOS_UNIT_TEST(IntegratorBasic, Describe)
+{
+  // 1) Setup the ParameterList (here we start with params from .xml file)
+  RCP<ParameterList> pl = getParametersFromXmlFile("Tempus_default.xml");
+
+  // 2) Setup the ModelEvaluator
+  RCP<SinCosModel<double> > model = Teuchos::rcp(new SinCosModel<double> ());
+
+  // 3) Setup the Integrator
+  RCP<ParameterList> tempusPL = sublist(pl, "Tempus", true);
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    Tempus::createIntegratorBasic<double>(tempusPL, model);
+
+  std::ostringstream ss;
+  Teuchos::RCP<Teuchos::FancyOStream> myOut =
+    Teuchos::fancyOStream(Teuchos::rcpFromRef(ss));
+
+  integrator->describe(*myOut, Teuchos::VERB_EXTREME);
+
+  auto testS = ss.str();
+
+  // Find major headers.
+  auto npos = std::string::npos;
+  TEST_ASSERT(npos != testS.find("--- Tempus::IntegratorBasic ---"));
+  TEST_ASSERT(npos != testS.find("--- Tempus::SolutionHistory"));
+  TEST_ASSERT(npos != testS.find("--- SolutionState (index =     0; time =         0; dt =         1) ---"));
+  TEST_ASSERT(npos != testS.find("--- Tempus::SolutionStateMetaData ---"));
+  TEST_ASSERT(npos != testS.find("--- Tempus::StepperState"));
+  TEST_ASSERT(npos != testS.find("--- Tempus::PhysicsState"));
+  TEST_ASSERT(npos != testS.find("--- Tempus::TimeStepControl ---"));
+  TEST_ASSERT(npos != testS.find("--- Tempus::TimeStepControlStrategyConstant ---"));
+  TEST_ASSERT(npos != testS.find("--- Stepper ---"));
+  TEST_ASSERT(npos != testS.find("stepperType_        = Forward Euler"));
+  TEST_ASSERT(npos != testS.find("--- StepperExplicit ---"));
+
+  integrator->setStatus(Tempus::Status::FAILED);
+  TEST_ASSERT(integrator->getStatus() == Tempus::Status::FAILED);
+  integrator->setStatus(Tempus::Status::WORKING);
+  TEST_ASSERT(integrator->getStatus() == Tempus::Status::WORKING);
+  integrator->setStatus(Tempus::Status::PASSED);
+  TEST_ASSERT(integrator->getStatus() == Tempus::Status::PASSED);
+}
+
 
 } // namespace Tempus_Test

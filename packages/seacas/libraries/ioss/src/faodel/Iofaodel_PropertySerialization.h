@@ -4,6 +4,9 @@
 //
 // See packages/seacas/LICENSE for details
 
+#ifndef Iofaodel_PropertySerialization_h
+#define Iofaodel_PropertySerialization_h
+
 #include "Iofaodel_Utils.h"
 #include <Ioss_Field.h>
 #include <Ioss_GroupingEntity.h>
@@ -60,3 +63,5 @@ namespace Iofaodel {
   std::string property_get_string(lunasa::DataObject ldo);
 
 } // namespace Iofaodel
+
+#endif

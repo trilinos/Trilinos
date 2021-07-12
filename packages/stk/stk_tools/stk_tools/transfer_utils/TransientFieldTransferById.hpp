@@ -182,8 +182,6 @@ class TransientFieldTransferById
 public:
     TransientFieldTransferById(stk::io::StkMeshIoBroker &brokerA, stk::io::StkMeshIoBroker &brokerB);
 
-    TransientFieldTransferById(stk::io::StkMeshIoBroker &brokerA, stk::io::StkMeshIoBroker &brokerB, const std::vector<stk::mesh::EntityRank> &entityRanks);
-
     ~TransientFieldTransferById();
 
     void writeFields(size_t aOutFileIndex, std::vector<const stk::mesh::FieldBase *> & aTransientFields, std::vector<std::string> & aGlobalVariableNames);

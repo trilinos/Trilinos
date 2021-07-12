@@ -83,7 +83,7 @@ C  NODE ID
                   NEW=INDX (NNN, NUID, IVAL)
                   IF (NEW .EQ. 0) THEN
                      WRITE (*, 10010)IVAL
-                     CALL MESAGE ('THIS NODE WILL BE SKIPPED')
+                     CALL MESSAGE('THIS NODE WILL BE SKIPPED')
                   ELSEIF (IOCCUR (NLIST, LIST, NEW) .EQ. 0) THEN
                      NLIST=NLIST + 1
                      LIST (NLIST)=NEW
@@ -108,7 +108,7 @@ C  P-L-P
      &               KXN, NXK, NUID, IP1, LINE, IP2, LIST (NLIST + 1),
      &               NUMNEW, NNN, LASTN, NOROOM, ERR)
                   IF (NOROOM) THEN
-                     CALL MESAGE ('DIMENSIONS MUST BE INCREASED')
+                     CALL MESSAGE('DIMENSIONS MUST BE INCREASED')
                      RETURN
                   ELSEIF (ERR) THEN
                      RETURN

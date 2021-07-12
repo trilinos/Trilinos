@@ -65,7 +65,7 @@ C  OTHERWISE, MAKE SURE THE INTERVALS ARE ALRIGHT AND ADD THE EXTRA ONE
 
             EPS = .001
             IF (INTNOW + 1 .NE. NINT) THEN
-               CALL MESAGE ('** PROBLEMS WITH INTNOW '//
+               CALL MESSAGE('** PROBLEMS WITH INTNOW '//
      &            'IN PLINE **')
                ERR = .TRUE.
                GOTO 160

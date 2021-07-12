@@ -59,8 +59,6 @@
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_as.hpp"
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -81,21 +79,6 @@ namespace Belos {
 class LSQRSolMgrLinearProblemFailure : public BelosError {
 public:
   LSQRSolMgrLinearProblemFailure(const std::string& what_arg)
-    : BelosError(what_arg)
-  {}
-};
-
-/** \brief LSQRSolMgrOrthoFailure is thrown when the orthogonalization manager is
- * unable to generate orthonormal columns from the initial basis vectors.
- *
- * \warning DO NOT USE; DEPRECATED.
- *
- * This std::exception is thrown from the LSQRSolMgr::solve() method.
- *
- */
-class LSQRSolMgrOrthoFailure : public BelosError {
-public:
-  LSQRSolMgrOrthoFailure(const std::string& what_arg)
     : BelosError(what_arg)
   {}
 };

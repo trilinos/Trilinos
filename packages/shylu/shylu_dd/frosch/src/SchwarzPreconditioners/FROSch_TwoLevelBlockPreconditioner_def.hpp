@@ -61,17 +61,17 @@ namespace FROSch {
             // Set the LevelID in the sublist
             parameterList->sublist("IPOUHarmonicCoarseOperator").set("Level ID",this->LevelID_);
             //                FROSCH_ASSERT(false,"not implemented for block.");
-            this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").sublist("InterfacePartitionOfUnity").set("Test Unconnected Interface",false);
+            this->ParameterList_->sublist("IPOUHarmonicCoarseOperator").sublist("InterfacePartitionOfUnity").set("Test Unconnected Interface",true);
             CoarseOperator_ = IPOUHarmonicCoarseOperatorPtr(new IPOUHarmonicCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"IPOUHarmonicCoarseOperator")));
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("GDSWCoarseOperator")) {
             // Set the LevelID in the sublist
             parameterList->sublist("GDSWCoarseOperator").set("Level ID",this->LevelID_);
-            this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",false);
+            this->ParameterList_->sublist("GDSWCoarseOperator").set("Test Unconnected Interface",true);
             CoarseOperator_ = GDSWCoarseOperatorPtr(new GDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"GDSWCoarseOperator")));
         } else if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("RGDSWCoarseOperator")) {
             // Set the LevelID in the sublist
             parameterList->sublist("RGDSWCoarseOperator").set("Level ID",this->LevelID_);
-            this->ParameterList_->sublist("RGDSWCoarseOperator").set("Test Unconnected Interface",false);
+            this->ParameterList_->sublist("RGDSWCoarseOperator").set("Test Unconnected Interface",true);
             CoarseOperator_ = RGDSWCoarseOperatorPtr(new RGDSWCoarseOperator<SC,LO,GO,NO>(k,sublist(parameterList,"RGDSWCoarseOperator")));
         } else {
             FROSCH_ASSERT(false,"CoarseOperator Type unkown.");

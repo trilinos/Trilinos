@@ -549,6 +549,7 @@ void StepperNewmarkImplicitAForm<Scalar>::describe(
 template<class Scalar>
 bool StepperNewmarkImplicitAForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
   out.setOutputToRootOnly(0);
 

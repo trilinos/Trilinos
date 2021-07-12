@@ -171,6 +171,7 @@ lib stk_balance_lib
       [ glob 
              $(stk_balance-root)/stk_balance/*.cpp 
              $(stk_balance-root)/stk_balance/internal/*.cpp 
+             $(stk_balance-root)/stk_balance/m2n/*.cpp 
              $(stk_balance-root)/stk_balance/mesh/*.cpp
              $(stk_balance-root)/stk_balance/io/*.cpp
              $(stk_balance-root)/stk_balance/setup/*.cpp

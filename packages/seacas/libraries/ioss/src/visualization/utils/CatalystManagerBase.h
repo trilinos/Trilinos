@@ -7,8 +7,8 @@
 #ifndef __CATALYST_MANAGER_BASE_H
 #define __CATALYST_MANAGER_BASE_H
 
-#include "CatalystCGNSMeshBase.h"
-#include "CatalystExodusMeshBase.h"
+#include "visualization/cgns/CatalystCGNSMeshBase.h"
+#include "visualization/exodus/CatalystExodusMeshBase.h"
 #include <memory>
 #include <string>
 #include <vector>

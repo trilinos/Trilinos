@@ -5,6 +5,8 @@
  *
  * See packages/seacas/LICENSE for details
  */
+#ifndef OPTKD_H
+#define OPTKD_H
 #define BUCKETSIZE 100
 
 typedef struct optkdnode
@@ -15,3 +17,4 @@ typedef struct optkdnode
   struct optkdnode *loson, *hison;
   int               lopt, hipt;
 } optkdNode;
+#endif

@@ -8,6 +8,7 @@ export TRILINOS_SRC="$WORKSPACE/Trilinos"
 rm -rf EclipsePerfScripts
 #Get a fresh copy
 scp -rp jenkins@sherlock.sandia.gov:$DATASTORE/Scripts/eclipse EclipsePerfScripts || true
+scp -rp jenkins@sherlock.sandia.gov:$DATASTORE/Scripts/timingPercentages EclipsePerfScripts || true
 #Copy the newest performance report tarball from data store
 scp -p jenkins@sherlock.sandia.gov:$DATASTORE/EclipseData.tar.gz EclipseData.tar.gz || true
 #Unpack it
@@ -19,6 +20,8 @@ tar -xf EclipseData.tar.gz
 mkdir -p build
 #Configure and build on a compute node, then run run tests on 4 compute nodes.
 $WORKSPACE/EclipsePerfScripts/launch.sh
+#put the time percentages in each xml file
+python $WORKSPACE/EclipsePerfScripts/timing_extractor.py -p EclipseData
 #Repack the up to date tarball of data, and put back in both datastores
 tar -czf EclipseData.tar.gz EclipseData
 scp -p EclipseData.tar.gz jenkins@sherlock.sandia.gov:$DATASTORE/EclipseData.tar.gz || true

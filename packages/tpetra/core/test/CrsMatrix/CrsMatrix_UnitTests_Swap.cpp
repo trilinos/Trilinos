@@ -698,14 +698,17 @@ class crsMatrix_Swap_Tester
             output = false;
         }
 
-        auto rowptr1 = matrix1.getLocalMatrix().graph.row_map;
-        auto rowptr2 = matrix2.getLocalMatrix().graph.row_map;
+        auto lclmtx1 = matrix1.getLocalMatrixHost();
+        auto lclmtx2 = matrix2.getLocalMatrixHost();
 
-        auto colind1 = matrix1.getLocalMatrix().graph.entries;
-        auto colind2 = matrix2.getLocalMatrix().graph.entries;
+        auto rowptr1 = lclmtx1.graph.row_map;
+        auto rowptr2 = lclmtx2.graph.row_map;
 
-        auto rbo1 = matrix1.getLocalMatrix().graph.row_block_offsets;
-        auto rbo2 = matrix2.getLocalMatrix().graph.row_block_offsets;
+        auto colind1 = lclmtx1.graph.entries;
+        auto colind2 = lclmtx2.graph.entries;
+
+        auto rbo1 = lclmtx1.graph.row_block_offsets;
+        auto rbo2 = lclmtx2.graph.row_block_offsets;
 
         if(rowptr1.extent(0) != rowptr2.extent(0))
         {

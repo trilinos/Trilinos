@@ -40,6 +40,7 @@
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <utility>                      // for pair
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/EntityIterator.hpp"
 #include "stk_mesh/base/Types.hpp"      // for EntityRank
 
 namespace stk {
@@ -94,14 +95,13 @@ public:
     void clear_all_cache();
     void clear_cache(EntityRank rank) const;
 
-    size_t heap_memory_in_bytes() const;
-
   private:
     void clear_destroyed_entity_cache(EntityRank rank) const;
     void clear_updated_entity_cache(EntityRank rank) const;
     void clear_created_entity_cache(EntityRank rank) const;
     entity_iterator get_from_cache(const EntityKey& key) const;
     std::pair<entity_iterator,bool> add_to_cache(const EntityKey& key);
+    EntityRank entity_rank_count() const { return static_cast<EntityRank>(m_entities.size()); }
 
     mutable std::vector<EntityKeyEntityVector> m_entities;
 

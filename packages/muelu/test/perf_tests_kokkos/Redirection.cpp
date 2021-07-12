@@ -160,15 +160,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       TEUCHOS_TEST_FOR_EXCEPTION(tA.is_null(), MueLu::Exceptions::RuntimeError,
                                  "A is not a Tpetra CrsMatrix");
 
-      ArrayView<const LocalOrdinal> indices;
-      ArrayView<const Scalar> vals;
-
+      typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type indices;
+      typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
+ 
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra/Epetra")));
       for (int i = 0; i < loops; i++)  {
         for (LocalOrdinal row = 0; row < numRows; row++) {
           tA->getLocalRowView(row, indices, vals);
 
-          validation += indices.size();
+          validation += indices.extent(0);
         }
       }
       tm = Teuchos::null;
@@ -209,7 +209,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Loop 3
   {
-    auto localMatrix = A->getLocalMatrix();
+    auto localMatrix = A->getLocalMatrixHost();
 
     GO validation = 0;
 
@@ -229,7 +229,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Loop 4
   {
-    auto localMatrix = A->getLocalMatrix();
+    auto localMatrix = A->getLocalMatrixDevice();
 
     GO validation = 0;
 

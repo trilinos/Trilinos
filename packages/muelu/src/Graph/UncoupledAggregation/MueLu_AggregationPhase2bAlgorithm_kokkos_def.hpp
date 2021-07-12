@@ -93,8 +93,8 @@ namespace MueLu {
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    auto vertex2AggId           = aggregates.GetVertex2AggId()->getDeviceLocalView();
-    auto procWinner             = aggregates.GetProcWinner()  ->getDeviceLocalView();
+    auto vertex2AggId           = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto procWinner             = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto colors                 = aggregates.GetGraphColors();
     const LO numColors          = aggregates.GetGraphNumColors();
     const LO numLocalAggregates = aggregates.GetNumAggregates();
@@ -195,8 +195,8 @@ namespace MueLu {
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    auto vertex2AggId     = aggregates.GetVertex2AggId()->getDeviceLocalView();
-    auto procWinner       = aggregates.GetProcWinner()  ->getDeviceLocalView();
+    auto vertex2AggId     = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto procWinner       = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
     auto colors           = aggregates.GetGraphColors();
     const LO numColors    = aggregates.GetGraphNumColors();
     LO numLocalAggregates = aggregates.GetNumAggregates();

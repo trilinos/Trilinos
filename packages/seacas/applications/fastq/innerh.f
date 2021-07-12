@@ -61,7 +61,7 @@ C  MAKE SPACE IN LXN LIST FOR NEW NODES
             JJ = LXN(4, JJ)
             MAXLNK = MAXLNK + 1
             IF (MAXLNK .GT. NNNOLD) THEN
-               CALL MESAGE ('INNERH - LXN LINKED LIST ERROR')
+               CALL MESSAGE('INNERH - LXN LINKED LIST ERROR')
                ERR = .TRUE.
                GO TO 200
             ELSE
@@ -133,7 +133,7 @@ C  GENERATE ELEMENTS
          ELSE IF (KXL(2, LINE) .EQ. 0) THEN
             KXL(2, LINE) = KKK
          ELSE
-            CALL MESAGE ('KXL TABLE FULL')
+            CALL MESSAGE('KXL TABLE FULL')
          END IF
          KXL(2, LLLOLD + I) = KKK
          KXL(1, LLLOLD + I + 1) = KKK
@@ -152,7 +152,7 @@ C  GENERATE ELEMENTS
       ELSE IF (KXL(2, LINE) .EQ. 0) THEN
          KXL(2, LINE) = KKK
       ELSE
-         CALL MESAGE ('KXL TABLE FULL')
+         CALL MESSAGE('KXL TABLE FULL')
       END IF
       KXL(2, LLLOLD + NH) = KKK
       KXL(1, LLLOLD + 1) = KKK

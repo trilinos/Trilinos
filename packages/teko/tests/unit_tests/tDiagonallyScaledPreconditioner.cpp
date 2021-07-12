@@ -187,7 +187,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
 
    Thyra::LinearOpTester<double> tester;
    tester.show_all_tests(true);
-   tester.set_all_error_tol(5e-14);
+   tester.set_all_error_tol(8e-14);
 
    const bool result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test_tpetra)
 
    Thyra::LinearOpTester<ST> tester;
    tester.show_all_tests(true);
-   tester.set_all_error_tol(5e-14);
+   tester.set_all_error_tol(8e-14);
 
    const bool result = tester.compare( *invA, *invExactA, Teuchos::ptrFromRef(out));
    if (!result) {
@@ -243,7 +243,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
    bool result;
    Thyra::LinearOpTester<double> tester;
    tester.show_all_tests(true);
-   tester.set_all_error_tol(5e-14);
+   tester.set_all_error_tol(8e-14);
 
    // build operators and factories
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
@@ -294,7 +294,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row_tpetra)
    bool result;
    Thyra::LinearOpTester<ST> tester;
    tester.show_all_tests(true);
-   tester.set_all_error_tol(5.5e-14);
+   tester.set_all_error_tol(5.8e-14);
 
    // build operators and factories
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
@@ -349,7 +349,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
    bool result;
    Thyra::LinearOpTester<double> tester;
    tester.show_all_tests(true);
-   tester.set_all_error_tol(5e-14);
+   tester.set_all_error_tol(8e-14);
 
    // build operators and factories
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();

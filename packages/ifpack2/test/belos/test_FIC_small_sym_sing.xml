@@ -3,7 +3,7 @@
   <Parameter name="rhs_mm_file" type="string" value="consist_rhs.vec"/>
   <Parameter name="nullMvec_mm_file" type="string" value="small_null.vec"/>
 
-  <Parameter name="solver_type" type="string" value="BlockCG"/>
+  <Parameter name="solver_type" type="string" value="Block CG"/>
   <ParameterList name="Belos">
     <Parameter name="Block Size" type="int" value="1"/>
     <Parameter name="Convergence Tolerance" type="double" value=".0001"/>

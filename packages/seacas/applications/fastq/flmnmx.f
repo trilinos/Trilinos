@@ -37,7 +37,7 @@ C***********************************************************************
          KOUNT = KOUNT + 1
 
          IF (KOUNT .GT. NLOOP) THEN
-            CALL MESAGE('PROBLEMS IN FLMNMX WITH LOOP NOT CLOSING')
+            CALL MESSAGE('PROBLEMS IN FLMNMX WITH LOOP NOT CLOSING')
             ERR = .TRUE.
             GOTO 130
          ENDIF
@@ -65,7 +65,7 @@ C  LOOP THROUGH ALL THE REMAINING PERIMETERS CHECKING FOR CROSSINGS
       IF (INOW .EQ. LINKPR (1, IPERIM)) GOTO 110
 
       IF (KOUNT. GT. KMAX + 1) THEN
-         CALL MESAGE('PROBLEMS IN FLMNMX WITH LOOP NOT CLOSING')
+         CALL MESSAGE('PROBLEMS IN FLMNMX WITH LOOP NOT CLOSING')
          ERR = .TRUE.
          GOTO 130
       ENDIF

@@ -393,8 +393,8 @@ namespace {
 
       // const size_t srcMaxNumRowEntries = A_src->getNodeMaxNumRowEntries ();
       // const size_t tgtMaxNumRowEntries = A_tgt->getNodeMaxNumRowEntries ();
-      ArrayView<const LO> srcIndView, tgtIndView;
-      ArrayView<const ST> srcValView, tgtValView;
+      typename matrix_type::local_inds_host_view_type srcIndView, tgtIndView;
+      typename matrix_type::values_host_view_type srcValView, tgtValView;
 
       // We assume that the row Maps of A_src and A_tgt share the same
       // GIDs, except that the row Map of A_src has overlap, and the
@@ -429,14 +429,14 @@ namespace {
         A_tgt->getLocalRowView (tgtLocalRow, tgtIndView, tgtValView);
 
         // Assume for now that the entries are sorted by column index.
-        if (! std::equal (srcIndView.begin(), srcIndView.end(), tgtIndView.begin())) {
+        if (! std::equal (srcIndView.data(), srcIndView.data()+srcIndView.extent(0), tgtIndView.data())) {
           allRowsAgree = false;
           disagreeingRows.push_back (globalRow);
           continue;
         }
         // FIXME (mfh 15 Mar 2012) Should we include a small error
         // tolerance here for roundoff?
-        if (! std::equal (srcValView.begin(), srcValView.end(), tgtValView.begin())) {
+        if (! std::equal (srcValView.data(), srcValView.data()+srcIndView.extent(0), tgtValView.data())) {
           allRowsAgree = false;
           disagreeingRows.push_back (globalRow);
           continue;

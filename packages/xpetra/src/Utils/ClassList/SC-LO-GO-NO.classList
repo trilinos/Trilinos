@@ -14,7 +14,7 @@
 #ReorderedBlockedCrsMatrix
 TpetraBlockCrsMatrix
 TpetraCrsMatrix
-TpetraHalfPrecisionOperator
+#TpetraHalfPrecisionOperator
 ##TpetraVbrMatrix
 ##VbrMatrix
 #Vector

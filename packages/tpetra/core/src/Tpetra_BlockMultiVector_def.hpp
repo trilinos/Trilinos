@@ -823,7 +823,6 @@ blockWiseMultiply (const Scalar& alpha,
 {
   using Kokkos::ALL;
   typedef typename device_type::execution_space execution_space;
-  typedef typename device_type::memory_space memory_space;
   const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
 
   if (alpha == STS::zero ()) {
@@ -857,7 +856,6 @@ blockJacobiUpdate (const Scalar& alpha,
 {
   using Kokkos::ALL;
   using Kokkos::subview;
-  typedef typename device_type::memory_space memory_space;
   typedef impl_scalar_type IST;
 
   const IST alphaImpl = static_cast<IST> (alpha);

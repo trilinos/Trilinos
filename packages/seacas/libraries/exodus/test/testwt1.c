@@ -44,7 +44,7 @@ int main(int argc, char **argv)
   int id, ebids[10], ids[10];
   int num_nodes_per_set[10], num_elem_per_set[10];
   int num_df_per_set[10];
-  int df_ind[10], node_ind[10], elem_ind[10];
+  int node_ind[10], elem_ind[10];
   int num_qa_rec, num_info;
   int num_glo_vars, num_nod_vars, num_ele_vars;
   int whole_time_step, num_time_steps;
@@ -505,8 +505,7 @@ int main(int argc, char **argv)
   num_df_per_set[0] = 5;
   num_df_per_set[1] = 3;
 
-  df_ind[0] = 0;
-  df_ind[1] = 5;
+  int ns_df_ind[2] = {0, 5};
 
   dist_fact[0] = 1.0;
   dist_fact[1] = 2.0;
@@ -524,7 +523,7 @@ int main(int argc, char **argv)
     set_specs.num_entries_per_set = num_nodes_per_set;
     set_specs.num_dist_per_set    = num_df_per_set;
     set_specs.sets_entry_index    = node_ind;
-    set_specs.sets_dist_index     = df_ind;
+    set_specs.sets_dist_index     = ns_df_ind;
     set_specs.sets_entry_list     = node_list;
     set_specs.sets_extra_list     = NULL;
     set_specs.sets_dist_fact      = dist_fact;
@@ -710,8 +709,7 @@ int main(int argc, char **argv)
   num_df_per_set[4] = 0;
   num_df_per_set[5] = 0;
 
-  df_ind[0] = 0;
-  df_ind[1] = 4;
+  int ss_df_ind[] = {0, 4, 4, 4, 4, 4};
 
   /* side set #1 df */
   dist_fact[0] = 30.0;
@@ -732,7 +730,7 @@ int main(int argc, char **argv)
     set_specs.num_entries_per_set = num_elem_per_set;
     set_specs.num_dist_per_set    = num_df_per_set;
     set_specs.sets_entry_index    = elem_ind;
-    set_specs.sets_dist_index     = df_ind;
+    set_specs.sets_dist_index     = ss_df_ind;
     set_specs.sets_entry_list     = elem_list;
     set_specs.sets_extra_list     = side_list;
     set_specs.sets_dist_fact      = dist_fact;

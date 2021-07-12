@@ -75,6 +75,8 @@ public:
     virtual int getIndex() const = 0;
     /// Get the Status
     virtual Tempus::Status getStatus() const = 0;
+    /// Set the Status
+    virtual void setStatus(const Tempus::Status st) = 0;
     /// Get the stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
     /// Return a copy of the Tempus ParameterList
@@ -82,6 +84,8 @@ public:
     virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) = 0;
     /// Returns the SolutionHistory for this Integrator
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const = 0;
+    /// Returns the SolutionHistory for this Integrator
+    virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() = 0;
     /// Returns the TimeStepControl for this Integrator
     virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const = 0;
     virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() = 0;

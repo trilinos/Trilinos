@@ -176,6 +176,7 @@ void TimeEventList<Scalar>::describe() const
 {
   Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
+  out->setOutputToRootOnly(0);
   *out << "TimeEventList:" << "\n"
        << "name           = " << this->getName() << "\n"
        << "timeScale_     = " << timeScale_     << "\n"

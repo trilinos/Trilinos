@@ -59,6 +59,8 @@
 
 #cmakedefine HAVE_MUELU_KOKKOSCORE
 
+#cmakedefine HAVE_MUELU_KOKKOSKERNELS
+
 #cmakedefine HAVE_MUELU_ML
 
 #cmakedefine HAVE_MUELU_PAMGEN

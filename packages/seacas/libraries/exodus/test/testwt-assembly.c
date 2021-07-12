@@ -216,6 +216,7 @@ int main(int argc, char **argv)
                                       var_vals));
       }
     }
+    free(var_vals);
   }
 
   /* close the EXODUS files

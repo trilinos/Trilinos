@@ -27,7 +27,7 @@ C***********************************************************************
          IF (ICOMB (I) .EQ. 1) THEN
             KLEN = KLEN + 1
             IF (KLEN .GT. ILEN) THEN
-               CALL MESAGE ('PROBLEMS IN SPACED - COUNTERS DON''T '//
+               CALL MESSAGE('PROBLEMS IN SPACED - COUNTERS DON''T '//
      &            'MATCH DATA')
                RETURN
             ENDIF

@@ -323,8 +323,8 @@ public:
   const std::vector<std::string> & entity_rank_names() const
     { return m_entity_rank_names ; }
 
-  std::vector<std::string>::size_type entity_rank_count() const
-    { return m_entity_rank_names.size(); }
+  EntityRank entity_rank_count() const
+    { return static_cast<EntityRank>(m_entity_rank_names.size()); }
 
   const std::string & entity_rank_name( EntityRank entity_rank ) const ;
 
@@ -460,6 +460,7 @@ public:
 
   /** \brief  Allow late field registration */
   void enable_late_fields() { m_are_late_fields_enabled = true; }
+  void disable_late_fields() { m_are_late_fields_enabled = false; }
 
   /** \brief  Query if late fields are allowed */
   bool are_late_fields_enabled() const { return m_are_late_fields_enabled; }

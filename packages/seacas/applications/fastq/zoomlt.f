@@ -28,10 +28,10 @@ C***********************************************************************
 
 C  USE CURSOR INPUT FROM THE SCREEN
 
-         CALL MESAGE (' ')
-         CALL MESAGE (' ')
-         CALL MESAGE ('LOCATE ONE CORNER WITH CURSOR')
-         CALL MESAGE ('THEN HIT ANY KEY')
+         CALL MESSAGE(' ')
+         CALL MESSAGE(' ')
+         CALL MESSAGE('LOCATE ONE CORNER WITH CURSOR')
+         CALL MESSAGE('THEN HIT ANY KEY')
 C         X1 = .45
 C         Y1 = .325
          CALL PLTCRS (XTEST1, YTEST1, ANS)
@@ -49,8 +49,8 @@ C         Y2 = MAX( Y1+.05, .425)
          CALL PLTDRW (1., YTEST2)
          CALL PLTMOV (XTEST2, 0.)
          CALL PLTDRW (XTEST2, .75)
-         CALL MESAGE ('LOCATE THE OTHER CORNER WITH CURSOR')
-         CALL MESAGE ('THEN HIT ANY KEY')
+         CALL MESSAGE('LOCATE THE OTHER CORNER WITH CURSOR')
+         CALL MESSAGE('THEN HIT ANY KEY')
          CALL PLTFLU
          X1 = MIN (XTEST1, XTEST2)
          X2 = MAX (XTEST1, XTEST2)
@@ -67,10 +67,10 @@ C  USE USER INPUT FROM THE KEYPAD
          IF ((CIN(ICOM)(1:1) .EQ. 'C') .OR.
      &      (CIN(ICOM)(1:1) .EQ. 'c')) THEN
             ICOM = ICOM+1
-            CALL MESAGE (' ')
-            CALL MESAGE ('NO CURRENT PLOT FOR CURSOR ZOOM')
-            CALL MESAGE ('CURRENT PLOT LIMITS UNCHANGED')
-            CALL MESAGE ('* IN OTHER WORDS ... PLOT FIRST (P) '//
+            CALL MESSAGE(' ')
+            CALL MESSAGE('NO CURRENT PLOT FOR CURSOR ZOOM')
+            CALL MESSAGE('CURRENT PLOT LIMITS UNCHANGED')
+            CALL MESSAGE('* IN OTHER WORDS ... PLOT FIRST (P) '//
      &         'AND THEN ZOOM (Z,C) *')
 
 C  SEE IF ANY OF THE VALUES ARE REDEFINED
@@ -97,8 +97,8 @@ C  SEE IF ANY OF THE VALUES ARE REDEFINED
             YMIN = YMIN1
             XMAX = XMAX1
             YMAX = YMAX1
-            CALL MESAGE (' ')
-            CALL MESAGE ('ZOOM LIMITS RESET TO PLOT EXTREMES')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('ZOOM LIMITS RESET TO PLOT EXTREMES')
          END IF
       END IF
 

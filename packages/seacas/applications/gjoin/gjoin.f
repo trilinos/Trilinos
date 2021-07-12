@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -140,7 +140,7 @@ C ... Parse options...
      &   KIDELB, KNELB, KNLNK, KNATR, KLINK, KATRIB,
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
-     &   kltsnc, kfacss, KNMLB)
+     &   kltsnc, kfacss, KNMLB, KNMBK, KNMNS, KNMSS)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 140
 
@@ -164,7 +164,7 @@ C   --Open and read the database
      &  KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &  KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
      &  kltsnc, kfacss, NQAREC, QAREC, NINFO, INFREC, KNMLB,
-     &  USESDF, *150)
+     &  KNMBK, KNMNS, KNMSS, USESDF, *150)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 140
 
@@ -191,7 +191,7 @@ C   --Open and read the second database
      &    KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &    KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, kltsss,
      &    kltsnc, kfacss, NQAREC, QAREC, NINFO, INFREC, KNMLB,
-     &    USESDF, *110)
+     &    KNMBK, KNMNS, KNMSS, USESDF, *110)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 140
 
@@ -420,7 +420,7 @@ C   --"Munch" the element blocks
          CALL MDRSRV ('JNELB', KJNELB, NEWELB)
          CALL MDRSRV ('ISCR', KISCR, NEWELB)
 
-         CALL MCFIND ('NAMELB', IDUM, LNAM)
+         CALL MCFIND ('NAMBK', IDUM, LNAM)
          CALL MCRSRV ('NAMSCR', KNMSC, LNAM)
          CALL MDSTAT (NERR, MEM)
          IF (NERR .GT. 0) GOTO 140
@@ -429,7 +429,7 @@ C   --"Munch" the element blocks
      &      IA(KIDELB), IA(KNELB), IA(KNLNK), IA(KNATR),
      &      IA(KLINK), A(KATRIB), IA(KLINKO), A(KATRO),
      &      IA(KIXEL), IA(KIXELB), IA(KJNELB), IA(KISCR),
-     &      C(KNMLB),  C(KNMSC), LLINK, LATRIB)
+     &      C(KNMLB),  C(KNMBK), C(KNMSC), LLINK, LATRIB)
 
          CALL MDDEL ('LINKO')
          CALL MDDEL ('ATRIBO')
@@ -697,7 +697,7 @@ C   --Write the QA records
      &   KIDNS, KNNNS, KIXNNS, KLTNNS, KFACNS,
      &   KIDSS, KNESS, KNDSS, KIXESS, KIXDSS, KLTESS, KFACSS,
      &   kltsss, NQAREC, QAREC, NINFO, INFREC, C(KNMLB), L64BIT, NC4,
-     &   *140)
+     &   C(KNMBK), C(KNMNS), C(KNMSS), *140)
 
       FIRST = .FALSE.
 
@@ -738,3 +738,4 @@ C   This is currently used in the sideset mirroring code
  10   continue
       return
       end
+

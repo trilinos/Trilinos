@@ -3,5 +3,10 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
+#ifndef TO_STRING_H
+#define TO_STRING_H
+
 #include <string>
 std::string to_string(int t) { return std::to_string(t); }
+
+#endif

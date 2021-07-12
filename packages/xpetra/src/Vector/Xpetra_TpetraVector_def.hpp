@@ -203,47 +203,7 @@ getTpetra_Vector() const
 }
 
 
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host_um
-TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-getHostLocalView() const
-{
-    return this->TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getHostLocalView();
-}
-
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev_um
-TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-getDeviceLocalView() const
-{
-    return this->TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDeviceLocalView();
-}
-
-
-#if 0
- template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<
-        typename dual_view_type::t_dev_um::execution_space::memory_space,
-        typename TargetDeviceType::memory_space>::value,
-        typename dual_view_type::t_dev_um,
-        typename dual_view_type::t_host_um>::type
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
- TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalView () const {
-      return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>();
-    }
-#endif  // #if 0
-
-#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
-
-
-
 #ifdef HAVE_XPETRA_EPETRA
-
-
 
 #if((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) \
     || (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
@@ -392,53 +352,6 @@ class TpetraVector<Scalar, int, int, EpetraNode>
         return Teuchos::null;
     }
 
-
-
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-    using dual_view_type = typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type;
-
-    typename dual_view_type::t_host_um getHostLocalView() const
-    {
-        typename dual_view_type::t_host_um ret;
-        return ret;
-    }
-
-    typename dual_view_type::t_dev_um getDeviceLocalView() const
-    {
-        typename dual_view_type::t_dev_um ret;
-        return ret;
-    }
-
-
-
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
-    ///          with the Xpetra::TpetraVector object. To write a code which is independent
-    ///          from the underlying linear algebra package you should always use the abstract class,
-    ///          i.e. Xpetra::Vector!
-    ///
-    /// \warning Be aware that the view on the vector data is non-persisting, i.e.
-    ///          only valid as long as the vector does not run of scope!
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
-      typename dual_view_type::t_dev_um,
-      typename dual_view_type::t_host_um>::type
-    getLocalView() const
-    {
-        typename Kokkos::Impl::if_c<
-          std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
-          typename dual_view_type::t_dev_um,
-          typename dual_view_type::t_host_um>::type ret;
-        return ret;
-    }
-
-#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
-
-
     //@}
 
 };      // TpetraVector class (specialization on GO=int, NO=EpetraNode)
@@ -586,48 +499,6 @@ class TpetraVector<Scalar, int, long long, EpetraNode>
     {
         return Teuchos::null;
     }
-
-
-#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-
-    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
-
-    typename dual_view_type::t_host_um getHostLocalView() const
-    {
-        typename dual_view_type::t_host_um ret;
-        return ret;
-    }
-
-    typename dual_view_type::t_dev_um getDeviceLocalView() const
-    {
-        typename dual_view_type::t_dev_um ret;
-        return ret;
-    }
-
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
-    ///          with the Xpetra::TpetraVector object. To write a code which is independent
-    ///          from the underlying linear algebra package you should always use the abstract class,
-    ///          i.e. Xpetra::Vector!
-    ///
-    /// \warning Be aware that the view on the vector data is non-persisting, i.e.
-    ///          only valid as long as the vector does not run of scope!
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
-      typename dual_view_type::t_dev_um,
-      typename dual_view_type::t_host_um>::type
-    getLocalView() const
-    {
-        typename Kokkos::Impl::if_c<
-          std::is_same<typename dual_view_type::t_dev_um::execution_space::memory_space, typename TargetDeviceType::memory_space>::value,
-          typename dual_view_type::t_dev_um,
-          typename dual_view_type::t_host_um>::type ret;
-        return ret;
-    }
-#endif  // HAVE_XPETRA_KOKKOS_REFACTOR
 
     //@}
 

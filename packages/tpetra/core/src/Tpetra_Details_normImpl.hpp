@@ -248,18 +248,27 @@ gblNormImpl (const RV& normsOut,
   if (distributed && comm != nullptr) {
     // The calling process only participates in the collective if
     // both the Map and its Comm on that process are nonnull.
-    //
-    // MPI doesn't allow aliasing of arguments, so we have to make
-    // a copy of the local sum.
-    RV lclNorms ("MV::normImpl lcl", numVecs);
-    Kokkos::deep_copy (lclNorms, normsOut);
-    const mag_type* const lclSum = lclNorms.data ();
-    mag_type* const gblSum = normsOut.data ();
     const int nv = static_cast<int> (numVecs);
-    if (whichNorm == NORM_INF) {
-      reduceAll<int, mag_type> (*comm, REDUCE_MAX, nv, lclSum, gblSum);
+    const bool commIsInterComm = ::Tpetra::Details::isInterComm (*comm);
+
+    if (commIsInterComm) {
+      RV lclNorms (Kokkos::ViewAllocateWithoutInitializing ("MV::normImpl lcl"), numVecs);
+      Kokkos::deep_copy (lclNorms, normsOut);
+      const mag_type* const lclSum = lclNorms.data ();
+      mag_type* const gblSum = normsOut.data ();
+
+      if (whichNorm == NORM_INF) {
+        reduceAll<int, mag_type> (*comm, REDUCE_MAX, nv, lclSum, gblSum);
+      } else {
+        reduceAll<int, mag_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
+      }
     } else {
-      reduceAll<int, mag_type> (*comm, REDUCE_SUM, nv, lclSum, gblSum);
+      mag_type* const gblSum = normsOut.data ();
+      if (whichNorm == NORM_INF) {
+        reduceAll<int, mag_type> (*comm, REDUCE_MAX, nv, gblSum, gblSum);
+      } else {
+        reduceAll<int, mag_type> (*comm, REDUCE_SUM, nv, gblSum, gblSum);
+      }
     }
   }
 

@@ -4,10 +4,10 @@ C    NTESS, the U.S. Government retains certain rights in this software.
 C
 C    See packages/seacas/LICENSE for details
 
-      SUBROUTINE MESAGE (PROMPT)
+      SUBROUTINE MESSAGE(PROMPT)
 C***********************************************************************
 
-C  SUBROUTINE MESAGE = PRINTS A MESSAGE ONTO THE SCREEN
+C  SUBROUTINE MESSAGE= PRINTS A MESSAGEONTO THE SCREEN
 
 C***********************************************************************
 

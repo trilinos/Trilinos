@@ -668,7 +668,7 @@ MACRO(TRIBITS_REMEMBER_IF_CONFIGURE_ATTEMPTED)
     ENDIF()
   ELSEIF(CTEST_DO_NEW_START)
     IF (EXISTS "${CONFIGURE_ATTEMPTED_FILE}")
-      FILE(REMOTE "${CONFIGURE_ATTEMPTED_FILE}")
+      FILE(REMOVE "${CONFIGURE_ATTEMPTED_FILE}")
     ENDIF()
     IF (EXISTS "${CONFIGURE_PASSED_FILE}")
       FILE(REMOVE "${CONFIGURE_PASSED_FILE}")
@@ -1670,6 +1670,6 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   ENDIF()
   # ToDo: Optionally determine pass/fail based 
 
-  MESSAGE("\nDone with the all-at-once configure, build, test, ans submit of ${PROJECT_NAME} packages!\n")
+  MESSAGE("\nDone with the all-at-once configure, build, test, and submit of ${PROJECT_NAME} packages!\n")
 
 ENDMACRO()

@@ -142,14 +142,30 @@ namespace MueLuTests {
     typename entries_type::HostMirror entriesHost = Kokkos::create_mirror_view(entries);
     Kokkos::deep_copy(rowPtrsHost, rowPtrs);
     Kokkos::deep_copy(entriesHost, entries);
+    rowPtrs = row_map_type();
+    entries = entries_type();
 
     // Check that the graph is not null
     TEST_EQUALITY(graph != Teuchos::null, true);
 
-    // Since this is a scalar problem and no entries are dropped
-    // we can simply compare the value from LWGraph with those in A
-    TEST_EQUALITY(graph->GetNodeNumVertices() == A->getNodeNumRows(), true);
-    TEST_EQUALITY(graph->GetNodeNumEdges() == A->getNodeNumEntries(), true);
+    {
+      // Since this is a scalar problem and no entries are dropped
+      // we can simply compare the value from LWGraph with those in A
+      auto numrows=A->getNodeNumRows(), nument=A->getNodeNumEntries();
+      int result=0;
+      auto lgraph = *graph;
+      Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
+			      KOKKOS_LAMBDA(const LO i, int &incorrect) { 
+				if (lgraph.GetNodeNumVertices() != numrows)
+				  incorrect++;
+				if (lgraph.GetNodeNumEdges() != nument)
+				  incorrect++;
+			      }, result);
+      TEST_EQUALITY(result, 0);
+
+    }
+
+    graph.reset();
     Array<LO> indices(3);
     Array<SC> values(3);
     size_t numEntries;

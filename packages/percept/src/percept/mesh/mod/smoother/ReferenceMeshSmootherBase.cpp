@@ -84,10 +84,7 @@
   template <typename MeshType>
     ReferenceMeshSmootherBaseImpl<MeshType>::
 	~ReferenceMeshSmootherBaseImpl()
-  {
-	  if(Base::m_eMesh->get_rank() == 0)
-		  myFile.close();
-  }
+  {}
 
   template<>
     void ReferenceMeshSmootherBaseImpl<STKMesh>::sync_fields(int iter)

@@ -84,7 +84,7 @@ namespace MueLu {
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
     LO blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
 
-    GetOStream(Statistics1) << "Using BlockDiagonal Graph (dropping connections between "<<blocksize<<" equations)"<<std::endl;
+    GetOStream(Statistics1) << "Generating interleaved blocking with "<<blocksize<<" equations"<<std::endl;
     RCP<LocalOrdinalVector> BlockNumber = LocalOrdinalVectorFactory::Build(A->getRowMap(),false);
     Teuchos::ArrayRCP<LO> bn_data = BlockNumber->getDataNonConst(0);
     for(LO i=0; i<(LO)A->getRowMap()->getNodeNumElements();i++)

@@ -97,23 +97,30 @@ namespace MueLuTests {
     TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
 
     bool bCorrectGraph = false;
-    if (comm->getSize() == 1) {
-      auto v0 = graph->getNeighborVertices(0);
-      auto v1 = graph->getNeighborVertices(1);
-      auto v2 = graph->getNeighborVertices(2);
-      if (v0.length == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
-          v1.length == 3 && v2.length == 3)
-        bCorrectGraph = true;
-    } else {
-      if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).length == 2)
-          bCorrectGraph = true;
-
-      } else {
-        if (graph->getNeighborVertices(0).length == 3)
-          bCorrectGraph = true;
-      }
-    }
+    int reduction_val=0;
+    int comm_size=comm->getSize(), comm_rank=comm->getRank();
+    auto lgraph=*graph;
+    Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
+			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			      if (comm_size == 1) {
+				auto v0 = lgraph.getNeighborVertices(0);
+				auto v1 = lgraph.getNeighborVertices(1);
+				auto v2 = lgraph.getNeighborVertices(2);
+				if (v0.length == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
+				    v1.length == 3 && v2.length == 3)
+				  correct = true;
+			      } else {
+				if (comm_rank == 0 ) {
+				  if (lgraph.getNeighborVertices(0).length == 2)
+				    correct = true;
+				  
+				} else {
+				  if (lgraph.getNeighborVertices(0).length == 3)
+				    correct = true;
+				}
+			      }
+			    }, reduction_val);
+    bCorrectGraph=reduction_val;
     TEST_EQUALITY(bCorrectGraph, true);
 
     auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
@@ -166,24 +173,31 @@ namespace MueLuTests {
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == 3*comm->getSize(), true);
 
     bool bCorrectGraph = false;
-    if (comm->getSize() == 1) {
-      auto v0 = graph->getNeighborVertices(0);
-      auto v1 = graph->getNeighborVertices(1);
-      auto v2 = graph->getNeighborVertices(2);
-      if (v0.length == 1 &&   v0(0) == 0 &&
-          v1.length == 2 && ((v1(0) == 0 && v1(1) == 1) || (v1(0) == 1 && v1(1) == 0)) &&
-          v2.length == 2 && ((v2(0) == 1 && v2(1) == 2) || (v2(0) == 2 && v2(1) == 1)))
-        bCorrectGraph = true;
-    } else {
-      if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).length == 1)
-          bCorrectGraph = true;
-
-      } else {
-        if (graph->getNeighborVertices(0).length == 2)
-          bCorrectGraph = true;
-      }
-    }
+    int reduction_val=0;
+    int comm_size=comm->getSize(), comm_rank=comm->getRank();
+    auto lgraph=*graph;
+    Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
+			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			      if (comm_size == 1) {
+				auto v0 = lgraph.getNeighborVertices(0);
+				auto v1 = lgraph.getNeighborVertices(1);
+				auto v2 = lgraph.getNeighborVertices(2);
+				if (v0.length == 1 &&   v0(0) == 0 &&
+				    v1.length == 2 && ((v1(0) == 0 && v1(1) == 1) || (v1(0) == 1 && v1(1) == 0)) &&
+				    v2.length == 2 && ((v2(0) == 1 && v2(1) == 2) || (v2(0) == 2 && v2(1) == 1)))
+				  correct = true;
+			      } else {
+				if (comm_rank == 0 ) {
+				  if (lgraph.getNeighborVertices(0).length == 1)
+				    correct = true;
+				  
+				} else {
+				  if (lgraph.getNeighborVertices(0).length == 2)
+				    correct = true;
+				}
+			      }
+			    }, reduction_val);
+    bCorrectGraph=reduction_val;			    
     TEST_EQUALITY(bCorrectGraph, true);
 
     auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!
@@ -237,18 +251,25 @@ namespace MueLuTests {
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
 
     bool bCorrectGraph = false;
-    if (comm->getSize() == 1 && graph->getNeighborVertices(0).length == 1) {
-      bCorrectGraph = true;
-    } else {
-      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        if (graph->getNeighborVertices(0).length == 2)
-          bCorrectGraph = true;
-
-      } else {
-        if (as<int>(graph->getNeighborVertices(0).length) == blockSize)
-          bCorrectGraph = true;
-      }
-    }
+    int reduction_val=0;
+    int comm_size=comm->getSize(), comm_rank=comm->getRank();
+    auto lgraph=*graph;
+    Kokkos::parallel_reduce("MueLu:TentativePF:Build:compute_agg_sizes", Kokkos::RangePolicy<typename NO::execution_space, size_t> (0,1),
+			    KOKKOS_LAMBDA(const LO i, int &correct) { 
+			      if (comm_size == 1 && lgraph.getNeighborVertices(0).length == 1) {
+				correct = true;
+			      } else {
+				if (comm_rank == 0 || comm_rank == comm_size-1) {
+				  if (lgraph.getNeighborVertices(0).length == 2)
+				    correct = true;
+				  
+				} else {
+				  if (as<int>(lgraph.getNeighborVertices(0).length) == blockSize)
+				    correct = true;
+				}
+			      }
+			    }, reduction_val);
+    bCorrectGraph=reduction_val;			    
     TEST_EQUALITY(bCorrectGraph, true);
 
     auto myImportMap = graph->GetImportMap(); // < note that the ImportMap is built from the column map of the matrix A WITHOUT dropping!

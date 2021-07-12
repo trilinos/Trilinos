@@ -122,15 +122,23 @@ ENDMACRO()
 
 
 #
-# Macro that processes the list of TPLs
+# @MACRO: TRIBITS_PROCESS_TPLS_LISTS()
 #
-# This macro reads from the variable
-# ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS for a given repository and
-# and fills the variables ${PROJECT_NAME}_TPLS, ${PROJECT_NAME}_NUM_TPLS,
-# ${PROJECT_NAME}_REVERSE_TPLS.  For each TPL, it also sets the variable
-# ${TPL_NAME}_FINDMOD and ${TPL_NAME}_TESTGROUP.
+# This macro that processes the project-level variable::
 #
-
+#   ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+#
+# and updates the project-level variables::
+#
+#   ${PROJECT_NAME}_TPLS
+#   ${PROJECT_NAME}_NUM_TPLS,
+#   ${PROJECT_NAME}_REVERSE_TPLS
+#
+# For each TPL, it also sets the variables::
+#
+#   ${TPL_NAME}_FINDMOD
+#   ${TPL_NAME}_TESTGROUP
+#
 MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

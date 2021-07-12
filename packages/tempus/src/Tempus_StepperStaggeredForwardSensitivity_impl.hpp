@@ -89,7 +89,7 @@ setModel(
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 StepperStaggeredForwardSensitivity<Scalar>::
-getModel()
+getModel() const
 {
   return combined_fsa_model_;
 }
@@ -274,6 +274,7 @@ describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
 
@@ -296,6 +297,7 @@ describe(
 template<class Scalar>
 bool StepperStaggeredForwardSensitivity<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;

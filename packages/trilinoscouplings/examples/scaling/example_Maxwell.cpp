@@ -1445,7 +1445,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Vector for use in applying BCs
-  Epetra_MultiVector v(globalMapC,true);
+  Epetra_Vector v(globalMapC,true);
   v.PutScalar(0.0);
 
   // Set v to boundary values on Dirichlet edges
@@ -1457,11 +1457,19 @@ int main(int argc, char *argv[]) {
       if (edgeOnBoundary(i)){
         BCEdges[indbc]=iOwned;
         indbc++;
-        v[0][iOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+        v[iOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
       }
       iOwned++;
     }
   }
+
+  if(numProcs==1 && dump) {
+    FILE * f=fopen("boundary_edge_list.dat","w");
+    for(int i=0; i<numBCEdges; i++)
+      fprintf(f,"%d ",BCEdges[i]);
+    fclose(f);
+  }
+
 
   if(MyPID==0) {std::cout << "Boundary Condition Setup                    "
                           << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
@@ -1960,6 +1968,8 @@ int main(int argc, char *argv[]) {
     EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
     EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);
 
+    // Boundary Application
+    EpetraExt::VectorToMatrixMarketFile("boundary_v.dat",v);
 
     // Edge signs
     EpetraExt::MultiVectorToMatrixMarketFile("edge_signs.dat",edgeSign,0,0,false);
@@ -2022,6 +2032,10 @@ int main(int argc, char *argv[]) {
       }
       indOwned++;
     }
+  }
+
+  if (dump) {
+    EpetraExt::RowMatrixToMatrixMarketFile("edge_matrix_nobcs.mat",StiffMatrixC);
   }
 
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges

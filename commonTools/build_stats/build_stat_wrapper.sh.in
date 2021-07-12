@@ -1,0 +1,18 @@
+#!/bin/bash
+# Consumed by the magic_wrapper
+
+export TRILINOS_BUILD_STATS_PARSE_NM="false"
+# BUILD_STATS_INNER_OP is the command we are wrapping
+export TRILINOS_BUILD_STATS_INNER_OP="@BUILD_STATS_WRAPPER_INNER_OP@"
+# BUILD_STATS_TIME_CMD points to a valid GNU Time executable
+export TRILINOS_BUILD_STATS_TIME_CMD="@BUILD_STATS_TIME_CMD@"
+# We need to know the `root` of the build tree so we annotate
+# paths correctly (see github PR 8638 for issue with Makefile builds)
+export TRILINOS_BUILD_STATS_BASE_DIR="@BASE_BUILD_DIR_FOR_PYTHON@"
+
+if [ "${CMAKE_IS_IN_CONFIGURE_MODE}" == "1" ]; then
+  ${TRILINOS_BUILD_STATS_INNER_OP} "$@"
+else
+  "@PYTHON_EXECUTABLE@" \
+    "@BUILD_STATS_SRC_DIR@/wrapper/magic_wrapper.py" "$@"
+fi

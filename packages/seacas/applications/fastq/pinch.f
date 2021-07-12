@@ -341,7 +341,7 @@ C  FIX THE LINES PER ELEMENT ARRAY FOR THE ONE ELEMENT CHANGING
                         GOTO 160
                      ENDIF
   150             CONTINUE
-                  CALL MESAGE ('** PROBLEMS IN PINCH FIXING'//
+                  CALL MESSAGE('** PROBLEMS IN PINCH FIXING'//
      &               ' ELEMENT **')
                   ERR = .TRUE.
                   GOTO 210
@@ -352,7 +352,7 @@ C  RECONNECT ALL LINES CONNECTING TO NGONE TO NTHERE
 
                CALL GETLXN (MXND, LXN, NGONE, L1LIST, NL, ERR)
                IF (ERR) THEN
-                  CALL MESAGE ('** PROBLEMS IN PINCH GETTING NGONE'//
+                  CALL MESSAGE('** PROBLEMS IN PINCH GETTING NGONE'//
      &               'LINES **')
                   GOTO 210
                ENDIF
@@ -397,14 +397,14 @@ C  UNHOOK LOLD FROM NGONE AND FROM N1
                CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, NGONE,
      &            LOLD, NNN, ERR, NOROOM)
                IF ((NOROOM) .OR. (ERR)) THEN
-                  CALL MESAGE ('** PROBLEMS IN PINCH DELETING '//
+                  CALL MESSAGE('** PROBLEMS IN PINCH DELETING '//
      &               'LOLD FROM NGONE **')
                   GOTO 210
                ENDIF
                CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, N1,
      &            LOLD, NNN, ERR, NOROOM)
                IF ((NOROOM) .OR. (ERR)) THEN
-                  CALL MESAGE ('** PROBLEMS IN PINCH DELETING '//
+                  CALL MESSAGE('** PROBLEMS IN PINCH DELETING '//
      &               'LOLD FROM N1 **')
                   GOTO 210
                ENDIF
@@ -417,7 +417,7 @@ C  ADD ALL LINES STILL HOOKED TO NGONE TO THE LIST OF LINES FOR NTHERE
                      CALL ADDLXN (MXND, LXN, NUID, NAVAIL, IAVAIL,
      &                  NTHERE, LL, NNN, ERR, NOROOM)
                      IF ((NOROOM) .OR. (ERR)) THEN
-                        CALL MESAGE ('** PROBLEMS IN PINCH ADDING'//
+                        CALL MESSAGE('** PROBLEMS IN PINCH ADDING'//
      &                     'LL TO NTHERE **')
                         GOTO 210
                      ENDIF

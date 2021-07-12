@@ -595,6 +595,9 @@ IF (COMMAND INSTALL AND NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "")
 
   SET( ATDM_BUILD_NAME $ENV{ATDM_CONFIG_BUILD_NAME} )
 
+  ADVANCED_SET(CTEST_BUILD_NAME "${ATDM_BUILD_NAME}-exp" CACHE STRING
+    "Build name for submit to CDash with 'dashboard' target (default set as env<ATDM_CONFIG_BUILD_NAME>-exp)" )
+
   SET( ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME load_matching_env.sh
     CACHE STRING
     "Name of script installed in <CMAKE_INSTALL_PREFIX> to source to load matching env." )

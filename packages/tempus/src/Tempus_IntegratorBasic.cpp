@@ -18,6 +18,10 @@ namespace Tempus {
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorBasic<double> > createIntegratorBasic(
+    Teuchos::RCP<Teuchos::ParameterList>        parameterList);
+
+  // Nonmember ctor
+  template Teuchos::RCP<IntegratorBasic<double> > createIntegratorBasic(
     Teuchos::RCP<Teuchos::ParameterList>        parameterList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model);
 

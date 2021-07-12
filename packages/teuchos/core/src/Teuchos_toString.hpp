@@ -125,6 +125,25 @@ public:
   }
 };
 
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
+/** \brief Specialization for long double. */
+template<>
+class ToStringTraits<long double> {
+public:
+  static std::string toString (const long double& t) {
+    std::ostringstream os;
+    os.setf (std::ios::scientific);
+    // 26 = round(80 * log10(2)) + 1.  That's one decimal digit more
+    // than the binary precision justifies, which should be plenty.
+    // Guy Steele et al. have a better algorithm for floating-point
+    // I/O, but using a lot of digits is the lazy approach.
+    os.precision (26);
+    os << t;
+    return os.str();
+  }
+};
+#endif
+
 /** \brief Specialization for float. */
 template<>
 class ToStringTraits<float> {

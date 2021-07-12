@@ -1,0 +1,129 @@
+<ParameterList name="MueLu">
+
+  <Parameter name="verbosity" type="string" value="high"/>
+
+  <Parameter name="max levels" type="int" value="4"/>
+  <Parameter name="coarse: max size" type="int" value="150"/>
+  <Parameter        name="number of equations"                  type="int"      value="3"/>
+
+  <Parameter name="multigrid algorithm" type="string" value="sa"/>
+  <Parameter name="sa: damping factor"  type="double" value="1.33333"/>
+
+   <!-- 
+  <Parameter name="coarse: type" type="string" value="RELAXATION"/>
+  <ParameterList name="coarse: params">
+    <Parameter name="relaxation: type"  type="string" value="Jacobi"/>
+    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+    <Parameter name="relaxation: damping factor" type="double" value="0.00000001"/>
+  </ParameterList>
+        -->
+
+  <Parameter name="smoother: pre or post" type="string" value="post"/>
+
+  <Parameter name="smoother: pre type" type="string" value="LINESMOOTHING_BANDEDRELAXATION"/>
+  <ParameterList name="smoother: pre params">
+    <Parameter name="relaxation: type"  type="string" value="Jacobi"/>
+    <Parameter name="relaxation: sweeps" type="int" value="1"/>
+    <Parameter name="relaxation: damping factor" type="double" value="0.25"/>
+  </ParameterList>
+<!--
+<Parameter        name="smoother: post type"                       type="string"   value="ILUT"/>
+  <ParameterList    name="smoother: post params">
+    <Parameter      name="schwarz: overlap level"               type="int"      value="2"/>
+    <Parameter      name="schwarz: combine mode"                type="string"   value="Insert"/>
+    <Parameter      name="schwarz: use reordering"              type="bool"     value="true"/>
+    <ParameterList  name="schwarz: reordering list">
+      <Parameter    name="order_method"                         type="string"   value="rcm"/>
+    </ParameterList>
+    <Parameter      name="fact: ilut level-of-fill"             type="double"   value="2.0"/>
+    <Parameter      name="fact: drop tolerance"                 type="double"   value="0.0"/>
+  </ParameterList>
+-->
+
+  <Parameter        name="smoother: post type"                         type="string"   value="STRATIMIKOS"/>
+  <ParameterList    name="smoother: post params">
+      <Parameter name="smoother: recurMgOnFilteredA" type="bool" value="true"/>
+      <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+      <ParameterList name="Linear Solver Types">
+          <ParameterList name="Belos">
+              <Parameter name="Solver Type" type="string" value="Fixed Point"/>
+              <ParameterList name="Solver Types">
+                  <ParameterList name="Fixed Point">
+                      <Parameter name="Block Size" type="int" value="1"/>
+                      <Parameter name="Output Frequency" type="int" value="1"/>
+                      <Parameter name="Output Style" type="int" value="1"/>
+                      <Parameter name="Verbosity" type="int" value="35"/>
+                      <Parameter name="Timer Label" type="string" value="FixedPoint system"/>
+                      <Parameter name="Maximum Iterations" type="int" value="1"/>
+                  </ParameterList>
+                  <ParameterList name="Block GMRES">
+                      <Parameter name="Convergence Tolerance" type="double" value="1.0e-8"/>
+                      <Parameter name="Orthogonalization" type="string" value="ICGS"/>
+                      <Parameter name="Output Frequency" type="int" value="1"/>
+                      <Parameter name="Output Style" type="int" value="1"/>
+                      <Parameter name="Verbosity" type="int" value="35"/>
+                      <Parameter name="Maximum Iterations" type="int" value="50"/>
+                      <Parameter name="Block Size" type="int" value="10"/>
+                      <Parameter name="Num Blocks" type="int" value="10"/>
+                      <Parameter name="Flexible Gmres" type="bool" value="true"/>
+                      <Parameter name="Timer Label" type="string" value="GMRES block system"/>
+                      <Parameter name="Implicit Residual Scaling" type="string" value="Norm of Initial Residual"/>
+                  </ParameterList>
+              </ParameterList>
+              <ParameterList name="VerboseObject">
+                  <Parameter name="Verbosity Level" type="string" value="none"/>
+              </ParameterList>
+          </ParameterList>
+      </ParameterList>
+
+      <Parameter name="Preconditioner Type" type="string" value="MueLu"/>
+      <ParameterList name="Preconditioner Types">
+          <ParameterList name="MueLu">
+    <Parameter        name="verbosity"                            type="string"   value="high"/>
+    <Parameter        name="coarse: max size"                     type="int"      value="990"/>
+    <Parameter        name="multigrid algorithm"                  type="string"   value="sa"/>
+    <Parameter        name="number of equations"                  type="int"      value="1"/>
+    <Parameter        name="max levels"                           type="int"      value="3"/>
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+  <Parameter name="aggregation: min agg size" type="int" value="2"/>
+  <Parameter name="aggregation: max agg size" type="int" value="299"/>
+  <Parameter name="aggregation: drop tol" type="double" value="0.000000000001"/>
+    <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+    <ParameterList    name="smoother: params">
+        <Parameter      name="relaxation: type"                    type="string"      value="Jacobi"/>
+        <Parameter      name="relaxation: sweeps"          type="int"   value="1"/>
+        <Parameter      name="relaxation: damping factor"          type="double"   value="0.5"/>
+    </ParameterList>
+
+
+
+          </ParameterList>
+          <ParameterList name="Ifpack2">
+              <Parameter name="Prec Type" type="string" value="relaxation"/>
+              <ParameterList name="Ifpack2 Settings">
+                  <Parameter name="relaxation: type" type="string" value="Jacobi"/>
+                  <Parameter name="relaxation: sweeps" type="int" value="1"/>
+              </ParameterList>
+          </ParameterList>
+      </ParameterList>
+  </ParameterList>
+<!-- -->
+
+
+
+
+
+  <!-- Aggregation -->
+  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+  <Parameter name="aggregation: min agg size" type="int" value="2"/>
+  <Parameter name="aggregation: max agg size" type="int" value="299"/>
+  <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
+
+  <!-- SemiCoarsening -->
+  <Parameter name="semicoarsen: number of levels" type="int" value="2"/>
+  <Parameter name="semicoarsen: coarsen rate" type="int" value="3"/>
+  <Parameter name="semicoarsen: piecewise constant" type="bool" value="true"/>
+  <Parameter name="linedetection: orientation" type="string" value="horizontal"/>
+  <Parameter name="linedetection: num layers" type="int" value="99"/>
+
+</ParameterList>

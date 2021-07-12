@@ -51,35 +51,62 @@ namespace mesh {
 namespace impl {
 
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
+void VisitClosureNoRecurse(
+        const BulkData & mesh,
+        Entity inputEntity,
+        DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this,
+        DESIRED_ENTITY & desired_entity)
+{
+  if (desired_entity(inputEntity)) {
+    do_this(inputEntity);
+    const EntityRank inputEntityRank = mesh.entity_rank(inputEntity);
+    for (EntityRank rank = stk::topology::NODE_RANK ; rank < inputEntityRank ; ++rank) {
+        const unsigned num_entities_of_rank = mesh.num_connectivity(inputEntity,rank);
+        if (num_entities_of_rank > 0) {
+          const Entity * entities = mesh.begin(inputEntity,rank);
+
+          for (unsigned i=0 ; i<num_entities_of_rank ; ++i) {
+            if (desired_entity(entities[i])) {
+              do_this(entities[i]);
+            }
+          }
+        }
+    }
+  }
+}
+
+inline
+EntityRank get_highest_downward_connected_rank(const BulkData& mesh, Entity entity)
+{
+  EntityRank nextLowerRank = static_cast<EntityRank>(mesh.entity_rank(entity) - 1);
+  while (mesh.num_connectivity(entity, nextLowerRank) == 0 && nextLowerRank > stk::topology::NODE_RANK) {
+    nextLowerRank = static_cast<EntityRank>(nextLowerRank-1);
+  }
+  return nextLowerRank;
+}
+
+template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(
         const BulkData & mesh,
         Entity inputEntity,
         DO_THIS_FOR_ENTITY_IN_CLOSURE & do_this,
         DESIRED_ENTITY & desired_entity)
 {
-    if (desired_entity(inputEntity)) {
-      do_this(inputEntity);
-      const EntityRank inputEntityRank = mesh.entity_rank(inputEntity);
-      for (EntityRank rank = stk::topology::NODE_RANK ; rank < inputEntityRank ; ++rank) {
-          unsigned num_entities_of_rank = mesh.num_connectivity(inputEntity,rank);
-          if (num_entities_of_rank > 0) {
-            const bool dontRecurse = rank == stk::topology::NODE_RANK ||
-                                     inputEntityRank <= stk::topology::ELEM_RANK;
-            const Entity * entities = mesh.begin(inputEntity,rank);
-
-            for (unsigned i=0 ; i<num_entities_of_rank ; ++i) {
-                if (dontRecurse) {
-                  if (desired_entity(entities[i])) {
-                    do_this(entities[i]);
-                  }
-                }
-                else {
-                    VisitClosureGeneral(mesh,entities[i],do_this,desired_entity);
-                }
-            }
-          }
+  const EntityRank inputEntityRank = mesh.entity_rank(inputEntity);
+  if (inputEntityRank <= stk::topology::ELEM_RANK) {
+    VisitClosureNoRecurse(mesh, inputEntity, do_this, desired_entity);
+  }
+  else if (desired_entity(inputEntity)) {
+    do_this(inputEntity);
+    const EntityRank nextLowerRank = get_highest_downward_connected_rank(mesh, inputEntity);
+    const unsigned num_entities_of_rank = mesh.num_connectivity(inputEntity,nextLowerRank);
+    if (num_entities_of_rank > 0) {
+      const Entity * entities = mesh.begin(inputEntity,nextLowerRank);
+      for (unsigned i=0 ; i<num_entities_of_rank ; ++i) {
+        VisitClosureGeneral(mesh,entities[i],do_this,desired_entity);
       }
     }
+  }
 }
 
 inline

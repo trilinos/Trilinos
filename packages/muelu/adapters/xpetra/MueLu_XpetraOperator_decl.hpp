@@ -118,8 +118,6 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(A->getDomainMap()->isSameAs(*(Yop->getMap())) == false, std::logic_error,
                                    "MueLu::XpetraOperator::apply: map of Y is incompatible with domain map of A");
 #endif
-
-        Y.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
         Hierarchy_->Iterate(X, Y, 1, true);
       } catch (std::exception& e) {
         //FIXME add message and rethrow

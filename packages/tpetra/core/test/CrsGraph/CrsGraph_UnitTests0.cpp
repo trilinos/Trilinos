@@ -47,6 +47,7 @@ namespace { // (anonymous)
 
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
+  using Tpetra::TestingUtilities::arcp_from_view;
   using Teuchos::arcp;
   using Teuchos::arcpClone;
   using Teuchos::Array;
@@ -360,16 +361,20 @@ namespace { // (anonymous)
       ProfileType pftype = StaticProfile;
       params->set("Optimize Storage",((T & 2) == 2));
       GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
-      Array<GO> GCopy(4); Array<LO> LCopy(4);
-      ArrayView<const GO> GView;
-      ArrayView<const LO> LView;
       size_t numindices;
-      // at this point, there are no global or local indices, but views and copies should succeed
-      trigraph.getLocalRowCopy(0,LCopy,numindices);
-      trigraph.getLocalRowView(0,LView);
-      trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
-      trigraph.getGlobalRowView(myrowind,GView);
-      // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
+      {
+
+        typename GRAPH::global_inds_host_view_type GView;
+        typename GRAPH::local_inds_host_view_type LView;
+        typename GRAPH::nonconst_global_inds_host_view_type GCopy("gcopy",4);
+        typename GRAPH::nonconst_local_inds_host_view_type LCopy("lcopy",4);
+        // at this point, there are no global or local indices, but views and copies should succeed
+        TEST_NOTHROW(trigraph.getLocalRowCopy(0,LCopy,numindices));
+        TEST_NOTHROW(trigraph.getLocalRowView(0,LView));
+        TEST_NOTHROW(trigraph.getGlobalRowCopy(myrowind,GCopy,numindices));
+        TEST_NOTHROW(trigraph.getGlobalRowView(myrowind,GView));
+      }
+        // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
       typedef typename Teuchos::ArrayView<const GO>::size_type size_type;
       for (size_type j=0; j < ginds.size(); ++j) {
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
@@ -387,16 +392,22 @@ namespace { // (anonymous)
         Array<GO> zero(0);
         TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
       }
-      // check for throws and no-throws/values
-      TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
-      TEST_THROW( trigraph.getLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
-      TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
-      TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
-      TEST_COMPARE_ARRAYS( LView, linds );
-      TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
-      TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
-      TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
-      TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
+      {
+        // check for throws and no-throws/values
+        typename GRAPH::global_inds_host_view_type GView;
+        typename GRAPH::local_inds_host_view_type LView;
+        typename GRAPH::nonconst_global_inds_host_view_type GCopy_short("gshort",1), GCopy("gcopy",4);
+        typename GRAPH::nonconst_local_inds_host_view_type LCopy_short("lshort",1), LCopy("lcopy",4);
+        TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
+        TEST_THROW( trigraph.getLocalRowCopy(0, LCopy_short,numindices), std::runtime_error );
+        TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy_short,numindices), std::runtime_error );
+        TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
+        TEST_COMPARE_ARRAYS( LView, linds );
+        TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
+        TEST_COMPARE_ARRAYS( arcp_from_view(LCopy,numindices), linds );
+        TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
+        TEST_COMPARE_ARRAYS( arcp_from_view(GCopy,numindices), ginds );
+      }
       STD_TESTS(trigraph);
       
       // All procs fail if any node fails
@@ -622,11 +633,13 @@ namespace { // (anonymous)
       ArrayRCP<size_t> toalloc = arcpClone<size_t>( tuple<size_t>(0,1,0) );
       GRAPH ddgraph(map, toalloc (), pftype);
       ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
-      // before globalAssemble(), there should be one local entry on middle, none on the others
-      ArrayView<const GO> myrow_gbl;
-      ddgraph.getGlobalRowView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
-      ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
-      ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+      {
+        // before globalAssemble(), there should be one local entry on middle, none on the others
+        typename GRAPH::global_inds_host_view_type myrow_gbl;
+        ddgraph.getGlobalRowView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+        ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
+        ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+      }
       if (pftype == StaticProfile) { // no room for more, on any row
         TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle+1)), std::runtime_error );
         TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle+1)), std::runtime_error );
@@ -634,13 +647,15 @@ namespace { // (anonymous)
       }
       ddgraph.fillComplete(params);
       // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
-      ArrayView<const LO> myrow_lcl;
-      TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
-      TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
-      ddgraph.getLocalRowView(1,myrow_lcl);
-      TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
-      if (myrow_lcl.size() == 1) {
-        TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
+      {
+        typename GRAPH::local_inds_host_view_type myrow_lcl;
+        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
+        TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
+        ddgraph.getLocalRowView(1,myrow_lcl);
+        TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
+        if (myrow_lcl.size() == 1) {
+          TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
+        }
       }
       // also, the row map and column map should be equivalent
       TEST_EQUALITY( ddgraph.getGlobalNumCols(), static_cast<GST> (3*numProcs) );
@@ -704,23 +719,32 @@ namespace { // (anonymous)
             grow = 0;
           }
           diaggraph.insertGlobalIndices (grow, tuple<GO> (grow));
-          // before globalAssemble(), there should be no local entries if numProcs > 1
-          ArrayView<const GO> myrow_gbl;
-          diaggraph.getGlobalRowView (myrowind, myrow_gbl);
-          TEST_EQUALITY( myrow_gbl.size (), (numProcs == 1 ? 1 : 0) );
+          // before globalAssemble(), there should be no local entries if 
+          // numProcs > 1
+          {
+            typename GRAPH::global_inds_host_view_type myrow_gbl;
+            diaggraph.getGlobalRowView (myrowind, myrow_gbl);
+            TEST_EQUALITY( myrow_gbl.size (), (numProcs == 1 ? 1 : 0) );
+          }
           diaggraph.globalAssemble ();
           // after globalAssemble(), there should be one local entry per
           // row, corresponding to the diagonal
-          diaggraph.getGlobalRowView (myrowind, myrow_gbl);
-          TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO> (myrowind) );
+          {
+            typename GRAPH::global_inds_host_view_type myrow_gbl;
+            diaggraph.getGlobalRowView (myrowind, myrow_gbl);
+            TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO> (myrowind) );
+          }
 
           if (pftype == StaticProfile) { // no room for more
-            out << "Attempt to insert global column index " << (myrowind+1) << " into"
-              " global row " << myrowind << "; it should throw, because the graph"
-              " is StaticProfile, has an upper bound of one entry per row, and "
-              "already has a different column index " << grow << " in this row."
+            out << "Attempt to insert global column index " << (myrowind+1) 
+                << " into global row " << myrowind 
+                << "; it should throw, because the graph"
+                << " is StaticProfile, has an upper bound of one entry "
+                << "per row, and already has a different column index " 
+                << grow << " in this row."
                 << endl;
-            TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+1)),
+            TEST_THROW( diaggraph.insertGlobalIndices(myrowind,
+                                                      tuple<GO>(myrowind+1)),
                         std::runtime_error );
           }
 
@@ -728,15 +752,19 @@ namespace { // (anonymous)
 
           // after fillComplete(), there should be a single entry on my
           // row, corresponding to the diagonal
-          ArrayView<const LO> myrow_lcl;
-          diaggraph.getLocalRowView (0, myrow_lcl);
-          TEST_EQUALITY_CONST( myrow_lcl.size (), 1 );
-          if (myrow_lcl.size() == 1) {
-            TEST_EQUALITY( diaggraph.getColMap ()->getGlobalElement (myrow_lcl[0]),
-                           myrowind );
+          {
+            typename GRAPH::local_inds_host_view_type myrow_lcl;
+            diaggraph.getLocalRowView (0, myrow_lcl);
+            TEST_EQUALITY_CONST( myrow_lcl.size (), 1 );
+            if (myrow_lcl.size() == 1) {
+              TEST_EQUALITY( 
+                   diaggraph.getColMap()->getGlobalElement(myrow_lcl[0]),
+                   myrowind );
+            }
           }
           // also, the row map and column map should be equivalent
-          TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
+          TEST_EQUALITY_CONST(
+               diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
 
           STD_TESTS(diaggraph);
         }
@@ -763,11 +791,6 @@ namespace { // (anonymous)
           ngraph.insertGlobalIndices (grows[1], tuple<GO> (myRank));
           ngraph.insertGlobalIndices (grows[2], tuple<GO> (myRank));
 
-          // before globalAssemble(), there should be a single local
-          // entry on parallel runs, three on serial runs
-          ArrayView<const GO> myrow_gbl;
-          ngraph.getGlobalRowView (myrowind, myrow_gbl);
-
           // after globalAssemble(), storage should be maxed out
           out << "Calling globalAssemble()" << endl;
           ngraph.globalAssemble();
@@ -777,14 +800,11 @@ namespace { // (anonymous)
           out << "Calling fillComplete(params)" << endl;
           ngraph.fillComplete (params);
 
-          // after fillComplete(), there should be entries for me and my
-          // neighbors on my row
-          ArrayView<const LO> myrow_lcl;
-          ngraph.getLocalRowView (0, myrow_lcl);
-          out << "Returned view of column indices on Proc 0: "
-              << Teuchos::toString (myrow_lcl) << endl;
-
           {
+            // after fillComplete(), there should be entries for me and my
+            // neighbors on my row
+            typename GRAPH::local_inds_host_view_type myrow_lcl;
+            ngraph.getLocalRowView (0, myrow_lcl);
             // check indices on my row
             typename Array<GO>::iterator glast;
             std::sort (grows.begin (), grows.end ());
@@ -795,20 +815,23 @@ namespace { // (anonymous)
             TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
             if ((size_t)myrow_lcl.size() == numunique) {
               size_t numinds;
-              Array<GO> inds(numunique+1);
+              typename GRAPH::nonconst_global_inds_host_view_type inds("right",numunique),inds_short("short",numunique-1),inds_long("long",numunique+1);
               TEST_THROW(
-                         ngraph.getGlobalRowCopy (myrowind, inds (0, numunique-1), numinds),
-                         std::runtime_error );
+                   ngraph.getGlobalRowCopy (myrowind, inds_short,
+                                            numinds),
+                   std::runtime_error );
               TEST_NOTHROW(
-                           ngraph.getGlobalRowCopy (myrowind, inds (0, numunique), numinds) );
-              TEST_NOTHROW( ngraph.getGlobalRowCopy (myrowind,inds (), numinds) );
-              std::sort (inds.begin (), inds.begin () + numinds);
-              TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
+                   ngraph.getGlobalRowCopy (myrowind, inds_long,
+                                            numinds) );
+              TEST_NOTHROW(
+                   ngraph.getGlobalRowCopy (myrowind,inds, numinds) );
+              Tpetra::sort(inds, numinds);
+              TEST_COMPARE_ARRAYS( arcp_from_view(inds,numinds), grows (0, numunique) );
 
               out << "On Proc 0:" << endl;
               Teuchos::OSTab tab5 (out);
               out << "numinds: " << numinds << endl
-                  << "inds(0,numinds): " << inds (0, numinds) << endl
+                  << "inds(0,numinds): " << arcp_from_view(inds, numinds) << endl
                   << "numunique: " << numunique << endl
                   << "grows(0,numunique): " << grows (0, numunique) << endl;
             }

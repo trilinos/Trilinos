@@ -100,6 +100,25 @@ namespace Xpetra {
       TEUCHOS_UNREACHABLE_RETURN(null);
     }
 
+    //! Constructor specifying column Map and number of entries per row
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
+          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
+          size_t maxNumEntriesPerRow,
+          const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, maxNumEntriesPerRow, plist) );
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
+
     //! Constructor specifying column Map and number of entries in each row.
     static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
     Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
@@ -117,6 +136,26 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
       TEUCHOS_UNREACHABLE_RETURN(null);
     }
+
+
+    //! Constructor using fused import
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const RCP<const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > >& sourceGraph,
+          const Import< LocalOrdinal, GlobalOrdinal, Node > & importer,
+          const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node >>& domainMap = Teuchos::null,
+          const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >& rangeMap = Teuchos::null,
+          const RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+#ifdef HAVE_XPETRA_TPETRA
+      if (sourceGraph->getRowMap()->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(sourceGraph, importer, domainMap, rangeMap, params) );
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(sourceGraph()->getRowMap()->lib());
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
+
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
@@ -237,6 +276,43 @@ namespace Xpetra {
 #endif
 #endif
 
+    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the graph,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the graph.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the graph.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
+          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
+          const Teuchos::ArrayRCP<size_t>& rowPointers,
+          const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
+          const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap,
+                                                                          colMap,
+                                                                          rowPointers,
+                                                                          columnIndices,
+                                                                          plist));
+
+      XPETRA_FACTORY_END;
+    }
+
   };
 
 // we need the Epetra specialization only if Epetra is enabled
@@ -297,6 +373,44 @@ namespace Xpetra {
 
       if (rowMap->lib() == UseEpetra)
         return rcp( new EpetraCrsGraphT<int, Node>(rowMap, colMap, NumEntriesPerRowToAlloc, plist) );
+
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
+    //! Constructor specifying column Map and number of entries per row
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
+          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
+          size_t maxNumEntriesPerRow,
+          const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, maxNumEntriesPerRow, plist) );
+#endif
+      if (rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsGraphT<int,Node>(rowMap, colMap, maxNumEntriesPerRow, plist) );
+
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
+
+    //! Constructor using fused import
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const RCP<const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > >& sourceGraph,
+          const Import< LocalOrdinal, GlobalOrdinal, Node > & importer,
+          const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node >>& domainMap = Teuchos::null,
+          const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >& rangeMap = Teuchos::null,
+          const RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+#ifdef HAVE_XPETRA_TPETRA
+      if (sourceGraph->getRowMap()->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(sourceGraph, importer, domainMap, rangeMap, params) );
+#endif
+      if (sourceGraph->getRowMap()->lib() == UseEpetra)
+        return rcp( new EpetraCrsGraphT<int, Node>(sourceGraph, importer, domainMap, rangeMap, params) );
 
       XPETRA_FACTORY_END;
       TEUCHOS_UNREACHABLE_RETURN(null);
@@ -421,6 +535,43 @@ namespace Xpetra {
 #endif
 #endif
 
+    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the graph,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the graph.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the graph.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
+          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
+          const Teuchos::ArrayRCP<size_t>& rowPointers,
+          const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
+          const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap,
+                                                                          colMap,
+                                                                          rowPointers,
+                                                                          columnIndices,
+                                                                          plist));
+
+      XPETRA_FACTORY_END;
+    }
+
   };
 #endif
 
@@ -486,6 +637,44 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
       TEUCHOS_UNREACHABLE_RETURN(null);
     }
+
+    //! Constructor specifying column Map and number of entries per row
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
+          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
+          size_t maxNumEntriesPerRow,
+          const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsGraphFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, maxNumEntriesPerRow, plist) );
+#endif
+      if (rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsGraphT<long long,Node>(rowMap, colMap, maxNumEntriesPerRow, plist) );
+
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
+    //! Constructor using fused import
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const RCP<const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > >& sourceGraph,
+          const Import< LocalOrdinal, GlobalOrdinal, Node > & importer,
+          const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node >>& domainMap = Teuchos::null,
+          const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >& rangeMap = Teuchos::null,
+          const RCP<Teuchos::ParameterList>& params = Teuchos::null) {
+#ifdef HAVE_XPETRA_TPETRA
+      if (sourceGraph->getRowMap()->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(sourceGraph, importer, domainMap, rangeMap, params) );
+#endif
+      if (sourceGraph->getRowMap()->lib() == UseTpetra)
+        return rcp( new EpetraCrsGraphT<long long,Node><LocalOrdinal, GlobalOrdinal, Node>(sourceGraph, importer, domainMap, rangeMap, params) );
+
+      XPETRA_FACTORY_END;
+      TEUCHOS_UNREACHABLE_RETURN(null);
+    }
+
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
@@ -605,6 +794,43 @@ namespace Xpetra {
     }
 #endif
 #endif
+
+    /// \brief Constructor specifying column Map and arrays containing the graph in sorted, local ids.
+    ///
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param rowPointers [in] The beginning of each row in the graph,
+    ///   as in a CSR "rowptr" array.  The length of this vector should be
+    ///   equal to the number of rows in the graph, plus one.  This last
+    ///   entry should store the nunber of nonzeros in the graph.
+    ///
+    /// \param columnIndices [in] The local indices of the columns,
+    ///   as in a CSR "colind" array.  The length of this vector
+    ///   should be equal to the number of unknowns in the graph.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    static Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> >
+    Build(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap,
+          const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &colMap,
+          const Teuchos::ArrayRCP<size_t>& rowPointers,
+          const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
+          const Teuchos::RCP< Teuchos::ParameterList > &plist=Teuchos::null) {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>(rowMap,
+                                                                          colMap,
+                                                                          rowPointers,
+                                                                          columnIndices,
+                                                                          plist));
+
+      XPETRA_FACTORY_END;
+    }
 
   };
 #endif

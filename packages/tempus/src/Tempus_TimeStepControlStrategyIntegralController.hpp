@@ -178,22 +178,29 @@ public:
     void describe(Teuchos::FancyOStream          &out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
-      Teuchos::OSTab ostab(out,2,"describe");
-      out << description() << "::describe:" << std::endl
-          << "Strategy Type                      = " << this->getStrategyType() << std::endl
-          << "Step Type                          = " << this->getStepType()     << std::endl
-          << "Controller Type                    = " << getController()         << std::endl
-          << "KI                                 = " << getKI()                 << std::endl
-          << "KP                                 = " << getKP()                 << std::endl
-          << "KD                                 = " << getKD()                 << std::endl
-          << "errN_                              = " << errN_                   << std::endl
-          << "errNm1_                            = " << errNm1_                 << std::endl
-          << "errNm2_                            = " << errNm2_                 << std::endl
-          << "Safety Factor                      = " << getSafetyFactor()       << std::endl
-          << "Safety Factor After Step Rejection = " << getSafetyFactorAfterReject() << std::endl
-          << "Maximum Safety Factor (INPUT)      = " << facMaxINPUT_            << std::endl
-          << "Maximum Safety Factor              = " << getFacMax()             << std::endl
-          << "Minimum Safety Factor              = " << getFacMin()             << std::endl;
+      auto l_out = Teuchos::fancyOStream( out.getOStream() );
+      Teuchos::OSTab ostab(*l_out, 2, this->description());
+      l_out->setOutputToRootOnly(0);
+
+      *l_out << "\n--- " << this->description() << " ---" << std::endl;
+
+      if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+       *l_out << "  Strategy Type                      = " << this->getStrategyType() << std::endl
+            << "  Step Type                          = " << this->getStepType()     << std::endl
+            << "  Controller Type                    = " << getController()         << std::endl
+            << "  KI                                 = " << getKI()                 << std::endl
+            << "  KP                                 = " << getKP()                 << std::endl
+            << "  KD                                 = " << getKD()                 << std::endl
+            << "  errN_                              = " << errN_                   << std::endl
+            << "  errNm1_                            = " << errNm1_                 << std::endl
+            << "  errNm2_                            = " << errNm2_                 << std::endl
+            << "  Safety Factor                      = " << getSafetyFactor()       << std::endl
+            << "  Safety Factor After Step Rejection = " << getSafetyFactorAfterReject() << std::endl
+            << "  Maximum Safety Factor (INPUT)      = " << facMaxINPUT_            << std::endl
+            << "  Maximum Safety Factor              = " << getFacMax()             << std::endl
+            << "  Minimum Safety Factor              = " << getFacMin()             << std::endl;
+        *l_out << std::string(this->description().length()+8, '-') <<std::endl;
+      }
     }
   //@}
 

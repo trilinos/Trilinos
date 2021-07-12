@@ -245,7 +245,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
     }
 #else
 #ifdef __GNUC__
@@ -656,7 +656,7 @@ namespace Xpetra {
 
     //! Replace this Map's communicator with a subset communicator.
     RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
-      throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
+      throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 
@@ -698,7 +698,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
     }
 
   private:
@@ -1092,7 +1092,7 @@ namespace Xpetra {
 
     //! Replace this Map's communicator with a subset communicator.
     RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &/* newComm */) const {
-      throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
+      throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
       // return Teuchos::null; // unreachable
     }
 
@@ -1132,7 +1132,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented.");
+      throw std::runtime_error("Xpetra::EpetraMap::getLocalMap is not implemented in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
     }
 
   private:

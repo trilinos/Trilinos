@@ -50,7 +50,7 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "Xpetra_MultiVector_fwd.hpp"
 #include "Xpetra_MultiVectorFactory_fwd.hpp"
-#include "Xpetra_Matrix.hpp"
+#include "Xpetra_CrsGraph_fwd.hpp"
 
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_LocalOrdinalTransferFactory_fwd.hpp"
@@ -92,6 +92,9 @@ namespace MueLu {
   ----------|--------------|------------
   | TransferVec | LocalOrdinalTransferFactory   | coarse level transfervec
 */
+
+
+
   template<class LocalOrdinal = DefaultLocalOrdinal,
            class GlobalOrdinal = DefaultGlobalOrdinal,
            class Node = DefaultNode>
@@ -99,7 +102,7 @@ namespace MueLu {
 #undef MUELU_LOCALORDINALTRANSFERFACTORY_SHORT
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
-  public:
+  public:    
     //! @name Constructors/Destructors.
     //@{
 
@@ -114,7 +117,10 @@ namespace MueLu {
        The operator associated with <tt>projectionName</tt> will be applied to the MultiVector associated with
        <tt>vectorName</tt>.
     */
-    LocalOrdinalTransferFactory(const std::string TransferVecName): TransferVecName_(TransferVecName) { }
+    LocalOrdinalTransferFactory(const std::string & TransferVecName, const std::string & mode): TransferVecName_(TransferVecName) { 
+      if(mode == "classical") useAggregatesMode_ = false;
+      else useAggregatesMode_ = true;
+    }
 
     //! Destructor.
     virtual ~LocalOrdinalTransferFactory() { }
@@ -144,8 +150,13 @@ namespace MueLu {
     //@}
 
   private:
-    
 
+    void BuildAggregates(Level & fineLevel, Level &coarseLevel) const;
+
+    void BuildFC(Level & fineLevel, Level &coarseLevel) const;
+    
+    //! Use aggregates mode (as opposed to FC mode)
+    bool useAggregatesMode_;
 
     //! The name for the vector to be transfered.  This allows us to have multiple factories for different variables
     std::string TransferVecName_;

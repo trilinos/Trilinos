@@ -188,6 +188,7 @@ public:
   {
     Teuchos::RCP<Teuchos::FancyOStream> out =
       Teuchos::VerboseObjectBase::getDefaultOStream();
+    out->setOutputToRootOnly(0);
     *out << "TimeEventComposite:" << "\n"
         << "name                 = " << this->getName() << "\n"
         << "Number of TimeEvents = " << timeEvents_.size() << std::endl;

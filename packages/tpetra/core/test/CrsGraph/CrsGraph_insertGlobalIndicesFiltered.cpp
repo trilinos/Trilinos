@@ -74,6 +74,7 @@ namespace { // (anonymous)
     typedef Tpetra::CrsGraph<LO, GO, NODE_TYPE> crs_graph_type;
     typedef Tpetra::Map<LO, GO, NODE_TYPE> map_type;
     typedef Tpetra::Export<LO, GO, NODE_TYPE> export_type;
+    using gids_type = typename crs_graph_type::nonconst_global_inds_host_view_type;
     int lclSuccess = 1; // to set below
     int gblSuccess = 0; // to set below
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -131,7 +132,7 @@ namespace { // (anonymous)
     const size_t maxNumEntPerRow = static_cast<size_t> (lclNumColMapInds_src);
 
     // Buffer for storing output of getGlobalRowCopy.
-    Teuchos::Array<GO> gblColIndsBuf (maxNumEntPerRow);
+    gids_type gblColIndsBuf("gcids",maxNumEntPerRow);
 
     const Tpetra::ProfileType profileTypes[1] = {Tpetra::StaticProfile};
     for (auto profileType_src : profileTypes) {
@@ -158,7 +159,7 @@ namespace { // (anonymous)
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const GO gblRow = rowMap_tgt->getGlobalElement (lclRow);
           size_t numEnt = 0; // output argument
-          graph_tgt.getGlobalRowCopy (gblRow, gblColIndsBuf (), numEnt);
+          graph_tgt.getGlobalRowCopy (gblRow, gblColIndsBuf, numEnt);
           TEST_EQUALITY( numEnt, static_cast<size_t> (lclNumColMapInds_tgt) );
           if (numEnt == static_cast<size_t> (lclNumColMapInds_tgt)) {
             for (LO k = 0; k < static_cast<LO> (numEnt); ++k) {

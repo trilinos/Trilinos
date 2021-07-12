@@ -1,11 +1,13 @@
 import subprocess
 import csv
 import os
+from WrapperCommandLineParser import WrapperCommandLineParser
 
-#
-# Data for this WrapperOpTimer module
-#
+def get_full_header(fields_list,full_header_map):
+  return ','.join([ full_header_map[f] for f in fields_list ])
 
+
+# the values are
 usr_bin_time_csv_map = {
   "E":
     "elapsed_real_time_fmt",
@@ -126,47 +128,48 @@ default_fields = [
   "x",
   ]
 
-field_header_full = \
-  ','.join([ usr_bin_time_csv_map[f] \
-    for f in default_fields ])
+field_header_full = get_full_header(default_fields, usr_bin_time_csv_map) #','.join([ WrapperOpTimer.usr_bin_time_csv_map[f] for f in default_fields ])
 field_header_short = ','.join(default_fields)
-field_arg = '--format=' + field_header_full + '\n' + \
-  ','.join([ '%{}'.format(f) for f in default_fields] )
-
-
-#
-# Class WrapperOpTimer
-#
+field_arg = '--format=' + field_header_full + '\n' + ','.join([ '%{}'.format(f) for f in default_fields] )
 
 class WrapperOpTimer:
 
   @staticmethod
-  def time_op(op,
-              op_output_file,
-              output_stats_file,
-              op_args,
-              base_build_dir=None):
-    """
-      evaluate 'op' with 'op_args', and gather stats into output_stats_file
-    """
-    cmd = [
-            '/usr/bin/time',
-            # '--append',
-            '--output=' + output_stats_file,
-            field_arg,
-           op ] + op_args
-
-    # print(' '.join(cmd))
+  def run_cmd(cmd):
     p = subprocess.Popen(cmd)
     p.communicate()
     returncode = p.returncode
+    return returncode
+
+  @staticmethod
+  def time_op(wcp):
+    """
+      evaluate 'op' with 'op_args', and gather stats into output_stats_file
+    """
+    # if os.path.exists(output_stats_file) and os.path.getsize(output_stats_file) > 0:
+    #   print("WARNING: File '"+output_stats_file+"' exists and will be overwritten")
+    #   print("op='"+op+"'")
+    #   print("op_args='"+str(op_args)+"'")
+    #   print("op_output_file='"+op_output_file+"'")
 
     # initializing the titles and rows list
     fields = []
     csv_row = {}
 
+    cmdcount = 0
+    returncode = 0
+    for cmd in wcp.commands:
+      if cmdcount == 0:
+        cmd = [ wcp.time_cmd,
+                # '--append',
+                '--output=' + wcp.output_stats_file,
+                field_arg,
+               ] + cmd
+      cmdcount += 1
+      returncode |= WrapperOpTimer.run_cmd(cmd)
+
     # reading csv file
-    with open(output_stats_file, 'r') as csvfile:
+    with open(wcp.output_stats_file, 'r') as csvfile:
       # creating a csv reader object
       csvreader = csv.reader(csvfile)
 
@@ -174,28 +177,39 @@ class WrapperOpTimer:
       fields = next(csvreader)
 
       # extracting each data row one by one
-      # we effectively retain on the last row.
+      # we effectively retain only the last row.
       # it isn't clear if we should expect multiple rows per file
+      #
+      # In the bash version of this I was able to handle multiple rows per file
+      # We could do that here, but it would require returning a list of csv maps
+      # On the system side of things, it is very murky.  We would need to ensure
+      # file integrity (concurrent reads/writes).  For now, it's
+      # best to enforce 1 file per operation performed. (which should happen if we
+      # name things correctly) - That is invalid is there is a cycle in the Build graph,
+      # but that is a larger problem.
       for row in csvreader:
         csv_row = dict(zip(fields, row))
 
     # FileSize
-    csv_row['FileSize'] = WrapperOpTimer.get_file_size(op_output_file)
+    csv_row['FileSize'] = WrapperOpTimer.get_file_size(wcp.op_output_file)
+
+    # add a field with the short op
+    csv_row['op'] = os.path.basename(wcp.op)
 
     # FileName
-    if base_build_dir:
-      abs_base_build_dir = os.path.abspath(base_build_dir)
+    if wcp.base_build_dir:
+      abs_base_build_dir = os.path.abspath(wcp.base_build_dir)
       current_working_dir = os.path.abspath(os.getcwd())
       rel_path_to_base_build_dir = os.path.relpath(
         current_working_dir, start=abs_base_build_dir)
-      rel_op_output_file = os.path.join(rel_path_to_base_build_dir, op_output_file)
+      rel_op_output_file = os.path.join(rel_path_to_base_build_dir, wcp.op_output_file)
     else:
-      rel_op_output_file = op_output_file
+      rel_op_output_file = wcp.op_output_file
     csv_row['FileName'] = rel_op_output_file
 
     # Remove the build stats output file if the build failed
-    if returncode != 0 and os.path.exists(output_stats_file):
-      os.remove(output_stats_file)
+    if returncode != 0 and os.path.exists(wcp.output_stats_file):
+      os.remove(wcp.output_stats_file)
 
     return (csv_row, returncode)
 

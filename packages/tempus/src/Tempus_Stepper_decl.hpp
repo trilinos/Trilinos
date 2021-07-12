@@ -70,7 +70,7 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& /* appModel */){}
 
 #endif
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
     { return Teuchos::null; }
 
     /// Set solver.

@@ -67,7 +67,7 @@ C***********************************************************************
 
   100 CONTINUE
       IF (ICOM .GT. JCOM) THEN
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CALL FREFLD (IZ, IZ, 'ENTER LIST OPTION: ', MCOM, IOSTAT, JCOM,
      &      KIN, CIN, IIN, RIN)
          ICOM = 1
@@ -78,14 +78,14 @@ C  LIST OUT THE POINTS
       IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR. (CIN(ICOM)(1:1) .EQ. 'p')) THEN
          ICOM = ICOM+1
          IF (N(1) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL POINTS', IANS, MCOM, ICOM, JCOM, CIN,
      &         IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(18)
             ELSE
-               CALL MESAGE ('LIST POINTS <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST POINTS <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -108,10 +108,10 @@ C  LIST OUT THE POINTS
                END IF
   110       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*-----------------------------------*')
-            CALL MESAGE ('* NO POINTS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*-----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*-----------------------------------*')
+            CALL MESSAGE('* NO POINTS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*-----------------------------------*')
          END IF
   120    CONTINUE
 
@@ -121,14 +121,14 @@ C  LIST OUT THE LINES
      &   (CIN(ICOM)(1:1) .EQ. 'l')) THEN
          ICOM = ICOM+1
          IF (N(2) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL LINES', IANS, MCOM, ICOM, JCOM, CIN,
      &         IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(19)
             ELSE
-               CALL MESAGE ('LIST LINES <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST LINES <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -156,10 +156,10 @@ C  LIST OUT THE LINES
                END IF
   130       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*----------------------------------*')
-            CALL MESAGE ('* NO LINES IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*----------------------------------*')
+            CALL MESSAGE('* NO LINES IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*----------------------------------*')
          END IF
   140    CONTINUE
 
@@ -169,14 +169,14 @@ C  LIST OUT THE SIDES
      &   (CIN(ICOM)(1:2) .EQ. 'si')) THEN
          ICOM = ICOM+1
          IF (N(3) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL SIDES', IANS, MCOM, ICOM, JCOM, CIN,
      &         IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(20)
             ELSE
-               CALL MESAGE ('LIST SIDES <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST SIDES <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -209,10 +209,10 @@ C  LIST OUT THE SIDES
                END IF
   160       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*----------------------------------*')
-            CALL MESAGE ('* NO SIDES IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*----------------------------------*')
+            CALL MESSAGE('* NO SIDES IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*----------------------------------*')
          END IF
   170    CONTINUE
 
@@ -229,14 +229,14 @@ C  LIST OUT SCHEMES
      &   (CIN(ICOM)(1:1) .EQ. 's')) THEN
          ICOM = ICOM+1
          IF (N(10) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL SCHEMES', IANS, MCOM, ICOM, JCOM,
      &         CIN, IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(24)
             ELSE
-               CALL MESAGE ('LIST SCHEMES <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST SCHEMES <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -250,7 +250,7 @@ C  LIST OUT SCHEMES
                   GO TO 190
                END IF
             END IF
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             WRITE(*, 10170)
             DO 180 I = I1, I2
                CALL LTSORT (MR, LINKSC, I, K, ADDLNK)
@@ -259,15 +259,15 @@ C  LIST OUT SCHEMES
                END IF
   180       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE
+            CALL MESSAGE(' ')
+            CALL MESSAGE
      &         ('*---------------------------------------------*')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('* ONLY DEFAULT SCHEME IN THE CURRENT DATABASE *')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('*---------------------------------------------*')
             WRITE(*, 10180)DEFSCH
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
          END IF
   190    CONTINUE
 
@@ -277,14 +277,14 @@ C  LIST OUT THE BAR SETS
      &   (CIN(ICOM)(1:2) .EQ. 'ba')) THEN
          ICOM = ICOM+1
          IF (N(5) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL BAR SETS', IANS, MCOM, ICOM, JCOM,
      &         CIN, IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(21)
             ELSE
-               CALL MESAGE ('LIST BAR SETS <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST BAR SETS <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -298,7 +298,7 @@ C  LIST OUT THE BAR SETS
                   GO TO 220
                END IF
             END IF
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             WRITE(*, 10130)
             DO 210 I = I1, I2
                CALL LTSORT (MS, LINKB, I, K, ADDLNK)
@@ -319,10 +319,10 @@ C  LIST OUT THE BAR SETS
                END IF
   210       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*-------------------------------------*')
-            CALL MESAGE ('* NO BAR SETS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*-------------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*-------------------------------------*')
+            CALL MESSAGE('* NO BAR SETS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*-------------------------------------*')
          END IF
   220    CONTINUE
 
@@ -332,10 +332,10 @@ C  LIST OUT THE RENUMBERING CARDS
      &   (CIN(ICOM)(1:3) .EQ. 'ren')) THEN
          ICOM = ICOM+1
          IF (N(28) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             I1 = 1
             I2 = N(28)
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             WRITE(*, 10220)
             DO 230 I = I1, I2
                WRITE(*, 10230)I, NUMBER(I)(1:72)
@@ -344,20 +344,20 @@ C  LIST OUT THE RENUMBERING CARDS
                END IF
   230       CONTINUE
          ELSE IF (OPTIM) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('*------------------------------------------*')
-            CALL MESAGE ('* NO RENUMBER CARDS - OPTIMIZATION ENABLED *')
-            CALL MESAGE ('*------------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*------------------------------------------*')
+            CALL MESSAGE('* NO RENUMBER CARDS - OPTIMIZATION ENABLED *')
+            CALL MESSAGE('*------------------------------------------*')
+            CALL MESSAGE(' ')
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE
+            CALL MESSAGE(' ')
+            CALL MESSAGE
      &         ('*-------------------------------------------*')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('* NO RENUMBER CARDS - OPTIMIZATION DISABLED *')
-            CALL MESAGE
+            CALL MESSAGE
      &         ('*-------------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
          END IF
 
 C  LIST OUT THE REGIONS
@@ -374,14 +374,14 @@ C  LIST OUT THE REGIONS
   240    CONTINUE
   250    CONTINUE
          IF (.NOT.LGROUP) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL REGIONS', IANS, MCOM, ICOM, JCOM,
      &         CIN, IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(22)
             ELSE
-               CALL MESAGE ('LIST REGIONS <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST REGIONS <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -395,7 +395,7 @@ C  LIST OUT THE REGIONS
                   GO TO 280
                END IF
             END IF
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             WRITE(*, 10050)
             DO 270 I = I1, I2
                CALL LTSORT (MR, LINKR, I, K, ADDLNK)
@@ -427,10 +427,10 @@ C  LIST OUT THE REGIONS
                END IF
   270       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*------------------------------------*')
-            CALL MESAGE ('* NO REGIONS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*------------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*------------------------------------*')
+            CALL MESSAGE('* NO REGIONS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*------------------------------------*')
          END IF
   280    CONTINUE
 
@@ -448,14 +448,14 @@ C  LIST OUT THE GROUPS
   290    CONTINUE
   300    CONTINUE
          IF (LGROUP) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL GROUPS', IANS, MCOM, ICOM, JCOM,
      &         CIN, IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(22)
             ELSE
-               CALL MESAGE ('LIST GROUPS <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST GROUPS <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -469,7 +469,7 @@ C  LIST OUT THE GROUPS
                   GO TO 330
                END IF
             END IF
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             WRITE(*, 10080)
             DO 320 I = I1, I2
                CALL LTSORT (MR, LINKR, I, K, ADDLNK)
@@ -489,10 +489,10 @@ C  LIST OUT THE GROUPS
                END IF
   320       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*-----------------------------------*')
-            CALL MESAGE ('* NO GROUPS IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*-----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*-----------------------------------*')
+            CALL MESSAGE('* NO GROUPS IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*-----------------------------------*')
          END IF
   330    CONTINUE
 
@@ -502,14 +502,14 @@ C  LIST OUT THE HOLES
      &   (CIN(ICOM)(1:2) .EQ. 'ho')) THEN
          ICOM = ICOM+1
          IF (N(29) .GT. 0) THEN
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             CALL INTRUP ('LIST ALL REGIONS WITH HOLES', IANS, MCOM,
      &         ICOM, JCOM, CIN, IIN, RIN, KIN)
             IF (IANS) THEN
                I1 = 1
                I2 = N(7)
             ELSE
-               CALL MESAGE ('LIST HOLES IN REGIONS <I1> THROUGH <I2>:')
+               CALL MESSAGE('LIST HOLES IN REGIONS <I1> THROUGH <I2>:')
                IF (ICOM .GT. JCOM) THEN
                   CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN,
      &               CIN, IIN, RIN)
@@ -523,7 +523,7 @@ C  LIST OUT THE HOLES
                   GO TO 360
                END IF
             END IF
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
             WRITE(*, 10100)
             DO 350 I = I1, I2
                CALL LTSORT (MR, LINKR, I, K, ADDLNK)
@@ -545,10 +545,10 @@ C  LIST OUT THE HOLES
                END IF
   350       CONTINUE
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*----------------------------------*')
-            CALL MESAGE ('* NO HOLES IN THE CURRENT DATABASE *')
-            CALL MESAGE ('*----------------------------------*')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*----------------------------------*')
+            CALL MESSAGE('* NO HOLES IN THE CURRENT DATABASE *')
+            CALL MESSAGE('*----------------------------------*')
          END IF
   360    CONTINUE
 
@@ -569,7 +569,7 @@ C  LIST OUT THE REGIONS IN THE BODY
          WRITE(*, 10210) (IRPB(J), J = J1, N(9))
       ELSE IF (CIN(ICOM)(1:1) .EQ. ' ') THEN
          ICOM = ICOM+1
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          RETURN
 
 C  LIST OUT BOUNDARY CONDITIONS
@@ -577,7 +577,7 @@ C  LIST OUT BOUNDARY CONDITIONS
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'B') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'b')) THEN
          ICOM = ICOM+1
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CHOICE = 'POINT  '
          CALL LISTBF(MP, N(25), CHOICE, LINKPB, IPBF, NPPF, IFPB,
      &      LISTPB, IWTPBF)
@@ -594,17 +594,17 @@ C  LIST OUT THE THREE NODE QUAD GENERATION FLAG
      &   (CIN(ICOM)(1:1) .EQ. 't')) THEN
          ICOM = ICOM+1
          IF (THREE) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('*--------------------------------------*')
-            CALL MESAGE ('* THREE NODE BAR GENERATION - ENABLED  *')
-            CALL MESAGE ('*--------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*--------------------------------------*')
+            CALL MESSAGE('* THREE NODE BAR GENERATION - ENABLED  *')
+            CALL MESSAGE('*--------------------------------------*')
+            CALL MESSAGE(' ')
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*---------------------------------------*')
-            CALL MESAGE ('* THREE NODE BAR GENERATION - DISABLED  *')
-            CALL MESAGE ('*---------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*---------------------------------------*')
+            CALL MESSAGE('* THREE NODE BAR GENERATION - DISABLED  *')
+            CALL MESSAGE('*---------------------------------------*')
+            CALL MESSAGE(' ')
          END IF
 
 C  LIST OUT THE EIGHT NODE QUAD GENERATION FLAG
@@ -613,17 +613,17 @@ C  LIST OUT THE EIGHT NODE QUAD GENERATION FLAG
      &   (CIN(ICOM)(1:2) .EQ. 'ei')) THEN
          ICOM = ICOM+1
          IF (EIGHT) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('*--------------------------------------*')
-            CALL MESAGE ('* EIGHT NODE QUAD GENERATION - ENABLED *')
-            CALL MESAGE ('*--------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*--------------------------------------*')
+            CALL MESSAGE('* EIGHT NODE QUAD GENERATION - ENABLED *')
+            CALL MESSAGE('*--------------------------------------*')
+            CALL MESSAGE(' ')
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*---------------------------------------*')
-            CALL MESAGE ('* EIGHT NODE QUAD GENERATION - DISABLED *')
-            CALL MESAGE ('*---------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*---------------------------------------*')
+            CALL MESSAGE('* EIGHT NODE QUAD GENERATION - DISABLED *')
+            CALL MESSAGE('*---------------------------------------*')
+            CALL MESSAGE(' ')
          END IF
 
 C  LIST OUT THE NINE NODE QUAD GENERATION FLAG
@@ -632,17 +632,17 @@ C  LIST OUT THE NINE NODE QUAD GENERATION FLAG
      &   (CIN(ICOM)(1:1) .EQ. 'n')) THEN
          ICOM = ICOM+1
          IF (NINE) THEN
-            CALL MESAGE (' ')
-            CALL MESAGE ('*-------------------------------------*')
-            CALL MESAGE ('* NINE NODE QUAD GENERATION - ENABLED *')
-            CALL MESAGE ('*-------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*-------------------------------------*')
+            CALL MESSAGE('* NINE NODE QUAD GENERATION - ENABLED *')
+            CALL MESSAGE('*-------------------------------------*')
+            CALL MESSAGE(' ')
          ELSE
-            CALL MESAGE (' ')
-            CALL MESAGE ('*--------------------------------------*')
-            CALL MESAGE ('* NINE NODE QUAD GENERATION - DISABLED *')
-            CALL MESAGE ('*--------------------------------------*')
-            CALL MESAGE (' ')
+            CALL MESSAGE(' ')
+            CALL MESSAGE('*--------------------------------------*')
+            CALL MESSAGE('* NINE NODE QUAD GENERATION - DISABLED *')
+            CALL MESSAGE('*--------------------------------------*')
+            CALL MESSAGE(' ')
          END IF
 
 C  EXIT OPTION - EXITS FASTQ
@@ -660,7 +660,7 @@ C  EXIT OPTION - EXITS FASTQ
          ENDIF
          GO TO 100
 
-C  PRINT HELP MESAGE
+C  PRINT HELP MESSAGE
 
       ELSE
          ICOM = ICOM+1

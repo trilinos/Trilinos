@@ -261,7 +261,7 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     std::vector<int> shared_procs;
     bulk.comm_shared_procs(bulk.entity_key(node),shared_procs);
     ASSERT_EQ( size_t(1) , shared_procs.size() );
-    ASSERT_EQ( size_t(2) , bulk.count_relations(node) );
+    ASSERT_EQ( size_t(2) , bulk.count_relations(node) )<<"node: "<<bulk.identifier(node);
 
     EntityId node_element_ids[2] ;
     Entity const *node_elems = bulk.begin_elements(node);
@@ -343,14 +343,9 @@ TEST(UnitTestingOfBulkData, testDestroy_ring)
     for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
     {
       --irank;
-      if (bulk.num_connectivity(node_owned, irank) > 0) {
+      while (bulk.num_connectivity(node_owned, irank) > 0) {
         stk::mesh::Entity const *to_b = bulk.begin(node_owned, irank);
-        stk::mesh::Entity const *to_e = bulk.end(node_owned, irank);
-        for ( ; to_b != to_e;
-              bulk.begin(node_owned, irank), to_e = bulk.end(node_owned, irank))
-        {
-          ASSERT_TRUE( bulk.destroy_entity(*(to_e - 1)) );
-        }
+        ASSERT_TRUE( bulk.destroy_entity(*to_b) );
       }
     }
     ASSERT_TRUE( bulk.destroy_entity( node_owned ) );

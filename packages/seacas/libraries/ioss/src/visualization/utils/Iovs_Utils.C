@@ -5,11 +5,11 @@
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Utils.h>
-#include <Iovs_Utils.h>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <visualization/utils/Iovs_Utils.h>
 
 #ifdef IOSS_DLOPEN_ENABLED
 #include <dlfcn.h>
@@ -17,6 +17,11 @@
 
 #include <libgen.h>
 #include <sys/stat.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 
 namespace Iovs {
   std::string persistentLdLibraryPathEnvForCatalyst = "";
@@ -265,7 +270,7 @@ namespace Iovs {
     bool        callDlopenLibOSMesa{};
     std::string libOSMesaPath;
 
-    this->getCatalystPluginPath(pluginLibraryPath, callDlopenLibOSMesa, libOSMesaPath);
+    callDlopenLibOSMesa = this->getCatalystPluginPath(pluginLibraryPath, libOSMesaPath);
 
 #ifdef IOSS_DLOPEN_ENABLED
     if (callDlopenLibOSMesa) {
@@ -287,15 +292,15 @@ namespace Iovs {
 #endif
   }
 
-  void Utils::getCatalystPluginPath(std::string &catalystPluginPath, bool callDlopenLibOSMesa,
-                                    std::string &libOSMesaPath)
+  bool Utils::getCatalystPluginPath(std::string &catalystPluginPath, std::string &libOSMesaPath)
   {
+    bool callDlopenLibOSMesa = false;
 
     if (getenv("CATALYST_PLUGIN") != nullptr) {
       catalystPluginPath  = getenv("CATALYST_PLUGIN");
       callDlopenLibOSMesa = false;
       libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return;
+      return callDlopenLibOSMesa;
     }
 
     std::string catalystInsDir = this->getCatalystAdapterInstallDirectory();
@@ -305,7 +310,7 @@ namespace Iovs {
           catalystInsDir + std::string(CATALYST_INSTALL_LIB_DIR) + CATALYST_PLUGIN_DYNAMIC_LIBRARY;
       callDlopenLibOSMesa = false;
       libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return;
+      return callDlopenLibOSMesa;
     }
 
     catalystPluginPath =
@@ -320,6 +325,7 @@ namespace Iovs {
     std::string paraviewPythonZipFile =
         this->getSierraInstallDirectory() + CATALYST_PARAVIEW_PYTHON_ZIP_FILE;
     setPythonPathForParaViewPythonZipFile(paraviewPythonZipFile);
+    return callDlopenLibOSMesa;
   }
 
   void Utils::setPythonPathForParaViewPythonZipFile(std::string &paraviewPythonZipFilePath)
@@ -331,7 +337,11 @@ namespace Iovs {
     else {
       persistentLdLibraryPathEnvForCatalyst = paraviewPythonZipFilePath + ":" + existingPythonpath;
     }
+#ifdef _WIN32
+    SetEnvironmentVariableA("PYTHONPATH", persistentLdLibraryPathEnvForCatalyst.c_str());
+#else
     setenv("PYTHONPATH", persistentLdLibraryPathEnvForCatalyst.c_str(), 1);
+#endif
   }
 
   std::string Utils::getCatalystPythonDriverPath()
@@ -372,7 +382,11 @@ namespace Iovs {
       IOSS_ERROR(errmsg);
     }
 
-    char *      cbuf          = realpath(sierraInsDir.c_str(), nullptr);
+#ifdef _WIN32
+    char *cbuf = _fullpath(nullptr, sierraInsDir.c_str(), _MAX_PATH);
+#else
+    char *cbuf = realpath(sierraInsDir.c_str(), nullptr);
+#endif
     std::string sierraInsPath = cbuf;
     free(cbuf);
 

@@ -293,6 +293,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_graph_entries( const unsigned iset ) const
   {
+    typedef typename std::remove_reference< decltype( row_count(0) ) >::type atomic_incr_type;
+
     if ( node_node_set.valid_at(iset) ) {
       // Add each entry to the graph entries.
 
@@ -301,13 +303,11 @@ public:
       const unsigned col_node = key.second ;
 
       if ( row_node < row_count.extent(0) ) {
-        typedef typename std::remove_reference< decltype( row_count(0) ) >::type atomic_incr_type;
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = col_node ;
       }
 
       if ( col_node < row_count.extent(0) && col_node != row_node ) {
-        typedef typename std::remove_reference< decltype( row_count(0) ) >::type atomic_incr_type;
         const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , atomic_incr_type(1) );
         graph.entries( offset ) = row_node ;
       }

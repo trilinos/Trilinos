@@ -139,7 +139,16 @@ namespace MueLu {
     /// Return a simple one-line description of the Graph.
     std::string description() const                              { return "MueLu.description()"; } //FIXME use object's label
 
+    //! Return the row pointers of the local graph
+    const ArrayRCP<const LO> getRowPtrs() const {
+      return rows_;
+    }
 
+    //! Return the list entries in the local graph
+    const ArrayRCP<const LO> getEntries() const {
+      return columns_;
+    }
+    
     //! Print the Graph with some verbosity level to an FancyOStream object.
     //using MueLu::Describable::describe; // overloading, not hiding
     //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;;

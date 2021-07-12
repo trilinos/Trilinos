@@ -35,7 +35,7 @@ FUNCTION(TRIBITS_GET_RAW_GIT_COMMIT_UTC_TIME  repo_base_dir  commit_ref
     set(ENV{TZ} GMT)
     execute_process(
       COMMAND "${GIT_EXECUTABLE}" log
-        --format="%cd" --date=iso-local -1 ${commit_ref}
+        "--format=%cd" --date=iso-local -1 ${commit_ref}
       WORKING_DIRECTORY "${repo_base_dir}"
       OUTPUT_VARIABLE  GIT_CMND_OUTPUT
       ERROR_VARIABLE  GIT_CMND_OUTPUT
@@ -51,6 +51,7 @@ FUNCTION(TRIBITS_GET_RAW_GIT_COMMIT_UTC_TIME  repo_base_dir  commit_ref
         "Error Message: ${GIT_CMND_OUTPUT}" )
     endif()
   endif()
+  # print_var(GIT_CMND_OUTPUT)
   tribits_strip_quotes_from_str("${GIT_CMND_OUTPUT}" git_commit_no_quotes)
   # ToDo: Assert that the date offset is "+0000" or error out!
   set(${git_commit_utc_time_out} "${git_commit_no_quotes}" PARENT_SCOPE)

@@ -11,6 +11,7 @@
 #include "Ioss_GetLongOpt.h"
 
 #include <iosfwd>
+#include <limits>
 #include <string>
 #include <vector>
 

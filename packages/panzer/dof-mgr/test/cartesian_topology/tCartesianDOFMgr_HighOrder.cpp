@@ -83,7 +83,7 @@ std::string getElementBlock(const Triplet & element,
                                     const CartesianConnManager & connManager)
                                     
 {
-  int localElmtId = connManager.computeLocalElementIndex(element); 
+  int localElmtId = connManager.computeLocalBrickElementIndex(element);
   return connManager.getBlockId(localElmtId);
 }
 
@@ -128,8 +128,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
 
-  auto myOffset   = connManager->getMyOffsetTriplet();
-  auto myElements = connManager->getMyElementsTriplet();
+  auto myOffset   = connManager->getMyBrickOffsetTriplet();
+  auto myElements = connManager->getMyBrickElementsTriplet();
 
   // check sharing locally on this processor
   {
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, ho_gid_values)
 
     out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
-    int localElmtId    = connManager->computeLocalElementIndex(element);
+    int localElmtId    = connManager->computeLocalBrickElementIndex(element);
 
     TEST_ASSERT(localElmtId>=0);
 
@@ -222,8 +222,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
 
-  auto myOffset   = connManager->getMyOffsetTriplet();
-  auto myElements = connManager->getMyElementsTriplet();
+  auto myOffset   = connManager->getMyBrickOffsetTriplet();
+  auto myElements = connManager->getMyBrickElementsTriplet();
 
   // check sharing locally on this processor
   {
@@ -235,9 +235,9 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, gid_values)
 
     out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
-    int localElmtId    = connManager->computeLocalElementIndex(element);
-    int localElmtId_px = connManager->computeLocalElementIndex(Triplet(element.x+1,element.y,element.z));
-    int localElmtId_py = connManager->computeLocalElementIndex(Triplet(element.x,element.y+1,element.z));
+    int localElmtId    = connManager->computeLocalBrickElementIndex(element);
+    int localElmtId_px = connManager->computeLocalBrickElementIndex(Triplet(element.x+1,element.y,element.z));
+    int localElmtId_py = connManager->computeLocalBrickElementIndex(Triplet(element.x,element.y+1,element.z));
 
     TEST_ASSERT(localElmtId>=0);
     TEST_ASSERT(localElmtId_px>=0);
@@ -359,8 +359,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
   out << std::endl << "Mesh Topology: " << std::endl;
   printMeshTopology(out,*dofManager);
 
-  auto myOffset   = connManager->getMyOffsetTriplet();
-  auto myElements = connManager->getMyElementsTriplet();
+  auto myOffset   = connManager->getMyBrickOffsetTriplet();
+  auto myElements = connManager->getMyBrickElementsTriplet();
 
   out << "My Offset   = " << myOffset.x << " " << myOffset.y << " " << myOffset.z << std::endl;
   out << "My myElements = " << myElements.x << " " << myElements.y << " " << myElements.z << std::endl;
@@ -375,9 +375,9 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 
     out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
 
-    int localElmtId    = connManager->computeLocalElementIndex(element);
-    int localElmtId_px = connManager->computeLocalElementIndex(Triplet(element.x+1,element.y,element.z));
-    int localElmtId_py = connManager->computeLocalElementIndex(Triplet(element.x,element.y+1,element.z));
+    int localElmtId    = connManager->computeLocalBrickElementIndex(element);
+    int localElmtId_px = connManager->computeLocalBrickElementIndex(Triplet(element.x+1,element.y,element.z));
+    int localElmtId_py = connManager->computeLocalBrickElementIndex(Triplet(element.x,element.y+1,element.z));
 
     TEST_ASSERT(localElmtId>=0);
     TEST_ASSERT(localElmtId_px>=0);
@@ -464,8 +464,8 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_HighOrder, quad2d)
 
     out << "right element = " << element_r.x << " " << element_r.y << " " << element_r.z << std::endl;
 
-    int localElmtId_l    = connManager->computeLocalElementIndex(element_l);
-    int localElmtId_r    = connManager->computeLocalElementIndex(element_r);
+    int localElmtId_l    = connManager->computeLocalBrickElementIndex(element_l);
+    int localElmtId_r    = connManager->computeLocalBrickElementIndex(element_r);
 
     TEST_ASSERT(localElmtId_l>=0);
     TEST_ASSERT(localElmtId_r>=0);

@@ -66,6 +66,7 @@ namespace Xpetra {
     typedef LocalOrdinal local_ordinal_type;
     typedef GlobalOrdinal global_ordinal_type;
     typedef Node node_type;
+    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -73,6 +74,10 @@ namespace Xpetra {
     //! Destructor.
     virtual ~Import() { }
 
+    //! Special "constructor"
+    virtual Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const = 0;
+    
    //@}
 
     //! @name Import Attribute Methods

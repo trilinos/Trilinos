@@ -56,6 +56,6 @@ class TestPhactoriSliceWithPlaneOperation(unittest.TestCase):
   def test_OrthogonalSlices(unittest.TestCase):
 
 if __name__ == '__main__':
+    cc = Cone()
+    rr = Show()
     unittest.main()
-
-

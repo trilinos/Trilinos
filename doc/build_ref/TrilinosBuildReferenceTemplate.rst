@@ -272,23 +272,25 @@ needs to be rebuilt).  The solution is to switch from the default ``Unix
 Makefiles`` generator to the ``Ninja`` generator (see `Enabling support for
 Ninja`_).
 
+
 Enabling and viewing build statistics
 -------------------------------------
 
 The Trilinos project has portable built-in support for generating and
-reporting build statistics such the high-watermark for RAM, the wall clock
-time, and many other statistics used to build each and every object file,
-library, and executable target.  To enable support for this, configure with::
+reporting build statistics such high-watermark for RAM, wall clock time, file
+size, and many other statistics used to build each and every object file,
+library, and executable target in the project (and report that information to
+CDash).  To enable support for these build statistics, configure with::
 
   -D Trilinos_ENABLE_BUILD_STATS=ON \
 
 This will do the following:
 
-* Generate compiler wrappers ``build_stats_<lang>_wrapper.sh`` for C, C++, and
-  Fortran in the build tree that will compute statics as a byproduct for every
-  usage of each compiler.  (The compiler wrappers create a file
-  ``<output-file>.timing`` for every generated object, library and executable
-  ``<output-file>`` file.)
+* Generate wrappers ``build_stats_<op>_wrapper.sh`` for C, C++, and Fortran
+  (and for static builds also ``ar``, ``randlib`` and ``ld``) in the build
+  tree that will compute statics as a byproduct of every invocation of these
+  commands.  (The wrappers create a file ``<output-file>.timing`` for every
+  generated object, library and executable ``<output-file>`` file.)
 
 * Define a build target called ``generate-build-stats`` that when run will
   gather up all of the generated build statistics into a single CSV file
@@ -296,19 +298,14 @@ This will do the following:
   the end of the ``ALL`` target so a raw ``make`` will automatically create an
   up-to-date ``build_stats.csv`` file.)
 
-* Enable the package ``TrilinosBuildStats`` (and when
+* By default, enable the package ``TrilinosBuildStats`` (and when
   ``-DTrilinos_ENABLE_TESTS=ON`` or ``-DTrilinosBuildStats_ENABLE_TESTS=ON``
   are also set) will define the test ``TrilinosBuildStats_Results`` to
   summarize and report the build statistics.  When run, this test calls the
-  tool ``summarize_build_stats.py`` in to report summary build stats to STDOUT
-  the test and will also upload the file ``build_stats.csv`` to CDash as using
-  the CTest property ``ATTACHED_FILES`` when submitting test results to CDash.
-
-* Set up to install the generated build-stats compiler wrappers and a helper
-  script ``gather_build_stats.sh`` into the ``<prefix>/bin`` directory as part
-  of the default ``install`` target.  (This allows customers to also use these
-  compiler wrappers to generate and gather up build stats for their own
-  project as well that depends on Trilinos.)
+  tools ``gather_build_stats.py`` and ``summarize_build_stats.py`` to gather
+  and report summary build stats to STDOUT and will also upload the file
+  ``build_stats.csv`` to CDash as using the CTest property ``ATTACHED_FILES``
+  when submitting test results to CDash.
 
 The default for the cache variable ``Trilinos_ENABLE_BUILD_STATS`` is
 determined as follows:
@@ -323,6 +320,9 @@ determined as follows:
   used as the default value.
 
 * Else, the default value is set to ``OFF``.
+
+Otherwise, if ``Trilinos_ENABLE_BUILD_STATS`` is explicitly set in the cache
+with ``-DTrilinos_ENABLE_BUILD_STATS=ON|OFF``, then that value will be used.
 
 When the test ``TrilinosBuildStats_Results`` is run, it produces summary
 statistics to STDOUT like shown below::
@@ -356,8 +356,8 @@ where:
   given target measured in MB.
 * ``elapsed_real_time_sec`` is the wall clock time used to build a given
   target measured in seconds.
-* ``file_size_mb`` is the produced file size of a given build target
-  (i.e. object file, library, or executable) measured in MB.
+* ``file_size_mb`` is the file size of a given build target (i.e. object file,
+  library, or executable) measured in MB.
 * ``Full Project`` are the stats for all of the enabled Trilinos packages.
 * ``<packagei>`` are the build stats for the ``<packagei>`` subdirectory under
   the base directories ``commonTools`` and ``packages``.  (These map to Trilinos
@@ -370,7 +370,7 @@ compilers, platforms, and build configurations and even across the same builds
 over days, weeks, and months.)
 
 The generated ``build_stats.csv`` file contains many other types of useful
-build stats as well but the above three are some of the more impact-full build
+build stats as well but the above three are some of the more significant build
 statistics.
 
 To avoid situations where a full rebuild does not occur (e.g. any build target
@@ -384,42 +384,47 @@ process and therefore will usually remove the file even of later configure
 operations fail.
 
 Finally, to make rebuilds more robust and to restrict build stats to only new
-targets getting (re)built after an initial configure, configure with::
+targets getting (re)built after an initial configure, then configure with::
 
   -D Trilinos_REMOVE_BUILD_STATS_TIMING_FILES_ON_FRESH_CONFIGURE=ON
 
-The will remove **all** of the ``*.timing`` files under the base build
+This will remove **all** of the ``*.timing`` files under the base build
 directory during a fresh configure (i.e. where the ``CMakeCache.txt`` file
 does not exist).  But this will not remove ``*.timing`` files on reconfigures
 (i..e where a ``CMakeCache.txt`` file is preserved).  Timing stats for targets
 that are already built and don't need to be rebuilt after the last fresh
 configure will not get reported.  (But this can be useful for CI builds where
 one only wants to see build stats for the files updated in the last PR
-iteration.  Also, this will avoid problems with corrupted `<target>.timing`
-files that may already exist in the base repo.)
+iteration.
 
 NOTES:
+
+* The underlying compilers must already be specified in the cache variables
+  ``CMAKE_C_COMPILER``, ``CMAKE_CXX_COMPILER``, and ``CMAKE_Fortran_COMPILER``
+  and not left up to CMake to determine.  The best way to do that is, for
+  example ``-DCMAKE_C_COMPILER=$(which mpicc)`` on the ``cmake`` command-line.
+
+* The tool ``gather_build_stats.py`` is very robust and will discard data from
+  any invalid or corrupted ``*.timing`` files and can deal with ``*.timing``
+  files with different sets and ordering of the data fields from different
+  versions of the build stats wrapper tool.  (Therefore, one can keep
+  rebuilding in an existing build directory with old ``*.timing`` files
+  hanging around and never have to worry about being able to create an updated
+  ``build_stats.csv`` file.)
 
 * The installed ``TrilinosConfig.cmake`` and ``<Package>Config.cmake`` files
   list the original underlying C, C++, and Fortran compilers, **not** the
   build stats compiler wrappers.
 
-* If a customer wants to use the build stats compiler wrappers, then they can
-  just directly set ``CMAKE_<LANG>_COMPILER`` to the path of the installed
-  compiler wrappers ``<prefix>/bin/build_stats_<lang>_wrapper.sh`` for each
-  language ``<lang>`` = C, CXX, and Fortran and also add
-  ``set(ENV{CMAKE_IS_IN_CONFIGURE_MODE} 1)`` to the beginning of their
-  project's top-level ``CMakeLists.txt`` file.
-
 * The ``generate-build-stats`` target has dependencies on every object,
   library, and executable build target in the project so it will always only
   run after all of those targets are up to date.
 
-* The file ``build_stats.csv`` can be downloaded off of CDash from the
-  ``TrilinosBuildStats_Results`` test results summary page.  (The file is
-  downloaded as a compressed ``build_stats.csv.tgz`` file which will then need
-  to be uncompressed using ``tar -xzvf build_stats.csv.tgz`` before being
-  viewed.)
+* After uploading the test results to CDash, the file ``build_stats.csv`` can
+  be downloaded off CDash from the ``TrilinosBuildStats_Results`` test results
+  details page.  (The file is downloaded as a compressed
+  ``build_stats.csv.tgz`` file which will then need to be uncompressed using
+  ``tar -xzvf build_stats.csv.tgz`` before viewing.)
 
 * Any ``build_stats.csv`` file can be viewed and queried by uploading it to
   the site ``https://jjellio.github.io/build_stats/index.html``.

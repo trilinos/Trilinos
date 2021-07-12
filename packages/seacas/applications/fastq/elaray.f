@@ -102,7 +102,7 @@ C  TEST TO SEE IF THE NODE FITS IN THE GRID
      &               ((Y1 .LE. YU) .AND. (Y1 .GE. YL))  ) THEN
                      KOUNT = KOUNT + 1
                      IF (KOUNT .GT. NPEOLD*4) THEN
-                        CALL MESAGE ('** ERROR - NOT ENOUGH ROOM '//
+                        CALL MESSAGE('** ERROR - NOT ENOUGH ROOM '//
      &                     'IN LISTEG, SUBROUTINE ELARAY **')
                         GOTO 170
                      ENDIF
@@ -131,7 +131,7 @@ C  TEST TO SEE IF THE EDGE OF THE ELEMENT CROSSES THE GRID
                   IF (LCROSS) THEN
                      KOUNT = KOUNT + 1
                      IF (KOUNT .GT. NPEOLD*4) THEN
-                        CALL MESAGE ('** ERROR - NOT ENOUGH ROOM '//
+                        CALL MESSAGE('** ERROR - NOT ENOUGH ROOM '//
      &                     'IN LISTEG, SUBROUTINE ELARAY **')
                         GOTO 170
                      ENDIF
@@ -162,7 +162,7 @@ C  OTHERWISE TEST TO SEE IF THE ELEMENT COMPLETELY ENCLOSES THE GRID
                   IF (INSIDE) THEN
                      KOUNT = KOUNT + 1
                      IF (KOUNT .GT. NPEOLD*4) THEN
-                        CALL MESAGE ('** ERROR - NOT ENOUGH ROOM '//
+                        CALL MESSAGE('** ERROR - NOT ENOUGH ROOM '//
      &                     'IN LISTEG, SUBROUTINE ELARAY **')
                         GOTO 170
                      ENDIF

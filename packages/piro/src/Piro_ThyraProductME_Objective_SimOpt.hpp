@@ -678,6 +678,11 @@ public:
       params->set<int>("Optimizer Iteration Number", iter);
   }
 
+  void update( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType /*type*/, int iter = -1) {
+    //temporary implementation using old update function  
+    this->update( u, z, true, iter);
+  }
+
   bool z_hasChanged(const ROL::Vector<Real> &rol_z) const {
     bool changed = true;
     if (Teuchos::nonnull(rol_z_ptr)) {

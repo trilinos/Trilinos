@@ -201,6 +201,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   A->fillComplete();
   using device_type = typename NT::device_type;
   using execution_space = typename device_type::execution_space;
+  using gids_type = typename graph_type::nonconst_global_inds_host_view_type;
   execution_space().fence ();
 
   auto loc_num_errs = 0;
@@ -211,9 +212,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
     for (LO loc_row=0; loc_row<num_loc_rows; ++loc_row) {
       const auto gbl_row = map1->getGlobalElement(loc_row);
       size_t num_entries = 3;
-      Array<GO> A_indices(num_entries);
-      A->getGlobalRowCopy(gbl_row, A_indices(), num_entries);
-      std::sort(A_indices.begin(), A_indices.begin()+num_entries);
+      gids_type A_indices(num_entries);
+      A->getGlobalRowCopy(gbl_row, A_indices, num_entries);
+      Tpetra::sort(A_indices, num_entries);
 
       auto errors = 0; // Herb Sutter loves you :)
       if (gbl_row == 0) {

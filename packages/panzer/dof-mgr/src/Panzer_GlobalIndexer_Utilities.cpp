@@ -153,8 +153,10 @@ printMeshTopology(std::ostream & os,const panzer::GlobalIndexer & ugi)
  
     // loop over element in this element block, write out to 
     for(std::size_t e=0;e<elements.size();e++) {
-      // extract LIDs, this is returned by reference nominally for performance
+      // extract LIDs, this is terribly inefficient for certain
+      // devices but only used for debugging
       PHX::View<const int*> lids = ugi.getElementLIDs(elements[e]);
+      auto lids_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),lids);
 
       // extract GIDs, this array is filled
       std::vector<panzer::GlobalOrdinal> gids;
@@ -168,7 +170,7 @@ printMeshTopology(std::ostream & os,const panzer::GlobalIndexer & ugi)
 
       os << ",  lids =";
       for(std::size_t i=0;i<gids.size();i++)
-        os << " " << lids[i];
+        os << " " << lids_host(i);
       os << std::endl;
     }
   }
@@ -177,8 +179,8 @@ printMeshTopology(std::ostream & os,const panzer::GlobalIndexer & ugi)
 Teuchos::RCP<Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildGhostedFieldReducedVector(const GlobalIndexer & ugi)
 {
-   typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
-   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> IntVector;
+   using Map = Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+   using IntVector = Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
 
    std::vector<panzer::GlobalOrdinal> indices;
    std::vector<std::string> blocks;
@@ -234,21 +236,23 @@ void buildGhostedFieldVector(const GlobalIndexer & ugi,
                              std::vector<int> & fieldNumbers,
                              const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec)
 {
-   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> IntVector;
-
+   using IntVector = Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
    Teuchos::RCP<const IntVector> dest = buildGhostedFieldVector(ugi,reducedVec);
 
+   auto host_values = dest->getLocalViewHost(Tpetra::Access::ReadOnly);
+
    fieldNumbers.resize(dest->getLocalLength());
-   dest->get1dCopy(Teuchos::arrayViewFromVector(fieldNumbers));
+   for (size_t i=0; i < fieldNumbers.size(); ++i)
+     fieldNumbers[i] = host_values(i,0);
 }
 
 Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
 buildGhostedFieldVector(const GlobalIndexer & ugi,
                         const Teuchos::RCP<const Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> > & reducedVec)
 {
-   typedef Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Map;
-   typedef Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> IntVector;
-   typedef Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType> Importer;
+   using Map = Tpetra::Map<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+   using IntVector = Tpetra::Vector<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+   using Importer = Tpetra::Import<int,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
 
    // first step: get a reduced field number vector and build a map to 
    // contain the full field number vector
@@ -275,6 +279,7 @@ buildGhostedFieldVector(const GlobalIndexer & ugi,
    Importer importer(sourceMap,destMap);
 
    dest->doImport(*source,importer,Tpetra::INSERT);
+   PHX::Device::execution_space().fence();
 
    return dest;
 }

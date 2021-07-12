@@ -263,6 +263,18 @@ public:
   /// environment variable.
   static bool profilingRegionUseKokkosProfiling();
 
+  /// \brief Skip copyAndPermute if possible
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_SKIP_COPY_AND_PERMUTE</tt> environment variable.
+  static bool skipCopyAndPermuteIfPossible();
+
+  /// \brief Overlap communication and computation.
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_OVERLAP</tt> environment variable.
+  static bool overlapCommunicationAndComputation();
+
 
 };
 

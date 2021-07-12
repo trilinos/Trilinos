@@ -405,7 +405,8 @@ mult_test_results multiply_test_kernel(
   }
 
   // Extract Kokkos CrsMatrices
-  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<SC,LO,GO,NO>::local_matrix_device_type 
+                   KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -415,8 +416,8 @@ mult_test_results multiply_test_kernel(
           typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrix-es
-  const KCRS & Ak = Aeff->getLocalMatrix();
-  const KCRS & Bk = Beff->getLocalMatrix();
+  const KCRS & Ak = Aeff->getLocalMatrixDevice();
+  const KCRS & Bk = Beff->getLocalMatrixDevice();
 
   // Setup
   // As a note "SPGEMM_MKL" will *NOT* pass all of these tests

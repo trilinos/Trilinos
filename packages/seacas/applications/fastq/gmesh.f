@@ -93,7 +93,7 @@ C  ENTER GRAPHICS OPTION
 
   110 CONTINUE
       IF (ICOM .GT. JCOM) THEN
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
          CALL FREFLD (IZ, IZ, 'ENTER MESH GRAPHICS OPTION: ', MCOM,
      &      IOSTAT, JCOM, KIN, CIN, IIN, RIN)
          ICOM = 1
@@ -106,10 +106,10 @@ C  TOGGLE DRAWING OF THE AXIS
          ICOM = ICOM + 1
          IF (AXIS) THEN
             AXIS = .FALSE.
-            CALL MESAGE ('AXIS DRAWING - OFF')
+            CALL MESSAGE('AXIS DRAWING - OFF')
          ELSE
             AXIS = .TRUE.
-            CALL MESAGE ('AXIS DRAWING - ON')
+            CALL MESSAGE('AXIS DRAWING - ON')
          END IF
 
 C  TOGGLE CALCULATION OF AREA AND C.G.
@@ -119,10 +119,10 @@ C  TOGGLE CALCULATION OF AREA AND C.G.
          ICOM = ICOM + 1
          IF (AREACG) THEN
             AREACG = .FALSE.
-            CALL MESAGE ('AREA AND C.G. REPORT - OFF')
+            CALL MESSAGE('AREA AND C.G. REPORT - OFF')
          ELSE
             AREACG = .TRUE.
-            CALL MESAGE ('AREA AND C.G. REPORT - ON')
+            CALL MESSAGE('AREA AND C.G. REPORT - ON')
          END IF
 
 C  TOGGLE NODAL BOUNDARY DISPLAY
@@ -132,10 +132,10 @@ C  TOGGLE NODAL BOUNDARY DISPLAY
          ICOM = ICOM + 1
          IF (LABNB) THEN
             LABNB = .FALSE.
-            CALL MESAGE ('NODAL BOUNDARY DISPLAY - OFF')
+            CALL MESSAGE('NODAL BOUNDARY DISPLAY - OFF')
          ELSE
             LABNB = .TRUE.
-            CALL MESAGE ('NODAL BOUNDARY DISPLAY - ON')
+            CALL MESSAGE('NODAL BOUNDARY DISPLAY - ON')
          END IF
 
 C  TOGGLE ELEMENT SIDE BOUNDARY DISPLAY
@@ -145,10 +145,10 @@ C  TOGGLE ELEMENT SIDE BOUNDARY DISPLAY
          ICOM = ICOM + 1
          IF (LABSB) THEN
             LABSB = .FALSE.
-            CALL MESAGE ('ELEMENT SIDE BOUNDARY DISPLAY - OFF')
+            CALL MESSAGE('ELEMENT SIDE BOUNDARY DISPLAY - OFF')
          ELSE
             LABSB = .TRUE.
-            CALL MESAGE ('ELEMENT SIDE BOUNDARY DISPLAY - ON')
+            CALL MESSAGE('ELEMENT SIDE BOUNDARY DISPLAY - ON')
          END IF
 
 C  TOGGLE WEIGHTING FACTOR DISPLAY
@@ -158,10 +158,10 @@ C  TOGGLE WEIGHTING FACTOR DISPLAY
          ICOM = ICOM + 1
          IF (LABW) THEN
             LABW = .FALSE.
-            CALL MESAGE ('BOUNDARY WEIGHTING DISPLAY - OFF')
+            CALL MESSAGE('BOUNDARY WEIGHTING DISPLAY - OFF')
          ELSE
             LABW = .TRUE.
-            CALL MESAGE ('BOUNDARY WEIGHTING DISPLAY - ON')
+            CALL MESSAGE('BOUNDARY WEIGHTING DISPLAY - ON')
          END IF
 
 C  TOGGLE ELEMENT NUMBERING
@@ -171,10 +171,10 @@ C  TOGGLE ELEMENT NUMBERING
          ICOM = ICOM + 1
          IF (LABE) THEN
             LABE = .FALSE.
-            CALL MESAGE ('ELEMENT NUMBERS - OFF')
+            CALL MESSAGE('ELEMENT NUMBERS - OFF')
          ELSE
             LABE = .TRUE.
-            CALL MESAGE ('ELEMENT NUMBERS - ON')
+            CALL MESSAGE('ELEMENT NUMBERS - ON')
             LABO = .FALSE.
          END IF
 
@@ -185,10 +185,10 @@ C  TOGGLE NODE NUMBERING
          ICOM = ICOM + 1
          IF (LABN) THEN
             LABN = .FALSE.
-            CALL MESAGE ('NODE NUMBERS - OFF')
+            CALL MESSAGE('NODE NUMBERS - OFF')
          ELSE
             LABN = .TRUE.
-            CALL MESAGE ('NODE NUMBERS - ON')
+            CALL MESSAGE('NODE NUMBERS - ON')
          END IF
 
 C  TOGGLE MATERIAL NUMBER DISPLAY
@@ -198,10 +198,10 @@ C  TOGGLE MATERIAL NUMBER DISPLAY
          ICOM = ICOM + 1
          IF (LABM) THEN
             LABM = .FALSE.
-            CALL MESAGE ('MATERIAL NUMBERING - OFF')
+            CALL MESSAGE('MATERIAL NUMBERING - OFF')
          ELSE
             LABM = .TRUE.
-            CALL MESAGE ('MATERIAL NUMBERING - ON')
+            CALL MESSAGE('MATERIAL NUMBERING - ON')
          END IF
 
 C  TOGGLE OPTIMIZED ORDER DISPLAY
@@ -211,10 +211,10 @@ C  TOGGLE OPTIMIZED ORDER DISPLAY
          ICOM = ICOM + 1
          IF (LABO) THEN
             LABO = .FALSE.
-            CALL MESAGE ('OPTIMIZED ORDER NUMBERING - OFF')
+            CALL MESSAGE('OPTIMIZED ORDER NUMBERING - OFF')
          ELSE
             LABO = .TRUE.
-            CALL MESAGE ('OPTIMIZER ORDER NUMBERING - ON')
+            CALL MESSAGE('OPTIMIZER ORDER NUMBERING - ON')
             LABE = .FALSE.
          END IF
 
@@ -224,7 +224,7 @@ C  PLOT ALL ACTIVE ELEMENTS  (ZOOM STILL APPLIES)
      &   (CIN (ICOM) (1:1) .EQ. 'p')) THEN
          ICOM = ICOM + 1
          IF (ALPHA) THEN
-            CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
+            CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &         'TERMINAL')
          ELSE
             CALL PMESH (NPNODE, NPELEM, MXNFLG, MXSFLG, NPNBC, NPSBC,
@@ -251,8 +251,8 @@ C  PLOT A LIMITED NUMBER OF ELEMENTS BY ELEMENT NUMBER
          CALL FLAGK (NPELEM, NNXK, NXK, MAPDXG, 1, KKK, SETFLG, OLD)
          SETFLG = .TRUE.
          GOPLOT = .FALSE.
-         CALL MESAGE ('PLOT ELEMENTS FROM <I1> TO <I2>')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('PLOT ELEMENTS FROM <I1> TO <I2>')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   120    CONTINUE
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN, IIN,
@@ -271,7 +271,7 @@ C  PLOT A LIMITED NUMBER OF ELEMENTS BY ELEMENT NUMBER
          END IF
          IF (GOPLOT) THEN
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
+               CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            ' TERMINAL')
             ELSE
                CALL MNMXK (NPELEM, NPNODE, NNXK, NXK, XN, YN, CENTK,
@@ -301,14 +301,14 @@ C  PLOT ELEMENTS BY REGION (S) OR BARSET (S) CHOSEN
          GOPLOT = .FALSE.
          IF ((CIN (ICOM) (1:1) .EQ. 'R') .OR.
      &      (CIN (ICOM) (1:1) .EQ. 'r')) THEN
-            CALL MESAGE ('PLOT REGIONS FROM <I1> TO <I2>')
+            CALL MESSAGE('PLOT REGIONS FROM <I1> TO <I2>')
             REGPLT = .TRUE.
          ELSE
-            CALL MESAGE ('PLOT BARSETS FROM <I1> TO <I2>')
+            CALL MESSAGE('PLOT BARSETS FROM <I1> TO <I2>')
             REGPLT = .FALSE.
          END IF
          ICOM = ICOM + 1
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   130    CONTINUE
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN, IIN,
@@ -335,7 +335,7 @@ C  PLOT ELEMENTS BY REGION (S) OR BARSET (S) CHOSEN
          END IF
          IF (GOPLOT) THEN
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
+               CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            'TERMINAL')
             ELSE
                CALL MNMXK (NPELEM, NPNODE, NNXK, NXK, XN, YN, CENTK,
@@ -366,8 +366,8 @@ C  PLOT ELEMENTS BY MATERIAL NUMBER
          CALL FLAGK (NPELEM, NNXK, NXK, MAPDXG, 1, KKK, SETFLG, OLD)
          GOPLOT = .FALSE.
          SETFLG = .TRUE.
-         CALL MESAGE ('PLOT MATERIALS FROM <I1> TO <I2>')
-         CALL MESAGE ('HIT RETURN TO END INPUT')
+         CALL MESSAGE('PLOT MATERIALS FROM <I1> TO <I2>')
+         CALL MESSAGE('HIT RETURN TO END INPUT')
   150    CONTINUE
          IF (ICOM .GT. JCOM) THEN
             CALL FREFLD (IZ, IZ, '>', MCOM, IOSTAT, JCOM, KIN, CIN, IIN,
@@ -392,7 +392,7 @@ C  PLOT ELEMENTS BY MATERIAL NUMBER
          END IF
          IF (GOPLOT) THEN
             IF (ALPHA) THEN
-               CALL MESAGE ('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
+               CALL MESSAGE('NO PLOTTING POSSIBLE ON ALPHANUMERIC '//
      &            'TERMINAL')
             ELSE
                CALL MNMXK (NPELEM, NPNODE, NNXK, NXK, XN, YN, CENTK,
@@ -421,55 +421,55 @@ C  SHOW STATUS OF ALL TOGGLES
       ELSE IF ((CIN (ICOM) (1:1) .EQ. 'S') .OR.
      &   (CIN (ICOM) (1:1) .EQ. 's')) THEN
          ICOM = ICOM + 1
-         CALL MESAGE (' ')
-         CALL MESAGE ('THE CURRENT STATUS OF ALL PLOTTING TOGGLES IS:')
+         CALL MESSAGE(' ')
+         CALL MESSAGE('THE CURRENT STATUS OF ALL PLOTTING TOGGLES IS:')
          IF (AXIS) THEN
-            CALL MESAGE ('   AXIS PLOTTING                - ON')
+            CALL MESSAGE('   AXIS PLOTTING                - ON')
          ELSE
-            CALL MESAGE ('   AXIS PLOTTING                - OFF')
+            CALL MESSAGE('   AXIS PLOTTING                - OFF')
          END IF
          IF (AREACG) THEN
-            CALL MESAGE ('   AREA AND C.G. REPORT         - ON')
+            CALL MESSAGE('   AREA AND C.G. REPORT         - ON')
          ELSE
-            CALL MESAGE ('   AREA AND C.G. REPORT         - OFF')
+            CALL MESSAGE('   AREA AND C.G. REPORT         - OFF')
          END IF
          IF (LABN) THEN
-            CALL MESAGE ('   LABELING OF NODES            -  ON')
+            CALL MESSAGE('   LABELING OF NODES            -  ON')
          ELSE
-            CALL MESAGE ('   LABELING OF NODES            -  OFF')
+            CALL MESSAGE('   LABELING OF NODES            -  OFF')
          END IF
          IF (LABNB) THEN
-            CALL MESAGE ('   LABELING OF NODAL BOUND.     -  ON')
+            CALL MESSAGE('   LABELING OF NODAL BOUND.     -  ON')
          ELSE
-            CALL MESAGE ('   LABELING OF NODAL BOUND.     -  OFF')
+            CALL MESSAGE('   LABELING OF NODAL BOUND.     -  OFF')
          END IF
          IF (LABW) THEN
-            CALL MESAGE ('   LABELING OF NODE WEIGHTING   -  ON')
+            CALL MESSAGE('   LABELING OF NODE WEIGHTING   -  ON')
          ELSE
-            CALL MESAGE ('   LABELING OF NODE WEIGHTING   -  OFF')
+            CALL MESSAGE('   LABELING OF NODE WEIGHTING   -  OFF')
          END IF
          IF (LABE) THEN
-            CALL MESAGE ('   LABELING OF ELEMENTS         -  ON')
+            CALL MESSAGE('   LABELING OF ELEMENTS         -  ON')
          ELSE
-            CALL MESAGE ('   LABELING OF ELEMENTS         -  OFF')
+            CALL MESSAGE('   LABELING OF ELEMENTS         -  OFF')
          END IF
          IF (LABSB) THEN
-            CALL MESAGE ('   LABELING OF ELEM SIDE BOUND. - ON')
+            CALL MESSAGE('   LABELING OF ELEM SIDE BOUND. - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF ELEM SIDE BOUND. - OFF')
+            CALL MESSAGE('   LABELING OF ELEM SIDE BOUND. - OFF')
          END IF
          IF (LABM) THEN
-            CALL MESAGE ('   LABELING OF BLOCK ID  (MAT)  - ON')
+            CALL MESSAGE('   LABELING OF BLOCK ID  (MAT)  - ON')
          ELSE
-            CALL MESAGE ('   LABELING OF BLOCK ID  (MAT)  - OFF')
+            CALL MESSAGE('   LABELING OF BLOCK ID  (MAT)  - OFF')
          END IF
-         CALL MESAGE (' ')
-         CALL MESAGE ('*----------------- NOTE -----------------*')
-         CALL MESAGE ('    PLOTTING ORDER AT NODES IS:           ')
-         CALL MESAGE ('        NODE NO./NODAL BOUND. FLAG/WEIGHT ')
-         CALL MESAGE ('    PLOTTING ORDER AT ELEMENT CENTER IS:  ')
-         CALL MESAGE ('        ELEMENT NO./BLOCK ID  (MAT) NO.    ')
-         CALL MESAGE ('*----------------- NOTE -----------------*')
+         CALL MESSAGE(' ')
+         CALL MESSAGE('*----------------- NOTE -----------------*')
+         CALL MESSAGE('    PLOTTING ORDER AT NODES IS:           ')
+         CALL MESSAGE('        NODE NO./NODAL BOUND. FLAG/WEIGHT ')
+         CALL MESSAGE('    PLOTTING ORDER AT ELEMENT CENTER IS:  ')
+         CALL MESSAGE('        ELEMENT NO./BLOCK ID  (MAT) NO.    ')
+         CALL MESSAGE('*----------------- NOTE -----------------*')
 
 C  GET A QMS PLOT FILE OF THE CURRENT SCREEN
 
@@ -492,10 +492,10 @@ C  GET A QMS PLOT FILE OF THE CURRENT SCREEN
                CALL PLTFLU
                CALL VDESCP (10001, 0, 0)
             END IF
-            CALL MESAGE ('HARDCOPY PLOT GENERATED')
+            CALL MESSAGE('HARDCOPY PLOT GENERATED')
             HARDPL = .TRUE.
          ELSE
-            CALL MESAGE ('HARDCOPY DEVICE NOT AVAILABLE')
+            CALL MESSAGE('HARDCOPY DEVICE NOT AVAILABLE')
          END IF
 
 C  ENTER ZOOM LOCATION

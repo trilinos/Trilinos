@@ -71,7 +71,15 @@ ENDIF()
 # performance of users' own threads -- OpenMP doesn't have
 # that problem).
 
-IF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosHIPWrapperNode")
+IF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosSYCLWrapperNode")
+  IF (NOT Kokkos_ENABLE_SYCL)
+    MESSAGE (FATAL_ERROR "Kokkos_ENABLE_SYCL is OFF, but you set Tpetra's default Node type to Kokkos::Compat::KokkosSYCLWrapperNode.")
+  ENDIF ()
+  IF (NOT Tpetra_INST_SYCL)
+    MESSAGE (FATAL_ERROR "Tpetra_INST_SYCL is OFF, but you set Tpetra's default Node type to Kokkos::Compat::KokkosSYCLWrapperNode.")
+  ENDIF ()
+  SET (HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE ON CACHE BOOL "")
+ELSEIF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosHIPWrapperNode")
   IF (NOT Kokkos_ENABLE_HIP)
     MESSAGE (FATAL_ERROR "Kokkos_ENABLE_HIP is OFF, but you set Tpetra's default Node type to Kokkos::Compat::KokkosHIPWrapperNode.")
   ENDIF ()
@@ -115,7 +123,14 @@ ELSEIF (Tpetra_DefaultNode STREQUAL "")
   #
   # The user didn't set Tpetra_DefaultNode, so we need to pick it.
   #
-  IF (Tpetra_INST_HIP)
+  IF (Tpetra_INST_SYCL)
+    IF(NOT Kokkos_ENABLE_SYCL)
+      MESSAGE(FATAL_ERROR "Tpetra_INST_SYCL is ON, but Kokkos_ENABLE_SYCL is OFF.")
+    ENDIF()
+    MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosSYCLWrapperNode.")
+    SET(Tpetra_DefaultNode "Kokkos::Compat::KokkosSYCLWrapperNode")
+    SET(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE ON CACHE BOOL "")
+  ELSEIF (Tpetra_INST_HIP)
     IF(NOT Kokkos_ENABLE_HIP)
       MESSAGE(FATAL_ERROR "Tpetra_INST_HIP is ON, but Kokkos_ENABLE_HIP is OFF.")
     ENDIF()

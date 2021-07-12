@@ -68,16 +68,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
   //
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ST;
-#elif HAVE_COMPLEX_H
-  typedef std::complex<double> ST;
-#else
-  std::cout << "Not compiled with std::complex support." << std::endl;
-  std::cout << "End Result: TEST FAILED" << std::endl;
-  return EXIT_FAILURE;
-#endif
-
+  typedef std::complex<double>              ST;
   typedef ScalarTraits<ST>                 SCT;
   typedef SCT::magnitudeType                MT;
   typedef Belos::MultiVec<ST>               MV;

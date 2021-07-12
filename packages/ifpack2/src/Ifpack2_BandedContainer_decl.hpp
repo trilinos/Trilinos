@@ -137,6 +137,7 @@ private:
   using typename Container<MatrixType>::HostView;
   using typename ContainerImpl<MatrixType, LSC>::HostSubviewLocal;
   using typename ContainerImpl<MatrixType, LSC>::ConstHostSubviewLocal;
+  using typename ContainerImpl<MatrixType,LSC>::block_crs_matrix_type;
   using HostViewLocal = typename local_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,

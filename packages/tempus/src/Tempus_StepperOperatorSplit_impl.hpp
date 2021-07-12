@@ -85,7 +85,7 @@ void StepperOperatorSplit<Scalar>::setModel(
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-StepperOperatorSplit<Scalar>::getModel()
+StepperOperatorSplit<Scalar>::getModel() const
 {
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
   typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::const_iterator
@@ -350,6 +350,7 @@ void StepperOperatorSplit<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
 
@@ -375,6 +376,7 @@ void StepperOperatorSplit<Scalar>::describe(
 template<class Scalar>
 bool StepperOperatorSplit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;

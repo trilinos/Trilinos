@@ -652,7 +652,7 @@ void IossApplication::callCatalystIOSSDatabaseOnRank()
   }
 }
 
-char *gGridInputNames[5] = {"input", "inputB", "inputC", "inputD", "inputE"};
+const char *gGridInputNames[5] = {"input", "inputB", "inputC", "inputD", "inputE"};
 
 void IossApplication::callCatalystIOSSDatabaseOnRankMultiGrid()
 {

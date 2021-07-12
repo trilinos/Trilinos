@@ -30,7 +30,6 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/base/Stencils.hpp>
 #include <stk_mesh/base/TopologyDimensions.hpp>
 
 #include <percept/TopologyVerifier.hpp>

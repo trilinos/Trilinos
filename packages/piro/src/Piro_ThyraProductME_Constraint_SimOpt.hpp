@@ -742,6 +742,10 @@ public:
     }
   }
 
+  void solve_update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
+    this->update(u, z, type, iter);
+  }
+
   void solve(ROL::Vector<Real> &c,
       ROL::Vector<Real> &u,
       const ROL::Vector<Real> &z,
@@ -1160,6 +1164,11 @@ public:
       params->set<int>("Optimizer Iteration Number", iter);
   }
 
+  void update_1( const ROL::Vector<Real> &u, ROL::UpdateType /*type*/, int iter = -1 ) {
+    //temporary implementation using update_1 function
+    this->update_1(u, true, iter);
+  }
+
   /** \brief Update constraint functions with respect to Opt variable.
                 x is the optimization variable,
                 flag = ??,
@@ -1188,6 +1197,11 @@ public:
 
     if(params != Teuchos::null)
       params->set<int>("Optimizer Iteration Number", iter);
+  }
+
+  void update_2( const ROL::Vector<Real> &z, ROL::UpdateType /*type*/, int iter = -1 ) {
+    //temporary implementation using update_1 function
+    this->update_2(z, true, iter);
   }
 
   bool z_hasChanged(const ROL::Vector<Real> &rol_z) const {

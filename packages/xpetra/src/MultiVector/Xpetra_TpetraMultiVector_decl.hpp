@@ -255,11 +255,27 @@ namespace Xpetra {
 
     void doImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM);
 
+    void beginImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM);
+
+    void endImport(const DistObject< Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM);
+
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM);
+
+    void beginExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM);
+
+    void endExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM);
 
     void doImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
 
+    void beginImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
+
+    void endImport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
+
     void doExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
+
+    void beginExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
+
+    void endExport(const DistObject< Scalar, LocalOrdinal, GlobalOrdinal, Node > &dest, const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter, CombineMode CM);
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
 
@@ -281,30 +297,19 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
-    /// \brief Return an unmanaged non-const view of the local data on a specific device.
-    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
-    ///
-    /// \warning DO NOT USE THIS FUNCTION! There is no reason why you are working directly
-    ///          with the Xpetra::TpetraMultiVector object. To write a code which is independent
-    ///          from the underlying linear algebra package you should always use the abstract class,
-    ///          i.e. Xpetra::MultiVector!
-    ///
-    /// \warning Be aware that the view on the multivector data is non-persisting, i.e.
-    ///          only valid as long as the multivector does not run of scope!
-#if 0
-    template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<
-        typename dual_view_type::t_dev_um::execution_space::memory_space,
-        typename TargetDeviceType::memory_space>::value,
-      typename dual_view_type::t_dev_um,
-      typename dual_view_type::t_host_um>::type
-    getLocalView () const;
-#endif
-    typename dual_view_type::t_host_um getHostLocalView () const;
 
-    typename dual_view_type::t_dev_um
-    getDeviceLocalView() const;
+    virtual typename dual_view_type::t_host_const_um getHostLocalView (Access::ReadOnlyStruct) const;
+
+    virtual typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const;
+    
+    virtual typename dual_view_type::t_host_um getHostLocalView (Access::OverwriteAllStruct) const;
+
+    virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const;
+
+    virtual typename dual_view_type::t_host_um getHostLocalView (Access::ReadWriteStruct) const;
+
+    virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const;
+
 
 #endif
 

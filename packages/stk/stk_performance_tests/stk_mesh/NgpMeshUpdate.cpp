@@ -53,7 +53,7 @@ public:
 
   void setup_host_mesh()
   {
-    setup_mesh("generated:1x1x1000000", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
     get_meta().declare_part(newPartName);
   }
 
@@ -65,6 +65,13 @@ public:
     stk::mesh::get_updated_ngp_mesh(get_bulk());
   }
 
+  void batch_change_element_part_membership(int cycle)
+  {
+    get_bulk().batch_change_entity_parts(stk::mesh::EntityVector{get_element(cycle)},
+                                         stk::mesh::PartVector{get_part()}, {});
+    stk::mesh::get_updated_ngp_mesh(get_bulk());
+  }
+
 private:
   stk::mesh::Entity get_element(int cycle)
   {
@@ -72,7 +79,7 @@ private:
     return get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
   }
 
-  const stk::mesh::Part* get_part()
+  stk::mesh::Part* get_part()
   {
     return get_meta().get_part(newPartName);
   }
@@ -90,7 +97,7 @@ public:
 
   void setup_host_mesh()
   {
-    setup_mesh("generated:1x1x1000000", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
   }
 
   void create_entity(int cycle)
@@ -122,7 +129,7 @@ public:
 protected:
   void setup_host_mesh()
   {
-    setup_mesh("generated:1x1x1000000", stk::mesh::BulkData::NO_AUTO_AURA);
+    setup_mesh("generated:100x100x100", stk::mesh::BulkData::NO_AUTO_AURA);
     get_bulk().modification_begin();
     ghosting = &get_bulk().create_ghosting(ghostingName);
     get_bulk().modification_end();
@@ -153,16 +160,33 @@ private:
 
 TEST_F( NgpMeshChangeElementPartMembership, Timing )
 {
-  if (get_parallel_size() != 1) return;
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
 
   const int NUM_RUNS = 200;
 
   stk::performance_tests::Timer timer(get_comm());
+  timer.start_timing();
   setup_host_mesh();
 
-  timer.start_timing();
   for (int i=0; i<NUM_RUNS; i++) {
     change_element_part_membership(i);
+  }
+  timer.update_timing();
+  timer.print_timing(NUM_RUNS);
+}
+
+TEST_F( NgpMeshChangeElementPartMembership, TimingBatch )
+{
+  if (get_parallel_size() != 1) { GTEST_SKIP(); }
+
+  const int NUM_RUNS = 200;
+
+  stk::performance_tests::Timer timer(get_comm());
+  timer.start_timing();
+  setup_host_mesh();
+
+  for (int i=0; i<NUM_RUNS; i++) {
+    batch_change_element_part_membership(i);
   }
   timer.update_timing();
   timer.print_timing(NUM_RUNS);
@@ -175,13 +199,13 @@ TEST_F( NgpMeshCreateEntity, Timing )
   const int NUM_RUNS = 100;
 
   stk::performance_tests::Timer timer(get_comm());
+  timer.start_timing();
   setup_host_mesh();
 
   for (int i=0; i<NUM_RUNS; i++) {
-    timer.start_timing();
     create_entity(i);
-    timer.update_timing();
   }
+  timer.update_timing();
   timer.print_timing(NUM_RUNS);
 }
 
@@ -192,12 +216,12 @@ TEST_F( NgpMeshGhosting, Timing )
   const int NUM_RUNS = 100;
 
   stk::performance_tests::Timer timer(get_comm());
+  timer.start_timing();
   setup_host_mesh();
 
   for (int i=0; i<NUM_RUNS; i++) {
-    timer.start_timing();
     ghost_element(i);
-    timer.update_timing();
   }
+  timer.update_timing();
   timer.print_timing(NUM_RUNS);
 }

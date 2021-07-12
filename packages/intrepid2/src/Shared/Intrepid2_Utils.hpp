@@ -350,7 +350,7 @@ namespace Intrepid2 {
   //! \brief Creates and returns a view that matches the provided view in Kokkos Layout.
   //! \param [in] view  - the view to match
   //! \param [in] label - a string label for the view to be created
-  //! \param [in] dims  - dimensions to use for the view (the nominal dimensions; this method handles adding the derivative dimension required for Fad types).
+  //! \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
   //!
   //! This method is particularly useful because we use LayoutStride as the Kokkos Layout in a number of places, and LayoutStride
   //! views cannot be instantiated without also providing stride information.

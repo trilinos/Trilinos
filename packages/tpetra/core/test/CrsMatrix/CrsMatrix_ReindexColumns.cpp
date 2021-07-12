@@ -433,10 +433,10 @@ namespace {
         // Get the "new" local column indices that resulted from the
         // call to reindexColumns.  Get by copy, not by view, so we
         // can sort it.
-        Array<LO> newLclColInds (numEnt);
+        typename graph_type::nonconst_local_inds_host_view_type newLclColInds ("colind",numEnt);
         {
           size_t actualNumEnt = 0;
-          graph.getLocalRowCopy (lclRowInd, newLclColInds (), actualNumEnt);
+          graph.getLocalRowCopy (lclRowInd, newLclColInds, actualNumEnt);
           if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << ", graph.getLocalRowCopy(...) reported different # entries"
                << endl;
@@ -444,7 +444,7 @@ namespace {
             continue; // don't even bother with the rest
           }
         }
-        os << ", newLclInds: " << Teuchos::toString (newLclColInds);
+        //os << ", newLclInds: " << Teuchos::toString (newLclColInds);
 
         // Use the new column Map to convert them to global indices.
         Array<GO> gblColInds (numEnt);
@@ -457,7 +457,7 @@ namespace {
             success = false;
           }
         }
-        os << ", gblInds: " << Teuchos::toString (gblColInds ());
+        //os << ", gblInds: " << Teuchos::toString (gblColInds ());
 
         // Convert those global indices to the original column Map's
         // local indices.  Those should match the original local
@@ -481,10 +481,10 @@ namespace {
         os << ", oldLclInds: " << Teuchos::toString (oldLclColInds);
 
         // Get the original local indices from the original graph.
-        Array<LO> origLclColInds (numEnt);
+        typename graph_type::nonconst_local_inds_host_view_type origLclColInds("colind",numEnt);
         {
           size_t actualNumEnt = 0;
-          graph2->getLocalRowCopy (lclRowInd, origLclColInds (), actualNumEnt);
+          graph2->getLocalRowCopy (lclRowInd, origLclColInds, actualNumEnt);
           if (static_cast<size_t> (numEnt) != actualNumEnt) {
             os << ", graph2.getLocalRowCopy(...) reported different # entries"
                << endl;
@@ -492,16 +492,16 @@ namespace {
             continue; // don't even bother with the rest
           }
         }
-        os << ", origLclInds: " << Teuchos::toString (origLclColInds);
+        //        os << ", origLclInds: " << Teuchos::toString (origLclColInds);
 
         // The indices in both graphs don't need to be in the same
         // order; they just need to be the same indices.
-        std::sort (origLclColInds.begin (), origLclColInds.end ());
-        std::sort (oldLclColInds.begin (), oldLclColInds.end ());
+        Tpetra::sort (origLclColInds, origLclColInds.extent(0));
+        std::sort (oldLclColInds.begin(), oldLclColInds.end());
 
         // Compare the two sets of indices.
         bool arraysSame = true;
-        if (oldLclColInds.size () != origLclColInds.size ()) {
+        if ((size_t)oldLclColInds.size () != (size_t)origLclColInds.size ()) {
           arraysSame = false;
         } else {
           for (size_type k = 0; k < oldLclColInds.size (); ++k) {

@@ -33,298 +33,385 @@ THREAD_SAFE=@SEACASExodus_ENABLE_THREADSAFE@
 
 DIFF="diff -w"
 
+ret_status=0
 rm -f test.output
 echo "testwt - single precision write test..."
 echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/testwt${SUFFIX} >> test.output
-echo "end testwt" >> test.output
+ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end testwt, status = $ret_status" >> test.output
 
 echo "testrd - single precision read test..."
 echo "begin testrd" >> test.output
 ${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
-echo "end testrd" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd, status = $ret_status" >> test.output
 
 echo "testcp_ss - single-to-single precision copy test..."
 echo "begin testcp_ss" >> test.output
 ${PREFIX} ${BINDIR}/testcp${SUFFIX} >> test.output
-echo "end testcp_ss" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_ss.dmp | tee testcp_ss.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testcp_ss, status = $ret_status" >> test.output
 
 echo "testcp_sd - single-to-double precision copy test..."
 echo "begin testcp_sd" >> test.output
 ${PREFIX} ${BINDIR}/testcpd${SUFFIX} >> test.output
-echo "end testcp_sd" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcpd.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_sd.dmp | tee testcp_sd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testcp_sd, status = $ret_status" >> test.output
 
 echo "testcp_nl - normal_model to large_model single precision copy test..."
 echo "begin testcp_nl" >> test.output
 ${PREFIX} ${BINDIR}/testcp_nl${SUFFIX} >> test.output
-echo "end testcp_nl" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcp_nl.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_nl.dmp | tee testcp_nl.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testcp_nl, status = $ret_status" >> test.output
 
 echo "testcp_transient - copy mesh and transient data..."
 echo "begin testcp_tran" >> test.output
 ${PREFIX} ${BINDIR}/testcp_tran${SUFFIX} >> test.output
-echo "end testcp_tran" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_tran.dmp | tee testcp_tran.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testcp_tran, status = $ret_status" >> test.output
 
 echo "testwt_clb - single precision write test using concatenated puts..."
 echo "begin testwt_clb" >> test.output
 ${PREFIX} ${BINDIR}/testwt_clb${SUFFIX} >> test.output
-echo "end testwt_clb" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test_clb.dmp | tee testwt_clb.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt_clb, status = $ret_status" >> test.output
 
 echo "testwtd - double precision write test..."
 echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/testwtd${SUFFIX} >> test.output
-echo "end testwtd" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwtd, status = $ret_status" >> test.output
 
 echo "testrdd - double precision read test..."
 echo "begin testrdd" >> test.output
 ${PREFIX} ${BINDIR}/testrdd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
-echo "end testrdd" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrdd, status = $ret_status" >> test.output
 
 echo "testcp_dd - double-to-double precision copy test..."
 echo "begin testcp_dd" >> test.output
 ${PREFIX} ${BINDIR}/testcpd${SUFFIX} >> test.output
-echo "end testcp_dd" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcpd.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_dd.dmp | tee testcp_dd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testcp_dd, status = $ret_status" >> test.output
 
 echo "testcp_ds - double-to-single precision copy test..."
 echo "begin testcp_ds" >> test.output
 ${PREFIX} ${BINDIR}/testcp${SUFFIX} >> test.output
-echo "end testcp_ds" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_ds.dmp | tee testcp_ds.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testcp_ds, status = $ret_status" >> test.output
 
 echo "testwt1 - single precision write files with several side sets..."
 echo "testwt1 ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt1" >> test.output
 ${PREFIX} ${BINDIR}/testwt1${SUFFIX} >> test.output
-echo "end testwt1" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test1.dmp | tee testwt1.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt1, status = $ret_status" >> test.output
 
 echo "testrd1 - single precision read test of a file with several side sets..."
 echo "testrd1 ... [Expect file create failure error, NOCLOBBER]"
 echo "testrd1 ... [Expect failure locating elem var 1 for elem block 12]"
 echo "begin testrd1" >> test.output
 ${PREFIX} ${BINDIR}/testrd1${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd1.dmp | tee testrd1.res
-echo "end testrd1" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd1, status = $ret_status" >> test.output
 
 echo "testwt_ss - write files to test side sets..."
 echo "testwt_ss ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt_ss" >> test.output
 ${PREFIX} ${BINDIR}/testwt_ss${SUFFIX} >> test.output
-echo "end testwt_ss" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testwt_ss.dmp | tee testwt_ss.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt_ss, status = $ret_status" >> test.output
 
 echo "testrd_ss - read test of a file with several side sets..."
 echo "testrd_ss ... [Expect warning for NULL sidesets 30 and 31]"
 echo "begin testrd_ss" >> test.output
 ${PREFIX} ${BINDIR}/testrd_ss${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_ss.dmp | tee testrd_ss.res
-echo "end testrd_ss" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd_ss, status = $ret_status" >> test.output
 
 echo "testwt2 - single precision write 2 files (simultaneously open) test..."
 echo "begin testwt2" >> test.output
 ${PREFIX} ${BINDIR}/testwt2${SUFFIX} >> test.output
-echo "end testwt2" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-1.dmp | tee testwt2-1.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 ${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2-2.dmp | tee testwt2-2.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt2, status = $ret_status" >> test.output
 
 echo "testrdwt - read from one and write to another (simultaneously open) file..."
 echo "begin testrdwt" >> test.output
 ${PREFIX} ${BINDIR}/testrdwt${SUFFIX} >> test.output
-echo "end testrdwt" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test2.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test2.dmp | tee testrdwt.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testrdwt, status = $ret_status" >> test.output
 
 echo "testwt_nc - write x y z components of coordinates separately..."
 echo "begin testwt_nc" >> test.output
 ${PREFIX} ${BINDIR}/testwt_nc${SUFFIX} >> test.output
-echo "end testwt_nc" >> test.output
+ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt_nc.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end testwt_nc, status = $ret_status" >> test.output
 
 echo "testrd_nc - read x y z components of coordinates separately..."
 echo "begin testrd_nc" >> test.output
 ${PREFIX} ${BINDIR}/testrd_nc${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_nc.dmp | tee testrd_nc.res
-echo "end testrd" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd, status = $ret_status" >> test.output
 
 echo "testwt-zeron - write file with zero nodes and elements..."
 echo "begin testwt-zeron" >> test.output
 ${PREFIX} ${BINDIR}/testwt-zeron${SUFFIX} >> test.output
-echo "end testwt-zeron" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testwt-zeron.dmp | tee testwt-zeron.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt-zeron, status = $ret_status" >> test.output
 
 echo "testrd - read test of file with zero nodes and elements..."
 echo "begin testrd zero nodes" >> test.output
 ${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_zeron.dmp | tee testrd_zeron.res
-echo "end testrd zero nodes" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd zero nodes, status = $ret_status" >> test.output
 
 echo "testwt-zeroe - write file with zero elements..."
 echo "begin testwt-zeroe" >> test.output
 ${PREFIX} ${BINDIR}/testwt-zeroe${SUFFIX} >> test.output
-echo "end testwt-zeroe" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testwt-zeroe.dmp | tee testwt-zeroe.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt-zeroe, status = $ret_status" >> test.output
 
 echo "testrd - read test of file with zero elements..."
 echo "begin testrd zero elements" >> test.output
 ${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_zeroe.dmp | tee testrd_zeroe.res
-echo "end testrd zero elements" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd zero elements, status = $ret_status" >> test.output
 
 echo "testwt-one-attrib - read/write test of element attributes - read one at a time..."
 echo "begin testwt-one-attrib - read attributes one at a time" >> test.output
-${PREFIX} ${BINDIR}/testwt-one-attrib${SUFFIX} | tee testrd_zeroe.res
-echo "end testwt-one-attrib - read attributes one at a time" >> test.output
+${PREFIX} ${BINDIR}/testwt-one-attrib${SUFFIX} >> test.output
+ret_status=$((ret_status+$?))
+echo "end testwt-one-attrib - read attributes one at a time, status = $ret_status" >> test.output
 
 echo "testwt-nsided - write file with nsided elements..."
 echo "begin testwt-nsided" >> test.output
 ${PREFIX} ${BINDIR}/testwt-nsided${SUFFIX} >> test.output
-echo "end testwt-nsided" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test-nsided.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testwt-nsided.dmp | tee testwt-nsided.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt-nsided, status = $ret_status" >> test.output
 
 echo "testrd-nsided - read file with nsided elements..."
 echo "begin testrd-nsided" >> test.output
 ${PREFIX} ${BINDIR}/testrd-nsided${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-nsided.dmp | tee testrd-nsided.res
-echo "end testrd-nsided" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd-nsided, status = $ret_status" >> test.output
 
 echo "testwt-nfaced - write file with nfaced elements..."
 echo "begin testwt-nfaced" >> test.output
 ${PREFIX} ${BINDIR}/testwt-nfaced${SUFFIX} >> test.output
-echo "end testwt-nfaced" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test-nfaced.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testwt-nfaced.dmp | tee testwt-nfaced.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt-nfaced, status = $ret_status" >> test.output
 
 echo "testrd-nfaced - read file with nfaced elements..."
 echo "begin testrd-nfaced" >> test.output
 ${PREFIX} ${BINDIR}/testrd-nfaced${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-nfaced.dmp | tee testrd-nfaced.res
-echo "end testrd-nfaced" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd-nfaced, status = $ret_status" >> test.output
 
 echo "testwt-long-name - write file with long (64-character) names..."
 echo "begin testwt-long-name" >> test.output
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${PREFIX} ${BINDIR}/testwt-long-name${SUFFIX} >> test.output
-echo "end testwt-long-name" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-long-name.dmp | tee testwt-long-name.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
+echo "end testwt-long-name, status = $ret_status" >> test.output
 
 echo "testrd - read long name file truncating to 32 characters on read..."
 echo "begin testrd (truncate)" >> test.output
 ${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-nm32.dmp | tee testrd-nm32.res
-echo "end testrd (truncate)" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd (truncate), status = $ret_status" >> test.output
 
 echo "testrd-long-name - read long name file..."
 echo "begin testrd-long-name" >> test.output
 ${PREFIX} ${BINDIR}/testrd-long-name${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-long-name.dmp | tee testrd-long-name.res
-echo "end testrd-long-name" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd-long-name, status = $ret_status" >> test.output
 
 echo "test_nemesis - read long name file..."
 echo "begin test_nemesis" >> test.output
 ${PREFIX} ${BINDIR}/test_nemesis${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test_nemesis.dmp | tee test_nemesis.res
-echo "end test_nemesis" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end test_nemesis, status = $ret_status" >> test.output
 
 echo "test-empty - read an empty (only ex_create called) exodus file..."
 echo "begin test-empty" >> test.output
 ${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
-echo "end test-empty" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end test-empty, status = $ret_status" >> test.output
 
 echo "testwt-results - write EXPERIMENTAL file with only transient data; no mesh bulk data..."
 echo "begin testwt-results" >> test.output
 ${PREFIX} ${BINDIR}/testwt-results${SUFFIX} >> test.output
-echo "end testwt-results" >> test.output
+ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
-${NCDUMP} -d5,5 test-results.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-results.dmp | tee testwt-results.res
+${NCDUMP} -d5,5 test-results.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-results.dmp | tee testwt-results.re
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end testwt-results, status = $ret_status" >> test.output
 
 echo "testwt-assembly - write file containing assembly data"
 echo "begin testwt-assembly" >> test.output
 ${PREFIX} ${BINDIR}/testwt-assembly${SUFFIX} >> test.output
-echo "end testwt-assembly" >> test.output
+ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test-assembly.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-assembly.dmp | tee testwt-assembly.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end testwt-assembly, status = $ret_status" >> test.output
 
 echo "testrd-assembly - read file containing assembly data"
 echo "begin testrd-assembly" >> test.output
 ${PREFIX} ${BINDIR}/testrd-assembly${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-assembly.dmp | tee testrd-assembly.res
-echo "end testrd-assembly" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd-assembly, status = $ret_status" >> test.output
 
 echo "test-add-assembly - add an assembly to an existing file"
 echo "begin test-add-assembly" >> test.output
 ${PREFIX} ${BINDIR}/test-add-assembly${SUFFIX} >> test.output
+ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test-assembly.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/test-add-assembly.dmp | tee test-add-assembly.res
-echo "end test-add-assembly" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end test-add-assembly, status = $ret_status" >> test.output
 
 echo "testwt-blob - write file containing blob data"
 echo "begin testwt-blob" >> test.output
 ${PREFIX} ${BINDIR}/testwt-blob${SUFFIX} >> test.output
-echo "end testwt-blob" >> test.output
+ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test-blob.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-blob.dmp | tee testwt-blob.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end testwt-blob, status = $ret_status" >> test.output
 
 echo "testrd-blob - read file containing blob data"
 echo "begin testrd-blob" >> test.output
 ${PREFIX} ${BINDIR}/testrd-blob${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-blob.dmp | tee testrd-blob.res
-echo "end testrd-blob" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd-blob, status = $ret_status" >> test.output
 
 echo "testwt-oned - write 1D mesh..."
 echo "begin testwt-oned" >> test.output
 ${PREFIX} ${BINDIR}/testwt-oned${SUFFIX} >> test.output
-echo "end testwt-oned" >> test.output
+ret_status=$((ret_status+$?))
 # Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-oned.dmp | tee testwt-oned.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end testwt-oned, status = $ret_status" >> test.output
 
 echo "testrd - read test of 1D file..."
 echo "begin testrd 1D" >> test.output
 ${PREFIX} ${BINDIR}/testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd-oned.dmp | tee testrd-oned.res
-echo "end testrd 1D" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end testrd 1D, status = $ret_status" >> test.output
 
 if [ "$THREAD_SAFE" == "YES" ]; then
 
 echo "test_ts_nvar - each thread writes data for a single nodal variable..."
 echo "begin test_ts_nvar" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_nvar${SUFFIX} >> test.output
-echo "end test_ts_nvar" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/test_ts_nvar.dmp | tee testwt-long-name.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end test_ts_nvar, status = $ret_status" >> test.output
 
 echo "test_ts_nvar_rd - each thread reads data for a single nodal variable..."
 echo "begin test_ts_nvar_rd" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_nvar_rd${SUFFIX} | ${DIFF} - ${SRCDIR}/test_ts_nvar_rd.dmp | tee test_ts_nvar_rd.res
-echo "end test_ts_nvar_rd" >> test.output
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[2]}))
+echo "end test_ts_nvar_rd, status = $ret_status" >> test.output
 
 
 echo "test_ts_partial_nvar - each thread writes data for a single nodal variable..."
 echo "begin test_ts_partial_nvar" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_partial_nvar${SUFFIX} >> test.output
-echo "end test_ts_partial_nvar" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/test_ts_partial_nvar.dmp | tee testwt-long-name.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end test_ts_partial_nvar, status = $ret_status" >> test.output
 
 echo "test_ts_partial_nvar_rd - each thread reads data for a single nodal variable..."
 echo "begin test_ts_partial_nvar_rd" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_partial_nvar${SUFFIX} >> test.output
-echo "end test_ts_partial_nvar_rd" >> test.output
+ret_status=$((ret_status+$?))
 ${PREFIX} ${BINDIR}/test_ts_partial_nvar_rd${SUFFIX} | ${DIFF} - ${SRCDIR}/test_ts_partial_nvar_rd.dmp | tee test_ts_partial_nvar_rd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[1]}))
+echo "end test_ts_partial_nvar_rd, status = $ret_status" >> test.output
+
 echo "test_ts_files - each thread creates its own file..."
 echo "begin test_ts_files" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_files${SUFFIX} >> test.output
-echo "end test_ts_files" >> test.output
+ret_status=$((ret_status+$?))
 mv test0.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files0.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 mv test1.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files1.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 mv test2.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files2.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 mv test3.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files3.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 mv test4.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files4.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 mv test5.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files5.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 mv test6.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files6.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 mv test7.exo test.exo
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files7.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
+echo "end test_ts_files, status = $ret_status" >> test.output
+
 echo "test_ts_errval - multiple threads calling ex_err and ex_get_err..."
 echo "begin test_ts_errval" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_errval${SUFFIX} >> test.output
-echo "end test_ts_errval" >> test.output
+ret_status=$((ret_status+$?))
+echo "end test_ts_errval, status = $ret_status" >> test.output
 fi
+exit $ret_status
 

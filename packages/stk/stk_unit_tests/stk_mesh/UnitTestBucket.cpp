@@ -385,12 +385,12 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
         ASSERT_TRUE(elements_face_offset!=stk::mesh::INVALID_CONNECTIVITY_ORDINAL);
 
         stk::mesh::unit_test::BucketTester& bucket_side = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(side));
-        bucket_side.my_change_exisiting_connectivity(bulk.bucket_ordinal(side), &new_nodes[0]);
-        bucket_side.my_change_exisiting_permutation_for_connected_element(bulk.bucket_ordinal(side), faces_element_offset, new_permutation);
+        bucket_side.my_change_connected_nodes(bulk.bucket_ordinal(side), &new_nodes[0]);
+        bucket_side.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(side), faces_element_offset, new_permutation);
 
         stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
 
-        bucket_elem.my_change_exisiting_permutation_for_connected_face(bulk.bucket_ordinal(elem), elements_face_offset, new_permutation);
+        bucket_elem.my_change_existing_permutation_for_connected_face(bulk.bucket_ordinal(elem), elements_face_offset, new_permutation);
 
         test_nodes_and_permutation(bulk, elem, side, new_nodes);
     }
@@ -454,12 +454,12 @@ TEST_F(BucketHex, changing_conn_on_bucket_for_edge_to_element)
 
         stk::mesh::unit_test::BucketTester& bucket_edge = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(edge));
 
-        bucket_edge.my_change_exisiting_connectivity(bulk.bucket_ordinal(edge), &new_nodes[0]);
-        bucket_edge.my_change_exisiting_permutation_for_connected_element(bulk.bucket_ordinal(edge), edges_element_offset, new_permutation);
+        bucket_edge.my_change_connected_nodes(bulk.bucket_ordinal(edge), &new_nodes[0]);
+        bucket_edge.my_change_existing_permutation_for_connected_element(bulk.bucket_ordinal(edge), edges_element_offset, new_permutation);
 
         stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(bulk.bucket(elem));
 
-        bucket_elem.my_change_exisiting_permutation_for_connected_edge(bulk.bucket_ordinal(elem), elements_edge_offset, new_permutation);
+        bucket_elem.my_change_existing_permutation_for_connected_edge(bulk.bucket_ordinal(elem), elements_edge_offset, new_permutation);
 
         test_nodes_and_permutation(bulk, elem, edge, new_nodes);
     }

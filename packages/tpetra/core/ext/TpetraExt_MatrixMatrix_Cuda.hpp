@@ -154,7 +154,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
 
   // Lots and lots of typedefs
   using Teuchos::RCP;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -179,20 +179,24 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
        typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrices
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
-  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
-  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
-  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  c_lno_view_t Arowptr = Amat.graph.row_map,
+               Browptr = Bmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries,
+                       Bcolind = Bmat.graph.entries;
+  const scalar_view_t Avals = Amat.values,
+                      Bvals = Bmat.values;
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
 
@@ -258,12 +262,13 @@ template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class LocalOrdinalViewType>
-void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::mult_A_B_reuse_kernel_wrapper(
+               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
-                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
-                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
-                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,
+                                                                                               const LocalOrdinalViewType & targetMapToOrigRow_dev,
+                                                                                               const LocalOrdinalViewType & targetMapToImportRow_dev,
+                                                                                               const LocalOrdinalViewType & Bcol2Ccol_dev,
+                                                                                               const LocalOrdinalViewType & Icol2Ccol_dev,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -283,7 +288,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
 
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -298,8 +303,24 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
-  // Since this is being run on Cuda, we need to fence because the below host code will use UVM
-  typename graph_t::execution_space().fence();
+  // Since this is being run on Cuda, we need to fence because the below code will use UVM
+  // typename graph_t::execution_space().fence();
+  
+  // KDDKDD UVM Without UVM, need to copy targetMap arrays to host.
+  // KDDKDD UVM Ideally, this function would run on device and use 
+  // KDDKDD UVM KokkosKernels instead of this host implementation.
+  auto targetMapToOrigRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToOrigRow_dev);
+  auto targetMapToImportRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToImportRow_dev);
+  auto Bcol2Ccol =
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Bcol2Ccol_dev);
+  auto Icol2Ccol = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Icol2Ccol_dev);
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -307,12 +328,16 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   size_t n = Ccolmap->getNodeNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
-  const KCRS & Cmat = C.getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS & Cmat = C.getLocalMatrixHost();
 
-  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
-  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
+  c_lno_view_t Arowptr = Amat.graph.row_map,
+               Browptr = Bmat.graph.row_map,
+               Crowptr = Cmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries, 
+                       Bcolind = Bmat.graph.entries, 
+                       Ccolind = Cmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
   scalar_view_t Cvals = Cmat.values;
 
@@ -320,9 +345,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -468,10 +494,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
                                                                                                const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
-                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
-                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
-                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,
+                                                                                               const LocalOrdinalViewType & targetMapToOrigRow_dev,
+                                                                                               const LocalOrdinalViewType & targetMapToImportRow_dev,
+                                                                                               const LocalOrdinalViewType & Bcol2Ccol_dev,
+                                                                                               const LocalOrdinalViewType & Icol2Ccol_dev,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -490,7 +516,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -507,7 +533,24 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
   // Since this is being run on Cuda, we need to fence because the below host code will use UVM
-  typename graph_t::execution_space().fence();
+  // KDDKDD typename graph_t::execution_space().fence();
+
+  // KDDKDD UVM Without UVM, need to copy targetMap arrays to host.
+  // KDDKDD UVM Ideally, this function would run on device and use 
+  // KDDKDD UVM KokkosKernels instead of this host implementation.
+  auto targetMapToOrigRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToOrigRow_dev);
+  auto targetMapToImportRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToImportRow_dev);
+  auto Bcol2Ccol =
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Bcol2Ccol_dev);
+  auto Icol2Ccol = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Icol2Ccol_dev);
+  
  
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -515,9 +558,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   size_t n = Ccolmap->getNodeNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
-  const KCRS & Cmat = C.getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS & Cmat = C.getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -528,9 +571,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
   // Jacobi-specific inner stuff
@@ -670,7 +714,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
 
   // Usings
   using device_t = typename Kokkos::Compat::KokkosCudaWrapperNode::device_type;
-  using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode>::local_matrix_type;
+  using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode>::local_matrix_device_type;
   using graph_t = typename matrix_t::StaticCrsGraphType;
   using lno_view_t = typename graph_t::row_map_type::non_const_type;
   using c_lno_view_t = typename graph_t::row_map_type::const_type;
@@ -687,17 +731,18 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   lno_nnz_view_t Icolind;
   scalar_view_t Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
   // Merge the B and Bimport matrices
   const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements());
 
   // Get the properties and arrays of input matrices
-  const matrix_t & Amat = Aview.origMatrix->getLocalMatrix();
-  const matrix_t & Bmat = Bview.origMatrix->getLocalMatrix();
+  const matrix_t & Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const matrix_t & Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
   typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
   typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();

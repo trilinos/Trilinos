@@ -72,6 +72,8 @@ namespace { // (anonymous)
     using std::endl;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+    using lids_type = typename crs_matrix_type::nonconst_local_inds_host_view_type;
+    using vals_type = typename crs_matrix_type::nonconst_values_host_view_type;
     typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::MatrixMarket::Writer<crs_matrix_type> writer_type;
     typedef typename Teuchos::Array<LO>::size_type size_type;
@@ -225,10 +227,10 @@ namespace { // (anonymous)
       TEST_EQUALITY_CONST( numEnt, static_cast<size_t> (1) );
 
       if (numEnt == static_cast<size_t> (1)) {
-        Teuchos::Array<LO> ind (numEnt);
-        Teuchos::Array<Scalar> val (numEnt);
+        lids_type ind ("ind",numEnt);
+        vals_type val ("val",numEnt);
         size_t numEntOut = 0;
-        matrix->getLocalRowCopy (0, ind (), val (), numEntOut);
+        matrix->getLocalRowCopy (0, ind, val, numEntOut);
         TEST_EQUALITY( numEnt, numEntOut );
 
         if (numEntOut == static_cast<size_t> (1)) {
@@ -274,10 +276,10 @@ namespace { // (anonymous)
       TEST_EQUALITY_CONST( numEnt, static_cast<size_t> (1) );
 
       if (numEnt == static_cast<size_t> (1)) {
-        Teuchos::Array<LO> ind (numEnt);
-        Teuchos::Array<Scalar> val (numEnt);
+        lids_type ind ("ind",numEnt);
+        vals_type val ("val",numEnt);
         size_t numEntOut = 0;
-        matrix->getLocalRowCopy (0, ind (), val (), numEntOut);
+        matrix->getLocalRowCopy (0, ind, val, numEntOut);
         TEST_EQUALITY( numEnt, numEntOut );
 
         if (numEntOut == static_cast<size_t> (1)) {

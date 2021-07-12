@@ -1982,6 +1982,57 @@ namespace Teuchos
 
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
+
+  // BEGIN int, long double SPECIALIZATION DECLARATION //
+
+  // IKT 29 May 2021: I had to write this specialization by hand,
+  // since LAPACK does not provide it, so it is not complete.
+  template<>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, long double>
+  {
+  public:
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<int, long double>& lapack) {}
+    inline virtual ~LAPACK(void) {}
+
+    void GESV(const int& n, const int& nrhs, long double* A, const int& lda, int* IPIV, long double* B, const int& ldb, int* info) const; 
+    void GTTRS(const char& TRANS, const int& n, const int& nrhs, const long double* dl, const long double* d, const long double* du, const long double* du2, const int* IPIV, long double* B, const int& ldb, int* info) const; 
+    void GTTRF(const int& n, long double* dl, long double* d, long double* du, long double* du2, int* IPIV, int* info) const;
+    void SYGV(const int& itype, const char& JOBZ, const char& UPLO, const int& n, long double* A, const int& lda, long double* B, const int& ldb, long double* W, long double* WORK, const int& lwork, int* info) const;
+    void GEEV(const char& JOBVL, const char& JOBVR, const int& n, long double* A, const int& lda, long double* WR, long double* WI, long double* VL, const int& ldvl, long double* VR, const int& ldvr, long double* WORK, const int& lwork, int* info) const; 
+    void GEEV(const char& JOBVL, const char& JOBVR, const int& n, long double* A, const int& lda, long double* WR, long double* WI, long double* VL, const int& ldvl, long double* VR, const int& ldvr, long double* WORK, const int& lwork, long double* /* RWORK */, int* info) const; 
+    void GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, long double* A, const int& lda, long double* B, const int& ldb, long double* ALPHAR, long double* ALPHAI, long double* BETA, long double* VL, const int& ldvl, long double* VR, const int& ldvr, int* ilo, int* ihi, long double* lscale, long double* rscale, long double* abnrm, long double* bbnrm, long double* RCONDE, long double* RCONDV, long double* WORK, const int& lwork, int* IWORK, int* BWORK, int* info) const; 
+    void GGEVX(const char& BALANC, const char& JOBVL, const char& JOBVR, const char& SENSE, const int& n, long double* A, const int& lda, long double* B, const int& ldb, long double* ALPHAR, long double* ALPHAI, long double* BETA, long double* VL, const int& ldvl, long double* VR, const int& ldvr, int* ilo, int* ihi, long double* lscale, long double* rscale, long double* abnrm, long double* bbnrm, long double* RCONDE, long double* RCONDV, long double* WORK, const int& lwork, long double* /* RWORK */, int* IWORK, int* BWORK, int* info) const; 
+    void PORFS(const char& UPLO, const int& n, const int& nrhs, long double* A, const int& lda, const long double* AF, const int& ldaf, const long double* B, const int& ldb, long double* X, const int& ldx, long double* FERR, long double* BERR, long double* WORK, int* IWORK, int* info) const; 
+    void PTEQR(const char& COMPZ, const int& n, long double* D, long double* E, long double* Z, const int& ldz, long double* WORK, int* info) const;
+    void POTRF(const char& UPLO, const int& n, long double* A, const int& lda, int* info) const; 
+    void POTRS(const char& UPLO, const int& n, const int& nrhs, const long double* A, const int& lda, long double* B, const int& ldb, int* info) const; 
+    void POEQU(const int& n, const long double* A, const int& lda, long double* S, long double* scond, long double* amax, int* info) const; 
+    void GEQRF(const int& m, const int& n, long double* A, const int& lda, long double* TAU, long double* WORK, const int& lwork, int* info) const;
+    void GEQR2(const int& m, const int& n, long double A[], const int& lda, long double TAU[], long double WORK[], int* const info) const;
+    void GETRF(const int& m, const int& n, long double* A, const int& lda, int* IPIV, int* info) const;
+    void GETRS(const char& TRANS, const int& n, const int& nrhs, const long double* A, const int& lda, const int* IPIV, long double* B, const int& ldb, int* info) const;
+    void GETRI(const int& n, long double* A, const int& lda, const int* IPIV, long double* WORK, const int& lwork, int* info) const;
+    void LASWP (const int& N, long double A[], const int& LDA, const int& K1, const int& K2, const int IPIV[], const int& INCX) const;
+
+    void ORM2R(const char& SIDE, const char& TRANS, const int& m, const int& n, const int& k, const long double A[], const int& lda, const long double TAU[], long double C[], const int& ldc, long double WORK[], int* const info) const;
+    void ORGQR(const int& m, const int& n, const int& k, long double* A, const int& lda, const long double* TAU, long double* WORK, const int& lwork, int* info) const;
+    void UNGQR(const int& m, const int& n, const int& k, long double* A, const int& lda, const long double* TAU, long double* WORK, const int& lwork, int* info) const;
+
+    void LARFG( const int& n, long double* alpha, long double* x, const int& incx, long double* tau ) const;
+
+    long double LAPY2 (const long double x, const long double y) const;
+    void LASCL (const char& TYPE, const int& kl, const int& ku, const long double cfrom, const long double cto, const int& m, const int& n, long double* A, const int& lda, int* info) const;
+
+    void GBTRF (const int& m, const int& n, const int& kl, const int& ku, long double* A, const int& lda, int* IPIV, int* info) const;
+    void GBTRS (const char& TRANS, const int& n, const int& kl, const int& ku, const int& nrhs, const long double* A, const int& lda, const int* IPIV, long double* B, const int& ldb, int* info) const;
+  };
+
+  // END int, long double SPECIALIZATION DECLARATION //
+
+#endif // HAVE_TEUCHOS_LONG_DOUBLE
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Teuchos

@@ -130,9 +130,9 @@ C  REGION HAS BEEN FLAGGED
                IF (NPER .GE. 6) THEN
                   TRIANG = .TRUE.
                ELSE
-                  CALL MESAGE ('TRIANGULAR REGION MESH NOT')
-                  CALL MESAGE ('POSSIBLE WITH PERIMETER < 6')
-                  CALL MESAGE ('REGULAR PROCESSING ASSUMED')
+                  CALL MESSAGE('TRIANGULAR REGION MESH NOT')
+                  CALL MESSAGE('POSSIBLE WITH PERIMETER < 6')
+                  CALL MESSAGE('REGULAR PROCESSING ASSUMED')
                END IF
                GO TO 110
             ELSE IF ((SCHSTR(J:J) .EQ. 'U') .OR.
@@ -140,9 +140,9 @@ C  REGION HAS BEEN FLAGGED
                IF (NPER .GE. 10) THEN
                   PENTAG = .TRUE.
                ELSE
-                  CALL MESAGE ('PENTAGON REGION MESH NOT')
-                  CALL MESAGE ('POSSIBLE WITH PERIMETER < 10')
-                  CALL MESAGE ('REGULAR PROCESSING ASSUMED')
+                  CALL MESSAGE('PENTAGON REGION MESH NOT')
+                  CALL MESSAGE('POSSIBLE WITH PERIMETER < 10')
+                  CALL MESSAGE('REGULAR PROCESSING ASSUMED')
                END IF
                GO TO 110
             ELSE IF ((SCHSTR(J:J) .EQ. 'B') .OR.
@@ -151,9 +151,9 @@ C  REGION HAS BEEN FLAGGED
                   TRNSIT = .TRUE.
                   HALFC = .FALSE.
                ELSE
-                  CALL MESAGE ('TRANSITION REGION GENERATION NOT')
-                  CALL MESAGE ('POSSIBLE WITH NO. IN PERIMETER < 8')
-                  CALL MESAGE ('REGULAR PROCESSING WILL BE ATTEMPTED')
+                  CALL MESSAGE('TRANSITION REGION GENERATION NOT')
+                  CALL MESSAGE('POSSIBLE WITH NO. IN PERIMETER < 8')
+                  CALL MESSAGE('REGULAR PROCESSING WILL BE ATTEMPTED')
                END IF
                GO TO 110
             ELSE IF ((SCHSTR(J:J) .EQ. 'C') .OR.
@@ -163,9 +163,9 @@ C  REGION HAS BEEN FLAGGED
                   TRNSIT = .TRUE.
                   HALFC = .TRUE.
                ELSE
-                  CALL MESAGE ('SEMICIRCLE REGION GENERATION NOT')
-                  CALL MESAGE ('POSSIBLE WITH NO. IN PERIMETER < 8')
-                  CALL MESAGE ('REGULAR PROCESSING WILL BE ATTEMPTED')
+                  CALL MESSAGE('SEMICIRCLE REGION GENERATION NOT')
+                  CALL MESSAGE('POSSIBLE WITH NO. IN PERIMETER < 8')
+                  CALL MESSAGE('REGULAR PROCESSING WILL BE ATTEMPTED')
                END IF
                GO TO 110
             END IF

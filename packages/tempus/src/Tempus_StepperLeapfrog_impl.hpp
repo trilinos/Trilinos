@@ -189,6 +189,7 @@ void StepperLeapfrog<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperExplicit<Scalar>::describe(out, verbLevel);
@@ -203,6 +204,7 @@ void StepperLeapfrog<Scalar>::describe(
 template<class Scalar>
 bool StepperLeapfrog<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;

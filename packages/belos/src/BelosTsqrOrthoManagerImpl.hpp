@@ -50,7 +50,6 @@
 #include "BelosOrthoManager.hpp" // OrthoError, etc.
 
 #include "Teuchos_as.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR

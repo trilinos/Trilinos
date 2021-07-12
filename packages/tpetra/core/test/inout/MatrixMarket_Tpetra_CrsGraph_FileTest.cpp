@@ -134,6 +134,7 @@ compareCrsGraph (const CrsGraphType& A_orig, const CrsGraphType& A, Teuchos::Fan
 {
   typedef typename CrsGraphType::global_ordinal_type GO;
   typedef typename ArrayView<const GO>::size_type size_type;
+  typedef typename CrsGraphType::nonconst_global_inds_host_view_type gids_type;
 
   OSTab tab (out);
   int localEqual = 1;
@@ -141,7 +142,7 @@ compareCrsGraph (const CrsGraphType& A_orig, const CrsGraphType& A, Teuchos::Fan
   //
   // Are my local graphs equal?
   //
-  Array<GO> indOrig, ind;
+  gids_type indOrig, ind;
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
@@ -156,15 +157,15 @@ compareCrsGraph (const CrsGraphType& A_orig, const CrsGraphType& A, Teuchos::Fan
       localEqual = 0;
       break;
     }
-    indOrig.resize (numEntriesOrig);
-    A_orig.getGlobalRowCopy (globalRow, indOrig (), numEntriesOrig);
-    ind.resize (numEntries);
-    A.getGlobalRowCopy (globalRow, ind (), numEntries);
+    Kokkos::resize(indOrig,numEntriesOrig);
+    A_orig.getGlobalRowCopy (globalRow, indOrig, numEntriesOrig);
+    Kokkos::resize(ind,numEntries);
+    A.getGlobalRowCopy (globalRow, ind, numEntries);
 
     // Global row entries are not necessarily sorted.  Sort them so
     // we can compare them.
-    std::sort(indOrig.begin (), indOrig.end ());
-    std::sort(ind.begin (), ind.end ());
+    Tpetra::sort(indOrig, indOrig.extent(0));
+    Tpetra::sort(ind, ind.extent(0));
 
     for (size_t k = 0; k < numEntries; ++k) {
       // Values should be _exactly_ equal.

@@ -1269,7 +1269,8 @@ namespace Xpetra {
         //TEUCHOS_TEST_FOR_EXCEPTION(true, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
 #if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
         Epetra_MultiVector * MV;
-        EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
+        int rv = EpetraExt::MatrixMarketFileToMultiVector(fileName.c_str(), toEpetra(map), MV);
+        if(rv != 0) throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToMultiVector failed");
         RCP<Epetra_MultiVector> MVrcp = rcp(MV);
         return Convert_Epetra_MultiVector_ToXpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(MVrcp);
 #else

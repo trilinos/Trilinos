@@ -79,8 +79,8 @@ ReorderFilter (const Teuchos::RCP<const row_matrix_type>& A,
     "Ifpack2::ReorderFilter: The input matrix is not square.");
 
   // Temp arrays for apply
-  Indices_.resize (A_->getNodeMaxNumRowEntries ());
-  Values_.resize (A_->getNodeMaxNumRowEntries ());
+  Kokkos::resize(Indices_,A_->getNodeMaxNumRowEntries ());
+  Kokkos::resize(Values_,A_->getNodeMaxNumRowEntries ());
 }
 
 
@@ -286,10 +286,10 @@ bool ReorderFilter<MatrixType>::isFillComplete() const
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
-getGlobalRowCopy (global_ordinal_type globalRow,
-                  const Teuchos::ArrayView<global_ordinal_type>& globalInd,
-                  const Teuchos::ArrayView<scalar_type>& val,
-                  size_t& numEntries) const
+ getGlobalRowCopy (global_ordinal_type globalRow,
+                   nonconst_global_inds_host_view_type &globalInd,
+                   nonconst_values_host_view_type &val,
+                   size_t& numEntries) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -306,37 +306,38 @@ getGlobalRowCopy (global_ordinal_type globalRow,
     << " is not owned by the calling process with rank "
     << rowMap.getComm ()->getRank () << ".");
 
-  if (sizeof (GO) == sizeof (LO)) {
-    // This means we can convert local to global in place.
-    ArrayView<LO> localInd = av_reinterpret_cast<LO> (globalInd);
-    this->getLocalRowCopy (localRow, localInd, val, numEntries);
+  // The Indices_ temp array is only used in apply, not getLocalRowCopy, so this is safe
+  numEntries = this->getNumEntriesInLocalRow (localRow);
+  this->getLocalRowCopy (localRow, Indices_, val, numEntries);
 
-    // Convert local indices back to global indices.
-    for (size_t k = 0; k < numEntries; ++k) {
-      globalInd[k] = rowMap.getGlobalElement (localInd[k]);
-    }
-  }
-  else {
-    // LO and GO have different sizes, so we need a temp array
-    // for converting local to global.
-    numEntries = this->getNumEntriesInLocalRow (localRow);
-    Array<LO> localInd (numEntries);
-    this->getLocalRowCopy (localRow, localInd, val, numEntries);
-
-    // Convert local indices back to global indices.
-    for (size_t k = 0; k < numEntries; ++k) {
-      globalInd[k] = rowMap.getGlobalElement (localInd[k]);
-    }
+  // Convert local indices back to global indices.
+  for (size_t k = 0; k < numEntries; ++k) {
+    globalInd[k] = rowMap.getGlobalElement (Indices_[k]);
   }
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
+void ReorderFilter<MatrixType>::
+getGlobalRowCopy (global_ordinal_type globalRow,
+                  const Teuchos::ArrayView<global_ordinal_type>& Indices,
+                  const Teuchos::ArrayView<scalar_type>& Values,
+                  size_t& numEntries) const
+{
+  using IST = typename row_matrix_type::impl_scalar_type;
+  nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
+  getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
+}
+#endif
 
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getLocalRowCopy (local_ordinal_type LocalRow,
-                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                 const Teuchos::ArrayView<scalar_type> &Values,
-                 size_t &NumEntries) const
+    nonconst_local_inds_host_view_type &Indices,
+    nonconst_values_host_view_type &Values,
+    size_t& NumEntries) const
+
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! A_->getRowMap ()->isNodeLocalElement (LocalRow),
@@ -370,7 +371,29 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
+void ReorderFilter<MatrixType>::getLocalRowCopy (local_ordinal_type LocalRow,
+                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                 const Teuchos::ArrayView<scalar_type> &Values,
+                 size_t &NumEntries) const
+{
+  using IST = typename row_matrix_type::impl_scalar_type;
+  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
+  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
+}
+#endif
 
+template<class MatrixType>
+void ReorderFilter<MatrixType>::getGlobalRowView(global_ordinal_type /* GlobalRow */,
+                                                  global_inds_host_view_type &/*indices*/,
+                                                  values_host_view_type &/*values*/) const
+{
+  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getGlobalRowView (global_ordinal_type /* GlobalRow */,
@@ -379,8 +402,18 @@ getGlobalRowView (global_ordinal_type /* GlobalRow */,
 {
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
 }
+#endif
 
 
+template<class MatrixType>
+void ReorderFilter<MatrixType>::getLocalRowView(local_ordinal_type /* LocalRow */,
+    local_inds_host_view_type & /*indices*/,
+    values_host_view_type & /*values*/) const
+{
+  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getLocalRowView (local_ordinal_type /* LocalRow */,
@@ -389,6 +422,7 @@ getLocalRowView (local_ordinal_type /* LocalRow */,
 {
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
 }
+#endif
 
 
 template<class MatrixType>
@@ -445,25 +479,26 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   for (size_t i = 0; i < A_->getNodeNumRows (); ++i) {
     size_t Nnz;
     // Use this class's getrow to make the below code simpler
-    getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
+    getLocalRowCopy (i, Indices_ , Values_ , Nnz);
+    scalar_type* Values = reinterpret_cast<scalar_type*>(Values_.data());
     if (mode == Teuchos::NO_TRANS) {
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
+          y_ptr[k][i] += Values[j] * x_ptr[k][Indices_[j]];
         }
       }
     }
     else if (mode == Teuchos::TRANS) {
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += Values[j] * x_ptr[k][i];
         }
       }
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][Indices_[j]] += STS::conjugate(Values_[j]) * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += STS::conjugate(Values[j]) * x_ptr[k][i];
         }
       }
     }

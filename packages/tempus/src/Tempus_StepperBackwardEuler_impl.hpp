@@ -121,6 +121,24 @@ void StepperBackwardEuler<Scalar>::setAppAction(
 
 
 template<class Scalar>
+void StepperBackwardEuler<Scalar>::setModel(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
+{
+  StepperImplicit<Scalar>::setModel(appModel);
+
+  if (predictorStepper_ != Teuchos::null) {
+    // If predictor's model is not set, set it to the stepper model.
+    if (predictorStepper_->getModel() == Teuchos::null) {
+      predictorStepper_->setModel(appModel);
+      predictorStepper_->initialize();
+    }
+  }
+
+  this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
 void StepperBackwardEuler<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
@@ -247,6 +265,7 @@ void StepperBackwardEuler<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
@@ -269,6 +288,7 @@ void StepperBackwardEuler<Scalar>::describe(
 template<class Scalar>
 bool StepperBackwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
@@ -438,14 +458,14 @@ createStepperBackwardEuler(
 
   stepper->setStepperImplicitValues(pl);
 
+  if (pl != Teuchos::null) {
+    std::string predictorName =
+      pl->get<std::string>("Predictor Stepper Type", "None");
+    stepper->setPredictor(predictorName);
+  }
+
   if (model != Teuchos::null) {
     stepper->setModel(model);
-
-    if (pl != Teuchos::null) {
-      std::string predictorName =
-        pl->get<std::string>("Predictor Stepper Type", "None");
-      stepper->setPredictor(predictorName);
-    }
     stepper->initialize();
   }
 

@@ -249,6 +249,15 @@ namespace MueLu {
 
   private:
     void SetupStratimikos           (Level& currentLevel);
+    /*!
+      @brief Filter out any matrix connections that corresponds to coupling along a vertical grid line
+
+      Builds a special filtered matrix for meshes that are structured in at least one direction (the z direction). Specifically
+      the new matrix has all the vertical connections removed.
+      */
+    void ExperimentalDropVertConnections(RCP<Matrix> & filteredA, Level& currentLevel);
+
+    //@}
 
     std::string                         type_;
 
@@ -257,6 +266,7 @@ namespace MueLu {
     //! matrix, used in apply if solving residual equation
     RCP<Matrix> A_;
 
+    bool recurMgOnFilteredA_ = false;
   }; // class StratimikosSmoother
 
 } // namespace MueLu

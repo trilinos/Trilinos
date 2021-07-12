@@ -12,11 +12,6 @@ if [ "${EXCLUDE_NODES_FROM_BSUB}" == "" ] ; then
   fi
 fi
 
-if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
-  export Trilinos_ENABLE_BUILD_STATS=ON
-fi
-echo "Trilinos_ENABLE_BUILD_STATS='${Trilinos_ENABLE_BUILD_STATS}'"
-
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
 set -x

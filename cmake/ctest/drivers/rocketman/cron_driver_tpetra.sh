@@ -28,10 +28,10 @@ export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 # Machine specific environment
 #
-export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
-export TDD_HTTPS_PROXY="https://sonproxy.sandia.gov:80"
-export http_proxy="http://sonproxy.sandia.gov:80"
-export https_proxy="https://sonproxy.sandia.gov:80"
+. /etc/profile
+
+export TDD_HTTP_PROXY=$http_proxy
+export TDD_HTTPS_PROXY=$https_proxy
 
 export DO_TPETRA_TESTING="YES"
 

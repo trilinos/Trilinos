@@ -48,7 +48,7 @@ C  CHECK FOR INPUT ERRORS
 
       ERR = .FALSE.
       IF (NNN - NNNOLD .LE. 0) THEN
-         CALL MESAGE ('NO NODES DEFINED IN REGION')
+         CALL MESSAGE('NO NODES DEFINED IN REGION')
          ERR = .TRUE.
 
 C  GOOD INPUT
@@ -65,7 +65,7 @@ C  CIRCULAR HOLE
             CALL LTSORT (MP, LINKP, LCON(1, LIN), I1, ADDLNK)
             CALL LTSORT (MP, LINKP, LCON(2, LIN), I2, ADDLNK)
             IF (I1 .NE. I2) THEN
-               CALL MESAGE ('CIRCULAR HOLE DOES NOT CLOSE')
+               CALL MESSAGE('CIRCULAR HOLE DOES NOT CLOSE')
                ERR = .TRUE.
                GO TO 380
             END IF
@@ -74,7 +74,7 @@ C  CIRCULAR HOLE
             YCEN = COOR(2, I2)
             RADIUS = (COOR(1, I1) - XCEN)**2 + (COOR(2, I1) - YCEN)**2
             IF (RADIUS .LE. 0.0) THEN
-               CALL MESAGE ('RADIUS HAS ZERO LENGTH')
+               CALL MESSAGE('RADIUS HAS ZERO LENGTH')
                ERR = .TRUE.
                GO TO 380
             END IF
@@ -159,7 +159,7 @@ C  DELETE EVERYTHING ATTACHED TO NODES WITHIN HOLE
 C  CANNOT DELETE BOUNDARY NODES
 
                   ELSE
-                     CALL MESAGE ('HOLE CROSSES FIXED BOUNDARY')
+                     CALL MESSAGE('HOLE CROSSES FIXED BOUNDARY')
                      ERR = .TRUE.
                      GO TO 380
                   END IF
@@ -186,7 +186,7 @@ C  PROCESS SMALL CIRCLES (I.E. SMALLER THAN AN ELEMENT)
                SUM = SUM/2.0
                IF (ABS((AREA - SUM)/AREA) .LT. 1.0E-4) GO TO 160
   150       CONTINUE
-            CALL MESAGE ('FAILED TO FIND ELEMENT SURROUNDING '//
+            CALL MESSAGE('FAILED TO FIND ELEMENT SURROUNDING '//
      &         'SMALL HOLE')
             ERR = .TRUE.
             GO TO 380
@@ -257,9 +257,9 @@ C     AROUND HOLE
   230          CONTINUE
                GO TO 180
             ELSE
-               CALL MESAGE
+               CALL MESSAGE
      &            ('INTERVAL MISMATCH BETWEEN HOLE AND BOUNDARY.')
-               CALL MESAGE ('ALL ELEMENTS DELETED.')
+               CALL MESSAGE('ALL ELEMENTS DELETED.')
                ERR = .TRUE.
                GO TO 380
             END IF
@@ -290,7 +290,7 @@ C  MAKE SURE LOOP CLOSES
                GO TO 280
             END IF
   270    CONTINUE
-         CALL MESAGE ('HOLE PERIMETER DOES NOT CLOSE')
+         CALL MESSAGE('HOLE PERIMETER DOES NOT CLOSE')
          ERR = .TRUE.
          GO TO 380
   280    CONTINUE
@@ -317,7 +317,7 @@ C  MAKE SURE HOLE PERIMETER IS DEFINED COUNTER-CLOCKWISE
                DIFF = DIFF + TWOPI
             END IF
             IF (ABS(ABS(DIFF) - PI) .LT .1.0E-3) THEN
-               CALL MESAGE ('PERIMETER CONTAINS SWITCHBACKS')
+               CALL MESSAGE('PERIMETER CONTAINS SWITCHBACKS')
                ERR = .TRUE.
                GO TO 380
             ENDIF
@@ -333,7 +333,7 @@ C  MAKE SURE HOLE PERIMETER IS DEFINED COUNTER-CLOCKWISE
   300       CONTINUE
          ELSE IF ((ABS(SPIRO) .LT .PI) .OR.
      &      (ABS(SPIRO) .GT. (3.*PI))) THEN
-            CALL MESAGE
+            CALL MESSAGE
      &         ('UNABLE TO DETERMINE CW OR CCW SENSE OF HOLE')
             ERR = .TRUE.
             GO TO 380
@@ -401,7 +401,7 @@ C  GENERATE THE PERIMETER OF THE HOLE
                CALL LTSORT (ML, LINKL, LNUM, LIN, ADDLNK)
                NINT(LIN) = NH - NSUM
             END IF
-            CALL MESAGE ('INTERVALS MODIFIED FOR HOLE')
+            CALL MESSAGE('INTERVALS MODIFIED FOR HOLE')
          END IF
          NLP1 = NL + 1
          CALL PERIM (MP, ML, MS, NS, MAXNL, MAXNP, MAXNBC, MAXSBC, KNBC,
@@ -418,7 +418,7 @@ C  GENERATE THE PERIMETER OF THE HOLE
          IF (NL1 .GE. 0 .AND. NL + NL1 .LE. MAXNL) THEN
             NL = NL + NL1
          ELSE
-            CALL MESAGE ('UNABLE TO ADD HOLE LINES TO REGION LINE LIST')
+            CALL MESSAGE('UNABLE TO ADD HOLE LINES TO REGION LINE LIST')
             ERR = .TRUE.
             GO TO 380
          END IF
@@ -426,7 +426,7 @@ C  GENERATE THE PERIMETER OF THE HOLE
 C  TACK THE HOLE LINE LIST ONTO THE BOUNDARY LINE LIST
 
          IF (NPERIM(NPRM) .NE. NH) THEN
-            CALL MESAGE ('INTERVAL MISMATCH ON HOLE PERIMETER')
+            CALL MESSAGE('INTERVAL MISMATCH ON HOLE PERIMETER')
             ERR = .TRUE.
             GO TO 380
          END IF

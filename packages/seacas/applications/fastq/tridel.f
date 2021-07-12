@@ -106,7 +106,7 @@ C  K(3) IS BETWEEN L3 & L1
                K(1) = KXL (2, L1)
             ELSE
                ERR = .TRUE.
-               CALL MESAGE ('** PROBLEMS IN TRIDEL FINDING K(1) **')
+               CALL MESSAGE('** PROBLEMS IN TRIDEL FINDING K(1) **')
                GOTO 180
             ENDIF
 
@@ -118,7 +118,7 @@ C  K(3) IS BETWEEN L3 & L1
                K(2) = KXL (2, L2)
             ELSE
                ERR = .TRUE.
-               CALL MESAGE ('** PROBLEMS IN TRIDEL FINDING K(2) **')
+               CALL MESSAGE('** PROBLEMS IN TRIDEL FINDING K(2) **')
                GOTO 180
             ENDIF
 
@@ -130,7 +130,7 @@ C  K(3) IS BETWEEN L3 & L1
                K(3) = KXL (2, L3)
             ELSE
                ERR = .TRUE.
-               CALL MESAGE ('** PROBLEMS IN TRIDEL FINDING K(3) **')
+               CALL MESSAGE('** PROBLEMS IN TRIDEL FINDING K(3) **')
                GOTO 180
             ENDIF
 
@@ -299,7 +299,7 @@ C  THIS ELEMENT SHOULD BE DELETED.
      &            CCW)
                IF ( (I .NE. NODES(1)) .AND. (I .NE. NODES(2)) .AND.
      &            (I .NE. NODES(3)) .AND. (I .NE. NODES(4)) ) THEN
-                  CALL MESAGE ('** PROBLEMS IN TRIDEL - I IS NOT IN '//
+                  CALL MESSAGE('** PROBLEMS IN TRIDEL - I IS NOT IN '//
      &               'ELEMENT K **')
                   ERR = .TRUE.
                   GOTO 180

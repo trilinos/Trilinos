@@ -5,15 +5,9 @@
  *
  * See packages/seacas/LICENSE for details
  */
-/*
- *
- *
- *
- *      Include file for I/O global variables used in FEM
- *      problem specification
- *
- */
 
+#ifndef RF_IO_H
+#define RF_IO_H
 std::string ExoFile;               /* Exodus II File containing problem definition. */
                                    /* This name is the root name.                   */
 std::string Output_File_Base_Name; /* Base name of output file. If it has a suffix, it will be
@@ -45,3 +39,4 @@ int Num_Nset_Var = 0; /* The number of nodeset variables to reserve */
                       /* space in the output file for. */
 int Num_Sset_Var = 0; /* The number of sideset variables to reserve */
                       /* space in the output file for. */
+#endif

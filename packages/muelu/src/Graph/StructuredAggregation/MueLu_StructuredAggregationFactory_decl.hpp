@@ -56,6 +56,7 @@
 #include "MueLu_StructuredAggregationFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_AggregationStructuredAlgorithm_fwd.hpp"
 
 namespace MueLu {
 

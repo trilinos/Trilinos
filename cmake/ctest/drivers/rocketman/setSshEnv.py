@@ -16,7 +16,7 @@ import re
 
 # Fingerprint of identity that you will use. You can find it with "cd .ssh; ssh-keygen -lf /your/private/ssh/key".
 # You'll need to remove the ".pub" suffix.
-keyFingerprint = "4096 f7:ef:b2:1f:dc:c6:a0:d3:f6:ec:f9:64:15:f4:64:18 id_rsa_rocketman (RSA)"
+keyFingerprint = "2048 SHA256:uYqtrZm1O3AaKp/+n9PNIvCAcn7No2RtuVZpchJT8nw .ssh/id_rsa_geminga (RSA)"
 # socket query tool
 socketCommand="/usr/sbin/ss"
 

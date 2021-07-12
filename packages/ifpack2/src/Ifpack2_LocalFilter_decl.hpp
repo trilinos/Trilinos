@@ -189,8 +189,20 @@ public:
   //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
+
+  typedef typename MatrixType::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename MatrixType::values_host_view_type values_host_view_type;
+
+  typedef typename MatrixType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+
+
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
+
+
 
   //! Type of the Tpetra::RowMatrix specialization that this class uses.
   typedef Tpetra::RowMatrix<scalar_type,
@@ -331,9 +343,16 @@ public:
   /// on output.
   virtual void
   getGlobalRowCopy (global_ordinal_type GlobalRow,
+                   nonconst_global_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowCopy (global_ordinal_type GlobalRow,
                     const Teuchos::ArrayView<global_ordinal_type> &Indices,
                     const Teuchos::ArrayView<scalar_type> &Values,
                     size_t &NumEntries) const;
+#endif
 
   /// \brief Get the entries in the given row, using local indices.
   ///
@@ -350,10 +369,17 @@ public:
   /// on output.
   virtual void
   getLocalRowCopy (local_ordinal_type LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
+  virtual void
+  getLocalRowCopy (local_ordinal_type LocalRow,
                    const Teuchos::ArrayView<local_ordinal_type> &Indices,
                    const Teuchos::ArrayView<scalar_type> &Values,
                    size_t &NumEntries) const ;
-
+#endif
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow [in] Global row number for which indices are desired.
@@ -367,8 +393,14 @@ public:
   */
   virtual void
   getGlobalRowView (global_ordinal_type GlobalRow,
+                    global_inds_host_view_type &indices,
+                    values_host_view_type &values) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowView (global_ordinal_type GlobalRow,
                     Teuchos::ArrayView<const global_ordinal_type> &indices,
                     Teuchos::ArrayView<const scalar_type> &values) const;
+#endif
 
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
@@ -383,9 +415,14 @@ public:
   */
   virtual void
   getLocalRowView (local_ordinal_type LocalRow,
+    local_inds_host_view_type & indices,
+    values_host_view_type & values) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getLocalRowView (local_ordinal_type LocalRow,
                    Teuchos::ArrayView<const local_ordinal_type> &indices,
                    Teuchos::ArrayView<const scalar_type> &values) const;
-
+#endif
   /// \brief Get the diagonal entries of the (locally filtered) matrix.
   ///
   /// \param diag [in/out] On input: a Tpetra::Vector whose Map is the
@@ -508,11 +545,12 @@ private:
   //! NumEntries_[i] contains the nonzero entries in row `i'.
   std::vector<size_t> NumEntries_;
 
-  //! Temporary array used in getLocalRowCopy().
-  mutable Teuchos::Array<local_ordinal_type> localIndices_;
+  //! Used in ExtractMyRowCopy, to avoid allocation each time.
+  mutable nonconst_local_inds_host_view_type localIndices_;
+  mutable nonconst_local_inds_host_view_type localIndicesForGlobalCopy_;
+  //! Used in ExtractMyRowCopy, to avoid allocation each time.
+  mutable nonconst_values_host_view_type Values_;
 
-  //! Temporary array used in getLocalRowCopy().
-  mutable Teuchos::Array<scalar_type> Values_;
 };// class LocalFilter
 
 }// namespace Ifpack2

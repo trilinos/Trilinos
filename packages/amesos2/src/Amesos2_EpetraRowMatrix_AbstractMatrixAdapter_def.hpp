@@ -162,6 +162,26 @@ namespace Amesos2 {
 
 
   template <class DerivedMat>
+  template<typename KV_GO, typename KV_S>
+  void
+  AbstractConcreteMatrixAdapter<
+    Epetra_RowMatrix,
+    DerivedMat>::getGlobalRowCopy_kokkos_view_impl(global_ordinal_t row,
+                                                   KV_GO & indices,
+                                                   KV_S & vals,
+                                                   size_t& nnz) const
+  {
+    using index_t = typename KV_GO::value_type;
+    using value_t = typename KV_S::value_type;
+    ArrayView<value_t>  vals_array    (vals.data(),    vals.extent(0));
+    ArrayView<index_t>  indices_array (indices.data(), indices.extent(0));
+
+    this->getGlobalRowCopy_impl(row, indices_array, vals_array, nnz);
+  }
+
+
+
+  template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<
     Epetra_RowMatrix,
     DerivedMat>::global_size_t
@@ -355,12 +375,12 @@ namespace Amesos2 {
 
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
-  ::super_t::spmtx_ptr_t
+  ::spmtx_ptr_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseRowPtr() const
   {
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_val_t  sp_values = nullptr;
 
     this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
 
@@ -369,12 +389,12 @@ namespace Amesos2 {
 
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
-  ::super_t::spmtx_idx_t
+  ::spmtx_idx_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseColInd() const
   {
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_val_t  sp_values = nullptr;
 
     this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
 
@@ -383,12 +403,12 @@ namespace Amesos2 {
 
   template <class DerivedMat>
   typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>
-  ::super_t::spmtx_vals_t
+  ::spmtx_val_t
   AbstractConcreteMatrixAdapter<Epetra_RowMatrix, DerivedMat>::getSparseValues() const
   {
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_ptr_t  sp_rowptr = nullptr;
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_idx_t  sp_colind = nullptr;
-    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::super_t::spmtx_vals_t sp_values = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_ptr_t  sp_rowptr = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_idx_t  sp_colind = nullptr;
+    typename AbstractConcreteMatrixAdapter<Epetra_RowMatrix,DerivedMat>::spmtx_val_t  sp_values = nullptr;
 
     this->mat_->ExtractCrsDataPointers(sp_rowptr, sp_colind, sp_values);
 

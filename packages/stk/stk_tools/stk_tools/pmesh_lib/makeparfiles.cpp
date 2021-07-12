@@ -15,7 +15,7 @@
 namespace stk_tools 
 {
 
-void SetFileName(char fn[], int total_subdomains, int i, int numraid, const char* rootdir, const char* subdir);
+void SetFileName(char fn[], int total_subdomains, int i, const char* rootdir);
 int OpenExoFile(char filename[300] );
 void getMyNodeNeighbors(int my_node_neighbor[26],
                         int xc, int yc, int zc,
@@ -80,7 +80,7 @@ int getCubeId(int &x_c, int &y_c, int &z_c, const int& n_x, const int& n_y, cons
 
 void MakeParFile(const int& my_proc_id, const int& num_procs, const int& ncuts_x, const int& ncuts_y,
         const int& ncuts_z, const int& nelem_per_edge, const double& lenx, const double& leny, const double& lenz,
-        const int& numraid, const char* rootdir, const char* subdir)
+        const char* rootdir)
 {
 
     int i = 0;
@@ -282,7 +282,7 @@ void MakeParFile(const int& my_proc_id, const int& num_procs, const int& ncuts_x
     {
 
 
-        SetFileName(dirloc,total_subdomains, i, numraid, rootdir, subdir);
+        SetFileName(dirloc,total_subdomains, i, rootdir);
 
 
         // Now have the filename figured out and stored in *dirloc*
@@ -475,47 +475,66 @@ int getCubeId(int &x_c, int &y_c, int &z_c, const int& n_x, const int& n_y, cons
     return id;
 }
 
+
+int GetNumDigits(int n)
+{
+    if (n==0) {return 1;}
+    if (n<0) {n = -n;}
+    int d = 0;
+    while (n != 0) {
+        n = n / 10;
+        ++d;
+    }
+    return d;
+}
+
+
 void SetFileName(char dirloc[], int total_subdomains, int i, 
-                int numraid, const char* rootdir, const char* subdir)
+                const char* rootdir)
         // The following is some ugly code to arrive at the full path and name for
-        // each subdomain cube. If root = /ufs/tmp, subdir=joemoe, and numraid is 1,
+        // each subdomain cube. If root = /ufs/tmp and nsubdomains is 8, then
         // the 'dirloc', which contains the full path and name, will be
-        // /ufs/tmp_1/joemoe/cube.par.8.0, for cube 0 and assuming nsubdomains is 8.
+        // /ufs/tmp/cube.exo.8.0, for cube 0 
 
         // First create the filename, which depends on the
         // number of processors and current file id.
 {
-    const char* base_fn = "cube.par.";
+    const char* base_fn = "cube.exo.";
     char fn[50];
-        if(total_subdomains < 10)
+    int digit = GetNumDigits(total_subdomains);
+    switch ( digit )
+    {
+        case 1:
             sprintf(fn, "%s%d.%.1d", base_fn, total_subdomains, i);
-        else if(total_subdomains < 100)
+            break;
+        case 2:
             sprintf(fn, "%s%d.%.2d", base_fn, total_subdomains, i);
-        else if(total_subdomains < 1000)
+            break;
+        case 3:
             sprintf(fn, "%s%d.%.3d", base_fn, total_subdomains, i);
-        else if(total_subdomains < 10000)
+            break;
+        case 4:
             sprintf(fn, "%s%d.%.4d", base_fn, total_subdomains, i);
-        else if(total_subdomains < 100000)
+            break;
+        case 5:
             sprintf(fn, "%s%d.%.5d", base_fn, total_subdomains, i);
-        else if(total_subdomains < 1000000)
+            break;
+        case 6:
             sprintf(fn, "%s%d.%.6d", base_fn, total_subdomains, i);
-        else
-            sprintf(fn, "%s%d.%.7d", base_fn, total_subdomains, i);
+            break;
+        default:
+            std::cerr << "no more than 6 digits are supported " << std::endl;
+            MPI_Abort(MPI_COMM_WORLD, digit);
+            exit(-1);
+    }
 
 
-        // Next add in the full directory path
-        // Two lines below figure out which raid the file will be
-        // written to. And then *dirloc* stores the fullpath and filename
-
-        int tmp1 = i / numraid;
-        int raid = i - numraid * tmp1;
-
-        sprintf(dirloc, "%s%d/%s/%s", rootdir, raid + 1, subdir, fn);
-
-#if defined(MANOJ_DEBUG)
-        if ( my_proc_id == 0 )
-        cerr << "Filenames are: " << dirloc << endl;
-#endif
+    std::string directory(rootdir);
+    if (directory.empty()) { 
+        sprintf(dirloc, "%s", fn);
+    } else {
+        sprintf(dirloc, "%s/%s", rootdir, fn);
+    }
 }
 
 

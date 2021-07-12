@@ -3,6 +3,9 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
+#ifndef MINMAXDATA_H
+#define MINMAXDATA_H
+
 #include <cmath>
 
 enum class ToleranceType {
@@ -77,3 +80,4 @@ public:
 
   ToleranceType type{ToleranceType::mm_unknown};
 };
+#endif

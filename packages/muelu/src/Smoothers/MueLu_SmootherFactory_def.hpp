@@ -126,7 +126,7 @@ namespace MueLu {
   void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildSmoother(Level& currentLevel, PreOrPost const preOrPost) const {
     // SmootherFactory is quite tricky because of the fact that one of the smoother prototypes may be zero.
     // The challenge is that we have no way of knowing how user uses this factory. For instance, lets say
-    // user wants to use s1 prototype as a presmoother, and s2 as a postsmoother. He could do:
+    // user wants to use s1 prototype as a presmoother, and s2 as a postsmoother. They could do:
     //   (a) create SmootherFactory(s1, s2), or
     //   (b) create SmootherFactory(s1, null) and SmootherFactory(null, s2)
     // It may also happen that somewhere somebody set presmoother factory = postsmoother factory = (a)
@@ -227,7 +227,7 @@ namespace MueLu {
       currentLevel.Set<RCP<SmootherBase> >("PostSmoother", postSmoother, this);
 
       if (pL.get<bool>("keep smoother data"))
-        Set(currentLevel, "PostSmoother data", preSmoother);
+        Set(currentLevel, "PostSmoother data", postSmoother);
     }
 
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());

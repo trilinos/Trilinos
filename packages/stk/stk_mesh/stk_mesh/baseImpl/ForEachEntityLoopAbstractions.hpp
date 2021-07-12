@@ -36,7 +36,7 @@
 #define stk_mesh_ForEachEntityLoopAbstractions_hpp
 
 #include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
-#include <stk_mesh/base/Bucket.hpp>     // for Bucket, Bucket::size_type, etc
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 

@@ -369,7 +369,7 @@ struct constraintKernel {
     LO nPDEs = A->GetFixedBlockSize();
 
     using local_mat_type = typename Matrix::local_matrix_type;
-    constraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrix() );
+    constraintKernel<local_mat_type> myKernel(nPDEs,P->getLocalMatrixDevice() );
     Kokkos::parallel_for("enforce constraint",Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getNodeNumElements() ),
                         myKernel );
 

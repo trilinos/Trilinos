@@ -159,11 +159,11 @@ namespace {
       Vdomain.doExport(Vcolumn,*importer,Tpetra::ADD);
 
 
-      Vfe.beginFill();
+      Vfe.beginAssembly();
       Vfe.putScalar(ZERO);
       for(size_t i=0; i<Ndomain; i++)
         Vfe.getDataNonConst(0)[i] = domainMap->getGlobalElement(i);
-      Vfe.endFill();
+      Vfe.endAssembly();
       vector_check(Ndomain,Vfe,Vdomain);
 
       // 2) Test column -> domain (with off-proc addition)
@@ -172,9 +172,9 @@ namespace {
       Vdomain.doExport(Vcolumn,*importer,Tpetra::ADD);
 
       Vfe.putScalar(ZERO);
-      Vfe.beginFill();
+      Vfe.beginAssembly();
       Vfe.putScalar(ONE);
-      Vfe.endFill();
+      Vfe.endAssembly();
       vector_check(Ncolumn,Vfe,Vdomain);
     } catch (std::exception& e) {
       err << "Proc " << myRank << ": " << e.what () << std::endl;
@@ -219,10 +219,10 @@ namespace {
     Tpetra::FEMultiVector<Scalar,LO,GO,Node> v2(map,importer,1);
     Tpetra::FEMultiVector<Scalar,LO,GO,Node> v3(map,importer,1);
 
-    // Just check to make sure beginFill() / endFill() compile
-    Tpetra::beginFill(v1,v2,v3);
+    // Just check to make sure beginAssembly() / endAssembly() compile
+    Tpetra::beginAssembly(v1,v2,v3);
 
-    Tpetra::endFill(v1,v2,v3);
+    Tpetra::endAssembly(v1,v2,v3);
   }
 
 #define UNIT_TEST_GROUP( SC, LO, GO, NO ) \

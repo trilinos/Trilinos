@@ -494,6 +494,25 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
    )
+
+
+ IF(${PACKAGE_NAME}_ENABLE_MueLu)
+   TRIBITS_ADD_EXECUTABLE(
+     Example_Maxwell_Tpetra
+     SOURCES example_Maxwell_Tpetra.cpp
+     TrilinosCouplings_Pamgen_Utils.cpp
+     COMM serial mpi
+     )
+
+   TRIBITS_ADD_TEST(
+     Example_Maxwell_Tpetra
+     NAME Example_Maxwell_Tpetra_MueLu
+     ARGS "--solverName=MueLu"
+     NUM_MPI_PROCS 1
+     COMM mpi serial
+     )
+ ENDIF()
+
 ENDIF()
 
 

@@ -125,7 +125,8 @@ int main(int argc, char *argv[])
     My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
     bool useepetra = false;
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-
+    bool useGeoMap = false;
+    My_CLP.setOption("useGeoMap","useAlgMap",&useGeoMap,"Use Geometric Map");
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
@@ -200,7 +201,25 @@ int main(int argc, char *argv[])
             RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Elasticity3D",UniqueMap,GaleriList);
             K = Problem->BuildMatrix();
         }
-        RCP<Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMapNonConst<LO,GO,NO>(K->getCrsGraph());
+
+
+        RCP<Map<LO,GO,NO> > FullRepeatedMap;
+        RCP<Map<LO,GO,NO> > RepeatedMap;
+        RCP<const Map<LO,GO,NO> > FullRepeatedMapNode;
+        if (useGeoMap) {
+            if (Dimension == 2) {
+                FullRepeatedMap = BuildRepeatedMapGaleriStruct2D<SC,LO,GO,NO>(K,M,Dimension);
+                RepeatedMap = FullRepeatedMap;
+            } else if (Dimension == 3) {
+                FullRepeatedMapNode = BuildRepeatedMapGaleriStruct3D<SC,LO,GO,NO>(K->getMap(),M,Dimension);
+                FullRepeatedMap = BuildMapFromNodeMap(FullRepeatedMapNode,Dimension,NodeWise);
+                //FullRepeatedMapNode->describe(*fancy,Teuchos::VERB_EXTREME);
+                RepeatedMap = FullRepeatedMap;
+            }
+        } else {
+            RepeatedMap = BuildRepeatedMapNonConst<LO,GO,NO>(K->getCrsGraph());
+        }
+
 
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
@@ -214,7 +233,7 @@ int main(int argc, char *argv[])
         RCP<const MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
 
         //-----------Set Coordinates and RepMap in ParameterList--------------------------
-        RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
+        RCP<ParameterList> plList = sublist(parameterList,"Preconditioner Types");
         sublist(plList,"FROSch")->set("Dimension",Dimension);
         sublist(plList,"FROSch")->set("Overlap",Overlap);
         sublist(plList,"FROSch")->set("DofOrdering","NodeWise");

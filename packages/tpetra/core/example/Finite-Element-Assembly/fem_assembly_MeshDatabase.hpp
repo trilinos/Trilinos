@@ -139,6 +139,7 @@ private:
 
   void initializeOwnedAndGhostElementGlobalIDs(void);
 
+  //wrapped dual views 
   global_ordinal_view_type ownedElementGlobalIDs_;
   global_ordinal_view_type ghostElementGlobalIDs_;
 
@@ -182,7 +183,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 {
 
   // NOTE: Elements/nodes are numbered sequentially with x as the "fast" direction
-
+  // NOTE: assembly is all on host, so the overall scopeguard is sufficient here
   // Get processor decomp information
   MyRank_ = comm_->getRank();
   ij_from_idx(globalProcs_[0],MyRank_,myProcIJ_[0],myProcIJ_[1]);
@@ -202,40 +203,43 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
   }
 
   // Generate the owned element ids
-  Kokkos::resize(ownedElementGlobalIDs_,num_my_elements);
+  auto ownedElementGlobalIDs = ownedElementGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
+  Kokkos::resize(ownedElementGlobalIDs,num_my_elements);
   int ect=0;
   for(global_ordinal_type j=myElementStart_[1]; j<myElementStop_[1]; j++) {
     for(global_ordinal_type i=myElementStart_[0]; i<myElementStop_[0]; i++) {
       global_ordinal_type idx=idx_from_ij(globalElements_[0],i,j);
-      ownedElementGlobalIDs_(ect) = idx;
+      ownedElementGlobalIDs(ect) = idx;
       ect++;
     }
   }
 
   // Generate the owned node ids
-  Kokkos::resize(ownedNodeGlobalIDs_,num_my_nodes);
+  auto _ownedNodeGlobalIDs = ownedNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
+  Kokkos::resize(_ownedNodeGlobalIDs,num_my_nodes);
   int nct=0;
   for(global_ordinal_type j=myNodeStart_[1]; j<myNodeStop_[1]; j++) {
     for(global_ordinal_type i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
       global_ordinal_type idx=idx_from_ij(globalNodes_[0],i,j);
-      ownedNodeGlobalIDs_(nct) = idx;
+      _ownedNodeGlobalIDs(nct) = idx;
       nct++;
     }
   }
 
   // Generate the element-to-node map
   // NOTE: Hardwired to QUAD4's.  Nodes are ordered exodus-style (counter-clockwise) within an element
-  Kokkos::resize(ownedElementToNode_,num_my_elements);
+  auto _ownedElementToNode = ownedElementToNode_.getHostView(Tpetra::Access::ReadWrite);
+  Kokkos::resize(_ownedElementToNode,num_my_elements);
   int cct=0;
   for(global_ordinal_type j=myElementStart_[1]; j<myElementStop_[1]; j++) {
     for(global_ordinal_type i=myElementStart_[0]; i<myElementStop_[0]; i++) {
       // The (i,j) of the bottom left corner matches for elements & nodes
       global_ordinal_type nidx=idx_from_ij(globalNodes_[0],i,j);
 
-      ownedElementToNode_(cct,0) = nidx;
-      ownedElementToNode_(cct,1) = nidx+1;
-      ownedElementToNode_(cct,2) = nidx+globalNodes_[0]+1;
-      ownedElementToNode_(cct,3) = nidx+globalNodes_[0];
+      _ownedElementToNode(cct,0) = nidx;
+      _ownedElementToNode(cct,1) = nidx+1;
+      _ownedElementToNode(cct,2) = nidx+globalNodes_[0]+1;
+      _ownedElementToNode(cct,3) = nidx+globalNodes_[0];
       cct++;
     }
   }
@@ -259,37 +263,41 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm,
   }
 
   // NOTE: This are not recorded in Aztec/Ifpack/ML ordering.  Because most apps don't do that.
-  Kokkos::resize(ghostElementGlobalIDs_,my_ghost_elements.size());
-  Kokkos::resize(ghostElementToNode_,my_ghost_elements.size());
+  auto _ghostElementGlobalIDs = ghostElementGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
+  auto _ghostElementToNode = ghostElementToNode_.getHostView(Tpetra::Access::ReadWrite);
+  Kokkos::resize(_ghostElementGlobalIDs,my_ghost_elements.size());
+  Kokkos::resize(_ghostElementToNode,my_ghost_elements.size());
   for(size_t k=0; k<my_ghost_elements.size(); k++) {
     global_ordinal_type i,j, eidx= my_ghost_elements[k];
-    ghostElementGlobalIDs_(k) = eidx;
+    _ghostElementGlobalIDs(k) = eidx;
     ij_from_idx(globalElements_[0],eidx,i,j);
 
     // The (i,j) of the bottom left corner matches for elements & nodes
     global_ordinal_type nidx=idx_from_ij(globalNodes_[0],i,j);
 
-    ghostElementToNode_(k,0) = nidx;
-    ghostElementToNode_(k,1) = nidx+1;
-    ghostElementToNode_(k,2) = nidx+globalNodes_[0]+1;
-    ghostElementToNode_(k,3) = nidx+globalNodes_[0];
+    _ghostElementToNode(k,0) = nidx;
+    _ghostElementToNode(k,1) = nidx+1;
+    _ghostElementToNode(k,2) = nidx+globalNodes_[0]+1;
+    _ghostElementToNode(k,3) = nidx+globalNodes_[0];
   }
 
   // Generate the list of "ghost" nodes (aka any node that exists on the ownedElement list that isn't owned
   std::set<global_ordinal_type> my_ghost_nodes;
-  for(size_t k=0; k<ownedElementToNode_.extent(0); k++) {
-    for(size_t l=0; l<ownedElementToNode_.extent(1); l++) {
-      global_ordinal_type nidx=ownedElementToNode_(k,l);
+  auto ownedElementToNodeView = ownedElementToNode_.getHostView(Tpetra::Access::ReadOnly);  
+  for(size_t k=0; k<ownedElementToNodeView.extent(0); k++) {
+    for(size_t l=0; l<ownedElementToNodeView.extent(1); l++) {
+      global_ordinal_type nidx=ownedElementToNodeView(k,l);
       if(!nodeIsOwned(nidx)) {
         my_ghost_nodes.insert(nidx);
       }
     }
   }
 
-  Kokkos::resize(ghostNodeGlobalIDs_,my_ghost_nodes.size());
+  auto _ghostNodeGlobalIDs = ghostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
+  Kokkos::resize(_ghostNodeGlobalIDs,my_ghost_nodes.size());
   for(auto k=my_ghost_nodes.begin(); k!=my_ghost_nodes.end(); k++) {
     size_t kk = std::distance(my_ghost_nodes.begin(),k);
-    ghostNodeGlobalIDs_(kk) = *k;
+    _ghostNodeGlobalIDs(kk) = *k;
   }
 
   initializeOwnedAndGhostNodeGlobalIDs();
@@ -301,16 +309,21 @@ void MeshDatabase::initializeOwnedAndGhostNodeGlobalIDs(void)
 {
   size_t total_size = getNumOwnedNodes() + getNumGhostNodes();
 
-  Kokkos::resize(ownedAndGhostNodeGlobalIDs_, total_size);
+  auto _ownedAndGhostNodeGlobalIDs = ownedAndGhostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
+  Kokkos::resize(_ownedAndGhostNodeGlobalIDs, total_size);
 
-  size_t insert_idx = 0;
-  for(size_t idx=0; idx < getNumOwnedNodes(); idx++)
   {
-    ownedAndGhostNodeGlobalIDs_(insert_idx++) = getOwnedNodeGlobalIDs()(idx);
-  }
-  for(size_t idx=0; idx < getNumGhostNodes(); idx++)
-  {
-    ownedAndGhostNodeGlobalIDs_(insert_idx++) = getGhostNodeGlobalIDs()(idx);
+    size_t insert_idx = 0;
+    auto ownedNodeGlobalIDs = getOwnedNodeGlobalIDs().getHostView(Tpetra::Access::ReadOnly);
+    auto ghostNodeGlobalIDs = getGhostNodeGlobalIDs().getHostView(Tpetra::Access::ReadOnly);
+    for(size_t idx=0; idx < getNumOwnedNodes(); idx++)
+    {
+      _ownedAndGhostNodeGlobalIDs(insert_idx++) = ownedNodeGlobalIDs(idx);
+    }
+    for(size_t idx=0; idx < getNumGhostNodes(); idx++)
+    {
+      _ownedAndGhostNodeGlobalIDs(insert_idx++) = ghostNodeGlobalIDs(idx);
+    }
   }
 }
 
@@ -318,16 +331,21 @@ void MeshDatabase::initializeOwnedAndGhostNodeGlobalIDs(void)
 void MeshDatabase::initializeOwnedAndGhostElementGlobalIDs(void)
 {
   size_t total_size = getNumOwnedElements() + getNumGhostElements();
-  Kokkos::resize(ownedAndGhostElementGlobalIDs_, total_size);
+  auto _ownedAndGhostElementGlobalIDs = ownedAndGhostElementGlobalIDs_.getHostView(Tpetra::Access::ReadWrite);
+  Kokkos::resize(_ownedAndGhostElementGlobalIDs, total_size);
 
-  size_t insert_idx = 0;
-  for(size_t idx=0; idx<getNumOwnedElements(); idx++)
   {
-    ownedAndGhostElementGlobalIDs_(insert_idx++) = getOwnedElementGlobalIDs()(idx);
-  }
-  for(size_t idx=0; idx<getNumGhostElements(); idx++)
-  {
-    ownedAndGhostElementGlobalIDs_(insert_idx++) = getGhostElementGlobalIDs()(idx);
+    size_t insert_idx = 0;
+    auto ownedElementGlobalIDs = getOwnedElementGlobalIDs().getHostView(Tpetra::Access::ReadOnly);
+    auto ghostElementGlobalIDs = getGhostElementGlobalIDs().getHostView(Tpetra::Access::ReadOnly);
+    for(size_t idx=0; idx<getNumOwnedElements(); idx++)
+    {
+      _ownedAndGhostElementGlobalIDs(insert_idx++) = ownedElementGlobalIDs(idx);
+    }
+    for(size_t idx=0; idx<getNumGhostElements(); idx++)
+    {
+      _ownedAndGhostElementGlobalIDs(insert_idx++) = ghostElementGlobalIDs(idx);
+    }
   }
 }
 
@@ -342,50 +360,75 @@ void MeshDatabase::print(std::ostream & oss)
   oss<<ss.str()<<" Stop/Start Nodes      = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
 
   oss<<ss.str()<<" Owned Global Elements = ";
-  for(size_t i=0; i<ownedElementGlobalIDs_.extent(0); i++) {
-    oss<<ownedElementGlobalIDs_[i]<<" ";
+  {
+    auto IDs = ownedElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
 
   oss<<"\n"<<ss.str()<<" Owned Global Nodes    = ";
-  for(size_t i=0; i<ownedNodeGlobalIDs_.extent(0); i++) {
-    oss<<ownedNodeGlobalIDs_[i]<<" ";
+  {
+    auto IDs = ownedNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
 
   oss<<"\n"<<ss.str()<<" Owned Element2Node    = ";
-  for(size_t i=0; i<ownedElementToNode_.extent(0); i++) {
-    oss<<"(";
-    for(size_t j=0; j<ownedElementToNode_.extent(1); j++) {
-      oss<<ownedElementToNode_(i,j)<<" ";
+  {
+    auto IDs = ownedElementToNode_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<"(";
+      for(size_t j=0; j<IDs.extent(1); j++) {
+	oss<<IDs(i,j)<<" ";
+      }
+      oss<<") ";
     }
-    oss<<") ";
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Global Elements = ";
-  for(size_t i=0; i<ghostElementGlobalIDs_.extent(0); i++) {
-    oss<<ghostElementGlobalIDs_[i]<<" ";
+  {
+    auto IDs = ghostElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
+
   oss<<"\n"<<ss.str()<<" Ghost Global Nodes    = ";
-  for(size_t i=0; i<ghostNodeGlobalIDs_.extent(0); i++) {
-    oss<<ghostNodeGlobalIDs_[i]<<" ";
+  {
+    auto IDs = ghostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Element2Node    = ";
-  for(size_t i=0; i<ghostElementToNode_.extent(0); i++) {
-    oss<<"(";
-    for(size_t j=0; j<ghostElementToNode_.extent(1); j++) {
-      oss<<ghostElementToNode_(i,j)<<" ";
+  {
+    auto IDs = ghostElementToNode_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<"(";
+      for(size_t j=0; j<IDs.extent(1); j++) {
+	oss<<IDs(i,j)<<" ";
+      }
+      oss<<") ";
     }
-    oss<<") ";
   }
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Nodes = ";
-  for(size_t i=0; i<ownedAndGhostNodeGlobalIDs_.extent(0); i++) {
-    oss << ownedAndGhostNodeGlobalIDs_[i]<<" ";
+  {
+    auto IDs = ownedAndGhostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss << IDs[i]<<" ";
+    }
   }
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Elements = ";
-  for(size_t i=0; i<ownedAndGhostElementGlobalIDs_.extent(0); i++) {
-    oss << ownedAndGhostElementGlobalIDs_[i]<<" ";
+  {
+    auto IDs = ownedAndGhostElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss << IDs[i]<<" ";
+    }
   }
 
   oss<<std::endl;

@@ -90,7 +90,7 @@ public:
                   stk::topology connectedTopology = connectedBucket.topology();
                   stk::topology connectedSideTopology = connectedTopology.side_topology(connectedOrdAndPerm.first);
                   const bool isConnectingSolidToWrongSideOfShell = is_shell_solid_connection(elementTopology, connectedTopology)
-                                                    && connectedOrdAndPerm.second < connectedSideTopology.num_positive_permutations();
+                               && static_cast<unsigned>(connectedOrdAndPerm.second) < connectedSideTopology.num_positive_permutations();
                   if(!isConnectingSolidToWrongSideOfShell)
                   {
                       if(is_solid_shell_connection(elementTopology, connectedTopology))
@@ -100,7 +100,7 @@ public:
                       if (m_populateSideNodes) {
                         connectedElemSideNodes.resize(sideNodes.size());
                         const stk::mesh::Entity* connectedElemNodes = m_bulk.begin_nodes(otherElement);
-                        connectedTopology.side_nodes(connectedElemNodes, sideIndex, connectedElemSideNodes.begin());
+                        connectedTopology.side_nodes(connectedElemNodes, sideIndex, connectedElemSideNodes.data());
                         connectedElemData.set_element_side_nodes(connectedElemSideNodes);
                       }
                       connectedElemData.set_element_local_id(localId);

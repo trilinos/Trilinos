@@ -139,14 +139,6 @@
 #define ANASAZI_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
 #define ANASAZI_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
-#ifdef HAVE_TEUCHOS_COMPLEX
-#  if defined(HAVE_COMPLEX)
-#    define ANSZI_CPLX_CLASS std::complex
-#  elif  defined(HAVE_COMPLEX_H)
-#    define ANSZI_CPLX_CLASS ::complex
-#  endif
-#endif
-
 #include "Anasazi_DLLExportMacro.h"
 
 /*

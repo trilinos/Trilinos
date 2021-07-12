@@ -52,7 +52,7 @@
 #include <Teuchos_VerbosityLevel.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include <Tpetra_ConfigDefs.hpp>	// for global_size_t
+#include <Tpetra_ConfigDefs.hpp>        // for global_size_t
 
 // #include "Amesos2_ConcreteMatrixAdapter_decl.hpp"
 #include "Amesos2_Util.hpp"
@@ -87,10 +87,15 @@ namespace Amesos2 {
     typedef MatrixAdapter<Matrix>                                       type;
     typedef ConcreteMatrixAdapter<Matrix>                          adapter_t;
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     typedef typename MatrixTraits<Matrix>::local_matrix_t     local_matrix_t;
     typedef typename MatrixTraits<Matrix>::sparse_ptr_type       spmtx_ptr_t;
     typedef typename MatrixTraits<Matrix>::sparse_idx_type       spmtx_idx_t;
     typedef typename MatrixTraits<Matrix>::sparse_values_type   spmtx_vals_t;
+    #endif
+
+    typedef typename MatrixTraits<Matrix>::global_host_idx_type  global_host_idx_t;
+    typedef typename MatrixTraits<Matrix>::global_host_val_type  global_host_val_t;
 
     // template<typename S, typename GO, typename GS, typename Op>
     // friend class Util::get_cxs_helper<MatrixAdapter<Matrix>,S,GO,GS,Op>;
@@ -131,22 +136,24 @@ namespace Amesos2 {
      * \exception std::runtime_error Thrown if there is an error while extracting
      * row values from the underlying matrix.
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void getCrs(const Teuchos::ArrayView<scalar_t> nzval,
-		const Teuchos::ArrayView<global_ordinal_t> colind,
-		const Teuchos::ArrayView<global_size_t> rowptr,
-		global_size_t& nnz,
-		const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		EStorage_Ordering ordering=ARBITRARY,
-		EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
+                const Teuchos::ArrayView<global_ordinal_t> colind,
+                const Teuchos::ArrayView<global_size_t> rowptr,
+                global_size_t& nnz,
+                const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+                EStorage_Ordering ordering=ARBITRARY,
+                EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
+    #endif
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     void getCrs_kokkos_view(KV_S & nzval,
-    KV_GO & colind,
-    KV_GS & rowptr,
-    global_size_t& nnz,
-    const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-    EStorage_Ordering ordering=ARBITRARY,
-    EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
+                            KV_GO & colind,
+                            KV_GS & rowptr,
+                            global_size_t& nnz,
+                            const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+                            EStorage_Ordering ordering=ARBITRARY,
+                            EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
 
 
     /**
@@ -154,12 +161,22 @@ namespace Amesos2 {
      * to describe some of the most basic distributions that could be
      * desired.
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void getCrs(const Teuchos::ArrayView<scalar_t> nzval,
-		const Teuchos::ArrayView<global_ordinal_t> colind,
-		const Teuchos::ArrayView<global_size_t> rowptr,
-		global_size_t& nnz,
-		EDistribution distribution,
-		EStorage_Ordering ordering=ARBITRARY) const;
+                const Teuchos::ArrayView<global_ordinal_t> colind,
+                const Teuchos::ArrayView<global_size_t> rowptr,
+                global_size_t& nnz,
+                EDistribution distribution,
+                EStorage_Ordering ordering=ARBITRARY) const;
+    #endif
+
+    template<typename KV_S, typename KV_GO, typename KV_GS>
+    void getCrs_kokkos_view(KV_S & nzval,
+                            KV_GO & colind,
+                            KV_GS & rowptr,
+                            global_size_t& nnz,
+                            EDistribution distribution=ROOTED,
+                            EStorage_Ordering ordering=ARBITRARY) const; // This was placed as last argument to preserve API
 
     /**
      * \brief Gets a compressed-column storage summary of \c this
@@ -189,34 +206,46 @@ namespace Amesos2 {
      * \exception std::runtime_error Thrown if there is an error while extracting
      * row values from the underlying matrix.
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void getCcs(const Teuchos::ArrayView<scalar_t> nzval,
-		const Teuchos::ArrayView<global_ordinal_t> rowind,
-		const Teuchos::ArrayView<global_size_t> colptr,
-		global_size_t& nnz,
-		const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		EStorage_Ordering ordering=ARBITRARY,
-		EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
+                const Teuchos::ArrayView<global_ordinal_t> rowind,
+                const Teuchos::ArrayView<global_size_t> colptr,
+                global_size_t& nnz,
+                const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+                EStorage_Ordering ordering=ARBITRARY,
+                EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
+    #endif
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     void getCcs_kokkos_view(KV_S & nzval,
-    KV_GO & colind,
-    KV_GS & rowptr,
-    global_size_t& nnz,
-    const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-    EStorage_Ordering ordering=ARBITRARY,
-    EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
+                            KV_GO & rowind,
+                            KV_GS & colptr,
+                            global_size_t& nnz,
+                            const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+                            EStorage_Ordering ordering=ARBITRARY,
+                            EDistribution distribution=ROOTED) const; // This was placed as last argument to preserve API
 
     /**
      * Convenience overload for the getCcs function that uses an enum
      * to describe some of the most basic distributions that could be
      * desired.
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void getCcs(const Teuchos::ArrayView<scalar_t> nzval,
-		const Teuchos::ArrayView<global_ordinal_t> rowind,
-		const Teuchos::ArrayView<global_size_t> colptr,
-		global_size_t& nnz,
-		EDistribution distribution,
-		EStorage_Ordering ordering=ARBITRARY) const;
+                const Teuchos::ArrayView<global_ordinal_t> rowind,
+                const Teuchos::ArrayView<global_size_t> colptr,
+                global_size_t& nnz,
+                EDistribution distribution,
+                EStorage_Ordering ordering=ARBITRARY) const;
+    #endif
+
+    template<typename KV_S, typename KV_GO, typename KV_GS>
+    void getCcs_kokkos_view(KV_S & nzval,
+                            KV_GO & rowind,
+                            KV_GS & colptr,
+                            global_size_t& nnz,
+                            EDistribution distribution=ROOTED,
+                            EStorage_Ordering ordering=ARBITRARY) const; // This was placed as last argument to preserve API
 
 
     /// Returns the Teuchos::Comm object associated with this matrix.
@@ -271,8 +300,9 @@ namespace Amesos2 {
 
     /// Describes of this matrix adapter with some level of verbosity.
     void describe(Teuchos::FancyOStream &out,
-		  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+                  const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// Return raw pointer from CRS row pointer of matrixA_
     spmtx_ptr_t returnRowPtr() const;
 
@@ -281,6 +311,7 @@ namespace Amesos2 {
 
     /// Return raw pointer from CRS values of matrixA_
     spmtx_vals_t returnValues() const;
+    #endif
 
     /// Return kokkos view of CRS row pointer of matrixA_
     template<typename KV>
@@ -297,23 +328,25 @@ namespace Amesos2 {
 
   private:
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void help_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
-		     const Teuchos::ArrayView<global_ordinal_t> colind,
-		     const Teuchos::ArrayView<global_size_t> rowptr,
-		     global_size_t& nnz,
-		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		     EDistribution distribution,
-		     EStorage_Ordering ordering,
-		     has_special_impl hsi) const;
+                     const Teuchos::ArrayView<global_ordinal_t> colind,
+                     const Teuchos::ArrayView<global_size_t> rowptr,
+                     global_size_t& nnz,
+                     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+                     EDistribution distribution,
+                     EStorage_Ordering ordering,
+                     has_special_impl hsi) const;
 
     void help_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
-		     const Teuchos::ArrayView<global_ordinal_t> colind,
-		     const Teuchos::ArrayView<global_size_t> rowptr,
-		     global_size_t& nnz,
-		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
-		     EDistribution distribution,
-		     EStorage_Ordering ordering,
-		     no_special_impl nsi) const;
+                     const Teuchos::ArrayView<global_ordinal_t> colind,
+                     const Teuchos::ArrayView<global_size_t> rowptr,
+                     global_size_t& nnz,
+                     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > rowmap,
+                     EDistribution distribution,
+                     EStorage_Ordering ordering,
+                     no_special_impl nsi) const;
+    #endif
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     void help_getCrs_kokkos_view(KV_S & nzval,
@@ -325,6 +358,7 @@ namespace Amesos2 {
          EStorage_Ordering ordering,
          no_special_impl nsi) const;
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void do_getCrs(const Teuchos::ArrayView<scalar_t> nzval,
         const Teuchos::ArrayView<global_ordinal_t> colind,
         const Teuchos::ArrayView<global_size_t> rowptr,
@@ -342,6 +376,7 @@ namespace Amesos2 {
         EDistribution distribution,
         EStorage_Ordering ordering,
         col_access ca) const;
+    #endif
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     void do_getCrs_kokkos_view(KV_S & nzval,
@@ -353,23 +388,25 @@ namespace Amesos2 {
         EStorage_Ordering ordering,
         row_access ra) const;
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void help_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
-		     const Teuchos::ArrayView<global_ordinal_t> rowind,
-		     const Teuchos::ArrayView<global_size_t> colptr,
-		     global_size_t& nnz,
-		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		     EDistribution distribution,
-		     EStorage_Ordering ordering,
-		     has_special_impl hsi) const;
+                     const Teuchos::ArrayView<global_ordinal_t> rowind,
+                     const Teuchos::ArrayView<global_size_t> colptr,
+                     global_size_t& nnz,
+                     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+                     EDistribution distribution,
+                     EStorage_Ordering ordering,
+                     has_special_impl hsi) const;
 
     void help_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
-		     const Teuchos::ArrayView<global_ordinal_t> rowind,
-		     const Teuchos::ArrayView<global_size_t> colptr,
-		     global_size_t& nnz,
-		     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
-		     EDistribution distribution,
-		     EStorage_Ordering ordering,
-		     no_special_impl nsi) const;
+                     const Teuchos::ArrayView<global_ordinal_t> rowind,
+                     const Teuchos::ArrayView<global_size_t> colptr,
+                     global_size_t& nnz,
+                     const Teuchos::Ptr<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > colmap,
+                     EDistribution distribution,
+                     EStorage_Ordering ordering,
+                     no_special_impl nsi) const;
+    #endif
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     void help_getCcs_kokkos_view(KV_S & nzval,
@@ -381,6 +418,7 @@ namespace Amesos2 {
          EStorage_Ordering ordering,
          no_special_impl nsi) const;
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void do_getCcs(const Teuchos::ArrayView<scalar_t> nzval,
         const Teuchos::ArrayView<global_ordinal_t> rowind,
         const Teuchos::ArrayView<global_size_t> colptr,
@@ -398,6 +436,7 @@ namespace Amesos2 {
         EDistribution distribution,
         EStorage_Ordering ordering,
         col_access ca) const;
+    #endif
 
     template<typename KV_S, typename KV_GO, typename KV_GS>
     void do_getCcs_kokkos_view(KV_S & nzval,
@@ -419,10 +458,18 @@ namespace Amesos2 {
      * \param [out] vals the non-zero values in row \c row
      * \param [out] nnz the number of nonzeros extracted from row \c row
      */
+    template<typename KV_GO, typename KV_S>
+    void getGlobalRowCopy_kokkos_view(global_ordinal_t row,
+                                      KV_GO & indices,
+                                      KV_S & vals,
+                                      size_t& nnz) const;
+
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void getGlobalRowCopy(global_ordinal_t row,
-			  const Teuchos::ArrayView<global_ordinal_t>& indices,
-			  const Teuchos::ArrayView<scalar_t>& vals,
-			  size_t& nnz) const;
+                          const Teuchos::ArrayView<global_ordinal_t>& indices,
+                          const Teuchos::ArrayView<scalar_t>& vals,
+                          size_t& nnz) const;
+    #endif
 
     /**
      * \param [out] col the global matrix col
@@ -430,10 +477,12 @@ namespace Amesos2 {
      * \param [out] vals the non-zero values in row \c row
      * \param [out] nnz the number of nonzeros extracted from row \c row
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void getGlobalColCopy(global_ordinal_t col,
-			  const Teuchos::ArrayView<global_ordinal_t>& indices,
-			  const Teuchos::ArrayView<scalar_t>& vals,
-			  size_t& nnz) const;
+                          const Teuchos::ArrayView<global_ordinal_t>& indices,
+                          const Teuchos::ArrayView<scalar_t>& vals,
+                          size_t& nnz) const;
+    #endif
 
     size_t getMaxRowNNZ() const;
 
@@ -459,7 +508,7 @@ namespace Amesos2 {
     mutable Teuchos::RCP<const Tpetra::Map<local_ordinal_t,global_ordinal_t,node_t> > col_map_;
 
     mutable Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-  };				// end class MatrixAdapter
+  };                                // end class MatrixAdapter
 
 
   // Factory creation method
@@ -473,4 +522,4 @@ namespace Amesos2 {
 
 } // end namespace Amesos2
 
-#endif	// AMESOS2_MATRIXADAPTER_DECL_HPP
+#endif        // AMESOS2_MATRIXADAPTER_DECL_HPP

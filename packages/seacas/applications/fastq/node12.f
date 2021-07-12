@@ -39,7 +39,7 @@ C***********************************************************************
   120 CONTINUE
       KOUNT = KOUNT + 1
       IF (KOUNT .GT. NLOOP1) THEN
-         CALL MESAGE ('** PROBLEMS IN NODE12 FINDING NODE **')
+         CALL MESSAGE('** PROBLEMS IN NODE12 FINDING NODE **')
          ERR = .TRUE.
          GOTO 130
       ENDIF

@@ -55,18 +55,19 @@ void PhysicsState<Scalar>::setName(std::string pN)
 template<class Scalar>
 std::string PhysicsState<Scalar>::description() const
 {
-  return physicsName_;
+  return "Tempus::PhysicsState - '" + physicsName_ + "'";
 }
 
 template<class Scalar>
 void PhysicsState<Scalar>::describe(
-  Teuchos::FancyOStream        & in_out,
+  Teuchos::FancyOStream        & out,
   const Teuchos::EVerbosityLevel /* verbLevel */) const
 {
-  auto out = Teuchos::fancyOStream( in_out.getOStream() );
-  out->setOutputToRootOnly(0);
-  *out << description() << "::describe" << std::endl
-      << "  physicsName   = " << physicsName_ << std::endl;
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "\n--- " << this->description() << " ---" << std::endl;
 }
 
 

@@ -729,7 +729,13 @@ public:
     return Kokkos::Experimental::cast_to_half(::sqrt (Kokkos::Experimental::cast_from_half<float>(x)));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return Kokkos::Experimental::cast_to_half(::cbrt (Kokkos::Experimental::cast_from_half<float>(x)));
+    return Kokkos::Experimental::cast_to_half(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(Kokkos::Experimental::cast_from_half<float>(x))
+#else
+        ::cbrt(Kokkos::Experimental::cast_from_half<float>(x))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return Kokkos::Experimental::cast_to_half(::exp (Kokkos::Experimental::cast_from_half<float>(x)));
@@ -762,10 +768,22 @@ public:
     return Kokkos::Experimental::cast_to_half(::asin (Kokkos::Experimental::cast_from_half<float>(x)));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
-    return Kokkos::Experimental::cast_to_half(::acos (Kokkos::Experimental::cast_from_half<float>(x)));
+    return Kokkos::Experimental::cast_to_half(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::acos(Kokkos::Experimental::cast_from_half<float>(x))
+#else
+        ::acos(Kokkos::Experimental::cast_from_half<float>(x))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
-    return Kokkos::Experimental::cast_to_half(::atan (Kokkos::Experimental::cast_from_half<float>(x)));
+    return Kokkos::Experimental::cast_to_half(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::atan(Kokkos::Experimental::cast_from_half<float>(x))
+#else
+        ::atan(Kokkos::Experimental::cast_from_half<float>(x))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     //return ::pow(2, -KOKKOSKERNELS_IMPL_FP16_SIGNIFICAND_BITS);
@@ -858,16 +876,16 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
-#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::isinf
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
+    using sycl::isinf;
 #endif
     return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const float x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
-#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::isnan
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
+    using sycl::isnan;
 #endif
     return isnan (x);
   }
@@ -899,10 +917,18 @@ public:
     return ::pow (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION float sqrt (const float x) {
-    return ::sqrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::sqrt(x);
+#else
+    return ::sqrt(x);
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION float cbrt (const float x) {
-    return ::cbrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::cbrt(x);
+#else
+    return ::cbrt(x);
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION float exp (const float x) {
     return ::exp (x);
@@ -938,7 +964,11 @@ public:
     return ::acos (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION float atan (const float x) {
-    return ::atan (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::atan(x);
+#else
+    return ::atan(x);
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
     return FLT_EPSILON;
@@ -1039,8 +1069,8 @@ public:
   static bool isInf(const std::complex<Dummy>& x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
-#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::isinf
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
+    using sycl::isinf;
 #endif
     return isinf (real (x)) || isinf (imag (x));
   }
@@ -1062,8 +1092,8 @@ public:
   static bool isNan(const std::complex<Dummy>& x) {
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
-#elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
-    using sycl::isnan
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
+    using sycl::isnan;
 #endif
     return isnan (real (x)) || isnan (imag (x));
   }
@@ -1130,7 +1160,11 @@ public:
     return std::sqrt (x);
   }
   static std::complex<RealFloatType> cbrt (const std::complex<RealFloatType>& x) {
-    return std::cbrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::cbrt(x);
+#else
+    return ::cbrt(x);
+#endif
   }
   static std::complex<RealFloatType> exp (const std::complex<RealFloatType>& x) {
     return std::exp (x);
@@ -1166,7 +1200,12 @@ public:
     return std::acos (x);
   }
   static std::complex<RealFloatType> atan (const std::complex<RealFloatType>& x) {
-    return std::atan (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    using sycl::atan;
+#else
+    using std::atan;
+#endif
+    return atan(x);
   }
   static std::complex<RealFloatType> nan () {
     const mag_type mag_nan = ArithTraits<mag_type>::nan ();
@@ -1251,17 +1290,17 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
-    #elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
     using sycl::isinf;
-    #endif
+#endif
     return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
     #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
-    #elif KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
     using sycl::isnan;
-    #endif
+#endif
     return isnan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -1292,10 +1331,18 @@ public:
     return ::pow (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-    return ::sqrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::sqrt(x);
+#else
+    return ::sqrt(x);
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return ::cbrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::cbrt(x);
+#else
+    return ::cbrt(x);
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return ::exp (x);
@@ -1331,7 +1378,11 @@ public:
     return ::acos (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
-    return ::atan (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::atan(x);
+#else
+    return ::atan(x);
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
 #if defined(__CUDA_ARCH__)
@@ -2224,10 +2275,22 @@ public:
     // some reasonable value (like 0), though this might be more
     // expensive than the absolute value interpreted using the ternary
     // operator.
-    return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::sqrt(static_cast<float>(abs(x)))
+#else
+        ::sqrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return static_cast<val_type> ( ::cbrt (static_cast<float> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<float>(abs(x)))
+#else
+        ::cbrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<float> (abs (x))));
@@ -2346,10 +2409,22 @@ public:
     return intPowSigned<val_type> (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-    return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::sqrt(static_cast<float>(abs(x)))
+#else
+        ::sqrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return static_cast<val_type> ( ::cbrt (static_cast<float> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<float>(abs(x)))
+#else
+        ::cbrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<float> (abs (x))));
@@ -2471,10 +2546,22 @@ public:
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
-    return static_cast<val_type> ( ::sqrt (static_cast<float> (x)));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::sqrt(static_cast<float>(abs(x)))
+#else
+        ::sqrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return static_cast<val_type> ( ::cbrt (static_cast<float> (x)));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<float>(abs(x)))
+#else
+        ::cbrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<float> (x)));
@@ -2604,10 +2691,22 @@ public:
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
-    return static_cast<val_type> ( ::sqrt (static_cast<float> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::sqrt(static_cast<float>(abs(x)))
+#else
+        ::sqrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return static_cast<val_type> ( ::cbrt (static_cast<float> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<float>(abs(x)))
+#else
+        ::cbrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<float> (abs (x))));
@@ -2735,10 +2834,22 @@ public:
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
-    return static_cast<val_type> ( ::sqrt (static_cast<float> (x)));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::sqrt(static_cast<float>(abs(x)))
+#else
+        ::sqrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return static_cast<val_type> ( ::cbrt (static_cast<float> (x)));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<float>(abs(x)))
+#else
+        ::cbrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<float> (x)));
@@ -2874,10 +2985,22 @@ public:
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
-    return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::sqrt(static_cast<float>(abs(x)))
+#else
+        ::sqrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<float>(abs(x)))
+#else
+        ::cbrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<double> (abs (x))));
@@ -3005,10 +3128,22 @@ public:
     // This will result in no loss of accuracy, though it might be
     // more expensive than it should, if we were clever about using
     // bit operations.
-    return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::sqrt(static_cast<float>(abs(x)))
+#else
+        ::sqrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<float>(abs(x)))
+#else
+        ::cbrt(static_cast<float>(abs(x)))
+#endif
+    );
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<double> (x)));
@@ -3272,7 +3407,13 @@ public:
     using std::cbrtl;
     return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
 #else
-    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+    return static_cast<val_type>(
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+        sycl::cbrt(static_cast<double>(abs(x)))
+#else
+        ::cbrt(static_cast<double>(abs(x)))
+#endif
+    );
 #endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
@@ -3406,7 +3547,7 @@ public:
     // 64-bit integer type exactly.  However, CUDA does not implement
     // long double for device functions.
     return static_cast<val_type> ( sqrt (static_cast<long double> (abs (x))));
-#else
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
     // Casting from a 64-bit integer type to double does result in a
     // loss of accuracy.  However, it gives us a good first
     // approximation.  For very large numbers, we may lose some
@@ -3417,6 +3558,8 @@ public:
     // which it has to be, so we don't have to check) to ensure
     // correctness.  It actually should suffice to check numbers
     // within 1 of the result.
+    return static_cast<val_type>(sycl::sqrt(static_cast<double>(abs(x))));
+#else
     return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
 #endif
   }
@@ -3425,6 +3568,8 @@ public:
     using std::cbrtl;
     using std::abs;
     return static_cast<val_type> ( cbrtl (static_cast<long double> (abs (x))));
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
+    return static_cast<val_type>(sycl::cbrt(static_cast<double>(abs(x))));
 #else
     return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
 #endif
@@ -3555,6 +3700,8 @@ public:
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::sqrt;
     return static_cast<val_type> ( sqrt (static_cast<long double> (x)));
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
+    return static_cast<val_type>(sycl::sqrt(static_cast<double>(x)));
 #else
     return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
 #endif
@@ -3563,6 +3710,8 @@ public:
 #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::cbrtl;
     return static_cast<val_type> ( cbrtl (static_cast<long double> (x)));
+#elif defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL)
+    return static_cast<val_type>(sycl::cbrt(static_cast<double>(x)));
 #else
     return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
 #endif
@@ -3700,10 +3849,18 @@ struct ArithTraits<dd_real>
     return ::pow(x,y);
   }
   static inline val_type sqrt (const val_type& x) {
-      return ::sqrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::sqrt(x);
+#else
+    return ::sqrt(x);
+#endif
   }
   static inline val_type cbrt (const val_type& x) {
-      return ::cbrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::cbrt(x);
+#else
+    return ::cbrt(x);
+#endif
   }
   static inline val_type exp (const val_type& x) {
       return ::exp (x);
@@ -3740,7 +3897,11 @@ struct ArithTraits<dd_real>
     return ::acos (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
-    return ::atan (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::atan(x);
+#else
+    return ::atan(x);
+#endif
   }
   static inline val_type nan () {
     return val_type::_nan;
@@ -3801,7 +3962,11 @@ struct ArithTraits<dd_real>
   }
   static std::string name () { return "dd_real"; }
   static val_type squareroot (const val_type& x) {
-    return ::sqrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::sqrt(x);
+#else
+    return ::sqrt(x);
+#endif
   }
 };
 
@@ -3852,10 +4017,18 @@ struct ArithTraits<qd_real>
     return ::pow (x, y);
   }
   static inline val_type sqrt (const val_type& x) {
-    return ::sqrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::sqrt(x);
+#else
+    return ::sqrt(x);
+#endif
   }
   static inline val_type cbrt (const val_type& x) {
-    return ::cbrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::cbrt(x);
+#else
+    return ::cbrt(x);
+#endif
   }
   static inline val_type exp (const val_type& x) {
     return ::exp (x);
@@ -3892,7 +4065,11 @@ struct ArithTraits<qd_real>
     return ::acos (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
-    return ::atan (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::atan(x);
+#else
+    return ::atan(x);
+#endif
   }
   static inline val_type nan () {
     return val_type::_nan;
@@ -3957,7 +4134,11 @@ struct ArithTraits<qd_real>
   }
   static std::string name () { return "qd_real"; }
   static val_type squareroot (const val_type& x) {
-    return ::sqrt (x);
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_SYCL
+    return sycl::sqrt(x);
+#else
+    return ::sqrt(x);
+#endif
   }
 };
 #endif // HAVE_KOKKOS_QD

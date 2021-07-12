@@ -84,8 +84,8 @@ namespace MueLu {
     RCP<IndexManager_kokkos> geoData = aggregates.GetIndexManager();
     const LO numLocalFineNodes= geoData->getNumLocalFineNodes();
     const LO numCoarseNodes   = geoData->getNumCoarseNodes();
-    LOVectorView vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView();
-    LOVectorView procWinner   = aggregates.GetProcWinner()  ->getDeviceLocalView();
+    LOVectorView vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    LOVectorView procWinner   = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
     *out << "Loop over fine nodes and assign them to an aggregate and a rank" << std::endl;
     LO numAggregatedNodes;

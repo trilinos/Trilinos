@@ -127,6 +127,9 @@ namespace Xpetra {
     //! Gets the 1D pointer arrays of the graph.
     virtual void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const = 0;
 
+    //! Gets the 1D pointer arrays of the graph.
+    virtual void getAllValues(ArrayRCP<Scalar>& values) =0;
+
     //@}
 
     //! @name Transformational Methods
@@ -323,8 +326,14 @@ namespace Xpetra {
     typedef KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
                               typename local_graph_type::size_type> local_matrix_type;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Access the underlying local KokkosSparse::CrsMatrix object
-    virtual local_matrix_type getLocalMatrix () const = 0;
+    virtual local_matrix_type getLocalMatrix () const {
+      return getLocalMatrixDevice();
+    }
+#endif
+    virtual local_matrix_type getLocalMatrixDevice () const = 0;
+    virtual typename local_matrix_type::HostMirror getLocalMatrixHost () const = 0;
 
     virtual void setAllValues (const typename local_matrix_type::row_map_type& ptr,
                                const typename local_graph_type::entries_type::non_const_type& ind,

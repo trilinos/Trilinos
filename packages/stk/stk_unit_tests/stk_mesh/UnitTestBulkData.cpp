@@ -2070,8 +2070,6 @@ typedef stk::mesh::Field<int> PressureFieldType;
 static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_field, bool sync_shared, bool sync_aura)
 {
     unsigned p_rank = eMesh.parallel_rank();
-    unsigned p_size = eMesh.parallel_size();
-    static_cast<void>(p_size);
 
     const stk::mesh::BucketVector & buckets = eMesh.buckets(stk::topology::NODE_RANK);
 

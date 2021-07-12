@@ -75,6 +75,8 @@ public:
     stk::print_stats_for_performance_compare(std::cout, timeAll, meshOperationHwm, iterationCount, communicator);
   }
 
+  double get_timing() { return cumulativeTime; }
+
 private:
   MPI_Comm communicator;
   double iterationStartTime;

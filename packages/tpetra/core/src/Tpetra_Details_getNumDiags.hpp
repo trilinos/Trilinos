@@ -61,7 +61,7 @@ namespace Impl {
   ///   number of diagonal entries in a sparse graph.
   ///
   /// \tparam LocalGraphType Kokkos::StaticCrsGraph specialization
-  /// \tparam LocalMapType Result of Tpetra::Map::getLocalGraph()
+  /// \tparam LocalMapType Result of Tpetra::CrsGraph::getLocalGraph*()
   template<class LocalGraphType, class LocalMapType>
   class CountLocalNumDiags {
   public:
@@ -116,8 +116,8 @@ namespace Impl {
   {
     using crs_graph_type = ::Tpetra::CrsGraph<LO, GO, NT>;
     using local_map_type = typename crs_graph_type::map_type::local_map_type;
-    using local_graph_type = typename crs_graph_type::local_graph_type;
-    using functor_type = CountLocalNumDiags<local_graph_type, local_map_type>;
+    using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
+    using functor_type = CountLocalNumDiags<local_graph_device_type, local_map_type>;
     using execution_space = typename crs_graph_type::device_type::execution_space;
     using policy_type = Kokkos::RangePolicy<execution_space, LO>;
 
@@ -128,7 +128,7 @@ namespace Impl {
     }
     else {
       LO lclNumDiags {0};
-      functor_type f (G.getLocalGraph (), rowMap->getLocalMap (), colMap->getLocalMap ());
+      functor_type f (G.getLocalGraphDevice (), rowMap->getLocalMap (), colMap->getLocalMap ());
       Kokkos::parallel_reduce (policy_type (0, G.getNodeNumRows ()), f, lclNumDiags);
       return lclNumDiags;
     }
@@ -168,7 +168,8 @@ namespace Impl {
       TEUCHOS_TEST_FOR_EXCEPTION
         (! G.supportsRowViews (), std::logic_error, "Not implemented!");
 
-      Teuchos::ArrayView<const LO> lclColInds;
+      typename ::Tpetra::RowGraph<LO, GO, NT>::local_inds_host_view_type 
+               lclColInds;
       const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
 
       LO diagCount = 0;
@@ -208,17 +209,16 @@ namespace Impl {
       return 0; // this process does not participate
     }
     else {
-      Teuchos::Array<LO> lclColIndsBuf;
+      using inds_type = typename ::Tpetra::RowGraph<LO,GO,NT>::nonconst_local_inds_host_view_type;
+      inds_type lclColIndsBuf("lclColIndsBuf",G.getNodeMaxNumRowEntries());
       const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
 
       LO diagCount = 0;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         size_t numEntSizeT = G.getNumEntriesInLocalRow (lclRow);
         const LO numEnt = static_cast<LO> (numEntSizeT);
-        if (static_cast<LO> (lclColIndsBuf.size ()) < numEnt) {
-          lclColIndsBuf.resize (numEnt);
-        }
-        Teuchos::ArrayView<LO> lclColInds = lclColIndsBuf (0, numEnt);
+
+        inds_type lclColInds = Kokkos::subview(lclColIndsBuf,std::make_pair(0,numEnt));
         G.getLocalRowCopy (lclRow, lclColInds, numEntSizeT);
 
         if (numEnt != 0) {
@@ -252,7 +252,8 @@ namespace Impl {
       return 0; // this process does not participate
     }
     else {
-      Teuchos::ArrayView<const GO> gblColInds;
+      typename ::Tpetra::RowGraph<LO,GO,NT>::global_inds_host_view_type 
+               gblColInds;
       const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
 
       LO diagCount = 0;
@@ -281,12 +282,13 @@ namespace Impl {
   typename ::Tpetra::RowGraph<LO, GO, NT>::local_ordinal_type
   countLocalNumDiagsInNonFillCompleteGloballyIndexedGraphWithoutRowViews (const ::Tpetra::RowGraph<LO, GO, NT>& G)
   {
+    using gids_type = typename ::Tpetra::RowGraph<LO,GO,NT>::nonconst_global_inds_host_view_type ;
     const auto rowMap = G.getRowMap ();
     if (rowMap.get () == nullptr) {
       return 0; // this process does not participate
     }
     else {
-      Teuchos::Array<GO> gblColIndsBuf;
+      gids_type gblColIndsBuf;
       const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
 
       LO diagCount = 0;
@@ -294,9 +296,10 @@ namespace Impl {
         size_t numEntSizeT = G.getNumEntriesInLocalRow (lclRow);
         const LO numEnt = static_cast<LO> (numEntSizeT);
         if (static_cast<LO> (gblColIndsBuf.size ()) < numEnt) {
-          gblColIndsBuf.resize (numEnt);
+          Kokkos::resize(gblColIndsBuf,numEnt);
         }
-        Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf (0, numEnt);
+
+        gids_type gblColInds = Kokkos::subview(gblColIndsBuf,std::make_pair((LO)0, numEnt));
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         G.getGlobalRowCopy (gblRow, gblColInds, numEntSizeT);
 

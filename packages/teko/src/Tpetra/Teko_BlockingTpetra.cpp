@@ -244,8 +244,8 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
    LO maxNumEntries = A->getNodeMaxNumRowEntries();
 
    // for extraction
-   std::vector<LO> indices(maxNumEntries);
-   std::vector<ST> values(maxNumEntries);
+   auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
+   auto values = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
 
    // for insertion
    std::vector<GO> colIndices(maxNumEntries);
@@ -264,11 +264,11 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
       LO lid = A->getRowMap()->getLocalElement(globalRow);
       TEUCHOS_ASSERT(lid>-1);
 
-      A->getLocalRowCopy(lid, Teuchos::ArrayView<LO>(indices), Teuchos::ArrayView<ST>(values),numEntries);
+      A->getLocalRowCopy(lid, indices, values, numEntries);
 
       LO numOwnedCols = 0;
       for(size_t localCol=0;localCol<numEntries;localCol++) {
-         TEUCHOS_ASSERT(indices[localCol]>-1);
+         TEUCHOS_ASSERT(indices(localCol)>-1);
 
          // if global id is not owned by this column
 
@@ -290,19 +290,19 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildSubBlock(int i,int j,const RCP<const T
       GO contigRow = rowMap->getGlobalElement(localRow);
       TEUCHOS_ASSERT(lid>-1);
 
-      A->getLocalRowCopy(lid, Teuchos::ArrayView<LO>(indices), Teuchos::ArrayView<ST>(values),numEntries);
+      A->getLocalRowCopy(lid, indices, values, numEntries);
 
       LO numOwnedCols = 0;
       for(size_t localCol=0;localCol<numEntries;localCol++) {
-         TEUCHOS_ASSERT(indices[localCol]>-1);
+         TEUCHOS_ASSERT(indices(localCol)>-1);
 
          // if global id is not owned by this column
 
-         GO gid = local2ContigGIDs.getData()[indices[localCol]];
+         GO gid = local2ContigGIDs.getData()[indices(localCol)];
          if(gid==-1) continue; // in contiguous row
 
          colIndices[numOwnedCols] = gid;
-         colValues[numOwnedCols] = values[localCol];
+         colValues[numOwnedCols] = values(localCol);
          numOwnedCols++;
       }
 
@@ -344,8 +344,8 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
    LO maxNumEntries = A->getNodeMaxNumRowEntries();
 
    // for extraction
-   std::vector<LO> indices(maxNumEntries);
-   std::vector<ST> values(maxNumEntries);
+   auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_local_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
+   auto values = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),maxNumEntries);
 
    // for insertion
    std::vector<GO> colIndices(maxNumEntries);
@@ -362,18 +362,18 @@ void rebuildSubBlock(int i,int j,const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> 
       GO contigRow = rowMap.getGlobalElement(localRow);
       TEUCHOS_ASSERT(lid>-1);
 
-      A->getLocalRowCopy(lid, Teuchos::ArrayView<LO>(indices), Teuchos::ArrayView<ST>(values), numEntries);
+      A->getLocalRowCopy(lid, indices, values, numEntries);
 
       LO numOwnedCols = 0;
       for(size_t localCol=0;localCol<numEntries;localCol++) {
-         TEUCHOS_ASSERT(indices[localCol]>-1);
+         TEUCHOS_ASSERT(indices(localCol)>-1);
          
          // if global id is not owned by this column
-         GO gid = local2ContigGIDs.getData()[indices[localCol]];
+         GO gid = local2ContigGIDs.getData()[indices(localCol)];
          if(gid==-1) continue; // in contiguous row
 
          colIndices[numOwnedCols] = gid;
-         colValues[numOwnedCols] = values[localCol];
+         colValues[numOwnedCols] = values(localCol);
          numOwnedCols++;
       }
 

@@ -197,7 +197,8 @@ compute (vector_type& D_inv,
 
     // Canonicalize template arguments to avoid redundant instantiations.
   using d_type = typename vector_type::dual_view_type::t_dev;
-  using matrix_type = typename crs_matrix_type::local_matrix_type;
+  //  using h_matrix_type = typename crs_matrix_type::local_matrix_host_type;
+  using d_matrix_type = typename crs_matrix_type::local_matrix_device_type;
 
   const char kernel_label[] = "inverse_diagonal_kernel";
   using execution_space = typename NT::execution_space;
@@ -206,7 +207,7 @@ compute (vector_type& D_inv,
   auto policy = range_type(0, lclNumRows);
 
   d_type d = D_inv.getLocalViewDevice(Tpetra::Access::OverwriteAll);
-  matrix_type a = A_crs_->getLocalMatrix();
+  d_matrix_type a = A_crs_->getLocalMatrixDevice();
 
   if (do_l1) {
     constexpr bool do_l1_template = true;
@@ -214,7 +215,7 @@ compute (vector_type& D_inv,
       constexpr bool fix_tiny_template = true;
       using functor_type =
         Impl::InverseDiagonalWithExtraction<d_type,
-                               matrix_type,
+                               d_matrix_type,
                                offset_type,
                                do_l1_template,
                                fix_tiny_template>;
@@ -224,7 +225,7 @@ compute (vector_type& D_inv,
       constexpr bool fix_tiny_template = false;
       using functor_type =
         Impl::InverseDiagonalWithExtraction<d_type,
-                               matrix_type,
+                               d_matrix_type,
                                offset_type,
                                do_l1_template,
                                fix_tiny_template>;
@@ -237,7 +238,7 @@ compute (vector_type& D_inv,
       constexpr bool fix_tiny_template = true;
       using functor_type =
         Impl::InverseDiagonalWithExtraction<d_type,
-                               matrix_type,
+                               d_matrix_type,
                                offset_type,
                                do_l1_template,
                                fix_tiny_template>;
@@ -247,7 +248,7 @@ compute (vector_type& D_inv,
       constexpr bool fix_tiny_template = false;
       using functor_type =
         Impl::InverseDiagonalWithExtraction<d_type,
-                               matrix_type,
+                               d_matrix_type,
                                offset_type,
                                do_l1_template,
                                fix_tiny_template>;

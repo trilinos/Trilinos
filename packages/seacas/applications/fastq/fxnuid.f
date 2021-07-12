@@ -38,7 +38,7 @@ C  GET LIST OF LINES
      &         ISLIST(IFSIDE(IPTR)), LINKS, LINKL, ERR)
             N1 = N1 + NL
             IF (N1 .GT. MAXNL) THEN
-               CALL MESAGE ('IN FXNUID, LINE LIST OVERFLOW')
+               CALL MESSAGE('IN FXNUID, LINE LIST OVERFLOW')
                NOROOM = .TRUE.
                ERR = .TRUE.
                RETURN
@@ -153,7 +153,7 @@ C  CHECK ALL POINT NUID'S TO MAKE SURE THEY ARE ON BOUNDARY
             NODE = I
             CALL GETLXN (MXND, LXN, NODE, LINES, NL, ERR)
             IF (NL .GT. 20) THEN
-               CALL MESAGE ('IN FXNUID, TOO MANY LINES/NODE')
+               CALL MESSAGE('IN FXNUID, TOO MANY LINES/NODE')
                NOROOM = .TRUE.
                ERR = .TRUE.
                RETURN

@@ -279,10 +279,10 @@ namespace Intrepid2 {
       return pointTensorComponents_[component](componentPointOrdinal,d);
     }
     
-    /** \brief  Returns the nominal extent in the requested dimension.
+    /** \brief  Returns the logical extent in the requested dimension.
        \param [in] r - the dimension
        
-     \return the nominal extent in the requested dimension, as an int.  (This will be 1 for r >= 2, as this is a rank-2 container.)
+     \return the logical extent in the requested dimension, as an int.  (This will be 1 for r >= 2, as this is a rank-2 container.)
     */
     template <typename iType>
     KOKKOS_INLINE_FUNCTION
@@ -302,10 +302,10 @@ namespace Intrepid2 {
       }
     }
     
-    /** \brief  Returns the nominal extent in the requested dimension.
+    /** \brief  Returns the logical extent in the requested dimension.
        \param [in] r - the dimension
        
-     \return the nominal extent in the requested dimension.  (This will be 1 for r >= 2, as this is a rank-2 container.)
+     \return the logical extent in the requested dimension.  (This will be 1 for r >= 2, as this is a rank-2 container.)
     */
     template <typename iType>
     KOKKOS_INLINE_FUNCTION constexpr

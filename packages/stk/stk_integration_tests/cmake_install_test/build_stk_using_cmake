@@ -29,7 +29,8 @@ if [ ! -d ${trilinos_dir} ] ; then
   exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
 else
   exe cd "${trilinos_dir}"
-  exe git reset --hard develop
+  exe git checkout develop
+  exe git reset --hard origin/develop
   exe git pull
 fi
 
@@ -40,7 +41,7 @@ stk_build_dir=${output_dir}/stk_build_${build_type}_${SIERRA_COMPILER}
 exe rm -rf $stk_build_dir
 exe mkdir -p $stk_build_dir
 
-stk_cmake_testing=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
 
 printf "\nUsing sierra project: ${sierra_proj}\n";
 printf "Using build-type: ${build_type}\n";
@@ -72,10 +73,11 @@ if [ ! -L ${trilinos_dir}/packages/stk ] ; then
   exe ln -s ${sierra_proj}/stk ${trilinos_dir}/packages
 fi
 
-exe cp ${stk_cmake_testing}/run_cmake_stk ${stk_build_dir}
+exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk ${stk_build_dir}
 exe cd ${stk_build_dir}
-printf "\nGenerating pre-requisite TPL paths in ${stk_build_dir}/tpl_paths\n";
-exe ${stk_cmake_testing}/generate_tpl_paths_from_sierra_proj ${sierra_proj} ${output_dir} ${stk_build_dir}/tpl_paths
+
+exe source ${stk_cmake_testing_source_dir}/load_gcc_modules
+
 printf "Configuring trilinos/stk (running cmake)...\n";
 exe "TRILINOS_DIR=${trilinos_dir} \
      TRILINOS_INSTALL_DIR=${trilinos_install_dir} \

@@ -54,7 +54,7 @@ C  START BY SETTING UP THE LIMITS OF THE SEARCH
             IF (TEPS .LE. EPS) EPS = TEPS
             GOTO 110
          ELSEIF (KOUNT .GT. NLOOP) THEN
-            CALL MESAGE ('** PROBLEMS IN ADJROW WITH LOOP NOT '//
+            CALL MESSAGE('** PROBLEMS IN ADJROW WITH LOOP NOT '//
      &         'CLOSING **')
             ERR = .TRUE.
             GOTO 160

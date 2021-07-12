@@ -63,19 +63,19 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml
+    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml
     CATEGORIES BASIC PERFORMANCE
    )
 
  TRIBITS_ADD_EXECUTABLE(
    ImportPerformance
-   SOURCES ImportPerformance
+   SOURCES ImportPerformance.cpp
    COMM mpi
    )
 
  TRIBITS_ADD_EXECUTABLE(
    TAFCPerformance
-   SOURCES TAFCPerformance
+   SOURCES TAFCPerformance.cpp
    COMM mpi
    )
 
@@ -440,6 +440,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 3
       COMM mpi
       )
+    IF ( MUELU_RECURMG )
+      MUELU_ADD_SERIAL_AND_MPI_TEST(
+        Driver
+        NAME "RecursiveMGWithSemiCoarsening"
+        ARGS "--linAlgebra=Tpetra --xml=recurMG.xml --matrixType=Elasticity3D --nx=12  --ny=12 --nz=99 --belosType=\"Pseudoblock GMRES\" --noscale --its=50 --tol=1e-5"
+        NUM_MPI_PROCS 4
+        COMM serial mpi
+        )
+    ENDIF()
 
 
   ENDIF()

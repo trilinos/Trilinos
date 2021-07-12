@@ -58,23 +58,41 @@
 namespace Belos {
   namespace Tpetra {
 
+    /// \function convertData
+    template<class scalar>
+    void convertData( const double* dPtr, const int nnz, scalar* retVals );
+
+    template<>
+    void convertData( const double* dPtr, const int nnz, double* retVals )
+    {
+      for ( int i=0; i<nnz; ++i )
+        retVals[i] = dPtr[i];
+    }
+
+    template<>
+    void convertData( const double* dPtr, const int nnz, std::complex<double>* retVals )
+    {
+      for ( int i=0; i<nnz; ++i )
+        retVals[i] = std::complex<double>( dPtr[2*i], dPtr[2*i+1] );
+    }
+
     /// \class HarwellBoeingReader
     /// \brief Read a Harwell-Boeing format file into a Tpetra::CrsMatrix.
     /// \author Mark Hoemmen
     ///
     /// \warning This reader is incomplete.  It currently only handles
-    ///   real double-precision floating-point data and indices of
-    ///   Fortran type integer, and only some of the possible ways
-    ///   that these can be represented in the file.
+    ///   double-precision floating-point data and some of the possible
+    ///   representations to create float, real, and complex-valued matrices.
     template<class SparseMatrixType>
     class HarwellBoeingReader {
-    public:
+
       typedef SparseMatrixType sparse_matrix_type;
       typedef typename SparseMatrixType::scalar_type scalar_type;
       typedef typename SparseMatrixType::local_ordinal_type local_ordinal_type;
       typedef typename SparseMatrixType::global_ordinal_type global_ordinal_type;
       typedef typename SparseMatrixType::node_type node_type;
 
+    public:
       /// \typedef multivector_type
       /// \brief Specialization of \c Tpetra::MultiVector.
       ///
@@ -101,67 +119,74 @@ namespace Belos {
       /// \param comm [in] Communicator over which to distribute the
       ///   sparse matrices.
       HarwellBoeingReader (const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
-        comm_ (comm),
+        comm_ (comm)
       {}
 
       //! Read the sparse matrix from the file with the given name.
       Teuchos::RCP<sparse_matrix_type>
       readFromFile (const std::string& filename)
       {
-        using ::Tpetra::createUniformContigMapWithNode;
-        using Teuchos::ArrayView;
-        using Teuchos::arrayView;
-        using Teuchos::RCP;
-        using Teuchos::rcp;
-
-        // Use the existing Harwell-Boeing reader to read the sparse
-        // matrix from the file with the given name.
-        int numRows = 0;
-        int numCols = 0;
-        int nnz = 0;
-        int* ptr = NULL;
-        int* ind = NULL;
-        double* val = NULL;
+        //
+        // Get the data from the HB file and build the Map,Matrix
+        //
+        int MyPID = rank(*comm_);
         int info = 0;
-
-        if (comm_->getRank () == 0) {
-          // This function violates the POSIX return value convention,
-          // in that a zero return value indicates an error.
-          info = readHB_newmat_double (filename.c_str(), &numRows,
-                                       &numCols, &nnz, &ptr, &ind, &val);
+        int dim,dim2,nnz,rnnzmax;
+        double *dvals;
+        int *colptr,*rowind;
+        nnz = -1;
+        if (MyPID == 0) {
+          info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+          // find maximum NNZ over all rows
+          std::vector<int> rnnz(dim,0);
+          for (int *ri=rowind; ri<rowind+nnz; ++ri) {
+            ++rnnz[*ri-1];
+          }  
+          rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
         }
-        // Broadcast (info, numRows, numCols, nnz) all at once.
-        Teuchos::Tuple<int, 4> metadata;
-        metadata[0] = info;
-        metadata[1] = numRows;
-        metadata[2] = numCols;
-        metadata[3] = nnz;
-        Teuchos::broadcast (*comm_, 0, metadata);
-        // Now that all processes have the same info value, we can
-        // safely throw an exception if info indicates an error
-        // reading the file.
-        TEUCHOS_TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
+        else {
+          // address uninitialized data warnings
+          dvals = NULL;
+          colptr = NULL;
+          rowind = NULL;
+        }
+        Teuchos::broadcast(*comm_,0,&info);
+        Teuchos::broadcast(*comm_,0,&nnz);
+        Teuchos::broadcast(*comm_,0,&dim);
+        Teuchos::broadcast(*comm_,0,&rnnzmax);
+
+        TEUCHOS_TEST_FOR_EXCEPTION((info == 0 || nnz < 0), std::runtime_error,
           "HarwellBoeingReader::readFromFile: Failed to read Harwell-Boeing "
           "sparse matrix file: readHB_newmat_double() returned INFO = "
           << info << ".");
 
-        // Make row, domain, and range maps.
-        typedef local_ordinal_type LO;
-        typedef global_ordinal_type GO;
-        typedef node_type NT;
-        RCP<const map_type> rowMap =
-          createUniformContigMapWithNode<LO, GO, NT> (numRows, comm_);
-        RCP<const map_type> rangeMap = rowMap;
-        RCP<const map_type> domainMap =
-          createUniformContigMapWithNode<LO, GO, NT> (numCols, comm_);
+        // create map
+        Teuchos::RCP<const ::Tpetra::Map<> > map = Teuchos::rcp (new ::Tpetra::Map<> (dim, 0, comm_));
+        Teuchos::RCP<sparse_matrix_type> A = Teuchos::rcp(new sparse_matrix_type(map, rnnzmax));
+        if (MyPID == 0) {
+          // HB format is compressed column. CrsMatrix is compressed row.
+          scalar_type* svals = new scalar_type[ nnz ];
+          convertData<scalar_type>( dvals, nnz, svals );
+          const scalar_type *sptr = svals;
+          const int *rptr = rowind;
+          for (int c=0; c<dim; ++c) {
+            for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
+              A->insertGlobalValues (static_cast<global_ordinal_type> (*rptr++ - 1), 
+                                     Teuchos::tuple<global_ordinal_type> (c), 
+                                     Teuchos::tuple (sptr[0]));
+              sptr++;
+            }
+          }
 
-        // Convert the read-in matrix data into a Tpetra::CrsMatrix.
-        typedef ArrayView<const int>::size_type size_type;
-        ArrayView<const double> valView (val, static_cast<size_type> (nnz));
-        ArrayView<const int> indView (ind, static_cast<size_type> (nnz));
-        ArrayView<const int> ptrView (ptr, static_cast<size_type> (numCols+1));
-        return convert<double, int> (rowMap, domainMap, rangeMap,
-                                     valView, indView, ptrView);
+          // Clean up.
+          free( svals );
+          free( dvals );
+          free( colptr );
+          free( rowind );
+        }
+
+        A->fillComplete();
+        return A;
       }
 
     private:
@@ -175,41 +200,11 @@ namespace Belos {
       ///   values resp. global indices.  This is why this method is
       ///   templated on ValueType and IndexType, which are the types
       ///   of values resp. indices found in the file.
-      template<class ValueType, class IndexType>
-      Teuchos::RCP<sparse_matrix_type>
-      convert (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::RCP<const map_type>& domainMap,
-               const Teuchos::RCP<const map_type>& rangeMap,
-               Teuchos::ArrayView<const scalar_type> val,
-               Teuchos::ArrayView<const IndexType> ind,
-               Teuchos::ArrayView<const IndexType> ptr)
-      {
-        using ::Tpetra::global_size_t;
-        using Teuchos::ArrayRCP;
-        using Teuchos::ArrayView;
-        using Teuchos::RCP;
-        using Teuchos::rcp;
-        using Teuchos::tuple;
+      template<class ValueType>
+      void
+      insertValues (Teuchos::RCP<sparse_matrix_type>& A,
+                    const double* dptr, const int *rind, const int *cptr );
 
-        RCP<sparse_matrix_type> A = rcp (new sparse_matrix_type (rowMap, 0));
-        //const global_size_t numRows = rangeMap->getGlobalNumElements (); // unused
-        const global_size_t numCols = domainMap->getGlobalNumElements ();
-        const int myRank = comm_->getRank ();
-        if (myRank == 0) {
-          // Convert from Harwell-Boeing's compressed sparse column
-          // storage to CrsMatrix's compressed sparse row storage.
-          for (global_size_t curCol = 0; curCol < numCols; ++curCol) {
-            for (IndexType k = ptr[curCol]; k < ptr[curCol+1]; ++k) {
-              const global_ordinal_type curRow = static_cast<global_ordinal_type> (ind[k]);
-              const scalar_type curVal = static_cast<scalar_type> (val[k]);
-              A->insertGlobalValues (curRow, tuple (curCol), tuple (curVal));
-            }
-          }
-        }
-        // Distribute matrix data.
-        A->fillComplete (domainMap, rangeMap);
-        return A;
-      }
     };
 
     /// \class ProblemMaker
@@ -490,9 +485,7 @@ namespace Belos {
         using Teuchos::rcp;
         using std::endl;
 
-        typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
-        typedef node_type NT;
         typedef multivector_type MV;
 
         RCP<Teuchos::FancyOStream> out = getDebugStream ();

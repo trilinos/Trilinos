@@ -18,7 +18,7 @@ namespace {
 
     const crs_graph_type& G_crs = dynamic_cast<const crs_graph_type&> (G);
 
-    auto G_lcl = G_crs.getLocalGraph ();
+    auto G_lcl = G_crs.getLocalGraphDevice ();
     auto lclRowMap = G.getRowMap ()->getLocalMap ();
     auto lclColMap = G.getColMap ()->getLocalMap ();
     return determineLocalTriangularStructure (G_lcl, lclRowMap, lclColMap, true);

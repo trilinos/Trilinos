@@ -499,7 +499,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #endif
 
   // Only the root image needs storage allocated
-  if( this->root_ ){
+  if( this->root_ ) {
     host_nzvals_view_ = host_value_type_array(
       Kokkos::ViewAllocateWithoutInitializing("host_nzvals_view_"), this->globalNumNonZeros_);
     host_rows_view_ = host_ordinal_type_array(
@@ -528,8 +528,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
   }
 
-
-  if( this->root_ ){
+  if( this->root_ ) {
     TEUCHOS_TEST_FOR_EXCEPTION( nnz_ret != as<local_ordinal_type>(this->globalNumNonZeros_),
                         std::runtime_error,
                         "Did not get the expected number of non-zero vals");
