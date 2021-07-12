@@ -262,21 +262,6 @@ namespace panzer {
 
   }
 
-  // This should be a simple lambda but the RCPs and std::vector in
-  // the int_values triggers warnings for calling host code form a
-  // host/device function. We eliminate the warnings by using a
-  // functor that is memcopied to device.
-  template<typename Scalar>
-  struct DoSwapOnDevice {
-    int cell_,orig_pt_,new_pt_;
-    panzer::IntegrationValues2<Scalar> int_values_;
-    DoSwapOnDevice(int cell,int orig_pt,int new_pt,panzer::IntegrationValues2<Scalar>& int_values)
-      : cell_(cell),orig_pt_(orig_pt),new_pt_(new_pt),int_values_(int_values){}
-    KOKKOS_INLINE_FUNCTION void operator() (const int ) const {
-      int_values_.swapQuadraturePoints(cell_,orig_pt_,new_pt_);
-    }
-  };
-
   TEUCHOS_UNIT_TEST(integration_values, quadpt_swap)
   {    
     Teuchos::RCP<shards::CellTopology> topo = 
@@ -350,7 +335,25 @@ namespace panzer {
       int org_pt = 0;
       int new_pt = 1;
 
-      Kokkos::parallel_for("swap qp",1,DoSwapOnDevice<double>(tst_cell,org_pt,new_pt,int_values));
+      auto ref_ip_coordinates_k = int_values.ref_ip_coordinates.get_view();
+      auto ip_coordinates_k = int_values.ip_coordinates.get_view();
+      auto weighted_measure_k = int_values.weighted_measure.get_view();
+      auto jac_k = int_values.jac.get_view();
+      auto jac_det_k = int_values.jac_det.get_view();
+      auto jac_inv_k = int_values.jac_inv.get_view();
+      auto surface_normals_k = int_values.surface_normals.get_view();
+      auto surface_rotation_matrices_k = int_values.surface_rotation_matrices.get_view();
+      Kokkos::parallel_for("swap qp",1,KOKKOS_LAMBDA (const int ) {
+        panzer::swapQuadraturePoints<double>(tst_cell,org_pt,new_pt,
+                                             ref_ip_coordinates_k,
+                                             ip_coordinates_k,
+                                             weighted_measure_k,
+                                             jac_k,
+                                             jac_det_k,
+                                             jac_inv_k,
+                                             surface_normals_k,
+                                             surface_rotation_matrices_k);
+      });
 
       Kokkos::deep_copy(weighted_measure,int_values.weighted_measure.get_view());
       Kokkos::deep_copy(jac_det,int_values.jac_det.get_view());
@@ -380,7 +383,26 @@ namespace panzer {
       int org_pt = 1;
       int new_pt = 3;
 
-      Kokkos::parallel_for("swap qp",1,DoSwapOnDevice<double>(tst_cell,org_pt,new_pt,int_values));
+      auto ref_ip_coordinates_k = int_values.ref_ip_coordinates.get_view();
+      auto ip_coordinates_k = int_values.ip_coordinates.get_view();
+      auto weighted_measure_k = int_values.weighted_measure.get_view();
+      auto jac_k = int_values.jac.get_view();
+      auto jac_det_k = int_values.jac_det.get_view();
+      auto jac_inv_k = int_values.jac_inv.get_view();
+      auto surface_normals_k = int_values.surface_normals.get_view();
+      auto surface_rotation_matrices_k = int_values.surface_rotation_matrices.get_view();
+      // Kokkos::parallel_for("swap qp",1,DoSwapOnDevice<double>(tst_cell,org_pt,new_pt,int_values));
+      Kokkos::parallel_for("swap qp",1,KOKKOS_LAMBDA (const int ) {
+        panzer::swapQuadraturePoints<double>(tst_cell,org_pt,new_pt,
+                                             ref_ip_coordinates_k,
+                                             ip_coordinates_k,
+                                             weighted_measure_k,
+                                             jac_k,
+                                             jac_det_k,
+                                             jac_inv_k,
+                                             surface_normals_k,
+                                             surface_rotation_matrices_k);
+      });
 
       Kokkos::deep_copy(weighted_measure,int_values.weighted_measure.get_view());
       Kokkos::deep_copy(jac_det,int_values.jac_det.get_view());

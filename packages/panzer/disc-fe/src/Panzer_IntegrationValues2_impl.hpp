@@ -10,12 +10,22 @@
    testing).
  */
 namespace panzer {
-  
-template <typename Scalar>
-void IntegrationValues2<Scalar>::
+
+template<typename Scalar,
+         typename T0,typename T1,typename T2,typename T3,
+         typename T4,typename T5,typename T6,typename T7>
+void
 swapQuadraturePoints(int cell,
                      int a,
-                     int b) const
+                     int b,
+                     T0& ref_ip_coordinates,
+                     T1& ip_coordinates,
+                     T2& weighted_measure,
+                     T3& jac,
+                     T4& jac_det,
+                     T5& jac_inv,
+                     T6& surface_normals,
+                     T7& surface_rotation_matrices)
 {
   const int new_cell_point = a;
   const int old_cell_point = b;
