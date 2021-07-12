@@ -124,6 +124,268 @@ int DistributorPlan::getTag(const int pathTag) const {
   return useDistinctTags_ ? pathTag : comm_->getTag();
 }
 
+size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
+  using Teuchos::outArg;
+  using Teuchos::REDUCE_MAX;
+  using Teuchos::reduceAll;
+  using std::endl;
+
+  const size_t numExports = exportProcIDs.size();
+  const int myProcID = comm_->getRank();
+  const int numProcs = comm_->getSize();
+
+  // exportProcIDs tells us the communication pattern for this
+  // distributor.  It dictates the way that the export data will be
+  // interpreted in doPosts().  We want to perform at most one
+  // send per process in doPosts; this is for two reasons:
+  //   * minimize latency / overhead in the comm routines (nice)
+  //   * match the number of receives and sends between processes
+  //     (necessary)
+  //
+  // Teuchos::Comm requires that the data for a send are contiguous
+  // in a send buffer.  Therefore, if the data in the send buffer
+  // for doPosts() are not contiguous, they will need to be copied
+  // into a contiguous buffer.  The user has specified this
+  // noncontiguous pattern and we can't do anything about it.
+  // However, if they do not provide an efficient pattern, we will
+  // warn them if one of the following compile-time options has been
+  // set:
+  //   * HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
+  //   * HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
+  //
+  // If the data are contiguous, then we can post the sends in situ
+  // (i.e., without needing to copy them into a send buffer).
+  //
+  // Determine contiguity. There are a number of ways to do this:
+  // * If the export IDs are sorted, then all exports to a
+  //   particular proc must be contiguous. This is what Epetra does.
+  // * If the export ID of the current export already has been
+  //   listed, then the previous listing should correspond to the
+  //   same export.  This tests contiguity, but not sortedness.
+  //
+  // Both of these tests require O(n), where n is the number of
+  // exports. However, the latter will positively identify a greater
+  // portion of contiguous patterns.  We use the latter method.
+  //
+  // Check to see if values are grouped by procs without gaps
+  // If so, indices_to -> 0.
+
+  // Set up data structures for quick traversal of arrays.
+  // This contains the number of sends for each process ID.
+  //
+  // FIXME (mfh 20 Mar 2014) This is one of a few places in Tpetra
+  // that create an array of length the number of processes in the
+  // communicator (plus one).  Given how this code uses this array,
+  // it should be straightforward to replace it with a hash table or
+  // some other more space-efficient data structure.  In practice,
+  // most of the entries of starts should be zero for a sufficiently
+  // large process count, unless the communication pattern is dense.
+  // Note that it's important to be able to iterate through keys (i
+  // for which starts[i] is nonzero) in increasing order.
+  Teuchos::Array<size_t> starts (numProcs + 1, 0);
+
+  // numActive is the number of sends that are not Null
+  size_t numActive = 0;
+  int needSendBuff = 0; // Boolean
+
+  for (size_t i = 0; i < numExports; ++i) {
+    const int exportID = exportProcIDs[i];
+    if (exportID >= 0) {
+      // exportID is a valid process ID.  Increment the number of
+      // messages this process will send to that process.
+      ++starts[exportID];
+
+      // If we're sending more than one message to process exportID,
+      // then it is possible that the data are not contiguous.
+      // Check by seeing if the previous process ID in the list
+      // (exportProcIDs[i-1]) is the same.  It's safe to use i-1,
+      // because if starts[exportID] > 1, then i must be > 1 (since
+      // the starts array was filled with zeros initially).
+
+      // null entries break continuity.
+      // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not contiguous
+      if (needSendBuff == 0 && starts[exportID] > 1 &&
+          exportID != exportProcIDs[i-1]) {
+        needSendBuff = 1;
+      }
+      ++numActive;
+    }
+  }
+
+#if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+  {
+    int global_needSendBuff;
+    reduceAll<int, int> (*comm_, REDUCE_MAX, needSendBuff,
+        outArg (global_needSendBuff));
+    TPETRA_EFFICIENCY_WARNING(
+        global_needSendBuff != 0, std::runtime_error,
+        "::createFromSends: Grouping export IDs together by process rank often "
+        "improves performance.");
+  }
+#endif
+
+  // Determine from the caller's data whether or not the current
+  // process should send (a) message(s) to itself.
+  if (starts[myProcID] != 0) {
+    sendMessageToSelf_ = true;
+  }
+  else {
+    sendMessageToSelf_ = false;
+  }
+
+  if (! needSendBuff) {
+    // grouped by proc, no send buffer or indicesTo_ needed
+    numSendsToOtherProcs_ = 0;
+    // Count total number of sends, i.e., total number of procs to
+    // which we are sending.  This includes myself, if applicable.
+    for (int i = 0; i < numProcs; ++i) {
+      if (starts[i]) {
+        ++numSendsToOtherProcs_;
+      }
+    }
+
+    // Not only do we not need these, but we must clear them, as
+    // empty status of indicesTo is a flag used later.
+    indicesTo_.resize(0);
+    // Size these to numSendsToOtherProcs_; note, at the moment, numSendsToOtherProcs_
+    // includes self sends.  Set their values to zeros.
+    procIdsToSendTo_.assign(numSendsToOtherProcs_,0);
+    startsTo_.assign(numSendsToOtherProcs_,0);
+    lengthsTo_.assign(numSendsToOtherProcs_,0);
+
+    // set startsTo to the offset for each send (i.e., each proc ID)
+    // set procsTo to the proc ID for each send
+    // in interpreting this code, remember that we are assuming contiguity
+    // that is why index skips through the ranks
+    {
+      size_t index = 0, procIndex = 0;
+      for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
+        while (exportProcIDs[procIndex] < 0) {
+          ++procIndex; // skip all negative proc IDs
+        }
+        startsTo_[i] = procIndex;
+        int procID = exportProcIDs[procIndex];
+        procIdsToSendTo_[i] = procID;
+        index     += starts[procID];
+        procIndex += starts[procID];
+      }
+    }
+    // sort the startsTo and proc IDs together, in ascending order, according
+    // to proc IDs
+    if (numSendsToOtherProcs_ > 0) {
+      sort2(procIdsToSendTo_.begin(), procIdsToSendTo_.end(), startsTo_.begin());
+    }
+    // compute the maximum send length
+    maxSendLength_ = 0;
+    for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
+      int procID = procIdsToSendTo_[i];
+      lengthsTo_[i] = starts[procID];
+      if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
+        maxSendLength_ = lengthsTo_[i];
+      }
+    }
+  }
+  else {
+    // not grouped by proc, need send buffer and indicesTo_
+
+    // starts[i] is the number of sends to proc i
+    // numActive equals number of sends total, \sum_i starts[i]
+
+    // this loop starts at starts[1], so explicitly check starts[0]
+    if (starts[0] == 0 ) {
+      numSendsToOtherProcs_ = 0;
+    }
+    else {
+      numSendsToOtherProcs_ = 1;
+    }
+    for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
+        im1=starts.begin();
+        i != starts.end(); ++i)
+    {
+      if (*i != 0) ++numSendsToOtherProcs_;
+      *i += *im1;
+      im1 = i;
+    }
+    // starts[i] now contains the number of exports to procs 0 through i
+
+    for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
+        i=starts.rbegin()+1;
+        i != starts.rend(); ++i)
+    {
+      *ip1 = *i;
+      ip1 = i;
+    }
+    starts[0] = 0;
+    // starts[i] now contains the number of exports to procs 0 through
+    // i-1, i.e., all procs before proc i
+
+    indicesTo_.resize(numActive);
+
+    for (size_t i = 0; i < numExports; ++i) {
+      if (exportProcIDs[i] >= 0) {
+        // record the offset to the sendBuffer for this export
+        indicesTo_[starts[exportProcIDs[i]]] = i;
+        // now increment the offset for this proc
+        ++starts[exportProcIDs[i]];
+      }
+    }
+    // our send buffer will contain the export data for each of the procs
+    // we communicate with, in order by proc id
+    // sendBuffer = {proc_0_data, proc_1_data, ..., proc_np-1_data}
+    // indicesTo now maps each export to the location in our send buffer
+    // associated with the export
+    // data for export i located at sendBuffer[indicesTo[i]]
+    //
+    // starts[i] once again contains the number of exports to
+    // procs 0 through i
+    for (int proc = numProcs-1; proc != 0; --proc) {
+      starts[proc] = starts[proc-1];
+    }
+    starts.front() = 0;
+    starts[numProcs] = numActive;
+    //
+    // starts[proc] once again contains the number of exports to
+    // procs 0 through proc-1
+    // i.e., the start of my data in the sendBuffer
+
+    // this contains invalid data at procs we don't care about, that is okay
+    procIdsToSendTo_.resize(numSendsToOtherProcs_);
+    startsTo_.resize(numSendsToOtherProcs_);
+    lengthsTo_.resize(numSendsToOtherProcs_);
+
+    // for each group of sends/exports, record the destination proc,
+    // the length, and the offset for this send into the
+    // send buffer (startsTo_)
+    maxSendLength_ = 0;
+    size_t snd = 0;
+    for (int proc = 0; proc < numProcs; ++proc ) {
+      if (starts[proc+1] != starts[proc]) {
+        lengthsTo_[snd] = starts[proc+1] - starts[proc];
+        startsTo_[snd] = starts[proc];
+        // record max length for all off-proc sends
+        if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
+          maxSendLength_ = lengthsTo_[snd];
+        }
+        procIdsToSendTo_[snd] = proc;
+        ++snd;
+      }
+    }
+  }
+
+  if (sendMessageToSelf_) {
+    --numSendsToOtherProcs_;
+  }
+
+  // Invert map to see what msgs are received and what length
+  computeReceives();
+
+  // createFromRecvs() calls createFromSends(), but will set
+  // howInitialized_ again after calling createFromSends().
+  howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS;
+
+  return totalReceiveLength_;
+}
+
 void DistributorPlan::computeReceives()
 {
   using Teuchos::Array;

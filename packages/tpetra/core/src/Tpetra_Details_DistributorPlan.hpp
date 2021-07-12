@@ -101,6 +101,8 @@ public:
   /// variants) and computeReceives().
   int getTag(const int pathTag) const;
 
+  size_t createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs);
+
   /// \brief Compute receive info from sends.
   ///
   /// This method computes numReceives_, lengthsFrom_, procsFrom_,

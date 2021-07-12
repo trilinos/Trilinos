@@ -2688,13 +2688,6 @@ namespace Tpetra {
       "  Please report this bug to the Tpetra developers.";
 
     const int myRank = plan_.comm_->getRank ();
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("computeSends");
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (importGIDs.size () != importProcIDs.size (),
@@ -2714,11 +2707,6 @@ namespace Tpetra {
     // pairs to importProcIDs[i].
     //
     Distributor tempPlan(plan_.comm_);
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call tempPlan.createFromSends" << endl;
-      std::cerr << os.str();
-    }
     // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
     // signed, in order to forestall any possible causes for Bug 6069.
     const size_t numExportsAsSizeT =
@@ -2762,23 +2750,12 @@ namespace Tpetra {
        << numExports << "." << suffix);
 
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call tempPlan.doPostsAndWaits" << endl;
-      std::cerr << os.str();
-    }
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportProcIDs.
     for (size_type i = 0; i < numExports; ++i) {
       exportGIDs[i] = static_cast<OrdinalType> (exportObjs[2*i]);
       exportProcIDs[i] = static_cast<int> (exportObjs[2*i+1]);
-    }
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
     }
   }
 
