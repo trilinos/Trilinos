@@ -471,7 +471,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
     Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
     Kokkos::parallel_for("node_coordinates",policy,KOKKOS_LAMBDA (const int cell, const int node, const int dim) {
-          node_coordinates_k(cell,node,dim) = in_node_coordinates_k(cell,node,dim);
+      node_coordinates_k(cell,node,dim) = in_node_coordinates_k(cell,node,dim);
     });
     PHX::Device::execution_space().fence();
   }
@@ -699,25 +699,33 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 #define PANZER_DOT(a,b) (a[0]*b[0] + a[1]*b[1] + a[2]*b[2])
 #define PANZER_CROSS(a,b,c) {c[0] = a[1]*b[2] - a[2]*b[1]; c[1] = a[2]*b[0] - a[0]*b[2]; c[2] = a[0]*b[1] - a[1]*b[0];}
 
-    // Reorder index vector
-    std::vector<int> point_order(num_points_per_face);
+    // Reorder index vector. This is scratch space that needs to be
+    // allocated per thread now. Should use team size instead of num
+    // faces, but then we need to convert the lambda below to a
+    // functor to query the policy using the functor. We'll just live
+    // with the extra memory since it is temporary scratch.
+    // std::vector<int> point_order(num_points_per_face);
+    PHX::View<int**> point_order("scratch: point_order",face_connectivity.numSubcellsHost(),num_points_per_face);
 
     // Iterate through faces
-    for(int face=0; face<face_connectivity.numSubcellsHost(); ++face){
+    auto ip_coordinates_k = ip_coordinates.get_view();
+    auto surface_rotation_matrices_k = surface_rotation_matrices.get_view();
+    auto& int_values_device = *this; // for cuda
+    Kokkos::parallel_for("face iteration",face_connectivity.numSubcellsHost(),KOKKOS_LAMBDA (const int face) {
       // Cells for sides 0 and 1
       const int cell_0 = face_connectivity.cellForSubcell(face,0);
       const int cell_1 = face_connectivity.cellForSubcell(face,1);
 
       // If this face doesn't connect to anything we don't need to worry about alignment
       if(cell_1 < 0)
-        continue;
+        return;
 
       // Local face index for sides 0 and 1
       const int lidx_0 = face_connectivity.localSubcellForSubcell(face,0);
       const int lidx_1 = face_connectivity.localSubcellForSubcell(face,1);
 
       // If the cell exists, then the local face index needs to exist
-      TEUCHOS_ASSERT(lidx_1 >= 0);
+      KOKKOS_ASSERT(lidx_1 >= 0);
       
       // To compare points on planes, it is good to center the planes around the origin
       // Find the face center for the left and right cell (may not be the same point - e.g. periodic conditions)
@@ -726,14 +734,14 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       for(int face_point=0; face_point<num_points_per_face; ++face_point){
         Scalar dx2 = 0.;
         for(int dim=0; dim<cell_dim; ++dim){
-          xc0[dim] += ip_coordinates(cell_0,lidx_0*num_points_per_face + face_point,dim);
-          xc1[dim] += ip_coordinates(cell_1,lidx_1*num_points_per_face + face_point,dim);
-          const Scalar dx = ip_coordinates(cell_0,lidx_0*num_points_per_face + face_point,dim) - ip_coordinates(cell_0,lidx_0*num_points_per_face,dim); 
+          xc0[dim] += ip_coordinates_k(cell_0,lidx_0*num_points_per_face + face_point,dim);
+          xc1[dim] += ip_coordinates_k(cell_1,lidx_1*num_points_per_face + face_point,dim);
+          const Scalar dx = ip_coordinates_k(cell_0,lidx_0*num_points_per_face + face_point,dim) - ip_coordinates_k(cell_0,lidx_0*num_points_per_face,dim); 
           dx2 += dx*dx;
         }
 
         // Check if the distance squared between these two points is larger than the others (doesn't need to be perfect)
-        r2 = std::max(r2, dx2);
+        r2 = (r2 < dx2) ? dx2 : r2;
       }
       for(int dim=0; dim<cell_dim; ++dim){
         xc0[dim] /= double(num_points_per_face);
@@ -750,15 +758,15 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       const int example_point_1 = lidx_1*num_points_per_face;
       
       // Load the transverse and binormal for the 0 cell (default)
-      Scalar t[3] = {surface_rotation_matrices(cell_0,example_point_0,1,0), surface_rotation_matrices(cell_0,example_point_0,1,1), surface_rotation_matrices(cell_0,example_point_0,1,2)};
-      Scalar b[3] = {surface_rotation_matrices(cell_0,example_point_0,2,0), surface_rotation_matrices(cell_0,example_point_0,2,1), surface_rotation_matrices(cell_0,example_point_0,2,2)};
+      Scalar t[3] = {surface_rotation_matrices_k(cell_0,example_point_0,1,0), surface_rotation_matrices_k(cell_0,example_point_0,1,1), surface_rotation_matrices_k(cell_0,example_point_0,1,2)};
+      Scalar b[3] = {surface_rotation_matrices_k(cell_0,example_point_0,2,0), surface_rotation_matrices_k(cell_0,example_point_0,2,1), surface_rotation_matrices_k(cell_0,example_point_0,2,2)};
 
       // In case the faces are not antiparallel (e.g. periodic wedge), we may need to change the transverse and binormal
       {
       
         // Get the normals for each face for constructing one of the plane vectors (transverse)
-        const Scalar n0[3] = {surface_rotation_matrices(cell_0,example_point_0,0,0), surface_rotation_matrices(cell_0,example_point_0,0,1), surface_rotation_matrices(cell_0,example_point_0,0,2)};
-        const Scalar n1[3] = {surface_rotation_matrices(cell_1,example_point_1,0,0), surface_rotation_matrices(cell_1,example_point_1,0,1), surface_rotation_matrices(cell_1,example_point_1,0,2)};
+        const Scalar n0[3] = {surface_rotation_matrices_k(cell_0,example_point_0,0,0), surface_rotation_matrices_k(cell_0,example_point_0,0,1), surface_rotation_matrices_k(cell_0,example_point_0,0,2)};
+        const Scalar n1[3] = {surface_rotation_matrices_k(cell_1,example_point_1,0,0), surface_rotation_matrices_k(cell_1,example_point_1,0,1), surface_rotation_matrices_k(cell_1,example_point_1,0,2)};
 
         // n_0*n_1 == -1 (antiparallel), n_0*n_1 == 1 (parallel - bad), |n_0*n_1| < 1 (other)
         const Scalar n0_dot_n1 = PANZER_DOT(n0,n1);
@@ -767,7 +775,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
         // This causes a host of issues (e.g. identifying 180 degree periodic wedges), but we have to support virtual cells as a priority
         // Therefore, we will just assume that the ordering is fine (not valid for 180 degree periodic wedges)
         if(std::fabs(n0_dot_n1 - 1.) < 1.e-8)
-          continue;
+          return;
 
         // Rotated faces case (e.g. periodic wedge) we need to check for non-antiparallel face normals
         if(std::fabs(n0_dot_n1 + 1.) > 1.e-2){
@@ -794,7 +802,6 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           b[2] /= mag_b;
           
         }
-        
       }
 
       // Now that we have a reference coordinate plane in which to align our points
@@ -805,7 +812,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       // Differential position in mesh
       Scalar x0[3] = {0};
       Scalar x1[3] = {0};
-      
+
       // Iterate through points in cell 1 and find which point they align with in cell 0
       for(int face_point_1=0; face_point_1<num_points_per_face; ++face_point_1){
 
@@ -814,14 +821,14 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
         // Load position shifted by face center
         for(int dim=0; dim<cell_dim; ++dim)
-          x1[dim] = ip_coordinates(cell_1,point_1,dim) - xc1[dim];
+          x1[dim] = ip_coordinates_k(cell_1,point_1,dim) - xc1[dim];
 
         // Convert position to transverse/binormal plane
         p1[0] = PANZER_DOT(x1,t);
         p1[1] = PANZER_DOT(x1,b);
 
         // Set the default for the point order
-        point_order[face_point_1] = face_point_1;
+        point_order(face,face_point_1) = face_point_1;
         
         // Compare to points on the other surface
         for(int face_point_0=0; face_point_0<num_points_per_face; ++face_point_0){
@@ -831,7 +838,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
           // Load position shifted by face center
           for(int dim=0; dim<cell_dim; ++dim)
-            x0[dim] = ip_coordinates(cell_0,point_0,dim) - xc0[dim];
+            x0[dim] = ip_coordinates_k(cell_0,point_0,dim) - xc0[dim];
 
           // Convert position to transverse/binormal plane
           p0[0] = PANZER_DOT(x0,t);
@@ -842,28 +849,30 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
           // If the distance, compared to the size of the cell, is small, we assume these are the same points
           if(p012 / r2 < 1.e-12){
-            point_order[face_point_1] = face_point_0;
+            point_order(face,face_point_1) = face_point_0;
             break;
           }
 
           // Big problem - there wan't a point that aligned properly
-          TEUCHOS_ASSERT(face_point_0 != num_points_per_face-1);
+          KOKKOS_ASSERT(face_point_0 != num_points_per_face-1);
 
         }
       }
-      
+
       // Now re-order the points on face 1 to correct the alignment
       const int point_offset = lidx_1*num_points_per_face;
       for( int face_point_1 = 0; face_point_1 < num_points_per_face - 1; ++face_point_1 ){
         // While the point is not yet in place - keep swapping until it is in place (N^2 operations - not great)
-        while( face_point_1 != point_order[face_point_1] ){
+        while( face_point_1 != point_order(face,face_point_1) ){
           // We need to swap with the component in this position
-          const int face_point_0 = point_order[face_point_1];
-          swapQuadraturePoints(cell_1,point_offset+face_point_1,point_offset+face_point_0);
-          std::swap( point_order[face_point_1], point_order[face_point_0] );
+          const int face_point_0 = point_order(face,face_point_1);
+          int_values_device.swapQuadraturePoints(cell_1,point_offset+face_point_1,point_offset+face_point_0);
+          std::swap( point_order(face,face_point_1), point_order(face,face_point_0) );
         }
       }
-    }
+
+    });
+    PHX::Device::execution_space().fence();
   }
     
 #undef PANZER_DOT
@@ -874,41 +883,51 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
   // I'm not sure if these should exist for surface integrals, but here we go!
 
   // Shakib contravarient metric tensor
-  for (int cell = 0; cell < num_cells; ++cell) {
-    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
-
+  {
+    auto contravarient_k = this->contravarient.get_static_view();
+    auto covarient_k = this->covarient.get_static_view();
+    auto jac_k = this->jac.get_static_view();
+    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{(int)num_cells,(int)contravarient.extent(1)});
+    Kokkos::parallel_for("covarient metric tensor",policy,KOKKOS_LAMBDA (const int cell,const int ip) {
       // zero out matrix
-      for (size_type i = 0; i < contravarient.extent(2); ++i)
-        for (size_type j = 0; j < contravarient.extent(3); ++j)
-          covarient(cell,ip,i,j) = 0.0;
+      for (size_type i = 0; i < contravarient_k.extent(2); ++i)
+        for (size_type j = 0; j < contravarient_k.extent(3); ++j)
+          covarient_k(cell,ip,i,j) = 0.0;
 
       // g^{ij} = \frac{\parital x_i}{\partial \chi_\alpha}\frac{\parital x_j}{\partial \chi_\alpha}
-      for (size_type i = 0; i < contravarient.extent(2); ++i) {
-        for (size_type j = 0; j < contravarient.extent(3); ++j) {
-          for (size_type alpha = 0; alpha < contravarient.extent(2); ++alpha) {
-            covarient(cell,ip,i,j) += jac(cell,ip,i,alpha) * jac(cell,ip,j,alpha);
+      for (size_type i = 0; i < contravarient_k.extent(2); ++i) {
+        for (size_type j = 0; j < contravarient_k.extent(3); ++j) {
+          for (size_type alpha = 0; alpha < contravarient_k.extent(2); ++alpha) {
+            covarient_k(cell,ip,i,j) += jac_k(cell,ip,i,alpha) * jac_k(cell,ip,j,alpha);
           }
         }
       }
-
-    }
+    });
+    PHX::Device::execution_space().fence();
   }
 
-  auto s_contravarient = Kokkos::subview(contravarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
-  auto s_covarient = Kokkos::subview(covarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
-  Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(s_contravarient, s_covarient);
+  {
+    auto s_contravarient = Kokkos::subview(contravarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
+    auto s_covarient = Kokkos::subview(covarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
+    Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(s_contravarient, s_covarient);
+    PHX::Device::execution_space().fence();    
+  }
 
   // norm of g_ij
-  for (int cell = 0; cell < num_cells; ++cell) {
-    for (size_type ip = 0; ip < contravarient.extent(1); ++ip) {
-      norm_contravarient(cell,ip) = 0.0;
-      for (size_type i = 0; i < contravarient.extent(2); ++i) {
-        for (size_type j = 0; j < contravarient.extent(3); ++j) {
-          norm_contravarient(cell,ip) += contravarient(cell,ip,i,j) * contravarient(cell,ip,i,j);
+  {
+    auto contravarient_k = this->contravarient.get_static_view();
+    auto norm_contravarient_k = this->norm_contravarient.get_static_view();
+    Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{(int)num_cells,(int)contravarient.extent(1)});
+    Kokkos::parallel_for("covarient metric tensor",policy,KOKKOS_LAMBDA (const int cell,const int ip) {
+      norm_contravarient_k(cell,ip) = 0.0;
+      for (size_type i = 0; i < contravarient_k.extent(2); ++i) {
+        for (size_type j = 0; j < contravarient_k.extent(3); ++j) {
+          norm_contravarient_k(cell,ip) += contravarient_k(cell,ip,i,j) * contravarient_k(cell,ip,i,j);
         }
       }
-      norm_contravarient(cell,ip) = std::sqrt(norm_contravarient(cell,ip));
-    }
+      norm_contravarient_k(cell,ip) = std::sqrt(norm_contravarient_k(cell,ip));
+    });
+    PHX::Device::execution_space().fence();    
   }
 
 }

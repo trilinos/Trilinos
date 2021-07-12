@@ -507,7 +507,7 @@ namespace panzer {
     auto node_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("node_coordinates",2,4,2);
     {
       auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_static_view());
-      auto cell_vertices_host = Kokkos::create_mirror_view(mesh.cell_vertices);
+      auto cell_vertices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),mesh.cell_vertices);
       for(int i=0; i<mesh.cell_vertices.extent_int(0); ++i)
         for(int j=0; j<mesh.cell_vertices.extent_int(1); ++j)
           for(int k=0; k<mesh.cell_vertices.extent_int(2); ++k)
@@ -549,11 +549,11 @@ namespace panzer {
     
     // Face 0
     {
-      const int cell_0 = connectivity->cellForSubcell(0,0);
-      const int cell_1 = connectivity->cellForSubcell(0,1);
+      const int cell_0 = connectivity->cellForSubcellHost(0,0);
+      const int cell_1 = connectivity->cellForSubcellHost(0,1);
 
-      const int lidx_0 = connectivity->localSubcellForSubcell(0,0);
-      const int lidx_1 = connectivity->localSubcellForSubcell(0,1);
+      const int lidx_0 = connectivity->localSubcellForSubcellHost(0,0);
+      const int lidx_1 = connectivity->localSubcellForSubcellHost(0,1);
 
       TEST_EQUALITY(cell_0,0);
       TEST_EQUALITY(cell_1,1);
@@ -585,11 +585,11 @@ namespace panzer {
     
     // Face 2
     {
-      const int cell_0 = connectivity->cellForSubcell(2,0);
-      const int cell_1 = connectivity->cellForSubcell(2,1);
+      const int cell_0 = connectivity->cellForSubcellHost(2,0);
+      const int cell_1 = connectivity->cellForSubcellHost(2,1);
 
-      const int lidx_0 = connectivity->localSubcellForSubcell(2,0);
-      const int lidx_1 = connectivity->localSubcellForSubcell(2,1);
+      const int lidx_0 = connectivity->localSubcellForSubcellHost(2,0);
+      const int lidx_1 = connectivity->localSubcellForSubcellHost(2,1);
 
       TEST_EQUALITY(cell_0,0);
       TEST_EQUALITY(cell_1,1);

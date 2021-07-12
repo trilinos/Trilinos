@@ -71,9 +71,9 @@ swapQuadraturePoints(int cell,
   // Rotation matrices are always in 3D
   for(int dim=0; dim<3; ++dim){
     for(int dim2=0; dim2<3; ++dim2){
-      scratch_for_compute_side_measure(0) = surface_rotation_matrices(cell,new_cell_point,dim,dim2);
+      hold = surface_rotation_matrices(cell,new_cell_point,dim,dim2);
       surface_rotation_matrices(cell,new_cell_point,dim,dim2) = surface_rotation_matrices(cell,old_cell_point,dim,dim2);
-      surface_rotation_matrices(cell,old_cell_point,dim,dim2) = scratch_for_compute_side_measure(0);
+      surface_rotation_matrices(cell,old_cell_point,dim,dim2) = hold;
     }
   }
 }

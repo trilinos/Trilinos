@@ -162,7 +162,6 @@ namespace panzer {
     void swapQuadraturePoints(int cell,int a,int b) const;
 
     KOKKOS_INLINE_FUNCTION
-    //void convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3]);
     static void convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3]);
 
     /// This should be a private method, but using lambdas on cuda forces this to be public.
