@@ -154,7 +154,6 @@ set (Sacado_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (SEACAS_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (ShyLU_DD_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (STK_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (Teko_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Zoltan2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 
 
