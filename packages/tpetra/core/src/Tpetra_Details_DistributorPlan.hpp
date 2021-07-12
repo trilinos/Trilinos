@@ -101,6 +101,18 @@ public:
   /// variants) and computeReceives().
   int getTag(const int pathTag) const;
 
+  /// \brief Compute receive info from sends.
+  ///
+  /// This method computes numReceives_, lengthsFrom_, procsFrom_,
+  /// totalReceiveLength_, indicesFrom_, and startsFrom_.
+  ///
+  /// \note This method currently ignores the sendType_ and
+  ///   barrierBetween_ parameters, and always uses ireceive() /
+  ///   send() for communication of the process IDs from which our
+  ///   process is receiving and their corresponding receive packet
+  ///   counts.
+  void computeReceives();
+
   Teuchos::RCP<const Teuchos::Comm<int>> comm_;
   Details::EDistributorHowInitialized howInitialized_;
 

@@ -784,18 +784,6 @@ namespace Tpetra {
     /// \brief The number of bytes received by this proc in the last call to do/doReverse
     size_t lastRoundBytesRecv_;
 
-    /// \brief Compute receive info from sends.
-    ///
-    /// This method computes numReceives_, lengthsFrom_, procsFrom_,
-    /// totalReceiveLength_, indicesFrom_, and startsFrom_.
-    ///
-    /// \note This method currently ignores the sendType_ and
-    ///   barrierBetween_ parameters, and always uses ireceive() /
-    ///   send() for communication of the process IDs from which our
-    ///   process is receiving and their corresponding receive packet
-    ///   counts.
-    void computeReceives ();
-
     /// \brief Compute send (GID,PID) pairs from receive (GID,PID) pairs.
     ///
     /// GID means "global ID" and PID means "process ID" (rank, in MPI
