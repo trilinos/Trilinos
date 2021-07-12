@@ -92,6 +92,7 @@ FEMultiVector (const Teuchos::RCP<const map_type>& map,
     inactiveMultiVector_ =
              Teuchos::rcp (new base_type (*this, importer_->getSourceMap(), 0));
   }
+  fillState_ = Teuchos::rcp(new FillState(FillState::closed));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -122,6 +123,52 @@ endFill ()
       (true, std::runtime_error, "Owned+Shared MultiVector already active; "
        "cannot call endFill.");
   }
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginAssembly() {
+  const char tfecfFuncName[] = "FEMultiVector::beginAssembly: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::closed,
+    std::runtime_error,
+    "Cannot beginAssembly, matrix is not in a closed state"
+  );
+  *fillState_ = FillState::open;
+  this->beginFill();
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
+  const char tfecfFuncName[] = "FEMultiVector::endAssembly: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open,
+    std::runtime_error,
+    "Cannot endAssembly, matrix is not open to fill."
+  );
+  *fillState_ = FillState::closed;
+  this->endFill();
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginModify() {
+  const char tfecfFuncName[] = "FEMultiVector::beginModify: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::closed,
+    std::runtime_error,
+    "Cannot beginModify, matrix is not in a closed state"
+  );
+  *fillState_ = FillState::modify;
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endModify() {
+  const char tfecfFuncName[] = "FEMultiVector::endModify: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::modify,
+    std::runtime_error,
+    "Cannot endModify, matrix is not open to modify."
+  );
+  *fillState_ = FillState::closed;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

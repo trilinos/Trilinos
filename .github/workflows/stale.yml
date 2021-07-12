@@ -20,7 +20,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v3.0.18
+    - uses: actions/stale@v3
       with:
         debug-only: false
         ascending: true
@@ -35,7 +35,7 @@ jobs:
         # We specifically DO NOT exempt PR's from autoclosing.
         #exempt-pr-labels: ''
         remove-stale-when-updated: true
-        operations-per-run: 70
+        operations-per-run: 75
         stale-issue-message: >
           This issue has had no activity for **365** days and is marked for
           closure. It will be closed after an additional **30** days of inactivity.
