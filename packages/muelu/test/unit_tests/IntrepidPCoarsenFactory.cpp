@@ -1251,6 +1251,7 @@ namespace MueLuTests {
         Kokkos::parallel_for("IntrepidPCoarsenFactory,BuildLoElemToNode", Nn, KOKKOS_LAMBDA (int i) {
            hi_e2n(0,i)=i;
         });
+	Kokkos::fence();
         for(int i=0; i<Nn; i++) {
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
@@ -1307,8 +1308,11 @@ namespace MueLuTests {
         FC hi_dofCoords;
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 
+        Kokkos::parallel_for("IntrepidPCoarsenFactory,BuildLoElemToNodeWithDirichlet", Nn, KOKKOS_LAMBDA (int i) {
+           hi_e2n(0,i)=i;
+        });
+	Kokkos::fence();
         for(int i=0; i<Nn; i++) {
-          hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
@@ -1838,8 +1842,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     {
       CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
       //UVM used here, accessing vertex coordinates on host that were populated on device.
-      Kokkos::fence();
-      for (int d=0; d<spaceDim; d++)
+
+      Kokkos::parallel_for(spaceDim, KOKKOS_LAMBDA (int d)
       {
         refCellVertices(vertexOrdinal,d) = refCellVertex(d);
         //      cout << "refCellVertices(" << vertexOrdinal << "," << d << ") = " << refCellVertex(d) << endl;
@@ -1848,7 +1852,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         // cell 1 is the reference cell, except that the x coords get translated
         // NOTE: this will need to change to support non-hypercube topologies
         physCellVertices(1,vertexOrdinal,d) = refCellVertex(d) + ((d==0) ? xTranslationForCell1 : 0);
-      }
+      });
+      Kokkos::fence();
     }
     Symmetries cellSymmetries = Symmetries::shardsSymmetries(cellTopo);
     int symmetryCount = cellSymmetries.getPermutationCount();
