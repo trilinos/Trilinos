@@ -1248,8 +1248,10 @@ namespace MueLuTests {
         FC hi_dofCoords;
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 
+        Kokkos::parallel_for("IntrepidPCoarsenFactory,BuildLoElemToNode", Nn, KOKKOS_LAMBDA (int i) {
+           hi_e2n(0,i)=i;
+        });
         for(int i=0; i<Nn; i++) {
-          hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
