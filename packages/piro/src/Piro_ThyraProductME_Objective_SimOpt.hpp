@@ -60,9 +60,10 @@ public:
 
 
   ThyraProductME_Objective_SimOpt(const Thyra::ModelEvaluator<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
-      Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
+      Teuchos::ParameterList& piroParams_, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
       Teuchos::RCP<ROL_ObserverBase<Real>> observer_ = Teuchos::null) :
-        thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
+        thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_),
+        optParams(piroParams_.sublist("Optimization Status")),
         out(Teuchos::VerboseObjectBase::getDefaultOStream()),
         verbosityLevel(verbLevel), observer(observer_)  {
     computeValue = computeGradient1 = computeGradient2 = true;
@@ -70,12 +71,8 @@ public:
     value_ = 0;
     rol_u_ptr = rol_z_ptr = Teuchos::null;
     z_stored_ptr =  Teuchos::null;
-    if(params != Teuchos::null) {
-      write_interval = params->get("Write Interval", 1);
-      params->set<int>("Optimizer Iteration Number", -1);
-    }
-    else
-      write_interval = 1;
+    write_interval = optParams.get("Write Interval", 1);
+    optParams.set<int>("Optimizer Iteration Number", -1);
   };
 
 
@@ -674,8 +671,7 @@ public:
       print = false;
     }
 
-    if(params != Teuchos::null)
-      params->set<int>("Optimizer Iteration Number", iter);
+    optParams.set<int>("Optimizer Iteration Number", iter);
   }
 
   void update( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType /*type*/, int iter = -1) {
@@ -719,7 +715,7 @@ private:
   Teuchos::RCP<ROL::Vector<Real> > grad2_ptr_;
   Teuchos::RCP<ROL::Vector<Real> > rol_z_ptr;
   Teuchos::RCP<ROL::Vector<Real> > rol_u_ptr;
-  Teuchos::RCP<Teuchos::ParameterList> params;
+  Teuchos::ParameterList& optParams;
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::EVerbosityLevel verbosityLevel;
   Teuchos::RCP<ROL_ObserverBase<Real>> observer;

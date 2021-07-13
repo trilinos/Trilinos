@@ -88,7 +88,7 @@ struct RemoveEntityFunctor
 
 struct DeclareRelationFunctor
 {
-  DeclareRelationFunctor(Bucket::size_type bucket_ordinal, Entity to, ConnectivityOrdinal ordinal,
+  DeclareRelationFunctor(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal,
                          Permutation permutation)
     : m_bucket_ordinal(bucket_ordinal),
       m_to(to),
@@ -107,7 +107,7 @@ struct DeclareRelationFunctor
     m_modified = connectivity.add_connectivity(m_bucket_ordinal, m_to, m_ordinal, m_permutation);
   }
 
-  Bucket::size_type m_bucket_ordinal;
+  unsigned m_bucket_ordinal;
   Entity m_to;
   ConnectivityOrdinal m_ordinal;
   Permutation m_permutation;
@@ -116,7 +116,7 @@ struct DeclareRelationFunctor
 
 struct DestroyRelationFunctor
 {
-  DestroyRelationFunctor(Bucket::size_type bucket_ordinal, Entity to, ConnectivityOrdinal ordinal)
+  DestroyRelationFunctor(unsigned bucket_ordinal, Entity to, ConnectivityOrdinal ordinal)
     : m_bucket_ordinal(bucket_ordinal),
       m_to(to),
       m_ordinal(ordinal),
@@ -133,7 +133,7 @@ struct DestroyRelationFunctor
     m_modified = connectivity.remove_connectivity(m_bucket_ordinal, m_to, m_ordinal);
   }
 
-  Bucket::size_type m_bucket_ordinal;
+  unsigned m_bucket_ordinal;
   Entity m_to;
   ConnectivityOrdinal m_ordinal;
   bool m_modified;
@@ -186,7 +186,7 @@ namespace impl {
 
 struct OverwriteEntityFunctor
 {
-  OverwriteEntityFunctor(Bucket::size_type old_ordinal, Bucket::size_type new_ordinal) : m_old_ordinal(old_ordinal), m_new_ordinal(new_ordinal) {}
+  OverwriteEntityFunctor(unsigned old_ordinal, unsigned new_ordinal) : m_old_ordinal(old_ordinal), m_new_ordinal(new_ordinal) {}
 
   template <EntityRank Rank, ConnectivityType OtherType, typename Connectivity>
   void operator()(Bucket& bucket, Connectivity& connectivity, Bucket* otherBucket)
@@ -201,8 +201,8 @@ struct OverwriteEntityFunctor
   static
   impl::BucketConnectivity<Rank, Type>& get_other_connectivity(Bucket* other_bucket);
 
-  Bucket::size_type m_old_ordinal;
-  Bucket::size_type m_new_ordinal;
+  unsigned m_old_ordinal;
+  unsigned m_new_ordinal;
 };
 
 }
@@ -483,14 +483,6 @@ void Bucket::supersets( OrdinalVector & ps ) const
 
 //----------------------------------------------------------------------
 
-bool Bucket::assert_correct() const {
-  // test equivalent() method
-
-  // other tests...
-
-  return true;
-}
-
 bool Bucket::field_data_is_allocated(const FieldBase& field) const
 {
     return field_is_allocated_for_bucket(field, *this);
@@ -560,7 +552,7 @@ struct EntityRankLess
   const BulkData *m_mesh;
 };
 
-size_t Bucket::get_others_begin_index(size_type bucket_ordinal, EntityRank rank) const
+unsigned Bucket::get_others_begin_index(unsigned bucket_ordinal, EntityRank rank) const
 {
   Entity const * const ents_begin = m_dynamic_other_connectivity.begin(bucket_ordinal);
   Entity const * const ents_end = m_dynamic_other_connectivity.end(bucket_ordinal);
@@ -572,7 +564,7 @@ size_t Bucket::get_others_begin_index(size_type bucket_ordinal, EntityRank rank)
   return probe - ents_begin;
 }
 
-size_t Bucket::get_others_end_index(size_type bucket_ordinal, EntityRank rank) const
+unsigned Bucket::get_others_end_index(unsigned bucket_ordinal, EntityRank rank) const
 {
   Entity const * const ents_begin = m_dynamic_other_connectivity.begin(bucket_ordinal);
   Entity const * const ents_end = m_dynamic_other_connectivity.end(bucket_ordinal);
@@ -584,7 +576,7 @@ size_t Bucket::get_others_end_index(size_type bucket_ordinal, EntityRank rank) c
   return probe - ents_begin;
 }
 
-size_t Bucket::get_others_index_count(size_type bucket_ordinal, EntityRank rank) const
+unsigned Bucket::get_others_index_count(unsigned bucket_ordinal, EntityRank rank) const
 {
   Entity const * const ents_begin = m_dynamic_other_connectivity.begin(bucket_ordinal);
   Entity const * const ents_end = m_dynamic_other_connectivity.end(bucket_ordinal);
@@ -656,7 +648,7 @@ void Bucket::reset_bucket_parts(const OrdinalVector& newPartOrdinals)
   supersets(m_parts);
 }
 
-void Bucket::initialize_slot(size_type ordinal, Entity entity)
+void Bucket::initialize_slot(unsigned ordinal, Entity entity)
 {
   mark_for_modification();
   m_entities[ordinal]    = entity;
@@ -665,16 +657,16 @@ void Bucket::initialize_slot(size_type ordinal, Entity entity)
   }
 }
 
-int Bucket::parallel_owner_rank(size_type ordinal) const
+int Bucket::parallel_owner_rank(unsigned ordinal) const
 {
   return m_mesh.parallel_owner_rank(m_entities[ordinal]);
 }
 
-void Bucket::reset_entity_location(Entity entity, size_type to_ordinal, const FieldVector* fields)
+void Bucket::reset_entity_location(Entity entity, unsigned to_ordinal, const FieldVector* fields)
 {
   mark_for_modification();
   Bucket & from_bucket = mesh().bucket(entity);
-  const Bucket::size_type from_ordinal = mesh().bucket_ordinal(entity);
+  const unsigned from_ordinal = mesh().bucket_ordinal(entity);
 
   m_entities[to_ordinal]    = entity;
 
@@ -706,14 +698,14 @@ void Bucket::add_entity(Entity entity)
 
 bool Bucket::destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id )
 {
-  const size_type from_bucket_ordinal = mesh().bucket_ordinal(e_from);
+  const unsigned from_bucket_ordinal = mesh().bucket_ordinal(e_from);
   DestroyRelationFunctor functor(from_bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id));
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
 
   return functor.m_modified;
 }
 
-bool Bucket::declare_relation(size_type bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation )
+bool Bucket::declare_relation(unsigned bucket_ordinal, Entity e_to, const ConnectivityOrdinal ordinal, Permutation permutation )
 {
   DeclareRelationFunctor functor(bucket_ordinal, e_to, ordinal, permutation);
   modify_connectivity(functor, m_mesh.entity_rank(e_to));
@@ -746,7 +738,7 @@ void Bucket::copy_entity(Entity entity)
 
   mark_for_modification();
   Bucket* old_bucket = mesh().bucket_ptr(entity);
-  const Bucket::size_type old_ordinal = mesh().bucket_ordinal(entity);
+  const unsigned old_ordinal = mesh().bucket_ordinal(entity);
 
   this->mesh().add_entity_callback(this->entity_rank(), this->bucket_id(), m_size);
   reset_entity_location(entity, m_size);
@@ -814,7 +806,7 @@ void Bucket::copy_entity(Entity entity)
   old_bucket->m_dynamic_other_connectivity.copy_entity(old_ordinal, m_dynamic_other_connectivity);
 }
 
-void Bucket::overwrite_entity(size_type to_ordinal, Entity entity, const FieldVector* fields)
+void Bucket::overwrite_entity(unsigned to_ordinal, Entity entity, const FieldVector* fields)
 {
   ThrowAssert(to_ordinal < m_capacity);
   ThrowAssert(mesh().is_valid(entity));
