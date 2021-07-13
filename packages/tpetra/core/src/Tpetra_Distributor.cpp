@@ -390,17 +390,7 @@ namespace Tpetra {
   void
   Distributor::doWaits()
   {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*actor_.timer_doWaits_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    if (actor_.requests_.size() > 0) {
-      Teuchos::waitAll(*plan_.comm_, actor_.requests_());
-
-      // Restore the invariant that requests_.size() is the number of
-      // outstanding nonblocking communication requests.
-      actor_.requests_.resize (0);
-    }
+    actor_.doWaits(plan_);
   }
 
   void Distributor::doReverseWaits() {

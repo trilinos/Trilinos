@@ -75,6 +75,8 @@ public:
           const ImpView &imports,
           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
+  void doWaits(const DistributorPlan& plan);
+
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
