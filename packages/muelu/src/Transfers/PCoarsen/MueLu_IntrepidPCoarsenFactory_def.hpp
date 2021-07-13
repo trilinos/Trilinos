@@ -293,24 +293,27 @@ void GenerateLoNodeInHiViaGIDs(const std::vector<std::vector<size_t> > & candida
    size_t lo_nperel   = candidates.size();
    Kokkos::resize(lo_elemToHiRepresentativeNode,numElem, lo_nperel);
 
-
+   auto lo_elemToHiRepresentativeNode_host = Kokkos::create_mirror_view(lo_elemToHiRepresentativeNode);
+   auto hi_elemToNode_host = Kokkos::create_mirror_view(hi_elemToNode);
+   Kokkos::deep_copy(hi_elemToNode_host, hi_elemToNode);
    for(size_t i=0; i<numElem; i++)
      for(size_t j=0; j<lo_nperel; j++) {
        if(candidates[j].size() == 1)
-         lo_elemToHiRepresentativeNode(i,j) =  hi_elemToNode(i,candidates[j][0]);
+         lo_elemToHiRepresentativeNode_host(i,j) =  hi_elemToNode_host(i,candidates[j][0]);
        else {
          // First we get the GIDs for each candidate
          std::vector<GO> GID(candidates[j].size());
          for(size_t k=0; k<(size_t)candidates[j].size(); k++)
-           GID[k] = hi_columnMap->getGlobalElement(hi_elemToNode(i,candidates[j][k]));
+           GID[k] = hi_columnMap->getGlobalElement(hi_elemToNode_host(i,candidates[j][k]));
 
          // Find the one with smallest GID
          size_t which = std::distance(GID.begin(),std::min_element(GID.begin(),GID.end()));
 
          // Record this
-         lo_elemToHiRepresentativeNode(i,j) =  hi_elemToNode(i,candidates[j][which]);
+         lo_elemToHiRepresentativeNode_host(i,j) =  hi_elemToNode_host(i,candidates[j][which]);
        }
      }
+   Kokkos::deep_copy(lo_elemToHiRepresentativeNode, lo_elemToHiRepresentativeNode_host);
 }
 
 /*********************************************************************************************************/
@@ -340,10 +343,12 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
   Kokkos::resize(lo_elemToNode,numElem, lo_nperel);
 
   // Start by flagginc the representative nodes
+  auto lo_elemToHiRepresentativeNode_host = Kokkos::create_mirror_view(lo_elemToHiRepresentativeNode);
+  Kokkos::deep_copy(lo_elemToHiRepresentativeNode_host, lo_elemToHiRepresentativeNode);
   std::vector<bool> is_low_order(hi_numNodes,false);
   for(size_t i=0; i<numElem; i++)
     for(size_t j=0; j<lo_nperel; j++) {
-      LO id = lo_elemToHiRepresentativeNode(i,j);
+      LO id = lo_elemToHiRepresentativeNode_host(i,j);
       is_low_order[id] = true; // This can overwrite and that is OK.
     }
 
@@ -367,9 +372,10 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
   }
 
   // Translate lo_elemToNode to a lo local index
+  auto lo_elemToNode_host = Kokkos::create_mirror_view(lo_elemToNode);
   for(size_t i=0; i<numElem; i++)
     for(size_t j=0; j<lo_nperel; j++)
-      lo_elemToNode(i,j) = hi_to_lo_map[lo_elemToHiRepresentativeNode(i,j)];
+      lo_elemToNode_host(i,j) = hi_to_lo_map[lo_elemToHiRepresentativeNode_host(i,j)];
 
 
   // Check for the [E|T]petra column map ordering property, namely LIDs for owned nodes should all appear first.
@@ -381,6 +387,7 @@ void BuildLoElemToNodeViaRepresentatives(const LOFieldContainer & hi_elemToNode,
 
   if(!map_ordering_test_passed)
     throw std::runtime_error("MueLu::MueLuIntrepid::BuildLoElemToNodeViaRepresentatives failed map ordering test");
+  Kokkos::deep_copy(lo_elemToNode, lo_elemToNode_host);
 
 }
 
@@ -560,15 +567,17 @@ void GenerateRepresentativeBasisNodes(const Basis & basis, const SCFieldContaine
 #endif
 
   representative_node_candidates.resize(numFieldsLo);
+  auto LoValues_host = Kokkos::create_mirror_view(LoValues);
+  Kokkos::deep_copy(LoValues_host, LoValues);
   for(size_t i=0; i<numFieldsLo; i++) {
     // 1st pass: find the max value
     typename Teuchos::ScalarTraits<SC>::magnitudeType vmax = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<SC>::magnitudeType>::zero();
     for(size_t j=0; j<numFieldsHi; j++)
-      vmax = std::max(vmax,Teuchos::ScalarTraits<SC>::magnitude(LoValues(i,j)));
+      vmax = std::max(vmax,Teuchos::ScalarTraits<SC>::magnitude(LoValues_host(i,j)));
 
     // 2nd pass: Find all values w/i threshhold of target
     for(size_t j=0; j<numFieldsHi; j++) {
-      if(Teuchos::ScalarTraits<SC>::magnitude(vmax - LoValues(i,j)) < threshold*vmax)
+      if(Teuchos::ScalarTraits<SC>::magnitude(vmax - LoValues_host(i,j)) < threshold*vmax)
         representative_node_candidates[i].push_back(j);
     }
   }
