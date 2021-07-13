@@ -416,6 +416,10 @@ namespace MueLuTests {
     template<class ArrayScalar, class ArrayOrdinal>
     void getIDs(const ArrayScalar &points, ArrayOrdinal &globalIDs)
     {
+
+      auto points_host = Kokkos::create_mirror_view(points);
+      auto globalIDs_host = Kokkos::create_mirror_view(globalIDs);
+      Kokkos::deep_copy(points_host, points);
       int spaceDim = _knownCoords.size();
       TEUCHOS_TEST_FOR_EXCEPTION(spaceDim != (int) points.extent(points.rank()-1), std::invalid_argument, "final extent of points container must equal spaceDim");
       if (points.rank() == 2)
@@ -426,9 +430,9 @@ namespace MueLuTests {
           vector<double> coords(spaceDim);
           for (int d=0; d<spaceDim; d++)
           {
-            coords[d] = points(pointOrdinal,d);
+            coords[d] = points_host(pointOrdinal,d);
           }
-          globalIDs(pointOrdinal) = getGlobalID(coords);
+          globalIDs_host(pointOrdinal) = getGlobalID(coords);
         }
       }
       else if (points.rank() == 3)
@@ -442,9 +446,9 @@ namespace MueLuTests {
             vector<double> coords(spaceDim);
             for (int d=0; d<spaceDim; d++)
             {
-              coords[d] = points(cellOrdinal,pointOrdinal,d);
+              coords[d] = points_host(cellOrdinal,pointOrdinal,d);
             }
-            globalIDs(cellOrdinal,pointOrdinal) = getGlobalID(coords);
+            globalIDs_host(cellOrdinal,pointOrdinal) = getGlobalID(coords);
           }
         }
       }
@@ -452,6 +456,7 @@ namespace MueLuTests {
       {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "points must be a rank 2 or rank 3 container");
       }
+      Kokkos::deep_copy(globalIDs, globalIDs_host);
     }
     int getGlobalID(const vector<double> &coords)
     {
@@ -506,47 +511,48 @@ namespace MueLuTests {
 
     subcellCountForDimension.resize(spaceDim+1);
     subcellCountForDimension[spaceDim] = numCells;
+    auto cellWorkset_host = Kokkos::create_mirror_view(cellWorkset);
     if (spaceDim == 1)
     {
       // line
-      cellWorkset(0,0,0) = 0.0;
-      cellWorkset(0,1,0) = 1.0;
-      cellWorkset(1,0,0) = 1.0;
-      cellWorkset(1,1,0) = 2.0;
-      cellWorkset(2,0,0) = 2.0;
-      cellWorkset(2,1,0) = 3.0;
+      cellWorkset_host(0,0,0) = 0.0;
+      cellWorkset_host(0,1,0) = 1.0;
+      cellWorkset_host(1,0,0) = 1.0;
+      cellWorkset_host(1,1,0) = 2.0;
+      cellWorkset_host(2,0,0) = 2.0;
+      cellWorkset_host(2,1,0) = 3.0;
       subcellCountForDimension[0] = 4; // 3 cells x 2 vertices - (2 interior vertices)
     }
     else if ((spaceDim == 2) && (vertexCount == 4))
     {
       // quad
       // first element: LL @ (0,1), UR @ (1,2)
-      cellWorkset(0,0,0) = 0.0;
-      cellWorkset(0,0,1) = 1.0;
-      cellWorkset(0,1,0) = 1.0;
-      cellWorkset(0,1,1) = 1.0;
-      cellWorkset(0,2,0) = 1.0;
-      cellWorkset(0,2,1) = 2.0;
-      cellWorkset(0,3,0) = 0.0;
-      cellWorkset(0,3,1) = 2.0;
+      cellWorkset_host(0,0,0) = 0.0;
+      cellWorkset_host(0,0,1) = 1.0;
+      cellWorkset_host(0,1,0) = 1.0;
+      cellWorkset_host(0,1,1) = 1.0;
+      cellWorkset_host(0,2,0) = 1.0;
+      cellWorkset_host(0,2,1) = 2.0;
+      cellWorkset_host(0,3,0) = 0.0;
+      cellWorkset_host(0,3,1) = 2.0;
       // second element: LL @ (0,0), UR @ (1,1)
-      cellWorkset(1,0,0) = 0.0;
-      cellWorkset(1,0,1) = 0.0;
-      cellWorkset(1,1,0) = 1.0;
-      cellWorkset(1,1,1) = 0.0;
-      cellWorkset(1,2,0) = 1.0;
-      cellWorkset(1,2,1) = 1.0;
-      cellWorkset(1,3,0) = 0.0;
-      cellWorkset(1,3,1) = 1.0;
+      cellWorkset_host(1,0,0) = 0.0;
+      cellWorkset_host(1,0,1) = 0.0;
+      cellWorkset_host(1,1,0) = 1.0;
+      cellWorkset_host(1,1,1) = 0.0;
+      cellWorkset_host(1,2,0) = 1.0;
+      cellWorkset_host(1,2,1) = 1.0;
+      cellWorkset_host(1,3,0) = 0.0;
+      cellWorkset_host(1,3,1) = 1.0;
       // third element: LL @ (1,0), UR @ (2,1)
-      cellWorkset(2,0,0) = 1.0;
-      cellWorkset(2,0,1) = 0.0;
-      cellWorkset(2,1,0) = 2.0;
-      cellWorkset(2,1,1) = 0.0;
-      cellWorkset(2,2,0) = 2.0;
-      cellWorkset(2,2,1) = 1.0;
-      cellWorkset(2,3,0) = 1.0;
-      cellWorkset(2,3,1) = 1.0;
+      cellWorkset_host(2,0,0) = 1.0;
+      cellWorkset_host(2,0,1) = 0.0;
+      cellWorkset_host(2,1,0) = 2.0;
+      cellWorkset_host(2,1,1) = 0.0;
+      cellWorkset_host(2,2,0) = 2.0;
+      cellWorkset_host(2,2,1) = 1.0;
+      cellWorkset_host(2,3,0) = 1.0;
+      cellWorkset_host(2,3,1) = 1.0;
       subcellCountForDimension[0] = 12-2-1*2; // 3 cells x 4 vertices - (2 vertices seen by 2 cells, 1 vertex seen by 3 cells)
       subcellCountForDimension[1] = 12-2;   // 3 cells x 4 edges - (2 shared edges)
     }
@@ -554,80 +560,80 @@ namespace MueLuTests {
     {
       // hex: same geometry as quad, but extruded in z from 0 to 1
       // first element: LL @ (0,1), UR @ (1,2)
-      cellWorkset(0,0,0) = 0.0;
-      cellWorkset(0,0,1) = 1.0;
-      cellWorkset(0,0,2) = 0.0;
-      cellWorkset(0,1,0) = 1.0;
-      cellWorkset(0,1,1) = 1.0;
-      cellWorkset(0,1,2) = 0.0;
-      cellWorkset(0,2,0) = 1.0;
-      cellWorkset(0,2,1) = 2.0;
-      cellWorkset(0,2,2) = 0.0;
-      cellWorkset(0,3,0) = 0.0;
-      cellWorkset(0,3,1) = 2.0;
-      cellWorkset(0,3,2) = 0.0;
-      cellWorkset(0,4,0) = 0.0;
-      cellWorkset(0,4,1) = 1.0;
-      cellWorkset(0,4,2) = 1.0;
-      cellWorkset(0,5,0) = 1.0;
-      cellWorkset(0,5,1) = 1.0;
-      cellWorkset(0,5,2) = 1.0;
-      cellWorkset(0,6,0) = 1.0;
-      cellWorkset(0,6,1) = 2.0;
-      cellWorkset(0,6,2) = 1.0;
-      cellWorkset(0,7,0) = 0.0;
-      cellWorkset(0,7,1) = 2.0;
-      cellWorkset(0,7,2) = 1.0;
+      cellWorkset_host(0,0,0) = 0.0;
+      cellWorkset_host(0,0,1) = 1.0;
+      cellWorkset_host(0,0,2) = 0.0;
+      cellWorkset_host(0,1,0) = 1.0;
+      cellWorkset_host(0,1,1) = 1.0;
+      cellWorkset_host(0,1,2) = 0.0;
+      cellWorkset_host(0,2,0) = 1.0;
+      cellWorkset_host(0,2,1) = 2.0;
+      cellWorkset_host(0,2,2) = 0.0;
+      cellWorkset_host(0,3,0) = 0.0;
+      cellWorkset_host(0,3,1) = 2.0;
+      cellWorkset_host(0,3,2) = 0.0;
+      cellWorkset_host(0,4,0) = 0.0;
+      cellWorkset_host(0,4,1) = 1.0;
+      cellWorkset_host(0,4,2) = 1.0;
+      cellWorkset_host(0,5,0) = 1.0;
+      cellWorkset_host(0,5,1) = 1.0;
+      cellWorkset_host(0,5,2) = 1.0;
+      cellWorkset_host(0,6,0) = 1.0;
+      cellWorkset_host(0,6,1) = 2.0;
+      cellWorkset_host(0,6,2) = 1.0;
+      cellWorkset_host(0,7,0) = 0.0;
+      cellWorkset_host(0,7,1) = 2.0;
+      cellWorkset_host(0,7,2) = 1.0;
       // second element: LL @ (0,0), UR @ (1,1)
-      cellWorkset(1,0,0) = 0.0;
-      cellWorkset(1,0,1) = 0.0;
-      cellWorkset(1,0,2) = 0.0;
-      cellWorkset(1,1,0) = 1.0;
-      cellWorkset(1,1,1) = 0.0;
-      cellWorkset(1,1,2) = 0.0;
-      cellWorkset(1,2,0) = 1.0;
-      cellWorkset(1,2,1) = 1.0;
-      cellWorkset(1,2,2) = 0.0;
-      cellWorkset(1,3,0) = 0.0;
-      cellWorkset(1,3,1) = 1.0;
-      cellWorkset(1,3,2) = 0.0;
-      cellWorkset(1,4,0) = 0.0;
-      cellWorkset(1,4,1) = 0.0;
-      cellWorkset(1,4,2) = 1.0;
-      cellWorkset(1,5,0) = 1.0;
-      cellWorkset(1,5,1) = 0.0;
-      cellWorkset(1,5,2) = 1.0;
-      cellWorkset(1,6,0) = 1.0;
-      cellWorkset(1,6,1) = 1.0;
-      cellWorkset(1,6,2) = 1.0;
-      cellWorkset(1,7,0) = 0.0;
-      cellWorkset(1,7,1) = 1.0;
-      cellWorkset(1,7,2) = 1.0;
+      cellWorkset_host(1,0,0) = 0.0;
+      cellWorkset_host(1,0,1) = 0.0;
+      cellWorkset_host(1,0,2) = 0.0;
+      cellWorkset_host(1,1,0) = 1.0;
+      cellWorkset_host(1,1,1) = 0.0;
+      cellWorkset_host(1,1,2) = 0.0;
+      cellWorkset_host(1,2,0) = 1.0;
+      cellWorkset_host(1,2,1) = 1.0;
+      cellWorkset_host(1,2,2) = 0.0;
+      cellWorkset_host(1,3,0) = 0.0;
+      cellWorkset_host(1,3,1) = 1.0;
+      cellWorkset_host(1,3,2) = 0.0;
+      cellWorkset_host(1,4,0) = 0.0;
+      cellWorkset_host(1,4,1) = 0.0;
+      cellWorkset_host(1,4,2) = 1.0;
+      cellWorkset_host(1,5,0) = 1.0;
+      cellWorkset_host(1,5,1) = 0.0;
+      cellWorkset_host(1,5,2) = 1.0;
+      cellWorkset_host(1,6,0) = 1.0;
+      cellWorkset_host(1,6,1) = 1.0;
+      cellWorkset_host(1,6,2) = 1.0;
+      cellWorkset_host(1,7,0) = 0.0;
+      cellWorkset_host(1,7,1) = 1.0;
+      cellWorkset_host(1,7,2) = 1.0;
       // third element: LL @ (1,0), UR @ (2,1)
-      cellWorkset(2,0,0) = 1.0;
-      cellWorkset(2,0,1) = 0.0;
-      cellWorkset(2,0,2) = 0.0;
-      cellWorkset(2,1,0) = 2.0;
-      cellWorkset(2,1,1) = 0.0;
-      cellWorkset(2,1,2) = 0.0;
-      cellWorkset(2,2,0) = 2.0;
-      cellWorkset(2,2,1) = 1.0;
-      cellWorkset(2,2,2) = 0.0;
-      cellWorkset(2,3,0) = 1.0;
-      cellWorkset(2,3,1) = 1.0;
-      cellWorkset(2,3,2) = 0.0;
-      cellWorkset(2,4,0) = 1.0;
-      cellWorkset(2,4,1) = 0.0;
-      cellWorkset(2,4,2) = 1.0;
-      cellWorkset(2,5,0) = 2.0;
-      cellWorkset(2,5,1) = 0.0;
-      cellWorkset(2,5,2) = 1.0;
-      cellWorkset(2,6,0) = 2.0;
-      cellWorkset(2,6,1) = 1.0;
-      cellWorkset(2,6,2) = 1.0;
-      cellWorkset(2,7,0) = 1.0;
-      cellWorkset(2,7,1) = 1.0;
-      cellWorkset(2,7,2) = 1.0;
+      cellWorkset_host(2,0,0) = 1.0;
+      cellWorkset_host(2,0,1) = 0.0;
+      cellWorkset_host(2,0,2) = 0.0;
+      cellWorkset_host(2,1,0) = 2.0;
+      cellWorkset_host(2,1,1) = 0.0;
+      cellWorkset_host(2,1,2) = 0.0;
+      cellWorkset_host(2,2,0) = 2.0;
+      cellWorkset_host(2,2,1) = 1.0;
+      cellWorkset_host(2,2,2) = 0.0;
+      cellWorkset_host(2,3,0) = 1.0;
+      cellWorkset_host(2,3,1) = 1.0;
+      cellWorkset_host(2,3,2) = 0.0;
+      cellWorkset_host(2,4,0) = 1.0;
+      cellWorkset_host(2,4,1) = 0.0;
+      cellWorkset_host(2,4,2) = 1.0;
+      cellWorkset_host(2,5,0) = 2.0;
+      cellWorkset_host(2,5,1) = 0.0;
+      cellWorkset_host(2,5,2) = 1.0;
+      cellWorkset_host(2,6,0) = 2.0;
+      cellWorkset_host(2,6,1) = 1.0;
+      cellWorkset_host(2,6,2) = 1.0;
+      cellWorkset_host(2,7,0) = 1.0;
+      cellWorkset_host(2,7,1) = 1.0;
+      cellWorkset_host(2,7,2) = 1.0;
       subcellCountForDimension[0] = 24-4*1-2*2; // 3 cells x 8 vertices - (4 vertices seen by 2 cells, 2 vertices seen by 3 cells)
       subcellCountForDimension[1] = 36-6*1-1*2; // 3 cells x 12 edges - (6 edges seen by 2 cells, 1 edge seen by 3 cells)
       subcellCountForDimension[2] = 18-2*1;     // 3 cells x 6 faces - (2 faces seen by 2 cells)
@@ -638,6 +644,7 @@ namespace MueLuTests {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unimplemented test case");
     }
 
+    Kokkos::deep_copy(cellWorkset, cellWorkset_host);
     CellTools::mapToPhysicalFrame(cellDofCoords, refDofCoords, cellWorkset, cellTopo);
 
     Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
@@ -651,16 +658,20 @@ namespace MueLuTests {
     // store ordinals in a set for easy uniquing
     vector<set<int>> ordinalsForSubcellDimensionSet(spaceDim+1);
 
+    auto cellDofIDs_host = Kokkos::create_mirror_view(cellDofIDs);
+    auto elemToNodeMap_host = Kokkos::create_mirror_view(elemToNodeMap);
+    Kokkos::deep_copy(cellDofIDs_host,cellDofIDs);
     for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
     {
       for (int dofOrdinal=0; dofOrdinal<numDofsPerCell; dofOrdinal++)
       {
         int subcellDofDim = basis->getDofTag(dofOrdinal)[tagOrdSubcellDim];
-        int globalID = cellDofIDs(cellOrdinal,dofOrdinal);
+        int globalID = cellDofIDs_host(cellOrdinal,dofOrdinal);
         ordinalsForSubcellDimensionSet[subcellDofDim].insert(globalID);
-        elemToNodeMap(cellOrdinal,dofOrdinal) = globalID;
+        elemToNodeMap_host(cellOrdinal,dofOrdinal) = globalID;
       }
     }
+    Kokkos::deep_copy(elemToNodeMap, elemToNodeMap_host);
     ordinalsForSubcellDimension.clear();
     for (int d=0; d<spaceDim+1; d++)
     {
@@ -682,8 +693,8 @@ namespace MueLuTests {
     typedef Kokkos::DynRankView<OT,typename Node::device_type> FCO; // FC of ordinals
     typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
 
-    FC physDofCoords;
-    FCO cellGIDs;
+    typename FC::HostMirror physDofCoords;
+    typename FCO::HostMirror cellGIDs;
     std::vector<std::vector<LocalOrdinal> > expectedGIDs = {{ 0, 1, 2, 3, 4, 5, 6, 7, 8},
       { 9,10,11,12,13,14, 0, 1, 2},
       {11,15,16,14,17,18, 2,19,20}};

@@ -678,7 +678,11 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   FC LoValues_at_HiDofs("LoValues_at_HiDofs",numFieldsLo,numFieldsHi);
   lo_basis.getValues(LoValues_at_HiDofs, hi_DofCoords, Intrepid2::OPERATOR_VALUE);
   auto LoValues_at_HiDofs_host = Kokkos::create_mirror_view(LoValues_at_HiDofs);
+  auto hi_elemToNode_host = Kokkos::create_mirror_view(hi_elemToNode);
+  auto lo_elemToHiRepresentativeNode_host = Kokkos::create_mirror_view(lo_elemToHiRepresentativeNode);
   Kokkos::deep_copy(LoValues_at_HiDofs_host, LoValues_at_HiDofs);
+  Kokkos::deep_copy(hi_elemToNode_host, hi_elemToNode);
+  Kokkos::deep_copy(lo_elemToHiRepresentativeNode_host, lo_elemToHiRepresentativeNode);
   Kokkos::fence(); // for kernel in getValues
 
   typedef typename Teuchos::ScalarTraits<SC>::halfPrecision SClo;
@@ -696,12 +700,12 @@ void IntrepidPCoarsenFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Generat
   Teuchos::Array<SC> val(1);
   for(size_t i=0; i<Nelem; i++) {
     for(size_t j=0; j<numFieldsHi; j++) {
-      LO row_lid = hi_elemToNode(i,j);
+      LO row_lid = hi_elemToNode_host(i,j);
       GO row_gid = hi_map->getGlobalElement(row_lid);
       if(hi_nodeIsOwned[row_lid] && !touched[row_lid]) {
         for(size_t k=0; k<numFieldsLo; k++) {
           // Get the local id in P1's column map
-          LO col_lid = hi_to_lo_map[lo_elemToHiRepresentativeNode(i,k)];
+          LO col_lid = hi_to_lo_map[lo_elemToHiRepresentativeNode_host(i,k)];
           col_gid[0] = {lo_colMap->getGlobalElement(col_lid)};
           val[0]     = LoValues_at_HiDofs_host(k,j);
 
