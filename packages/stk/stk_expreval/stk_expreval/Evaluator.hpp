@@ -43,6 +43,7 @@
 #include <set>
 #include <stdexcept>
 #include <cctype>
+#include <memory>
 
 #include <stk_expreval/Function.hpp>
 #include <stk_expreval/Constants.hpp>
@@ -71,8 +72,9 @@ public:
   Eval(VariableMap::Resolver &resolver = VariableMap::getDefaultResolver(), const std::string &expr = "", const Variable::ArrayOffset arrayOffsetType = Variable::ZERO_BASED_INDEX);
   explicit Eval(const std::string &expr, const Variable::ArrayOffset arrayOffsetType = Variable::ZERO_BASED_INDEX);
 
+  Eval(const Eval &);
+
 private:
-  explicit Eval(const Eval &);
   Eval &operator=(const Eval &);
 
 public:
@@ -117,6 +119,15 @@ public:
     return m_variableMap.getMyThreadEntry();
   }
 
+  bool is_constant_expression() const;
+
+  bool is_variable(const std::string& variableName) const; 
+ 
+  std::vector<std::string> get_variable_names() const;
+
+  std::vector<std::string> get_dependent_variable_names() const;
+
+  std::vector<std::string> get_independent_variable_names() const;
   /**
    * @brief Member function <b>getUndefinedFunctionSet</b> returns a reference to the
    * variable map of this expression.
@@ -309,8 +320,8 @@ private:
   bool			m_syntaxStatus;		///< True if syntax is correct
   bool			m_parseStatus;		///< True if parsed successfully
 
-  stk::ThreadLocalData<Node *>		m_headNode;		///< Head of compiled expression
-  stk::ThreadLocalData<std::vector<Node *>> m_nodes;                ///< Allocated nodes
+  stk::ThreadLocalData<Node*>		m_headNode;		///< Head of compiled expression
+  stk::ThreadLocalData<std::vector<std::shared_ptr<Node>>> m_nodes;                ///< Allocated nodes
   Variable::ArrayOffset m_arrayOffsetType;      ///< Zero or one based array indexing
 };
 

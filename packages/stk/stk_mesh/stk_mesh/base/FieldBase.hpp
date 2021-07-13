@@ -37,7 +37,7 @@
 
 #include <stddef.h>                     // for NULL
 #include <iosfwd>                       // for ostream
-#include <stk_mesh/base/Bucket.hpp>     // for Bucket, Bucket::size_type
+#include <stk_mesh/base/Bucket.hpp>     // for Bucket
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction, etc
 #include <stk_mesh/base/FieldState.hpp>  // for FieldState
@@ -461,14 +461,14 @@ debug_stale_access_entity_check(const FieldBase & stkField, const Entity & entit
 
 template <typename StkDebugger>
 typename std::enable_if<std::is_same<StkDebugger, EmptyStkFieldSyncDebugger>::value, void>::type
-debug_stale_access_entity_check(const FieldBase & stkField, const unsigned bucketId, Bucket::size_type bucketOrd,
+debug_stale_access_entity_check(const FieldBase & stkField, const unsigned bucketId, unsigned bucketOrd,
                                 const char * fileName, int lineNumber)
 {
 }
 
 template <typename StkDebugger>
 typename std::enable_if<std::is_same<StkDebugger, StkFieldSyncDebugger>::value, void>::type
-debug_stale_access_entity_check(const FieldBase & stkField, const unsigned bucketId, Bucket::size_type bucketOrd,
+debug_stale_access_entity_check(const FieldBase & stkField, const unsigned bucketId, unsigned bucketOrd,
                                 const char * fileName, int lineNumber)
 {
   if (stkField.has_ngp_field()) {
@@ -516,7 +516,7 @@ debug_stale_access_bucket_check(const FieldBase & stkField, const unsigned & buc
 template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord, const int knownSize,
+field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord, const int knownSize,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   ThrowAssertMsg(f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity >= knownSize,
@@ -544,7 +544,7 @@ field_data(const FieldType & f, const unsigned bucket_id,
 template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type bucket_ord,
+field_data(const FieldType & f, const unsigned bucket_id, unsigned bucket_ord,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   debug_stale_access_entity_check<StkDebugger>(static_cast<const FieldBase&>(f), bucket_id, bucket_ord, fileName, lineNumber);
@@ -556,7 +556,7 @@ field_data(const FieldType & f, const unsigned bucket_id, Bucket::size_type buck
 template<class FieldType, typename StkDebugger = DefaultStkFieldSyncDebugger>
 inline
 typename FieldTraits<FieldType>::data_type*
-field_data(const FieldType & f, const Bucket& b, Bucket::size_type bucket_ord,
+field_data(const FieldType & f, const Bucket& b, unsigned bucket_ord,
            DummyOverload dummyArg = DummyOverload(), const char * fileName = HOST_DEBUG_FILE_NAME, int lineNumber = HOST_DEBUG_LINE_NUMBER)
 {
   ThrowAssert(f.entity_rank() == b.entity_rank());

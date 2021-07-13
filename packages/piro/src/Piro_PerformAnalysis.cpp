@@ -268,11 +268,8 @@ Piro::PerformROLAnalysis(
     }
   }
 
-  RCP<Teuchos::ParameterList> opt_paramList = Teuchos::rcp(&appParams.sublist("Optimization Status"),false);
-  if(appParams.isParameter("Enable Explicit Matrix Transpose")) {
-    opt_paramList->set("Enable Explicit Matrix Transpose", appParams.get<bool>("Enable Explicit Matrix Transpose"));
-  }
-  opt_paramList->set("Parameter Names", Teuchos::rcpFromRef(p_names));
+  //set names of parameters in the "Optimization Status" sublist
+  appParams.sublist("Optimization Status").set("Parameter Names", Teuchos::rcpFromRef(p_names));
 
   Teuchos::Array<Teuchos::RCP<Thyra::VectorSpaceBase<double> const>> p_spaces(num_parameters);
   Teuchos::Array<Teuchos::RCP<Thyra::VectorBase<double>>> p_vecs(num_parameters);
@@ -302,8 +299,8 @@ Piro::PerformROLAnalysis(
   Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
   ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
-  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, opt_paramList, verbosityLevel, observer);
-  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, opt_paramList, verbosityLevel, observer);
+  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, appParams, verbosityLevel, observer);
+  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, appParams, verbosityLevel, observer);
 
   constr.setSolveParameters(rolParams.sublist("ROL Options"));
 
@@ -651,7 +648,6 @@ Piro::getValidPiroAnalysisParameters()
   validPL->sublist("Dakota",    false, "");
   validPL->sublist("ROL",       false, "");
   validPL->set<int>("Write Interval", 1, "Iterval between writes to mesh");
-  validPL->set<bool>("Enable Explicit Matrix Transpose", false, "Wether to explicitly transpose the matrix when needed");
 
   return validPL;
 }

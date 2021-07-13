@@ -233,7 +233,7 @@ struct fecomp{
 template<class Container>
 double distance(Container &nodeCoord, int i1, int i2) {
   double dist = 0.0;
-  for(int j=0; j<3; j++) 
+  for(int j=0; j<3; j++)
     dist+= SQR( nodeCoord(i1,j) - nodeCoord(i2,j) );
   return sqrt(dist);
 }
@@ -541,11 +541,11 @@ int body(int argc, char *argv[]) {
 
   // Get the solver name from input deck or command line
   if(solverName == "default") {
-    if(inputList.isParameter("Preconditioner")) 
+    if(inputList.isParameter("Preconditioner"))
       solverName=inputList.get("Preconditioner","MueLu");
     else
       solverName="MueLu";
-  }  
+  }
 
 
 
@@ -700,7 +700,7 @@ int body(int argc, char *argv[]) {
       }
       muVal(telct) = mu[b];
       sigmaVal(telct) = sigma[b];
-      
+
       telct ++;
     }
   }
@@ -1024,8 +1024,8 @@ int body(int argc, char *argv[]) {
   for (int i=0; i<numEdges; i++)
     overlappedEdges[i]=(GO)globalEdgeIds[i];
   RCP<const Tpetra_Map> overlapMapC = rcp(new Tpetra_Map(GST_INVALID,overlappedEdges,0,comm));
- 
-  
+
+
   if (jiggle) {
     /***********************************************************************************/
     /* This block of code will create a randomly perturbed mesh by jiggling the node   */
@@ -1056,7 +1056,7 @@ int body(int argc, char *argv[]) {
       if (!nodeOnBoundary(inode)) {
         double rx = displacement.getData(0)[inode];
         double ry = displacement.getData(1)[inode];
-        double rz = displacement.getData(2)[inode]; 
+        double rz = displacement.getData(2)[inode];
 
         nodeCoord(inode,0) = nodeCoord(inode,0) + fac * hx * rx;
         nodeCoord(inode,1) = nodeCoord(inode,1) + fac * hy * ry;
@@ -1174,22 +1174,22 @@ int body(int argc, char *argv[]) {
   RCP<Tpetra_FECrsGraph> EdgeGraph = rcp(new Tpetra_FECrsGraph(globalMapC,overlapMapC,27*numFieldsC));
   RCP<Tpetra_FECrsGraph> NodeGraph = rcp(new Tpetra_FECrsGraph(globalMapG,overlapMapG,9*numFieldsG));
 
-  Tpetra::beginFill(*EdgeGraph,*NodeGraph);
-  for(int workset = 0; workset < numWorksets; workset++){    
+  Tpetra::beginAssembly(*EdgeGraph,*NodeGraph);
+  for(int workset = 0; workset < numWorksets; workset++){
     // Compute cell numbers where the workset starts and ends
     //    int worksetSize  = 0;
     int worksetBegin = (workset + 0)*desiredWorksetSize;
     int worksetEnd   = (workset + 1)*desiredWorksetSize;
-    
+
     // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
     worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
-    
+
     // Now we know the actual workset size and can allocate the array for the cell nodes
     //    worksetSize  = worksetEnd - worksetBegin;
 
     // Loop over workset cells
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
-      
+
       /*** Assemble H(grad) mass matrix ***/
       // loop over nodes for matrix row
       for (int cellNodeRow = 0; cellNodeRow < numFieldsG; cellNodeRow++){
@@ -1199,7 +1199,7 @@ int body(int argc, char *argv[]) {
         // loop over nodes for matrix column
         for (int cellNodeCol = 0; cellNodeCol < numFieldsG; cellNodeCol++){
           int localNodeCol = elemToNode(cell, cellNodeCol);
-          GO globalNodeCol = (GO) globalNodeIds[localNodeCol];          
+          GO globalNodeCol = (GO) globalNodeIds[localNodeCol];
           NodeGraph->insertGlobalIndices(globalNodeRow,1,&globalNodeCol);
 
         }// *** cell node col loop ***
@@ -1223,7 +1223,7 @@ int body(int argc, char *argv[]) {
 
     }// *** workset cell loop **
   }// *** workset loop ***
-  Tpetra::endFill(*EdgeGraph,*NodeGraph);
+  Tpetra::endAssembly(*EdgeGraph,*NodeGraph);
 
   /**********************************************************************************/
   /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
@@ -1261,8 +1261,8 @@ int body(int argc, char *argv[]) {
   RCP<const Tpetra_Map> globalMapElem = rcp(new Tpetra_Map(numElemsGlobal, numElems, 0, comm));
 
   // Put coordinates in multivector for output
-  Tpetra_MultiVector nCoord(globalMapG,3);  
-  {  
+  Tpetra_MultiVector nCoord(globalMapG,3);
+  {
     auto Nx_data=nCoord.getDataNonConst(0);
     auto Ny_data=nCoord.getDataNonConst(1);
     auto Nz_data=nCoord.getDataNonConst(2);
@@ -1279,7 +1279,7 @@ int body(int argc, char *argv[]) {
 
 
 
-  if (dump){  
+  if (dump){
     Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("coords.dat",nCoord);
 
     // Put element to node mapping in multivector for output
@@ -1293,7 +1293,7 @@ int body(int argc, char *argv[]) {
     Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("elem2node.dat",elem2node);
 
     // Put element to edge mapping in multivector for output
-    Tpetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);    
+    Tpetra_MultiVector elem2edge(globalMapElem, numEdgesPerElem);
     for (int iedge=0; iedge<numEdgesPerElem; iedge++) {
        auto data = elem2edge.getDataNonConst(iedge);
        for (int ielem=0; ielem<numElems; ielem++) {
@@ -1314,9 +1314,9 @@ int body(int argc, char *argv[]) {
         ownedEdge++;
       }
     }
-    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge2node.dat",edge2node);    
+    Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge2node.dat",edge2node);
   }
-    
+
   // Define multi-vector for cell edge sign (fill during cell loop)
   Tpetra_MultiVector edgeSign(globalMapElem, numEdgesPerElem);
 
@@ -1335,7 +1335,7 @@ int body(int argc, char *argv[]) {
   Tpetra_Vector EDGE_Y(globalMapC);
   Tpetra_Vector EDGE_Z(globalMapC);
   {
-    auto ex_data = EDGE_X.getDataNonConst(0);   
+    auto ex_data = EDGE_X.getDataNonConst(0);
     auto ey_data = EDGE_Y.getDataNonConst(0);
     auto ez_data = EDGE_Z.getDataNonConst(0);
     double vals[2];
@@ -1354,14 +1354,14 @@ int body(int argc, char *argv[]) {
       }
     }
   }
-  
+
   DGrad.fillComplete(MassMatrixG.getRowMap(),MassMatrixC.getRowMap());
 
   if(MyPID==0) {std::cout << "Building incidence matrix                   \n";}
 
 
   // Local CFL Calculations
-  double DOUBLE_MAX = std::numeric_limits<double>::max();  
+  double DOUBLE_MAX = std::numeric_limits<double>::max();
   double l_max_sigma=0.0, l_max_mu = 0.0, l_max_cfl = 0.0, l_max_dx = 0.0, l_max_osm=0.0;
   double l_min_sigma=DOUBLE_MAX, l_min_mu= DOUBLE_MAX, l_min_cfl = DOUBLE_MAX, l_min_dx = DOUBLE_MAX, l_min_osm=DOUBLE_MAX;
 
@@ -1370,10 +1370,10 @@ int body(int argc, char *argv[]) {
       l_max_sigma = std::max(l_max_sigma,sigmaVal(idx));
       l_min_sigma = std::min(l_min_sigma,sigmaVal(idx));
       l_max_mu    = std::max(l_max_mu,muVal(idx));
-      l_min_mu    = std::min(l_min_mu,muVal(idx));  
+      l_min_mu    = std::min(l_min_mu,muVal(idx));
       l_max_osm   = std::max(l_max_osm,1/(sigmaVal(idx)*muVal(idx)));
       l_min_osm   = std::min(l_min_osm,1/(sigmaVal(idx)*muVal(idx)));
-      
+
       // We'll chose "dx" as the max/min edge length over the cell
       double my_edge_min = DOUBLE_MAX, my_edge_max=0.0;
       for(int j=0; j<numEdgesPerElem; j++) {
@@ -1391,7 +1391,7 @@ int body(int argc, char *argv[]) {
       double my_min_cfl = 1.0 / (sigmaVal(idx) * muVal(idx) * l_max_dx * l_max_dx);
       l_max_cfl = std::max(l_max_cfl,my_max_cfl);
       l_min_cfl = std::min(l_min_cfl,my_min_cfl);
-      
+
       idx++;
     }
   }
@@ -1912,7 +1912,7 @@ int body(int argc, char *argv[]) {
     /**********************************************************************************/
     /*                         Assemble into Global Matrix                            */
     /**********************************************************************************/
-    Tpetra::beginFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
+    Tpetra::beginAssembly(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
 
     // Loop over workset cells
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
@@ -1987,7 +1987,7 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Assemble over multiple processors, if necessary
-  Tpetra::endFill(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
+  Tpetra::endAssembly(MassMatrixG,MassMatrixC,MassMatrixC1,StiffMatrixC,SystemMatrix,rhsVector);
 
   MLStatistics.Phase2b(MassMatrixG.getCrsGraph(),rcp(&nCoord,false));
 
@@ -2016,7 +2016,7 @@ int body(int argc, char *argv[]) {
     Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("mag_t_matrix.dat",DGrad);
   }
 
-  
+
 
   /**********************************************************************************/
   /*********************** ADJUST MATRICES AND RHS FOR BCs **************************/
@@ -2030,7 +2030,7 @@ int body(int argc, char *argv[]) {
     MassMatrixG.apply(DiagG,DiagG);
     for(int i=0;i<(int)d_data.size();i++) {
       d_data[i]=1.0/d_data[i];
-    }      
+    }
   }
 
   Tpetra_CrsMatrix MassMatrixGinv(MassMatrixG.getRowMap(),MassMatrixG.getRowMap(),1);
@@ -2077,7 +2077,7 @@ int body(int argc, char *argv[]) {
       }
     }
   }
-  
+
   if (dump) {
     Tpetra::MatrixMarket::Writer<Tpetra_CrsMatrix>::writeSparseFile("edge_matrix_nobcs.mat",SystemMatrix);
   }
@@ -2147,11 +2147,11 @@ int body(int argc, char *argv[]) {
     //MueList22.set("coarse: type","Amesos-KLU");
   }
 
-  
+
 #if defined(HAVE_TRILINOSCOUPLINGS_AVATAR)
   Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
   Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
- 
+
   std::vector<std::string> AvatarSublists{"Avatar-MueLu-Fine","Avatar-MueLu-11","Avatar-MueLu-22"};
   std::vector<Teuchos::ParameterList *> MueLuSublists{&MueLuList,&MueList11,&MueList22};
   for (int i=0; i<(int)AvatarSublists.size(); i++) {
@@ -2159,7 +2159,7 @@ int body(int argc, char *argv[]) {
       Teuchos::ParameterList problemFeatures = problemStatistics;
       Teuchos::ParameterList avatarParams = inputList.sublist(AvatarSublists[i]);
       std::cout<<"*** Avatar["<<AvatarSublists[i]<<"] Parameters ***\n"<<avatarParams<<std::endl;
-      
+
       MueLu::AvatarInterface avatar(comm,avatarParams);
       std::cout<<"*** Avatar Setup ***"<<std::endl;
       avatar.Setup();
@@ -2176,7 +2176,7 @@ int body(int argc, char *argv[]) {
   int maxNumIters = 200;
   int num_steps = 1;
   double tol = 1e-10;
-  
+
   RCP<Tpetra_CrsMatrix> SystemMatrix_r   = rcp(&SystemMatrix,false);
   RCP<Tpetra_CrsMatrix> DGrad_r          = rcp(&DGrad,false);
   RCP<Tpetra_CrsMatrix> MassMatrixGinv_r = rcp(&MassMatrixGinv,false);
@@ -2185,23 +2185,23 @@ int body(int argc, char *argv[]) {
   RCP<Tpetra_MultiVector> nCoord_r       = rcp(&nCoord,false);
   RCP<Tpetra_MultiVector> xh_r           = rcp(&xh,false);
   RCP<Tpetra_MultiVector> rhsVector_r    = rcp(&rhsVector,false);
-  
+
   if (solverName == "MueLu") {
     // MueLu RefMaxwell
     if(MyPID==0) {std::cout << "\n\nMueLu solve \n";}
-    RCP<Xpetra_Operator>  preconditioner = 
+    RCP<Xpetra_Operator>  preconditioner =
       BuildPreconditioner_MueLu(probType,MueLuList,SystemMatrix_r,DGrad_r,MassMatrixGinv_r,MassMatrixC_r,MassMatrixC1_r,nCoord_r);
 
     RCP<Xpetra_Operator> A_x = toXpetra(SystemMatrix_r);
     RCP<Xpetra_MultiVector> xh_x = toXpetra(xh_r);
     RCP<Xpetra_MultiVector> rhsVector_x = toXpetra(rhsVector_r);
-    
+
     using BMV = Xpetra_MultiVector;
     using BOP = typename Belos::OperatorT<BMV>;
     RCP<BOP> belosOp = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(A_x));
     RCP<BOP> precOp  = rcp(new Belos::XpetraOp<SC,LO,GO,NO>(preconditioner));
     RCP<BOP> dummy;
-    
+
     solverName="CG";
     TrilinosCouplings::IntrepidPoissonExample::
       solveWithBelos<SC,BMV,BOP>(converged,numItersPerformed,solverName,tol,maxNumIters,num_steps,
@@ -2463,7 +2463,7 @@ void solution_test(string msg, const Tpetra_Operator &A,const Tpetra_MultiVector
   auto xexact_data = xexact.getData(0);
   for(LO i=0 ; i<(LO)lhs.getMap()->getNodeNumElements() ; ++i )
     d += (lhs_data[i] - xexact_data[i]) * (lhs_data[i] - xexact_data[i]);
-  
+
   TC_sumAll(comm,d,d_tot);
 
   // ================== //
