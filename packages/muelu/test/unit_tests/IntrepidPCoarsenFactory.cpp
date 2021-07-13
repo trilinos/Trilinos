@@ -847,11 +847,13 @@ namespace MueLuTests {
       int numCells = elementToNodeMap.extent(0);
       int dofsPerCell = elementToNodeMap.extent(1);
       int maxGID = -1;
+      auto elementToNodeMap_host = Kokkos::create_mirror_view(elementToNodeMap);
+      Kokkos::deep_copy(elementToNodeMap_host, elementToNodeMap);
       for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
       {
         for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
         {
-          maxGID = max(maxGID,elementToNodeMap(cellOrdinal,dofOrdinal));
+          maxGID = max(maxGID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
         }
       }
       int numElements = maxGID + 1;
@@ -867,6 +869,7 @@ namespace MueLuTests {
         if (remainder > rank) numRankLocalElements++;
         FCO rankLocalElementToNodeMap;
         resize(rankLocalElementToNodeMap,numCells,basis->getCardinality());
+	auto rankLocalElementToNodeMap_host = Kokkos::create_mirror_view(rankLocalElementToNodeMap);
         vector<set<LocalOrdinal>> expectedSeedsSets(spaceDim+1);
 
         auto isRankLocal = [startingGID,numRankLocalElements](GlobalOrdinal GID) -> bool {
@@ -887,7 +890,7 @@ namespace MueLuTests {
           bool hasOwnedGIDs = false;
           for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
           {
-            GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+            GlobalOrdinal GID = elementToNodeMap_host(cellOrdinal,dofOrdinal);
             if (isRankLocal(GID))
             {
               hasOwnedGIDs = true;
@@ -898,7 +901,7 @@ namespace MueLuTests {
           {
             for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
             {
-              GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+              GlobalOrdinal GID = elementToNodeMap_host(cellOrdinal,dofOrdinal);
               if (! isRankLocal(GID))
               {
                 if (GID == -1)
@@ -930,9 +933,9 @@ namespace MueLuTests {
           }
           for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
           {
-            GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+            GlobalOrdinal GID = elementToNodeMap_host(cellOrdinal,dofOrdinal);
             LocalOrdinal LID = colMapRCP->getLocalElement(GID);
-            rankLocalElementToNodeMap(cellOrdinal,dofOrdinal) = LID; // may be -1
+            rankLocalElementToNodeMap_host(cellOrdinal,dofOrdinal) = LID; // may be -1
             if (LID != -1)
             {
               int subcdim = basis->getDofTag(dofOrdinal)[0];
@@ -960,6 +963,7 @@ namespace MueLuTests {
           }
         }
 
+	Kokkos::deep_copy(rankLocalElementToNodeMap, rankLocalElementToNodeMap_host);
         MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, rankLocalElementToNodeMap,
                                                                                                    seeds, *rowMapRCP, *colMapRCP);
 
@@ -1027,11 +1031,13 @@ namespace MueLuTests {
       int numCells = elementToNodeMap.extent(0);
       int dofsPerCell = elementToNodeMap.extent(1);
       int maxLID = -1;
+      auto elementToNodeMap_host = Kokkos::create_mirror_view(elementToNodeMap);
+      Kokkos::deep_copy(elementToNodeMap_host, elementToNodeMap);
       for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
       {
         for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
         {
-          maxLID = max(maxLID,elementToNodeMap(cellOrdinal,dofOrdinal));
+          maxLID = max(maxLID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
         }
       }
       int numElements = maxLID + 1;

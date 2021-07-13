@@ -140,6 +140,8 @@ inline std::string tolower(const std::string & str) {
     std::vector<std::set<LocalOrdinal>> seedSets(spaceDim+1);
 
     int numCells = elementToNodeMap.extent(0);
+    auto elementToNodeMap_host = Kokkos::create_mirror_view(elementToNodeMap);
+    Kokkos::deep_copy(elementToNodeMap_host,elementToNodeMap);
     for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
     {
       for (int d=0; d<=spaceDim; d++)
@@ -155,7 +157,7 @@ inline std::string tolower(const std::string & str) {
           for (int basisOrdinalOrdinal=0; basisOrdinalOrdinal<dofCount; basisOrdinalOrdinal++)
           {
             int basisOrdinal = basis->getDofOrdinal(d,subcord,basisOrdinalOrdinal);
-            int colLID = elementToNodeMap(cellOrdinal,basisOrdinal);
+            int colLID = elementToNodeMap_host(cellOrdinal,basisOrdinal);
             if (colLID != Teuchos::OrdinalTraits<LO>::invalid())
             {
               GlobalOrdinal colGID = columnMap.getGlobalElement(colLID);
