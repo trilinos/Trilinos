@@ -390,65 +390,16 @@ namespace Tpetra {
   void
   Distributor::doWaits()
   {
-    using Teuchos::Array;
-    using Teuchos::CommRequest;
-    using Teuchos::FancyOStream;
-    using Teuchos::includesVerbLevel;
-    using Teuchos::is_null;
-    using Teuchos::RCP;
-    using Teuchos::waitAll;
-    using std::endl;
-
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMon (*actor_.timer_doWaits_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-    const bool debug = Details::Behavior::debug("Distributor");
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("doWaits");
-      std::ostringstream os;
-      os << *prefix << "Start: requests_.size(): "
-         << actor_.requests_.size() << endl;
-      std::cerr << os.str();
-    }
-
     if (actor_.requests_.size() > 0) {
-      waitAll(*plan_.comm_, actor_.requests_());
+      Teuchos::waitAll(*plan_.comm_, actor_.requests_());
 
-      if (debug) {
-        // Make sure that waitAll() nulled out all the requests.
-        for (auto it = actor_.requests_.begin(); it != actor_.requests_.end(); ++it) {
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (! is_null(*it), std::runtime_error,
-             "Tpetra::Distributor::doWaits: Communication requests "
-             "should all be null aftr calling Teuchos::waitAll on "
-             "them, but at least one request is not null.");
-        }
-      }
       // Restore the invariant that requests_.size() is the number of
       // outstanding nonblocking communication requests.
       actor_.requests_.resize (0);
-    }
-
-    if (debug) {
-      const int localSizeNonzero = (actor_.requests_.size () != 0) ? 1 : 0;
-      int globalSizeNonzero = 0;
-      Teuchos::reduceAll<int, int> (*plan_.comm_, Teuchos::REDUCE_MAX,
-                                    localSizeNonzero,
-                                    Teuchos::outArg (globalSizeNonzero));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        globalSizeNonzero != 0, std::runtime_error,
-        "Tpetra::Distributor::doWaits: After waitAll, at least one process has "
-        "a nonzero number of outstanding posts.  There should be none at this "
-        "point.  Please report this bug to the Tpetra developers.");
-    }
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
     }
   }
 
