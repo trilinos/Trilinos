@@ -491,7 +491,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           }
           // If n is zero then this is - hopefully - a virtual cell
           if(n > 0.){
-            n = std::sqrt(n);
+            n = Kokkos::Experimental::sqrt(n);
             for(int dim=0;dim<cell_dim;++dim){
               side_normals(cell,point,dim) /= n;
             }
@@ -658,18 +658,18 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
         // FIXME: Currently virtual cells will set their surface normal along the same direction as the cell they "reflect"
         // This causes a host of issues (e.g. identifying 180 degree periodic wedges), but we have to support virtual cells as a priority
         // Therefore, we will just assume that the ordering is fine (not valid for 180 degree periodic wedges)
-        if(std::fabs(n0_dot_n1 - 1.) < 1.e-8)
+        if(Kokkos::Experimental::fabs(n0_dot_n1 - 1.) < 1.e-8)
           return;
 
         // Rotated faces case (e.g. periodic wedge) we need to check for non-antiparallel face normals
-        if(std::fabs(n0_dot_n1 + 1.) > 1.e-2){
+        if(Kokkos::Experimental::fabs(n0_dot_n1 + 1.) > 1.e-2){
 
           // Now we need to define an arbitrary transverse and binormal in the plane across which the faces are anti-symmetric
           // We can do this by setting t = n_0 \times n_1
           PANZER_CROSS(n0,n1,t);
 
           // Normalize the transverse vector
-          const Scalar mag_t = std::sqrt(PANZER_DOT(t,t));
+          const Scalar mag_t = Kokkos::Experimental::sqrt(PANZER_DOT(t,t));
           t[0] /= mag_t;
           t[1] /= mag_t;
           t[2] /= mag_t;
@@ -680,7 +680,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           b[2] = n0[2] + n1[2];
 
           // Normalize the binormal vector
-          const Scalar mag_b = std::sqrt(PANZER_DOT(b,b));
+          const Scalar mag_b = Kokkos::Experimental::sqrt(PANZER_DOT(b,b));
           b[0] /= mag_b;
           b[1] /= mag_b;
           b[2] /= mag_b;
@@ -759,7 +759,9 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
                                                jac_inv_k,
                                                surface_normals_k,
                                                surface_rotation_matrices_k);
-          std::swap( point_order(face,face_point_1), point_order(face,face_point_0) );
+          Scalar tmp = point_order(face,face_point_1);
+          point_order(face,face_point_1) = point_order(face,face_point_0);
+          point_order(face,face_point_0) = tmp;
         }
       }
 
@@ -817,7 +819,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           norm_contravarient_k(cell,ip) += contravarient_k(cell,ip,i,j) * contravarient_k(cell,ip,i,j);
         }
       }
-      norm_contravarient_k(cell,ip) = std::sqrt(norm_contravarient_k(cell,ip));
+      norm_contravarient_k(cell,ip) = Kokkos::Experimental::sqrt(norm_contravarient_k(cell,ip));
     });
     PHX::Device::execution_space().fence();    
   }
@@ -863,12 +865,15 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
                          cub_points.get_view(),
                          node_coordinates.get_view(),
                          *(int_rule->topology));
+  PHX::Device::execution_space().fence();
 
   auto s_jac_inv = Kokkos::subview(jac_inv.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
   cell_tools.setJacobianInv(s_jac_inv, s_jac);
 
   auto s_jac_det = Kokkos::subview(jac_det.get_view(),std::make_pair(0,num_cells),Kokkos::ALL());
   cell_tools.setJacobianDet(s_jac_det, s_jac);
+
+  PHX::Device::execution_space().fence();
 
   auto s_weighted_measure = Kokkos::subview(weighted_measure.get_view(),std::make_pair(0,num_cells),Kokkos::ALL());
   if (!int_rule->isSide()) {
@@ -888,6 +893,8 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
                        scratch_for_compute_side_measure.get_view());
   }
   else TEUCHOS_ASSERT(false);
+
+  PHX::Device::execution_space().fence();
 
   // Shakib contravarient metric tensor
   {
@@ -916,6 +923,7 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
   auto s_covarient = Kokkos::subview(covarient.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
   auto s_contravarient = Kokkos::subview(contravarient.get_view(),std::make_pair(0,num_cells),Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
   Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(s_contravarient, s_covarient);
+  PHX::Device::execution_space().fence();
 
   // norm of g_ij
   {
@@ -929,7 +937,7 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
           norm_contravarient_k(cell,ip) += contravarient_k(cell,ip,i,j) * contravarient_k(cell,ip,i,j);
         }
       }
-      norm_contravarient_k(cell,ip) = std::sqrt(norm_contravarient_k(cell,ip));
+      norm_contravarient_k(cell,ip) = Kokkos::Experimental::sqrt(norm_contravarient_k(cell,ip));
     });
     PHX::Device::execution_space().fence();
   }
