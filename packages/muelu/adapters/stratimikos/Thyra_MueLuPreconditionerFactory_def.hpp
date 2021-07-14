@@ -123,8 +123,8 @@ namespace Thyra {
       else if (paramList.isType<RCP<TpCrsMat> >(parameterName)) {
         RCP<TpCrsMat> tM = paramList.get<RCP<TpCrsMat> >(parameterName);
         paramList.remove(parameterName);
-        RCP<XpCrsMat> xM = rcp_dynamic_cast<XpCrsMat>(tM, true);
-        paramList.set<RCP<XpCrsMat> >(parameterName, xM);
+        RCP<XpMat> xM = MueLu::TpetraCrs_To_XpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tM);
+        paramList.set<RCP<XpMat> >(parameterName, xM);
         return true;
       } else if (paramList.isType<RCP<tMV> >(parameterName)) {
         RCP<tMV> tpetra_X = paramList.get<RCP<tMV> >(parameterName);
