@@ -58,7 +58,7 @@ class SubcellConnectivity
 public:
 
   /// Default constructor
-  SubcellConnectivity():_num_subcells(-1),_num_cells(-1){}
+  SubcellConnectivity() = default;
 
   /// Default destructor
   ~SubcellConnectivity() = default;
@@ -69,8 +69,7 @@ public:
    * \return Number of subcells associated with the cells
    */
   KOKKOS_INLINE_FUNCTION
-  int numSubcells() const {return _num_subcells_device(0);}
-  int numSubcellsHost() const {return _num_subcells;}
+  int numSubcells() const {return _subcell_to_cells_adj.extent(0)-1;}
 
   /**
    * \brief Gives number of cells in connectivity
@@ -78,8 +77,7 @@ public:
    * \return Number of subcells associated with the cells
    */
   KOKKOS_INLINE_FUNCTION
-  int numCells() const {return _num_cells_device(0);}
-  int numCellsHost() const {return _num_cells;}
+  int numCells() const {return _cell_to_subcells_adj.extent(0)-1;}
 
   /**
    * \brief gives number of subcells (e.g. faces) found on a given cell
@@ -166,14 +164,6 @@ public:
 
 protected:
 
-  /// Number of subcells for a given number of cells
-  int _num_subcells;
-  PHX::View<int*> _num_subcells_device;
-
-  /// Number of cells
-  int _num_cells;
-  PHX::View<int*> _num_cells_device;
-
   /// Adjacency array for indexing into subcell_to_cells array
   PHX::View<int*> _subcell_to_cells_adj;
   PHX::View<int*>::HostMirror _subcell_to_cells_adj_host;
@@ -230,7 +220,7 @@ SubcellConnectivity::
 numSubcellsOnCell(const int cell) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells_device(0));
+  KOKKOS_ASSERT(cell >= 0 and cell < numCells());
 #endif
   return _cell_to_subcells_adj(cell+1)-_cell_to_subcells_adj(cell);
 }
@@ -240,7 +230,7 @@ SubcellConnectivity::
 numSubcellsOnCellHost(const int cell) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells);
+  KOKKOS_ASSERT(cell >= 0 and cell < numCells());
 #endif
   return _cell_to_subcells_adj_host(cell+1)-_cell_to_subcells_adj_host(cell);
 }
@@ -250,7 +240,7 @@ SubcellConnectivity::
 numCellsOnSubcell(const int subcell) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells_device(0));
+  KOKKOS_ASSERT(subcell >= 0 and subcell < numSubcells());
 #endif
   return _subcell_to_cells_adj(subcell+1)-_subcell_to_cells_adj(subcell);
 }
@@ -260,7 +250,7 @@ SubcellConnectivity::
 numCellsOnSubcellHost(const int subcell) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  KOKKOS_ASSERT(subcell >= 0 and subcell < numSubcells());
 #endif
   return _subcell_to_cells_adj_host(subcell+1)-_subcell_to_cells_adj_host(subcell);
 }
@@ -270,7 +260,7 @@ SubcellConnectivity::
 subcellForCell(const int cell, const int local_subcell_index) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells_device(0));
+  KOKKOS_ASSERT(cell >= 0 and cell < numCells());
   KOKKOS_ASSERT(local_subcell_index < numSubcellsOnCell(cell));
 #endif
   const int index = _cell_to_subcells_adj(cell)+local_subcell_index;
@@ -282,7 +272,7 @@ SubcellConnectivity::
 subcellForCellHost(const int cell, const int local_subcell_index) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(cell >= 0 and cell < _num_cells);
+  KOKKOS_ASSERT(cell >= 0 and cell < numCell());
   KOKKOS_ASSERT(local_subcell_index < numSubcellsOnCellHost(cell));
 #endif
   const int index = _cell_to_subcells_adj_host(cell)+local_subcell_index;
@@ -294,7 +284,7 @@ SubcellConnectivity::
 cellForSubcell(const int subcell, const int local_cell_index) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells_device(0));
+  KOKKOS_ASSERT(subcell >= 0 and subcell < numSubcells());
   KOKKOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
 #endif
   const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
@@ -306,7 +296,7 @@ SubcellConnectivity::
 cellForSubcellHost(const int subcell, const int local_cell_index) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  KOKKOS_ASSERT(subcell >= 0 and subcell < numSubcells());
   KOKKOS_ASSERT(local_cell_index < numCellsOnSubcellHost(subcell));
 #endif
   const int index = _subcell_to_cells_adj_host(subcell)+local_cell_index;
@@ -318,7 +308,7 @@ SubcellConnectivity::
 localSubcellForSubcell(const int subcell, const int local_cell_index) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells_device(0));
+  KOKKOS_ASSERT(subcell >= 0 and subcell < numSubcells());
   KOKKOS_ASSERT(local_cell_index < numCellsOnSubcell(subcell));
 #endif
   const int index = _subcell_to_cells_adj(subcell)+local_cell_index;
@@ -330,7 +320,7 @@ SubcellConnectivity::
 localSubcellForSubcellHost(const int subcell, const int local_cell_index) const
 {
 #ifdef PANZER_DEBUG
-  KOKKOS_ASSERT(subcell >= 0 and subcell < _num_subcells);
+  KOKKOS_ASSERT(subcell >= 0 and subcell < numSubcells());
   KOKKOS_ASSERT(local_cell_index < numCellsOnSubcellHost(subcell));
 #endif
   const int index = _subcell_to_cells_adj_host(subcell)+local_cell_index;

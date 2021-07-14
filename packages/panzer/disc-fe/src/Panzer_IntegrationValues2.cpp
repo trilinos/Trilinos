@@ -584,7 +584,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     // functor to query the policy using the functor. We'll just live
     // with the extra memory since it is temporary scratch.
     // std::vector<int> point_order(num_points_per_face);
-    PHX::View<int**> point_order("scratch: point_order",face_connectivity.numSubcellsHost(),num_points_per_face);
+    PHX::View<int**> point_order("scratch: point_order",face_connectivity.numSubcells(),num_points_per_face);
 
     // Iterate through faces
     auto ref_ip_coordinates_k = ref_ip_coordinates.get_view();
@@ -595,7 +595,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     auto jac_inv_k = jac_inv.get_view();
     auto surface_normals_k = surface_normals.get_view();
     auto surface_rotation_matrices_k = surface_rotation_matrices.get_view();
-    Kokkos::parallel_for("face iteration",face_connectivity.numSubcellsHost(),KOKKOS_LAMBDA (const int face) {
+    Kokkos::parallel_for("face iteration",face_connectivity.numSubcells(),KOKKOS_LAMBDA (const int face) {
       // Cells for sides 0 and 1
       const int cell_0 = face_connectivity.cellForSubcell(face,0);
       const int cell_1 = face_connectivity.cellForSubcell(face,1);

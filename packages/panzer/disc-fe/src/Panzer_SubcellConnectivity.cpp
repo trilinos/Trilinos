@@ -55,13 +55,6 @@ setup(const panzer::LocalMeshPartition & partition)
   const int num_faces_per_cell = partition.cell_to_faces.extent(1);
   const int num_cells_per_face = 2;
 
-  _num_subcells = num_faces;
-  _num_subcells_device = PHX::View<int*>("_num_subcells_device",1);
-  Kokkos::deep_copy(_num_subcells_device,_num_subcells);
-  _num_cells = num_cells;
-  _num_cells_device = PHX::View<int*>("_num_cells_device",1);
-  Kokkos::deep_copy(_num_cells_device,_num_cells);
-
   _subcell_to_cells_adj = PHX::View<int*>("subcell_to_cells_adj", num_faces+1);
   _subcell_to_cells = PHX::View<int*>("subcell_to_cells", num_faces*num_cells_per_face);
   _subcell_to_local_subcells = PHX::View<int*>("subcell_to_local_subcells", num_faces*num_cells_per_face);
