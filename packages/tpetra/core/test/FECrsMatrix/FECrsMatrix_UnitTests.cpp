@@ -310,6 +310,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_2, LO, GO, Scalar, No
   using FEMAT = typename Tpetra::FECrsMatrix<Scalar,LO,GO,Node>;
   using CMAT = typename Tpetra::CrsMatrix<Scalar,LO,GO,Node>;
   using FEG = typename Tpetra::FECrsGraph<LO,GO,Node>;
+  using cols_type = typename CMAT::nonconst_local_inds_host_view_type;
+  using vals_type = typename CMAT::nonconst_values_host_view_type;
+
 
   // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
@@ -367,14 +370,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_2, LO, GO, Scalar, No
   if (fe_matrix.getRowMap()->isNodeLocalElement(local_row))
   {
     auto num_entries = fe_matrix.getNodeNumEntries();
-    Teuchos::Array<LO> cols(num_entries);
+    cols_type cols("cols",num_entries);
     Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    Teuchos::Array<Scalar> vals(num_entries, zero);
-    fe_matrix.getLocalRowCopy(local_row, cols(), vals(), num_entries);
-    std::fill(vals.begin(), vals.end(), zero);
+    vals_type vals("vals",num_entries);
+    fe_matrix.getLocalRowCopy(local_row, cols, vals, num_entries);
+    Kokkos::deep_copy(vals,zero);
     vals[0] = one;
-    fe_matrix.replaceLocalValues(local_row, cols(), vals());
+    auto cols_sub = Kokkos::subview(cols,Kokkos::make_pair((size_t)0,num_entries));
+    auto vals_sub = Kokkos::subview(vals,Kokkos::make_pair((size_t)0,num_entries));
+
+    fe_matrix.replaceLocalValues(local_row, cols_sub, vals_sub);
   }
   fe_matrix.endModify();
   TPETRA_GLOBAL_SUCCESS_CHECK(out,comm,success)
