@@ -186,6 +186,8 @@ WorksetDetails()
   : num_cells(0)
   , subcell_dim(-1)
   , subcell_index(-1)
+  , ir_degrees(new std::vector<int>())
+  , basis_names(new std::vector<std::string>())
   , setup_(false)
   , num_owned_cells_(0)
   , num_ghost_cells_(0)
@@ -334,6 +336,8 @@ getIntegrationValues(const panzer::IntegrationDescriptor & description) const
   TEUCHOS_ASSERT(not (options_.side_assembly_ and options_.align_side_points_));
 
   integration_values_map_[description.getKey()] = iv;
+  ir_degrees->push_back(iv->int_rule->cubature_degree);
+  int_rules.push_back(iv);
 
   return *iv;
 
@@ -435,6 +439,8 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
   applyBV2Orientations(numOwnedCells()+numGhostCells(),*biv,getLocalCellIDs(),options_.orientations_);
 
   basis_integration_values_map_[basis_description.getKey()][integration_description.getKey()] = biv;
+  bases.push_back(biv);
+  basis_names->push_back(biv->basis_layout->name());
 
   return *biv;
 
