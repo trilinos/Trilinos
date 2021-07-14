@@ -1823,7 +1823,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class Basis>
 bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & name, Intrepid2::EPointType ptype, int max_degree)
   {
-#if 0
 #   include "MueLu_UseShortNames.hpp"
     typedef Scalar SC;
     typedef GlobalOrdinal GO;
@@ -1863,7 +1862,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
       //UVM used here, accessing vertex coordinates on host that were populated on device.
 
-      Kokkos::parallel_for(spaceDim, KOKKOS_LAMBDA (int d)
+      Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::device_type::execution_space>(0, spaceDim), KOKKOS_LAMBDA (int d)
       {
         refCellVertices(vertexOrdinal,d) = refCellVertex(d);
         //      cout << "refCellVertices(" << vertexOrdinal << "," << d << ") = " << refCellVertex(d) << endl;
@@ -1957,7 +1956,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           vector<double> coords(hi_DofCoords.extent(1));
           for (int d=0; d<int(hi_DofCoords.extent(1)); d++)
           {
-            coords[d] = hi_DofCoords(highOrdinal,d);
+            coords[d] = hi_DofCoords_host(highOrdinal,d);
           }
           if (coords[0] == 1.0)
           {
@@ -1992,6 +1991,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
         // Correctness Test 2: Try 2 elements, in all possible relative orientations, and confirm that the
         //                     "lowest global ordinal" tie-breaker always returns the same thing for both neighbors
+	auto physCellVertices_host = Kokkos::create_mirror_view(physCellVertices);
+	auto physCellVerticesPermuted_host = Kokkos::create_mirror_view(physCellVerticesPermuted);
+	Kokkos::deep_copy(physCellVertices_host, physCellVertices);
         for (int permOrdinal0=0; permOrdinal0<symmetryCount; permOrdinal0++)
         {
           vector<int> perm0 = cellSymmetries.getPermutation(permOrdinal0);
@@ -2000,7 +2002,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             int mappedVertexOrdinal = perm0[vertexOrdinal];
             for (int d=0; d<spaceDim; d++)
             {
-              physCellVerticesPermuted(0,vertexOrdinal,d) = physCellVertices(0,mappedVertexOrdinal,d);
+              physCellVerticesPermuted_host(0,vertexOrdinal,d) = physCellVertices_host(0,mappedVertexOrdinal,d);
             }
           }
 
@@ -2008,7 +2010,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           // this is the one that has points with x coordinates equal to 1.0
           // we'll want to do this once for cell 0, and once for cell 1, so we make it a lambda
           // (NOTE: this will need to change for non-hypercube topology support)
-          auto searchForX1Side = [cellTopo,physCellVerticesPermuted,spaceDim](int cellOrdinal) -> int
+          auto searchForX1Side = [cellTopo,physCellVerticesPermuted_host,spaceDim](int cellOrdinal) -> int
           {
 
             // Line<2> gives wrong answers for getSideCount() and getNodeCount(), so we handle 1D case separately:
@@ -2018,7 +2020,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               for (int sideVertexOrdinal=0; sideVertexOrdinal<sideCount; sideVertexOrdinal++)
               {
                 int cellVertexOrdinal = sideVertexOrdinal;
-                if (physCellVerticesPermuted(cellOrdinal,cellVertexOrdinal,0) == 1.0)
+                if (physCellVerticesPermuted_host(cellOrdinal,cellVertexOrdinal,0) == 1.0)
                 {
                   return sideVertexOrdinal;
                 }
@@ -2033,7 +2035,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               for (int sideVertexOrdinal=0; sideVertexOrdinal<sideVertexCount; sideVertexOrdinal++)
               {
                 int cellVertexOrdinal = cellTopo.getNodeMap(spaceDim-1, sideOrdinal, sideVertexOrdinal);
-                if (physCellVerticesPermuted(cellOrdinal,cellVertexOrdinal,0) != 1.0)
+                if (physCellVerticesPermuted_host(cellOrdinal,cellVertexOrdinal,0) != 1.0)
                 {
                   matchFound = false;
                   break;
@@ -2058,17 +2060,21 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               int mappedVertexOrdinal = perm1[vertexOrdinal];
               for (int d=0; d<spaceDim; d++)
               {
-                physCellVerticesPermuted(1,vertexOrdinal,d) = physCellVertices(1,mappedVertexOrdinal,d);
+                physCellVerticesPermuted_host(1,vertexOrdinal,d) = physCellVertices_host(1,mappedVertexOrdinal,d);
               }
             }
             // get the mapped dof coords for lo and high bases:
             FC lo_physDofCoords, hi_physDofCoords;
             Kokkos::resize(lo_physDofCoords, numCells, lo->getCardinality(), cellTopo.getDimension());
             Kokkos::resize(hi_physDofCoords, numCells, hi->getCardinality(), cellTopo.getDimension());
-
+	    
+	    Kokkos::deep_copy(physCellVerticesPermuted,physCellVerticesPermuted_host);
             CellTools::mapToPhysicalFrame(lo_physDofCoords, lo_DofCoords, physCellVerticesPermuted, cellTopo);
             CellTools::mapToPhysicalFrame(hi_physDofCoords, hi_DofCoords, physCellVerticesPermuted, cellTopo);
-
+	    auto lo_physDofCoords_host = Kokkos::create_mirror_view(lo_physDofCoords);
+	    auto hi_physDofCoords_host = Kokkos::create_mirror_view(hi_physDofCoords);
+	    Kokkos::deep_copy(lo_physDofCoords_host, lo_physDofCoords);
+	    Kokkos::deep_copy(hi_physDofCoords_host, hi_physDofCoords);
             Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
 
             int cell1Side = searchForX1Side(1);
@@ -2092,7 +2098,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
              to verify that the two cells agree.
              */
 
-            auto constructMap = [lo, lo_physDofCoords, &loNumbering, candidates, hi_physDofCoords, &hiNumbering, spaceDim]
+            auto constructMap = [lo, lo_physDofCoords_host, &loNumbering, candidates, hi_physDofCoords_host, &hiNumbering, spaceDim]
             (int cellOrdinal, int sideOrdinal) -> map<int, set<int>>
             {
               map<int,set<int>> globalLowToHighMap;
@@ -2103,7 +2109,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
                 vector<double> loCoords(spaceDim);
                 for (int d=0; d<spaceDim; d++)
                 {
-                  loCoords[d] = lo_physDofCoords(cellOrdinal,lowLocalOrdinal,d);
+                  loCoords[d] = lo_physDofCoords_host(cellOrdinal,lowLocalOrdinal,d);
                 }
                 int lowGlobalNumber = loNumbering.getGlobalID(loCoords);
                 vector<size_t> highLocalOrdinals = candidates[lowLocalOrdinal];
@@ -2112,7 +2118,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
                   vector<double> hiCoords(spaceDim);
                   for (int d=0; d<spaceDim; d++)
                   {
-                    hiCoords[d] = hi_physDofCoords(cellOrdinal,highLocalOrdinal,d);
+                    hiCoords[d] = hi_physDofCoords_host(cellOrdinal,highLocalOrdinal,d);
                   }
                   int highGlobalNumber = hiNumbering.getGlobalID(hiCoords);
                   globalLowToHighMap[lowGlobalNumber].insert(highGlobalNumber);
@@ -2190,8 +2196,6 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     }
     cout << "Tested " << combinationTestedCount << " lo/hi, two-cell permutation combinations.\n";
     return success;
-#endif
-    return 1;
   }
 
 /*********************************************************************************************************************/
