@@ -57,6 +57,7 @@
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_Traits.hpp"
 #include "Panzer_SubcellConnectivity.hpp"
+#include "Panzer_ConvertNormalToRotationMatrix.hpp"
 
 // For device member functions to avoid CUDA RDC in unit testing
 #include "Panzer_IntegrationValues2_impl.hpp"
@@ -548,7 +549,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       
       Scalar transverse[3];
       Scalar binormal[3];
-      convertNormalToRotationMatrix(normal,transverse,binormal);
+      panzer::convertNormalToRotationMatrix(normal,transverse,binormal);
       
       for(int dim=0; dim<3; ++dim){
         surface_rotation_matrices_k(cell,point,0,dim) = normal[dim];

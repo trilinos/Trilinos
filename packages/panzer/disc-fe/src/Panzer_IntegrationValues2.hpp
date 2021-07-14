@@ -174,9 +174,6 @@ namespace panzer {
 
     Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
 
-    KOKKOS_INLINE_FUNCTION
-    static void convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3]);
-
     /// This should be a private method, but using lambdas on cuda forces this to be public.
     void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
 
