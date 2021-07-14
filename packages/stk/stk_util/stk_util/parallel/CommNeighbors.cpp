@@ -49,14 +49,6 @@ namespace stk {
 
 #if defined( STK_HAS_MPI )
 
-void CommNeighbors::rank_error( const char * method , int p ) const
-{
-  std::ostringstream os ;
-  os << "stk::CommNeighbors::" << method
-     << "(" << p << ") ERROR: Not in [0:" << m_size << ")" ;
-  throw std::range_error( os.str() );
-}
-
 //----------------------------------------------------------------------
 
 CommNeighbors::~CommNeighbors()

@@ -460,7 +460,7 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
   if (m_check_invalid_rels) {
     const MeshIndex &mesh_idx = mesh_index(entity);
     const Bucket &b = *mesh_idx.bucket;
-    Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;
+    const unsigned bucket_ord = mesh_idx.bucket_ordinal;
     ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
                    count_valid_connectivity(entity,rank) << " = count_valid_connectivity("<<entity_key(entity)<<","<<rank<<") != b.num_connectivity("<<bucket_ord<<","<<rank<<") = " << b.num_connectivity(bucket_ord,rank);
                   );
@@ -617,7 +617,7 @@ inline Bucket * BulkData::bucket_ptr(Entity entity) const
   return mesh_index(entity).bucket;
 }
 
-inline Bucket::size_type BulkData::bucket_ordinal(Entity entity) const
+inline unsigned BulkData::bucket_ordinal(Entity entity) const
 {
 #ifndef NDEBUG
   entity_getter_debug_check(entity);
@@ -717,7 +717,7 @@ inline void BulkData::compress_relation_capacity(Entity entity)
 }
 #endif
 
-inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal )
+inline void BulkData::set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal )
 {
   ThrowAssert(entity.local_offset() > 0);
 
