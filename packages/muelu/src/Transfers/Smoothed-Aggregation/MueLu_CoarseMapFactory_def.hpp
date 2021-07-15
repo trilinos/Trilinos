@@ -76,6 +76,7 @@ namespace MueLu {
     validParamList->set< std::string  >("Striding info", "{}", "Striding information");
     validParamList->set< LocalOrdinal >("Strided block id", -1, "Strided block id");
 
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     // Domain GID offsets: list of offset values for domain gids (coarse gids) of tentative prolongator  (default = 0).
     // For each multigrid level we can define a different offset value, ie for the prolongator between
     // level 0 and level 1 we use the offset entry domainGidOffsets_[0], for the prolongator between
@@ -85,6 +86,9 @@ namespace MueLu {
     // The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed
     // equally over the procs (unless some reordering is done).
     validParamList->set< std::string > ("Domain GID offsets", "{0}", "vector with offsets for GIDs for each level. If no offset GID value is given for the level we use 0 as default.");
+
+    GetOStream(Warnings) << "The parameter \"Domain GID offsets\" will be deprecated. Use BlockedCoarseMapFactory instead, which can auto-compute the GID offset." << std::endl;
+#endif
 
     return validParamList;
   }
@@ -162,11 +166,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MUELU_DEPRECATED
   GlobalOrdinal CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDomainGIDOffset(
     Level& currentLevel) const
   {
     GlobalOrdinal domainGidOffset = Teuchos::ScalarTraits<GlobalOrdinal>::zero();
-
+#ifdef HAVE_MUELU_DEPRECATED_CODE
     std::vector<GlobalOrdinal> domainGidOffsets;
     domainGidOffsets.clear();
     const ParameterList & pL = GetParameterList();
@@ -180,7 +185,7 @@ namespace MueLu {
         }
       }
     }
-
+#endif
     return domainGidOffset;
   }
 

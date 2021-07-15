@@ -72,7 +72,7 @@ namespace MueLuTests {
     TEST_EQUALITY(mapFact != Teuchos::null, true);
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, BuildBlockedCoarseMapWithGIDOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, BuildMapWithGIDOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
@@ -136,9 +136,74 @@ namespace MueLuTests {
     TEST_EQUALITY(Teuchos::as<GO>(map2->getNodeNumElements()), numAggs * Teuchos::as<GO>(NSdim));
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedCoarseMapFactory, BuildMapWithGIDOffsetMultipleLevels, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    const size_t numNodes = 15;
+    const size_t numAggs = 10;
+
+    Level myLevel;
+    myLevel.SetLevelID(0);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(numNodes);
+    myLevel.Set("A", A);
+
+    // build dummy aggregate structure
+    Teuchos::RCP<Aggregates> aggs = Teuchos::rcp(new Aggregates(A->getRowMap()));
+    aggs->SetNumAggregates(10); // set (local!) number of aggregates
+    myLevel.Set("Aggregates", aggs);
+
+    // build dummy nullspace vector
+    Teuchos::RCP<MultiVector> nsp = MultiVectorFactory::Build(A->getRowMap(),1);
+    nsp->putScalar(1.0);
+    myLevel.Set("Nullspace", nsp);
+
+    RCP<CoarseMapFactory> myCMF = Teuchos::rcp(new CoarseMapFactory());
+    myCMF->SetFactory("Aggregates", MueLu::NoFactory::getRCP());
+    myCMF->SetFactory("Nullspace", MueLu::NoFactory::getRCP());
+
+    RCP<BlockedCoarseMapFactory> myBlockedCMF = Teuchos::rcp(new BlockedCoarseMapFactory());
+    myBlockedCMF->SetFactory("CoarseMap", myCMF);
+    myBlockedCMF->SetFactory("Aggregates", MueLu::NoFactory::getRCP());
+    myBlockedCMF->SetFactory("Nullspace", MueLu::NoFactory::getRCP());
+
+    myLevel.Request("CoarseMap", myCMF.get());
+    myLevel.Request("CoarseMap", myBlockedCMF.get());
+    myBlockedCMF->Build(myLevel);
+
+    RCP<const Map> myCoarseMap = myLevel.Get<RCP<const Map> >("CoarseMap",myCMF.get());
+    RCP<const Map> myCoarseMapWithOffset = myLevel.Get<RCP<const Map> >("CoarseMap", myBlockedCMF.get());
+
+    TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex(), 0);
+    TEST_EQUALITY(myCoarseMap->getMaxLocalIndex(), numAggs - 1);
+
+    TEST_EQUALITY(myCoarseMapWithOffset->getMinAllGlobalIndex(), myCoarseMap->getMaxAllGlobalIndex() + 1);
+    TEST_EQUALITY(myCoarseMapWithOffset->getMaxLocalIndex(), numAggs - 1);
+
+    myLevel.Release("CoarseMap", myCMF.get());
+    myLevel.Release("CoarseMap", myBlockedCMF.get());
+    myLevel.SetLevelID(1);
+    myLevel.Request("CoarseMap", myCMF.get());
+    myLevel.Request("CoarseMap", myBlockedCMF.get());
+    myBlockedCMF->Build(myLevel);
+
+    myCoarseMap = myLevel.Get<RCP<const Map> >("CoarseMap",myCMF.get());
+    myCoarseMapWithOffset = myLevel.Get<RCP<const Map> >("CoarseMap", myBlockedCMF.get());
+
+    TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex(), 0);
+    TEST_EQUALITY(myCoarseMap->getMaxLocalIndex(), numAggs - 1);
+
+    TEST_EQUALITY(myCoarseMapWithOffset->getMinAllGlobalIndex(), myCoarseMap->getMaxAllGlobalIndex() + 1);
+    TEST_EQUALITY(myCoarseMapWithOffset->getMaxLocalIndex(), numAggs - 1);
+  }
+
 #define MUELU_ETI_GROUP(Scalar,LocalOrdinal,GlobalOrdinal,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, BuildBlockedCoarseMapWithGIDOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, BuildMapWithGIDOffset, Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedCoarseMapFactory, BuildMapWithGIDOffsetMultipleLevels, Scalar, LocalOrdinal, GlobalOrdinal, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

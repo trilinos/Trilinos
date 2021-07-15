@@ -108,6 +108,8 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+#ifdef HAVE_MUELU_DEPRECATED_TESTS
+    out << "Testing deprecated method" << std::endl;
     out << "version: " << MueLu::Version() << std::endl;
     Level myLevel;
     myLevel.SetLevelID(0);
@@ -158,7 +160,11 @@ namespace MueLuTests {
 
     TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex() == 0, true);
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()==9,true);
+#else
+    std::cout << "*** This test is marked as deprecated." << std::endl;
+#endif
   } // NonStandardCaseA
+
 
   ///////////////////////////////////////////////////////////////////////////
 
