@@ -307,6 +307,7 @@ namespace MueLu {
         Teuchos::ArrayRCP<Scalar> diagA = Utilities::GetMatrixDiagonal(*A);
         RCP<Matrix> DinvADinvAP0 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A, false, *DinvAP0, false, GetOStream(Statistics2), doFillComplete, optimizeStorage);
         Utilities::MyOldScaleMatrix(*DinvADinvAP0, diagA, true, doFillComplete, optimizeStorage); //scale matrix with reciprocal of diag
+	diagA = Teuchos::ArrayRCP<Scalar>();
 
         Numerator =   VectorFactory::Build(DinvADinvAP0->getColMap(), true);
         Denominator = VectorFactory::Build(DinvADinvAP0->getColMap(), true);
@@ -438,6 +439,7 @@ namespace MueLu {
         InnerProd_local[lindices[i]] += lvals[i]*lvals[i];
       }
     }
+     InnerProd_local = Teuchos::ArrayRCP< Scalar >();
 
     // exporter: overlapping map to nonoverlapping map (target map is unique)
     Teuchos::RCP<const Export> exporter =
@@ -562,7 +564,7 @@ namespace MueLu {
             (*temp_array)[(*NewLeftLocal)[lindices_left[i] ] ] = 0.0;
           }
         }
-
+	InnerProd_local = Teuchos::ArrayRCP< Scalar >();
         // exporter: overlapping map to nonoverlapping map (target map is unique)
         Teuchos::RCP<const Export> exporter =
           ExportFactory::Build(right->getColMap(), right->getDomainMap()); // TODO: change left to right?
