@@ -146,7 +146,7 @@ private:
   void solve_adjoint_sensitivity(const Vector<Real> &w, const Vector<Real> &v, const Vector<Real> &z, Real &tol) {
     // Evaluate full hessVec in the direction (s,v)
     conVal_->applyAdjointHessian_11(*dualstate_,w,*state_sens_,*state_,z,tol);
-    conVal_->applyAdjointHessian_12(*dualstate1_,w,v,*state_,z,tol);
+    conVal_->applyAdjointHessian_21(*dualstate1_,w,v,*state_,z,tol);
     dualstate_->plus(*dualstate1_);
     // Apply adjoint Hessian of constraint
     conRed_->applyAdjointHessian_11(*dualstate1_,*adjoint_,*state_sens_,*state_,z,tol);
@@ -311,7 +311,7 @@ public:
       solve_adjoint_sensitivity(w,v,z,tol);
       // Build hessVec
       conRed_->applyAdjointJacobian_2(ahwv,*adjoint_sens_,*state_,z,tol);
-      conVal_->applyAdjointHessian_21(*dualcontrol_,w,*state_sens_,*state_,z,tol);
+      conVal_->applyAdjointHessian_12(*dualcontrol_,w,*state_sens_,*state_,z,tol);
       ahwv.plus(*dualcontrol_);
       conVal_->applyAdjointHessian_22(*dualcontrol_,w,v,*state_,z,tol);
       ahwv.plus(*dualcontrol_);
