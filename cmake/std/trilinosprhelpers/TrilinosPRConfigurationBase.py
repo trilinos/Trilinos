@@ -3,9 +3,10 @@
 """
 This file contains the base class for the Pull Request test driver.
 """
-import configparser
+import configparserenhanced
 import multiprocessing
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -13,10 +14,9 @@ from textwrap import dedent
 
 sys.dont_write_bytecode = True
 
-
-from . import setenvironment
 from . import sysinfo
-#from . import jenkinsenv
+from loadenv.LoadEnv import LoadEnv
+import setenvironment
 
 
 
@@ -222,25 +222,44 @@ class TrilinosPRConfigurationBase(object):
         loaded from the config.ini file.
         """
         if self._config_data is None:
-            self._config_data = setenvironment.SetEnvironment(self.arg_pr_config_file,
-                                                              self.arg_pr_jenkins_job_name)
-        return self._config_data
+            self._load_env_config_data = configparserenhanced.ConfigParserEnhanced(
+                Path(self.arg_pr_config_file)
+                ).configparserenhanceddata
 
+            if not self._load_env_config_data.has_section("load-env"):
+                msg = f"'{self.load_env_ini_file}' must contain a 'load-env' section."
+                raise ValueError(self.get_formatted_msg(msg))
+
+            pr_specs_key = "pullrequest-specs"
+            if not self._load_env_config_data.has_option("load-env",
+                                                        pr_specs_key):
+                raise ValueError(
+                    f"'{self.load_env_ini_file}' must contain the "
+                    "following in the 'load-env' section: "
+                    "{key} : /path/to/{key}.ini".format(key=pr_specs_key)
+                )
+
+            self._config_data_path = Path(
+                os.path.join(Path(self.arg_pr_config_file).parent,
+                self._load_env_config_data['load-env']['pullrequest-specs'])
+                ).resolve()
+
+            self._config_data = configparserenhanced.ConfigParserEnhanced(
+                self._config_data_path).configparserenhanceddata
+
+        return self._config_data
 
     @property
     def config_script(self):
         """
-        Returns the configuration script from the configuration file.
+        Returns the configuration script name
 
-        This function searches the [CONFIG_SCRIPT_MAP] section in the config.ini file
-        and looks for the key matching the Jenkins job name and returns the
-        value from that KV pair.  This would be the .cmake file that maps to the
-        job.
+        This arbitrary name will be used for all runs until  an override is established
 
         Returns:
             String containing the job-specific configuration script to load.
         """
-        return self.get_property_from_config("CONFIG_SCRIPT_MAP", self.arg_pr_jenkins_job_name)
+        return "generatedPRFragment.cmake"
 
 
     @property
@@ -271,7 +290,9 @@ class TrilinosPRConfigurationBase(object):
         """
         if self._max_test_parallelism is None:
             try:
-                self._max_test_parallelism = int(self.get_property_from_config("PR_JOB_PARAMETERS","max-test-parallelism"))
+                self._max_test_parallelism = \
+                    int(self.get_property_from_config("PR_JOB_PARAMETERS",
+                                                      "max-test-parallelism"))
             except:
                 self._max_test_parallelism = 1
         return self._max_test_parallelism
@@ -351,13 +372,10 @@ class TrilinosPRConfigurationBase(object):
         """
         output = default
         try:
-            output = self.config_data.config.get(section, option)
-        except configparser.NoSectionError:
+            output = self.config_data.get(section, option)
+        except KeyError:
             print("WARNING: Configuration section '{}' does not exist.".format(section))
             print("       : Returning default value: '{}'".format(output))
-        except configparser.NoOptionError:
-            print("WARNING: Configuration section '{}' has no key '{}'".format(section,option))
-            print("       : Returning default value: {}".format(output))
         return output
 
 
@@ -381,15 +399,15 @@ class TrilinosPRConfigurationBase(object):
         """
         output = default
         try:
-            for option_full in self.config_data.config.options(section):
+            for option_full in self.config_data.options(section):
                 if option == option_full.split(" ")[0]:
                     if output is None:
-                        output = self.config_data.config.get(section, option_full)
+                        output = self.config_data.get(section, option_full)
                     else:
                         output = delimeter.join(
-                            [output, self.config_data.config.get(section, option_full)]
+                            [output, self.config_data.get(section, option_full)]
                         )
-        except configparser.NoSectionError:
+        except KeyError:
             print("WARNING: Configuration section '{}' does not exist.".format(section))
             print("       : Returning default value: {}".format(output))
         return output
@@ -556,14 +574,18 @@ class TrilinosPRConfigurationBase(object):
         print("+" + "-"*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   S T A R T")
         print("+" + "-"*68 + "+")
-        tr_config = setenvironment.SetEnvironment(self.arg_pr_config_file, self.arg_pr_jenkins_job_name)
+        tr_env = LoadEnv([self.arg_pr_jenkins_job_name],
+                         load_env_ini_file=Path(self.arg_pr_config_file))
+        tr_env.load_set_environment()
 
         rval = 0
         if not self.args.dry_run:
-            rval = tr_config.apply(throw_on_error=True)
+            rval = tr_env.apply_env()
             print("--- Environment setup completed ({})".format(rval))
         else:
-            tr_config.pretty_print()
+            if tr_env.set_environment is None:
+                tr_env.load_set_environment()
+            tr_env.set_environment.pretty_print_actions(tr_env.parsed_env_name)
             print("")
             print("--- NOTICE: ENVVARS not set due to dry-run flag.")
             print("")
@@ -596,7 +618,7 @@ class TrilinosPRConfigurationBase(object):
             "MODULESHOME"
             ]
         print("")
-        tr_config.pretty_print_envvars(envvar_filter=envvars_to_print)
+        tr_env.set_environment.pretty_print_envvars(envvar_filter=envvars_to_print)
 
         print("+" + "-"*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
