@@ -89,7 +89,7 @@ const bool  CommandLineProcessor::output_show_proc_rank_default_(false);
 const int   CommandLineProcessor::output_to_root_rank_only_default_(0);
 const bool  CommandLineProcessor::print_rcpnode_statistics_on_exit_default_(false);
 const bool  CommandLineProcessor::show_timer_summary_on_exit_default_(false);
-
+const bool  CommandLineProcessor::print_stacktrace_on_segfault_default_(false);
 
 CommandLineProcessor::CommandLineProcessor(
   bool   throwExceptions_in
@@ -105,11 +105,23 @@ CommandLineProcessor::CommandLineProcessor(
   ,output_show_proc_rank_(output_show_proc_rank_default_)
   ,output_to_root_rank_only_(output_to_root_rank_only_default_)
   ,print_rcpnode_statistics_on_exit_(print_rcpnode_statistics_on_exit_default_)
+  ,print_stacktrace_on_segfault_(print_stacktrace_on_segfault_default_)
   ,show_timer_summary_on_exit_(show_timer_summary_on_exit_default_)
   ,printed_timer_summary_(false)
   ,added_extra_output_setup_options_(false)
   ,in_add_extra_output_setup_options_(false)
-{}
+{
+#ifdef HAVE_TEUCHOS_STACKTRACE
+  // CommandLineProcessor
+  //   *clp = const_cast<CommandLineProcessor*>(this);
+  // clp->setOption(
+  setOption(
+    "print-stacktrace-on-segfault", "no-print-stacktrace-on-segfault",
+    &print_stacktrace_on_segfault_,
+    "Set if the a stracktrace will be printed on segfault or not."
+    );
+#endif
+}
 
 
 CommandLineProcessor::~CommandLineProcessor()
@@ -425,6 +437,10 @@ CommandLineProcessor::parse(
       defaultOut->setOutputToRootOnly(output_to_root_rank_only_);
     RCPNodeTracer::setPrintRCPNodeStatisticsOnExit(print_rcpnode_statistics_on_exit_);
   }
+#ifdef HAVE_TEUCHOS_STACKTRACE
+  if (print_stacktrace_on_segfault_)
+    Teuchos::print_stack_on_segfault();
+#endif
   return PARSE_SUCCESSFUL;
 }
 

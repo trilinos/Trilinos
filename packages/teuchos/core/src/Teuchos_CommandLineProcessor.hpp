@@ -547,6 +547,7 @@ private:
   bool  output_show_proc_rank_;
   int   output_to_root_rank_only_;
   bool  print_rcpnode_statistics_on_exit_;
+  bool  print_stacktrace_on_segfault_;
   bool  show_timer_summary_on_exit_;
 
   bool printed_timer_summary_;
@@ -561,6 +562,7 @@ private:
   static const int   output_to_root_rank_only_default_;
   static const bool  print_rcpnode_statistics_on_exit_default_;
   static const bool  show_timer_summary_on_exit_default_;
+  static const bool  print_stacktrace_on_segfault_default_;
 
   // /////////////////////////////////
   // Private member functions
