@@ -183,8 +183,8 @@ namespace BaskerNS
     Int           btf_tabs_offset; // stores offset of first btf block in BTF_C, after the nd blocks BTF_A
     Int           btf_nblks; // set during Symbolic() btf ordering step - total of BTF_C blocks and ND blocks?
 
-    Int           btf_top_tabs_offset;
-    Int           btf_top_nblks;
+    Int           btf_top_tabs_offset; // store offset of "first" btf block in BTF_A (BTF_A has only one block)
+    Int           btf_top_nblks;       // store the number of diagonal blocks in BTF_D
 
     //These are temp arrys that are used for ordering and sfactor
     INT_1DARRAY btf_blk_work;
@@ -1269,16 +1269,6 @@ namespace BaskerNS
     /* ----------------TYPEDEF TYPES-------------------*/
 
     bool crs_transpose_needed;
-    BASKER_MATRIX A;
-    BASKER_MATRIX BTF_A;
-    BASKER_MATRIX BTF_C;
-    BASKER_MATRIX BTF_B;
-    BASKER_MATRIX BTF_D;
-    BASKER_MATRIX BTF_E;
-
-    Int gn;
-    Int gm;
-
     //OLD
     //For BTF Option
     // [BTF_A BTF_B]
@@ -1289,6 +1279,16 @@ namespace BaskerNS
     // [BTF_D  BTF_E]
     // [0      BTF_A BTF_B]
     // [0      0     BTF_C]
+
+    BASKER_MATRIX A;
+    BASKER_MATRIX BTF_A;
+    BASKER_MATRIX BTF_C;
+    BASKER_MATRIX BTF_B;
+    BASKER_MATRIX BTF_D;
+    BASKER_MATRIX BTF_E;
+
+    Int gn;
+    Int gm;
 
     //Note: In future, rename AV -> AU
     MATRIX_VIEW_2DARRAY  AV;

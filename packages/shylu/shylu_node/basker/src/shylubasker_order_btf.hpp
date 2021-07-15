@@ -680,11 +680,16 @@ namespace BaskerNS
 
     Options.btf = BASKER_TRUE;
 
-    //Alg.  
+    //Alg. 
+    // Old: 
     // A -> [BTF_A  BTF_B] 
     //      [0      BTF_C]
-    //1. Run backward through the btf_tabs to find size C
-    //2. Form A,B,C based on size in 1.
+    // New: 
+    // A -> [BTF_D    BTF_E     ]  (BTF_E stores interface to both BTF_A and BTF_C)
+    //      [0      BTF_A  BTF_B]  (BTF_A has just one block)
+    //      [0      0      BTF_C]
+    //1. Run backward through the btf_tabs to find size of C
+    //2. Form A,B,C ,and D & E,  based on step 1.
 
     //Short circuit, 
     //If nblks  == 1, than only BTF_A exists
@@ -833,14 +838,14 @@ namespace BaskerNS
     #endif
 
     //Comeback and change
-    // btf_tabs_offset is offset to id of first block after diag blocks in BTF_A 
-    btf_tabs_offset = blk_idx;
+    // btf_tabs_offset is offset to id of first block after diag blocks in BTF_A
+    // (i.e., the first block in BTF_C)
+    btf_tabs_offset = blk_idx; // 
 
     //Step 2. Move into Blocks 
     MALLOC_INT_1DARRAY_PAIRS(vals_block_map_perm_pair, M.nnz); //this will store and map A.val indices to val indices of BTF_A, BTF_B, and BTF_C 
-    // Begin with BTF_A
-    if(btf_tabs_offset != 0)
-    {
+    if(btf_tabs_offset != 0) // if the id of the first block in BTF_C != 0
+    {                        // -> we have BTF_A, and maybe blocks in BTF_D
 #if defined(BASKER_SPLIT_A)
       #if 0
       // debuging with A merging all the top blocks
@@ -850,11 +855,13 @@ namespace BaskerNS
 
       scol_top = 0;
       #else
-      btf_top_tabs_offset = btf_tabs_offset-1;  // starting block ID of A block (for now, there is just one big block in A)
-      btf_top_nblks = btf_top_tabs_offset;      // number of blocks in D
+      btf_top_tabs_offset = btf_tabs_offset-1;  // starting block ID of BTF_A block (for now, there is just one big block in A)
+      btf_top_nblks = btf_top_tabs_offset;      // number of blocks in BTF_D
 
       scol_top = _btf_tabs[btf_top_tabs_offset]; // the first column index of A
       #endif
+
+      // extract BTF_D and BTF_E
       Int dnnz = M.col_ptr(scol_top);
       Int ennz = 0;
       for(Int k = scol_top; k < M.ncol; ++k) {
@@ -933,8 +940,10 @@ namespace BaskerNS
       BTF_A.set_shape(0, scol-scol_top, 0, scol-scol_top);
       BTF_A.nnz = annz;
       if(Options.verbose == BASKER_TRUE) {
-        printf( " + scol = %d, scol_top = %d, btf_tabs = %d, btf_top_tabs = %d, annz = %d\n", (int)scol, (int)scol_top, (int)btf_tabs_offset, (int)btf_top_tabs_offset, (int)annz );
-        printf( " +  BTF_A.srow = %d, BTF_A.scol = %d, BTF_A.nrow = %d, BTF_A.ncol = %d\n", (int)BTF_A.srow, (int)BTF_A.scol, (int)BTF_A.nrow, (int)BTF_A.ncol );
+        printf( " + scol = %d, scol_top = %d, btf_tabs = %d, btf_top_tabs = %d, annz = %d\n",
+                (int)scol, (int)scol_top, (int)btf_tabs_offset, (int)btf_top_tabs_offset, (int)annz );
+        printf( " +  BTF_A.srow = %d, BTF_A.scol = %d, BTF_A.nrow = %d, BTF_A.ncol = %d\n",
+                (int)BTF_A.srow, (int)BTF_A.scol, (int)BTF_A.nrow, (int)BTF_A.ncol );
       }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
