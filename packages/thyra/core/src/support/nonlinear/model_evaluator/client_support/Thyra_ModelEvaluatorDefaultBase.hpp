@@ -1106,12 +1106,13 @@ ModelEvaluatorDefaultBase<Scalar>::createDefaultLinearOp(
       return nonconstAdjoint<Scalar>(
         rcp_implicit_cast<LOB>(createMembers(var_space, fnc_space->dim()))
         );
-#ifdef TEUCHOS_DEBUG
     default:
+#ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+#else
+      return Teuchos::null; // Will never be called!
 #endif
   }
-  return Teuchos::null; // Will never be called!
 }
 
 
@@ -1166,14 +1167,13 @@ ModelEvaluatorDefaultBase<Scalar>::getOutArgImplForDefaultLinearOpSupport(
         MEB::DERIV_TRANS_MV_BY_ROW
         );
     }
-#ifdef TEUCHOS_DEBUG
     default:
+#ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+#else
+      return ModelEvaluatorBase::Derivative<Scalar>(); // Should never get here!
 #endif
   }
-
-  return ModelEvaluatorBase::Derivative<Scalar>(); // Should never get here!
-
 }
 
 
