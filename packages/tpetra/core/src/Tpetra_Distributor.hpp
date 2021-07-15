@@ -65,7 +65,8 @@ namespace Tpetra {
       DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
       DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
       DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
-      DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
+      DISTRIBUTOR_SSEND, // Use MPI_Ssend (Teuchos::ssend)
+      DISTRIBUTOR_PERSISTENT  // Use MPI persistent send
     };
 
     /// \brief Convert an EDistributorSendType enum value to a string.
@@ -246,7 +247,10 @@ namespace Tpetra {
     ///
     /// \pre No outstanding communication requests.
     ///   (We could check, but see GitHub Issue #1303.)
-    virtual ~Distributor () = default;
+    ~Distributor () {
+      for (int i = 0; i<persistentRequests_.size(); i++)
+        persistentRequests_[i]->free();
+    };
 
     /// \brief Swap the contents of rhs with those of *this.
     ///
@@ -935,6 +939,9 @@ namespace Tpetra {
     ///   receive and send requests.
     Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > requests_;
 
+    /// \brief Communication requests associated with persistent receives and sends.
+    Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > persistentRequests_;
+
     /// \brief The reverse distributor.
     ///
     /// This is created on demand in getReverse() and cached for
@@ -1150,6 +1157,9 @@ namespace Tpetra {
     using Teuchos::includesVerbLevel;
     using Teuchos::ireceive;
     using Teuchos::isend;
+    using Teuchos::receiveInit;
+    using Teuchos::sendInit;
+    using Teuchos::OSTab;
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
@@ -1246,12 +1256,15 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
+    const bool setupRequests = ((sendType != Details::DISTRIBUTOR_PERSISTENT) ||
+                                (persistentRequests_.size() == 0));
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3TA_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -1284,8 +1297,12 @@ namespace Tpetra {
             << ").");
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufOffset, curBufLen);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
-                                                      tag, *comm_));
+          if (sendType != Details::DISTRIBUTOR_PERSISTENT)
+            requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
+                                                        tag, *comm_));
+          else
+            persistentRequests_.push_back(receiveInit<int, Packet> (recvBuf, procsFrom_[i],
+                                                                    tag, *comm_));
         }
         else { // Receiving from myself
           selfReceiveOffset = curBufOffset; // Remember the self-recv offset
@@ -1387,6 +1404,15 @@ namespace Tpetra {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
                                 procsTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+            if (setupRequests) {
+              ArrayRCP<const Packet> sendBuf =
+                exports.persistingView (startsTo_[p] * numPackets,
+                                        lengthsTo_[p] * numPackets);
+              persistentRequests_.push_back(sendInit<int, Packet> (sendBuf, procsTo_[p],
+                                                                   tag, *comm_));
+            }
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -1398,6 +1424,16 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+        // start the persistent send and receive requests
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "Starting persistent requests" << endl;
+          std::cerr << os.str ();
+        }
+        startAll(*comm_, persistentRequests_());
       }
 
       if (selfMessage_) {
@@ -1433,6 +1469,13 @@ namespace Tpetra {
         "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
         "The \"send buffer\" code path doesn't currently work with "
         "nonblocking sends.");
+
+      // FIXME (CAG 01 April 2019) This does not work for Persistent.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_PERSISTENT,
+        std::logic_error,
+        "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): The \"send buffer\" code path "
+        "doesn't currently work with persistent send requests.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + procIndex;
@@ -1531,6 +1574,8 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::ireceive;
     using Teuchos::isend;
+    using Teuchos::receiveInit;
+    using Teuchos::sendInit;
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
@@ -1643,12 +1688,15 @@ namespace Tpetra {
       as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
+    const bool setupRequests = ((sendType != Details::DISTRIBUTOR_PERSISTENT) ||
+                                (persistentRequests_.size() == 0));
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4TA_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -1672,8 +1720,12 @@ namespace Tpetra {
           // 2. Start the Irecv and save the resulting request.
           ArrayRCP<Packet> recvBuf =
             imports.persistingView (curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
-                                                      tag, *comm_));
+          if (sendType != Details::DISTRIBUTOR_PERSISTENT)
+            requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
+                                                        tag, *comm_));
+          else
+            persistentRequests_.push_back (receiveInit<int, Packet> (recvBuf, procsFrom_[i],
+                                                                     tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
           selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -1773,6 +1825,14 @@ namespace Tpetra {
                                 as<int> (tmpSend.size ()),
                                 procsTo_[p], tag, *comm_);
           }
+          else if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+            if (setupRequests) {
+              ArrayRCP<const Packet> sendBuf =
+                exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
+              persistentRequests_.push_back(isend<int, Packet> (sendBuf, procsTo_[p],
+                                                                tag, *comm_));
+            }
+          }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -1784,6 +1844,17 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+        // start the persistent send and receive requests
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix
+             << "doPosts(4 args, Teuchos::ArrayRCP, fast): Starting persistent requests" << endl;
+          std::cerr << os.str ();
+        }
+        startAll(*comm_, persistentRequests_());
       }
 
       if (selfMessage_) {
@@ -1817,6 +1888,12 @@ namespace Tpetra {
         std::logic_error,
         "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): "
         "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_PERSISTENT,
+        std::logic_error,
+        "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): "
+        "The \"send buffer\" code path does not work with persistent sends.");
 
       Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
       size_t ioffset = 0;
@@ -2100,6 +2177,9 @@ namespace Tpetra {
     using Teuchos::includesVerbLevel;
     using Teuchos::ireceive;
     using Teuchos::isend;
+    using Teuchos::receiveInit;
+    using Teuchos::sendInit;
+    using Teuchos::OSTab;
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
@@ -2237,12 +2317,15 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
+    const bool setupRequests = ((sendType != Details::DISTRIBUTOR_PERSISTENT) ||
+                                (persistentRequests_.size() == 0));
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -2275,8 +2358,12 @@ namespace Tpetra {
             curBufLen << ").");
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, curBufLen);
-          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
-                                              tag, *comm_));
+          if (sendType != Details::DISTRIBUTOR_PERSISTENT)
+            requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
+                                                tag, *comm_));
+          else
+            persistentRequests_.push_back (receiveInit<int> (recvBuf, procsFrom_[i],
+                                                             tag, *comm_));
         }
         else { // Receiving from myself
           selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
@@ -2383,6 +2470,15 @@ namespace Tpetra {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
                         procsTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+            if (setupRequests) {
+              exports_view_type sendBuf =
+                subview_offset (exports, startsTo_[p] * numPackets,
+                                lengthsTo_[p] * numPackets);
+              persistentRequests_.push_back(sendInit<int> (sendBuf, procsTo_[p],
+                                                           tag, *comm_));
+            }
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true,
@@ -2395,6 +2491,16 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+        // start the persistent send and receive requests
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "Starting persistent requests" << endl;
+          std::cerr << os.str ();
+        }
+        startAll(*comm_, persistentRequests_());
       }
 
       if (selfMessage_) {
@@ -2445,6 +2551,13 @@ namespace Tpetra {
         std::logic_error,
         "Tpetra::Distributor::doPosts(3 args, Kokkos): The \"send buffer\" code path "
         "doesn't currently work with nonblocking sends.");
+
+      // FIXME (CAG 01 April 2019) This does not work for Persistent.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_PERSISTENT,
+        std::logic_error,
+        "Tpetra::Distributor::doPosts(3 args, Kokkos): The \"send buffer\" code path "
+        "doesn't currently work with persistent send requests.");
 
       for (size_t i = 0; i < numBlocks; ++i) {
         size_t p = i + procIndex;
@@ -2545,6 +2658,8 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::ireceive;
     using Teuchos::isend;
+    using Teuchos::receiveInit;
+    using Teuchos::sendInit;
     using Teuchos::readySend;
     using Teuchos::send;
     using Teuchos::ssend;
@@ -2665,12 +2780,15 @@ namespace Tpetra {
       as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
+    const bool setupRequests = ((sendType != Details::DISTRIBUTOR_PERSISTENT) ||
+                                (persistentRequests_.size() == 0));
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -2694,8 +2812,12 @@ namespace Tpetra {
           // 2. Start the Irecv and save the resulting request.
           imports_view_type recvBuf =
             subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
-                                              tag, *comm_));
+          if (sendType != Details::DISTRIBUTOR_PERSISTENT)
+            requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
+                                                tag, *comm_));
+          else
+            persistentRequests_.push_back (receiveInit<int> (recvBuf, procsFrom_[i],
+                                                             tag, *comm_));
         }
         else { // Receiving these packet(s) from myself
           selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -2794,6 +2916,14 @@ namespace Tpetra {
                         as<int> (tmpSend.size ()),
                         procsTo_[p], tag, *comm_);
           }
+          else if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+            if (setupRequests) {
+              exports_view_type sendBuf =
+                subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
+              persistentRequests_.push_back(sendInit<int> (sendBuf, procsTo_[p],
+                                                           tag, *comm_));
+            }
+          }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -2805,6 +2935,17 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+        // start the persistent send and receive requests
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix
+             << "doPosts(4 args, Kokkos, fast): Starting persistent requests" << endl;
+          std::cerr << os.str ();
+        }
+        startAll(*comm_, persistentRequests_());
       }
 
       if (selfMessage_) {
@@ -2840,6 +2981,12 @@ namespace Tpetra {
         std::logic_error,
         "Tpetra::Distributor::doPosts(4-arg, Kokkos): "
         "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        sendType == Details::DISTRIBUTOR_PERSISTENT,
+        std::logic_error,
+        "Tpetra::Distributor::doPosts(4 args, Kokkos): "
+        "The \"send buffer\" code path does not work with persistent sends.");
 
       Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
       size_t ioffset = 0;

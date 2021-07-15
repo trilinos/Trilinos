@@ -181,17 +181,48 @@ public:
   ireceive (const ArrayView<char> &Buffer,
             const int sourceRank,
             const int tag) const;
+  virtual RCP<CommRequest<Ordinal> > sendInit(
+    const ArrayView<const char> &sendBuffer,
+    const int destRank
+    ) const;
+  //! Variant of sendInit() that takes a tag.
+  virtual RCP<CommRequest<Ordinal> >
+  sendInit (const ArrayView<const char> &sendBuffer,
+         const int destRank,
+         const int tag) const;
+  /** \brief . */
+  virtual RCP<CommRequest<Ordinal> > receiveInit(
+    const ArrayView<char> &Buffer,
+    const int sourceRank
+    ) const;
+  /** \brief . */
+  virtual RCP<CommRequest<Ordinal> >
+  receiveInit (const ArrayView<char> &Buffer,
+            const int sourceRank,
+            const int tag) const;
   /** \brief . */
   virtual void waitAll(
-    const ArrayView<RCP<CommRequest<Ordinal> > > &requests
+    const ArrayView<RCP<CommRequest<Ordinal> > > &requests,
+    bool releaseRequests=true
     ) const;
   /** \brief . */
   virtual void
   waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-           const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const;
+           const ArrayView<RCP<CommStatus<Ordinal> > >& statuses,
+           bool releaseRequests=true) const;
   /** \brief . */
   virtual RCP<CommStatus<Ordinal> >
   wait (const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
+  /** \brief . */
+  virtual void
+  start (const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
+  /** \brief . */
+  virtual void startAll(
+    const ArrayView<RCP<CommRequest<Ordinal> > > &requests
+    ) const;
+  /** \brief . */
+  virtual void
+  free (const Ptr<RCP<CommRequest<Ordinal> > >& request) const;
   /** \brief . */
   virtual RCP< Comm<Ordinal> > duplicate() const;
   /** \brief . */
@@ -472,7 +503,50 @@ ireceive (const ArrayView<char> &/*Buffer*/,
 
 
 template<typename Ordinal>
-void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests) const
+RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::sendInit(
+  const ArrayView<const char> &/*sendBuffer*/,
+  const int /*destRank*/
+  ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::sendInit: You cannot call sendInit when you only have one process." );
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> >
+SerialComm<Ordinal>::
+sendInit (const ArrayView<const char> &/*sendBuffer*/,
+       const int /*destRank*/,
+       const int /*tag*/) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::sendInit: You cannot call sendInit when you only have one process." );
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> > SerialComm<Ordinal>::receiveInit(
+  const ArrayView<char> &/*Buffer*/,
+  const int /*sourceRank*/
+  ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::receiveInit: You cannot call isend when you only have one process." );
+}
+
+
+template<typename Ordinal>
+RCP<CommRequest<Ordinal> >
+SerialComm<Ordinal>::
+receiveInit (const ArrayView<char> &/*Buffer*/,
+          const int /*sourceRank*/,
+          const int /*tag*/) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error, "SerialComm<Ordinal>::receiveInit: You cannot call isend when you only have one process." );
+}
+
+
+template<typename Ordinal>
+void SerialComm<Ordinal>::waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
+                                   bool releaseRequests) const
 {
   (void) requests;
   // There's nothing to wait on!
@@ -483,7 +557,8 @@ template<typename Ordinal>
 void
 SerialComm<Ordinal>::
 waitAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests,
-         const ArrayView<RCP<CommStatus<Ordinal> > >& statuses) const
+         const ArrayView<RCP<CommStatus<Ordinal> > >& statuses,
+         bool releaseRequests) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(statuses.size() < requests.size(),
     std::invalid_argument, "Teuchos::SerialComm::waitAll: There are not enough "
@@ -510,6 +585,34 @@ SerialComm<Ordinal>::wait (const Ptr<RCP<CommRequest<Ordinal> > > & request) con
   }
   *request = null;
   return rcp (new SerialCommStatus<Ordinal>);
+}
+
+template<typename Ordinal>
+void
+SerialComm<Ordinal>::start (const Ptr<RCP<CommRequest<Ordinal> > > & request) const
+{
+  (void) request;
+  TEUCHOS_TEST_FOR_EXCEPTION(request.getRawPtr() == NULL, std::invalid_argument,
+    "Teuchos::SerialComm::start: On input, the request pointer is null.");
+  *request = null;
+}
+
+template<typename Ordinal>
+void
+SerialComm<Ordinal>::free (const Ptr<RCP<CommRequest<Ordinal> > > & request) const
+{
+  (void) request;
+  TEUCHOS_TEST_FOR_EXCEPTION(request.getRawPtr() == NULL, std::invalid_argument,
+    "Teuchos::SerialComm::free: On input, the request pointer is null.");
+  *request = null;
+}
+
+
+template<typename Ordinal>
+void SerialComm<Ordinal>::startAll (const ArrayView<RCP<CommRequest<Ordinal> > >& requests) const
+{
+  (void) requests;
+  // There's nothing to start!
 }
 
 template< typename Ordinal>

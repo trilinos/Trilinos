@@ -122,6 +122,33 @@ ireceive (const ViewType& recvBuffer,
 }
 
 
+//! Variant of sendInit() that takes a tag (and restores the correct order of arguments).
+template<typename Ordinal, class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
+sendInit (const ViewType& sendBuffer,
+          const int destRank,
+          const int tag,
+          const Comm<Ordinal>& comm)
+{
+  using Kokkos::Compat::persistingView;
+  // See Issue #1454: https://github.com/trilinos/Trilinos/issues/1454
+  typename ViewType::const_type sendBuffer_const = sendBuffer;
+  return sendInit (persistingView (sendBuffer_const), destRank, tag, comm);
+}
+
+//! Variant of receiveInit that takes a tag argument (and restores the correct order of arguments).
+template<typename Ordinal, class ViewType>
+typename std::enable_if<(Kokkos::Impl::is_view<ViewType>::value),RCP<CommRequest<Ordinal> >>::type
+receiveInit (const ViewType& recvBuffer,
+             const int sourceRank,
+             const int tag,
+             const Comm<Ordinal>& comm)
+{
+  using Kokkos::Compat::persistingView;
+  return receiveInit(persistingView(recvBuffer), sourceRank, tag, comm);
+}
+
+
 template<typename Ordinal, typename SendViewType, typename RecvViewType>
 typename std::enable_if<(Kokkos::Impl::is_view<SendViewType>::value && Kokkos::Impl::is_view<RecvViewType>::value)>::type
 reduceAll (const SendViewType& sendBuf,
