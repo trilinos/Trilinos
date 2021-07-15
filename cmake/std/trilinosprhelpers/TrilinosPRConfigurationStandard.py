@@ -8,7 +8,7 @@ import os
 import subprocess
 
 from . import TrilinosPRConfigurationBase
-
+from gen_config import GenConfig
 
 
 class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
@@ -38,6 +38,11 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         print("--- OK")
         print("")
 
+        # Use GenConffig to write the configure script for cmake
+        gc = GenConfig(["-y", "--force", self.arg_pr_jenkins_job_name,
+                        os.path.join(self.arg_workspace_dir,
+                                     self.config_script)])
+
         # Execute the call to ctest.
         # - NOTE: simple_testing.cmake can be found in the TFW_single_configure_support_scripts
         #         repository.
@@ -52,9 +57,6 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                       '-Dbuild_dir={}/pull_request_test'.format(self.arg_workspace_dir),
                       '-Dconfigure_script=' +
                           os.path.join(self.arg_workspace_dir,
-                                       'Trilinos',
-                                       'cmake',
-                                       'std',
                                        self.config_script),
                       '-Dpackage_enables=' + self.arg_filename_packageenables,
                       '-Dsubprojects_file=' + self.arg_filename_subprojects

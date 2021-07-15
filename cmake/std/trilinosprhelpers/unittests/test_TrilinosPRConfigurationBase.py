@@ -19,8 +19,8 @@ if sys.version_info >= (3,0):               # pragma: no cover
 else:                                       # pragma: no cover
     from io import BytesIO as StringIO      # pragma: no cover
 
-#import unittest
-from unittest import TestCase
+import unittest
+# from unittest import TestCase
 
 try:                                        # pragma: no cover
     import unittest.mock as mock            # pragma: no cover
@@ -37,11 +37,8 @@ import argparse
 import multiprocessing
 import subprocess
 
+import setenvironment
 import trilinosprhelpers
-from trilinosprhelpers import setenvironment
-from trilinosprhelpers import sysinfo
-
-
 
 
 #==============================================================================
@@ -159,7 +156,7 @@ def mock_se_apply_fail(*args, **kwargs):
 #                                T E S T S
 #
 #==============================================================================
-class TrilinosPRConfigurationTest(TestCase):
+class TrilinosPRConfigurationTest(unittest.TestCase):
     """
     Test TrilinsoPRConfigurationBase class
     """
@@ -174,9 +171,9 @@ class TrilinosPRConfigurationTest(TestCase):
         #os.environ["PULLREQUEST_CDASH_TRACK"] = "Pull Request"
 
         # Find the config file
-        #config_file = 'test_config.ini'
         config_file = 'trilinos_pr_test.ini'
         self._config_file = self.find_config_ini(config_file)
+        
         print("")
         print("--- Config file found: {}".format(self._config_file))
         print("")
@@ -185,7 +182,7 @@ class TrilinosPRConfigurationTest(TestCase):
         self._args = self.dummy_args_python3()
 
         # Create SetEnvironment object for tests
-        self._env  = setenvironment.SetEnvironment(filename=self._config_file, profile="Trilinos_pullrequest_gcc_4.8.4")
+        self._env  = setenvironment.SetEnvironment(filename=self._config_file)
 
         # Set up some global mock patches
         self.patch_cpu_count = patch('multiprocessing.cpu_count', return_value=64)
@@ -208,7 +205,7 @@ class TrilinosPRConfigurationTest(TestCase):
             source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
-            pullrequest_build_name="Trilinos_pullrequest_gcc_7.2.0",
+            pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
             jenkins_job_number=99,
             pullrequest_number='0000',
             pullrequest_cdash_track="Pull Request",
@@ -240,13 +237,13 @@ class TrilinosPRConfigurationTest(TestCase):
         Generate dummy command line arguments
         """
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
+        args.pullrequest_build_name = "Trilinos-pullrequest-python-3"
         return args
 
 
     def dummy_args_gcc_720(self):
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_7.2.0"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
         return args
 
 
@@ -272,7 +269,7 @@ class TrilinosPRConfigurationTest(TestCase):
         return args
 
 
-    def find_config_ini(self, filename="config.ini"):
+    def find_config_ini(self, filename="trilinos_pr_test.ini"):
         rootpath = "."
         output = None
         for dirpath,dirnames,filename_list in os.walk(rootpath):
@@ -478,9 +475,9 @@ class TrilinosPRConfigurationTest(TestCase):
         args = self.dummy_args()
 
         # Test the gcc 7.2.0 mapping
-        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_7.2.0"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-7.2.0"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-        self.assertEqual(pr_config.config_script, "PullRequestLinuxGCC7.2.0TestingSettings.cmake")
+        self.assertEqual(pr_config.config_script, "generatedPRFragment.cmake")
 
 
     def test_TrilinosPRConfigurationBaseProperty_get_property_from_config_PASS(self):
@@ -531,7 +528,7 @@ class TrilinosPRConfigurationTest(TestCase):
     def test_TrilinosPRConfigurationBaseProperty_get_multi_property_from_config_PASS(self):
         print("")
         args = self.dummy_args()
-        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_8.3.0_installation_testing"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-8.3.0-installation-testing"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Load the ENABLE_MAP job information to test `get_multi_property_from_config`.
@@ -558,7 +555,7 @@ class TrilinosPRConfigurationTest(TestCase):
         """
         print("")
         args = self.dummy_args()
-        args.pullrequest_build_name = "Trilinos_pullrequest_gcc_8.3.0_installation_testing"
+        args.pullrequest_build_name = "Trilinos-pullrequest-gcc-8.3.0-installation-testing"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
 
         # Load the ENABLE_MAP job information to test `get_multi_property_from_config`.
@@ -698,3 +695,6 @@ class TrilinosPRConfigurationTest(TestCase):
             pr_config.execute_test()
 
 mock_modulehelper_module_fail
+
+if __name__ == '__main__':
+    unittest.main()  # pragma nocover

@@ -35,10 +35,6 @@ from mock import patch
 
 import argparse
 import multiprocessing
-#import subprocess
-
-#from trilinosprhelpers import setenvironment
-#from trilinosprhelpers import sysinfo
 
 
 import trilinosprhelpers
@@ -115,14 +111,15 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         self.patch_os_chdir = patch('os.chdir', side_effect=mock_chdir)
         self.mock_chdir = self.patch_os_chdir.start()
 
-        self.patch_subprocess_check_call = patch('subprocess.check_call', side_effect=mock_subprocess_check_call)
+        self.patch_subprocess_check_call = patch('subprocess.check_call',
+                                                 side_effect=mock_subprocess_check_call)
         self.mock_subprocess_check_call = self.patch_subprocess_check_call.start()
 
         self.patch_subprocess_check_output = patch('subprocess.check_output',
                                                    side_effect=mock_subprocess_check_output)
         self.mock_subprocess_check_output = self.patch_subprocess_check_output.start()
 
-        self.patch_modulehelper_module = patch('trilinosprhelpers.setenvironment.ModuleHelper.module',
+        self.patch_modulehelper_module = patch('setenvironment.ModuleHelper.module',
                                                side_effect=mock_module_apply)
         self.mock_modulehelper_module  = self.patch_modulehelper_module.start()
 
@@ -147,7 +144,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
             source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
-            pullrequest_build_name="Trilinos_pullrequest_gcc_7.2.0",
+            pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
             pullrequest_cdash_track="Pull Request",
             jenkins_job_number=99,
             pullrequest_number='0000',
@@ -217,12 +214,12 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         """
         Test the Standard Configuration
         - Change args to enable:
-            - pullrequest_build_name = "Trilinos_pullrequest_python_3"
+            - pullrequest_build_name = "Trilinos-pullrequest-python_3"
             - dry_run = True
         - Change args to enable dry_run mode.
         """
         args = self.dummy_args()
-        args.pullrequest_build_name = "Trilinos_pullrequest_python_3"
+        args.pullrequest_build_name = "Trilinos-pullrequest-python-3"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step
