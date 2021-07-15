@@ -49,6 +49,7 @@
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
+#include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Kokkos_ViewFactory.hpp"
@@ -235,6 +236,59 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    RCP<STK_Interface> mesh_read = factory.buildMesh(MPI_COMM_WORLD);
    TEST_EQUALITY(mesh_read->getInitialStateTime(),4.5);
    TEST_EQUALITY(mesh_read->getCurrentStateTime(),0.0); // writeToExodus has not yet been called
+}
+
+TEUCHOS_UNIT_TEST(tSTK_IO, addInformationRecords)
+{
+   using Teuchos::RCP;
+
+   std::vector<std::string> info_records_1 = {
+     "DG::eblock-0_0_0::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-0_0_0::field::Ex"
+   };
+   std::vector<std::string> info_records_2 = {
+     "DG::eblock-0_0_0::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-0_0_0::field::Ey"
+   };
+   std::vector<std::string> info_records_3 = {
+     "DG::eblock-0_0_0::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-0_0_0::field::Ez"
+   };
+   std::vector<std::string> info_records_4 = {
+     "DG::eblock-1_1_1::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-1_1_1::field::Ex"
+   };
+   std::vector<std::string> info_records_5 = {
+     "DG::eblock-1_1_1::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-1_1_1::field::Ey"
+   };
+   std::vector<std::string> info_records_6 = {
+     "DG::eblock-1_1_1::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-1_1_1::field::Ez"
+   };
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",1);
+   pl->set("Y Blocks",1);
+   pl->set("Z Blocks",1);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",4);
+   pl->set("Z Elements",5);
+
+   CubeHexMeshFactory factory;
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+   mesh->addInformationRecords(info_records_1);
+   mesh->addInformationRecords(info_records_2);
+   mesh->addInformationRecords(info_records_3);
+   mesh->addInformationRecords(info_records_4);
+   mesh->addInformationRecords(info_records_5);
+   mesh->addInformationRecords(info_records_6);
+   factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+
+   TEST_ASSERT(mesh!=Teuchos::null);
+
+   mesh->writeToExodus("info_records.exo");
 }
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements)

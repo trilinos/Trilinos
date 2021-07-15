@@ -180,6 +180,12 @@ public:
                            const std::vector<std::string> & coordField,
                            const std::string & dispPrefix);
 
+   /** Add a vector of strings to the Information Records block.  Each string
+     * will be it's own record.  The info records will be deduped before they
+     * are added to IOSS.
+     */
+   void addInformationRecords(const std::vector<std::string> & info_records);
+
    //////////////////////////////////////////
 
    /** Initialize the mesh with the current dimension This also calls
@@ -1316,6 +1322,9 @@ protected:
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToCellField_;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToEdgeField_;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToFaceField_;
+
+   // use a set to maintain a list of unique information records
+   std::set<std::string> informationRecords_;
 
    unsigned dimension_;
 
