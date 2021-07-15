@@ -852,7 +852,7 @@ evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordi
     auto node_coordinates_k = node_coordinates.get_view();
     auto in_node_coordinates_k = in_node_coordinates.get_view();
 
-    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
+    Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{(int)num_cells,(int)num_nodes,(int)num_dims});
     Kokkos::parallel_for("node coordinates",policy,KOKKOS_LAMBDA (const int cell,const int node,const int dim) {
       node_coordinates_k(cell,node,dim) = in_node_coordinates_k(cell,node,dim);
     });
