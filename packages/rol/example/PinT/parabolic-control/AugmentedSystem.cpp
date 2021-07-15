@@ -218,7 +218,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   state->boundaryExchange();
   control->boundaryExchange();
 
-  Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>({state->clone(),control->clone(),state->clone()});
+  Ptr<ROL::Vector<RealT>> kkt_vector = makePtr<PartitionedVector>(std::vector<ROL::Ptr<ROL::Vector<RealT>>>{state->clone(),control->clone(),state->clone()});
   auto kkt_x_in  = kkt_vector->clone();
   auto kkt_b     = kkt_vector->clone();
 

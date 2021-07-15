@@ -69,49 +69,47 @@ private:
 
   ROL::Ptr<EV> vec_;
 
-  int dim_;
-
 public:
 
-  Eigen3Vector( const ROL::Ptr<EV> &vec ) : vec_(vec), dim_(vec->size()) {
+  Eigen3Vector( const ROL::Ptr<EV> &vec ) : vec_(vec) {
   }
  
-  Eigen3Vector( int dim, bool zeroOut=false ) : dim_(dim) {
-    vec_ = ROL::makePtr<EV>(dim_);
+  Eigen3Vector( int dim, bool zeroOut=false ) {
+    vec_ = ROL::makePtr<EV>(dim);
     if( zeroOut ) vec_->setZero();
   }
 
   void applyUnary( const UF &f ) {
-    for( int i=0; i<dim_; ++i ) 
+    for( int i=0; i<dimension(); ++i )
       (*vec_)(i) = f.apply((*vec_)(i));
   }
 
   void applyBinary( const BF &f, const V &x ) {
     auto ex = dynamic_cast<const Eigen3Vector&>(x);
-    for( int i=0; i<dim_; ++i ) 
+    for( int i=0; i<dimension(); ++i )
       (*vec_)(i) = f.apply((*vec_)(i),ex(i));
   }
 
   Real reduce( const RO &r ) const {
     Real result = r.initialValue();
-    for( int i=0; i<dim_; ++i ) 
+    for( int i=0; i<dimension(); ++i )
       r.reduce((*vec_)(i),result);
     return result;
   }
 
   int dimension() const {
-    return dim_;
+    return static_cast<int>(vec_->size());
   }
 
   ROL::Ptr<V> basis( const int i ) const {
-    auto data = ROL::makePtr<EV>(dim_);
+    auto data = ROL::makePtr<EV>(dimension());
     data->setZero();
     (*data)(i) = static_cast<Real>(1.0);
     return ROL::makePtr<Eigen3Vector>(data);
   }
 
   ROL::Ptr<V> clone() const {
-    return ROL::makePtr<Eigen3Vector>(dim_); 
+    return ROL::makePtr<Eigen3Vector>(dimension());
   }
 
   ROL::Ptr<EV> getVector() {

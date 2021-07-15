@@ -63,7 +63,7 @@ static std::nullptr_t nullPtr = nullptr;
 template<class T, class... Args>
 inline
 Ptr<T> makePtr( Args&&... args ) {
-  return std::make_shared<T>(args...);
+  return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
 template<class T>
