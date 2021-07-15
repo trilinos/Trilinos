@@ -24,12 +24,6 @@ namespace Tempus {
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
-  integratorPseudoTransientForwardSensitivity(
-    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
-    std::string stepperType);
-
-  // Nonmember ctor
-  template Teuchos::RCP<IntegratorPseudoTransientForwardSensitivity<double> >
   integratorPseudoTransientForwardSensitivity();
 
 } // namespace Tempus
