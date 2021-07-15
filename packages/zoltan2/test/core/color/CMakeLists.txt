@@ -1,13 +1,18 @@
-
-IF (${PROJECT_NAME}_ENABLE_Galeri)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+TRIBITS_ADD_EXECUTABLE(
     Coloring1
     SOURCES coloring1.cpp
+  )
+
+IF (${PROJECT_NAME}_ENABLE_Galeri)
+  TRIBITS_ADD_TEST(
+    Coloring1
+    NAME Coloring1_galeri
     NUM_MPI_PROCS 4
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+ENDIF()
 
 TRIBITS_ADD_TEST(
   Coloring1
@@ -124,8 +129,8 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-
 ENDIF()
+
 
 TRIBITS_ADD_TEST(
   Coloring1
@@ -501,7 +506,6 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-ENDIF()
 
 
 # Command that copies files to the executable directory.
