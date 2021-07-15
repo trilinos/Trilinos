@@ -46,6 +46,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_Details_MPI.hpp"
 
 #include "KokkosCompat_View.hpp"
 #include "Kokkos_Core.hpp"
@@ -65,7 +66,8 @@ namespace Tpetra {
       DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
       DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
       DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
-      DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
+      DISTRIBUTOR_SSEND, // Use MPI_Ssend (Teuchos::ssend)
+      DISTRIBUTOR_ALLTOALL     // Use MPI Alltoall
     };
 
     /// \brief Convert an EDistributorSendType enum value to a string.
@@ -1246,12 +1248,14 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
+    const bool setupRequests = (sendType != Details::DISTRIBUTOR_ALLTOALL);
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3TA_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -1387,6 +1391,9 @@ namespace Tpetra {
             ssend<int, Packet> (tmpSend.getRawPtr (),
                                 as<int> (tmpSend.size ()),
                                 procsTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+            // nothing to do
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -1398,6 +1405,46 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+        size_t commSize = comm_->getSize();
+        Kokkos::View<int*, Kokkos::HostSpace> sendcounts("sendcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> sdispls("sdispls", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> recvcounts("recvcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> rdispls("rdispls", commSize);
+
+        size_t curBufOffset = 0;
+        for (size_type i = 0; i < actualNumReceives; ++i) {
+          const size_t curBufLen = lengthsFrom_[i] * numPackets;
+          if (procsFrom_[i] != myRank) {
+            rdispls[procsFrom_[i]] = curBufOffset * sizeof(Packet);
+            recvcounts[procsFrom_[i]] = curBufLen * sizeof(Packet);
+          }
+          else { // Receiving from myself
+            selfReceiveOffset = curBufOffset; // Remember the self-recv offset
+          }
+          curBufOffset += curBufLen;
+        }
+
+        for (size_t i = 0; i < numBlocks; ++i) {
+          size_t p = i + procIndex;
+          if (p > (numBlocks - 1)) {
+            p -= numBlocks;
+          }
+          sdispls[procsTo_[p]] = startsTo_[p] * numPackets * sizeof(Packet);
+          sendcounts[procsTo_[p]] = lengthsTo_[p] * numPackets * sizeof(Packet);
+        }
+
+        if (verbose_) {
+          std::ostringstream os;
+          os << *prefix << "Fast: Alltoallv" << endl;
+          std::cerr << os.str ();
+        }
+
+        Kokkos::View<const Packet*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > exports_v(exports.getRawPtr(), exports.size());
+        Kokkos::View<Packet*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > imports_v(imports.getRawPtr(), imports.size());
+        Details::MPI::alltoallv(exports_v, sendcounts, sdispls, imports_v, recvcounts, rdispls, *comm_);
       }
 
       if (selfMessage_) {
@@ -1429,7 +1476,8 @@ namespace Tpetra {
       ArrayRCP<Packet> sendArray (maxSendLength_ * numPackets); // send buffer
 
       TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
+        sendType == Details::DISTRIBUTOR_ISEND ||
+        sendType == Details::DISTRIBUTOR_ALLTOALL, std::logic_error,
         "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
         "The \"send buffer\" code path doesn't currently work with "
         "nonblocking sends.");
@@ -1643,12 +1691,14 @@ namespace Tpetra {
       as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
+    const bool setupRequests = (sendType != Details::DISTRIBUTOR_ALLTOALL);
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4TA_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -1773,6 +1823,9 @@ namespace Tpetra {
                                 as<int> (tmpSend.size ()),
                                 procsTo_[p], tag, *comm_);
           }
+          else if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+            // nothing to do
+          }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -1784,6 +1837,56 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+        size_t commSize = comm_->getSize();
+        Kokkos::View<int*, Kokkos::HostSpace> sendcounts("sendcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> sdispls("sdispls", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> recvcounts("recvcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> rdispls("rdispls", commSize);
+
+        size_t curBufferOffset = 0;
+        size_t curLIDoffset = 0;
+        for (size_type i = 0; i < actualNumReceives; ++i) {
+          size_t totalPacketsFrom_i = 0;
+          for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
+            totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+          }
+          curLIDoffset += lengthsFrom_[i];
+          if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
+            rdispls[procsFrom_[i]] = curBufferOffset * sizeof(Packet);
+            recvcounts[procsFrom_[i]] = totalPacketsFrom_i * sizeof(Packet);
+
+          }
+          else { // Receiving these packet(s) from myself
+            selfReceiveOffset = curBufferOffset; // Remember the offset
+          }
+          curBufferOffset += totalPacketsFrom_i;
+        }
+
+        for (size_t i = 0; i < numBlocks; ++i) {
+          size_t p = i + procIndex;
+          if (p > (numBlocks - 1)) {
+            p -= numBlocks;
+          }
+          if (procsTo_[p] != myProcID && packetsPerSend[p] > 0) {
+            sdispls[procsTo_[p]] = sendPacketOffsets[p] * sizeof(Packet);
+            sendcounts[procsTo_[p]] = packetsPerSend[p] * sizeof(Packet);
+          }
+
+        }
+
+        if (verbose_) {
+          std::ostringstream os;
+          os << "Proc " << myProcID
+             << ": doPosts(4 args, Teuchos::ArrayRCP, fast) Alltoallv" << endl;
+          std::cerr << os.str ();
+        }
+
+        Kokkos::View<const Packet*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > exports_v(exports.getRawPtr(), exports.size());
+        Kokkos::View<Packet*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > imports_v(imports.getRawPtr(), imports.size());
+        Details::MPI::alltoallv(exports_v, sendcounts, sdispls, imports_v, recvcounts, rdispls, *comm_);
       }
 
       if (selfMessage_) {
@@ -1813,7 +1916,8 @@ namespace Tpetra {
       ArrayRCP<Packet> sendArray (maxNumPackets); // send buffer
 
       TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
+        sendType == Details::DISTRIBUTOR_ISEND ||
+        sendType == Details::DISTRIBUTOR_ALLTOALL,
         std::logic_error,
         "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): "
         "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
@@ -2237,12 +2341,14 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
+    const bool setupRequests = (sendType != Details::DISTRIBUTOR_ALLTOALL);
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -2383,6 +2489,9 @@ namespace Tpetra {
             ssend<int> (tmpSend,
                         as<int> (tmpSend.size ()),
                         procsTo_[p], tag, *comm_);
+          }
+          else if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+            // nothing to do
           } else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true,
@@ -2395,6 +2504,50 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+        typedef typename ExpView::non_const_value_type Packet;
+
+        size_t commSize = comm_->getSize();
+        Kokkos::View<int*, Kokkos::HostSpace> sendcounts("sendcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> sdispls("sdispls", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> recvcounts("recvcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> rdispls("rdispls", commSize);
+
+        size_t curBufferOffset = 0;
+        for (size_type i = 0; i < actualNumReceives; ++i) {
+          const size_t curBufLen = lengthsFrom_[i] * numPackets*sizeof(Packet);
+          if (procsFrom_[i] != myRank) {
+            rdispls[procsFrom_[i]] = curBufferOffset;
+            recvcounts[procsFrom_[i]] = curBufLen;
+          }
+          else { // Receiving from myself
+            selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
+          }
+          curBufferOffset += curBufLen;
+        }
+
+        for (size_t i = 0; i < numBlocks; ++i) {
+          size_t p = i + procIndex;
+          if (p > (numBlocks - 1)) {
+            p -= numBlocks;
+          }
+          if (procsTo_[p] != myRank) {
+            sdispls[procsTo_[p]] = startsTo_[p]*numPackets*sizeof(Packet);
+            sendcounts[procsTo_[p]] = lengthsTo_[p]*numPackets*sizeof(Packet);
+          }
+        }
+
+        // kick off alltoallv
+        if (verbose_) {
+          std::ostringstream os;
+          os << "Proc " << myRank << ": doPosts(3 args, Kokkos, fast): Calling Alltoallv" << endl;
+          std::cerr << os.str ();
+        }
+
+        Details::MPI::alltoallv(exports, sendcounts, sdispls, imports, recvcounts, rdispls, *comm_);
+
       }
 
       if (selfMessage_) {
@@ -2441,7 +2594,8 @@ namespace Tpetra {
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
       // sends), because the buffer is only long enough for one send.
       TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
+        sendType == Details::DISTRIBUTOR_ISEND ||
+        sendType == Details::DISTRIBUTOR_ALLTOALL,
         std::logic_error,
         "Tpetra::Distributor::doPosts(3 args, Kokkos): The \"send buffer\" code path "
         "doesn't currently work with nonblocking sends.");
@@ -2665,12 +2819,14 @@ namespace Tpetra {
       as<size_type> (selfMessage_ ? 1 : 0);
     requests_.resize (0);
 
+    const bool setupRequests = (sendType != Details::DISTRIBUTOR_ALLTOALL);
+
     // Post the nonblocking receives.  It's common MPI wisdom to post
     // receives before sends.  In MPI terms, this means favoring
     // adding to the "posted queue" (of receive requests) over adding
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
-    {
+    if (setupRequests) {
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -2794,6 +2950,9 @@ namespace Tpetra {
                         as<int> (tmpSend.size ()),
                         procsTo_[p], tag, *comm_);
           }
+          else if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+            // nothing to do
+          }
           else {
             TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -2805,6 +2964,56 @@ namespace Tpetra {
         else { // "Sending" the message to myself
           selfNum = p;
         }
+      }
+
+      if (sendType == Details::DISTRIBUTOR_ALLTOALL) {
+
+        typedef typename ExpView::non_const_value_type Packet;
+
+        size_t commSize = comm_->getSize();
+
+        Kokkos::View<int*, Kokkos::HostSpace> sendcounts("sendcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> sdispls("sdispls", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> recvcounts("recvcounts", commSize);
+        Kokkos::View<int*, Kokkos::HostSpace> rdispls("rdispls", commSize);
+
+        size_t curBufferOffset = 0;
+        size_t curLIDoffset = 0;
+        for (size_type i = 0; i < actualNumReceives; ++i) {
+          size_t totalPacketsFrom_i = 0;
+          for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
+            totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
+          }
+          curLIDoffset += lengthsFrom_[i];
+          if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
+            rdispls[procsFrom_[i]] = curBufferOffset*sizeof(Packet);
+            recvcounts[procsFrom_[i]] = totalPacketsFrom_i*sizeof(Packet);
+          }
+          else { // Receiving these packet(s) from myself
+            selfReceiveOffset = curBufferOffset; // Remember the offset
+          }
+          curBufferOffset += totalPacketsFrom_i;
+        }
+
+        for (size_t i = 0; i < numBlocks; ++i) {
+          size_t p = i + procIndex;
+          if (p > (numBlocks - 1)) {
+            p -= numBlocks;
+          }
+          if (procsTo_[p] != myProcID) {
+            sdispls[procsTo_[p]] = sendPacketOffsets[p]*sizeof(Packet);
+            sendcounts[procsTo_[p]] = packetsPerSend[p]*sizeof(Packet);
+          }
+        }
+
+        // kick off alltoallv
+        if (verbose_) {
+          std::ostringstream os;
+          os << "Proc " << myProcID << ": doPosts(4 args, Kokkos, fast) Calling Alltoallv" << endl;
+          std::cerr << os.str ();
+        }
+
+        Details::MPI::alltoallv(exports, sendcounts, sdispls, imports, recvcounts, rdispls, *comm_);
       }
 
       if (selfMessage_) {
@@ -2836,7 +3045,8 @@ namespace Tpetra {
       Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", maxNumPackets); // send buffer
 
       TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
+        sendType == Details::DISTRIBUTOR_ISEND ||
+        sendType == Details::DISTRIBUTOR_ALLTOALL,
         std::logic_error,
         "Tpetra::Distributor::doPosts(4-arg, Kokkos): "
         "The \"send buffer\" code path may not necessarily work with nonblocking sends.");

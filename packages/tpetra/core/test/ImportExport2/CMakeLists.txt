@@ -4,7 +4,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ImportExport2_UnitTests.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
-  ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  ARGS
+  "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1 --distributor-send-type=Isend"
+  "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1 --distributor-send-type=Rsend"
+  "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1 --distributor-send-type=Send"
+  "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1 --distributor-send-type=Ssend"
+  "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1 --distributor-send-type=Alltoall"
   STANDARD_PASS_OUTPUT
   )
 
