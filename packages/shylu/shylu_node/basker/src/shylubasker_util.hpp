@@ -23,6 +23,7 @@
 #include <assert.h>
 
 using namespace std;
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -39,6 +40,7 @@ namespace BaskerNS
 
     Basker<Int,Entry,Exe_Space>  *basker;
     BASKER_BOOL                  alloc;
+    BASKER_BOOL                  keep_zeros;
 
 
     kokkos_order_init_2D()
@@ -50,10 +52,11 @@ namespace BaskerNS
       alloc  = BASKER_TRUE;
     }//end kokkos_order_init_2D()
 
-    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b, BASKER_BOOL _alloc)
+    kokkos_order_init_2D(Basker<Int,Entry,Exe_Space> *_b, BASKER_BOOL _alloc, BASKER_BOOL _keep_zeros)
     {
-      basker = _b;
-      alloc  = _alloc;
+      basker      = _b;
+      alloc       = _alloc;
+      keep_zeros  = _keep_zeros;
     }
       
 
@@ -68,7 +71,7 @@ namespace BaskerNS
       Int kid = (Int)(thread.league_rank()*thread.team_size() + thread.team_rank());
       #endif
       {
-        basker->t_init_2DA(kid, alloc);
+        basker->t_init_2DA(kid, alloc, keep_zeros);
       }
     }//end operator()
 
@@ -363,7 +366,6 @@ namespace BaskerNS
         */
 
         LU(b)(LU_size(b)-1).nnz = LU(b)(LU_size(b)-1).mnnz;
-
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
           Int U_col = S(l)(kid);
@@ -411,6 +413,15 @@ namespace BaskerNS
   void Basker<Int,Entry,Exe_Space>::t_init_factor(Int kid)
   {
     //L
+    #ifdef BASKER_TIMER
+    double init_matrixL_time = 0.0;
+    double fill_matrixL_time = 0.0;
+    Kokkos::Timer timer_initL;
+    Kokkos::Timer timer_init_matrixL;
+    Kokkos::Timer timer_fill_matrixL;
+    timer_initL.reset();
+    #endif
+    //printf( " > t_init_factor( tid = %d ) <\n",kid );
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -424,26 +435,51 @@ namespace BaskerNS
               b, row, kid, LL[b][row].nnz);
           #endif
 
+          #ifdef BASKER_TIMER
+          timer_init_matrixL.reset();
+          #endif
+          //printf( " lvl=%d: LL(%d,%d): nnz=%d, mnnz=%d\n",(int)lvl, (int)b, (int)row, (int)LL(b)(row).nnz, (int)LL(b)(row).mnnz);
           LL(b)(row).init_matrix("Loffdig",
               LL(b)(row).srow,
               LL(b)(row).nrow,
               LL(b)(row).scol,
               LL(b)(row).ncol,
               LL(b)(row).nnz);
+          #ifdef BASKER_TIMER
+          init_matrixL_time += timer_init_matrixL.seconds();
+          #endif
 
           //Fix when this all happens in the future
           if(Options.incomplete == BASKER_TRUE)
           {
             LL(b)(row).init_inc_lvl();
           }
-          LL(b)(row).fill();
+          #ifdef BASKER_TIMER
+          timer_fill_matrixL.reset();
+          #endif
+          //LL(b)(row).fill();
+          Kokkos::deep_copy(LL(b)(row).col_ptr, 0);
+          #ifdef BASKER_TIMER
+          fill_matrixL_time += timer_fill_matrixL.seconds();
+          #endif
+          //printf( " LL(%d)(%d).init_pend(ncol = %d)\n",b,row,LL(b)(row).ncol );
           LL(b)(row).init_pend();
 
         }//end over all row
       }//end select which thread
     }//end for over all lvl
-   
+    #ifdef BASKER_TIMER
+    double initL_time = timer_initL.seconds();
+    std::cout << " >   Basker t_init_factor::initL(" << kid << "): time: " << initL_time << std::endl;
+    std::cout << " > + Basker t_init_factor::initL::initMatrix(" << kid << "): time: " << init_matrixL_time << std::endl;
+    std::cout << " > + Basker t_init_factor::initL::fillMatrix(" << kid << "): time: " << fill_matrixL_time << std::endl;
+    #endif
+
     //U
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer_initU;
+    timer_initU.reset();
+    #endif
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -456,6 +492,7 @@ namespace BaskerNS
             LU[b][LU_size[b]-1].nnz);
         #endif
 
+        //printf( " lvl=%d: LU(%d,%d): nnz=%d, mnnz=%d\n", (int)lvl, (int)b, (int)LU_size(b)-1, (int)LU(b)(LU_size(b)-1).nnz, (int)LU(b)(LU_size(b)-1).mnnz);
         LU(b)(LU_size(b)-1).init_matrix("Udiag",
             LU(b)(LU_size(b)-1).srow,
             LU(b)(LU_size(b)-1).nrow,
@@ -463,7 +500,8 @@ namespace BaskerNS
             LU(b)(LU_size(b)-1).ncol,
             LU(b)(LU_size(b)-1).nnz);
 
-        LU(b)(LU_size(b)-1).fill();
+        //LU(b)(LU_size(b)-1).fill();
+        Kokkos::deep_copy(LU(b)(LU_size(b)-1).col_ptr, 0);
 
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
@@ -503,6 +541,7 @@ namespace BaskerNS
               LU[U_col][U_row].nnz);
           #endif
 
+          //printf( " > l=%d: LU(%d,%d): nnz=%d, mnnz=%d\n", (int)l, (int)U_col, (int)U_row, (int)LU(U_col)(U_row).nnz, (int)LU(U_col)(U_row).mnnz);
           LU(U_col)(U_row).init_matrix("Uoffdiag",
               LU(U_col)(U_row).srow,
               LU(U_col)(U_row).nrow,
@@ -510,7 +549,8 @@ namespace BaskerNS
               LU(U_col)(U_row).ncol,
               LU(U_col)(U_row).nnz);
 
-          LU(U_col)(U_row).fill();
+          //LU(U_col)(U_row).fill();
+          Kokkos::deep_copy(LU(U_col)(U_row).col_ptr, 0);
 
           if(Options.incomplete == BASKER_TRUE)
           {
@@ -521,6 +561,10 @@ namespace BaskerNS
       }//if KID
 
     }//end over all lvls
+    #ifdef BASKER_TIMER
+    double initU_time = timer_initU.seconds();
+    std::cout << " > Basker t_init_factor::initU(" << kid << "): time: " << initU_time << std::endl;
+    #endif
 
   }//end t_init_factor()
 
@@ -529,10 +573,27 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int, Entry, Exe_Space>::t_init_2DA
   (
-   Int kid, BASKER_BOOL alloc
+   Int kid, BASKER_BOOL alloc, BASKER_BOOL keep_zeros
   )
   {
-    //L
+    /*if (kid == 1) {
+      printf(" BTF_A_2D = [\n" );
+      for(Int j = 0; j < BTF_A.ncol; j++) {
+        for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+        }
+      }
+      printf("];\n");
+      printf(" A_2D = [\n" );
+      for(Int j = 0; j < A.ncol; j++) {
+        for(Int k = A.col_ptr[j]; k < A.col_ptr[j+1]; k++) {
+          printf("%d %d %e\n", A.row_idx[k], j, A.val[k]);
+        }
+      }
+      printf("];\n");
+    }*/
+    // extract strictly Lower blockks into ALM
+    // (blocks in strictly lower part, diagonal blocks are in AVM)
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -548,26 +609,49 @@ namespace BaskerNS
               ALM(b)(row).ncol);
           #endif
 
+          /*if (kid == 1)
+          {
+            printf(" > kid=%d, lvl=%d: convert2D ALM(%d, %d) with (%dx%d and nnz=%d from %d,%d)\n", kid, lvl, b, row,
+                   ALM(b)(row).nrow,ALM(b)(row).ncol, ALM(b)(row).nnz, ALM(b)(row).srow,ALM(b)(row).scol);
+            printf("[\n");
+            for(Int j = 0; j < BTF_A.ncol; j++) {
+              for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+                printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+              }
+            }
+            printf("];\n");
+          }*/
           if(Options.btf == BASKER_FALSE)
           {
+            #ifdef BASKER_DEBUG_INIT
+            printf("ALM alloc: b=%d row=%d kid=%d btf=%d\n",
+                    b, row, kid, Options.btf);
+            #endif
             ALM(b)(row).convert2D(A, alloc, kid);
           }
           else
           {
             //printf("Using BTF AL \n");
             #ifdef BASKER_DEBUG_INIT
-            printf("ALM alloc: %d %d kid: %d \n",
-                b, row, kid);
+            printf("ALM alloc: b=%d row=%d kid=%d \n",
+                   b, row, kid);
             #endif
-
             ALM(b)(row).convert2D(BTF_A, alloc, kid);
           }
-
+          /*if (kid == 0) {
+            for(Int j = 0; j < ALM(b)(row).ncol; j++) {
+              for(Int k = ALM(b)(row).col_ptr[j]; k < ALM(b)(row).col_ptr[j+1]; k++) {
+                printf("%d %d %e\n", ALM(b)(row).row_idx[k], j, ALM(b)(row).val[k]);
+              }
+            }
+            printf("];\n");
+          }*/
         }//end over all row
       }//end select which thread
     }//end for over all lvl
    
-    //U
+    //extract Upper blocks into AVM 
+    //(both diagonal blocks + upper offdiagonal blocks)
     for(Int lvl = 0; lvl < tree.nlvls+1; lvl++)
     {
       if(kid%((Int)pow(2,lvl)) == 0)
@@ -582,6 +666,10 @@ namespace BaskerNS
             AVM(b)(LU_size(b)-1).ncol);
         #endif
 
+        /*if (kid == 1) {
+          printf(" > kid=%d, lvl=%d: convert2D AVM(%d, %d), lower(%dx%d and nnz=%d from %d,%d)\n", kid, lvl, b, LU_size(b)-1,
+                     AVM(b)(LU_size(b)-1).nrow,AVM(b)(LU_size(b)-1).ncol,AVM(b)(LU_size(b)-1).nnz, AVM(b)(LU_size(b)-1).srow,AVM(b)(LU_size(b)-1).scol);
+        }*/
         if(Options.btf == BASKER_FALSE)
         {
           AVM(b)(LU_size(b)-1).convert2D(A, alloc, kid);
@@ -589,10 +677,17 @@ namespace BaskerNS
         else
         {
           //printf("Using BTF AU\n");
-          //printf("convert AVM: %d %d kid: %d  \n", 
-          // b, LU_size(b)-1, kid);
+          //printf(" > kid=%d: convert2D AVM(%d,%d)\n", kid, b, LU_size(b)-1);
           AVM(b)(LU_size(b)-1).convert2D(BTF_A, alloc, kid);
         }
+        /*if (kid == 0) {
+          for(Int j = 0; j < AVM(b)(LU_size(b)-1).ncol; j++) {
+            for(Int k = AVM(b)(LU_size(b)-1).col_ptr[j]; k < AVM(b)(LU_size(b)-1).col_ptr[j+1]; k++) {
+              printf("%d %d %e\n", AVM(b)(LU_size(b)-1).row_idx[k], j, AVM(b)(LU_size(b)-1).val[k]);
+            }
+          }
+          printf("];\n");
+        }*/
 
         for(Int l = lvl+1; l < tree.nlvls+1; l++)
         {
@@ -645,9 +740,15 @@ namespace BaskerNS
               AVM(U_col)(U_row).ncol);
           #endif
 
+          #if 0
+          if (kid == 1) {
+             printf(" > kid=%d, lvl=%d: convert2D AVM(%d, %d), upper(%dx%d and nnz=%d from %d,%d)\n", kid, lvl, U_col, U_row,
+                     AVM(U_col)(U_row).nrow,AVM(U_col)(U_row).ncol,AVM(U_col)(U_row).nnz, AVM(U_col)(U_row).srow,AVM(U_col)(U_row).scol);
+          }
+          #endif
           if(Options.btf == BASKER_FALSE)
           {
-            BASKER_ASSERT(0==1, "SHOULD NOTH BE CALL\n");
+            BASKER_ASSERT(0==1, "SHOULD NOT BE CALL\n");
             //AVM(U_col)(U_row).convert2D(A);
           }
           else
@@ -655,8 +756,7 @@ namespace BaskerNS
             //printf("Using BTF AU\n");
             //printf("2nd convert AVM: %d %d size:%d kid: %d\n",
             //	   U_col, U_row, AVM(U_col)(U_row).nnz, 
-            //	   kid);
-
+            //     kid);
             AVM(U_col)(U_row).convert2D(BTF_A, alloc, kid);
           }
 
@@ -670,127 +770,131 @@ namespace BaskerNS
   
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  void Basker<Int,Entry,Exe_Space>::t_init_workspace(Int kid)
+  void Basker<Int,Entry,Exe_Space>::t_init_workspace(bool flag, Int kid)
   {
     Int max_sep_size = 0;
 
-    if(btf_tabs_offset != 0)
+    if(flag)
     {
-      #ifdef BASKER_2DL
-      Int            b  = S(0)(kid);
-      //INT_1DARRAY    ws = LL[b][0].iws;
-      //ENTRY_1DARRAY  X  = LL[b][0].ews;
-      //Int      iws_size = LL[b][0].iws_size;
-      //Int      ews_size = LL[b][0].ews_size;
-      //Int      iws_mult = LL[b][0].iws_mult;
-      //Int      ews_mult = LL[b][0].ews_mult;
-
-      #else
-      INT_1DARRAY  &ws = thread_array(kid).iws;
-      ENTRY_1DARRAY &X = thread_array(kid).ews;
-      Int iws_size     = thread_array(kid).iws_size;
-      Int iws_mult     = thread_array(kid).iws_mult;
-      Int ews_size     = thread_array(kid).ews_size;
-      Int ews_mult     = thread_array(kid).ews_mult;
-      #endif
-      //Note: need to add a size array for all these
-
-      #ifdef BASKER_2DL
-      for(Int l = 0; l < LL_size(b); l++)
+      if(btf_tabs_offset != 0)
       {
-        //defining here
-        LL(b)(l).iws_size = LL(b)(l).nrow;
-        //This can be made smaller, see notes in Sfactor_old
-        LL(b)(l).iws_mult = 5;
-        LL(b)(l).ews_size = LL(b)(l).nrow;
-        //This can be made smaller, see notes in sfactor_old
-        LL(b)(l).ews_mult = 2;
+        // init_workspace for a big A block (delayed till numeric Factor if MWM is enabled0
+        #ifdef BASKER_2DL
+        Int            b  = S(0)(kid);
+        //INT_1DARRAY    ws = LL[b][0].iws;
+        //ENTRY_1DARRAY  X  = LL[b][0].ews;
+        //Int      iws_size = LL[b][0].iws_size;
+        //Int      ews_size = LL[b][0].ews_size;
+        //Int      iws_mult = LL[b][0].iws_mult;
+        //Int      ews_mult = LL[b][0].ews_mult;
+        #else
+        INT_1DARRAY  &ws = thread_array(kid).iws;
+        ENTRY_1DARRAY &X = thread_array(kid).ews;
+        Int iws_size     = thread_array(kid).iws_size;
+        Int iws_mult     = thread_array(kid).iws_mult;
+        Int ews_size     = thread_array(kid).ews_size;
+        Int ews_mult     = thread_array(kid).ews_mult;
+        #endif
+        //Note: need to add a size array for all these
 
-        Int iws_size = LL(b)(l).iws_size;
-        Int iws_mult = LL(b)(l).iws_mult;
-        Int ews_size = LL(b)(l).ews_size;
-        Int ews_mult = LL(b)(l).ews_mult;
-
-        if(iws_size > max_sep_size)
+        #ifdef BASKER_2DL
+        for(Int l = 0; l < LL_size(b); l++)
         {
-          max_sep_size = iws_size;
-        }
+          //defining here
+          LL(b)(l).iws_size = LL(b)(l).nrow;
+          //This can be made smaller, see notes in Sfactor_old
+          LL(b)(l).iws_mult = 5;
+          LL(b)(l).ews_size = LL(b)(l).nrow;
+          //This can be made smaller, see notes in sfactor_old
+          LL(b)(l).ews_mult = 2;
 
-        if(iws_size == 0)
-        {
-          iws_size  = 1;
-        }
+          Int iws_size = LL(b)(l).iws_size;
+          Int iws_mult = LL(b)(l).iws_mult;
+          Int ews_size = LL(b)(l).ews_size;
+          Int ews_mult = LL(b)(l).ews_mult;
 
-        BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
-        MALLOC_INT_1DARRAY(LL(b)(l).iws, iws_size*iws_mult);
-
-        //TEST
-        INT_1DARRAY att = LL(b)(l).iws; 
-        if(ews_size == 0)
-        {
-          ews_size = 1;
-        }
-
-        BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
-        MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
-
-        for(Int i=0; i<iws_mult*iws_size; i++)
-        {
-          LL(b)(l).iws(i) = 0;
-        }
-
-        for(Int i=0; i<ews_mult*ews_size; i++)
-        {
-          LL(b)(l).ews(i) = 0;
-        }
-
-        LL(b)(l).fill();
-
-        if(l==0)
-        {
-          //Also workspace matrix 
-          //This could be made smaller
-          //printf("C: size: %d kid: %d \n",
-          //	   iws_size, kid);
-
-          //thread_array[kid].C.init_matrix("cwork", 
-          //			     0, iws_size,
-          //			     0, 2, 
-          //			     iws_size*2);
-        }
-      } //end for l
-
-      //Also workspace matrix 
-      //This could be made smaller
-      thread_array(kid).C.init_matrix("cwork", 0, max_sep_size,
-          0, 2, max_sep_size*2);
-
-    } //end if btf_tabs_offset != 0
-    else
-    {
-      if(btf_nblks > 1)
-      {
-        if(Options.btf == BASKER_TRUE)
-        {
-          Int iws_mult = thread_array[kid].iws_mult;
-          Int iws_size = thread_array[kid].iws_size;
-          Int ews_mult = thread_array[kid].ews_mult;
-          Int ews_size = thread_array[kid].ews_size;
-
-          for(Int i=0; i < iws_mult*iws_size; i++)
+          if(iws_size > max_sep_size)
           {
-            thread_array[kid].iws[i] = 0;
+            max_sep_size = iws_size;
           }
 
-          for(Int i = 0; i < ews_mult*ews_size; i++)
+          if(iws_size == 0)
           {
-            thread_array[kid].ews[i] = 0.0;
+            iws_size  = 1;
+          }
+
+          BASKER_ASSERT((iws_size*iws_mult)>0, "util iws");
+          MALLOC_INT_1DARRAY(LL(b)(l).iws, iws_size*iws_mult);
+          for(Int i=0; i<iws_mult*iws_size; i++)
+          {
+            LL(b)(l).iws(i) = 0;
+          }
+
+
+          //TEST
+          //INT_1DARRAY att = LL(b)(l).iws; 
+          /*if(ews_size == 0)
+          {
+            ews_size = 1;
+          }*/
+          if (ews_size*ews_mult > 0) {
+            BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
+            MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
+
+            for(Int i=0; i<ews_mult*ews_size; i++)
+            {
+              LL(b)(l).ews(i) = 0;
+            }
+          }
+
+          //printf( " LL(%d, %d).fill\n",b,l );
+          //LL(b)(l).fill();
+          Kokkos::deep_copy(LL(b)(l).col_ptr, 0);
+
+          if(l==0)
+          {
+            //Also workspace matrix 
+            //This could be made smaller
+            //printf("C: size: %d kid: %d \n",
+            //	   iws_size, kid);
+
+            //thread_array[kid].C.init_matrix("cwork", 
+            //			     0, iws_size,
+            //			     0, 2, 
+            //			     iws_size*2);
+          }
+        } //end for l
+
+        //Also workspace matrix 
+        //This could be made smaller
+        thread_array(kid).C.init_matrix("cwork", 0, max_sep_size,
+            0, 2, max_sep_size*2);
+
+      } //end if btf_tabs_offset != 0
+      //else // though offset=0, there may be still BLK factorization
+      {
+        if(btf_nblks > 1 && (btf_top_tabs_offset > 0 || btf_nblks > btf_tabs_offset))
+        { // if any left over for BLK factorization
+          if(Options.btf == BASKER_TRUE)
+          {
+            Int iws_mult = thread_array[kid].iws_mult;
+            Int iws_size = thread_array[kid].iws_size;
+            Int ews_mult = thread_array[kid].ews_mult;
+            Int ews_size = thread_array[kid].ews_size;
+
+            for(Int i=0; i < iws_mult*iws_size; i++)
+            {
+              thread_array[kid].iws[i] = 0;
+            }
+
+            for(Int i = 0; i < ews_mult*ews_size; i++)
+            {
+              thread_array[kid].ews[i] = 0.0;
+            }
           }
         }
-      }
-
-    }//else
-   
+      }//else
+    }
     #else //ifdef basker_2dl
     printf("init_workspace 1d, kid: %d size: %d %d %d %d \n",
 	    kid, iws_mult, iws_size, ews_mult, ews_size);
@@ -1185,8 +1289,7 @@ namespace BaskerNS
     {
       for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
       {
-        fprintf(fp, "%ld %ld %e \n", 
-            (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]); 
+        fprintf(fp, "%ld %ld %e \n", (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j])); 
       }//over nnz in each column
     }//over each column
 
@@ -1219,12 +1322,12 @@ namespace BaskerNS
         if(off == BASKER_FALSE)
         {
           fprintf(fp, "%ld %ld %e \n", 
-              (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]);
+              (long)M.row_idx[j]+1, (long)k-bcol+1, std::real(M.val[j]));
         }
         else
         {
           fprintf(fp, "%ld %ld %e \n", 
-              (long)M.row_idx[j]+1-brow, (long)k-bcol+1,M.val[j]);
+              (long)M.row_idx[j]+1-brow, (long)k-bcol+1, std::real(M.val[j]));
         }
       }//over nnz in each column
     }//over each column
@@ -1482,7 +1585,7 @@ namespace BaskerNS
       for(Int r = 0; r < LL_size(l); r++)
       {
         BASKER_MATRIX &myL = LL(l)(r);
-        total_nnz += myL.col_ptr(myL.ncol);  
+        total_nnz += myL.col_ptr(myL.ncol);
       }//end over each matrix row
     }//end over all nblks
 
@@ -1493,6 +1596,12 @@ namespace BaskerNS
     //Get nnz for BTF L
     if(Options.btf == BASKER_TRUE)
     {
+      for(Int i =0; i < btf_top_nblks; i++)
+      {
+        BASKER_MATRIX &myL = L_D(i);
+        total_nnz += myL.col_ptr(myL.ncol);
+      }
+
       Int nblks = btf_nblks-btf_tabs_offset;
       for(Int i =0; i < nblks; i++)
       {
@@ -1530,9 +1639,14 @@ namespace BaskerNS
     printf("nnz in ND: %d \n", total_nnz);
     #endif
 
-    //Get nnz for BTF L
+    //Get nnz for BTF U
     if(Options.btf == BASKER_TRUE)
     {
+      for(Int i =0; i < btf_top_nblks; i++)
+      {
+        BASKER_MATRIX &myU = U_D(i);
+        total_nnz += myU.col_ptr(myU.ncol);
+      }
       Int nblks = btf_nblks-btf_tabs_offset;
       for(Int i =0; i < nblks; i++)
       {
@@ -1561,6 +1675,7 @@ namespace BaskerNS
    Entry**  val
   )
   {
+    printf( "\n get_L \n\n" );
     //Add Check
     //Kokkos::Impl::Timer timer;
     n   = gn;
@@ -1639,6 +1754,7 @@ namespace BaskerNS
   )
   {
     //Add Check
+    printf( "\n >> get_U <<\n\n" );
     n       = gn;
     nnz = get_Unnz();
     (*col_ptr) = new Int[gn+1]();
@@ -1722,8 +1838,9 @@ namespace BaskerNS
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::matrix_transpose
   (
-   BASKER_MATRIX &M, //BTF_A
-   BASKER_MATRIX &AT //T, blank
+   BASKER_MATRIX &M,  //BTF_A
+   BASKER_MATRIX &AT, //T, blank
+   BASKER_BOOL keep_zeros
   )
   {
     //const Int brow = M.srow; Not used
@@ -1734,93 +1851,62 @@ namespace BaskerNS
     AT.ncol = M.nrow;
     AT.nnz  = M.nnz;
 
-    BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol");
+    BASKER_ASSERT((AT.ncol+1) > 0, "util trans ncol");
     MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
-    init_value(AT.col_ptr, AT.ncol+1, (Int)0);
-    MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
-    BASKER_ASSERT((AT.nnz)>0, "util trans nnz");
-    init_value(AT.row_idx, AT.nnz, (Int)0);
-    MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
-    init_value(AT.val,     AT.nnz, (Entry)1.0);
 
-    //Setup a litte workspace
-    const Int ws_size = M.nrow;
-    INT_1DARRAY ws;
-    BASKER_ASSERT(ws_size > 0, "util trans ws");
-    MALLOC_INT_1DARRAY(ws, ws_size);
-
-    for(Int j = 0; j < ws_size; ++j)
-    {
-      ws(j) = (Int) 0;
+    if (AT.nnz > 0) {
+      BASKER_ASSERT((AT.nnz)    > 0, "util trans nnz");
+      MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
     }
-    
-    //Note could get number of nonzeros here inplace of nnz() for faster
+    //MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
+    //init_value(AT.col_ptr, AT.ncol+1, (Int)0);
+    //init_value(AT.row_idx, AT.nnz, (Int)0);
+    ///init_value(AT.val,     AT.nnz, (Entry)1.0);
 
+    Kokkos::deep_copy(AT.col_ptr, 0);
+    //for(Int j = 0; j <= AT.ncol; ++j)
+    //{
+    //  AT.col_ptr(j) = (Int) 0;
+    //}
+
+    const Entry zero (0.0);
+    #ifdef BASKER_TIMER
+    Kokkos::Timer timer;
+    #endif
     //get row counts
-    Int total =0 ;
-    Int maxv  =0;
     for(Int j = M.col_ptr(0); j < M.col_ptr(M.ncol); ++j)
     {
-      if(M.row_idx(j) > maxv)
-      {
-        maxv = M.row_idx(j);
+      if (keep_zeros || M.val(j) != zero) {
+        AT.col_ptr(1+M.row_idx(j)) ++;
       }
-      if(M.row_idx(j) > (ws_size-1))
-      {
-        printf("error type 1\n");
-      }
-      ws(M.row_idx(j)) = ws(M.row_idx(j)) + 1;
-
-      total++;
     }
-    //printf("got row counts, total: %d  %d \n", total, M.nnz);
-    //printf("debug 0: %d 1: %d 2: %d 3: %d \n",
-    //	   ws(0), ws(1), ws(2), ws(3));
-    //printf("max idx: %d nrow: %d wssize: %d \n", 
-    //	   maxv, M.nrow, ws_size); 
 
-    //write stupid code!
-    //add them all up
-    total = 0;
-    //Int total2 = 0; //Not used
-    for(Int j = 0; j < ws_size; ++j)
-    {
-      total = total + ws(j);
-      //total2 = total2 + ws_test[j];
-    }
-   
+    // make into offset
     for(Int j = 1; j < M.nrow; ++j)
     {
-      ws(j)  = ws(j) + ws(j-1);
-    }//for-j
+      AT.col_ptr(j) += AT.col_ptr(j-1);
+    }
   
-    //copy over to AT
-    AT.col_ptr(0) = (Int) 0;
-    for(Int j = 1; j <= M.nrow; ++j)
-    {
-      AT.col_ptr(j) = ws(j-1);
-    }
-
-    //set ws
-    for(Int j = 0; j < M.nrow; ++j)
-    {
-      ws(j) = AT.col_ptr(j);
-    }
-
     for(Int k = 0; k < M.ncol; ++k)
     {
       for(Int j = M.col_ptr(k); j < M.col_ptr(k+1); ++j)
       {
-        if(ws(M.row_idx(j)) >= AT.nnz)
-        { 
-          printf("error \n");
+        if (keep_zeros || M.val(j) != zero) {
+          AT.row_idx(AT.col_ptr(M.row_idx(j))++) = k; 
         }
-        AT.row_idx(ws(M.row_idx(j))++) = k; 
-        //starting at zero
       }
     }
-    
-    FREE_INT_1DARRAY(ws);
+
+    // recover offset
+    for(Int j = M.nrow; j > 0; --j)
+    {
+      AT.col_ptr(j) = AT.col_ptr(j-1);
+    }//for-j
+    AT.col_ptr(0) = 0;
+    AT.nnz  = AT.col_ptr(AT.ncol);
+    #ifdef BASKER_TIMER
+    std::cout << " matrix_trans: " << timer.seconds() << std::endl;
+    #endif
   }//end matrix_transpose
 
   
@@ -1840,14 +1926,16 @@ namespace BaskerNS
     AT.ncol = MV.ncol;
     AT.nnz  = MV.nnz();
 
-    BASKER_ASSERT((AT.ncol+1)>0, "util trans ncol2");
+    BASKER_ASSERT((AT.ncol+1) > 0, "util trans ncol2");
+    BASKER_ASSERT(AT.nnz      > 0, "util trans nnz2");
+
     MALLOC_INT_1DARRAY(AT.col_ptr, AT.ncol+1);
-    init_value(AT.col_ptr, AT.ncol+1, (Int)0);
-    BASKER_ASSERT(AT.nnz > 0, "util trans nnz2");
     MALLOC_INT_1DARRAY(AT.row_idx, AT.nnz);
-    init_value(AT.row_idx, AT.nnz, (Int)0);
-    MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
-    init_value(AT.val,     AT.nnz, (Entry)1.0);
+    //MALLOC_ENTRY_1DARRAY(AT.val    , AT.nnz);
+
+    //init_value(AT.col_ptr, AT.ncol+1, (Int)0);
+    //init_value(AT.row_idx, AT.nnz, (Int)0);
+    ///init_value(AT.val,     AT.nnz, (Entry)1.0);
 
     //Setup a litte workspace
     Int ws_size = MV.nrow;
@@ -2199,7 +2287,8 @@ namespace BaskerNS
 
     for(Int i = 0; i< n; i++)
     {
-      printf("%ld %g, \n", (long)i, x[i]);
+      //printf("%ld %g, \n", (long)i, x[i]);
+      printf("%ld %.16e\n", (long)i, x[i]);
     }
 
     printf("---END VECTOR: %d ---\n", n);

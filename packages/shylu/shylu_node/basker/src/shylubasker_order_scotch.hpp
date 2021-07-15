@@ -2,9 +2,17 @@
 #define SHYLUBASKER_ORDER_SCOTCH_HPP
 
 #include "shylubasker_types.hpp"
-#include "scotch.h"
+#include "shylubasker_sswrapper.hpp"
+
+#ifdef HAVE_SHYLU_NODEBASKER_SCOTCH
+  #include "scotch.h"
+#endif
+#ifdef HAVE_SHYLU_NODEBASKER_METIS
+ #include "metis.h"
+#endif
 
 //#define BASKER_DEBUG_ORDER_SCOTCH
+//#define BASKER_TIMER
 
 //NOTE need to change all the max_idx here still
 
@@ -36,41 +44,46 @@ namespace BaskerNS
   int Basker<Int,Entry,Exe_Space>::AplusAT
   (
    BASKER_MATRIX &M,
-   BASKER_MATRIX &C
+   BASKER_MATRIX &C,
+   BASKER_BOOL keep_zeros
   )
   {
     BASKER_MATRIX T;
     //get matrix transpose
-    matrix_transpose(M,T);
+    matrix_transpose(M, T, keep_zeros);
    
     C.set_shape(M.srow, M.nrow, M.scol, M.ncol);
 
-    BASKER_ASSERT((M.ncol+1) > 0, "scotch ncol"); 
-    MALLOC_INT_1DARRAY(C.col_ptr, M.ncol+1);
-    init_value(C.col_ptr, M.ncol+1, (Int) 0);
-    BASKER_ASSERT(M.nnz > 0, "scotch nnz");
-    MALLOC_INT_1DARRAY(C.row_idx, 2*M.nnz);
-    init_value(C.row_idx, 2*M.nnz, (Int) 0);
+    //BASKER_ASSERT((M.ncol+1) > 0, "scotch ncol"); 
+    BASKER_ASSERT(M.nrow > 0, "scotch nrow");
+    BASKER_ASSERT(M.nnz  > 0, "scotch nnz");
 
+    MALLOC_INT_1DARRAY(C.col_ptr, M.ncol+1);
+    MALLOC_INT_1DARRAY(C.row_idx, 2*M.nnz);
+
+    //init_value(C.col_ptr, M.ncol+1, (Int) 0);
+    //init_value(C.row_idx, 2*M.nnz, (Int) 0);
     
     INT_1DARRAY ws;
-    BASKER_ASSERT(M.nrow > 0, "scotch nrow");
     MALLOC_INT_1DARRAY(ws, M.nrow);
     init_value(ws, M.nrow, BASKER_MAX_IDX);
-    
 
+    const Entry zero (0.0);
     Int c_nnz = 0;
+    C.col_ptr(0) = 0;
     for(Int k = 0 ; k <  M.ncol; ++k)
     {
       //scatter M
       for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
       {
         Int j = M.row_idx(i);
-        if(ws(j) != k)
+        if (ws(j) != k)
         {
-          C.row_idx(c_nnz) = j;
-          c_nnz++;
-          ws(j) = k;
+          if (keep_zeros || M.val(i) != zero) {
+            C.row_idx(c_nnz) = j;
+            c_nnz++;
+            ws(j) = k;
+          }
         }
       }
 
@@ -91,10 +104,12 @@ namespace BaskerNS
     
     //sort columns??
 
+    #if 0
     //can be remove after debuggin
     BASKER_ASSERT(c_nnz > 0, "C.val scotch");
-    MALLOC_ENTRY_1DARRAY(C.val,c_nnz);
+    MALLOC_ENTRY_1DARRAY(C.val, c_nnz);
     init_value(C.val,c_nnz, (Entry)1.0);
+    #endif
     C.nnz = c_nnz;
 
     FREE(T);
@@ -110,8 +125,7 @@ namespace BaskerNS
   )
   {
     Int lvls = round(log(num_threads)/log(2));
-    part_scotch(M, BT, lvls);
-    return 0;
+    return part_scotch(M, BT, lvls);
   }//end part_scotch
 
 
@@ -124,110 +138,689 @@ namespace BaskerNS
    Int num_domains
   )
   {
-  //----------------------INIT Scotch Graph------------//
-  #if SHYLU_SCOTCH_64
+    #if SHYLU_SCOTCH_64
     using scotch_integral_type = int64_t; //NDE: make this depend on the scotch type
-  #else
+    #else
     using scotch_integral_type = int32_t; //NDE: make this depend on the scotch type
-  #endif
+    #endif
+    Kokkos::Impl::Timer timer_scotch;
+
+    Int num_levels = num_domains; 
+    Int num_doms   = pow(2.0, (double)(num_levels+1)) - 1;
     scotch_graph<scotch_integral_type> sg;
+
     sg.m = M.nrow;
-    sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
-    sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
+    sg.cblk = 0;
     sg.permtab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
     sg.peritab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
-    sg.rangtab = (scotch_integral_type *)malloc((sg.m+1)*sizeof(scotch_integral_type));
-    sg.treetab = (scotch_integral_type *)malloc((sg.m)  *sizeof(scotch_integral_type));
-    
-    sg.Ap[0] = 0;
-    Int sj;
-    Int sptr = 0;
-    Int self_edge = 0; //If we do not have them, the matrix order will be bad
-    for(Int i = 0; i < sg.m; i++)
-    {
-      sj=0;
-      for(Int k = M.col_ptr(i); k <M.col_ptr(i+1); k++)
+    sg.rangtab = (scotch_integral_type *)malloc((num_doms+1)*sizeof(scotch_integral_type));
+    sg.treetab = (scotch_integral_type *)malloc((num_doms+1)*sizeof(scotch_integral_type));
+    if (num_levels == 0) {
+      for(Int i = 0; i < sg.m; i++)
       {
-        if(M.row_idx(k) != i)
-        {
-          ASSERT(sptr < M.nnz);
-          sg.Ai[sptr++] = M.row_idx(k);
-          sj++;
-        }
-        else
-        {
-          self_edge++;
-        }
+        sg.permtab[i] = i;
+        sg.peritab[i] = i;
       }
-      sg.Ap[i+1] = sg.Ap[i]+sj;
-    }
-    sg.nz = sg.Ap[sg.m];
+      // just one block
+      sg.cblk = 1;
+      sg.rangtab[0] = 0;
+      sg.rangtab[1] = sg.m;
+      // root
+      sg.treetab[0] = -1;
+    } else {
+      #if defined (HAVE_SHYLU_NODEBASKER_METIS) || defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+      if (Options.use_metis == BASKER_TRUE) {
+        #if !defined(HAVE_SHYLU_NODEBASKER_METIS)
+        BASKER_ASSERT(false, ">> BASKER ASSERT: METIS is not enabled <<");
+        #else
+        Kokkos::Impl::Timer timer_metis;
+        double time_metis = 0.0;
 
-    //printf("num self_edge: %d sg.m: %d \n",
-    //	   self_edge, sg.m);
-    if(self_edge != (sg.m))
-    {
-      BASKER_ASSERT(self_edge == (sg.m-1), 
-          "ZERO ON DIAGONAL, SCOTCH FAIL\n");
-      //JDB: comeback need to have a better way to exit
-      exit(0);
-      //Need to clean up this 
-    }
+        //idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);
+        idx_t  metis_offset = 0; // BTF_A now contains one big block
+        idx_t  metis_size = M.nrow - metis_offset;
+        idx_t  metis_nnz = M.col_ptr(M.nrow);
 
-    for(Int i =0; i < sg.m; i++)
-    {
-      sg.permtab[i] = 0;
-      sg.peritab[i] = 0;
-      sg.rangtab[i] = 0;
-      sg.treetab[i] = 0;
-    }
-    sg.cblk = 0;
+        using METIS_1DARRAY = Kokkos::View<idx_t*,  BASKER_EXE_SPACE>;
+        METIS_1DARRAY metis_part   (KOKKOS_NOINIT("metis_part"),   metis_size);
+        METIS_1DARRAY metis_rowptr (KOKKOS_NOINIT("metis_rowptr"), metis_size+1);
+        METIS_1DARRAY metis_colidx (KOKKOS_NOINIT("metis_colidx"), metis_nnz);
 
-    SCOTCH_Strat strdat;
-    SCOTCH_Graph cgrafptr;
-    int err;
-    scotch_integral_type *vwgts; vwgts = NULL;
+        METIS_1DARRAY metis_part_k  (KOKKOS_NOINIT("metis_part_k"),  metis_size);
+        METIS_1DARRAY metis_perm_k  (KOKKOS_NOINIT("metis_iperm_k"), metis_size);
+        METIS_1DARRAY metis_iperm_k (KOKKOS_NOINIT("metis_iperm_k"), metis_size);
+
+        // to find vertex cover/separator
+        using METIS_2DARRAY = Kokkos::View<idx_t**, BASKER_EXE_SPACE>;
+        METIS_2DARRAY metis_vc (KOKKOS_NOINIT("metis_vc"), metis_nnz, 3);
+        METIS_1DARRAY metis_vc_score (KOKKOS_NOINIT("metis_vc_score"),  metis_nnz);
+
+        int info = 0;
+        idx_t sepsize = 0;
+        idx_t options[METIS_NOPTIONS];
+
+        // --------------------------------------------------- 
+        // compute post-order
+        INT_1DARRAY metis_queue;
+        INT_1DARRAY metis_check;
+        INT_1DARRAY post_order;  // post(i) is the new ith domain id after ND
+        INT_1DARRAY post_iorder; // the original ith domain becomes ipost(i) th domain after ND
+        MALLOC_INT_1DARRAY(metis_queue, num_doms);
+        MALLOC_INT_1DARRAY(metis_check, num_doms);
+        MALLOC_INT_1DARRAY(post_order,  num_doms);
+        MALLOC_INT_1DARRAY(post_iorder, num_doms);
+        for (Int i = 0; i < num_doms; i++) {
+          metis_check(i) = 0;
+        }
+
+        // id of the first leaf node (BF order, post_order maps from BF to ND)
+        Int leaves_id = pow(2.0, (double)(num_levels)) - 1;
+        //printf( " num_levels = %d, num_doms = %d, leves_id = %d\n",num_levels,num_doms,leaves_id );
+
+        // > insert root
+        Int num_queued = 0;
+        metis_queue(num_queued) = 0;
+        num_queued ++;
+
+        num_doms = 0;
+        while (num_queued > 0) {
+          // pop a node from queue
+          Int dom_id = metis_queue(num_queued-1);
+          //printf( " > check (dom_id = %d) = %d\n",dom_id,metis_check(dom_id) );
+          if (dom_id >= leaves_id ||      // leaf
+              metis_check(dom_id) == 2)  // both childrend processed
+          {
+            post_order(num_doms) = dom_id;
+            //printf( " pop queue(%d) = %d -> post(%d) = %d\n\n",num_queued-1,dom_id, num_doms,dom_id );
+            num_doms ++;
+
+            if (dom_id != 0) {
+              // if not root, let the parent node know one of its children has been processed
+              Int parent_id = (dom_id - 1)/2;
+              metis_check(parent_id) ++;
+            }
+
+            num_queued --;
+          } else {
+            // push right child
+            //printf( " push queue(%d) = %d\n",num_queued,2*dom_id+2 );
+            metis_queue(num_queued) = 2*dom_id + 2;
+            num_queued ++;
+            // push left child
+            //printf( " push queue(%d) = %d\n\n",num_queued,2*dom_id+1 );
+            metis_queue(num_queued) = 2*dom_id + 1;
+            num_queued ++;
+          }
+        }
+        for (Int i = 0; i < num_doms; i++) {
+          post_iorder(post_order(i)) = i;
+        }
+        /*for (Int i = 0; i < num_doms; i++) {
+          printf( " post[%d] = %d, ipost[%d]=%d\n",i,post_order(i),i,post_iorder(i) );
+        }*/
+        /*printf( " M = [\n" );
+        for(Int i = 0; i < M.nrow; i++) {
+          for(Int k = M.col_ptr(i); k < M.col_ptr(i+1); k++) printf( "%d %d\n",i,M.row_idx(k) );
+        }
+        printf( "];\n" );*/
+
+        // initial partition
+        sg.cblk = 1;
+        for (Int i = 0; i < M.nrow; i++) {
+          metis_part[i] = post_iorder(0);
+          sg.permtab[i] = i;
+          sg.peritab[i] = i;
+        }
+        sg.treetab[post_iorder(0)] = -1;
+        for (Int i = 0; i < num_doms; i++) {
+          sg.rangtab[i] = 0;
+        }
+        sg.rangtab[num_doms] = M.nrow;
+        Int last_level = num_levels - 1;
+        if (Options.run_nd_on_leaves) {
+          // level goes to num_leaves so that we can call ND on the final leaf nodes
+          last_level = num_levels;
+        }
+        for (Int level = 0; level <= last_level; level++) {
+          Int num_leaves = pow(2.0, (double)(level));       // number of leaves at this level
+          Int first_sep  = pow(2.0, (double)(level)) - 1;   // id of the first leaf at this level
+          Int first_leaf = pow(2.0, (double)(1+level)) - 1; // id of the first new leaf at the next level
+
+          //printf( "\n ===========================================\n" );
+          for (Int leaf_id = 0; leaf_id < num_leaves; leaf_id++) {
+            // extract k-th interoior
+            Int dom_id = 2 * leaf_id + first_leaf;
+            Int dom_id1 = dom_id;     // id of left-child after bisection
+            Int dom_id2 = dom_id + 1; // id of right-child after bisection
+            Int sep_id = (dom_id1)/2; // id of this domain before bisection (becomes separator after bisection)
+            //printf( "\n > level = %d, dom_id = 2*%d + %d = %d, dom_id1 = %d, dom_id2 = %d, sep_id = %d\n",level,leaf_id,first_leaf,dom_id,dom_id1,dom_id2,sep_id );
+
+            // trying to figure out which block comes right before me
+            Int sep_left_sibling = 0;
+            if (sep_id == first_sep) {
+              // this iis the first leaf
+              sep_left_sibling = 0;
+            } else if (leaf_id%2 == 1) {
+              // this is right-child, so assign to left-sibling
+              //printf( " set_left_sibling = 1 + iorder(%d - 1) = 1 + %d\n",sep_id,post_iorder(sep_id - 1) );
+              sep_left_sibling = 1+post_iorder(sep_id - 1);
+            } else {
+              // this is left-child, so assign to left-sibling of its separator
+              //sep_left_sibling = 1+(post_iorder(sep_id/2 - 1));
+              Int last_left_child = pow(2.0, (num_levels - level))*(1+sep_id) - 1;
+              //printf( " set_left_sibling = 1 + iorder(2^(%d-%d) * (1+%d)) - 1)-1 = 1 + iorder(%d)-1 = 1+%d-1\n",num_levels,level,sep_id,last_left_child,post_iorder(last_left_child) );
+              sep_left_sibling = 1+(post_iorder(last_left_child)-1);
+            }
+            //printf( "  -> level = %d, sep_left_sibling = %d (sep_id = %d, first_sep = %d)\n",level,sep_left_sibling,sep_id,first_sep );
+
+            // post order
+            dom_id1 = post_iorder(dom_id1);
+            dom_id2 = post_iorder(dom_id2);
+            sep_id  = post_iorder(sep_id);
+            //printf( "  -> level = %d, dom_id1 = %d, dom_id2 = %d, sep_id = %d\n",level,dom_id1,dom_id2,sep_id );
+            //printf( "  -> level = %d, rantab[%d] = %d, rangtab[%d] = %d, rangtab[%d] = %d\n",level,dom_id1,sg.rangtab[dom_id1],dom_id2,sg.rangtab[dom_id2],sep_id,sg.rangtab[sep_id] );
+            //printf( "  -> level = %d, dom = %d -> %d (nrow = %d)\n",level,dom_id,sep_id,M.nrow );
+
+            Int frow = sg.rangtab[sep_left_sibling];
+            Int metis_offset_k = frow + metis_offset;
+            //printf( "frow = rangtab[%d] = %d\n",sep_left_sibling,frow );
+            //printf( " -> metis_offset_k = %d + %d\n",frow,metis_offset );
+            //for(Int i = 0; i < M.nrow; i++) {
+            //  printf( " %d %d %d %d\n",i, metis_part(i), sg.permtab[i], sg.peritab[i] );
+            //}
+            idx_t metis_size_k = 0;
+            idx_t nnz_k=0;
+            metis_rowptr[0] = 0;
+            for(Int j = metis_offset; j < M.ncol; j++) {
+              Int col = sg.peritab[j]; // j is after ND, col is original
+              if (metis_part(col) == sep_id) {
+                for(Int k = M.col_ptr(col); k < M.col_ptr(col+1); k++)
+                {
+                  Int row = M.row_idx(k);
+                  Int i = sg.permtab[row]; // i is after ND, row is original
+                  if(row != col && i >= metis_offset_k) {
+                    if(metis_part(row) == sep_id)
+                    {
+                      metis_colidx[nnz_k] = i - frow;
+                      nnz_k ++;
+                    }
+                  }
+                }
+                metis_rowptr[metis_size_k+1] = nnz_k;
+                metis_size_k ++;
+              }
+            }
+
+            //printf( " metis_size = %d, n = %d\n",metis_size_k,M.nrow );
+            /*printf( " Ke = [\n" );
+            for(Int i = metis_offset; i < M.nrow; i++)
+            {
+              Int col = sg.peritab[i];
+              for(Int k = M.col_ptr(col); k <M.col_ptr(col+1); k++)
+              {
+                Int j = M.row_idx(k);
+                Int row = sg.permtab[j];
+                printf( "%d %d %d %d\n",j,i,row,col );
+              }
+            }
+            printf( "];\n" );*/
+            /*printf( " Me = [\n" );
+            for(Int i = 0; i < metis_size_k; i++) {
+              for(Int k = metis_rowptr(i); k < metis_rowptr(i+1); k++) printf( "%d %d %d\n",i,metis_colidx(k),k );
+            }
+            printf( "];\n" );*/
+
+            sepsize = 0;
+            info = 0;
+            if (METIS_OK != METIS_SetDefaultOptions(options)) {
+              std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
+              return BASKER_ERROR; // TODO: what to do here?
+            }
+            if (level == num_levels) {
+              // ===============================================
+              // calling ND on final leaves (fill-reducing)
+              timer_metis.reset();
+              bool amd_on_leaf = true;
+              if (Options.verbose == BASKER_TRUE) {
+                std::cout << std::endl << " > calling " << (amd_on_leaf ? "Basker_AMD" : "METIS_NodeND" ) << " on leaf " << leaf_id
+                          << " at final level " << level << ", size = " << metis_size_k
+                          << " < " << std::endl;
+              }
+              #if 0
+              // TODO: Int and idx_t mismatch
+              if (amd_on_leaf) {
+                double l_nnz, lu_work;
+                info = BaskerSSWrapper<Int>::amd_order(metis_size_k,
+                                                       &(metis_rowptr(0)),
+                                                       &(metis_colidx(0)),
+                                                       &(metis_perm_k(0)),
+                                                       l_nnz, lu_work, Options.verbose);
+
+                if (info != TRILINOS_AMD_OUT_OF_MEMORY && info != TRILINOS_AMD_INVALID) {
+                  for(Int i = 0; i < metis_size_k; i++) {
+                    metis_iperm_k(metis_perm_k(i)) = i;
+                  }
+                  info = METIS_OK;
+                } else {
+                  std::cout << std::endl << " > Basker AMD failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
+                }
+              } else
+              #endif
+              {
+                // perm(i) of the original matrix is i-th row in the new matrix
+                info = METIS_NodeND(&metis_size_k,
+                                    &(metis_rowptr(0)),
+                                    &(metis_colidx(0)),
+                                     nullptr,
+                                     options,
+                                    &(metis_perm_k(0)),
+                                    &(metis_iperm_k(0)));
+                if (info != METIS_OK) {
+                  std::cout << std::endl << " > METIS_NodeND failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
+                }
+              }
+
+              // update perm/
+              for(Int i = 0; i < metis_size_k; i++) {
+                // metis_part_k[i] is the original global index before ND
+                metis_part_k[i] = sg.peritab[frow + metis_perm_k[i]];
+              }
+              for(Int i = 0; i < metis_size_k; i++) {
+                sg.peritab[frow + i] = metis_part_k[i];
+                sg.permtab[sg.peritab[frow + i]] = frow + i;
+              }
+            } else {
+              // ===============================================
+              // finding separator on the current leaves (ND)
+              bool use_metis_kway = false;
+              timer_metis.reset();
+              if (use_metis_kway) {
+                // compute two-way partition
+                if (Options.verbose == BASKER_TRUE) {
+                  std::cout << std::endl << " > calling METIS_PartGraphKway on leaf " << leaf_id
+                            << " at level " << level << " < " << std::endl;
+                }
+                idx_t num_constraints = 1;
+                idx_t num_parts = 2;
+                idx_t objval = -1;
+
+                idx_t *vwgt = nullptr;    // contraints (n * num_constraints)
+                idx_t *vsize = nullptr;   // for total comm vol
+                idx_t *adjwgt = nullptr;  // for reducing cut
+
+                real_t *tpwgts = nullptr; // weights for eachh partition              (num_parts * num_constraints)
+                real_t *ubvec = nullptr;  // imbalance tolerance for each constraints (num_constraints)
+                info = METIS_PartGraphKway(&metis_size_k,
+                                           &num_constraints,
+                                           &(metis_rowptr(0)),
+                                           &(metis_colidx(0)),
+                                            vwgt,
+                                            vsize,
+                                            adjwgt,
+                                           &num_parts,
+                                            tpwgts,
+                                            ubvec,
+                                            options,
+                                           &objval,
+                                           &(metis_part_k(0)));
+                // look for edge separator
+                for(Int i = 0; i < metis_size_k; i++) {
+                  Int con1 = 0;
+                  Int con2 = 0;
+                  for (idx_t k = metis_rowptr(i); k < metis_rowptr(i+1); k++) {
+                    if (metis_part_k(metis_colidx(k)) == 0 || metis_part_k(metis_colidx(k)) == -2) {
+                      con1 ++;
+                    } else {
+                      con2 ++;
+                    }
+                  }
+                  if (con1 > 0 && con2) {
+                    if (metis_part_k(i) == 0) {
+                      metis_part_k(i) = -2;
+                    } else {
+                      metis_part_k(i) = 2;
+                    }
+                  }
+                }
+                #if 0
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == -2) {
+                    // put it to edge separator
+                    metis_part_k(i) = 2;
+                  }
+                }
+                #else
+                // look for vertex cover/separator
+                // > look for edges within edge separator
+                Int num_edges = 0;
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
+                    metis_vc_score(i) = 0;
+                  }
+                }
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == 2 || metis_part_k(i) == -2) {
+                    for (idx_t k = metis_rowptr(i); k < metis_rowptr(i+1); k++) {
+                      if (metis_part_k(metis_colidx(k)) == 2 || metis_part_k(metis_colidx(k)) == -2) {
+                        metis_vc(num_edges, 0) = i;
+                        metis_vc(num_edges, 1) = metis_colidx(k);
+                        metis_vc(num_edges, 2) = 0;
+                        num_edges ++;
+
+                        metis_vc_score(i) ++;
+                        metis_vc_score(metis_colidx(k)) ++;
+                      }
+                    }
+                  }
+                }
+                //for (Int i = 0; i < num_edges; i++) std::cout << " edge(" << metis_vc(i, 0) << ", " << metis_vc(i, 1) << ")" << std::endl;
+                // > look for vertex cover/separator
+                Int num_edges_left = num_edges;
+                while (num_edges_left > 0) {
+                  // look for un-processed edge
+                  Int next_edge = 0;
+                  #if 0
+                  while (metis_vc(next_edge, 2) != 0) {
+                    next_edge ++;
+                  }
+                  #else
+                  Int max_score = 0;
+                  for (Int i = 0; i < num_edges; i++) {
+                    Int v1 = metis_vc(i, 0);
+                    Int v2 = metis_vc(i, 1);
+                    Int score = metis_vc_score(v1) + metis_vc_score(v2);
+                    if (metis_vc(i, 2) == 0 && score > max_score) {
+                      next_edge = i;
+                    }
+                  }
+                  #endif
+                  num_edges_left --;
+                  Int v1 = metis_vc(next_edge, 0);
+                  Int v2 = metis_vc(next_edge, 1);
+                  metis_part_k(v1) = 3;
+                  metis_part_k(v2) = 3;
+                  metis_vc_score(v1) --;
+                  metis_vc_score(v2) --;
+                  //std::cout << " >> next edge = " << next_edge << ": edges left = " << num_edges_left << std::endl;
+                  // > remove all the incidental edges
+                  metis_vc(next_edge, 2) = 2;
+                  for (Int i = 0; i < num_edges; i++) {
+                    bool edge_removed = false;
+                    if (metis_vc(i, 0) == v1 || metis_vc(i, 0) == v2) {
+                      if (metis_vc(i, 2) == 0) {
+                        num_edges_left --;
+                      }
+                      //std::cout << "   ++ incident edge = " << i << std::endl;
+                      metis_vc(i, 2) ++;
+                      edge_removed = true;
+                    }
+                    if (metis_vc(i, 1) == v1 || metis_vc(i, 1) == v2) {
+                      if (metis_vc(i, 2) == 0) {
+                        num_edges_left --;
+                      }
+                      //std::cout << "   -- incident edge = " << i << std::endl;
+                      metis_vc(i, 2) ++;
+                      edge_removed = true;
+                    }
+                    if (edge_removed) {
+                      metis_vc_score(metis_vc(i, 0)) --;
+                      metis_vc_score(metis_vc(i, 1)) --;
+                    }
+                  }
+                }
+                for(Int i = 0; i < metis_size_k; i++) {
+                  if (metis_part_k(i) == -2) {
+                    // put it back to dom-0
+                    metis_part_k(i) = 0;
+                  }
+                  if (metis_part_k(i) == 2) {
+                    // put it back to dom-1
+                    metis_part_k(i) = 1;
+                  }
+                  if (metis_part_k(i) == 3) {
+                    // put it to vertex separator
+                    metis_part_k(i) = 2;
+                  }
+                }
+                #endif
+              } else {
+                // find vertex separator
+                if (Options.verbose == BASKER_TRUE) {
+                  std::cout << std::endl << " > calling METIS_ComputeVertexSeparator on leaf " << leaf_id
+                            << " at level " << level << " < " << std::endl;
+                }
+                info = METIS_ComputeVertexSeparator(&metis_size_k,
+                                                    &(metis_rowptr(0)),
+                                                    &(metis_colidx(0)),
+                                                     nullptr,
+                                                     options,
+                                                    &sepsize,
+                                                    &(metis_part_k(0)));
+                if (info != METIS_OK) {
+                  std::cout << std::endl << " > METIS_ComputeVertexSeparator failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
+                }
+              }
+              time_metis += timer_metis.seconds();
+
+              Int dom1 = 0;
+              Int dom2 = 0;
+              Int sep  = 0;
+              for(Int i = 0; i < metis_size_k; i++)
+              {
+                if (metis_part_k[i] == 0) {
+                  dom1 ++;
+                } else if (metis_part_k[i] == 1) {
+                  dom2 ++;
+                } else {
+                  sep ++;
+                }
+              }
+              if(Options.verbose == BASKER_TRUE) {
+                std::cout << " METIS: info = " << info << "(okay = " << METIS_OK << ")"
+                          << " size = " << metis_size_k << " sepsize = " << sepsize << std::endl;
+                std::cout << " dom1=(id=" << dom_id1 << ", size=" << dom1 << "),"
+                          << " dom2=(id=" << dom_id2 << ", size=" << dom2 << "),"
+                          << "  sep=(id=" << sep_id  << ", size=" << sep  << ")" << std::endl;
+                if (dom1 == 0 || dom2 == 0) {
+                  std::cout << std::endl << " > METIS returned an empty domain  "
+                                         << dom1 << " + " << dom2 << " + " << sep
+                                         << " (n = " << M.nrow << ")"
+                                         << std::endl << std::endl;
+                }
+              }
+
+              // update num doms
+              if (dom1 > 0) {
+                sg.cblk ++;
+              }
+              if (dom2 > 0) {
+                sg.cblk ++;
+              }
+              if (sep == 0) {
+                sg.cblk --;
+              }
+              // update permtab, permtab maps original to ND order (permtab[i] is the new row index after nd)
+              sep  = frow + dom1 + dom2;
+              dom2 = frow + dom1;
+              dom1 = frow + 0;
+              for(Int i = 0; i < metis_size_k; i++)
+              {
+                // i_g is the original global index before ND
+                Int i_g = sg.peritab[frow + i];
+                if (metis_part_k[i] == 0) {
+                  sg.permtab[i_g] = dom1;
+                  dom1 ++;
+                } else if (metis_part_k[i] == 1) {
+                  sg.permtab[i_g] = dom2;
+                  dom2 ++;
+                } else {
+                  sg.permtab[i_g] = sep;
+                  sep ++;
+                }
+              }
+
+              // update global part
+              for(Int i = 0; i < metis_size_k; i++) {
+                Int i_g = sg.peritab[frow + i];
+                if (metis_part_k[i] == 0) {
+                  metis_part[i_g] = dom_id1;
+                } else if (metis_part_k[i] == 1) {
+                  metis_part[i_g] = dom_id2;
+                } else {
+                  metis_part[i_g] = sep_id;
+                }
+              }
+
+              // update peritab
+              for(Int i = 0; i < sg.m; i++)
+              {
+                sg.peritab[sg.permtab[i]] = i;
+              }
+
+              // update rangtab
+              sg.rangtab[dom_id1+1] = dom1;
+              sg.rangtab[dom_id2+1] = dom2;
+              sg.rangtab[sep_id+1] = sep;
+
+              // update postorder tree
+              sg.treetab[dom_id1] = sep_id;
+              sg.treetab[dom_id2] = sep_id;
+              //printf( " -> rangtab[%d] = %d, rangtab[%d] = %d, rangtab[%d]=%d\n",dom_id1+1,dom1,dom_id2+1,dom2,sep_id+1,sep);
+            } // if level == num_levels
+          } // for each leaves at this level
+        } // for each level
+
+        // --------------------------------------------------- 
+        // done with ND using METIS
+        sg.cblk = num_doms;
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << std::endl << " > Time to call METIS : " << time_metis << std::endl;
+        }
+        #endif
+      } else
+      { // using SCOTCH
+        #if !defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
+        BASKER_ASSERT(false, ">> BASKER ASSERT: Scotch is not enabled <<");
+        #else
+        //----------------------INIT Scotch Graph------------//
+        sg.Ap = (scotch_integral_type *)malloc((sg.m+1)     *sizeof(scotch_integral_type));
+        sg.Ai = (scotch_integral_type *)malloc((M.nnz)      *sizeof(scotch_integral_type));
+
+        sg.Ap[0] = 0;
+        Int sj;
+        Int sptr = 0;
+        Int self_edge = 0; //If we do not have them, the matrix order will be bad
+        for(Int i = 0; i < sg.m; i++)
+        {
+          sj=0;
+          for(Int k = M.col_ptr(i); k <M.col_ptr(i+1); k++)
+          {
+            if(M.row_idx(k) != i)
+            {
+              ASSERT(sptr < M.nnz);
+              sg.Ai[sptr++] = M.row_idx(k);
+              sj++;
+            }
+            else
+            {
+              self_edge++;
+            }
+          }
+          sg.Ap[i+1] = sg.Ap[i]+sj;
+        }
+        sg.nz = sg.Ap[sg.m];
+
+        //printf("num self_edge: %d sg.m: %d \n",
+        //	   self_edge, sg.m);
+        if(self_edge != (sg.m))
+        {
+          BASKER_ASSERT(self_edge == (sg.m-1), 
+              "ZERO ON DIAGONAL, SCOTCH FAIL\n");
+          //JDB: comeback need to have a better way to exit
+          exit(0);
+          //Need to clean up this 
+        }
+
+        for(Int i =0; i < sg.m; i++)
+        {
+          sg.permtab[i] = 0;
+          sg.peritab[i] = 0;
+        }
+        for(Int i =0; i < num_doms; i++)
+        {
+          sg.rangtab[i] = 0;
+          sg.treetab[i] = 0;
+        }
+        sg.rangtab[num_doms] = 0;
+
+        SCOTCH_Strat strdat;
+        SCOTCH_Graph cgrafptr;
+        int err;
+        scotch_integral_type *vwgts; vwgts = NULL;
     
-    if(SCOTCH_graphInit(&cgrafptr) != 0)
-    {
-      printf("Scotch: error initalizing graph \n");
-      return -1;
+        if(SCOTCH_graphInit(&cgrafptr) != 0)
+        {
+          printf("Scotch: error initalizing graph \n");
+          return BASKER_ERROR; // TODO: what to do here?
+        }
+
+        if( SCOTCH_graphBuild(&cgrafptr, 0, sg.m, sg.Ap, sg.Ap+1, vwgts, NULL,
+                              sg.nz, sg.Ai, NULL) !=0 )
+        {
+          printf("Scotch: failed to build scotch graph \n");
+          return BASKER_ERROR; // TODO: what to do here?
+        }
+
+        //Need to come back to this so update based on nthreads
+        Int flagval = SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE;
+        double balrat = 0.2;
+        SCOTCH_stratInit(&strdat);
+        err = SCOTCH_stratGraphOrderBuild(&strdat, flagval, num_levels, balrat);
+
+        /*
+        err = SCOTCH_stratGraphOrderBuild(&strdat, 
+                                          SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN,
+                                          num_levels, 0.2);
+        */
+
+        if(err != 0)
+        {
+          printf("Scotch: cannot build strategy \n");
+          return BASKER_ERROR; // TODO: what to do here?
+        }
+
+        // permtab[i] = dom id
+        if(SCOTCH_graphOrder(&cgrafptr, &strdat, sg.permtab, sg.peritab, 
+                             &sg.cblk, sg.rangtab, sg.treetab) != 0)
+        {
+          printf("Scotch: cannot compute ordering \n");
+          return BASKER_ERROR; // TODO: what to do here?
+        }
+
+        if(Options.verbose == BASKER_TRUE) {
+          std::cout << " calling SCOTCH_graphOrder(" << M.nrow << " x " << M.ncol 
+                    << ", num_levels = " << num_domains << ")" << std::endl;
+        }
+        free(sg.Ap);
+        free(sg.Ai);
+
+        SCOTCH_stratExit(&strdat);
+        SCOTCH_graphFree(&cgrafptr);
+        #endif
+      } // end of SCOTCH
+      #else
+      BASKER_ASSERT(false, ">> BASKER ASSERT: needs Metis or Scotch to run with multiple threasds <<");
+      #endif
     }
-
-    if( SCOTCH_graphBuild(&cgrafptr, 0, sg.m, sg.Ap, sg.Ap+1, vwgts, NULL,
-          sg.nz, sg.Ai, NULL) !=0 )
-    {
-      printf("Scotch: failed to build scotch graph \n");
-      return -1;
-    }
-
-    //Need to come back to this so update based on nthreads
-    
-    Int num_levels = num_domains; 
-    SCOTCH_stratInit(&strdat);
-    
-    err = SCOTCH_stratGraphOrderBuild(&strdat, 
-				      SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN | SCOTCH_STRATLEAFSIMPLE | SCOTCH_STRATSEPASIMPLE,
-		  num_levels, 0.2);
-    
-
-    /*
-    err = SCOTCH_stratGraphOrderBuild(&strdat, 
-				      SCOTCH_STRATLEVELMAX | SCOTCH_STRATLEVELMIN,
-		  num_levels, 0.2);
-    */
-
-    if(err != 0)
-    {
-      printf("Scotch: cannot build strategy \n");
-      return -1;
-    }
-
-    if(SCOTCH_graphOrder(&cgrafptr, &strdat, sg.permtab, sg.peritab, 
-          &sg.cblk, sg.rangtab, sg.treetab) != 0)
-    {
-      printf("Scotch: cannot compute ordering \n");
-      return -1;
+    if(Options.verbose == BASKER_TRUE) {
+      double time_scotch = timer_scotch.seconds();
+      std::cout << " > Time to compute ND : " << time_scotch << std::endl << std::endl;
+      for(Int i = 0; i < sg.cblk; i++) {
+        printf( " dom-%d : size = %d (%d:%d), tab = %d\n",(int)i,(int)(sg.rangtab[i+1]-sg.rangtab[i]),(int)sg.rangtab[i],(int)(sg.rangtab[i+1]-1),(int)(sg.treetab[i]) );
+      }
     }
 
     //Scan see how many -1
@@ -242,7 +835,7 @@ namespace BaskerNS
     
     #ifdef BASKER_DEBUG_ORDER_SCOTCH
      printf("FIX SCOTCH PRINT OUT\n");
-     printf("SCOTCH: ASKED: %d  GOT : %d TREES: %d \n",
+     printf("SCOTCH: NUM_LEVELS ASKED = %d,  NUM DOMS GOT = %d, NUM TREES = %d \n",
 	    num_levels, sg.cblk, num_trees);
      printf("\n");
      printf("%d %d should blks: %f \n",
@@ -295,8 +888,11 @@ namespace BaskerNS
        printf("\n");
        #endif
 
-       to_complete_tree( num_levels,iblks, sg.cblk,
-           ttabs, ttree );
+       if(Options.verbose == BASKER_TRUE) {
+         printf(" > calling to_complete_tree (cblk = %d) <\n",sg.cblk );
+       }
+       to_complete_tree( num_levels, iblks, sg.cblk,
+                         ttabs, ttree );
 
 
        #ifdef BASKER_DEBUG_ORDER_SCOTCH
@@ -323,12 +919,11 @@ namespace BaskerNS
          sg.rangtab[i] = ttabs(i);
        }
        sg.rangtab[iblks] = ttabs(iblks);
-
      }
      #ifdef BASKER_DEBUG_ORDER_SCOTCH
-    printf("SCOTCH: ASKED: %d  GOT : %d \n",
-	   num_levels, sg.cblk);
-    #endif
+     printf("SCOTCH: NUM LEVELS ASKED = %d,  NUM DOMS GOT = %d \n",
+             num_levels, sg.cblk);
+     #endif
 
     //Find the leaf nad non-leaf nodes
     //Int is_nonleaf[sg.cblk];
@@ -407,10 +1002,12 @@ namespace BaskerNS
       BT.treetab[i]  = sg.treetab[i];
     }
 
+    //printf( " + permtab, peritab\n" );
     for(Int i = 0; i < M.nrow; i++)
     {
       BT.permtab[i] = sg.permtab[i];
       BT.ipermtab[i] = sg.peritab[i];
+      //printf( " + %d, %d\n",BT.permtab[i],BT.ipermtab[i] );
     }
 
     //Used for recursing easier
@@ -420,18 +1017,13 @@ namespace BaskerNS
     //Right now defaulting parts to two
     BT.nparts = 2;
 
-    free(sg.Ap);
-    free(sg.Ai);
     free(sg.permtab);
     free(sg.peritab);
     free(sg.rangtab);
     free(sg.treetab);
-    free(is_nonleaf);
+    delete [] is_nonleaf;
 
-    SCOTCH_stratExit(&strdat);
-    SCOTCH_graphFree(&cgrafptr);
-
-    return 0;
+    return BASKER_SUCCESS;
   }//end part_scotch()
 
 
@@ -441,8 +1033,8 @@ namespace BaskerNS
    Int lvl,
    Int iblks,
    Int nblks,
-   INT_1DARRAY tabs,
-   INT_1DARRAY tree
+   INT_1DARRAY  tabs,
+   INT_1DARRAY _tree
   )
   {
     //Goal is to turn the incomplete tree 
@@ -502,7 +1094,7 @@ namespace BaskerNS
     
     for(Int t_blk = 1; t_blk < nblks; t_blk++)
     {
-      if(tree(t_blk-1) == tree(t_blk))
+      if(_tree(t_blk-1) == _tree(t_blk))
       {
         ndomains++;
       } 
@@ -519,23 +1111,19 @@ namespace BaskerNS
       }
     }
 
+    Int bdomains = pow(2, lvl+1)-1; // I am hoping for binary tree..
     if(Options.verbose == BASKER_TRUE)
     {
       printf("Domains Found: %ld \n", (long)ndomains);
       printf("Domains Ideal: %ld \n", (long)indomains);
-    }  
+      printf("Domains Binary: %ld \n", (long)ndomains);
+    } 
 
-    if(ndomains != indomains)
+    if(ndomains != indomains || ndomains != bdomains)
     {
-      if(Options.verbose == BASKER_TRUE)
-      {
-        printf("Domains Found: %ld \n", (long)ndomains);
-        printf("Domains Ideal: %ld \n", (long)indomains);
-        printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
-        printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
-      }
       printf(" ShyLU Basker Error: do_complete_tree routine \n");
-      printf("   num domains != ideal num domains\n");
+      printf(" > ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
+      printf(" > REDUCE THREAD COUNT AND TRY AGAIN\n\n");
       printf("  This error occurs when the matrix to be solved is too small for given number of threads\n \
           The number of threads must match the number of leaves in the tree\n \
           To resolve this, rerun with fewer threads\n");
@@ -562,7 +1150,7 @@ namespace BaskerNS
     printf("IN Tree: ");
     for(Int i=0; i < iblks+1; i++)
     {
-      printf("%d, ", tree(i));
+      printf("%d, ", _tree(i));
     }
     printf("\n");
     printf("Out Tree: ");
@@ -584,33 +1172,33 @@ namespace BaskerNS
 
     #ifdef BASKER_DEBUG_ORDER_SCOTCH
       printf("top of loop: %d \n",
-          tree(s_tree_p));
+          _tree(s_tree_p));
     #endif
 
       if(ws(m_tree_p) == 0)
       {
         //Not assigned yet
-        if((tree(s_tree_p) == otree(m_tree_p)))
+        if((_tree(s_tree_p) == otree(m_tree_p)))
         {
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("same case\n");
         #endif
           otabs(m_tab_p) = tabs(s_tab_p);
         }
-        else if(tree(s_tree_p) == -1)
+        else if(_tree(s_tree_p) == -1)
         {
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("-1 case \n");
         #endif
-          tree(s_tree_p) = otree(m_tree_p);
+          _tree(s_tree_p) = otree(m_tree_p);
           otabs(m_tab_p) = tabs(s_tab_p);
         }
-        else if(tree(s_tree_p) == 0)
+        else if(_tree(s_tree_p) == 0)
         {
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("end case\n");
         #endif
-          tree(s_tree_p) = otree(m_tree_p);
+          _tree(s_tree_p) = otree(m_tree_p);
           otabs(m_tab_p) = tabs(s_tab_p-1);
           s_tab_p--;
         }
@@ -619,7 +1207,7 @@ namespace BaskerNS
         #ifdef BASKER_DEBUG_ORDER_SCOTCH
           printf("no sep \n");
           printf("tree: %d %d otree: %d %d \n",
-              s_tree_p, tree(s_tree_p),
+              s_tree_p, _tree(s_tree_p),
               m_tree_p, otree(m_tree_p));
         #endif
           if(ws(otree(m_tree_p)) == 0)
@@ -627,30 +1215,30 @@ namespace BaskerNS
             //need to offset to make space
             for(Int jj = iblks; jj > otree(m_tree_p); jj--)
             {
-              if((tree(jj-1) == 0) || (tree(jj-1) ==-1))
+              if((_tree(jj-1) == 0) || (_tree(jj-1) ==-1))
               {
-                tree(jj) = tree(jj-1);
+                _tree(jj) = _tree(jj-1);
                 #ifdef BASKER_DEBUG_ORDER_SCOTCH
                 printf("sliding1: %d %d %d \n",
-                    jj, jj-1, tree(jj-1));
+                    jj, jj-1, _tree(jj-1));
                 #endif
               }
               else
               {
-                tree(jj) = tree(jj-1)+1;
+                _tree(jj) = _tree(jj-1)+1;
                 #ifdef BASKER_DEBUG_ORDER_SCOTCH
                 printf("sliding2: %d %d %d \n",
-                    jj, jj-1, tree(jj-1));
+                    jj, jj-1, _tree(jj-1));
                 #endif
               }
             }//end for-over upper
 
-            tree(otree(m_tree_p)) = otree(otree(m_tree_p));
+            _tree(otree(m_tree_p)) = otree(otree(m_tree_p));
             ws(otree(m_tree_p)) = 1;
 
           }//ws == 0;
 
-          tree(s_tree_p) = otree(m_tree_p);
+          _tree(s_tree_p) = otree(m_tree_p);
           otabs(m_tab_p) = tabs(s_tab_p);
         }//eles
 
@@ -667,7 +1255,7 @@ namespace BaskerNS
         #endif
         //Note assigned sep
         otabs(m_tab_p) = tabs(s_tab_p-1);
-        tree(s_tree_p) = otree(m_tree_p);
+        _tree(s_tree_p) = otree(m_tree_p);
         s_tree_p++;
         m_tab_p++;
       }//ws == 1
@@ -688,7 +1276,7 @@ namespace BaskerNS
       printf("Tree: ");
       for(Int i=0; i < iblks+1; i++)
       {
-        printf("%d, ", tree(i));
+        printf("%d, ", _tree(i));
       }
       printf("\n");
       printf("Tabs: ");
@@ -712,7 +1300,7 @@ namespace BaskerNS
     printf("Tree: ");
     for(Int i=0; i < iblks+1; i++)
     {
-      printf("%d, ", tree(i));
+      printf("%d, ", _tree(i));
     }
     printf("\n");
     printf("Tabs: ");
@@ -738,7 +1326,7 @@ namespace BaskerNS
    Int lvl,
    Int &lpos, Int &rpos, 
    Int &mynum,
-   INT_1DARRAY tree
+   INT_1DARRAY _tree
   )
   {
     //printf("assign, lpos: %d rpos: %d  number: %d\n",
@@ -757,8 +1345,8 @@ namespace BaskerNS
           lpos, rpos, lvl);
       #endif
 
-      tree(leftc)  = mynum;
-      tree(rightc) = mynum;
+      _tree(leftc)  = mynum;
+      _tree(rightc) = mynum;
 
       #ifdef BASKER_DEBUG_ORDER_SCOTCH
       printf("assign: %d %d \n", leftc, mynum);
@@ -769,13 +1357,13 @@ namespace BaskerNS
       rec_build_tree(lvl-1, 
           leftc, rightc,
           mynum,
-          tree);
+          _tree);
 
       mynum = leftc;
       rec_build_tree(lvl-1,
           lpos, leftc, 
           mynum,
-          tree);
+          _tree);
 
     } // end if lvl > 0
 
@@ -783,4 +1371,5 @@ namespace BaskerNS
 
 }//end namespace Basker
 
+#undef BASKER_TIMER
 #endif //ifndef basker_order_scotch_hpp

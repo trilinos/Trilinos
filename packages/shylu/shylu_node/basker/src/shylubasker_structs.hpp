@@ -3,6 +3,7 @@
 
 #include "shylubasker_types.hpp"
 #include "shylubasker_vector.hpp"
+#include "shylubasker_scalar_traits.hpp"
 
 namespace BaskerNS
 {
@@ -112,9 +113,9 @@ namespace BaskerNS
     BASKER_INLINE
     basker_tree()
     {
+      nroots = 0;
       nparts = 2;
       nblks = 0;
-
     }
     BASKER_INLINE
     ~basker_tree()
@@ -366,7 +367,7 @@ namespace BaskerNS
       {
         BASKER_ASSERT(size > 0, "struct post size");
         MALLOC_INT_1DARRAY(post, size);
-        post_flg =size;
+        post_flg = size;
       }
       else if(size > parent_flg)
       {
@@ -553,11 +554,13 @@ namespace BaskerNS
 
 
     BASKER_INLINE
-    void init_L_row_counts(Int size)
+    void init_L_row_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_L_row_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_L_row_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(L_row_counts_flg == 0)
@@ -577,11 +580,13 @@ namespace BaskerNS
     }//end init_L_row_counts
 
     BASKER_INLINE
-    void init_L_col_counts(Int size)
+    void init_L_col_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_L_col_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_L_col_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(L_col_counts_flg == 0)
@@ -625,11 +630,13 @@ namespace BaskerNS
     }//end init_U_row_counts
 
     BASKER_INLINE
-    void init_U_col_counts(Int size)
+    void init_U_col_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_U_col_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_U_col_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(U_col_counts_flg == 0)
@@ -649,11 +656,13 @@ namespace BaskerNS
     }//end init_U_col_counts
 
     BASKER_INLINE
-    void init_S_row_counts(Int size)
+    void init_S_row_counts(Int size, BASKER_BOOL verbose)
     {
       if(size <=0)
       {
-        std::cout << " init_S_row_counts: size <= 0 no alloc " << std::endl;
+        if (verbose) {
+          std::cout << " init_S_row_counts: size <= 0 no alloc " << std::endl;
+        }
         return;  //NDE - info of failure to allocate should be returned...
       }
       if(S_row_counts_flg == 0)
@@ -721,9 +730,11 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct basker_options
   {
+    using STS = Basker_ScalarTraits<Entry>;
+    using BASKER_MAGNITUDE = typename STS::magnitudeType;
+
     basker_options()
     {
-
       //Operation Options
       same_pattern = BASKER_FALSE;
 
@@ -749,17 +760,35 @@ namespace BaskerNS
       //Default is on using bottle-neck
       matching      = BASKER_TRUE;
       matching_type = BASKER_MATCHING_BN;
-
+      // matching before BTF in symbolic 
+      // > 0 = none, 1 = ShyLUBasker::mwm, 2 = trilinos_btf_maxtrans, or 3 = MC64 if enabled
+      btf_matching = 2;
+      min_block_size = 0; // no merging blocks
 
       //BTF Ordering Options
       btf             = BASKER_TRUE;
       btf_max_percent = BASKER_BTF_MAX_PERCENT;
       btf_large       = BASKER_BTF_LARGE;
+      use_sequential_diag_facto = BASKER_FALSE;
+      // MWM matching before AMD 
+      //  0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
+      blk_matching = 1; // if 0, then ND & AMD are applied in symbolic
+
+      // ND Ordering Options (Should METIS optional?)
+      use_metis = true;
+      run_nd_on_leaves = false;
+
+      // AMD Option
+      amd_dom = true;
 
       //Pivot
       no_pivot   = BASKER_FALSE;
-      pivot_tol  = (Entry)BASKER_PIVOT_TOL; 
-      pivot_bias = (Entry)BASKER_PIVOT_BIAS;
+      pivot_tol  = BASKER_PIVOT_TOL; 
+      static_delayed_pivot = 0;
+
+      //Prune (if not pruned, check for numerical cancelatin)
+      prune = BASKER_FALSE;
+      replace_tiny_pivot = BASKER_TRUE;
 
       //BTF Options
       btf_prune_size = (Int)BASKER_BTF_PRUNE_SIZE;
@@ -771,9 +800,7 @@ namespace BaskerNS
       //incomplete_type = BASKER_INCOMPLETE_RLVL_LIMITED;
       inc_lvl    = BASKER_INC_LVL_VALUE;
       inc_tol    = BASKER_INC_TOL_VALUE;
-      //user_fill  = (Entry)BASKER_FILL_USER;
-      user_fill  = (double)BASKER_FILL_USER;
- 
+      user_fill  = BASKER_FILL_USER;
     }
 
     //Reuse Pattern (Save time if same pattern can be used)
@@ -800,17 +827,33 @@ namespace BaskerNS
 
     //BTF Ordering Options
     BASKER_BOOL  btf;
-    BASKER_ENTRY btf_max_percent;
-    BASKER_ENTRY btf_large;
-    
+    BASKER_MAGNITUDE btf_max_percent;
+    BASKER_MAGNITUDE btf_large;
+    BASKER_BOOL  use_sequential_diag_facto;
+    // TODO: remove this (matching during symbolic)
+    int btf_matching; // carbinality matching before BTF (Symbolic):                0 = none, 1 = Basker, or 2 = Trilinos (default) (3 = MC64 if enable)
+    int blk_matching; // max weight matching on each of diagonal blocks (Numeric):  0 = none (default), or 1 = Basker (2 = MC64 if enable)
+    Int min_block_size; // min size of blocks
+
+    // Replace tiny pivott
+    BASKER_BOOL replace_tiny_pivot;
+
+    // Option to apply MWM at numeric through "delayed" pivot
+    int static_delayed_pivot;
+
     //AMD Ordering Options
     BASKER_BOOL  amd_dom;
-    BASKER_BOOL  amd_btf;
-    
+
+    // ND Ordering Options
+    BASKER_BOOL use_metis;
+    BASKER_BOOL run_nd_on_leaves;
+
     //Pivot Options
     BASKER_BOOL  no_pivot;
-    BASKER_ENTRY pivot_tol;  //Not Used
-    BASKER_ENTRY pivot_bias;
+    BASKER_MAGNITUDE pivot_tol;
+
+    //Prune (if not pruned, check for numerical cancelatin)
+    BASKER_BOOL prune;
 
     //BTF Options
     BASKER_INT   btf_prune_size;
@@ -819,9 +862,8 @@ namespace BaskerNS
     BASKER_BOOL  incomplete;
     BASKER_INT   incomplete_type;
     BASKER_INT   inc_lvl;
-    BASKER_ENTRY inc_tol;    //Not Used
-    //BASKER_ENTRY user_fill;
-    double user_fill;
+    BASKER_MAGNITUDE inc_tol;    //Not Used
+    BASKER_MAGNITUDE user_fill;
     
     /* ---- todo add more ----*/
   }; // end bask_options

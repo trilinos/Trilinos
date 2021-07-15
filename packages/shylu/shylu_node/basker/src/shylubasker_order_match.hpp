@@ -2,31 +2,31 @@
 #define SHYLUBASKER_ORDER_MATCH_HPP
 
 
-//#define BASKER_MC64
-
 //Include statements
-#ifdef BASKER_MC64
-#include "mc64ad.hpp"
-#endif
-
-#include "mwm2.hpp"
-
-
+//#include "mc64ad.hpp"
 /* Note, come back and rewrite these 
  * function yourself at somepoint to clean up
  * In the mean time to test how well this works, we will use the auto rewritten from SuperLU_dist with modifications
  */
 
-/*
+#include "mwm2.hpp"
+//#if defined(HAVE_AMESOS2_SUPERLUDIST) && !defined(BASKER_MC64)
+//  #define BASKER_SUPERLUDIS_MC64
+//#endif
+#ifdef BASKER_MC64
+#include "mc64ad.hpp"
+#elif defined(BASKER_SUPERLUDIS_MC64)
+// FIX this
 extern  "C"
 {
-  void mc64id_(int *);
+  void mc64id_dist(int *);
 
-  void mc64ad_(int*, int*, int*, int*, int*,  double*,
-               int*, int*, int*, int*, int*,  double*,
-               int*, int*);
+  void mc64ad_dist(int*, int*, int*, int*, int*,  double*,
+                   int*, int*, int*, int*, int*,  double*,
+                   int*, int*);
 }
-*/
+#endif
+
 
 namespace BaskerNS
 {
@@ -35,83 +35,88 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::mwm(BASKER_MATRIX &M, INT_1DARRAY perm)
   {
-    //DEBUG put to get compiled
-    
     Int num = 0;
     mwm_order::mwm(M.nrow, M.nnz, 
 		   &(M.col_ptr[0]), &(M.row_idx[0]),
 		   &(M.val[0]), &(perm[0]), 
 		   num);
-
-    return 0;
+    return num;
   }//end mwm
 
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry, Exe_Space>::mc64(BASKER_MATRIX &M, Int _job, INT_1DARRAY _perm)
+  int Basker<Int,Entry, Exe_Space>::mc64(Int n_, Int nnz_, Int *colptr, Int *row_idx, Entry *val,
+                                         Int _job, Int *_perm, Entry *_scale_row, Entry *_scale_col)
   {
     //Note using primative types to match fortran
-  #ifdef BASKER_MC64
-
+  #ifdef BASKER_SUPERLUDIS_MC64
+    typedef     int         int_t;
   #else
-    typedef     Int          int_t;
+    typedef     Int         int_t;
   #endif
-    //typedef     int         int_t;
     typedef     double      entry_t;
 
-    int_t i, liw, ldw, num;
-    int_t *iw, icntl[10], info[10];
+    int_t liw, ldw, num;
+    int_t *iw;
+    #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
+    int_t icntl[10], info[10];
+    #endif
     int_t job  = _job;
     entry_t *dw;
     entry_t *nzval_abs;
-    int_t n = M.nrow;
-    int_t nnz = M.nnz;
+    int_t n = n_;
+    int_t nnz = nnz_;
 
-    nzval_abs = (entry_t*)malloc(M.nnz*sizeof(entry_t));
+    nzval_abs = (entry_t*)malloc(nnz*sizeof(entry_t));
 
     liw = 5*n;
     if(job == 3) 
-    { liw = 10*M.nrow + M.nnz; }
+    { liw = 10*n + n; }
     iw = (int_t*) malloc(liw*sizeof(int_t));
     ldw = 3*n+nnz;
     dw = (entry_t*) malloc(ldw*sizeof(entry_t));
 
     //Convert to 1 formatting
-    for(Int i = 0; i <= M.nrow; ++i)
-      M.col_ptr[i] = M.col_ptr[i]+1;
-    for(Int i = 0; i < M.nnz; ++i)
-      M.row_idx[i] = M.row_idx[i]+1;
+    for(Int i = 0; i <= n; ++i)
+      colptr[i] = colptr[i]+1;
+    for(Int i = 0; i < nnz; ++i)
+      row_idx[i] = row_idx[i]+1;
     
     //call init
     #ifdef BASKER_MC64
     mc64id_(icntl);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
+    mc64id_dist(icntl);
     #endif
 
-    for(Int i = 0; i < M.nnz; ++i)
-    { nzval_abs[i] = abs(M.val[i]); }
-
-    Int* colptr = &(M.col_ptr[0]);
-    Int* rowidx = &(M.row_idx[0]);
-    Entry* val  = &(M.val[0]);
+    for(Int i = 0; i < nnz; ++i)
+    { nzval_abs[i] = abs(val[i]); }
 
     Int *perm;
-    perm = (Int*) malloc(M.nrow*sizeof(Int));
+    perm = (Int*) malloc(n*sizeof(Int));
 
     #ifdef BASKER_MC64
-    mc64ad_(&job, &n, &nnz, colptr, rowidx, nzval_abs, 
+    mc64ad_(&job, &n, &nnz, colptr, row_idx, nzval_abs,
 	    &num, perm, &liw, iw, &ldw, dw, icntl, info);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
+    mc64ad_dist(&job, &n, &nnz, colptr, row_idx, nzval_abs,
+	        &num, perm, &liw, iw, &ldw, dw, icntl, info);
     #endif
 
     //debug
 
     //convert indexing back
-    for(Int i=0; i <= M.nrow; ++i)
-    { M.col_ptr[i] = M.col_ptr[i]-1; }
-    for(Int i=0; i < M.nnz; ++i)
-    { M.row_idx[i] = M.row_idx[i]-1; }
-    for(Int i=0; i < M.nrow; ++i)
-    { _perm[i] = perm[i] -1; }
+    for(Int i=0; i <= n; ++i)
+    { colptr[i] = colptr[i]-1; }
+    for(Int i=0; i < nnz; ++i)
+    { row_idx[i] = row_idx[i]-1; }
+    for(Int i=0; i < n; ++i)
+    { _perm[i] = perm[i]-1; }
+    for(Int i =0; i < n; ++i)
+    { _scale_row[i] = exp (dw[i]); }
+    for(Int i =0; i < n; ++i)
+    { _scale_col[i] = exp (dw[i+n]); }
 
     //add job 5 special 
 
@@ -123,22 +128,38 @@ namespace BaskerNS
 
   }//end mc64
   
+  // With user-specified matrix
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int,Entry, Exe_Space>::mc64(BASKER_MATRIX &M, Int _job, INT_1DARRAY _perm,
+                                         ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col)
+  {
+    int info;
+    info = mc64(M.nrows, M.nnz, &(M.colptr(0)), &(M.rowidx(0)), &(M.val(0)),
+                _job, &(_perm(0)), &(_scale_row(0)), &(_scale_col(0)));
+    return info;
+  }
+
 
   //With default matirix
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry, Exe_Space>::mc64(Int _job, INT_1DARRAY _perm)
+  int Basker<Int,Entry, Exe_Space>::mc64(Int _job, INT_1DARRAY _perm, ENTRY_1DARRAY _scale_row, ENTRY_1DARRAY _scale_col)
   {
     //Note using primative types to match fortran
-  #ifdef BASKER_MC64
-
-  #else
+    #ifdef BASKER_SUPERLUDIS_MC64
+    typedef     int         int_t;
+    #else
     typedef     Int         int_t;
-  #endif
+    #endif
     typedef     double      entry_t;
 
-    int_t i, liw, ldw, num;
-    int_t *iw, icntl[10], info[10];
+    #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
+    int_t num;
+    int_t icntl[10], info[10];
+    #endif
+    int_t liw, ldw;
+    int_t *iw;
     int_t job  = _job;
     entry_t *dw;
     entry_t *nzval_abs;
@@ -148,10 +169,11 @@ namespace BaskerNS
     nzval_abs = (entry_t*)malloc(A.nnz*sizeof(entry_t));
 
     liw = 5*n;
-    if(job == 3) 
-      { liw = 10*A.nrow + A.nnz; }
+    if(job == 3) {
+      liw = 10*A.nrow + A.nnz;
+    }
     iw = (int_t*) malloc(liw*sizeof(int_t));
-    ldw = 2*n+nnz;
+    ldw = 3*n+nnz;
     dw = (entry_t*) malloc(ldw*sizeof(entry_t));
 
     //Convert to 1 formatting
@@ -163,21 +185,28 @@ namespace BaskerNS
     //call init
     #ifdef BASKER_MC64
     mc64id_(icntl);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
+    mc64id_dist(icntl);
     #endif
 
     for(Int i = 0; i < A.nnz; ++i)
     { nzval_abs[i] = abs(A.val[i]); }
     
-    Int* colptr = &(A.col_ptr[0]);
-    Int* rowidx = &(A.row_idx[0]);
-    Entry* val  = &(A.val[0]);
     Int *perm;
     perm = (Int*) malloc(A.nrow*sizeof(Int));
    
+    #if defined(BASKER_MC64) || defined(BASKER_SUPERLUDIS_MC64)
+    Int* colptr = &(A.col_ptr[0]);
+    Int* rowidx = &(A.row_idx[0]);
     #ifdef BASKER_MC64
-    mc64ad_(&job, &n, &nnz, colptr, rowidx, nzval_abs, 
+    mc64ad_(&job, &n, &nnz, colptr, rowidx, nzval_abs,
 	    &num, perm,
-           &liw, iw, &ldw, dw, icntl, info);
+            &liw, iw, &ldw, dw, icntl, info);
+    #elif defined(BASKER_SUPERLUDIS_MC64)
+    mc64ad_dist(&job, &n, &nnz, colptr, rowidx, nzval_abs,
+	        &num, perm,
+                &liw, iw, &ldw, dw, icntl, info);
+    #endif
     #endif
 
     //debug
@@ -189,6 +218,10 @@ namespace BaskerNS
       A.row_idx[i] = A.row_idx[i]-1;
     for(Int i =0; i < A.nrow; ++i)
       _perm[i] = perm[i] -1;
+    for(Int i =0; i < A.nrow; ++i)
+      _scale_row[i] = exp (dw[i]);
+    for(Int i =0; i < A.nrow; ++i)
+      _scale_col[i] = exp (dw[i+A.nrow]);
 
     free(iw);
     free(dw);
