@@ -46,8 +46,7 @@ class IntegratorAdjointSensitivity :
 {
 public:
 
-  /** \brief Constructor with ParameterList and model, and will be fully
-   * initialized. */
+  /** \brief Full Constructor will be fully initialized. */
   /*!
    * In addition to all of the regular integrator options, the supplied
    * parameter list supports the following options contained within a sublist
@@ -89,7 +88,6 @@ public:
       const bool ic_depends_on_p,
       const bool mass_matrix_is_identity);
 
-  /// Destructor
   /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
   IntegratorAdjointSensitivity();
 
