@@ -14,8 +14,7 @@
 # Handle KOKKOS_ARCH
 #
 
-if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* || \
-  "$ATDM_CONFIG_COMPILER" == "XL"* ]]; then
+if [[ "$ATDM_CONFIG_COMPILER" == "GNU"* ]]; then
   if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "DEFAULT" || \
     "$ATDM_CONFIG_KOKKOS_ARCH" == "Power9" ]] ; then
     export ATDM_CONFIG_KOKKOS_ARCH=Power9
@@ -96,28 +95,6 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
 
   export ATDM_CONFIG_USE_NINJA=ON
 
-elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
-
-  # Point to binutils root.
-  export BINUTILS_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
-  export LD_LIBRARY_PATH=${BINUTILS_ROOT}/lib:${LD_LIBRARY_PATH}
-  export LIBRARY_PATH=${BINUTILS_ROOT}/lib
-  export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
-  export CPATH=${BINUTILS_ROOT}/include:${CPATH}
-  export BLAS_ROOT=${CBLAS_ROOT}
-
-  # Don't use ninja as the fortran compiler test is broken.
-  export ATDM_CONFIG_USE_NINJA=OFF
-
-  if [[ "CUDA" == "$ATDM_CONFIG_NODE_TYPE" ]]; then
-    export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
-  else
-    export ATDM_CONFIG_CXX_FLAGS="-qxflag=disable__cplusplusOverride"
-  fi
-
-  # set the gcc compiler XL  will use for backend to one that handles c++14
-  export XLC_USR_CONFIG=/opt/ibm/xlC/16.1.1/etc/xlc.cfg.rhel.7.6.gcc.7.3.1.cuda.10.1.243
-  export XLF_USR_CONFIG=/opt/ibm/xlf/16.1.1/etc/xlf.cfg.rhel.7.5.gcc.7.3.1.cuda.10.1.243
 fi
 
 # Set up stuff related to CUDA

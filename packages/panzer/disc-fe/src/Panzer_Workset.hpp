@@ -138,7 +138,7 @@ namespace panzer {
     Teuchos::RCP< std::vector<int> > ir_degrees;
     
     //TEUCHOS_DEPRECATED
-    std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
+    mutable std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
     
     //! Value corresponds to basis type.  Use the offest for indexing.
     //TEUCHOS_DEPRECATED
@@ -146,7 +146,7 @@ namespace panzer {
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     //TEUCHOS_DEPRECATED
-    std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
+    mutable std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
 
     /** Grab the face connectivity for this workset
      * DEPRECATED - use: workset.getSubcellConnectivity(workset.numDimensions()-1)
