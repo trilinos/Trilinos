@@ -92,6 +92,7 @@ public:
 
   void doWaits(const DistributorPlan& plan);
 
+private:
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS

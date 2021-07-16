@@ -825,12 +825,6 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     typedef typename ArrayRCP<const Packet>::size_type size_type;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << actor_.requests_.size () <<
-      " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
-
     // doPosts() accepts the exports and imports arrays as ArrayRCPs,
     // requiring that the memory location is persisting (as is
     // necessary for nonblocking receives).  However, it need only
@@ -874,12 +868,6 @@ namespace Tpetra {
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits: There are " << actor_.requests_.size () << " outstanding "
-      "nonblocking messages pending.  It is incorrect to call doPostsAndWaits "
-      "with posts outstanding.");
 
     // doPosts() accepts the exports and imports arrays as ArrayRCPs,
     // requiring that the memory location is persisting (as is
@@ -980,12 +968,6 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doReversePostsAndWaits(4 args): There are " << actor_.requests_.size ()
-      << " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
 
     // doReversePosts() accepts the exports and imports arrays as
     // ArrayRCPs, requiring that the memory location is persisting (as
@@ -1109,11 +1091,6 @@ namespace Tpetra {
                           const ImpView& imports,
                           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(actor_.requests_.size() != 0, std::runtime_error,
-      "Tpetra::Distributor::doReversePostsAndWaits(4 args): There are "
-      << actor_.requests_.size() << " outstanding nonblocking messages pending.  It "
-      "is incorrect to call this method with posts outstanding.");
-
     doReversePosts (exports, numExportPacketsPerLID, imports,
                     numImportPacketsPerLID);
     doReverseWaits ();
