@@ -52,6 +52,7 @@
 #include "Panzer_LocalMeshInfo.hpp"
 #include "Panzer_PointGenerator.hpp"
 #include "Panzer_PointValues2.hpp"
+#include "Panzer_ConvertNormalToRotationMatrix.hpp"
 
 #include "Panzer_SubcellConnectivity.hpp"
 #include "Panzer_OrientationsInterface.hpp"
@@ -147,7 +148,7 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
           normal[d] = -n_d;
         }
 
-        panzer::IntegrationValues2<double>::convertNormalToRotationMatrix(normal,transverse,binormal);
+        panzer::convertNormalToRotationMatrix(normal,transverse,binormal);
 
         for(int dim=0; dim<3; ++dim){
           iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,0,dim) = normal[dim];

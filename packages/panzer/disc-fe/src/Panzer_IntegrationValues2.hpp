@@ -57,6 +57,31 @@ namespace panzer {
 
   class SubcellConnectivity;
 
+  /**
+   * \brief Swap the ordering of quadrature points in a specified cell.
+   *
+   * \param[in] cell   Cell index
+   * \param[in] a      Quadrature point a
+   * \param[in] b      Quadrature point b
+   *
+   * NOTE: this should be a member function of IntegrationValues but
+   * lambda capture generates a ton of cuda compiler warnings. Making
+   * it a stand alone function fixes this.
+   */
+  template<typename Scalar,
+           typename T0,typename T1,typename T2,typename T3,
+           typename T4,typename T5,typename T6,typename T7>
+  KOKKOS_INLINE_FUNCTION
+  void swapQuadraturePoints(int cell,int a,int b,
+                            T0& ref_ip_coordinates,
+                            T1& ip_coordinates,
+                            T2& weighted_measure,
+                            T3& jac,
+                            T4& jac_det,
+                            T5& jac_inv,
+                            T6& surface_normals,
+                            T7& surface_rotation_matrices);
+
   template <typename Scalar>
   class IntegrationValues2 {
   public:
@@ -149,34 +174,26 @@ namespace panzer {
 
     Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
 
-    /**
-     * \brief Swap the ordering of quadrature points in a specified cell.
-     *
-     * \param[in] cell   Cell index
-     * \param[in] a      Quadrature point a
-     * \param[in] b      Quadrature point b
-     */
-    void swapQuadraturePoints(int cell,int a,int b);
+    /// This should be a private method, but using lambdas on cuda forces this to be public.
+    void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
 
-    static void convertNormalToRotationMatrix(const Scalar normal[3], Scalar transverse[3], Scalar binormal[3]);
-    
+    /// This should be a private method, but using lambdas on cuda forces this to be public.
+    void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
+
+    /// This should be a private method, but using lambdas on cuda forces this to be public.
+    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells,const SubcellConnectivity & face_connectivity);
+
   protected:
-
-
 
     // TODO: Make this a utility function that only exists in source file
     Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> getIntrepidCubature(const panzer::IntegrationRule & ir) const;
-
 
   private:
     bool alloc_arrays;
     std::string prefix;
     std::vector<PHX::index_size_type> ddims_;
 
-    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells,const SubcellConnectivity & face_connectivity);
     void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
-    void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
-    void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
     void evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,const int in_num_cells);
   };
 
