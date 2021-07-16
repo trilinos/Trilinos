@@ -56,6 +56,11 @@
 
 #include "Kokkos_DynRankView.hpp"
 
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_Region.h"
+
+
 #ifdef PANZER_HAVE_IOSS
 
 using Teuchos::RCP;
@@ -289,6 +294,32 @@ TEUCHOS_UNIT_TEST(tSTK_IO, addInformationRecords)
    TEST_ASSERT(mesh!=Teuchos::null);
 
    mesh->writeToExodus("info_records.exo");
+
+   {
+   Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus", 
+                                                     "info_records.exo", 
+                                                     Ioss::READ_MODEL);
+   TEST_ASSERT(db_io);
+
+   Ioss::Region region(db_io);
+   TEST_ASSERT(db_io->ok() == true);
+
+   auto info_records_from_ioss = db_io->get_information_records();
+
+   // put all the info records in one vector to make them easier to iterate over
+   std::vector<std::string> all_expected_records;
+   all_expected_records.insert(all_expected_records.end(), info_records_1.begin(), info_records_1.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_2.begin(), info_records_2.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_3.begin(), info_records_3.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_4.begin(), info_records_4.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_5.begin(), info_records_5.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_6.begin(), info_records_6.end());
+   // make sure all the input records appear in the results returned from IOSS
+   for ( auto r : all_expected_records ) {
+      auto iter = std::find(info_records_from_ioss.begin(), info_records_from_ioss.end(), r);
+      TEST_ASSERT(iter != info_records_from_ioss.end());
+   }
+   }
 }
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements)
