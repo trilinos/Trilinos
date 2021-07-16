@@ -281,6 +281,11 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
    }
 }
 
+void STK_Interface::addInformationRecords(const std::vector<std::string> & info_records)
+{
+   informationRecords_.insert(info_records.begin(), info_records.end());
+}
+
 void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO,
                                const bool buildRefinementSupport)
 {
@@ -711,6 +716,10 @@ setupExodusFile(const std::string& filename,
       meshData_->add_field(meshIndex_, *fields[i]);
     }
   }
+
+  // convert the set to a vector
+  std::vector<std::string> deduped_info_records(informationRecords_.begin(),informationRecords_.end());
+  meshData_->add_info_records(meshIndex_, deduped_info_records);
 #else
   TEUCHOS_ASSERT(false)
 #endif
