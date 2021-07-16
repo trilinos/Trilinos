@@ -75,34 +75,6 @@ namespace Details {
     timer_doWaits_ = Teuchos::TimeMonitor::getNewTimer (
                            "Tpetra::Distributor: doWaits");
 
-    timer_doPosts3TA_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(3) TA");
-    timer_doPosts4TA_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(4) TA");
-
-    timer_doPosts3TA_recvs_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(3): recvs TA");
-    timer_doPosts4TA_recvs_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(4): recvs TA");
-
-    timer_doPosts3TA_barrier_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(3): barrier TA");
-    timer_doPosts4TA_barrier_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(4): barrier TA");
-
-    timer_doPosts3TA_sends_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(3): sends TA");
-    timer_doPosts4TA_sends_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(4): sends TA");
-    timer_doPosts3TA_sends_slow_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(3): sends TA SLOW");
-    timer_doPosts4TA_sends_slow_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(4): sends TA SLOW");
-    timer_doPosts3TA_sends_fast_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(3): sends TA FAST");
-    timer_doPosts4TA_sends_fast_ = Teuchos::TimeMonitor::getNewTimer (
-                           "Tpetra::Distributor: doPosts(4): sends TA FAST");
-
     timer_doPosts3KV_ = Teuchos::TimeMonitor::getNewTimer (
                            "Tpetra::Distributor: doPosts(3) KV");
     timer_doPosts4KV_ = Teuchos::TimeMonitor::getNewTimer (

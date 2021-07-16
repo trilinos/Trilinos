@@ -933,10 +933,6 @@ namespace Tpetra {
     using std::endl;
     using size_type = Array<size_t>::size_type;
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*actor_.timer_doPosts3TA_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
     const bool debug = Details::Behavior::debug("Distributor");
     const int myRank = plan_.comm_->getRank ();
     // Run-time configurable parameters that come from the input
@@ -1027,10 +1023,6 @@ namespace Tpetra {
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
     {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*actor_.timer_doPosts3TA_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
       size_t curBufOffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
         const size_t curBufLen = plan_.lengthsFrom_[i] * numPackets;
@@ -1070,10 +1062,6 @@ namespace Tpetra {
     }
 
     if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*actor_.timer_doPosts3TA_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << (plan_.indicesTo_.empty () ? "Fast" : "Slow")
@@ -1087,10 +1075,6 @@ namespace Tpetra {
       // guarantee that in this case is to use a barrier.
       plan_.comm_->barrier ();
     }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*actor_.timer_doPosts3TA_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // setup scan through procIdsToSendTo_ list starting with higher numbered procs
     // (should help balance message traffic)
@@ -1117,11 +1101,6 @@ namespace Tpetra {
     }
 
     if (plan_.indicesTo_.empty ()) {
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts3TA_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
       // Data are already blocked (laid out) by process, so we don't
       // need a separate send buffer (besides the exports array).
       for (size_t i = 0; i < numBlocks; ++i) {
@@ -1194,11 +1173,6 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts3TA_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
       // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
       // sends), because the buffer is only long enough for one send.
       ArrayRCP<Packet> sendArray (plan_.maxSendLength_ * numPackets); // send buffer
@@ -1321,10 +1295,6 @@ namespace Tpetra {
       std::cerr << os.str();
     }
 
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*actor_.timer_doPosts4TA_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
     // Run-time configurable parameters that come from the input
     // ParameterList set by setParameterList().
     const Details::EDistributorSendType sendType = plan_.sendType_;
@@ -1402,10 +1372,6 @@ namespace Tpetra {
     // to the "unexpected queue" (of arrived messages not yet matched
     // with a receive).
     {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*actor_.timer_doPosts4TA_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
       size_t curBufferOffset = 0;
       size_t curLIDoffset = 0;
       for (size_type i = 0; i < actualNumReceives; ++i) {
@@ -1436,9 +1402,6 @@ namespace Tpetra {
     }
 
     if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*actor_.timer_doPosts4TA_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
       // If we are using ready sends (MPI_Rsend) below, we need to do
       // a barrier before we post the ready sends.  This is because a
       // ready send requires that its matching receive has already
@@ -1446,10 +1409,6 @@ namespace Tpetra {
       // guarantee that in this case is to use a barrier.
       plan_.comm_->barrier ();
     }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*actor_.timer_doPosts4TA_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
     // setup arrays containing starting-offsets into exports for each send,
     // and num-packets-to-send for each send.
@@ -1482,11 +1441,6 @@ namespace Tpetra {
     size_t selfIndex = 0;
 
     if (plan_.indicesTo_.empty()) {
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts4TA_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << "fast path: posting sends" << endl;
@@ -1551,11 +1505,6 @@ namespace Tpetra {
       }
     }
     else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*actor_.timer_doPosts4TA_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
       if (verbose_) {
         std::ostringstream os;
         os << *prefix << "slow path: posting sends" << endl;
@@ -1766,44 +1715,7 @@ namespace Tpetra {
                    size_t numPackets,
                    const ImpView& imports)
   {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using std::endl;
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("doPostsAndWaits(3-arg, Kokkos)");
-      std::ostringstream os;
-      os << *prefix << "sendType: "
-         << DistributorSendTypeEnumToString(plan_.sendType_)
-         << ", barrierBetween: "
-         << (plan_.barrierBetweenRecvSend_ ? "true" : "false") << endl;
-      std::cerr << os.str();
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      actor_.requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << actor_.requests_.size () <<
-      " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call doPosts" << endl;
-      std::cerr << os.str();
-    }
-    doPosts (exports, numPackets, imports);
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call doWaits" << endl;
-      std::cerr << os.str();
-    }
-    doWaits ();
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
-    }
+    actor_.doPostsAndWaits(plan_, exports, numPackets, imports);
   }
 
   template <class ExpView, class ImpView>
@@ -1814,29 +1726,7 @@ namespace Tpetra {
                   const ImpView& imports,
                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    using std::endl;
-    const char rawPrefix[] = "doPostsAndWaits(4-arg, Kokkos)";
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix(rawPrefix);
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (actor_.requests_.size() != 0, std::runtime_error,
-       "Tpetra::Distributor::" << rawPrefix << ": There is/are "
-      << actor_.requests_.size() << " outstanding nonblocking message(s) "
-       "pending.  It is incorrect to call this method with posts "
-       "outstanding.");
-    doPosts(exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
-    doWaits();
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
-    }
+    actor_.doPostsAndWaits(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
 
 

@@ -62,6 +62,21 @@ public:
 
   template <class ExpView, class ImpView>
   typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
+  doPostsAndWaits(const DistributorPlan& plan,
+                  const ExpView &exports,
+                  size_t numPackets,
+                  const ImpView &imports);
+
+  template <class ExpView, class ImpView>
+  typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
+  doPostsAndWaits(const DistributorPlan& plan,
+                  const ExpView &exports,
+                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                  const ImpView &imports,
+                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+
+  template <class ExpView, class ImpView>
+  typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
   doPosts(const DistributorPlan& plan,
           const ExpView& exports,
           size_t numPackets,
@@ -80,21 +95,9 @@ public:
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requests_;
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_;
   Teuchos::RCP<Teuchos::Time> timer_doWaits_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_recvs_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_recvs_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_barrier_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_barrier_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_slow_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_slow_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_fast_;
-  Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_fast_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_recvs_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_recvs_;
   Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_barrier_;
@@ -110,6 +113,29 @@ public:
   void makeTimers();
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 };
+
+template <class ExpView, class ImpView>
+typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
+DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
+                                  const ExpView& exports,
+                                  size_t numPackets,
+                                  const ImpView& imports)
+{
+  doPosts(plan, exports, numPackets, imports);
+  doWaits(plan);
+}
+
+template <class ExpView, class ImpView>
+typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
+DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
+                                  const ExpView& exports,
+                                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                                  const ImpView& imports,
+                                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+{
+  doPosts(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+  doWaits(plan);
+}
 
 template <class ExpView, class ImpView>
 typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
