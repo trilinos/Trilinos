@@ -9,6 +9,7 @@ class ColorerTest {
 public:
   using map_t = Tpetra::Map<>;
   using gno_t = typename map_t::global_ordinal_type;
+  using graph_t = Tpetra::CrsGraph<>;
   using matrix_t = Tpetra::CrsMatrix<zscalar_t>;
   using multivector_t = Tpetra::MultiVector<zscalar_t>;
   using execution_space_t = typename matrix_t::device_type::execution_space;
@@ -83,10 +84,22 @@ public:
                         static_cast<IST>(1.), static_cast<IST>(9999.));
     JBlock->fillComplete();
 
+
     // Make JCyclic:  same matrix with different Domain and Range maps
-    JCyclic = rcp(new matrix_t(JBlock->getLocalMatrixDevice(),
-                               JBlock->getRowMap(), JBlock->getColMap(),
-                               vMapCyclic, wMapCyclic));
+    RCP<const graph_t> block_graph = JBlock->getCrsGraph();
+    RCP<graph_t> cyclic_graph = rcp(new graph_t(*block_graph));
+    cyclic_graph->resumeFill();
+    cyclic_graph->fillComplete(vMapCyclic, wMapCyclic);
+    JCyclic = rcp(new matrix_t(cyclic_graph));
+    JCyclic->resumeFill();
+    TEUCHOS_ASSERT(block_graph->getNodeNumRows() == cyclic_graph->getNodeNumRows());
+    {
+      auto val_s = JBlock->getLocalMatrixHost().values;
+      auto val_d = JCyclic->getLocalMatrixHost().values;
+      TEUCHOS_ASSERT(val_s.extent(0) == val_d.extent(0));
+      Kokkos::deep_copy(val_d, val_s);
+    }
+    JCyclic->fillComplete();
   }
 
   ////////////////////////////////////////////////////////////////
