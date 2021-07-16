@@ -30,6 +30,20 @@ namespace Tempus {
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<double> >
+  integratorPseudoTransientAdjointSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList>        parameterList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& adjoint_model);
+
+  // Nonmember ctor
+  template Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<double> >
+  integratorPseudoTransientAdjointSensitivity(
+    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& adjoint_model,
+    std::string stepperType);
+
+  // Nonmember ctor
+  template Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<double> >
   integratorPseudoTransientAdjointSensitivity();
 
 } // namespace Tempus
