@@ -971,8 +971,8 @@ namespace Tpetra {
     // Check whether the source object is a MultiVector.  If not, then
     // we can't even compare sizes, so it's definitely not OK to
     // Import or Export from it.
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> this_type;
-    const this_type* src = dynamic_cast<const this_type*> (&sourceObj);
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
+    const MV* src = dynamic_cast<const MV*> (&sourceObj);
     if (src == nullptr) {
       return false;
     }
@@ -3251,18 +3251,7 @@ namespace Tpetra {
       (rowOffset, rowOffset + newNumRows);
 
     dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
-    // FIXME (mfh 29 Sep 2016) If we just use X.view_ here, it breaks
-    // Ifpack2's Gauss-Seidel implementation (which assumes the
-    // ability to create domain Map views of column Map MultiVectors,
-    // and then get the original column Map MultiVector out again).
-    // If we just use X.origView_ here, it breaks the fix for #46.
-    // The test for rowOffset == 0 is a hack that makes both tests
-    // pass, but doesn't actually fix the more general issue.  In
-    // particular, the right way to fix Gauss-Seidel would be to fix
-    // #385; that would make "getting the original column Map
-    // MultiVector out again" unnecessary.
-    dual_view_type newView =
-      subview (rowOffset == 0 ? X.origView_ : X.view_, rowRng, ALL ());
+    dual_view_type newView = subview (X.view_, rowRng, ALL ());
 
     // NOTE (mfh 06 Jan 2015) Work-around to deal with Kokkos not
     // handling subviews of degenerate Views quite so well.  For some

@@ -2350,6 +2350,80 @@ namespace {
   }
 
 
+  //This test is for issue #9160. Row subview of a col subview (e.g. A->getVector(i)->getOffsetView(...))
+  //would have numVectors() equal to A->numVectors(), not the col subview's numVectors() as it should.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, VectorOffsetView, LO , GO , Scalar , Node )
+  {
+    typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+
+    out << "Test: MultiVector, VectorOffsetView" << endl;
+
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocal1 = 3;
+    const size_t numLocal2 = 4;
+    const size_t numLocal = numLocal1 + numLocal2;
+    const size_t numVectors = 3;
+    RCP<const Map<LO,GO,Node> > fullMap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
+    RCP<const Map<LO,GO,Node> >    map1 = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal1,comm);
+    RCP<const Map<LO,GO,Node> >    map2 = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal2,comm);
+    RCP<MV> A = rcp(new MV(fullMap,numVectors,false));
+    RCP<MV> Acol0 = A->getVectorNonConst(0);
+    //MultiVector has 3 interfaces for the same thing:
+    // 1.) MV(MV&, RCP<Map>, size_t): offset view of 1st arg, using given map.
+    //     Other 2 interfaces implemented in terms of this.
+    // 2.) MV(MV&, Map&, LO): same as 1.) but with different arg types, and it copy-ctors the map (shallow copy)
+    // 3.) Methods offsetView/offsetViewNonConst (RCP<Map>, size_t)
+
+    //Test first with a zero offset (corresponding to map1)
+    //1
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, map1, 0));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //2
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, *map1, 0));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //3
+    {
+      {
+        RCP<MV> Acol0sub = Acol0->offsetViewNonConst(map1, 0);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+      {
+        RCP<const MV> Acol0sub = Acol0->offsetView(map1, 0);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+    }
+    //Now test with offset numLocal1, corresponding to map2's
+    //1
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, map2, numLocal1));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //2
+    {
+      RCP<MV> Acol0sub = rcp(new MV(*Acol0, *map2, numLocal1));
+      TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+    }
+    //3
+    {
+      {
+        RCP<MV> Acol0sub = Acol0->offsetViewNonConst(map2, numLocal1);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+      {
+        RCP<const MV> Acol0sub = Acol0->offsetView(map2, numLocal1);
+        TEST_EQUALITY( Acol0sub->getNumVectors(), Acol0->getNumVectors() );
+      }
+    }
+  }
+
+
   // This unit test exercises the following situation: Given a
   // Tpetra::MultiVector X, partition it into row blocks [X1; X2]
   // (Matlab notation) using offsetView (or offsetViewNonConst).  The
@@ -5203,6 +5277,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Norm2             , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, CopyView          , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, OffsetView        , LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, VectorOffsetView  , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ZeroScaleUpdate   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(      Vector, ZeroScaleUpdate   , LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, ScaleAndAssign    , LO, GO, SCALAR, NODE ) \
