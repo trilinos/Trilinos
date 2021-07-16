@@ -368,9 +368,7 @@ namespace Zoltan2 {
     {
 
 	// Get the row pointers in the host
-	auto rowOffsets = graph_->getLocalGraphDevice().row_map;
-	auto rowOffsets_h = Kokkos::create_mirror_view(rowOffsets);
-	Kokkos::deep_copy(rowOffsets_h, rowOffsets);
+	auto rowOffsets = graph_->getLocalGraphHost().row_map;
 
 	// Create the degree matrix with max row size set to 1
  	Teuchos::RCP<matrix_t> degMat(new matrix_t (graph_->getRowMap(), 
