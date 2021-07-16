@@ -390,8 +390,8 @@ static void zoltanHGCS_withMatrixAdapter(void *data, int nGidEnt, int nLists,
   const MatrixAdapter<user_t>* madp = static_cast<MatrixAdapter<user_t>* >(data);
 
   const gno_t *Ids;
-  const gno_t *pIds;
-  const offset_t *offsets;
+  ArrayRCP<const gno_t> pIds;
+  ArrayRCP<const offset_t> offsets;
 
   // Get the pins and list IDs.
   if (madp->CRSViewAvailable()) {

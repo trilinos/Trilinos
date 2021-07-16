@@ -416,6 +416,10 @@ namespace MueLuTests {
     template<class ArrayScalar, class ArrayOrdinal>
     void getIDs(const ArrayScalar &points, ArrayOrdinal &globalIDs)
     {
+
+      auto points_host = Kokkos::create_mirror_view(points);
+      auto globalIDs_host = Kokkos::create_mirror_view(globalIDs);
+      Kokkos::deep_copy(points_host, points);
       int spaceDim = _knownCoords.size();
       TEUCHOS_TEST_FOR_EXCEPTION(spaceDim != (int) points.extent(points.rank()-1), std::invalid_argument, "final extent of points container must equal spaceDim");
       if (points.rank() == 2)
@@ -426,9 +430,9 @@ namespace MueLuTests {
           vector<double> coords(spaceDim);
           for (int d=0; d<spaceDim; d++)
           {
-            coords[d] = points(pointOrdinal,d);
+            coords[d] = points_host(pointOrdinal,d);
           }
-          globalIDs(pointOrdinal) = getGlobalID(coords);
+          globalIDs_host(pointOrdinal) = getGlobalID(coords);
         }
       }
       else if (points.rank() == 3)
@@ -442,9 +446,9 @@ namespace MueLuTests {
             vector<double> coords(spaceDim);
             for (int d=0; d<spaceDim; d++)
             {
-              coords[d] = points(cellOrdinal,pointOrdinal,d);
+              coords[d] = points_host(cellOrdinal,pointOrdinal,d);
             }
-            globalIDs(cellOrdinal,pointOrdinal) = getGlobalID(coords);
+            globalIDs_host(cellOrdinal,pointOrdinal) = getGlobalID(coords);
           }
         }
       }
@@ -452,6 +456,7 @@ namespace MueLuTests {
       {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "points must be a rank 2 or rank 3 container");
       }
+      Kokkos::deep_copy(globalIDs, globalIDs_host);
     }
     int getGlobalID(const vector<double> &coords)
     {
@@ -506,47 +511,48 @@ namespace MueLuTests {
 
     subcellCountForDimension.resize(spaceDim+1);
     subcellCountForDimension[spaceDim] = numCells;
+    auto cellWorkset_host = Kokkos::create_mirror_view(cellWorkset);
     if (spaceDim == 1)
     {
       // line
-      cellWorkset(0,0,0) = 0.0;
-      cellWorkset(0,1,0) = 1.0;
-      cellWorkset(1,0,0) = 1.0;
-      cellWorkset(1,1,0) = 2.0;
-      cellWorkset(2,0,0) = 2.0;
-      cellWorkset(2,1,0) = 3.0;
+      cellWorkset_host(0,0,0) = 0.0;
+      cellWorkset_host(0,1,0) = 1.0;
+      cellWorkset_host(1,0,0) = 1.0;
+      cellWorkset_host(1,1,0) = 2.0;
+      cellWorkset_host(2,0,0) = 2.0;
+      cellWorkset_host(2,1,0) = 3.0;
       subcellCountForDimension[0] = 4; // 3 cells x 2 vertices - (2 interior vertices)
     }
     else if ((spaceDim == 2) && (vertexCount == 4))
     {
       // quad
       // first element: LL @ (0,1), UR @ (1,2)
-      cellWorkset(0,0,0) = 0.0;
-      cellWorkset(0,0,1) = 1.0;
-      cellWorkset(0,1,0) = 1.0;
-      cellWorkset(0,1,1) = 1.0;
-      cellWorkset(0,2,0) = 1.0;
-      cellWorkset(0,2,1) = 2.0;
-      cellWorkset(0,3,0) = 0.0;
-      cellWorkset(0,3,1) = 2.0;
+      cellWorkset_host(0,0,0) = 0.0;
+      cellWorkset_host(0,0,1) = 1.0;
+      cellWorkset_host(0,1,0) = 1.0;
+      cellWorkset_host(0,1,1) = 1.0;
+      cellWorkset_host(0,2,0) = 1.0;
+      cellWorkset_host(0,2,1) = 2.0;
+      cellWorkset_host(0,3,0) = 0.0;
+      cellWorkset_host(0,3,1) = 2.0;
       // second element: LL @ (0,0), UR @ (1,1)
-      cellWorkset(1,0,0) = 0.0;
-      cellWorkset(1,0,1) = 0.0;
-      cellWorkset(1,1,0) = 1.0;
-      cellWorkset(1,1,1) = 0.0;
-      cellWorkset(1,2,0) = 1.0;
-      cellWorkset(1,2,1) = 1.0;
-      cellWorkset(1,3,0) = 0.0;
-      cellWorkset(1,3,1) = 1.0;
+      cellWorkset_host(1,0,0) = 0.0;
+      cellWorkset_host(1,0,1) = 0.0;
+      cellWorkset_host(1,1,0) = 1.0;
+      cellWorkset_host(1,1,1) = 0.0;
+      cellWorkset_host(1,2,0) = 1.0;
+      cellWorkset_host(1,2,1) = 1.0;
+      cellWorkset_host(1,3,0) = 0.0;
+      cellWorkset_host(1,3,1) = 1.0;
       // third element: LL @ (1,0), UR @ (2,1)
-      cellWorkset(2,0,0) = 1.0;
-      cellWorkset(2,0,1) = 0.0;
-      cellWorkset(2,1,0) = 2.0;
-      cellWorkset(2,1,1) = 0.0;
-      cellWorkset(2,2,0) = 2.0;
-      cellWorkset(2,2,1) = 1.0;
-      cellWorkset(2,3,0) = 1.0;
-      cellWorkset(2,3,1) = 1.0;
+      cellWorkset_host(2,0,0) = 1.0;
+      cellWorkset_host(2,0,1) = 0.0;
+      cellWorkset_host(2,1,0) = 2.0;
+      cellWorkset_host(2,1,1) = 0.0;
+      cellWorkset_host(2,2,0) = 2.0;
+      cellWorkset_host(2,2,1) = 1.0;
+      cellWorkset_host(2,3,0) = 1.0;
+      cellWorkset_host(2,3,1) = 1.0;
       subcellCountForDimension[0] = 12-2-1*2; // 3 cells x 4 vertices - (2 vertices seen by 2 cells, 1 vertex seen by 3 cells)
       subcellCountForDimension[1] = 12-2;   // 3 cells x 4 edges - (2 shared edges)
     }
@@ -554,80 +560,80 @@ namespace MueLuTests {
     {
       // hex: same geometry as quad, but extruded in z from 0 to 1
       // first element: LL @ (0,1), UR @ (1,2)
-      cellWorkset(0,0,0) = 0.0;
-      cellWorkset(0,0,1) = 1.0;
-      cellWorkset(0,0,2) = 0.0;
-      cellWorkset(0,1,0) = 1.0;
-      cellWorkset(0,1,1) = 1.0;
-      cellWorkset(0,1,2) = 0.0;
-      cellWorkset(0,2,0) = 1.0;
-      cellWorkset(0,2,1) = 2.0;
-      cellWorkset(0,2,2) = 0.0;
-      cellWorkset(0,3,0) = 0.0;
-      cellWorkset(0,3,1) = 2.0;
-      cellWorkset(0,3,2) = 0.0;
-      cellWorkset(0,4,0) = 0.0;
-      cellWorkset(0,4,1) = 1.0;
-      cellWorkset(0,4,2) = 1.0;
-      cellWorkset(0,5,0) = 1.0;
-      cellWorkset(0,5,1) = 1.0;
-      cellWorkset(0,5,2) = 1.0;
-      cellWorkset(0,6,0) = 1.0;
-      cellWorkset(0,6,1) = 2.0;
-      cellWorkset(0,6,2) = 1.0;
-      cellWorkset(0,7,0) = 0.0;
-      cellWorkset(0,7,1) = 2.0;
-      cellWorkset(0,7,2) = 1.0;
+      cellWorkset_host(0,0,0) = 0.0;
+      cellWorkset_host(0,0,1) = 1.0;
+      cellWorkset_host(0,0,2) = 0.0;
+      cellWorkset_host(0,1,0) = 1.0;
+      cellWorkset_host(0,1,1) = 1.0;
+      cellWorkset_host(0,1,2) = 0.0;
+      cellWorkset_host(0,2,0) = 1.0;
+      cellWorkset_host(0,2,1) = 2.0;
+      cellWorkset_host(0,2,2) = 0.0;
+      cellWorkset_host(0,3,0) = 0.0;
+      cellWorkset_host(0,3,1) = 2.0;
+      cellWorkset_host(0,3,2) = 0.0;
+      cellWorkset_host(0,4,0) = 0.0;
+      cellWorkset_host(0,4,1) = 1.0;
+      cellWorkset_host(0,4,2) = 1.0;
+      cellWorkset_host(0,5,0) = 1.0;
+      cellWorkset_host(0,5,1) = 1.0;
+      cellWorkset_host(0,5,2) = 1.0;
+      cellWorkset_host(0,6,0) = 1.0;
+      cellWorkset_host(0,6,1) = 2.0;
+      cellWorkset_host(0,6,2) = 1.0;
+      cellWorkset_host(0,7,0) = 0.0;
+      cellWorkset_host(0,7,1) = 2.0;
+      cellWorkset_host(0,7,2) = 1.0;
       // second element: LL @ (0,0), UR @ (1,1)
-      cellWorkset(1,0,0) = 0.0;
-      cellWorkset(1,0,1) = 0.0;
-      cellWorkset(1,0,2) = 0.0;
-      cellWorkset(1,1,0) = 1.0;
-      cellWorkset(1,1,1) = 0.0;
-      cellWorkset(1,1,2) = 0.0;
-      cellWorkset(1,2,0) = 1.0;
-      cellWorkset(1,2,1) = 1.0;
-      cellWorkset(1,2,2) = 0.0;
-      cellWorkset(1,3,0) = 0.0;
-      cellWorkset(1,3,1) = 1.0;
-      cellWorkset(1,3,2) = 0.0;
-      cellWorkset(1,4,0) = 0.0;
-      cellWorkset(1,4,1) = 0.0;
-      cellWorkset(1,4,2) = 1.0;
-      cellWorkset(1,5,0) = 1.0;
-      cellWorkset(1,5,1) = 0.0;
-      cellWorkset(1,5,2) = 1.0;
-      cellWorkset(1,6,0) = 1.0;
-      cellWorkset(1,6,1) = 1.0;
-      cellWorkset(1,6,2) = 1.0;
-      cellWorkset(1,7,0) = 0.0;
-      cellWorkset(1,7,1) = 1.0;
-      cellWorkset(1,7,2) = 1.0;
+      cellWorkset_host(1,0,0) = 0.0;
+      cellWorkset_host(1,0,1) = 0.0;
+      cellWorkset_host(1,0,2) = 0.0;
+      cellWorkset_host(1,1,0) = 1.0;
+      cellWorkset_host(1,1,1) = 0.0;
+      cellWorkset_host(1,1,2) = 0.0;
+      cellWorkset_host(1,2,0) = 1.0;
+      cellWorkset_host(1,2,1) = 1.0;
+      cellWorkset_host(1,2,2) = 0.0;
+      cellWorkset_host(1,3,0) = 0.0;
+      cellWorkset_host(1,3,1) = 1.0;
+      cellWorkset_host(1,3,2) = 0.0;
+      cellWorkset_host(1,4,0) = 0.0;
+      cellWorkset_host(1,4,1) = 0.0;
+      cellWorkset_host(1,4,2) = 1.0;
+      cellWorkset_host(1,5,0) = 1.0;
+      cellWorkset_host(1,5,1) = 0.0;
+      cellWorkset_host(1,5,2) = 1.0;
+      cellWorkset_host(1,6,0) = 1.0;
+      cellWorkset_host(1,6,1) = 1.0;
+      cellWorkset_host(1,6,2) = 1.0;
+      cellWorkset_host(1,7,0) = 0.0;
+      cellWorkset_host(1,7,1) = 1.0;
+      cellWorkset_host(1,7,2) = 1.0;
       // third element: LL @ (1,0), UR @ (2,1)
-      cellWorkset(2,0,0) = 1.0;
-      cellWorkset(2,0,1) = 0.0;
-      cellWorkset(2,0,2) = 0.0;
-      cellWorkset(2,1,0) = 2.0;
-      cellWorkset(2,1,1) = 0.0;
-      cellWorkset(2,1,2) = 0.0;
-      cellWorkset(2,2,0) = 2.0;
-      cellWorkset(2,2,1) = 1.0;
-      cellWorkset(2,2,2) = 0.0;
-      cellWorkset(2,3,0) = 1.0;
-      cellWorkset(2,3,1) = 1.0;
-      cellWorkset(2,3,2) = 0.0;
-      cellWorkset(2,4,0) = 1.0;
-      cellWorkset(2,4,1) = 0.0;
-      cellWorkset(2,4,2) = 1.0;
-      cellWorkset(2,5,0) = 2.0;
-      cellWorkset(2,5,1) = 0.0;
-      cellWorkset(2,5,2) = 1.0;
-      cellWorkset(2,6,0) = 2.0;
-      cellWorkset(2,6,1) = 1.0;
-      cellWorkset(2,6,2) = 1.0;
-      cellWorkset(2,7,0) = 1.0;
-      cellWorkset(2,7,1) = 1.0;
-      cellWorkset(2,7,2) = 1.0;
+      cellWorkset_host(2,0,0) = 1.0;
+      cellWorkset_host(2,0,1) = 0.0;
+      cellWorkset_host(2,0,2) = 0.0;
+      cellWorkset_host(2,1,0) = 2.0;
+      cellWorkset_host(2,1,1) = 0.0;
+      cellWorkset_host(2,1,2) = 0.0;
+      cellWorkset_host(2,2,0) = 2.0;
+      cellWorkset_host(2,2,1) = 1.0;
+      cellWorkset_host(2,2,2) = 0.0;
+      cellWorkset_host(2,3,0) = 1.0;
+      cellWorkset_host(2,3,1) = 1.0;
+      cellWorkset_host(2,3,2) = 0.0;
+      cellWorkset_host(2,4,0) = 1.0;
+      cellWorkset_host(2,4,1) = 0.0;
+      cellWorkset_host(2,4,2) = 1.0;
+      cellWorkset_host(2,5,0) = 2.0;
+      cellWorkset_host(2,5,1) = 0.0;
+      cellWorkset_host(2,5,2) = 1.0;
+      cellWorkset_host(2,6,0) = 2.0;
+      cellWorkset_host(2,6,1) = 1.0;
+      cellWorkset_host(2,6,2) = 1.0;
+      cellWorkset_host(2,7,0) = 1.0;
+      cellWorkset_host(2,7,1) = 1.0;
+      cellWorkset_host(2,7,2) = 1.0;
       subcellCountForDimension[0] = 24-4*1-2*2; // 3 cells x 8 vertices - (4 vertices seen by 2 cells, 2 vertices seen by 3 cells)
       subcellCountForDimension[1] = 36-6*1-1*2; // 3 cells x 12 edges - (6 edges seen by 2 cells, 1 edge seen by 3 cells)
       subcellCountForDimension[2] = 18-2*1;     // 3 cells x 6 faces - (2 faces seen by 2 cells)
@@ -638,6 +644,7 @@ namespace MueLuTests {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unimplemented test case");
     }
 
+    Kokkos::deep_copy(cellWorkset, cellWorkset_host);
     CellTools::mapToPhysicalFrame(cellDofCoords, refDofCoords, cellWorkset, cellTopo);
 
     Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
@@ -651,16 +658,20 @@ namespace MueLuTests {
     // store ordinals in a set for easy uniquing
     vector<set<int>> ordinalsForSubcellDimensionSet(spaceDim+1);
 
+    auto cellDofIDs_host = Kokkos::create_mirror_view(cellDofIDs);
+    auto elemToNodeMap_host = Kokkos::create_mirror_view(elemToNodeMap);
+    Kokkos::deep_copy(cellDofIDs_host,cellDofIDs);
     for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
     {
       for (int dofOrdinal=0; dofOrdinal<numDofsPerCell; dofOrdinal++)
       {
         int subcellDofDim = basis->getDofTag(dofOrdinal)[tagOrdSubcellDim];
-        int globalID = cellDofIDs(cellOrdinal,dofOrdinal);
+        int globalID = cellDofIDs_host(cellOrdinal,dofOrdinal);
         ordinalsForSubcellDimensionSet[subcellDofDim].insert(globalID);
-        elemToNodeMap(cellOrdinal,dofOrdinal) = globalID;
+        elemToNodeMap_host(cellOrdinal,dofOrdinal) = globalID;
       }
     }
+    Kokkos::deep_copy(elemToNodeMap, elemToNodeMap_host);
     ordinalsForSubcellDimension.clear();
     for (int d=0; d<spaceDim+1; d++)
     {
@@ -682,8 +693,8 @@ namespace MueLuTests {
     typedef Kokkos::DynRankView<OT,typename Node::device_type> FCO; // FC of ordinals
     typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
 
-    FC physDofCoords;
-    FCO cellGIDs;
+    typename FC::HostMirror physDofCoords;
+    typename FCO::HostMirror cellGIDs;
     std::vector<std::vector<LocalOrdinal> > expectedGIDs = {{ 0, 1, 2, 3, 4, 5, 6, 7, 8},
       { 9,10,11,12,13,14, 0, 1, 2},
       {11,15,16,14,17,18, 2,19,20}};
@@ -836,11 +847,13 @@ namespace MueLuTests {
       int numCells = elementToNodeMap.extent(0);
       int dofsPerCell = elementToNodeMap.extent(1);
       int maxGID = -1;
+      auto elementToNodeMap_host = Kokkos::create_mirror_view(elementToNodeMap);
+      Kokkos::deep_copy(elementToNodeMap_host, elementToNodeMap);
       for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
       {
         for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
         {
-          maxGID = max(maxGID,elementToNodeMap(cellOrdinal,dofOrdinal));
+          maxGID = max(maxGID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
         }
       }
       int numElements = maxGID + 1;
@@ -856,6 +869,7 @@ namespace MueLuTests {
         if (remainder > rank) numRankLocalElements++;
         FCO rankLocalElementToNodeMap;
         resize(rankLocalElementToNodeMap,numCells,basis->getCardinality());
+	auto rankLocalElementToNodeMap_host = Kokkos::create_mirror_view(rankLocalElementToNodeMap);
         vector<set<LocalOrdinal>> expectedSeedsSets(spaceDim+1);
 
         auto isRankLocal = [startingGID,numRankLocalElements](GlobalOrdinal GID) -> bool {
@@ -876,7 +890,7 @@ namespace MueLuTests {
           bool hasOwnedGIDs = false;
           for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
           {
-            GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+            GlobalOrdinal GID = elementToNodeMap_host(cellOrdinal,dofOrdinal);
             if (isRankLocal(GID))
             {
               hasOwnedGIDs = true;
@@ -887,7 +901,7 @@ namespace MueLuTests {
           {
             for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
             {
-              GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+              GlobalOrdinal GID = elementToNodeMap_host(cellOrdinal,dofOrdinal);
               if (! isRankLocal(GID))
               {
                 if (GID == -1)
@@ -919,9 +933,9 @@ namespace MueLuTests {
           }
           for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
           {
-            GlobalOrdinal GID = elementToNodeMap(cellOrdinal,dofOrdinal);
+            GlobalOrdinal GID = elementToNodeMap_host(cellOrdinal,dofOrdinal);
             LocalOrdinal LID = colMapRCP->getLocalElement(GID);
-            rankLocalElementToNodeMap(cellOrdinal,dofOrdinal) = LID; // may be -1
+            rankLocalElementToNodeMap_host(cellOrdinal,dofOrdinal) = LID; // may be -1
             if (LID != -1)
             {
               int subcdim = basis->getDofTag(dofOrdinal)[0];
@@ -949,6 +963,7 @@ namespace MueLuTests {
           }
         }
 
+	Kokkos::deep_copy(rankLocalElementToNodeMap, rankLocalElementToNodeMap_host);
         MueLu::MueLuIntrepid::FindGeometricSeedOrdinals<Basis,FCO,LocalOrdinal,GlobalOrdinal,Node>(basis, rankLocalElementToNodeMap,
                                                                                                    seeds, *rowMapRCP, *colMapRCP);
 
@@ -1016,11 +1031,13 @@ namespace MueLuTests {
       int numCells = elementToNodeMap.extent(0);
       int dofsPerCell = elementToNodeMap.extent(1);
       int maxLID = -1;
+      auto elementToNodeMap_host = Kokkos::create_mirror_view(elementToNodeMap);
+      Kokkos::deep_copy(elementToNodeMap_host, elementToNodeMap);
       for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
       {
         for (int dofOrdinal=0; dofOrdinal<dofsPerCell; dofOrdinal++)
         {
-          maxLID = max(maxLID,elementToNodeMap(cellOrdinal,dofOrdinal));
+          maxLID = max(maxLID,elementToNodeMap_host(cellOrdinal,dofOrdinal));
         }
       }
       int numElements = maxLID + 1;
@@ -1248,8 +1265,11 @@ namespace MueLuTests {
         FC hi_dofCoords;
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 
+        Kokkos::parallel_for("IntrepidPCoarsenFactory,BuildLoElemToNode", Kokkos::RangePolicy<typename Node::device_type::execution_space>(0, Nn), KOKKOS_LAMBDA (int i) {
+           hi_e2n(0,i)=i;
+        });
+	Kokkos::fence();
         for(int i=0; i<Nn; i++) {
-          hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
@@ -1305,8 +1325,12 @@ namespace MueLuTests {
         FC hi_dofCoords;
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
 
+        Kokkos::parallel_for("IntrepidPCoarsenFactory,BuildLoElemToNodeWithDirichlet", 
+			     Kokkos::RangePolicy<typename Node::device_type::execution_space>(0, Nn), KOKKOS_LAMBDA (int i) {
+           hi_e2n(0,i)=i;
+        });
+	Kokkos::fence();
         for(int i=0; i<Nn; i++) {
-          hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
@@ -1794,6 +1818,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
   }
 
 
+
 /*********************************************************************************************************************/
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class Basis>
 bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & name, Intrepid2::EPointType ptype, int max_degree)
@@ -1836,8 +1861,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     {
       CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
       //UVM used here, accessing vertex coordinates on host that were populated on device.
-      Kokkos::fence();
-      for (int d=0; d<spaceDim; d++)
+
+      Kokkos::parallel_for(Kokkos::RangePolicy<typename Node::device_type::execution_space>(0, spaceDim), KOKKOS_LAMBDA (int d)
       {
         refCellVertices(vertexOrdinal,d) = refCellVertex(d);
         //      cout << "refCellVertices(" << vertexOrdinal << "," << d << ") = " << refCellVertex(d) << endl;
@@ -1846,7 +1871,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         // cell 1 is the reference cell, except that the x coords get translated
         // NOTE: this will need to change to support non-hypercube topologies
         physCellVertices(1,vertexOrdinal,d) = refCellVertex(d) + ((d==0) ? xTranslationForCell1 : 0);
-      }
+      });
+      Kokkos::fence();
     }
     Symmetries cellSymmetries = Symmetries::shardsSymmetries(cellTopo);
     int symmetryCount = cellSymmetries.getPermutationCount();
@@ -1856,11 +1882,12 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       RCP<Basis> hi = rcp(new Basis(highPolyDegree,ptype));
       Kokkos::resize(hi_DofCoords,hi->getCardinality(),hi->getBaseCellTopology().getDimension());
       hi->getDofCoords(hi_DofCoords);
-
+      auto hi_DofCoords_host = Kokkos::create_mirror_view(hi_DofCoords);
+      Kokkos::deep_copy(hi_DofCoords_host, hi_DofCoords);
 
       // we'll want to create a global numbering for both high and low order bases
       // --> we make a lambda function that accepts FC with dof coords as argument
-      auto getTwoCellNumbering = [pointTol,numCells,spaceDim,xTranslationForCell1](const FC &dofCoords) -> UniqueNumbering
+      auto getTwoCellNumbering = [pointTol,numCells,spaceDim,xTranslationForCell1](const typename FC::HostMirror &dofCoords) -> UniqueNumbering
       {
         int dofsPerCell = dofCoords.extent(0);
 
@@ -1889,7 +1916,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         return numbering;
       };
 
-      UniqueNumbering hiNumbering = getTwoCellNumbering(hi_DofCoords);
+      UniqueNumbering hiNumbering = getTwoCellNumbering(hi_DofCoords_host);
       out << "Total dof count two cells of degree " << highPolyDegree << ": ";
       out << hiNumbering.totalCount() << endl;
 
@@ -1898,7 +1925,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         RCP<Basis> lo = rcp(new Basis(lowPolyDegree,ptype));
         Kokkos::resize(lo_DofCoords,lo->getCardinality(),lo->getBaseCellTopology().getDimension());
         lo->getDofCoords(lo_DofCoords);
-        UniqueNumbering loNumbering = getTwoCellNumbering(lo_DofCoords);
+	auto lo_DofCoords_host = Kokkos::create_mirror_view(lo_DofCoords);
+	Kokkos::deep_copy(lo_DofCoords_host, lo_DofCoords);
+        UniqueNumbering loNumbering = getTwoCellNumbering(lo_DofCoords_host);
 
         // print out the high/low global numbering along the x=1 interface:
         out << "Low-order global IDs along intercell interface:\n";
@@ -1907,7 +1936,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           vector<double> coords(lo_DofCoords.extent(1));
           for (int d=0; d<int(lo_DofCoords.extent(1)); d++)
           {
-            coords[d] = lo_DofCoords(lowOrdinal,d);
+            coords[d] = lo_DofCoords_host(lowOrdinal,d);
           }
           if (coords[0] == 1.0)
           {
@@ -1927,7 +1956,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           vector<double> coords(hi_DofCoords.extent(1));
           for (int d=0; d<int(hi_DofCoords.extent(1)); d++)
           {
-            coords[d] = hi_DofCoords(highOrdinal,d);
+            coords[d] = hi_DofCoords_host(highOrdinal,d);
           }
           if (coords[0] == 1.0)
           {
@@ -1962,6 +1991,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
         // Correctness Test 2: Try 2 elements, in all possible relative orientations, and confirm that the
         //                     "lowest global ordinal" tie-breaker always returns the same thing for both neighbors
+	auto physCellVertices_host = Kokkos::create_mirror_view(physCellVertices);
+	auto physCellVerticesPermuted_host = Kokkos::create_mirror_view(physCellVerticesPermuted);
+	Kokkos::deep_copy(physCellVertices_host, physCellVertices);
         for (int permOrdinal0=0; permOrdinal0<symmetryCount; permOrdinal0++)
         {
           vector<int> perm0 = cellSymmetries.getPermutation(permOrdinal0);
@@ -1970,7 +2002,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             int mappedVertexOrdinal = perm0[vertexOrdinal];
             for (int d=0; d<spaceDim; d++)
             {
-              physCellVerticesPermuted(0,vertexOrdinal,d) = physCellVertices(0,mappedVertexOrdinal,d);
+              physCellVerticesPermuted_host(0,vertexOrdinal,d) = physCellVertices_host(0,mappedVertexOrdinal,d);
             }
           }
 
@@ -1978,7 +2010,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
           // this is the one that has points with x coordinates equal to 1.0
           // we'll want to do this once for cell 0, and once for cell 1, so we make it a lambda
           // (NOTE: this will need to change for non-hypercube topology support)
-          auto searchForX1Side = [cellTopo,physCellVerticesPermuted,spaceDim](int cellOrdinal) -> int
+          auto searchForX1Side = [cellTopo,physCellVerticesPermuted_host,spaceDim](int cellOrdinal) -> int
           {
 
             // Line<2> gives wrong answers for getSideCount() and getNodeCount(), so we handle 1D case separately:
@@ -1988,7 +2020,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               for (int sideVertexOrdinal=0; sideVertexOrdinal<sideCount; sideVertexOrdinal++)
               {
                 int cellVertexOrdinal = sideVertexOrdinal;
-                if (physCellVerticesPermuted(cellOrdinal,cellVertexOrdinal,0) == 1.0)
+                if (physCellVerticesPermuted_host(cellOrdinal,cellVertexOrdinal,0) == 1.0)
                 {
                   return sideVertexOrdinal;
                 }
@@ -2003,7 +2035,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               for (int sideVertexOrdinal=0; sideVertexOrdinal<sideVertexCount; sideVertexOrdinal++)
               {
                 int cellVertexOrdinal = cellTopo.getNodeMap(spaceDim-1, sideOrdinal, sideVertexOrdinal);
-                if (physCellVerticesPermuted(cellOrdinal,cellVertexOrdinal,0) != 1.0)
+                if (physCellVerticesPermuted_host(cellOrdinal,cellVertexOrdinal,0) != 1.0)
                 {
                   matchFound = false;
                   break;
@@ -2028,17 +2060,21 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
               int mappedVertexOrdinal = perm1[vertexOrdinal];
               for (int d=0; d<spaceDim; d++)
               {
-                physCellVerticesPermuted(1,vertexOrdinal,d) = physCellVertices(1,mappedVertexOrdinal,d);
+                physCellVerticesPermuted_host(1,vertexOrdinal,d) = physCellVertices_host(1,mappedVertexOrdinal,d);
               }
             }
             // get the mapped dof coords for lo and high bases:
             FC lo_physDofCoords, hi_physDofCoords;
             Kokkos::resize(lo_physDofCoords, numCells, lo->getCardinality(), cellTopo.getDimension());
             Kokkos::resize(hi_physDofCoords, numCells, hi->getCardinality(), cellTopo.getDimension());
-
+	    
+	    Kokkos::deep_copy(physCellVerticesPermuted,physCellVerticesPermuted_host);
             CellTools::mapToPhysicalFrame(lo_physDofCoords, lo_DofCoords, physCellVerticesPermuted, cellTopo);
             CellTools::mapToPhysicalFrame(hi_physDofCoords, hi_DofCoords, physCellVerticesPermuted, cellTopo);
-
+	    auto lo_physDofCoords_host = Kokkos::create_mirror_view(lo_physDofCoords);
+	    auto hi_physDofCoords_host = Kokkos::create_mirror_view(hi_physDofCoords);
+	    Kokkos::deep_copy(lo_physDofCoords_host, lo_physDofCoords);
+	    Kokkos::deep_copy(hi_physDofCoords_host, hi_physDofCoords);
             Kokkos::fence(); // mapToPhysicalFrame calls getValues which calls kernels, so fence is required before UVM reads below
 
             int cell1Side = searchForX1Side(1);
@@ -2062,7 +2098,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
              to verify that the two cells agree.
              */
 
-            auto constructMap = [lo, lo_physDofCoords, &loNumbering, candidates, hi_physDofCoords, &hiNumbering, spaceDim]
+            auto constructMap = [lo, lo_physDofCoords_host, &loNumbering, candidates, hi_physDofCoords_host, &hiNumbering, spaceDim]
             (int cellOrdinal, int sideOrdinal) -> map<int, set<int>>
             {
               map<int,set<int>> globalLowToHighMap;
@@ -2073,7 +2109,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
                 vector<double> loCoords(spaceDim);
                 for (int d=0; d<spaceDim; d++)
                 {
-                  loCoords[d] = lo_physDofCoords(cellOrdinal,lowLocalOrdinal,d);
+                  loCoords[d] = lo_physDofCoords_host(cellOrdinal,lowLocalOrdinal,d);
                 }
                 int lowGlobalNumber = loNumbering.getGlobalID(loCoords);
                 vector<size_t> highLocalOrdinals = candidates[lowLocalOrdinal];
@@ -2082,7 +2118,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
                   vector<double> hiCoords(spaceDim);
                   for (int d=0; d<spaceDim; d++)
                   {
-                    hiCoords[d] = hi_physDofCoords(cellOrdinal,highLocalOrdinal,d);
+                    hiCoords[d] = hi_physDofCoords_host(cellOrdinal,highLocalOrdinal,d);
                   }
                   int highGlobalNumber = hiNumbering.getGlobalID(hiCoords);
                   globalLowToHighMap[lowGlobalNumber].insert(highGlobalNumber);
@@ -2294,9 +2330,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       FCi lo_e2n("lo_e2n",1,numLo);
 
       // Dummy elem2node map
+      Kokkos::parallel_for("IntrepidPCoarsenFactory,GenerateLoNodeInHighViaGIDs_QUAD_pn_to_p1", 
+			   Kokkos::RangePolicy<typename Node::device_type::execution_space>(0, numHi), KOKKOS_LAMBDA (int j) {
+        hi_e2n(0,j)    = j;
+      });
+      Kokkos::fence();
       Teuchos::Array<GO> hi_colids(numHi);
       for(size_t j=0; j<numHi; j++) {
-        hi_e2n(0,j)    = j;
         hi_colids[j] = j;
       }
 
@@ -2310,8 +2350,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
       // Compare and make sure we're cool
       bool node_diff = false;
+      auto lo_e2n_host = Kokkos::create_mirror_view(lo_e2n);
+      Kokkos::deep_copy(lo_e2n_host, lo_e2n);
       for(size_t j=0; j<numLo; j++)
-        if(lo_node_in_hi[j]!=(size_t)lo_e2n(0,j)) node_diff=true;
+        if(lo_node_in_hi[j]!=(size_t)lo_e2n_host(0,j)) node_diff=true;
 #if 0
       printf("[%d] Comparison = ",i);
       for(size_t j=0; j<numLo; j++)
@@ -2363,10 +2405,14 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         FC hi_dofCoords;
 
         // El2node / ownership / colmap
+        Kokkos::parallel_for("IntrepidPCoarsenFactory,BuildLoElemToNodeViaRepresentatives_QUAD_pn_to_p1", 
+			     Kokkos::RangePolicy<typename Node::device_type::execution_space>(0, Nn), KOKKOS_LAMBDA (int i) {
+           hi_e2n(0,i)=i;
+        });
+	Kokkos::fence();
         Teuchos::Array<GO> hi_colids(Nn);
         for(int i=0; i<Nn; i++) {
           hi_colids[i] = i;
-          hi_e2n(0,i)=i;
           if(i < Nn-(degree+1)) hi_owned[i]=true;
         }
 
@@ -2397,9 +2443,13 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         TEST_EQUALITY(lo_owned.size(),num_lo_nodes_located);
         TEST_EQUALITY(lo_owned_mk2.size(),num_lo_nodes_located);
 
+	auto lo_e2n_host = Kokkos::create_mirror_view(lo_e2n);
+	auto lo_e2n_mk2_host = Kokkos::create_mirror_view(lo_e2n_mk2);
+	Kokkos::deep_copy(lo_e2n_host, lo_e2n);
+	Kokkos::deep_copy(lo_e2n_mk2_host, lo_e2n_mk2);
         for(size_t i=0; i<lo_e2n.extent(0); i++)
           for(size_t j=0; j<lo_e2n.extent(1); j++)
-            TEST_EQUALITY(lo_e2n(i,j),lo_e2n_mk2(i,j));
+            TEST_EQUALITY(lo_e2n_host(i,j),lo_e2n_mk2_host(i,j));
 
         for(size_t i=0; i<(size_t) lo_owned.size(); i++)
           TEST_EQUALITY(lo_owned[i],lo_owned_mk2[i]);

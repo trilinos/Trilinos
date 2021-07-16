@@ -99,8 +99,6 @@ private:
   std::string mPartitionMethod;
 
   const RCP<GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
-  const RCP<CoordinateModel<typename Adapter::base_adapter_t> > mIds;
-
   const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;                                                                                                                                 
 
   void getBoundLayer(part_t levelIndx, const std::vector<part_t> &partMap,
@@ -141,7 +139,7 @@ public:
        )
     :mEnv(env_), mProblemComm(problemComm_), mPartitionMethod("rcb"),
      mGraphModel(gModel_), 
-     mIds(cModel_), mBaseInputAdapter(baseInputAdapter_)
+     mBaseInputAdapter(baseInputAdapter_)
   {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
     Z2_THROW_EXPERIMENTAL("Zoltan2 AlgND is strictly experimental software ")

@@ -9,6 +9,7 @@ class ColorerTest {
 public:
   using map_t = Tpetra::Map<>;
   using gno_t = typename map_t::global_ordinal_type;
+  using graph_t = Tpetra::CrsGraph<>;
   using matrix_t = Tpetra::CrsMatrix<zscalar_t>;
   using multivector_t = Tpetra::MultiVector<zscalar_t>;
   using execution_space_t = typename matrix_t::device_type::execution_space;
@@ -73,23 +74,32 @@ public:
 
     // Fill JBlock with random numbers for a better test.
     JBlock->resumeFill();
-    auto local_matrix = JBlock->getLocalMatrixHost();
-    auto local_graph = JBlock->getCrsGraph()->getLocalGraphHost();
 
     using IST = typename Kokkos::Details::ArithTraits<zscalar_t>::val_type;
     using pool_type = 
           Kokkos::Random_XorShift64_Pool<execution_space_t>;
     pool_type rand_pool(static_cast<uint64_t>(me));
 
-    Kokkos::fill_random(local_matrix.values, rand_pool, 
+    Kokkos::fill_random(JBlock->getLocalMatrixDevice().values, rand_pool, 
                         static_cast<IST>(1.), static_cast<IST>(9999.));
     JBlock->fillComplete();
 
+
     // Make JCyclic:  same matrix with different Domain and Range maps
-    auto lclMatrix = JBlock->getLocalMatrixHost();
-    JCyclic = rcp(new matrix_t(JBlock->getLocalMatrixHost(),
-                               JBlock->getRowMap(), JBlock->getColMap(),
-                               vMapCyclic, wMapCyclic));
+    RCP<const graph_t> block_graph = JBlock->getCrsGraph();
+    RCP<graph_t> cyclic_graph = rcp(new graph_t(*block_graph));
+    cyclic_graph->resumeFill();
+    cyclic_graph->fillComplete(vMapCyclic, wMapCyclic);
+    JCyclic = rcp(new matrix_t(cyclic_graph));
+    JCyclic->resumeFill();
+    TEUCHOS_ASSERT(block_graph->getNodeNumRows() == cyclic_graph->getNodeNumRows());
+    {
+      auto val_s = JBlock->getLocalMatrixHost().values;
+      auto val_d = JCyclic->getLocalMatrixHost().values;
+      TEUCHOS_ASSERT(val_s.extent(0) == val_d.extent(0));
+      Kokkos::deep_copy(val_d, val_s);
+    }
+    JCyclic->fillComplete();
   }
 
   ////////////////////////////////////////////////////////////////
@@ -127,7 +137,6 @@ public:
 
     // Create a colorer
     Zoltan2::TpetraCrsColorer<matrix_t> colorer(J);
-
     colorer.computeColoring(params);
 
     // Check coloring
@@ -164,8 +173,8 @@ public:
     colorer.reconstructMatrix(W, *Jp);
 
     // Check that values of J = values of Jp
-    auto J_local_matrix = J->getLocalMatrixHost();
-    auto Jp_local_matrix = Jp->getLocalMatrixHost();
+    auto J_local_matrix = J->getLocalMatrixDevice();
+    auto Jp_local_matrix = Jp->getLocalMatrixDevice();
     const size_t num_local_nz = J->getNodeNumEntries();
 
     Kokkos::parallel_reduce(
