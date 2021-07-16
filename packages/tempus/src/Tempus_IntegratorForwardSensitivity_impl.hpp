@@ -16,7 +16,6 @@
 
 #include "Tempus_CombinedForwardSensitivityModelEvaluator.hpp"
 #include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
-#include <fstream>
 
 namespace Tempus {
 
