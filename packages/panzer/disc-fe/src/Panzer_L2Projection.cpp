@@ -115,8 +115,8 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_scalar;
-          const auto weightedBasis = basisValues.weighted_basis_scalar;
+          const auto unweightedBasis = basisValues.basis_scalar.get_static_view();
+          const auto weightedBasis = basisValues.weighted_basis_scalar.get_static_view();
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
@@ -215,8 +215,8 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_vector;
-          const auto weightedBasis = basisValues.weighted_basis_vector;
+          const auto unweightedBasis = basisValues.basis_vector.get_static_view();
+          const auto weightedBasis = basisValues.weighted_basis_vector.get_static_view();
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);

@@ -1017,12 +1017,38 @@ int body(int argc, char *argv[]) {
 
   // Define overlapping maps
   Teuchos::Array<GO> overlappedNodes(numNodes);
-  for (int i=0; i<numNodes; i++)
-    overlappedNodes[i]=(GO)globalNodeIds[i];
+  {
+    int inode = 0;
+    for (int i=0; i<numNodes; i++) {
+      if(nodeIsOwned[i]) {
+        overlappedNodes[inode]=(GO)globalNodeIds[i];
+        inode++;
+      }
+    }
+    for (int i=0; i<numNodes; i++) {
+      if(!nodeIsOwned[i]) {
+        overlappedNodes[inode]=(GO)globalNodeIds[i];
+        inode++;
+      }
+    }
+  }
   RCP<const Tpetra_Map> overlapMapG = rcp(new Tpetra_Map(GST_INVALID,overlappedNodes,0,comm));
   Teuchos::Array<GO> overlappedEdges(numEdges);
-  for (int i=0; i<numEdges; i++)
-    overlappedEdges[i]=(GO)globalEdgeIds[i];
+  {
+    int iedge = 0;
+    for (int i=0; i<numEdges; i++) {
+      if(edgeIsOwned[i]) {
+        overlappedEdges[iedge]=(GO)globalEdgeIds[i];
+        iedge++;
+      }
+    }
+    for (int i=0; i<numEdges; i++) {
+      if(!edgeIsOwned[i]) {
+        overlappedEdges[iedge]=(GO)globalEdgeIds[i];
+        iedge++;
+      }
+    }
+  }
   RCP<const Tpetra_Map> overlapMapC = rcp(new Tpetra_Map(GST_INVALID,overlappedEdges,0,comm));
 
 
@@ -1310,8 +1336,8 @@ int body(int argc, char *argv[]) {
       for (int iedge=0; iedge<numEdges; iedge++) {
         if (edgeIsOwned[iedge]) {
           data[ownedEdge]=globalNodeIds[edgeToNode(iedge,inode)];
+          ownedEdge++;
         }
-        ownedEdge++;
       }
     }
     Tpetra::MatrixMarket::Writer<Tpetra_MultiVector>::writeDenseFile("edge2node.dat",edge2node);
@@ -1326,7 +1352,7 @@ int body(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Edge to node incidence matrix
-  Tpetra_CrsMatrix DGrad(globalMapC, 2);
+  Tpetra_CrsMatrix DGrad(globalMapC, overlapMapG, 2);
 
   // Estimate the global CFL based on minimum edge length and assumed dt=1"
 
@@ -1355,7 +1381,7 @@ int body(int argc, char *argv[]) {
     }
   }
 
-  DGrad.fillComplete(MassMatrixG.getRowMap(),MassMatrixC.getRowMap());
+  DGrad.fillComplete(globalMapG, globalMapC);
 
   if(MyPID==0) {std::cout << "Building incidence matrix                   \n";}
 
