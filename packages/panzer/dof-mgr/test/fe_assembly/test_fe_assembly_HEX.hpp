@@ -534,7 +534,7 @@ int feAssemblyHex(int argc, char *argv[]) {
 
     auto localColMap  = A->getColMap()->getLocalMap();
     auto localMap  = ownedAndGhostedMap->getLocalMap();
-    auto localMatrix  = A->getLocalMatrix();
+    auto localMatrix  = A->getLocalMatrixDevice();
     auto localRHS     = b->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     //fill matrix
