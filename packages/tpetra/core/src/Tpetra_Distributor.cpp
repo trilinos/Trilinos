@@ -318,48 +318,8 @@ namespace Tpetra {
   Distributor::createReverseDistributor() const
   {
     reverseDistributor_ = Teuchos::rcp(new Distributor(plan_.comm_));
-    reverseDistributor_->plan_.howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
-    reverseDistributor_->plan_.sendType_ = plan_.sendType_;
-    reverseDistributor_->plan_.barrierBetweenRecvSend_ = plan_.barrierBetweenRecvSend_;
+    reverseDistributor_->plan_ = *plan_.getReversePlan();
     reverseDistributor_->verbose_ = verbose_;
-
-    // The total length of all the sends of this Distributor.  We
-    // calculate it because it's the total length of all the receives
-    // of the reverse Distributor.
-    size_t totalSendLength =
-      std::accumulate (plan_.lengthsTo_.begin(), plan_.lengthsTo_.end(), 0);
-
-    // The maximum length of any of the receives of this Distributor.
-    // We calculate it because it's the maximum length of any of the
-    // sends of the reverse Distributor.
-    size_t maxReceiveLength = 0;
-    const int myProcID = plan_.comm_->getRank();
-    for (size_t i=0; i < plan_.numReceives_; ++i) {
-      if (plan_.procsFrom_[i] != myProcID) {
-        // Don't count receives for messages sent by myself to myself.
-        if (plan_.lengthsFrom_[i] > maxReceiveLength) {
-          maxReceiveLength = plan_.lengthsFrom_[i];
-        }
-      }
-    }
-
-    // Initialize all of reverseDistributor's data members.  This
-    // mainly just involves flipping "send" and "receive," or the
-    // equivalent "to" and "from."
-
-    reverseDistributor_->plan_.sendMessageToSelf_ = plan_.sendMessageToSelf_;
-    reverseDistributor_->plan_.numSendsToOtherProcs_ = plan_.numReceives_;
-    reverseDistributor_->plan_.procIdsToSendTo_ = plan_.procsFrom_;
-    reverseDistributor_->plan_.startsTo_ = plan_.startsFrom_;
-    reverseDistributor_->plan_.lengthsTo_ = plan_.lengthsFrom_;
-    reverseDistributor_->plan_.maxSendLength_ = maxReceiveLength;
-    reverseDistributor_->plan_.indicesTo_ = plan_.indicesFrom_;
-    reverseDistributor_->plan_.numReceives_ = plan_.numSendsToOtherProcs_;
-    reverseDistributor_->plan_.totalReceiveLength_ = totalSendLength;
-    reverseDistributor_->plan_.lengthsFrom_ = plan_.lengthsTo_;
-    reverseDistributor_->plan_.procsFrom_ = plan_.procIdsToSendTo_;
-    reverseDistributor_->plan_.startsFrom_ = plan_.startsTo_;
-    reverseDistributor_->plan_.indicesFrom_ = plan_.indicesTo_;
 
     // requests_: Allocated on demand.
     // reverseDistributor_: See note below
@@ -370,8 +330,6 @@ namespace Tpetra {
     // are accurate.
     reverseDistributor_->lastRoundBytesSend_ = 0;
     reverseDistributor_->lastRoundBytesRecv_ = 0;
-
-    reverseDistributor_->plan_.useDistinctTags_ = plan_.useDistinctTags_;
 
     // I am my reverse Distributor's reverse Distributor.
     // Thus, it would be legit to do the following:

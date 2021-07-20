@@ -105,6 +105,8 @@ public:
   void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
                                const Teuchos::ArrayView<const int>& remoteProcIDs);
 
+  Teuchos::RCP<DistributorPlan> getReversePlan() const;
+
   size_t getNumReceives() const { return numReceives_; }
   size_t getNumSends() const { return numSendsToOtherProcs_; }
   bool hasSelfMessage() const { return sendMessageToSelf_; }
@@ -115,6 +117,8 @@ public:
   Teuchos::ArrayView<const size_t> getLengthsFrom() const { return lengthsFrom_; }
   Teuchos::ArrayView<const size_t> getLengthsTo() const { return lengthsTo_; }
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
+
+  void createReversePlan() const;
 
   /// \brief Compute receive info from sends.
   ///
@@ -130,6 +134,7 @@ public:
 
   Teuchos::RCP<const Teuchos::Comm<int>> comm_;
   Details::EDistributorHowInitialized howInitialized_;
+  mutable Teuchos::RCP<DistributorPlan> reversePlan_;
 
   //! @name Parameters read in from the Teuchos::ParameterList
   //@{

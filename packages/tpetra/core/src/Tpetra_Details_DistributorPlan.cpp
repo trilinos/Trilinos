@@ -89,6 +89,7 @@ DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
 DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
   : comm_(comm),
     howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
+    reversePlan_(Teuchos::null),
     sendType_(DISTRIBUTOR_SEND),
     barrierBetweenRecvSend_(barrierBetween_default),
     useDistinctTags_(useDistinctTags_default),
@@ -102,6 +103,7 @@ DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
 DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
   : comm_(otherPlan.comm_),
     howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
+    reversePlan_(otherPlan.reversePlan_),
     sendType_(otherPlan.sendType_),
     barrierBetweenRecvSend_(otherPlan.barrierBetweenRecvSend_),
     useDistinctTags_(otherPlan.useDistinctTags_),
@@ -570,6 +572,54 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
   totalReceiveLength_ = remoteProcIDs.size();
   indicesFrom_.clear ();
   numReceives_-=sendMessageToSelf_;
+}
+
+Teuchos::RCP<DistributorPlan> DistributorPlan::getReversePlan() const {
+  if (reversePlan_.is_null()) createReversePlan();
+  return reversePlan_;
+}
+
+void DistributorPlan::createReversePlan() const
+{
+  reversePlan_ = Teuchos::rcp(new DistributorPlan(comm_));
+  reversePlan_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+  reversePlan_->sendType_ = sendType_;
+  reversePlan_->barrierBetweenRecvSend_ = barrierBetweenRecvSend_;
+
+  // The total length of all the sends of this DistributorPlan.  We
+  // calculate it because it's the total length of all the receives
+  // of the reverse DistributorPlan.
+  size_t totalSendLength =
+    std::accumulate(lengthsTo_.begin(), lengthsTo_.end(), 0);
+
+  // The maximum length of any of the receives of this DistributorPlan.
+  // We calculate it because it's the maximum length of any of the
+  // sends of the reverse DistributorPlan.
+  size_t maxReceiveLength = 0;
+  const int myProcID = comm_->getRank();
+  for (size_t i=0; i < numReceives_; ++i) {
+    if (procsFrom_[i] != myProcID) {
+      // Don't count receives for messages sent by myself to myself.
+      if (lengthsFrom_[i] > maxReceiveLength) {
+        maxReceiveLength = lengthsFrom_[i];
+      }
+    }
+  }
+
+  reversePlan_->sendMessageToSelf_ = sendMessageToSelf_;
+  reversePlan_->numSendsToOtherProcs_ = numReceives_;
+  reversePlan_->procIdsToSendTo_ = procsFrom_;
+  reversePlan_->startsTo_ = startsFrom_;
+  reversePlan_->lengthsTo_ = lengthsFrom_;
+  reversePlan_->maxSendLength_ = maxReceiveLength;
+  reversePlan_->indicesTo_ = indicesFrom_;
+  reversePlan_->numReceives_ = numSendsToOtherProcs_;
+  reversePlan_->totalReceiveLength_ = totalSendLength;
+  reversePlan_->lengthsFrom_ = lengthsTo_;
+  reversePlan_->procsFrom_ = procIdsToSendTo_;
+  reversePlan_->startsFrom_ = startsTo_;
+  reversePlan_->indicesFrom_ = indicesTo_;
+  reversePlan_->useDistinctTags_ = useDistinctTags_;
 }
 
 void DistributorPlan::computeReceives()
