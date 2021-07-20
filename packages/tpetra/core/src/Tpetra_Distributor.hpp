@@ -1276,22 +1276,7 @@ namespace Tpetra {
 
     computeSends(remoteGIDs, remoteProcIDs, exportGIDs, exportProcIDs);
 
-    const size_t numProcsSendingToMe = createFromSends(exportProcIDs ());
-
-    if (verbose_) {
-      // NOTE (mfh 20 Mar 2014) If remoteProcIDs could contain
-      // duplicates, then its length might not be the right check here,
-      // even if we account for sendMessageToSelf_.  sendMessageToSelf_ is set in
-      // createFromSends.
-      std::ostringstream os;
-      os << *prefix << "numProcsSendingToMe: "
-         << numProcsSendingToMe << ", remoteProcIDs.size(): "
-         << remoteProcIDs.size () << ", sendMessageToSelf_: "
-         << (plan_.sendMessageToSelf_ ? "true" : "false") << "" << endl;
-      std::cerr << os.str();
-    }
-
-    plan_.howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
+    plan_.createFromRecvs(remoteProcIDs);
 
     if (verbose_) {
       std::ostringstream os;

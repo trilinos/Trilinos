@@ -102,6 +102,7 @@ public:
   int getTag(const int pathTag) const;
 
   size_t createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs);
+  void createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs);
   void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
                                const Teuchos::ArrayView<const int>& remoteProcIDs);
 
