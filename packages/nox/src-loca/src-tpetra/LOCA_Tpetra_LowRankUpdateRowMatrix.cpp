@@ -275,7 +275,7 @@ namespace LOCA {
     {
       NOX::Scalar val = 0.0;
       auto U_HostView=nonconst_U->getLocalViewHost(::Tpetra::Access::ReadOnly);
-      auto V_HostView=nonconst_V->getLocalViewDevice(::Tpetra::Access::ReadOnly);
+      auto V_HostView=nonconst_V->getLocalViewHost(::Tpetra::Access::ReadOnly);
 
       // val = sum_{k=0}^m U(i,k)*V(j,k)
       for (int k=0; k<m; ++k)
