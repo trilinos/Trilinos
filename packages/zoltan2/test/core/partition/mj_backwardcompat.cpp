@@ -195,7 +195,7 @@ public:
 
     // create kokkos_coords in default memory space
     {
-      typedef Kokkos::DualView<scalar_t **> kokkos_coords_t;
+      typedef Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft> kokkos_coords_t;
       kokkos_coords = kokkos_coords_t(
         Kokkos::ViewAllocateWithoutInitializing("coords"), nids, dim);
       auto host_kokkos_coords = kokkos_coords.h_view;
@@ -257,7 +257,7 @@ private:
   const size_t nids;
   Kokkos::DualView<gno_t *> kokkos_gids;
   const int dim;
-  Kokkos::DualView<scalar_t **> kokkos_coords;
+  Kokkos::DualView<scalar_t **, Kokkos::LayoutLeft> kokkos_coords;
   Kokkos::DualView<scalar_t **> kokkos_weights;
 };
 
