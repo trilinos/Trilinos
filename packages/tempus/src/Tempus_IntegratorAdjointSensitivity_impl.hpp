@@ -16,6 +16,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_ImplicitAdjointModelEvaluator.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
 namespace Tempus {
 
@@ -83,6 +84,9 @@ advanceTime(const Scalar timeFinal)
   using Thyra::MultiVectorBase;
   using Thyra::LinearOpBase;
   using Thyra::LinearOpWithSolveBase;
+  using Thyra::LinearOpWithSolveFactoryBase;
+  using Thyra::PreconditionerBase;
+  using Thyra::PreconditionerFactoryBase;
   using Thyra::createMember;
   using Thyra::createMembers;
   using Thyra::assign;
@@ -135,11 +139,52 @@ advanceTime(const Scalar timeFinal)
   else {
     inargs.set_alpha(1.0);
     inargs.set_beta(0.0);
-    RCP<LinearOpWithSolveBase<Scalar> > W = adjoint_model_->create_W();
-    adj_outargs.set_W(W);
-    adjoint_model_->evalModel(inargs, adj_outargs);
+    RCP<LinearOpWithSolveBase<Scalar> > W;
+    if (adj_outargs.supports(MEB::OUT_ARG_W)) {
+      // Model supports W
+      W = adjoint_model_->create_W();
+      adj_outargs.set_W(W);
+      adjoint_model_->evalModel(inargs, adj_outargs);
+      adj_outargs.set_W(Teuchos::null);
+    }
+    else {
+      // Otherwise model must support a W_op and W factory
+      RCP<const LinearOpWithSolveFactoryBase<Scalar> > lowsfb =
+        adjoint_model_->get_W_factory();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lowsfb == Teuchos::null, std::logic_error,
+        "Adjoint ME must support W out-arg or provide a W_factory for non-identity mass matrix");
+
+      // Compute W_op (and W_prec if supported)
+      RCP<LinearOpBase<Scalar> > W_op = adjoint_model_->create_W_op();
+      adj_outargs.set_W_op(W_op);
+      RCP<PreconditionerFactoryBase<Scalar> > prec_factory =
+        lowsfb->getPreconditionerFactory();
+      RCP<PreconditionerBase<Scalar> > W_prec;
+      if (prec_factory != Teuchos::null)
+        W_prec = prec_factory->createPrec();
+      else if (adj_outargs.supports(MEB::OUT_ARG_W_prec)) {
+        W_prec = adjoint_model_->create_W_prec();
+        adj_outargs.set_W_prec(W_prec);
+      }
+      adjoint_model_->evalModel(inargs, adj_outargs);
+      adj_outargs.set_W_op(Teuchos::null);
+      if (adj_outargs.supports(MEB::OUT_ARG_W_prec))
+        adj_outargs.set_W_prec(Teuchos::null);
+
+      // Create and initialize W
+      W = lowsfb->createOp();
+      if (W_prec != Teuchos::null) {
+        if (prec_factory != Teuchos::null)
+          prec_factory->initializePrec(
+            Thyra::defaultLinearOpSource<Scalar>(W_op), W_prec.get());
+        Thyra::initializePreconditionedOp<Scalar>(
+          *lowsfb, W_op, W_prec, W.ptr());
+      }
+      else
+        Thyra::initializeOp<Scalar>(*lowsfb, W_op, W.ptr());
+    }
     W->solve(Thyra::NOTRANS, *dgdx, adjoint_init_mv.ptr());
-    adj_outargs.set_W(Teuchos::null);
   }
 
   // Run sensitivity integrator and get solution
