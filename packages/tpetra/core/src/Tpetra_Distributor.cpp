@@ -418,7 +418,6 @@ namespace Tpetra {
       out << "numReceives: " << getNumReceives () << endl;
       out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
       out << "lengthsFrom: " << toString (plan_.lengthsFrom_) << endl;
-      out << "startsFrom: " << toString (plan_.startsFrom_) << endl;
       out << "procsFrom: " << toString (plan_.procsFrom_) << endl;
     }
 

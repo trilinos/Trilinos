@@ -234,6 +234,7 @@ public:
   /// message i was sent by process procsFrom_[i].
   Teuchos::Array<int> procsFrom_;
 
+private:
   /// \brief Array of offsets of incoming messages.
   ///
   /// This array has length numReceives_ + sendMessageToSelf_.  It is an
