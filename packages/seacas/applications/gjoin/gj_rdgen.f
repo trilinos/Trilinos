@@ -327,7 +327,9 @@ C   --Read the node sets
       CALL MDLONG ('LTNNPS', KLTNNS, LOLD2+LNPSNL)
       CALL MDLONG ('FACNPS', KFACNS, LOLD2+LNPSNL)
       call mdlong ('CFACNP', kcfacn, lnpsnl) ! Compressed df list array
-      CALL MCLONG ('NAMNS',  KNMNS, (LOLD+NUMNPS)*namlen)
+      if (numnps .gt. 0) then
+        CALL MCLONG ('NAMNS',  KNMNS, (LOLD+NUMNPS)*namlen)
+      end if
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 950
 
@@ -376,7 +378,9 @@ C   --Read the side sets
       call mdlong ('LTSSNC', kltsnc, lold2+lessel)
       call mdfind ('FACESS', KFACSS, LOLD3)
       call mdlong ('FACESS', kfacss, lold3+lessdl)    ! Compressed dist factors list
-      CALL MCLONG ('NAMSS',  KNMSS, (LOLD+NUMESS)*namlen)
+      if (numess .gt. 0) then
+        CALL MCLONG ('NAMSS',  KNMSS, (LOLD+NUMESS)*namlen)
+      end if
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 950
 
@@ -522,11 +526,9 @@ C     df count for this list
 
       subroutine getnam(ndb, itype, isiz, names)
       include 'gj_namlen.blk'
-      
+
       character*(namlen) names(*)
 
       call exgnams(ndb, itype, isiz, names, ierr)
       return
       end
-
-      

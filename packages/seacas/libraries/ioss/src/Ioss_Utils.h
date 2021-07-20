@@ -22,6 +22,7 @@
 #include <string>    // for string
 #include <vector>    // for vector
 namespace Ioss {
+  class DatabaseIO;
   class Field;
   class GroupingEntity;
   class Region;
@@ -413,8 +414,8 @@ namespace Ioss {
                                       const std::string &working_directory);
 
     static void get_fields(int64_t entity_count, char **names, size_t num_names,
-                           Ioss::Field::RoleType fld_role, bool enable_field_recognition,
-                           char suffix_separator, int *local_truth,
+                           Ioss::Field::RoleType fld_role,
+                           const DatabaseIO *db, int *local_truth,
                            std::vector<Ioss::Field> &fields);
 
     static int field_warning(const Ioss::GroupingEntity *ge, const Ioss::Field &field,

@@ -73,7 +73,9 @@ C ... If the old length == 0, then we don't have a valid pointer.
 C      Need to call malloc instead of realloc.
       if (oldlen .eq. 0) then
          memret = 0
-        call exmemy(memlen, newadr, memret)
+         if (memlen .gt. 0) then
+           call exmemy(memlen, newadr, memret)
+         end if
       else
 
 C ... Passing a size of 0 to realloc (via exmemy) is the
