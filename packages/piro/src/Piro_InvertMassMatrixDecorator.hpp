@@ -133,7 +133,6 @@ class InvertMassMatrixDecorator
    //! Operator form of df/dp for distributed parameters - for transient adjoint sensitivities
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> create_DfDp_op_impl(int j) const
   {
-    std::cout << "IKT in create_DfDp_op_impl model = " << model->description() << "\n"; 
     return model->create_DfDp_op(j); 
   }
 
