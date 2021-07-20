@@ -480,7 +480,11 @@ public:
                                   missing += (offsets(i) == STINV);
                                 }, numMissingDiagonalEntries);
 
-        if (numMissingDiagonalEntries == 0) {
+        GlobalOrdinal gNumMissingDiagonalEntries;
+        Teuchos::reduceAll(*(Ac->getRowMap()->getComm()), Teuchos::REDUCE_SUM, Teuchos::as<GlobalOrdinal>(numMissingDiagonalEntries),
+                             Teuchos::outArg(gNumMissingDiagonalEntries));
+
+        if (gNumMissingDiagonalEntries == 0) {
           // Matrix has all diagonal entries, now we fix them
 
           auto lclA = tpCrsAc->getLocalMatrixDevice();
