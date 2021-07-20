@@ -197,6 +197,7 @@ class AlgDistance1 : public Algorithm<Adapter>
                          Kokkos::View<gno_t*,
 			              Kokkos::Device<ExecutionSpace, MemorySpace>> ghost_degrees,
 			 bool recolor_degrees){
+      gno_t local_recoloring_size;
       Kokkos::parallel_reduce("Conflict Detection",
 		              Kokkos::RangePolicy<ExecutionSpace>(0,n_ghosts), 
 		              KOKKOS_LAMBDA(const int& i,
@@ -235,7 +236,8 @@ class AlgDistance1 : public Algorithm<Adapter>
             }
           }
         }
-      },recoloringSize(0));
+      },local_recoloring_size);
+      Kokkos::deep_copy(recoloringSize, local_recoloring_size);
       Kokkos::fence();
       Kokkos::parallel_for("Rebuild verts_to_send_view",
 		           Kokkos::RangePolicy<ExecutionSpace>(0,n_local), 
@@ -749,9 +751,6 @@ class AlgDistance1 : public Algorithm<Adapter>
 
       //if there is more than a single process, check distributed conflicts and recolor
       if(comm->getSize() > 1){
-	//get the colors from the femv
-        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>(Tpetra::Access::ReadWrite); // Partial write
-        Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
 	
         if(verbose)std::cout<<comm->getRank()<<": going to communicate\n";
 
@@ -773,6 +772,9 @@ class AlgDistance1 : public Algorithm<Adapter>
 	verts_to_send_size_host(0) = 0;
         deep_copy(verts_to_send_size, verts_to_send_size_host);
         //set the old ghost colors
+	//get the colors from the femv
+        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>(Tpetra::Access::ReadWrite); // Partial write
+        Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
         Kokkos::parallel_for(rand.size()-nVtx,KOKKOS_LAMBDA(const int& i){
           ghost_colors(i) = femv_colors(i+nVtx);
         });
@@ -836,7 +838,8 @@ class AlgDistance1 : public Algorithm<Adapter>
 
         double recolor_temp = timer();
         //use KokkosKernels to recolor the conflicting vertices.  
-	if(verts_to_send_size(0) > 0){
+        deep_copy(verts_to_send_size_host, verts_to_send_size);
+	if(verts_to_send_size_host(0) > 0){
             this->colorInterior<execution_space,
                                 memory_space>(femv_colors.size(),
 					      dist_adjs,dist_offsets,
@@ -870,10 +873,11 @@ class AlgDistance1 : public Algorithm<Adapter>
         //communicate
         Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
 	Kokkos::deep_copy(verts_to_send_size_host, verts_to_send_size);
-	auto femvColors_host = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
-	auto femv_colors_host = subview(femvColors_host, Kokkos::ALL, 0);
 	gno_t sent,recv;
-        
+        // Reset device views
+        femvColors = decltype(femvColors)();
+        femv_colors = decltype(femv_colors)();
+
 	double curr_comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,
 			                                  nVtx, 
 							  verts_to_send_host, 
@@ -892,6 +896,9 @@ class AlgDistance1 : public Algorithm<Adapter>
         //detect conflicts in parallel. For a detected conflict,
         //reset the vertex-to-be-recolored's color to 0, in order to
         //allow KokkosKernels to recolor correctly.
+	
+        femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
+        femv_colors = subview(femvColors, Kokkos::ALL, 0);
         Kokkos::parallel_for(rand.size()-nVtx, KOKKOS_LAMBDA(const int& i){
           ghost_colors(i) = femv_colors(i+nVtx);
         });
@@ -927,7 +934,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 	}
         //do a reduction to determine if we're done
         int globalDone = 0;
-        int localDone = recoloringSize(0);
+        int localDone = recoloringSize_host(0);
         Teuchos::reduceAll<int, int>(*comm,Teuchos::REDUCE_SUM,1, &localDone, &globalDone);
         //We're only allowed to stop once everyone has no work to do.
         //collectives will hang if one process exits. 
@@ -956,7 +963,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 
 	double recolor_temp = timer();
 	//use KokkosKernels to recolor the conflicting vertices
-	if(verts_to_send_size(0) > 0){
+	if(verts_to_send_size_host(0) > 0){
 	  this->colorInterior<host_exec,
 			      host_mem>
 			      (femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, verts_to_send_host, verts_to_send_size_host(0), true);
