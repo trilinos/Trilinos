@@ -538,8 +538,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
 
    std::size_t sz = 20;
    std::size_t numEntries = 0;
-   Teuchos::Array<double> values(sz);
-   Teuchos::Array<int> indices(sz);
+   typename CrsMatrixType::nonconst_local_inds_host_view_type indices("indices", sz);
+   typename CrsMatrixType::nonconst_values_host_view_type values("values", sz);
 
    if(myRank==0) {   
       RCP<const Thyra::LinearOpBase<double> > A = b_sys->get_A();
@@ -715,8 +715,8 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, node_cell)
 
    std::size_t sz = 20;
    std::size_t numEntries = 0;
-   Teuchos::Array<double> values(sz);
-   Teuchos::Array<int> indices(sz);
+   typename CrsMatrixType::nonconst_local_inds_host_view_type indices("indices", sz);
+   typename CrsMatrixType::nonconst_values_host_view_type values("values", sz);
 
    if(myRank==0) {   
       RCP<const Thyra::LinearOpBase<double> > A = b_sys->get_A();
