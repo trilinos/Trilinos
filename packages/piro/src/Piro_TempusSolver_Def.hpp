@@ -525,6 +525,7 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
   validPL->sublist("Tempus Integrator", false, "");
   validPL->sublist("Tempus Stepper", false, "");
   validPL->sublist("Time Step Control", false, "");
+  validPL->sublist("Sensitivities", false, "");
   return validPL;
 }
 
