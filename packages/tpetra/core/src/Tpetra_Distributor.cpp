@@ -367,7 +367,7 @@ namespace Tpetra {
       out << "Label: " << label << ", ";
     }
     out << "How initialized: "
-        << Details::DistributorHowInitializedEnumToString (plan_.howInitialized_)
+        << Details::DistributorHowInitializedEnumToString (plan_.howInitialized())
         << ", Parameters: {"
         << "Send type: "
         << DistributorSendTypeEnumToString (plan_.sendType_)
@@ -403,22 +403,22 @@ namespace Tpetra {
     out << "Process " << myRank << " of " << numProcs << ":" << endl;
     Teuchos::OSTab tab1 (out);
 
-    out << "selfMessage: " << hasSelfMessage () << endl;
-    out << "numSends: " << getNumSends () << endl;
+    out << "selfMessage: " << hasSelfMessage() << endl;
+    out << "numSends: " << getNumSends() << endl;
     if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-      out << "procsTo: " << toString (plan_.procIdsToSendTo_) << endl;
-      out << "lengthsTo: " << toString (plan_.lengthsTo_) << endl;
-      out << "maxSendLength: " << getMaxSendLength () << endl;
+      out << "procsTo: " << toString (plan_.getProcsTo()) << endl;
+      out << "lengthsTo: " << toString (plan_.getLengthsTo()) << endl;
+      out << "maxSendLength: " << getMaxSendLength() << endl;
     }
     if (vl == VERB_EXTREME) {
-      out << "startsTo: " << toString (plan_.startsTo_) << endl;
+      out << "startsTo: " << toString (plan_.getStartsTo()) << endl;
       out << "indicesTo: " << toString (plan_.getIndicesTo()) << endl;
     }
     if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-      out << "numReceives: " << getNumReceives () << endl;
-      out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
-      out << "lengthsFrom: " << toString (plan_.lengthsFrom_) << endl;
-      out << "procsFrom: " << toString (plan_.procsFrom_) << endl;
+      out << "numReceives: " << getNumReceives() << endl;
+      out << "totalReceiveLength: " << getTotalReceiveLength() << endl;
+      out << "lengthsFrom: " << toString (plan_.getLengthsFrom()) << endl;
+      out << "procsFrom: " << toString (plan_.getProcsFrom()) << endl;
     }
 
     out.flush (); // make sure the ostringstream got everything

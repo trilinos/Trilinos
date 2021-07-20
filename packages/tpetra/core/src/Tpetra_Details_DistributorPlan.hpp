@@ -118,6 +118,7 @@ public:
   Teuchos::ArrayView<const int> getProcsTo() const { return procIdsToSendTo_; }
   Teuchos::ArrayView<const size_t> getLengthsFrom() const { return lengthsFrom_; }
   Teuchos::ArrayView<const size_t> getLengthsTo() const { return lengthsTo_; }
+  Teuchos::ArrayView<const size_t> getStartsTo() const { return startsTo_; }
   Teuchos::ArrayView<const size_t> getIndicesTo() const { return indicesTo_; }
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
 
