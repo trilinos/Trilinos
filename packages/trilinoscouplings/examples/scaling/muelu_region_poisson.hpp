@@ -101,36 +101,38 @@
 // Sacado headers
 #include "Sacado_mpl_apply.hpp"
 
-// because Percept's breakers order things in a counter-clockwise fashion,
-// this function recreates percept's
-std::vector<unsigned int> perceptrenumbertest(const unsigned int num_levels_refinement)
+/* because Percept's breaker creates mesh elements in a recursive
+ * counter-clockwise fashion, this function recreates Percept's and then
+ * produces an std::vector with the mesh elements in lexicographic order
+ *
+ * i.e., with one refinement level, Percept orders elements as
+ *
+ *  -------      -------
+ * |   |   |    |   |   |
+ * | 7 | 6 |    | 3 | 2 |
+ * |   |   |    |   |   |
+ * |---+---|    |---+---|
+ * |   |   |    |   |   |
+ * | 4 | 5 |    | 0 | 1 |
+ * |   |   |    |   |   |
+ *  -------      -------
+ *   (z=1)        (z=0)
+ *
+ * however, the lexicographic ordering is not 0123, but rather 0132.
+ * as num_levels_refinement increases, this becomes even more difficult because
+ * it recursively orders counterclockwise on top of each level of refinement.
+ * For a more visual description of what's happening, pass print_details=true
+ */
+std::vector<unsigned int> renumberPerceptCellsToLexicographic(const unsigned int num_levels_refinement, const bool print_details=false)
 {
-
   std::vector<unsigned int> renumber;
 
-  const bool print_info = true;
-
-  std::cout << "Starting perceptrenumber..." << std::endl;
-
-  const unsigned int d = 3; // spatial dimension (only 2 or 3 makes sense)... I only really care about the 2D case since it's where the ccw rotation lies
+  const unsigned int d = 3; // spatial dimension (only 2 or 3 makes sense)...
   const unsigned int r = num_levels_refinement; // levels of recursion/refinement
   const unsigned int cells_per_dim = (1 << r); // number of cells per dim is 2^(r-1), i.e. 1<<r
   const unsigned int points_per_dim = cells_per_dim + 1; // number of points per spatial dimension is just 1 higher
   const unsigned int num_cells = (d<3)? cells_per_dim*cells_per_dim : cells_per_dim*cells_per_dim*cells_per_dim; // evil ternary op code to avoid using pow
   const unsigned int num_points = (d<3)? points_per_dim*points_per_dim : points_per_dim*points_per_dim*points_per_dim; // evil ternary op code to avoid using pow
-
-  if(print_info)
-  {
-    std::cout << "Parameters: " << std::endl;
-    std::cout << "   Dimension = " << d << std::endl;
-    std::cout << "      Levels = " << r << std::endl;
-    std::cout << "   Cells/dim = " << cells_per_dim << std::endl;
-    std::cout << "       Cells = " << num_cells << std::endl;
-    std::cout << "  Points/dim = " << points_per_dim << std::endl;
-    std::cout << "      Points = " << num_points << std::endl;
-    std::cout << std::endl;
-    std::cout << "Running re-ordering scheme..." << std::endl;
-  }
 
   unsigned int percept[2][2][2];
 
@@ -147,8 +149,12 @@ std::vector<unsigned int> perceptrenumbertest(const unsigned int num_levels_refi
 
   // scope in case I decide to copypasta
   {
+    // TODO: this uses VLAs on the stack for simplicity, but using a different
+    // data structure on the heap would be safer. we'll return to this if it
+    // severely affects performance, but we'll likely keep num_refinements<=8
+
     // initialize to 0
-    unsigned int outputorder[cells_per_dim][cells_per_dim][cells_per_dim]; // TODO: dirty VLA usage
+    unsigned int outputorder[cells_per_dim][cells_per_dim][cells_per_dim];
     for(unsigned int i=0; i<cells_per_dim; ++i)
       for(unsigned int j=0; j<cells_per_dim; ++j)
         for(unsigned int k=0; k<cells_per_dim; ++k)
@@ -170,7 +176,7 @@ std::vector<unsigned int> perceptrenumbertest(const unsigned int num_levels_refi
     // note: there's a lot of nonsense here to prettily format the output and make sure things look correct
     if(d==2)
     {
-      if(print_info)
+      if(print_details)
       {
         std::cout << "Outputting Percept's order in 2D... " << std::endl;
         for(int j=cells_per_dim-1; j>=0; --j)
@@ -197,7 +203,7 @@ std::vector<unsigned int> perceptrenumbertest(const unsigned int num_levels_refi
     }
     else
     {
-      if(print_info)
+      if(print_details)
       {
         std::cout << "Outputting Percept's order in 3D... " << std::endl;
         for(int k=cells_per_dim-1; k>=0; --k)

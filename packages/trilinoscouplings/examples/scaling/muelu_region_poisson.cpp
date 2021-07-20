@@ -22,12 +22,12 @@
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosMueLuAdapter.hpp"      // => This header defines Belos::MueLuOp
+#include "BelosMueLuAdapter.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
 #ifdef HAVE_MUELU_TPETRA
-#include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
+#include <BelosTpetraAdapter.hpp>
 #endif
 
 // MueLu headers
@@ -95,6 +95,7 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
+#include "Panzer_TpetraLinearObjFactory.hpp"
 
 // Percept headers
 #include <percept/PerceptMesh.hpp>
@@ -111,6 +112,18 @@
 // Include factories for boundary conditions and other Panzer setup
 // Most of which is taken from PoissonExample in Panzer_STK
 #include "muelu_region_poisson.hpp"
+
+
+// need this for debugging purposes... technically any class that has a size()
+// method and [] operator that returns a type that can be streamed works,
+// but the stream needs to be able to use std::endl; (could replace with \n)
+#define DUMPSTDVECTOR(vector, stream) \
+  stream << #vector << ".size() = " << vector.size() << std::endl; \
+  stream << #vector << "        = (" << vector[0]; \
+  for(unsigned int i=1; i < vector.size(); ++i) \
+    stream << ", " << vector[i]; \
+  stream << ")" << std::endl;
+
 
 
 int main(int argc, char *argv[]) {
@@ -138,22 +151,25 @@ int main(int argc, char *argv[]) {
   { // Kokkos scope
 
 
-    /**********************************************************************************/
-    /************************************** SETUP *************************************/
-    /**********************************************************************************/
+    ////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////// SETUP //////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
 
 
     // Setup output stream, MPI, and grab info
-    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Teuchos::FancyOStream& out = *fancy;
-    out.setOutputToRootOnly(0); // use out on rank 0
+    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+    out.setOutputToRootOnly(0);
+
+    //Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    //Teuchos::FancyOStream& out = *fancy;
+    //out.setOutputToRootOnly(0); // use out on rank 0
 
     Teuchos::RCP<Teuchos::FancyOStream> fancydebug = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::FancyOStream& debug = *fancydebug; // use on all ranks
 
     // TODO: comb back through everything and make sure I'm using MPI comms properly when necessary
     Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
     const int numRanks = comm->getSize();
     const int myRank = comm->getRank();
@@ -188,7 +204,7 @@ int main(int argc, char *argv[]) {
     std::string coarseAmgXmlFile      = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,      "Read parameters for AMG as coarse level solve from this xml file.");
     std::string coarseSmootherXMLFile = "";                  clp.setOption("coarseSmootherXML",     &coarseSmootherXMLFile, "File containing the parameters to use with the coarse level smoother.");
     int  cacheSize = 0;                                      clp.setOption("cachesize",               &cacheSize,           "cache size (in KB)"); // what does this do?
-    std::string cycleType = "V";                             clp.setOption("cycleType", &cycleType, "{Multigrid cycle type. Possible values: V, W.");
+    std::string cycleType = "V";                             clp.setOption("cycleType", &cycleType, "Multigrid cycle type. Possible values: V, W.");
 #ifdef HAVE_MUELU_TPETRA
     std::string equilibrate = "no" ;                         clp.setOption("equilibrate",           &equilibrate,           "equilibrate the system (no | diag | 1-norm)");
 #endif
@@ -233,11 +249,11 @@ int main(int argc, char *argv[]) {
       out << "Using default solver values ..." << std::endl;
     }
 
-    /**********************************************************************************/
-    /******************************* MESH AND WORKSETS ********************************/
-    /**********************************************************************************/
 
-    // TODO: due to #8475, we may need to create two meshes while we explore ways to correct it
+    ////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////// MESH AND WORKSETS /////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+
 
     Teuchos::RCP<Teuchos::Time> meshTimer = Teuchos::TimeMonitor::getNewCounter("Step 1: Mesh generation");
     Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
@@ -250,37 +266,48 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
     Teuchos::RCP<Teuchos::ParameterList> mesh_pl = Teuchos::rcp(new Teuchos::ParameterList);
 
+    // TODO: due to #8475, we have this. we will clean up Panzer and this code once we verify
+    // the functionality of the full HHG scheme obtained by using Percept
+    Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory_percept;
+    Teuchos::RCP<Teuchos::ParameterList> mesh_pl_percept = Teuchos::rcp(new Teuchos::ParameterList);
 
-    if(exodusFileName.length())
+    bool use_exodus_mesh = exodusFileName.length() > 0;
+    bool use_pamgen_mesh = !use_exodus_mesh;
+    bool use_percept = mesh_refinements > 0;
+
+    if(use_exodus_mesh)
     {
       // set the filename and type
       mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory);
-      mesh_pl->set("File Name",exodusFileName);
-      mesh_pl->set("File Type","Exodus");
-
-      if(mesh_refinements>0)
-      {
-        mesh_pl->set("Levels of Uniform Refinement",mesh_refinements); // this multiplies the number of elements by 2^(dimension*level)
-        mesh_pl->set("Keep Percept Data",true); // this is necessary to gather mesh hierarchy information
-        mesh_pl->set("Keep Percept Parent Elements",!delete_parent_elements); // this is necessary to gather mesh hierarchy information
-      }
+      mesh_pl->set("File Name", exodusFileName);
+      mesh_pl->set("File Type", "Exodus");
     }
-    else if(pamgenFileName.length())
+    else if(use_pamgen_mesh)
     {
       // set the filename and type
       mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory);
-      mesh_pl->set("File Name",pamgenFileName);
-      mesh_pl->set("File Type","Pamgen");
+      mesh_pl->set("File Name", pamgenFileName);
+      mesh_pl->set("File Type", "Pamgen");
 
-      if(mesh_refinements>0)
+      if(use_percept)
       {
-        mesh_pl->set("Levels of Uniform Refinement",mesh_refinements); // this multiplies the number of elements by 2^(dimension*level)
-        mesh_pl->set("Keep Percept Data",true); // this is necessary to gather mesh hierarchy information
-        mesh_pl->set("Keep Percept Parent Elements",!delete_parent_elements); // this is necessary to gather mesh hierarchy information
+        mesh_pl->set("Levels of Uniform Refinement", mesh_refinements); // this multiplies the number of elements by 2^(dimension*level)
+
+        mesh_factory_percept = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory);
+        mesh_pl_percept->set("File Name", pamgenFileName);
+        mesh_pl_percept->set("File Type", "Pamgen");
+        mesh_pl_percept->set("Levels of Uniform Refinement", mesh_refinements); // this multiplies the number of elements by 2^(dimension*level)
+        mesh_pl_percept->set("Keep Percept Data", true); // this is necessary to gather mesh hierarchy information
+        mesh_pl_percept->set("Keep Percept Parent Elements", !delete_parent_elements); // this is necessary to gather mesh hierarchy information
       }
     }
     else
       throw std::runtime_error("no mesh file name found!");
+    
+
+    mesh_factory_percept->setParameterList(mesh_pl_percept);
+    Teuchos::RCP<panzer_stk::STK_Interface> parent_data_mesh;
+    parent_data_mesh = mesh_factory_percept->buildMesh(MPI_COMM_WORLD);
 
     // set the parameters
     mesh_factory->setParameterList(mesh_pl);
@@ -300,6 +327,12 @@ int main(int argc, char *argv[]) {
     mesh->getElementBlockNames(eBlocks);
     std::vector<bool> unstructured_eBlocks(eBlocks.size(), false);
     // TODO: set unstructured blocks based on some sort of input information; for example, using the Exodus ex_get_var* functions
+
+    // grab the number and name of nodesets
+    std::vector<std::string> nodesets;
+    mesh->getNodesetNames(nodesets);
+
+    // TODO: Dirichlet boundaries on top and bottom of cylinder
 
     // grab the number and names of sidesets
     std::vector<std::string> sidesets;
@@ -335,10 +368,10 @@ int main(int argc, char *argv[]) {
           std::string dof_name = "TEMPERATURE";
           std::string strategy = "Constant";
           double value = 0.0;
-	        Teuchos::ParameterList p; // this is how the official example does it, so I'll leave it alone for now
-          p.set("Value",value);
+	  Teuchos::ParameterList pbc; // this is how the official example does it, so I'll leave it alone for now
+          pbc.set("Value",value);
           panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
-                        strategy, p);
+                        strategy, pbc);
           bcs.push_back(bc);
         }
         const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology(eBlocks[i]));
@@ -386,9 +419,7 @@ int main(int argc, char *argv[]) {
     }
     mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD); // this is where the mesh refinements are applied
 
-    unsigned int numDimensions = mesh->getDimension();
-    if(print_debug_info)
-      out << "Using dimension = " << numDimensions << std::endl;
+    unsigned int num_dimensions = mesh->getDimension();
 
     // build DOF Manager and linear object factory
     /////////////////////////////////////////////////////////////
@@ -417,9 +448,10 @@ int main(int argc, char *argv[]) {
     wkstContainer->setGlobalIndexer(dofManager);
 
 
-    /**********************************************************************************/
-    /********************************** CONSTRUCT REGIONS *****************************/
-    /**********************************************************************************/
+    ////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////// CONSTRUCT REGIONS //////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+
 
     // The code in this section assumes that a region hierarchy can be established with Percept. 
     // In the case where a region hierarchy is constructed from an exodus data input, for example, 
@@ -433,127 +465,297 @@ int main(int argc, char *argv[]) {
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 3 - Setup Region Information")));
 
-    unsigned int children_per_element = 1 << (numDimensions*mesh_refinements);
+    Teuchos::RCP<stk::mesh::BulkData> bulk_data = mesh->getBulkData();
+    Teuchos::RCP<stk::mesh::MetaData> meta_data = mesh->getMetaData();
+
+    std::vector<stk::mesh::Entity> nodes;
+    bulk_data->get_entities(mesh->getNodeRank(),meta_data->locally_owned_part(),nodes);
+    std::vector<stk::mesh::Entity> cells;
+    bulk_data->get_entities(mesh->getElementRank(),meta_data->locally_owned_part(),cells);
+
+    const unsigned int region_cells_per_dim = (1 << mesh_refinements);
+    const unsigned int region_nodes_per_dim = region_cells_per_dim + 1;
+    const unsigned int region_nodes_per_proc = region_nodes_per_dim*region_nodes_per_dim*region_nodes_per_dim;
+
+    // Do a little bit of output here, regardless of verbosity
+    out << "Driver parameters: " << std::endl;
+    out << "          Dimension = " << num_dimensions << std::endl;
+    out << "  Refinement Levels = " << mesh_refinements << std::endl;
+    out << "   Region cells/dim = " << region_cells_per_dim << std::endl;
+    out << "   Region nodes/dim = " << region_nodes_per_dim << std::endl;
+    debug << "       Rank " << myRank << " cells = " << cells.size() << std::endl;
+    debug << "       Rank " << myRank << " nodes = " << nodes.size() << std::endl;
+    out << std::endl;
+
+    comm->barrier();
+
+    const unsigned int children_per_element = 1 << (num_dimensions*mesh_refinements);
     if(print_debug_info)
       out << "Number of mesh children = " << children_per_element << std::endl;
 
     // initialize data here that we will use for the region MG solver
-    std::vector<GO> child_element_gids; // these don't always start at 0, and changes I'm making to Panzer keep changing this, so I'll store them for now
-    std::vector<GO> child_element_region_gids;
+    std::vector<GO> local_child_element_gids; // these don't always start at 0, and changes I'm making to Panzer keep changing this, so I'll store them for now
+    std::vector<GO> local_child_element_region_gids;
+    std::vector<GO> local_element_gids;
+    Array<GO> x_coords(region_nodes_per_proc, 0);
+    Array<GO> y_coords(region_nodes_per_proc, 0);
+    Array<GO> z_coords(region_nodes_per_proc, 0);
     Array<GO>  quasiRegionGIDs;
-    // do not run region MG if we delete parent elements or if we do not refine the mesh regularly
-    if(mesh_refinements>0 && !delete_parent_elements)
+    Array<GO>  quasiRegionCoordGIDs;
+
+    quasiRegionGIDs.resize(region_nodes_per_proc);
+
+    // if we use Percept, this is the strategy to follow.
+    // this may be turned into its own function later
+    if(use_percept)
     {
       // get the Percept mesh from Panzer
-      Teuchos::RCP<percept::PerceptMesh> refinedMesh = mesh->getRefinedMesh();
+      Teuchos::RCP<percept::PerceptMesh> percept_mesh = parent_data_mesh->getRefinedMesh();
       if(print_percept_mesh)
-        refinedMesh->print_info(out,"",1,true);
+        percept_mesh->print_info(out,"",1,true);
 
       // ids are linear within stk, but we need an offset because the original mesh info comes first
-      size_t node_id_start = 0;
-      {
-        const stk::mesh::BucketVector & local_buckets = refinedMesh->get_bulk_data()->get_buckets(stk::topology::ELEM_RANK,refinedMesh->get_fem_meta_data()->locally_owned_part());
-        //const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->node_rank());
-        stk::mesh::Bucket & bucket = **local_buckets.begin() ;
-        node_id_start = refinedMesh->id(bucket[0]);
-        if(print_debug_info)
-          debug << "Starting node id = " << node_id_start << std::endl;
-      }
-
-      size_t elem_id_start = 0;
-      {
-        const stk::mesh::BucketVector & local_buckets = refinedMesh->get_bulk_data()->get_buckets(stk::topology::ELEM_RANK,refinedMesh->get_fem_meta_data()->locally_owned_part());
-        //const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->element_rank());
-        stk::mesh::Bucket & bucket = **local_buckets.begin() ;
-        elem_id_start = refinedMesh->id(bucket[0]);
-        if(print_debug_info)
-          debug << "Starting element id = " << elem_id_start << std::endl;
-      }
+//      size_t node_id_start = 0;
+//      {
+//        const stk::mesh::BucketVector & local_buckets = percept_mesh->get_bulk_data()->get_buckets(stk::topology::ELEM_RANK,percept_mesh->get_fem_meta_data()->locally_owned_part());
+//        //const stk::mesh::BucketVector & buckets = percept_mesh->get_bulk_data()->buckets(percept_mesh->node_rank());
+//        stk::mesh::Bucket & bucket = **local_buckets.begin() ;
+//        node_id_start = percept_mesh->id(bucket[0]);
+//        if(print_debug_info)
+//          debug << "Starting node id = " << node_id_start << std::endl;
+//      }
+//
+//      size_t elem_id_start = 0;
+//      {
+//        const stk::mesh::BucketVector & local_buckets = percept_mesh->get_bulk_data()->get_buckets(stk::topology::ELEM_RANK,percept_mesh->get_fem_meta_data()->locally_owned_part());
+//        //const stk::mesh::BucketVector & buckets = percept_mesh->get_bulk_data()->buckets(percept_mesh->element_rank());
+//        stk::mesh::Bucket & bucket = **local_buckets.begin() ;
+//        elem_id_start = percept_mesh->id(bucket[0]);
+//        if(print_debug_info)
+//          debug << "Starting element id = " << elem_id_start << std::endl;
+//      }
       //panzer_stk::workset_utils::getIdsAndVertices
 
+
+      // grab the region information from the mesh that keeps parent elements
       {
-        const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->element_rank());
+        // count parents and children
         int npar=0;
         int nchild=0;
-        for (stk::mesh::BucketVector::const_iterator k = buckets.begin(); k != buckets.end(); ++k)
+
+        const stk::mesh::BucketVector & local_buckets = percept_mesh->get_bulk_data()->get_buckets(stk::topology::ELEM_RANK,percept_mesh->get_fem_meta_data()->locally_owned_part());
+        for (stk::mesh::BucketVector::const_iterator k = local_buckets.begin(); k != local_buckets.end(); ++k)
         {
-          stk::mesh::Bucket & bucket = **k ;
+          const stk::mesh::Bucket & bucket = **k ;
           if(print_debug_info)
             debug << "New bucket" << std::endl;
 
-          const unsigned num_elements_in_bucket = bucket.size();
-          for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+          const unsigned int num_elements_in_bucket = bucket.size();
+          for (unsigned int iElement = 0; iElement < num_elements_in_bucket; iElement++)
           {
-            stk::mesh::Entity element = bucket[iElement];
-            if (!refinedMesh->isParentElement(element, false))
+            const stk::mesh::Entity element = bucket[iElement];
+            if (!percept_mesh->isParentElement(element, false))
             {
               ++nchild;
 
               // this is the important part here. take the id of the element and the id of the element's root
-              child_element_gids.push_back(refinedMesh->id(element));
-              child_element_region_gids.push_back(refinedMesh->id(refinedMesh->rootOfTree(element)));
+              local_child_element_gids.push_back(percept_mesh->id(element));
+              local_child_element_region_gids.push_back(percept_mesh->id(percept_mesh->rootOfTree(element)));
 
               if(print_debug_info)
-                debug << "Stk Element = " << element << std::endl;
+                debug << "Percept Element = " << percept_mesh->id(element) << std::endl;
 
-              percept::MyPairIterRelation elem_nodes ( *refinedMesh, element,  stk::topology::NODE_RANK);
+              const percept::MyPairIterRelation elem_nodes ( *percept_mesh, element,  stk::topology::NODE_RANK);
 
-              for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
+              for (unsigned int i_node = 0; i_node < elem_nodes.size(); i_node++)
               {
-                stk::mesh::Entity node = elem_nodes[i_node].entity();
+                const stk::mesh::Entity node = elem_nodes[i_node].entity();
+                //local_node_gids.push_back(percept_mesh->id(node));
+
                 if(print_debug_info)
-                  debug << "Stk Node = " << node << std::endl;
-
-
-
+                  debug << "Stk Node = " << percept_mesh->id(node) << std::endl;
               }
             }
             else
             {
               if(print_debug_info)
-                debug << "parent= " << refinedMesh->id(element) << std::endl;
+                debug << "p = " << myRank << ", parent = " << percept_mesh->id(element) << std::endl;
+            }
+          }
+        }
+
+        if(print_debug_info)
+        {
+          for(unsigned int i=0; i<local_child_element_gids.size(); ++i)
+          {
+            out << "child= " << local_child_element_gids[i] << " parent= " << local_child_element_region_gids[i] << std::endl;
+          }
+        }
+      }
+
+      // however, the mesh that keeps parent elements does not assemble finite
+      // element data properly; therefore, we must now convert from element IDs
+      // on the mesh with parent elements to element IDs on the mesh without
+      // parent elements.
+      {
+        const stk::mesh::BucketVector & local_buckets = mesh->getBulkData()->get_buckets(stk::topology::ELEM_RANK,mesh->getMetaData()->locally_owned_part());
+        for (stk::mesh::BucketVector::const_iterator k = local_buckets.begin(); k != local_buckets.end(); ++k)
+        {
+          const stk::mesh::Bucket & bucket = **k;
+
+          const unsigned int num_elements_in_bucket = bucket.size();
+          for (unsigned int iElement = 0; iElement < num_elements_in_bucket; iElement++)
+          {
+            const stk::mesh::Entity element = bucket[iElement];
+            local_element_gids.push_back(mesh->getBulkData()->identifier(element));
+          }
+        }
+      }
+
+      // grab the Percept element renumbering
+      sleep(myRank);
+      const std::vector<unsigned int> percept_lexicographic_elements = renumberPerceptCellsToLexicographic(mesh_refinements);
+      DUMPSTDVECTOR(percept_lexicographic_elements, debug);
+      DUMPSTDVECTOR(local_child_element_gids, debug);
+      DUMPSTDVECTOR(local_element_gids, debug);
+      comm->barrier();
+
+      // I think this is no longer necessary. Since elements are locally ordered,
+      // percept_lexicographic_elements is exactly the local indexing we need.
+      // // apply the renumbering
+      //std::vector<unsigned int> renumbered_local_element_gids;
+      //for(unsigned int i=0; i<percept_lexicographic_elements.size(); ++i)
+      //  renumbered_local_element_gids.push_back(local_element_gids[percept_lexicographic_elements[i]]);
+      // // make sure we have the correct number of elements on this rank
+      //TEUCHOS_ASSERT(renumbered_local_element_gids.size() == children_per_element);
+
+      // once we have the elements in lexicographic order, we have to loop through 
+      // one last time and grab the vertices in lexicographic order too
+      // warning: this is not very performative as far as access patterns, etc go
+      // I'll revisit performance once it's working. in principle, this isn't a
+      // huge computational sink since we're likely not making regions too huge...
+      // we'll see what the timers say
+      {
+        const stk::mesh::FieldBase *coordinatesField = mesh->getMetaData()->get_field(stk::topology::NODE_RANK, "coordinates");
+        const stk::mesh::BucketVector & local_buckets = mesh->getBulkData()->get_buckets(stk::topology::ELEM_RANK,mesh->getMetaData()->locally_owned_part());
+        for (stk::mesh::BucketVector::const_iterator iBucket = local_buckets.begin(); iBucket != local_buckets.end(); ++iBucket)
+        {
+          stk::mesh::Bucket & bucket = **iBucket;
+
+          const unsigned int num_elements_in_bucket = bucket.size();
+          debug << "bucket size = " << num_elements_in_bucket << std::endl;
+
+          for (unsigned int k = 0; k < region_cells_per_dim; k++) // z direction
+          {
+            for (unsigned int j = 0; j < region_cells_per_dim; j++) // y direction
+            {
+              for (unsigned int i = 0; i < region_cells_per_dim; i++) // x direction
+              {
+                const unsigned int iElement = percept_lexicographic_elements[region_cells_per_dim*region_cells_per_dim*k + region_cells_per_dim*j + i];
+                const stk::mesh::Entity element = bucket[iElement];
+
+                // GH: commenting for now... I don't think I need this
+                // const unsigned int size = mesh->getBulkData()->num_connectivity(element, stk::topology::NODE_RANK);
+
+                // these are fine... this never has over 8 nodes per element
+                // this is what Percept::MyPairIterRelation does under the hood. I'm stealing it since this mesh doesn't have access to Percept
+                const stk::mesh::Entity *nodes = mesh->getBulkData()->begin(element, stk::topology::NODE_RANK);
+                const stk::mesh::ConnectivityOrdinal *ordinals = mesh->getBulkData()->begin_ordinals(element, stk::topology::NODE_RANK);
+
+                double *nodeCoords[8];
+                for (unsigned int i=0; i<8; ++i)
+                  nodeCoords[i] = static_cast<double *>(stk::mesh::field_data(*coordinatesField, nodes[i]));
+
+                // subtracting 1 everywhere since STK numbering starts at 1
+                quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = mesh->getBulkData()->identifier(nodes[0]) - 1;
+                x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[0][0];
+                y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[0][1];
+                z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[0][2];
+
+                // if we're on the +z side of a region
+                if(k==region_cells_per_dim-1)
+                {
+                  quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*(k+1) + region_nodes_per_dim*j + i] = mesh->getBulkData()->identifier(nodes[4]) - 1;
+                  x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[4][0];
+                  y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[4][1];
+                  z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[4][2];
+                  if(j==region_cells_per_dim-1)
+                  {
+                    quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*(k+1) + region_nodes_per_dim*(j+1) + i] = mesh->getBulkData()->identifier(nodes[6]) - 1;
+                    x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[6][0];
+                    y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[6][1];
+                    z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[6][2];
+                    if(i==region_cells_per_dim-1)
+                    {
+                      quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*(k+1) + region_nodes_per_dim*(j+1) + i + 1] = mesh->getBulkData()->identifier(nodes[7]) - 1;
+                      x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[7][0];
+                      y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[7][1];
+                      z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[7][2];
+                    }
+                  }
+                  if(i==region_cells_per_dim-1)
+                  {
+                    quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*(k+1) + region_nodes_per_dim*j + i + 1] = mesh->getBulkData()->identifier(nodes[5]) - 1;
+                    x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[5][0];
+                    y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[5][1];
+                    z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[5][2];
+                  }
+                }
+                // if we're on the +y side of a region
+                if(j==region_cells_per_dim-1)
+                {
+                  quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*(j+1) + i] = mesh->getBulkData()->identifier(nodes[3]) - 1;
+                  x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[3][0];
+                  y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[3][1];
+                  z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[3][2];
+                  if(i==region_cells_per_dim-1)
+                  {
+                    quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*(j+1) + i + 1] = mesh->getBulkData()->identifier(nodes[2]) - 1;
+                    x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[2][0];
+                    y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[2][1];
+                    z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[2][2];
+                  }
+                }
+                // if we're on the +x side of a region
+                if(i==region_cells_per_dim-1)
+                {
+                  quasiRegionGIDs[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i + 1] = mesh->getBulkData()->identifier(nodes[1]) - 1;
+                  x_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[1][0];
+                  y_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[1][1];
+                  z_coords[region_nodes_per_dim*region_nodes_per_dim*k + region_nodes_per_dim*j + i] = nodeCoords[1][2];
+                }
+              }
             }
           }
         }
       }
-    }
 
-    // Probably need to map indices of elements from the Percept indices back to the Panzer indices
+      debug << "quasiRegionGIDs = " << quasiRegionGIDs << std::endl;
 
 
-    std::vector<stk::mesh::Entity> elements;
-    Kokkos::DynRankView<double,PHX::Device> vertices;
-    std::vector<std::size_t> localIds;
+    } // if use percept
 
-    panzer_stk::workset_utils::getIdsAndVertices(*mesh,eBlocks[0],localIds,vertices);
-    //mesh->getElementVertices(elements,0,vertices);
-
-    if(dump_element_vertices)
     {
-      for(unsigned int ielem=0; ielem<vertices.extent(0); ++ielem)
-        for(unsigned int ivert=0; ivert<vertices.extent(1); ++ivert)
-        {
-          out << "element " << ielem << " vertex " << ivert << " = (" << vertices(ielem,ivert,0);
-          for(unsigned int idim=1; idim<vertices.extent(2); ++idim) // fenceposting the output
-            out << ", " << vertices(ielem,ivert,idim);
-          out << ")" << std::endl;
-        }
-    }
+      std::vector<stk::mesh::Entity> elements;
+      Kokkos::DynRankView<double,PHX::Device> vertices;
+      std::vector<std::size_t> localIds;
 
+      panzer_stk::workset_utils::getIdsAndVertices(*mesh,eBlocks[0],localIds,vertices); // TODO: in Matthias' case, this is likely eBlock[myRank]
 
-
-    if(print_debug_info)
-    {
-      for(unsigned int i=0; i<child_element_gids.size(); ++i)
+      if(dump_element_vertices)
       {
-        out << "child= " << child_element_gids[i] << " parent= " << child_element_region_gids[i] << std::endl;
+        sleep(myRank);
+        for(unsigned int ielem=0; ielem<vertices.extent(0); ++ielem)
+          for(unsigned int ivert=0; ivert<vertices.extent(1); ++ivert)
+          {
+            out << "rank p=" << myRank << " element=" << ielem << " vertex=" << ivert << "   (" << vertices(ielem,ivert,0);
+            for(unsigned int idim=1; idim<vertices.extent(2); ++idim) // fenceposting the output
+              out << ", " << vertices(ielem,ivert,idim);
+            out << ")" << std::endl;
+          }
+        return 0;
       }
     }
-
-    if(myRank == 0)
-      perceptrenumbertest(mesh_refinements);
-
-    // next we need to get the LIDs
 
     // Setup response library for checking the error in this manufactured solution
     ////////////////////////////////////////////////////////////////////////
@@ -563,7 +765,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
     {
-      const int integration_order = 10;
+      // must set a higher integration order to avoid false superconvergence
+      const int integration_order = 5;
 
       panzer::FunctionalResponse_Builder<int,int> builder;
       builder.comm = MPI_COMM_WORLD;
@@ -574,14 +777,12 @@ int main(int argc, char *argv[]) {
       errorResponseLibrary->addResponse("L2 Error",eBlocks,builder);
 
       // TODO: uncomment the H1 errors once things look correct in the L2 norm
-      /*
-      builder.comm = MPI_COMM_WORLD;
-      builder.cubatureDegree = integration_order;
-      builder.requiresCellIntegral = true;
-      builder.quadPointField = "TEMPERATURE_H1_ERROR";
-
-      errorResponseLibrary->addResponse("H1 Error",eBlocks,builder);
-       */
+//      builder.comm = MPI_COMM_WORLD;
+//      builder.cubatureDegree = integration_order;
+//      builder.requiresCellIntegral = true;
+//      builder.quadPointField = "TEMPERATURE_H1_ERROR";
+//
+//      errorResponseLibrary->addResponse("H1 Error",eBlocks,builder);
     }
 
 
@@ -603,11 +804,9 @@ int main(int argc, char *argv[]) {
       closure_models.sublist("solid").sublist("TEMPERATURE_L2_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
 
       // TODO: uncomment the H1 errors once things look correct in the L2 norm
-      /*
-      closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Type","H1 ERROR_CALC");
-      closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field A","TEMPERATURE");
-      closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
-       */
+//      closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Type","H1 ERROR_CALC");
+//      closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field A","TEMPERATURE");
+//      closure_models.sublist("solid").sublist("TEMPERATURE_H1_ERROR").set<std::string>("Field B","TEMPERATURE_EXACT");
       closure_models.sublist("solid").sublist("TEMPERATURE_EXACT").set<std::string>("Type","TEMPERATURE_EXACT");
     }
 
@@ -666,10 +865,10 @@ int main(int argc, char *argv[]) {
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
 
+    ////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////// LINEAR SOLVER ////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
 
-    /**********************************************************************************/
-    /************************************ LINEAR SOLVER *******************************/
-    /**********************************************************************************/
 
     // TODO: this goes away once we finish getting the runtime errors in the region driver section sorted
     tm = Teuchos::null;
@@ -677,7 +876,6 @@ int main(int argc, char *argv[]) {
 
     // convert generic linear object container to tpetra container
     Teuchos::RCP<panzer::TpetraLinearObjContainer<ST,LO,GO> > tp_container = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<ST,LO,GO> >(container);
-
     Teuchos::RCP<MueLu::TpetraOperator<ST,LO,GO,NT> > mueLuPreconditioner;
 
     if(xmlFileName.size())
@@ -724,9 +922,9 @@ int main(int argc, char *argv[]) {
       out << "Solution norm: " << tp_container->get_x()->norm2() << std::endl;
     }
 
-    /**********************************************************************************/
-    /************************************ REGION DRIVER *******************************/
-    /**********************************************************************************/
+    ////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////// REGION DRIVER ////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
     {
       using Teuchos::RCP;
       using Teuchos::rcp;
@@ -734,7 +932,7 @@ int main(int argc, char *argv[]) {
       using Teuchos::TimeMonitor;
       using Teuchos::ParameterList;
 
-      RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm(); // TODO: the use of Teuchos::Comm and Teuchos::MpiComm is conflicting, even though everything builds fine
+      using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
 
       // =========================================================================
       // Convenient definitions
@@ -743,7 +941,7 @@ int main(int argc, char *argv[]) {
       SC zero = STS::zero(), one = STS::one();
       using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
       using real_type = typename STS::coordinateType;
-      using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
+
 
       ParameterList paramList;
       //auto inst = xpetraParameters.GetInstantiation();
@@ -803,22 +1001,27 @@ int main(int argc, char *argv[]) {
       RCP<RealValuedMultiVector> coordinates;
 
       const int numDofsPerNode = 1;
-      Teuchos::Array<LO> lNodesPerDim(3); // TODO: this can't be removed so easily yet...
+      Teuchos::Array<LO> lNodesPerDim(3);
+      if(use_percept)
+      {
+        lNodesPerDim[0] = region_nodes_per_dim;
+        lNodesPerDim[1] = region_nodes_per_dim;
+        lNodesPerDim[2] = region_nodes_per_dim;
+      }
 
-      // Create map and coordinates
-      // TODO: get a nodeMap and coordinates from Panzer
-      // if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
-      //  numDimensions = 3;
-      //  nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+      // Create map and coordinates from Panzer's dofManager
+      // TODO: get coordinates from Panzer
+      RCP<panzer::TpetraLinearObjFactory<panzer::Traits,ST,LO,GO> > tp_object_factory = rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,ST,LO,GO>(comm, dofManager));
+      nodeMap = Teuchos::rcp_dynamic_cast<Map>(tp_object_factory->getMap());
       //  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
       // }
       
       dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
-      //A = tp_container->get_A(); // TODO: convert this
+      A = Teuchos::rcp_dynamic_cast<Matrix>(tp_container->get_A());
       //nullspace = Pr->BuildNullspace(); // TODO: get a nullspace
 
-      X = VectorFactory::Build(dofMap);
-      B = VectorFactory::Build(dofMap);
+      X = Teuchos::rcp_dynamic_cast<Vector>(tp_container->get_x());
+      B = Teuchos::rcp_dynamic_cast<Vector>(tp_container->get_f());
 
       if(serialRandom) {
         //Build the seed on rank zero and broadcast it.
@@ -900,13 +1103,11 @@ int main(int argc, char *argv[]) {
       Array<int> sendPIDs;
       Array<LO>  rNodesPerDim(3);
       Array<LO>  compositeToRegionLIDs(nodeMap->getNodeNumElements()*numDofsPerNode);
-      Array<GO>  quasiRegionGIDs;
-      Array<GO>  quasiRegionCoordGIDs;
       Array<GO>  interfaceGIDs;
       Array<LO>  interfaceLIDsData;
 
       // TODO: finish generating the appropriate data that this function typically generates
-//      createRegionData(numDimensions, useUnstructured, numDofsPerNode,
+//      createRegionData(num_dimensions, useUnstructured, numDofsPerNode,
 //                       gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
 //                       maxRegPerGID, numLocalRegionNodes, boundaryConditions,
 //                       sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
@@ -927,7 +1128,7 @@ int main(int argc, char *argv[]) {
       // Now we can construct a list of GIDs that corresponds to rowMap
       Array<LO>  interfacesDimensions, interfacesLIDs;
       if(useUnstructured) {
-        findInterface(numDimensions, rNodesPerDim, boundaryConditions,
+        findInterface(num_dimensions, rNodesPerDim, boundaryConditions,
                       interfacesDimensions, interfacesLIDs);
 
         // std::cout << "p=" << myRank << " | numLocalRegionNodes=" << numLocalRegionNodes
@@ -1064,7 +1265,7 @@ int main(int argc, char *argv[]) {
       regionNullspace->replaceMap(revisedRowMap);
 
       // create region coordinates vector
-      regionCoordinates = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap, // TODO: this can't remain commented
+      regionCoordinates = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
                                                                                 coordinates->getNumVectors());
       regionCoordinates->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
       regionCoordinates->replaceMap(regCoordMap);
@@ -1098,7 +1299,7 @@ int main(int argc, char *argv[]) {
       // Insert region-specific data into parameter list
       const std::string userName = "user data";
       Teuchos::ParameterList& userParamList = mueluParams->sublist(userName);
-      userParamList.set<int>        ("int numDimensions", numDimensions);
+      userParamList.set<int>        ("int num_dimensions", num_dimensions);
       userParamList.set<Array<LO> > ("Array<LO> lNodesPerDim", regionNodesPerDim);
       userParamList.set<std::string>("string aggregationRegionType", aggregationRegionType);
       userParamList.set<Array<LO> > ("Array<LO> nodeOnInterface", interfaceParams->get<Array<LO> >("interfaces: interface nodes"));
@@ -1130,7 +1331,7 @@ int main(int argc, char *argv[]) {
 
 
       // Create multigrid hierarchy part 2
-      createRegionHierarchy(numDimensions,
+      createRegionHierarchy(num_dimensions,
                             regionNodesPerDim,
                             aggregationRegionType,
                             interfaceParams,
@@ -1339,12 +1540,12 @@ int main(int argc, char *argv[]) {
       TimeMonitor::clearCounters();
 
       return EXIT_SUCCESS;
-      /**/
+
     }
     
-    /**********************************************************************************/
-    /************************************ OUTPUT RESULTS ******************************/
-    /**********************************************************************************/
+    ////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////// OUTPUT RESULTS ///////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
 
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 6 - Output Data")));
@@ -1379,12 +1580,12 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Thyra::VectorBase<double> > l2_respVec = Thyra::createMember(l2_resp_func->getVectorSpace());
       l2_resp_func->setVector(l2_respVec);
 
-      /*
-      Teuchos::RCP<panzer::ResponseBase> h1_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
-      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
-      Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
-      h1_resp_func->setVector(h1_respVec);
-      */
+
+//      Teuchos::RCP<panzer::ResponseBase> h1_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
+//      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
+//      Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
+//      h1_resp_func->setVector(h1_respVec);
+
 
       errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
