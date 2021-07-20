@@ -722,14 +722,14 @@ evalModelImpl(
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
 
   //double t = inArgs.get_t();
-  Scalar a = this->a_;
+  //Scalar a = this->a_;
   Scalar f = this->f_;
   Scalar L = this->L_;
   if (this->acceptModelParams_) {
     const RCP<const VectorBase<Scalar> > p_in =
       inArgs.get_p(0).assert_not_null();
     Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
-    a = p_in_view[0];
+    //a = p_in_view[0];
     f = p_in_view[1];
     L = p_in_view[2];
   }
