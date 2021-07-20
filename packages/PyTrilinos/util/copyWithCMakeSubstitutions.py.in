@@ -94,8 +94,7 @@ def main():
         exit(-2)
 
     # Obtain the dictionary of CMake cache variables
-    makefileVariables   = MakefileVariables.processMakefile("Makefile")
-    cmakeBinaryDir      = makefileVariables["CMAKE_BINARY_DIR"]
+    cmakeBinaryDir      = "@CMAKE_BINARY_DIR@"
     # Remove quotes from cmakeBinaryDir.
     cmakeBinaryDir = cmakeBinaryDir.replace("\"", "").replace("'", "")
     cmakeCacheFile      = os.path.join(cmakeBinaryDir, "CMakeCache.txt")
