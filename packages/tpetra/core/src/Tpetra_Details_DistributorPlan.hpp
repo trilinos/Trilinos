@@ -108,6 +108,7 @@ public:
 
   Teuchos::RCP<DistributorPlan> getReversePlan() const;
 
+  Teuchos::RCP<const Teuchos::Comm<int>> getComm() const { return comm_; }
   size_t getNumReceives() const { return numReceives_; }
   size_t getNumSends() const { return numSendsToOtherProcs_; }
   bool hasSelfMessage() const { return sendMessageToSelf_; }
@@ -117,6 +118,7 @@ public:
   Teuchos::ArrayView<const int> getProcsTo() const { return procIdsToSendTo_; }
   Teuchos::ArrayView<const size_t> getLengthsFrom() const { return lengthsFrom_; }
   Teuchos::ArrayView<const size_t> getLengthsTo() const { return lengthsTo_; }
+  Teuchos::ArrayView<const size_t> getIndicesTo() const { return indicesTo_; }
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
 
   void createReversePlan() const;

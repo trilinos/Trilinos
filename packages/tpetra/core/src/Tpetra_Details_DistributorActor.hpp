@@ -195,7 +195,7 @@ DistributorActor::doPosts(const DistributorPlan& plan,
 
   // MPI tag for nonblocking receives and blocking sends in this
   // method.  Some processes might take the "fast" path
-  // (indicesTo_.empty()) and others might take the "slow" path for
+  // (getIndicesTo().is_null()) and others might take the "slow" path for
   // the same doPosts() call, so the path tag must be the same for
   // both.
   const int pathTag = 0;
@@ -300,7 +300,7 @@ DistributorActor::doPosts(const DistributorPlan& plan,
   size_t selfNum = 0;
   size_t selfIndex = 0;
 
-  if (plan.indicesTo_.empty()) {
+  if (plan.getIndicesTo().is_null()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_fast_);
@@ -398,7 +398,7 @@ DistributorActor::doPosts(const DistributorPlan& plan,
         size_t j = plan.startsTo_[p];
         for (size_t k = 0; k < plan.lengthsTo_[p]; ++k, ++j) {
           deep_copy_offset(sendArray, exports, sendArrayOffset,
-              plan.indicesTo_[j]*numPackets, numPackets);
+              plan.getIndicesTo()[j]*numPackets, numPackets);
           sendArrayOffset += numPackets;
         }
         ImpView tmpSend =
@@ -443,7 +443,7 @@ DistributorActor::doPosts(const DistributorPlan& plan,
     if (plan.sendMessageToSelf_) {
       for (size_t k = 0; k < plan.lengthsTo_[selfNum]; ++k) {
         deep_copy_offset(imports, exports, selfReceiveOffset,
-            plan.indicesTo_[selfIndex]*numPackets, numPackets);
+            plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
         ++selfIndex;
         selfReceiveOffset += numPackets;
       }
@@ -519,7 +519,7 @@ doPosts(const DistributorPlan& plan,
 
   // MPI tag for nonblocking receives and blocking sends in this
   // method.  Some processes might take the "fast" path
-  // (plan.indicesTo_.empty()) and others might take the "slow" path for
+  // (plan.getIndicesTo().is_null()) and others might take the "slow" path for
   // the same doPosts() call, so the path tag must be the same for
   // both.
   const int pathTag = 1;
@@ -632,7 +632,7 @@ doPosts(const DistributorPlan& plan,
 
   size_t selfNum = 0;
   size_t selfIndex = 0;
-  if (plan.indicesTo_.empty()) {
+  if (plan.getIndicesTo().is_null()) {
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_fast_);

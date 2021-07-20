@@ -1001,7 +1001,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! plan_.indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -1019,7 +1019,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! plan_.indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -1105,7 +1105,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! plan_.indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -1124,7 +1124,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! plan_.indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -1156,7 +1156,7 @@ namespace Tpetra {
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
-    const int myRank = plan_.comm_->getRank ();
+    const int myRank = plan_.getComm()->getRank ();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (importGIDs.size () != importProcIDs.size (),
@@ -1175,7 +1175,7 @@ namespace Tpetra {
     // Use a temporary Distributor to send the (importGIDs[i], myRank)
     // pairs to importProcIDs[i].
     //
-    Distributor tempPlan(plan_.comm_);
+    Distributor tempPlan(plan_.getComm());
     // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
     // signed, in order to forestall any possible causes for Bug 6069.
     const size_t numExportsAsSizeT =
@@ -1237,7 +1237,7 @@ namespace Tpetra {
   {
     using std::endl;
     const char errPrefix[] = "Tpetra::Distributor::createFromRecvs: ";
-    const int myRank = plan_.comm_->getRank();
+    const int myRank = plan_.getComm()->getRank();
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -1257,7 +1257,7 @@ namespace Tpetra {
       const int errProc =
         (remoteGIDs.size () != remoteProcIDs.size ()) ? myRank : -1;
       int maxErrProc = -1;
-      reduceAll(*plan_.comm_, REDUCE_MAX, errProc, outArg(maxErrProc));
+      reduceAll(*plan_.getComm(), REDUCE_MAX, errProc, outArg(maxErrProc));
       TEUCHOS_TEST_FOR_EXCEPTION
         (maxErrProc != -1, std::runtime_error, errPrefix << "Lists "
          "of remote IDs and remote process IDs must have the same "

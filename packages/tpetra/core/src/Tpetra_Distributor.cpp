@@ -155,7 +155,7 @@ namespace Tpetra {
   createPrefix(const char methodName[]) const
   {
     return Details::createPrefix(
-      plan_.comm_.getRawPtr(), "Distributor", methodName);
+      plan_.getComm().getRawPtr(), "Distributor", methodName);
   }
 
   void
@@ -317,7 +317,7 @@ namespace Tpetra {
   void
   Distributor::createReverseDistributor() const
   {
-    reverseDistributor_ = Teuchos::rcp(new Distributor(plan_.comm_));
+    reverseDistributor_ = Teuchos::rcp(new Distributor(plan_.getComm()));
     reverseDistributor_->plan_ = *plan_.getReversePlan();
     reverseDistributor_->verbose_ = verbose_;
 
@@ -390,7 +390,7 @@ namespace Tpetra {
     using std::endl;
 
     // This preserves current behavior of Distributor.
-    if (vl <= Teuchos::VERB_LOW || plan_.comm_.is_null ()) {
+    if (vl <= Teuchos::VERB_LOW || plan_.getComm().is_null ()) {
       return std::string ();
     }
 
@@ -398,8 +398,8 @@ namespace Tpetra {
     auto outp = Teuchos::getFancyOStream (outStringP); // returns RCP
     Teuchos::FancyOStream& out = *outp;
 
-    const int myRank = plan_.comm_->getRank ();
-    const int numProcs = plan_.comm_->getSize ();
+    const int myRank = plan_.getComm()->getRank ();
+    const int numProcs = plan_.getComm()->getSize ();
     out << "Process " << myRank << " of " << numProcs << ":" << endl;
     Teuchos::OSTab tab1 (out);
 
@@ -412,7 +412,7 @@ namespace Tpetra {
     }
     if (vl == VERB_EXTREME) {
       out << "startsTo: " << toString (plan_.startsTo_) << endl;
-      out << "indicesTo: " << toString (plan_.indicesTo_) << endl;
+      out << "indicesTo: " << toString (plan_.getIndicesTo()) << endl;
     }
     if (vl == VERB_HIGH || vl == VERB_EXTREME) {
       out << "numReceives: " << getNumReceives () << endl;
@@ -449,11 +449,11 @@ namespace Tpetra {
     // operations with the other processes.  In that case, it is not
     // even legal to call this method.  The reasonable thing to do in
     // that case is nothing.
-    if (plan_.comm_.is_null ()) {
+    if (plan_.getComm().is_null ()) {
       return;
     }
-    const int myRank = plan_.comm_->getRank ();
-    const int numProcs = plan_.comm_->getSize ();
+    const int myRank = plan_.getComm()->getRank ();
+    const int numProcs = plan_.getComm()->getSize ();
 
     // Only Process 0 should touch the output stream, but this method
     // in general may need to do communication.  Thus, we may need to
@@ -480,7 +480,7 @@ namespace Tpetra {
       }
       out << "Number of processes: " << numProcs << endl
           << "How initialized: "
-          << Details::DistributorHowInitializedEnumToString (plan_.howInitialized_)
+          << Details::DistributorHowInitializedEnumToString (plan_.howInitialized())
           << endl;
       {
         out << "Parameters: " << endl;
@@ -498,7 +498,7 @@ namespace Tpetra {
     // This is collective over the Map's communicator.
     if (vl > VERB_LOW) {
       const std::string lclStr = this->localDescribeToString (vl);
-      Tpetra::Details::gathervPrint (out, lclStr, *plan_.comm_);
+      Tpetra::Details::gathervPrint (out, lclStr, *plan_.getComm());
     }
 
     out << "Reverse Distributor:";
