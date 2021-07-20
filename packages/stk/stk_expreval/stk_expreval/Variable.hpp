@@ -45,7 +45,7 @@
 #include <stdexcept>
 #include <cctype>
 #include <sstream>
-
+#include <memory>
 
 #include <stk_util/util/string_case_compare.hpp>
 
@@ -372,14 +372,14 @@ private:
  * @brief Class <b>VariableMap</b> implements a mapping from name to a pointer to
  * a <b>Variable</b> object.  The mapping is case insensitive.
  */
-class VariableMap : public std::map<std::string, Variable *, LessCase>
+class VariableMap : public std::map<std::string, std::shared_ptr<Variable>, LessCase>
 {
 public:
   /**
    * @brief Typedef <b>value_type</b> is the value_type of the
    * <b>std::map</b> subclass.  The mapping is case insensitive.
    */
-  typedef std::map<std::string, Variable *, LessCase >::value_type value_type;
+  typedef std::map<std::string, std::shared_ptr<Variable>, LessCase >::value_type value_type;
 
   /**
    * @brief Class <b>Resolver</b> is a base class for a variable name to value
@@ -419,17 +419,6 @@ public:
 
 private:
   /**
-   * @brief Member function <b>delete_variable</b> is a function which will delete
-   * the variable pointed to by <b>t</b>.
-   *
-   * @param t			a <b>value_type</b> reference to the variable to be
-   *				deleted.
-   */
-  static void delete_variable(value_type &t) {
-    delete t.second;
-  }
-
-  /**
    * @brief Class <b>DefaultResolver</b> implement a default resolver.
    */
   class DefaultResolver : public Resolver
@@ -459,15 +448,14 @@ public:
    *				resolver for this variable map.
    */
   VariableMap(Resolver &resolver = getDefaultResolver())
-    : std::map<std::string, Variable *, LessCase>(),
+    : std::map<std::string, std::shared_ptr<Variable>, LessCase>(),
       m_resolver(resolver)
   {}
 
   /**
-   * Destroys a <b>VariableMap</b> instance.  All variables are destroyed.
+   * Destroys a <b>VariableMap</b> instance. 
    */
   virtual ~VariableMap() {
-    std::for_each(begin(), end(), &delete_variable);
   }
 
   /**
@@ -478,12 +466,12 @@ public:
    *
    * @return			a <b>Variable</b> pointer to the new variable.
    */
-  Variable *operator[](const std::string &s) {
-    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable*)nullptr));
+  Variable* operator[](const std::string &s) {
+    std::pair<iterator,bool> i = insert(std::pair<const std::string, std::shared_ptr<Variable>>(s, std::shared_ptr<Variable>(nullptr)));
     if (i.second) {
-      (*i.first).second = new Variable(s);
+      (*i.first).second = std::make_shared<Variable>(s);
     }
-    return (*i.first).second;
+    return (*i.first).second.get();
   }
 
   /**

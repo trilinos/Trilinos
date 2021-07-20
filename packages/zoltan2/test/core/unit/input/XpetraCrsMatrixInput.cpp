@@ -112,8 +112,9 @@ int verifyInputAdapter(
 
   gfail = globalFail(*comm, fail);
 
-  const zgno_t *rowIds=NULL, *colIds=NULL;
-  const offset_t *offsets=NULL;
+  const zgno_t *rowIds=NULL;
+  ArrayRCP<const zgno_t> colIds;
+  ArrayRCP<const offset_t> offsets;
   size_t nrows=0;
 
   if (!gfail){
@@ -128,7 +129,7 @@ int verifyInputAdapter(
     gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
-      printMatrix<offset_t>(comm, nrows, rowIds, offsets, colIds);
+      printMatrix<offset_t>(comm, nrows, rowIds, offsets.getRawPtr(), colIds.getRawPtr());
     }
     else{
       if (!fail) fail = 10;

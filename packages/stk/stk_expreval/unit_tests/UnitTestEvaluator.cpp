@@ -38,6 +38,8 @@
 #include <iomanip>
 #include <cmath>
 
+#include <Kokkos_Core.hpp>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -47,6 +49,8 @@
 #include <stk_expreval/Evaluator.hpp>
 #include <stk_util/util/ThreadLocalData.hpp>
 
+using ExecutionSpace = Kokkos::Serial;
+
 class UnitTestEvaluator
 {
 public:
@@ -55,9 +59,6 @@ public:
 
 using namespace stk::expreval;
 
-//  expr_eval.bind("x", x);				\								x
-//      expr_eval.setValue("x", x);			\								x
-//      std::cout << std::setprecision(20) << x << "," << std::setprecision(20) << y << std::endl;		\	x
 namespace {
 
 TEST( UnitTestEvaluator, testEvaluator)
@@ -71,7 +72,263 @@ std::string generate_expression(std::string expression) {
   return std::string("by=") + expression + ";";
 }
 
-TEST( UnitTestEvaluator, testThreadedEvaluation)
+double
+kernel_evaluate(stk::expreval::Eval& inputEval) 
+{
+  double result;
+  Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecutionSpace>(0,1), KOKKOS_LAMBDA (const int& i, double& localResult) {
+    localResult = inputEval.evaluate();
+  }, result);
+
+  return result;
+}
+
+bool
+has_variable(const std::vector<std::string>& variableNames, const std::string& variableName) 
+{
+  return (std::find(variableNames.begin(), variableNames.end(), variableName) != variableNames.end());
+}
+
+TEST(UnitTestEvaluator, isConstantExpression_empty)
+{
+  stk::expreval::Eval eval;
+  eval.parse();
+  EXPECT_EQ(eval.is_constant_expression(), true);
+}
+
+TEST(UnitTestEvaluator, isConstantExpression_constant)
+{
+  stk::expreval::Eval eval("2");
+  eval.parse();
+  EXPECT_EQ(eval.is_constant_expression(), true);
+}
+
+TEST(UnitTestEvaluator, isConstantExpression_variable)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  EXPECT_EQ(eval.is_constant_expression(), false);
+}
+
+TEST(UnitTestEvaluator, isVariable_no)
+{
+  stk::expreval::Eval eval;
+  eval.parse();
+  EXPECT_EQ(eval.is_variable("x"), false);
+}
+
+TEST(UnitTestEvaluator, isVariable_yes)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  EXPECT_EQ(eval.is_variable("x"), true);
+}
+
+TEST(UnitTestEvaluator, isVariable_twoVariables_yes)
+{
+  stk::expreval::Eval eval("x + y");
+  eval.parse();
+  EXPECT_EQ(eval.is_variable("x"), true);
+  EXPECT_EQ(eval.is_variable("y"), true);
+}
+
+TEST(UnitTestEvaluator, isVariable_twoVariables_no)
+{
+  stk::expreval::Eval eval("x + y");
+  eval.parse();
+  EXPECT_EQ(eval.is_variable("x"), true);
+  EXPECT_EQ(eval.is_variable("z"), false);
+}
+
+TEST(UnitTestEvaluator, getAllVariables_noVariables)
+{
+  stk::expreval::Eval eval;
+  eval.parse();
+  EXPECT_EQ(eval.get_variable_names().size(), 0u);
+}
+
+TEST(UnitTestEvaluator, getAllVariables_noAssign)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_variable_names();
+  EXPECT_EQ(variableNames.size(), 1u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+}
+
+TEST(UnitTestEvaluator, getAllVariables_constant)
+{
+  stk::expreval::Eval eval("x = 2");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_variable_names();
+  EXPECT_EQ(variableNames.size(), 1u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+}
+
+TEST(UnitTestEvaluator, getAllVariables_oneDependent)
+{
+  stk::expreval::Eval eval("x = sin(y)");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_variable_names();
+  EXPECT_EQ(variableNames.size(), 2u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+}
+
+TEST(UnitTestEvaluator, getAllVariables_constantAssign)
+{
+  stk::expreval::Eval eval("x = 2; y = x");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_variable_names();
+  EXPECT_EQ(variableNames.size(), 2u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+}
+
+TEST(UnitTestEvaluator, getAllVariables_twoIdenticalVariables)
+{
+  stk::expreval::Eval eval("x = y; z = y");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_variable_names();
+  EXPECT_EQ(variableNames.size(), 3u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_TRUE(has_variable(variableNames, "z"));
+}
+
+TEST(UnitTestEvaluator, getAllVariables_twoVariables)
+{
+  stk::expreval::Eval eval("y = x; w = z");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_variable_names();
+  EXPECT_EQ(variableNames.size(), 4u);
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(has_variable(variableNames, "w"));
+  EXPECT_TRUE(has_variable(variableNames, "z"));
+}
+
+TEST(UnitTestEvaluator, getDependentVariables_noVariables)
+{
+  stk::expreval::Eval eval;
+  eval.parse();
+  EXPECT_EQ(eval.get_dependent_variable_names().size(), 0u);
+}
+
+TEST(UnitTestEvaluator, getDependentVariables_noAssign)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  EXPECT_EQ(eval.get_dependent_variable_names().size(), 0u);
+}
+
+TEST(UnitTestEvaluator, getDependentVariables_constant)
+{
+  stk::expreval::Eval eval("x = 2");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_dependent_variable_names();
+  EXPECT_EQ(variableNames.size(), 1u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+}
+
+TEST(UnitTestEvaluator, getDependentVariables_oneDependent)
+{
+  stk::expreval::Eval eval("x = sin(y)");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_dependent_variable_names();
+  EXPECT_EQ(variableNames.size(), 1u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+}
+
+TEST(UnitTestEvaluator, getDependentVariables_constantAssign)
+{
+  stk::expreval::Eval eval("x = 2; y = x");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_dependent_variable_names();
+  EXPECT_EQ(variableNames.size(), 2u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+}
+
+TEST(UnitTestEvaluator, getDependentVariables_twoIdenticalVariables)
+{
+  stk::expreval::Eval eval("x = y; z = y");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_dependent_variable_names();
+  EXPECT_EQ(variableNames.size(), 2u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(has_variable(variableNames, "z"));
+}
+
+TEST(UnitTestEvaluator, getDependentVariables_twoVariables)
+{
+  stk::expreval::Eval eval("y = x; w = z");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_dependent_variable_names();
+  EXPECT_EQ(variableNames.size(), 2u);
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+  EXPECT_TRUE(has_variable(variableNames, "w"));
+}
+
+TEST(UnitTestEvaluator, getIndependentVariables_noVariables)
+{
+  stk::expreval::Eval eval;
+  eval.parse();
+  EXPECT_EQ(eval.get_independent_variable_names().size(), 0u);
+}
+
+TEST(UnitTestEvaluator, getIndependentVariables_noAssign)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_independent_variable_names();
+  EXPECT_EQ(variableNames.size(), 1u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+}
+
+TEST(UnitTestEvaluator, getIndependentVariables_constant)
+{
+  stk::expreval::Eval eval("x = 2");
+  eval.parse();
+  EXPECT_EQ(eval.get_independent_variable_names().size(), 0u);
+}
+
+TEST(UnitTestEvaluator, getIndependentVariables_oneDependent)
+{
+  stk::expreval::Eval eval("x = sin(y)");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_independent_variable_names();
+  EXPECT_EQ(variableNames.size(), 1u);
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+}
+
+TEST(UnitTestEvaluator, getIndependentVariables_constantAssign)
+{
+  stk::expreval::Eval eval("x = 2; y = x");
+  eval.parse();
+  EXPECT_EQ(eval.get_independent_variable_names().size(), 0u);
+}
+
+TEST(UnitTestEvaluator, getIndependentVariables_twoIdenticalVariables)
+{
+  stk::expreval::Eval eval("x = y; z = y");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_independent_variable_names();
+  EXPECT_EQ(variableNames.size(), 1u);
+  EXPECT_TRUE(has_variable(variableNames, "y"));
+}
+
+TEST(UnitTestEvaluator, getIndependentVariables_twoVariables)
+{
+  stk::expreval::Eval eval("y = x; w = z");
+  eval.parse();
+  std::vector<std::string> variableNames = eval.get_independent_variable_names();
+  EXPECT_EQ(variableNames.size(), 2u);
+  EXPECT_TRUE(has_variable(variableNames, "x"));
+  EXPECT_TRUE(has_variable(variableNames, "z"));
+}
+
+TEST(UnitTestEvaluator, testThreadedEvaluation)
 {
   // complicated expression that simplifies into 'x'
   std::string expression = " k = 7; h = -7; 1.0*x + 2.0 - (1.0/1.0) - 1.0*1.0 + 0.0*x + (x - x) + (k+h)";
@@ -98,7 +355,7 @@ TEST( UnitTestEvaluator, testEvaluateEmptyString)
     std::string emptyExpression = "";
     stk::expreval::Eval expr_eval(emptyExpression);
     expr_eval.parse();
-    double result = expr_eval.evaluate();
+    double result = kernel_evaluate(expr_eval);
     EXPECT_EQ(0.0, result);
 }
 
@@ -114,7 +371,7 @@ TEST( UnitTestEvaluator, testIndexing)
     stk::expreval::Eval expr_eval0(expr0);
     expr_eval0.parse();
     expr_eval0.bindVariable("y", *y, 3);
-    double result = expr_eval0.evaluate();
+    double result = kernel_evaluate(expr_eval0);
     EXPECT_EQ(6.6, result);
   }
 
@@ -126,7 +383,7 @@ TEST( UnitTestEvaluator, testIndexing)
     stk::expreval::Eval expr_eval1(expr1, stk::expreval::Variable::ONE_BASED_INDEX);
     expr_eval1.parse();
     expr_eval1.bindVariable("y", *y, 3);
-    double result = expr_eval1.evaluate();
+    double result = kernel_evaluate(expr_eval1);
     EXPECT_EQ(6.6, result);
   }
 
@@ -190,7 +447,7 @@ TEST( UnitTestEvaluator, testIndexing)
     stk::expreval::Eval expr_eval0(expr0);
     expr_eval0.parse();
     expr_eval0.bindVariable("y", *y, 3);
-    double result = expr_eval0.evaluate();
+    double result = kernel_evaluate(expr_eval0);
     EXPECT_EQ(6.6, result);
   }
 
@@ -206,7 +463,7 @@ TEST( UnitTestEvaluator, testIndexing)
 
     expr_eval0.bindVariable("y", *y, 3);
     expr_eval0.bindVariable("z", *z, 3);
-    double result = expr_eval0.evaluate();
+    double result = kernel_evaluate(expr_eval0);
     EXPECT_EQ(6.6, result);
   }
 
@@ -288,7 +545,9 @@ test_one_value(const char *expression, double gold_value)
   std::cout << "Evaluate " << expression << " ... ";
   stk::expreval::Eval expr_eval(generate_expression(expression));
   expr_eval.parse();
-  double result = expr_eval.evaluate();
+
+  double result = kernel_evaluate(expr_eval);
+
   double absolute_error = std::fabs(result - gold_value);
   if (absolute_error > std::fabs(1.0e-14*result)) 
   {
@@ -306,74 +565,16 @@ test_one_value_is_equal(const char *expression, const char* gold_expression)
 {
   stk::expreval::Eval gold_expr_eval(generate_expression(gold_expression));
   gold_expr_eval.parse();
-  double gold_value = gold_expr_eval.evaluate(); 
+
+  double gold_value = kernel_evaluate(gold_expr_eval); 
+
   return test_one_value(expression, gold_value);
-}
-
-bool
-evaluate_range(
-  const char *	expr,
-  double xmin,
-  double xmax,
-  int numPoints  = 100,
-  bool write_csv = false)
-{
-  std::ofstream expression_csv; 
-  std::ofstream expression_gnu; 
-
-  std::string expression_csv_name = expr + std::string(".csv");
-  if( write_csv ) {
-    expression_csv.open(expression_csv_name);
-    expression_csv << "### Evaluate " << expr << " from " << xmin << " to " << xmax<< " with " << numPoints << "\n";
-  }
-  std::cout << "Evaluate " << expr << " from " << xmin << " to " << xmax << " with " << numPoints << "\n";
-
-  stk::expreval::Eval expr_eval(generate_expression(expr));
-  expr_eval.parse();
-
-  double x=0, y=0, by=0, v[2]={0,0};
-  expr_eval.bindVariable("x", x);
-  expr_eval.bindVariable("by", by);
-  expr_eval.bindVariable("v", *v);
-
-  double ymin = std::numeric_limits<double>::max();
-  double ymax = std::numeric_limits<double>::lowest();
-
-  double start_x = xmin;
-  double range = (xmax - xmin);
-  double delta_x = range/numPoints;
-  for (int i = 0; i <= numPoints; ++i) {
-    x = start_x + i*delta_x;
-    y = expr_eval.evaluate();
-    ymin = std::min(y, ymin);
-    ymax = std::max(y, ymax);
-    if( write_csv ) {
-      expression_csv << std::setprecision(14) << x << ", " << std::setprecision(14) << y << "\n";
-    }
-  }
-
-  if( write_csv ) {
-    // write a gnuplot input file corresponding to the csv file
-    std::string expression_gnu_name = expr + std::string(".gnu");
-    expression_gnu.open(expression_gnu_name);
-    expression_gnu << "set terminal postscript color" << "\n";
-    expression_gnu << "set output \"" << expr << ".ps\"" << "\n";
-    expression_gnu << "set grid" << "\n";
-    //expression_gnu << "set autoscale" << "\n";
-    expression_gnu << "set yrange [" << 1.1*ymin << ":" << 1.1*ymax << "]" << "\n";
-    expression_gnu << "set key off" << "\n";
-    expression_gnu << "set title " << "\"" << expr << "\"" << "\n";
-    expression_gnu << "plot " << "\"" << expression_csv_name << "\"" << " using 1:2 with lines lw 4\n";
-  }
-  return true;
 }
 
 typedef double (TestFunc)(double);
 
 bool
-test(
-  const char *	expr,
-  TestFunc	c_expr)
+test(const char* expr, TestFunc c_expr)
 {
   bool failed = false;
   std::cout << "Evaluate " << expr << " ... ";
@@ -390,7 +591,7 @@ test(
     x = v[1] = i*0.01;
     y = (*c_expr)(x);
     try {
-      result = expr_eval.evaluate();
+      result = kernel_evaluate(expr_eval);
     }
     catch (std::runtime_error &exc) {
       std::cout << expr << " at "
@@ -599,11 +800,11 @@ UnitTestEvaluator::testEvaluator()
         x = L*(i-50)/100.0;
         for(int j = 0; j < 100; ++j) {
           y = L*(j-50)/100.0;
-          double result = expr_eval.evaluate();
+          double result = kernel_evaluate(expr_eval);
           int idx = static_cast<int>(result*10);
           bins[idx] += 1;
 
-          result = expr_eval_norm.evaluate();
+          result = kernel_evaluate(expr_eval_norm);
           mean += result;
           sigma += (result-1)*(result-1);
           den += 1;
@@ -634,7 +835,7 @@ UnitTestEvaluator::testEvaluator()
     {
       std::vector<int> bins(10,0);
       for(int i = 0; i < 10000; ++i) {
-        double result = expr_eval.evaluate();
+        double result = kernel_evaluate(expr_eval);
         int idx = static_cast<int>(result*10);
         bins[idx] += 1;
         t += 1e-4;
@@ -657,27 +858,6 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(test_one_value("point3d(0,0,0,1,0.1)", 1.0));
   EXPECT_TRUE(test_one_value("point3d(0,1,0,1,0.1)", 0.5));
   EXPECT_TRUE(test_one_value("point3d(0,2,0,1,0.1)", 0.0));
-
-  // These tests just print a range of values of the input expressions.
-  // and optionally output to a CSV file along with an associated GNUPLOT input file.
-  //
-  //                          FUNCTION                    XMIN  XMAX   NPts  Output
-  EXPECT_TRUE(evaluate_range("weibull_pdf(x,3,1)"       ,    0,    3,  3000, false ));
-  EXPECT_TRUE(evaluate_range("normal_pdf(x,1,.2)"       ,    0,    2,  3000, false ));
-  EXPECT_TRUE(evaluate_range("gamma_pdf(x,10,1.0)"      ,    0,    4,  3000, false ));
-  EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
-  EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
-  EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)"     ,    0,   .3,  3000, false ));
-  EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"       ,  0.0,  3.0,  3000, false ));
-  EXPECT_TRUE(evaluate_range("cosine_ramp(x,-1,1)"      , -1.0,  2.0,  2000, false ));
-  EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"         ,  0.0,  2.0,  2000, false ));
-  EXPECT_TRUE(evaluate_range("cosine_ramp(x)"           ,  0.0,  2.0,  2000, false ));
-  EXPECT_TRUE(evaluate_range("random()"                 , -1.0,  1.0,  2000, false ));
-  EXPECT_TRUE(evaluate_range("random(7)"                , -1.0,  1.0,  2000, false ));
-  EXPECT_TRUE(evaluate_range("random(time())"           , -1.0,  1.0,   100, false ));
-  EXPECT_TRUE(evaluate_range("rand()"                   , -1.0,  1.0,  2000, false ));
-  EXPECT_TRUE(evaluate_range("srand(7)"                 , -1.0,  1.0,  2000, false ));
-  EXPECT_TRUE(evaluate_range("sign(sin(x))"             ,    0,   12, 12000, false )); // square wave
 
   EXPECT_TRUE(syntax("2*2"));
   EXPECT_TRUE(syntax(""));
