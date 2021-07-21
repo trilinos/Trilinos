@@ -3,10 +3,9 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ED_Version_h
-#define ED_Version_h
+#ifndef HWM_H
+#define HWM_H
 
-static std::string version("3.16");
-static std::string verdate("2021-06-28");
+size_t get_hwm_memory_info();
 
-#endif // ED_Version_h
+#endif

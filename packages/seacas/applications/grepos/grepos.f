@@ -1420,7 +1420,7 @@ C   This is currently used in the sideset mirroring code
 
       subroutine putnam(ndb, itype, isiz, names)
       include 'gp_namlen.blk'
-      character*(maxnam) names(*)
+      character*(namlen) names(*)
 
       call expnams(ndb, itype, isiz, names, ierr)
       return

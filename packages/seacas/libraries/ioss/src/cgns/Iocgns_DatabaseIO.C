@@ -1590,8 +1590,7 @@ namespace Iocgns {
     nodeCount = num_node;
 
     Utils::add_transient_variables(get_file_pointer(), m_timesteps, get_region(),
-                                   get_field_recognition(), get_field_separator(), myProcessor,
-                                   false);
+                                   myProcessor, false);
   }
 
   void DatabaseIO::write_meta_data()
