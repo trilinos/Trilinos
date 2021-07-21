@@ -370,11 +370,11 @@ namespace Tpetra {
         << Details::DistributorHowInitializedEnumToString (plan_.howInitialized())
         << ", Parameters: {"
         << "Send type: "
-        << DistributorSendTypeEnumToString (plan_.sendType_)
+        << DistributorSendTypeEnumToString (plan_.getSendType())
         << ", Barrier between receives and sends: "
-        << (plan_.barrierBetweenRecvSend_ ? "true" : "false")
+        << (plan_.barrierBetweenRecvSend() ? "true" : "false")
         << ", Use distinct tags: "
-        << (plan_.useDistinctTags_ ? "true" : "false")
+        << (plan_.useDistinctTags() ? "true" : "false")
         << ", Debug: " << (verbose_ ? "true" : "false")
         << "}}";
     return out.str ();
@@ -485,11 +485,11 @@ namespace Tpetra {
         out << "Parameters: " << endl;
         Teuchos::OSTab tab2 (out);
         out << "\"Send type\": "
-            << DistributorSendTypeEnumToString (plan_.sendType_) << endl
+            << DistributorSendTypeEnumToString (plan_.getSendType()) << endl
             << "\"Barrier between receives and sends\": "
-            << (plan_.barrierBetweenRecvSend_ ? "true" : "false") << endl
+            << (plan_.barrierBetweenRecvSend() ? "true" : "false") << endl
             << "\"Use distinct tags\": "
-            << (plan_.useDistinctTags_ ? "true" : "false") << endl
+            << (plan_.useDistinctTags() ? "true" : "false") << endl
             << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;
       }
     } // if myRank == 0

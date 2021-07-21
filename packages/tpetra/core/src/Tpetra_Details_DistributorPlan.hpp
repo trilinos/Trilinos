@@ -109,6 +109,9 @@ public:
   Teuchos::RCP<DistributorPlan> getReversePlan() const;
 
   Teuchos::RCP<const Teuchos::Comm<int>> getComm() const { return comm_; }
+  EDistributorSendType getSendType() const { return sendType_; }
+  bool barrierBetweenRecvSend() const { return barrierBetweenRecvSend_; }
+  bool useDistinctTags() const { return useDistinctTags_; }
   size_t getNumReceives() const { return numReceives_; }
   size_t getNumSends() const { return numSendsToOtherProcs_; }
   bool hasSelfMessage() const { return sendMessageToSelf_; }
