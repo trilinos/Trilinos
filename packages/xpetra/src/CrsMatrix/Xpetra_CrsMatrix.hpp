@@ -311,20 +311,20 @@ namespace Xpetra {
     //@{
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    typedef typename node_type::execution_space execution_space;
+    using impl_scalar_type  = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+    using execution_space   = typename node_type::device_type;
 
     // that is the local_graph_type in Tpetra::CrsGraph...
-    typedef Kokkos::StaticCrsGraph<LocalOrdinal,
-                                       Kokkos::LayoutLeft,
-                                       execution_space,
-                                       void,
-                                       size_t> local_graph_type;
+    using local_graph_type  = Kokkos::StaticCrsGraph<LocalOrdinal,
+						    Kokkos::LayoutLeft,
+						    execution_space,
+						    void,
+						    size_t>;
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
     ///  The same as for Tpetra
-    typedef KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
-                              typename local_graph_type::size_type> local_matrix_type;
+    using local_matrix_type = KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
+						      typename local_graph_type::size_type>;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Access the underlying local KokkosSparse::CrsMatrix object
