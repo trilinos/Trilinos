@@ -297,6 +297,58 @@ namespace
     testFloatingEquality3(AB_actual, AB_expected, relTol, absTol, out, success);
   }
 
+  TEUCHOS_UNIT_TEST( Data, InPlaceProduct_Matrix )
+  {
+    double relTol = 1e-13;
+    double absTol = 1e-13;
+    
+    // Use two Data objects A and B, each with logical shape (10,3,2,2) -- (C,P,D,D), say.
+    // with A having variation types of CONSTANT, CONSTANT, and BLOCK_DIAGONAL (with the final two dimensions being purely diagonal)
+    // and B having variation types of CONSTANT for all entries
+    // Result should have variation types of CONSTANT, CONSTANT, and BLOCK_DIAGONAL, with the diagonal matrix entries weighted by the value from B.
+    // (This test is modeled on Jacobians for a uniform geometry being weighted by inverse determinants, as happens when computing inputs to getHDIVtransformVALUE().
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    
+    const int rank        = 4;
+    const int cellCount   = 10;
+    const int pointCount  = 3;
+    const int spaceDim    = 2;
+    
+    const double bValue = M_PI;
+    
+    auto AView = getView<Scalar,DeviceType>("A", spaceDim); // diagonal: one entry per dimension
+    auto ABView = getView<Scalar,DeviceType>("A .* B", spaceDim); // should be same shape as A
+    
+    auto AViewHost  = Kokkos::create_mirror(AView);
+    auto ABViewHost = Kokkos::create_mirror(ABView);
+    for (int d=0; d<spaceDim; d++)
+    {
+      AViewHost(d)  = d + 1.;
+      ABViewHost(d) = AViewHost(d) * bValue;
+    }
+    Kokkos::deep_copy( AView,  AViewHost);
+    Kokkos::deep_copy(ABView, ABViewHost);
+    
+    Kokkos::Array<int,rank> extents {cellCount, pointCount, spaceDim, spaceDim};
+    Kokkos::Array<DataVariationType,rank> A_variation {CONSTANT, CONSTANT, BLOCK_PLUS_DIAGONAL, BLOCK_PLUS_DIAGONAL};
+    
+    Data<Scalar,DeviceType> A(AView,extents,A_variation);
+    Data<Scalar,DeviceType> B(bValue,extents);
+    
+    // expected variation for A+B:
+    Kokkos::Array<DataVariationType,4> AB_variation  = A_variation;
+    // expected Data object for A+B:
+    Data<Scalar,DeviceType> AB_expected(ABView,extents,AB_variation);
+    
+    auto AB_actual = Data<Scalar,DeviceType>::allocateInPlaceCombinationResult(A, B);
+    
+    AB_actual.storeInPlaceProduct(A, B);
+    
+    // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
+    testFloatingEquality4(AB_actual, AB_expected, relTol, absTol, out, success);
+  }
+
 // #pragma mark Data: MatVec
 /** \brief Data provides matrix-vector multiplication support.  This method checks correctness of the computed mat-vec for a particular case involving a 2x2 matrix and a 2x1 vector.
 */

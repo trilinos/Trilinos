@@ -163,6 +163,25 @@ namespace Intrepid2
       }
     }
     
+    //! Returns the field ordinal offset for the specified family.
+    KOKKOS_INLINE_FUNCTION
+    int familyFieldOrdinalOffset(const int &familyOrdinal) const
+    {
+      if (vectorData_.isValid())
+      {
+        return vectorData_.familyFieldOrdinalOffset(familyOrdinal);
+      }
+      else
+      {
+        int offset = 0;
+        for (int i=0; i<familyOrdinal; i++)
+        {
+          offset += tensorDataFamilies_[i].extent_int(0); // (F,P,…)
+        }
+        return offset;
+      }
+    }
+    
     //! TensorData accessor for single-family scalar data
     TensorDataType & tensorData()
     {

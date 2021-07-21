@@ -167,8 +167,8 @@ namespace
   
   //! Computes C := A*B or C := A^T*B
   //! B is allowed to be either a (rank-2) matrix, or a higher-rank object.  Either way, B's first (row) index should match A's column count.
-  template<class Rank2View>
-  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, Rank2View &B, Rank2View &C)
+  template<class Rank2View, class BFunctor, int rankB = 2>
+  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, BFunctor &B, Rank2View &C)
   {
     using DeviceType = DefaultTestDeviceType;
     using Scalar = typename Rank2View::value_type;
@@ -185,11 +185,13 @@ namespace
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
     }
-    using ViewIteratorScalar = ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
+    TEUCHOS_TEST_FOR_EXCEPTION(getFunctorRank(B) != rankB, std::invalid_argument, "run-time rank of B does not match compile-time rank");
+    using  ViewIteratorScalar = ViewIterator<Rank2View, Scalar>;
+    using     BIteratorScalar = FunctorIterator<BFunctor, Scalar, rankB>;
     Kokkos::parallel_for(N0, KOKKOS_LAMBDA(const int A_row_ordinal)
     {
-      ViewIteratorScalar B_viewIterator(B);
-      ViewIteratorScalar C_viewIterator(C);
+      BIteratorScalar     B_viewIterator(B);
+      ViewIteratorScalar  C_viewIterator(C);
       
       for (int B_col_ordinal=0; B_col_ordinal<N2; B_col_ordinal++)
       {
@@ -431,7 +433,11 @@ namespace
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -468,7 +474,11 @@ namespace
     using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -488,7 +498,11 @@ namespace
     using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
     using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
     
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -508,7 +522,11 @@ namespace
     using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
     using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
     
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -533,7 +551,11 @@ namespace
     const double relTol=1e-11; // 2e-12 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
     const double absTol=1e-11; // 9e-13 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
     
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     for (int polyOrder=1; polyOrder<3; polyOrder++)
     {
       CGBasis cgBasis(polyOrder);
@@ -552,7 +574,11 @@ namespace
     const double relTol=1e-12; // 2e-13 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
     const double absTol=1e-13; // 2e-14 is sharp on development setup for polyOrder=2; relaxing for potential architectural differences
     
-    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     for (int polyOrder=1; polyOrder<3; polyOrder++)
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);

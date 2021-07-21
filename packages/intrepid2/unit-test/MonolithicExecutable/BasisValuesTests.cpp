@@ -249,8 +249,11 @@ namespace
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_QUAD;
     
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     const double relTol=1e-13;
     const double absTol=1e-13;
@@ -285,8 +288,11 @@ namespace
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_HEX;
     
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     const double relTol=1e-13;
     const double absTol=1e-13;
@@ -447,8 +453,11 @@ namespace
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HVOL_QUAD;
     
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     const double relTol=1e-13;
     const double absTol=1e-13;
@@ -465,8 +474,11 @@ namespace
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HVOL_HEX;
     
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    // NOTE: for the moment, OPERATOR_Dn for n > 2 not supported by DerivedBasis.  We can support more by either increasing
+    //       Parameters::MaxVectorComponents (which is 7 right now), or by changing VectorData to allow a dynamic number of
+    //       components.  (We were doing the latter using Kokkos::vector, but have switched to a Kokkos::Array instead to
+    //       avoid using UVM.)
+    std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2}; //, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
     const double relTol=1e-13;
     const double absTol=1e-13;

@@ -75,15 +75,163 @@
 
 #include "Intrepid2_ScalarView.hpp"
 
+#include "GRADGRADStandardAssembly.hpp"
+#include "GRADGRADStructuredAssembly.hpp"
+#include "H1StandardAssembly.hpp"
+#include "H1StructuredAssembly.hpp"
+#include "HDIVStandardAssembly.hpp"
+#include "HDIVStructuredAssembly.hpp"
+#include "HCURLStandardAssembly.hpp"
+#include "HCURLStructuredAssembly.hpp"
+#include "HVOLStandardAssembly.hpp"
+#include "HVOLStructuredAssembly.hpp"
+
 namespace
 {
   using namespace Intrepid2;
 
+  enum FormulationChoice
+  {
+    Poisson, // (grad, grad)
+    Hgrad,   // (grad, grad) + (value, value)
+    Hdiv,    // (div, div)   + (value, value)
+    Hcurl,   // (curl, curl) + (value, value)
+    L2       // (value, value)
+  };
+
+  enum AlgorithmChoice
+  {
+    Standard,
+    AffineNonTensor,
+    NonAffineTensor,
+    AffineTensor,
+    DiagonalJacobian,
+    Uniform
+  };
+
+  enum BasisFamilyChoice
+  {
+    Nodal,
+    Hierarchical,
+    Serendipity
+  };
+
+  std::string to_string(AlgorithmChoice choice)
+  {
+    switch (choice) {
+      case Standard:         return "Standard";
+      case AffineNonTensor:  return "AffineNonTensor";
+      case NonAffineTensor:  return "NonAffineTensor";
+      case AffineTensor:     return "AffineTensor";
+      case DiagonalJacobian: return "DiagonalJacobian";
+      case Uniform:          return "Uniform";
+      
+      default:               return "Unknown AlgorithmChoice";
+    }
+  }
+
+  std::string to_string(FormulationChoice choice)
+  {
+    switch (choice) {
+      case Poisson: return "Poisson";
+      case Hgrad:   return "Hgrad";
+      case Hdiv:    return "Hdiv";
+      case Hcurl:   return "Hcurl";
+      case L2:      return "L2";
+      
+      default:      return "Unknown FormulationChoice";
+    }
+  }
+
+  using namespace Intrepid2;
+
+  template< typename PointScalar, int spaceDim, typename DeviceType >
+  inline
+  CellGeometry<PointScalar, spaceDim, DeviceType> getMesh(AlgorithmChoice algorithmChoice, const Kokkos::Array<int,spaceDim> &gridCellCounts)
+  {
+    Kokkos::Array<PointScalar,spaceDim> domainExtents;
+    for (int d=0; d<spaceDim; d++)
+    {
+      domainExtents[d]  = 1.0;
+    }
+    auto uniformTensorGeometry = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(domainExtents, gridCellCounts);
+    
+    switch (algorithmChoice)
+    {
+      case Standard:
+      case NonAffineTensor:
+      {
+        // Standard and non-affine tensor use the same geometry; the difference is how this is used in assembly
+        const bool copyAffineness = false;
+        auto genericGeometry = getNodalCellGeometry(uniformTensorGeometry, copyAffineness);
+        return genericGeometry;
+      }
+      case Uniform:
+        return uniformTensorGeometry;
+      case AffineNonTensor:
+      case AffineTensor:
+      {
+        const bool copyAffineness = true;
+        auto affineNonTensorGeometry = getNodalCellGeometry(uniformTensorGeometry, copyAffineness);
+        return affineNonTensorGeometry;
+      }
+      case DiagonalJacobian:
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "DiagonalJacobian case not yet implemented");
+      }
+    }
+    return uniformTensorGeometry; // this line should be unreachable; included to avoid compiler warnings from nvcc
+  }
+
+  template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+  Intrepid2::ScalarView<Scalar,DeviceType> performStandardQuadrature(FormulationChoice formulation,
+                                          Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                          double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+  {
+    switch (formulation)
+    {
+      case Poisson:
+        return performStandardQuadratureGRADGRAD<Scalar,BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case Hgrad:
+        return performStandardQuadratureH1<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case Hdiv:
+        return performStandardQuadratureHDIV<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case Hcurl:
+        return performStandardQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case L2:
+        return performStandardQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported formulation");
+    }
+  }
+
+  template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+  Intrepid2::ScalarView<Scalar,DeviceType> performStructuredQuadrature(FormulationChoice formulation,
+                                            Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType> &geometry, const int &polyOrder, const int &worksetSize,
+                                            double &transformIntegrateFlopCount, double &jacobianCellMeasureFlopCount)
+  {
+    switch (formulation)
+    {
+      case Poisson:
+        return performStructuredQuadratureGRADGRAD<Scalar,BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case Hgrad:
+        return performStructuredQuadratureH1<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case Hdiv:
+        return performStructuredQuadratureHDIV<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case Hcurl:
+        return performStructuredQuadratureHCURL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      case L2:
+        return performStructuredQuadratureHVOL<Scalar, BasisFamily>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
+      default:
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported formulation");
+    }
+  }
+
 //! version of integrate that performs a standard integration for affine meshes; does not take advantage of the tensor product structure at all
 //! this version can be used to verify correctness of other versions
 template<class Scalar, typename DeviceType>
-void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
-                        const TensorData<Scalar,DeviceType> cellMeasures, const TransformedVectorData<Scalar,DeviceType> vectorDataRight)
+void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
+                        const TensorData<Scalar,DeviceType> cellMeasures, const TransformedBasisValues<Scalar,DeviceType> vectorDataRight)
 {
   const int spaceDim       = vectorDataLeft.spaceDim();
   
@@ -142,113 +290,113 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVect
 //  std::cout << "\n\nApproximate flop count (baseline): " << approximateFlopCount << std::endl;
 }
 
-//! version that uses the classic Intrepid2 paths
-template<class Scalar, class PointScalar, int spaceDim, typename DeviceType>
-ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, int polyOrder, int worksetSize)
-{
-  using ExecutionSpace = typename DeviceType::execution_space;
-  using CellTools = Intrepid2::CellTools<DeviceType>;
-  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecutionSpace>;
-  
-  using namespace std;
-  // dimensions of the returned view are (C,F,F)
-  auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
-
-  shards::CellTopology lineTopo = shards::getCellTopologyData< shards::Line<> >();
-  shards::CellTopology cellTopo;
-  if      (spaceDim == 1) cellTopo = shards::getCellTopologyData< shards::Line<>          >();
-  else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
-  else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
-  
-  auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
-  
-  int numFields = basis->getCardinality();
-  int numHypercubes = 1;
-  for (int d=0; d<spaceDim; d++)
-  {
-    numHypercubes *= meshWidth;
-  }
-  int numCells = numHypercubes;
-  
-  if (worksetSize > numCells) worksetSize = numCells;
-  
-  // local stiffness matrix:
-  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
-  
-  auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
-  int numPoints = cubature->getNumPoints();
-  ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
-  ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
-  
-  cubature->getCubature(cubaturePoints, cubatureWeights);
-  
-  // Allocate some intermediate containers
-  ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
-  ScalarView<Scalar,DeviceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
-
-  ScalarView<Scalar,DeviceType> transformedGradValues("transformed grad values", worksetSize, numFields, numPoints, spaceDim);
-  ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", worksetSize, numFields, numPoints, spaceDim);
-  
-  basis->getValues(basisValues,     cubaturePoints, Intrepid2::OPERATOR_VALUE );
-  basis->getValues(basisGradValues, cubaturePoints, Intrepid2::OPERATOR_GRAD  );
-  
-  CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
-  
-  const int numNodesPerCell = cellNodes.numNodesPerCell();
-  ScalarView<PointScalar,DeviceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
-  using ExecutionSpace = typename DeviceType::execution_space;
-  auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
-  Kokkos::parallel_for("fill expanded cell nodes", policy,
-  KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
-  {
-    for (int d=0; d<spaceDim; d++)
-    {
-      expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
-    }
-  });
-  
-  // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
-
-  ScalarView<Scalar,DeviceType> cellMeasures("cell measures", worksetSize, numPoints);
-  ScalarView<Scalar,DeviceType> jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
-  ScalarView<Scalar,DeviceType> jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
-  ScalarView<Scalar,DeviceType> jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
-
-  int cellOffset = 0;
-  while (cellOffset < numCells)
-  {
-    int startCell         = cellOffset;
-    int numCellsInWorkset = (cellOffset + worksetSize - 1 < numCells) ? worksetSize : numCells - startCell;
-    
-    std::pair<int,int> cellRange = {startCell, startCell+numCellsInWorkset};
-    auto cellWorkset = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
-    
-    // note that the following will not work if numCellsInWorkset != worksetSize
-    // (we would need to take an appropriate subview of jacobian, etc. containers)
-    INTREPID2_TEST_FOR_EXCEPTION(numCellsInWorkset != worksetSize, std::invalid_argument, "workset size must evenly divide the number of cells!");
-    CellTools::setJacobian(jacobian, cubaturePoints, cellWorkset, cellTopo);
-    CellTools::setJacobianInv(jacobianInverse, jacobian);
-    CellTools::setJacobianDet(jacobianDeterminant, jacobian);
-    
-    FunctionSpaceTools::computeCellMeasure(cellMeasures, jacobianDeterminant, cubatureWeights);
-    FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, jacobianInverse, basisGradValues);
-    FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);
-    
-//    printView(transformedGradValues, std::cout, "transformedGradValues");
-//    printView(cellMeasures, std::cout, "cellMeasures");
-    
-    auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
-    
-    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedGradValues, transformedWeightedGradValues);
-    
-    cellOffset += worksetSize;
-  }
-  return cellStiffness;
-}
+////! version that uses the classic Intrepid2 paths
+//template<class Scalar, class PointScalar, int spaceDim, typename DeviceType>
+//ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, int polyOrder, int worksetSize)
+//{
+//  using ExecutionSpace = typename DeviceType::execution_space;
+//  using CellTools = Intrepid2::CellTools<DeviceType>;
+//  using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<DeviceType>;
+//
+//  using namespace std;
+//  // dimensions of the returned view are (C,F,F)
+//  auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
+//
+//  shards::CellTopology lineTopo = shards::getCellTopologyData< shards::Line<> >();
+//  shards::CellTopology cellTopo;
+//  if      (spaceDim == 1) cellTopo = shards::getCellTopologyData< shards::Line<>          >();
+//  else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
+//  else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
+//
+//  auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
+//
+//  int numFields = basis->getCardinality();
+//  int numHypercubes = 1;
+//  for (int d=0; d<spaceDim; d++)
+//  {
+//    numHypercubes *= meshWidth;
+//  }
+//  int numCells = numHypercubes;
+//
+//  if (worksetSize > numCells) worksetSize = numCells;
+//
+//  // local stiffness matrix:
+//  ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
+//
+//  auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
+//  int numPoints = cubature->getNumPoints();
+//  ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
+//  ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
+//
+//  cubature->getCubature(cubaturePoints, cubatureWeights);
+//
+//  // Allocate some intermediate containers
+//  ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
+//  ScalarView<Scalar,DeviceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
+//
+//  ScalarView<Scalar,DeviceType> transformedGradValues("transformed grad values", worksetSize, numFields, numPoints, spaceDim);
+//  ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", worksetSize, numFields, numPoints, spaceDim);
+//
+//  basis->getValues(basisValues,     cubaturePoints, Intrepid2::OPERATOR_VALUE );
+//  basis->getValues(basisGradValues, cubaturePoints, Intrepid2::OPERATOR_GRAD  );
+//
+//  CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
+//
+//  const int numNodesPerCell = cellNodes.numNodesPerCell();
+//  ScalarView<PointScalar,DeviceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
+//  using ExecutionSpace = typename DeviceType::execution_space;
+//  auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
+//  Kokkos::parallel_for("fill expanded cell nodes", policy,
+//  KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
+//  {
+//    for (int d=0; d<spaceDim; d++)
+//    {
+//      expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
+//    }
+//  });
+//
+//  // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
+//
+//  ScalarView<Scalar,DeviceType> cellMeasures("cell measures", worksetSize, numPoints);
+//  ScalarView<Scalar,DeviceType> jacobianDeterminant("jacobian determinant", worksetSize, numPoints);
+//  ScalarView<Scalar,DeviceType> jacobian("jacobian", worksetSize, numPoints, spaceDim, spaceDim);
+//  ScalarView<Scalar,DeviceType> jacobianInverse("jacobian inverse", worksetSize, numPoints, spaceDim, spaceDim);
+//
+//  int cellOffset = 0;
+//  while (cellOffset < numCells)
+//  {
+//    int startCell         = cellOffset;
+//    int numCellsInWorkset = (cellOffset + worksetSize - 1 < numCells) ? worksetSize : numCells - startCell;
+//
+//    std::pair<int,int> cellRange = {startCell, startCell+numCellsInWorkset};
+//    auto cellWorkset = Kokkos::subview(expandedCellNodes, cellRange, Kokkos::ALL(), Kokkos::ALL());
+//
+//    // note that the following will not work if numCellsInWorkset != worksetSize
+//    // (we would need to take an appropriate subview of jacobian, etc. containers)
+//    INTREPID2_TEST_FOR_EXCEPTION(numCellsInWorkset != worksetSize, std::invalid_argument, "workset size must evenly divide the number of cells!");
+//    CellTools::setJacobian(jacobian, cubaturePoints, cellWorkset, cellTopo);
+//    CellTools::setJacobianInv(jacobianInverse, jacobian);
+//    CellTools::setJacobianDet(jacobianDeterminant, jacobian);
+//
+//    FunctionSpaceTools::computeCellMeasure(cellMeasures, jacobianDeterminant, cubatureWeights);
+//    FunctionSpaceTools::HGRADtransformGRAD(transformedGradValues, jacobianInverse, basisGradValues);
+//    FunctionSpaceTools::multiplyMeasure(transformedWeightedGradValues, cellMeasures, transformedGradValues);
+//
+////    printView(transformedGradValues, std::cout, "transformedGradValues");
+////    printView(cellMeasures, std::cout, "cellMeasures");
+//
+//    auto cellStiffnessSubview = Kokkos::subview(cellStiffness, cellRange, Kokkos::ALL(), Kokkos::ALL());
+//
+//    FunctionSpaceTools::integrate(cellStiffnessSubview, transformedGradValues, transformedWeightedGradValues);
+//
+//    cellOffset += worksetSize;
+//  }
+//  return cellStiffness;
+//}
 
   template<class Scalar, typename DeviceType>
-  void testIntegrateMatchesBaseline(const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
-                                    const TensorData<Scalar,DeviceType> cellMeasures, const TransformedVectorData<Scalar,DeviceType> vectorDataRight,
+  void testIntegrateMatchesBaseline(const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
+                                    const TensorData<Scalar,DeviceType> cellMeasures, const TransformedBasisValues<Scalar,DeviceType> vectorDataRight,
                                     Teuchos::FancyOStream &out, bool &success)
   {
     const double relTol = 1e-12;
@@ -263,15 +411,6 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
     IntegrationTools::integrate(integralsIntegrate, vectorDataLeft, cellMeasures, vectorDataRight);
     
     const int integralsBaselineViewRank = integralsBaseline.getUnderlyingViewRank();
-    
-//    std::cout << "integralsBaselineView.extent_int(0) = " << integralsBaselineView.extent_int(0) << std::endl;
-//    std::cout << "integralsBaselineView.extent_int(1) = " << integralsBaselineView.extent_int(1) << std::endl;
-//    std::cout << "integralsBaselineView.extent_int(2) = " << integralsBaselineView.extent_int(2) << std::endl;
-//
-//    std::cout << "integralsBaselineView.rank() = " << integralsBaselineView.rank() << std::endl;
-//
-//    std::cout << "integralsBaselineView(0,0)  = " << integralsBaselineView(0,0) << std::endl;
-//    std::cout << "integralsIntegrateView(0,0) = " << integralsIntegrateView(0,0) << std::endl;
     
     printFunctor3( integralsBaseline, out, "integralsBaseline");
     printFunctor3(integralsIntegrate, out, "integralsIntegrate");
@@ -293,144 +432,28 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
     }
   }
 
-  template<class Scalar, class PointScalar, int spaceDim>
-  void testQuadratureHypercube(bool useAffinePath, int meshWidth, int polyOrder, int worksetSize, Teuchos::FancyOStream &out, bool &success)
+  template<class Scalar, class BasisFamily, class PointScalar, int spaceDim, typename DeviceType>
+  void testQuadratureHypercube(int meshWidth, int polyOrder, int worksetSize,
+                               const FormulationChoice &formulation, const AlgorithmChoice &algorithm,
+                               const double &relTol, const double &absTol,
+                               Teuchos::FancyOStream &out, bool &success)
   {
-    const double relTol = 1e-12;
-    const double absTol = 1e-12;
-    
     using namespace std;
-    using DeviceType = DefaultTestDeviceType;
     
-    using IntegrationTools   = Intrepid2::IntegrationTools<DeviceType>;
-    // dimensions of the returned view are (C,F,F)
-    auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
-    
-    auto lineBasis = Intrepid2::getLineBasis< Intrepid2::NodalBasisFamily<DeviceType> >(fs, polyOrder);
-    
-    int numFields_1D = lineBasis->getCardinality();
-    
-    int numFields = 1;
-    int numHypercubes = 1;
+    Kokkos::Array<int,spaceDim> gridCellCounts;
     for (int d=0; d<spaceDim; d++)
     {
-      numHypercubes *= meshWidth;
-      numFields     *= numFields_1D;
-    }
-    int numCells = numHypercubes;
-    
-    if (worksetSize > numCells) worksetSize = numCells;
-    
-    // local stiffness matrix:
-    ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
-    
-    shards::CellTopology lineTopo = shards::getCellTopologyData< shards::Line<> >();
-    shards::CellTopology cellTopo;
-    if      (spaceDim == 1) cellTopo = shards::getCellTopologyData< shards::Line<>          >();
-    else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
-    else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
-    
-    auto lineCubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(lineTopo,polyOrder*2);
-    int numPoints_1D = lineCubature->getNumPoints();
-    ScalarView<PointScalar,DeviceType> lineCubaturePoints("line cubature points",numPoints_1D,1);
-    ScalarView<double,DeviceType> lineCubatureWeights("line cubature weights", numPoints_1D);
-    
-    lineCubature->getCubature(lineCubaturePoints, lineCubatureWeights);
-    
-    // Allocate some intermediate containers
-    ScalarView<Scalar,DeviceType> lineBasisValues    ("line basis values",      numFields_1D, numPoints_1D   );
-    ScalarView<Scalar,DeviceType> lineBasisGradValues("line basis grad values", numFields_1D, numPoints_1D, 1);
-    
-    // for now, we use 1D values to build up the 2D or 3D gradients
-    // eventually, TensorBasis should offer a getValues() variant that returns tensor basis data
-    lineBasis->getValues(lineBasisValues,     lineCubaturePoints, Intrepid2::OPERATOR_VALUE );
-    lineBasis->getValues(lineBasisGradValues, lineCubaturePoints, Intrepid2::OPERATOR_GRAD  );
-    
-    // drop the trivial space dimension in line gradient values:
-    Kokkos::resize(lineBasisGradValues, numFields_1D, numPoints_1D);
-      
-    Kokkos::Array<TensorData<Scalar,DeviceType>, spaceDim> vectorComponents;
-    
-    for (int d=0; d<spaceDim; d++)
-    {
-      Kokkos::Array<Data<Scalar,DeviceType>, spaceDim> gradComponent_d;
-      for (int d2=0; d2<spaceDim; d2++)
-      {
-        if (d2 == d) gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisGradValues);
-        else         gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisValues);
-      }
-      vectorComponents[d] = TensorData<Scalar,DeviceType>(gradComponent_d);
-    }
-    VectorData<Scalar,DeviceType> gradientValues(vectorComponents, false); // false: not axis-aligned
-    
-    CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
-    
-    if (useAffinePath)
-    {
-      out << "Testing path with affine, grid-aligned CellGeometry.\n";
-    }
-    else
-    {
-      // make a "generic" copy of cellNodes, one that uses the (C,N), (N,D) node specification.  This will not know that the geometry is affine, grid-aligned, or uniform.
-      const bool copyAffineness = false; // want to go through the non-affine geometry path
-      CellGeometry<PointScalar,spaceDim,DeviceType> nodalCellGeometry = getNodalCellGeometry(cellNodes, copyAffineness);
-      
-      cellNodes = nodalCellGeometry;
-      out << "Testing non-affine path.\n";
+      gridCellCounts[d] = meshWidth;
     }
     
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
-    auto tensorCubatureWeights = cubature->allocateCubatureWeights();
-    auto tensorCubaturePoints  = cubature->allocateCubaturePoints();
+    auto geometry = getMesh<PointScalar, spaceDim, DeviceType>(algorithm, gridCellCounts);
+    double flopCountIntegration = 0, flopCountJacobian = 0;
+    auto standardIntegrals = performStandardQuadrature<Scalar, BasisFamily>(formulation, geometry, polyOrder, worksetSize, flopCountIntegration, flopCountJacobian);
     
-    cubature->getCubature(tensorCubaturePoints, tensorCubatureWeights);
+    auto structuredIntegrals = performStructuredQuadrature<Scalar, BasisFamily>(formulation, geometry, polyOrder, worksetSize, flopCountIntegration, flopCountJacobian);
     
-    // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
-    
-    int pointsPerCell = 1;
-    for (int d=0; d<spaceDim; d++)
-    {
-      pointsPerCell *= numPoints_1D;
-    }
-    
-    Data<PointScalar,DeviceType> jacobian = cellNodes.allocateJacobianData(tensorCubaturePoints);
-    Data<PointScalar,DeviceType> jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
-    Data<PointScalar,DeviceType> jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
-    
-    auto refData = cellNodes.getJacobianRefData(tensorCubaturePoints);
-    cellNodes.setJacobian(jacobian, tensorCubaturePoints, refData);
-    CellTools<DeviceType>::setJacobianDet(jacobianDet, jacobian);
-    CellTools<DeviceType>::setJacobianInv(jacobianInv, jacobian);
-    
-    // lazily-evaluated transformed gradient values:
-    using FunctionSpaceToolsDT = ::Intrepid2::FunctionSpaceTools<DeviceType>; // TODO: once FunctionSpaceTools has proper DeviceType support, change the earlier FunctionSpaceTools typedef, and use it here…
-    auto transformedGradientValues = FunctionSpaceToolsDT::getHGRADtransformGRAD(jacobianInv, gradientValues);
-    auto standardIntegrals = performStandardQuadratureHypercube<Scalar,PointScalar,spaceDim,DeviceType>(meshWidth, polyOrder, worksetSize);
-    
-    TensorData<PointScalar,DeviceType> cellMeasures = cellNodes.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
-    if (!cellNodes.affine())
-    {
-      // if cellNodes is not (known to be) affine, then cellMeasures should not have a separate first component (indicating the cell dimension is separated, thanks to point-invariant cell Jacobian determinant)
-      TEST_EQUALITY(cellMeasures.separateFirstComponent(), false);
-    }
-    cellNodes.computeCellMeasure(cellMeasures, jacobianDet, tensorCubatureWeights);
-    
-    auto integralData = IntegrationTools::allocateIntegralData(transformedGradientValues, cellMeasures, transformedGradientValues);
-    
-    IntegrationTools::integrate(integralData, transformedGradientValues, cellMeasures, transformedGradientValues);
-    
-    auto integralDataBaseline = IntegrationTools::allocateIntegralData(transformedGradientValues, cellMeasures, transformedGradientValues);
-    
-    integrate_baseline(integralDataBaseline, transformedGradientValues, cellMeasures, transformedGradientValues);
-    
-    out << "Comparing new integration path path with baseline integration…\n";
-    testIntegrateMatchesBaseline(transformedGradientValues, cellMeasures, transformedGradientValues, out, success);
-    
-    out << "Comparing baseline to standard Intrepid2 integration…\n";
-    testFloatingEquality3(standardIntegrals, integralDataBaseline, relTol, absTol, out, success, "standard Intrepid2 integral", "reduced data integral - baseline");
-    
-    out << "Comparing new integration path with standard Intrepid2 integration…\n";
-    testFloatingEquality3(standardIntegrals, integralData, relTol, absTol, out, success, "standard Intrepid2 integral", "reduced data integral");
+    out << "Comparing standard Intrepid2 integration to new integration path…\n";
+    testFloatingEquality3(standardIntegrals, structuredIntegrals, relTol, absTol, out, success, "standard Intrepid2 integral", "reduced data integral - baseline");
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p1_AffinePath
@@ -442,9 +465,18 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
     const int polyOrder = 1;
     const int spaceDim = 1;
     const int worksetSize = meshWidth;
-    const bool affinePath = true;
+
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    const AlgorithmChoice algorithm = AffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p1_GeneralPath
@@ -456,9 +488,18 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
     const int polyOrder = 1;
     const int spaceDim = 1;
     const int worksetSize = meshWidth;
-    const bool affinePath = false;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = NonAffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p4_GeneralPath
@@ -470,9 +511,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p4_GeneralPat
   const int polyOrder = 4;
   const int spaceDim = 1;
   const int worksetSize = meshWidth;
-  const bool affinePath = false;
   
-  testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const AlgorithmChoice algorithm = NonAffineTensor;
+  const FormulationChoice formulation = Poisson;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                      relTol, absTol, out, success);
 }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_1D_p2
@@ -484,9 +534,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p4_GeneralPat
     const int polyOrder = 2;
     const int spaceDim = 1;
     const int worksetSize = meshWidth;
-    const bool affinePath = true;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = AffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p1
@@ -498,9 +557,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p4_GeneralPat
     const int polyOrder = 1;
     const int spaceDim = 2;
     const int worksetSize = meshWidth * meshWidth;
-    const bool affinePath = true;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = AffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p1_GeneralPath
@@ -512,9 +580,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_1D_p4_GeneralPat
     const int polyOrder = 1;
     const int spaceDim = 2;
     const int worksetSize = meshWidth * meshWidth;
-    const bool affinePath = false;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = NonAffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p2_GeneralPath
@@ -526,9 +603,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_2D_p2_GeneralPat
   const int polyOrder = 2;
   const int spaceDim = 2;
   const int worksetSize = meshWidth * meshWidth;
-  const bool affinePath = false;
   
-  testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const AlgorithmChoice algorithm = NonAffineTensor;
+  const FormulationChoice formulation = Poisson;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                      relTol, absTol, out, success);
 }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_2D_p2
@@ -542,7 +628,17 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_2D_p2_GeneralPat
     const int worksetSize = meshWidth * meshWidth;
     const bool affinePath = true;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = AffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p1
@@ -554,9 +650,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_2D_p2_GeneralPat
     const int polyOrder = 1;
     const int spaceDim = 3;
     const int worksetSize = meshWidth * meshWidth * meshWidth;
-    const bool affinePath = true;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = AffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p1_GeneralPath
@@ -568,9 +673,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p1_GeneralPat
   const int polyOrder = 1;
   const int spaceDim = 3;
   const int worksetSize = meshWidth * meshWidth * meshWidth;
-  const bool affinePath = false;
   
-  testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const AlgorithmChoice algorithm = NonAffineTensor;
+  const FormulationChoice formulation = Poisson;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                      relTol, absTol, out, success);
 }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p2
@@ -582,9 +696,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p1_GeneralPat
     const int polyOrder = 2;
     const int spaceDim = 3;
     const int worksetSize = meshWidth * meshWidth * meshWidth;
-    const bool affinePath = true;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = AffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p2_GeneralPath
@@ -596,9 +719,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p2_GeneralPat
   const int polyOrder = 2;
   const int spaceDim = 3;
   const int worksetSize = meshWidth * meshWidth * meshWidth;
-  const bool affinePath = false;
   
-  testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+  using DeviceType = DefaultTestDeviceType;
+  using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+  
+  const AlgorithmChoice algorithm = NonAffineTensor;
+  const FormulationChoice formulation = Poisson;
+  
+  double relTol = 1e-12;
+  double absTol = 1e-12;
+  
+  testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                      relTol, absTol, out, success);
 }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p3
@@ -610,9 +742,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p2_GeneralPat
     const int polyOrder = 3;
     const int spaceDim = 3;
     const int worksetSize = meshWidth * meshWidth * meshWidth;
-    const bool affinePath = true;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = AffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureUniformMesh_3D_p3_GeneralPath
@@ -624,9 +765,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureUniformMesh_3D_p2_GeneralPat
     const int polyOrder = 3;
     const int spaceDim = 3;
     const int worksetSize = meshWidth * meshWidth * meshWidth;
-    const bool affinePath = false;
     
-    testQuadratureHypercube<DataScalar,PointScalar,spaceDim>(affinePath,meshWidth, polyOrder, worksetSize, out, success);
+    using DeviceType = DefaultTestDeviceType;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType>;
+    
+    const AlgorithmChoice algorithm = NonAffineTensor;
+    const FormulationChoice formulation = Poisson;
+    
+    double relTol = 1e-12;
+    double absTol = 1e-12;
+    
+    testQuadratureHypercube<DataScalar, BasisFamily, PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, worksetSize, formulation, algorithm,
+                                                                                        relTol, absTol, out, success);
   }
 
 // #pragma mark StructuredIntegration: QuadratureSynthetic_AxisAlignedPath_Case1
@@ -661,7 +811,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_AxisAlignedPath_Ca
   
   VectorData<DataScalar,DeviceType> unitVectorData(vectorComponents);
   
-  TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,unitVectorData);
+  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,unitVectorData);
   
   Data<DataScalar,DeviceType> constantCellMeasuresCellComponent(1.0, Kokkos::Array<int,1>{numCells});
   Data<DataScalar,DeviceType> constantCellMeasuresPointComponent(1.0, Kokkos::Array<int,1>{numComponentPoints});
@@ -712,7 +862,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case1 
   
   VectorData<DataScalar,DeviceType> unitVectorData(vectorComponents);
   
-  TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,unitVectorData);
+  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,unitVectorData);
   
   Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
   TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -775,7 +925,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case2 
   
   VectorData<DataScalar,DeviceType> vectorData(vectorComponents);
   
-  TransformedVectorData<DataScalar,DeviceType> transformedVectorData(explicitIdentityMatrix,vectorData);
+  TransformedBasisValues<DataScalar,DeviceType> transformedVectorData(explicitIdentityMatrix,vectorData);
   
   Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
   TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -858,7 +1008,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case3 
   
   VectorData<DataScalar,DeviceType> vectorData(vectorComponents);
   
-  TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,vectorData);
+  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,vectorData);
   
   Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
   TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -929,7 +1079,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case4 
   TEST_EQUALITY(numFieldsPerFamily, vectorData.numFieldsInFamily(0));
   TEST_EQUALITY(numFieldsPerFamily, vectorData.numFieldsInFamily(1));
   
-  TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,vectorData);
+  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorData(explicitIdentityMatrix,vectorData);
   
   Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
   TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -1011,8 +1161,8 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case5 
   TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
   TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(1));
   
-  TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-  TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+  TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
   
   Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
   TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -1096,8 +1246,8 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_AxisAlignedPath_Ca
    VectorData<DataScalar,DeviceType> vectorDataRight(vectorComponentsRight);
    TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
    
-   TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-   TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+   TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+   TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
    
    Data<DataScalar,DeviceType>  constantCellMeasuresCellComponent(1.0, Kokkos::Array<int,1>{numCells});
    Data<DataScalar,DeviceType> constantCellMeasuresPointComponent(1.0, Kokkos::Array<int,1>{numComponentPoints});
@@ -1155,44 +1305,26 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case6_
   fieldComponentExtents[0] = numFields3;
   Data<DataScalar,DeviceType> fieldComponentData3(fieldComponentDataView3,fieldComponentExtents,fieldComponentVariationTypes);
   
-   TensorData<DataScalar,DeviceType>  tensorDataLeft(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2,fieldComponentData3});
-   TensorData<DataScalar,DeviceType> tensorDataRight(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData3,fieldComponentData2});
+  TensorData<DataScalar,DeviceType>  tensorDataLeft(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2,fieldComponentData3});
+  TensorData<DataScalar,DeviceType> tensorDataRight(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData3,fieldComponentData2});
    
-   auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
-   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixViewHost = getHostCopy(identityMatrixView);
    
-   for (int d1=0; d1<spaceDim; d1++)
-   {
-     for (int d2=0; d2<spaceDim; d2++)
-     {
-       identityMatrixViewHost(d1,d2) = (d1 == d2) ? 1.0 : 0.0;
-     }
-   }
-   Kokkos::deep_copy(identityMatrixView, identityMatrixViewHost);
-   
-   const int numPoints = numComponentPoints * numComponentPoints;
-   Kokkos::Array<int,4> transformationExtents {numCells, numPoints, spaceDim, spaceDim};
-   Kokkos::Array<DataVariationType,4> transformationVariationType {CONSTANT, CONSTANT, GENERAL, GENERAL};
-   
-   Data<DataScalar,DeviceType> explicitIdentityMatrix(identityMatrixView, transformationExtents, transformationVariationType);
-   
-//   const int numFamilies = 3;
-//   Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim > firstFamilyLeft  {tensorDataLeft,TensorData<DataScalar,DeviceType>(),TensorData<DataScalar,DeviceType>()};
-//   Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim > secondFamilyLeft {TensorData<DataScalar,DeviceType>(),tensorDataLeft,TensorData<DataScalar,DeviceType>()};
-//   Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim > thirdFamilyLeft  {TensorData<DataScalar,DeviceType>(),TensorData<DataScalar,DeviceType>(),tensorDataLeft};
-//   Kokkos::Array< Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, secondFamilyLeft, thirdFamilyLeft};
-//
-//   VectorData<DataScalar,DeviceType> vectorDataLeft(vectorComponentsLeft);
-//   TEST_EQUALITY(numFieldsPerFamilyLeft, vectorDataLeft.numFieldsInFamily(0));
-//   TEST_EQUALITY(numFieldsPerFamilyLeft, vectorDataLeft.numFieldsInFamily(1));
-//
-//   Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim > firstFamilyRight  {tensorDataRight,TensorData<DataScalar,DeviceType>(),TensorData<DataScalar,DeviceType>()};
-//   Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim > secondFamilyRight {TensorData<DataScalar,DeviceType>(),tensorDataRight,TensorData<DataScalar,DeviceType>()};
-//   Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim > thirdFamilyRight  {TensorData<DataScalar,DeviceType>(),TensorData<DataScalar,DeviceType>(),tensorDataRight};
-//   Kokkos::Array< Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, secondFamilyRight, thirdFamilyRight};
-//  VectorData<DataScalar,DeviceType> vectorDataRight(vectorComponentsRight);
-//  TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
-//  TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(1));
+  for (int d1=0; d1<spaceDim; d1++)
+  {
+    for (int d2=0; d2<spaceDim; d2++)
+    {
+      identityMatrixViewHost(d1,d2) = (d1 == d2) ? 1.0 : 0.0;
+    }
+  }
+  Kokkos::deep_copy(identityMatrixView, identityMatrixViewHost);
+  
+  const int numPoints = numComponentPoints * numComponentPoints;
+  Kokkos::Array<int,4> transformationExtents {numCells, numPoints, spaceDim, spaceDim};
+  Kokkos::Array<DataVariationType,4> transformationVariationType {CONSTANT, CONSTANT, GENERAL, GENERAL};
+  
+  Data<DataScalar,DeviceType> explicitIdentityMatrix(identityMatrixView, transformationExtents, transformationVariationType);
   
   const int numFamilies = 1;
   Kokkos::Array<TensorData<DataScalar,DeviceType>, spaceDim > firstFamilyLeft  {tensorDataLeft,TensorData<DataScalar,DeviceType>(),TensorData<DataScalar,DeviceType>()};
@@ -1207,8 +1339,8 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case6_
    VectorData<DataScalar,DeviceType> vectorDataRight(vectorComponentsRight);
    TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
    
-   TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-   TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+   TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+   TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
    
    Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
    TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -1294,8 +1426,8 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case7_
    VectorData<DataScalar,DeviceType> vectorDataRight(vectorComponentsRight);
    TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
    
-   TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-   TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+   TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+   TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
    
    Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
    TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -1385,8 +1517,8 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case8_
    TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
    TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(1));
   
-   TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-   TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+   TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+   TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
    
    Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
    TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -1473,8 +1605,8 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case9_
   VectorData<DataScalar,DeviceType> vectorDataRight(vectorComponentsRight);
   TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
   
-  TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-  TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+  TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
   
   Data<DataScalar,DeviceType> constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
   TensorData<DataScalar,DeviceType> constantCellMeasures(constantCellMeasuresData);
@@ -1556,8 +1688,8 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case10
   VectorData<DataScalar,DeviceType> vectorDataRight(vectorComponentsRight);
   TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
   
-  TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-  TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+  TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
   
   auto cellMeasures = getFixedRankView<DataScalar>("cellMeasures", numCells, numPoints);
   
