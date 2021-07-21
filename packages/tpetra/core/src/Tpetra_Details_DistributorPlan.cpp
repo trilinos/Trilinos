@@ -38,6 +38,7 @@
 
 #include "Tpetra_Details_DistributorPlan.hpp"
 
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Util.hpp"
 #include <numeric>
 
@@ -857,6 +858,117 @@ void DistributorPlan::computeReceives()
   if (sendMessageToSelf_) {
     --numReceives_;
   }
+}
+
+void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist)
+{
+  using Teuchos::FancyOStream;
+  using Teuchos::getIntegralValue;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using std::endl;
+
+  if (! plist.is_null()) {
+    RCP<const ParameterList> validParams = getValidParameters ();
+    plist->validateParametersAndSetDefaults (*validParams);
+
+    const bool barrierBetween =
+      plist->get<bool> ("Barrier between receives and sends");
+    const Details::EDistributorSendType sendType =
+      getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
+    const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
+    {
+      // mfh 03 May 2016: We keep this option only for backwards
+      // compatibility, but it must always be true.  See discussion of
+      // Github Issue #227.
+      const bool enable_cuda_rdma =
+        plist->get<bool> ("Enable MPI CUDA RDMA support");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
+         "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
+         "support\" = false.  This is no longer valid.  You don't need to "
+         "specify this option any more; Tpetra assumes it is always true.  "
+         "This is a very light assumption on the MPI implementation, and in "
+         "fact does not actually involve hardware or system RDMA support.  "
+         "Tpetra just assumes that the MPI implementation can tell whether a "
+         "pointer points to host memory or CUDA device memory.");
+    }
+
+    // We check this property explicitly, since we haven't yet learned
+    // how to make a validator that can cross-check properties.
+    // Later, turn this into a validator so that it can be embedded in
+    // the valid ParameterList and used in Optika.
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
+       std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
+       << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
+       "between receives and sends." << endl << "This is invalid; you must "
+       "include the barrier if you use ready sends." << endl << "Ready sends "
+       "require that their corresponding receives have already been posted, "
+       "and the only way to guarantee that in general is with a barrier.");
+
+    // Now that we've validated the input list, save the results.
+    sendType_ = sendType;
+    barrierBetweenRecvSend_ = barrierBetween;
+    useDistinctTags_ = useDistinctTags;
+
+    // ParameterListAcceptor semantics require pointer identity of the
+    // sublist passed to setParameterList(), so we save the pointer.
+    this->setMyParamList (plist);
+  }
+}
+
+Teuchos::Array<std::string> distributorSendTypes()
+{
+  Teuchos::Array<std::string> sendTypes;
+  sendTypes.push_back ("Isend");
+  sendTypes.push_back ("Rsend");
+  sendTypes.push_back ("Send");
+  sendTypes.push_back ("Ssend");
+  return sendTypes;
+}
+
+Teuchos::RCP<const Teuchos::ParameterList>
+DistributorPlan::getValidParameters() const
+{
+  using Teuchos::Array;
+  using Teuchos::ParameterList;
+  using Teuchos::parameterList;
+  using Teuchos::RCP;
+  using Teuchos::setStringToIntegralParameter;
+
+  const bool barrierBetween = Details::barrierBetween_default;
+  const bool useDistinctTags = Details::useDistinctTags_default;
+
+  Array<std::string> sendTypes = distributorSendTypes ();
+  const std::string defaultSendType ("Send");
+  Array<Details::EDistributorSendType> sendTypeEnums;
+  sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
+  sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
+  sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
+  sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
+
+  RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
+  plist->set ("Barrier between receives and sends", barrierBetween,
+      "Whether to execute a barrier between receives and sends in do"
+      "[Reverse]Posts().  Required for correctness when \"Send type\""
+      "=\"Rsend\", otherwise correct but not recommended.");
+  setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
+      defaultSendType, "When using MPI, the variant of send to use in "
+      "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
+  plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
+      "MPI message tags for different code paths.  Highly recommended"
+      " to avoid message collisions.");
+  plist->set ("Timer Label","","Label for Time Monitor output");
+  plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
+      "tell whether a pointer points to host memory or CUDA device "
+      "memory.  You don't need to specify this option any more; "
+      "Tpetra assumes it is always true.  This is a very light "
+      "assumption on the MPI implementation, and in fact does not "
+      "actually involve hardware or system RDMA support.");
+
+  return Teuchos::rcp_const_cast<const ParameterList> (plist);
 }
 
 }

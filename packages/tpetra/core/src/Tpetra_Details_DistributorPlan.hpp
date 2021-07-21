@@ -40,6 +40,7 @@
 #ifndef TPETRA_DETAILS_DISTRIBUTOR_PLAN_HPP
 #define TPETRA_DETAILS_DISTRIBUTOR_PLAN_HPP
 
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
@@ -90,7 +91,22 @@ enum EDistributorHowInitialized {
 std::string
 DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 
-class DistributorPlan {
+/// Instances of Distributor take the following parameters that
+/// control communication and debug output:
+/// - "Barrier between receives and sends" (<tt>bool</tt>):
+///   Whether to execute a barrier between receives and sends in
+///   do[Reverse]Posts().  A barrier is required for correctness
+///   when the "Send type" parameter is "Rsend".  Otherwise, a
+///   barrier is correct and may be useful for debugging, but not
+///   recommended, since it introduces useless synchronization.
+/// - "Send type" (<tt>std::string</tt>): When using MPI, the
+///   variant of MPI_Send to use in do[Reverse]Posts().  Valid
+///   values include "Isend", "Rsend", "Send", and "Ssend".  The
+///   default is "Send".  (The receive type is always MPI_Irecv, a
+///   nonblocking receive.  Since we post receives first before
+///   sends, this prevents deadlock, even if MPI_Send blocks and
+///   does not buffer.)
+class DistributorPlan : public Teuchos::ParameterListAcceptorDefaultBase {
 public:
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
   DistributorPlan(const DistributorPlan& otherPlan);
@@ -105,6 +121,18 @@ public:
   void createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs);
   void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
                                const Teuchos::ArrayView<const int>& remoteProcIDs);
+
+  /// \brief Set Distributor parameters.
+  ///
+  /// Please see the class documentation for a list of all accepted
+  /// parameters and their default values.
+  void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist);
+
+  /// \brief List of valid Distributor parameters.
+  ///
+  /// Please see the class documentation for a list of all accepted
+  /// parameters and their default values.
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   Teuchos::RCP<DistributorPlan> getReversePlan() const;
 

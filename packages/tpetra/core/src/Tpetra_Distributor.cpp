@@ -175,49 +175,14 @@ namespace Tpetra {
       RCP<const ParameterList> validParams = getValidParameters ();
       plist->validateParametersAndSetDefaults (*validParams);
 
-      const bool barrierBetween =
-        plist->get<bool> ("Barrier between receives and sends");
-      const Details::EDistributorSendType sendType =
-        getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
-      const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
-      {
-        // mfh 03 May 2016: We keep this option only for backwards
-        // compatibility, but it must always be true.  See discussion of
-        // Github Issue #227.
-        const bool enable_cuda_rdma =
-          plist->get<bool> ("Enable MPI CUDA RDMA support");
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
-           "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
-           "support\" = false.  This is no longer valid.  You don't need to "
-           "specify this option any more; Tpetra assumes it is always true.  "
-           "This is a very light assumption on the MPI implementation, and in "
-           "fact does not actually involve hardware or system RDMA support.  "
-           "Tpetra just assumes that the MPI implementation can tell whether a "
-           "pointer points to host memory or CUDA device memory.");
-      }
-
-      // We check this property explicitly, since we haven't yet learned
-      // how to make a validator that can cross-check properties.
-      // Later, turn this into a validator so that it can be embedded in
-      // the valid ParameterList and used in Optika.
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
-         std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
-         << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
-         "between receives and sends." << endl << "This is invalid; you must "
-         "include the barrier if you use ready sends." << endl << "Ready sends "
-         "require that their corresponding receives have already been posted, "
-         "and the only way to guarantee that in general is with a barrier.");
-
-      // Now that we've validated the input list, save the results.
-      plan_.sendType_ = sendType;
-      plan_.barrierBetweenRecvSend_ = barrierBetween;
-      plan_.useDistinctTags_ = useDistinctTags;
-
       // ParameterListAcceptor semantics require pointer identity of the
       // sublist passed to setParameterList(), so we save the pointer.
       this->setMyParamList (plist);
+
+      RCP<ParameterList> planParams(plist);
+      planParams->remove("Debug", false);
+      planParams->remove("VerboseObject", false);
+      plan_.setParameterList(planParams);
     }
   }
 
