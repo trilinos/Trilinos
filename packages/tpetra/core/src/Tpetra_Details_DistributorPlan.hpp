@@ -122,17 +122,7 @@ public:
   void createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
                                const Teuchos::ArrayView<const int>& remoteProcIDs);
 
-  /// \brief Set Distributor parameters.
-  ///
-  /// Please see the class documentation for a list of all accepted
-  /// parameters and their default values.
   void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist);
-
-  /// \brief List of valid Distributor parameters.
-  ///
-  /// Please see the class documentation for a list of all accepted
-  /// parameters and their default values.
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   Teuchos::RCP<DistributorPlan> getReversePlan() const;
 
@@ -152,6 +142,9 @@ public:
   Teuchos::ArrayView<const size_t> getStartsTo() const { return startsTo_; }
   Teuchos::ArrayView<const size_t> getIndicesTo() const { return indicesTo_; }
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
+
+private:
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   void createReversePlan() const;
 
@@ -266,7 +259,6 @@ public:
   /// message i was sent by process procsFrom_[i].
   Teuchos::Array<int> procsFrom_;
 
-private:
   /// \brief Array of offsets of incoming messages.
   ///
   /// This array has length numReceives_ + sendMessageToSelf_.  It is an

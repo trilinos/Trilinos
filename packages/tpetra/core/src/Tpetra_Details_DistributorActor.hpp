@@ -177,11 +177,11 @@ DistributorActor::doPosts(const DistributorPlan& plan,
   Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-  const int myRank = plan.comm_->getRank ();
+  const int myRank = plan.getComm()->getRank ();
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
-  const Details::EDistributorSendType sendType = plan.sendType_;
-  const bool doBarrier = plan.barrierBetweenRecvSend_;
+  const Details::EDistributorSendType sendType = plan.getSendType();
+  const bool doBarrier = plan.barrierBetweenRecvSend();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
@@ -213,7 +213,7 @@ DistributorActor::doPosts(const DistributorPlan& plan,
   // nonblocking message requests, so we resize to zero to maintain
   // this invariant.
   //
-  // numReceives_ does _not_ include the self message, if there is
+  // getNumReceives() does _not_ include the self message, if there is
   // one.  Here, we do actually send a message to ourselves, so we
   // include any self message in the "actual" number of receives to
   // post.
@@ -222,8 +222,8 @@ DistributorActor::doPosts(const DistributorPlan& plan,
   // doesn't (re)allocate its array of requests.  That happens in
   // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
   // demand), or Resize_().
-  const size_type actualNumReceives = as<size_type> (plan.numReceives_) +
-    as<size_type> (plan.sendMessageToSelf_ ? 1 : 0);
+  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
   requests_.resize (0);
 
   // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -238,14 +238,14 @@ DistributorActor::doPosts(const DistributorPlan& plan,
 
     size_t curBufferOffset = 0;
     for (size_type i = 0; i < actualNumReceives; ++i) {
-      const size_t curBufLen = plan.lengthsFrom_[i] * numPackets;
-      if (plan.procsFrom_[i] != myRank) {
+      const size_t curBufLen = plan.getLengthsFrom()[i] * numPackets;
+      if (plan.getProcsFrom()[i] != myRank) {
         // If my process is receiving these packet(s) from another
         // process (not a self-receive):
         //
         // 1. Set up the persisting view (recvBuf) of the imports
         //    array, given the offset and size (total number of
-        //    packets from process procsFrom_[i]).
+        //    packets from process getProcsFrom()[i]).
         // 2. Start the Irecv and save the resulting request.
         TEUCHOS_TEST_FOR_EXCEPTION(
             curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
@@ -256,8 +256,8 @@ DistributorActor::doPosts(const DistributorPlan& plan,
             curBufLen << ").");
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, curBufLen);
-        requests_.push_back (ireceive<int> (recvBuf, plan.procsFrom_[i],
-              tag, *plan.comm_));
+        requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
+              tag, *plan.getComm()));
       }
       else { // Receiving from myself
         selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
@@ -276,21 +276,21 @@ DistributorActor::doPosts(const DistributorPlan& plan,
     // ready send requires that its matching receive has already
     // been posted before the send has been posted.  The only way to
     // guarantee that in this case is to use a barrier.
-    plan.comm_->barrier ();
+    plan.getComm()->barrier ();
   }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-  // setup scan through procIdsToSendTo_ list starting with higher numbered procs
+  // setup scan through getProcsTo() list starting with higher numbered procs
   // (should help balance message traffic)
   //
   // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
   // It doesn't depend on the input at all.
-  size_t numBlocks = plan.numSendsToOtherProcs_ + plan.sendMessageToSelf_;
+  size_t numBlocks = plan.getNumSends() + plan.hasSelfMessage();
   size_t procIndex = 0;
-  while ((procIndex < numBlocks) && (plan.procIdsToSendTo_[procIndex] < myRank)) {
+  while ((procIndex < numBlocks) && (plan.getProcsTo()[procIndex] < myRank)) {
     ++procIndex;
   }
   if (procIndex == numBlocks) {
@@ -314,31 +314,31 @@ DistributorActor::doPosts(const DistributorPlan& plan,
         p -= numBlocks;
       }
 
-      if (plan.procIdsToSendTo_[p] != myRank) {
+      if (plan.getProcsTo()[p] != myRank) {
         exports_view_type tmpSend = subview_offset(
-            exports, plan.startsTo_[p]*numPackets, plan.lengthsTo_[p]*numPackets);
+            exports, plan.getStartsTo()[p]*numPackets, plan.getLengthsTo()[p]*numPackets);
 
         if (sendType == Details::DISTRIBUTOR_SEND) {
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else if (sendType == Details::DISTRIBUTOR_ISEND) {
           exports_view_type tmpSendBuf =
-            subview_offset (exports, plan.startsTo_[p] * numPackets,
-                plan.lengthsTo_[p] * numPackets);
-          requests_.push_back (isend<int> (tmpSendBuf, plan.procIdsToSendTo_[p],
-                tag, *plan.comm_));
+            subview_offset (exports, plan.getStartsTo()[p] * numPackets,
+                plan.getLengthsTo()[p] * numPackets);
+          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
+                tag, *plan.getComm()));
         }
         else if (sendType == Details::DISTRIBUTOR_RSEND) {
           readySend<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else if (sendType == Details::DISTRIBUTOR_SSEND) {
           ssend<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         } else {
           TEUCHOS_TEST_FOR_EXCEPTION(
               true,
@@ -353,7 +353,7 @@ DistributorActor::doPosts(const DistributorPlan& plan,
       }
     }
 
-    if (plan.sendMessageToSelf_) {
+    if (plan.hasSelfMessage()) {
       // This is how we "send a message to ourself": we copy from
       // the export buffer to the import buffer.  That saves
       // Teuchos::Comm implementations other than MpiComm (in
@@ -362,8 +362,8 @@ DistributorActor::doPosts(const DistributorPlan& plan,
       // need internal buffer space for messages, keyed on the
       // message's tag.)
       deep_copy_offset(imports, exports, selfReceiveOffset,
-          plan.startsTo_[selfNum]*numPackets,
-          plan.lengthsTo_[selfNum]*numPackets);
+          plan.getStartsTo()[selfNum]*numPackets,
+          plan.getLengthsTo()[selfNum]*numPackets);
     }
   }
   else { // data are not blocked by proc, use send buffer
@@ -377,7 +377,7 @@ DistributorActor::doPosts(const DistributorPlan& plan,
     typedef typename ExpView::device_type Device;
     typedef typename ExpView::memory_traits Mem;
     Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
-        plan.maxSendLength_ * numPackets);
+        plan.getMaxSendLength() * numPackets);
 
     // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
     // sends), because the buffer is only long enough for one send.
@@ -393,37 +393,37 @@ DistributorActor::doPosts(const DistributorPlan& plan,
         p -= numBlocks;
       }
 
-      if (plan.procIdsToSendTo_[p] != myRank) {
+      if (plan.getProcsTo()[p] != myRank) {
         size_t sendArrayOffset = 0;
-        size_t j = plan.startsTo_[p];
-        for (size_t k = 0; k < plan.lengthsTo_[p]; ++k, ++j) {
+        size_t j = plan.getStartsTo()[p];
+        for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
           deep_copy_offset(sendArray, exports, sendArrayOffset,
               plan.getIndicesTo()[j]*numPackets, numPackets);
           sendArrayOffset += numPackets;
         }
         ImpView tmpSend =
-          subview_offset(sendArray, size_t(0), plan.lengthsTo_[p]*numPackets);
+          subview_offset(sendArray, size_t(0), plan.getLengthsTo()[p]*numPackets);
 
         if (sendType == Details::DISTRIBUTOR_SEND) {
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else if (sendType == Details::DISTRIBUTOR_ISEND) {
           exports_view_type tmpSendBuf =
-            subview_offset (sendArray, size_t(0), plan.lengthsTo_[p] * numPackets);
-          requests_.push_back (isend<int> (tmpSendBuf, plan.procIdsToSendTo_[p],
-                tag, *plan.comm_));
+            subview_offset (sendArray, size_t(0), plan.getLengthsTo()[p] * numPackets);
+          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
+                tag, *plan.getComm()));
         }
         else if (sendType == Details::DISTRIBUTOR_RSEND) {
           readySend<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else if (sendType == Details::DISTRIBUTOR_SSEND) {
           ssend<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(
@@ -436,12 +436,12 @@ DistributorActor::doPosts(const DistributorPlan& plan,
       }
       else { // "Sending" the message to myself
         selfNum = p;
-        selfIndex = plan.startsTo_[p];
+        selfIndex = plan.getStartsTo()[p];
       }
     }
 
-    if (plan.sendMessageToSelf_) {
-      for (size_t k = 0; k < plan.lengthsTo_[selfNum]; ++k) {
+    if (plan.hasSelfMessage()) {
+      for (size_t k = 0; k < plan.getLengthsTo()[selfNum]; ++k) {
         deep_copy_offset(imports, exports, selfReceiveOffset,
             plan.getIndicesTo()[selfIndex]*numPackets, numPackets);
         ++selfIndex;
@@ -490,8 +490,8 @@ doPosts(const DistributorPlan& plan,
 
   // Run-time configurable parameters that come from the input
   // ParameterList set by setParameterList().
-  const Details::EDistributorSendType sendType = plan.sendType_;
-  const bool doBarrier = plan.barrierBetweenRecvSend_;
+  const Details::EDistributorSendType sendType = plan.getSendType();
+  const bool doBarrier = plan.barrierBetweenRecvSend();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
@@ -500,7 +500,7 @@ doPosts(const DistributorPlan& plan,
       "sends.  This should have been checked before.  "
       "Please report this bug to the Tpetra developers.");
 
-  const int myProcID = plan.comm_->getRank ();
+  const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -535,7 +535,7 @@ doPosts(const DistributorPlan& plan,
   // nonblocking message requests, so we resize to zero to maintain
   // this invariant.
   //
-  // numReceives_ does _not_ include the self message, if there is
+  // getNumReceives() does _not_ include the self message, if there is
   // one.  Here, we do actually send a message to ourselves, so we
   // include any self message in the "actual" number of receives to
   // post.
@@ -544,8 +544,8 @@ doPosts(const DistributorPlan& plan,
   // doesn't (re)allocate its array of requests.  That happens in
   // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
   // demand), or Resize_().
-  const size_type actualNumReceives = as<size_type> (plan.numReceives_) +
-    as<size_type> (plan.sendMessageToSelf_ ? 1 : 0);
+  const size_type actualNumReceives = as<size_type> (plan.getNumReceives()) +
+    as<size_type> (plan.hasSelfMessage() ? 1 : 0);
   requests_.resize (0);
 
   // Post the nonblocking receives.  It's common MPI wisdom to post
@@ -562,23 +562,23 @@ doPosts(const DistributorPlan& plan,
     size_t curLIDoffset = 0;
     for (size_type i = 0; i < actualNumReceives; ++i) {
       size_t totalPacketsFrom_i = 0;
-      for (size_t j = 0; j < plan.lengthsFrom_[i]; ++j) {
+      for (size_t j = 0; j < plan.getLengthsFrom()[i]; ++j) {
         totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
       }
-      curLIDoffset += plan.lengthsFrom_[i];
-      if (plan.procsFrom_[i] != myProcID && totalPacketsFrom_i) {
+      curLIDoffset += plan.getLengthsFrom()[i];
+      if (plan.getProcsFrom()[i] != myProcID && totalPacketsFrom_i) {
         // If my process is receiving these packet(s) from another
         // process (not a self-receive), and if there is at least
         // one packet to receive:
         //
         // 1. Set up the persisting view (recvBuf) into the imports
         //    array, given the offset and size (total number of
-        //    packets from process procsFrom_[i]).
+        //    packets from process getProcsFrom()[i]).
         // 2. Start the Irecv and save the resulting request.
         imports_view_type recvBuf =
           subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-        requests_.push_back (ireceive<int> (recvBuf, plan.procsFrom_[i],
-              tag, *plan.comm_));
+        requests_.push_back (ireceive<int> (recvBuf, plan.getProcsFrom()[i],
+              tag, *plan.getComm()));
       }
       else { // Receiving these packet(s) from myself
         selfReceiveOffset = curBufferOffset; // Remember the offset
@@ -596,7 +596,7 @@ doPosts(const DistributorPlan& plan,
     // ready send requires that its matching receive has already
     // been posted before the send has been posted.  The only way to
     // guarantee that in this case is to use a barrier.
-    plan.comm_->barrier ();
+    plan.getComm()->barrier ();
   }
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -605,13 +605,13 @@ doPosts(const DistributorPlan& plan,
 
   // setup arrays containing starting-offsets into exports for each send,
   // and num-packets-to-send for each send.
-  Array<size_t> sendPacketOffsets(plan.numSendsToOtherProcs_,0), packetsPerSend(plan.numSendsToOtherProcs_,0);
+  Array<size_t> sendPacketOffsets(plan.getNumSends(),0), packetsPerSend(plan.getNumSends(),0);
   size_t maxNumPackets = 0;
   size_t curPKToffset = 0;
-  for (size_t pp=0; pp<plan.numSendsToOtherProcs_; ++pp) {
+  for (size_t pp=0; pp<plan.getNumSends(); ++pp) {
     sendPacketOffsets[pp] = curPKToffset;
     size_t numPackets = 0;
-    for (size_t j=plan.startsTo_[pp]; j<plan.startsTo_[pp]+plan.lengthsTo_[pp]; ++j) {
+    for (size_t j=plan.getStartsTo()[pp]; j<plan.getStartsTo()[pp]+plan.getLengthsTo()[pp]; ++j) {
       numPackets += numExportPacketsPerLID[j];
     }
     if (numPackets > maxNumPackets) maxNumPackets = numPackets;
@@ -619,11 +619,11 @@ doPosts(const DistributorPlan& plan,
     curPKToffset += numPackets;
   }
 
-  // setup scan through procIdsToSendTo_ list starting with higher numbered procs
+  // setup scan through getProcsTo() list starting with higher numbered procs
   // (should help balance message traffic)
-  size_t numBlocks = plan.numSendsToOtherProcs_ + plan.sendMessageToSelf_;
+  size_t numBlocks = plan.getNumSends() + plan.hasSelfMessage();
   size_t procIndex = 0;
-  while ((procIndex < numBlocks) && (plan.procIdsToSendTo_[procIndex] < myProcID)) {
+  while ((procIndex < numBlocks) && (plan.getProcsTo()[procIndex] < myProcID)) {
     ++procIndex;
   }
   if (procIndex == numBlocks) {
@@ -646,30 +646,30 @@ doPosts(const DistributorPlan& plan,
         p -= numBlocks;
       }
 
-      if (plan.procIdsToSendTo_[p] != myProcID && packetsPerSend[p] > 0) {
+      if (plan.getProcsTo()[p] != myProcID && packetsPerSend[p] > 0) {
         exports_view_type tmpSend =
           subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
 
         if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else if (sendType == Details::DISTRIBUTOR_RSEND) {
           readySend<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else if (sendType == Details::DISTRIBUTOR_ISEND) {
           exports_view_type tmpSendBuf =
             subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
-          requests_.push_back (isend<int> (tmpSendBuf, plan.procIdsToSendTo_[p],
-                tag, *plan.comm_));
+          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
+                tag, *plan.getComm()));
         }
         else if (sendType == Details::DISTRIBUTOR_SSEND) {
           ssend<int> (tmpSend,
               as<int> (tmpSend.size ()),
-              plan.procIdsToSendTo_[p], tag, *plan.comm_);
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(
@@ -684,7 +684,7 @@ doPosts(const DistributorPlan& plan,
       }
     }
 
-    if (plan.sendMessageToSelf_) {
+    if (plan.hasSelfMessage()) {
       deep_copy_offset(imports, exports, selfReceiveOffset,
           sendPacketOffsets[selfNum], packetsPerSend[selfNum]);
     }
@@ -721,11 +721,11 @@ doPosts(const DistributorPlan& plan,
         p -= numBlocks;
       }
 
-      if (plan.procIdsToSendTo_[p] != myProcID) {
+      if (plan.getProcsTo()[p] != myProcID) {
         size_t sendArrayOffset = 0;
-        size_t j = plan.startsTo_[p];
+        size_t j = plan.getStartsTo()[p];
         size_t numPacketsTo_p = 0;
-        for (size_t k = 0; k < plan.lengthsTo_[p]; ++k, ++j) {
+        for (size_t k = 0; k < plan.getLengthsTo()[p]; ++k, ++j) {
           numPacketsTo_p += numExportPacketsPerLID[j];
           deep_copy_offset(sendArray, exports, sendArrayOffset,
               indicesOffsets[j], numExportPacketsPerLID[j]);
@@ -738,34 +738,34 @@ doPosts(const DistributorPlan& plan,
           if (sendType == Details::DISTRIBUTOR_RSEND) {
             readySend<int> (tmpSend,
                 as<int> (tmpSend.size ()),
-                plan.procIdsToSendTo_[p], tag, *plan.comm_);
+                plan.getProcsTo()[p], tag, *plan.getComm());
           }
           else if (sendType == Details::DISTRIBUTOR_ISEND) {
             exports_view_type tmpSendBuf =
               subview_offset (sendArray, size_t(0), numPacketsTo_p);
-            requests_.push_back (isend<int> (tmpSendBuf, plan.procIdsToSendTo_[p],
-                  tag, *plan.comm_));
+            requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
+                  tag, *plan.getComm()));
           }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                 as<int> (tmpSend.size ()),
-                plan.procIdsToSendTo_[p], tag, *plan.comm_);
+                plan.getProcsTo()[p], tag, *plan.getComm());
           }
           else { // if (sendType == Details::DISTRIBUTOR_SSEND)
             send<int> (tmpSend,
                 as<int> (tmpSend.size ()),
-                plan.procIdsToSendTo_[p], tag, *plan.comm_);
+                plan.getProcsTo()[p], tag, *plan.getComm());
           }
         }
       }
       else { // "Sending" the message to myself
         selfNum = p;
-        selfIndex = plan.startsTo_[p];
+        selfIndex = plan.getStartsTo()[p];
       }
     }
 
-    if (plan.sendMessageToSelf_) {
-      for (size_t k = 0; k < plan.lengthsTo_[selfNum]; ++k) {
+    if (plan.hasSelfMessage()) {
+      for (size_t k = 0; k < plan.getLengthsTo()[selfNum]; ++k) {
         deep_copy_offset(imports, exports, selfReceiveOffset,
             indicesOffsets[selfIndex],
             numExportPacketsPerLID[selfIndex]);
