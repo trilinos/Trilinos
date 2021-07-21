@@ -226,6 +226,8 @@ void Piro::TempusSolver<Scalar>::initialize(
     // IKT, 12/8/16: it may be necessary to expand the list of conditions
     // below, as more explicit schemes get added to Tempus
     // Explicit time-integrators for 1st order ODEs 
+    const bool lump_mass_matrix = tempusPL->get("Lump Mass Matrix", false);
+    const bool const_mass_matrix = tempusPL->get("Constant Mass Matrix", false);
     if (
       stepperType == "Forward Euler" ||
       stepperType == "RK Forward Euler" ||
@@ -251,7 +253,8 @@ void Piro::TempusSolver<Scalar>::initialize(
 
       Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
       model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-      sublist(tempusPL,"Stratimikos", true), origModel, tempusPL->get("Constant Mass Matrix", false), tempusPL->get("Lump Mass Matrix", false),false));
+        sublist(tempusPL,"Stratimikos", true), origModel, const_mass_matrix, lump_mass_matrix,false));
+      is_explicit_ = true; 
     }
 
     //Explicit time-integrators for 2nd order ODEs
@@ -259,7 +262,28 @@ void Piro::TempusSolver<Scalar>::initialize(
     else if (stepperType == "Newmark Explicit a-Form") {
       Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model_;
       model_ = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar>(
-        sublist(tempusPL,"Stratimikos", true), origModel, tempusPL->get("Constant Mass Matrix", false), tempusPL->get("Lump Mass Matrix", false),true));
+        sublist(tempusPL,"Stratimikos", true), origModel, const_mass_matrix, lump_mass_matrix,true));
+      is_explicit_ = true; 
+    }
+    //Set 'Tempus'->'Sensitivities'->'Mass Matrix Is Identity' to true in the case of explicit
+    //scheme and mass lumping.  Only relevant for adjoint transient sensitivities.  If 
+    //user explicitly sets this parameter to 'false', throw.
+    if ((is_explicit_ == true) && (lump_mass_matrix == true)) {
+      ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities");
+      if (tempusSensPL.isParameter("Mass Matrix Is Identity")) {
+        const bool is_const_mass_matrix = tempusSensPL.get<bool>("Mass Matrix Is Identity");
+        if (is_const_mass_matrix == false) { //Throw if setting 'Mass Matrix Is Identity = false' with explicit
+		                             //stepper and mass lumping
+          TEUCHOS_TEST_FOR_EXCEPTION(
+             true,
+             Teuchos::Exceptions::InvalidParameter,
+             "\n Error! Piro::TempusSolver: please set 'Tempus'->'Sensitivities'->'Mass Matrix Is Identity=true' when using"
+	     << " mass lumping + explicit stepper!\n");
+	}	
+      }
+      else {
+        tempusSensPL.set("Mass Matrix Is Identity", true); // Necessary for explicit
+      }
     }
     // C.2) Create the Thyra-wrapped ModelEvaluator
 
@@ -472,7 +496,6 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   if (Teuchos::VERB_MEDIUM <= solnVerbLevel_) {
     *out_ << "Final Solution\n" << *finalSolution << "\n";
   }
-
 
   // As post-processing step, calculate responses at final solution
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = model_->createInArgs();

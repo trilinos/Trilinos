@@ -213,7 +213,10 @@ private:
   SENS_METHOD sens_method_;
 
   //Boolean to mark whether initial state was reset using setInitialState routine
-  bool initial_state_reset_; 
+  bool initial_state_reset_;
+
+  //Boolean marking whether stepper is explicit
+  bool is_explicit_ = false;  
 };
 
 /** \brief Non-member constructor function */
