@@ -690,6 +690,22 @@ create_W_op() const
 }
 
 template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+SinCosModelAdjoint<Scalar>::
+createInArgs() const
+{
+  // This ME should use the same InArgs as the base SinCosModel.  However
+  // we can't just use it's InArgs directly because the description won't
+  // match (which is checked in debug builds).  Instead create a new InArgsSetup
+  // initialized by SinCosModel::createInArgs() and set the description
+  // appropriately.
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgsSetup<Scalar> inArgs = SinCosModel<Scalar>::createInArgs();
+  inArgs.setModelEvalDescription(this->description());
+  return inArgs;
+}
+
+template<class Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 SinCosModelAdjoint<Scalar>::
 createOutArgsImpl() const
@@ -699,6 +715,7 @@ createOutArgsImpl() const
   outArgs.setModelEvalDescription(this->description());
   outArgs.setSupports( MEB::OUT_ARG_f ); // Apparently all models have to support f
   outArgs.setSupports( MEB::OUT_ARG_W_op );
+  outArgs.set_Np_Ng(this->Np_,0);
   return outArgs;
 }
 

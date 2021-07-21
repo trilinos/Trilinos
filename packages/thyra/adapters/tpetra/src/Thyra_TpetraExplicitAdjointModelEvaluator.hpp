@@ -76,6 +76,19 @@ public:
   //! Destructor
   virtual ~TpetraExplicitAdjointModelEvaluator() = default;
 
+  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
+  {
+    // This ME should use the same InArgs as the underlying model.  However
+    // we can't just use it's InArgs directly because the description won't
+    // match (which is checked in debug builds).  Instead create a new
+    // InArgsSetup initialized by the underlying model's createInArgs() and
+    // set the description appropriately.
+    ModelEvaluatorBase::InArgsSetup<Scalar> inArgs =
+      this->getUnderlyingModel()->createInArgs();
+    inArgs.setModelEvalDescription(this->description());
+    return inArgs;
+  }
+
   RCP<LinearOpBase<Scalar> > create_W_op() const {
     typedef TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node> TLO;
     typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> TO;
@@ -105,8 +118,9 @@ private:
       this->getUnderlyingModel()->createOutArgs();
     MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
-    if (model_outArgs.supports(MEB::OUT_ARG_W_op))
-      outArgs.setSupports(MEB::OUT_ARG_W_op);
+    outArgs.setSupports(MEB::OUT_ARG_f); //All models must support f, apparently
+    outArgs.setSupports(MEB::OUT_ARG_W_op);
+    TEUCHOS_ASSERT(model_outArgs.supports(MEB::OUT_ARG_W_op));
     return outArgs;
   }
 

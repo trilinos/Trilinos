@@ -198,6 +198,7 @@ class SinCosModelAdjoint
   /** \name Public functions overridden from ModelEvaluator. */
   //@{
 
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
 
