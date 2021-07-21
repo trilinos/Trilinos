@@ -3603,7 +3603,6 @@ namespace {
                                 int part_count, int time_step,
                                 const std::vector<std::vector<INT>> &local_element_to_global)
   {
-    int  error = 0;
     bool is_sidenodeset =
         vars.objectType == Excn::ObjectType::NSET || vars.objectType == Excn::ObjectType::SSET;
 
@@ -3638,7 +3637,7 @@ namespace {
 
               if (local_mesh[p]
                       .truthTable[static_cast<int>(vars.objectType)][input_truth_table_loc] > 0) {
-                error = ex_get_var(id, time_step + 1, exodus_object_type(vars.objectType), i + 1,
+                int error = ex_get_var(id, time_step + 1, exodus_object_type(vars.objectType), i + 1,
                                    local_sets[p][b].id, entity_count, values.data());
                 if (error < 0) {
                   exodus_error(__LINE__);
