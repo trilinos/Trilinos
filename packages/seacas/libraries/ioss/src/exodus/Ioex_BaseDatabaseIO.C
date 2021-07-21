@@ -2088,7 +2088,6 @@ namespace Ioex {
       // attribute named "attribute_1", "attribute_2", ..., "attribute_#"
       // This is controlled by the database property
       // "IGNORE_ATTRIBUTE_NAMES"
-      char field_suffix_separator = get_field_separator();
       bool attributes_named       = true; // Possibly reset below; note that even if ignoring
       // attribute names, they are still 'named'
 
