@@ -182,7 +182,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    else
      x = tpetraContainer_->get_x();
 
-   auto x_data = x->template getLocalView<PHX::Device>();
+   auto x_data = x->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
    globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
@@ -507,8 +507,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
     x_vector = ro_ged->getGhostedVector_Tpetra();
 
-    x_vector->template sync<PHX::Device>();
-
     return;
   }
 
@@ -531,8 +529,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
       else
         x_vector = tpetraContainer->get_x();
 
-      x_vector->template sync<PHX::Device>();
-
       return; // epetraContainer was found
     }
   }
@@ -543,8 +539,6 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
     x_vector = ro_ged->getGhostedVector_Tpetra();
   }
-
-  x_vector->template sync<PHX::Device>();
 }
 
 // **********************************************************************
@@ -595,7 +589,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    // now setup the fuctor_data, and run the parallel_for loop
    //////////////////////////////////////////////////////////////////////////////////
 
-   functor_data.x_data = x_vector->template getLocalView<PHX::Device>();
+   functor_data.x_data = x_vector->getLocalViewDevice(Tpetra::Access::ReadOnly);
    functor_data.seed_value = seed_value;
    functor_data.lids = scratch_lids_;
 
