@@ -2088,13 +2088,11 @@ namespace Ioex {
       // attribute named "attribute_1", "attribute_2", ..., "attribute_#"
       // This is controlled by the database property
       // "IGNORE_ATTRIBUTE_NAMES"
+      char field_suffix_separator = get_field_separator();
       bool attributes_named       = true; // Possibly reset below; note that even if ignoring
       // attribute names, they are still 'named'
 
       if (properties.exists("IGNORE_ATTRIBUTE_NAMES")) {
-        field_suffix_separator = ' '; // Do not combine into a
-        // higher-order storage type.
-
         for (int i = 0; i < attribute_count; i++) {
           std::string tmp = fmt::format("attribute_{}", i + 1);
           Ioss::Utils::copy_string(names[i], tmp, maximumNameLength + 1);
