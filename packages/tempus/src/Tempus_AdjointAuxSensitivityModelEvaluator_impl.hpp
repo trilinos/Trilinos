@@ -72,7 +72,10 @@ AdjointAuxSensitivityModelEvaluator(
   x_prod_space_ = Thyra::productVectorSpace(x_spaces());
   f_prod_space_ = Thyra::productVectorSpace(f_spaces());
 
+  // forward and adjoint models must support same InArgs
   MEB::InArgs<Scalar> me_inArgs = model_->createInArgs();
+  me_inArgs.assertSameSupport(adjoint_model_->createInArgs());
+
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setModelEvalDescription(this->description());
   inArgs.setSupports(MEB::IN_ARG_x);
