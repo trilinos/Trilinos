@@ -485,13 +485,14 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   auto numStates = solutionHistory->getNumStates();
   solutionState = (*solutionHistory)[numStates-1];
   //Get final solution from solutionHistory.
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> x = solutionState->getX(); 
-  Teuchos::RCP<const DMVPV> X = Teuchos::rcp_dynamic_cast<const DMVPV>(x);
+  //typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  //Teuchos::RCP<const Thyra::VectorBase<Scalar>> x = solutionState->getX(); 
+  //Teuchos::RCP<const DMVPV> X = Teuchos::rcp_dynamic_cast<const DMVPV>(x);
   //It appears only forward sensitivity method returns a Thyra product MV whose 
   //first column is the solution, not the adjoint sensitivity method.  Might
   //want to add a check for this.
-  finalSolution = (X == Teuchos::null) ? x : X->getMultiVector()->col(0);
+  //finalSolution = (X == Teuchos::null) ? x : X->getMultiVector()->col(0);
+  finalSolution = piroTempusIntegrator_->getX(); 
 
   if (Teuchos::VERB_MEDIUM <= solnVerbLevel_) {
     *out_ << "Final Solution\n" << *finalSolution << "\n";
