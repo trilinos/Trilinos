@@ -134,6 +134,12 @@ template class EpetraVectorT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode 
 template Epetra_Vector & toEpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(Vector<double, int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> &);
 template const Epetra_Vector & toEpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Vector<double, int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> &);
 #endif
+#ifdef HAVE_TPETRA_INST_CUDA
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraVectorT<long long, default_node_type >;
+template Epetra_Vector & toEpetra<long long,default_node_type >(Vector<double, int, long long, default_node_type> &);
+template const Epetra_Vector & toEpetra<long long, default_node_type >(const Vector<double, int, long long, default_node_type> &);
+#endif
 #ifdef HAVE_TPETRA_INST_HIP
 typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
 template class EpetraVectorT<long long, default_node_type >;

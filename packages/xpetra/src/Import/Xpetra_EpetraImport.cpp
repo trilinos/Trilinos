@@ -119,6 +119,11 @@ template RCP<const Import<int,long long,Kokkos::Compat::KokkosThreadsWrapperNode
 template class EpetraImportT<long long, Kokkos::Compat::KokkosOpenMPWrapperNode >;
 template RCP<const Import<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNode> > toXpetra<long long,Kokkos::Compat::KokkosOpenMPWrapperNode>(const Epetra_Import *);
 #endif
+#ifdef HAVE_TPETRA_INST_CUDA
+typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraImportT<long long, default_node_type >;
+template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
+#endif
 #ifdef HAVE_TPETRA_INST_HIP
 typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
 template class EpetraImportT<long long, default_node_type >;
