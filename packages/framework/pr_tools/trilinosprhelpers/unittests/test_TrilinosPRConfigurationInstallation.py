@@ -218,6 +218,16 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         self.assertEqual(ret, 0)
         self.assertTrue(Path(os.path.join(args.workspace_dir,
                                           "generatedPRFragment.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "generatedPRFragment.cmake"))
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "packageEnables.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "packageEnables.cmake"))
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "package_subproject_list.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "package_subproject_list.cmake"))
 
 
     def test_TrilinosPRConfigurationInstallationDryRun(self):

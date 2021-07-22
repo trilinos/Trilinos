@@ -369,7 +369,7 @@ class TrilinosPRConfigurationBase(object):
 
         PR-<PR Number>-test-<Jenkins Job Name>-<Job Number">
         """
-        output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_jenkins_job_name, self.arg_jenkins_job_number)
+        output = "PR-{}-test-{}-{}".format(self.arg_pullrequest_number, self.arg_pr_genconfig_job_name, self.arg_jenkins_job_number)
         return output
 
 
@@ -581,6 +581,7 @@ class TrilinosPRConfigurationBase(object):
         print("--- arg_pr_env_config_file      = {}".format(self.arg_pr_env_config_file))
         print("--- arg_pr_gen_config_file      = {}".format(self.arg_pr_gen_config_file))
         print("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
+        print("--- arg_pr_genconfig_job_name   = {}".format(self.arg_pr_genconfig_job_name))
         print("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
         print("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
         print("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
@@ -600,10 +601,7 @@ class TrilinosPRConfigurationBase(object):
         print("+" + "-"*68 + "+")
         print("|   E N V I R O N M E N T   S E T   U P   S T A R T")
         print("+" + "-"*68 + "+")
-        # tr_env = LoadEnv([self.arg_pr_jenkins_job_name,
-        #                   "--environment-specs",
-        #                   self.arg_pr_config_file])
-        tr_env = LoadEnv([self.arg_pr_jenkins_job_name],
+        tr_env = LoadEnv([self.arg_pr_genconfig_job_name],
                          load_env_ini_file=Path(self.arg_pr_env_config_file))
         tr_env.load_set_environment()
 

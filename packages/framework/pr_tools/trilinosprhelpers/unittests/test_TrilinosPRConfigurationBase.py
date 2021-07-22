@@ -209,6 +209,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
             pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
+            genconfig_build_name="rhel7_sems-gnu-7.2.0-openmpi-1.10.1-openmp_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-package-enables",
             jenkins_job_number=99,
             pullrequest_number='0000',
             pullrequest_cdash_track="Pull Request",
@@ -242,6 +243,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         """
         args = copy.deepcopy(self.dummy_args())
         args.pullrequest_build_name = "Trilinos-pullrequest-python-3"
+        args.genconfig_build_name = "Trilinos-pullrequest-python-3"
         return args
 
 
@@ -344,7 +346,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config.pullrequest_build_name
         print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.pullrequest_build_name, args.jenkins_job_number)
+        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
 
 
@@ -353,7 +355,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
         build_name = pr_config. pullrequest_build_name
         print("--- build_name = {}".format(build_name))
-        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.pullrequest_build_name, args.jenkins_job_number)
+        expected_build_name = "PR-{}-test-{}-{}".format(args.pullrequest_number, args.genconfig_build_name, args.jenkins_job_number)
         self.assertEqual(build_name, expected_build_name)
 
 

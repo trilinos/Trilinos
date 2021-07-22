@@ -35,6 +35,7 @@ from mock import patch
 
 import argparse
 import multiprocessing
+from pathlib import Path
 
 
 import trilinosprhelpers
@@ -193,6 +194,10 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         self.mock_chdir.assert_called_once()
         self.mock_subprocess_check_call.assert_called()
         self.assertEqual(ret, 0)
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "generatedPRFragment.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "generatedPRFragment.cmake"))
 
 
     def test_TrilinosPRConfigurationStandardDryRun(self):
@@ -230,6 +235,14 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         ret = pr_config.prepare_test()
         self.assertEqual(ret, 0)
         self.mock_cpu_count.assert_called()
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "packageEnables.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "packageEnables.cmake"))
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "package_subproject_list.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "package_subproject_list.cmake"))
 
         # execute step
         #ret = pr_config.execute_test()
