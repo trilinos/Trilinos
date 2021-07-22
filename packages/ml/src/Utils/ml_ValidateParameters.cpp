@@ -145,13 +145,19 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
 # endif
   /* Unlisted Options */
   setIntParameter("smoother: self overlap",0,"experimental option",PL,intParam);
+  setDoubleParameter("aggregation: enrich beta",0.0,"Unlisted option",PL,dblParam);
+
   /* Unlisted Options that should probably be listed */
   PL->set("smoother: self list",dummy);
   PL->sublist("smoother: self list").disableRecursiveValidation();
   setDoubleParameter("coarse: add to diag", 0.0,"Unlisted option",PL,dblParam);
   PL->set("coarse: split communicator",false);
   PL->set("smoother: split communicator",false);
-    
+  PL->set("dump matrix: enable",false);
+
+
+
+
 
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL,intParam);
