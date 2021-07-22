@@ -39,6 +39,12 @@ namespace Tempus {
  *
  * Because of limitations on the steppers, the implementation currently assumes
  * df/dxdot is a constant matrix.
+ *
+ * To extract the final solution x(T) and sensitivity dg/dp(T) one should use
+ * the getX() and getDgDp() methods, which return these quantities directly.
+ * One can also extract this data for all times from the solution history,
+ * however the data is stored in Thyra product vectors which requires
+ * knowledge of the internal implementation.
  */
 template<class Scalar>
 class IntegratorAdjointSensitivity :
