@@ -61,13 +61,13 @@ public:
 
   // Constructor
   ObserverToTempusIntegrationObserverAdapter(
+    const Teuchos::RCP<const Piro::TempusIntegrator<Scalar>>& piroTempusIntegrator, 
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
     const bool supports_x_dotdot = false, 
     const bool abort_on_fail_at_min_dt = false, 
-    const SENS_METHOD sens_method = NONE,  
-    const Teuchos::RCP<const Piro::TempusIntegrator<Scalar>>& integrator = Teuchos::null); 
+    const SENS_METHOD sens_method = NONE); 
 
   // Overridden from Tempus::IntegratorObserver
 
@@ -112,7 +112,7 @@ private:
   bool supports_x_dotdot_;
   Scalar previous_dt_; 
   bool abort_on_fail_at_min_dt_;
-  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> integrator_; 
+  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
   
   SENS_METHOD sens_method_;
 };

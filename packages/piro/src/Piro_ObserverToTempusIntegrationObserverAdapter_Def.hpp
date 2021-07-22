@@ -49,20 +49,20 @@
 // Constructor
 template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegrationObserverAdapter(
+    const Teuchos::RCP<const Piro::TempusIntegrator<Scalar>>& piroTempusIntegrator,
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
     const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt, 
-    const SENS_METHOD sens_method,
-    const Teuchos::RCP<const Piro::TempusIntegrator<Scalar>>& integrator) 
-    : solutionHistory_(solutionHistory),
+    const SENS_METHOD sens_method)
+    : piroTempusIntegrator_(piroTempusIntegrator),	
+      solutionHistory_(solutionHistory),
       timeStepControl_(timeStepControl),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
       wrappedObserver_(wrappedObserver),
       supports_x_dotdot_(supports_x_dotdot),
       abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt), 
-      sens_method_(sens_method),
-      integrator_(integrator)	
+      sens_method_(sens_method)
 {
   previous_dt_ = 0.0;
 }
@@ -228,13 +228,13 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
     return;
   }
 
-  //Get solution and its time derivatives from integrator
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution = integrator_->getX(); 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dot = integrator_->getXDot(); 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dotdot = (supports_x_dotdot_ == true) ? integrator_->getXDotDot() : Teuchos::null; 
+  //Get solution and its time derivatives from piroTempusIntegrator
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution = piroTempusIntegrator_->getX(); 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dot = piroTempusIntegrator_->getXDot(); 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dotdot = (supports_x_dotdot_ == true) ? piroTempusIntegrator_->getXDotDot() : Teuchos::null; 
   
-  //get solution derivative dx/dp (for forward sens) from integrator 
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > solution_dxdp_mv = (sens_method_ == FORWARD) ? integrator_->getDxDp() : Teuchos::null; 
+  //get solution derivative dx/dp (for forward sens) from piroTempusIntegrator 
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > solution_dxdp_mv = (sens_method_ == FORWARD) ? piroTempusIntegrator_->getDxDp() : Teuchos::null; 
 
 #ifdef DEBUG_OUTPUT
   if (solution_dxdp_mv != Teuchos::null) {  
