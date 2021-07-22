@@ -46,8 +46,20 @@ class IntegratorAdjointSensitivity :
 {
 public:
 
-  /** \brief Full Constructor will be fully initialized. */
-  /*!
+  /** \brief Full Constructor with model, and will be fully initialized. 
+   *
+   * \param[in] model                   The forward physics ModelEvaluator
+   * \param[in] state_integrator        Forward state Integrator for the forward problem
+   * \param[in] adjoint_model           ModelEvaluator for the adjoint physics/problem 
+   * \param[in] adjoint_integrator      Time integrator for the adjoint problem
+   * \param[in] solution_history        The forward state solution history
+   * \param[in] p_index                 Sensitivity parameter index
+   * \param[in] g_index                 Response function index
+   * \param[in] g_depends_on_p        Does response depends on parameters?
+   * \param[in] f_depends_on_p        Does residual depends on parameters?
+   * \param[in] ic_depends_on_p       Does the initial condition depends on parameters?
+   * \param[in] mass_matrix_is_identity Is the mass matrix an identity matrix?
+   *
    * In addition to all of the regular integrator options, the supplied
    * parameter list supports the following options contained within a sublist
    * "Sensitivities" from the top-level parameter list:
@@ -80,7 +92,7 @@ public:
       const Teuchos::RCP<IntegratorBasic<Scalar>> &state_integrator,
       const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_model,
       const Teuchos::RCP<IntegratorBasic<Scalar>> &ajoint_integrator,
-      const Teuchos::RCP<SolutionHistory<Scalar> > &solutionHistory,
+      const Teuchos::RCP<SolutionHistory<Scalar> > &solution_history,
       const int p_index,
       const int g_index,
       const bool g_depends_on_p,
@@ -174,31 +186,51 @@ protected:
     const Teuchos::RCP<const SolutionHistory<Scalar> >& state_solution_history,
     const Teuchos::RCP<const SolutionHistory<Scalar> >& adjoint_solution_history);
 
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
-  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > adjoint_integrator_;
-  Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
+  Teuchos::RCP<IntegratorBasic<Scalar>> state_integrator_;
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar>> adjoint_model_;
+  Teuchos::RCP<IntegratorBasic<Scalar>> adjoint_integrator_;
+  Teuchos::RCP<SolutionHistory<Scalar>> solutionHistory_;
   int p_index_;
   int g_index_;
   bool g_depends_on_p_;
   bool f_depends_on_p_;
   bool ic_depends_on_p_;
   bool mass_matrix_is_identity_;
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_init_;
-  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > dgdp_;
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> dxdp_init_;
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> dgdp_;
 };
 
 /// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
+/**
+ * @brief Nonmember constructor
+ *
+ * This nonmember constructor calls parses the `pList` provided to constructor
+ * the sub-objects needed to call the full `IntegratorAdjointSensitivity`
+ * construtor
+ *
+ * @param pList  ParameterList defining the integrator options and options
+ *               defining the sensitivity analysis
+ * @param model  ModelEvaluator for the problem
+ *
+ * @return Time integrator implementing adjoint sensitivity
+ */
+template <class Scalar>
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar>>
 integratorAdjointSensitivity(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model);
 
 /// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
+/**
+ * @brief Default non-member constructor
+ *
+ * This nonmember constructor creates default state and adjoint time integrator.
+ *
+ * @return Time integrator implementing forward sensitivity
+ */
+template <class Scalar>
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar>>
 integratorAdjointSensitivity();
 
 } // namespace Tempus
