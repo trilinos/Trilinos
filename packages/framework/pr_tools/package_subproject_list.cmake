@@ -1,0 +1,1 @@
+set(CTEST_LABELS_FOR_SUBPROJECTS TrilinosFrameworkTests)
