@@ -283,28 +283,28 @@ Piro::TempusIntegrator<Scalar>::getDxDp() const
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
-Piro::TempusIntegrator<Scalar>::getDxdotDp() const
+Piro::TempusIntegrator<Scalar>::getDxDotDp() const
 {
   if (fwdSensIntegrator_ != Teuchos::null) {
-    return fwdSensIntegrator_->getDxdotDp(); 
+    return fwdSensIntegrator_->getDxDotDp(); 
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-                 "Error in Piro::TempusIntegrator: getDxdotDp() is not valid for the requested integrator type, " <<
+                 "Error in Piro::TempusIntegrator: getDxDotDp() is not valid for the requested integrator type, " <<
 		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
-Piro::TempusIntegrator<Scalar>::getDxdotdotDp() const
+Piro::TempusIntegrator<Scalar>::getDxDotDotDp() const
 {
   if (fwdSensIntegrator_ != Teuchos::null) {
-    return fwdSensIntegrator_->getDxdotdotDp(); 
+    return fwdSensIntegrator_->getDxDotDotDp(); 
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-                 "Error in Piro::TempusIntegrator: getDxdotdotDp() is not valid for the requested integrator type, " <<
+                 "Error in Piro::TempusIntegrator: getDxDotDotDp() is not valid for the requested integrator type, " <<
 		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }

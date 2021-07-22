@@ -91,15 +91,15 @@ public:
                                  Teuchos::RCP< const Thyra::VectorBase< Scalar > > xdot0 = Teuchos::null,
                                  Teuchos::RCP< const Thyra::VectorBase< Scalar > > xdotdot0 = Teuchos::null,
                                  Teuchos::RCP< const Thyra::MultiVectorBase< Scalar > > DxDp0 = Teuchos::null,
-                                 Teuchos::RCP< const Thyra::MultiVectorBase< Scalar > > DxdotDp0 = Teuchos::null,
-                                 Teuchos::RCP< const Thyra::MultiVectorBase< Scalar > > DxdotdotDp0 = Teuchos::null);
+                                 Teuchos::RCP< const Thyra::MultiVectorBase< Scalar > > DxDotDp0 = Teuchos::null,
+                                 Teuchos::RCP< const Thyra::MultiVectorBase< Scalar > > DxdotDotDp0 = Teuchos::null);
 
   Tempus::Status getStatus() const;
 
   // The following 3 routines are only for forward sensitivities
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxDp() const;
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxdotDp() const;
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxdotdotDp() const;
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxDotDp() const;
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDxDotDotDp() const;
 
   //The following routine is only for adjoint sensitivities
   Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> getDgDp() const;
