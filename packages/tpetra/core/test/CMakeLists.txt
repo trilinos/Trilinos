@@ -9,7 +9,7 @@ ADD_SUBDIRECTORIES(
   Block
   BugTests
   Comm
-  Core  
+  Core
   CrsGraph
   CrsMatrix
   Directory
@@ -27,6 +27,7 @@ ADD_SUBDIRECTORIES(
   Merge
   MultiVector
   Node
+  Operator
   PerformanceCGSolve
   Sort
   Utils
