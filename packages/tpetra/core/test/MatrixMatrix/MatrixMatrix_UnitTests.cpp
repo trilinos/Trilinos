@@ -2209,6 +2209,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
 }*/
 
 
+// These are the tests associated to UNIT_TEST_GROUP_SC_LO_GO_NO that work for all backends.
 #define UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON( SC, LO, GO, NT )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
@@ -2221,7 +2222,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)
 
-// FIXME_SYCL requires quering free device memory
+// FIXME_SYCL requires querying free device memory in KokkosKernels.
+// The SYCL specifications don't allow asking for that.
 #ifdef HAVE_TPETRA_SYCL
   #define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )  \
     UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON( SC, LO, GO, NT )

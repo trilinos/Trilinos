@@ -2845,12 +2845,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetPids, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Import_Util, GetTwoTransferOwnershipVector, LO, GO )
 
+// These are the tests associated to UNIT_TEST_GROUP_SC_LO_GO that work for all backends.
 #define UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC )
 
-// FIXME_SYCL requires quering free device memory
+// FIXME_SYCL requires querying free device memory in KokkosKernels.
+// The SYCL specifications don't allow asking for that.
 #ifdef HAVE_TPETRA_SYCL
   #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )  \
     UNIT_TEST_GROUP_SC_LO_GO_COMMON( SC, LO, GO )

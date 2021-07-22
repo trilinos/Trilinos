@@ -39,6 +39,9 @@
 // ************************************************************************
 // @HEADER
 
+
+// This is a verbatim copy of the other TpetraExt_MatrixMatrix_*.hpp files
+// replacing the execution/memory space by the ones corresponding to SYCL.
 #ifndef TPETRA_MATRIXMATRIX_SYCL_DEF_HPP
 #define TPETRA_MATRIXMATRIX_SYCL_DEF_HPP
 
