@@ -147,6 +147,40 @@ Piro::TempusIntegrator<Scalar>::getX() const
 }
  
 template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getXDot() const
+{
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdot; 
+  if (basicIntegrator_ != Teuchos::null) {
+    xdot = basicIntegrator_->getXDot(); 
+  }
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    xdot = fwdSensIntegrator_->getXDot(); 
+  }
+  if (adjSensIntegrator_ != Teuchos::null) {
+    xdot = adjSensIntegrator_->getXDot(); 
+  }
+  return xdot; 
+}
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getXDotDot() const
+{
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdotdot; 
+  if (basicIntegrator_ != Teuchos::null) {
+    xdotdot = basicIntegrator_->getXDotDot(); 
+  }
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    xdotdot = fwdSensIntegrator_->getXDotDot(); 
+  }
+  if (adjSensIntegrator_ != Teuchos::null) {
+    xdotdot = adjSensIntegrator_->getXDotDot(); 
+  }
+  return xdotdot; 
+}
+
+template <typename Scalar>
 Teuchos::RCP<const Tempus::SolutionHistory<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getSolutionHistory() const
 {
@@ -274,7 +308,7 @@ Piro::TempusIntegrator<Scalar>::getDxDp() const
   if (fwdSensIntegrator_ != Teuchos::null) {
     return fwdSensIntegrator_->getDxDp(); 
   }
-  else {
+  else { 
     TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
                  "Error in Piro::TempusIntegrator: getDxDp() is not valid for the requested integrator type, " <<
 		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
