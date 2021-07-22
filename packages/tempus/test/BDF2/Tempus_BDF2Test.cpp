@@ -340,7 +340,6 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
   RCP<ParameterList> pList =
     getParametersFromXmlFile("Tempus_BDF2_SinCos_AdaptDt.xml");
   //Set initial time step = 2*dt specified in input file (for convergence study)
-  RCP<ParameterList> tempus_pl = sublist(pList, "Tempus", true);
   double dt = pList->sublist("Tempus")
              .sublist("Default Integrator")
              .sublist("Time Step Control").get<double>("Initial Time Step");

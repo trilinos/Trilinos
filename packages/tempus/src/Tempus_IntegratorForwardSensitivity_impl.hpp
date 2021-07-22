@@ -231,7 +231,7 @@ describe(
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
-integratorForwardSensitivity(
+createIntegratorForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
@@ -293,7 +293,7 @@ integratorForwardSensitivity(
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
-integratorForwardSensitivity()
+createIntegratorForwardSensitivity()
 {
 
   Teuchos::RCP<IntegratorForwardSensitivity<Scalar> > integrator =

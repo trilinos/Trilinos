@@ -251,7 +251,7 @@ protected:
  */
 template <class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
-integratorForwardSensitivity(
+createIntegratorForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList> pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model);
 
@@ -266,7 +266,7 @@ integratorForwardSensitivity(
  */
 template <class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar>>
-integratorForwardSensitivity();
+createIntegratorForwardSensitivity();
 
 } // namespace Tempus
 
