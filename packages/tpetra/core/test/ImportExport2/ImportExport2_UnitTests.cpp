@@ -2851,7 +2851,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC )
 
-// FIXME_SYCL requires querying free device memory in KokkosKernels.
+// FIXME_SYCL requires querying free device memory in KokkosKernels, see
+// https://github.com/kokkos/kokkos-kernels/issues/1062.
 // The SYCL specifications don't allow asking for that.
 #ifdef HAVE_TPETRA_SYCL
   #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )  \
