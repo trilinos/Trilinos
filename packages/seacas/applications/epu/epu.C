@@ -1298,6 +1298,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
         if (debug_level & 2) {
           std::fill(master_values.begin(), master_values.end(), T(0.0));
         }
+
         for (p = 0; p < part_count; p++) {
           ExodusFile id(p);
 
@@ -1308,8 +1309,6 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
               exodus_error(__LINE__);
             }
 
-            int i_out = nodal_vars.index_[i] - 1;
-            SMART_ASSERT(i_out < nodal_vars.count(InOut::OUT));
             if (debug_level & 2) {
               for (size_t j = 0; j < node_count; j++) {
                 size_t nodal_value = local_node_to_global[p][j];
@@ -1320,7 +1319,6 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
               }
             }
 
-            T *local_nodal_values = values.data();
             if (interFace.sum_shared_nodes()) {
               // sum values into master nodal value information. Note
               // that for non-shared nodes, this will be the same as a
@@ -1328,7 +1326,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
               for (size_t j = 0; j < node_count; j++) {
                 // Map local nodal value to global location...
                 size_t nodal_value = local_node_to_global[p][j];
-                master_values[nodal_value] += local_nodal_values[j];
+                master_values[nodal_value] += values[j];
               }
             }
             else {
@@ -1336,15 +1334,15 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
               for (size_t j = 0; j < node_count; j++) {
                 // Map local nodal value to global location...
                 size_t nodal_value         = local_node_to_global[p][j];
-                master_values[nodal_value] = local_nodal_values[j];
+                master_values[nodal_value] = values[j];
               }
             }
           }
         }
-      }
-      // output nodal variable info. for specified time step
-      for (int i = 0; i < nodal_vars.count(InOut::OUT); i++) {
-        error = ex_put_var(ExodusFile::output(), time_step_out, EX_NODAL, i + 1, 0,
+        // output nodal variable info. for specified time step
+        int i_out = nodal_vars.index_[i];
+        SMART_ASSERT(i_out <= nodal_vars.count(InOut::OUT));
+        error = ex_put_var(ExodusFile::output(), time_step_out, EX_NODAL, i_out, 0,
                            global.nodeCount, master_values.data());
         if (error < 0) {
           exodus_error(__LINE__);
