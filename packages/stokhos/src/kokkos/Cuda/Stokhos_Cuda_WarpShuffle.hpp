@@ -72,19 +72,19 @@ template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
 Scalar shfl_down(const Scalar &val, const int& delta, const int& width,
 		 const int& mask){
-  return KOKKOS_IMPL_CUDA_SHFL_DOWN_MASK(mask, val, delta, width);
+  return __shfl_down_sync(mask, val, delta, width);
 }
 
 template<typename Scalar>
 KOKKOS_INLINE_FUNCTION
 Scalar shfl_up(const Scalar &val, const int& delta, const int& width,
 	       const int& mask){
-  return KOKKOS_IMPL_CUDA_SHFL_UP_MASK(mask, val, delta, width);
+  return __shfl_up_sync(mask, val, delta, width);
 }
 
 KOKKOS_INLINE_FUNCTION
 void sync_warp(const int& mask) {
-  KOKKOS_IMPL_CUDA_SYNCWARP_MASK(mask);
+  __syncwarp(mask);
 }
 
 } // namespace Stokhos
