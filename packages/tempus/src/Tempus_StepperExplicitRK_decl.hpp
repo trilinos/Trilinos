@@ -16,6 +16,8 @@
 
 namespace Tempus {
 
+template<class> class Stepper_ErrorNorm;
+
 /** \brief Explicit Runge-Kutta time stepper.
  *
  *  For the explicit ODE system,
@@ -108,6 +110,9 @@ public:
     /// Initialize during construction and after changing input parameters.
     virtual void initialize();
 
+    /// set ErrorNorm calculator
+    void setErrorNorm(const Teuchos::RCP<Stepper_ErrorNorm<Scalar>> &errCalculator = Teuchos::null);
+
     /// Set model
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
@@ -170,6 +175,8 @@ protected:
 
 
   std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > stageXDot_;
+
+  Teuchos::RCP<Stepper_ErrorNorm<Scalar>> stepperErrorNormCalculator_;
 
 };
 

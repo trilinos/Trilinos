@@ -11,10 +11,25 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
+#include "Tempus_Stepper_ErrorNorm.hpp"
+
 #include "Tempus_RKButcherTableau.hpp"
 
 
 namespace Tempus {
+
+template<class Scalar>
+void StepperExplicitRK<Scalar>::
+setErrorNorm(const Teuchos::RCP<Stepper_ErrorNorm<Scalar>> &errCalculator)
+{
+  if (errCalculator != Teuchos::null) {
+    stepperErrorNormCalculator_ = errCalculator;
+  }
+  else {
+    auto er = Teuchos::rcp(new Stepper_ErrorNorm<Scalar>());
+    stepperErrorNormCalculator_ = er;
+  }
+}
 
 
 template<class Scalar>
@@ -40,6 +55,7 @@ void StepperExplicitRK<Scalar>::setup(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
   this->setStageNumber(-1);
+  this->setErrorNorm();
 
   this->setAppAction(stepperRKAppAction);
 
@@ -186,6 +202,7 @@ void StepperExplicitRK<Scalar>::setModel(
   }
 
   this->setEmbeddedMemory();
+  this->setErrorNorm();
 
   this->isInitialized_ = false;
 }
