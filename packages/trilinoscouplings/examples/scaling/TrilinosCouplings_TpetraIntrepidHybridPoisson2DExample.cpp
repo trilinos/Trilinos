@@ -1122,10 +1122,12 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     size_t NumEntries = 0;
 
     // Zero the columns corresponding to Dirichlet BCs.
+    typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", 1);
+    typename sparse_matrix_type::nonconst_values_host_view_type values("values", 1);
     for (LO i = 0; i < as<int> (gl_StiffMatrix->getNodeNumRows ()); ++i) {
       NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (i);
-      typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", NumEntries);
-      typename sparse_matrix_type::nonconst_values_host_view_type values("values", NumEntries);
+      Kokkos::resize(indices, NumEntries);
+      Kokkos::resize(values, NumEntries);
       gl_StiffMatrix->getLocalRowCopy (i, indices, values, NumEntries);
       for (int j = 0; j < as<int> (NumEntries); ++j) {
         if (myColsToZeroArrayRCP[indices(j)] == 1)
@@ -1137,8 +1139,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // Zero the rows and add ones to diagonal.
     for (int i = 0; i < numBCNodes; ++i) {
       NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (BCNodes[i]);
-      typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", NumEntries);
-      typename sparse_matrix_type::nonconst_values_host_view_type values("values", NumEntries);
+      Kokkos::resize(indices, NumEntries);
+      Kokkos::resize(values, NumEntries);
       gl_StiffMatrix->getLocalRowCopy (BCNodes[i], indices, values, NumEntries);
       const GO globalRow = gl_StiffMatrix->getRowMap ()->getGlobalElement (BCNodes[i]);
       const LO localCol = gl_StiffMatrix->getColMap ()->getLocalElement (globalRow);
