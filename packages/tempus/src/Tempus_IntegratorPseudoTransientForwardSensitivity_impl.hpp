@@ -149,23 +149,6 @@ getStepper() const
 }
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-getTempusParameterList()
-{
-  return state_integrator_->getTempusParameterList();
-}
-
-template<class Scalar>
-void
-IntegratorPseudoTransientForwardSensitivity<Scalar>::
-setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "  IntegratorPseudoTransientForwardSensitivity::setTempusParameterList() --  Deprecated!\n");
-}
-
-template<class Scalar>
 Teuchos::RCP<const SolutionHistory<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getSolutionHistory() const
@@ -490,7 +473,7 @@ buildSolutionHistory()
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity(
+createIntegratorPseudoTransientForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model)
 {
@@ -537,7 +520,7 @@ integratorPseudoTransientForwardSensitivity(
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity()
+createIntegratorPseudoTransientForwardSensitivity()
 {
   Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar>());

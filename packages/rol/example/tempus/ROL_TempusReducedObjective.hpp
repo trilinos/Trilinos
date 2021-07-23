@@ -389,7 +389,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
   else if (dgdp != Teuchos::null &&
            sensitivity_method_ == "Pseudotransient Forward") {
     RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Real> > integrator =
-      Tempus::integratorPseudoTransientForwardSensitivity<Real>(tempus_params_,
+      Tempus::createIntegratorPseudoTransientForwardSensitivity<Real>(tempus_params_,
                                                                 wrapped_model);
     const bool integratorStatus = integrator->advanceTime();
     TEUCHOS_TEST_FOR_EXCEPTION(

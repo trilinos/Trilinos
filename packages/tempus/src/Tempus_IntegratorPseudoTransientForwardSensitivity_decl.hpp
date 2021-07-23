@@ -124,8 +124,10 @@ public:
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
   /// Return a copy of the Tempus ParameterList
-  virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override;
-  virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
+  virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
+  { return state_integrator_->getTempusParameterList(); }
+  virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
+  { state_integrator_->setTempusParameterList(pl); }
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
   /// Get the SolutionHistory
@@ -192,7 +194,7 @@ protected:
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity(
+createIntegratorPseudoTransientForwardSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
@@ -207,7 +209,7 @@ integratorPseudoTransientForwardSensitivity(
  */
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity();
+createIntegratorPseudoTransientForwardSensitivity();
 
 } // namespace Tempus
 
