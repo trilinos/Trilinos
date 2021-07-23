@@ -384,6 +384,10 @@ namespace Thyra {
       if (useHalfPrecision) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
 
+        // CAG: There is nothing special about the combination double-float,
+        //      except that I feel somewhat confident that Trilinos builds
+        //      with both scalar types.
+
         // convert to half precision
         RCP<XphMat> halfA = Xpetra::convertToHalfPrecision(A);
         const std::string userName = "user data";
