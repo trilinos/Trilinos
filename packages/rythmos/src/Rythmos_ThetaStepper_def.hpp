@@ -150,6 +150,7 @@ ThetaStepper<Scalar>::unSetInterpolator()
   interpolator_ = Teuchos::null;
   return(temp_interpolator);
   isInitialized_ = false;
+  return temp_interpolator;
 }
 
 
