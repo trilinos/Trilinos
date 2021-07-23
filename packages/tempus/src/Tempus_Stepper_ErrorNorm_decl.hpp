@@ -29,7 +29,9 @@ class Stepper_ErrorNorm
 
     ~Stepper_ErrorNorm() {};
 
-    Scalar computeErrorNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &err);
+    Scalar computeWRMSNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x,
+        const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &xNext,
+        const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &err);
 
     Scalar errorNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x);
 
@@ -41,7 +43,8 @@ class Stepper_ErrorNorm
 
     Scalar relTol_;
     Scalar abssTol_;
-    Teuchos::RCP<const Thyra::VectorBase<Scalar>> x_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> u_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> uNext_;
     Teuchos::RCP<Thyra::VectorBase<Scalar>> errorWeightVector_;
     Teuchos::RCP<Thyra::VectorBase<Scalar>> scratchVector_;
 

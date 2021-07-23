@@ -358,14 +358,7 @@ void StepperExplicitRK<Scalar>::takeStep(
       }
 
 
-      // Compute: Atol + max(|u^n|, |u^{n+1}| ) * Rtol
-      Thyra::abs( *(currentState->getX()), this->abs_u0.ptr());
-      Thyra::abs( *(workingState->getX()), this->abs_u.ptr());
-      Thyra::pair_wise_max_update(tolRel, *this->abs_u0, this->abs_u.ptr());
-      Thyra::add_scalar(tolAbs, this->abs_u.ptr());
-
-      // Compute: || ee / sc ||
-      Scalar err = stepperErrorNormCalculator_->computeErrorNorm(this->abs_u, this->ee_);
+      Scalar err = stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
       workingState->setErrorRel(err);
 
       // Test if step should be rejected

@@ -27,14 +27,27 @@ Stepper_ErrorNorm<Scalar>::Stepper_ErrorNorm(const Scalar relTol, const Scalar a
 
 template<class Scalar>
 Scalar Stepper_ErrorNorm<Scalar>::
-computeErrorNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x, 
+computeWRMSNorm(const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &x, 
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &xNext,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> &err)
 {
   if (errorWeightVector_ == Teuchos::null)
     errorWeightVector_ = Thyra::createMember(x->space());
 
+  if (u_ == Teuchos::null)
+    u_ = Thyra::createMember(x->space());
+
+  if (uNext_ == Teuchos::null)
+    uNext_ = Thyra::createMember(x->space());
+
+  // Compute: Atol + max(|u^n|, |u^{n+1}| ) * Rtol
+  Thyra::abs(*x, u_.ptr());
+  Thyra::abs(*xNext, uNext_.ptr());
+  Thyra::pair_wise_max_update(relTol_, *u_, uNext_.ptr());
+  Thyra::add_scalar(abssTol_, uNext_.ptr());
+
   Thyra::assign(errorWeightVector_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-  Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *err, *x, errorWeightVector_.ptr());
+  Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *err, *uNext_, errorWeightVector_.ptr());
 
   const auto space_dim = err->space()->dim();
   Scalar err_norm = std::abs( Thyra::norm(*errorWeightVector_) / space_dim);
