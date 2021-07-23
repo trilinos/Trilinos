@@ -17,6 +17,8 @@
 
 namespace Tempus {
 
+template<class> class Stepper_ErrorNorm;
+
 /** \brief Diagonally Implicit Runge-Kutta (DIRK) time stepper.
  *
  *  For the implicit ODE system, \f$\mathcal{F}(\dot{x},x,t) = 0\f$,
@@ -82,7 +84,7 @@ namespace Tempus {
  *      \item \qquad  $\dot{X}_i \leftarrow 0$
  *                    \hfill {\it * Not needed for later calculations.}
  *      \item \quad {\bf else if ($a_{ii} = 0$) then}
- *                  \hfill {\it * Explicit stage.}
+ * void setErrorNorm(const Teuchos::RCP<Stepper_ErrorNorm<Scalar>> &errCalculator = Teuchos::null);                  \hfill {\it * Explicit stage.}
  *      \item \qquad  {\bf if ($i=0$ and ``Use FSAL'' and (previous step not failed))}
  *      \item \qquad \quad  $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
  *                          \hfill {\it * Use $\dot{X}_{s-1}$ from $n-1$ time step.}
@@ -162,6 +164,9 @@ public:
   //@{
     /// Initialize after construction and changing input parameters.
     virtual void initialize() override;
+
+    /// set ErrorNorm calculator
+    void setErrorNorm(const Teuchos::RCP<Stepper_ErrorNorm<Scalar>> &errCalculator = Teuchos::null); /// set ErrorNorm calculator
 
     /// Set the model
     virtual void setModel(
@@ -282,6 +287,8 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
   bool resetGuess_ = true;
+
+  Teuchos::RCP<Stepper_ErrorNorm<Scalar>> stepperErrorNormCalculator_;
 };
 
 
