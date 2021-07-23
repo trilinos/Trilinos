@@ -39,9 +39,11 @@ namespace Tempus {
  * Note that this integrator implements all of the same functions as the
  * IntegratorBasicOld, but is not derived from IntegratorBasicOld.  It also provides
  * functions for setting the sensitivity initial conditions and extracting the
- * sensitivity at the final time.  Also the vectors stored in the solution
- * history store product vectors of the state and sensitivities using
- * Thyra;:DefaultMultiVectorProductVector.
+ * sensitivity at the final time.  One should use the getX() and getDxDp()
+ * methods for extracting the final sultion and its parameter sensitivity
+ * as a multi-vector.  This data can also be extracted from the solution
+ * history, but is stored as a Thyra product vector which requires knowledge
+ * of the internal implementation.
  */
 template<class Scalar>
 class IntegratorForwardSensitivity

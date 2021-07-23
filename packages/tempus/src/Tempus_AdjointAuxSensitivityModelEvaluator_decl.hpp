@@ -81,12 +81,17 @@ public:
    */
   AdjointAuxSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_model,
     const Scalar& t_final,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
 
   //! Get the underlying model 'f'
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
   { return model_; }
+
+  //! Get the underlying adjoint model
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getAdjointModel() const
+  { return adjoint_model_; }
 
   //! Set solution history from forward evaluation
   void setForwardSolutionHistory(
@@ -134,6 +139,7 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > adjoint_model_;
 
   Teuchos::RCP<const DMVPVS> adjoint_space_;
   Teuchos::RCP<const DMVPVS> residual_space_;
