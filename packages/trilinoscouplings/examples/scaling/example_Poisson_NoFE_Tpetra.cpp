@@ -1248,7 +1248,7 @@ int main(int argc, char *argv[]) {
     /* Zero the columns */
     for (size_t i=0; i < gl_StiffMatrixT->getNodeNumRows(); i++) {
        NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(i);
-       typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indicies", NumEntries);
+       typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", NumEntries);
        typename sparse_matrix_type::nonconst_values_host_view_type values("values", NumEntries);
        gl_StiffMatrixT->getLocalRowCopy(i, indices, values, NumEntries);
        //Matrix.ExtractMyRowView(i,numEntries,vals,cols);
@@ -1263,7 +1263,7 @@ int main(int argc, char *argv[]) {
     /* Zero the rows, add ones to diagonal */
     for (size_t i = 0; i<(size_t)numBCNodes; i++) {
       NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(BCNodes[i]);
-      typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indicies", NumEntries);
+      typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", NumEntries);
       typename sparse_matrix_type::nonconst_values_host_view_type values("values", NumEntries);
       gl_StiffMatrixT->getLocalRowCopy(BCNodes[i], indices, values, NumEntries);
       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);

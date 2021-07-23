@@ -2952,7 +2952,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     typename crs_matrix_type::nonconst_values_host_view_type vals("vals", numEntriesInRow);
     A.getLocalRowCopy(lrid, cols, vals, numEntriesInRow);
     
-    for(int j=0; j<vals.size(); j++)
+    for(size_t j=0; j<vals.extent(0); j++)
       vals(j) = (cols(j) == lrid) ? 1.0 : 0.0;
 
     A.replaceLocalValues(lrid, cols, vals);
