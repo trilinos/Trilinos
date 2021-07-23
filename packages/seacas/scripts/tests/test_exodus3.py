@@ -112,6 +112,30 @@ class MyTestCase(unittest.TestCase):
         self.assertIn("Momentum_Z", names)
         self.assertIn("Kinetic_Energy", names)
 
+    def test_get_reduction_variables_assembly_enum(self):
+        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        red_var = temp_exofile.get_reduction_variable_number(exo.ex_entity_type.EX_ASSEMBLY)
+        self.assertEqual(4, red_var)
+        names = temp_exofile.get_reduction_variable_names(exo.ex_entity_type.EX_ASSEMBLY)
+        self.assertIn("Momentum_X", names)
+        self.assertIn("Momentum_Y", names)
+        self.assertIn("Momentum_Z", names)
+        self.assertIn("Kinetic_Energy", names)
+
+    def test_get_reduction_variable_assembly(self):
+        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        red_var = temp_exofile.get_reduction_variable_number("EX_ASSEMBLY")
+        self.assertEqual(4, red_var)
+        name = temp_exofile.get_reduction_variable_name("EX_ASSEMBLY", 1)
+        self.assertIn("Momentum_X", name)
+
+    def test_get_reduction_variable_assembly_enum(self):
+        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        red_var = temp_exofile.get_reduction_variable_number(exo.ex_entity_type.EX_ASSEMBLY)
+        self.assertEqual(4, red_var)
+        name = temp_exofile.get_reduction_variable_name(exo.ex_entity_type.EX_ASSEMBLY, 1)
+        self.assertIn("Momentum_X", name)
+
     def test_get_reduction_variable_values_assembly(self):
         temp_exofile = exo.exodus("test-assembly.exo", mode='r')
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")

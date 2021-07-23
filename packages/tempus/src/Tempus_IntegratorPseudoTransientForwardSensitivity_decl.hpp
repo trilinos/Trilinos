@@ -45,6 +45,12 @@ namespace Tempus {
  * One can see that z^s is the only steady-state solution of the sensitivity
  * equations, since df/dx and df/dp are constant, and must be linearly stable
  * since it has the same Jacobian matrix as the forward equations.
+ *
+ * One should use the getX() and getDxDp()
+ * methods for extracting the final sultion and its parameter sensitivity
+ * as a multi-vector.  This data can also be extracted from the solution
+ * history, but is stored as a Thyra product vector which requires knowledge
+ * of the internal implementation.
  */
 template<class Scalar>
 class IntegratorPseudoTransientForwardSensitivity

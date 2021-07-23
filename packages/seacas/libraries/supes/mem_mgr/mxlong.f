@@ -92,19 +92,9 @@ C      Need to call malloc instead of realloc.
 C     Perform data fill if appropriate.
 
       IF (FILL) THEN
-         DO 120 I = DPOINT(ROW,1,1)+OLDLEN, DPOINT(ROW,1,1)+NEWLEN-1-7,8
-            MYV(I+0) = FDATA
-            MYV(I+1) = FDATA
-            MYV(I+2) = FDATA
-            MYV(I+3) = FDATA
-            MYV(I+4) = FDATA
-            MYV(I+5) = FDATA
-            MYV(I+6) = FDATA
-            MYV(I+7) = FDATA
-  120    CONTINUE
-         DO 130 J = I, DPOINT(ROW,1,1)+NEWLEN-1
-            MYV(J) = FDATA
-  130    CONTINUE
+        DO J = DPOINT(ROW,1,1)+OLDLEN, DPOINT(ROW,1,1)+NEWLEN-1
+          MYV(J) = FDATA
+        end do
       END IF
 
       RETURN

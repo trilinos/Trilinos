@@ -542,6 +542,8 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_subcells,num_points});
     Kokkos::parallel_for("create surface rotation matrices",policy,KOKKOS_LAMBDA (const int cell,const int subcell_index,const int point) {
       Scalar normal[3];
+
+      for(int i=0;i<3;i++){normal[i]=0.;}
         
       for(int dim=0; dim<cell_dim; ++dim){
         normal[dim] = surface_normals_k(cell,point,dim);
