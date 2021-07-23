@@ -96,28 +96,30 @@ namespace panzer {
 
     const size_type x = 0;
     const size_type y = 1;
+    auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_static_view());
     for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 
-      node_coordinates(cell,0,x) = xleft*0.5;
-      node_coordinates(cell,0,y) = yleft*0.5;
+      node_coordinates_host(cell,0,x) = xleft*0.5;
+      node_coordinates_host(cell,0,y) = yleft*0.5;
 
-      node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5;
+      node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,1,y) = yleft*0.5;
 
-      node_coordinates(cell,2,x) = (xleft+1)*0.5;
-      node_coordinates(cell,2,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,2,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
 
-      node_coordinates(cell,3,x) = xleft*0.5;
-      node_coordinates(cell,3,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,3,x) = xleft*0.5;
+      node_coordinates_host(cell,3,y) = (yleft+1)*0.5;
 
       out << "Cell " << cell << " = ";
       for(int i=0;i<4;i++)
-         out << "(" << node_coordinates(cell,i,x) << ", "
-                    << node_coordinates(cell,i,y) << ") ";
+         out << "(" << node_coordinates_host(cell,i,x) << ", "
+                    << node_coordinates_host(cell,i,y) << ") ";
       out << std::endl;
     }
+    Kokkos::deep_copy(node_coordinates.get_static_view(),node_coordinates_host);
 
     int_values.evaluateValues(node_coordinates);
 
@@ -141,23 +143,28 @@ namespace panzer {
 
     out << "check output" << std::endl;
     double relCellVol = 0.25*0.25; // this is the relative (to the reference cell) volume
+    auto cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_weights.get_static_view());
+    auto basis_ref_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_ref_scalar.get_static_view());
+    auto jac_det_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.jac_det.get_static_view());
+    auto weighted_basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_basis_scalar.get_static_view());
+    auto basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_scalar.get_static_view());
     for(int i=0;i<num_qp;i++) {
        // double x = int_values.cub_points(i,0);
        // double y = int_values.cub_points(i,1);
-       double weight = int_values.cub_weights(i);
+       double weight = cub_weights_host(i);
 
        // check reference values
-       TEST_EQUALITY(basis_values.basis_ref_scalar(0,i),1.0);
+       TEST_EQUALITY(basis_ref_scalar_host(0,i),1.0);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
 
           out << "wm = " << int_values.weighted_measure(cell,i) << " " << std::endl;;
-          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
+          TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
           // check out basis on transformed elemented
-          TEST_EQUALITY(basis_values.basis_ref_scalar(0,i),basis_values.basis_scalar(cell,0,i));
-          TEST_EQUALITY(basis_values.weighted_basis_scalar(cell,0,i),relCellVol*weight*basis_values.basis_scalar(cell,0,i));
+          TEST_EQUALITY(basis_ref_scalar_host(0,i),basis_scalar_host(cell,0,i));
+          TEST_EQUALITY(weighted_basis_scalar_host(cell,0,i),relCellVol*weight*basis_scalar_host(cell,0,i));
        }
        out << std::endl;
     }
