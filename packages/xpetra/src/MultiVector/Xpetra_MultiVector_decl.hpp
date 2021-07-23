@@ -310,13 +310,13 @@ class MultiVector
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
-    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type                                                                  impl_scalar_type;
-    typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutStride, typename node_type::execution_space, Kokkos::MemoryUnmanaged> dual_view_type;
-    typedef Kokkos::DualView<const impl_scalar_type**, Kokkos::LayoutStride, typename node_type::execution_space, Kokkos::MemoryUnmanaged> dual_view_type_const;
-    typedef typename dual_view_type::host_mirror_space      host_execution_space;
-    typedef typename dual_view_type::t_dev::execution_space dev_execution_space;
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    using impl_scalar_type     = typename Kokkos::Details::ArithTraits<Scalar>::val_type;
+    using dual_view_type       = Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;
+    using dual_view_type_const = Kokkos::DualView<const impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;
+    using host_execution_space = typename dual_view_type::host_mirror_space;
+    using dev_execution_space  = typename dual_view_type::t_dev::execution_space;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Return an unmanaged non-const view of the local data on a specific device.
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
     ///
