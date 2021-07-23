@@ -224,6 +224,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: brick z Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: greedy Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: coloring algorithm\" type=\"string\" value=\"serial\"/>"
   "<Parameter name=\"aggregation: coloring: use color graph\" type=\"bool\" value=\"false\"/>"
@@ -651,6 +652,8 @@ namespace MueLu {
          ("aggregation: max selected neighbors","aggregation: max selected neighbors")
       
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
+      
+         ("aggregation: greedy Dirichlet","aggregation: greedy Dirichlet")
       
          ("aggregation: deterministic","aggregation: deterministic")
       

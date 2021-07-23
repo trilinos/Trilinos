@@ -609,6 +609,14 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: greedy Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Force the node to be Dirichlet if any DOFs on the node are Dirichlet (default is nodes are Dirichlet only if all DOFs on node are Dirichlet).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: deterministic</name>
       <type>bool</type>
       <default>false</default>
