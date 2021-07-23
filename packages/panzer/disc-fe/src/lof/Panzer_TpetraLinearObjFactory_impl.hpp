@@ -257,13 +257,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          if(!Teuchos::is_null(A)) {
             std::size_t numEntries = 0;
             std::size_t sz = A->getNumEntriesInLocalRow(i);
-            Teuchos::Array<LocalOrdinalT> indices(sz);
-            Teuchos::Array<double> values(sz);
+	    typename CrsMatrixType::nonconst_local_inds_host_view_type indices("indices", sz);
+	    typename CrsMatrixType::nonconst_values_host_view_type values("values", sz);
 
             A->getLocalRowCopy(i,indices,values,numEntries);
 
             for(std::size_t c=0;c<numEntries;c++) 
-               values[c] = 0.0;
+	      values(c) = 0.0;
 
             A->replaceLocalValues(i,indices,values);
          }
@@ -279,13 +279,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
          if(!Teuchos::is_null(A)) {
             std::size_t numEntries = 0;
             std::size_t sz = A->getNumEntriesInLocalRow(i);
-            Teuchos::Array<LocalOrdinalT> indices(sz);
-            Teuchos::Array<double> values(sz);
+	    typename CrsMatrixType::nonconst_local_inds_host_view_type indices("indices", sz);
+	    typename CrsMatrixType::nonconst_values_host_view_type values("values", sz);
 
             A->getLocalRowCopy(i,indices,values,numEntries);
 
             for(std::size_t c=0;c<numEntries;c++) 
-               values[c] /= scaleFactor;
+	      values(c) /= scaleFactor;
 
             A->replaceLocalValues(i,indices,values);
          }

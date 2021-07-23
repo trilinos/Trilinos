@@ -454,7 +454,31 @@ namespace Ioex {
     std::string    path = file.pathname();
     filename            = file.tailname();
     char *current_cwd   = getcwd(nullptr, 0);
-    chdir(path.c_str());
+    if (!path.empty()) {
+      auto success = chdir(path.c_str());
+      if (success == -1) {
+        if (write_message || error_msg != nullptr) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg,
+                     "ERROR: Directory '{}' does not exist.  Error in filename specification.",
+                     path);
+          fmt::print(errmsg, "\n");
+          if (error_msg != nullptr) {
+            *error_msg = errmsg.str();
+          }
+          if (write_message && myProcessor == 0) {
+            fmt::print(Ioss::OUTPUT(), "{}", errmsg.str());
+          }
+          if (bad_count != nullptr) {
+            *bad_count = 1;
+          }
+          if (abort_if_error) {
+            IOSS_ERROR(errmsg);
+          }
+        }
+        return false;
+      }
+    }
 #endif
 
     bool do_timer = false;
@@ -474,7 +498,9 @@ namespace Ioex {
     }
 
 #ifndef _WIN32
-    chdir(current_cwd);
+    if (!path.empty()) {
+      chdir(current_cwd);
+    }
     std::free(current_cwd);
 #endif
 

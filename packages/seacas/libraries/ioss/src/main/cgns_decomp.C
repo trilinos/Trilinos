@@ -114,7 +114,7 @@ namespace {
 	      options_.usage(std::cerr);
 	      exit(EXIT_FAILURE);
 	    }
-	  }	  
+	  }
 	  else {
 	    for (size_t i = 0; i < stemp.size(); i++) {
 	      if (stemp[i] == 'i' || stemp[i] == 'I') {

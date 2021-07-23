@@ -150,7 +150,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto uv_2d = ownedVec_tp->getLocalView<Kokkos::HostSpace> ();
 #else
-    auto uv_2d = ownedVec_tp->getLocalViewHost ();
+    auto uv_2d = ownedVec_tp->getLocalViewHost (Tpetra::Access::OverwriteAll);
 #endif
     auto ownedVec = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
@@ -175,7 +175,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto uv_2d = ownedVecTp.getLocalView<Kokkos::HostSpace> ();
 #else
-    auto uv_2d = ownedVecTp.getLocalViewHost ();
+    auto uv_2d = ownedVecTp.getLocalViewHost (Tpetra::Access::ReadOnly);
 #endif
     auto ownedVecTpKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
@@ -224,7 +224,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto uv_2d = ghostedVecTp.getLocalView<Kokkos::HostSpace> ();
 #else
-    auto uv_2d = ghostedVecTp.getLocalViewHost ();
+    auto uv_2d = ghostedVecTp.getLocalViewHost (Tpetra::Access::ReadOnly);
 #endif
     auto ghostedVecKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
@@ -466,7 +466,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto uv_2d = ownedVecTp->getLocalView<Kokkos::HostSpace> ();
 #else
-    auto uv_2d = ownedVecTp->getLocalViewHost ();
+    auto uv_2d = ownedVecTp->getLocalViewHost (Tpetra::Access::OverwriteAll);
 #endif
     auto ownedVec = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
@@ -493,7 +493,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
     auto uv_2d = ghostedVecTp.getLocalView<Kokkos::HostSpace> ();
 #else
-    auto uv_2d = ghostedVecTp.getLocalViewHost ();
+    auto uv_2d = ghostedVecTp.getLocalViewHost (Tpetra::Access::ReadOnly);
 #endif
     auto ghostedVecKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 

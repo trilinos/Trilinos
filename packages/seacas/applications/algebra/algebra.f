@@ -163,7 +163,7 @@ C     Open the input database; Exit on error
 
 C     Initialize the Memory Manager
       CALL MDINIT (A)
-      CALL MDFILL(0)
+c      CALL MDFILL(0)
       CALL MCINIT (C)
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) THEN

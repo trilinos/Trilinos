@@ -94,7 +94,7 @@ namespace panzer {
     ghostedMatrix->resumeFill();
     ghostedMatrix->setAllToScalar(0.0);
 
-    auto M = ghostedMatrix->getLocalMatrix();
+    auto M = ghostedMatrix->getLocalMatrixDevice();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
 
     const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const" || targetBasisDescriptor_.getType()=="HVol";
@@ -477,7 +477,7 @@ namespace panzer {
           Kokkos::deep_copy(sourceFieldOffsets,hostOffsets);
         }
 
-        const auto localMatrix = ghostedMatrix->getLocalMatrix();
+        const auto localMatrix = ghostedMatrix->getLocalMatrixDevice();
         const int numRows = static_cast<int>(targetWeightedBasis.extent(1));
         int tmpNumCols = -1;
         int tmpNumQP = -1;

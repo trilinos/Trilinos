@@ -415,8 +415,10 @@ namespace Ioss {
 
     char get_field_separator() const { return fieldSeparator; }
     bool get_field_recognition() const { return enableFieldRecognition; }
+    bool get_field_strip_trailing_() const { return fieldStripTrailing_; }
     void set_field_separator(char separator);
     void set_field_recognition(bool yes_no) { enableFieldRecognition = yes_no; }
+    void set_field_strip_trailing_(bool yes_no) { fieldStripTrailing_ = yes_no; }
 
     void set_lower_case_variable_names(bool true_false) const
     {
@@ -806,6 +808,7 @@ namespace Ioss {
     Region *region_{nullptr};
     char    fieldSeparator{'_'};
     bool    enableFieldRecognition{true};
+    bool    fieldStripTrailing_{false};
     bool    isInput;
     bool    isParallelConsistent{
         true}; // True if application will make field data get/put calls parallel

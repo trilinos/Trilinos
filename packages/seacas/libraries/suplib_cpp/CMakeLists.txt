@@ -18,6 +18,7 @@ SET(SOURCES
   timer.C
   copyright.C
   SL_tokenize.C
+  hwm.C
   )
 
 TRIBITS_ADD_LIBRARY(

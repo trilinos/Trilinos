@@ -301,14 +301,11 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
       const bool i_mine = row_map.isNodeGlobalElement(i);
       double x_prev = 0;
       int i_lid = 0;
-      x->sync_host();
-      auto x_host = x->getLocalViewHost();
+      auto x_host = x->getLocalViewHost(Tpetra::Access::ReadWrite);
       if (i_mine && i >= 0) {
         i_lid = col_map.getLocalElement(i);
         x_prev = x_host(i_lid,0);
         x_host(i_lid,0) += delta;
-        x->modify_host();
-        x->sync_device();
       }
       ep_con->set_x(x);
       panzer::AssemblyEngineInArgs input(ghost_con, ep_con);
@@ -319,10 +316,8 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
         f0 = ep_con->get_f();
       else {
         TpetraVector& f = *ep_con->get_f();
-        f.sync_host();
-        f0->sync_host();
-        const auto f_host = f.getLocalViewHost();
-        const auto f0_host = f0->getLocalViewHost();
+        const auto f_host = f.getLocalViewHost(Tpetra::Access::ReadOnly);
+        const auto f0_host = f0->getLocalViewHost(Tpetra::Access::ReadOnly);
         if (i_mine) {
           //(*x)[i_lid] = x_prev;
           x_host(i_lid,0) = x_prev;
@@ -369,14 +364,14 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
     RCP<TpetraCrsMatrix> D = Tpetra::MatrixMatrix::add(-1.0, false, *ep_con->get_A(), 1.0, false, *A_fd);
     Kokkos::fence();
 
-    auto local_A_fd = A_fd->getLocalMatrix().values;
+    auto local_A_fd = A_fd->getLocalMatrixDevice().values;
     double local_A_fd_inf_norm = 0.0;
     Kokkos::parallel_reduce(local_A_fd.size(),KOKKOS_LAMBDA (const int i, double& abs_max) {
       double val = std::fabs(local_A_fd(i));
       if (val > abs_max) abs_max = val;
     },Kokkos::Max<double>(local_A_fd_inf_norm));
 
-    auto local_D = D->getLocalMatrix().values;
+    auto local_D = D->getLocalMatrixDevice().values;
     double local_D_inf_norm = 0.0;
     Kokkos::parallel_reduce(local_D.size(),KOKKOS_LAMBDA (const int i, double& abs_max) {
       double val = std::fabs(local_D(i));
