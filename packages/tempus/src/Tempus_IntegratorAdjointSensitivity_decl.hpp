@@ -39,6 +39,12 @@ namespace Tempus {
  *
  * Because of limitations on the steppers, the implementation currently assumes
  * df/dxdot is a constant matrix.
+ *
+ * To extract the final solution x(T) and sensitivity dg/dp(T) one should use
+ * the getX() and getDgDp() methods, which return these quantities directly.
+ * One can also extract this data for all times from the solution history,
+ * however the data is stored in Thyra product vectors which requires
+ * knowledge of the internal implementation.
  */
 template<class Scalar>
 class IntegratorAdjointSensitivity :
@@ -76,6 +82,24 @@ public:
    *    <li> "Mass Matrix Is Identity" (default: false) Whether the mass matrix
    *         is the identity matrix, in which some computations can be skipped.
    * </ul>
+   *
+   * To support use-cases with explicitly computed adjoint operators, the
+   * constructor takes an additional model evaluator for computing the adjoint
+   * W/W_op.  It is assumed the operator returned by this model evaluator is
+   * the adjoint, and so will not be transposed.  It is also assumed this
+   * model evaluator accepts the same inArgs as the forward model, however it
+   * only requires supporting the adjoint W/W_op outArgs.
+   */
+  IntegratorAdjointSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList>                pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model);
+
+  /*! \brief Version of the constructor taking a single model evaluator. */
+  /*!
+   * This version takes a single model evaluator for the case when the adjoint
+   * is implicitly determined from the forward operator by the (conjugate)
+   * transpose.
    */
   IntegratorAdjointSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
@@ -173,6 +197,7 @@ protected:
   Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >
   createAdjointModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
 
   void buildSolutionHistory(
@@ -180,7 +205,8 @@ protected:
     const Teuchos::RCP<const SolutionHistory<Scalar> >& adjoint_solution_history);
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjoint_model_;
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_aux_model_;
   Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasicOld<Scalar> > adjoint_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
@@ -200,6 +226,14 @@ Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
+integratorAdjointSensitivity(
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model);
 
 /// Nonmember constructor
 template<class Scalar>
