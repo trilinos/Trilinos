@@ -372,12 +372,17 @@ namespace MueLu {
       dump(BCcolsKokkos_,   "BCcols.m");
       dump(BCdomainKokkos_, "BCdomain.m");
 
-      for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
-        if (BCrowsKokkos_(i))
-          BCedgesLocal += 1;
-      for (size_t i = 0; i<BCdomainKokkos_.size(); i++)
-        if (BCdomainKokkos_(i))
-          BCnodesLocal += 1;
+      auto BCrowsKokkos=BCrowsKokkos_;
+      Kokkos::parallel_reduce(BCrowsKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+        if (BCrowsKokkos(i))
+	  ++sum;
+	}, BCedgesLocal );
+         
+      auto BCdomainKokkos = BCdomainKokkos_;
+      Kokkos::parallel_reduce(BCdomainKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+        if (BCdomainKokkos(i))
+	  ++sum;
+	}, BCnodesLocal);
     } else
 #endif // HAVE_MUELU_KOKKOS_REFACTOR
     {
