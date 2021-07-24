@@ -54,7 +54,7 @@ void test_pseudotransient_fsa(const bool use_dfdp_as_tangent,
 
   // Setup the Integrator
   RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<double> > integrator =
-    Tempus::integratorPseudoTransientForwardSensitivity<double>(pl, model);
+    Tempus::createIntegratorPseudoTransientForwardSensitivity<double>(pl, model);
 
   // Integrate to timeMax
   bool integratorStatus = integrator->advanceTime();

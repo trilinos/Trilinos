@@ -2837,14 +2837,14 @@ void CreateLinearSystem(int numWorksets,
   }
 
   vector_type laplDiagOwned(rowMap, true);
-  Teuchos::ArrayView<const local_ordinal_type> indices;
-  Teuchos::ArrayView<const scalar_type> values;
+  typename crs_matrix_type::local_inds_host_view_type indices;
+  typename crs_matrix_type::values_host_view_type values;
   size_t numOwnedRows = rowMap->getNodeNumElements();
   for (size_t row=0; row<numOwnedRows; row++) {
     StiffMatrix.getLocalRowView(row, indices, values);
     size_t numIndices = indices.size();
     for (size_t j=0; j<numIndices; j++) {
-      size_t col = indices[j];
+      size_t col = indices(j);
       if (row == col) continue;
       laplDiagOwned.sumIntoLocalValue(row, 1/myDistance2(*coordsOwnedPlusShared, row, col));
     }
@@ -2948,14 +2948,14 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
     xdata[lrid]=bdata[lrid] = solndata[lrid];
 
     size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
-    Array<local_ordinal_type> cols(numEntriesInRow);
-    Array<scalar_type> vals(numEntriesInRow);
-    A.getLocalRowCopy(lrid, cols(), vals(), numEntriesInRow);
+    typename crs_matrix_type::nonconst_local_inds_host_view_type cols("cols", numEntriesInRow);
+    typename crs_matrix_type::nonconst_values_host_view_type vals("vals", numEntriesInRow);
+    A.getLocalRowCopy(lrid, cols, vals, numEntriesInRow);
     
-    for(int j=0; j<vals.size(); j++)
-      vals[j] = (cols[j] == lrid) ? 1.0 : 0.0;
+    for(size_t j=0; j<vals.extent(0); j++)
+      vals(j) = (cols(j) == lrid) ? 1.0 : 0.0;
 
-    A.replaceLocalValues(lrid, cols(), vals());
+    A.replaceLocalValues(lrid, cols, vals);
   }
 
   A.fillComplete();

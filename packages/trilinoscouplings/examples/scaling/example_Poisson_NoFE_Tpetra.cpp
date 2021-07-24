@@ -1243,39 +1243,39 @@ int main(int argc, char *argv[]) {
     // now import from the global column map to the local column map
     myColsToZeroT->doImport(*globColsToZeroT,*ExporterT,Tpetra::INSERT);
 
-    Teuchos::Array<double> values;
-    Teuchos::Array<int> indices;
     Teuchos::ArrayRCP<const int> myColsToZeroArrayRCP = myColsToZeroT->getData(0);
     size_t NumEntries = 0;
     /* Zero the columns */
+    typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", 1);
+    typename sparse_matrix_type::nonconst_values_host_view_type values("values", 1);
     for (size_t i=0; i < gl_StiffMatrixT->getNodeNumRows(); i++) {
-       NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(i);
-       values.resize(NumEntries);
-       indices.resize(NumEntries);
-       gl_StiffMatrixT->getLocalRowCopy(i, indices(), values(), NumEntries);
-       //Matrix.ExtractMyRowView(i,numEntries,vals,cols);
-       for (size_t j=0; j < NumEntries; j++){
-          //Teuchos::ArrayRCP<const int> myColsToZeroj = myColsToZeroT->getData();
-          if (myColsToZeroArrayRCP[indices[j]] == 1)
-              values[j] = 0.0;
-       }
-       gl_StiffMatrixT->replaceLocalValues(i, indices(), values());
+      NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(i);
+      Kokkos::resize(indices, NumEntries);
+      Kokkos::resize(values, NumEntries);
+      gl_StiffMatrixT->getLocalRowCopy(i, indices, values, NumEntries);
+      //Matrix.ExtractMyRowView(i,numEntries,vals,cols);
+      for (size_t j=0; j < NumEntries; j++){
+	//Teuchos::ArrayRCP<const int> myColsToZeroj = myColsToZeroT->getData();
+	if (myColsToZeroArrayRCP[indices(j)] == 1)
+	  values(j) = 0.0;
+      }
+      gl_StiffMatrixT->replaceLocalValues(i, indices, values);
     }/*end for*/
 
     /* Zero the rows, add ones to diagonal */
     for (size_t i = 0; i<(size_t)numBCNodes; i++) {
       NumEntries = gl_StiffMatrixT->getNumEntriesInLocalRow(BCNodes[i]);
-      indices.resize(NumEntries);
-      values.resize(NumEntries);
-      gl_StiffMatrixT->getLocalRowCopy(BCNodes[i], indices(), values(), NumEntries);
+      Kokkos::resize(indices, NumEntries);
+      Kokkos::resize(values, NumEntries);
+      gl_StiffMatrixT->getLocalRowCopy(BCNodes[i], indices, values, NumEntries);
       int globalRow = gl_StiffMatrixT->getRowMap()->getGlobalElement(BCNodes[i]);
       int localCol = gl_StiffMatrixT->getColMap()->getLocalElement(globalRow);
       for (size_t j = 0; j<NumEntries; j++){
-         values[j] = 0.0;
-         if (indices[j] == localCol)
-            values[j] = 1.0;
+	values(j) = 0.0;
+	if (indices(j) == localCol)
+	  values(j) = 1.0;
       }
-      gl_StiffMatrixT->replaceLocalValues(BCNodes[i], indices(), values());
+      gl_StiffMatrixT->replaceLocalValues(BCNodes[i], indices, values);
    }
    }
    }

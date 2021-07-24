@@ -94,6 +94,12 @@ template class EpetraIntMultiVectorT<int, default_node_type >;
 template Epetra_IntMultiVector & toEpetra<int,default_node_type >(MultiVector<int, int, int, default_node_type> &);
 template const Epetra_IntMultiVector & toEpetra<int,default_node_type >(const MultiVector<int, int, int, default_node_type> &);
 #endif
+#ifdef HAVE_TPETRA_INST_HIP
+typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+template class EpetraIntMultiVectorT<int, default_node_type >;
+template Epetra_IntMultiVector & toEpetra<int,default_node_type >(MultiVector<int, int, int, default_node_type> &);
+template const Epetra_IntMultiVector & toEpetra<int,default_node_type >(const MultiVector<int, int, int, default_node_type> &);
+#endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
 typedef Xpetra::EpetraNode default_node_type;
@@ -129,6 +135,12 @@ template const Epetra_IntMultiVector & toEpetra<long long, Kokkos::Compat::Kokko
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraIntMultiVectorT<long long, default_node_type >;
+template Epetra_IntMultiVector & toEpetra<long long,default_node_type >(MultiVector<int, int, long long, default_node_type> &);
+template const Epetra_IntMultiVector & toEpetra<long long,default_node_type >(const MultiVector<int, int, long long, default_node_type> &);
+#endif
+#ifdef HAVE_TPETRA_INST_HIP
+typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
 template class EpetraIntMultiVectorT<long long, default_node_type >;
 template Epetra_IntMultiVector & toEpetra<long long,default_node_type >(MultiVector<int, int, long long, default_node_type> &);
 template const Epetra_IntMultiVector & toEpetra<long long,default_node_type >(const MultiVector<int, int, long long, default_node_type> &);
