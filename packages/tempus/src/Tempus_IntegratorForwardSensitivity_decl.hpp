@@ -40,7 +40,7 @@ namespace Tempus {
  * IntegratorBasic, but is not derived from IntegratorBasic.  It also provides
  * functions for setting the sensitivity initial conditions and extracting the
  * sensitivity at the final time.  One should use the getX() and getDxDp()
- * methods for extracting the final sultion and its parameter sensitivity
+ * methods for extracting the final solution and its parameter sensitivity
  * as a multi-vector.  This data can also be extracted from the solution
  * history, but is stored as a Thyra product vector which requires knowledge
  * of the internal implementation.
@@ -204,13 +204,36 @@ public:
   virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
     { return integrator_->getStepperTimer(); }
 
-  /// Get current the solution, x
+  /**
+   * @brief Get the current solution, x, only. If looking for the solution
+   * vector and the sensitivities, use `SolutionState->getX()` which will return a
+   * Block MultiVector with the first block containing the current solution, x,
+   * and the remaining blocks are the forward sensitivities \f$dx/dp\f$. 
+   *
+   * Use `getDxDp` to get the forward sensitivities \f$dx/dp\f$ only.
+   *
+   * @return The current solution, x, without the sensitivities. 
+   * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
+
+  /// Get the forward sensitivities \f$dx/dp\f$
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxDp() const;
-  /// Get current the time derivative of the solution, xdot
+  /**
+   * @brief Get current the time derivative of the solution, xdot, only.  This
+   * is the first block only and not the full Block MultiVector.
+   *
+   * @return Get current the time derivative of the solution, xdot. 
+   * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDp() const;
-  /// Get current the second time derivative of the solution, xdotdot
+  /**
+   * @brief Get current the second time derivative of the solution, xdotdot, only.  This
+   * is the first block only and not the full Block MultiVector.
+   *
+   * Use `getDXDotDp` to get the forward sensitivities.
+   *
+   * @return Get current the second time derivative of the solution, xdotdot. 
+   * */
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDXDotDotDp() const;
 
