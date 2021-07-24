@@ -137,7 +137,6 @@ set (Kokkos_ENABLE_CUDA_UVM OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Tpetra_ENABLE_CUDA_UVM OFF CACHE BOOL "Set by default for CUDA PR testing")
 
 # Turn off packages currently failing with UVM = OFF
-set (Trilinos_ENABLE_Panzer OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_Stokhos OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_TrilinosCouplings OFF CACHE BOOL "Turn off packages for non-UVM build")
 
