@@ -370,7 +370,6 @@ rowStatIsSupportedImpl(
       return false;
   }
 
-  TEUCHOS_UNREACHABLE_RETURN(false);
 }
 
 
