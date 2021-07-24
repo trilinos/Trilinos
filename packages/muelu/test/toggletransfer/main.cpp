@@ -101,7 +101,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Xpetra::Parameters xpetraParameters(clp);             // manage parameters of xpetra
 
     // custom parameters
-    int pauseForDebugger=0;
     //std::string aggOrdering = "natural";
     int minPerAgg=2; //was 3 in simple
     int maxNbrAlreadySelected=0;
@@ -109,7 +108,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     std::string xmlFile="parameters.xml";
 
     //clp.setOption("aggOrdering",&aggOrdering,"aggregation ordering strategy (natural,graph)");
-    clp.setOption("debug",&pauseForDebugger,"pause to attach debugger");
     clp.setOption("maxNbrSel",&maxNbrAlreadySelected,"maximum # of nbrs allowed to be in other aggregates");
     clp.setOption("minPerAgg",&minPerAgg,"minimum #DOFs per aggregate");
     clp.setOption("timings",&printTimings,"print timings to screen");
@@ -123,10 +121,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     Teuchos::RCP<Teuchos::TimeMonitor> globalTimeMonitor = Teuchos::rcp (new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Timings: Global Time")));
-
-    if (pauseForDebugger) {
-      Utilities::PauseForDebugger();
-    }
 
     matrixParameters.check();
     xpetraParameters.check();
