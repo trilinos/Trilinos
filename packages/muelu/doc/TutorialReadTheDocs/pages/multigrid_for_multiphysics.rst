@@ -10,7 +10,7 @@ Assuming we have a multiphysics application which generates a :math:`n\times n` 
 or a Navier-Stokes problem with the splitting into velocity and pressure degrees of freedom),
 the idea is to preserve the block structure on the coarse levels
 using block-diagonal segregated transfer operators and block smoothers on all multigrid levels.
-The blocks :math:`P_{i,i}` and :math:`R_{i,i}` in the block-diagonal transfer operators :math`P` and :math:`R`
+The blocks :math:`P_{i,i}` and :math:`R_{i,i}` in the block-diagonal transfer operators :math:`P` and :math:`R`
 usually are built using the diagonal blocks :math:`A_{i,i}`
 or - for applications where :math:`A_{i,i}` does not contain sufficient information to build aggregates -
 any other kind of application-specific method.
@@ -21,6 +21,8 @@ as well as application-specific adaptions.
 
 Exemplary setup for a :math:`2\times 2` problem
 ================================================
+
+.. _multigrid_for_multiphysics/blocktransfersetup:
 
 Setup of block transfer operators
 ---------------------------------
@@ -547,7 +549,7 @@ The ``myRepartitionHeuristicFact`` object will decide whether rebalancing is nec
 If yes, then it will return the number of required partitions for the coarse level operator.
 This input is processed by the repartition interface and repartition factory objects
 that finally create ``Xpetra::Importer`` to do the rebalancing.
-The ``myRebBlocked{P,R,Ac}Fact` objects use those ``Importer`` objects to perform the rebalancing.
+The ``myRebBlocked{P,R,Ac}Fact`` objects use those ``Importer`` objects to perform the rebalancing.
 
 Please note, that we build additional helper factory manager objects ``myRebFirstGroup`` and ``myRebSecondGroup``
 which contain all factories relevant for rebalancing the two blocks.
@@ -561,7 +563,7 @@ which contain all factories relevant for rebalancing the two blocks.
 Complete XML input deck
 -----------------------
 
-.. literalinclude:: xml/blocked_rebalancing.xml
+.. literalinclude:: ../../../test/tutorial/blocked_rebalancing.xml
   :language: xml
 
 Note, that we are using a coordinate-based rebalancing method from the Zoltan package.
