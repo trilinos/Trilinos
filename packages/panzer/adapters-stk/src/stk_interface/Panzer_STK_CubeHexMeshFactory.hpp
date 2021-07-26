@@ -109,6 +109,8 @@ protected:
 
    bool buildInterfaceSidesets_;
    bool buildSubcells_;
+   bool createEdgeBlocks_;
+   bool createFaceBlocks_;
 
    mutable Teuchos::Tuple<std::size_t,3> procTuple_;
 };
