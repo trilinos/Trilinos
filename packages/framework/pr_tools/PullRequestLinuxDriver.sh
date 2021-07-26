@@ -157,7 +157,7 @@ test_cmd_options=(
     --target-repo-url=${TRILINOS_TARGET_REPO:?}
     --target-branch-name=${TRILINOS_TARGET_BRANCH:?}
     --pullrequest-build-name=${JOB_BASE_NAME:?}
-    --pullrequest-genconfig-build-name=${GENCONFIG_BUILD_NAME:?}
+    --genconfig-build-name=${GENCONFIG_BUILD_NAME:?}
     --pullrequest-env-config-file=${LOADENV_CONFIG_FILE:?}
     --pullrequest-gen-config-file=${GENCONFIG_CONFIG_FILE:?}
     --pullrequest-number=${PULLREQUESTNUM:?}
@@ -171,7 +171,7 @@ test_cmd_options=(
 )
 
 # Execute the TEST operation
-test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
+test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 
 # Call the script to launch the tests

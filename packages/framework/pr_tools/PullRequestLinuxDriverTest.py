@@ -219,6 +219,7 @@ def parse_args():
     print("| - [R] target_repo_url             : {target_repo_url}".format(**vars(arguments)))
     print("| - [R] target_branch_name          : {target_branch_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-build-name      : {pullrequest_build_name}".format(**vars(arguments)))
+    print("| - [R] genconfig-build-name        : {genconfig_build_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-number          : {pullrequest_number}".format(**vars(arguments)))
     print("| - [R] jenkins-job-number          : {jenkins_job_number}".format(**vars(arguments)))
     print("|")

@@ -105,6 +105,7 @@ class Test_parse_args(unittest.TestCase):
                                         | - [R] target_repo_url             : /dev/null/target_repo
                                         | - [R] target_branch_name          : real_trash
                                         | - [R] pullrequest-build-name      : Some_odd_compiler
+                                        | - [R] genconfig-build-name        : Some_odd_compiler_and_options
                                         | - [R] pullrequest-number          : 4242
                                         | - [R] jenkins-job-number          : 2424
                                         |
