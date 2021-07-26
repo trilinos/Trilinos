@@ -54,13 +54,14 @@ public:
 
   /** \brief Full Constructor with model, and will be fully initialized. 
    *
-   * \param[in] model                   The forward physics ModelEvaluator
-   * \param[in] state_integrator        Forward state Integrator for the forward problem
-   * \param[in] adjoint_model           ModelEvaluator for the adjoint physics/problem 
-   * \param[in] adjoint_integrator      Time integrator for the adjoint problem
-   * \param[in] solution_history        The forward state solution history
-   * \param[in] p_index                 Sensitivity parameter index
-   * \param[in] g_index                 Response function index
+   * \param[in] model                 The forward physics ModelEvaluator
+   * \param[in] state_integrator      Forward state Integrator for the forward problem
+   * \param[in] adjoint_model         ModelEvaluator for the adjoint physics/problem 
+   * \param[in] adjoint_aux_model     ModelEvaluator for the auxiliary adjoint physics/problem 
+   * \param[in] adjoint_integrator    Time integrator for the adjoint problem
+   * \param[in] solution_history      The forward state solution history
+   * \param[in] p_index               Sensitivity parameter index
+   * \param[in] g_index               Response function index
    * \param[in] g_depends_on_p        Does response depends on parameters?
    * \param[in] f_depends_on_p        Does residual depends on parameters?
    * \param[in] ic_depends_on_p       Does the initial condition depends on parameters?
@@ -100,10 +101,6 @@ public:
    * model evaluator accepts the same inArgs as the forward model, however it
    * only requires supporting the adjoint W/W_op outArgs.
    */
-  IntegratorAdjointSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model);
 
   /*! \brief Version of the constructor taking a single model evaluator. */
   /*!
@@ -114,7 +111,8 @@ public:
   IntegratorAdjointSensitivity(
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
       const Teuchos::RCP<IntegratorBasic<Scalar>> &state_integrator,
-      const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &adjoint_model,
+      const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_aux_model,
       const Teuchos::RCP<IntegratorBasic<Scalar>> &ajoint_integrator,
       const Teuchos::RCP<SolutionHistory<Scalar> > &solution_history,
       const int p_index,
@@ -213,10 +211,10 @@ protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
   Teuchos::RCP<IntegratorBasic<Scalar>> state_integrator_;
-  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar>> adjoint_model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> adjoint_model_;
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_aux_model_;
   Teuchos::RCP<IntegratorBasic<Scalar>> adjoint_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar>> solutionHistory_;
-  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_aux_model_;
   int p_index_;
   int g_index_;
   bool g_depends_on_p_;
@@ -238,21 +236,23 @@ protected:
  * @param pList         ParameterList defining the integrator options and options
  *                      defining the sensitivity analysis
  * @param model         ModelEvaluator for the problem
- * @param adjoing_model ModelEvaluator for the adjoint problem
+ * @param adjoing_model ModelEvaluator for the adjoint problem. Optional. Default value is null.
+ *                      When not provided, the adjoint_model will be constructed
+ *                      from the forward physics model.
  *
  * @return Time integrator implementing adjoint sensitivity
  */
 template <class Scalar>
 Teuchos::RCP<IntegratorAdjointSensitivity<Scalar>>
-integratorAdjointSensitivity(
+createIntegratorAdjointSensitivity(
     Teuchos::RCP<Teuchos::ParameterList> pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model=Teuchos::null);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model
+    ,const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model=Teuchos::null);
 
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
-integratorAdjointSensitivity();
+createIntegratorAdjointSensitivity();
 
 } // namespace Tempus
 
