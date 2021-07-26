@@ -429,8 +429,7 @@ namespace Iocgns {
     }
 
     Utils::add_transient_variables(get_file_pointer(), m_timesteps, get_region(),
-                                   get_field_recognition(), get_field_separator(), myProcessor,
-                                   true);
+                                   myProcessor, true);
   }
 
   void ParallelDatabaseIO::handle_unstructured_blocks()

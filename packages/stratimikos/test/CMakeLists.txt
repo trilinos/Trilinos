@@ -6,7 +6,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURC
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Belos)
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-     Belos_GCRODR_strattest 
+     Belos_GCRODR_strattest
      SOURCES
        test_belos_gcrodr.cpp
        ${TEUCHOS_STD_UNIT_TEST_MAIN}
@@ -56,7 +56,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
   TRIBITS_ADD_TEST(
     test_single_stratimikos_solver_driver
     NAME test_single_stratimikos_solver_driver_amesos
-    ARGS 
+    ARGS
       "--input-file=FourByFour.xml --show-timer-summary"
       "--input-file=FourByFour.amesos.xml --show-timer-summary"
     COMM serial mpi
@@ -165,8 +165,40 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
 ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Tpetra)
 IF (${PROJECT_NAME}_ENABLE_Tpetra)
   ASSERT_DEFINED(Tpetra_INST_DOUBLE)
+  ASSERT_DEFINED(Tpetra_INST_FLOAT)
   ASSERT_DEFINED(Tpetra_INST_INT_INT)
 ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Tpetra_INST_DOUBLE)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
+    SOURCE_FILES stratimikos_jacobi.xml stratimikos_jacobi_half.xml
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+   GaleriDriver
+   SOURCES galeri_driver.cpp
+   COMM serial mpi
+   )
+
+ TRIBITS_ADD_TEST(
+   GaleriDriver
+   NAME "Galeri_Jacobi"
+   ARGS "--xml=stratimikos_jacobi.xml"
+   NUM_MPI_PROCS 4
+   )
+
+ IF (Tpetra_INST_FLOAT)
+   TRIBITS_ADD_TEST(
+     GaleriDriver
+     NAME "Galeri_Jacobi_HalfPrecision"
+     ARGS "--xml=stratimikos_jacobi_half.xml"
+     NUM_MPI_PROCS 4
+     )
+ ENDIF()
+
+ENDIF ()
+
 
 IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND Tpetra_INST_DOUBLE AND Tpetra_INST_INT_INT)
  TRIBITS_ADD_EXECUTABLE(

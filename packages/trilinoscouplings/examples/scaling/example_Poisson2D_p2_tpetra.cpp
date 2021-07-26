@@ -2297,15 +2297,14 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
 
     xdata[lrid]=bdata[lrid] = solndata[lrid];
 
-    size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);
-    Array<local_ordinal_type> cols(numEntriesInRow);
-    Array<scalar_type> vals(numEntriesInRow);
-    A.getLocalRowCopy(lrid, cols(), vals(), numEntriesInRow);
+    size_t numEntriesInRow = A.getNumEntriesInLocalRow(lrid);    typename crs_matrix_type::nonconst_local_inds_host_view_type cols("cols", numEntriesInRow);
+    typename crs_matrix_type::nonconst_values_host_view_type vals("vals", numEntriesInRow);
+    A.getLocalRowCopy(lrid, cols, vals, numEntriesInRow);
 
-    for(int j=0; j<vals.size(); j++)
-      vals[j] = (cols[j] == lrid) ? 1.0 : 0.0;
+    for(size_t j=0; j<vals.extent(0); j++)
+      vals(j) = (cols(j) == lrid) ? 1.0 : 0.0;
 
-    A.replaceLocalValues(lrid, cols(), vals());
+    A.replaceLocalValues(lrid, cols, vals);
   }
 
   A.fillComplete();

@@ -93,11 +93,9 @@ getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,
 
    // this is what to distribute
    Tpetra::Vector<GO,LO,GO,NODE> providedVector(providedMap);
-   providedVector.sync_host();
-   auto pvHost = providedVector.getLocalViewHost();
+   auto pvHost = providedVector.getLocalViewHost(Tpetra::Access::OverwriteAll);
    for(std::size_t i=0;i<locallyMatchedIds.size();i++) 
      pvHost(i,0) = locallyMatchedIds[i].second;
-   providedVector.modify_host();
    
    Tpetra::Vector<GO,LO,GO,NODE> requiredVector(requiredMap);
    requiredVector.doImport(providedVector,importer,Tpetra::INSERT);
@@ -106,8 +104,7 @@ getGlobalPairing(const std::vector<std::size_t> & locallyRequiredIds,
    Teuchos::RCP<std::vector<std::pair<std::size_t,std::size_t> > > result
          = Teuchos::rcp(new std::vector<std::pair<std::size_t,std::size_t> >(requiredInts.size()));
 
-   requiredVector.sync_host();
-   auto rvHost = requiredVector.getLocalViewHost();
+   auto rvHost = requiredVector.getLocalViewHost(Tpetra::Access::ReadOnly);
    for(std::size_t i=0;i<result->size();i++) {
       (*result)[i].first = requiredInts[i];
       (*result)[i].second = rvHost(i,0);
@@ -282,10 +279,8 @@ getSideIdsAndCoords(const STK_Interface & mesh,
    RCP<Tpetra::MultiVector<double,LO,GO,NODE>> localCoordVec_ = rcp(new Tpetra::MultiVector<double,LO,GO,NODE>(idMap_,physicalDim));
 
    // copy local Ids and coords into Tpetra vectors
-   localIdVec_->sync_host();
-   localCoordVec_->sync_host();
-   auto lidHost = localIdVec_->getLocalViewHost();
-   auto lcoordHost = localCoordVec_->getLocalViewHost();
+   auto lidHost = localIdVec_->getLocalViewHost(Tpetra::Access::OverwriteAll);
+   auto lcoordHost = localCoordVec_->getLocalViewHost(Tpetra::Access::OverwriteAll);
    for(std::size_t n=0;n<local_side_ids.size();n++) {
       std::size_t nodeId = local_side_ids[n];
       Teuchos::Tuple<double,3> & coords = local_side_coords[n];
@@ -294,8 +289,6 @@ getSideIdsAndCoords(const STK_Interface & mesh,
       for(unsigned d=0;d<physicalDim;d++)
         lcoordHost(n,d) = coords[d];
    }
-   localIdVec_->modify_host();
-   localCoordVec_->modify_host();
 
    // fully distribute epetra vector across all processors 
    // (these are "distributed" or "dist" objects)
@@ -322,10 +315,8 @@ getSideIdsAndCoords(const STK_Interface & mesh,
       = Teuchos::rcp(new std::vector<Teuchos::Tuple<double,3> >(dist_nodeCount));
 
    // copy local Ids from Tpetra vector
-   distIdVec_->sync_host();
-   distCoordVec_->sync_host();
-   const auto didHost = distIdVec_->getLocalViewHost();
-   const auto dcoordHost = distCoordVec_->getLocalViewHost();
+   const auto didHost = distIdVec_->getLocalViewHost(Tpetra::Access::ReadOnly);
+   const auto dcoordHost = distCoordVec_->getLocalViewHost(Tpetra::Access::ReadOnly);
    for(std::size_t n=0;n<dist_side_ids->size();++n) {
      (*dist_side_ids)[n] = didHost(n,0);
 

@@ -268,12 +268,12 @@ evaluateFields(typename TRAITS::EvalData workset)
      }
 
      // Get Scatter target block
-     const auto& tpetraScatterTarget = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraScatterTarget->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
-     const auto& kokkosScatterTarget = tpetraScatterTarget.template getLocalView<PHX::mem_space>();
+     auto& tpetraScatterTarget = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraScatterTarget->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+     const auto& kokkosScatterTarget = tpetraScatterTarget.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
      // Get dirichlet counter block
-     const auto& tpetraDirichletCounter = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(dirichletCounter_->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
-     const auto& kokkosDirichletCounter = tpetraDirichletCounter.template getLocalView<PHX::mem_space>();
+     auto& tpetraDirichletCounter = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(dirichletCounter_->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
+     const auto& kokkosDirichletCounter = tpetraDirichletCounter.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
      // Class data fields for lambda capture
      const auto fieldOffsets = fieldOffsets_[fieldIndex];
@@ -519,7 +519,7 @@ evaluateFields(typename TRAITS::EvalData workset)
         {
           // Grab the local managed matrix and graph
           const auto tpetraCrsMatrix = rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);
-          const auto managedMatrix = tpetraCrsMatrix->getLocalMatrix();
+          const auto managedMatrix = tpetraCrsMatrix->getLocalMatrixDevice();
           const auto managedGraph = managedMatrix.graph;
 
           // Create runtime unmanaged versions
@@ -563,13 +563,13 @@ evaluateFields(typename TRAITS::EvalData workset)
     const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
     typename Tpetra::Vector<double,LO,GO,PHX::Device>::dual_view_type::t_dev kokkosResidual;
     if (haveResidual) {
-      const auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
-      kokkosResidual = tpetraResidual.template getLocalView<PHX::mem_space>();
+      auto& tpetraResidual = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(thyraBlockResidual->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
+      kokkosResidual = tpetraResidual.getLocalViewDevice(Tpetra::Access::OverwriteAll);
     }
 
     // Get dirichlet counter block
-    const auto& tpetraDirichletCounter = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(dirichletCounter_->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
-    const auto& kokkosDirichletCounter = tpetraDirichletCounter.template getLocalView<PHX::mem_space>();
+    auto& tpetraDirichletCounter = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(dirichletCounter_->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
+    const auto& kokkosDirichletCounter = tpetraDirichletCounter.getLocalViewDevice(Tpetra::Access::ReadWrite);
 
     // Class data fields for lambda capture
     const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];

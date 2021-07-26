@@ -65,6 +65,7 @@ Sum(
 
   // check if the user wants to scale each term independently
   auto local_scalars = PHX::View<double *>("scalars",value_names->size());
+  auto local_scalars_host = Kokkos::create_mirror_view(local_scalars);
   if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
     auto scalars_v = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
 
@@ -72,12 +73,13 @@ Sum(
     TEUCHOS_ASSERT(scalars_v.size()==value_names->size());
 
     for (std::size_t i=0; i < value_names->size(); ++i)
-      local_scalars(i) = scalars_v[i];
+      local_scalars_host(i) = scalars_v[i];
   }
   else {
     for (std::size_t i=0; i < value_names->size(); ++i)
-      local_scalars(i) = 1.0;
+      local_scalars_host(i) = 1.0;
   }
+  Kokkos::deep_copy(local_scalars,local_scalars_host);
 
   scalars = local_scalars; 
   

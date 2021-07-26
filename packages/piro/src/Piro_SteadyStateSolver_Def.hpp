@@ -411,11 +411,6 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
 
     ROL::ThyraVector<Scalar> rol_p(p_prod);
 
-    RCP<Teuchos::ParameterList> opt_paramList = Teuchos::rcp(&appParams.sublist("Optimization Status"),false);
-    if(appParams.isParameter("Enable Explicit Matrix Transpose")) {
-      opt_paramList->set("Enable Explicit Matrix Transpose", appParams.get<bool>("Enable Explicit Matrix Transpose"));
-    }
-
     Teuchos::RCP<Thyra::VectorSpaceBase<Scalar> const> x_space = this->getModel().get_x_space();
     Teuchos::RCP<Thyra::VectorBase<Scalar>> x = Thyra::createMember(x_space);
     Thyra::copy(*modelInArgs.get_x(), x.ptr());
@@ -432,8 +427,8 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     ROL::Ptr<ROL::Vector<Scalar> > rol_lambda_ptr = ROL::makePtrFromRef(rol_lambda);
 
     for (int i=0; i<num_g_; ++i) {
-      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, i, p_indices, opt_paramList, Teuchos::VERB_NONE);
-      Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, i, p_indices, opt_paramList, Teuchos::VERB_NONE);
+      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, i, p_indices, appParams, Teuchos::VERB_NONE);
+      Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, i, p_indices, appParams, Teuchos::VERB_NONE);
 
       ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
       ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
@@ -546,6 +541,7 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
       }
     }
   } else if(computeAdjointSensitivities) {
+
     // Compute adjoint layouts of df/dp, dg/dx depending on
     for (int i=0; i<num_p_; i++) {
       // p
@@ -905,6 +901,13 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     }
   } else if (computeAdjointSensitivities) {
 
+    bool explicitlyTransposeMatrix = appParams.isParameter("Enable Explicit Matrix Transpose") ?
+        appParams.get<bool>("Enable Explicit Matrix Transpose") :
+        false;
+
+    if(explicitlyTransposeMatrix)
+      appParams.sublist("Optimization Status").set("Compute Transposed Jacobian", true);
+
     // Create implicitly transpose Jacobian and preconditioner
     Teuchos::RCP< const Thyra::LinearOpWithSolveFactoryBase<double> > lows_factory = model_->get_W_factory();
     TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
@@ -942,15 +945,24 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
       model_->evalModel(in_args, out_args);
     }
 
-    if(Teuchos::nonnull(prec))
-      Thyra::initializePreconditionedOp<double>(*lows_factory,
-          Thyra::transpose<double>(lop),
-          Thyra::unspecifiedPrec<double>(::Thyra::transpose<double>(prec->getUnspecifiedPrecOp())),
+    if(Teuchos::nonnull(prec)) {
+      if(explicitlyTransposeMatrix) {
+        Thyra::initializePreconditionedOp<double>(*lows_factory,
+          lop,
+          prec,
           jacobian.ptr());
-    else
-      Thyra::initializeOp<double>(*lows_factory,
-          Thyra::transpose<double>(lop),
-          jacobian.ptr());
+      } else {
+        Thyra::initializePreconditionedOp<double>(*lows_factory,
+            Thyra::transpose<double>(lop),
+            Thyra::unspecifiedPrec<double>(::Thyra::transpose<double>(prec->getUnspecifiedPrecOp())),
+            jacobian.ptr());
+      }
+    } else {
+      if(explicitlyTransposeMatrix)
+        Thyra::initializeOp<double>(*lows_factory, lop, jacobian.ptr());
+      else
+        Thyra::initializeOp<double>(*lows_factory, Thyra::transpose<double>(lop), jacobian.ptr());
+    }
 
 
     for (int j=0; j<num_g_; j++) {
@@ -1143,13 +1155,16 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
         }
       }
     }
+    if(explicitlyTransposeMatrix)
+      appParams.sublist("Optimization Status").set("Compute Transposed Jacobian", false);
   }
 }
 
 template <typename Scalar>
 void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs) const
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
+    Teuchos::ParameterList& appParams) const
 {
 #ifdef HAVE_PIRO_ROL
   using Teuchos::RCP;
@@ -1196,8 +1211,6 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
   ROL::ThyraVector<Scalar> rol_p(p_prod);
   ROL::ThyraVector<Scalar> rol_direction_p(direction_p_prod);
 
-  RCP<Teuchos::ParameterList> opt_paramList;
-
   Teuchos::RCP<Thyra::VectorSpaceBase<Scalar> const> x_space = this->getModel().get_x_space();
   Teuchos::RCP<Thyra::VectorBase<Scalar>> x = Thyra::createMember(x_space);
   Thyra::copy(*modelInArgs.get_x(), x.ptr());
@@ -1219,8 +1232,8 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
   }
 
   for (int g_index=0; g_index<num_g_; ++g_index) {
-    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, g_index, p_indices, opt_paramList, Teuchos::VERB_NONE);
-    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, g_index, p_indices, opt_paramList, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, g_index, p_indices, appParams, Teuchos::VERB_NONE);
 
     ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
     ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);

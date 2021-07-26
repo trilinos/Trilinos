@@ -62,7 +62,7 @@ namespace Zoltan2 {
  *           and their associated weights, if any.
  *
  *  The user supplies the identifiers and weights by way of pointers
- *    to arrays.  
+ *    to arrays.
  *
  *  The template parameter (\c User) is a C++ class type which provides the
  *  actual data types with which the Zoltan2 library will be compiled, through
@@ -112,27 +112,41 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const {
+  size_t getLocalNumIDs() const override {
     return idsView_.extent(0);
   }
 
-  void getIDsKokkosView(Kokkos::View<const gno_t *,
-    typename node_t::device_type> &ids) const {
-    ids = idsView_;
+  void getIDsView(const gno_t *&ids) const override {
+    auto kokkosIds = idsView_.view_host();
+    ids = kokkosIds.data();
   }
 
-  int getNumWeightsPerID() const {
+  void getIDsKokkosView(Kokkos::View<const gno_t *,
+    typename node_t::device_type> &ids) const override {
+    ids = idsView_.template view<typename node_t::device_type>();
+  }
+
+  int getNumWeightsPerID() const override {
     return weightsView_.extent(1);
   }
 
+  void getWeightsView(const scalar_t *&wgt, int &stride,
+                      int idx = 0) const override
+  {
+    auto h_wgts_2d = weightsView_.view_host();
+
+    wgt = Kokkos::subview(h_wgts_2d, Kokkos::ALL, idx).data();
+    stride = 1;
+  }
+
   void getWeightsKokkosView(Kokkos::View<scalar_t **,
-    typename node_t::device_type> &wgts) const {
-    wgts = weightsView_;
+    typename node_t::device_type> &wgts) const override {
+    wgts = weightsView_.template view<typename node_t::device_type>();
   }
 
 private:
-  Kokkos::View<const gno_t *, typename node_t::device_type> idsView_;
-  Kokkos::View<scalar_t **, typename node_t::device_type> weightsView_;
+  Kokkos::DualView<gno_t *> idsView_;
+  Kokkos::DualView<scalar_t **> weightsView_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -140,12 +154,25 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
-    Kokkos::View<gno_t*, typename node_t::device_type> &ids,
-    Kokkos::View<scalar_t**, typename node_t::device_type> &weights):
-      idsView_(ids), weightsView_(weights) {
+BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
+    Kokkos::View<gno_t *, typename node_t::device_type> &ids,
+    Kokkos::View<scalar_t **, typename node_t::device_type> &weights)
+{
+  idsView_ = Kokkos::DualView<gno_t *>("idsView_", ids.extent(0));
+  Kokkos::deep_copy(idsView_.h_view, ids);
+
+  weightsView_ = Kokkos::DualView<scalar_t **>("weightsView_", weights.extent(0), weights.extent(1));
+  Kokkos::deep_copy(weightsView_.h_view, weights);
+
+  weightsView_.modify_host();
+  weightsView_.sync_host();
+  weightsView_.template sync<typename node_t::device_type>();
+
+  idsView_.modify_host();
+  idsView_.sync_host();
+  idsView_.template sync<typename node_t::device_type>();
 }
-  
+
 } //namespace Zoltan2
-  
+
 #endif

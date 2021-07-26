@@ -59,7 +59,7 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector
 #include <unordered_map>
-#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
@@ -188,14 +188,6 @@ public:
   /** \brief  The meta data manager for this bulk data manager. */
   const MetaData & mesh_meta_data() const { return m_mesh_meta_data ; }
         MetaData & mesh_meta_data()       { return m_mesh_meta_data ; }
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after February 2021
-  // Call stk::mesh::get_updated_ngp_mesh() instead from GetNgpMesh.hpp
-  STK_DEPRECATED NgpMesh & get_updated_ngp_mesh() const;
-
-  // Call stk::mesh::get_updated_ngp_mesh() instead from GetNgpMesh.hpp and don't store return value
-  STK_DEPRECATED void update_ngp_mesh() const;
-#endif
 
   /** \brief  The parallel machine */
   ParallelMachine parallel() const { return m_parallel.parallel() ; }
@@ -681,7 +673,7 @@ public:
   inline EntityState state(Entity entity) const;
   inline Bucket & bucket(Entity entity) const;
   inline Bucket * bucket_ptr(Entity entity) const;
-  inline Bucket::size_type bucket_ordinal(Entity entity) const;
+  inline unsigned bucket_ordinal(Entity entity) const;
   inline int parallel_owner_rank(Entity entity) const;
   inline unsigned local_id(Entity entity) const;
 
@@ -809,12 +801,6 @@ public:
   // memoized version
   BucketVector const& get_buckets(EntityRank rank, Selector const& selector) const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after November 2020
-  // non-memoized version.
-STK_DEPRECATED  void get_buckets(EntityRank rank, Selector const& selector, BucketVector & output_buckets) const;
-
-#endif
-
   //
   //  Get entities of the specified rank that satisfy the input selector.
   //  Note entities are returned in bucket order, though no particular order should be relied on
@@ -877,8 +863,9 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   std::vector<SideSet *> get_sidesets();
   std::vector<const SideSet *> get_sidesets() const;
   void synchronize_sideset_sync_count();
-
-  void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after August 2021
+  STK_DEPRECATED void clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk);
+#endif
   void create_side_entities(const SideSet &sideSet, const stk::mesh::PartVector& parts);
 
   bool supports_large_ids() const {return m_supportsLargeIds; }
@@ -925,7 +912,8 @@ protected: //functions
   bool inputs_ok_and_need_ghosting(Ghosting & ghosts ,
                                const std::vector<EntityProc> & add_send ,
                                const std::vector<Entity> & remove_receive,
-                               std::vector<EntityProc> &filtered_add_send);
+                               std::vector<EntityProc> &filtered_add_send,
+                               std::vector<Entity> &filtered_remove_receive);
 
   void internal_batch_add_to_ghosting(Ghosting &ghosting, const EntityProcVec &entitiesAndDestinationProcs); // Mod Mark
 
@@ -1012,7 +1000,6 @@ protected: //functions
   void internal_change_entity_parts_without_propagating_to_downward_connected_entities(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed, OrdinalVector& newBucketPartList, OrdinalVector& scratchSpace);
   void internal_change_bucket_parts_without_propagating_to_downward_connected_entities(Bucket* bucket, EntityRank rank, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& ranked_parts_removed, OrdinalVector& newBucketPartList);
   void internal_change_entity_parts_without_propagating_to_downward_connected_entities_with_notification(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& remove_parts, OrdinalVector& parts_removed, OrdinalVector& newBucketPartList, OrdinalVector& scratchSpace);
-  void internal_determine_inducible_parts(Entity entity, const OrdinalVector& add_parts, const OrdinalVector& parts_removed, OrdinalVector& inducible_parts_added, OrdinalVector& inducible_parts_removed);
   void internal_determine_inducible_parts(EntityRank e_rank, const OrdinalVector& add_parts, const OrdinalVector& parts_removed, OrdinalVector& inducible_parts_added, OrdinalVector& inducible_parts_removed);
   void internal_determine_inducible_parts_and_propagate_to_downward_connected_entities(
                                                         Entity entity,
@@ -1085,7 +1072,6 @@ protected: //functions
   bool internal_modification_end_for_change_parts(ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
   void internal_modification_end_for_change_ghosting();
 
-  void mark_bucket_entities_and_upward_related_entities_as_modified(Bucket* bucket);
   void mark_entity_and_upward_related_entities_as_modified(Entity entity);
 
   void set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map(std::vector<shared_entity_type> & shared_entity_map);
@@ -1216,7 +1202,7 @@ protected: //functions
   }
 
   void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
-  void remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
+  void remove_entity_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
 
   bool internal_destroy_relation(Entity e_from ,
                                  Entity e_to,
@@ -1263,7 +1249,7 @@ protected: //functions
                                                                       stk::mesh::Bucket *bucket_old,
                                                                       int closureCountAdjustment); // Mod Mark
 
-  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
+  inline void set_mesh_index(Entity entity, Bucket * in_bucket, unsigned ordinal );
 
   stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
 
@@ -1296,14 +1282,12 @@ private:
   void verify_and_filter_add_send(Ghosting & ghosts, const std::vector<EntityProc> & add_send, bool &need_to_change_ghosting,
                                   bool &add_send_is_owned, std::vector <EntityProc> &filtered_add_send );
 
-  void verify_remove_receive(Ghosting & ghosts, const std::vector<Entity> & remove_receive, bool &need_to_change_ghosting, bool &remove_receive_are_part_of_this_ghosting);
+  void verify_and_filter_remove_receive(Ghosting & ghosts, const std::vector<Entity> & remove_receive, bool &need_to_change_ghosting, std::vector<Entity> & filtered_remove_receive);
 
   bool check_errors_and_determine_if_ghosting_needed_in_parallel(const stk::mesh::Ghosting &ghosts,
                                         bool add_send_is_owned,
-                                        bool remove_receive_are_part_of_this_ghosting,
                                         bool need_to_change_ghosting,
-                                        const std::vector<EntityProc> & add_send,
-                                        const std::vector<Entity> & remove_receive);
+                                        const std::vector<EntityProc> & add_send);
 
   void delete_unneeded_entries_from_the_comm_list();
 
@@ -1391,8 +1375,8 @@ private:
   //
   //  "fields" is an optional argument, if present copy only the listed fields.
   //
-  void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, Bucket::size_type dst_bucket_ord,
-                                   unsigned src_bucket_id, Bucket::size_type src_bucket_ord,
+  void copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_bucket_id, unsigned dst_bucket_ord,
+                                   unsigned src_bucket_id, unsigned src_bucket_ord,
                                    const std::vector<FieldBase*>* fields = nullptr);
 
 
@@ -1401,8 +1385,8 @@ private:
   // id_map, indexed by new id, maps to old id
   void reorder_buckets_callback(EntityRank rank, const std::vector<unsigned>& id_map);
 
-  void remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
-  void add_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord);
+  void remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
+  void add_entity_callback(EntityRank rank, unsigned bucket_id, unsigned bucket_ord);
 
   void initialize_arrays();
 
@@ -1459,13 +1443,6 @@ private:
   void internal_adjust_closure_count(Bucket* bucket,
                                      const OrdinalVector & add_parts,
                                      const OrdinalVector & remove_parts); // Mod Mark
-
-
-  void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
-                                                           const OrdinalVector & add_parts,
-                                                           const OrdinalVector & remove_parts,
-                                                           OrdinalVector &newBucketPartList,
-                                                           OrdinalVector &parts_removed);
 
   void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Bucket* bucket_old,
                                                            const OrdinalVector & add_parts,

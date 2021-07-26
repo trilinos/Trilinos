@@ -18,19 +18,13 @@ namespace Tempus {
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorForwardSensitivity<double> >
-  integratorForwardSensitivity(
+  createIntegratorForwardSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>        parameterList,
     const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model);
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorForwardSensitivity<double> >
-  integratorForwardSensitivity(
-    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
-    std::string stepperType);
-
-  // Nonmember ctor
-  template Teuchos::RCP<IntegratorForwardSensitivity<double> >
-  integratorForwardSensitivity();
+  createIntegratorForwardSensitivity();
 
 } // namespace Tempus
 

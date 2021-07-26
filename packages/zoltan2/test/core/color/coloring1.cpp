@@ -406,10 +406,10 @@ int main(int narg, char** arg)
   std::cout<<"Got row indices, replacing diagonals\n";
   //loop through all rows
   for(size_t i = 0; i < rowInds.size(); i++){
-    Kokkos::View<zgno_t*> idx("idx",1);
-    Kokkos::View<zscalar_t*> val("val",1);
-    idx(0) = rowInds[i];
-    val(0) = 0;
+    typename Kokkos::View<zgno_t*>::HostMirror idx("idx",1);
+    typename Kokkos::View<zscalar_t*>::HostMirror val("val",1);
+    Kokkos::deep_copy(idx,rowInds[i]);
+    Kokkos::deep_copy(val, 0.);
     //get the entries in the current row
     size_t numEntries = Matrix->getNumEntriesInGlobalRow(rowInds[i]);
     typename tcrsMatrix_t::nonconst_global_inds_host_view_type  inds("Indices", numEntries);

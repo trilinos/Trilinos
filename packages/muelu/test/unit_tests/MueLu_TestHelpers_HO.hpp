@@ -208,17 +208,18 @@ namespace MueLuTests {
       // Fill elem_to_node using Kirby-style ordering
       // Ownership rule: I own the element if I own the left node in said element
       Kokkos::resize(elem_to_node,local_num_elements,degree+1);
+      auto elem_to_node_host = Kokkos::create_mirror_view(elem_to_node);
       for(size_t i=0; i<local_num_elements; i++) {
         // End Nodes
         // NTS: This only works for lines
         GO row_gid = pn_colmap->getGlobalElement(i);
         GO col_gid = row_gid+1;
-        elem_to_node(i,0) = i;
-        elem_to_node(i,degree) = pn_colmap->getLocalElement(col_gid);
+        elem_to_node_host(i,0) = i;
+        elem_to_node_host(i,degree) = pn_colmap->getLocalElement(col_gid);
 
         // Middle nodes (in local ids)
         for(size_t j=0; j<(size_t)(degree-1); j++)
-          elem_to_node(i,1+j) = pn_colmap->getLocalElement(go_edge_start + i*(degree-1)+j);
+          elem_to_node_host(i,1+j) = pn_colmap->getLocalElement(go_edge_start + i*(degree-1)+j);
       }
 
       // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
@@ -237,19 +238,19 @@ namespace MueLuTests {
         // Fill in a fake stiffness matrix
         for(int j=0; j<degree+1; j++) {
           // Dirichlet check
-          if( (j==0 && pn_colmap->getGlobalElement(elem_to_node(i,j)) == 0) ||
-              (j==degree &&  pn_colmap->getGlobalElement(elem_to_node(i,j)) ==  global_num_nodes-1))  {
+          if( (j==0 && pn_colmap->getGlobalElement(elem_to_node_host(i,j)) == 0) ||
+              (j==degree &&  pn_colmap->getGlobalElement(elem_to_node_host(i,j)) ==  global_num_nodes-1))  {
             // Stick a 1 on the diagonal
-            GO row_gid = pn_colmap->getGlobalElement(elem_to_node(i,j));
+            GO row_gid = pn_colmap->getGlobalElement(elem_to_node_host(i,j));
             Teuchos::Array<GO> index(1); index[0]=row_gid;
             Teuchos::Array<SC> value(1); value[0]=1.0;
             B->insertGlobalValues(row_gid,index(),value());
             continue;
           }
 
-          GO rowj =  pn_colmap->getGlobalElement(elem_to_node(i,j));
+          GO rowj =  pn_colmap->getGlobalElement(elem_to_node_host(i,j));
           for(int k=0; k<degree+1; k++) {
-            GO rowk =  pn_colmap->getGlobalElement(elem_to_node(i,k));
+            GO rowk =  pn_colmap->getGlobalElement(elem_to_node_host(i,k));
             Teuchos::Array<GO> index(1); index[0] = rowk;
             Teuchos::Array<SC> value(1);
             if(j==0 && k==0)                value[0]=1.0;
@@ -264,7 +265,7 @@ namespace MueLuTests {
       }
 
       B->fillComplete(pn_rowmap,pn_rowmap);
-
+      Kokkos::deep_copy(elem_to_node, elem_to_node_host);
 
 #if 0
       std::cout<<"*** Pseudo Poisson ***"<<std::endl;

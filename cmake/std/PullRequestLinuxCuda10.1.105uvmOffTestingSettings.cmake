@@ -147,15 +147,12 @@ set (Anasazi_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Domi_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Kokkos_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (KokkosKernels_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (MueLu_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (NOX_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (ROL_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Sacado_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (SEACAS_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (ShyLU_DD_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (STK_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (Teko_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (Zoltan2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 
 
 # ShyLU_DD UVM = OFF tests

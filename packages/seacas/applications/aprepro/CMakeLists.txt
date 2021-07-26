@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2021 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -52,9 +52,8 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_array_test
  TEST_0 EXEC aprepro
-	ARGS -q --include=${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
+	ARGS -q --info=aprepro-array.dump --include=${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
 	test-array.out
-  OUTPUT_FILE test-array.stderr
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w
@@ -62,7 +61,7 @@ TRIBITS_ADD_ADVANCED_TEST(
 		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.out
  TEST_2 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-array.stderr.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/test-array.stderr
+		       ${CMAKE_CURRENT_BINARY_DIR}/aprepro-array.dump
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION
@@ -72,14 +71,13 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_command_line_vars_test
  TEST_0 EXEC aprepro
-	ARGS -q var=42 svar='String' ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
+	ARGS -q var=42 svar='String' --info=test-vars.dump ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
 	test-vars.out
-  OUTPUT_FILE test-vars.stderr
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/test-vars.stderr
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-vars.dump
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION
@@ -89,14 +87,13 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_command_line_include_test
  TEST_0 EXEC aprepro
-	ARGS -q --include ${CMAKE_CURRENT_SOURCE_DIR}/test-include.i ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
+	ARGS -q --info=test-vars.dump --include ${CMAKE_CURRENT_SOURCE_DIR}/test-include.i ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
 	test-include.out
-  OUTPUT_FILE test-include.stderr
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/test-include.stderr
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-vars.dump
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION
@@ -106,16 +103,11 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_test_dump_reread
  TEST_0 EXEC aprepro
-        ARGS -D ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app test_dump.output
-  OUTPUT_FILE test.dump
+        ARGS --info=test.dump -D ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app test_dump.output
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
- TEST_1 CMND grep ARGS -v Aprepro: test.dump
-  OUTPUT_FILE test-filter.dump
-  PASS_ANY
- TEST_2 EXEC aprepro
-        ARGS -D test-filter.dump test_dump.output
-  OUTPUT_FILE test-reread.dump
+ TEST_1 EXEC aprepro
+        ARGS --info=test-reread.dump -D test.dump test_dump.output
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_3 CMND diff ARGS -w test-filter.dump test-reread.dump
@@ -130,7 +122,6 @@ TRIBITS_ADD_ADVANCED_TEST(
  aprepro_test_exodus
  TEST_0 EXEC aprepro
         ARGS --include=${CMAKE_CURRENT_SOURCE_DIR} -q ${CMAKE_CURRENT_SOURCE_DIR}/exodus-test.apr test_exo.output
-  OUTPUT_FILE test-2.stderr
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w

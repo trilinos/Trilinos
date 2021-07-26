@@ -60,7 +60,7 @@ StkFieldSyncDebugger::host_stale_access_entity_check(const stk::mesh::Entity& en
 }
 
 void
-StkFieldSyncDebugger::host_stale_access_entity_check(const unsigned & bucketId, const Bucket::size_type & bucketOrd,
+StkFieldSyncDebugger::host_stale_access_entity_check(const unsigned & bucketId, const unsigned & bucketOrd,
                                                      const char * fileName, int lineNumber)
 {
   BulkData & bulk = m_stkField->get_mesh();
