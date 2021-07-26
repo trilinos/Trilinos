@@ -455,8 +455,13 @@ int main (int argc, char* argv[])
 
     // Construct mesh.
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
+    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     if ( ! po.mesh_filename.empty()) {
       mesh_factory = Teuchos::rcp(new panzer_stk::STK_ExodusReaderFactory(po.mesh_filename));
+      pl->set("File Name", po.mesh_filename);
+      pl->set("Keep Percept Data", true);
+      pl->set("Keep Percept Parent Elements", true);
+      pl->set("Levels of Uniform Refinement", 1);
     } else {
       if (po.is3d)
         mesh_factory = Teuchos::rcp(new panzer_stk::CubeHexMeshFactory);
@@ -466,7 +471,6 @@ int main (int argc, char* argv[])
 
     if (po.mesh_filename.empty()) {
       // set mesh factory parameters
-      RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
       pl->set("X Blocks",2);
       pl->set("Y Blocks",1);
       if (po.is3d) pl->set("Z Blocks",1);
@@ -485,8 +489,8 @@ int main (int argc, char* argv[])
           pl->set("Y Procs", nyp);
         }
       }
-      mesh_factory->setParameterList(pl);
     }
+    mesh_factory->setParameterList(pl);
 
     RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
     if (po.generate_mesh_only) {
