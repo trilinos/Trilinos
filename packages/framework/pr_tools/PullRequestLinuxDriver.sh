@@ -34,26 +34,13 @@ function bootstrap_modules() {
             exit -1
         fi
     else
+        module load apps/anaconda3.7
         source /projects/sems/modulefiles/utils/sems-modules-init.sh
         module unload sems-git
         module unload sems-python
         module load sems-git/2.10.1
 
-#        module load sems-python/3.5.2      # Currently not on cloud nodes
-#        #pip3 install --user configparser
-#        get_python_packages pip3
-#        export PYTHON_EXE=python3
-
-#         envvar_set_or_create     PYTHONHOME /projects/sierra/linux_rh7/install/Python/3.6.3
-         envvar_set_or_create     PYTHONHOME /projects/sierra/linux_rh7/install/Python/3.6.10
-#        #envvar_set_or_create     PYTHONPATH ${HOME}/.local/lib/python3.6/site-packages
-#        #envvar_append_or_create  PYTHONPATH ${PYTHONHOME:?}/lib/python3.6/site-packages
-#        unset PYTHONHOME
-         unset PYTHONPATH
-         envvar_prepend_or_create PATH       ${PYTHONHOME:?}/bin
-         envvar_set_or_create     PYTHON_EXE ${PYTHONHOME:?}/bin/python3
-         #export PYTHONHOME=/projects/sierra/linux_rh7/install/Python/3.6.3
-         #export PYTHONPATH=${HOME}/.local/lib/python3.6/site-packages:${PYTHONHOME:?}/lib/python3.6/site-packages
+        envvar_set_or_create     PYTHON_EXE $(which python3)
     fi
 
     module list
