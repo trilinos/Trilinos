@@ -134,7 +134,7 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::DynRankView<double,DeviceSpace> dofCoords("dofCoords", 1, hdivCardinality, dim);
     Kokkos::DynRankView<double,DeviceSpace> basisCoeffsLI("basisCoeffsLI", 1, hcurlCardinality, hdivCardinality);
     Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts("elemOrts", 1);
-    Kokkos::DynRankView<GlobalOrdinal, DeviceSpace> elemNodes("elemNodes", 1, numElemVertices);
+    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes("elemNodes", 1, numElemVertices);
     Kokkos::DynRankView<int, DeviceSpace> fOrt("fOrt", hdivCardinality);
     Kokkos::DynRankView<double, DeviceSpace> ortJacobian("ortJacobian", 2, 2);
 
@@ -338,7 +338,7 @@ void addDiscreteCurlToRequestHandler(
     Kokkos::DynRankView<double,DeviceSpace> dofCoords("dofCoords", 1, hdivCardinality, dim);
     Kokkos::DynRankView<double,DeviceSpace> basisCoeffsLI("basisCoeffsLI", 1, hcurlCardinality, hdivCardinality);
     Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts("elemOrts", 1);
-    Kokkos::DynRankView<GlobalOrdinal, DeviceSpace> elemNodes("elemNodes", 1, numElemVertices);
+    typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes("elemNodes", 1, numElemVertices);
     Kokkos::DynRankView<int, DeviceSpace> fOrt("fOrt", hdivCardinality);
     Kokkos::DynRankView<double, DeviceSpace> ortJacobian("ortJacobian", 2, 2);
 
