@@ -261,6 +261,8 @@ namespace Thyra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MueLuPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   initializePrec(const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLu::initializePrec")));
+
     using Teuchos::rcp_dynamic_cast;
 
     // we are using typedefs here, since we are using objects from different packages (Xpetra, Thyra,...)
