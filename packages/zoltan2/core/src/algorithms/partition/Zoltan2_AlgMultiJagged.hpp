@@ -3662,7 +3662,7 @@ struct ReduceWeightsFunctor {
   Kokkos::View<double *, device_t> current_part_weights;
   Kokkos::View<scalar_t *, device_t> current_left_closest;
   Kokkos::View<scalar_t *, device_t> current_right_closest;
-#endif // KOKKOS_ENABLE_CUDA && defined(KOKKOS_ENABLE_HIP)
+#endif // KOKKOS_ENABLE_CUDA || defined(KOKKOS_ENABLE_HIP)
 
   ReduceWeightsFunctor(
     int mj_loop_count,
@@ -3685,7 +3685,7 @@ struct ReduceWeightsFunctor {
     ,Kokkos::View<double *, device_t> & mj_current_part_weights,
     Kokkos::View<scalar_t *, device_t> & mj_current_left_closest,
     Kokkos::View<scalar_t *, device_t> & mj_current_right_closest
-#endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     ) :
       loop_count(mj_loop_count),
       max_scalar(mj_max_scalar),
@@ -3708,7 +3708,7 @@ struct ReduceWeightsFunctor {
       ,current_part_weights(mj_current_part_weights),
       current_left_closest(mj_current_left_closest),
       current_right_closest(mj_current_right_closest)
-#endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
   {
   }
 
