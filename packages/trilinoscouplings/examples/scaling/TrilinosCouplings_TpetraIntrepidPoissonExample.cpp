@@ -1355,39 +1355,39 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // Import from the global column map to the local column map.
     myColsToZeroT->doImport (*globColsToZeroT, *bdyExporter, Tpetra::INSERT);
 
-    Array<ST> values;
-    Array<int> indices;
     ArrayRCP<const int> myColsToZeroArrayRCP = myColsToZeroT->getData(0);
     size_t NumEntries = 0;
 
     // Zero the columns corresponding to Dirichlet BCs.
+    typename sparse_matrix_type::nonconst_local_inds_host_view_type indices("indices", 1);
+    typename sparse_matrix_type::nonconst_values_host_view_type values("values", 1);
     for (LO i = 0; i < as<int> (gl_StiffMatrix->getNodeNumRows ()); ++i) {
       NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (i);
-      values.resize (NumEntries);
-      indices.resize (NumEntries);
-      gl_StiffMatrix->getLocalRowCopy (i, indices (), values (), NumEntries);
+      Kokkos::resize(indices, NumEntries);
+      Kokkos::resize(values, NumEntries);
+      gl_StiffMatrix->getLocalRowCopy (i, indices, values, NumEntries);
       for (int j = 0; j < as<int> (NumEntries); ++j) {
-        if (myColsToZeroArrayRCP[indices[j]] == 1)
-          values[j] = STS::zero ();
+        if (myColsToZeroArrayRCP[indices(j)] == 1)
+          values(j) = STS::zero ();
       }
-      gl_StiffMatrix->replaceLocalValues (i, indices (), values ());
+      gl_StiffMatrix->replaceLocalValues (i, indices, values);
     } // for each (local) row of the global stiffness matrix
 
     // Zero the rows and add ones to diagonal.
     for (int i = 0; i < numBCNodes; ++i) {
       NumEntries = gl_StiffMatrix->getNumEntriesInLocalRow (BCNodes[i]);
-      indices.resize (NumEntries);
-      values.resize (NumEntries);
-      gl_StiffMatrix->getLocalRowCopy (BCNodes[i], indices (), values (), NumEntries);
+      Kokkos::resize(indices, NumEntries);
+      Kokkos::resize(values, NumEntries);
+      gl_StiffMatrix->getLocalRowCopy (BCNodes[i], indices, values, NumEntries);
       const GO globalRow = gl_StiffMatrix->getRowMap ()->getGlobalElement (BCNodes[i]);
       const LO localCol = gl_StiffMatrix->getColMap ()->getLocalElement (globalRow);
       for (int j = 0; j < as<int> (NumEntries); ++j) {
-        values[j] = STS::zero ();
-        if (indices[j] == localCol) {
-          values[j] = STS::one ();
+        values(j) = STS::zero ();
+        if (indices(j) == localCol) {
+          values(j) = STS::one ();
         }
       } // for each entry in the current row
-      gl_StiffMatrix->replaceLocalValues (BCNodes[i], indices (), values ());
+      gl_StiffMatrix->replaceLocalValues (BCNodes[i], indices, values);
     } // for each BC node
   }
 

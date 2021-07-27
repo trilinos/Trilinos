@@ -50,8 +50,10 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
+#include <Tpetra_CrsMatrix.hpp>
 #include <Xpetra_TpetraOperator.hpp>
 #include <Xpetra_MultiVector.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 
 namespace Xpetra {
@@ -59,35 +61,40 @@ namespace Xpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Matrix<typename Teuchos::ScalarTraits<Scalar>::halfPrecision, LocalOrdinal, GlobalOrdinal, Node> >
   convertToHalfPrecision(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A) {
-    typedef typename Teuchos::ScalarTraits<Scalar>::halfPrecision                                 HalfScalar;
-    typedef typename Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type LM;
-    typedef Xpetra::Matrix<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>                            MatrixHalf;
-    typedef Xpetra::CrsMatrix<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>                         CrsHalf;
-    typedef Xpetra::TpetraCrsMatrix<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>                   tCrsHalf;
-    typedef typename CrsHalf::local_matrix_type                                                    LMhalf;
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+    using HalfScalar = typename Teuchos::ScalarTraits<Scalar>::halfPrecision;
+    typedef typename Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> XpCrs;
 
-    LM lclA = A->getLocalMatrix();
-    LMhalf newLclA = LMhalf("new A", lclA.graph);
-    Kokkos::deep_copy(newLclA.values, lclA.values);
-    RCP<CrsHalf> newCrsA = Teuchos::rcp(new tCrsHalf(newLclA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap()));
-    RCP<MatrixHalf> newA = Teuchos::rcp(new Xpetra::CrsMatrixWrap<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>(newCrsA));
-    newA->setObjectLabel(A->getObjectLabel());
+    RCP<XpCrs> xpCrs = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(A, true)->getCrsMatrix();
+    auto tpCrs = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(xpCrs, true)->getTpetra_CrsMatrix();
+    auto newTpCrs = tpCrs->template convert<HalfScalar>();
+    auto newXpCrs = Teuchos::rcp(new Xpetra::TpetraCrsMatrix<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>(newTpCrs));
+    auto newA = Teuchos::rcp(new Xpetra::CrsMatrixWrap<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrix<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>>(newXpCrs)));
+
     return newA;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::convertToHalfPrecision only available for Tpetra with SC=double and SC=float enabled");
+    TEUCHOS_UNREACHABLE_RETURN(false);
+#endif
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::halfPrecision, LocalOrdinal, GlobalOrdinal, Node> >
   convertToHalfPrecision(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X) {
-    typedef Xpetra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>    tMV;
-    typedef typename Teuchos::ScalarTraits<Scalar>::halfPrecision                HalfScalar;
-    typedef Xpetra::MultiVector<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>       MVHalf;
-    typedef Xpetra::TpetraMultiVector<HalfScalar,LocalOrdinal,GlobalOrdinal,Node> tMVHalf;
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+    using HalfScalar = typename Teuchos::ScalarTraits<Scalar>::halfPrecision;
 
-    RCP<MVHalf> newX = Xpetra::MultiVectorFactory<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),
-                                                                                                     X->getNumVectors());
-    Tpetra::deep_copy(*Teuchos::rcp_dynamic_cast<tMVHalf>(newX)->getTpetra_MultiVector(),
-                      *Teuchos::rcp_dynamic_cast<tMV>(X)->getTpetra_MultiVector());
+    auto tpX = toTpetra(*X);
+    auto newTpX = tpX.template convert<HalfScalar>();
+    auto newX = rcp(new Xpetra::TpetraMultiVector<HalfScalar,LocalOrdinal,GlobalOrdinal,Node>(newTpX));
+
     return newX;
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::convertToHalfPrecision only available for Tpetra with SC=double and SC=float enabled");
+    TEUCHOS_UNREACHABLE_RETURN(false);
+#endif
   }
 
 /*!  @brief Wraps an existing halfer precision Xpetra::Operator as a Xpetra::Operator.

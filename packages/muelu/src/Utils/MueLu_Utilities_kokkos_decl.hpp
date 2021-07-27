@@ -206,8 +206,6 @@ namespace MueLu {
       return Utilities::Residual(Op, X, RHS);
     }
 
-    static void PauseForDebugger();
-
     /*! @brief Simple transpose for Tpetra::CrsMatrix types
 
         Note:  This is very inefficient, as it inserts one entry at a time.
@@ -402,9 +400,6 @@ namespace MueLu {
     }
     static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
       return UtilitiesBase::Residual(Op,X,RHS);
-    }
-    static void PauseForDebugger() {
-      UtilitiesBase::PauseForDebugger();
     }
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
       return UtilitiesBase::MakeFancy(os);

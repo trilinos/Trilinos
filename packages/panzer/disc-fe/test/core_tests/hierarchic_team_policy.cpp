@@ -44,6 +44,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 
+#include "KokkosExp_View_Fad.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 #include "Panzer_HierarchicParallelism.hpp"
 #include "Sacado.hpp"
 
@@ -88,7 +90,7 @@ namespace panzer_test {
 
     for (int i=0; i < M; ++i) {
       for (int j=0; j < N; ++j) {
-        TEST_FLOATING_EQUALITY(Sacado::ScalarValue<Scalar>::eval(a(i,j)),3.0,tol);
+        TEST_FLOATING_EQUALITY(Sacado::ScalarValue<Scalar>::eval(a_host(i,j)),3.0,tol);
       }
     }
   }

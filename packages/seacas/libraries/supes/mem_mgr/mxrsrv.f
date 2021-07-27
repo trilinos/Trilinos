@@ -96,19 +96,9 @@ C     Update dictionary.
 C        Data fill pattern.
 
          IF (FILL) THEN
-            DO 100 I = VOID(VROW,1,1), VOID(VROW,1,1)+MYLEN-1-7,8
-               MYV(I+0) = FDATA
-               MYV(I+1) = FDATA
-               MYV(I+2) = FDATA
-               MYV(I+3) = FDATA
-               MYV(I+4) = FDATA
-               MYV(I+5) = FDATA
-               MYV(I+6) = FDATA
-               MYV(I+7) = FDATA
-  100       CONTINUE
-            do 110 J = I, VOID(VROW,1,1)+MYLEN-1
+            do J = NEWLOC, NEWLOC+MYLEN-1
               MYV(J) = FDATA
- 110        continue
+            end do
          END IF
 
 C        Update void table.

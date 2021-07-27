@@ -63,9 +63,10 @@ class ThyraProductME_Constraint_SimOpt : public ROL::Constraint_SimOpt<Real> {
 public:
 
   ThyraProductME_Constraint_SimOpt(const Thyra::ModelEvaluator<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
-      Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
+      Teuchos::ParameterList& piroParams_, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
       Teuchos::RCP<ROL_ObserverBase<Real>> observer_ = Teuchos::null) :
-        thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
+        thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_),
+        optParams(piroParams_.sublist("Optimization Status")),
         out(Teuchos::VerboseObjectBase::getDefaultOStream()),
         verbosityLevel(verbLevel), observer(observer_) {
     thyra_solver = Teuchos::null;
@@ -77,8 +78,11 @@ public:
     jac1 = Teuchos::null;
     z_stored_ptr =  Teuchos::null;
 
-    if(params != Teuchos::null)
-      params->set<int>("Optimizer Iteration Number", -1);
+    explicitlyTransposeMatrix = piroParams_.isParameter("Enable Explicit Matrix Transpose") ?
+        piroParams_.get<bool>("Enable Explicit Matrix Transpose") :
+        false;
+    optParams.set<int>("Optimizer Iteration Number", -1);
+    print = false;
   };
 
   void setExternalSolver(Teuchos::RCP<Thyra::ModelEvaluator<double>> thyra_solver_) {
@@ -526,14 +530,10 @@ public:
     TEUCHOS_ASSERT(Teuchos::nonnull(lows_factory));
     Teuchos::RCP< Thyra::LinearOpBase<double> > lop;
 
-    bool explicitlyTransposMatrix = false;
-    if(params != Teuchos::null) {
-      explicitlyTransposMatrix = params->get("Enable Explicit Matrix Transpose", false);
-      if(explicitlyTransposMatrix)
-        params->set("Compute Transposed Jacobian", true);
-    }
+    if(explicitlyTransposeMatrix)
+      optParams.set("Compute Transposed Jacobian", true);
 
-    if(computeJacobian1 || explicitlyTransposMatrix)
+    if(computeJacobian1 || explicitlyTransposeMatrix)
       lop = thyra_model.create_W_op();
     else {
       if(verbosityLevel >= Teuchos::VERB_HIGH)
@@ -553,14 +553,14 @@ public:
     }
     const Teuchos::RCP<Thyra::LinearOpWithSolveBase<Real> > jacobian = lows_factory->createOp();
 
-    if(computeJacobian1 || explicitlyTransposMatrix)
+    if(computeJacobian1 || explicitlyTransposeMatrix)
     {
       outArgs.set_W_op(lop);
       thyra_model.evalModel(inArgs, outArgs);
       outArgs.set_W_op(Teuchos::null);
       jac1 = lop;
 
-      computeJacobian1 = explicitlyTransposMatrix;
+      computeJacobian1 = explicitlyTransposeMatrix;
     }
 
     if (Teuchos::nonnull(prec_factory))
@@ -571,7 +571,7 @@ public:
     }
 
     if(Teuchos::nonnull(prec)) {
-      if(explicitlyTransposMatrix) {
+      if(explicitlyTransposeMatrix) {
         Thyra::initializePreconditionedOp<double>(*lows_factory,
           lop,
           prec,
@@ -584,7 +584,7 @@ public:
       }
     }
     else {
-      if(explicitlyTransposMatrix)
+      if(explicitlyTransposeMatrix)
         Thyra::initializeOp<double>(*lows_factory, lop, jacobian.ptr());
       else
         Thyra::initializeOp<double>(*lows_factory, Thyra::transpose<double>(lop), jacobian.ptr());
@@ -601,10 +601,7 @@ public:
         thyra_iajv_ptr.ptr(),
         Teuchos::ptr(&solve_criteria));
 
-    if(params != Teuchos::null) {
-      params->set("Compute Transposed Jacobian", false);
-    }
-
+    optParams.set("Compute Transposed Jacobian", false);
   };
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
@@ -789,8 +786,7 @@ public:
 
       inArgs.set_x(thyra_x.getVector());
 
-      if(params != Teuchos::null)
-        params->set<bool>("Compute State", true);
+      optParams.set<bool>("Compute State", true);
 
       thyra_solver->evalModel(inArgs, outArgs);
 
@@ -1160,8 +1156,7 @@ public:
       rol_u_ptr->set(u);
     }
 
-    if(params != Teuchos::null)
-      params->set<int>("Optimizer Iteration Number", iter);
+    optParams.set<int>("Optimizer Iteration Number", iter);
   }
 
   void update_1( const ROL::Vector<Real> &u, ROL::UpdateType /*type*/, int iter = -1 ) {
@@ -1195,8 +1190,7 @@ public:
       z_stored_ptr->set(z);
     }
 
-    if(params != Teuchos::null)
-      params->set<int>("Optimizer Iteration Number", iter);
+    optParams.set<int>("Optimizer Iteration Number", iter);
   }
 
   void update_2( const ROL::Vector<Real> &z, ROL::UpdateType /*type*/, int iter = -1 ) {
@@ -1239,14 +1233,15 @@ private:
   int num_responses;
   Teuchos::RCP<ROL::Vector<Real> > value_ptr_;
   Teuchos::RCP<ROL::Vector<Real> > rol_u_ptr, rol_z_ptr;
-  Teuchos::RCP<Teuchos::ParameterList> params;
+  Teuchos::ParameterList& optParams;
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::RCP< Thyra::LinearOpBase<double> > jac1;
   Teuchos::EVerbosityLevel verbosityLevel;
   Teuchos::RCP<ROL_ObserverBase<Real>> observer;
 
   Teuchos::RCP<ROL::Vector<Real> > z_stored_ptr;
-  bool print = false;
+  bool explicitlyTransposeMatrix;
+  bool print;
 
 };
 

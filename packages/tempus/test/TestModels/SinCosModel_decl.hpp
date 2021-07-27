@@ -141,7 +141,7 @@ private:
 
   void calculateCoeffFromIC_();
 
-private:
+protected:
   int dim_;         ///< Number of state unknowns (2)
   int Np_;          ///< Number of parameter vectors (1)
   int np_;          ///< Number of parameters in this vector (2)
@@ -181,6 +181,40 @@ private:
 //  return(model);
 //}
 
+//! Adjoint for SinCosModel
+/*!
+ * This model evaluator modifies evalModel() to compute the adjoint operator
+ * instead of the forward operator.
+ */
+template<class Scalar>
+class SinCosModelAdjoint
+  : public SinCosModel<Scalar>
+{
+  public:
+
+  // Constructor
+  SinCosModelAdjoint(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null) : SinCosModel<Scalar>(pList) {}
+
+  /** \name Public functions overridden from ModelEvaluator. */
+  //@{
+
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+
+  //@}
+
+private:
+
+  /** \name Private functions overridden from ModelEvaluatorDefaultBase. */
+  //@{
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  void evalModelImpl(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs_bar,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs_bar
+    ) const;
+  //@}
+};
 
 } // namespace Tempus_Test
 #endif // TEMPUS_TEST_SINCOS_MODEL_DECL_HPP

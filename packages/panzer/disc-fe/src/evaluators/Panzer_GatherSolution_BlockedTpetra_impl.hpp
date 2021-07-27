@@ -220,7 +220,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
 
     const auto& tpetraSolution = *((rcp_dynamic_cast<Thyra::TpetraVector<ScalarT,LO,GO,NodeT>>(thyraBlockSolution->getNonconstVectorBlock(productVectorBlockIndex_[fieldIndex]),true))->getTpetraVector());
-    const auto& kokkosSolution = tpetraSolution.template getLocalView<PHX::mem_space>();
+    const auto& kokkosSolution = tpetraSolution.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     // Class data fields for lambda capture
     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
@@ -551,7 +551,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
     const int blockRowIndex = productVectorBlockIndex_[fieldIndex];
     const auto& subblockSolution = *((rcp_dynamic_cast<Thyra::TpetraVector<RealType,LO,GO,NodeT>>(blockedSolution->getNonconstVectorBlock(blockRowIndex),true))->getTpetraVector());
-    const auto kokkosSolution = subblockSolution.template getLocalView<PHX::mem_space>();
+    const auto kokkosSolution = subblockSolution.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     // Class data fields for lambda capture
     const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];

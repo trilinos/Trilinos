@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.24 (2021/05/04)";
+  const char *       version_string = "5.27 (2021/07/20)";
 
   void output_copyright();
 
@@ -55,6 +55,10 @@ namespace SEAMS {
     if (!outputStream.empty()) {
       outputStream.top()->flush();
     }
+
+    // May need to delete this if set via --info=file, but need a way to determine this.
+    // For now, flush so all data written and leave as is.
+    infoStream->flush();
 
     if ((stringScanner != nullptr) && stringScanner != lexer) {
       delete stringScanner;
@@ -223,7 +227,7 @@ namespace SEAMS {
       return;
     }
 
-    bool              colorize = (infoStream == &std::cerr) && isatty(fileno(stderr));
+    bool              colorize = (infoStream == &std::cout) && isatty(fileno(stdout));
     std::stringstream ss;
     if (prefix) {
       if (colorize) {
@@ -288,8 +292,8 @@ namespace SEAMS {
     }
 
     /* If pointer still null, print error message */
-    if (pointer == nullptr || pointer->bad() || !pointer->good()) {
-      std::string err = "Can't open " + file;
+    if (pointer == nullptr || pointer->fail() || pointer->bad() || !pointer->good()) {
+      std::string err = "Can't open '" + file + "'. " + strerror(errno);
       error(err, false);
       delete pointer;
       pointer = nullptr;
@@ -442,6 +446,18 @@ namespace SEAMS {
     }
     else if (option == "--exit_on" || option == "-e") {
       ap_options.end_on_exit = true;
+    }
+    else if (option.find("--info") != std::string::npos) {
+      std::string value;
+
+      size_t index = option.find_first_of('=');
+      if (index != std::string::npos) {
+        value     = option.substr(index + 1);
+        auto info = open_file(value, "w");
+        if (info != nullptr) {
+          set_error_streams(nullptr, nullptr, info);
+        }
+      }
     }
     else if (option.find("--include") != std::string::npos || (option[1] == 'I')) {
       std::string value;

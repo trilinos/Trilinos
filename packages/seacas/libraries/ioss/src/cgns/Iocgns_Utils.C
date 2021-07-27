@@ -2170,9 +2170,7 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
 }
 
 void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector<double> &timesteps,
-                                            Ioss::Region *region, bool enable_field_recognition,
-                                            char suffix_separator, int myProcessor,
-                                            bool is_parallel_io)
+                                            Ioss::Region *region, int myProcessor, bool is_parallel_io)
 {
   // ==========================================
   // Add transient variables (if any) to all zones...
@@ -2211,7 +2209,7 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
       if (grid_loc == CG_CellCenter) {
         size_t entity_count = block->entity_count();
         Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT,
-                                enable_field_recognition, suffix_separator, nullptr, fields);
+                                region->get_database(), nullptr, fields);
         size_t index = 1;
         for (const auto &field : fields) {
           Utils::set_field_index(field, index, grid_loc);
@@ -2228,7 +2226,7 @@ void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector
         auto * nb           = const_cast<Ioss::NodeBlock *>(cnb);
         size_t entity_count = nb->entity_count();
         Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT,
-                                enable_field_recognition, suffix_separator, nullptr, fields);
+                                region->get_database(), nullptr, fields);
         size_t index = 1;
         for (const auto &field : fields) {
           Utils::set_field_index(field, index, grid_loc);

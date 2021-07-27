@@ -49,11 +49,17 @@
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
+#include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
 #include "Kokkos_DynRankView.hpp"
+
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_Region.h"
+
 
 #ifdef PANZER_HAVE_IOSS
 
@@ -235,6 +241,85 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    RCP<STK_Interface> mesh_read = factory.buildMesh(MPI_COMM_WORLD);
    TEST_EQUALITY(mesh_read->getInitialStateTime(),4.5);
    TEST_EQUALITY(mesh_read->getCurrentStateTime(),0.0); // writeToExodus has not yet been called
+}
+
+TEUCHOS_UNIT_TEST(tSTK_IO, addInformationRecords)
+{
+   using Teuchos::RCP;
+
+   std::vector<std::string> info_records_1 = {
+     "DG::eblock-0_0_0::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-0_0_0::field::Ex"
+   };
+   std::vector<std::string> info_records_2 = {
+     "DG::eblock-0_0_0::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-0_0_0::field::Ey"
+   };
+   std::vector<std::string> info_records_3 = {
+     "DG::eblock-0_0_0::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-0_0_0::field::Ez"
+   };
+   std::vector<std::string> info_records_4 = {
+     "DG::eblock-1_1_1::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-1_1_1::field::Ex"
+   };
+   std::vector<std::string> info_records_5 = {
+     "DG::eblock-1_1_1::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-1_1_1::field::Ey"
+   };
+   std::vector<std::string> info_records_6 = {
+     "DG::eblock-1_1_1::basis::Basis_HGRAD_HEX_C1_FEM",
+     "DG::eblock-1_1_1::field::Ez"
+   };
+
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   pl->set("X Blocks",1);
+   pl->set("Y Blocks",1);
+   pl->set("Z Blocks",1);
+   pl->set("X Elements",2);
+   pl->set("Y Elements",4);
+   pl->set("Z Elements",5);
+
+   CubeHexMeshFactory factory;
+   factory.setParameterList(pl);
+   RCP<STK_Interface> mesh = factory.buildUncommitedMesh(MPI_COMM_WORLD);
+   mesh->addInformationRecords(info_records_1);
+   mesh->addInformationRecords(info_records_2);
+   mesh->addInformationRecords(info_records_3);
+   mesh->addInformationRecords(info_records_4);
+   mesh->addInformationRecords(info_records_5);
+   mesh->addInformationRecords(info_records_6);
+   factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+
+   TEST_ASSERT(mesh!=Teuchos::null);
+
+   mesh->writeToExodus("info_records.exo");
+
+   {
+   Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus", 
+                                                     "info_records.exo", 
+                                                     Ioss::READ_MODEL);
+   TEST_ASSERT(db_io);
+
+   Ioss::Region region(db_io);
+   TEST_ASSERT(db_io->ok() == true);
+
+   auto info_records_from_ioss = db_io->get_information_records();
+
+   // put all the info records in one vector to make them easier to iterate over
+   std::vector<std::string> all_expected_records;
+   all_expected_records.insert(all_expected_records.end(), info_records_1.begin(), info_records_1.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_2.begin(), info_records_2.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_3.begin(), info_records_3.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_4.begin(), info_records_4.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_5.begin(), info_records_5.end());
+   all_expected_records.insert(all_expected_records.end(), info_records_6.begin(), info_records_6.end());
+   // make sure all the input records appear in the results returned from IOSS
+   for ( auto r : all_expected_records ) {
+      auto iter = std::find(info_records_from_ioss.begin(), info_records_from_ioss.end(), r);
+      TEST_ASSERT(iter != info_records_from_ioss.end());
+   }
+   }
 }
 
 RCP<STK_Interface> buildMesh(int xElements,int yElements)

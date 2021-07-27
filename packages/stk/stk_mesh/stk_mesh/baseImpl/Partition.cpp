@@ -272,7 +272,7 @@ void Partition::sort(const EntitySorterBase& sorter)
   // Make sure that there is a vacancy somewhere.
   //
   stk::mesh::Bucket *vacancy_bucket = *(buckets_end - 1);
-  size_t vacancy_ordinal = vacancy_bucket->size();
+  unsigned vacancy_ordinal = vacancy_bucket->size();
   stk::mesh::Bucket *tmp_bucket = 0;
 
   if (vacancy_ordinal >= vacancy_bucket->capacity())
@@ -297,13 +297,13 @@ void Partition::sort(const EntitySorterBase& sorter)
 
   FieldVector reduced_fields;
   if(m_mesh.is_field_updating_active()) {
-    if(buckets_begin != buckets_end && (stk::topology::rank_t)(*buckets_begin)->entity_rank() < stk::topology::NUM_RANKS) {
-      const FieldVector& rankFields = m_mesh.mesh_meta_data().get_fields((stk::topology::rank_t)(*buckets_begin)->entity_rank());
+    if(buckets_begin != buckets_end && (*buckets_begin)->entity_rank() < stk::topology::NUM_RANKS) {
+      const FieldVector& rankFields = m_mesh.mesh_meta_data().get_fields((*buckets_begin)->entity_rank());
       reduced_fields.reserve(rankFields.size());
       for(unsigned ifield=0; ifield<rankFields.size(); ++ifield) {
-	if(field_bytes_per_entity(*rankFields[ifield], *(*buckets_begin))) {
-	  reduced_fields.push_back(rankFields[ifield]);
-	}
+        if(field_bytes_per_entity(*rankFields[ifield], *(*buckets_begin))) {
+          reduced_fields.push_back(rankFields[ifield]);
+        }
       }
     }
   }
@@ -327,8 +327,9 @@ void Partition::sort(const EntitySorterBase& sorter)
               }
 
               // Set the vacant spot to where the required entity is now.
-              vacancy_bucket  = & (m_mesh.bucket(*sorted_ent_vector_itr));
-              vacancy_ordinal = m_mesh.bucket_ordinal(*sorted_ent_vector_itr);
+              MeshIndex& meshIndex = m_mesh.mesh_index(*sorted_ent_vector_itr);
+              vacancy_bucket  = meshIndex.bucket;
+              vacancy_ordinal = meshIndex.bucket_ordinal;
 
               // Move required entity to the required spot
               curr_bucket.overwrite_entity( curr_bucket_ord, *sorted_ent_vector_itr, &reduced_fields );

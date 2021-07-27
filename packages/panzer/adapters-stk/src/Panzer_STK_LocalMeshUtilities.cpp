@@ -104,7 +104,7 @@ buildGhostedVertices(const Tpetra::Import<int,panzer::GlobalOrdinal,panzer::Tpet
   RCP<mvec_type> ghstd_vertices_mv = rcp(new mvec_type(importer.getTargetMap(),vertices_per_cell*space_dim));
 
   {
-    auto owned_vertices_view = owned_vertices_mv->template getLocalView<dual_view_type>();
+    auto owned_vertices_view = owned_vertices_mv->getLocalViewHost(Tpetra::Access::OverwriteAll);
     for(size_t i=0;i<owned_cell_cnt;i++) {
       int l = 0;
       for(int j=0;j<vertices_per_cell;j++)
@@ -119,7 +119,7 @@ buildGhostedVertices(const Tpetra::Import<int,panzer::GlobalOrdinal,panzer::Tpet
   // copy multivector into ghstd vertex structure
   Kokkos::DynRankView<double,PHX::Device> ghstd_vertices("ghstd_vertices",ghstd_cell_cnt,vertices_per_cell,space_dim);
   {
-    auto ghstd_vertices_view = ghstd_vertices_mv->template getLocalView<dual_view_type>();
+    auto ghstd_vertices_view = ghstd_vertices_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
     for(size_t i=0;i<ghstd_cell_cnt;i++) {
       int l = 0;
       for(int j=0;j<vertices_per_cell;j++)

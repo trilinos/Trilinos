@@ -94,7 +94,7 @@ namespace panzer {
     ghostedMatrix->resumeFill();
     ghostedMatrix->setAllToScalar(0.0);
 
-    auto M = ghostedMatrix->getLocalMatrix();
+    auto M = ghostedMatrix->getLocalMatrixDevice();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
 
     const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const" || targetBasisDescriptor_.getType()=="HVol";
@@ -115,8 +115,8 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_scalar;
-          const auto weightedBasis = basisValues.weighted_basis_scalar;
+          const auto unweightedBasis = basisValues.basis_scalar.get_static_view();
+          const auto weightedBasis = basisValues.weighted_basis_scalar.get_static_view();
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
@@ -215,8 +215,8 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_vector;
-          const auto weightedBasis = basisValues.weighted_basis_vector;
+          const auto unweightedBasis = basisValues.basis_vector.get_static_view();
+          const auto weightedBasis = basisValues.weighted_basis_vector.get_static_view();
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
@@ -477,7 +477,7 @@ namespace panzer {
           Kokkos::deep_copy(sourceFieldOffsets,hostOffsets);
         }
 
-        const auto localMatrix = ghostedMatrix->getLocalMatrix();
+        const auto localMatrix = ghostedMatrix->getLocalMatrixDevice();
         const int numRows = static_cast<int>(targetWeightedBasis.extent(1));
         int tmpNumCols = -1;
         int tmpNumQP = -1;

@@ -210,6 +210,9 @@ TEST(Parallel, CommNeighbors)
  
   stk::CommNeighbors commNeighbors(comm, neighborProcs);
 
+  EXPECT_EQ(numProcs, commNeighbors.parallel_size());
+  EXPECT_EQ(myProc, commNeighbors.parallel_rank());
+
   for(int proc : neighborProcs) {
       stk::CommBufferV& proc_buff = commNeighbors.send_buffer(proc);
       for(int i=0; i<numItems; ++i) {

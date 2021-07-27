@@ -52,7 +52,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Tempus_IntegratorBasicOld.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 
 #include <fstream>
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     RCP<Teuchos::ParameterList> tempusParList = sublist(parList, "Tempus", true);
     RCP<SinCosModelEvaluator<RealT>> model = Teuchos::rcp(new SinCosModelEvaluator<RealT>());
 
-    RCP<Tempus::IntegratorBasicOld<RealT> > integrator = Tempus::integratorBasic<RealT>(tempusParList, model);
+    RCP<Tempus::IntegratorBasic<RealT> > integrator = Tempus::createIntegratorBasic<RealT>(tempusParList, model);
 
     integrator->advanceTime();
 

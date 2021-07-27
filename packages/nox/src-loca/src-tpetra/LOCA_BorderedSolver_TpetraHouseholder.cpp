@@ -773,8 +773,8 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
     //*tpetraPrecMatrix = *jac_crs;
     {
       tpetraPrecMatrix->resumeFill();
-      auto jac_view = jac_crs->getLocalMatrix().values;
-      auto prec_view = tpetraPrecMatrix->getLocalMatrix().values;
+      auto jac_view = jac_crs->getLocalMatrixDevice().values;
+      auto prec_view = tpetraPrecMatrix->getLocalMatrixDevice().values;
       Kokkos::deep_copy(prec_view,jac_view);
       tpetraPrecMatrix->fillComplete();
     }
@@ -1116,17 +1116,15 @@ updateCrsMatrixForPreconditioner(const NOX::Abstract::MultiVector& UU,
 
   auto& UU_tpetra = NOX::Tpetra::getTpetraMultiVector(UU);
   auto& VV_tpetra = NOX::Tpetra::getTpetraMultiVector(VV);
-  const_cast<NOX::TMultiVector&>(UU_tpetra).sync_device();
-  const_cast<NOX::TMultiVector&>(VV_tpetra).sync_device();
-  const auto uu = UU_tpetra.getLocalViewDevice();
-  const auto vv = VV_tpetra.getLocalViewDevice();
+  const auto uu = UU_tpetra.getLocalViewDevice(::Tpetra::Access::ReadOnly);
+  const auto vv = VV_tpetra.getLocalViewDevice(::Tpetra::Access::ReadOnly);
 
   const auto numRows = matrix.getNodeNumRows();
   const auto rowMap = matrix.getRowMap()->getLocalMap();
   const auto colMap = matrix.getColMap()->getLocalMap();
   const auto uMap = UU_tpetra.getMap()->getLocalMap();
   const auto vMap = VV_tpetra.getMap()->getLocalMap();
-  auto J_view = matrix.getLocalMatrix();
+  auto J_view = matrix.getLocalMatrixDevice();
   auto numConstraintsLocal = numConstraints; // for cuda lambda capture
 
   TEUCHOS_ASSERT(static_cast<size_t>(matrix.getRowMap()->getNodeNumElements()) == uu.extent(0));

@@ -646,7 +646,7 @@ TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 
   if ( to_remove_not_ghosted.size() > 0 )
   {
-    ASSERT_THROW ( bulk.change_ghosting ( ghosting , empty_send , to_remove_not_ghosted ) , std::runtime_error );
+    ASSERT_NO_THROW( bulk.change_ghosting ( ghosting , empty_send , to_remove_not_ghosted ) );
   }
   else
   {

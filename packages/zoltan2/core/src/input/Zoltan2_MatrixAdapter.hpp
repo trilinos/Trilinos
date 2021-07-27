@@ -175,11 +175,11 @@ public:
       \param colIds on return will point to the global column Ids for
          the non-zeros for each row.
    */
-  virtual void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
+  virtual void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
   {
     // Default implementation; no CRS view provided.
-    offsets = NULL;
-    colIds = NULL;
+    offsets = ArrayRCP<const offset_t>();
+    colIds = ArrayRCP<const gno_t>();
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -197,14 +197,14 @@ public:
       \param values on return will point to the values stored in the
          non-zeros for each row.
    */
-  virtual void getCRSView(const offset_t *&offsets,
-                          const gno_t *& colIds,
-                          const scalar_t *&values) const
+  virtual void getCRSView(ArrayRCP<const offset_t> &offsets,
+                          ArrayRCP<const gno_t> &colIds,
+                          ArrayRCP<const scalar_t> &values) const
   {
     // Default implementation; no CRS view provided.
-    offsets = NULL;
-    colIds = NULL;
-    values = NULL;
+    offsets = ArrayRCP<const offset_t>();
+    colIds = ArrayRCP<const gno_t>();
+    values = ArrayRCP<const scalar_t>();
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -263,12 +263,12 @@ public:
       \param rowIds on return will point to the global row Ids for
          the non-zeros for each column.
    */
-  virtual void getCCSView(const offset_t *&offsets,
-                          const gno_t *&rowIds) const
+  virtual void getCCSView(ArrayRCP<const offset_t> &offsets,
+                          ArrayRCP<const gno_t> &rowIds) const
   {
     // Default implementation; no CCS view provided.
-    offsets = NULL;
-    rowIds = NULL;
+    offsets = ArrayRCP<const offset_t>();
+    rowIds = ArrayRCP<const gno_t>();
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -286,14 +286,14 @@ public:
       \param values on return will point to the values stored in the
          non-zeros for each column.
    */
-  virtual void getCCSView(const offset_t *&offsets,
-                          const gno_t *&rowIds,
-                          const scalar_t *&values) const
+  virtual void getCCSView(ArrayRCP<const offset_t> &offsets,
+                          ArrayRCP<const gno_t> &rowIds,
+                          ArrayRCP<const scalar_t> &values) const
   {
     // Default implementation; no CCS view provided.
-    offsets = NULL;
-    rowIds = NULL;
-    values = NULL;
+    offsets = ArrayRCP<const offset_t>();
+    rowIds = ArrayRCP<const gno_t>();
+    values = ArrayRCP<const scalar_t>();
     Z2_THROW_NOT_IMPLEMENTED
   }
 

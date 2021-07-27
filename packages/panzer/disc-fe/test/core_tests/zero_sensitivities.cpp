@@ -43,6 +43,8 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 
+#include "KokkosExp_View_Fad.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
@@ -137,20 +139,23 @@ namespace panzer {
       a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::RealType,typename PHX::DevLayout<panzer::Traits::RealType>::type,PHX::Device>::buildView(a.fieldTag()));
       
       // initialize
-      for (int cell = 0; cell < a.extent_int(0); ++cell) {
-	for (int pt=0; pt < a.extent_int(1); ++pt) {
-	  a(cell,pt) = 2.0;
-	}
-      }
+      a.deep_copy(2.0);
+      // for (int cell = 0; cell < a.extent_int(0); ++cell) {
+      //   for (int pt=0; pt < a.extent_int(1); ++pt) {
+      //     a(cell,pt) = 2.0;
+      //   }
+      // }
       
       // Compute
       Kokkos::parallel_for(a.extent_int(0),ComputeA<panzer::Traits::RealType,PHX::Device,PHX::MDField<panzer::Traits::RealType,Cell,BASIS> > (a));
       typename PHX::Device().fence();
+
+      auto a_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),a.get_static_view());
       
       // Check
       for (int cell = 0; cell < a.extent_int(0); ++cell)
 	for (int pt=0; pt < a.extent_int(1); ++pt)
-	  TEST_FLOATING_EQUALITY(a(cell,pt),2.0,tolerance);
+	  TEST_FLOATING_EQUALITY(a_host(cell,pt),2.0,tolerance);
     }
 
     // ***********************
@@ -162,28 +167,39 @@ namespace panzer {
       derivative_dimension.push_back(2);
       a.setFieldData(PHX::KokkosViewFactory<panzer::Traits::FadType,typename PHX::DevLayout<panzer::Traits::FadType>::type,PHX::Device>::buildView(a.fieldTag(),derivative_dimension));
       
-      // initialize
+      // Initialize (use raw kokkos to avoid compiler warning about MDField dtor with host function calls).
+      auto a_dev = a.get_static_view();
+      Kokkos::parallel_for("initialize zero sensitivity vec",a.extent(0),KOKKOS_LAMBDA (const int cell) {
+          //for (int cell = 0; cell < a.extent_int(0); ++cell) {
+	for (int pt=0; pt < a_dev.extent_int(1); ++pt) {
+	  a_dev(cell,pt) = 1.0;
+	  a_dev(cell,pt).fastAccessDx(0) = 2.0;
+	  a_dev(cell,pt).fastAccessDx(1) = 3.0;
+	}
+      });
+
+      // Check initial values
+      auto a_host = Kokkos::create_mirror_view(a.get_static_view());
+      Kokkos::deep_copy(a_host,a.get_static_view());
       for (int cell = 0; cell < a.extent_int(0); ++cell) {
 	for (int pt=0; pt < a.extent_int(1); ++pt) {
-	  a(cell,pt) = 1.0;
-	  a(cell,pt).fastAccessDx(0) = 2.0;
-	  a(cell,pt).fastAccessDx(1) = 3.0;
-	  TEST_FLOATING_EQUALITY(a(cell,pt).val(),1.0,1e-12);
-	  TEST_FLOATING_EQUALITY(a(cell,pt).fastAccessDx(0),2.0,1e-12);
-	  TEST_FLOATING_EQUALITY(a(cell,pt).fastAccessDx(1),3.0,1e-12);
+	  TEST_FLOATING_EQUALITY(a_host(cell,pt).val(),1.0,1e-12);
+	  TEST_FLOATING_EQUALITY(a_host(cell,pt).fastAccessDx(0),2.0,1e-12);
+	  TEST_FLOATING_EQUALITY(a_host(cell,pt).fastAccessDx(1),3.0,1e-12);
 	}
       }
-      
+
       // Compute
       Kokkos::parallel_for(a.extent(0),ComputeB<PHX::Device,PHX::MDField<panzer::Traits::FadType,Cell,BASIS> > (a));
       typename PHX::Device().fence();
       
       // Check
+      Kokkos::deep_copy(a_host,a.get_static_view());
       for (int cell = 0; cell < a.extent_int(0); ++cell) {
 	for (int pt=0; pt < a.extent_int(1); ++pt) {
-	  TEST_FLOATING_EQUALITY(a(cell,pt).val(),1.0,1e-12);
-	  TEST_FLOATING_EQUALITY(a(cell,pt).fastAccessDx(0),0.0,1e-12);
-	  TEST_FLOATING_EQUALITY(a(cell,pt).fastAccessDx(1),0.0,1e-12);
+	  TEST_FLOATING_EQUALITY(a_host(cell,pt).val(),1.0,1e-12);
+	  TEST_FLOATING_EQUALITY(a_host(cell,pt).fastAccessDx(0),0.0,1e-12);
+	  TEST_FLOATING_EQUALITY(a_host(cell,pt).fastAccessDx(1),0.0,1e-12);
 	}
       }
 

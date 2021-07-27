@@ -171,7 +171,7 @@ C   --Write out the nodal point sets
             goto 150
          endif
          call mddel('NSDF')
-         call putnam(idexo, 2, numnps, namns)
+         call expnams(idexo, 2, numnps, namns, ierr)
       endif
 
 C   --Write element side sets
@@ -183,7 +183,7 @@ C   --Write element side sets
           call exerr ('gjoin2', 'Error from expcss', exlmsg)
           goto 150
         endif
-        call putnam(idexo, 3, numness, namss)
+         call expnams(idexo, 3, numess, namss, ierr)
       endif
 
 C   --Write the element blocks
@@ -232,13 +232,3 @@ C        skipping null element blocks
 
       RETURN
       END
-
-      subroutine putnam(ndb, itype, isiz, names)
-      include 'gj_namlen.blk'
-      character*(namlen) names(*)
-
-      call expnams(ndb, itype, isiz, names, ierr)
-      return
-      end
-
-      
