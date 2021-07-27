@@ -167,15 +167,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
   read_matrix<SC,LO,GO,NO>(lib,comm,SM_Matrix,D0_Matrix,Kn_Matrix,coords);
 
-  printf("CMS: Aedge = %d x %d, Anode = %d x %d\n, D0 = %d x %d\n",
-    (int)SM_Matrix->getGlobalNumRows(),
-    (int)SM_Matrix->getGlobalNumCols(),
-    (int)Kn_Matrix->getGlobalNumRows(),    
-    (int)Kn_Matrix->getGlobalNumCols(),
-    (int)D0_Matrix->getGlobalNumRows(),
-    (int)D0_Matrix->getGlobalNumCols());
-  
-
   int NumLevels = 2;
   // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy
   // and then generating the edge hierarchy
@@ -237,7 +228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
   }
 
   // Generate the Edge Hierarchy
-  out<<"*** Setting Up Egde Hierarchy *** "<<std::endl;
+  out<<"*** Setting Up Edge Hierarchy *** "<<std::endl;
   {
     FactoryManager M0; // how to build aggregates and smoother of the first level
     M0.SetKokkosRefactor(false);
@@ -260,15 +251,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
 
   {
     RCP<const Matrix> Pe = l1->Get<RCP<Matrix> >("P");
-    Xpetra::IO<SC,LO,GO,NO>::Write("Pe.mat",*Pe);
+    //    Xpetra::IO<SC,LO,GO,NO>::Write("Pe.mat",*Pe);
   }
-
-
-  TEST_EQUALITY(0,0);
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
 }
 
 # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ReitzingerPFactory, Setup2Level, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ReitzingerPFactory, Setup2Level_Unsmoothed, Scalar, LO, GO, Node) \
 
 
 

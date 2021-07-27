@@ -262,8 +262,6 @@ namespace MueLu {
     RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
     RCP<const Map> ownedPlusSharedCoarseNodeMap  = Pn_crs->getColMap();
 
-    printf("CMS: # coarse edges = %d # coarse nodes = %d current = %d\n",num_coarse_edges,(int)ownedCoarseNodeMap->getNodeNumElements(),current);fflush(stdout);
-    
     // Create the coarse D0
     RCP<CrsMatrix> D0_coarse;
     {
