@@ -533,13 +533,6 @@ namespace BaskerNS
         MALLOC_INT_1DARRAY(row_idx, nnz+1);
       }
     }
-    //init_value(row_idx, nnz, (Int) 0);
-    //printf("clear row: %d \n", nnz);
-    /*for(Int i = 0; i < nnz; ++i)
-    {
-      //printf("clear row_idx(%d) \n", i);
-      row_idx(i) = 0;
-    }*/
 
     if(alloc == BASKER_TRUE)
     {
@@ -554,13 +547,6 @@ namespace BaskerNS
         MALLOC_ENTRY_1DARRAY(val, nnz+1);
       }
     }
-    //init_value(val, nnz, (Entry) 0);
-    /*for(Int i = 0; i < nnz; ++i)
-    {
-      val(i) = 0;
-    }*/
-    //if (kid == 3)
-    //printf( " kid=%d: convert2D(%dx%d, nnz = %d, alloc = %d, scol = %d, ncol = %d)\n",kid,M.nrow,M.ncol,M.nnz,alloc, scol,ncol );
 
     const Entry zero(0.0);
 

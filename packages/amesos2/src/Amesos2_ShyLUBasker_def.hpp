@@ -294,7 +294,6 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
       std::cout << "rowind_ : " << rowind_.toString() << std::endl;
       std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 #endif
-      //ShyLUbasker->PRINT_C(); 
 
       // NDE: Special case 
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,

@@ -6,8 +6,7 @@
 #include "shylubasker_matrix_view_def.hpp"
 #include "shylubasker_types.hpp"
 #include "shylubasker_stats.hpp"
-
-#include "Teuchos_LAPACK.hpp"
+//#include "Teuchos_LAPACK.hpp"
 
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -356,7 +355,7 @@ namespace BaskerNS
     timer_nfactor_tot.reset();
     #endif
 
-    Teuchos::LAPACK<int, Entry> lapack;
+    //Teuchos::LAPACK<int, Entry> lapack;
     //Mag rmin_ = lapack.LAMCH('E');
     //Mag rmin_ = lapack.LAMCH('U');
     Mag rmin_ (0.0);
