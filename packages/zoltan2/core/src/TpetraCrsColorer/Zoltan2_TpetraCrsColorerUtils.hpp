@@ -46,10 +46,10 @@ check_coloring(
             if (col != col2 && list_of_colors[col] == list_of_colors[col2])
             {
               ++lcl_conflict;
-              std::printf(
-                  "proc = %i : Invalid coloring!  Local row %zu"
-                  " and columns %zu, %zu have the same color %i\n",
-                  rank, row, col, col2, list_of_colors[col]);
+              printf(
+		     "proc = %i : Invalid coloring!  Local row %zu"
+		     " and columns %zu, %zu have the same color %i\n",
+		     rank, row, col, col2, list_of_colors[col]);
             }
           }
         }
