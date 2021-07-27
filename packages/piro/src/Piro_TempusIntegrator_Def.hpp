@@ -67,7 +67,7 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
   else if (sens_method == FORWARD) {
     //forward sensitivities
     basicIntegrator_ = Teuchos::null;
-    fwdSensIntegrator_ = Tempus::integratorForwardSensitivity<Scalar>(pList, model);
+    fwdSensIntegrator_ = Tempus::createIntegratorForwardSensitivity<Scalar>(pList, model);
     adjSensIntegrator_ = Teuchos::null; 
   }
   else if (sens_method == ADJOINT) {
