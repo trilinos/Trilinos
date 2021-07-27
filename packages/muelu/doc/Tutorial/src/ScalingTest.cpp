@@ -158,8 +158,6 @@ int main(int argc, char *argv[]) {
   Xpetra::Parameters xpetraParameters(clp);                   // manage parameters of xpetra
 
   // Custom command line parameters
-  // - Debug
-  int optDebug   = 0;                     clp.setOption("debug",          &optDebug,              "pause to attach debugger");
   int optDump    = 0;                     clp.setOption("dump",           &optDump,               "write matrix to file");
   int optTimings = 0;                     clp.setOption("timings",        &optTimings,            "print timings to screen");
 
@@ -205,10 +203,6 @@ int main(int argc, char *argv[]) {
   }
 
   RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
-
-  if (optDebug) {
-    Utils::PauseForDebugger();
-  }
 
   matrixParameters.check();
   xpetraParameters.check();
