@@ -73,6 +73,7 @@
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_Hierarchy.hpp>
 #include <MueLu_RAPFactory.hpp>
+#include <MueLu_SaPFactory.hpp>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -172,8 +173,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
   // and then generating the edge hierarchy
 
   Hierarchy NodeH, EdgeH;
-  NodeH.EnableGraphDumping("node_graph_0",0);
-  EdgeH.EnableGraphDumping("edge_graph_0",0);
+  //  NodeH.EnableGraphDumping("node_graph_0",0);
+  //  EdgeH.EnableGraphDumping("edge_graph_0",0);
   NodeH.SetMaxCoarseSize(10);
 
   // Generate Node Hierarchy
@@ -217,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
       EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
 
       RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
-      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
+      //      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
     }
 
     if(i==0) {
@@ -258,8 +259,261 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
   TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
 }
 
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#   include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+  
+  RCP<Matrix> SM_Matrix, D0_Matrix, Kn_Matrix;
+  RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
+  read_matrix<SC,LO,GO,NO>(lib,comm,SM_Matrix,D0_Matrix,Kn_Matrix,coords);
+
+  int NumLevels = 2;
+  // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy
+  // and then generating the edge hierarchy
+  Hierarchy NodeH, EdgeH;
+  NodeH.SetMaxCoarseSize(10);
+  //NodeH.EnableGraphDumping("node_graph_0",0);
+  EdgeH.EnableGraphDumping("edge_graph_0",0);
+
+  // Generate Node Hierarchy
+  out<<"*** Setting Up Node Hierarchy *** "<<std::endl;
+  {
+    RCP<MueLu::Level> Finest = NodeH.GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);  
+    Finest->Set("A", Kn_Matrix);
+
+    // Level 0
+    FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
+    
+    // Level 1 (Plain aggregation)
+    FactoryManager M1; 
+    M1.SetKokkosRefactor(false);
+    Teuchos::ParameterList tp_list; 
+    tp_list.set("tentative: constant column sums",false);
+    tp_list.set("tentative: calculate qr",false);
+    RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
+    PnodalFact->SetParameterList(tp_list);
+    M1.SetFactory("P",PnodalFact);
+
+
+    bool r;
+    r = NodeH.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1));  TEST_EQUALITY(r, false);
+    r = NodeH.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null); TEST_EQUALITY(r, true);
+    RCP<Level> l0 = NodeH.GetLevel(0);
+    RCP<Level> l1 = NodeH.GetLevel(1);
+  }  
+
+  out<<"*** Copy Node->Edge Data *** "<<std::endl;
+  // Copy Data to Edge Hierarchy
+  for(int i=0; i<NumLevels; i++) {  
+    EdgeH.AddNewLevel();
+    RCP<Level> NodeL = NodeH.GetLevel(i);
+    RCP<Level> EdgeL = EdgeH.GetLevel(i);
+
+    EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
+    if(i!=0) {
+      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+
+      RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
+      //      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
+    }
+
+    if(i==0) {
+      EdgeL->Set("Coordinates", coords);
+      EdgeL->Set("A", SM_Matrix);
+      EdgeL->Set("D0", D0_Matrix);
+    }
+  }
+
+  // Generate the Edge Hierarchy
+  out<<"*** Setting Up Edge Hierarchy *** "<<std::endl;
+  {
+    FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
+    
+    // Level 1 (Plain aggregation)
+    FactoryManager M1; 
+    M1.SetKokkosRefactor(false);
+    RCP<ReitzingerPFactory> PedgeFact  = rcp(new ReitzingerPFactory());
+    RCP<SaPFactory> PFact = rcp(new SaPFactory());    
+    PFact->SetFactory("P",PedgeFact);
+    M1.SetFactory("Ptent",PedgeFact);
+    M1.SetFactory("P",PFact);
+
+
+    // Do the setup
+    bool r;
+    r = EdgeH.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1));  TEST_EQUALITY(r, false);
+    r = EdgeH.Setup(1, rcpFromRef(M0), rcpFromRef(M1), Teuchos::null); TEST_EQUALITY(r, true);
+  }
+
+  
+  RCP<Level> l0 = EdgeH.GetLevel(0);
+  RCP<Level> l1 = EdgeH.GetLevel(1);
+
+  {
+    RCP<const Matrix> Pe = l1->Get<RCP<Matrix> >("P");
+    //    Xpetra::IO<SC,LO,GO,NO>::Write("Pe.mat",*Pe);
+  }
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
+}
+
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_AlphaSmoothed, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#   include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+  
+  RCP<Matrix> SM_Matrix, D0_Matrix, Kn_Matrix;
+  RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
+  read_matrix<SC,LO,GO,NO>(lib,comm,SM_Matrix,D0_Matrix,Kn_Matrix,coords);
+
+  int NumLevels = 3;
+  // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy
+  // and then generating the edge hierarchy
+  Hierarchy NodeH, EdgeH;
+  NodeH.SetMaxCoarseSize(1);
+  EdgeH.SetMaxCoarseSize(1);
+  //NodeH.EnableGraphDumping("node_graph_0",0);
+  //EdgeH.EnableGraphDumping("edge_graph_0",0);
+
+  // Generate Node Hierarchy
+  out<<"*** Setting Up Node Hierarchy *** "<<std::endl;
+  {
+    RCP<MueLu::Level> Finest = NodeH.GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);  
+    Finest->Set("A", Kn_Matrix);
+    Finest->Set("Coordinates", coords);
+
+    // Level 0
+    FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
+    
+    // Level 1 (Plain aggregation)
+    FactoryManager M1;
+    {
+      M1.SetKokkosRefactor(false);
+      Teuchos::ParameterList tp_list; 
+      tp_list.set("tentative: constant column sums",false);
+      tp_list.set("tentative: calculate qr",false);
+      RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
+      PnodalFact->SetParameterList(tp_list);
+      M1.SetFactory("P",PnodalFact);
+      M1.SetFactory("Ptent",PnodalFact);// You actually need this
+    }
+
+    // Level 2 (Plain aggregation)
+    FactoryManager M2;
+    {
+      M2.SetKokkosRefactor(false);
+      Teuchos::ParameterList tp_list; 
+      tp_list.set("tentative: constant column sums",false);
+      tp_list.set("tentative: calculate qr",false);
+      RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
+      PnodalFact->SetParameterList(tp_list);
+      M2.SetFactory("P",PnodalFact);
+    }
+
+    bool r;
+    r = NodeH.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); TEST_EQUALITY(r, false);
+    r = NodeH.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2)); TEST_EQUALITY(r, false);
+    r = NodeH.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null ); TEST_EQUALITY(r, true);
+
+    RCP<Level> l0 = NodeH.GetLevel(0);
+    RCP<Level> l1 = NodeH.GetLevel(1);
+    RCP<Level> l2 = NodeH.GetLevel(2);
+  }  
+
+  out<<"*** Copy Node->Edge Data *** "<<std::endl;
+  // Copy Data to Edge Hierarchy
+  for(int i=0; i<NumLevels; i++) {  
+    EdgeH.AddNewLevel();
+    RCP<Level> NodeL = NodeH.GetLevel(i);
+    RCP<Level> EdgeL = EdgeH.GetLevel(i);
+
+    EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
+    if(i!=0) {
+      EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
+
+      RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
+      //      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
+    }
+
+    if(i==0) {
+      EdgeL->Set("Coordinates", coords);
+      EdgeL->Set("A", SM_Matrix);
+      EdgeL->Set("D0", D0_Matrix);
+    }
+  }
+
+  // Generate the Edge Hierarchy
+  out<<"*** Setting Up Edge Hierarchy *** "<<std::endl;
+  {
+    FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
+    
+    // Level 1 (Plain aggregation)
+    FactoryManager M1; 
+    {
+      M1.SetKokkosRefactor(false);
+      RCP<ReitzingerPFactory> PedgeFact  = rcp(new ReitzingerPFactory());
+      RCP<SaPFactory> PFact = rcp(new SaPFactory());    
+      PFact->SetFactory("P",PedgeFact);
+      M1.SetFactory("Ptent",PedgeFact);
+      M1.SetFactory("D0",PedgeFact);
+      M1.SetFactory("P",PFact);
+    }
+
+    // Level 2 (just like level 1)
+    FactoryManager M2; 
+    {
+      M2.SetKokkosRefactor(false);
+      RCP<ReitzingerPFactory> PedgeFact  = rcp(new ReitzingerPFactory());
+      RCP<SaPFactory> PFact = rcp(new SaPFactory());    
+      PFact->SetFactory("P",PedgeFact);
+      M2.SetFactory("Ptent",PedgeFact);
+      M2.SetFactory("D0",PedgeFact);
+      M2.SetFactory("P",PFact);
+    }
+    
+    // Do the setup
+    bool r;
+    r = EdgeH.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); TEST_EQUALITY(r, false);
+    r = EdgeH.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2)); TEST_EQUALITY(r, false);
+    r = EdgeH.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null);  TEST_EQUALITY(r, true);
+  }
+
+  
+  RCP<Level> l0 = EdgeH.GetLevel(0);
+  RCP<Level> l1 = EdgeH.GetLevel(1);
+  RCP<Level> l2 = EdgeH.GetLevel(2);
+
+
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("A",            MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l2->IsAvailable("P",            MueLu::NoFactory::get()), true);
+
+}
+
+
+
 # define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ReitzingerPFactory, Setup2Level_Unsmoothed, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ReitzingerPFactory, Setup2Level_AlphaSmoothed, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ReitzingerPFactory, Setup3Level_AlphaSmoothed, Scalar, LO, GO, Node)
 
 
 
