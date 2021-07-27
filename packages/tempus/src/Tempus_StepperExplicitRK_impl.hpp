@@ -11,25 +11,11 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_Stepper_ErrorNorm.hpp"
 
 #include "Tempus_RKButcherTableau.hpp"
 
 
 namespace Tempus {
-
-template<class Scalar>
-void StepperExplicitRK<Scalar>::
-setErrorNorm(const Teuchos::RCP<Stepper_ErrorNorm<Scalar>> &errCalculator)
-{
-  if (errCalculator != Teuchos::null) {
-    stepperErrorNormCalculator_ = errCalculator;
-  }
-  else {
-    auto er = Teuchos::rcp(new Stepper_ErrorNorm<Scalar>());
-    stepperErrorNormCalculator_ = er;
-  }
-}
 
 
 template<class Scalar>
@@ -101,11 +87,11 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    outArgs.set_f(stageXDot[0]); // K1
    this->appModel_->evalModel(inArgs, outArgs);
 
-   stepperErrorNormCalculator_->setRelativeTolerance(errorRel);
-   stepperErrorNormCalculator_->setAbsoluteTolerance(errorAbs);
+   this->stepperErrorNormCalculator_->setRelativeTolerance(errorRel);
+   this->stepperErrorNormCalculator_->setAbsoluteTolerance(errorAbs);
 
-   Scalar d0 = stepperErrorNormCalculator_->errorNorm(stageX);
-   Scalar d1 = stepperErrorNormCalculator_->errorNorm(stageXDot[0]);
+   Scalar d0 = this->stepperErrorNormCalculator_->errorNorm(stageX);
+   Scalar d1 = this->stepperErrorNormCalculator_->errorNorm(stageXDot[0]);
 
    // b) first guess for the step size
    dt = Teuchos::as<Scalar>(0.01)*(d0/d1);
@@ -126,7 +112,7 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    errX = Thyra::createMember(this->appModel_->get_f_space());
    assign(errX.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
    Thyra::V_VmV(errX.ptr(), *(stageXDot[1]), *(stageXDot[0]));
-   Scalar d2 = stepperErrorNormCalculator_->errorNorm(errX) / dt;
+   Scalar d2 = this->stepperErrorNormCalculator_->errorNorm(errX) / dt;
 
    // e) compute step size h_1 (from m = 0 order Taylor series)
    Scalar max_d1_d2 = std::max(d1, d2);
@@ -340,8 +326,8 @@ void StepperExplicitRK<Scalar>::takeStep(
       const Scalar tolAbs = workingState->getTolAbs();
 
       // update the tolerance
-      stepperErrorNormCalculator_->setRelativeTolerance(tolRel);
-      stepperErrorNormCalculator_->setAbsoluteTolerance(tolAbs);
+      this->stepperErrorNormCalculator_->setRelativeTolerance(tolRel);
+      this->stepperErrorNormCalculator_->setAbsoluteTolerance(tolAbs);
 
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
@@ -358,7 +344,7 @@ void StepperExplicitRK<Scalar>::takeStep(
       }
 
 
-      Scalar err = stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
+      Scalar err = this->stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
       workingState->setErrorRel(err);
 
       // Test if step should be rejected

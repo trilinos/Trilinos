@@ -11,25 +11,10 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_Stepper_ErrorNorm.hpp"
-
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
 
 
 namespace Tempus {
-
-template<class Scalar>
-void StepperDIRK<Scalar>::
-setErrorNorm(const Teuchos::RCP<Stepper_ErrorNorm<Scalar>> &errCalculator)
-{
-  if (errCalculator != Teuchos::null) {
-    stepperErrorNormCalculator_ = errCalculator;
-  }
-  else {
-    auto er = Teuchos::rcp(new Stepper_ErrorNorm<Scalar>());
-    stepperErrorNormCalculator_ = er;
-  }
-}
 
 
 template<class Scalar>
@@ -290,8 +275,8 @@ void StepperDIRK<Scalar>::takeStep(
       const Scalar tolAbs = workingState->getTolAbs();
 
       // update the tolerance
-      stepperErrorNormCalculator_->setRelativeTolerance(tolRel);
-      stepperErrorNormCalculator_->setAbsoluteTolerance(tolAbs);
+      this->stepperErrorNormCalculator_->setRelativeTolerance(tolRel);
+      this->stepperErrorNormCalculator_->setAbsoluteTolerance(tolAbs);
 
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
@@ -307,7 +292,7 @@ void StepperDIRK<Scalar>::takeStep(
          }
       }
 
-      Scalar err = stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
+      Scalar err = this->stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
       workingState->setErrorRel(err);
 
       // test if step should be rejected
