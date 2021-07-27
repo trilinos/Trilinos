@@ -12,6 +12,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
+
+ TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    ReitzingerPFactory
+    SOURCES ReitzingerPFactory.cpp
+    ARGS ""
+    COMM serial mpi
+    )
+
+
+
 IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
 
   TRIBITS_ADD_EXECUTABLE(
