@@ -155,7 +155,7 @@ void read_matrix(Xpetra::UnderlyingLib & lib,RCP<const Teuchos::Comm<int> > & co
 
 namespace MueLuTests {
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #   include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
@@ -199,7 +199,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level, Scalar, Local
     // Level 1 (Plain aggregation)
     FactoryManager M1; 
     M1.SetKokkosRefactor(false);
-    RCP<FactoryBase>        PnodalFact = rcp(new TentativePFactory());
+    Teuchos::ParameterList tp_list; 
+    tp_list.set("tentative: constant column sums",false);
+    tp_list.set("tentative: calculate qr",false);
+    RCP<TentativePFactory>        PnodalFact = rcp(new TentativePFactory());
+    PnodalFact->SetParameterList(tp_list);
     M1.SetFactory("P",PnodalFact);
 
 
@@ -218,9 +222,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level, Scalar, Local
     RCP<Level> EdgeL = EdgeH.GetLevel(i);
 
     EdgeL->Set("NodeMatrix",NodeL->Get<RCP<Matrix> >("A"));
-    if(i!=0) 
+    if(i!=0) {
       EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
 
+      RCP<const Matrix> P = NodeL->Get<RCP<Matrix> >("P");
+      Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*P);
+    }
 
     if(i==0) {
       EdgeL->Set("Coordinates", coords);
@@ -250,6 +257,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level, Scalar, Local
   
   RCP<Level> l0 = EdgeH.GetLevel(0);
   RCP<Level> l1 = EdgeH.GetLevel(1);
+
+  {
+    RCP<const Matrix> Pe = l1->Get<RCP<Matrix> >("P");
+    Xpetra::IO<SC,LO,GO,NO>::Write("Pe.mat",*Pe);
+  }
+
 
   TEST_EQUALITY(0,0);
 }

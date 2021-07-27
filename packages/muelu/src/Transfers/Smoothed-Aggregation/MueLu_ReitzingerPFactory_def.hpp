@@ -137,6 +137,7 @@ namespace MueLu {
     //    typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinate_type;
     //    typedef Xpetra::MultiVector<coordinate_type,LO,GO,NO> RealValuedMultiVector;
     //    typedef Xpetra::MultiVectorFactory<coordinate_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    using MT  = typename Teuchos::ScalarTraits<SC>::magnitudeType;
     using XMM = Xpetra::MatrixMatrix<SC,LO,GO,NO>;
     Teuchos::FancyOStream& out0=GetBlackHole();
     const ParameterList& pL = GetParameterList();
@@ -319,6 +320,7 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "Generate Pe (post-fix)", coarseLevel);
       Pe->resumeFill();
       SC one = Teuchos::ScalarTraits<SC>::one();
+      MT two = 2*Teuchos::ScalarTraits<MT>::one();
       SC zero = Teuchos::ScalarTraits<SC>::zero();
       SC neg_one = - one;
       // FIXME: Deprecated code
@@ -330,7 +332,9 @@ namespace MueLu {
         ArrayView<SC> values_nc = Teuchos::av_const_cast<SC>(values);
         for (LO j=0; j<(LO)values.size(); j++)
           if ((values_nc[j] == one || values_nc[j] == neg_one))
-            values_nc[j] = zero;        
+            values_nc[j] = zero;       
+          else
+            values_nc[j] /= two;
       }//end for i < Ne
       Pe->fillComplete(Pe->getDomainMap(),Pe->getRangeMap());
     }
