@@ -67,7 +67,7 @@ void edge_block_test_helper(Teuchos::FancyOStream &out,
                             bool &success,
                             Teuchos::RCP<Teuchos::ParameterList> pl,
                             std::string exodus_filename,
-                            int expected_edge_block_count)
+                            uint32_t expected_edge_block_count)
 {
    SquareTriMeshFactory factory; 
    factory.setParameterList(pl);

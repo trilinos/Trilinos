@@ -72,8 +72,8 @@ void edge_face_block_test_helper(Teuchos::FancyOStream &out,
                                  bool &success,
                                  Teuchos::RCP<Teuchos::ParameterList> pl,
                                  std::string exodus_filename,
-                                 int expected_edge_block_count,
-                                 int expected_face_block_count)
+                                 uint32_t expected_edge_block_count,
+                                 uint32_t expected_face_block_count)
 {
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -228,8 +228,6 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, default_edge_face_blocks)
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
 
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-
    int xe = 2, ye = 2, ze = 2;
    int bx = 1, by = 1, bz = 1;
 
@@ -249,8 +247,6 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_edge_blocks_pl)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    int xe = 2, ye = 2, ze = 2;
    int bx = 1, by = 1, bz = 1;
@@ -273,8 +269,6 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_face_blocks_pl)
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
 
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-
    int xe = 2, ye = 2, ze = 2;
    int bx = 1, by = 1, bz = 1;
 
@@ -296,8 +290,6 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, create_edge_face_blocks_pl)
    using Teuchos::RCP;
    using Teuchos::rcp;
    using Teuchos::rcpFromRef;
-
-   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    int xe = 2, ye = 2, ze = 2;
    int bx = 1, by = 1, bz = 1;

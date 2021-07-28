@@ -75,8 +75,8 @@ namespace panzer_stk {
 void edge_face_block_test_helper(Teuchos::FancyOStream &out,
                                  bool &success,
                                  std::string exodus_filename,
-                                 int expected_edge_block_count,
-                                 int expected_face_block_count)
+                                 uint32_t expected_edge_block_count,
+                                 uint32_t expected_face_block_count)
 {
    Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus", 
                                                      exodus_filename.c_str(), 
