@@ -55,6 +55,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
+#include <Xpetra_ImportUtils.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_StridedMap.hpp>
@@ -145,6 +146,9 @@ namespace MueLu {
     RCP<Matrix>                Pn            = Get< RCP<Matrix> >               (coarseLevel, "Pnodal");
     RCP<Matrix>                D0            = Get< RCP<Matrix> >               (fineLevel, "D0");
     RCP<Matrix>                NodeMatrix    = Get< RCP<Matrix> >               (fineLevel, "NodeMatrix");
+    const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+    const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    int MyPID = D0->getRowMap()->getComm()->getRank();
     //    RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
 
     RCP<CrsMatrixWrap> Pn_crs = rcp_dynamic_cast<CrsMatrixWrap>(Pn);
@@ -175,11 +179,23 @@ namespace MueLu {
 
     /* Generate the Pn * D0 matrix and its transpose */
     RCP<Matrix> D0_Pn, PnT_D0T;
+    Teuchos::Array<int> D0_Pn_col_pids;
     {
       RCP<Matrix> dummy;
       SubFactoryMonitor m2(*this, "Generate D0*Pn", coarseLevel);
       D0_Pn = XMM::Multiply(*D0,false,*Pn,false,dummy,out0,true,true,"D0*Pn",mm_params);
+
+      // Get owning PID information on columns for tie-breaking
+      if(!D0_Pn->getCrsGraph()->getImporter().is_null()) {
+        Xpetra::ImportUtils<LO,GO,NO> utils;
+        utils.getPids(*D0_Pn->getCrsGraph()->getImporter(),D0_Pn_col_pids,false);
+      }
+      else {
+        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
+      }
     }
+          
+
     {
       // FIXME: Do we need to optimize the transpose?
       SubFactoryMonitor m2(*this, "Transpose D0*Pn", coarseLevel);
@@ -202,8 +218,10 @@ namespace MueLu {
 
 
     LO current = 0;
+    
     for(LO i=0; i<(LO)Nn; i++) {
-     
+      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
+
       // FIXME: We don't really want an std::map here.  This is just a first cut implementation
       using value_type = std::pair<LO,SC>;
       std::map<LO, value_type> ce_map;
@@ -212,17 +230,47 @@ namespace MueLu {
       PnT_D0T->getLocalRowView(i,colind_E,values_E);
       
       for(LO j=0; j<(LO)colind_E.size(); j++) {
-        LO j_row = colind_E[j];
+
+        // NOTE: Edges between procs will be via handled via the a version
+        // of ML's odd/even rule
+        // For this to function correctly, we make two assumptions:
+        //  (a) The processor that owns a fine edge owns at least one of the attached nodes.
+        //  (b) Aggregation is uncoupled.
+
+
+        // FIXME: Add some debug code to check the assumptions
+
+        // Check to see if we own this edge and continue if we don't
+        GO edge_gid = PnT_D0T->getColMap()->getGlobalElement(colind_E[j]);
+        LO j_row    = D0_Pn->getRowMap()->getLocalElement(edge_gid);
+        if(j_row == GO_INVALID) continue;
+
+        // Get the local row of D0_Pn
         D0_Pn->getLocalRowView(j_row,colind_N,values_N);
 
         // Skip incomplete rows
         if(colind_N.size() != 2) continue;
 
-        // FIXME:  Do we even need the values?????
+        // Check to see who owns these nodes
+        // If the sum of owning procs is odd, the lower ranked proc gets it
+        bool zero_matches = D0_Pn_col_pids[colind_N[0]] == MyPID;
+        bool one_matches  = D0_Pn_col_pids[colind_N[1]] == MyPID;
+        bool keep_edge = false;
+        if(zero_matches && one_matches) keep_edge = true;
+        else {
+          int sum_is_odd =  D0_Pn_col_pids[colind_N[0]] + D0_Pn_col_pids[colind_N[1]] % 2;
+          int i_am_smaller = MyPID == std::min(D0_Pn_col_pids[colind_N[0]],D0_Pn_col_pids[colind_N[1]]);
+          if(sum_is_odd  && i_am_smaller) keep_edge=true;
+          if(!sum_is_odd && !i_am_smaller) keep_edge=true;
+        }
+        if(!keep_edge) continue;
 
+        // We're doing this in GID space, but only only because it allows us to explain
+        // the edge orientation as "always goes from lower GID to higher GID".  This could
+        // be done entirely in local GIDs, but then the ordering is a little more confusing.
+        // This could be done in local indices later if we need the extra performance.
         for(LO k=0; k<(LO)colind_N.size(); k++) {
-          // FIXME: Should this be done in GID space?  Probably
-          if(colind_N[k] > i) {
+          if(D0_Pn->getRowMap()->getGlobalElement(colind_N[k]) > global_i) {
             ce_map.emplace(std::make_pair(colind_N[k],std::make_pair(colind_E[j],values_N[k])));
           }
         }//end for k < colind_N.size()
@@ -249,16 +297,12 @@ namespace MueLu {
     D0_colind.resize(current);
     D0_values.resize(current);
 
-
-
     // Count the total number of edges
-    // FIXME: Since we're not using global ids above, this won't work in parallel.  Need to fix this.
-    // I suspect we'll have to conditionally number edges based on owners.  Somehow.
-    GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+    // NOTE: Since we solve the ownership issue above, this should do what we want
     RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO,GO,NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges,EdgeMatrix->getRowMap()->getIndexBase(),EdgeMatrix->getRowMap()->getComm());
-    RCP<const Map> ownedPlusSharedCoarseEdgeMap = ownedCoarseEdgeMap;
 
-    // FIXME: Not sure this is right in parallel.  Does owning an edge guarantee that it is in the node's colmap
+
+    // NOTE:  This only works because of the assumptions above
     RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
     RCP<const Map> ownedPlusSharedCoarseNodeMap  = Pn_crs->getColMap();
 
@@ -343,7 +387,12 @@ namespace MueLu {
     
     /* Set output on the level */
     Set(coarseLevel,"P",Pe);
+    Set(coarseLevel,"Ptent",Pe);
+
     Set(coarseLevel,"D0",D0_coarse_m);
+    coarseLevel.Set("D0",D0_coarse_m,NoFactory::get());
+    coarseLevel.AddKeepFlag("D0",NoFactory::get(), MueLu::Final);
+    coarseLevel.RemoveKeepFlag("D0",NoFactory::get(), MueLu::UserData);
     
 
   }// end Build
