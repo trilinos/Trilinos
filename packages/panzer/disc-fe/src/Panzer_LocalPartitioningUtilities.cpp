@@ -113,6 +113,7 @@ buildCellGlobalIDs(panzer::ConnManager & conn,
     totalSize += localIDs.size();
   }
   globals = PHX::View<panzer::GlobalOrdinal*>("global_cells",totalSize);
+  auto globals_h = Kokkos::create_mirror_view(globals);
 
   for (std::size_t id=0;id<totalSize; ++id) {
     // sanity check
@@ -120,8 +121,9 @@ buildCellGlobalIDs(panzer::ConnManager & conn,
     TEUCHOS_ASSERT(n_conn==1);
 
     const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(id);
-    globals(id) = connectivity[0];
+    globals_h(id) = connectivity[0];
   }
+  Kokkos::deep_copy(globals, globals_h);
 
 //  print_view_1D("buildCellGlobalIDs : globals",globals);
 }
@@ -162,6 +164,7 @@ buildCellToNodes(panzer::ConnManager & conn, PHX::View<panzer::GlobalOrdinal**> 
     maxNodes = maxNodes<Teuchos::as<std::size_t>(thisSize) ? Teuchos::as<std::size_t>(thisSize) : maxNodes;
   }
   globals = PHX::View<panzer::GlobalOrdinal**>("cell_to_node",totalCells,maxNodes);
+  auto globals_h = Kokkos::create_mirror_view(globals);
 
   // build connectivity array
   for (std::size_t id=0;id<totalCells; ++id) {
@@ -169,8 +172,9 @@ buildCellToNodes(panzer::ConnManager & conn, PHX::View<panzer::GlobalOrdinal**> 
     int nodeCnt = conn.getConnectivitySize(id);
 
     for(int n=0;n<nodeCnt;n++)
-      globals(id,n) = connectivity[n];
+      globals_h(id,n) = connectivity[n];
   }
+  Kokkos::deep_copy(globals, globals_h);
 
 //  print_view("buildCellToNodes : globals",globals);
 }
@@ -197,16 +201,20 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   typedef Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> map_type;
 
   // get locally unique global ids
+  auto cells_to_nodes_h = Kokkos::create_mirror_view(cells_to_nodes);
+  Kokkos::deep_copy(cells_to_nodes_h, cells_to_nodes);
   std::set<panzer::GlobalOrdinal> global_nodes;
   for(unsigned int i=0;i<cells_to_nodes.extent(0);i++)
     for(unsigned int j=0;j<cells_to_nodes.extent(1);j++)
-      global_nodes.insert(cells_to_nodes(i,j));
+      global_nodes.insert(cells_to_nodes_h(i,j));
 
   // build local vector contribution
   PHX::View<panzer::GlobalOrdinal*> node_ids("global_nodes",global_nodes.size());
+  auto node_ids_h = Kokkos::create_mirror_view(node_ids);
   int i = 0;
   for(auto itr=global_nodes.begin();itr!=global_nodes.end();++itr,++i)
-    node_ids(i) = *itr;
+    node_ids_h(i) = *itr;
+  Kokkos::deep_copy(node_ids, node_ids_h);
 
 //  print_view("buildNodeMap : cells_to_nodes",cells_to_nodes);
 //  print_view_1D("buildNodeMap : node_ids",node_ids);
@@ -261,15 +269,15 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     std::vector<panzer::LocalOrdinal> local_node_indexes(num_nodes_per_cell);
     std::vector<panzer::GlobalOrdinal> global_node_indexes(num_nodes_per_cell);
+    auto owned_cells_h = Kokkos::create_mirror_view(owned_cells);
+    auto owned_cells_to_nodes_h = Kokkos::create_mirror_view(owned_cells_to_nodes);
+    Kokkos::deep_copy(owned_cells_h, owned_cells);
+    Kokkos::deep_copy(owned_cells_to_nodes_h, owned_cells_to_nodes);
     for(unsigned int i=0;i<num_local_cells;i++) {
-      const panzer::GlobalOrdinal global_cell_index = owned_cells(i);
-  //    std::vector<panzer::LocalOrdinal> vals(cells_to_nodes.extent(1));
-  //    std::vector<panzer::GlobalOrdinal> cols(cells_to_nodes.extent(1));
+      const panzer::GlobalOrdinal global_cell_index = owned_cells_h(i);
       for(unsigned int j=0;j<num_nodes_per_cell;j++) {
-  //      vals[j] = Teuchos::as<panzer::LocalOrdinal>(j);
-  //      cols[j] = cells_to_nodes(i,j);
         local_node_indexes[j] = Teuchos::as<panzer::LocalOrdinal>(j);
-        global_node_indexes[j] = owned_cells_to_nodes(i,j);
+        global_node_indexes[j] = owned_cells_to_nodes_h(i,j);
       }
 
   //    cell_to_node_mat->insertGlobalValues(cells(i),cols,vals);
@@ -355,8 +363,10 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
   // mark all owned cells as already known, e.g. and not in the list of
   // ghstd cells to be constructed
+  auto cells_h = Kokkos::create_mirror_view(cells);
+  Kokkos::deep_copy(cells_h, cells);
   for(size_t i=0;i<cells.extent(0);i++) {
-    unique_cells.insert(cells(i));
+    unique_cells.insert(cells_h(i));
   }
 
   // The set of ghost cells that share a global node with an owned cell
