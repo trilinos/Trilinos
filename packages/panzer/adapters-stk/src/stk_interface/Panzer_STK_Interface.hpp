@@ -1721,6 +1721,7 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::E
 
    // allocate space
    vertices = Kokkos::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
+   auto vertices_h = Kokkos::create_mirror_view(vertices);
 
    // loop over each requested element
    unsigned dim = getDimension();
@@ -1745,9 +1746,10 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::E
 
         // set each dimension of the coordinate
         for(unsigned d=0;d<dim;d++)
-          vertices(cell,node,d) = coord[d];
+          vertices_h(cell,node,d) = coord[d];
       }
    }
+   Kokkos::deep_copy(vertices, vertices_h);
 }
 
 template <typename ArrayT>
