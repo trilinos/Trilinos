@@ -596,6 +596,7 @@ generateLocalMeshInfoBase()
       block.cell_to_faces(4,0) = 3; block.cell_to_faces(4,1) =-1;
     });
 
+  Kokkos::fence();
   return block_rcp;
 }
 
