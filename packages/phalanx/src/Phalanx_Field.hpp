@@ -182,6 +182,8 @@ namespace PHX {
 
     void setFieldData(const PHX::any& a);
 
+    void releaseFieldData();
+
     void print(std::ostream& os, bool printValues = false) const;
 
     KOKKOS_INLINE_FUNCTION
