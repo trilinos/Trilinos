@@ -375,7 +375,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
   }
   else if (dgdp != Teuchos::null && sensitivity_method_ == "Adjoint") {
     RCP<Tempus::IntegratorAdjointSensitivity<Real> > integrator =
-      Tempus::integratorAdjointSensitivity<Real>(tempus_params_, wrapped_model);
+      Tempus::createIntegratorAdjointSensitivity<Real>(tempus_params_, wrapped_model);
     const bool integratorStatus = integrator->advanceTime();
     TEUCHOS_TEST_FOR_EXCEPTION(
       !integratorStatus, std::logic_error, "Integrator failed!");

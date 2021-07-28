@@ -94,7 +94,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorAdjointSensitivity<double> > integrator =
-      Tempus::integratorAdjointSensitivity<double>(pl, model, adjoint_model);
+      Tempus::createIntegratorAdjointSensitivity<double>(pl, model, adjoint_model);
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions

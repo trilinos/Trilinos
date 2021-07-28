@@ -2554,7 +2554,7 @@ namespace MueLu {
       MatrixUtils::checkLocalRowMapMatchesColMap(A);
 #endif // HAVE_MUELU_DEBUG
 
-    } catch (std::bad_cast& e) {
+    } catch (std::bad_cast&) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
     }
   }

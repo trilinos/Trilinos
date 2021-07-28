@@ -170,6 +170,13 @@ IF(${PACKAGE_NAME}_ENABLE_Pamgen)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    tSTKRebalancing
+    SOURCES tSTKRebalancing.cpp ${UNIT_TEST_DRIVER}
+    NUM_MPI_PROCS 4
+    COMM mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     pamgen_writer
     SOURCES pamgen_writer.cpp
     )
