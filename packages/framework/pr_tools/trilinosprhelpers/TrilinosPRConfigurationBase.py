@@ -15,8 +15,8 @@ from textwrap import dedent
 sys.dont_write_bytecode = True
 
 from . import sysinfo
-from loadenv.LoadEnv import LoadEnv
-import setenvironment
+from LoadEnv.load_env import LoadEnv
+from LoadEnv import setenvironment
 
 
 

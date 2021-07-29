@@ -37,7 +37,7 @@ import argparse
 import multiprocessing
 import subprocess
 
-import setenvironment
+from LoadEnv import setenvironment
 import trilinosprhelpers
 
 
