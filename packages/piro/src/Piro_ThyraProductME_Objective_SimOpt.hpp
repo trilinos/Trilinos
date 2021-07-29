@@ -268,14 +268,15 @@ public:
 
   void hessian_22(const Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<Real>> H,
                   const ROL::Vector<Real> &u,
-                  const ROL::Vector<Real> &z) {
+                  const ROL::Vector<Real> &z,
+                  const int g_idx) {
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::hessian_22" << std::endl;
 
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
     bool supports_deriv = true;
     for(std::size_t i=0; i<p_indices.size(); ++i)
-      supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_index, p_indices[i], p_indices[i]);
+      supports_deriv = supports_deriv &&  outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices[i], p_indices[i]);
 
     if(supports_deriv) { //use derivatives computed by model evaluator
       const ROL::ThyraVector<Real>  & thyra_p = dynamic_cast<const ROL::ThyraVector<Real>&>(z);
@@ -294,18 +295,18 @@ public:
       }
       inArgs.set_x(thyra_x.getVector());
 
-      Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_index));
+      Teuchos::RCP< Thyra::VectorBase<Real> > multiplier_g = Thyra::createMember<Real>(thyra_model.get_g_multiplier_space(g_idx));
       Thyra::put_scalar(1.0, multiplier_g.ptr());
-      inArgs.set_g_multiplier(g_index, multiplier_g);
+      inArgs.set_g_multiplier(g_idx, multiplier_g);
 
       Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
 
       for(std::size_t i=0; i<p_indices.size(); ++i) {
-        bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_index, p_indices[i], p_indices[i]);
+        bool supports_deriv = outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_g_pp, g_idx, p_indices[i], p_indices[i]);
         ROL_TEST_FOR_EXCEPTION( !supports_deriv, std::logic_error, "ROL::ThyraProductME_Objective_SimOpt: H_pp is not supported");
 
-        Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model.create_hess_g_pp(g_index, p_indices[i], p_indices[i]);
-        outArgs.set_hess_g_pp(g_index, p_indices[i], p_indices[i], hess_g_pp);
+        Teuchos::RCP<Thyra::LinearOpBase<Real>> hess_g_pp = thyra_model.create_hess_g_pp(g_idx, p_indices[i], p_indices[i]);
+        outArgs.set_hess_g_pp(g_idx, p_indices[i], p_indices[i], hess_g_pp);
         H->setBlock(p_indices[i], p_indices[i], hess_g_pp);
       }
       H->endBlockFill();

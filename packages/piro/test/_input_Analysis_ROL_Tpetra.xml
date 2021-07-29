@@ -181,7 +181,40 @@
 
         <Parameter name="Step Method" type="string" value="Line Search" />
         <Parameter name="Full Space" type="bool" value="false" />
-        <Parameter name="Hessian Dot Product" type="bool" value="true" />
+        
+        <ParameterList name="Matrix Based Dot Product">
+          <Parameter name="Matrix Type" type="string" value="Hessian Of Response" />
+          <ParameterList name="Matrix Types">
+            <ParameterList name="Hessian Of Response">
+              <Parameter name="Response Index" type="int" value="0" />
+              <ParameterList name="Block Diagonal Solver">
+                <ParameterList name="Block 0">
+                  <Parameter name="Linear Solver Type" type="string" value="Belos" />
+                  <ParameterList name="Linear Solver Types">
+                    <ParameterList name="Belos">
+                      <Parameter name="Solver Type" type="string" value="Block GMRES" />
+                      <ParameterList name="Solver Types">
+                        <ParameterList name="Block GMRES">
+                          <Parameter name="Maximum Iterations" type="int" value="200" />
+                          <Parameter name="Num Blocks" type="int" value="200" />
+                          <Parameter name="Verbosity" type="int" value="33" />
+                          <Parameter name="Output Frequency" type="int" value="20" />
+                          <Parameter name="Output Style" type="int" value="1" />
+                          <Parameter name="Convergence Tolerance" type="double" value="1e-7" />
+                        </ParameterList>
+                      </ParameterList>
+                      <ParameterList name="VerboseObject">
+                        <Parameter name="Verbosity Level" type="string" value="medium" />
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+                  <Parameter name="Preconditioner Type" type="string" value="None" />
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+          
         <Parameter name="Use NOX Solver" type="bool" value="false" />
 
         <!-- =========== BEGIN ROL INPUT PARAMETER SUBLIST =========== -->
