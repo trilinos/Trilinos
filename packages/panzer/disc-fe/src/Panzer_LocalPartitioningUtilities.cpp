@@ -864,14 +864,17 @@ fillLocalCellIDs(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
   // Iterate over all faces and identify the faces connected to a potential virtual cell
   std::vector<int> all_boundary_faces;
   const int num_faces = elems_by_face.extent(0);
+  auto elems_by_face_h = Kokkos::create_mirror_view(elems_by_face);
+  Kokkos::deep_copy(elems_by_face_h, elems_by_face);
   for(int face=0;face<num_faces;++face)
-    if(elems_by_face(face,0) < 0 or elems_by_face(face,1) < 0)
+    if(elems_by_face_h(face,0) < 0 or elems_by_face_h(face,1) < 0)
       all_boundary_faces.push_back(face);
   const panzer::LocalOrdinal num_virtual_cells = all_boundary_faces.size();
 
   // Create some global indexes associated with the virtual cells
   // Note: We are assuming that virtual cells belong to ranks and are not 'shared' - this will change later on
   virtual_cells = PHX::View<panzer::GlobalOrdinal*>("virtual_cells",num_virtual_cells);
+  auto virtual_cells_h = Kokkos::create_mirror_view(virtual_cells);
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("Initial global index creation",InitialGlobalIndexCreation);
 
@@ -905,9 +908,10 @@ fillLocalCellIDs(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
     }
 
     for(int i=0;i<num_virtual_cells;++i){
-      virtual_cells(i) = global_virtual_start_idx + panzer::GlobalOrdinal(i);
+      virtual_cells_h(i) = global_virtual_start_idx + panzer::GlobalOrdinal(i);
     }
   }
+  Kokkos::deep_copy(virtual_cells, virtual_cells_h);
 }
 
 }
