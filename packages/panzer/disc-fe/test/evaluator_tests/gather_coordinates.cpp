@@ -106,15 +106,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
-
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) { 
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+      
+      coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+      coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+      coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+      coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    });
+  Kokkos::fence();
 
   // build topology, basis, integration rule, and basis layout
   int quadOrder = 5;
