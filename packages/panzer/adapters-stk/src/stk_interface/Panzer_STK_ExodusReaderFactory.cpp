@@ -363,7 +363,6 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    levelsOfRefinement_ = paramList->get<int>("Levels of Uniform Refinement");
 
    createEdgeBlocks_ = paramList->get<bool>("Create Edge Blocks");
-
    createFaceBlocks_ = paramList->get<bool>("Create Face Blocks");
 }
 
@@ -401,10 +400,8 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
 
       validParams->set("Rebalancing","default","The type of rebalancing to be performed on the mesh after creation (default, none)");
 
-      // default to false to prevent massive exodiff test failures
+      // default to false for backward compatibility
       validParams->set("Create Edge Blocks",false,"Create or copy edge blocks in the mesh");
-
-      // default to false to prevent massive exodiff test failures
       validParams->set("Create Face Blocks",false,"Create or copy face blocks in the mesh");
    }
 

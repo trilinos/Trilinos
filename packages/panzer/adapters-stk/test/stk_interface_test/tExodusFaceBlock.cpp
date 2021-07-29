@@ -84,6 +84,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, face_count)
    pl->set("X Elements",(int)xelems);
    pl->set("Y Elements",(int)yelems);
    pl->set("Z Elements",(int)zelems);
+   pl->set("Create Face Blocks",true);
 
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -167,6 +168,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, is_face_local)
    pl->set("X Elements",(int)xelems);
    pl->set("Y Elements",(int)yelems);
    pl->set("Z Elements",(int)zelems);
+   pl->set("Create Face Blocks",true);
 
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -217,6 +219,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, add_face_field)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
+   pl->set("Create Face Blocks",true);
 
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -273,6 +276,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, set_face_field_data)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
+   pl->set("Create Face Blocks",true);
 
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
