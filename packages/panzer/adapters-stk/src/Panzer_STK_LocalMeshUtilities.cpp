@@ -119,13 +119,14 @@ buildGhostedVertices(const Tpetra::Import<int,panzer::GlobalOrdinal,panzer::Tpet
   // copy multivector into ghstd vertex structure
   Kokkos::DynRankView<double,PHX::Device> ghstd_vertices("ghstd_vertices",ghstd_cell_cnt,vertices_per_cell,space_dim);
   {
-    auto ghstd_vertices_view = ghstd_vertices_mv->getLocalViewHost(Tpetra::Access::ReadOnly);
-    for(size_t i=0;i<ghstd_cell_cnt;i++) {
+    auto ghstd_vertices_view = ghstd_vertices_mv->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    Kokkos::parallel_for(ghstd_cell_cnt, KOKKOS_LAMBDA (size_t i) {
       int l = 0;
       for(int j=0;j<vertices_per_cell;j++)
         for(int k=0;k<space_dim;k++,l++)
           ghstd_vertices(i,j,k) = ghstd_vertices_view(i,l);
-    }
+      } );
+    Kokkos::fence();
   }
 
   return ghstd_vertices;

@@ -400,13 +400,14 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   // build an array containing only the ghstd cells
   int indx = 0;
   PHX::View<panzer::GlobalOrdinal*> ghstd_cells("ghstd_cells",ghstd_cells_set.size());
+  auto ghstd_cells_h = Kokkos::create_mirror_view(ghstd_cells);
   for(auto global_cell_index : ghstd_cells_set) {
-    ghstd_cells(indx) = global_cell_index;
+    ghstd_cells_h(indx) = global_cell_index;
     indx++;
   }
 
 //  print_view_1D("ghstd_cells",ghstd_cells);
-
+  Kokkos::deep_copy(ghstd_cells, ghstd_cells_h);
   return ghstd_cells;
 }
 
