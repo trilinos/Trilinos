@@ -493,8 +493,6 @@ Piro::PerformROLAnalysis(
   }
 
   bool useFullSpace = rolParams.get("Full Space",false);
-  bool useHessianDotProduct = rolParams.get("Hessian Dot Product",false);
-  bool removeMeanOfTheRHS = rolParams.get("Remove Mean Of The Right-hand Side",false);
 
   *out << "\nROL options:" << std::endl;
   rolParams.sublist("ROL Options").print(*out);
@@ -510,16 +508,37 @@ Piro::PerformROLAnalysis(
   ROL::Ptr<ROL::Algorithm<double> > algo;
   algo = ROL::makePtr<ROL::Algorithm<double>>(step, status, true);
 
-#ifdef HAVE_PIRO_TEKO
+  bool useHessianDotProduct = false;
+  Teuchos::ParameterList hessianDotProductList;
+  if(rolParams.isSublist("Matrix Based Dot Product")) {
+    const Teuchos::ParameterList& matrixDotProductList = rolParams.sublist("Matrix Based Dot Product");
+    auto matrixType = matrixDotProductList.get<std::string>("Matrix Type");
+    if(matrixType == "Hessian Of Response") {
+      useHessianDotProduct = true;
+      hessianDotProductList = matrixDotProductList.sublist("Matrix Types").sublist("Hessian Of Response");
+    }
+    else if (matrixType == "Identity")
+      useHessianDotProduct = false;
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+          std::endl << "Error in Piro::PerformROLAnalysis: " <<
+          "Matrix Type not recognized. Available options are: \n" <<
+          "\"Identity\" and \"Hessian Of Response\""<<std::endl);
+    }
+  }
+
+  #ifdef HAVE_PIRO_TEKO
   Teko::LinearOp H, invH;
   if (useHessianDotProduct) {
+    int hessianResponseIndex = hessianDotProductList.get<int>("Response Index");
     *out << "\nStart the computation of H_pp" << std::endl;
     Teko::BlockedLinearOp bH = Teko::createBlockedOp();
-    obj.hessian_22(bH, rol_x, rol_p);
+    obj.hessian_22(bH, rol_x, rol_p, hessianResponseIndex);
     *out << "End of the computation of H_pp" << std::endl;
 
     int numBlocks = bH->productRange()->numBlocks();
 
+    /* Not using defaults to increase user awareness
     Teuchos::ParameterList defaultParamList;
     string defaultSolverType = "Belos";
     defaultParamList.set("Linear Solver Type", "Belos");
@@ -532,22 +551,14 @@ Piro::PerformROLAnalysis(
     belosList.sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency", 100);
     belosList.sublist("VerboseObject").set("Verbosity Level", "medium");
     defaultParamList.set("Preconditioner Type", "None");
+    */
 
-    Teuchos::ParameterList dHess;
-    if(rolParams.isSublist("Hessian Diagonal Inverse"))
-      dHess = rolParams.sublist("Hessian Diagonal Inverse");
-
+    Teuchos::ParameterList dHess = hessianDotProductList.sublist("Block Diagonal Solver");
     std::vector<Teko::LinearOp> diag(numBlocks);
-
     for (int i=0; i<numBlocks; ++i) {
       string blockName = "Block "+std::to_string(i);
-      string blockSolverType = "Block solver type "+std::to_string(i);
-      Teuchos::ParameterList pl;
-      if(dHess.isSublist(blockName))
-        pl = dHess.sublist(blockName);
-      else
-        pl = defaultParamList;
-      string solverType = dHess.get<string>(blockSolverType, defaultSolverType);
+      Teuchos::ParameterList pl = dHess.sublist(blockName);
+      std::string solverType = pl.get<string>("Linear Solver Type");
       diag[i] = Teko::buildInverse(*Teko::invFactoryFromParamList(pl, solverType), Teko::getBlock(i, i, bH));
     }
 
@@ -558,6 +569,10 @@ Piro::PerformROLAnalysis(
     H = Teuchos::null;
     invH = Teuchos::null;
   }
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(useHessianDotProduct, Teuchos::Exceptions::InvalidParameter,
+      std::endl << "Error in Piro::PerformROLAnalysis: " <<
+      "Teko is required for computing the Hessian based dot Product"<<std::endl);
 #endif
 
 
@@ -567,6 +582,7 @@ Piro::PerformROLAnalysis(
   //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_x.ptr());
   ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
 #ifdef HAVE_PIRO_TEKO
+  bool removeMeanOfTheRHS = hessianDotProductList.get("Remove Mean Of The Right-hand Side",false);
   ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, H, invH, removeMeanOfTheRHS);
 #else
   Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
