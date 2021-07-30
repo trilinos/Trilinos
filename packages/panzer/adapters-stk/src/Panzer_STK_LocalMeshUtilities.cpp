@@ -163,8 +163,10 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
   }
 
   std::vector<panzer::LocalOrdinal> owned_block_cells;
+  auto local_cells_h = Kokkos::create_mirror_view(mesh_info.local_cells);
+  Kokkos::deep_copy(local_cells_h, mesh_info.local_cells);
   for(int parent_owned_cell=0;parent_owned_cell<num_parent_owned_cells;++parent_owned_cell){
-    const panzer::LocalOrdinal local_cell = mesh_info.local_cells(parent_owned_cell);
+    const panzer::LocalOrdinal local_cell = local_cells_h(parent_owned_cell);
     const bool is_in_block = conn.getBlockId(local_cell) == element_block_name;
 
     if(is_in_block){
@@ -267,8 +269,10 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
     // We need a fast lookup for maping local indexes to parent indexes
     std::unordered_map<LocalOrdinal,ParentOrdinal> local_to_parent_lookup;
+    auto local_cells_h = Kokkos::create_mirror_view(mesh_info.local_cells);
+    Kokkos::deep_copy(local_cells_h, mesh_info.local_cells);
     for(ParentOrdinal parent_index=0; parent_index<static_cast<ParentOrdinal>(mesh_info.local_cells.extent(0)); ++parent_index)
-      local_to_parent_lookup[mesh_info.local_cells(parent_index)] = parent_index;
+      local_to_parent_lookup[local_cells_h(parent_index)] = parent_index;
 
     // Add the subcell indexes for each element on the sideset
     // TODO: There is a lookup call here to map from local indexes to parent indexes which slows things down. Maybe there is a way around that
@@ -322,7 +326,12 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   std::unordered_set<panzer::LocalOrdinal> owned_parent_cells_set, ghstd_parent_cells_set, virtual_parent_cells_set;
   std::vector<face_t> faces;
   {
-
+    auto cell_to_faces_h = Kokkos::create_mirror_view(mesh_info.cell_to_faces);
+    auto face_to_cells_h = Kokkos::create_mirror_view(mesh_info.face_to_cells);
+    auto face_to_lidx_h = Kokkos::create_mirror_view(mesh_info.face_to_lidx);
+    Kokkos::deep_copy(cell_to_faces_h, mesh_info.cell_to_faces);
+    Kokkos::deep_copy(face_to_cells_h, mesh_info.face_to_cells);
+    Kokkos::deep_copy(face_to_lidx_h, mesh_info.face_to_lidx);
     panzer::LocalOrdinal parent_virtual_cell_offset = mesh_info.num_owned_cells + mesh_info.num_ghstd_cells;
     for(const auto & local_cell_index_pair : owned_parent_cell_to_subcell_indexes){
 
@@ -333,13 +342,13 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 
       for(const SubcellOrdinal & subcell_index : subcell_indexes){
 
-        const LocalOrdinal face = mesh_info.cell_to_faces(parent_cell, subcell_index);
-        const LocalOrdinal face_other_side = (mesh_info.face_to_cells(face,0) == parent_cell) ? 1 : 0;
+        const LocalOrdinal face = cell_to_faces_h(parent_cell, subcell_index);
+        const LocalOrdinal face_other_side = (face_to_cells_h(face,0) == parent_cell) ? 1 : 0;
 
-        TEUCHOS_ASSERT(subcell_index == mesh_info.face_to_lidx(face, 1-face_other_side));
+        TEUCHOS_ASSERT(subcell_index == face_to_lidx_h(face, 1-face_other_side));
 
-        const ParentOrdinal other_side_cell = mesh_info.face_to_cells(face, face_other_side);
-        const SubcellOrdinal other_side_subcell_index = mesh_info.face_to_lidx(face, face_other_side);
+        const ParentOrdinal other_side_cell = face_to_cells_h(face, face_other_side);
+        const SubcellOrdinal other_side_subcell_index = face_to_lidx_h(face, face_other_side);
 
         faces.push_back(face_t(parent_cell, other_side_cell, subcell_index, other_side_subcell_index));
 
@@ -372,14 +381,19 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
     sideset_info.cell_vertices = PHX::View<double***>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
     Kokkos::deep_copy(sideset_info.cell_vertices,0.);
 
-    for(LocalOrdinal i=0; i<num_total_cells; ++i){
-      const ParentOrdinal parent_cell = all_cells[i];
+    typename PHX::View<ParentOrdinal*>::HostMirror all_cells_h("all_cells_h", num_total_cells);
+    PHX::View<ParentOrdinal*> all_cells_d("all_cells_d", num_total_cells);
+    for(LocalOrdinal i=0; i<num_total_cells; ++i)
+      all_cells_h(i) = all_cells[i];
+    Kokkos::deep_copy(all_cells_d, all_cells_h);
+    Kokkos::parallel_for(num_total_cells, KOKKOS_LAMBDA (LocalOrdinal i) {
+      const ParentOrdinal parent_cell = all_cells_d(i);
       sideset_info.local_cells(i) = mesh_info.local_cells(parent_cell);
       sideset_info.global_cells(i) = mesh_info.global_cells(parent_cell);
       for(LocalOrdinal j=0; j<num_vertices_per_cell; ++j)
-        for(LocalOrdinal k=0; k<num_dims; ++k)
-          sideset_info.cell_vertices(i,j,k) = mesh_info.cell_vertices(parent_cell,j,k);
-    }
+	for(LocalOrdinal k=0; k<num_dims; ++k)
+	  sideset_info.cell_vertices(i,j,k) = mesh_info.cell_vertices(parent_cell,j,k);
+      });
   }
 
   // Now we have to set the connectivity for the faces.
@@ -390,9 +404,12 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
   sideset_info.face_to_cells = PHX::View<LocalOrdinal*[2]>("face_to_cells", num_faces);
   sideset_info.face_to_lidx = PHX::View<LocalOrdinal*[2]>("face_to_lidx", num_faces);
   sideset_info.cell_to_faces = PHX::View<LocalOrdinal**>("cell_to_faces", num_total_cells, num_faces_per_cell);
+  auto cell_to_faces_h = Kokkos::create_mirror_view(sideset_info.cell_to_faces);
+  auto face_to_cells_h = Kokkos::create_mirror_view(sideset_info.face_to_cells);
+  auto face_to_lidx_h = Kokkos::create_mirror_view(sideset_info.face_to_lidx);
 
   // Default the system with invalid cell index - this will be most of the entries
-  Kokkos::deep_copy(sideset_info.cell_to_faces, -1);
+  Kokkos::deep_copy(cell_to_faces_h, -1);
 
   // Lookup for sideset cell index given parent cell index
   std::unordered_map<ParentOrdinal,ParentOrdinal> parent_to_sideset_lookup;
@@ -416,16 +433,19 @@ setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
 //    const ParentOrdinal sideset_cell_0 = std::distance(all_cells.begin(), std::find(all_cells.begin(), all_cells.end(), parent_cell_0));
 //    const ParentOrdinal sideset_cell_1 = std::distance(all_cells.begin(), std::find(all_cells.begin()+num_owned_cells, all_cells.end(), parent_cell_1));
 
-    sideset_info.face_to_cells(face_index,0) = sideset_cell_0;
-    sideset_info.face_to_cells(face_index,1) = sideset_cell_1;
+    face_to_cells_h(face_index,0) = sideset_cell_0;
+    face_to_cells_h(face_index,1) = sideset_cell_1;
 
-    sideset_info.face_to_lidx(face_index,0) = face.subcell_index_0;
-    sideset_info.face_to_lidx(face_index,1) = face.subcell_index_1;
+    face_to_lidx_h(face_index,0) = face.subcell_index_0;
+    face_to_lidx_h(face_index,1) = face.subcell_index_1;
 
-    sideset_info.cell_to_faces(sideset_cell_0,face.subcell_index_0) = face_index;
-    sideset_info.cell_to_faces(sideset_cell_1,face.subcell_index_1) = face_index;
+    cell_to_faces_h(sideset_cell_0,face.subcell_index_0) = face_index;
+    cell_to_faces_h(sideset_cell_1,face.subcell_index_1) = face_index;
 
   }
+  Kokkos::deep_copy(sideset_info.cell_to_faces, cell_to_faces_h);
+  Kokkos::deep_copy(sideset_info.face_to_cells, face_to_cells_h);
+  Kokkos::deep_copy(sideset_info.face_to_lidx,  face_to_lidx_h );
 
 }
 
