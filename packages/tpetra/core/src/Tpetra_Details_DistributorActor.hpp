@@ -61,34 +61,30 @@ public:
   DistributorActor(const DistributorActor& otherActor);
 
   template <class ExpView, class ImpView>
-  typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-  doPostsAndWaits(const DistributorPlan& plan,
-                  const ExpView &exports,
-                  size_t numPackets,
-                  const ImpView &imports);
+  void doPostsAndWaits(const DistributorPlan& plan,
+                       const ExpView &exports,
+                       size_t numPackets,
+                       const ImpView &imports);
 
   template <class ExpView, class ImpView>
-  typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-  doPostsAndWaits(const DistributorPlan& plan,
-                  const ExpView &exports,
-                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                  const ImpView &imports,
-                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+  void doPostsAndWaits(const DistributorPlan& plan,
+                       const ExpView &exports,
+                       const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                       const ImpView &imports,
+                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   template <class ExpView, class ImpView>
-  typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-  doPosts(const DistributorPlan& plan,
-          const ExpView& exports,
-          size_t numPackets,
-          const ImpView& imports);
+  void doPosts(const DistributorPlan& plan,
+               const ExpView& exports,
+               size_t numPackets,
+               const ImpView& imports);
 
   template <class ExpView, class ImpView>
-  typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-  doPosts(const DistributorPlan& plan,
-          const ExpView &exports,
-          const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-          const ImpView &imports,
-          const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
+  void doPosts(const DistributorPlan& plan,
+               const ExpView &exports,
+               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+               const ImpView &imports,
+               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
   void doWaits(const DistributorPlan& plan);
 
@@ -116,35 +112,38 @@ private:
 };
 
 template <class ExpView, class ImpView>
-typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
-                                  const ExpView& exports,
-                                  size_t numPackets,
-                                  const ImpView& imports)
+void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
+                                       const ExpView& exports,
+                                       size_t numPackets,
+                                       const ImpView& imports)
 {
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numPackets, imports);
   doWaits(plan);
 }
 
 template <class ExpView, class ImpView>
-typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
-                                  const ExpView& exports,
-                                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                                  const ImpView& imports,
-                                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+void DistributorActor::doPostsAndWaits(const DistributorPlan& plan,
+                                       const ExpView& exports,
+                                       const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                                       const ImpView& imports,
+                                       const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
 {
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPostsAndWaits must be Kokkos::Views");
   doPosts(plan, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   doWaits(plan);
 }
 
 template <class ExpView, class ImpView>
-typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-DistributorActor::doPosts(const DistributorPlan& plan,
-                          const ExpView& exports,
-                          size_t numPackets,
-                          const ImpView& imports)
+void DistributorActor::doPosts(const DistributorPlan& plan,
+                               const ExpView& exports,
+                               size_t numPackets,
+                               const ImpView& imports)
 {
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::FancyOStream;
@@ -452,14 +451,14 @@ DistributorActor::doPosts(const DistributorPlan& plan,
 }
 
 template <class ExpView, class ImpView>
-typename std::enable_if_t<areKokkosViews<ExpView, ImpView>>
-DistributorActor::
-doPosts(const DistributorPlan& plan,
-        const ExpView &exports,
-        const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-        const ImpView &imports,
-        const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
+void DistributorActor::doPosts(const DistributorPlan& plan,
+                               const ExpView &exports,
+                               const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                               const ImpView &imports,
+                               const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
 {
+  static_assert(areKokkosViews<ExpView, ImpView>,
+      "Data arrays for DistributorActor::doPosts must be Kokkos::Views");
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::ireceive;
