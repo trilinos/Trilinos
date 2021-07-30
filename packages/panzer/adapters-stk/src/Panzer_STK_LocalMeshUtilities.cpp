@@ -709,14 +709,11 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
       PANZER_FUNC_TIME_MONITOR_DIFF("Assign geometry traits",AssignGeometryTraits);
       Kokkos::parallel_for(num_virtual_cells,KOKKOS_LAMBDA (int i) {
         const panzer::LocalOrdinal virtual_cell = i+num_real_cells;
-        bool exists = false;
         for(int local_face=0; local_face<faces_per_cell; ++local_face){
           const panzer::LocalOrdinal face = cell_to_face(virtual_cell, local_face);
           if(face >= 0){
-            exists = true;
             const panzer::LocalOrdinal other_side = (face_to_cells(face, 0) == virtual_cell) ? 1 : 0;
             const panzer::LocalOrdinal real_cell = face_to_cells(face,other_side);
-	    //            TEUCHOS_ASSERT(real_cell < num_real_cells);
             for(int j=0;j<vertices_per_cell;++j){
               for(int k=0;k<space_dim;++k){
                 mesh_info.cell_vertices(virtual_cell,j,k) = mesh_info.cell_vertices(real_cell,j,k);
@@ -725,7 +722,6 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
             break;
           }
         }
-	//        TEUCHOS_TEST_FOR_EXCEPT_MSG(!exists, "panzer_stk::generateLocalMeshInfo : Virtual cell is not linked to real cell");
 	});
       
     }
