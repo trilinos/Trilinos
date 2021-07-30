@@ -526,34 +526,6 @@ tol = 0.;
     }
 
 
-#ifndef _WIN32
-    static void PauseForDebugger() {
-      RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-      int myPID = comm->getRank();
-      int pid   = getpid();
-      char hostname[80];
-      for (int i = 0; i <comm->getSize(); i++) {
-        if (i == myPID) {
-          gethostname(hostname, sizeof(hostname));
-          std::cout << "Host: " << hostname << "\tMPI rank: " << myPID << ",\tPID: " << pid << "\n\tattach " << pid << std::endl;
-          sleep(1);
-        }
-      }
-      if (myPID == 0) {
-        std::cout << "** Enter a character to continue > " << std::endl;
-        char go = ' ';
-        int r = scanf("%c", &go);
-        (void)r;
-        assert(r > 0);
-      }
-      comm->barrier();
-    }
-#else
-    static void PauseForDebugger() {
-         throw(Exceptions::RuntimeError("MueLu Utils: PauseForDebugger not implemented on Windows."));
-     }
-#endif
-
     /*! @brief Power method.
 
     @param A matrix

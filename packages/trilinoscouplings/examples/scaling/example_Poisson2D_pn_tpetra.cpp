@@ -411,9 +411,11 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 template<class FC1, class FC2>
 void CopyFieldContainer2D(const FC1 & c1, FC2 & c2) {
   Kokkos::resize(c2,c1.dimension(0),c1.dimension(1));
+  auto c2_h = Kokkos::create_mirror_view(c2);
   for(size_t i=0; i<(size_t)c1.dimension(0); i++)
     for(size_t j=0; j<(size_t)c1.dimension(1); j++)
-      c2(i,j) = c1(i,j);
+      c2_h(i,j) = c1(i,j);
+  Kokkos::deep_copy(c2, c2_h);
 }
 
 

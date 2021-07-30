@@ -74,7 +74,7 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
     //adjoint sensitivities
     basicIntegrator_ = Teuchos::null;
     fwdSensIntegrator_ = Teuchos::null; 
-    adjSensIntegrator_ = Tempus::integratorAdjointSensitivity<Scalar>(pList, model);
+    adjSensIntegrator_ = Tempus::createIntegratorAdjointSensitivity<Scalar>(pList, model);
   }
 }
 

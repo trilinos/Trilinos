@@ -2052,8 +2052,8 @@ int body(int argc, char *argv[]) {
   Tpetra_Vector DiagG(MassMatrixG.getRowMap());
   {
     DiagG.putScalar(1.0);
-    auto d_data = DiagG.getDataNonConst(0);
     MassMatrixG.apply(DiagG,DiagG);
+    auto d_data = DiagG.getDataNonConst(0);
     for(int i=0;i<(int)d_data.size();i++) {
       d_data[i]=1.0/d_data[i];
     }

@@ -811,12 +811,12 @@ public:
    /** Get a face's global index
      */
    inline stk::mesh::EntityId faceGlobalId(std::size_t lid) const
-   { return bulkData_->identifier((*orderedEdgeVector_)[lid]); }
+   { return bulkData_->identifier((*orderedFaceVector_)[lid]); }
 
    /** Get a face's global index
      */
-   inline stk::mesh::EntityId faceGlobalId(stk::mesh::Entity edge) const
-   { return bulkData_->identifier(edge); }
+   inline stk::mesh::EntityId faceGlobalId(stk::mesh::Entity face) const
+   { return bulkData_->identifier(face); }
 
   /** Get an Entity's parallel owner (process rank)
    */
