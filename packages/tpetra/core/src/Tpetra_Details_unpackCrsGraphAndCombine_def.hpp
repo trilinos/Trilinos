@@ -425,11 +425,11 @@ unpackAndCombineWithOwningPIDsCount(
     // Count entries received from other MPI processes.
     size_t tot_num_ent = 0;
     parallel_reduce("SumReduce",
-        num_packets_per_lid.size(),
+        range_policy(0,num_packets_per_lid.size()),
         KOKKOS_LAMBDA(const int& i, size_t& lsum) {
           lsum += num_packets_per_lid(i) / 2;
         }, Kokkos::Sum<size_t>(tot_num_ent));
-    count += tot_num_ent;
+    count += tot_num_ent; 
   }
 
   return count;

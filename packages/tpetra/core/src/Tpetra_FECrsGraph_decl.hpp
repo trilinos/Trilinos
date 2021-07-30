@@ -83,7 +83,7 @@ namespace Tpetra {
   ///       If you partition a mesh by node (N), then your owned+shared maps should contain all the
   ///       nodes that are in the patch of one of the owned nodes, which is precisely what
   ///       the colMap of the owned+shared graph should contain.
-  ///       On the other hand, if you partition the mesh by cell (C), then your owned+shared maps 
+  ///       On the other hand, if you partition the mesh by cell (C), then your owned+shared maps
   ///       should contain all nodes belonging to one of the owned elements. Such map does *NOT*
   ///       necessarily contain all the GID of all the nodes connected to one of the owned nodes
   ///       (which is what the colMap should contain). In this case, you are not likely to have
@@ -177,7 +177,7 @@ namespace Tpetra {
     /// \param ownedRangeMap [in] Optional range map for the owned graph.  If this is not provided, then ownedMap
     ///   will be used as range map for the owned graph.
     ///
-    /// \param params [in/out] Optional list of parameters.  If not 
+    /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     FECrsGraph(const Teuchos::RCP<const map_type> & ownedRowMap,
@@ -465,10 +465,11 @@ namespace Tpetra {
     //@{
 
     //! Migrates data to the owned mode
-    void endFill();
+    void endAssembly();
+    void endAssembly(const Teuchos::RCP<const map_type>& domainMap, const Teuchos::RCP<const map_type>& rangeMap);
 
-    //! Activates the owned+shared mode for assembly.  This can only be called once.
-    void beginFill();
+    //! Activates the owned+shared mode for assembly
+    void beginAssembly();
 
     /// \brief Tell the graph that you are done changing its structure.
     ///
@@ -548,6 +549,14 @@ namespace Tpetra {
 
 
   private:
+
+    //! Migrates data to the owned mode
+    void endFill();
+    void endFill(const Teuchos::RCP<const map_type>& domainMap, const Teuchos::RCP<const map_type>& rangeMap);
+
+    //! Activates the owned+shared mode for assembly.  This can only be called once.
+    void beginFill();
+
     /// \brief Migrate data from the owned+shared to the owned graph
     /// Since this is non-unique -> unique, we need a combine mode.
     /// Precondition: Must be FE_ACTIVE_OWNED_PLUS_SHARED mode
@@ -578,6 +587,12 @@ namespace Tpetra {
       FE_ACTIVE_OWNED_PLUS_SHARED
     };
 
+    enum class FillState
+    {
+      open,  // matrix is "open".  Values can freely inserted
+      closed
+    };
+    Teuchos::RCP<FillState> fillState_;
 
     // This is whichever graph isn't currently active
     Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > inactiveCrsGraph_;
@@ -593,6 +608,44 @@ namespace Tpetra {
 
     // The rangeMap to use in endFill() for the owned graph
     Teuchos::RCP<const map_type> ownedRangeMap_;
+
+  protected:
+    /// \brief Insert global indices, using an input <i>local</i> row index.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo() on the row in which
+    ///   to insert.
+    /// \param inputGblColInds [in] Input global column indices.
+    /// \param numInputInds [in] The number of input global column
+    ///   indices.
+    ///
+    /// \return The number of indices inserted.
+    size_t
+    insertGlobalIndicesImpl (const local_ordinal_type lclRow,
+                             const global_ordinal_type inputGblColInds[],
+                             const size_t numInputInds);
+
+    /// \brief Insert global indices, using an input RowInfo.
+    ///
+    /// \param rowInfo [in] Result of getRowInfo() on the row in which
+    ///   to insert.
+    /// \param inputGblColInds [in] Input global column indices.
+    /// \param numInputInds [in] The number of input global column
+    ///   indices.
+    ///
+    /// \return The number of indices inserted.
+    size_t
+    insertGlobalIndicesImpl (const RowInfo& rowInfo,
+                             const global_ordinal_type inputGblColInds[],
+                             const size_t numInputInds,
+                             std::function<void(const size_t, const size_t, const size_t)> fun =
+                                 std::function<void(const size_t, const size_t, const size_t)>());
+
+    void
+    insertLocalIndicesImpl (const local_ordinal_type lclRow,
+                            const Teuchos::ArrayView<const local_ordinal_type>& gblColInds,
+                            std::function<void(const size_t, const size_t, const size_t)> fun =
+                                std::function<void(const size_t, const size_t, const size_t)>());
+
   }; // class FECrsGraph
 
 

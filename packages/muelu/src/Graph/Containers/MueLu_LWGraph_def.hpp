@@ -55,7 +55,7 @@ namespace MueLu {
   //void describe(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LWGraph<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
-    MUELU_DESCRIBE;
+    //    MUELU_DESCRIBE;
 
     if (verbLevel & Parameters0) {
       //out0 << "Prec. type: " << type_ << std::endl;
@@ -69,9 +69,11 @@ namespace MueLu {
     }
 
     if (verbLevel & Debug) {
+      RCP<const Map> col_map = importMap_.is_null() ? domainMap_ : importMap_;
+
       for (LO i = 0; i < rows_.size()-1; i++) {
         for (LO j = rows_[i]; j < rows_[i+1]; j++)
-          out0 << i << " " << columns_[j]<<std::endl;
+          out<< domainMap_->getGlobalElement(i) << " " << col_map->getGlobalElement(columns_[j])<<std::endl;
       }
     }
   }

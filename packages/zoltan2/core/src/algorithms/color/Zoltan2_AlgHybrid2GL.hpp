@@ -648,7 +648,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 			   const std::unordered_map<lno_t, std::vector<int>>& procs_to_send,
                            gno_t& total_sent, gno_t& total_recvd){
       
-      auto femvColors = femv->getLocalViewHost();
+      auto femvColors = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
       auto colors = subview(femvColors, Kokkos::ALL, 0);
       //create vectors to hold send information
       int nprocs = comm->getSize();
@@ -1334,9 +1334,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       this->colorInterior(n_local, adjs_dev, offsets_dev, femv,adjs_dev,0,use_vbbit);
       interior_time = timer() - interior_time;
       comp_time = interior_time;
-      //get the color view from the FEMultiVector
-      auto femvColors = femv->getLocalViewDevice();
-      auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
 
       //ghost_colors holds the colors of only ghost vertices.
       //ghost_colors(0) holds the color of a vertex with LID n_local.
@@ -1360,6 +1357,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //store ghost colors so we can restore them after recoloring.
       //the local process can't color ghosts correctly, so we
       //reset the colors to avoid consistency issues.
+      //get the color view from the FEMultiVector
+      auto femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
       Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
         ghost_colors(i) = femv_colors(i+n_local);
       });
@@ -1462,6 +1462,10 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         
 	//send views are up-to-date, they were copied after conflict detection.
         //communicate the new colors
+
+        // Reset device views
+        femvColors = decltype(femvColors)();
+        femv_colors = decltype(femv_colors)();
         double curr_comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,n_local,verts_to_send_host,verts_to_send_size_host,femv,procs_to_send,sent,recv);
 	comm_time += curr_comm_time;
 
@@ -1476,6 +1480,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	//this process doesn't have enough info to correctly color
 	//ghosts, so we set them back to what they were before to
 	//remove consistency issues.
+        femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
+        femv_colors = subview(femvColors, Kokkos::ALL, 0);
         Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
           ghost_colors(i) = femv_colors(i+n_local);
         });
@@ -1537,8 +1543,11 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
        
       //Now we do a similar coloring loop to before, 
       //but using only host views in a serial execution space.
+      // Reset device views
+      femvColors = decltype(femvColors)();
+      femv_colors = decltype(femv_colors)();
       while(recoloringSize_host(0) > 0 || !done){
-	auto femvColors_host = femv->getLocalViewHost();
+	auto femvColors_host = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
 	auto colors_host = subview(femvColors_host, Kokkos::ALL, 0);
 	if(distributedRounds < numStatisticRecordingRounds){
 	  vertsPerRound[distributedRounds] = recoloringSize_host(0);
@@ -1548,8 +1557,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	
 	double recolor_temp = timer();
 	if(verts_to_recolor_size_host(0) > 0){
-	  this->colorInterior_serial(femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, 
-			             verts_to_recolor_host, verts_to_recolor_size(0), true);
+	  this->colorInterior_serial(colors_host.size(), dist_adjs_host, dist_offsets_host, femv, 
+			             verts_to_recolor_host, verts_to_recolor_size_host(0), true);
 	}
 	if(distributedRounds < numStatisticRecordingRounds){
 	  recoloringPerRound[distributedRounds] = timer() - recolor_temp;

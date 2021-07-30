@@ -47,7 +47,7 @@ public:
     balanceSettings.setDecompMethod("rcb");
 
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-    stk::balance::m2n::rebalanceMtoN(m_ioBroker, balanceSettings);
+    stk::balance::m2n::m2nRebalance(m_ioBroker, balanceSettings);
     stk::EnvData::instance().m_outputP0 = &std::cout;
   }
 };

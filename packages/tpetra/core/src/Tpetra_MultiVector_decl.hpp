@@ -2372,6 +2372,12 @@ namespace Tpetra {
     void
     assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
 
+    /// \brief Return another MultiVector with the same entries, but
+    ///   converted to a different Scalar type \c T.
+    template <class T>
+    Teuchos::RCP<MultiVector<T, LocalOrdinal, GlobalOrdinal, Node> >
+    convert () const;
+
 
     // \brief Checks to see if the local length, number of vectors and size of Scalar type match
     /// \param src [in] MultiVector
@@ -2574,6 +2580,46 @@ namespace Tpetra {
      const size_t constantNumPackets,
      Distributor& /* distor */,
      const CombineMode CM);
+
+  private:
+
+    // If comm buffers can be aliased to the data view, use this
+    // implementation.
+    template<class NO=Node>
+    typename std::enable_if<std::is_same<typename Tpetra::Details::DefaultTypes::CommBufferMemorySpace<typename NO::execution_space>::type,
+                                         typename NO::device_type::memory_space>::value, bool>::type
+    reallocImportsIfNeededImpl (const size_t newSize,
+                                 const bool verbose,
+                                 const std::string* prefix,
+                                 const bool areRemoteLIDsContiguous,
+                                 const CombineMode CM);
+
+    // If comm buffers cannot be aliased to the data view, use this
+    // implementation. (Just calls DistObject::reallocImportsIfNeeded.)
+    template<class NO=Node>
+    typename std::enable_if<!std::is_same<typename Tpetra::Details::DefaultTypes::CommBufferMemorySpace<typename NO::execution_space>::type,
+                                          typename NO::device_type::memory_space>::value, bool>::type
+    reallocImportsIfNeededImpl (const size_t newSize,
+                                 const bool verbose,
+                                 const std::string* prefix,
+                                 const bool areRemoteLIDsContiguous,
+                                 const CombineMode CM);
+  protected:
+
+    virtual bool
+    reallocImportsIfNeeded (const size_t newSize,
+                                 const bool verbose,
+                                 const std::string* prefix,
+                                 const bool areRemoteLIDsContiguous=false,
+                                 const CombineMode CM=INSERT);
+
+
+  public:
+    bool importsAreAliased();
+
+  protected:
+    Kokkos::DualView<impl_scalar_type*, buffer_device_type> unaliased_imports_;
+
     //@}
   }; // class MultiVector
 

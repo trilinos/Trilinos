@@ -868,10 +868,9 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       "computeBlockCrs: The input matrix A is null.  Please call setMatrix() "
       "with a nonnull input matrix, then call initialize(), before calling "
       "this method.");
-    const block_crs_matrix_type* blockCrsA =
-      dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
+    auto blockCrsA = rcp_dynamic_cast<const block_crs_matrix_type> (A_);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      blockCrsA == nullptr, std::logic_error, "Ifpack2::Relaxation::"
+      blockCrsA.is_null(), std::logic_error, "Ifpack2::Relaxation::"
       "computeBlockCrs: A_ is not a BlockCrsMatrix, but it should be if we "
       "got this far.  Please report this bug to the Ifpack2 developers.");
 
@@ -977,7 +976,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
        "Tpetra::BlockCrsMatrix, one or more diagonal block LU factorizations "
        "failed on one or more (MPI) processes.");
 #endif // HAVE_IFPACK2_DEBUG
-    serialGaussSeidel_ = rcp(new SerialGaussSeidel(*blockCrsA, blockDiag_, localSmoothingIndices_, DampingFactor_));
+    serialGaussSeidel_ = rcp(new SerialGaussSeidel(blockCrsA, blockDiag_, localSmoothingIndices_, DampingFactor_));
   } // end TimeMonitor scope
 
   ComputeTime_ += (timer->wallTime() - startTime);
@@ -1196,10 +1195,9 @@ void Relaxation<MatrixType>::compute ()
 
     bool debugAgainstSlowPath = false;
 
-    const crs_matrix_type* crsMat =
-      dynamic_cast<const crs_matrix_type*> (A_.get());
+    auto crsMat = rcp_dynamic_cast<const crs_matrix_type> (A_);
 
-    if (crsMat != nullptr && crsMat->isFillComplete ()) {
+    if (crsMat.get() && crsMat->isFillComplete ()) {
       // The invDiagKernel object computes diagonal offsets if
       // necessary. The "compute" call extracts diagonal enties,
       // optionally applies the L1 method and replacement of small
@@ -1220,7 +1218,7 @@ void Relaxation<MatrixType>::compute ()
 #endif
     }
 
-    if (crsMat == nullptr || ! crsMat->isFillComplete () || debugAgainstSlowPath) {
+    if (crsMat.is_null() || ! crsMat->isFillComplete () || debugAgainstSlowPath) {
       // We could not call the CrsMatrix version above, or want to
       // debug by comparing against the slow path.
 
@@ -1323,7 +1321,7 @@ void Relaxation<MatrixType>::compute ()
       //KokkosKernels GaussSeidel Initialization.
 
       TEUCHOS_TEST_FOR_EXCEPTION
-        (crsMat == nullptr, std::logic_error, methodName << ": "
+        (crsMat.is_null(), std::logic_error, methodName << ": "
          "Multithreaded Gauss-Seidel methods currently only work "
          "when the input matrix is a Tpetra::CrsMatrix.");
       local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
@@ -1347,9 +1345,9 @@ void Relaxation<MatrixType>::compute ()
     }
     else if(PrecType_ == Ifpack2::Details::GS || PrecType_ == Ifpack2::Details::SGS) {
       if(crsMat)
-        serialGaussSeidel_ = rcp(new SerialGaussSeidel(*crsMat, Diagonal_, localSmoothingIndices_, DampingFactor_));
+        serialGaussSeidel_ = rcp(new SerialGaussSeidel(crsMat, Diagonal_, localSmoothingIndices_, DampingFactor_));
       else
-        serialGaussSeidel_ = rcp(new SerialGaussSeidel(*A_, Diagonal_, localSmoothingIndices_, DampingFactor_));
+        serialGaussSeidel_ = rcp(new SerialGaussSeidel(A_, Diagonal_, localSmoothingIndices_, DampingFactor_));
     }
   } // end TimeMonitor scope
 
@@ -1574,14 +1572,12 @@ ApplyInverseSerialGS (const Tpetra::MultiVector<scalar_type,local_ordinal_type,g
   // declaration in Ifpack2_Relaxation_decl.hpp header file.  The code
   // will still be correct if the cast fails, but it will use an
   // unoptimized kernel.
-  const block_crs_matrix_type* blockCrsMat =
-    dynamic_cast<const block_crs_matrix_type*> (A_.getRawPtr ());
-  const crs_matrix_type* crsMat =
-    dynamic_cast<const crs_matrix_type*> (A_.getRawPtr ());
-  if (blockCrsMat != nullptr)  {
+  auto blockCrsMat = Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+  auto crsMat = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
+  if (blockCrsMat.get())  {
     const_cast<this_type&> (*this).ApplyInverseSerialGS_BlockCrsMatrix (*blockCrsMat, X, Y, direction);
   }
-  else if (crsMat != nullptr) {
+  else if (crsMat.get()) {
     ApplyInverseSerialGS_CrsMatrix (*crsMat, X, Y, direction);
   }
   else {

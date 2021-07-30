@@ -83,21 +83,18 @@ protected:
     }
   }
 
-  void verify_face_field_sizes_and_values(const std::string& fileName,
+  void verify_face_field_sizes_and_values(const stk::mesh::BulkData& bulk,
                                           const std::string& ssFieldName,
                                           unsigned expectedNumFaces)
   {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, get_comm());
-    stk::io::fill_mesh_with_fields(fileName, bulk);
-
+    const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
     stk::mesh::Part* surface1 = meta.get_part("surface_1");
     ASSERT_TRUE(surface1 != nullptr);
 
     stk::mesh::FieldBase* ssField = meta.get_field(meta.side_rank(), ssFieldName);
     ASSERT_TRUE(ssField != nullptr);
 
-    stk::mesh::Selector selector(*ssField);
+    stk::mesh::Selector selector(*ssField & meta.locally_owned_part());
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(bulk, meta.side_rank(), selector, faces);
     EXPECT_EQ(expectedNumFaces, faces.size());
@@ -111,6 +108,49 @@ protected:
       for(unsigned n=0; n<numFaceNodes; ++n) {
         EXPECT_NEAR(fieldData[n], static_cast<double>(bulk.identifier(faceNodes[n])), 1.e-6);
       }
+    }
+  }
+
+  void confirm_fmwk_restart_sequence(const std::string& fileName,
+                                     const std::string& ssFieldName,
+                                     unsigned expectedNumFaces)
+  {
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, get_comm());
+    stk::io::StkMeshIoBroker stkIo;
+    stkIo.set_bulk_data(bulk);
+    stkIo.add_mesh_database(fileName, stk::io::READ_RESTART);
+    stkIo.create_input_mesh();
+    stkIo.add_all_mesh_fields_as_input_fields();
+
+    stk::mesh::FieldBase* sidesetField = meta.get_field(meta.side_rank(), ssFieldName);
+    ASSERT_TRUE(sidesetField != nullptr);
+    stkIo.populate_bulk_data();
+
+    stk::io::MeshField meshField(*sidesetField, sidesetField->name());
+    const double time = 1.0;
+    meshField.set_read_time(time);
+    stkIo.read_input_field(meshField);
+
+    verify_face_field_sizes_and_values(bulk, ssFieldName, expectedNumFaces);
+  }
+
+  void read_and_verify_face_field_sizes_and_values(const std::string& fileName,
+                                          const std::string& ssFieldName,
+                                          unsigned expectedNumFaces,
+                                          bool isRestart = false)
+  {
+    stk::io::DatabasePurpose dbReadPurpose = isRestart ? stk::io::READ_RESTART : stk::io::READ_MESH;
+    {
+      stk::mesh::MetaData meta;
+      stk::mesh::BulkData bulk(meta, get_comm());
+      stk::io::fill_mesh_with_fields(fileName, bulk, dbReadPurpose);
+
+      verify_face_field_sizes_and_values(bulk, ssFieldName, expectedNumFaces);
+    }
+
+    if (isRestart) {
+      EXPECT_NO_THROW(confirm_fmwk_restart_sequence(fileName, ssFieldName, expectedNumFaces));
     }
   }
 
@@ -161,9 +201,8 @@ protected:
     stk::mesh::put_field_on_mesh(*ssField, *sideBlock2, 3, static_cast<double*>(nullptr));
   }
 
-  void setup_mesh_hex_tet_quad_tri()
+  void create_hex_with_face()
   {
-    get_bulk().modification_begin();
     stk::mesh::PartVector elem1Parts{block1};
     stk::mesh::EntityId elemId = 1;
     stk::mesh::EntityIdVector nodeIds{1, 2, 3, 4, 5, 6, 7, 8};
@@ -172,36 +211,55 @@ protected:
                                0,0,1, 1,0,1, 1,1,1, 0,1,1};
     set_coords(get_bulk(), *coordField, nodeIds, coords);
 
+    stk::mesh::PartVector quadFaceParts{surface1, sideBlock1};
+    stk::mesh::ConnectivityOrdinal faceOrd = 0;
+    stk::mesh::Entity face11 = get_bulk().declare_element_side(elem1, faceOrd, quadFaceParts);
+    EXPECT_EQ(stk::topology::QUAD_4, get_bulk().bucket(face11).topology());
+    set_face_field_data(*ssField, face11);
+  }
+
+  void create_tet_with_face()
+  {
     stk::mesh::PartVector elem2Parts{block2};
-    elemId = 2;
-    nodeIds = {1, 2, 9, 10};
-    coords = {0,0,0, 1,0,0, 0.5,-0.5,-0.5, 0.5,-0.5,0};
+    stk::mesh::EntityId elemId = 2;
+    stk::mesh::EntityIdVector nodeIds = {1, 2, 9, 10};
+    std::vector<double> coords = {0,0,0, 1,0,0, 0.5,-0.5,-0.5, 0.5,-0.5,0};
     stk::mesh::Entity elem2 = stk::mesh::declare_element(get_bulk(), elem2Parts,
                                             elemId, nodeIds);
     set_coords(get_bulk(), *coordField, nodeIds, coords);
 
-    stk::mesh::ConnectivityOrdinal faceOrd = 0;
-    stk::mesh::PartVector quadFaceParts{surface1, sideBlock1};
-    stk::mesh::Entity face11 = get_bulk().declare_element_side(elem1, faceOrd, quadFaceParts);
-    EXPECT_EQ(stk::topology::QUAD_4, get_bulk().bucket(face11).topology());
     stk::mesh::PartVector triFaceParts{surface1, sideBlock2};
+    stk::mesh::ConnectivityOrdinal faceOrd = 0;
     stk::mesh::Entity face21 = get_bulk().declare_element_side(elem2, faceOrd, triFaceParts);
     EXPECT_EQ(stk::topology::TRI_3, get_bulk().bucket(face21).topology());
-    get_bulk().modification_end();
-
-    set_face_field_data(*ssField, face11);
     set_face_field_data(*ssField, face21);
   }
 
-  void test_write_then_read()
+  void setup_mesh_hex_tet_quad_tri()
+  {
+    get_bulk().modification_begin();
+
+    if (get_bulk().parallel_size() == 1 || get_bulk().parallel_rank() == 0) {
+      create_tet_with_face();
+    }
+
+    if (get_bulk().parallel_size() == 1 || get_bulk().parallel_rank() == 1) {
+      create_hex_with_face();
+    }
+
+    get_bulk().modification_end();
+  }
+
+  void test_write_then_read(bool isRestart = false)
   {
     std::string fileName("ssfield.exo");
     int step = 1;
     double time = 1.0;
-    stk::io::write_mesh_with_fields(fileName, get_bulk(), step, time);
+    stk::io::DatabasePurpose dbWritePurpose = isRestart ? stk::io::WRITE_RESTART : stk::io::WRITE_RESULTS;
+    stk::io::write_mesh_with_fields(fileName, get_bulk(), step, time, dbWritePurpose);
 
-    unsigned expectedNumFaces = 2;
-    verify_face_field_sizes_and_values(fileName, ssField->name(), expectedNumFaces);
+    unsigned expectedNumFaces = get_bulk().parallel_size()==1 ? 2 : 1;
+    read_and_verify_face_field_sizes_and_values(fileName, ssField->name(), expectedNumFaces, isRestart);
     unlink(fileName.c_str());
   }
 
@@ -217,7 +275,7 @@ private:
 
 TEST_F(StkIoSideset, field_QuadAndTriSides)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) { return; }
+  if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
 
@@ -230,7 +288,7 @@ TEST_F(StkIoSideset, field_QuadAndTriSides)
 
 TEST_F(StkIoSideset, field_TriAndQuadSides)
 {
-  if (stk::parallel_machine_size(get_comm()) != 1) { return; }
+  if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
   unsigned bucketCapacity = 1;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
 
@@ -239,6 +297,34 @@ TEST_F(StkIoSideset, field_TriAndQuadSides)
   setup_mesh_hex_tet_quad_tri();
 
   test_write_then_read();
+}
+
+TEST_F(StkIoSideset, field_QuadAndTriSides_restart)
+{
+  if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
+  unsigned bucketCapacity = 1;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+
+  bool createQuadBlockFirst = true;
+  create_parts_and_fields(createQuadBlockFirst);
+  setup_mesh_hex_tet_quad_tri();
+
+  const bool isRestart = true;
+  test_write_then_read(isRestart);
+}
+
+TEST_F(StkIoSideset, field_TriAndQuadSides_restart)
+{
+  if (stk::parallel_machine_size(get_comm()) > 2) { GTEST_SKIP(); }
+  unsigned bucketCapacity = 1;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+
+  bool createQuadBlockFirst = false;
+  create_parts_and_fields(createQuadBlockFirst);
+  setup_mesh_hex_tet_quad_tri();
+
+  const bool isRestart = true;
+  test_write_then_read(isRestart);
 }
 
 TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)

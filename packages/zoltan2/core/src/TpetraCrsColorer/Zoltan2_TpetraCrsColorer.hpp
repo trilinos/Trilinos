@@ -257,9 +257,7 @@ TpetraCrsColorer<CrsMatrixType>::computeSeedMatrixFitted(
       " Jacobian graph.  "
       "You must call the non-fitted version of this function.");
 
-  V.sync_device();
-
-  auto V_view_dev = V.getLocalViewDevice();
+  auto V_view_dev = V.getLocalViewDevice(Tpetra::Access::OverwriteAll);
   const size_t num_local_cols = graph->getNodeNumCols();
   list_of_colors_t my_list_of_colors = list_of_colors;
 
@@ -269,7 +267,6 @@ TpetraCrsColorer<CrsMatrixType>::computeSeedMatrixFitted(
         V_view_dev(i, my_list_of_colors[i] - 1) = scalar_t(1.0); },
         "TpetraCrsColorer::computeSeedMatrixFitted()");
 
-  V.modify_device();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -323,11 +320,9 @@ TpetraCrsColorer<CrsMatrixType>::reconstructMatrixFitted(
       "Row map of the Jacobian graph is not locally fitted to the vector's map."
       "  You must call the non-fitted version of this function.");
 
-  W.sync_device();
-
-  auto W_view_dev = W.getLocalViewDevice();
-  auto local_matrix = mat.getLocalMatrix();
-  auto local_graph = graph->getLocalGraph();
+  auto W_view_dev = W.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto local_matrix = mat.getLocalMatrixDevice();
+  auto local_graph = local_matrix.graph;
   const size_t num_local_rows = graph->getNodeNumRows();
   list_of_colors_t my_list_of_colors = list_of_colors;
 
@@ -420,7 +415,6 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::computeSeedMatrixFitted(
       },
       "TpetraCrsColorer::computeSeedMatrixFitted()");
 
-  V.modify_device();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -489,7 +483,6 @@ TpetraCrsColorer<Tpetra::BlockCrsMatrix<SC,LO,GO,NO> >::reconstructMatrixFitted(
   const lno_t block_row_stride = block_size;
 
   auto W = block_W.getMultiVectorView();
-  W.sync_device();
   auto W_view_dev                       = W.getLocalViewDevice();
   auto matrix_vals                      = matrix->getValuesDevice();
   auto local_graph                      = graph->getLocalGraph();

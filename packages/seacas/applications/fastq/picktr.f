@@ -358,7 +358,7 @@ C  ADD THESE TO GET THE VALUE OF GVAL
                         I8 = I7 + KK
                      ENDIF
                   ELSE
-                     CALL MESAGE ('ODD PERIMETER PROBLEMS')
+                     CALL MESSAGE('ODD PERIMETER PROBLEMS')
                   ENDIF
                ENDIF
   230       CONTINUE

@@ -164,7 +164,7 @@ C  NEXT FROM DIAGONALLY OPPOSITE NODES (MAX 8)
                            GO TO 130
                         END IF
   120                CONTINUE
-                     CALL MESAGE ('ERROR IN APALSM')
+                     CALL MESSAGE('ERROR IN APALSM')
                      ERR = .TRUE.
                      RETURN
   130                CONTINUE

@@ -198,7 +198,7 @@ public:
 
   void reset_fields_values_on_host(stk::mesh::FieldVector& fields)
   {
-    auto updateValueFunc = [this](int* data, unsigned component)
+    auto updateValueFunc = [](int* data, unsigned component)
                            {
                              data[component] = component;
                            };
@@ -485,7 +485,7 @@ TEST_F(NgpFieldAsyncTest, SyncAsyncTiming)
   stk::mesh::FieldVector fields{intField1, intField2, intField3};
   std::vector<stk::mesh::NgpField<int>*> ngpFields = {&ngpIntField1, &ngpIntField2, &ngpIntField3};
 
-  for(unsigned i = 0; i < NUM_RUNS; i++) {
+  for(unsigned run = 0; run < NUM_RUNS; run++) {
 
     {
       auto defaultExecSpace = Kokkos::DefaultExecutionSpace();

@@ -96,8 +96,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Sum)
   {
-    
-
     ParameterList p("Sum Test");
     p.set("Sum Name", "Sum of Sources");
     RCP<vector<string> > value_names = rcp(new vector<string>);
@@ -114,8 +112,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, ScalarToVector)
   {
-    
-
     ParameterList p("ScalarToVector Test");
     p.set("Vector Name", "U");
     RCP<vector<string> > scalar_names = rcp(new vector<string>);
@@ -136,8 +132,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, VectorToScalar)
   {
-    
-
     ParameterList p("VectorToScalar Test");
     p.set("Vector Name", "U");
     RCP<vector<string> > scalar_names = rcp(new vector<string>);
@@ -158,8 +152,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DirichletResidual)
   {
-    
-
     ParameterList p("DirichletResidual Test");
     p.set("Residual Name", "Residual_TEMP");
     p.set("DOF Name", "TEMP");
@@ -173,7 +165,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, DOF)
   {
-    
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 
@@ -298,7 +289,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluators, Integrator_GradBasisDotVector)
   {
-    
     using panzer::IntegrationRule;
     using panzer::BasisIRLayout;
 

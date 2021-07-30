@@ -29,7 +29,7 @@ namespace Ioss {
     // only used by Catalyst calls to `copy_database`; if false the
     // copy process skips the defining of the mesh geometry and the
     // defining of the field data, thus assuming it has already been
-    // done. Used for calling `copy_database` multple times with
+    // done. Used for calling `copy_database` multiple times with
     // different timestep ranges.
     bool define_geometry{true};
 

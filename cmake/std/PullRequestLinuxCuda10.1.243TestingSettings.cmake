@@ -145,6 +145,23 @@ set (SEACASAprepro_aprepro_command_line_vars_test_DISABLE ON CACHE BOOL "Tempora
 set (SEACASAprepro_aprepro_command_line_include_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
 set (SEACASAprepro_aprepro_test_dump_reread_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
 
+# Disable tests detailed in issue #8796
+set (Adelus_vector_random_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
+# Disable tests detailed in issue #8799
+set (ROL_adapters_minitensor_test_function_test_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (ROL_adapters_minitensor_test_function_test_02_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (ROL_adapters_minitensor_test_sol_test_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (ROL_adapters_minitensor_test_vector_test_01_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (ROL_test_algorithm_TypeB_TrustRegionSPG_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
+# Disable tests detailed in issue #8800
+set (KokkosCore_UnitTest_CudaTimingBased_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
+# Disable tests detailed in issue #8129
+set (PanzerDiscFE_integration_values2_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (Stokhos_TpetraCrsMatrixMPVectorUnitTest_Cuda_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
 set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 # set (CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "Kokkos turns off CXX extensions")
 

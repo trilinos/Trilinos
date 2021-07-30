@@ -172,6 +172,14 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
      "See Trilinos GitHub issue #1088.");
 #endif // KOKKOS_ENABLE_CUDA
 
+#ifdef KOKKOS_ENABLE_SYCL
+    static_assert
+      (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
+       ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+       "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
+       "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
+#endif // KOKKOS_ENABLE_SYCL
+
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -478,10 +486,17 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 
 #ifdef KOKKOS_ENABLE_CUDA
   static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
-      ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
-      "Please do not use Tpetra::Distributor with UVM "
-      "allocations.  See GitHub issue #1088.");
+                 ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
+                 "Please do not use Tpetra::Distributor with UVM "
+                 "allocations.  See GitHub issue #1088.");
 #endif // KOKKOS_ENABLE_CUDA
+
+#ifdef KOKKOS_ENABLE_SYCL
+    static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
+                   ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+                   "Please do not use Tpetra::Distributor with SharedUSM "
+                   "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
+#endif // KOKKOS_ENABLE_SYCL
 
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
   Teuchos::TimeMonitor timeMon (*timer_doPosts4KV_);

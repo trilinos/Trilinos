@@ -9,7 +9,7 @@
 
 // Disable these tests on NVCC. It tries to optimize and takes forever to build...
 #ifndef __NVCC__
-#if defined(__clang__) || defined (__GNUC__)
+#if defined(__clang__) || (defined (__GNUC__) && !defined(__INTEL_COMPILER))
 # define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #else
 # define ATTRIBUTE_NO_SANITIZE_ADDRESS

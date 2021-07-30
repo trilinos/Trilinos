@@ -125,13 +125,13 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
   num_boundary_faces_=0;
   for (int i(0); i < face_to_elem_.extent_int(0); ++i)
   {
-    std::vector< GlobalOrdinal > indices(2);
+    typename Graph::nonconst_global_inds_host_view_type indices("indices", 2);
     size_t num_ent;
     graph_overlap.getGlobalRowCopy(face_map->getGlobalElement(i), indices, num_ent);
     assert(num_ent == 2 || num_ent == 1);
-    face_to_elem_(i,0) = indices[0];
+    face_to_elem_(i,0) = indices(0);
     if ( num_ent == 2)
-      face_to_elem_(i,1) = indices[1];
+      face_to_elem_(i,1) = indices(1);
     else {
       face_to_elem_(i,1) = -1;
       num_boundary_faces_++;

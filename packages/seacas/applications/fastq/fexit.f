@@ -19,29 +19,29 @@ C***********************************************************************
       DIMENSION KIN (MCOM), IIN (MCOM), RIN (MCOM)
 
       IF (.NOT.WROTE)THEN
-         CALL MESAGE (' ')
-         CALL MESAGE ('***********************************************')
-         CALL MESAGE ('*  WARNING: NO OUTPUT FILE HAS BEEN WRITTEN   *')
-         CALL MESAGE ('***********************************************')
+         CALL MESSAGE(' ')
+         CALL MESSAGE('***********************************************')
+         CALL MESSAGE('*  WARNING: NO OUTPUT FILE HAS BEEN WRITTEN   *')
+         CALL MESSAGE('***********************************************')
          CALL INTRUP ('EXIT ANYWAY', IANS, MCOM, ICOM, JCOM, CIN, IIN,
      &      RIN, KIN)
          IF (.NOT.IANS)RETURN
       ENDIF
-      CALL MESAGE (' ')
+      CALL MESSAGE(' ')
       CALL EXCPUS (TIME2)
       IF (BATCH)THEN
-         CALL MESAGE ('FASTQ COMPLETED SUCCESSFULLY')
+         CALL MESSAGE('FASTQ COMPLETED SUCCESSFULLY')
          CALL EXDATE (DATE)
          CALL EXTIME (TIME)
          WRITE (*, *)'             DATE: ', DATE
          WRITE (*, *)'             TIME: ', TIME
          WRITE (*, *)'          VERSION: ', VERSN
          WRITE (*, ' (A, I5)')'  CPU SECONDS USED: ', INT (TIME2-TIME1)
-         CALL MESAGE (' ')
+         CALL MESSAGE(' ')
       ELSE
          WRITE (*, ' (A, I5)')' CPU SECONDS USED: ', INT (TIME2-TIME1)
-         CALL MESAGE ('*--------------------------*')
-         CALL MESAGE (' ')
+         CALL MESSAGE('*--------------------------*')
+         CALL MESSAGE(' ')
          CALL VDESCP (10003, 0, 0)
          CALL PLTEND
       ENDIF

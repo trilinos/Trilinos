@@ -180,6 +180,12 @@ public:
                            const std::vector<std::string> & coordField,
                            const std::string & dispPrefix);
 
+   /** Add a vector of strings to the Information Records block.  Each string
+     * will be it's own record.  The info records will be deduped before they
+     * are added to IOSS.
+     */
+   void addInformationRecords(const std::vector<std::string> & info_records);
+
    //////////////////////////////////////////
 
    /** Initialize the mesh with the current dimension This also calls
@@ -805,12 +811,12 @@ public:
    /** Get a face's global index
      */
    inline stk::mesh::EntityId faceGlobalId(std::size_t lid) const
-   { return bulkData_->identifier((*orderedEdgeVector_)[lid]); }
+   { return bulkData_->identifier((*orderedFaceVector_)[lid]); }
 
    /** Get a face's global index
      */
-   inline stk::mesh::EntityId faceGlobalId(stk::mesh::Entity edge) const
-   { return bulkData_->identifier(edge); }
+   inline stk::mesh::EntityId faceGlobalId(stk::mesh::Entity face) const
+   { return bulkData_->identifier(face); }
 
   /** Get an Entity's parallel owner (process rank)
    */
@@ -1316,6 +1322,9 @@ protected:
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToCellField_;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToEdgeField_;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToFaceField_;
+
+   // use a set to maintain a list of unique information records
+   std::set<std::string> informationRecords_;
 
    unsigned dimension_;
 

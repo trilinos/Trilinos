@@ -43,7 +43,7 @@ export TDD_HTTPS_PROXY=$https_proxy
 export CTEST_CONFIGURATION="default"
 module load sems-env
 module load sems-git
-module load sems-cmake/3.10.3
+module load sems-cmake/3.17.1
 module load sems-gcc/5.3.0
 module load sems-openmpi/1.10.1
 module load sems-superlu/4.3/base

@@ -232,13 +232,13 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
   }
 }
 
-TEST(UnitTestingOfRelation, testRelationExtendedRanks)
+TEST(UnitTestingOfRelation, testRelationExtraRank)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   const unsigned spatial_dim = 3;
-  const unsigned num_ext_ranks = 3;
-  const char * ext_rank_names[num_ext_ranks] = { "EXT_RANK_0", "EXT_RANK_1", "EXT_RANK_2" };
+  const unsigned num_ext_ranks = 1;
+  const char * ext_rank_names[num_ext_ranks] = { "EXT_RANK_0" };
   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
   for (unsigned i = 0; i < num_ext_ranks; ++i) {
       entity_rank_names.push_back(ext_rank_names[i]);
@@ -280,7 +280,6 @@ TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   Entity ere_0_0 = mesh.declare_entity(ext_ranks[0], new_ent_id++, empty_parts);
   Entity ere_0_1 = mesh.declare_entity(ext_ranks[0], new_ent_id++, empty_parts);
   mesh.declare_relation(ere_0_0, node, ++ord_count);
-  stk::mesh::ConnectivityOrdinal node_rel_to_destroy = ord_count;
   mesh.declare_relation(ere_0_1, node, ++ord_count);
   mesh.declare_relation(ere_0_0, elem, ++ord_count);
   mesh.declare_relation(ere_0_1, elem, ++ord_count);
@@ -288,80 +287,6 @@ TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   {
     EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
     EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[0]), 2u);
-  }
-
-  // add relations of a second extended rank
-  mesh.modification_begin();
-  Entity ere_1_0 = mesh.declare_entity(ext_ranks[1], new_ent_id++, empty_parts);
-  Entity ere_1_1 = mesh.declare_entity(ext_ranks[1], new_ent_id++, empty_parts);
-  mesh.declare_relation(ere_1_0, elem, ++ord_count);
-  stk::mesh::ConnectivityOrdinal elem_rel_to_destroy = ord_count;
-  mesh.declare_relation(ere_1_1, elem, ++ord_count);
-
-  mesh.modification_end();
-  {
-    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
-    stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
-    stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
-    EXPECT_EQ(beg_rank4s + 2u, beg_rank5s);
-    stk::mesh::ConnectivityOrdinal const * const rank5_ords = mesh.begin_ordinals(elem, ext_ranks[1]);
-    EXPECT_EQ(rank5_ords[1], ord_count);
-  }
-
-  // destroy relations of extended ranks
-  {
-    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
-    EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 1u);
-    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
-    EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 1u);
-
-    mesh.modification_begin();
-    mesh.destroy_relation(ere_0_0, node, node_rel_to_destroy);
-    mesh.destroy_relation(ere_1_0, elem, elem_rel_to_destroy);
-    mesh.modification_end();
-
-    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 1u);
-    EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 0u);
-    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 1u);
-    EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 0u);
-  }
-
-  // test out-of-order relation creation; test queries inside modification
-  mesh.modification_begin();
-  Entity ere_0_2 = mesh.declare_entity(ext_ranks[0], new_ent_id++, empty_parts);
-  mesh.declare_relation(ere_0_2, elem, ++ord_count);
-  {
-    stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
-    stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
-    EXPECT_EQ(beg_rank4s + 3u, beg_rank5s);
-    stk::mesh::ConnectivityOrdinal const * const rank4_ords = mesh.begin_ordinals(elem, ext_ranks[0]);
-    EXPECT_EQ(rank4_ords[2], ord_count);
-  }
-  mesh.modification_end();
-
-  // test relations among entities of rank higher than ELEMENT_RANK
-  mesh.modification_begin();
-  Entity ere_2_0 = mesh.declare_entity(ext_ranks[2], new_ent_id++, empty_parts);
-  mesh.declare_relation(ere_2_0, ere_0_0, ++ord_count);
-  mesh.declare_relation(ere_2_0, ere_1_0, ++ord_count);
-  stk::mesh::ConnectivityOrdinal ext_rank_rel_to_destroy = ord_count;
-  mesh.declare_relation(ere_2_0, ere_0_1, ++ord_count);
-  mesh.declare_relation(ere_2_0, ere_1_1, ++ord_count);
-  mesh.modification_end();
-  {
-    EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[0]), 2u);
-    EXPECT_EQ(mesh.num_connectivity(ere_0_0, ext_ranks[2]), 1u);
-    stk::mesh::Entity const * const rel_2_0_entities = mesh.begin(ere_2_0, ext_ranks[0]);
-    EXPECT_EQ(rel_2_0_entities[1], ere_0_1);
-    stk::mesh::ConnectivityOrdinal const * const rel_2_1_ords = mesh.begin_ordinals(ere_2_0, ext_ranks[1]);
-    EXPECT_EQ(rel_2_1_ords[1], ord_count);
-
-    mesh.modification_begin();
-    mesh.destroy_relation(ere_2_0, ere_1_0, ext_rank_rel_to_destroy);
-    mesh.modification_end();
-
-    EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[1]), 1u);
-    EXPECT_EQ(mesh.num_connectivity(ere_1_0, ext_ranks[2]), 0u);
   }
 }
 

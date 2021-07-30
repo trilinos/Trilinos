@@ -63,6 +63,35 @@ namespace { // (anonymous)
     return Teuchos::ArrayView<const ElementType> (size == 0 ? nullptr : hostView.data (), size);
   }
 
+  template<class DeviceType, class LocalOrdinal>
+    struct OrderedViewFunctor {
+      OrderedViewFunctor (const Kokkos::View<LocalOrdinal*, DeviceType>& viewToCheck) :
+        viewToCheck_ (viewToCheck) {}
+      KOKKOS_INLINE_FUNCTION void operator() (const size_t i, unsigned int& isUnordered) const {
+        isUnordered |= static_cast<unsigned int>(viewToCheck_(i)+1 != viewToCheck_(i+1));
+      }
+      Kokkos::View<const LocalOrdinal*, DeviceType> viewToCheck_;
+    };
+
+    template<class DeviceType, class LocalOrdinal>
+    bool
+    isViewOrdered (const Kokkos::View<LocalOrdinal*, DeviceType>& viewToCheck)
+    {
+      using Kokkos::parallel_reduce;
+      typedef DeviceType DT;
+      typedef typename DT::execution_space DES;
+      typedef Kokkos::RangePolicy<DES, size_t> range_type;
+
+      const size_t size = viewToCheck.extent (0);
+      unsigned int isUnordered = 0;
+      if (size>1)
+        parallel_reduce ("isViewOrdered",
+                         range_type (0, size-1),
+                         OrderedViewFunctor<DeviceType, LocalOrdinal> (viewToCheck),
+                         isUnordered);
+      return isUnordered == 0;
+    }
+
 } // namespace (anonymous)
 
 namespace Tpetra {
@@ -269,6 +298,66 @@ Transfer<LO, GO, NT>::
 isLocallyComplete () const {
   return TransferData_->isLocallyComplete_;
 }
+
+template <class LO, class GO, class NT>
+bool
+Transfer<LO, GO, NT>::
+isLocallyFitted () const {
+  return (getNumSameIDs() == std::min(getSourceMap()->getNodeNumElements(),
+                                      getTargetMap()->getNodeNumElements()));
+}
+
+template <class LO, class GO, class NT>
+void
+Transfer<LO, GO, NT>::
+detectRemoteExportLIDsContiguous () const {
+
+  // Check that maps are locally fitted
+  // TODO: We really want to check here that remote LIDs are sorted last.
+  //       The current check is too restrictive in special cases.
+  bool ordered = (getNumSameIDs() == std::min(getSourceMap()->getNodeNumElements(),
+                                              getTargetMap()->getNodeNumElements()));
+  ordered &= (getTargetMap()->getNodeNumElements() == getNumSameIDs() + getNumRemoteIDs());
+  if (ordered) {
+    const auto& dv = TransferData_->remoteLIDs_;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (dv.need_sync_device (), std::logic_error,
+       "Tpetra::Details::Transfer::getRemoteLIDs_dv: "
+       "DualView needs sync to device" );
+    auto v_d = dv.view_device ();
+    ordered &= isViewOrdered<device_type, LO>(v_d);
+  }
+  TransferData_->remoteLIDsContiguous_ = ordered;
+
+  ordered = (getNumSameIDs() == std::min(getSourceMap()->getNodeNumElements(),
+                                         getTargetMap()->getNodeNumElements()));
+  ordered &= (getSourceMap()->getNodeNumElements() == getNumSameIDs() + getNumExportIDs());
+  if (ordered) {
+    const auto& dv = TransferData_->exportLIDs_;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (dv.need_sync_device (), std::logic_error,
+       "Tpetra::Details::Transfer::getRemoteLIDs_dv: "
+       "DualView needs sync to device" );
+    auto v_d = dv.view_device ();
+    ordered &= isViewOrdered<device_type, LO>(v_d);
+  }
+  TransferData_->exportLIDsContiguous_ = ordered;
+}
+
+template <class LO, class GO, class NT>
+bool
+Transfer<LO, GO, NT>::
+areRemoteLIDsContiguous () const {
+  return TransferData_->remoteLIDsContiguous_;
+}
+
+template <class LO, class GO, class NT>
+bool
+Transfer<LO, GO, NT>::
+areExportLIDsContiguous () const {
+  return TransferData_->exportLIDsContiguous_;
+}
+
 
 template <class LO, class GO, class NT>
 void
@@ -520,6 +609,21 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
     return outString->str ();
   }
 }
+
+
+template <class LO, class GO, class NT>
+void
+expertSetRemoteLIDsContiguous(Transfer<LO, GO, NT> transfer, bool contig) {
+  transfer.TransferData_->remoteLIDsContiguous_ = contig;
+}
+
+
+template <class LO, class GO, class NT>
+void
+expertSetExportLIDsContiguous(Transfer<LO, GO, NT> transfer, bool contig) {
+  transfer.TransferData_->exportLIDsContiguous_ = contig;
+}
+
 
 } // namespace Details
 } // namespace Tpetra

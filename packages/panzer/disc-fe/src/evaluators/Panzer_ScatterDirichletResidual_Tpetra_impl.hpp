@@ -633,14 +633,14 @@ evaluateFields(typename TRAITS::EvalData workset)
             {
                std::size_t sz = Jac->getNumEntriesInLocalRow(lid);
                std::size_t numEntries = 0;
-               Teuchos::Array<LO> rowIndices(sz);
-               Teuchos::Array<double> rowValues(sz);
+	       typename LOC::CrsMatrixType::nonconst_local_inds_host_view_type rowIndices("indices", sz);
+	       typename LOC::CrsMatrixType::nonconst_values_host_view_type rowValues("values", sz);
 
                // Jac->getLocalRowView(lid,numEntries,rowValues,rowIndices);
                Jac->getLocalRowCopy(lid,rowIndices,rowValues,numEntries);
 
                for(std::size_t i=0;i<numEntries;i++)
-                  rowValues[i] = 0.0;
+		 rowValues(i) = 0.0;
 
                Jac->replaceLocalValues(lid,rowIndices,rowValues);
             }

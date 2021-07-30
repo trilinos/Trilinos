@@ -27,8 +27,6 @@ namespace LOCA {
       J_rowMatrix(jacRowMatrix),
       nonconst_U(U_multiVec),
       nonconst_V(V_multiVec),
-      U_DeviceView(nonconst_U->getLocalViewDevice()),
-      V_DeviceView(nonconst_V->getLocalViewDevice()),
       includeUV(include_UV_terms),
       m(U_multiVec->getNumVectors()),
       U_map(*U_multiVec->getMap()),
@@ -140,6 +138,7 @@ namespace LOCA {
                                  "ERROR - LOCA::LowRankRowMatrix::getLocalRowView() - NOT implemented yet!");
     }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
     void
     LowRankUpdateRowMatrix::getGlobalRowCopy(NOX::GlobalOrdinal GlobalRow,
                                              const Teuchos::ArrayView<NOX::GlobalOrdinal> &Indices,
@@ -177,6 +176,7 @@ namespace LOCA {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                                  "ERROR - LOCA::LowRankRowMatrix::getLocalRowView() - NOT implemented yet!");
     }
+#endif
 
     // Use the default implementation!
     // NOX::LocalOrdinal
@@ -274,10 +274,12 @@ namespace LOCA {
     NOX::Scalar LowRankUpdateRowMatrix::computeUV(int u_row_lid, int v_row_lid) const
     {
       NOX::Scalar val = 0.0;
+      auto U_HostView=nonconst_U->getLocalViewHost(::Tpetra::Access::ReadOnly);
+      auto V_HostView=nonconst_V->getLocalViewHost(::Tpetra::Access::ReadOnly);
 
       // val = sum_{k=0}^m U(i,k)*V(j,k)
       for (int k=0; k<m; ++k)
-        val += U_DeviceView(u_row_lid,k) * V_DeviceView(v_row_lid,k);
+        val += U_HostView(u_row_lid,k) * V_HostView(v_row_lid,k);
 
       return val;
     }

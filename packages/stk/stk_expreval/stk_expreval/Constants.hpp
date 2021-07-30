@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef stk_expreval_Constants_hpp
-#define stk_expreval_Constants_hpp
+#ifndef stk_expreval_constants_hpp
+#define stk_expreval_constants_hpp
 
 #include <string>
 #include <limits>
@@ -80,4 +80,4 @@ ConstantMap &getConstantMap();
 } // namespace expreval
 } // namespace stk
 
-#endif // stk_expreval_Constants_hpp
+#endif // stk_expreval_constants_hpp

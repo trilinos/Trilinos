@@ -60,7 +60,7 @@ C  CHECK FOR ONE OF THE NODES BEING A TWO LINE NODE
                NGONE = N1
                NTHERE = N0
             ELSE
-               CALL MESAGE ('** PROBLEMS WITH NO TWO LINE NODE'//
+               CALL MESSAGE('** PROBLEMS WITH NO TWO LINE NODE'//
      &            ' ATTACHED IN CLOSE2 **')
                ERR = .TRUE.
                GOTO 150
@@ -82,14 +82,14 @@ C  UNHOOK BOTH LINES FROM NTHERE
             CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, NTHERE,
      &         LOLD, NNN, ERR, NOROOM)
             IF (ERR) THEN
-               CALL MESAGE ('** PROBLEMS IN CLOSE2 DELETING LOLD'//
+               CALL MESSAGE('** PROBLEMS IN CLOSE2 DELETING LOLD'//
      &            ' FROM NTHERE **')
                GOTO 150
             ENDIF
             CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, NTHERE,
      &         LNEW, NNN, ERR, NOROOM)
             IF (ERR) THEN
-               CALL MESAGE ('** PROBLEMS IN CLOSE2 DELETING LNEW'//
+               CALL MESSAGE('** PROBLEMS IN CLOSE2 DELETING LNEW'//
      &            ' FROM NTHERE **')
                GOTO 150
             ENDIF
@@ -149,7 +149,7 @@ C  FIX THE LINES PER ELEMENT ARRAY FOR THE ONE ELEMENT CHANGING
                GOTO 140
             ENDIF
   130    CONTINUE
-         CALL MESAGE ('** PROBLEMS IN CLOSE2 WITH CHANGING ELEMENT **')
+         CALL MESSAGE('** PROBLEMS IN CLOSE2 WITH CHANGING ELEMENT **')
          ERR = .TRUE.
          GOTO 150
   140    CONTINUE
@@ -160,13 +160,13 @@ C  UNHOOK LOLD FROM N0 AND FROM N1
          CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, N0,
      &      LOLD, NNN, ERR, NOROOM)
          IF (ERR) THEN
-            CALL MESAGE ('** PROBLEMS IN CLOSE2 DELETING NNN LINES **')
+            CALL MESSAGE('** PROBLEMS IN CLOSE2 DELETING NNN LINES **')
             GOTO 150
          ENDIF
          CALL DELLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, N1,
      &      LOLD, NNN, ERR, NOROOM)
          IF (ERR) THEN
-            CALL MESAGE ('** PROBLEMS IN CLOSE2 DELETING N1 LINES **')
+            CALL MESSAGE('** PROBLEMS IN CLOSE2 DELETING N1 LINES **')
             GOTO 150
          ENDIF
 
@@ -176,7 +176,7 @@ C NOW FIX THE LNODES ARRAY
          LNODES (4, N0) = - 2
 
       ELSE
-         CALL MESAGE ('** PINCHED TOO FAR IN CLOSE2 **')
+         CALL MESSAGE('** PINCHED TOO FAR IN CLOSE2 **')
          GOTO 150
       ENDIF
 

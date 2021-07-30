@@ -625,7 +625,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   // Validate the Integrator ParameterList
   auto vIntegratorName = validPL->template get<std::string>("Integrator Name");
   auto vIntegratorPL = Teuchos::sublist(validPL, vIntegratorName, true);
-  integratorPL->validateParametersAndSetDefaults(*vIntegratorPL);
+  integratorPL->validateParametersAndSetDefaults(*vIntegratorPL,1);
 
   // Validate the Stepper ParameterList
   auto stepperName = integratorPL->get<std::string>("Stepper Name");

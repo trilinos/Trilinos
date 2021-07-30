@@ -67,6 +67,7 @@
 #endif
 
 #include "Tpetra_Details_residual.hpp"
+#include "KokkosSparse_spmv_impl.hpp"
 
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_OverlappingRowMatrix.hpp>
@@ -133,8 +134,7 @@ void localReducedMatvec(const MatrixClass & A_lcl,
   int64_t numLocalRows = userNumRows;
   int64_t myNnz = A_lcl.nnz();
 
-  int64_t rows_per_team = 
-    Tpetra::Details::residual_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
+  int64_t rows_per_team = KokkosSparse::Impl::spmv_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
   int64_t worksets = (X_lcl.extent (0) + rows_per_team - 1) / rows_per_team;
 
   using policy_type = typename Kokkos::TeamPolicy<execution_space>;

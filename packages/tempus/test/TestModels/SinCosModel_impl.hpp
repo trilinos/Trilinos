@@ -641,5 +641,150 @@ calculateCoeffFromIC_()
   b_ = x1_ic_/((f_/L_)*cos((f_/L_)*t0_ic_+phi_));
 }
 
+template<class Scalar>
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+SinCosModelAdjoint<Scalar>::
+create_W() const
+{
+  using Teuchos::RCP;
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
+  RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
+  {
+    // 01/20/09 tscoffe:  This is a total hack to provide a full rank matrix to
+    // linearOpWithSolve because it ends up factoring the matrix during
+    // initialization, which it really shouldn't do, or I'm doing something
+    // wrong here.   The net effect is that I get exceptions thrown in
+    // optimized mode due to the matrix being rank deficient unless I do this.
+    RCP<Thyra::MultiVectorBase<Scalar> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
+    {
+      RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(this->f_space_);
+      {
+        Thyra::DetachedVectorView<Scalar> vec_view( *vec );
+        vec_view[0] = 0.0;
+        vec_view[1] = 1.0;
+      }
+      V_V(multivec->col(0).ptr(),*vec);
+      {
+        Thyra::DetachedVectorView<Scalar> vec_view( *vec );
+        vec_view[0] = 1.0;
+        vec_view[1] = 0.0;
+      }
+      V_V(multivec->col(1).ptr(),*vec);
+    }
+  }
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
+    Thyra::linearOpWithSolve<Scalar>(
+      *W_factory,
+      matrix
+      );
+  return W;
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+SinCosModelAdjoint<Scalar>::
+create_W_op() const
+{
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(this->f_space_, this->dim_);
+  return(matrix);
+}
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+SinCosModelAdjoint<Scalar>::
+createInArgs() const
+{
+  // This ME should use the same InArgs as the base SinCosModel.  However
+  // we can't just use it's InArgs directly because the description won't
+  // match (which is checked in debug builds).  Instead create a new InArgsSetup
+  // initialized by SinCosModel::createInArgs() and set the description
+  // appropriately.
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgsSetup<Scalar> inArgs = SinCosModel<Scalar>::createInArgs();
+  inArgs.setModelEvalDescription(this->description());
+  return inArgs;
+}
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
+SinCosModelAdjoint<Scalar>::
+createOutArgsImpl() const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgsSetup<Scalar> outArgs;
+  outArgs.setModelEvalDescription(this->description());
+  outArgs.setSupports( MEB::OUT_ARG_f ); // Apparently all models have to support f
+  outArgs.setSupports( MEB::OUT_ARG_W_op );
+  outArgs.set_Np_Ng(this->Np_,0);
+  return outArgs;
+}
+
+template<class Scalar>
+void
+SinCosModelAdjoint<Scalar>::
+evalModelImpl(
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  ) const
+{
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  using Teuchos::RCP;
+  using Thyra::VectorBase;
+  using Thyra::MultiVectorBase;
+  using Teuchos::rcp_dynamic_cast;
+  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized_, std::logic_error,
+      "Error, setupInOutArgs_ must be called first!\n");
+
+  const RCP<const VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
+  Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
+
+  //double t = inArgs.get_t();
+  //Scalar a = this->a_;
+  Scalar f = this->f_;
+  Scalar L = this->L_;
+  if (this->acceptModelParams_) {
+    const RCP<const VectorBase<Scalar> > p_in =
+      inArgs.get_p(0).assert_not_null();
+    Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
+    //a = p_in_view[0];
+    f = p_in_view[1];
+    L = p_in_view[2];
+  }
+
+  Scalar beta = inArgs.get_beta();
+
+  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
+  if (inArgs.get_x_dot().is_null()) {
+
+    // Evaluate the Explicit ODE f(x,t) [= 0]
+    if (!is_null(W_out)) {
+      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+        Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
+      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
+      matrix_view(0,0) = 0.0;               // d(f0)/d(x0_n)
+      matrix_view(1,0) = +beta;             // d(f0)/d(x1_n)
+      matrix_view(0,1) = -beta*(f/L)*(f/L); // d(f1)/d(x0_n)
+      matrix_view(1,1) = 0.0;               // d(f1)/d(x1_n)
+      // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
+    }
+  } else {
+
+    // Evaluate the implicit ODE f(xdot, x, t) [= 0]
+    RCP<const VectorBase<Scalar> > x_dot_in;
+    x_dot_in = inArgs.get_x_dot().assert_not_null();
+    Scalar alpha = inArgs.get_alpha();
+    if (!is_null(W_out)) {
+      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+        Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
+      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
+      matrix_view(0,0) = alpha;             // d(f0)/d(x0_n)
+      matrix_view(1,0) = -beta;             // d(f0)/d(x1_n)
+      matrix_view(0,1) = +beta*(f/L)*(f/L); // d(f1)/d(x0_n)
+      matrix_view(1,1) = alpha;             // d(f1)/d(x1_n)
+      // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
+    }
+  }
+}
+
 } // namespace Tempus_Test
 #endif // TEMPUS_TEST_SINCOS_MODEL_IMPL_HPP

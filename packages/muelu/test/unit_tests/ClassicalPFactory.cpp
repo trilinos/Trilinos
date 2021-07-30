@@ -107,10 +107,11 @@ namespace MueLuTests {
    
     // This test only works in parallel if we have Zoltan2 & Tpetra
 #ifndef HAVE_MUELU_ZOLTAN2
-    if(A->getRowMap()->getComm()->getRank() > 1)
+    if(A->getRowMap()->getComm()->getSize() > 1)
       return;
 #else
-    if(A->getRowMap()->lib() == Xpetra::UseEpetra)
+    if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
+        (A->getRowMap()->getComm()->getSize() > 1))
       return;
 #endif
 
@@ -137,7 +138,7 @@ namespace MueLuTests {
     cp_params.set("aggregation: classical scheme","direct");
     RCP<ClassicalPFactory> PFact = rcp(new ClassicalPFactory());
     PFact->SetParameterList(cp_params);
-    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    //    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
     PFact->SetFactory("Graph", dropFact);
     PFact->SetFactory("DofsPerNode", dropFact);
     PFact->SetFactory("FC Splitting", cmFact);
@@ -150,6 +151,13 @@ namespace MueLuTests {
     RCP<Matrix> P;
     coarseLevel.Get("P",P,PFact.get());
 
+    // Check that the matrix is not zero.
+    RCP<MultiVector> x = MultiVectorFactory::Build(P->getDomainMap(),1);
+    x->putScalar(TST::one());
+    RCP<MultiVector> y = MultiVectorFactory::Build(P->getRangeMap(),1);
+    P->apply(*x, *y,Teuchos::NO_TRANS);
+    const magnitude_type expected = TMT::one();
+    TEST_FLOATING_EQUALITY(y->getVector(0)->normInf(), expected, 10*TMT::eps());
   } //BuildP
 
 
@@ -178,6 +186,16 @@ namespace MueLuTests {
     A->SetFixedBlockSize(1);
     fineLevel.Set("A", A);
 
+    // This test only works in parallel if we have Zoltan2 & Tpetra
+#ifndef HAVE_MUELU_ZOLTAN2
+    if(A->getRowMap()->getComm()->getSize() > 1)
+      return;
+#else
+    if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
+        (A->getRowMap()->getComm()->getSize() > 1))
+      return;
+#endif
+
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", nx);
     RCP<RealValuedMultiVector> coordinates
@@ -189,6 +207,8 @@ namespace MueLuTests {
     nullSpace->randomize();
     fineLevel.Set("Nullspace", nullSpace);
 
+
+
     RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
@@ -197,12 +217,11 @@ namespace MueLuTests {
     cmFact->SetFactory("Graph", dropFact);
     cmFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-
     Teuchos::ParameterList cp_params;
     cp_params.set("aggregation: classical scheme","classical modified");
     RCP<ClassicalPFactory> PFact = rcp(new ClassicalPFactory());
     PFact->SetParameterList(cp_params);
-    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    //PFact->SetFactory("UnAmalgamationInfo", amalgFact);
     PFact->SetFactory("Graph", dropFact);
     PFact->SetFactory("DofsPerNode", dropFact);
     PFact->SetFactory("FC Splitting", cmFact);
@@ -214,6 +233,14 @@ namespace MueLuTests {
 
     RCP<Matrix> P;
     coarseLevel.Get("P",P,PFact.get());
+
+    // Check that the matrix is not zero.
+    RCP<MultiVector> x = MultiVectorFactory::Build(P->getDomainMap(),1);
+    x->putScalar(TST::one());
+    RCP<MultiVector> y = MultiVectorFactory::Build(P->getRangeMap(),1);
+    P->apply(*x, *y,Teuchos::NO_TRANS);
+    const magnitude_type expected = TMT::one();
+    TEST_FLOATING_EQUALITY(y->getVector(0)->normInf(), expected, 10*TMT::eps());
 
   } //BuildP
 
@@ -242,6 +269,16 @@ namespace MueLuTests {
     A->SetFixedBlockSize(1);
     fineLevel.Set("A", A);
 
+    // This test only works in parallel if we have Zoltan2 & Tpetra
+#ifndef HAVE_MUELU_ZOLTAN2
+    if(A->getRowMap()->getComm()->getSize() > 1)
+      return;
+#else
+    if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
+        (A->getRowMap()->getComm()->getSize() > 1))
+      return;
+#endif
+
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", nx);
     RCP<RealValuedMultiVector> coordinates
@@ -266,7 +303,7 @@ namespace MueLuTests {
     cp_params.set("aggregation: classical scheme","ext+i");
     RCP<ClassicalPFactory> PFact = rcp(new ClassicalPFactory());
     PFact->SetParameterList(cp_params);
-    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
+    //    PFact->SetFactory("UnAmalgamationInfo", amalgFact);
     PFact->SetFactory("Graph", dropFact);
     PFact->SetFactory("DofsPerNode", dropFact);
     PFact->SetFactory("FC Splitting", cmFact);
@@ -279,16 +316,24 @@ namespace MueLuTests {
     RCP<Matrix> P;
     coarseLevel.Get("P",P,PFact.get());
 
+    // Check that the matrix is not zero.
+    RCP<MultiVector> x = MultiVectorFactory::Build(P->getDomainMap(),1);
+    x->putScalar(TST::one());
+    RCP<MultiVector> y = MultiVectorFactory::Build(P->getRangeMap(),1);
+    P->apply(*x, *y,Teuchos::NO_TRANS);
+    const magnitude_type expected = TMT::one();
+    TEST_FLOATING_EQUALITY(y->getVector(0)->normInf(), expected, 10*TMT::eps());
+
   } //BuildP
 
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,Constructor,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Direct,Scalar,LO,GO,Node) 
-
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Direct,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_ClassicalModified,Scalar,LO,GO,Node)
   // Disabled until we actually have code to run these
 #if 0
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_ClassicalModified,Scalar,LO,GO,Node) \
+
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Ext,Scalar,LO,GO,Node)
 #endif
 

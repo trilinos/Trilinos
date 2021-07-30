@@ -86,7 +86,7 @@ namespace Iovs_exodus {
     // trailing underscore in their name.  The default behavior
     // is consistent with the ParaView Exodus II file reader.
     bool UnderscoreVectorsON();
-    bool SetUnderscoreVectors(bool status);
+    void SetUnderscoreVectors(bool status);
 
     // Description:
     // If true (the default), displacements will be applied to the
@@ -95,7 +95,7 @@ namespace Iovs_exodus {
     // default behavior is consistent with the ParaView Exodus II
     // file reader.
     bool ApplyDisplacementsON();
-    bool SetApplyDisplacements(bool status);
+    void SetApplyDisplacements(bool status);
 
     vtkMultiBlockDataSet *getMultiBlockDataSet();
 

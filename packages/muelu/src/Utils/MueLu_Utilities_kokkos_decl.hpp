@@ -206,8 +206,6 @@ namespace MueLu {
       return Utilities::Residual(Op, X, RHS);
     }
 
-    static void PauseForDebugger();
-
     /*! @brief Simple transpose for Tpetra::CrsMatrix types
 
         Note:  This is very inefficient, as it inserts one entry at a time.
@@ -403,9 +401,6 @@ namespace MueLu {
     static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
       return UtilitiesBase::Residual(Op,X,RHS);
     }
-    static void PauseForDebugger() {
-      UtilitiesBase::PauseForDebugger();
-    }
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
       return UtilitiesBase::MakeFancy(os);
     }
@@ -488,8 +483,8 @@ namespace MueLu {
           tpOp.resumeFill();
 
         if (Op.isLocallyIndexed() == true) {
-          Teuchos::ArrayView<const LO> cols;
-          Teuchos::ArrayView<const SC> vals;
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_inds_host_view_type cols;
+	  typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             tpOp.getLocalRowView(i, cols, vals);
@@ -502,14 +497,15 @@ namespace MueLu {
               scaledVals[j] = vals[j]*scalingVector[i];
 
             if (nnz > 0) {
+	      Teuchos::ArrayView<const LocalOrdinal> cols_view(cols.data(), nnz);
               Teuchos::ArrayView<const SC> valview(&scaledVals[0], nnz);
-              tpOp.replaceLocalValues(i, cols, valview);
+              tpOp.replaceLocalValues(i, cols_view, valview);
             }
           } //for (size_t i=0; ...
 
         } else {
-          Teuchos::ArrayView<const GO> cols;
-          Teuchos::ArrayView<const SC> vals;
+          typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_inds_host_view_type cols;
+          typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::values_host_view_type vals;
 
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             GO gid = rowMap->getGlobalElement(i);
@@ -523,9 +519,10 @@ namespace MueLu {
             for (size_t j = 0; j < nnz; ++j)
               scaledVals[j] = vals[j]*scalingVector[i]; //FIXME i or gid?
 
-            if (nnz > 0) {
+	    if (nnz > 0) {
+	      Teuchos::ArrayView<const GlobalOrdinal> cols_view(cols.data(), nnz);
               Teuchos::ArrayView<const SC> valview(&scaledVals[0], nnz);
-              tpOp.replaceGlobalValues(gid, cols, valview);
+              tpOp.replaceGlobalValues(gid, cols_view, valview);
             }
           } //for (size_t i=0; ...
         }
