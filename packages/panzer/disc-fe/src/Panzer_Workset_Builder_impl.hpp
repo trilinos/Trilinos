@@ -182,6 +182,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
 	  cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
         }
       });
+    Kokkos::fence();
     offset += wkst->num_cells;
   }
 
