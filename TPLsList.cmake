@@ -124,7 +124,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CASK            "cmake/TPLs/"    EX
   SPARSKIT        "cmake/TPLs/"    ST
   QT              "packages/teuchos/cmake/tpls/"    ST
-  gtest           "cmake/TPLs/"    EX
+  GTest           "cmake/TPLs/"    PT
   BoostLib        "cmake/TPLs/"    PT
   BoostAlbLib     "cmake/TPLs/"    ST
   OpenNURBS       "cmake/TPLs/"    EX
