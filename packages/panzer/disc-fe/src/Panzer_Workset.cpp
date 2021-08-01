@@ -257,10 +257,11 @@ setup(const panzer::LocalMeshPartition & partition,
 
     // Copy vertices over
     const auto partition_vertices = partition.cell_vertices;
+    auto cvc = cell_vertex_coordinates;
     Kokkos::parallel_for(num_cells, KOKKOS_LAMBDA (int i) {
       for(int j=0;j<num_vertices_per_cell;++j)
         for(int k=0;k<num_dims_per_vertex;++k)
-          cell_vertex_coordinates(i,j,k) = partition_vertices(i,j,k);
+          cvc(i,j,k) = partition_vertices(i,j,k);
       });
     Kokkos::fence();
   }
