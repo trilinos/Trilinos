@@ -400,7 +400,7 @@ namespace Galeri {
       if (this->Coords_ == Teuchos::null)
         BuildCoords();
 
-      Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
+      // Teuchos::ArrayView<const GO> GIDs = this->Map_->getNodeElementList();
 
       size_t          numDofs = this->Map_->getNodeNumElements();
       Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);

@@ -372,12 +372,17 @@ namespace MueLu {
       dump(BCcolsKokkos_,   "BCcols.m");
       dump(BCdomainKokkos_, "BCdomain.m");
 
-      for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
-        if (BCrowsKokkos_(i))
-          BCedgesLocal += 1;
-      for (size_t i = 0; i<BCdomainKokkos_.size(); i++)
-        if (BCdomainKokkos_(i))
-          BCnodesLocal += 1;
+      auto BCrowsKokkos=BCrowsKokkos_;
+      Kokkos::parallel_reduce(BCrowsKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+        if (BCrowsKokkos(i))
+	  ++sum;
+	}, BCedgesLocal );
+         
+      auto BCdomainKokkos = BCdomainKokkos_;
+      Kokkos::parallel_reduce(BCdomainKokkos_.size(), KOKKOS_LAMBDA (int i, int & sum) {
+        if (BCdomainKokkos(i))
+	  ++sum;
+	}, BCnodesLocal);
     } else
 #endif // HAVE_MUELU_KOKKOS_REFACTOR
     {
@@ -1704,9 +1709,6 @@ namespace MueLu {
 
       if (skipFirstLevel_) {
 	// Get data out of P_nodal_imported and D0.
-	auto localD0 = D0_Matrix_->getLocalMatrixHost();
-
-        auto localP = P_nodal_imported->getLocalMatrixHost();
 
         if (algo == "mat-mat") {
           RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap());
@@ -1717,7 +1719,7 @@ namespace MueLu {
 #endif
 
           // Get data out of D0*P.
-          auto localD0P = D0_P_nodal->getLocalMatrixHost();
+          auto localD0P = D0_P_nodal->getLocalMatrixDevice();
 
           // Create the matrix object
           RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
@@ -1754,6 +1756,8 @@ namespace MueLu {
 
             magnitudeType tol = Teuchos::ScalarTraits<magnitudeType>::eps();
 
+	    auto localD0 = D0_Matrix_->getLocalMatrixDevice();
+	    auto localP = P_nodal_imported->getLocalMatrixDevice();
             Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_enterValues_D0wZeros", range_type(0,numLocalRows),
                                  KOKKOS_LAMBDA(const size_t i) {
                                    for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
@@ -1781,6 +1785,8 @@ namespace MueLu {
                                  });
 
           } else {
+	    auto localD0 = D0_Matrix_->getLocalMatrixDevice();
+	    auto localP = P_nodal_imported->getLocalMatrixDevice();
             Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_enterValues", range_type(0,numLocalRows),
                                  KOKKOS_LAMBDA(const size_t i) {
                                    for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
@@ -1826,7 +1832,7 @@ namespace MueLu {
 
       } else { // !skipFirstLevel_
 	// Get data out of P_nodal_imported and D0.
-	auto localD0 = D0_Matrix_->getLocalMatrixHost();
+	auto localD0 = D0_Matrix_->getLocalMatrixDevice();
 
         CoordsH_ = Coords_;
 
