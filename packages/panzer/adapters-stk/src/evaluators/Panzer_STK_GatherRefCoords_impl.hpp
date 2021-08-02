@@ -85,8 +85,9 @@ evaluateFields(typename Traits::EvalData workset)
    std::vector<stk::mesh::Entity> selected_elements;
    for(std::size_t cell=0;cell<localCellIds.size();cell++)
      selected_elements.push_back(localElements[localCellIds[cell]]);
-
-   mesh_->getElementVertices_FromCoordsNoResize(selected_elements,coordField_);
+   
+   auto coordField = coordField_.get_view();
+   mesh_->getElementVertices_FromCoordsNoResize(selected_elements,coordField);
 }
 
 #endif

@@ -155,8 +155,10 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     wkst->cell_local_ids.assign(begin_iter,end_iter);
 
     PHX::View<int*> cell_local_ids_k = PHX::View<int*>("Workset:cell_local_ids",wkst->cell_local_ids.size());
+    auto cell_local_ids_k_h = Kokkos::create_mirror_view(cell_local_ids_k);
     for(std::size_t i=0;i<wkst->cell_local_ids.size();i++)
-      cell_local_ids_k(i) = wkst->cell_local_ids[i];
+      cell_local_ids_k_h(i) = wkst->cell_local_ids[i];
+    Kokkos::deep_copy(cell_local_ids_k, cell_local_ids_k_h);
     wkst->cell_local_ids_k = cell_local_ids_k;
     
     wkst->cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
@@ -172,13 +174,15 @@ panzer::buildWorksets(const WorksetNeeds & needs,
   // Copy cell vertex coordinates into local workset arrays
   std::size_t offset = 0;
   for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
-    for (index_t cell = 0; cell < wkst->num_cells; ++cell)
-      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.extent(1)); ++ vertex)
-	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.extent(2)); ++ dim) {
+    auto cell_vertex_coordinates = wkst->cell_vertex_coordinates;
+    Kokkos::parallel_for(wkst->num_cells, KOKKOS_LAMBDA (int cell) {
+      for (std::size_t vertex = 0; vertex < vertex_coordinates.extent(1); ++ vertex)
+	for (std::size_t dim = 0; dim < vertex_coordinates.extent(2); ++ dim) {
 	  //wkst->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
-	  wkst->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
+	  cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
         }
-
+      });
+    Kokkos::fence();
     offset += wkst->num_cells;
   }
 

@@ -131,7 +131,8 @@ namespace panzer_stk {
       elementEntities.push_back(*parentElement); // notice this is size 1!
       PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices 
           = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getVertexCount(), mesh->getDimension());
-      mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vertices);
+      auto vert_view = vertices.get_view();
+      mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vert_view);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology); // this is size 1 because elementEntties is size 1!
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
