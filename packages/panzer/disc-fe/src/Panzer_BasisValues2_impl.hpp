@@ -735,35 +735,36 @@ setWeightedMeasure(PHX::MDField<Scalar, Cell, IP> weighted_measure)
     name##_evaluated_ = true; \
   }
 
+#define PANZER_CACHE_DATA2(name) \
+  if(cache) { \
+    name = tmp_##name; \
+    name##_evaluated_ = true; \
+  }
+
 template <typename Scalar>
 typename BasisValues2<Scalar>::ConstArray_BasisDim
 BasisValues2<Scalar>::
 getBasisCoordinatesRef(const bool cache,
                        const bool force) const
 {
-
+  // Check if array already exists
   if(basis_coordinates_ref_evaluated_ and not force)
     return basis_coordinates_ref;
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_card  = basis_layout->cardinality();
-  int num_dim   = basis_layout->dimension();
+  const int num_card  = basis_layout->cardinality();
+  const int num_dim   = basis_layout->dimension();
 
   using coordsScalarType = typename Intrepid2::Basis<PHX::Device::execution_space,Scalar,Scalar>::scalarType;
-  auto dyn_basis_coordinates_ref = af.buildArray<coordsScalarType,BASIS,Dim>("basis_coordinates_ref", num_card, num_dim);
-  intrepid_basis->getDofCoords(dyn_basis_coordinates_ref.get_view());
+  auto tmp_basis_coordinates_ref = af.buildStaticArray<coordsScalarType,BASIS,Dim>("basis_coordinates_ref", num_card, num_dim);
+  intrepid_basis->getDofCoords(tmp_basis_coordinates_ref.get_view());
+  PHX::Device().fence();
 
-  // fill in basis coordinates
-  auto aux = af.buildStaticArray<coordsScalarType,BASIS,Dim>("basis_coordinates_ref", num_card, num_dim);
-  for (int i = 0; i < num_card; ++i)
-    for (int j = 0; j < num_dim; ++j)
-      aux(i,j) = dyn_basis_coordinates_ref(i,j);
+  // Store for later if cache is enabled
+  PANZER_CACHE_DATA2(basis_coordinates_ref)
 
-  PANZER_CACHE_DATA(basis_coordinates_ref)
-
-  return aux;
-
+  return tmp_basis_coordinates_ref;
 }
 
 template <typename Scalar>
@@ -785,23 +786,17 @@ getBasisValuesRef(const bool cache,
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_quad  = basis_layout->numPoints();
-  int num_card  = basis_layout->cardinality();
+  const int num_quad  = basis_layout->numPoints();
+  const int num_card  = basis_layout->cardinality();
 
-  ArrayDynamic dyn_basis_ref_scalar = af.buildArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_quad);
-
-  intrepid_basis->getValues(dyn_basis_ref_scalar.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_VALUE);
-  typename PHX::Device().fence();
-
-  auto aux = af.buildStaticArray<Scalar, IP, Dim>("basis_ref_scalar",  num_card, num_quad);
-  for (int b = 0; b < num_card; ++b)
-    for (int ip = 0; ip < num_quad; ++ip)
-      aux(b,ip) = dyn_basis_ref_scalar(b,ip);
+  auto tmp_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_quad);
+  intrepid_basis->getValues(tmp_basis_ref_scalar.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_VALUE);
+  PHX::Device().fence();
 
   // Store for later if cache is enabled
-  PANZER_CACHE_DATA(basis_ref_scalar);
+  PANZER_CACHE_DATA2(basis_ref_scalar);
 
-  return aux;
+  return tmp_basis_ref_scalar;
 }
 
 template <typename Scalar>
@@ -823,24 +818,18 @@ getVectorBasisValuesRef(const bool cache,
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_quad  = basis_layout->numPoints();
-  int num_card  = basis_layout->cardinality();
-  int num_dim   = basis_layout->dimension();
+  const int num_quad  = basis_layout->numPoints();
+  const int num_card  = basis_layout->cardinality();
+  const int num_dim   = basis_layout->dimension();
 
-  ArrayDynamic dyn_basis_ref_vector = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(dyn_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
-  typename PHX::Device().fence();
-
-  auto aux = af.buildStaticArray<Scalar, BASIS, IP, Dim>("basis_ref_vector",  num_card, num_quad, num_dim);
-  for (int b = 0; b < num_card; ++b)
-    for (int ip = 0; ip < num_quad; ++ip)
-      for (int d = 0; d < num_dim; ++d)
-        aux(b,ip,d) = dyn_basis_ref_vector(b,ip,d);
+  auto tmp_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
+  intrepid_basis->getValues(tmp_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
+  PHX::Device().fence();
 
   // Store for later if cache is enabled
-  PANZER_CACHE_DATA(basis_ref_vector);
+  PANZER_CACHE_DATA2(basis_ref_vector);
 
-  return aux;
+  return tmp_basis_ref_vector;
 }
 
 template <typename Scalar>
@@ -862,24 +851,18 @@ getGradBasisValuesRef(const bool cache,
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_quad  = basis_layout->numPoints();
-  int num_card  = basis_layout->cardinality();
-  int num_dim   = basis_layout->dimension();
+  const int num_quad  = basis_layout->numPoints();
+  const int num_card  = basis_layout->cardinality();
+  const int num_dim   = basis_layout->dimension();
 
-  ArrayDynamic dyn_grad_basis_ref = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(dyn_grad_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_GRAD);
-  typename PHX::Device().fence();
-
-  auto aux = af.buildStaticArray<Scalar, BASIS, IP, Dim>("grad_basis_ref",  num_card, num_quad, num_dim);
-  for (int b = 0; b < num_card; ++b)
-    for (int ip = 0; ip < num_quad; ++ip)
-      for (int d = 0; d < num_dim; ++d)
-        aux(b,ip,d) = dyn_grad_basis_ref(b,ip,d);
+  auto tmp_grad_basis_ref = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
+  intrepid_basis->getValues(tmp_grad_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_GRAD);
+  PHX::Device().fence();
 
   // Store for later if cache is enabled
-  PANZER_CACHE_DATA(grad_basis_ref);
+  PANZER_CACHE_DATA2(grad_basis_ref);
 
-  return aux;
+  return tmp_grad_basis_ref;
 }
 
 template <typename Scalar>
@@ -902,22 +885,17 @@ getCurl2DVectorBasisRef(const bool cache,
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_quad  = basis_layout->numPoints();
-  int num_card  = basis_layout->cardinality();
+  const int num_quad  = basis_layout->numPoints();
+  const int num_card  = basis_layout->cardinality();
 
-  ArrayDynamic dyn_curl_basis_ref = af.buildArray<Scalar,BASIS,IP>("dyn_curl_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(dyn_curl_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
-  typename PHX::Device().fence();
-
-  auto aux = af.buildStaticArray<Scalar, BASIS, IP>("curl_basis_ref_scalar",  num_card, num_quad);
-  for (int b = 0; b < num_card; ++b)
-    for (int ip = 0; ip < num_quad; ++ip)
-      aux(b,ip) = dyn_curl_basis_ref(b,ip);
+  auto tmp_curl_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("dyn_curl_basis_ref_scalar",num_card,num_quad);
+  intrepid_basis->getValues(tmp_curl_basis_ref_scalar.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
+  PHX::Device().fence();
 
   // Store for later if cache is enabled
-  PANZER_CACHE_DATA(curl_basis_ref_scalar);
+  PANZER_CACHE_DATA2(curl_basis_ref_scalar);
 
-  return aux;
+  return tmp_curl_basis_ref_scalar;
 }
 
 template <typename Scalar>
@@ -940,24 +918,18 @@ getCurlVectorBasisRef(const bool cache,
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_quad  = basis_layout->numPoints();
-  int num_card  = basis_layout->cardinality();
-  int num_dim   = basis_layout->dimension();
+  const int num_quad  = basis_layout->numPoints();
+  const int num_card  = basis_layout->cardinality();
+  const int num_dim   = basis_layout->dimension();
 
-  ArrayDynamic dyn_curl_basis_ref = af.buildArray<Scalar,BASIS,IP,Dim>("dyn_curl_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(dyn_curl_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
-  typename PHX::Device().fence();
-
-  auto aux = af.buildStaticArray<Scalar, BASIS, IP, Dim>("curl_basis_ref_scalar",  num_card, num_quad, num_dim);
-  for (int b = 0; b < num_card; ++b)
-    for (int ip = 0; ip < num_quad; ++ip)
-      for (int d = 0; d < num_dim; ++d)
-         aux(b,ip,d) = dyn_curl_basis_ref(b,ip,d);
+  auto tmp_curl_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_curl_basis_ref_vector",num_card,num_quad,num_dim);
+  intrepid_basis->getValues(tmp_curl_basis_ref_vector.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
+  PHX::Device().fence();
 
   // Store for later if cache is enabled
-  PANZER_CACHE_DATA(curl_basis_ref_vector);
+  PANZER_CACHE_DATA2(curl_basis_ref_vector);
 
-  return aux;
+  return tmp_curl_basis_ref_vector;
 }
 
 template <typename Scalar>
@@ -979,22 +951,17 @@ getDivVectorBasisRef(const bool cache,
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_quad  = basis_layout->numPoints();
-  int num_card  = basis_layout->cardinality();
+  const int num_quad  = basis_layout->numPoints();
+  const int num_card  = basis_layout->cardinality();
 
-  ArrayDynamic dyn_div_basis_ref = af.buildArray<Scalar,BASIS,IP>("dyn_div_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(dyn_div_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_DIV);
-  typename PHX::Device().fence();
-
-  auto aux = af.buildStaticArray<Scalar, BASIS, IP>("div_basis_ref",  num_card, num_quad);
-  for (int b = 0; b < num_card; ++b)
-    for (int ip = 0; ip < num_quad; ++ip)
-      aux(b,ip) = dyn_div_basis_ref(b,ip);
+  auto tmp_div_basis_ref = af.buildStaticArray<Scalar,BASIS,IP>("dyn_div_basis_ref_scalar",num_card,num_quad);
+  intrepid_basis->getValues(tmp_div_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_DIV);
+  PHX::Device().fence();
 
   // Store for later if cache is enabled
-  PANZER_CACHE_DATA(div_basis_ref);
+  PANZER_CACHE_DATA2(div_basis_ref);
 
-  return aux;
+  return tmp_div_basis_ref;
 }
 
 template <typename Scalar>
@@ -1003,35 +970,36 @@ BasisValues2<Scalar>::
 getBasisCoordinates(const bool cache,
                     const bool force) const
 {
+  // Check if array already exists
   if(basis_coordinates_evaluated_ and not force)
     return basis_coordinates;
 
   TEUCHOS_ASSERT(cell_vertex_coordinates_.size() > 0);
-
-  auto bcr = getBasisCoordinatesRef(false);
 
   const std::pair<int,int> cell_range(0,num_evaluate_cells_);
   const auto s_vertex_coordinates = Kokkos::subview(cell_vertex_coordinates_.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
-  int num_card  = basis_layout->cardinality();
-  int num_dim   = basis_layout->dimension();
+  const int num_card  = basis_layout->cardinality();
+  const int num_dim   = basis_layout->dimension();
 
-  auto aux = af.buildStaticArray<Scalar, Cell, BASIS, IP>("basis_coordinates",  num_cells_, num_card, num_dim);
-  auto s_aux = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+  auto tmp_basis_coordinates = af.buildStaticArray<Scalar, Cell, BASIS, IP>("basis_coordinates",  num_cells_, num_card, num_dim);
+  auto s_aux = Kokkos::subview(tmp_basis_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
 
-  // FIXME: some kind of type bug in Intrepid's mapToPhysicalFrame call? Can't let bcr be const
+  // Some kind of type bug in Intrepid's mapToPhysicalFrame call? Can't let bcr be const
+  auto bcr = getBasisCoordinatesRef(false);
   Kokkos::DynRankView<double> bcr_copy("nonconst_bcr",bcr.extent(0),bcr.extent(1));
   Kokkos::deep_copy(bcr_copy,bcr.get_view());
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
   cell_tools.mapToPhysicalFrame(s_aux, bcr_copy, s_vertex_coordinates, intrepid_basis->getBaseCellTopology());
+  PHX::Device().fence();
 
   // Store for later if cache is enabled
-  PANZER_CACHE_DATA(basis_coordinates);
+  PANZER_CACHE_DATA2(basis_coordinates);
 
-  return aux;
+  return tmp_basis_coordinates;
 }
 
 template <typename Scalar>
@@ -1041,6 +1009,11 @@ getBasisValues(const bool weighted,
                const bool cache,
                const bool force) const
 {
+
+
+  // ROGER
+
+
   if(weighted){
     if(weighted_basis_scalar_evaluated_ and not force)
       return weighted_basis_scalar;
@@ -1065,19 +1038,22 @@ getBasisValues(const bool weighted,
     const auto bv = getBasisValues(false, force);
 
     // Apply the weighted measure (cubature weights)
-    auto aux = af.buildStaticArray<Scalar, Cell, BASIS, IP>("weighted_basis_scalar",  num_cells, num_card, num_points);
+    auto tmp_weighted_basis_scalar = af.buildStaticArray<Scalar, Cell, BASIS, IP>("weighted_basis_scalar",  num_cells, num_card, num_points);
 
     const std::pair<int,int> cell_range(0,num_evaluate_cells_);
-    auto s_aux = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
+    auto s_aux = Kokkos::subview(tmp_weighted_basis_scalar.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
     auto s_cw = Kokkos::subview(cubature_weights_.get_view(),cell_range,Kokkos::ALL());
     auto s_bv = Kokkos::subview(bv.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     fst::multiplyMeasure(s_aux,s_cw,s_bv);
 
-    // Store for later if cache is enabled
-    PANZER_CACHE_DATA(weighted_basis_scalar);
+    // NOTE: Weighted path has orientations already applied so doesn't
+    // need the applyOrientations call at the bottom of this function.
 
-    return aux;
+    // Store for later if cache is enabled
+    PANZER_CACHE_DATA2(weighted_basis_scalar);
+
+    return tmp_weighted_basis_scalar;
 
   } else {
 
@@ -1111,6 +1087,11 @@ getBasisValues(const bool weighted,
 
     } else {
 
+      // This is ugly. The algorithm looks to be restricted to
+      // host/serial due to a call to intrepid tools that dispatch
+      // their own internal kokkos functors. We'll leave it serial for
+      // now, but should revisit.
+
       // Local allocation used for each cell
       auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_card,num_points);
       auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
@@ -1143,6 +1124,11 @@ getBasisValues(const bool weighted,
 
       }
     }
+
+    // NOTE: weighted already has orientations applied, so this code
+    // should only be reached if non-weighted. This is a by-product of
+    // the two construction paths in panzer. Unification should help
+    // fix the logic.
 
     if(orientations_ != Teuchos::null)
       applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), aux.get_view(), *orientations_->getOrientations(), *intrepid_basis);
@@ -1201,7 +1187,7 @@ getVectorBasisValues(const bool weighted,
 
     return aux;
 
-  } else {
+  } else { // non-weighted
 
     const auto element_space = getElementSpace();
     TEUCHOS_ASSERT(element_space == PureBasis::HCURL || element_space == PureBasis::HDIV);
@@ -1239,7 +1225,7 @@ getVectorBasisValues(const bool weighted,
         fst::HDIVtransformVALUE(s_aux,s_jac, s_jac_det, cell_basis_ref_vector.get_view());
       }
 
-      typename PHX::Device().fence();
+      PHX::Device().fence();
 
     } else {
 
