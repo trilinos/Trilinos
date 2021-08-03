@@ -612,7 +612,7 @@
       <name>aggregation: greedy Dirichlet</name>
       <type>bool</type>
       <default>false</default>
-      <description>Force the node to be Dirichlet if any DOFs on the node are Dirichlet (default is nodes are Dirichlet only if all DOFs on node are Dirichlet).</description>
+      <description>Force the aggregate to be Dirichlet if any DOFs in the aggregate are Dirichlet (default is aggregates are Dirichlet only if all DOFs in the aggregate are Dirichlet).</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
