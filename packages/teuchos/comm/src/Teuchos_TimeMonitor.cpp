@@ -878,7 +878,7 @@ namespace Teuchos {
       // this should be a "serial" (no MPI, one "process")
       // communicator.
 
-      Teuchos::RCP<const Teuchos::Comm<OrdinalType> > comm;
+      Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
   #ifdef HAVE_MPI
       int mpiStarted = 0;
