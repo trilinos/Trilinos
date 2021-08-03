@@ -99,6 +99,32 @@ namespace MueLu {
     Kokkos::parallel_reduce("MueLu:LWGraph:LWGraph:maxnonzeros", range_type(0,graph_.numRows()), maxNumRowEntriesFunctor, maxNumRowEntries_);
   }
 
-}
+  template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void LWGraph_kokkos<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  print(Teuchos::FancyOStream &out, const VerbLevel verbLevel) const {
+
+    if (verbLevel & Debug) {
+      RCP<const Map> col_map = importMap_.is_null() ? domainMap_ : importMap_;
+      int mypid = col_map->getComm()->getRank();
+
+      out << "[pid " << mypid << "] num entries=" << graph_.entries.size() << std::endl;
+
+      const size_t numRows = graph_.numRows();
+      auto rowPtrs = graph_.row_map;
+      auto columns = graph_.entries;
+      for (size_t i=0; i < numRows; ++i) {
+        out << "[pid " << mypid << "] row " << domainMap_->getGlobalElement(i) << ":";
+        out << " (numEntries=" << rowPtrs(i+1)-rowPtrs(i) << ")";
+
+        auto rowView = graph_.rowConst(i);
+        for (LO j = 0; j < rowView.length; j++) {
+          out<< " " << col_map->getGlobalElement(rowView.colidx(j));
+        }
+        out << std::endl;
+      }
+    }
+  }
+
+} //namespace MueLu
 
 #endif // MUELU_LWGRAPH_KOKKOS_DEF_HPP
