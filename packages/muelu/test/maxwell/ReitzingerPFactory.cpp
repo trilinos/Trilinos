@@ -255,7 +255,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
     }
 
     if(i==0) {
-      EdgeL->Set("Coordinates", coords);
       EdgeL->Set("A", SM_Matrix);
       EdgeL->Set("D0", D0_Matrix);
     }
@@ -283,13 +282,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_Unsmoothed, Sc
   RCP<Level> l0 = EdgeH.GetLevel(0);
   RCP<Level> l1 = EdgeH.GetLevel(1);
 
-  {
-    RCP<const Matrix> Pe = l1->Get<RCP<Matrix> >("P");
-    //    Xpetra::IO<SC,LO,GO,NO>::Write("Pe.mat",*Pe);
-  }
+  RCP<Level> node_l1 = NodeH.GetLevel(1);
+
   TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
+
+  // Check the commuting property
+  using MT = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+  Teuchos::Array<MT> norm(1), norm0(1);  
+  norm0[0] = Teuchos::ScalarTraits<MT>::zero();
+
+  norm[0] = CheckCommutingProperty<SC,LO,GO,NO>(*node_l1,*l0,*l1);
+  TEST_COMPARE_FLOATING_ARRAYS(norm,norm0,Teuchos::ScalarTraits<MT>::eps()*100)
+
 }
 
 
@@ -358,7 +364,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
     }
 
     if(i==0) {
-      EdgeL->Set("Coordinates", coords);
       EdgeL->Set("A", SM_Matrix);
       EdgeL->Set("D0", D0_Matrix);
     }
@@ -554,6 +559,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup3Level_Unsmoothed, Sc
   RCP<Matrix> SM_Matrix, D0_Matrix, Kn_Matrix;
   RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> > coords;
   read_matrix<SC,LO,GO,NO>(lib,comm,SM_Matrix,D0_Matrix,Kn_Matrix,coords);
+
 
   int NumLevels = 3;
   // This guy works by generating a nodal hierarchy, copying the relevant data to the edge hierarchy
