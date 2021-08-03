@@ -113,6 +113,7 @@ buildCellGlobalIDs(panzer::ConnManager & conn,
     totalSize += localIDs.size();
   }
   globals = PHX::View<panzer::GlobalOrdinal*>("global_cells",totalSize);
+  auto globals_h = Kokkos::create_mirror_view(globals);
 
   for (std::size_t id=0;id<totalSize; ++id) {
     // sanity check
@@ -120,8 +121,9 @@ buildCellGlobalIDs(panzer::ConnManager & conn,
     TEUCHOS_ASSERT(n_conn==1);
 
     const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(id);
-    globals(id) = connectivity[0];
+    globals_h(id) = connectivity[0];
   }
+  Kokkos::deep_copy(globals, globals_h);
 
 //  print_view_1D("buildCellGlobalIDs : globals",globals);
 }
@@ -162,6 +164,7 @@ buildCellToNodes(panzer::ConnManager & conn, PHX::View<panzer::GlobalOrdinal**> 
     maxNodes = maxNodes<Teuchos::as<std::size_t>(thisSize) ? Teuchos::as<std::size_t>(thisSize) : maxNodes;
   }
   globals = PHX::View<panzer::GlobalOrdinal**>("cell_to_node",totalCells,maxNodes);
+  auto globals_h = Kokkos::create_mirror_view(globals);
 
   // build connectivity array
   for (std::size_t id=0;id<totalCells; ++id) {
@@ -169,8 +172,9 @@ buildCellToNodes(panzer::ConnManager & conn, PHX::View<panzer::GlobalOrdinal**> 
     int nodeCnt = conn.getConnectivitySize(id);
 
     for(int n=0;n<nodeCnt;n++)
-      globals(id,n) = connectivity[n];
+      globals_h(id,n) = connectivity[n];
   }
+  Kokkos::deep_copy(globals, globals_h);
 
 //  print_view("buildCellToNodes : globals",globals);
 }
@@ -197,16 +201,20 @@ buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   typedef Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> map_type;
 
   // get locally unique global ids
+  auto cells_to_nodes_h = Kokkos::create_mirror_view(cells_to_nodes);
+  Kokkos::deep_copy(cells_to_nodes_h, cells_to_nodes);
   std::set<panzer::GlobalOrdinal> global_nodes;
   for(unsigned int i=0;i<cells_to_nodes.extent(0);i++)
     for(unsigned int j=0;j<cells_to_nodes.extent(1);j++)
-      global_nodes.insert(cells_to_nodes(i,j));
+      global_nodes.insert(cells_to_nodes_h(i,j));
 
   // build local vector contribution
   PHX::View<panzer::GlobalOrdinal*> node_ids("global_nodes",global_nodes.size());
+  auto node_ids_h = Kokkos::create_mirror_view(node_ids);
   int i = 0;
   for(auto itr=global_nodes.begin();itr!=global_nodes.end();++itr,++i)
-    node_ids(i) = *itr;
+    node_ids_h(i) = *itr;
+  Kokkos::deep_copy(node_ids, node_ids_h);
 
 //  print_view("buildNodeMap : cells_to_nodes",cells_to_nodes);
 //  print_view_1D("buildNodeMap : node_ids",node_ids);
@@ -261,15 +269,15 @@ buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
     std::vector<panzer::LocalOrdinal> local_node_indexes(num_nodes_per_cell);
     std::vector<panzer::GlobalOrdinal> global_node_indexes(num_nodes_per_cell);
+    auto owned_cells_h = Kokkos::create_mirror_view(owned_cells);
+    auto owned_cells_to_nodes_h = Kokkos::create_mirror_view(owned_cells_to_nodes);
+    Kokkos::deep_copy(owned_cells_h, owned_cells);
+    Kokkos::deep_copy(owned_cells_to_nodes_h, owned_cells_to_nodes);
     for(unsigned int i=0;i<num_local_cells;i++) {
-      const panzer::GlobalOrdinal global_cell_index = owned_cells(i);
-  //    std::vector<panzer::LocalOrdinal> vals(cells_to_nodes.extent(1));
-  //    std::vector<panzer::GlobalOrdinal> cols(cells_to_nodes.extent(1));
+      const panzer::GlobalOrdinal global_cell_index = owned_cells_h(i);
       for(unsigned int j=0;j<num_nodes_per_cell;j++) {
-  //      vals[j] = Teuchos::as<panzer::LocalOrdinal>(j);
-  //      cols[j] = cells_to_nodes(i,j);
         local_node_indexes[j] = Teuchos::as<panzer::LocalOrdinal>(j);
-        global_node_indexes[j] = owned_cells_to_nodes(i,j);
+        global_node_indexes[j] = owned_cells_to_nodes_h(i,j);
       }
 
   //    cell_to_node_mat->insertGlobalValues(cells(i),cols,vals);
@@ -355,8 +363,10 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
 
   // mark all owned cells as already known, e.g. and not in the list of
   // ghstd cells to be constructed
+  auto cells_h = Kokkos::create_mirror_view(cells);
+  Kokkos::deep_copy(cells_h, cells);
   for(size_t i=0;i<cells.extent(0);i++) {
-    unique_cells.insert(cells(i));
+    unique_cells.insert(cells_h(i));
   }
 
   // The set of ghost cells that share a global node with an owned cell
@@ -390,13 +400,14 @@ buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
   // build an array containing only the ghstd cells
   int indx = 0;
   PHX::View<panzer::GlobalOrdinal*> ghstd_cells("ghstd_cells",ghstd_cells_set.size());
+  auto ghstd_cells_h = Kokkos::create_mirror_view(ghstd_cells);
   for(auto global_cell_index : ghstd_cells_set) {
-    ghstd_cells(indx) = global_cell_index;
+    ghstd_cells_h(indx) = global_cell_index;
     indx++;
   }
 
 //  print_view_1D("ghstd_cells",ghstd_cells);
-
+  Kokkos::deep_copy(ghstd_cells, ghstd_cells_h);
   return ghstd_cells;
 }
 
@@ -461,10 +472,14 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
 
     std::unordered_set<LO> ghstd_parent_cells_set;
     std::unordered_set<LO> virtual_parent_cells_set;
+    auto cell_to_faces_h = Kokkos::create_mirror_view(parent_info.cell_to_faces);
+    auto face_to_cells_h = Kokkos::create_mirror_view(parent_info.face_to_cells);
+    Kokkos::deep_copy(cell_to_faces_h, parent_info.cell_to_faces);
+    Kokkos::deep_copy(face_to_cells_h, parent_info.face_to_cells);
     for(int i=0;i<num_owned_cells;++i){
       const LO parent_cell_index = owned_parent_cells[i];
       for(int local_face_index=0;local_face_index<num_faces_per_cell;++local_face_index){
-        const LO parent_face = parent_info.cell_to_faces(parent_cell_index, local_face_index);
+        const LO parent_face = cell_to_faces_h(parent_cell_index, local_face_index);
 
         // Sidesets can have owned cells that border the edge of the domain (i.e. parent_face == -1)
         // If we are at the edge of the domain, we can ignore this face.
@@ -472,10 +487,10 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
           continue;
 
         // Find the side index for neighbor cell with respect to the face
-        const LO neighbor_parent_side = (parent_info.face_to_cells(parent_face,0) == parent_cell_index) ? 1 : 0;
+        const LO neighbor_parent_side = (face_to_cells_h(parent_face,0) == parent_cell_index) ? 1 : 0;
 
         // Get the neighbor cell index in the parent's indexing scheme
-        const LO neighbor_parent_cell = parent_info.face_to_cells(parent_face, neighbor_parent_side);
+        const LO neighbor_parent_cell = face_to_cells_h(parent_face, neighbor_parent_side);
 
         // If the face exists, then the neighbor should exist
         TEUCHOS_ASSERT(neighbor_parent_cell >= 0);
@@ -543,17 +558,29 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
   sub_info.global_cells = PHX::View<GO*>("global_cells", num_total_cells);
   sub_info.local_cells = PHX::View<LO*>("local_cells", num_total_cells);
   sub_info.cell_vertices = PHX::View<double***>("cell_vertices", num_total_cells, num_vertices_per_cell, num_dims);
-  for(int cell=0;cell<num_total_cells;++cell){
+  auto global_cells_h =  Kokkos::create_mirror_view(sub_info.global_cells);
+  auto local_cells_h =   Kokkos::create_mirror_view(sub_info.local_cells);
+  auto cell_vertices_h = Kokkos::create_mirror_view(sub_info.cell_vertices);
+  auto p_global_cells_h =  Kokkos::create_mirror_view(parent_info.global_cells);
+  auto p_local_cells_h =   Kokkos::create_mirror_view(parent_info.local_cells);
+  auto p_cell_vertices_h = Kokkos::create_mirror_view(parent_info.cell_vertices);
+  Kokkos::deep_copy(p_global_cells_h,parent_info.global_cells);
+  Kokkos::deep_copy(p_local_cells_h,parent_info.local_cells);
+  Kokkos::deep_copy(p_cell_vertices_h,parent_info.cell_vertices);
+
+  for (int cell=0; cell<num_total_cells; ++cell) {
     const LO parent_cell = all_parent_cells[cell].first;
-    sub_info.global_cells(cell) = parent_info.global_cells(parent_cell);
-    sub_info.local_cells(cell) = parent_info.local_cells(parent_cell);
+    global_cells_h(cell) = p_global_cells_h(parent_cell);
+    local_cells_h(cell) = p_local_cells_h(parent_cell);
     for(int vertex=0;vertex<num_vertices_per_cell;++vertex){
       for(int dim=0;dim<num_dims;++dim){
-        sub_info.cell_vertices(cell,vertex,dim) = parent_info.cell_vertices(parent_cell,vertex,dim);
+        cell_vertices_h(cell,vertex,dim) = p_cell_vertices_h(parent_cell,vertex,dim);
       }
     }
   }
-
+  Kokkos::deep_copy(sub_info.global_cells, global_cells_h);
+  Kokkos::deep_copy(sub_info.local_cells, local_cells_h);
+  Kokkos::deep_copy(sub_info.cell_vertices, cell_vertices_h);
   // Now for the difficult part
 
   // We need to create a new face indexing scheme from the old face indexing scheme
@@ -584,20 +611,26 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
 
     std::sort(all_parent_cells.begin(), all_parent_cells.end());
 
+    auto cell_to_faces_h = Kokkos::create_mirror_view(parent_info.cell_to_faces);
+    auto face_to_cells_h = Kokkos::create_mirror_view(parent_info.face_to_cells);
+    auto face_to_lidx_h = Kokkos::create_mirror_view(parent_info.face_to_lidx);
+    Kokkos::deep_copy(cell_to_faces_h, parent_info.cell_to_faces);
+    Kokkos::deep_copy(face_to_cells_h, parent_info.face_to_cells);
+    Kokkos::deep_copy(face_to_lidx_h, parent_info.face_to_lidx);
     for(int owned_cell=0;owned_cell<num_owned_cells;++owned_cell){
       const LO owned_parent_cell = owned_parent_cells[owned_cell];
       for(int local_face=0;local_face<num_faces_per_cell;++local_face){
-        const LO parent_face = parent_info.cell_to_faces(owned_parent_cell,local_face);
+        const LO parent_face = cell_to_faces_h(owned_parent_cell,local_face);
 
         // Skip faces at the edge of the domain
         if(parent_face<0)
           continue;
 
         // Get the cell on the other side of the face
-        const LO neighbor_side = (parent_info.face_to_cells(parent_face,0) == owned_parent_cell) ? 1 : 0;
+        const LO neighbor_side = (face_to_cells_h(parent_face,0) == owned_parent_cell) ? 1 : 0;
 
-        const LO neighbor_parent_cell = parent_info.face_to_cells(parent_face, neighbor_side);
-        const LO neighbor_subcell_index = parent_info.face_to_lidx(parent_face, neighbor_side);
+        const LO neighbor_parent_cell = face_to_cells_h(parent_face, neighbor_side);
+        const LO neighbor_subcell_index = face_to_lidx_h(parent_face, neighbor_side);
 
         // Convert parent cell index into sub cell index
         std::pair<LO, LO> search_point(neighbor_parent_cell, 0);
@@ -641,6 +674,10 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
   sub_info.face_to_cells = PHX::View<LO*[2]>("face_to_cells", num_faces);
   sub_info.face_to_lidx = PHX::View<LO*[2]>("face_to_lidx", num_faces);
   sub_info.cell_to_faces = PHX::View<LO**>("cell_to_faces", num_total_cells, num_faces_per_cell);
+  auto cell_to_faces_h = Kokkos::create_mirror_view(sub_info.cell_to_faces);
+  auto face_to_cells_h = Kokkos::create_mirror_view(sub_info.face_to_cells);
+  auto face_to_lidx_h = Kokkos::create_mirror_view(sub_info.face_to_lidx);
+
 
   // Default the system with invalid cell index
   Kokkos::deep_copy(sub_info.cell_to_faces, -1);
@@ -648,17 +685,19 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
   for(int face_index=0;face_index<num_faces;++face_index){
     const face_t & face = faces[face_index];
 
-    sub_info.face_to_cells(face_index,0) = face.cell_0;
-    sub_info.face_to_cells(face_index,1) = face.cell_1;
+    face_to_cells_h(face_index,0) = face.cell_0;
+    face_to_cells_h(face_index,1) = face.cell_1;
 
-    sub_info.cell_to_faces(face.cell_0,face.subcell_index_0) = face_index;
-    sub_info.cell_to_faces(face.cell_1,face.subcell_index_1) = face_index;
+    cell_to_faces_h(face.cell_0,face.subcell_index_0) = face_index;
+    cell_to_faces_h(face.cell_1,face.subcell_index_1) = face_index;
 
-    sub_info.face_to_lidx(face_index,0) = face.subcell_index_0;
-    sub_info.face_to_lidx(face_index,1) = face.subcell_index_1;
+    face_to_lidx_h(face_index,0) = face.subcell_index_0;
+    face_to_lidx_h(face_index,1) = face.subcell_index_1;
 
   }
-
+  Kokkos::deep_copy(sub_info.cell_to_faces, cell_to_faces_h);
+  Kokkos::deep_copy(sub_info.face_to_cells, face_to_cells_h);
+  Kokkos::deep_copy(sub_info.face_to_lidx,  face_to_lidx_h);
   // Complete.
 
 }
@@ -826,14 +865,17 @@ fillLocalCellIDs(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
   // Iterate over all faces and identify the faces connected to a potential virtual cell
   std::vector<int> all_boundary_faces;
   const int num_faces = elems_by_face.extent(0);
+  auto elems_by_face_h = Kokkos::create_mirror_view(elems_by_face);
+  Kokkos::deep_copy(elems_by_face_h, elems_by_face);
   for(int face=0;face<num_faces;++face)
-    if(elems_by_face(face,0) < 0 or elems_by_face(face,1) < 0)
+    if(elems_by_face_h(face,0) < 0 or elems_by_face_h(face,1) < 0)
       all_boundary_faces.push_back(face);
   const panzer::LocalOrdinal num_virtual_cells = all_boundary_faces.size();
 
   // Create some global indexes associated with the virtual cells
   // Note: We are assuming that virtual cells belong to ranks and are not 'shared' - this will change later on
   virtual_cells = PHX::View<panzer::GlobalOrdinal*>("virtual_cells",num_virtual_cells);
+  auto virtual_cells_h = Kokkos::create_mirror_view(virtual_cells);
   {
     PANZER_FUNC_TIME_MONITOR_DIFF("Initial global index creation",InitialGlobalIndexCreation);
 
@@ -867,9 +909,10 @@ fillLocalCellIDs(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
     }
 
     for(int i=0;i<num_virtual_cells;++i){
-      virtual_cells(i) = global_virtual_start_idx + panzer::GlobalOrdinal(i);
+      virtual_cells_h(i) = global_virtual_start_idx + panzer::GlobalOrdinal(i);
     }
   }
+  Kokkos::deep_copy(virtual_cells, virtual_cells_h);
 }
 
 }

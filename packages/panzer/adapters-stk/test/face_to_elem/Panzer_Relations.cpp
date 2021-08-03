@@ -122,6 +122,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
 
 
   face_to_elem_ = PHX::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getNodeNumElements());
+  auto face_to_elem_h = Kokkos::create_mirror_view(face_to_elem_);
   num_boundary_faces_=0;
   for (int i(0); i < face_to_elem_.extent_int(0); ++i)
   {
@@ -129,15 +130,15 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
     size_t num_ent;
     graph_overlap.getGlobalRowCopy(face_map->getGlobalElement(i), indices, num_ent);
     assert(num_ent == 2 || num_ent == 1);
-    face_to_elem_(i,0) = indices(0);
+    face_to_elem_h(i,0) = indices(0);
     if ( num_ent == 2)
-      face_to_elem_(i,1) = indices(1);
+      face_to_elem_h(i,1) = indices(1);
     else {
-      face_to_elem_(i,1) = -1;
+      face_to_elem_h(i,1) = -1;
       num_boundary_faces_++;
     }
   }
-
+  Kokkos::deep_copy(face_to_elem_, face_to_elem_h);
 
   // Now we can get the nodal values
   std::vector<std::vector<int>> face_to_node;
@@ -156,7 +157,8 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
 
   }
   face_to_node_ = PHX::View<GlobalOrdinal**>("face_to_node", face_to_elem_.extent(0), face_to_node[0].size());
-  Kokkos::deep_copy(face_to_node_, -1);
+  auto face_to_node_h = Kokkos::create_mirror_view(face_to_node_);
+  Kokkos::deep_copy(face_to_node_h, -1);
   for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem) {
     const auto * connectivity = conn_->getConnectivity(ielem);
     for (int iface=0; iface <static_cast<int>(elem_to_face_[ielem].size()); ++iface ) {
@@ -164,13 +166,14 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
       {
         GlobalOrdinal g_face = elem_to_face_[ielem][iface];
         LocalOrdinal l_face = face_map->getLocalElement(g_face);
-        face_to_node_(l_face, inode) = connectivity[face_to_node[iface][inode]];
+        face_to_node_h(l_face, inode) = connectivity[face_to_node[iface][inode]];
       }
     }
   }
   for (int i(0); i < face_to_node_.extent_int(0); ++i)
     for (int j(0); j < face_to_node_.extent_int(1); ++j)
-      TEUCHOS_ASSERT(face_to_node_(i,j) >=0);
+      TEUCHOS_ASSERT(face_to_node_h(i,j) >=0);
+  Kokkos::deep_copy(face_to_node_, face_to_node_h);
 }
 
 void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > worksets){
