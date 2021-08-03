@@ -60,6 +60,7 @@
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_StridedMap.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_ReitzingerPFactory_decl.hpp"
 
@@ -151,8 +152,6 @@ namespace MueLu {
     int MyPID = D0->getRowMap()->getComm()->getRank();
     //    RCP<Aggregates>            aggregates    = Get< RCP<Aggregates> >           (fineLevel, "Aggregates");
 
-    RCP<CrsMatrixWrap> Pn_crs = rcp_dynamic_cast<CrsMatrixWrap>(Pn);
-
     // Matrix matrix params
     RCP<ParameterList> mm_params = rcp(new ParameterList);;
     if(pL.isSublist("matrixmatrix: kernel params"))
@@ -202,6 +201,47 @@ namespace MueLu {
       PnT_D0T = Utilities::Transpose(*D0_Pn, true);
     }
 
+
+    // We really need a ghosted version of D0_Pn here.
+    // The reason is that if there's only one fine edge between two coarse nodes, somebody is going
+    // to own the associated coarse edge.  The sum/sign rule doesn't guarantee the fine owner is the coarse owner.
+    // So you can wind up with a situation that only guy who *can* register the coarse edge isn't the sum/sign
+    // owner.  Adding more ghosting fixes that.
+    RCP<Matrix> D0_Pn_ghost;
+    Teuchos::Array<int> D0_Pn_ghost_col_pids;
+    if(!PnT_D0T->getCrsGraph()->getImporter().is_null()) {
+      SubFactoryMonitor m2(*this, "Ghost D0*Pn", coarseLevel);
+      RCP<const Import> Importer = PnT_D0T->getCrsGraph()->getImporter();
+      ArrayView<const LO> remoteLIDs = Importer->getRemoteLIDs();
+      size_t numRemote = Importer->getNumRemoteIDs();
+      Array<GO> remoteRows(numRemote);
+      for (size_t i = 0; i < numRemote; i++)
+        remoteRows[i] = Importer->getTargetMap()->getGlobalElement(remoteLIDs[i]);
+
+      RCP<const Map> remoteRowMap = MapFactory::Build(Importer->getTargetMap()->lib(),Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), remoteRows(),
+                                                      D0->getDomainMap()->getIndexBase(), D0->getDomainMap()->getComm());
+      
+      RCP<const Import> remoteOnlyImporter = Importer->createRemoteOnlyImport(remoteRowMap);
+      RCP<const CrsMatrix> D0_Pn_crs = rcp_dynamic_cast<const CrsMatrixWrap>(D0_Pn)->getCrsMatrix();
+      RCP<CrsMatrix> D0_Pn_ghost_crs = CrsMatrixFactory::Build(D0_Pn_crs,*remoteOnlyImporter,D0_Pn->getDomainMap(),remoteOnlyImporter->getTargetMap());
+      D0_Pn_ghost = rcp(new CrsMatrixWrap(D0_Pn_ghost_crs));
+
+      
+      // Get owning PID information on columns for tie-breaking
+      if(!D0_Pn_ghost->getCrsGraph()->getImporter().is_null()) {
+        Xpetra::ImportUtils<LO,GO,NO> utils;
+        utils.getPids(*D0_Pn_ghost->getCrsGraph()->getImporter(),D0_Pn_ghost_col_pids,false);
+      }
+      else {
+        D0_Pn_ghost_col_pids.resize(D0_Pn_ghost->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
+      }
+    }
+
+    // FIXME: Now add code to use this guy later
+
+
+
+
     // FIXME: This is using deprecated interfaces
     ArrayView<const LO>     colind_E, colind_N;
     ArrayView<const SC>     values_E, values_N;
@@ -218,9 +258,18 @@ namespace MueLu {
 
 
     LO current = 0;
+
+    LO Nnc = PnT_D0T->getRowMap()->getNodeNumElements();
+
+    printf("[%d] Ne = %d Nn = %d Nnc = %d\n",MyPID,(int)Ne,(int)Nn,(int)Pn->getDomainMap()->getNodeNumElements());
     
-    for(LO i=0; i<(LO)Nn; i++) {
+    //const int print_row_gid=16;
+
+    for(LO i=0; i<(LO)Nnc; i++) {
       GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
+
+      // Skip coarse nodes I don't own (this will keep the processing order identical to ML's)
+      //      if(Pn->getDomainMap()->getLocalElement(global_i) == LO_INVALID) continue;
 
       // FIXME: We don't really want an std::map here.  This is just a first cut implementation
       using value_type = std::pair<LO,SC>;
@@ -228,6 +277,8 @@ namespace MueLu {
       
       // FIXME: This is using deprecated interfaces
       PnT_D0T->getLocalRowView(i,colind_E,values_E);
+
+
       
       for(LO j=0; j<(LO)colind_E.size(); j++) {
 
@@ -243,35 +294,72 @@ namespace MueLu {
         // Check to see if we own this edge and continue if we don't
         GO edge_gid = PnT_D0T->getColMap()->getGlobalElement(colind_E[j]);
         LO j_row    = D0_Pn->getRowMap()->getLocalElement(edge_gid);
-        if(j_row == GO_INVALID) continue;
+        int pid0, pid1;
+        bool use_ghost;
+        if(j_row == GO_INVALID) {
+          j_row    = D0_Pn_ghost->getRowMap()->getLocalElement(edge_gid);
+          D0_Pn_ghost->getLocalRowView(j_row,colind_N,values_N);
 
-        // Get the local row of D0_Pn
-        D0_Pn->getLocalRowView(j_row,colind_N,values_N);
+          // Skip incomplete rows
+          if(colind_N.size() != 2) continue;
+          
+          pid0 = D0_Pn_ghost_col_pids[colind_N[0]];
+          pid1 = D0_Pn_ghost_col_pids[colind_N[1]];
+          use_ghost=true;
+          printf("[%d] Row %d considering edge %d -> %d\n",MyPID,global_i,D0_Pn_ghost->getColMap()->getGlobalElement(colind_N[0]),D0_Pn_ghost->getColMap()->getGlobalElement(colind_N[1]));
+        }
+        else {
+          D0_Pn->getLocalRowView(j_row,colind_N,values_N);
 
-        // Skip incomplete rows
-        if(colind_N.size() != 2) continue;
+          // Skip incomplete rows
+          if(colind_N.size() != 2) continue;
+          
+          pid0 = D0_Pn_col_pids[colind_N[0]];
+          pid1 = D0_Pn_col_pids[colind_N[1]];
+          use_ghost=false;
+          printf("[%d] Row %d considering edge %d -> %d\n",MyPID,global_i,D0_Pn->getColMap()->getGlobalElement(colind_N[0]),D0_Pn->getColMap()->getGlobalElement(colind_N[1]));
+        }        
 
+
+        
         // Check to see who owns these nodes
         // If the sum of owning procs is odd, the lower ranked proc gets it
-        bool zero_matches = D0_Pn_col_pids[colind_N[0]] == MyPID;
-        bool one_matches  = D0_Pn_col_pids[colind_N[1]] == MyPID;
-        bool keep_edge = false;
-        if(zero_matches && one_matches) keep_edge = true;
+        
+        bool zero_matches = pid0 == MyPID;
+        bool one_matches  = pid1 == MyPID;
+        bool keep_shared_edge = false, own_both_nodes = false;
+        if(zero_matches && one_matches) {own_both_nodes=true;}
         else {
-          int sum_is_odd =  D0_Pn_col_pids[colind_N[0]] + D0_Pn_col_pids[colind_N[1]] % 2;
-          int i_am_smaller = MyPID == std::min(D0_Pn_col_pids[colind_N[0]],D0_Pn_col_pids[colind_N[1]]);
-          if(sum_is_odd  && i_am_smaller) keep_edge=true;
-          if(!sum_is_odd && !i_am_smaller) keep_edge=true;
+          int sum_is_odd =  (pid0 + pid1) % 2;
+          int i_am_smaller = MyPID == std::min(pid0,pid1);
+          if(sum_is_odd  && i_am_smaller)  keep_shared_edge=true;
+          if(!sum_is_odd && !i_am_smaller) keep_shared_edge=true;
         }
-        if(!keep_edge) continue;
+        printf("[%d] - matches %d/%d keep_shared = %d own_both = %d\n",MyPID,(int)zero_matches,(int)one_matches,(int)keep_shared_edge,(int)own_both_nodes);
+        if(!keep_shared_edge && !own_both_nodes) continue;
+
 
         // We're doing this in GID space, but only only because it allows us to explain
         // the edge orientation as "always goes from lower GID to higher GID".  This could
         // be done entirely in local GIDs, but then the ordering is a little more confusing.
         // This could be done in local indices later if we need the extra performance.
         for(LO k=0; k<(LO)colind_N.size(); k++) {
-          if(D0_Pn->getRowMap()->getGlobalElement(colind_N[k]) > global_i) {
-            ce_map.emplace(std::make_pair(colind_N[k],std::make_pair(colind_E[j],values_N[k])));
+          if(keep_shared_edge || (own_both_nodes && colind_N[k] > i)) {
+            //          if(D0_Pn->getColMap()->getGlobalElement(colind_N[k]) > global_i) {
+            //
+            
+            // FIXME:  colind_N is going to be something else weird if we're on the ghost.  So this should get fixed.
+            LO my_colind;
+            if(use_ghost) {
+              // FIXME: This can be done more efficiently
+              // NOTE: What happens if this guy is just the wrong entry?  Should I checj?
+              my_colind = D0_Pn->getColMap()->getLocalElement(D0_Pn_ghost->getColMap()->getGlobalElement(colind_N[k]));
+            } 
+            else
+              my_colind = colind_N[k];
+
+            if(my_colind != LO_INVALID)
+              ce_map.emplace(std::make_pair(my_colind,std::make_pair(colind_E[j],values_N[k])));
           }
         }//end for k < colind_N.size()
       }// end for j < colind_E.size()
@@ -280,6 +368,8 @@ namespace MueLu {
       // std::map is sorted, so we'll just iterate through this
       for(auto iter=ce_map.begin(); iter != ce_map.end(); iter++) {
         LO col = iter->first;
+        // Sanity checks
+        //        if(i==col) continue;
         //        printf("[%d] Adding edge %d => %d\n",i,i,col);
         D0_colind[current]  = i;
         D0_values[current] = -1;
@@ -301,10 +391,11 @@ namespace MueLu {
     // NOTE: Since we solve the ownership issue above, this should do what we want
     RCP<const Map> ownedCoarseEdgeMap = Xpetra::MapFactory<LO,GO,NO>::Build(EdgeMatrix->getRowMap()->lib(), GO_INVALID, num_coarse_edges,EdgeMatrix->getRowMap()->getIndexBase(),EdgeMatrix->getRowMap()->getComm());
 
+    printf("[%d] num_coarse_edges = %d\n",MyPID,num_coarse_edges);
 
     // NOTE:  This only works because of the assumptions above
-    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap();
-    RCP<const Map> ownedPlusSharedCoarseNodeMap  = Pn_crs->getColMap();
+    RCP<const Map> ownedCoarseNodeMap = Pn->getDomainMap(); // = D0_Pn->getDomainMap();
+    RCP<const Map> ownedPlusSharedCoarseNodeMap  = D0_Pn->getCrsGraph()->getColMap();
 
     // Create the coarse D0
     RCP<CrsMatrix> D0_coarse;
@@ -329,19 +420,69 @@ namespace MueLu {
       //      printf("After: ia.size() = %d ja.size() = %d val.size() = %d\n",(int)ia.size(),(int)ja.size(),(int)val.size());
       D0_coarse->setAllValues(ia, ja, val);
 
-#if 0
-      printf("D0: ia  :");
-      for(int i=0; i<(int)ia.size(); i++)
-        printf("%d ",(int)ia[i]);
-      printf("\nD0: ja  :");
-      for(int i=0; i<(int)ja.size(); i++)
-        printf("%d ",ja[i]);
-      printf("\n");
+#if 1
+      { 
+        char fname[80];
+        printf("[%d] D0: ia.size() = %d ja.size() = %d\n",MyPID,(int)ia.size(),(int)ja.size());
+        printf("[%d] D0: ia  :",MyPID);
+        for(int i=0; i<(int)ia.size(); i++)
+          printf("%d ",(int)ia[i]);
+        printf("\n[%d] D0: global ja  :",MyPID);
+        for(int i=0; i<(int)ja.size(); i++)
+          printf("%d ",(int)ownedPlusSharedCoarseNodeMap->getGlobalElement(ja[i]));
+        printf("\n[%d] D0: local ja  :",MyPID);
+        for(int i=0; i<(int)ja.size(); i++)
+          printf("%d ",(int)ja[i]);
+        printf("\n");        
+
+        sprintf(fname,"D0_global_ja_%d.dat",MyPID);
+        FILE * f = fopen(fname,"w");
+        for(int i=0; i<(int)ja.size(); i++)
+          fprintf(f,"%d ",(int)ownedPlusSharedCoarseNodeMap->getGlobalElement(ja[i]));
+        fclose(f);
+
+        sprintf(fname,"D0_local_ja_%d.dat",MyPID);
+        f = fopen(fname,"w");
+        for(int i=0; i<(int)ja.size(); i++)
+          fprintf(f,"%d ",(int)ja[i]);
+        fclose(f);
+        
+      }
 #endif
+      fflush(stdout);
 
       D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap,ownedCoarseEdgeMap);
     }
     RCP<Matrix> D0_coarse_m = rcp(new CrsMatrixWrap(D0_coarse));
+    RCP<Teuchos::FancyOStream> fout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+ 
+    /*    *fout<<"*** Range Map ***"<<std::endl;
+    D0_coarse_m->getRangeMap()->describe(*fout,Teuchos::VERB_EXTREME);
+    *fout<<"*** Row Map ***"<<std::endl;
+    D0_coarse_m->getRowMap()->describe(*fout,Teuchos::VERB_EXTREME);*/
+    //    *fout<<"*** Col Map ***"<<std::endl;
+    //    D0_coarse_m->getColMap()->describe(*fout,Teuchos::VERB_EXTREME);
+    /*    *fout<<"*** Domain Map ***"<<std::endl;
+          D0_coarse_m->getDomainMap()->describe(*fout,Teuchos::VERB_EXTREME);*/
+
+    //CMS
+    //    std::cout<<"*** Dumping this stuff out ***"<<std::endl;
+    //    Xpetra::IO<SC,LO,GO,NO>::Write("Pn.mat",*Pn);
+    //    Xpetra::IO<SC,LO,GO,NO>::Write("D0_coarse.mat",*D0_coarse_m);
+
+
+    // Debugging
+    //    RCP<Matrix> D0_coarse_m_transpose = Utilities::Transpose(*D0_coarse_m, true);
+
+
+    //    D0_coarse_m_transpose->getRowMap()->describe(*fout,Teuchos::VERB_EXTREME);
+
+
+    //    Pn->getCrsGraph()->getColMap()->describe(*fout,Teuchos::VERB_EXTREME);
+
+
+
+
 
     // Create the Pe matrix, but with the extra entries.  From ML's notes:
     /* The general idea is that the matrix                              */
@@ -354,6 +495,7 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "Generate Pe (pre-fix)", coarseLevel);
       RCP<Matrix> dummy;
       RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn,false,*D0_coarse_m,true,dummy,out0,true,true,"Pn*D0c'",mm_params);
+      //      RCP<Matrix> Pn_D0cT = XMM::Multiply(*Pn,false,*D0_coarse_m_transpose,false,dummy,out0,true,true,"Pn*D0c'",mm_params);
       Pe = XMM::Multiply(*D0,false,*Pn_D0cT,false,dummy,out0,true,true,"D0*(Pn*D0c')",mm_params);
     }  
 
@@ -419,6 +561,17 @@ namespace MueLu {
      
      MT norm = summation->getFrobeniusNorm();     
      GetOStream(Statistics0) << "CheckCommutingProperty: ||Pe D0_c - D0_f Pn || = "<<norm<<std::endl;
+
+     //     summation->describe
+
+     {
+       int numProcs = Pe.getRowMap()->getComm()->getSize();       
+       char fname[80];
+       sprintf(fname,"Pe_%d.mat",numProcs);  Xpetra::IO<SC,LO,GO,NO>::Write(fname,Pe);
+       sprintf(fname,"Pn_%d.mat",numProcs);  Xpetra::IO<SC,LO,GO,NO>::Write(fname,Pn);
+       sprintf(fname,"D0c_%d.mat",numProcs);  Xpetra::IO<SC,LO,GO,NO>::Write(fname,D0_c);
+       sprintf(fname,"D0f_%d.mat",numProcs);  Xpetra::IO<SC,LO,GO,NO>::Write(fname,D0_f);
+     }
    }
 
  }//end CheckCommutingProperty
