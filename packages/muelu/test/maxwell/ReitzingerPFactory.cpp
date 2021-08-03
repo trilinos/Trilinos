@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ReitzingerPFactory, Setup2Level_AlphaSmoothed,
   Hierarchy NodeH, EdgeH;
   NodeH.SetMaxCoarseSize(10);
   //NodeH.EnableGraphDumping("node_graph_0",0);
-  EdgeH.EnableGraphDumping("edge_graph_0",0);
+  //EdgeH.EnableGraphDumping("edge_graph_0",0);
 
   // Generate Node Hierarchy
   out<<"*** Setting Up Node Hierarchy *** "<<std::endl;
