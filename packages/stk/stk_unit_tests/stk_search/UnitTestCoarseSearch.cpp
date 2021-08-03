@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <unit_tests/UnitTestUtils.hpp>
+#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <gtest/gtest.h>

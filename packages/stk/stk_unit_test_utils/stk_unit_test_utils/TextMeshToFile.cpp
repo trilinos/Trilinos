@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,73 +30,36 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
 
-#include "stk_util/util/CSet.hpp"
-#include <cstddef>    // for size_t
-#include <algorithm>  // for lower_bound
-#include <memory>     // for allocator_traits<>::value_type
+#include "TextMeshToFile.hpp"
+#include "stk_unit_test_utils/TextMesh.hpp"
 
-namespace stk {
-namespace cset {
-
-CSet::TypeVector::iterator
-lower_bound(CSet::TypeVector & typeVector, const std::type_info * type)
+namespace stk
 {
-  auto i = typeVector.begin();
-  auto j = typeVector.end();
-
-  return std::lower_bound(i, j, type, less_cset());
-}
-
-}
-
-const void *
-CSet::p_get(const std::type_info & type) const
+namespace unit_test_util
 {
-  for (auto it = m_type.begin(), end = m_type.end(); it != end; ++it) {
-    if (**it == type) {
-      return m_value[it - m_type.begin()].get();
-    }
-  }
 
-  return nullptr;
+TextMeshToFile::TextMeshToFile(stk::ParallelMachine comm, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+  : m_meta(3),
+    m_bulk(m_meta, comm, auraOption)
+{
 }
 
-} // namespace stk
+void
+TextMeshToFile::write_mesh()
+{
+  m_broker.write_output_mesh(m_outputFileIndex);
+}
 
+void TextMeshToFile::setup_mesh(const std::string& meshDesc, const std::string& outputFileName)
+{
+  stk::unit_test_util::setup_text_mesh(m_bulk, meshDesc);
 
+  m_broker.set_bulk_data(m_bulk);
+  m_broker.property_add(Ioss::Property("INTEGER_SIZE_API", 8));
+  m_broker.property_add(Ioss::Property("INTEGER_SIZE_DB", 8));
+  m_outputFileIndex = m_broker.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
+}

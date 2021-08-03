@@ -35,7 +35,7 @@
 #ifndef STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
-#include "unit_tests/UnitTestUtils.hpp"
+#include "stk_unit_test_utils/Search_UnitTestUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
 #include "stk_mesh/base/Field.hpp"

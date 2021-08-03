@@ -15,8 +15,8 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <test_utils/OptionsForTesting.hpp>
-#include <integrationtest/MeshUtilsForBoundingVolumes.hpp>
-#include <unit_tests/UnitTestUtils.hpp>
+#include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
+#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 #include <stk_balance/internal/StkMeshAdapterForZoltan2.hpp>

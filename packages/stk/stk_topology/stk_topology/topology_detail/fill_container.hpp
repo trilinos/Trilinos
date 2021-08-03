@@ -35,9 +35,11 @@
 #ifndef STKTOPOLOGY_DETAIL_FILL_CONTAINER_HPP
 #define STKTOPOLOGY_DETAIL_FILL_CONTAINER_HPP
 
+#include "stk_util/stk_config.h"
 #include <vector>
 
-namespace stk { namespace topology_detail {
+namespace stk {
+namespace topology_detail {
 
 template <typename OrdinalOutputIterator>
 struct host_fill_ordinal_container {

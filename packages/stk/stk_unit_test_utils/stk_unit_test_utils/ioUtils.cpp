@@ -8,12 +8,12 @@
 #include <string>                                    // for allocator, etc
 #include <vector>                                    // for vector
 #include "GeneratedMeshToFile.hpp"
+#include "TextMeshToFile.hpp"
 #include "Ioss_Property.h"                           // for Property
 #include "mpi.h"                                     // for MPI_COMM_SELF, etc
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"                // for StkMeshIoBroker
 #include "stk_mesh/base/BulkData.hpp"                // for BulkData, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase, etc
 #include "stk_mesh/base/GetEntities.hpp"             // for get_entities
@@ -30,13 +30,22 @@ namespace unit_test_util
 
 void generated_mesh_to_file_in_serial(const std::string &meshSizeSpec, const std::string &fileName)
 {
-    if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
-    {
-        GeneratedMeshToFile gMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    GeneratedMeshToFile gMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
 
-        gMesh.setup_mesh(meshSizeSpec, fileName);
-        gMesh.write_mesh();
-    }
+    gMesh.setup_mesh(meshSizeSpec, fileName);
+    gMesh.write_mesh();
+  }
+}
+
+void text_mesh_to_file_in_serial(const std::string& meshDesc, const std::string& fileName)
+{
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    TextMeshToFile tMesh(MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+
+    tMesh.setup_mesh(meshDesc, fileName);
+    tMesh.write_mesh();
+  }
 }
 
 void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time) const

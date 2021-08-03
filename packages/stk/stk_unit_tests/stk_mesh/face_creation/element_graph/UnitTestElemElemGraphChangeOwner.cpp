@@ -19,7 +19,6 @@
 #include "ElementGraphTester.hpp"       // for ElemElemGraphTester
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"

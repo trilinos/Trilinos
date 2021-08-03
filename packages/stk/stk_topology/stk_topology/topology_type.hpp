@@ -34,14 +34,12 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_TYPE_HPP
 #define STKTOPOLOGY_TOPOLOGY_TYPE_HPP
 
-// IWYU pragma: private, include "stk_topology/topology.hpp"
-
-#include <stk_topology/topology.hpp>
-
-#include <stk_topology/topology_detail/fill_container.hpp>
-#include <stk_topology/topology_detail/topology_data.hpp>
-#include <stk_topology/topology_detail/meta_functions.hpp>
-#include <stk_topology/topology_detail/equivalent_helper.hpp>
+#include "stk_topology/topology_decl.hpp"
+#include "stk_topology/topology_utils.hpp"
+#include "stk_topology/topology_detail/topology_data.hpp"
+#include "stk_topology/topology_detail/meta_functions.hpp"
+#include "stk_topology/topology_detail/fill_container.hpp"
+#include "stk_topology/topology_detail/equivalent_helper.hpp"
 
 namespace stk {
 
