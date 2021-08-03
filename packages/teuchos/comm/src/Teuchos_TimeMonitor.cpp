@@ -42,6 +42,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_TableColumn.hpp"
 #include "Teuchos_TableFormat.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -870,22 +871,25 @@ namespace Teuchos {
     getDefaultComm ()
     {
       // The default communicator.  If Trilinos was built with MPI
-      // enabled, this should be MPI_COMM_WORLD.  (If MPI has not yet
-      // been initialized, it's not valid to use the communicator!)
-      // Otherwise, this should be a "serial" (no MPI, one "process")
+      // enabled, this should be MPI_COMM_WORLD.  
+      // (If MPI has not yet been initialized, it's not valid to use 
+      // the communicator! In that case, we will get a serial communicator.)
+      // Otherwise, if Trilinos was not built with MPI enabled,
+      // this should be a "serial" (no MPI, one "process")
       // communicator.
-      RCP<const Comm<int> > comm = DefaultComm<int>::getComm ();
 
-#ifdef HAVE_MPI
-      {
-        int mpiHasBeenStarted = 0;
-        MPI_Initialized (&mpiHasBeenStarted);
-        if (! mpiHasBeenStarted) {
-          // Make pComm a new "serial communicator."
-          comm = rcp_implicit_cast<const Comm<int> > (rcp (new SerialComm<int> ()));
-        }
-      }
-#endif // HAVE_MPI
+      Teuchos::RCP<const Teuchos::Comm<OrdinalType> > comm;
+
+  #ifdef HAVE_MPI
+      int mpiStarted = 0;
+      MPI_Initialized(&mpiStarted);
+      if (mpiStarted)
+        comm = Teuchos::DefaultComm<int>::getComm();
+      else 
+        comm = rcp(new Teuchos::SerialComm<int>);
+  #else
+      comm = Teuchos::DefaultComm<int>::getComm();
+  #endif // HAVE_MPI
       return comm;
     }
 
