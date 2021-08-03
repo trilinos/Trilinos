@@ -207,6 +207,23 @@ namespace MueLu {
     // to own the associated coarse edge.  The sum/sign rule doesn't guarantee the fine owner is the coarse owner.
     // So you can wind up with a situation that only guy who *can* register the coarse edge isn't the sum/sign
     // owner.  Adding more ghosting fixes that.
+    if(!PnT_D0T->getCrsGraph()->getImporter().is_null()) {
+      RCP<const Import> Importer = PnT_D0T->getCrsGraph()->getImporter();
+      RCP<const CrsMatrix> D0_Pn_crs = rcp_dynamic_cast<const CrsMatrixWrap>(D0_Pn)->getCrsMatrix();
+      RCP<Matrix> D0_Pn_new = rcp(new CrsMatrixWrap(CrsMatrixFactory::Build(D0_Pn_crs,*Importer,D0_Pn->getDomainMap(),Importer->getTargetMap())));
+      D0_Pn = D0_Pn_new;
+      // Get owning PID information on columns for tie-breaking
+      if(!D0_Pn->getCrsGraph()->getImporter().is_null()) {
+        Xpetra::ImportUtils<LO,GO,NO> utils;
+        utils.getPids(*D0_Pn->getCrsGraph()->getImporter(),D0_Pn_col_pids,false);
+      }
+      else {
+        D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
+      }
+    }
+
+
+#if OLD_AND_BUSTED
     RCP<Matrix> D0_Pn_ghost;
     Teuchos::Array<int> D0_Pn_ghost_col_pids;
     if(!PnT_D0T->getCrsGraph()->getImporter().is_null()) {
@@ -236,7 +253,7 @@ namespace MueLu {
         D0_Pn_ghost_col_pids.resize(D0_Pn_ghost->getCrsGraph()->getColMap()->getNodeNumElements(),MyPID);
       }
     }
-
+#endif
     // FIXME: Now add code to use this guy later
 
 
@@ -295,6 +312,7 @@ namespace MueLu {
         GO edge_gid = PnT_D0T->getColMap()->getGlobalElement(colind_E[j]);
         LO j_row    = D0_Pn->getRowMap()->getLocalElement(edge_gid);
         int pid0, pid1;
+#ifdef OLD_AND_BUSTED
         bool use_ghost;
         if(j_row == GO_INVALID) {
           j_row    = D0_Pn_ghost->getRowMap()->getLocalElement(edge_gid);
@@ -309,6 +327,7 @@ namespace MueLu {
           printf("[%d] Row %d considering edge %d -> %d\n",MyPID,global_i,D0_Pn_ghost->getColMap()->getGlobalElement(colind_N[0]),D0_Pn_ghost->getColMap()->getGlobalElement(colind_N[1]));
         }
         else {
+#endif
           D0_Pn->getLocalRowView(j_row,colind_N,values_N);
 
           // Skip incomplete rows
@@ -316,9 +335,11 @@ namespace MueLu {
           
           pid0 = D0_Pn_col_pids[colind_N[0]];
           pid1 = D0_Pn_col_pids[colind_N[1]];
-          use_ghost=false;
+          //          use_ghost=false;
           printf("[%d] Row %d considering edge %d -> %d\n",MyPID,global_i,D0_Pn->getColMap()->getGlobalElement(colind_N[0]),D0_Pn->getColMap()->getGlobalElement(colind_N[1]));
+#ifdef OLD_AND_BUSTED
         }        
+#endif
 
 
         
@@ -350,12 +371,14 @@ namespace MueLu {
             
             // FIXME:  colind_N is going to be something else weird if we're on the ghost.  So this should get fixed.
             LO my_colind;
+#ifdef OLD_AND_BUSTED
             if(use_ghost) {
               // FIXME: This can be done more efficiently
               // NOTE: What happens if this guy is just the wrong entry?  Should I checj?
               my_colind = D0_Pn->getColMap()->getLocalElement(D0_Pn_ghost->getColMap()->getGlobalElement(colind_N[k]));
             } 
             else
+#endif
               my_colind = colind_N[k];
 
             if(my_colind != LO_INVALID)
