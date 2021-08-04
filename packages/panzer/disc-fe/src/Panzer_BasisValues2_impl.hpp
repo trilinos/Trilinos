@@ -94,7 +94,6 @@ applyOrientationsImpl(const int num_cells,
                       const std::vector<Intrepid2::Orientation> & orientations,
                       const typename BasisValues2<Scalar>::IntrepidBasis & basis)
 {
-
   // Move orientations vector to device
   Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> device_orientations("drv_orts", num_cells);
   auto host_orientations = Kokkos::create_mirror_view(device_orientations);
@@ -104,7 +103,6 @@ applyOrientationsImpl(const int num_cells,
 
   // Call the device orientations applicator
   applyOrientationsImpl(num_cells, view, device_orientations, basis);
-
 }
 
 }
@@ -190,7 +188,7 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
 
   references_evaluated = true;
 
-  // Evalute real space values
+  // Evaluate real space values
   if(elmtspace == PureBasis::HGRAD or elmtspace == PureBasis::CONST or elmtspace == PureBasis::HVOL)
     getBasisValues(false,true,true);
 
@@ -735,9 +733,21 @@ setWeightedMeasure(PHX::MDField<Scalar, Cell, IP> weighted_measure)
     name##_evaluated_ = true; \
   }
 
+// We have an issue that if the array is allocated we are not allowed to reassign it - this means we have to deep copy into it
+
+// ** NOTE: The comment above requires the if (name...) block
+// below. Only one test in panzer seems to fail without that if block
+// (i.e. using the else part only). The first part of if block allows
+// for forced recomputation during build on demand where the user has
+// cached the field outside of the BasisValues object. Need to test
+// against all the apps to see if it breaks anything.
 #define PANZER_CACHE_DATA2(name) \
   if(cache) { \
-    name = tmp_##name; \
+    if(name.size()==tmp_##name.size()){ \
+      Kokkos::deep_copy(name.get_view(), tmp_##name.get_view()); \
+    } else { \
+      name = tmp_##name; \
+    } \
     name##_evaluated_ = true; \
   }
 
@@ -1021,8 +1031,6 @@ getBasisValues(const bool weighted,
     if(basis_scalar_evaluated_ and not force)
       return basis_scalar;
 
-  using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
   const int num_cells  = num_cells_;
@@ -1045,6 +1053,7 @@ getBasisValues(const bool weighted,
     auto s_cw = Kokkos::subview(cubature_weights_.get_view(),cell_range,Kokkos::ALL());
     auto s_bv = Kokkos::subview(bv.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
 
+    using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
     fst::multiplyMeasure(s_aux,s_cw,s_bv);
 
     // NOTE: Weighted path has orientations already applied so doesn't
@@ -1066,7 +1075,7 @@ getBasisValues(const bool weighted,
     }
 
     auto cell_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("cell_basis_ref_scalar",num_card,num_points);
-    auto aux = af.buildStaticArray<Scalar,Cell,BASIS,IP>("basis_scalar",num_cells,num_card,num_points);
+    auto tmp_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("basis_scalar",num_cells,num_card,num_points);
 
     if(hasUniformReferenceSpace()){
 
@@ -1074,28 +1083,44 @@ getBasisValues(const bool weighted,
       intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
-      auto s_aux = Kokkos::subview(aux.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
+      auto s_aux = Kokkos::subview(tmp_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
 
       // Apply transformation (HGRAD version is just a copy operation)
+      using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
       if(element_space == PureBasis::HVOL){
         auto s_cjd = Kokkos::subview(cubature_jacobian_determinant_.get_view(), cell_range, Kokkos::ALL());
         fst::HVOLtransformVALUE(s_aux,s_cjd,cell_basis_ref_scalar.get_view());
       }else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST)
         fst::HGRADtransformVALUE(s_aux,cell_basis_ref_scalar.get_view());
 
-      typename PHX::Device().fence();
+      PHX::Device().fence();
 
     } else {
 
-      // This is ugly. The algorithm looks to be restricted to
-      // host/serial due to a call to intrepid tools that dispatch
-      // their own internal kokkos functors. We'll leave it serial for
-      // now, but should revisit.
+      // This is ugly. The algorithm is restricted to host/serial due
+      // to a call to intrepid tools that require uniform reference
+      // representation. For DG, CVFEM and sidesets this reference is
+      // nonuniform.
 
       // Local allocation used for each cell
       auto cell_basis_scalar = af.buildStaticArray<Scalar,Cell,BASIS,IP>("cell_basis_scalar",1,num_card,num_points);
       auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
       auto cell_jac_det = af.buildStaticArray<Scalar,Cell,IP>("cell_jac_det",1,num_points);
+
+      // The array factory is difficult to extend to host space
+      // without extra template magic and changing a ton of code in a
+      // non-backwards compatible way, so we use some of the arrays
+      // above only to get derivative array sized correctly and then
+      // create the mirror on host.
+      auto cell_basis_scalar_host = Kokkos::create_mirror_view(cell_basis_scalar.get_view());
+      auto cell_cub_points_host = Kokkos::create_mirror_view(cell_cub_points.get_view());
+      auto cell_jac_det_host = Kokkos::create_mirror_view(cell_jac_det.get_view());
+      auto cell_basis_ref_scalar_host = Kokkos::create_mirror_view(cell_basis_ref_scalar.get_view());
+      auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
+      Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
+      auto cubature_jacobian_determinant_host = Kokkos::create_mirror_view(cubature_jacobian_determinant_.get_view());
+      Kokkos::deep_copy(cubature_jacobian_determinant_host,cubature_jacobian_determinant_.get_view());
+      auto tmp_basis_scalar_host = Kokkos::create_mirror_view(tmp_basis_scalar.get_view());
 
       // We have to iterate through cells and apply a separate reference representation for each
       for(int cell=0; cell<num_evaluate_cells_; ++cell){
@@ -1103,25 +1128,33 @@ getBasisValues(const bool weighted,
         // Load external into cell-local arrays
         for(int p=0;p<num_points;++p)
           for(int d=0;d<num_dim;++d)
-            cell_cub_points(p,d)=cubature_points_ref_(cell,p,d);
+            cell_cub_points_host(p,d)=cubature_points_ref_host(cell,p,d);
+        Kokkos::deep_copy(cell_cub_points.get_view(),cell_cub_points_host);
 
-        // Convert to mesh space
+        // Convert to mesh space. The intrepid_basis is virtual and
+        // built in another class, short of adding a "clone on host"
+        // method, we will have to make this call on device. This is a
+        // major performance hit.
         intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
+        Kokkos::deep_copy(cell_basis_ref_scalar_host,cell_basis_ref_scalar.get_view());
+
+        using fst=Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>;
+
         if(element_space == PureBasis::HVOL){
           // Need the jacobian determinant for HVOL
           for(int p=0;p<num_points;++p)
-            cell_jac_det(0,p)=cubature_jacobian_determinant_(cell,p);
+            cell_jac_det_host(0,p)=cubature_jacobian_determinant_host(cell,p);
 
-          fst::HVOLtransformVALUE(cell_basis_scalar.get_view(),cell_jac_det.get_view(),cell_basis_ref_scalar.get_view());
+          fst::HVOLtransformVALUE(cell_basis_scalar_host,cell_jac_det_host,cell_basis_ref_scalar_host);
         } else if(element_space == PureBasis::HGRAD || element_space == PureBasis::CONST)
-          fst::HGRADtransformVALUE(cell_basis_scalar.get_view(),cell_basis_ref_scalar.get_view());
-        typename PHX::Device().fence();
+          fst::HGRADtransformVALUE(cell_basis_scalar_host,cell_basis_ref_scalar_host);
 
         // Copy cell quantity back into main array
         for(int b=0; b<num_card; ++b)
           for(int p=0; p<num_points; ++p)
-            aux(cell,b,p) = cell_basis_scalar(0,b,p);
+            tmp_basis_scalar_host(cell,b,p) = cell_basis_scalar_host(0,b,p);
 
+        Kokkos::deep_copy(tmp_basis_scalar.get_view(),tmp_basis_scalar_host);
       }
     }
 
@@ -1131,12 +1164,12 @@ getBasisValues(const bool weighted,
     // fix the logic.
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), aux.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
-    PANZER_CACHE_DATA(basis_scalar);
+    PANZER_CACHE_DATA2(basis_scalar);
 
-    return aux;
+    return tmp_basis_scalar;
 
   }
 
@@ -1156,8 +1189,6 @@ getVectorBasisValues(const bool weighted,
     if(basis_vector_evaluated_ and not force)
       return basis_vector;
 
-  using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
   const int num_cells  = num_cells_;
@@ -1173,19 +1204,20 @@ getVectorBasisValues(const bool weighted,
     const auto bv = getVectorBasisValues(false, force);
 
     // Apply the weighted measure (cubature weights)
-    auto aux = af.buildStaticArray<Scalar, Cell, BASIS, IP, Dim>("weighted_basis_vector",  num_cells, num_card, num_points, num_dim);
+    auto tmp_weighted_basis_vector = af.buildStaticArray<Scalar, Cell, BASIS, IP, Dim>("weighted_basis_vector",  num_cells, num_card, num_points, num_dim);
 
     const std::pair<int,int> cell_range(0,num_evaluate_cells_);
-    auto s_aux = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+    auto s_aux = Kokkos::subview(tmp_weighted_basis_vector.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
     auto s_cw = Kokkos::subview(cubature_weights_.get_view(),cell_range,Kokkos::ALL());
     auto s_bv = Kokkos::subview(bv.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
 
+    using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
     fst::multiplyMeasure(s_aux, s_cw, s_bv);
 
     // Store for later if cache is enabled
-    PANZER_CACHE_DATA(weighted_basis_vector);
+    PANZER_CACHE_DATA2(weighted_basis_vector);
 
-    return aux;
+    return tmp_weighted_basis_vector;
 
   } else { // non-weighted
 
@@ -1201,7 +1233,7 @@ getVectorBasisValues(const bool weighted,
     }
 
     auto cell_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("cell_basis_ref_scalar",num_card,num_points,num_dim);
-    auto aux = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("basis_vector",num_cells,num_card,num_points,num_dim);
+    auto tmp_basis_vector = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("basis_vector",num_cells,num_card,num_points,num_dim);
 
     if(hasUniformReferenceSpace()){
 
@@ -1209,9 +1241,10 @@ getVectorBasisValues(const bool weighted,
       intrepid_basis->getValues(cell_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
-      auto s_aux = Kokkos::subview(aux.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      auto s_aux = Kokkos::subview(tmp_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
       // Apply transformation (HGRAD version is just a copy operation)
+      using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
       if(element_space == PureBasis::HCURL){
 
         auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1229,6 +1262,11 @@ getVectorBasisValues(const bool weighted,
 
     } else {
 
+      // This is ugly. The algorithm is restricted to host/serial due
+      // to intrepid tools that requiring uniform reference
+      // representation. For DG, CVFEM and sidesets this reference is
+      // nonuniform.
+
       // Local allocation used for each cell
       auto cell_basis_vector = af.buildStaticArray<Scalar,Cell,BASIS,IP,Dim>("cell_basis_vector",1,num_card,num_points,num_dim);
       auto cell_cub_points = af.buildStaticArray<Scalar,IP,Dim>("cell_cub_points",num_points,num_dim);
@@ -1236,55 +1274,83 @@ getVectorBasisValues(const bool weighted,
       auto cell_jac = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac",1,num_points,num_dim,num_dim);
       auto cell_jac_inv = af.buildStaticArray<Scalar,Cell,IP,Dim,Dim>("cell_jac_inv",1,num_points,num_dim,num_dim);
 
+      // The array factory is difficult to extend to host space
+      // without extra template magic and changing a ton of code in a
+      // non-backwards compatible way, so we use some of the arrays
+      // above only to get derivative array sized correctly and then
+      // create the mirror on host.
+      auto cell_basis_vector_host = Kokkos::create_mirror_view(cell_basis_vector.get_view());
+      auto cell_cub_points_host = Kokkos::create_mirror_view(cell_cub_points.get_view());
+      auto cell_jac_det_host = Kokkos::create_mirror_view(cell_jac_det.get_view());
+      auto cell_jac_host = Kokkos::create_mirror_view(cell_jac.get_view());
+      auto cell_jac_inv_host = Kokkos::create_mirror_view(cell_jac_inv.get_view());
+      auto cell_basis_ref_vector_host = Kokkos::create_mirror_view(cell_basis_ref_vector.get_view());
+      auto cubature_points_ref_host = Kokkos::create_mirror_view(cubature_points_ref_.get_view());
+      Kokkos::deep_copy(cubature_points_ref_host,cubature_points_ref_.get_view());
+      auto cubature_jacobian_host = Kokkos::create_mirror_view(cubature_jacobian_.get_view());
+      Kokkos::deep_copy(cubature_jacobian_host,cubature_jacobian_.get_view());
+      auto cubature_jacobian_inverse_host = Kokkos::create_mirror_view(cubature_jacobian_inverse_.get_view());
+      Kokkos::deep_copy(cubature_jacobian_inverse_host,cubature_jacobian_inverse_.get_view());
+      auto cubature_jacobian_determinant_host = Kokkos::create_mirror_view(cubature_jacobian_determinant_.get_view());
+      Kokkos::deep_copy(cubature_jacobian_determinant_host,cubature_jacobian_determinant_.get_view());
+      auto tmp_basis_vector_host = Kokkos::create_mirror_view(tmp_basis_vector.get_view());
+
       // We have to iterate through cells and apply a separate reference representation for each
       for(int cell=0; cell<num_evaluate_cells_; ++cell){
 
         // Load external into cell-local arrays
         for(int p=0;p<num_points;++p)
           for(int d=0;d<num_dim;++d)
-            cell_cub_points(p,d)=cubature_points_ref_(cell,p,d);
+            cell_cub_points_host(p,d)=cubature_points_ref_host(cell,p,d);
+        Kokkos::deep_copy(cell_cub_points.get_view(),cell_cub_points_host);
 
-        // Convert to mesh space
+        // Convert to mesh space. The intrepid_basis is virtual and
+        // built in another class, short of adding a "clone on host"
+        // method, we will have to make this call on device. This is a
+        // major performance hit.
         intrepid_basis->getValues(cell_basis_ref_vector.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
+        Kokkos::deep_copy(cell_basis_ref_vector_host,cell_basis_ref_vector.get_view());
+
+        using fst=Intrepid2::FunctionSpaceTools<Kokkos::HostSpace>;
 
         if(element_space == PureBasis::HCURL){
           // Need the jacobian inverse for HCurl
           for(int p=0;p<num_points;++p)
             for(int i=0; i<num_dim; ++i)
               for(int j=0; j<num_dim; ++j)
-                cell_jac_inv(0,p,i,j)=cubature_jacobian_inverse_(cell,p,i,j);
+                cell_jac_inv_host(0,p,i,j)=cubature_jacobian_inverse_host(cell,p,i,j);
 
-          fst::HCURLtransformVALUE(cell_basis_vector.get_view(),cell_jac_inv.get_view(),cell_basis_ref_vector.get_view());
+          fst::HCURLtransformVALUE(cell_basis_vector_host,cell_jac_inv_host,cell_basis_ref_vector_host);
         } else {
           // Need the jacobian for HDiv
           for(int p=0;p<num_points;++p)
             for(int i=0; i<num_dim; ++i)
               for(int j=0; j<num_dim; ++j)
-                cell_jac(0,p,i,j)=cubature_jacobian_(cell,p,i,j);
+                cell_jac_host(0,p,i,j)=cubature_jacobian_host(cell,p,i,j);
 
           for(int p=0;p<num_points;++p)
-            cell_jac_det(0,p)=cubature_jacobian_determinant_(cell,p);
+            cell_jac_det_host(0,p)=cubature_jacobian_determinant_host(cell,p);
 
-          fst::HDIVtransformVALUE(cell_basis_vector.get_view(),cell_jac.get_view(),cell_jac_det.get_view(),cell_basis_ref_vector.get_view());
+          fst::HDIVtransformVALUE(cell_basis_vector_host,cell_jac_host,cell_jac_det_host,cell_basis_ref_vector_host);
         }
-        typename PHX::Device().fence();
 
         // Copy cell quantity back into main array
         for(int b=0; b<num_card; ++b)
           for(int p=0; p<num_points; ++p)
             for(int d=0; d<num_dim; ++d)
-            aux(cell,b,p,d) = cell_basis_vector(0,b,p,d);
+            tmp_basis_vector_host(cell,b,p,d) = cell_basis_vector_host(0,b,p,d);
 
+        Kokkos::deep_copy(tmp_basis_vector.get_view(),tmp_basis_vector_host);
       }
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), aux.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
-    PANZER_CACHE_DATA(basis_vector);
+    PANZER_CACHE_DATA2(basis_vector);
 
-    return aux;
+    return tmp_basis_vector;
 
   }
 
@@ -1303,8 +1369,6 @@ getGradBasisValues(const bool weighted,
   } else
     if(grad_basis_evaluated_ and not force)
       return grad_basis;
-
-  using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
 
   MDFieldArrayFactory af(prefix,getExtendedDimensions(),true);
 
@@ -1328,6 +1392,7 @@ getGradBasisValues(const bool weighted,
     auto s_cw = Kokkos::subview(cubature_weights_.get_view(), cell_range, Kokkos::ALL());
     auto s_bv = Kokkos::subview(bv.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
+    using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
     fst::multiplyMeasure(s_aux,s_cw,s_bv);
 
     // Store for later if cache is enabled
@@ -1355,6 +1420,7 @@ getGradBasisValues(const bool weighted,
       auto s_jac_inv = Kokkos::subview(cubature_jacobian_inverse_.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
 
       // Apply transformation
+      using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
       fst::HGRADtransformGRAD(s_aux, s_jac_inv,cell_grad_basis_ref.get_view());
 
       typename PHX::Device().fence();
@@ -1380,6 +1446,7 @@ getGradBasisValues(const bool weighted,
 
         // Convert to mesh space
         intrepid_basis->getValues(cell_grad_basis_ref.get_view(),cell_cub_points.get_view(),Intrepid2::OPERATOR_GRAD);
+        using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
         fst::HGRADtransformGRAD(cell_grad_basis.get_view(),cell_jac_inv.get_view(),cell_grad_basis_ref.get_view());
         typename PHX::Device().fence();
 
