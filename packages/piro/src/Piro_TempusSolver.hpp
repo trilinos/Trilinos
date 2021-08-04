@@ -86,6 +86,7 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
       const std::string sens_method_string = "None", 
+      const int sens_param_index = -1,
       const int response_fn_index = -1,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
  
@@ -100,6 +101,7 @@ public:
       Scalar initialTime,
       Scalar finalTime,
       const std::string sens_method_string = "None",
+      const int sens_param_index = -1,
       const int response_fn_index = -1, 
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}

@@ -181,12 +181,16 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
     const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepper_pl, model);
     const RCP<TempusSolver<double> > tempus_solver = 
+         //rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string, 1, 0));
          rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string));
     
     const Thyra::MEB::InArgs<double> inArgs = tempus_solver->getNominalValues();
     Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();
     const int solutionResponseIndex = tempus_solver->Ng() - 1;
     const int parameterIndex = 0;
+    std::cout << "IKT solutionResponseIndex, parameterIndex = " << solutionResponseIndex << ", " << parameterIndex << "\n"; 
+    tempus_solver->resetSensitivityParamIndex(parameterIndex); 
+    tempus_solver->resetResponseFnIndex(solutionResponseIndex); 
     const Thyra::MEB::Derivative<double> dxdp_deriv =
         Thyra::create_DgDp_mv(*tempus_solver, solutionResponseIndex, parameterIndex, Thyra::MEB::DERIV_MV_JACOBIAN_FORM);
     const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();

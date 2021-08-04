@@ -67,7 +67,9 @@ public:
 		           const Teuchos::RCP<Teuchos::ParameterList> &appParams); 
 
   TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model,
+		  const int sens_param_index = -1, 
 		  const int response_fn_index = -1); 
+
 
   //@}
 
@@ -107,6 +109,14 @@ public:
   void setPiroTempusIntegrator(Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator); 
   //@}
   
+  /** \brief . */
+  void resetSensitivityParamIndex(const int sens_param_index);
+  //@}
+
+  /** \brief . */
+  void resetResponseFnIndex(const int response_fn_index);
+  //@}
+
 protected:
   /** \name Service methods for subclasses. */
   //@{
@@ -133,7 +143,9 @@ private:
   int num_p_;
   int num_g_;
 
-  int response_fn_index_{0}; 
+  //The following are for sensitivities
+  mutable int response_fn_index_; 
+  mutable int sens_param_index_; 
 
   SENS_METHOD sensitivityMethod_;
 

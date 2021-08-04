@@ -74,15 +74,18 @@ Piro::TransientSolver<Scalar>::TransientSolver(
   if (tempusPL->isSublist("Sensitivities")){
     Teuchos::ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities", true);
     response_fn_index_ = tempusSensPL.get<int>("Response Function Index", 0);
+    sens_param_index_ = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
   }
   else {
     response_fn_index_ = 0; 
+    sens_param_index_ = 0; 
   }
 }
 
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, 
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+  const int sens_param_index, 
   const int response_fn_index) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   model_(model), 
@@ -90,7 +93,7 @@ Piro::TransientSolver<Scalar>::TransientSolver(
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
 {
-  if (num_g_ = 1) {
+  if (num_g_ == 1) {
     response_fn_index_ = 0; 
   }
   else {
@@ -103,8 +106,33 @@ Piro::TransientSolver<Scalar>::TransientSolver(
           << "with >1 response!\n"); 
     }
   }
+  if (num_p_ == 1) {
+    sens_param_index_ = 0; 
+  }
+  else {
+    sens_param_index_ = sens_param_index; 
+    if ((sensitivityMethod_ == ADJOINT) && (sens_param_index_ == -1)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error in Piro::TransientSolver constructor: 'Parameter Sensitivity Index' must be specified for ADJOINT sensitivity method "
+          << "with >1 parameter!\n"); 
+    }
+  }
+  std::cout << "IKT sens_param_index_ = " << sens_param_index_ << "\n"; 
 }
 
+template<typename Scalar>
+void Piro::TransientSolver<Scalar>::resetSensitivityParamIndex(const int sens_param_index)
+{
+  sens_param_index_ = sens_param_index; 
+}
+
+template<typename Scalar>
+void Piro::TransientSolver<Scalar>::resetResponseFnIndex(const int response_fn_index)
+{
+  response_fn_index_ = response_fn_index;  
+}
 
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
@@ -543,40 +571,39 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
         break; 
       }
     case ADJOINT: //adjoint sensitivities
-      for (int l = 0; l < num_p_; ++l) {
-        const int j = response_fn_index_; 
-        //Get DgDp from outArgs and set it based on adjoint integrator from Tempus 
-	//Note that this is only done if j == response_fn_index_, as Tempus can only 
-	//return a single DgDp
-        const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-           outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-        if (!dgdp_support.none()) {
-          const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv = outArgs.get_DgDp(j, l);
-          if (!dgdp_deriv.isEmpty()) {
-            const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
-            if (Teuchos::nonnull(dgdp_op)) {
-              //Case 1: DgDp is a linear ops.  This corresponds to a non-scalar
-              //response and distributed parameters.  Tempus::AdjointSensitivityIntegrator 
-              //cannot return a LinearOp for DgDp.  Therefore this case is not relevant here.
+      const int l = sens_param_index_; 
+      const int j = response_fn_index_;
+      //Get DgDp from outArgs and set it based on adjoint integrator from Tempus 
+      //Note that this is only done if j = response_fn_index_ and l = sens_param_index_, as Tempus can only 
+      //return DgDp for a single parameter and response
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+         outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+      if (!dgdp_support.none()) {
+        const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv = outArgs.get_DgDp(j, l);
+        if (!dgdp_deriv.isEmpty()) {
+          const RCP<Thyra::LinearOpBase<Scalar> > dgdp_op = dgdp_deriv.getLinearOp();
+          if (Teuchos::nonnull(dgdp_op)) {
+            //Case 1: DgDp is a linear ops.  This corresponds to a non-scalar
+            //response and distributed parameters.  Tempus::AdjointSensitivityIntegrator 
+            //cannot return a LinearOp for DgDp.  Therefore this case is not relevant here.
+            TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+              "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP (relevant for distributed responses) is not supported with adjoint sensitivities!");
+          }
+          //Cases 2 and 3.  These can happen with dgdp = DERIV_MV_GRADIENT_FORM and dgpg = DERIV_MV_JACOBIAN_FORM.  For 
+          //DERIV_MV_GRADIENT_FORM, the map is the responses, and the columns are the parameters; for 
+          //DERIV_MV_JACOBIAN_FORM, the map is the parameters, and the columns are the responses.
+          //Both cases are relevant for adjoint sensitivities: Case 2 corresponds to distributed parameters, whereas
+          //case 3 correspondes to scalar parameters.
+          const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
+	  //IKT, question: is it worth throwing if dgdp_mv == null, or this cannot happen?
+          if (Teuchos::nonnull(dgdp_mv)) {
+	    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> dgdp_mv_from_tempus = piroTempusIntegrator_->getDgDp();
+            if (dgdp_mv_from_tempus == Teuchos::null) {
               TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-                "\n Error! Piro::TransientSolver: DgDp = DERIV_LINEAR_OP (relevant for distributed responses) is not supported with adjoint sensitivities!");
-            }
-            //Cases 2 and 3.  These can happen with dgdp = DERIV_MV_GRADIENT_FORM and dgpg = DERIV_MV_JACOBIAN_FORM.  For 
-            //DERIV_MV_GRADIENT_FORM, the map is the responses, and the columns are the parameters; for 
-            //DERIV_MV_JACOBIAN_FORM, the map is the parameters, and the columns are the responses.
-	    //Both cases are relevant for adjoint sensitivities: Case 2 corresponds to distributed parameters, whereas
-	    //case 3 correspondes to scalar parameters.
-            const RCP<Thyra::MultiVectorBase<Scalar> > dgdp_mv = dgdp_deriv.getMultiVector();
-	    //IKT, question: is it worth throwing if dgdp_mv == null, or this cannot happen?
-            if (Teuchos::nonnull(dgdp_mv)) {
-	      Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> dgdp_mv_from_tempus = piroTempusIntegrator_->getDgDp();
-              if (dgdp_mv_from_tempus == Teuchos::null) {
-                TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-                  "\n Error! Piro::TransientSolver: DgDp returned by Tempus::IntegratorAdjointSensitivity::getDgDp() routine is null!\n"); 
-              } 
-	      //Copy dgdp_mv_from_tempus into dgdp_mv - IKT, there may be better way to do this
-	      dgdp_mv->assign(*dgdp_mv_from_tempus);
-	    }
+                "\n Error! Piro::TransientSolver: DgDp returned by Tempus::IntegratorAdjointSensitivity::getDgDp() routine is null!\n"); 
+            } 
+	    //Copy dgdp_mv_from_tempus into dgdp_mv - IKT, there may be better way to do this
+	    dgdp_mv->assign(*dgdp_mv_from_tempus);
 	  }
 	}
       }
