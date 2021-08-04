@@ -305,12 +305,12 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_NoDfDpMv_NoSensitivity)
   const Thyra::MEB::InArgs<double> inArgs = solver->getNominalValues();
   Thyra::MEB::OutArgs<double> outArgs = solver->createOutArgs();
 
-  const int responseIndex = 0;
+  /*const int responseIndex = 0;
   const int solutionResponseIndex = solver->Ng() - 1;
   const int parameterIndex = 0;
 
   TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, responseIndex, parameterIndex).none());
-  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());
+  TEST_ASSERT(outArgs.supports(Thyra::MEB::OUT_ARG_DgDp, solutionResponseIndex, parameterIndex).none());*/
 
   TEST_NOTHROW(solver->evalModel(inArgs, outArgs));
 }

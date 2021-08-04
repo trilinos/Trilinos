@@ -87,7 +87,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
-  TransientSolver<Scalar>(in_model), 
+  TransientSolver<Scalar>(in_model, appParams), 
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized_(false),
   piroObserver_(piroObserver),
@@ -324,9 +324,10 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &timeStepSolver,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &underlyingModel,
     Scalar finalTime,
-    const std::string sens_method_string, 
+    const std::string sens_method_string,
+    const int response_fn_index_, 
     Teuchos::EVerbosityLevel verbosityLevel) :
-  TransientSolver<Scalar>(underlyingModel), 
+  TransientSolver<Scalar>(underlyingModel, response_fn_index_), 
   piroTempusIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),
@@ -356,8 +357,9 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     Scalar initialTime,
     Scalar finalTime,
     const std::string sens_method_string, 
+    const int response_fn_index,
     Teuchos::EVerbosityLevel verbosityLevel) :
-  TransientSolver<Scalar>(underlyingModel), 
+  TransientSolver<Scalar>(underlyingModel, response_fn_index), 
   piroTempusIntegrator_(stateIntegrator),
   fwdStateStepper_(stateStepper),
   fwdTimeStepSolver_(timeStepSolver),

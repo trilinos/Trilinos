@@ -63,12 +63,12 @@ public:
   /** \name Constructors/initializers */
   //@{
   /** \brief . */
-  explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model);  
+  explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model,
+		           const Teuchos::RCP<Teuchos::ParameterList> &appParams); 
 
-  /** \brief . */
-  TransientSolver(
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      int numParameters); 
+  TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model,
+		  const int response_fn_index = -1); 
+
   //@}
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
@@ -132,6 +132,8 @@ private:
 
   int num_p_;
   int num_g_;
+
+  int response_fn_index_{0}; 
 
   SENS_METHOD sensitivityMethod_;
 

@@ -62,27 +62,49 @@
 
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model) :  
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, 
+  const Teuchos::RCP<Teuchos::ParameterList> &appParams) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   model_(model), 
   num_p_(model->Np()), 
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
 {
-  //Nothing to do
+  Teuchos::RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
+  if (tempusPL->isSublist("Sensitivities")){
+    Teuchos::ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities", true);
+    response_fn_index_ = tempusSensPL.get<int>("Response Function Index", 0);
+  }
+  else {
+    response_fn_index_ = 0; 
+  }
 }
 
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, int numParameters) :  
-    out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
-    model_(model),
-    num_p_(numParameters),
-    num_g_(model->Ng()),
-    sensitivityMethod_(NONE) 
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, 
+  const int response_fn_index) :
+  out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
+  model_(model), 
+  num_p_(model->Np()), 
+  num_g_(model->Ng()),
+  sensitivityMethod_(NONE)
 {
-  //Nothing to do
+  if (num_g_ = 1) {
+    response_fn_index_ = 1; 
+  }
+  else {
+    response_fn_index_ = response_fn_index; 
+    if ((sensitivityMethod_ == ADJOINT) && (response_fn_index_ == -1)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error in Piro::TransientSolver constructor: 'Response Function Index' must be specified for ADJOINT sensitivity method "
+          << "with >1 response!\n"); 
+    }
+  }
 }
+
 
 template<typename Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
@@ -522,8 +544,10 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
       }
     case ADJOINT: //adjoint sensitivities
       for (int l = 0; l < num_p_; ++l) {
-        for (int j = 0; j < num_g_; ++j) {
+        for (int j = response_fn_index_; j < response_fn_index_+1; ++j) {
           //Get DgDp from outArgs and set it based on adjoint integrator from Tempus 
+	  //Note that this is only done if j == response_fn_index_, as Tempus can only 
+	  //return a single DgDp
           const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
              outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
           if (!dgdp_support.none()) {
@@ -551,7 +575,7 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
                     "\n Error! Piro::TransientSolver: DgDp returned by Tempus::IntegratorAdjointSensitivity::getDgDp() routine is null!\n"); 
                 } 
 		//Copy dgdp_mv_from_tempus into dgdp_mv - IKT, there may be better way to do this
-		dgdp_mv->assign(*dgdp_mv_from_tempus); 
+		dgdp_mv->assign(*dgdp_mv_from_tempus);
 	      }
 	    }
 	  }
