@@ -282,7 +282,9 @@ void Piro::TempusSolver<Scalar>::initialize(
 	}	
       }
       else {
-        tempusSensPL.set("Mass Matrix Is Identity", true); // Necessary for explicit
+	if (sens_method_ == ADJOINT) {
+          tempusSensPL.set("Mass Matrix Is Identity", true); // Necessary for explicit + adjoint sensitivities
+	}
       }
     }
     // C.2) Create the Thyra-wrapped ModelEvaluator
