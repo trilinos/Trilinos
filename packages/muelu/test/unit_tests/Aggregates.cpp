@@ -944,8 +944,8 @@ public:
 
     aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
     // Test to check that the dirichlet node is aggregated:
-    for( auto i : unaggregated ){
-      TEST_EQUALITY( i == 2, false);
+    for( size_t i=0; i < unaggregated.size(); i++){
+      TEST_EQUALITY( unaggregated[i] == 2, false);
     }
 
     // Repeat with greedy Dirichlet
