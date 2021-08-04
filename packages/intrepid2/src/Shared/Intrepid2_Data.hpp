@@ -166,9 +166,14 @@ public:
   static ScalarView<DataScalar,DeviceType> zeroView()
   {
     static ScalarView<DataScalar,DeviceType> zeroView = ScalarView<DataScalar,DeviceType>("zero",1);
-    Kokkos::push_finalize_hook( [=] {
-      zeroView = ScalarView<DataScalar,DeviceType>();
-    });
+    static bool havePushedFinalizeHook = false;
+    if (!havePushedFinalizeHook)
+    {
+      Kokkos::push_finalize_hook( [=] {
+        zeroView = ScalarView<DataScalar,DeviceType>();
+      });
+      havePushedFinalizeHook = true;
+    }
     return zeroView;
   }
 };
