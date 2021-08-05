@@ -1005,11 +1005,16 @@ namespace MueLu {
      RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
      
      // These are all going to be user provided, so NoFactory
-     rFactory->SetFactory("D0", NoFactory::getRCP());
      rFactory->SetFactory("Pnodal", NoFactory::getRCP());
      rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
      
+     if(levelID > 1)
+       rFactory->SetFactory("D0", this->GetFactoryManager(levelID-1)->GetFactory("D0"));
+     else 
+       rFactory->SetFactory("D0", NoFactory::getRCP());     
+
      manager.SetFactory("Ptent", rFactory);
+     manager.SetFactory("D0", rFactory);
  
    }
 

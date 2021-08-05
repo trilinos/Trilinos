@@ -250,7 +250,7 @@ namespace MueLu {
       }
 
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Fix me");
+      throw std::runtime_error("Maxwell1: Not yet supported");
 
       return;
     }
@@ -267,7 +267,7 @@ namespace MueLu {
       }
 
       // Generate single level hierarchy for the edge
-      throw std::runtime_error("Maxwell1: Fix me");
+      throw std::runtime_error("Maxwell1: Not yet supported");
 
       return;
     }
