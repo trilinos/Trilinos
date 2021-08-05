@@ -67,6 +67,7 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
 
+
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_Utilities_kokkos.hpp"
 #endif
@@ -321,10 +322,17 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Generating the (1,1) Hierarchy
     Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
- 
+    if(mode_ == MODE_REFMAXWELL) {
+      if(Hierarchy11_->GetNumLevels() > 1) {
+        RCP<Level> EdgeL = Hierarchy11_->GetLevel(1);
+        P11_ = EdgeL->Get<RCP<Matrix> >("P");
+      }
+    }
 
+    ////////////////////////////////////////////////////////////////////////////////
+    // Allocate temporary MultiVectors for solve (only needed for RefMaxwell style)
+    allocateMemory(1);
 
-  
   }
 
 
@@ -373,8 +381,24 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::allocateMemory(int numVectors) const {
-    throw std::runtime_error("Maxwell1: write me");
-    RCP<Teuchos::TimeMonitor> tmAlloc = getTimer("MueLu Maxwell1: Allocate MVs");
+    if(mode_ == MODE_REFMAXWELL) {
+      RCP<Teuchos::TimeMonitor> tmAlloc = getTimer("MueLu Maxwell1: Allocate MVs");      
+
+      residualFine_ = MultiVectorFactory::Build(SM_Matrix_->getRangeMap(), numVectors);
+     
+      if(!Hierarchy11_.is_null() && Hierarchy11_->GetNumLevels() > 1) { 
+        RCP<Level> EdgeL = Hierarchy11_->GetLevel(1);
+        RCP<Matrix> A = EdgeL->Get<RCP<Matrix> >("A");
+        residual11c_ = MultiVectorFactory::Build(A->getRangeMap(), numVectors);
+        update11c_   = MultiVectorFactory::Build(A->getDomainMap(), numVectors);
+      }
+      
+      if(!Hierarchy22_.is_null()) {
+        residual22_ = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+        update22_   = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+      }
+
+    }
 
   }
 
@@ -460,7 +484,57 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseRefMaxwellAdditive(const MultiVector& RHS, MultiVector& X) const {
-    throw std::runtime_error("Maxwell1: Write me");
+    // make sure that we have enough temporary memory
+    const SC one = Teuchos::ScalarTraits<SC>::one();
+    if (!allEdgesBoundary_ && X.getNumVectors() != residualFine_->getNumVectors())
+      allocateMemory(X.getNumVectors());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(Hierarchy11_.is_null() || Hierarchy11_->GetNumLevels() == 0, Exceptions::RuntimeError, "(1,1) Hiearchy is null.");    
+
+    // 1) Run fine pre-smoother using Hierarchy11
+    RCP<Level> Fine = Hierarchy11_->GetLevel(0);
+    if (Fine->IsAvailable("PreSmoother")) {
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: PreSmoother");
+      RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
+      preSmoo->Apply(X, RHS, true);
+   }
+
+    // 2) Compute residual
+    {
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: residual calculation");
+      Utilities::Residual(*SM_Matrix_, X, RHS,*residualFine_);
+    }
+
+    // 3a) Restrict residual to (1,1) Hierarchy's level 1 and execute (1,1) hierarchy (use startLevel and InitialGuessIsZero)
+    if(!P11_.is_null()) {
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: (1,1) correction");
+      P11_->apply(*residualFine_,*residual11c_,Teuchos::TRANS);
+      Hierarchy11_->Iterate(*residual11c_,*update11c_,true,1);
+    }
+
+    // 3b) Restrict residual to (2,2) Hierarchy's level 0 and execute (2,2) hierarchy (use InitialGuessIsZero)
+    if (!allNodesBoundary_) {
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: (2,2) correction");
+      D0_Matrix_->apply(*residualFine_,*residual22_,Teuchos::TRANS);
+      Hierarchy22_->Iterate(*residual22_,*update22_,true,0);
+    }
+
+    // 4) Prolong both updates back into X-vector (Need to do both the P11 null and not null cases
+    {
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: Orolongation");
+      if(!P11_.is_null()) 
+        P11_->apply(*update11c_,X,Teuchos::NO_TRANS,one,one);
+      if (!allNodesBoundary_) 
+        D0_Matrix_->apply(*update22_,X,Teuchos::NO_TRANS,one,one);
+    }
+
+    // 5) Run fine post-smoother using Hierarchy11
+    if (Fine->IsAvailable("PostSmoother")) {
+      RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: PostSmoother");
+      RCP<SmootherBase> postSmoo = Fine->Get< RCP<SmootherBase> >("PostSmoother");
+      postSmoo->Apply(X, RHS, false);
+    }
+
 
   }
 
@@ -477,10 +551,10 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu Maxwell1: solve");
     if(mode_ == MODE_STANDARD || mode_ == MODE_EDGE_ONLY)
       applyInverseStandard(RHS,X);
-    else
+    else if(mode_ == MODE_REFMAXWELL)
       applyInverseRefMaxwellAdditive(RHS,X);
-
-    throw std::runtime_error("Maxwell1: Write me");
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Must use mode 'standard', 'refmaxwell' or 'edge only'.");    
   }
 
 

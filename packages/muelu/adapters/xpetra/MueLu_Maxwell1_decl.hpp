@@ -59,6 +59,7 @@
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_SmootherBase.hpp"
 
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_Utilities_kokkos_fwd.hpp"
@@ -290,14 +291,16 @@ namespace MueLu {
     //! Coordinates
     Teuchos::RCP<RealValuedMultiVector> Coords_;
     //! Some options
-    bool useSeperateHierarchyApply_,useKokkos_,allEdgesBoundary_,allNodesBoundary_,dump_matrices_,enable_reuse_,syncTimers_;
+    bool useKokkos_,allEdgesBoundary_,allNodesBoundary_,dump_matrices_,enable_reuse_,syncTimers_;
     bool applyBCsTo22_;
     
     //! Execution modes
     typedef enum {MODE_STANDARD=0, MODE_REFMAXWELL, MODE_EDGE_ONLY} mode_type;
     mode_type mode_;
 
-    //! Temporary memory
+    //! Temporary memory (cached vectors for RefMaxwell-style)
+    RCP<Matrix> P11_;
+    mutable Teuchos::RCP<MultiVector> residualFine_, residual11c_, residual22_, update11c_,update22_;
 
   };
 
