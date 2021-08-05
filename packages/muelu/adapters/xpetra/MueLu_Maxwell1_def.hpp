@@ -66,7 +66,8 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_PerfUtils.hpp"
-
+#include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_HierarchyManager.hpp"
 
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_Utilities_kokkos.hpp"
@@ -124,8 +125,10 @@ namespace MueLu {
 
     // If we're in edge only or standard modes, then the (2,2) hierarchy gets built without smoothers.
     // Otherwise we use the user's smoothers (defaulting to Chebyshev if unspecified)
-    if(list.isSublist("refmaxwell: 22list"))
-      precList22_     =  list.sublist("refmaxwell: 22list");
+    if(list.isSublist("maxwell1: 22list"))
+      precList22_     =  list.sublist("maxwell1: 22list");
+    else if(list.isSublist("refmaxwell: 22list"))
+      precList22_     =  list.sublist("refmaxwell: 22list");   
     if(mode_ == MODE_EDGE_ONLY || mode_ == MODE_STANDARD) 
       precList22_.set("smoother: pre or post","none");
     else if(!precList22_.isType<std::string>("Preconditioner Type") &&
@@ -139,7 +142,9 @@ namespace MueLu {
 
     // For the (1,1) hierarchy we'll use Hiptmair (STANDARD) or Chevyshev (EDGE_ONLY / REFMAXWELL) if
     // the user doesn't specify things
-    if(list.isSublist("refmaxwell: 11list"))
+    if(list.isSublist("maxwell1: 11list"))
+      precList11_     =  list.sublist("maxwell1: 11list");   
+    else if(list.isSublist("refmaxwell: 11list"))
       precList11_     =  list.sublist("refmaxwell: 11list");   
     if(!precList11_.isType<std::string>("Preconditioner Type") &&
        !precList11_.isType<std::string>("smoother: type") &&
@@ -195,7 +200,7 @@ namespace MueLu {
   void Maxwell1<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute(bool reuse) {
 
 #ifdef HAVE_MUELU_CUDA
-    if (parameterList_.get<bool>("refmaxwell: cuda profile setup", false)) cudaProfilerStart();
+    if (parameterList_.get<bool>("maxwell1: cuda profile setup", false)) cudaProfilerStart();
 #endif
 
     std::string timerLabel;
@@ -220,7 +225,7 @@ namespace MueLu {
     ////////////////////////////////////////////////////////////////////////////////
     // Detect Dirichlet boundary conditions
     if (!reuse) {
-      magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
+      magnitudeType rowSumTol = precList11_.get("aggregation: row sum drop tol",-1.0);
       Maxwell_Utils<SC,LO,GO,NO>::detectBoundaryConditionsSM(SM_Matrix_,D0_Matrix_,rowSumTol,
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
                                                              useKokkos_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_,
@@ -228,7 +233,7 @@ namespace MueLu {
                                                              BCedges_,BCnodes_,BCrows_,BCcols_,BCdomain_,
                                                              allEdgesBoundary_,allNodesBoundary_);
       if (IsPrint(Statistics2)) {
-        GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
+        GetOStream(Statistics2) << "MueLu::Maxwell1::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
       }
     }
 
@@ -318,14 +323,25 @@ namespace MueLu {
         EdgeL->Set("Pnodal",NodeL->Get<RCP<Matrix> >("P"));    
       }
     }
+    
 
     ////////////////////////////////////////////////////////////////////////////////
     // Generating the (1,1) Hierarchy
-    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
-    if(mode_ == MODE_REFMAXWELL) {
-      if(Hierarchy11_->GetNumLevels() > 1) {
-        RCP<Level> EdgeL = Hierarchy11_->GetLevel(1);
-        P11_ = EdgeL->Get<RCP<Matrix> >("P");
+    {
+      SM_Matrix_->setObjectLabel("A(1,1)");
+      precList11_.set("coarse: max size",1);
+      precList11_.set("max levels",Hierarchy22_->GetNumLevels());      
+      //    Hierarchy11_ = MueLu::CreateXpetraPreconditioner(SM_Matrix_, precList11_);
+      RCP<HierarchyManager<SC,LO,GO,NO> > mueLuFactory = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList11_,SM_Matrix_->getDomainMap()->getComm()));
+      Hierarchy11_->setlib(SM_Matrix_->getDomainMap()->lib());
+      Hierarchy11_->SetProcRankVerbose(SM_Matrix_->getDomainMap()->getComm()->getRank());
+      mueLuFactory->SetupHierarchy(*Hierarchy11_);
+      
+      if(mode_ == MODE_REFMAXWELL) {
+        if(Hierarchy11_->GetNumLevels() > 1) {
+          RCP<Level> EdgeL = Hierarchy11_->GetLevel(1);
+          P11_ = EdgeL->Get<RCP<Matrix> >("P");
+        }
       }
     }
 
@@ -373,6 +389,7 @@ namespace MueLu {
     }
     
     RCP<Matrix> Kn_Matrix = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
+    Kn_Matrix->setObjectLabel("A(2,2)");
 
     return Kn_Matrix;
   }
@@ -590,6 +607,17 @@ namespace MueLu {
     Hierarchy22_   = Teuchos::null;
     mode_          = MODE_STANDARD;
 
+    // Default settings
+    useKokkos_=false; 
+    allEdgesBoundary_=false;
+    allNodesBoundary_=false;
+    dump_matrices_ = false;
+    enable_reuse_=false;
+    syncTimers_=false;
+    applyBCsTo22_ = true;
+    
+
+
     // set parameters
     setParameters(List);
 
@@ -629,7 +657,7 @@ namespace MueLu {
     Coords_       = Coords;
     Nullspace_    = Nullspace;
 
-    dump(*Kn_Matrix_, "Kb.m");
+    dump(*Kn_Matrix_, "Kn.m");
     if (!Nullspace_.is_null())    dumpCoords(*Nullspace_, "nullspace.m");
     if (!Coords_.is_null())       dumpCoords(*Coords_, "coords.m");
 

@@ -101,11 +101,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
 
-    const ParameterList& pL = GetParameterList();
-
-    // NOTE: This guy can only either be 'Nullspace' or 'Scaled Nullspace' or else the validator above will cause issues
-    std::string nspName = "Nullspace";
-    if(pL.isParameter("Nullspace name")) nspName = pL.get<std::string>("Nullspace name");
+    //    const ParameterList& pL = GetParameterList();
 
     Input(fineLevel, "A");
     Input(coarseLevel, "Pnodal");
@@ -126,6 +122,7 @@ namespace MueLu {
     using XMM = Xpetra::MatrixMatrix<SC,LO,GO,NO>;
     Teuchos::FancyOStream& out0=GetBlackHole();
     const ParameterList& pL = GetParameterList();
+
     RCP<Matrix>                EdgeMatrix    = Get< RCP<Matrix> >               (fineLevel, "A");
     RCP<Matrix>                Pn            = Get< RCP<Matrix> >               (coarseLevel, "Pnodal");
     RCP<Matrix>                D0            = Get< RCP<Matrix> >               (fineLevel, "D0");

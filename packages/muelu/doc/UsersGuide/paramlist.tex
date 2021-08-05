@@ -219,6 +219,12 @@
           
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
           
+\cbb{maxwell1: mode}{string}{"standard"}{Specifying the order of solve of the block system. Allowed values are: "standard" (default), "refmaxwell"}
+          
+\cba{maxwell1: 11list}{\parameterlist}{Specifies the multigrid solver for the 11 block}
+          
+\cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
+          
 \cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
           
 \cbb{refmaxwell: disable addon}{bool}{true}{Specifing whether the addon should be built for stabilization}
