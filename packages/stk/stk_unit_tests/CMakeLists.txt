@@ -31,6 +31,10 @@ IF(Trilinos_ENABLE_STKCoupling)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_coupling)
 ENDIF()
 
+IF(Trilinos_ENABLE_STKSearch)
+TRIBITS_ADD_TEST_DIRECTORIES(stk_search)
+ENDIF()
+
 IF(Trilinos_ENABLE_STKTransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(stk_transfer)
 ENDIF()

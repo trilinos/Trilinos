@@ -33,8 +33,8 @@
 // 
 
 #include <gtest/gtest.h>
-#include <unit_tests/UnitTestUtils.hpp>
-#include "MeshUtilsForBoundingVolumes.hpp"
+#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
+#include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
 namespace

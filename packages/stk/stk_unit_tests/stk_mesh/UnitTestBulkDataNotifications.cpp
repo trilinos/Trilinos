@@ -9,7 +9,6 @@
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include <vector>                       // for vector
 #include "mpi.h"                        // for ompi_communicator_t, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for EntityRank

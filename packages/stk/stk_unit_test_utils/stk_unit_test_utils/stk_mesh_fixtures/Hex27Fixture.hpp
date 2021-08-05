@@ -50,7 +50,6 @@
 #include <vector>
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/CoordinateMapping.hpp"
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"

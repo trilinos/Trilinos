@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,73 +30,41 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
 
-#include "stk_util/util/CSet.hpp"
-#include <cstddef>    // for size_t
-#include <algorithm>  // for lower_bound
-#include <memory>     // for allocator_traits<>::value_type
+#ifndef TEXTMESHTOFILE_HPP
+#define TEXTMESHTOFILE_HPP
 
-namespace stk {
-namespace cset {
+#include <stddef.h>                             // for size_t
+#include <stk_io/StkMeshIoBroker.hpp>           // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>           // for BulkData, etc
+#include <stk_mesh/base/MetaData.hpp>           // for MetaData
+#include <string>                               // for string
+#include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine
 
-CSet::TypeVector::iterator
-lower_bound(CSet::TypeVector & typeVector, const std::type_info * type)
+namespace stk
 {
-  auto i = typeVector.begin();
-  auto j = typeVector.end();
-
-  return std::lower_bound(i, j, type, less_cset());
-}
-
-}
-
-const void *
-CSet::p_get(const std::type_info & type) const
+namespace unit_test_util
 {
-  for (auto it = m_type.begin(), end = m_type.end(); it != end; ++it) {
-    if (**it == type) {
-      return m_value[it - m_type.begin()].get();
-    }
-  }
 
-  return nullptr;
+class TextMeshToFile
+{
+public:
+  TextMeshToFile(stk::ParallelMachine comm, stk::mesh::BulkData::AutomaticAuraOption auraOption);
+  ~TextMeshToFile() = default;
+
+  void setup_mesh(const std::string& meshDesc, const std::string& outputFileName);
+  void write_mesh();
+
+  stk::mesh::BulkData& get_bulk() { return m_bulk; }
+  stk::mesh::MetaData& get_meta() { return m_meta; }
+
+protected:
+  stk::mesh::MetaData m_meta;
+  stk::mesh::BulkData m_bulk;
+  stk::io::StkMeshIoBroker m_broker;
+  size_t m_outputFileIndex = 0;
+};
+
 }
-
-} // namespace stk
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
+#endif // TEXTMESHTOFILE_HPP

@@ -41,7 +41,6 @@
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD
 
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityRank

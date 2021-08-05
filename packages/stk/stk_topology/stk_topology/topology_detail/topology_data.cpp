@@ -32,7 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_topology/topology.hpp>
+#include <stk_topology/topology_detail/topology_data.hpp>
 
 namespace stk { namespace topology_detail {
 

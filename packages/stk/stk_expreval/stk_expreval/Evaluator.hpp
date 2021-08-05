@@ -48,7 +48,6 @@
 #include <stk_expreval/Function.hpp>
 #include <stk_expreval/Constants.hpp>
 #include <stk_expreval/Variable.hpp>
-#include <stk_util/util/ThreadLocalData.hpp>
 
 namespace stk {
 namespace expreval {
@@ -116,12 +115,14 @@ public:
    * @return			a <b>VariableMap</b> reference to the variable map.
    */
   VariableMap &getVariableMap() {
-    return m_variableMap.getMyThreadEntry();
+    return m_variableMap;
   }
 
   bool is_constant_expression() const;
 
   bool is_variable(const std::string& variableName) const; 
+
+  bool is_scalar(const std::string& variableName) const;
  
   std::vector<std::string> get_variable_names() const;
 
@@ -161,9 +162,8 @@ public:
   }
 
   Eval &setValue(const std::string &name, double* value, int definedLength) {
-    auto& variableMap = m_variableMap.getMyThreadEntry();
-    VariableMap::iterator it = variableMap.find(name);
-    if (it != variableMap.end()) {
+    VariableMap::iterator it = m_variableMap.find(name);
+    if (it != m_variableMap.end()) {
       (*it).second->bind(*value, definedLength);
     }
     return *this;
@@ -179,9 +179,8 @@ public:
    * @return			a <b>double</b> value of the variable.
    */
   double getValue(const std::string &name) {
-    auto& variableMap = m_variableMap.getMyThreadEntry();
-    VariableMap::iterator it = variableMap.find(name);
-    if (it == variableMap.end())
+    VariableMap::iterator it = m_variableMap.find(name);
+    if (it == m_variableMap.end())
       throw std::runtime_error(std::string("Variable ") + name  + " not defined");
     return (*it).second->getValue();
   }
@@ -209,24 +208,9 @@ public:
    * @return			an <b>Eval</b> reference to this expression evaluator.
    */
   Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
-    auto& variableMap = m_variableMap.getMyThreadEntry();
-    VariableMap::iterator it = variableMap.find(name);
-    if (it != variableMap.end()) {
+    VariableMap::iterator it = m_variableMap.find(name);
+    if (it != m_variableMap.end()) {
       (*it).second->bind(value_ref, definedLength);
-    }
-    return *this;
-  }
-
-  Eval &bindVariable(const std::string &name, ThreadLocalData<double> &value_ref, int definedLength=std::numeric_limits<int>::max()) {
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    {
-      auto& variableMap = m_variableMap.getMyThreadEntry();
-      VariableMap::iterator it = variableMap.find(name);
-      if (it != variableMap.end()) {
-        (*it).second->bind(value_ref.getMyThreadEntry(), definedLength);
-      }
     }
     return *this;
   }
@@ -242,9 +226,8 @@ public:
    *				variable.
    */
   Variable &getVariable(const std::string &name) {
-    auto& variableMap = m_variableMap.getMyThreadEntry();
-    VariableMap::iterator it = variableMap.find(name);
-    if (it == variableMap.end())
+    VariableMap::iterator it = m_variableMap.find(name);
+    if (it == m_variableMap.end())
       throw std::runtime_error(std::string("Variable ") + name  + " not defined");
     return *(*it).second;
   }
@@ -313,15 +296,15 @@ public:
   Variable::ArrayOffset getArrayOffsetType() {return m_arrayOffsetType;}
 
 private:
-  stk::ThreadLocalData<VariableMap>		m_variableMap;		///< Variable map
+  VariableMap		m_variableMap;		///< Variable map
   UndefinedFunctionSet	m_undefinedFunctionSet;	///< Vector of undefined functions
 
   std::string		m_expression;		///< Expression which was parsed.
   bool			m_syntaxStatus;		///< True if syntax is correct
   bool			m_parseStatus;		///< True if parsed successfully
 
-  stk::ThreadLocalData<Node*>		m_headNode;		///< Head of compiled expression
-  stk::ThreadLocalData<std::vector<std::shared_ptr<Node>>> m_nodes;                ///< Allocated nodes
+  Node*		m_headNode;		///< Head of compiled expression
+  std::vector<std::shared_ptr<Node>> m_nodes;                ///< Allocated nodes
   Variable::ArrayOffset m_arrayOffsetType;      ///< Zero or one based array indexing
 };
 

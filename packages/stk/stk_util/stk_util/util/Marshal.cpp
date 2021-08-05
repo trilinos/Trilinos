@@ -33,7 +33,6 @@
 // 
 
 #include "stk_util/util/Marshal.hpp"
-#ifdef STK_HAS_MPI
 
 #include <stdint.h>                     // for uint32_t
 #include <algorithm>                    // for fill
@@ -459,5 +458,4 @@ Marshal &operator>>(Marshal &min, std::string &s)  {
 }
 
 } // namespace stk
-#endif // STK_HAS_MPI
 

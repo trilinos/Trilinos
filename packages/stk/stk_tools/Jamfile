@@ -189,6 +189,7 @@ lib stk_tools_lib
     ]
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_io//stk_io
+    /sierra/stk_util//stk_util_util
     stk_transfer_utils_lib
   :
     [ ifuserbuild
@@ -213,6 +214,10 @@ lib stk_mesh_tools_lib
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_search//stk_search
     /sierra/stk_io//stk_io
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_topology//stk_topology
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

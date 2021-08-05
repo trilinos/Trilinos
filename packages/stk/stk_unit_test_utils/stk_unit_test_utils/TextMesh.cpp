@@ -19,7 +19,6 @@
 #include <vector>                                    // for vector
 
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data

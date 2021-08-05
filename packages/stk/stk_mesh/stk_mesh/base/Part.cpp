@@ -204,5 +204,13 @@ bool Part::contains(const Part& part) const
   return stk::mesh::contains(subsets(), part);
 }
 
+namespace impl {
+
+stk::CSet & get_attributes(stk::mesh::Part & part) {
+  return part.get_attributes();
+}
+
+}
+
 } // namespace mesh
 } // namespace stk
