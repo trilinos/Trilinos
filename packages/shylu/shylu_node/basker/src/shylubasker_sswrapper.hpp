@@ -1,4 +1,4 @@
-#ifndef SHYLUBASKER_SSWRAPER_HPP
+#ifndef SHYLUBASKER_SSWRAPPER_HPP
 #define SHYLUBASKER_SSWRAPPER_HPP
 
 #include "shylubasker_types.hpp"
@@ -36,7 +36,7 @@ namespace BaskerNS
     inline
     int amd_order
     (
-     Int          n,
+     Int        n,
      Int       *col_ptr,
      Int       *row_ptr,
      Int       *p
@@ -45,11 +45,11 @@ namespace BaskerNS
       return -1;
     }
 
-     static
+    static
     inline
     int amd_order
     (
-     Int          n,
+     Int        n,
      Int       *col_ptr,
      Int       *row_ptr,
      Int       *p,
@@ -141,7 +141,8 @@ namespace BaskerNS
      int n, 
      int *col_ptr,
      int *row_idx,
-     int *p
+     int *p,
+     bool verbose
     )
     {
       double Info[TRILINOS_AMD_INFO];
@@ -151,14 +152,16 @@ namespace BaskerNS
 
       int ret = trilinos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
 
-      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
-        printf("Memory \n");
-      if(ret == TRILINOS_AMD_INVALID)
-        printf("Invalid\n");
-      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
-        printf("Jumbled\n");
+      if (verbose) {
+        if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+          printf(" + amd_order returned with TRILINOS_AMD_OUT_OF_MEMORY\n");
+        if(ret == TRILINOS_AMD_INVALID)
+          printf(" + amd_order returned with TRILINOS_AMD_INVALID\n");
+        if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+          printf(" + amd_order returned with TRILINOS_AMD_OK_BUT_JUMBLED\n");
+      }
 
-      return 0;
+      return ret;
     }
 
     static
@@ -170,7 +173,8 @@ namespace BaskerNS
      int *row_idx,
      int *p, 
      double &l_nnz,
-     double &lu_work
+     double &lu_work,
+     bool verbose
     )
     {
       double Info[TRILINOS_AMD_INFO];
@@ -180,18 +184,20 @@ namespace BaskerNS
 
       int ret = trilinos_amd_order(n, col_ptr, row_idx, p, NULL, Info); 
 
-      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
-        printf("Memory \n");
-      if(ret == TRILINOS_AMD_INVALID)
-        printf("Invalid\n");
-      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
-        printf("Jumbled\n");
+      if (verbose) {
+        if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+          printf(" > amd_order returned with TRILINOS_AMD_OUT_OF_MEMORY\n");
+        if(ret == TRILINOS_AMD_INVALID)
+          printf(" > amd_order returned with TRILINOS_AMD_INVALID\n");
+        if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+          printf(" > amd_order returned with TRILINOS_AMD_OK_BUT_JUMBLED\n");
+      }
 
       //These are round bounds but help in deciding work
-      l_nnz   = Info[TRILINOS_AMD_LNZ];
-      lu_work = Info[TRILINOS_AMD_NMULTSUBS_LU];
+      l_nnz   = Info[TRILINOS_AMD_LNZ];            // 
+      lu_work = Info[TRILINOS_AMD_NMULTSUBS_LU];   // 
 
-      return 0;
+      return ret;
     }
 
 
@@ -279,7 +285,8 @@ namespace BaskerNS
      long n, 
      long *col_ptr,
      long *row_idx,
-     long *p
+     long *p,
+     bool verbose
     )
     {
       double Info[TRILINOS_AMD_INFO];
@@ -288,14 +295,15 @@ namespace BaskerNS
 
       long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
 
-      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
-        printf("AMD Memory \n");
-      if(ret == TRILINOS_AMD_INVALID)
-        printf("AMD Invalid\n");
-      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
-        printf("AMD Jumbled\n");
-      
-      return 0;
+      if (verbose) {
+        if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+          printf(" x amd_order returned with TRILINOS_AMD_OUT_OF_MEMORY\n");
+        if(ret == TRILINOS_AMD_INVALID)
+          printf(" x amd_order returned with TRILINOS_AMD_INVALID\n");
+        if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+          printf(" x amd_order returned with TRILINOS_AMD_OK_BUT_JUMBLED\n");
+      }
+      return ret;
     }//amd_order
 
 
@@ -308,7 +316,8 @@ namespace BaskerNS
      long *row_idx,
      long *p,
      double &l_nnz,
-     double &lu_work
+     double &lu_work,
+     bool verbose
     )
     {
       double Info[TRILINOS_AMD_INFO];
@@ -317,17 +326,18 @@ namespace BaskerNS
 
       long ret = trilinos_amd_l_order(n, col_ptr, row_idx, p, NULL, Info);
 
-      if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
-        printf("AMD Memory \n");
-      if(ret == TRILINOS_AMD_INVALID)
-        printf("AMD Invalid\n");
-      if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
-        printf("AMD Jumbled\n");
-      
+      if (verbose) {
+        if(ret == TRILINOS_AMD_OUT_OF_MEMORY)
+          printf(" - amd_order returned with TRILINOS_AMD_OUT_OF_MEMORY\n");
+        if(ret == TRILINOS_AMD_INVALID)
+          printf(" - amd_order returned with TRILINOS_AMD_INVALID\n");
+        if(ret == TRILINOS_AMD_OK_BUT_JUMBLED)
+          printf(" - amd_order returned with TRILINOS_AMD_OK_BUT_JUMBLED\n");
+      }
       l_nnz   = Info[TRILINOS_AMD_LNZ];
       lu_work = Info[TRILINOS_AMD_NMULTSUBS_LU];
 
-      return 0;
+      return ret;
     }
 
   }; //end BaskerSSWrapper <long>

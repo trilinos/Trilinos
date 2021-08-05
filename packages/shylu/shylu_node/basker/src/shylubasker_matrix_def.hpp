@@ -11,6 +11,7 @@
 #else
 #include <omp.h>
 #endif
+#include "Teuchos_ScalarTraits.hpp"
 
 
 #include <iostream>
@@ -34,6 +35,8 @@ namespace BaskerNS
     w_fill  = BASKER_FALSE;
     #endif
     inc_lvl_flg = BASKER_FALSE;
+    anorm = -1.0;
+    gnorm = -1.0;
     //printf("matrix init\n");
   }//end BaskerMatrix()
 
@@ -52,6 +55,8 @@ namespace BaskerNS
     w_fill  = BASKER_FALSE;
     #endif
     inc_lvl_flg = BASKER_FALSE;
+    anorm = -1.0;
+    gnorm = -1.0;
   }//end BaskerMatrix(label)
 
   template <class Int, class Entry, class Exe_Space>
@@ -59,35 +64,39 @@ namespace BaskerNS
   BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
   (
    Int _m, Int _n, Int _nnz,
-   Int *col_ptr, Int *row_idx, Entry *val
+   Int *colptr, Int *rowind, Entry *nzval
   )
   {
     tpivot = 0;
+    anorm = -1.0;
+    gnorm = -1.0;
     #ifdef BASKER_2DL
     p_size = 0;
     w_fill = BASKER_FALSE;
     #endif
 
     v_fill = BASKER_FALSE;
-    init_matrix("matrix", _m,_n,_nnz, col_ptr, row_idx, val);
+    init_matrix("matrix", _m,_n,_nnz, colptr, rowind, nzval);
   }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   BaskerMatrix<Int,Entry, Exe_Space>::BaskerMatrix
   (
-   string label, Int _m, Int _n, Int _nnz,
-   Int *col_ptr, Int *row_idx, Entry *val
+   string _label, Int _m, Int _n, Int _nnz,
+   Int *colptr, Int *rowind, Entry *nzval
   )
   {
     tpivot = 0;
+    anorm = -1.0;
+    gnorm = -1.0;
     #ifdef BASKER_2DL
     p_size = 0;
     w_fill = BASKER_FALSE;
     #endif
 
     v_fill = BASKER_FALSE;
-    init_matrix(label, _m,_n,_nnz, col_ptr, row_idx, val);
+    init_matrix(_label, _m,_n,_nnz, colptr, rowind, nzval);
   }//end BaskerMatrix(int, int, int, int*, int*, Entry*)
 
   template <class Int, class Entry, class Exe_Space>
@@ -169,11 +178,14 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int, Entry, Exe_Space>::init_col()
   {
+    //printf( " init_col(n=%d)\n",ncol );
     BASKER_ASSERT(ncol >= 0, "INIT_COL, ncol > 0");
     MALLOC_INT_1DARRAY(col_ptr, ncol+1);
+    MALLOC_INT_1DARRAY(col_idx, ncol+1);
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
+      col_idx(i) = (Int) BASKER_MAX_IDX;
     }
   }//end init_col()
 
@@ -181,9 +193,11 @@ namespace BaskerNS
   BASKER_INLINE
   void BaskerMatrix<Int,Entry,Exe_Space>::clean_col()
   {
+    //printf( " clean_col(ncol = %d)\n",ncol );
     for(Int i = 0; i < ncol+1; ++i)
     {
       col_ptr(i) = (Int) BASKER_MAX_IDX;
+      col_idx(i) = (Int) BASKER_MAX_IDX;
     }
     nnz = 0;
     mnnz = 0;
@@ -251,9 +265,9 @@ namespace BaskerNS
   {
     label = _label;
     init_vectors(_m, _n, _nnz);
-    copy_vec(_col_ptr, _n+1,  col_ptr);
-    copy_vec(_row_idx, _nnz, row_idx);
-    copy_vec(_val,_nnz,     val);
+    copy_vec(_col_ptr,  _n+1,  col_ptr);
+    copy_vec(_row_idx,  _nnz,  row_idx);
+    copy_vec(_val,      _nnz,  val);
   }//end init_matrix(string with ptrs)
 
 
@@ -328,7 +342,7 @@ namespace BaskerNS
   int BaskerMatrix<Int,Entry,Exe_Space>::copy_values
   (
    Int _m, Int _n, Int _nnz,
-	 Int *_col_ptr, Int *_row_idx, Entry *_val
+   Int *_col_ptr, Int *_row_idx, Entry *_val
   )
   {
     if(nrow!=_m)
@@ -406,6 +420,7 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   void BaskerMatrix<Int,Entry,Exe_Space>::init_pend()
   {
+    //printf( " > init_pend(ncol = %d)\n",ncol );
     if(ncol > 0)
     {
       BASKER_ASSERT((ncol+1)>0, "matrix init_pend")
@@ -437,6 +452,13 @@ namespace BaskerNS
     if(v_fill == BASKER_TRUE)
       return -1;
 
+    #if 1
+    Kokkos::deep_copy(col_ptr, 0);
+    Kokkos::deep_copy(row_idx, 0);
+
+    const Entry zero(0.0);
+    Kokkos::deep_copy(val, zero);
+    #else
     for(Int i = 0; i < ncol+1; i++)
     {
       col_ptr(i) = 0;
@@ -451,6 +473,7 @@ namespace BaskerNS
     {
       val(i) = 0;
     }
+    #endif
 
     //#ifdef BASKER_INC_LVL
     if(inc_lvl_flg == BASKER_TRUE)
@@ -472,9 +495,13 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    BASKER_BOOL   alloc,
-   Int kid
+   Int kid,
+   bool keep_zeros
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
+    using Mag = typename STS::magnitudeType;
+
     if(nnz == 0)
     {
       for(Int i = 0; i < ncol+1; i++)
@@ -500,18 +527,11 @@ namespace BaskerNS
         BASKER_ASSERT(nnz > 0, "matrix row nnz 2");
         MALLOC_INT_1DARRAY(row_idx, nnz);
       }
-      else if(nnz ==0)
+      else if(nnz == 0)
       {
         BASKER_ASSERT((nnz+1)>0, "matrix row nnz 3");
         MALLOC_INT_1DARRAY(row_idx, nnz+1);
       }
-    }
-    //init_value(row_idx, nnz, (Int) 0);
-    //printf("clear row: %d \n", nnz);
-    for(Int i = 0; i < nnz; ++i)
-    {
-      //printf("clear row_idx(%d) \n", i);
-      row_idx(i) = 0;
     }
 
     if(alloc == BASKER_TRUE)
@@ -527,30 +547,43 @@ namespace BaskerNS
         MALLOC_ENTRY_1DARRAY(val, nnz+1);
       }
     }
-    //init_value(val, nnz, (Entry) 0);
-    for(Int i = 0; i < nnz; ++i)
-    {
-      val(i) = 0;
-    }
 
+    const Entry zero(0.0);
+
+    anorm = abs(zero);
     Int temp_count = 0;
-
     for(Int k = scol; k < scol+ncol; ++k)
     {
-      //note col_ptr[k-scol] contains the starting index
+      //note col_ptr[k-scol] contains the starting index (by find_2D_convert)
+      // i.e., start of the diagonal block for U, or start of the first off-diagonal block for L
       if(col_ptr(k-scol) == BASKER_MAX_IDX)
       {
         col_ptr(k-scol) = temp_count;
-        //printf("continue called, k: %d  \n", k);
+        /*if (kid == 1) {
+          printf("continue called, k: %d  \n", k);
+        }*/
         continue;
       }
 
+      /*if (kid == 1)
+      {
+        printf(" kid=%d: col_ptr(%d-%d) = %d, M.col_ptr(%d) = %d\n", kid,k,scol,col_ptr(k-scol), k+1,M.col_ptr(k+1));
+      }*/
+      Mag anorm_k (0.0);
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
-        //printf("i: %d j:%d \n", i,j);
+        /*if (kid == 3)
+        {
+          printf( " > row_idx[%d] = %d, val[%d] = %e (%d + %d) with k = %d+%d\n",i,j, i,M.val(i), srow,nrow, scol,k );
+        }*/
         if(j >= srow+nrow)
         {
+          // skip lower-off diagonal blocks for U
+          /*if (kid == 3)
+          {
+            printf("break called, k: %d  \n", k);
+          }*/
           break;
         }
         //printf("writing row_dix: %d i: %d  val: %d nnz: %d srow: %d nrow: %d \n",
@@ -558,22 +591,40 @@ namespace BaskerNS
         //	   srow, nrow);
         //BASKER_ASSERT(temp_count < nnz, "2DConvert, too many values");
 
-        if(j-srow <0)
+        if(j < srow)
         {
-          std::cout << "kid: " << kid 
-                    << " j: " << j 
+          std::cout << std::endl 
+                    << "BaskerMatrix::convert2D(kid = " << kid 
+                    << "): j " << j 
                     << " srow: " << srow 
-                    << " k: " << k
+                    << " scol: " << scol 
+                    << " nrow: " << nrow 
+                    << " ncol: " << ncol 
+                    << " with k: " << k
                     << " idx: " << i
-                    << std::endl;
-          BASKER_ASSERT(0==1, "j-srow NO");
+                    << std::endl << std::endl;
+          char error_msg[100];
+          sprintf(error_msg, " ERROR: j is less than srow (j=%d, srow=%d, kid=%d)",(int)j,(int)srow,(int)kid);
+          BASKER_ASSERT(0 == 1, error_msg);
         }
+        /*if (kid == 1) 
+        {
+          printf( " %d:%d:%d: %d %d, %e\n",kid,i,temp_count,j-srow,k,M.val(i) );
+        }*/
+        if (keep_zeros || M.val(i) != zero)
+        {
+          row_idx(temp_count) = j-srow;
+          val(temp_count) = M.val(i);
 
-
-        row_idx(temp_count) = j-srow;
-        val(temp_count) = M.val(i);
-        temp_count++;
+          anorm_k += abs(M.val(i));
+          temp_count++;
+        }
       }
+      anorm = (anorm > anorm_k ? anorm : anorm_k);
+      /*if (kid == 1) 
+      {
+        printf( " %d: col_ptr(%d) = %d\n",kid,k-scol,temp_count );
+      }*/
       col_ptr(k-scol) = temp_count;
     }
 
