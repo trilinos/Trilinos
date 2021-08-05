@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/cmake/std/PullRequestLinuxDriver.sh)
+SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
