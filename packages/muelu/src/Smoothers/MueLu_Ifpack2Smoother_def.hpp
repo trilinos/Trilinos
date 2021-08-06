@@ -755,15 +755,17 @@ namespace MueLu {
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     std::string smoother1  = paramList.get("hiptmair: smoother type 1","CHEBYSHEV");
     std::string smoother2  = paramList.get("hiptmair: smoother type 2","CHEBYSHEV");
-    SC lambdaMax11,lambdaMax22;
+    //    SC lambdaMax11,lambdaMax22;
 
     if(smoother1 == "CHEBYSHEV") {
       ParameterList & list1 = paramList.sublist("hiptmair: smoother list 1");
-      lambdaMax11 = SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
+      //lambdaMax11 = 
+      SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
     }
     if(smoother2 == "CHEBYSHEV") {
       ParameterList & list2 = paramList.sublist("hiptmair: smoother list 2");
-      lambdaMax22 = SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list2);
+      //lambdaMax22 = 
+      SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list2);
     }
 
     // FIXME: Should really add some checks to make sure the eigenvalue calcs worked like in

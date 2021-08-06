@@ -205,7 +205,7 @@ namespace MueLu {
     LO Nnc = PnT_D0T->getRowMap()->getNodeNumElements();
     
     for(LO i=0; i<(LO)Nnc; i++) {
-      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
+      //      GO global_i = PnT_D0T->getRowMap()->getGlobalElement(i);
 
       // FIXME: We don't really want an std::map here.  This is just a first cut implementation
       using value_type = bool;
