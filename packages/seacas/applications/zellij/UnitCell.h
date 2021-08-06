@@ -24,8 +24,8 @@ struct GeneratedSideBlock
   //!
   //! Note that the `element_offset` is the 1-based index of the
   //! element within the element block that it is a member of
-  GeneratedSideBlock() = default;
-  GeneratedSideBlock(const GeneratedSideBlock&) = delete;
+  GeneratedSideBlock()                           = default;
+  GeneratedSideBlock(const GeneratedSideBlock &) = delete;
 
   std::map<std::string, std::vector<int64_t>> m_faces;
 

@@ -18,18 +18,13 @@ namespace SEAMS {
      * (0.0 -> rows-1) (0.0 -> cols-1)
      */
 
-    if (aprepro->ap_options.one_based_index) {
-      row--;
-      col--;
-    }
-
-    int irl = row;
-    int irh = irl + 1;
-    int icl = col;
-    int ich = icl + 1;
-
     int cols = arr->cols;
     int rows = arr->rows;
+
+    int irl = row;
+    int irh = rows > 1 ? irl + 1 : irl;
+    int icl = col;
+    int ich = cols > 1 ? icl + 1 : icl;
 
     double value = 0.0;
 
@@ -38,8 +33,16 @@ namespace SEAMS {
       double v21 = arr->data[irh * cols + icl];
       double v12 = arr->data[irl * cols + ich];
       double v22 = arr->data[irh * cols + ich];
-      value      = v11 * (irh - row) * (ich - col) + v21 * (row - irl) * (ich - col) +
-              v12 * (irh - row) * (col - icl) + v22 * (row - irl) * (col - icl);
+      if (rows > 1 && cols > 1) {
+        value = (v11 * (irh - row) + v21 * (row - irl)) * (ich - col) +
+                (v12 * (irh - row) * v22 * (row - irl)) * (col - icl);
+      }
+      else if (rows > 1 && cols == 1) {
+        value = v11 * (irh - row) + v21 * (row - irl);
+      }
+      else if (cols > 1 && rows == 1) {
+        value = v11 * (ich - col) + v12 * (col - icl);
+      }
     }
     else {
       aprepro->error("Row or Column index out of range");
