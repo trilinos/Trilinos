@@ -59,8 +59,8 @@ enum { MAX_TREE_LEVELS = 100 };
 template <typename BoxType>
 class ObjectBoundingBoxHierarchy_T {
  public:
-  KOKKOS_FORCEINLINE_FUNCTION ObjectBoundingBoxHierarchy_T() : right_child_offset(0) {}               /// Default box is null and right child offset is 0 (invalid)
-  ~ObjectBoundingBoxHierarchy_T() {}
+  KOKKOS_FORCEINLINE_FUNCTION ObjectBoundingBoxHierarchy_T() = default; /// Default box is null and right child offset is 0 (invalid)
+  ~ObjectBoundingBoxHierarchy_T() = default;
 
   /**
    * Create a hierarchy from a list of object bounding boxes.  The top level of the hierarchy will contain all boxes.  In the next level
@@ -82,7 +82,7 @@ class ObjectBoundingBoxHierarchy_T {
   //  can be found at this[1] and the right child at this[right_child_offset]
   //
  public:
-  int right_child_offset;
+  int right_child_offset = 0;
   BoxType m_box;
 };
 

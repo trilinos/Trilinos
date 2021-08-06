@@ -35,6 +35,8 @@
 #ifndef STKTOPOLOGY_DETAIL_META_FUNCTION_HPP
 #define STKTOPOLOGY_DETAIL_META_FUNCTION_HPP
 
+#include "stk_topology/topology_decl.hpp"
+#include "stk_util/stk_config.h"
 #include <type_traits>
 
 namespace stk { namespace topology_detail {

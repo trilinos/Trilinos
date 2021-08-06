@@ -45,12 +45,13 @@
 #include <stk_mesh/base/NgpFieldBase.hpp>
 #include <stk_mesh/base/FieldSyncDebugging.hpp>
 #include <stk_mesh/base/StkFieldSyncDebugger.hpp>
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>  // for FieldBaseImpl
 #include <string>                       // for string
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
+#include <stk_util/util/SimpleArrayOps.hpp>  // for Copy
+#include <stk_util/util/CSet.hpp>
 #include "Teuchos_any.hpp"
 #include <type_traits>
 
@@ -89,10 +90,6 @@ typedef std::vector<FieldMetaData> FieldMetaDataVector;
  * API for Field objects. Note that the entire Field API is much broader than
  * what's defined in this class. See Field.hpp for more.
  */
-// Implementation details:
-//   Simply wraps a FieldBaseImpl object which is kept as a member, all calls are
-//   inlined and passed through to the impl object. This design is analogous
-//   to the "P-impl" pattern.
 class FieldBase
 {
 public:
@@ -103,56 +100,55 @@ public:
    /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
    */
-  MetaData & mesh_meta_data() const { return m_impl.meta_data(); }
+  MetaData & mesh_meta_data() const { return *m_meta_data; }
+
   /** \brief  Internally generated ordinal of this field that is unique
    *          within the owning \ref stk::mesh::MetaData "meta data manager".
    */
-  unsigned mesh_meta_data_ordinal() const { return m_impl.ordinal(); }
+  unsigned mesh_meta_data_ordinal() const { return m_ordinal; }
 
   /** \brief  Application-defined text name of this field */
-  const std::string & name() const { return m_impl.name() ; }
+  const std::string & name() const { return m_name ; }
 
   /** \brief  Query if the type is Type */
   template<class Type> bool type_is() const
-  { return m_impl.type_is<Type>(); }
+  { return m_data_traits.type_info == typeid(Type); }
 
   /** \brief  Return the \ref stk::mesh::DataTraits "data traits"
    *          for this field's type
    */
-  const DataTraits & data_traits() const { return m_impl.data_traits() ; }
+  const DataTraits & data_traits() const { return m_data_traits ; }
 
   /** \brief  Number of states of this field */
-  unsigned number_of_states() const { return m_impl.number_of_states() ; }
+  unsigned number_of_states() const { return m_num_states ; }
 
   /** \brief  FieldState of this field */
-  FieldState state() const { return m_impl.state() ; }
+  FieldState state() const { return m_this_state; }
 
   /** \brief  Multi-dimensional array rank of this field,
    *          which is zero for a scalar field.
    */
-  unsigned field_array_rank() const { return m_impl.field_array_rank(); }
+  unsigned field_array_rank() const { return m_field_rank; }
 
-  EntityRank entity_rank() const { return m_impl.entity_rank(); }
+  EntityRank entity_rank() const { return m_entity_rank; }
 
   /** \brief  Multi-dimensional
    *          \ref shards::ArrayDimTag "array dimension tags"
    *          of this field.
    */
   const shards::ArrayDimTag * const * dimension_tags() const
-  { return m_impl.dimension_tags() ; }
+  { return m_dim_tags; }
 
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity rank.
    */
-  unsigned max_size( EntityRank ent_rank) const {
-    return m_impl.max_size( ent_rank );
-  }
+  unsigned max_size( EntityRank ent_rank) const;
 
   //----------------------------------------
 
   /** \brief  Query attribute that has been attached to this field */
   template<class A>
-  const A * attribute() const { return m_impl.attribute<A>(); }
+  const A * attribute() const { return m_attribute.template get<A>(); }
 
   typedef FieldRestriction Restriction;
 
@@ -162,27 +158,42 @@ public:
   /** \brief  Vector of field restriction which is volatile until the owning
    *          \ref stk::mesh::MetaData "meta data manager" is committed.
    */
-  const RestrictionVector &restrictions() const {
-    return m_impl.restrictions();
-  }
+  const FieldRestrictionVector &restrictions() const { return m_field_states[0]->m_restrictions; }
+  FieldRestrictionVector & restrictions() { return m_field_states[0]->m_restrictions; }
 
   //----------------------------------------
 
   FieldBase * field_state( FieldState fstate) const {
-    return m_impl.field_state(fstate);
+    return m_field_states[fstate];
   }
 
   bool is_state_valid(FieldState fstate) const {
     return field_state(fstate) != nullptr;
   }
 
-  const void* get_initial_value() const { return m_impl.get_initial_value(); }
+  const void* get_initial_value() const
+  {
+    return m_field_states[0]->m_initial_value;
+  }
+  
+  void* get_initial_value() {
+    return m_field_states[0]->m_initial_value;
+  }
+  
+  unsigned get_initial_value_num_bytes() const {
+    return m_field_states[0]->m_initial_value_num_bytes;
+  }
 
-  void* get_initial_value() { return m_impl.get_initial_value(); }
+  virtual ~FieldBase() {
+    delete m_ngpField;
 
-  unsigned get_initial_value_num_bytes() const { return m_impl.get_initial_value_num_bytes(); }
+    if (state() == StateNone) {
+      void*& init_val = m_initial_value;
 
-  virtual ~FieldBase() {}
+      delete [] reinterpret_cast<char*>(init_val);
+      init_val = nullptr;
+    }
+  }
 
   virtual std::ostream& print_data(std::ostream& out, void* data, unsigned size_per_entity) const { return out; }
 
@@ -216,15 +227,15 @@ public:
 
   bool defined_on(const stk::mesh::Part& part) const;
 
-  void modify_on_host() const { m_impl.modify_on_host(); }
-  void modify_on_device() const { m_impl.modify_on_device(); }
-  void modify_on_host(const Selector& s) const { m_impl.modify_on_host(s); }
-  void modify_on_device(const Selector& s) const { m_impl.modify_on_device(s); }
-  void sync_to_host() const { m_impl.sync_to_host(); }
-  void sync_to_device() const { m_impl.sync_to_device(); }
-  void clear_sync_state() const { m_impl.clear_sync_state(); }
-  void clear_host_sync_state() const { m_impl.clear_host_sync_state(); }
-  void clear_device_sync_state() const { m_impl.clear_device_sync_state(); }
+  void modify_on_host() const;
+  void modify_on_device() const;
+  void modify_on_host(const Selector& s) const;
+  void modify_on_device(const Selector& s) const;
+  void sync_to_host() const;
+  void sync_to_device() const;
+  void clear_sync_state() const;
+  void clear_host_sync_state() const;
+  void clear_device_sync_state() const;
 
   unsigned synchronized_count() const
   {
@@ -234,10 +245,10 @@ public:
     return get_mesh().synchronized_count();
   }
 
-  size_t num_syncs_to_host() const { return m_impl.num_syncs_to_host(); }
-  size_t num_syncs_to_device() const { return m_impl.num_syncs_to_device(); }
-  bool has_ngp_field() const { return m_impl.get_ngp_field() != nullptr; }
-  void fence() const { return m_impl.fence(); }
+  size_t num_syncs_to_host() const;
+  size_t num_syncs_to_device() const;
+  bool has_ngp_field() const { return get_ngp_field() != nullptr; }
+  void fence() const;
 
   template <typename StkDebugger>
   void make_field_sync_debugger() const {
@@ -251,28 +262,54 @@ public:
 
   void rotate_multistate_data();
 
-
 private:
+  template<class A>
+    const A * declare_attribute_no_delete(const A * a) {
+      return m_attribute.template insert_no_delete<A>(a);
+    }   
+
+  template<class A>
+    const A * declare_attribute_with_delete(const A * a) {
+      return m_attribute.template insert_with_delete<A>(a);
+    }   
+
+  template<class A>
+    bool remove_attribute(const A * a) {
+      return m_attribute.template remove<A>(a);
+    }
+
+  template<typename FieldType>
+  void set_field_states( FieldType ** field_states)
+  {
+    for (unsigned i = 0; i < m_num_states; ++i) {
+      m_field_states[i] = field_states[i];
+    }
+  }
+
 
   //  Associate this field with a bulk data.
   //  Note, a field can be associated with one and only one bulk data object
   void set_mesh(stk::mesh::BulkData* bulk);
 
-  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
-   *          that owns this field
-   */
-  MetaData & meta_data() const { return m_impl.meta_data(); }
+  NgpFieldBase * get_ngp_field() const { return m_ngpField; }
+  void set_ngp_field(NgpFieldBase * ngpField) const;
 
-  NgpFieldBase * get_ngp_field() const { return m_impl.get_ngp_field(); }
-  void set_ngp_field(NgpFieldBase * ngpField) const { m_impl.set_ngp_field(ngpField); }
+  void increment_num_syncs_to_host() const;
+  void increment_num_syncs_to_device() const;
 
-  void increment_num_syncs_to_host() const { m_impl.increment_num_syncs_to_host(); }
-  void increment_num_syncs_to_device() const { m_impl.increment_num_syncs_to_device(); }
+  void set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes);
+
+  void insert_restriction( const char       * arg_method ,
+                         const Selector   & arg_selector ,
+                         const unsigned     arg_num_scalars_per_entity ,
+                         const unsigned     arg_first_dimension ,
+                         const void*        arg_init_value = NULL);
+
+  void verify_and_clean_restrictions( const Part& superset, const Part& subset );
 
   friend class ::stk::mesh::MetaData;
   friend class ::stk::mesh::BulkData;
   friend class ::stk::mesh::impl::FieldRepository;
-  friend class ::stk::mesh::impl::FieldBaseImpl;
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestFieldImpl ;
@@ -283,29 +320,7 @@ private:
   template <typename T, template <typename> class NgpDebugger> friend class HostField;
   template <typename T, template <typename> class NgpDebugger> friend class DeviceField;
 
-  FieldMetaDataVector m_field_meta_data;
-
 protected:
-  FieldBase(MetaData                   * arg_mesh_meta_data,
-            unsigned                     arg_ordinal,
-            const std::string          & arg_name,
-            const DataTraits           & arg_traits,
-            unsigned                     arg_rank,
-            const shards::ArrayDimTag  * const * arg_dim_tags,
-            unsigned                     arg_number_of_states,
-            FieldState                   arg_this_state)
-    : m_mesh(nullptr),
-      m_impl(arg_mesh_meta_data,
-             stk::topology::INVALID_RANK,
-             arg_ordinal,
-             arg_name,
-             arg_traits,
-             arg_rank,
-             arg_dim_tags,
-             arg_number_of_states,
-             arg_this_state)
-  {}
-
   FieldBase(MetaData                   * arg_mesh_meta_data,
             stk::topology::rank_t        arg_entity_rank,
             unsigned                     arg_ordinal,
@@ -316,20 +331,52 @@ protected:
             unsigned                     arg_number_of_states,
             FieldState                   arg_this_state)
     : m_mesh(nullptr),
-      m_impl(arg_mesh_meta_data,
-             arg_entity_rank,
-             arg_ordinal,
-             arg_name,
-             arg_traits,
-             arg_rank,
-             arg_dim_tags,
-             arg_number_of_states,
-             arg_this_state)
-  {}
+      m_entity_rank(arg_entity_rank),
+      m_name(arg_name),
+      m_num_states(arg_number_of_states),
+      m_field_rank( arg_rank ),
+      m_restrictions(),
+      m_initial_value(nullptr),
+      m_initial_value_num_bytes(0),
+      m_data_traits( arg_traits ),
+      m_meta_data(arg_mesh_meta_data),
+      m_ordinal(arg_ordinal),
+      m_this_state(arg_this_state),
+      m_ngpField(nullptr),
+      m_numSyncsToHost(0),
+      m_numSyncsToDevice(0)
+  {
+    FieldBase * const pzero = nullptr ;
+    const shards::ArrayDimTag * const dzero = nullptr ;
+    Copy<MaximumFieldStates>(    m_field_states , pzero );
+    Copy<MaximumFieldDimension>( m_dim_tags ,     dzero );
+
+    for ( unsigned i = 0 ; i < arg_rank ; ++i ) {
+      m_dim_tags[i] = arg_dim_tags[i];
+    }
+  }
 
 private:
+  FieldMetaDataVector m_field_meta_data;
+
   stk::mesh::BulkData* m_mesh;
-  impl::FieldBaseImpl  m_impl;
+  EntityRank m_entity_rank;
+  const std::string m_name;
+  const unsigned m_num_states;
+  unsigned m_field_rank;
+  FieldBase                  * m_field_states[ MaximumFieldStates ];
+  const shards::ArrayDimTag  * m_dim_tags[ MaximumFieldDimension ];
+  FieldRestrictionVector m_restrictions;
+  void*                        m_initial_value;
+  unsigned                     m_initial_value_num_bytes;
+  CSet                         m_attribute;
+  const DataTraits           & m_data_traits ;
+  MetaData             * const m_meta_data ;
+  const unsigned               m_ordinal ;
+  const FieldState             m_this_state ;
+  mutable NgpFieldBase       * m_ngpField;
+  mutable size_t               m_numSyncsToHost;
+  mutable size_t               m_numSyncsToDevice;
   mutable Teuchos::any m_stkFieldSyncDebugger;
 };
 

@@ -57,7 +57,8 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
-} // namespace impl
+stk::CSet & get_attributes(stk::mesh::Part & part);
+}
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -157,6 +158,7 @@ private:
    */
   MetaData & meta_data() const { return m_partImpl.mesh_meta_data(); }
 
+  CSet & get_attributes() { return m_partImpl.get_attributes(); }
 
   impl::PartImpl m_partImpl;
 
@@ -166,8 +168,9 @@ private:
    *         a private data object on the Part and the PartRepository is a
    *         friend.
    */
-  friend class ::stk::mesh::impl::PartRepository ;
-  friend class ::stk::mesh::MetaData ;
+  friend class ::stk::mesh::impl::PartRepository;
+  friend class ::stk::mesh::MetaData;
+  friend CSet & impl::get_attributes(stk::mesh::Part & part);
 
 #ifndef DOXYGEN_COMPILE
 
@@ -318,7 +321,6 @@ bool intersect( const Part & , const Part & );
  *          intersection.  Each line starts with the given leader string.
  */
 std::ostream & print( std::ostream & , const char * const , const Part & );
-
 
 /** \} */
 

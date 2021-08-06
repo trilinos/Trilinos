@@ -34,7 +34,7 @@
 
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
-#include <unit_tests/UnitTestUtils.hpp>
+#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 
 #include <gtest/gtest.h>
