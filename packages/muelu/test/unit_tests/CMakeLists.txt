@@ -51,6 +51,7 @@ APPEND_SET(SOURCES
   ReitzingerPFactory.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp
+  SemiCoarsenPFactory.cpp
   Smoothers/SmootherFactory.cpp
   StructuredAggregationFactory.cpp
   StructuredLineDetection.cpp

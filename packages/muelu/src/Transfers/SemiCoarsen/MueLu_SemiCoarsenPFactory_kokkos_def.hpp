@@ -356,7 +356,8 @@ void SemiCoarsenPFactory_kokkos<
                       const RCP<MultiVector> fineNullspace, RCP<Matrix> &P,
                       RCP<MultiVector> &coarseNullspace) const {
   SubFactoryMonitor m2(*this, "BuildSemiCoarsenP", coarseLevel);
-  using ATS = Kokkos::ArithTraits<SC>;
+  using impl_SC = typename Kokkos::ArithTraits<SC>::val_type;
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
   using LOView1D = Kokkos::View<LO *, DeviceType>;
   using LOView2D = Kokkos::View<LO **, DeviceType>;
 
@@ -469,9 +470,9 @@ void SemiCoarsenPFactory_kokkos<
   // Here we store the full matrix to be compatible with kokkos kernels batch LU
   // and tringular solve.
   int Nmax = MaxStencilSize * DofsPerNode;
-  Kokkos::View<typename ATS::val_type ***, DeviceType> BandMat(
+  Kokkos::View<impl_SC ***, DeviceType> BandMat(
       "BandMat", NVertLines, Nmax, Nmax);
-  Kokkos::View<typename ATS::val_type ***, DeviceType> BandSol(
+  Kokkos::View<impl_SC ***, DeviceType> BandSol(
       "BandSol", NVertLines, Nmax, DofsPerNode);
 
   // Precompute number of nonzeros in prolongation matrix and allocate P views
@@ -481,7 +482,7 @@ void SemiCoarsenPFactory_kokkos<
   for (int clayer = 0; clayer < NCLayers; ++clayer)
     NnzP += CLayer2StencilSizeHost(clayer);
   NnzP *= NVertLines * DofsPerNode * DofsPerNode;
-  Kokkos::View<typename ATS::val_type *, DeviceType> Pvals("Pvals", NnzP);
+  Kokkos::View<impl_SC *, DeviceType> Pvals("Pvals", NnzP);
   Kokkos::View<LO *, DeviceType> Pcols("Pcols", NnzP);
 
   // Precompute Pptr
@@ -536,6 +537,8 @@ void SemiCoarsenPFactory_kokkos<
     SubFactoryMonitor m3(*this, "Fill P", coarseLevel);
 
     const auto localAmat = Amat->getLocalMatrix();
+    const auto zero = impl_ATS::zero();
+    const auto one = impl_ATS::one();
 
     using range_policy = Kokkos::RangePolicy<execution_space>;
     Kokkos::parallel_for(
@@ -548,7 +551,7 @@ void SemiCoarsenPFactory_kokkos<
                 Kokkos::subview(BandSol, line, Kokkos::ALL(), Kokkos::ALL());
             for (int row = 0; row < Nmax; ++row)
               for (int dof = 0; dof < DofsPerNode; ++dof)
-                bandSol(row, dof) = ATS::zero();
+                bandSol(row, dof) = zero;
 
             // Initialize BandMat (set unused row diagonal to 1.0)
             const int stencilSize = CLayer2StencilSize(clayer);
@@ -558,7 +561,7 @@ void SemiCoarsenPFactory_kokkos<
             for (int row = 0; row < Nmax; ++row)
               for (int col = 0; col < Nmax; ++col)
                 bandMat(row, col) =
-                    (row == col && row >= N) ? ATS::one() : ATS::zero();
+                    (row == col && row >= N) ? one : zero;
 
             // Loop over layers in stencil and fill banded matrix and rhs
             const int flayer = CLayer2FLayer(clayer);
@@ -569,8 +572,8 @@ void SemiCoarsenPFactory_kokkos<
               if (layer == flayer) { // If layer in stencil is a coarse layer
                 for (int dof = 0; dof < DofsPerNode; ++dof) {
                   const int row = snode * DofsPerNode + dof;
-                  bandMat(row, row) = ATS::one();
-                  bandSol(row, dof) = ATS::one();
+                  bandMat(row, row) = one;
+                  bandSol(row, dof) = one;
                 }
               } else { // Not a coarse layer
                 const int AmatBlkRow = LineLayer2Node(line, layer);
@@ -587,7 +590,7 @@ void SemiCoarsenPFactory_kokkos<
 
                     // Sum values along row which correspond to stencil
                     // layer/dof and fill bandMat
-                    typename ATS::val_type val = 0.0;
+                    auto val = zero;
                     for (int i = 0; i < AmatRowLeng; ++i) {
                       const int colidx = localAmatRow.colidx(i);
                       if (FCol2Layer(colidx) == layer &&
@@ -599,7 +602,7 @@ void SemiCoarsenPFactory_kokkos<
                     if (snode > 0) {
                       // Sum values along row which correspond to stencil
                       // layer/dof below and fill bandMat
-                      val = 0.0;
+                      val = zero;
                       for (int i = 0; i < AmatRowLeng; ++i) {
                         const int colidx = localAmatRow.colidx(i);
                         if (FCol2Layer(colidx) == layer - 1 &&
@@ -612,7 +615,7 @@ void SemiCoarsenPFactory_kokkos<
                     if (snode < stencilSize - 1) {
                       // Sum values along row which correspond to stencil
                       // layer/dof above and fill bandMat
-                      val = 0.0;
+                      val = zero;
                       for (int i = 0; i < AmatRowLeng; ++i) {
                         const int colidx = localAmatRow.colidx(i);
                         if (FCol2Layer(colidx) == layer + 1 &&
@@ -634,11 +637,11 @@ void SemiCoarsenPFactory_kokkos<
                 typename KB::SerialTrsm<KB::Side::Left, KB::Uplo::Lower,
                                         KB::Trans::NoTranspose, KB::Diag::Unit,
                                         KB::Algo::Trsm::Unblocked>;
-            trsv_l_type::invoke(ATS::one(), bandMat, bandSol);
+            trsv_l_type::invoke(one, bandMat, bandSol);
             using trsv_u_type = typename KB::SerialTrsm<
                 KB::Side::Left, KB::Uplo::Upper, KB::Trans::NoTranspose,
                 KB::Diag::NonUnit, KB::Algo::Trsm::Unblocked>;
-            trsv_u_type::invoke(ATS::one(), bandMat, bandSol);
+            trsv_u_type::invoke(one, bandMat, bandSol);
 
             // Fill prolongation views with solution
             for (int snode = 0; snode < stencilSize; ++snode) {
