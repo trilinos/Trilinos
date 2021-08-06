@@ -348,7 +348,7 @@ namespace MueLu {
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
-  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
+  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-2\"/>"
   "<Parameter name=\"maxwell1: mode\" type=\"string\" value=\"standard\"/>"
   "<ParameterList name=\"maxwell1: 11list\"/>"
   "<ParameterList name=\"maxwell1: 22list\"/>"

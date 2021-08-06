@@ -526,8 +526,7 @@ namespace Iopg {
       block->property_add(Ioss::Property("guid", util().generate_guid(id)));
       block->property_add(Ioss::Property("original_block_order", iblk));
 
-      if (block->topology()->name() != save_type && save_type != "null" &&
-          save_type != "") {
+      if (block->topology()->name() != save_type && save_type != "null" && save_type != "") {
         // Maintain original element type on output database if possible.
         block->property_add(Ioss::Property("original_topology_type", save_type));
       }

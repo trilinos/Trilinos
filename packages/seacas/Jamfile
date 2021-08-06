@@ -157,7 +157,9 @@ alias install-user-include : install-user-include0
                              install-user-include3
                              install-user-include4
                              install-user-include5
-                             install-user-include6 ;
+                             install-user-include6
+                             install-user-include7
+                             install-user-include8 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -221,6 +223,21 @@ install install-user-include6
            $(seacas-root)/libraries/ioss/src/visualization/cgns/*.h ]
   : <location>$(install-root)/io_system/include
   ;
+
+
+explicit install-user-include7 ;
+install install-user-include7
+  : [ glob $(seacas-root)/libraries/aprepro_lib/*.h ]
+  : <location>$(install-root)/seacas/include
+  ;
+
+
+explicit install-user-include8 ;
+install install-user-include8
+  : [ glob $(seacas-root)/libraries/suplib_cpp/fmt/*.h ]
+  : <location>$(install-root)/io_system/include/fmt
+  ;
+
 
 explicit install-user-env ;
 alias install-user-env : install-user-jamfile

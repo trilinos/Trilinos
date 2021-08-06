@@ -28,11 +28,11 @@
 
 int main(int argc, char **argv)
 {
-  int  exoid;
-  int  error;
-  int  CPU_word_size;
-  int  IO_word_size;
-  int  idum;
+  int exoid;
+  int error;
+  int CPU_word_size;
+  int IO_word_size;
+  int idum;
 
   float version;
   float fdum;

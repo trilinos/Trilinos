@@ -3555,7 +3555,7 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
   size_t comp_count = var_type->component_count();
 
   char field_suffix_separator = get_field_separator();
-  bool field_strip_trailing_ = get_field_strip_trailing_();
+  bool field_strip_trailing_  = get_field_strip_trailing_();
 
   if (comp_count == 1 && field.get_type() == Ioss::Field::REAL) {
     std::string var_name = var_type->label_name(field.get_name(), 1, field_suffix_separator);
@@ -3586,11 +3586,11 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
       int     ierr     = 0;
       auto    var_iter = variables.find(var_name);
       if (var_iter == variables.end()) {
-	if (field_strip_trailing_ && field_suffix_separator == '\0') {
-	  // Try again using '_' as the field_suffix_separator...
-	  std::string tmp_var_name = var_type->label_name(field.get_name(), i + 1, '_');
-	  var_iter = variables.find(tmp_var_name);
-	}
+        if (field_strip_trailing_ && field_suffix_separator == '\0') {
+          // Try again using '_' as the field_suffix_separator...
+          std::string tmp_var_name = var_type->label_name(field.get_name(), i + 1, '_');
+          var_iter                 = variables.find(tmp_var_name);
+        }
       }
       if (var_iter == variables.end()) {
         std::ostringstream errmsg;
