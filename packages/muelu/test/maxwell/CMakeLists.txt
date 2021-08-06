@@ -103,11 +103,9 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
     SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Stratimikos.xml Maxwell.xml Maxwell2.xml Maxwell3.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml Maxwell_Reitzinger.xml
     )
 
-  IF(HAVE_MUELU_COMPLEX)
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp_complex
-      SOURCE_FILES M0_complex.mat M1_complex.mat S_complex.mat D0_complex.mat Maxwell_complex.xml
-      )
-  ENDIF()
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp_complex
+    SOURCE_FILES M0_complex.mat M1_complex.mat S_complex.mat D0_complex.mat Maxwell_complex.xml
+    )
 
 
 ENDIF()
