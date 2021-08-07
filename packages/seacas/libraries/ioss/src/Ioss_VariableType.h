@@ -41,16 +41,10 @@ namespace Ioss {
 
   struct Suffix
   {
-    explicit Suffix(const char *new_data) :m_data(new_data) {}
+    explicit Suffix(const char *new_data) : m_data(new_data) {}
     explicit Suffix(const std::string &new_data) : m_data(new_data) {}
-    bool operator==(const std::string &str) const
-    {
-      return Utils::str_equal(m_data, str);
-    }
-    bool operator!=(const std::string &str) const
-    {
-      return !Utils::str_equal(m_data, str);
-    }
+    bool        operator==(const std::string &str) const { return Utils::str_equal(m_data, str); }
+    bool        operator!=(const std::string &str) const { return !Utils::str_equal(m_data, str); }
     std::string m_data{};
   };
 

@@ -95,7 +95,8 @@ namespace MueLu {
         implicitTranspose_      (MasterList::getDefault<bool>("transpose: use implicit")),
         fuseProlongationAndUpdate_ (MasterList::getDefault<bool>("fuse prolongation and update")),
         sizeOfMultiVectors_     (MasterList::getDefault<int>("number of vectors")),
-        graphOutputLevel_(-1) { }
+        // -2 = no output, -1 = all levels
+        graphOutputLevel_(-2) { }
 
     //!
     virtual ~HierarchyManager() { }
@@ -173,7 +174,7 @@ namespace MueLu {
       // Setup Hierarchy
       H.SetMaxCoarseSize(maxCoarseSize_);
       VerboseObject::SetDefaultVerbLevel(verbosity_);
-      if (graphOutputLevel_ >= 0)
+      if (graphOutputLevel_ >= 0 || graphOutputLevel_ == -1)
         H.EnableGraphDumping("dep_graph", graphOutputLevel_);
 
       if (VerboseObject::IsPrint(Statistics2)) {

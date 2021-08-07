@@ -561,7 +561,7 @@ int Iocgns::Utils::get_db_zone(const Ioss::GroupingEntity *entity)
 namespace {
   const size_t CG_CELL_CENTER_FIELD_ID = 1ul << 30;
   const size_t CG_VERTEX_FIELD_ID      = 1ul << 31;
-}
+} // namespace
 
 size_t Iocgns::Utils::index(const Ioss::Field &field) { return field.get_index() & 0x00ffffff; }
 
@@ -1254,7 +1254,8 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     std::set<std::string> zgc_names;
 
     for (const auto &zgc : sb->m_zoneConnectivity) {
-      if (zgc.is_valid() && (zgc.is_active() || (!is_parallel && zgc.m_donorProcessor != zgc.m_ownerProcessor))) {
+      if (zgc.is_valid() &&
+          (zgc.is_active() || (!is_parallel && zgc.m_donorProcessor != zgc.m_ownerProcessor))) {
         int                     zgc_idx = 0;
         std::array<cgsize_t, 6> owner_range{{zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeBeg[1],
                                              zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[0],
@@ -2170,7 +2171,8 @@ void Iocgns::Utils::finalize_database(int cgns_file_ptr, const std::vector<doubl
 }
 
 void Iocgns::Utils::add_transient_variables(int cgns_file_ptr, const std::vector<double> &timesteps,
-                                            Ioss::Region *region, int myProcessor, bool is_parallel_io)
+                                            Ioss::Region *region, int myProcessor,
+                                            bool is_parallel_io)
 {
   // ==========================================
   // Add transient variables (if any) to all zones...
