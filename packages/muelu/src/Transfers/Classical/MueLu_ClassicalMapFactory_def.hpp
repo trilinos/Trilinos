@@ -82,11 +82,9 @@
 
 // NOTE: We should be checking for KokkosKernels here, but
 // MueLu doesn't have a macro for that
-#ifdef HAVE_MUELU_KOKKOSCORE
 #include "MueLu_LWGraph_kokkos.hpp"
 #include <KokkosGraph_Distance1ColorHandle.hpp>
 #include <KokkosGraph_Distance1Color.hpp>
-#endif
 
 namespace MueLu {
 
@@ -224,17 +222,11 @@ namespace MueLu {
 ;      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument,"MIS on more than 1 MPI rank is not supported");
       DoMISNaive(*graph,myColors,numColors);
     }
-#ifdef HAVE_MUELU_KOKKOSCORE  
     else {
       SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
       TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument,"KokkosKernels graph coloring on more than 1 MPI rank is not supported");
       DoGraphColoring(*graph,myColors,numColors);
     }
-#else
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 1 coloring algorithm");
-    }
-#endif
 
 #ifdef CMS_DUMP
     {
@@ -337,7 +329,6 @@ GenerateCoarseMap(const Map & fineMap, LO num_c_points, RCP<const Map> & coarseM
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 DoGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numColors) const {
-#ifdef HAVE_MUELU_KOKKOSCORE  
   const ParameterList& pL = GetParameterList();
   using graph_t = typename LWGraph_kokkos::local_graph_type;
   using KernelHandle = KokkosKernels::Experimental::
@@ -448,9 +439,6 @@ DoGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numCo
   
   //clean up coloring handle
   kh.destroy_graph_coloring_handle();
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError,"ClassicalMapFactory: Requires KokkosKernels");
-#endif
   
 }// end DoGraphColoring
     

@@ -57,8 +57,6 @@
 
 #cmakedefine HAVE_MUELU_KOKKOSCONTAINERS
 
-#cmakedefine HAVE_MUELU_KOKKOSCORE
-
 #cmakedefine HAVE_MUELU_KOKKOSKERNELS
 
 #cmakedefine HAVE_MUELU_ML
