@@ -278,8 +278,8 @@ class MergeLevelGraphs():
 				else:
 					break
 		else:
-			graphFile = os.path.join(PATH, "output.dot")
-			imageFile = os.path.join(PATH, "output.png")
+			graphFile = "output.dot"
+			imageFile = "output.png"
 
 		try:
 			self.__masterGraph.write(graphFile)
