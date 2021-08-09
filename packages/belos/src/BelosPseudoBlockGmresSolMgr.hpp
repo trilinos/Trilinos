@@ -708,7 +708,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
 
     // Update parameter in our list.
-    params_->set ("Output Style", verbosity_);
+    params_->set ("Output Style", outputStyle_);
     if (! outputTest_.is_null ()) {
       isSTSet_ = false;
     }
