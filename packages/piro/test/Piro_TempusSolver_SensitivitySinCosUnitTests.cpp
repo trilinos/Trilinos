@@ -57,10 +57,11 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_Ptr.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
-#include "Piro_Helpers.hpp" 
+#include "Piro_Helpers.hpp"
 
 #include <stdexcept>
 #include<mpi.h>
@@ -84,23 +85,23 @@ void test_sincos_fsa(const bool use_combined_method,
                      Teuchos::FancyOStream &out, bool &success)
 {
   const std::string sens_method_string = "Forward";
-  std::string outfile_name; 
-  std::string errfile_name; 
+  std::string outfile_name;
+  std::string errfile_name;
 
   if (use_combined_method == true) {
     if (use_dfdp_as_tangent == true) {
-      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Combined_FSA_Tangent.dat"; 
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Combined_FSA_Tangent.dat";
     }
     else {
-      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Combined_FSA.dat"; 
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Combined_FSA.dat";
     }
   }
   else {
     if (use_dfdp_as_tangent == true) {
-      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Staggered_FSA_Tangent.dat"; 
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Staggered_FSA_Tangent.dat";
     }
     else {
-      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Staggered_FSA.dat"; 
+      outfile_name = "Tempus_BackwardEuler_SinCos_Sens_Staggered_FSA.dat";
     }
   }
 
@@ -116,7 +117,7 @@ void test_sincos_fsa(const bool use_combined_method,
     Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
   my_out->setOutputToRootOnly(0);
-  
+
   SENS_METHOD sens_method;
   if (sens_method_string == "None") sens_method = Piro::NONE;
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
@@ -149,7 +150,7 @@ void test_sincos_fsa(const bool use_combined_method,
     // Setup the Integrator and reset initial time step
     tempus_pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
+    Teuchos::RCP<Piro::TempusIntegrator<double> > integrator
         = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempus_pl, model, sens_method));
     order = integrator->getStepper()->getOrder();
 
@@ -171,17 +172,17 @@ void test_sincos_fsa(const bool use_combined_method,
                                 DxDp0, Teuchos::null, Teuchos::null);
     const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
     const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
-    const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
+    const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver
           = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, false, false, sens_method));
     integrator->setObserver(tempusObserver);
-   
+
     const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
 
     RCP<ParameterList> stepper_pl = Teuchos::rcp(&(tempus_pl->sublist("Default Stepper")), false);
 
     RCP<Tempus::StepperFactory<double> > sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
     const RCP<Tempus::Stepper<double> > stepper = sf->createStepper(stepper_pl, model);
-    const RCP<TempusSolver<double> > tempus_solver = 
+    const RCP<TempusSolver<double> > tempus_solver =
          rcp(new TempusSolver<double>(integrator, stepper, stepSolver, model, tfinal, sens_method_string));
 
     const Thyra::MEB::InArgs<double> inArgs = tempus_solver->getNominalValues();
@@ -193,7 +194,7 @@ void test_sincos_fsa(const bool use_combined_method,
     const RCP<Thyra::MultiVectorBase<double> > dxdp = dxdp_deriv.getMultiVector();
     outArgs.set_DgDp(solutionResponseIndex, parameterIndex, dxdp_deriv);
 
-    //Integrate in time 
+    //Integrate in time
     tempus_solver->evalModel(inArgs, outArgs);
 
     // Test if at 'Final Time'
@@ -261,14 +262,14 @@ void test_sincos_fsa(const bool use_combined_method,
     const RCP<const Thyra::MultiVectorBase<double> > solution_dxdp =
       observer->lastSolution_dxdp();
 
-    //Compare solution from observer and x to verify observer routines 
+    //Compare solution from observer and x to verify observer routines
     TEST_COMPARE_FLOATING_ARRAYS(
       arrayFromVector(*solution),
       arrayFromVector(*x),
       tol);
 
-    //Compare solution_dxdp from observer and DxDp to verify observer routines 
-    for (int np = 0; np < DxDp->domain()->dim(); np++) { 
+    //Compare solution_dxdp from observer and DxDp to verify observer routines
+    for (int np = 0; np < DxDp->domain()->dim(); np++) {
       Teuchos::RCP<const Thyra::VectorBase<double>> DxDp_vec = DxDp->col(np);
       Teuchos::RCP<const Thyra::VectorBase<double>> solution_dxdp_vec = solution_dxdp->col(np);
       TEST_COMPARE_FLOATING_ARRAYS(
@@ -276,7 +277,7 @@ void test_sincos_fsa(const bool use_combined_method,
         arrayFromVector(*DxDp_vec),
         tol);
     }
-    
+
     // Calculate the error
     RCP<Thyra::VectorBase<double> > xdiff = x->clone_v();
     RCP<Thyra::MultiVectorBase<double> > DxDpdiff = DxDp->clone_mv();

@@ -40,7 +40,6 @@
 #include "Shards_Array.hpp"             // for ArrayDimTag
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
-#include "stk_mesh/baseImpl/FieldBaseImpl.hpp"  // for FieldBaseImpl
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf
 
 namespace stk { namespace mesh { class MetaData; } }
@@ -183,7 +182,7 @@ FieldBase * FieldRepository::declare_field(
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < arg_num_states ; ++i ) {
-      f[i] = f[0]->m_impl.field_state(static_cast<FieldState>(i));
+      f[i] = f[0]->field_state(static_cast<FieldState>(i));
     }
   }
   else {
@@ -222,7 +221,7 @@ FieldBase * FieldRepository::declare_field(
     }
 
     for ( unsigned i = 0 ; i < arg_num_states ; ++i ) {
-      f[i]->m_impl.set_field_states( f );
+      f[i]->set_field_states( f );
     }
   }
 
@@ -235,7 +234,7 @@ void FieldRepository::verify_and_clean_restrictions(const Part& superset, const 
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
     if (partRank == stk::topology::INVALID_RANK || partRank == (*f)->entity_rank())
     {
-      (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
+      (*f)->verify_and_clean_restrictions( superset, subset );
     }
   }
 }

@@ -14,7 +14,6 @@
 #include "stk_io/IossBridge.hpp"
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/ExodusTranslator.hpp"
 #include "stk_mesh/base/FieldBase.hpp"

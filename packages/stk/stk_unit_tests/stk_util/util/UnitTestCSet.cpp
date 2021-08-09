@@ -36,117 +36,773 @@
 #include "stk_util/util/CSet.hpp"  // for CSet, stk
 
 
-namespace stk {
-namespace cset_unit {
+namespace {
 
-class A {
-public:
-  virtual int id() const = 0 ;
-  virtual ~A(){}
-};
+static int g_objectLifetimeSpy_numConstructions;
+static int g_objectLifetimeSpy_numCopyConstructions;
+static int g_objectLifetimeSpy_numMoveConstructions;
+static int g_objectLifetimeSpy_numCopyAssignments;
+static int g_objectLifetimeSpy_numMoveAssignments;
+static int g_objectLifetimeSpy_numDestructions;
 
-class B {
-public:
-  virtual int id() const = 0 ;
-  virtual ~B(){}
-};
-
-class U : public A {
-public:
-  int id() const { return static_cast<int>(ID); }
-  ~U() {}
-  enum {ID = 0};
-};
-
-class V : public B {
-public:
-  int id() const { return static_cast<int>(ID); }
-  ~V() {}
-  enum {ID = 1};
-};
-
-class W : public B {
-public:
-  int id() const { return static_cast<int>(ID); }
-  ~W() {}
-  enum {ID = 2};
-};
-
-class X : public A , public B {
-public:
-  int id() const { return static_cast<int>(ID); }
-  ~X() {}
-  enum {ID = 3};
-};
-
-class Y : public A , public B {
-public:
-  int id() const { return static_cast<int>(ID); }
-  ~Y() {}
-  enum {ID = 4};
-};
-
-class Z {
-public:
-  int id() const { return static_cast<int>(ID); }
-  ~Z() {}
-  enum {ID = 5};
-};
-
-}//namespace cset_unit
-}//namespace stk
-
-using namespace stk;
-using namespace stk::cset_unit;
-
-TEST( UnitTestCSet, UnitTest)
-{
-//This unit-test imported from its previous home in the bottom of
-//the CSet implementation file.
-  const A * sa = nullptr ;
-  const B * sb = nullptr ;
-  bool flag = false ;
-
-  U  u;
-  V  v;
-  W  w;
-  X  x;
-  Y  y;
-
-  ASSERT_TRUE(u.id() == U::ID);
-  ASSERT_TRUE(v.id() == V::ID);
-  ASSERT_TRUE(w.id() == W::ID);
-  ASSERT_TRUE(x.id() == X::ID);
-  ASSERT_TRUE(y.id() == Y::ID);
-
-  {
-    CSet cs ;
-
-    sa = cs.insert_no_delete<A>(&u);
-    ASSERT_TRUE(sa->id() == static_cast<int>(U::ID));
-
-    sb = cs.insert_no_delete<B>(&v);
-    ASSERT_TRUE(sb->id() == static_cast<int>(V::ID));
-
-    // Should not replace:
-    sb = cs.insert_no_delete<B>(&w);
-    ASSERT_TRUE(sb->id() == static_cast<int>(V::ID));
-
-    flag = cs.remove<A>( &u );
-    ASSERT_TRUE(flag);
-
-    flag = cs.remove<B>( &v );
-    ASSERT_TRUE(flag);
-
-    sa = cs.insert_no_delete<A>(&x);
-    sb = cs.insert_no_delete<B>(&x);
-    ASSERT_TRUE(sa->id() == static_cast<int>(X::ID));
-    ASSERT_TRUE(sb->id() == static_cast<int>(X::ID));
-
-    sa = cs.insert_no_delete<A>(&y);
-    sb = cs.insert_no_delete<B>(&y);
-    ASSERT_TRUE(sa->id() == static_cast<int>(X::ID));
-    ASSERT_TRUE(sb->id() == static_cast<int>(X::ID));
-  }
+int objectLifetimeSpy_getNumConstructions() {
+  return g_objectLifetimeSpy_numConstructions;
 }
 
+int objectLifetimeSpy_getNumCopyConstructions() {
+  return g_objectLifetimeSpy_numCopyConstructions;
+}
+
+int objectLifetimeSpy_getNumMoveConstructions() {
+  return g_objectLifetimeSpy_numMoveConstructions;
+}
+
+int objectLifetimeSpy_getNumCopyAssignments() {
+  return g_objectLifetimeSpy_numCopyAssignments;
+}
+
+int objectLifetimeSpy_getNumMoveAssignments() {
+  return g_objectLifetimeSpy_numMoveAssignments;
+}
+
+int objectLifetimeSpy_getNumDestructions() {
+  return g_objectLifetimeSpy_numDestructions;
+}
+
+
+class ObjectLifetimeSpy
+{
+public:
+  explicit ObjectLifetimeSpy(int i = 0)
+    : m_i(i)
+  {
+    ++g_objectLifetimeSpy_numConstructions;
+  }
+
+  virtual ~ObjectLifetimeSpy()
+  {
+    ++g_objectLifetimeSpy_numDestructions;
+  }
+
+  ObjectLifetimeSpy(const ObjectLifetimeSpy & rhs)
+  {
+    ++g_objectLifetimeSpy_numCopyConstructions;
+    m_i = rhs.m_i;
+  }
+
+  ObjectLifetimeSpy(ObjectLifetimeSpy && rhs) noexcept
+  {
+    ++g_objectLifetimeSpy_numMoveConstructions;
+    m_i = rhs.m_i;
+    rhs.m_i = 0;
+  }
+
+  ObjectLifetimeSpy & operator=(const ObjectLifetimeSpy & rhs)
+  {
+    ++g_objectLifetimeSpy_numCopyAssignments;
+    m_i = rhs.m_i;
+    return *this;
+  }
+
+  ObjectLifetimeSpy & operator=(ObjectLifetimeSpy && rhs)
+  {
+    ++g_objectLifetimeSpy_numMoveAssignments;
+    m_i = rhs.m_i;
+    rhs.m_i = 0;
+    return *this;
+  }
+
+  int value() const
+  {
+    return m_i;
+  }
+
+private:
+  int m_i;
+};
+
+
+class ObjectLifetimeSpyA : public ObjectLifetimeSpy
+{
+public:
+  ObjectLifetimeSpyA(int value)
+    : ObjectLifetimeSpy(value)
+  {}
+};
+
+class ObjectLifetimeSpyB : public ObjectLifetimeSpy
+{
+public:
+  ObjectLifetimeSpyB(int value)
+    : ObjectLifetimeSpy(value)
+  {}
+};
+
+
+TEST(TestCSetComparison, NotEqual) {
+  const std::type_info * intType = &typeid(int);
+  const std::type_info * unsignedType = &typeid(unsigned);
+
+  stk::cset::less_cset compare;
+  EXPECT_TRUE(compare(intType, unsignedType));
+  EXPECT_FALSE(compare(unsignedType, intType));
+}
+
+TEST(TestCSetComparison, Equal) {
+  const std::type_info * intType1 = &typeid(int);
+  const std::type_info * intType2 = &typeid(int);
+
+  stk::cset::less_cset compare;
+  EXPECT_FALSE(compare(intType1, intType2));
+  EXPECT_FALSE(compare(intType2, intType1));
+}
+
+
+class TestCSet : public ::testing::Test
+{
+ protected:
+  virtual void SetUp() override {
+    g_objectLifetimeSpy_numConstructions = 0;
+    g_objectLifetimeSpy_numCopyConstructions = 0;
+    g_objectLifetimeSpy_numMoveConstructions = 0;
+    g_objectLifetimeSpy_numCopyAssignments = 0;
+    g_objectLifetimeSpy_numMoveAssignments = 0;
+    g_objectLifetimeSpy_numDestructions = 0;
+  }
+
+  virtual void TearDown() override {}
+};
+
+
+TEST_F(TestCSet, NoDelete_InsertSingleObject)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, NoDelete_InsertTwoObjects)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpyA objA(1);
+    ObjectLifetimeSpyB objB(2);
+    const ObjectLifetimeSpyA* insertedObjA = cs.insert_no_delete<ObjectLifetimeSpyA>(&objA);
+    const ObjectLifetimeSpyB* insertedObjB = cs.insert_no_delete<ObjectLifetimeSpyB>(&objB);
+    EXPECT_EQ(insertedObjA->value(), 1);
+    EXPECT_EQ(insertedObjB->value(), 2);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+TEST_F(TestCSet, NoDelete_DoubleInsert_NoReplace)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj1(1);
+    ObjectLifetimeSpy obj2(2);
+    const ObjectLifetimeSpy* insertedObjFirst  = cs.insert_no_delete<ObjectLifetimeSpy>(&obj1);
+    const ObjectLifetimeSpy* insertedObjSecond = cs.insert_no_delete<ObjectLifetimeSpy>(&obj2);
+    EXPECT_EQ(insertedObjFirst->value(), 1);
+    EXPECT_EQ(insertedObjSecond->value(), 1);
+    EXPECT_EQ(insertedObjFirst, insertedObjSecond);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+TEST_F(TestCSet, GetNotFound)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    const ObjectLifetimeSpy* getObj = cs.get<ObjectLifetimeSpy>();
+    EXPECT_EQ(getObj, nullptr);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, NoDelete_GetSingleObject)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+
+    const ObjectLifetimeSpy* getObj = cs.get<ObjectLifetimeSpy>();
+    EXPECT_EQ(getObj->value(), 1);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, NoDelete_GetTwoObjects)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpyA objA(1);
+    ObjectLifetimeSpyB objB(2);
+    const ObjectLifetimeSpyA* insertedObjA = cs.insert_no_delete<ObjectLifetimeSpyA>(&objA);
+    const ObjectLifetimeSpyB* insertedObjB = cs.insert_no_delete<ObjectLifetimeSpyB>(&objB);
+    EXPECT_EQ(insertedObjA->value(), 1);
+    EXPECT_EQ(insertedObjB->value(), 2);
+
+    const ObjectLifetimeSpyA* getObjA = cs.get<ObjectLifetimeSpyA>();
+    const ObjectLifetimeSpyB* getObjB = cs.get<ObjectLifetimeSpyB>();
+    EXPECT_EQ(getObjA->value(), 1);
+    EXPECT_EQ(getObjB->value(), 2);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+TEST_F(TestCSet, RemoveFromEmpty)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    EXPECT_FALSE(cs.remove<ObjectLifetimeSpy>(&obj));
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, NoDelete_Remove)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+
+    EXPECT_TRUE(cs.remove<ObjectLifetimeSpy>(&obj));
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(), 0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, NoDelete_RemoveSameTwice)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+
+    EXPECT_TRUE (cs.remove<ObjectLifetimeSpy>(&obj));
+    EXPECT_FALSE(cs.remove<ObjectLifetimeSpy>(&obj));
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, NoDelete_RemoveTwoObjects)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpyA objA(1);
+    ObjectLifetimeSpyB objB(2);
+    const ObjectLifetimeSpyA* insertedObjA = cs.insert_no_delete<ObjectLifetimeSpyA>(&objA);
+    const ObjectLifetimeSpyB* insertedObjB = cs.insert_no_delete<ObjectLifetimeSpyB>(&objB);
+    EXPECT_EQ(insertedObjA->value(), 1);
+    EXPECT_EQ(insertedObjB->value(), 2);
+
+    EXPECT_TRUE(cs.remove<ObjectLifetimeSpyA>(&objA));
+    EXPECT_TRUE(cs.remove<ObjectLifetimeSpyB>(&objB));
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(), 0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+
+TEST_F(TestCSet, WithDelete_InsertSingleObject)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy* obj = new ObjectLifetimeSpy(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, WithDelete_InsertTwoObjects)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpyA* objA = new ObjectLifetimeSpyA(1);
+    ObjectLifetimeSpyB* objB = new ObjectLifetimeSpyB(2);
+    const ObjectLifetimeSpyA* insertedObjA = cs.insert_with_delete<ObjectLifetimeSpyA>(objA);
+    const ObjectLifetimeSpyB* insertedObjB = cs.insert_with_delete<ObjectLifetimeSpyB>(objB);
+    EXPECT_EQ(insertedObjA->value(), 1);
+    EXPECT_EQ(insertedObjB->value(), 2);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+TEST_F(TestCSet, WithDelete_DoubleInsert_NoReplace)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy* obj1 = new ObjectLifetimeSpy(1);
+    ObjectLifetimeSpy* obj2 = new ObjectLifetimeSpy(2);
+    const ObjectLifetimeSpy* insertedObjFirst  = cs.insert_with_delete<ObjectLifetimeSpy>(obj1);
+    const ObjectLifetimeSpy* insertedObjSecond = cs.insert_with_delete<ObjectLifetimeSpy>(obj2);
+    EXPECT_EQ(insertedObjFirst->value(), 1);
+    EXPECT_EQ(insertedObjSecond->value(), 1);
+    EXPECT_EQ(insertedObjFirst, insertedObjSecond);
+    delete obj2;
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+TEST_F(TestCSet, WithDelete_GetSingleObject)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy* obj = new ObjectLifetimeSpy(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+
+    const ObjectLifetimeSpy* getObj = cs.get<ObjectLifetimeSpy>();
+    EXPECT_EQ(getObj->value(), 1);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, WithDelete_GetTwoObjects)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpyA* objA = new ObjectLifetimeSpyA(1);
+    ObjectLifetimeSpyB* objB = new ObjectLifetimeSpyB(2);
+    const ObjectLifetimeSpyA* insertedObjA = cs.insert_with_delete<ObjectLifetimeSpyA>(objA);
+    const ObjectLifetimeSpyB* insertedObjB = cs.insert_with_delete<ObjectLifetimeSpyB>(objB);
+    EXPECT_EQ(insertedObjA->value(), 1);
+    EXPECT_EQ(insertedObjB->value(), 2);
+
+    const ObjectLifetimeSpyA* getObjA = cs.get<ObjectLifetimeSpyA>();
+    const ObjectLifetimeSpyB* getObjB = cs.get<ObjectLifetimeSpyB>();
+    EXPECT_EQ(getObjA->value(), 1);
+    EXPECT_EQ(getObjB->value(), 2);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+TEST_F(TestCSet, WithDelete_Remove)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy* obj = new ObjectLifetimeSpy(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+
+    EXPECT_TRUE(cs.remove<ObjectLifetimeSpy>(obj));
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(), 0);
+    delete obj;
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, WithDelete_RemoveSameTwice)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy* obj = new ObjectLifetimeSpy(1);
+    const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+    EXPECT_EQ(insertedObj->value(), 1);
+
+    EXPECT_TRUE (cs.remove<ObjectLifetimeSpy>(obj));
+    EXPECT_FALSE(cs.remove<ObjectLifetimeSpy>(obj));
+    delete obj;
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 1);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  1);
+}
+
+TEST_F(TestCSet, WithDelete_RemoveTwoObjects)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpyA* objA = new ObjectLifetimeSpyA(1);
+    ObjectLifetimeSpyB* objB = new ObjectLifetimeSpyB(2);
+    const ObjectLifetimeSpyA* insertedObjA = cs.insert_with_delete<ObjectLifetimeSpyA>(objA);
+    const ObjectLifetimeSpyB* insertedObjB = cs.insert_with_delete<ObjectLifetimeSpyB>(objB);
+    EXPECT_EQ(insertedObjA->value(), 1);
+    EXPECT_EQ(insertedObjB->value(), 2);
+
+    EXPECT_TRUE(cs.remove<ObjectLifetimeSpyA>(objA));
+    EXPECT_TRUE(cs.remove<ObjectLifetimeSpyB>(objB));
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(), 0);
+    delete objA;
+    delete objB;
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(), 2);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),  2);
+}
+
+
+TEST_F(TestCSet, CopyConstructEmpty)
+{
+  {
+    stk::CSet cs;
+    stk::CSet csCopy = cs;
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+}
+
+TEST_F(TestCSet, CopyConstructNoDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet csCopy = cs;
+
+      const ObjectLifetimeSpy* copiedGetObj = csCopy.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(copiedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, copiedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+TEST_F(TestCSet, CopyConstructWithDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy * obj = new ObjectLifetimeSpy(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet csCopy = cs;
+
+      const ObjectLifetimeSpy* copiedGetObj = csCopy.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(copiedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, copiedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+
+TEST_F(TestCSet, CopyAssignEmpty)
+{
+  {
+    stk::CSet cs;
+    {
+      stk::CSet secondCs;
+      secondCs = cs;
+    }
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+}
+
+TEST_F(TestCSet, CopyAssignNoDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet secondCs;
+      secondCs = cs;
+
+      const ObjectLifetimeSpy* assignedGetObj = secondCs.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(assignedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, assignedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+TEST_F(TestCSet, CopyAssignWithDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy * obj = new ObjectLifetimeSpy(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet secondCs;
+      secondCs = cs;
+
+      const ObjectLifetimeSpy* assignedGetObj = secondCs.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(assignedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, assignedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+
+TEST_F(TestCSet, MoveConstructEmpty)
+{
+  {
+    stk::CSet cs;
+    stk::CSet csCopy = std::move(cs);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+}
+
+TEST_F(TestCSet, MoveConstructNoDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet csCopy = std::move(cs);
+
+      const ObjectLifetimeSpy* copiedGetObj = csCopy.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(copiedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, copiedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+TEST_F(TestCSet, MoveConstructWithDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy * obj = new ObjectLifetimeSpy(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet csCopy = std::move(cs);
+
+      const ObjectLifetimeSpy* copiedGetObj = csCopy.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(copiedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, copiedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+
+TEST_F(TestCSet, MoveAssignEmpty)
+{
+  {
+    stk::CSet cs;
+    {
+      stk::CSet secondCs;
+      secondCs = std::move(cs);
+    }
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+}
+
+TEST_F(TestCSet, MoveAssignNoDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy obj(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_no_delete<ObjectLifetimeSpy>(&obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet secondCs;
+      secondCs = std::move(cs);
+
+      const ObjectLifetimeSpy* assignedGetObj = secondCs.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(assignedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, assignedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      0);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+TEST_F(TestCSet, MoveAssignWithDelete)
+{
+  {
+    stk::CSet cs;
+    ObjectLifetimeSpy * obj = new ObjectLifetimeSpy(1);
+    {
+      const ObjectLifetimeSpy* insertedObj = cs.insert_with_delete<ObjectLifetimeSpy>(obj);
+      EXPECT_EQ(insertedObj->value(), 1);
+
+      stk::CSet secondCs;
+      secondCs = std::move(cs);
+
+      const ObjectLifetimeSpy* assignedGetObj = secondCs.get<ObjectLifetimeSpy>();
+      EXPECT_EQ(assignedGetObj->value(), 1);
+      EXPECT_EQ(insertedObj, assignedGetObj);
+    }
+
+    EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+    EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+    EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+  }
+
+  EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveConstructions(), 0);
+  EXPECT_EQ(objectLifetimeSpy_getNumCopyAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumMoveAssignments(),   0);
+  EXPECT_EQ(objectLifetimeSpy_getNumDestructions(),      1);
+}
+
+}

@@ -1,5 +1,5 @@
 """
-exodus.py v 1.20.7 (seacas-py3) is a python wrapper of some of the exodus library
+exodus.py v 1.20.8 (seacas-py3) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -70,10 +70,10 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.20.7 (seacas-py3)"
+EXODUS_PY_VERSION = "1.20.8 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.20.7 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.20.8 (seacas-py3), a python wrapper of some of the exodus library.
 
 Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
@@ -1843,7 +1843,7 @@ class exodus:
         -------
 
             if array_type == 'ctype':
-              <list<c_double>>  evar_vals
+              <list<ctypes.c_double>>  evar_vals
 
             if array_type == 'numpy':
               <np_array<double>>  evar_vals
@@ -5237,30 +5237,30 @@ class exodus:
     # --------------------------------------------------------------------
 
     def __ex_put_attribute(self, attribute):
-        att_id = c_longlong(attribute.entity_id)
+        att_id = ctypes.c_longlong(attribute.entity_id)
         att = ex_attribute(entity_id=att_id)
         att.name = attribute.name.encode('ascii')
-        att.entity_type = c_int(get_entity_type(attribute.entity_type))
+        att.entity_type = ctypes.c_int(get_entity_type(attribute.entity_type))
         att.value_count = len(attribute.values)
 
         if (isinstance(attribute.values[0], int)):
             eptr = (c_int * len(attribute.values))()
             for i in range(len(attribute.values)):
-               eptr[i] = c_int(attribute.values[i])
-            att.values = ctypes.cast(eptr, c_void_p)
+               eptr[i] = ctypes.c_int(attribute.values[i])
+            att.values = ctypes.cast(eptr, ctypes.c_void_p)
             att.type = 4
 
         elif (isinstance(attribute.values[0], float)):
             eptr = (c_double * len(attribute.values))()
             for i in range(len(attribute.values)):
-              eptr[i] = c_double(attribute.values[i])
-            att.values = ctypes.cast(eptr, c_void_p)
+              eptr[i] = ctypes.c_double(attribute.values[i])
+            att.values = ctypes.cast(eptr, ctypes.c_void_p)
             att.type = 6
 
         elif (isinstance(attribute.values[0], str)):
             eptr = (c_char * (len(attribute.values)+1))()
             eptr = attribute.values[0].encode('ascii')
-            att.values = ctypes.cast(eptr, c_void_p)
+            att.values = ctypes.cast(eptr, ctypes.c_void_p)
             att.type = 2
 
         EXODUS_LIB.ex_put_attribute(self.fileId, att)

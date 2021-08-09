@@ -36,8 +36,8 @@
 #include <vector>
 #include <fstream>
 
-#include <unit_tests/UnitTestUtils.hpp>
-#include "MeshUtilsForBoundingVolumes.hpp"
+#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
+#include <stk_unit_test_utils/MeshUtilsForBoundingVolumes.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_unit_test_utils/getOption.h>

@@ -87,13 +87,13 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_command_line_include_test
  TEST_0 EXEC aprepro
-	ARGS -q --info=test-vars.dump --include ${CMAKE_CURRENT_SOURCE_DIR}/test-include.i ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
+	ARGS -q --info=test-include.dump --include ${CMAKE_CURRENT_SOURCE_DIR}/test-include.i ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
 	test-include.out
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/test-vars.dump
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-include.dump
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION

@@ -48,8 +48,9 @@ namespace {
 TEST( stk_search_bounding_box, Point)
 {
   using namespace stk::search;
-
   Point<double> p;
+
+  static_assert(std::is_nothrow_move_constructible<Point<double>>::value , "Point<double> should be noexcept MoveConstructible");
 
   {
     std::ostringstream out;
@@ -162,6 +163,8 @@ TEST( stk_search_bounding_box, minimumSphereEnclosingEquilateralTriangle)
                             Point(0,std::sqrt(3),0)};
 
   Sphere s = minimumBoundingSphere(tri[0], tri[1], tri[2]);
+  static_assert(std::is_nothrow_move_constructible<Sphere>::value , "Sphere should be noexcept MoveConstructible");
+
   EXPECT_TRUE(is_valid(s));
   EXPECT_TRUE(is_coplanar(s.center(), tri));
   EXPECT_TRUE(is_interior_point(s.center(), tri));
@@ -226,6 +229,7 @@ TEST( stk_search_bounding_box, Box)
 
   using stk::search::is_valid;
 
+  static_assert(std::is_nothrow_move_constructible<Box>::value , "Box should be noexcept MoveConstructible");
   Box b;
   EXPECT_FALSE( is_valid(b));
 

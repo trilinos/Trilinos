@@ -7,6 +7,7 @@
 #include "trilinos_btf_decl.h"
 
 //#define BASKER_DEBUG_ORDER_BTF
+//#define BASKER_TIMER
 
 namespace BaskerNS
 {
@@ -17,7 +18,7 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    Int           nblks,
-   INT_1DARRAY   btf_tabs
+   INT_1DARRAY  _btf_tabs
   )
   {
     //Find total work estimate
@@ -34,15 +35,14 @@ namespace BaskerNS
 			                        ((double)1/num_threads) + 
                               ((double)BASKER_BTF_IMBALANCE)) );
 
-
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Total schedul size: %ld \n", (long)total_work_estimate);
     printf("Break schedule size: %ld \n", (long)break_size);
     printf("Total num blks: %ld \n", (long)btf_nblks);
     #endif
     
-    Int t_size            = 0;
-    Int t_loc             = 0;
+    Int t_size      = 0;
+    Int t_loc       = 0;
     btf_schedule(0) = btf_tabs_offset;
     //BASKER_BOOL  move_fwd = BASKER_TRUE; //NU
 
@@ -53,7 +53,7 @@ namespace BaskerNS
 
       #ifdef BASKER_DEBUG_ORDER_BTF
       printf("t: %d blk: %d work: %d twork: %d \n", 
-          t_loc,b, blk_work, t_size);
+             t_loc,b, blk_work, t_size);
       #endif
 
       if(((t_size > break_size) && (t_loc < num_threads-1)) || (b == btf_nblks-1))
@@ -77,7 +77,7 @@ namespace BaskerNS
   {
     Int nblks = 0;
 
-    strong_component(M,nblks,order_btf_array,btf_tabs);
+    strong_component(M, nblks, order_btf_array, btf_tabs);
 
     btf_flag = BASKER_TRUE;
 
@@ -125,9 +125,20 @@ namespace BaskerNS
    BASKER_MATRIX &M
   )
   {
+    #ifdef BASKER_TIMER
+    double order_time = 0.0;
+    Kokkos::Timer timer_order;
+    timer_order.reset();
+    #endif
     Int nblks = 0;
 
-    strong_component(M,nblks,order_btf_array,btf_tabs);
+    //================================================================
+    //compute BTF
+    strong_component(M, nblks, order_btf_array, btf_tabs);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : strong comp time  : " << order_time << std::endl;
+    #endif
 
     btf_nblks = nblks;
     btf_flag = BASKER_TRUE;
@@ -136,7 +147,6 @@ namespace BaskerNS
     {
       printf("Basker: BTF nblks returned: %ld \n", (long)nblks);
     }
-
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker: BTF nblks returned: %d \n", nblks);
     //BASKER_ASSERT(nblks>1, "NOT ENOUGH BTF BLOCKS");
@@ -145,55 +155,78 @@ namespace BaskerNS
     #endif
 
 
-    #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Basker: num_threads: %d \n", num_threads);
-    printf("\n\nBasker: BTF tabs: \n");
-    for(Int i=0; i < nblks+1; i++)
-    {
-      printf("%d, ", btf_tabs(i));
-    }
-    printf("\n");
-    #endif
-
     if (Options.verbose == BASKER_TRUE)
     {
-      //Print first 10 and last 3 
-      printf("Basker BTF tabs (first 10): \n");
-      if (nblks < 10)
-      {
-        for(Int i=0; i < nblks+1; i++)
-        {
-          printf("%ld, ", (long)btf_tabs(i));
-        }
-      }
-      else
-      {
-        printf("%ld, %ld, %ld, ...., ",
-            (long)btf_tabs(0), (long)btf_tabs(1), (long)btf_tabs(2));
-        printf("%ld, %ld, %ld",
-            (long)btf_tabs(nblks-3), 
-            (long)btf_tabs(nblks-2),
-            (long)btf_tabs(nblks-1));
-      }
-      printf("\n");
+      printf("Basker: num_threads: %d \n", (int)num_threads);
+      //printf("Basker BTF tabs: \n");
+      //for(Int i=0; i < nblks+1; i++)
+      //{
+      //  printf(" btf_tabs[%d] = %ld, ", (int)i, (long)btf_tabs(i));
+      //}
+      //printf("\n");
     }//if verbose
 
+    /*printf(" A = [\n" );
+    for(Int j = 0; j < M.ncol; j++) {
+      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+      }
+    }
+    printf("];\n");*/
+
     MALLOC_INT_1DARRAY(vals_order_btf_array, M.nnz);
-    //permute_col(M, order_btf_array); //NDE: Track movement of vals (lin_ind of row,col) here
-    permute_col_store_valperms(M, order_btf_array, vals_order_btf_array); //NDE: Track movement of vals (lin_ind of row,col) here
+    //permute_col(M, order_btf_array);                                    //NDE: col-order M
+    permute_col_store_valperms(M, order_btf_array, vals_order_btf_array); //NDE: col-order M & Track movement
     permute_row(M, order_btf_array);
 
     permute_inv(vals_perm_composition, vals_order_btf_array, M.nnz);
 
+
+    //================================================================
+    //compute (optionally MWM and) AMD on each block
+    //NOTE: MWM is computed though both MWM and AMD will be recomputed in numerics
+    //      AMD provides stats about LU
     MALLOC_INT_1DARRAY(order_blk_amd_array, M.ncol);
     init_value(order_blk_amd_array, M.ncol, (Int)0);
-    MALLOC_INT_1DARRAY(btf_blk_nnz, nblks+1);
-    init_value(btf_blk_nnz, nblks+1, (Int) 0);
-    MALLOC_INT_1DARRAY(btf_blk_work, nblks+1);
-    init_value(btf_blk_work, nblks+1, (Int) 0);
+    MALLOC_INT_1DARRAY(order_blk_mwm_array, M.ncol);
+    init_value(order_blk_mwm_array, M.ncol, (Int)0);
 
-    //Find AMD blk ordering, get nnz, and get work
-    btf_blk_amd( M, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    MALLOC_INT_1DARRAY(order_blk_amd_inv, M.ncol);
+    MALLOC_INT_1DARRAY(order_blk_mwm_inv, M.ncol);
+
+    MALLOC_INT_1DARRAY(btf_blk_nnz, nblks+1);
+    init_value(btf_blk_nnz, nblks+1, (Int)0);
+
+    MALLOC_INT_1DARRAY(btf_blk_work, nblks+1);
+    init_value(btf_blk_work, nblks+1, (Int)0);
+
+    //=====================================================================
+    //Find MWM + AMD blk ordering, also compute nnz and get workspace size
+    //NOTE: ordering is computed for each of **ALL** the diagonal blocks
+    //      (i.e., both A & C) since they are split to A & C after the 
+    //      ordering is computed
+    if(Options.verbose == BASKER_TRUE)
+    {
+      printf("Basker: block MWM+AMD(blk_matching = %d) \n", (int)Options.blk_matching);
+    }
+    #ifdef BASKER_TIMER
+    timer_order.reset();
+    #endif
+    int blk_mwm_info = btf_blk_mwm_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    if (blk_mwm_info != BASKER_SUCCESS) {
+      return blk_mwm_info;
+    }
+    #if 0 //debug
+    printf( " >> debug: set order_blk_mwm/amd on global matrix to identity <<\n" );
+    for (Int i = 0; i < (Int)M.nrow; i++) {
+      order_blk_mwm_array(i) = i;
+      order_blk_amd_array(i) = i;
+    }
+    #endif
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : Block MWM+AMD time: " << order_time << std::endl;
+    #endif
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker blk_perm:\n");
@@ -215,26 +248,129 @@ namespace BaskerNS
     //printMTX("A_BEFORE.mtx", M);
     //printVec("AMD.txt", order_blk_amd_array, M.ncol);
 
+    #ifdef BASKER_TIMER
+    timer_order.reset();
+    #endif
     MALLOC_INT_1DARRAY(vals_order_blk_amd_array, M.nnz);
-    //permute_col(M, order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
-    permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: Track movement of vals (lin_ind of row,col) here
-    permute_row(M, order_blk_amd_array);
+    if (Options.blk_matching == 0) // no blk_matching (TODO: should we add cardinality-matrching on each block?)
+    {
+      if (Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker find BTF: apply BLK AMD\n");
+      }
+      /*printf(" B = [\n" );
+      for(Int j = 0; j < M.ncol; j++) {
+        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+        }
+      }
+      printf("];\n");*/
 
-    permute_inv(vals_perm_composition, vals_order_blk_amd_array, M.nnz);
+      // > apply AMD to cols & rows
+      permute_col_store_valperms(M, order_blk_amd_array, vals_order_blk_amd_array); //NDE: col-order M & Track movement
+      permute_row(M, order_blk_amd_array);
 
-    // retry with original vals ordering
-    sort_matrix_store_valperms(M, vals_perm_composition);
+      /*printf(" T = [\n" );
+      for(Int j = 0; j < M.ncol; j++) {
+        for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+          //std::cout << M.row_idx[k] << " " << j << " " << M.val[k] << std::endl;
+          printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+        }
+      }
+      printf("];\n");*/
 
-    //changed col to row, error.
-    //print to see issue
-    //printMTX("A_TOTAL.mtx", M);
+      #ifdef BASKER_TIMER
+      order_time = timer_order.seconds();
+      std::cout << " >>> Basker order : val-perm time     : " << order_time << std::endl;
+      timer_order.reset();
+      #endif
 
+      permute_inv(vals_perm_composition, vals_order_blk_amd_array, M.nnz);
+      #ifdef BASKER_TIMER
+      order_time = timer_order.seconds();
+      std::cout << " >>> Basker order : invert perm time  : " << order_time << std::endl;
+      #endif
+    } else {
+      // reset matrix order and scale since they will be computed during numerical factorization
+      if (Options.verbose == BASKER_TRUE)
+      {
+        printf("Basker find BTF: skip applying BLK AMD\n");
+      }
+      Entry one (1.0);
+      for (Int i = 0; i < (Int)M.nrow; i++) {
+        order_blk_mwm_array(i) = i;
+        order_blk_amd_array(i) = i;
+        scale_row_array(i) = one;
+        scale_col_array(i) = one;
+      }
+    }
+
+    //================================================================
+    //Split the matrix M into blocks
     //NDE at this point, vals_perm_composition stores the permutation of the vals array; will be needed during break_into_parts
     break_into_parts2(M, nblks, btf_tabs);
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : partition time    : " << order_time << std::endl;
+    timer_order.reset();
+    #endif
+    /*printf(" M = [\n" );
+    for(Int j = 0; j < M.ncol; j++) {
+      for(Int k = M.col_ptr[j]; k < M.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", M.row_idx[k], j, M.val[k]);
+      }
+    }
+    printf("];\n"); fflush(stdout);
 
+    printf(" A = [\n" );
+    for(Int j = 0; j < BTF_A.ncol; j++) {
+      for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+      }
+    }
+    printf("];\n"); fflush(stdout);
+
+    printf(" D = [\n" );
+    for(Int j = 0; j < BTF_D.ncol; j++) {
+      for(Int k = BTF_D.col_ptr[j]; k < BTF_D.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_D.row_idx[k], j, BTF_D.val[k]);
+      }
+    }
+    printf("];\n"); fflush(stdout);
+
+    printf(" E = [\n" );
+    for(Int j = 0; j < BTF_E.ncol; j++) {
+      for(Int k = BTF_E.col_ptr[j]; k < BTF_E.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_E.row_idx[k], j, BTF_E.val[k]);
+      }
+    }
+    printf("];\n"); fflush(stdout);
+
+    printf(" C = [\n" );
+    for(Int j = 0; j < BTF_C.ncol; j++) {
+      for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+      }
+    }
+    printf("];\n"); fflush(stdout);
+
+    printf(" B = [\n" );
+    for(Int j = 0; j < BTF_B.ncol; j++) {
+      for(Int k = BTF_B.col_ptr[j]; k < BTF_B.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_B.row_idx[k], j, BTF_B.val[k]);
+      }
+    }
+    printf("];\n"); fflush(stdout);*/
+
+
+
+    //================================================================
     //find schedule
     find_btf_schedule(M, nblks, btf_tabs);
-
+    #ifdef BASKER_TIMER
+    order_time = timer_order.seconds();
+    std::cout << " >>> Basker order : schedule time     : " << order_time << std::endl;
+    #endif
 
     if (Options.verbose == BASKER_TRUE)
     {
@@ -245,7 +381,7 @@ namespace BaskerNS
     printf("------------BTF CUT: %d --------------\n",  btf_tabs(btf_tabs_offset));
 #endif
 
-    return 0;
+    return BASKER_SUCCESS;
   }//end find_btf2
 
 
@@ -255,7 +391,7 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    Int           nblks,
-   INT_1DARRAY   btf_tabs
+   INT_1DARRAY  _btf_tabs
   )
   {
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -293,8 +429,7 @@ namespace BaskerNS
     while(move_fwd==BASKER_TRUE)
     {
 
-      Int blk_size = btf_tabs(blk_idx)-
-        btf_tabs(blk_idx-1);
+      Int blk_size = _btf_tabs(blk_idx) - _btf_tabs(blk_idx-1);
 
     #ifdef BASKER_DEBUG_ORDER_BTF
       printf("move_fwd loop \n");
@@ -320,9 +455,9 @@ namespace BaskerNS
             (double) BASKER_BTF_MAX_PERCENT);
     #endif
 
-        t_size = t_size+blk_size;
+        t_size  = t_size+blk_size;
         blk_idx = blk_idx-1;
-        scol   = btf_tabs[blk_idx];
+        scol    = _btf_tabs[blk_idx];
       }
       else
       {
@@ -335,7 +470,7 @@ namespace BaskerNS
         {
           blk_idx = 0;
           t_size = t_size + blk_size;
-          scol = btf_tabs[blk_idx];
+          scol   = _btf_tabs[blk_idx];
         }
 
         //#endif
@@ -535,7 +670,7 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    Int           nblks,
-   INT_1DARRAY   btf_tabs
+   INT_1DARRAY  _btf_tabs
   )
   {
   #ifdef BASKER_DEBUG_ORDER_BTF
@@ -545,11 +680,16 @@ namespace BaskerNS
 
     Options.btf = BASKER_TRUE;
 
-    //Alg.  
+    //Alg. 
+    // Old: 
     // A -> [BTF_A  BTF_B] 
     //      [0      BTF_C]
-    //1. Run backward through the btf_tabs to find size C
-    //2. Form A,B,C based on size in 1.
+    // New: 
+    // A -> [BTF_D    BTF_E     ]  (BTF_E stores interface to both BTF_A and BTF_C)
+    //      [0      BTF_A  BTF_B]  (BTF_A has just one block)
+    //      [0      0      BTF_C]
+    //1. Run backward through the btf_tabs to find size of C
+    //2. Form A,B,C ,and D & E,  based on step 1.
 
     //Short circuit, 
     //If nblks  == 1, than only BTF_A exists
@@ -561,6 +701,11 @@ namespace BaskerNS
     #endif
       BTF_A = A;
       //Options.btf = BASKER_FALSE; // NDE: how is this handled???
+      //if (A.nrow < Options.btf_large) {
+      //  btf_tabs_offset = 0;
+      //} else {
+      //  btf_tabs_offset = 1;
+      //}
       btf_tabs_offset = 1;
       return 0;
     }
@@ -577,88 +722,113 @@ namespace BaskerNS
       return 0;
     }
 
-    //Step 1.
-    //Find total work estimate
-    Int total_work_estimate = 0;
-    for(Int b = 0; b < nblks; b++) //nblks is input; determined during btf ordering - total BTF_A blocks AND BTF_C blocks
-    {
-      total_work_estimate += btf_blk_work(b); //determined prior, during btf ordering
-    }
-    //Set a class variable to use later
-    btf_total_work = total_work_estimate;
-    //printf("num_threads: %d epsilon: %f \n",
-    //	   num_threads, 
-    //	   ((double)1/num_threads) +
-    //	   ((double)BASKER_BTF_IMBALANCE));
-    Int break_size    = ceil((double)total_work_estimate*(
-          ((double)1/num_threads) + 
-          ((double)BASKER_BTF_IMBALANCE)));
-
-    #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Basker: Break size: %d \n", break_size);
-    #endif
-
-    Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
-    Int scol              = M.ncol; // starting column of the BTF_C blocks
+    Int scol_top          = 0;      // starting column of the BTF_A bloc
+    Int scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
     Int blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
-                                    // note: blk_idx index acts as block id + 1; btf_tabs(nblks) is likely the end column number
-    BASKER_BOOL  move_fwd = BASKER_TRUE;
-
-    while(move_fwd==BASKER_TRUE)
-    {
-      Int blk_work = btf_blk_work(blk_idx-1);
-      Int blk_size  = btf_tabs(blk_idx) - 
-        btf_tabs(blk_idx-1);       // subtract the bounding column ids to determine size of the (square) block
-
-      #ifdef BASKER_DEBUG_ORDER_BTF
-      printf(" \n move_fwd loop \n");
-      BASKER_ASSERT(blk_idx>=0, "btf blk idx off");
-      BASKER_ASSERT(blk_work>=0, "btk_work wrong");
-      BASKER_ASSERT(blk_size>0, "btf blk size wrong");
-      printf("blk_idx: %d blk_work: %d break_size: %d \n",
-          blk_idx, blk_work, break_size);
+    if (num_threads == 1) {
+      // Short circuit for single thread = no big block A
+      scol = 0;
+      blk_idx = 0;
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker: short-circuit for one thread\n");
+      }
+    } else {
+      //Step 1.
+      //Find total work estimate
+      double total_work_estimate = 0;
+      for(Int b = 0; b < nblks; b++) //nblks is input; determined during btf ordering - total BTF_A blocks AND BTF_C blocks
+      {
+        total_work_estimate += btf_blk_work(b); //determined prior, during btf ordering
+      }
+      //Set a class variable to use later
+      btf_total_work = total_work_estimate;
+      //printf("num_threads: %d epsilon: %f \n",
+      //	   num_threads, 
+      //	   ((double)1/num_threads) +
+      //	   ((double)BASKER_BTF_IMBALANCE));
+      #if 0 // forcing to have the big A bloock for debug
+      //Int break_size = 0;
+      //Int break_size = 5;
+      Int break_size = 10;
+      //Int break_size = 100;
+      //Int break_size = 500000;
+      printf( " > debug: break_size = %d\n",break_size );
+      #else
+      double break_size = ceil(total_work_estimate*(
+            ((double)1.0/num_threads) + 
+            ((double)BASKER_BTF_IMBALANCE)));
       #endif
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker: Break size for workspace: %d with %d threads\n", (int)break_size, (int)num_threads);
+      }
 
-      //Should be end
-      //if(((blk_work < break_size) ||
-      //  (blk_size < BASKER_BTF_SMALL)) &&
-      //  (blk_idx > 1))
+      scol_top          = 0;      // starting column of the BTF_A bloc
+      scol              = M.ncol; // starting column of the BTF_C blocks (end of BTF_A block)
+      blk_idx           = nblks;  // start at lower right corner block, move left and up the diagonal
+                                  // note: blk_idx index acts as block id + 1; btf_tabs(nblks) is likely the end column number
 
-      //Continue to be in btf
-      if( (blk_work < break_size) && (blk_idx > 1) )
+      Int t_size            = 0;      //total size of cols from 'small' blocks in BTF_C: matrix ncols - t_size = BTF_A ncols
+      BASKER_BOOL  move_fwd = BASKER_TRUE;
+      while(move_fwd==BASKER_TRUE)
       {
-      #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker: continue with fine structure btf blocks\n");
-      #endif
+        Int blk_work = btf_blk_work(blk_idx-1);
+        // subtract the bounding column ids to determine size of the (square) block
+        Int blk_size = _btf_tabs(blk_idx) - _btf_tabs(blk_idx-1);
 
-        t_size = t_size+blk_size;
-        blk_idx = blk_idx-1;
-        scol   = btf_tabs[blk_idx];
-      }
-      //break due to size i.e. entered non-trivial large BTF_A block
-      else if( blk_work >= break_size )
-      {
-      #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker: break due to size\n");
-      #endif
-        move_fwd = BASKER_FALSE;
-      }
-      //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
-      else if(blk_idx == 1)
-      {
-        //printf("break last blk\n");
-        blk_idx = 0;
-        t_size = t_size + blk_size;
-        scol = btf_tabs[blk_idx];	
-        move_fwd = BASKER_FALSE;
-      }
-      //should not be called
-      else
-      {
-        BASKER_ASSERT(1==0, "btf order break");
-        move_fwd = BASKER_FALSE;
-      }
-    }//end while(move_fwd)
+        #ifdef BASKER_DEBUG_ORDER_BTF
+        printf(" \n move_fwd loop \n");
+        BASKER_ASSERT(blk_idx>=0, "btf blk idx off");
+        BASKER_ASSERT(blk_work>=0, "btk_work wrong");
+        BASKER_ASSERT(blk_size>0, "btf blk size wrong");
+        printf("blk_idx: %d blk_work: %d break_size: %d \n",
+            blk_idx, blk_work, break_size);
+        #endif
+
+        //Should be end
+        //if(((blk_work < break_size) ||
+        //  (blk_size < BASKER_BTF_SMALL)) &&
+        //  (blk_idx > 1))
+
+        //Continue to be in btf
+        if( (Options.use_sequential_diag_facto || blk_work < break_size) && (blk_idx > 1) )
+        {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+           printf("Basker(blk_idx=%d, blk_size=%d, blk_work=%d, break_size=%d): continue with fine structure btf blocks\n",
+                   (int)blk_idx,(int)blk_size,(int)blk_work,(int)break_size);
+          #endif
+
+          t_size  = t_size+blk_size;
+          blk_idx = blk_idx-1;
+          scol    = _btf_tabs[blk_idx];
+        }
+        //break due to size i.e. entered non-trivial large BTF_A block
+        else if( blk_work >= break_size )
+        {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+           printf("Basker: break due to size (%d > %d)\n",(int)blk_work,(int)break_size);
+          #endif
+          move_fwd = BASKER_FALSE;
+        }
+        //break due to end i.e. no 'large' BTF_A block for ND; only fine BTF structure
+        else if(blk_idx == 1)
+        {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+           printf("Basker: last block\n");
+          #endif
+          //printf("break last blk\n");
+          blk_idx = 0;
+          t_size = t_size + blk_size;
+          scol = _btf_tabs[blk_idx];	
+          move_fwd = BASKER_FALSE;
+        }
+        //should not be called
+        else
+        {
+          BASKER_ASSERT(1==0, "btf order break");
+          move_fwd = BASKER_FALSE;
+        }
+      }//end while(move_fwd)
+    }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("Basker: Done finding BTF2 cut.  Cut size: %d scol: %d \n", t_size, scol);
@@ -668,17 +838,113 @@ namespace BaskerNS
     #endif
 
     //Comeback and change
-    // btf_tabs_offset is offset to id of first block after diag blocks in BTF_A 
-    btf_tabs_offset = blk_idx;
+    // btf_tabs_offset is offset to id of first block after diag blocks in BTF_A
+    // (i.e., the first block in BTF_C)
+    btf_tabs_offset = blk_idx; // 
 
     //Step 2. Move into Blocks 
     MALLOC_INT_1DARRAY_PAIRS(vals_block_map_perm_pair, M.nnz); //this will store and map A.val indices to val indices of BTF_A, BTF_B, and BTF_C 
-    // Begin with BTF_A
-    if(btf_tabs_offset != 0)
-    {
+    if(btf_tabs_offset != 0) // if the id of the first block in BTF_C != 0
+    {                        // -> we have BTF_A, and maybe blocks in BTF_D
+#if defined(BASKER_SPLIT_A)
+      #if 0
+      // debuging with A merging all the top blocks
+      printf( " >> debug: remove D/E blocks <<\n" );
+      btf_top_tabs_offset = 0;
+      btf_top_nblks = 0;
+
+      scol_top = 0;
+      #else
+      btf_top_tabs_offset = btf_tabs_offset-1;  // starting block ID of BTF_A block (for now, there is just one big block in A)
+      btf_top_nblks = btf_top_tabs_offset;      // number of blocks in BTF_D
+
+      scol_top = _btf_tabs[btf_top_tabs_offset]; // the first column index of A
+      #endif
+
+      // extract BTF_D and BTF_E
+      Int dnnz = M.col_ptr(scol_top);
+      Int ennz = 0;
+      for(Int k = scol_top; k < M.ncol; ++k) {
+        for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+          if(M.row_idx(i) < scol_top) {
+            ennz ++;
+          }
+        }
+      }
+      BTF_D.set_shape(0, scol_top, 0,        scol_top);
+      BTF_E.set_shape(0, scol_top, scol_top, M.ncol-scol_top);
+      BTF_D.nnz = dnnz;
+      BTF_E.nnz = ennz;
+      if(BTF_D.v_fill == BASKER_FALSE)
+      {
+        MALLOC_INT_1DARRAY(BTF_D.col_ptr, BTF_D.ncol+1);
+        if (BTF_D.nnz > 0) {
+          MALLOC_INT_1DARRAY(BTF_D.row_idx, BTF_D.nnz);
+          MALLOC_ENTRY_1DARRAY(BTF_D.val, BTF_D.nnz);
+        }
+        BTF_D.fill();
+      }
+      if(BTF_E.v_fill == BASKER_FALSE)
+      {
+        MALLOC_INT_1DARRAY(BTF_E.col_ptr, BTF_E.ncol+1);
+        if (BTF_E.nnz > 0) {
+          MALLOC_INT_1DARRAY(BTF_E.row_idx, BTF_E.nnz);
+          MALLOC_ENTRY_1DARRAY(BTF_E.val, BTF_E.nnz);
+        }
+        BTF_E.fill();
+      }
+      if (BTF_D.nnz > 0) {
+        dnnz = 0;
+        for(Int k = 0; k < scol_top; ++k) {
+          for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+            BTF_D.row_idx(dnnz) = M.row_idx(i);
+            BTF_D.val(dnnz)     = M.val(i);
+            vals_block_map_perm_pair(i) = std::pair<Int,Int>(-1, dnnz);
+
+            dnnz ++;
+          }
+          BTF_D.col_ptr(k+1) = dnnz;
+        }
+      }
+      ennz = 0;
+      if (BTF_E.nnz > 0) {
+        for(Int k = scol_top; k < M.ncol; ++k) {
+          for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+            if(M.row_idx(i) < scol_top) {
+              BTF_E.row_idx(ennz) = M.row_idx(i);
+              BTF_E.val(ennz)     = M.val(i);
+              vals_block_map_perm_pair(i) = std::pair<Int,Int>(-2, ennz);
+
+              ennz++;
+            }
+          }
+          BTF_E.col_ptr(k-scol_top+1) = ennz;
+        }
+      }
+#endif
+
       //--Move A into BTF_A;
-      BTF_A.set_shape(0, scol, 0, scol);
-      BTF_A.nnz = M.col_ptr(scol);
+      Int annz = 0;
+      if (scol_top > 0) {
+        for(Int k = scol_top; k < scol; ++k) {
+          for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) {
+            if (M.row_idx(i) >= scol_top) {
+              annz ++;
+            }
+          }
+        }
+      } else {
+        annz = M.col_ptr(scol);
+      }
+      //BTF_A.set_shape(scol_top, scol-scol_top, scol_top, scol-scol_top);
+      BTF_A.set_shape(0, scol-scol_top, 0, scol-scol_top);
+      BTF_A.nnz = annz;
+      if(Options.verbose == BASKER_TRUE) {
+        printf( " + scol = %d, scol_top = %d, btf_tabs = %d, btf_top_tabs = %d, annz = %d\n",
+                (int)scol, (int)scol_top, (int)btf_tabs_offset, (int)btf_top_tabs_offset, (int)annz );
+        printf( " +  BTF_A.srow = %d, BTF_A.scol = %d, BTF_A.nrow = %d, BTF_A.ncol = %d\n",
+                (int)BTF_A.srow, (int)BTF_A.scol, (int)BTF_A.nrow, (int)BTF_A.ncol );
+      }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
       printf("Basker Init BTF_A. ncol: %d nnz: %d \n", scol, BTF_A.nnz);
@@ -688,47 +954,61 @@ namespace BaskerNS
       {
         BASKER_ASSERT(BTF_A.ncol >= 0, "BTF_A, col_ptr");
         MALLOC_INT_1DARRAY(BTF_A.col_ptr, BTF_A.ncol+1);
-        BASKER_ASSERT(BTF_A.nnz > 0, "BTF_A, nnz");
-        MALLOC_INT_1DARRAY(BTF_A.row_idx, BTF_A.nnz);
-        MALLOC_ENTRY_1DARRAY(BTF_A.val, BTF_A.nnz);
+        if(BTF_A.nnz > 0) {
+          BASKER_ASSERT(BTF_A.nnz > 0, "BTF_A, nnz");
+          MALLOC_INT_1DARRAY(BTF_A.row_idx, BTF_A.nnz);
+          MALLOC_ENTRY_1DARRAY(BTF_A.val, BTF_A.nnz);
+        }
         BTF_A.fill();
       }
 
-      Int annz = 0;
-      for(Int k = 0; k < scol; ++k)
-      {
-      #ifdef BASKER_DEBUG_ORDER_BTF
-        printf("Basker copy column: %d into A_BTF, [%d %d] \n", 
-            k, M.col_ptr(k), M.col_ptr(k+1));
-      #endif
-
-        for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+      if(BTF_A.nnz > 0) {
+        annz = 0;
+        for(Int k = scol_top; k < scol; ++k)
         {
-          BTF_A.row_idx(annz) = M.row_idx(i);
-          BTF_A.val(annz)     = M.val(i);  //NDE: Track movement of vals (lin_ind of row,col) here
+        #ifdef BASKER_DEBUG_ORDER_BTF
+          printf("Basker copy column: %d into A_BTF, [%d %d] \n", 
+              k, M.col_ptr(k), M.col_ptr(k+1));
+        #endif
 
-          vals_block_map_perm_pair(i) = std::pair<Int,Int>(0,annz);
+          for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+          {
+            if (M.row_idx(i) >= scol_top) {
+              BTF_A.row_idx(annz) = M.row_idx(i) - scol_top;
+              BTF_A.val(annz)     = M.val(i);  //NDE: Track movement of vals (lin_ind of row,col) here
 
-          annz++;
+              vals_block_map_perm_pair(i) = std::pair<Int,Int>(0,annz);
+
+              annz++;
+            }
+          }
+          BTF_A.col_ptr(k-scol_top+1) = annz;
         }
-
-        BTF_A.col_ptr(k+1) = annz;
       }
     }//no A
+
+    if(Options.verbose == BASKER_TRUE) {
+      printf( "\n > btf_tabs_offset = %d, btf_top_tabs_offset = %d\n", (int)btf_tabs_offset, (int)btf_top_tabs_offset );
+      for (blk_idx = 0; blk_idx < btf_top_tabs_offset; blk_idx++) printf( " x %d: %d\n", (int)blk_idx, (int)(btf_tabs[blk_idx+1]-btf_tabs[blk_idx]) );
+      for (blk_idx = btf_top_tabs_offset; blk_idx < btf_tabs_offset; blk_idx++) printf( " + %d: %d\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]) );
+      for (blk_idx = btf_tabs_offset; blk_idx < nblks; blk_idx++) printf( " - %d: %d\n", (int)blk_idx, (int)(_btf_tabs[blk_idx+1]-_btf_tabs[blk_idx]) );
+      printf( "\n" );
+    }
 
     //Fill in B and C at the same time
     INT_1DARRAY cws;
     BASKER_ASSERT((M.ncol-scol+1) > 0, "BTF_SIZE MALLOC");
     MALLOC_INT_1DARRAY(cws, M.ncol-scol+1);
     init_value(cws, M.ncol-scol+1, (Int)M.ncol);
-    BTF_B.set_shape(0, scol, scol, M.ncol-scol);
-    BTF_C.set_shape(scol, M.ncol-scol, scol, M.ncol-scol);
+    BTF_B.set_shape(scol_top,    scol-scol_top,  scol, M.ncol-scol);
+    BTF_C.set_shape(scol,        M.ncol-scol,    scol, M.ncol-scol);
 
     #ifdef BASKER_DEBUG_ORDER_BTF
-    printf("Baske Set Shape BTF_B: %d %d %d %d \n",
+    printf( " scol_top = %d, scol = %d, ncol = %d\n",scol_top, scol, M.ncol );
+    printf("Basker Set Shape BTF_B: %d:%d, %d:%d \n",
         BTF_B.srow, BTF_B.nrow,
         BTF_B.scol, BTF_B.ncol);
-    printf("Basker Set Shape BTF_C: %d %d %d %d \n",
+    printf("Basker Set Shape BTF_C: %d:%d, %d:%d \n",
         BTF_C.srow, BTF_C.nrow,
         BTF_C.scol, BTF_C.nrow);
     #endif
@@ -752,19 +1032,21 @@ namespace BaskerNS
 
       for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
       {
-        if(M.row_idx(i) < scol)
-        {
-        #ifdef BASKER_DEBUG_ORDER_BTF
-          printf("Basker Adding nnz to Upper, %d %d \n", scol, M.row_idx(i));
-        #endif
-          bnnz++;
-        }
-        else
-        {
-        #ifdef BASKER_DEBUG_ORDER_BTF
-          printf("Basker Adding nnz to Lower, %d %d \n", scol, M.row_idx(i));
-        #endif
-          cnnz++;
+        if(M.row_idx(i) >= scol_top) {
+          if(M.row_idx(i) < scol)
+          {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+            printf("Basker Adding nnz to Upper, %d %d \n", scol, M.row_idx(i));
+          #endif
+            bnnz++;
+          }
+          else
+          {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+            printf("Basker Adding nnz to Lower, %d %d \n", scol, M.row_idx(i));
+          #endif
+            cnnz++;
+          }
         }
       }//over all nnz in k
     }//over all k
@@ -777,24 +1059,27 @@ namespace BaskerNS
     BTF_B.nnz = bnnz;
     BTF_C.nnz = cnnz;
 
-
     //Malloc need space
-    if( (BTF_B.v_fill == BASKER_FALSE) && (BTF_B.nnz > 0) )
+    if(BTF_B.v_fill == BASKER_FALSE)
     {
       BASKER_ASSERT(BTF_B.ncol >= 0, "BTF_B ncol");
       MALLOC_INT_1DARRAY(BTF_B.col_ptr, BTF_B.ncol+1);
-      BASKER_ASSERT(BTF_B.nnz > 0, "BTF_B.nnz");
-      MALLOC_INT_1DARRAY(BTF_B.row_idx, BTF_B.nnz);
-      MALLOC_ENTRY_1DARRAY(BTF_B.val, BTF_B.nnz);
+      if(BTF_B.nnz > 0) {
+        BASKER_ASSERT(BTF_B.nnz > 0, "BTF_B.nnz");
+        MALLOC_INT_1DARRAY(BTF_B.row_idx, BTF_B.nnz);
+        MALLOC_ENTRY_1DARRAY(BTF_B.val, BTF_B.nnz);
+      }
       BTF_B.fill();
     }
     if(BTF_C.v_fill == BASKER_FALSE)
     {
       BASKER_ASSERT(BTF_C.ncol >= 0, "BTF_C.ncol");
       MALLOC_INT_1DARRAY(BTF_C.col_ptr, BTF_C.ncol+1);
-      BASKER_ASSERT(BTF_C.nnz > 0, "BTF_C.nnz");
-      MALLOC_INT_1DARRAY(BTF_C.row_idx, BTF_C.nnz);
-      MALLOC_ENTRY_1DARRAY(BTF_C.val, BTF_C.nnz);
+      if(BTF_C.nnz > 0) {
+        BASKER_ASSERT(BTF_C.nnz > 0, "BTF_C.nnz");
+        MALLOC_INT_1DARRAY(BTF_C.row_idx, BTF_C.nnz);
+        MALLOC_ENTRY_1DARRAY(BTF_C.val, BTF_C.nnz);
+      }
       BTF_C.fill();
     }
 
@@ -809,43 +1094,47 @@ namespace BaskerNS
 
       for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
       {
-        if(M.row_idx(i) < scol)
-        {
-        #ifdef BASKER_DEBUG_ORDER_BTF
-          printf("Adding nnz to Upper, %d %d \n", scol, M.row_idx[i]);
-        #endif
+        if(M.row_idx(i) >= scol_top) {
+          if(M.row_idx(i) < scol)
+          {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+            printf("Adding nnz to Upper, %d %d \n", scol, M.row_idx[i]);
+          #endif
 
-          BASKER_ASSERT(BTF_B.nnz > 0, "BTF B uninit");
-          //BTF_B.row_idx[bnnz] = M.row_idx[i];
-          //Note: do not offset because B srow = 0
-          BTF_B.row_idx(bnnz) = M.row_idx(i);
-          BTF_B.val(bnnz)     = M.val(i);
+            BASKER_ASSERT(BTF_B.nnz > 0, "BTF B uninit");
+            //BTF_B.row_idx[bnnz] = M.row_idx[i];
+            //Note: do not offset because B srow = 0
+            BTF_B.row_idx(bnnz) = M.row_idx(i) - scol_top;
+            BTF_B.val(bnnz)     = M.val(i);
 
-          vals_block_map_perm_pair(i) = std::pair<Int,Int>(1,bnnz);
+            vals_block_map_perm_pair(i) = std::pair<Int,Int>(1,bnnz);
 
-          bnnz++;
-        }
-        else
-        {
-        #ifdef BASKER_DEBUG_ORDER_BTF
-          printf("Adding nnz Lower,k: %d  %d %d %f \n",
-              k, scol, M.row_idx[i], 
-              M.val(i));
-        #endif
-          //BTF_C.row_idx[cnnz] = M.row_idx[i];
-          BTF_C.row_idx(cnnz) = M.row_idx(i)-scol;
-          BTF_C.val(cnnz)     = M.val(i);
+            bnnz++;
+          }
+          else
+          {
+          #ifdef BASKER_DEBUG_ORDER_BTF
+            printf("Adding nnz Lower,k: %d  %d %d %f \n",
+                k, scol, M.row_idx[i], 
+                M.val(i));
+          #endif
+            BTF_C.row_idx(cnnz) = M.row_idx(i)-scol;
+            BTF_C.val(cnnz)     = M.val(i);
 
-          vals_block_map_perm_pair(i) = std::pair<Int,Int>(2,cnnz);
+            vals_block_map_perm_pair(i) = std::pair<Int,Int>(2,cnnz);
 
-          cnnz++;
+            cnnz++;
+          }
         }
       }//over all nnz in k
-      if(BTF_B.nnz > 0)
+      //if(BTF_B.ncol > 0)
       {
         BTF_B.col_ptr(k-scol+1) = bnnz;
       }
-      BTF_C.col_ptr(k-scol+1) = cnnz;
+      //if(BTF_C.ncol > 0)
+      {
+        BTF_C.col_ptr(k-scol+1) = cnnz;
+      }
     }//over all k
 
     #ifdef BASKER_DEBUG_ORDER_BTF
@@ -902,6 +1191,49 @@ namespace BaskerNS
 			&(perm_in(0)), 
 			&(CC(0)));
 
+    if (Options.min_block_size > 0 && nblks > 1) {
+      for (Int blk = 0; blk < nblks-1; blk++) {
+        Int blk_size = CC(blk+1) - CC(blk);
+        if (blk_size < Options.min_block_size) {
+          if (blk == 0) {
+            // merge this block to the next block
+            for (Int I = blk+1; I < nblks; I++) {
+              CC(I) = CC(I+1);
+            }
+            // the next block is blk-th block
+            blk --;   // check this block again
+            nblks --; // reducd # of blocks
+          } else if (blk == nblks-1) {
+            // merge this block to the prev block
+            for (Int I = blk; I < nblks; I++) {
+              CC(I) = CC(I+1);
+            }
+            // the prev block is (blk-1)th block,
+            // the next block is blk-th block
+            blk --;   // check this block again
+            nblks --; // reducd # of blocks
+            break;    // done
+          } else {
+            Int prev_size = CC(blk)-CC(blk-1);
+            Int next_size = CC(blk+1)-CC(blk);
+            if (prev_size < next_size) {
+              // merge this block to the prev block
+              for (Int I = blk; I <= nblks; I++) {
+                CC(I) = CC(I-1);
+              }
+            } else {
+              // merge this block to the next block
+              for (Int I = blk+1; I < nblks; I++) {
+                CC(I) = CC(I+1);
+              }
+            }
+            blk --;   // check this block again
+            nblks --; // reducd # of block
+          }
+        }
+      }
+    }
+
     #ifdef BASKER_DEBUG_ORDER_BTF
     FILE *fp;
     fp = fopen("btf.txt", "w");
@@ -916,4 +1248,5 @@ namespace BaskerNS
   }//end strong_component <long int>
 
 }//end namespace BaskerNS
+#undef BASKER_TIMER
 #endif

@@ -124,7 +124,6 @@ namespace BaskerNS
 
     if(Options.btf == BASKER_FALSE)
     {
-
       if(btf_tabs_offset != 0)
       {
         serial_solve(y,x);
@@ -178,19 +177,18 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::solve_interface
   (
-   Int nrhs,
+   Int _nrhs,
    Entry *_x, // Solution
    Entry *_y  // rhs
   )
   {
-
-    for(Int r = 0; r < nrhs; r++)
+    for(Int r = 0; r < _nrhs; r++)
     {
       solve_interface(&(_x[r*gm]), &(_y[r*gm]));
     }
 
     return 0;
-  }//end solve_interface(nrhs,x,y);
+  }//end solve_interface(_nrhs,x,y);
 
 
   // _x will be solution (properly permuted)
@@ -210,15 +208,101 @@ namespace BaskerNS
    Entry *_y  // rhs
   )
   {
-    permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array , gn);
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf( "\n -- solve_interface --\n" );
+    for (Int i = 0; i < gn; i++) printf( " input: x(%d) = %e\n",i,_y[i] );
+    printf( "\n" );
+    #endif
+    if (Options.blk_matching != 0 || Options.static_delayed_pivot != 0) {
+      // apply mwm+amd row scaling from numeric
+      for(Int i = 0; i < gn; i++) {
+        Int row = order_blk_mwm_array(symbolic_row_iperm_array(i));
+        y_view_ptr_scale(i) = scale_row_array(row) * _y[i];
+        //printf( " symbolic_row_iperm(%d) = %d\n",i,symbolic_row_iperm_array(i) );
+        //printf( " scale_row(%d) = %e\n",row,scale_row_array(row) );
+      }
+      //printf( " > after scale:\n" );
+      //for (Int i = 0; i < gn; i++) printf( " > y(%d) = %.16e\n",i,y_view_ptr_scale(i) );
+
+      // apply mwm row-perm from symbolic
+      //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,perm_inv_comp_array(i) );
+      permute_inv_and_init_for_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
+      //printf( " > after symbolic-perm:\n" );
+      //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
+
+      // apply row-perm from setup at numeric phase
+      //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,numeric_row_iperm_array(i) );
+      permute_with_workspace(x_view_ptr_copy, numeric_row_iperm_array, gn);
+    } else {
+      //for (Int i = 0; i < gn; i++) printf( " > iperm(%d) = %d\n",i,perm_inv_comp_array(i) );
+      permute_inv_and_init_for_solve(_y, x_view_ptr_copy, y_view_ptr_copy, perm_inv_comp_array, gn);
+    }
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf( " > after perm:\n" );
+    for (Int i = 0; i < gn; i++) printf( " > perm_inv(%d) = %d\n",i, perm_inv_comp_array(i) );
+    for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
+    printf( "\n" );
+    #endif
+
     if (Options.no_pivot == BASKER_FALSE) {
+      // apply partial pivoting from numeric
+      //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d\n",i,gperm(i) );
       permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
+      //printf( " > after partial-pivot:\n" );
+      //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
+      //printf( "\n" );
     }
 
-    solve_interface(x_view_ptr_copy,y_view_ptr_copy); //x is now permuted rhs; y is 0 
+    // solve
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf( "\n before solver-interface\n" );
+    for (Int i = 0; i < gn; i++) printf( " %d %.16e\n",i,x_view_ptr_copy(i) );
+    printf( "\n" );
+    #endif
+    solve_interface(x_view_ptr_copy, y_view_ptr_copy); //x is now permuted rhs; y is 0 
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf( "\n after solver-interface\n" );
+    for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x_view_ptr_copy(i),y_view_ptr_copy(i) );
+    printf( "\n\n" );
+    #endif
 
+    if (Options.blk_matching != 0 || Options.static_delayed_pivot != 0) {
+      // apply amd col-permutation from numeric
+      permute_and_finalcopy_after_solve(&(y_view_ptr_scale(0)), x_view_ptr_copy, y_view_ptr_copy, numeric_col_iperm_array, gn);
+      //for (Int i = 0; i < gn; i++) printf( " > %d:%d: %.16e %.16e -> %.16e\n",i,numeric_col_iperm_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i), y_view_ptr_scale(i));
+
+      /*const Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+      for (Int i = 0; i < scol_top; i++) {
+        x_view_ptr_copy(i) = y_view_ptr_scale(i);
+      }*/
+      const Int poffset = btf_tabs(btf_tabs_offset);
+      for (Int i = 0; i < poffset; i++) {
+        x_view_ptr_copy(i) = y_view_ptr_scale(i);
+      }
+      for (Int i = poffset; i < gn; i++) {
+        y_view_ptr_copy(i) = y_view_ptr_scale(i);
+      }
+    }
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf( " before calling permute_and_finalcopy_after_solve\n" );
+    for (Int i = 0; i < gn; i++) printf( " %d:%d; %e %e\n",i,perm_comp_array(i),x_view_ptr_copy(i),y_view_ptr_copy(i));
+    #endif
     permute_and_finalcopy_after_solve(_x, x_view_ptr_copy, y_view_ptr_copy, perm_comp_array, gn);
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf( " after calling permute_and_finalcopy_after_solve\n" );
+    for (Int i = 0; i < gn; i++) printf( " %d:%d; %e %e\n",i,symbolic_col_iperm_array(i), _x[i],scale_col_array(i));
+    #endif
 
+    if (Options.blk_matching != 0) {
+      for(Int i = 0; i < gn; i++) {
+        Int col = symbolic_col_iperm_array(i);
+        _x[i] = scale_col_array(col) * _x[i];
+      }
+    }
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf( " final\n" );
+    for (Int i = 0; i < gn; i++) printf( " %d %e\n",i,_x[i]);
+    #endif
     return 0;
   }
 
@@ -314,26 +398,33 @@ namespace BaskerNS
   {
     //Start in C and go backwards
     //In first level, only do U\L\x->y
-    for(Int b = (btf_nblks-btf_tabs_offset)-1; b>= 0; b--)
-    {
-
-    #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("\n\n btf b: %ld \n", (long)b);
-    #endif
+    /*printf(" C = [\n" );
+    for(Int j = 0; j < BTF_C.ncol; j++) {
+      for(Int k = BTF_C.col_ptr[j]; k < BTF_C.col_ptr[j+1]; k++) {
+        printf("%d %d %.16e\n", BTF_C.row_idx[k], j, BTF_C.val[k]);
+      }
+    }
+    printf("];\n");*/
+    Int nblks_c = btf_nblks-btf_tabs_offset;
+    for(Int b = nblks_c-1; b>= 0; b--) {
 
       //---Lower solve
       BASKER_MATRIX &LC = LBTF(b);
-      //L\x -> y 
+      #ifdef BASKER_DEBUG_SOLVE_RHS
+      printf("\n\n btf b=%ld (%d x %d), LBTF(%d)\n", (long)b, (int)LC.nrow, (int)LC.ncol, (int)b);
+      #endif
+
+      //L(C)\x -> y (x = y at output, with unit diagonal L)
       lower_tri_solve(LC,x,y);
 
       //printVec(y,gn);
 
       BASKER_MATRIX &UC = UBTF(b);
-      //U\x -> y
+      //U(C)\x -> y
       upper_tri_solve(UC,x,y);
 
       #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("Before spmv\n");
+      printf("Before spmv\n"); fflush(stdout);
       printf("Inner Vector y print\n");
       printVec(y, gn);
       printf("Inner Vector x print\n");
@@ -349,7 +440,7 @@ namespace BaskerNS
       }
 
       #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("After spmv\n");
+      printf("After spmv\n"); fflush(stdout);
       printf("Inner Vector y print\n");
       printVec(y, gn);
       printf("Inner Vector x print\n");
@@ -362,12 +453,9 @@ namespace BaskerNS
     }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("Done, BTF-C Solve \n");
-    printf("\n x \n");
-    printVec(x, gn);
-    printf("\n y \n");
-    printVec(y, gn);
-    printf("\n\n");
+    printf("Done, BTF-C Solve \n"); fflush(stdout);
+    for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
+    printf( "\n");
     #endif
 
     //Update B
@@ -378,25 +466,94 @@ namespace BaskerNS
     }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("Done, SPMV BTF_B UPDATE \n");
-    printf("\n x \n");
-    printVec(x, gn);
-    printf("\n y \n");
-    printVec(y, gn);
-    printf("\n\n");
+    printf("Done, SPMV BTF_B UPDATE \n"); fflush(stdout);
+    for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
+    printf( "\n");
     #endif
 
     //now do the forward backward solve
     //L\x ->y
     serial_forward_solve(x,y);
+    #ifdef BASKER_DEBUG_SOLVE_RHS
+    printf("Done, serial_forward \n"); fflush(stdout);
+    for (Int i = 0; i < gn; i++) printf( "%d  %e %e\n",i,x(i),y(i));
+    printf( "\n");
+    #endif
+
     //U\y->x
     serial_backward_solve(y,x);
-
-    //copy lower part down
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("copying lower starting: %ld \n",
-        (long)btf_tabs[btf_tabs_offset]);
+    printf("Done, serial_backward \n"); fflush(stdout);
+    for (Int i = 0; i < gn; i++) printf( " %d %e %e\n",i,x(i),y(i));
+    printf( "\n");
     #endif
+
+    if(btf_top_tabs_offset >  0)
+    {
+      // copy the solution for C from y to x
+      Int srow_c = BTF_C.srow;
+      Int erow_c = BTF_C.nrow + srow_c;
+      for (Int i = srow_c; i < erow_c; i++) {
+        x(i) = y(i);
+      }
+
+      #ifdef BASKER_DEBUG_SOLVE_RHS
+      printf( " \n D solve..\n" );
+      for (Int i = 0; i < gn; i++) printf( " %d %e\n",i,x(i));
+      printf( "\n");
+      printf( " E = [\n" );
+      for(Int j = 0; j < BTF_E.ncol; ++j) {
+        for(Int k = BTF_E.col_ptr(j); k < BTF_E.col_ptr(j+1); k++) {
+          printf( "%d %d %e\n",BTF_E.row_idx(k),j,BTF_E.val(k) );
+        }
+      }
+      printf("];\n");
+      #endif
+      neg_spmv_perm(BTF_E, x, x);
+      #ifdef BASKER_DEBUG_SOLVE_RHS
+      printf( "\n after update\n" );
+      for (Int i = 0; i < gn; i++) printf( " %e\n",x(i));
+      printf( "\n");
+      #endif
+
+      for(Int b = btf_top_tabs_offset-1; b>= 0; b--)
+      {
+        //L(C)\x -> y 
+        BASKER_MATRIX &LC = L_D(b);
+        lower_tri_solve(LC, x, y);
+        #ifdef BASKER_DEBUG_SOLVE_RHS
+        printf( "\n after L solve (b=%d)\n",b ); fflush(stdout);
+        for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
+        printf( "\n");
+        #endif
+
+        //U(C)\y -> x
+        BASKER_MATRIX &UC = U_D(b);
+        upper_tri_solve(UC, y, x);
+        #ifdef BASKER_DEBUG_SOLVE_RHS
+        printf( "\n after U solve\n" ); fflush(stdout);
+        for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
+        printf( "\n");
+        #endif
+        {
+          //x = BTF_C*y;
+          spmv_BTF(b, BTF_D, x, x, false);
+        }
+        #ifdef BASKER_DEBUG_SOLVE_RHS
+        printf( "\n after spmv\n" ); fflush(stdout);
+        for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
+        printf( "\n");
+        #endif
+      }
+      #ifdef BASKER_DEBUG_SOLVE_RHS
+      printf("Done, D solve\n");
+      printf("\n x \n");
+      printVec(x, gn);
+      printf("\n y \n");
+      printVec(y, gn);
+      printf("\n\n");
+      #endif
+    }
 
     return 0;
   }//end serial_btf_solve
@@ -414,30 +571,42 @@ namespace BaskerNS
     printf("Called serial forward solve \n");
     #endif
 
+    Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     //Forward solve on A
     for(Int b = 0; b < tree.nblks; ++b)
     {
-    #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("Lower Solve blk: %d \n",b);
-    #endif
-
       BASKER_MATRIX &L = LL(b)(0);
+
       //L\x -> y 
-      lower_tri_solve(L, x, y);
+      lower_tri_solve(L, x, y, scol_top);
+      #ifdef BASKER_DEBUG_SOLVE_RHS
+      printf("Lower Solve blk (%d, 0): size=(%dx%d) srow=%d, scol=%d\n",b,(int)L.nrow,(int)L.ncol, (int)L.srow,(int)L.scol);
+      printf("[\n");
+      for (Int i = 0; i < gn; i++) printf( "%d  %e %e\n",i,x(i),y(i));
+      printf( "];\n");
+      #endif
 
       //Update offdiag
       for(Int bb = 1; bb < LL_size(b); ++bb)
       {
-        #ifdef BASKER_DEBUG_SOLVE_RHS
-        printf("Lower Solver Update blk: %d %d \n",
-            b, bb);
-        #endif
-
         BASKER_MATRIX &LD = LL(b)(bb);
         //x = LD*y;
-        neg_spmv_perm(LD, y, x);
+        /*printf( "[\n" );
+        for (Int j = 0; j < LD.ncol; j++) {
+          for (Int k = LD.col_ptr(j); k < LD.col_ptr(j+1); k++) {
+            printf( "%d %d %e\n",LD.row_idx(k),j,LD.val(k));
+          }
+        }
+        printf( "];\n" );*/
+        neg_spmv_perm(LD, y, x, scol_top);
+        #ifdef BASKER_DEBUG_SOLVE_RHS
+        printf("Lower Solver Update blk = (%d %d): size=(%dx%d) srow=%d, scol=%d \n",
+               b, bb, (int)LD.nrow,(int)LD.ncol, (int)LD.srow,(int)LD.scol);
+        printf("[\n");
+        for (Int i = 0; i < gn; i++) printf( "%d  %e %e\n",i,x(i),y(i));
+        printf( "];\n");
+        #endif
       }
-
       //printVec(y,gn);
     }
 
@@ -461,17 +630,17 @@ namespace BaskerNS
     printf("called serial backward solve \n");
     #endif
 
+    Int scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
     for(Int b = tree.nblks-1; b >=0; b--)
     {
       #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("Upper solve blk: %d \n", b);
+      printf("Upper solve blk: %d, %d \n", b,LU_size(b)-1);
       #endif
 
-      BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
-
       //U\y -> x
-      upper_tri_solve(U,y,x); // NDE: y , x positions swapped...
-                              //      seems role of x and y changed...
+      BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
+      upper_tri_solve(U, y, x, scol_top); // NDE: y , x positions swapped...
+                                          //      seems role of x and y changed...
 
       for(Int bb = LU_size(b)-2; bb >= 0; bb--)
       {
@@ -480,9 +649,9 @@ namespace BaskerNS
             b, bb);
         #endif
 
-        BASKER_MATRIX &UB = LU(b)(bb);
         //y = UB*x;
-        neg_spmv(UB,x,y);
+        BASKER_MATRIX &UB = LU(b)(bb);
+        neg_spmv(UB, x, y, scol_top);
       }
     }//end over all blks
 
@@ -544,23 +713,29 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    ENTRY_1DARRAY x, 
-   ENTRY_1DARRAY y  
+   ENTRY_1DARRAY y,
+   Int offset
   )
   {
     //Add checks
     #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("SPMV. scol: %d ncol: %d \n", M.scol, M.ncol);
     #endif
+    /*printf("M=[\n");
+    for(Int k=0; k < M.ncol; ++k) {
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+        printf( "%d %d %e\n",M.row_idx(i),k,M.val(i) );
+    }
+    printf("];\n");*/
 
-    const Int bcol = M.scol;
-    const Int msrow = M.srow;
+    const Int bcol  = M.scol + offset;
+    const Int msrow = M.srow + offset;
     //const Int brow = M.srow;
     for(Int k=0; k < M.ncol; ++k)
     {
       const auto xkbcol = x(k+bcol);
       const Int istart = M.col_ptr(k);
       const Int iend = M.col_ptr(k+1);
-      //for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
       for(Int i = istart; i < iend; ++i)
       {
         const Int j = M.row_idx(i) + msrow;
@@ -580,29 +755,36 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    ENTRY_1DARRAY &y, 
-   ENTRY_1DARRAY &x  
+   ENTRY_1DARRAY &x,
+   Int offset
   )
   {
     //Add checks
+    const Int bcol  = M.scol + offset;
+    const Int msrow = M.srow + offset;
     #ifdef BASKER_DEBUG_SOLVE_RHS
-    printf("SPMV. scol: %d ncol: %d \n", M.scol, M.ncol);
+    printf("SPMV. scol: %d ncol: %d, srow: %d nrow: %d \n", M.scol, M.ncol, M.srow, M.nrow);
+    if (Options.no_pivot == BASKER_FALSE) {
+      printf("P=[\n");
+      for(Int k=0; k < M.nrow; ++k) printf("%d+%d, %d\n",msrow,k,gperm(k+msrow));
+      printf("];\n");
+    }
+    printf("M=[\n");
+    for(Int k=0; k < M.ncol; ++k) {
+      for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
+        printf( "%d %d %d %.16e\n",gperm(M.row_idx(i) + msrow)-msrow, M.row_idx(i),k,M.val(i) );
+    }
+    printf("];\n");
     #endif
 
-    const Int bcol = M.scol;
-    const Int msrow = M.srow;
-
-    //for(Int k=M.scol; k < (M.scol+M.ncol); k++)
     for(Int k=0; k < M.ncol; ++k)
     {
       const Int istart = M.col_ptr(k);
       const Int iend   = M.col_ptr(k+1);
       const auto ykbcol = y(k+bcol);
 
-      //for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) 
       for(Int i = istart; i < iend; ++i) //NDE retest with const vars, scope tightly
       {
-        // const Int j = M.row_idx(i) + msrow;
-
         const Int j = (Options.no_pivot == BASKER_FALSE) ? 
                        gperm(M.row_idx(i) + msrow) :
                        (M.row_idx(i) + msrow) ;
@@ -622,20 +804,30 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    ENTRY_1DARRAY &x, 
-   ENTRY_1DARRAY &y  
+   ENTRY_1DARRAY &y,
+   Int offset
   )
   {
-    const Int bcol = M.scol;
-    const Int brow = M.scol;
+    const Int bcol = M.scol + offset;
+    const Int brow = M.scol + offset;
 
-    //M.info();
+    /*printf( " P = [\n" );
+    for (Int k = 0; k < M.ncol; k++) printf( "%d %d\n",brow+k,gperm(brow+k) );
+    printf("];\n");
+    printf( " L = [\n" );
+    for(Int k = 0; k < M.ncol; ++k) {
+      printf( " prt(%d) = %d:%d\n",k,M.col_ptr(k),M.col_ptr(k+1)-1 );
+      for (Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++) {
+        printf( "%d %d %e\n",M.row_idx(i),k,M.val(i) );
+      }
+    }
+    printf("];\n");*/
 
     for(Int k = 0; k < M.ncol; ++k)
     {
       //Test if zero pivot value
       #ifdef BASKER_DEBUG_SOLVE_RHS
       BASKER_ASSERT(M.val[M.col_ptr[k]]!=0.0, "LOWER PIVOT 0");
-
       //printf("Lower tri.  k: %d out: %f in: %f piv: %f \n",
       //   k+bcol, y[k+bcol], x[k+bcol], M.val[M.col_ptr[k]]);
       #endif
@@ -655,7 +847,10 @@ namespace BaskerNS
       const Int istart = M.col_ptr(k);
       const Int iend = M.col_ptr(k+1);
 
+      //printf( " %d %d %e\n",M.row_idx(M.col_ptr(k)),k,M.val(M.col_ptr(k)));
+      //printf( " -> %e %e (%d, %d,%d)\n",y(k+brow),x(k+bcol),k,brow,bcol );
       y(k+brow) = x(k+bcol) / M.val(M.col_ptr(k));
+      //printf( " y(%d) = %e / %e = %e\n",k+brow,x(k+bcol), M.val(M.col_ptr(k)), y(k+bcol));
 
       const auto ykbcol = y(k+bcol);
       //for(Int i = M.col_ptr(k)+1; i < M.col_ptr(k+1); ++i)
@@ -663,12 +858,13 @@ namespace BaskerNS
       {
         const Int j = (Options.no_pivot == BASKER_FALSE) ? 
                         gperm(M.row_idx(i)+brow) :
-                        (M.row_idx(i)+brow) ;
+                             (M.row_idx(i)+brow) ;
 
         #ifdef BASKER_DEBUG_SOLVE_RHS
         BASKER_ASSERT(j != BASKER_MAX_IDX,"Using nonperm\n");
         #endif
 
+        //printf( " > x (%d) -= %e %e\n",j,M.val(i),ykbcol );
         //x(j) -= M.val(i)*y(k+bcol);
         x(j) -= M.val(i)*ykbcol;
       } //over all nnz in a column
@@ -687,15 +883,23 @@ namespace BaskerNS
   (
    BASKER_MATRIX &M,
    ENTRY_1DARRAY &x,
-   ENTRY_1DARRAY &y 
+   ENTRY_1DARRAY &y,
+   Int offset
   )
   {
-    const Int bcol = M.scol;
-    const Int brow = M.srow;
+    const Int bcol = M.scol + offset;
+    const Int brow = M.srow + offset;
+    /*printf( " U = [\n" );
+    for(Int k = 0; k < M.ncol; ++k) {
+      for (Int i = M.col_ptr(k); i < M.col_ptr(k+1); i++) {
+        printf( "%d %d %e\n",M.row_idx(i),k,M.val(i) );
+      }
+    }
+    printf("];\n");*/
 
     for(Int k = M.ncol; k >= 1; k--)
     {
-
+      //printf( " -- k = %d --\n",k );
       #ifdef BASKER_DEBUG_SOLVE_RHS
       BASKER_ASSERT(M.val[M.col_ptr[k]-1]!=0.0,"UpperPivot\n");
       printf("Upper Tri Solve, scol: %d ncol: %d \n",
@@ -718,6 +922,7 @@ namespace BaskerNS
       const Int istart = M.col_ptr(k);
       const Int iend = M.col_ptr(k-1);
 
+      //printf( " > y(%d + %d -1 = %d) = x(%d + %d -1 = %d) -> %e / %e \n",k,brow,k-brow-1, k,bcol, k+bcol-1, x(k+bcol-1), M.val(M.col_ptr(k)-1) );
       y(k+brow-1)  =  x(k+bcol-1) / M.val(M.col_ptr(k)-1);
 
       const auto ykbcol = y(k+bcol-1);
@@ -727,6 +932,7 @@ namespace BaskerNS
         const Int j = M.row_idx(i) + brow; //NDE: why isn't gperm here like above?
 
         //x(j) -= M.val(i) * y(k+bcol-1);
+        //printf( " > x (%d) -= %e %e\n",j,M.val(i),ykbcol );
         x(j) -= M.val(i) * ykbcol;
       }
 
@@ -743,14 +949,19 @@ namespace BaskerNS
    Int tab,
    BASKER_MATRIX &M,
    ENTRY_1DARRAY &x, // modified rhs
-   ENTRY_1DARRAY &y  // intermediate solution
+   ENTRY_1DARRAY &y, // intermediate solution
+   bool full
   )
   {
     //Tab = block in    
-    const Int bcol = btf_tabs(tab)- M.scol;
-    const Int mscol = M.scol;
-    const Int brow = M.srow;
-    const Int ecol = btf_tabs(tab+1) - M.scol;
+    Int bcol = btf_tabs(tab)- M.scol;
+    Int mscol = M.scol;
+    Int brow = M.srow;
+    Int ecol = btf_tabs(tab+1) - M.scol;
+    if (ecol > M.ncol) {
+      // for D block, btf_tabs(tab+1) > ncol.
+      ecol = M.ncol;
+    }
 
     #ifdef BASKER_DEBUG_SOLVE_RHS
     Int erow = 0;
@@ -762,22 +973,21 @@ namespace BaskerNS
     {
       erow = brow-1;
     }
-
     printf("BTF_UPDATE, TAB: %d [%d %d] [%d %d] \n",
         tab, brow, erow, bcol, ecol);
     #endif
 
     //loop over each column
-    for(Int k = bcol; k < ecol; ++k)
-    {
+    //printf( "spmv_BTF(bcol = %d, ecol = %d) tab = %d, scol = %d\n",bcol,ecol,tab,M.scol );
+    for(Int k = bcol; k < ecol; ++k) {
       //const Int kcol = k+M.scol;
       const Int istart = M.col_ptr(k);
       const Int iend = M.col_ptr(k+1);
 
+      //printf( " M.col_ptr(%d) = %d, M.col_ptr(%d) = %d\n",k,istart,k+1,iend );
       const auto ykmcol = y(k+mscol);
       //for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i) 
-      for(Int i = istart; i < iend; ++i)
-      {
+      for(Int i = istart; i < iend; ++i) {
         const Int j = (Options.no_pivot == BASKER_FALSE) ? 
                         gperm(M.row_idx(i)+brow) :
                         (M.row_idx(i)+brow) ;
@@ -787,10 +997,12 @@ namespace BaskerNS
             j, x[j], y[k+M.scol], M.val[i]);
        #endif
 
-        //x(j) -= M.val(i)*y(k+M.scol);
-        x(j) -= M.val(i)*ykmcol;
+        if (full || j < bcol) {
+          //printf( " x(%d) -= M(%d,%d) * x(%d)\n",j,j,i,k+mscol );
+          //x(j) -= M.val(i)*y(k+M.scol);
+          x(j) -= M.val(i)*ykmcol;
+        }
       } //over all nnz in row
-
     } // end for over col
 
     return 0;

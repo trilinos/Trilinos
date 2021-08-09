@@ -6,7 +6,6 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <vector>                       // for vector
 #include <stk_unit_test_utils/BulkDataTester.hpp>           // for BulkDataTester
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityCommListInfo.hpp"
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc

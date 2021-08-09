@@ -609,6 +609,14 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: greedy Dirichlet</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Force the aggregate to be Dirichlet if any DOFs in the aggregate are Dirichlet (default is aggregates are Dirichlet only if all DOFs in the aggregate are Dirichlet).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: deterministic</name>
       <type>bool</type>
       <default>false</default>
@@ -1758,8 +1766,8 @@ optimized neighbor discovery for Importer construction.</description>
     <parameter>
       <name>debug: graph level</name>
       <type>int</type>
-      <default>-1</default>
-      <description>Output dependency graph.</description>
+      <default>-2</default>
+      <description>Output dependency graph on level X (use -1 for all levels).</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>

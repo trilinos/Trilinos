@@ -229,20 +229,19 @@ int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *ver
 #endif
       }
       else if (type == 1) {
-	/* Possibly an issue with an older file created by a Java-based NetCDF library which wrote
-	 * corrupted data which is now being checked by newer releases of the NetCDF library...
-	 * SEE: https://github.com/Unidata/netcdf-c/issues/1115
-	 */
-      snprintf(errmsg, MAX_ERR_LENGTH,
-               "ERROR: failed to open '%s' of type %d for reading.\n"
-	       "\t\tIf this is an old file, it is possible that it has some internal corruption\n"
-	       "\t\tthat is now being checked by recent versions of the NetCDF library.\n"
-	       "\t\tTo fix, you can find an older version of `nccopy` (prior to 4.6.0)\n"
-               "\t\tthen try `nccopy bad_file.g fixed_file.g`.",
-               path, type);
-      ex_err(__func__, errmsg, status);
-      EX_FUNC_LEAVE(EX_FATAL);
-
+        /* Possibly an issue with an older file created by a Java-based NetCDF library which wrote
+         * corrupted data which is now being checked by newer releases of the NetCDF library...
+         * SEE: https://github.com/Unidata/netcdf-c/issues/1115
+         */
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to open '%s' of type %d for reading.\n"
+                 "\t\tIf this is an old file, it is possible that it has some internal corruption\n"
+                 "\t\tthat is now being checked by recent versions of the NetCDF library.\n"
+                 "\t\tTo fix, you can find an older version of `nccopy` (prior to 4.6.0)\n"
+                 "\t\tthen try `nccopy bad_file.g fixed_file.g`.",
+                 path, type);
+        ex_err(__func__, errmsg, status);
+        EX_FUNC_LEAVE(EX_FATAL);
       }
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to open %s of type %d for reading. Either "

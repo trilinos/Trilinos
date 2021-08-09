@@ -8,7 +8,6 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for TEST_F, ASSERT_EQ, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Selector.hpp"   // for Selector

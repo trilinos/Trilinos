@@ -2437,15 +2437,19 @@ namespace MueLu {
       // If we did not apply BCs to A_nodal, we now need to correct
       // the zero diagonals of AH, since we did nuke the nullspace.
 
-      const bool fixZeroDiagonal = precList11_.get<bool>("rap: fix zero diagonals", !applyBCsToAnodal_);
+      bool fixZeroDiagonal = !applyBCsToAnodal_;
+      if (precList11_.isParameter("rap: fix zero diagonals"))
+        fixZeroDiagonal = precList11_.get<bool>("rap: fix zero diagonals");
 
       if (fixZeroDiagonal) {
-        magnitudeType threshold;
+        magnitudeType threshold = 1e-16;
+        Scalar replacement = 1.0;
         if (precList11_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
           threshold = precList11_.get<magnitudeType>("rap: fix zero diagonals threshold");
-        else
-          threshold = Teuchos::as<magnitudeType>(precList11_.get<double>("rap: fix zero diagonals threshold", 1e-16));
-        Scalar replacement = Teuchos::as<Scalar>(precList11_.get<double>("rap: fix zero diagonals replacement", 1.0));
+        else if (precList11_.isType<double>("rap: fix zero diagonals threshold"))
+          threshold = Teuchos::as<magnitudeType>(precList11_.get<double>("rap: fix zero diagonals threshold"));
+        if (precList11_.isType<double>("rap: fix zero diagonals replacement"))
+          replacement = Teuchos::as<Scalar>(precList11_.get<double>("rap: fix zero diagonals replacement"));
         Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(AH_, true, GetOStream(Warnings1), threshold, replacement);
       }
 
