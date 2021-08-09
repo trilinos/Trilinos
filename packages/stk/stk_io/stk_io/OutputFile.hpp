@@ -57,7 +57,6 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
-namespace boost { class any; }
 namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -150,14 +149,14 @@ public:
     void add_attribute_field(stk::mesh::FieldBase &field, const OutputVariableParams &var);
     void add_user_data(const std::vector<std::string>& userData, const std::string &alternate_name, stk::io::DataLocation loc);
     bool has_global(const std::string &globalVarName) const;
-    void add_global(const std::string &variableName, const boost::any &value, stk::util::ParameterType::Type type);
-    void add_global_ref(const std::string &variableName, const boost::any *value, stk::util::ParameterType::Type type);
+    void add_global(const std::string &variableName, const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type);
+    void add_global_ref(const std::string &variableName, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type);
     void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, const std::string &type, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, int component_count,     Ioss::Field::BasicType dataType);
 
     void write_global(const std::string &variableName,
-                      const boost::any &value, stk::util::ParameterType::Type type);
+                      const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type);
     void write_global(const std::string &variableName, double globalVarData);
     void write_global(const std::string &variableName, int globalVarData);
     void write_global(const std::string &variableName, std::vector<double>& globalVarData);

@@ -60,7 +60,6 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
-namespace boost { class any; }
 namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class SidesetUpdater; } }
 namespace stk { namespace mesh { class FieldBase; } }
@@ -395,7 +394,7 @@ namespace stk {
       size_t get_global_variable_length(const std::string& name) const;
 
       bool get_global(const std::string &variableName,
-		      boost::any &value,
+		      STK_ANY_NAMESPACE::any &value,
 		      stk::util::ParameterType::Type type,
           bool abort_if_not_found=true) const;
       bool get_global(const std::string &variableName,
@@ -477,13 +476,23 @@ namespace stk {
                      stk::io::DataLocation loc);
       bool has_global(size_t output_file_index,
                       const std::string &globalVarName) const;
+      template<typename T>
+      void add_global(size_t output_file_index,
+              const std::string& variableName,
+              const T& value,
+              stk::util::ParameterType::Type type)
+      {   
+        validate_output_file_index(output_file_index);
+        STK_ANY_NAMESPACE::any anyValue(value);
+        m_outputFiles[output_file_index]->add_global(variableName, anyValue, type);
+      }
       void add_global_ref(size_t output_file_index,
 			  const std::string &variableName,
-			  const boost::any *value,
+			  const STK_ANY_NAMESPACE::any *value,
 			  stk::util::ParameterType::Type type);
       void add_global(size_t output_file_index,
 		      const std::string &variableName,
-		      const boost::any &value,
+		      const STK_ANY_NAMESPACE::any &value,
 		      stk::util::ParameterType::Type type);
       void add_global(size_t output_file_index,
 		      const std::string &variableName,
@@ -528,9 +537,18 @@ namespace stk {
       // you have global variables to output.
       int process_output_request(size_t output_file_index, double time);
 
+      template<typename T>
+      void write_global(size_t output_file_index, const std::string &globalVarName,
+                        const T &value, stk::util::ParameterType::Type type) const
+      {
+          validate_output_file_index(output_file_index);
+          STK_ANY_NAMESPACE::any anyValue(value);
+          m_outputFiles[output_file_index]->write_global(globalVarName, anyValue, type);
+      }
+
       void write_global(size_t output_file_index,
 			const std::string &variableName,
-			const boost::any &value,
+			const STK_ANY_NAMESPACE::any &value,
       stk::util::ParameterType::Type type) const;
       void write_global(size_t output_file_index,
 			const std::string &variableName,
@@ -553,14 +571,14 @@ namespace stk {
   
       void define_heartbeat_global(size_t index,
                                    const std::string &name,
-                                   const boost::any *value,
+                                   const STK_ANY_NAMESPACE::any *value,
                                    stk::util::ParameterType::Type type,
                                    int copies = 1,
                                    Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
 
       void define_heartbeat_global(size_t index,
                                    const std::string &globalVarName,
-                                   const boost::any *value,
+                                   const STK_ANY_NAMESPACE::any *value,
                                    const std::string &storage,
                                    Ioss::Field::BasicType dataType,
                                    int copies = 1,
@@ -568,14 +586,14 @@ namespace stk {
 
       void add_heartbeat_global(size_t index,
                                 const std::string &name,
-                                const boost::any *value,
+                                const STK_ANY_NAMESPACE::any *value,
                                 stk::util::ParameterType::Type type,
                                 int copies = 1,
                                 Ioss::Field::RoleType role = Ioss::Field::REDUCTION);
   
       void add_heartbeat_global(size_t index,
                                 const std::string &globalVarName,
-                                const boost::any *value,
+                                const STK_ANY_NAMESPACE::any *value,
                                 const std::string &storage,
                                 Ioss::Field::BasicType dataType,
                                 int copies = 1,
@@ -857,7 +875,7 @@ namespace stk {
 
     inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
                                                          const std::string &name,
-                                                         const boost::any *value,
+                                                         const STK_ANY_NAMESPACE::any *value,
                                                          stk::util::ParameterType::Type type,
                                                          int copies,
                                                          Ioss::Field::RoleType role)
@@ -868,7 +886,7 @@ namespace stk {
 
     inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
                                                          const std::string &globalVarName,
-                                                         const boost::any *value,
+                                                         const STK_ANY_NAMESPACE::any *value,
                                                          const std::string &storage,
                                                          Ioss::Field::BasicType dataType,
                                                          int copies,
@@ -880,7 +898,7 @@ namespace stk {
 
     inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
 						      const std::string &name,
-						      const boost::any *value,
+						      const STK_ANY_NAMESPACE::any *value,
 						      stk::util::ParameterType::Type type,
 						      int copies,
 						      Ioss::Field::RoleType role)
@@ -891,7 +909,7 @@ namespace stk {
   
     inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
                                                       const std::string &globalVarName,
-                                                      const boost::any *value,
+                                                      const STK_ANY_NAMESPACE::any *value,
                                                       const std::string &storage,
                                                       Ioss::Field::BasicType dataType,
                                                       int copies,

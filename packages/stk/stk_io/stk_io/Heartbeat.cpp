@@ -81,7 +81,6 @@
 #include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
 #include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
@@ -195,7 +194,7 @@ bool impl::Heartbeat::has_global(const std::string &name)
 }
 
 void impl::Heartbeat::define_global_ref(const std::string &name,
-                                        const boost::any *value,
+                                        const STK_ANY_NAMESPACE::any *value,
                                         stk::util::ParameterType::Type type,
                                         int copies,
                                         Ioss::Field::RoleType role)
@@ -213,7 +212,7 @@ void impl::Heartbeat::define_global_ref(const std::string &name,
 }
 
 void impl::Heartbeat::add_global_ref(const std::string &name,
-                                     const boost::any *value,
+                                     const STK_ANY_NAMESPACE::any *value,
                                      stk::util::ParameterType::Type type,
                                      int copies,
                                      Ioss::Field::RoleType role)
@@ -233,7 +232,7 @@ void impl::Heartbeat::add_global_ref(const std::string &name,
 }
 
 void impl::Heartbeat::define_global_ref(const std::string &name,
-                                        const boost::any *value,
+                                        const STK_ANY_NAMESPACE::any *value,
                                         const std::string &storage,
                                         Ioss::Field::BasicType dataType,
                                         int copies,
@@ -255,7 +254,7 @@ void impl::Heartbeat::define_global_ref(const std::string &name,
 }
 
 void impl::Heartbeat::add_global_ref(const std::string &name,
-                                     const boost::any *value,
+                                     const STK_ANY_NAMESPACE::any *value,
                                      const std::string &storage,
                                      Ioss::Field::BasicType dataType,
                                      int copies,
