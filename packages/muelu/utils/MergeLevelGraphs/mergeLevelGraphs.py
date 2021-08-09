@@ -113,11 +113,11 @@ class MergeLevelGraphs():
 	def __renameSubgraphs(self) -> None:
 		cnt = 0
 		for value in self.__graphs.values():
-			subgraph = self.__masterGraph.get_subgraph_list()[cnt:]
 			NAME = f"cluster_{cnt}"
+			NEW_NAME = f"cluster_{value}"
 			
-			self.__masterGraph.obj_dict["subgraphs"][f"cluster_{value}"] = [self.__masterGraph.obj_dict["subgraphs"][NAME].pop()]
-			self.__masterGraph.obj_dict["subgraphs"][f"cluster_{value}"][0]["name"] = f"cluster_{value}"
+			self.__masterGraph.obj_dict["subgraphs"][NEW_NAME] = [self.__masterGraph.obj_dict["subgraphs"][NAME].pop()]
+			self.__masterGraph.obj_dict["subgraphs"][NEW_NAME][0]["name"] = NEW_NAME
 			del self.__masterGraph.obj_dict["subgraphs"][NAME]
 			cnt += 1
 
