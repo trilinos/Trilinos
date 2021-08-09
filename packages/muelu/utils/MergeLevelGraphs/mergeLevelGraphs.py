@@ -2,7 +2,7 @@ import os
 import sys
 import pydot
 
-class MergeLevelGraphs():
+class MergeLevelGraphs:
 	'''
 	A python tool to combine files into a nested dot file. All factories that
 	are in each file will be placed into a graph. That graph will be saved to a
@@ -27,9 +27,9 @@ class MergeLevelGraphs():
 		'''Convert each .dot file to a graph and append to graph list'''
 		if len(sys.argv) <= 1:
 			raise ValueError("0 command line argument passed, but expected at least 1")
-		
+
 		graphLst = []
-		
+
 		if "-o" in sys.argv:
 			graphLst = sys.argv[1:-3]
 		else:
@@ -47,7 +47,7 @@ class MergeLevelGraphs():
 			index = ii.rfind("\\")+1
 			if index == -1:
 				index = ii.rindex("/")+1
-			
+
 			fileName = ii[index: ii.rindex(".")]
 			self.__graphs[pydot.graph_from_dot_file(ii)[0]] = fileName
 
@@ -68,6 +68,7 @@ class MergeLevelGraphs():
 	def __findNode(self, NAME: str) -> list:
 		'''
 		Find the label that is not in the subgraph by searching masterGraph for it.
+
 		# Params:
 		NAME - name of the node being searched for
 		# Returns:
@@ -80,26 +81,28 @@ class MergeLevelGraphs():
 
 		# DON'T use obj_dict becuase it won't return a list with the node object
 		return self.__masterGraph.get_subgraph(f"cluster_{num}")[0].get_node(NAME)
-	
+
 	def __addEdge(self, SRC_DST: tuple, ATTRIBUTES: tuple) -> None:
 		'''
 		Add edges to the subgraph.
+
 		# Params:
 		SRC_DST - index 0 is SRC and 1 is DST\n
 		ATTRIBUTES - 0 is color 1 is label
 		'''
 		self.__subG.add_edge(pydot.Edge(SRC_DST[0], SRC_DST[1],
 			color=ATTRIBUTES[0], label=ATTRIBUTES[1]))
-	
+
 	def __replaceConnection(self, LABEL: str, ATTRIB_DICT: dict, IS_0_SRC: bool=True) -> None:
 		'''
 		Delete node edges that need to be replaced. Then, determin if
 		self.__NODE_0 is source and replace deleted edge the node.
+
 		# Params:
 		LABEL - Label of the node that be used for replacement\n
 		ATTRIB_DICT - key: type of attribute, value: attribute\n
-		IS_0_SRC - If self.__NODE_0 is src replace that node
-		else replace self.__NODE_1
+		IS_0_SRC - If self.__NODE_0 is src replace that node else replace
+		self.__NODE_1
 		'''
 		self.__subG.del_edge(self.__NODE_0[0], self.__NODE_1[0])
 
@@ -110,12 +113,46 @@ class MergeLevelGraphs():
 			self.__addEdge((self.__NODE_0[0], self.__repeatNodeMap[LABEL][0]),
 				(ATTRIB_DICT["color"], ATTRIB_DICT["label"]))
 	
+	def __renameNodes(self):
+		'''Rename all the nodes and remap their subgraphs.'''
+		KEYS = list(self.__subG.obj_dict["nodes"])
+
+		for ii in range(len(KEYS)):
+			NODE_DATA = self.__subG.obj_dict["nodes"][KEYS[ii]][0]
+			# delete old node
+			self.__subG.del_node(KEYS[ii])
+			# create new node to replace old node
+			newName = f"{self.__graphCnt}_{KEYS[ii]}" # fileNumber_nodeName
+			self.__subG.add_node(pydot.Node(name=newName,
+				label=NODE_DATA["attributes"]["label"]))
+
+			# remap the node edges
+			for edge in self.__subG.get_edge_list():
+				POINTS = edge.obj_dict["points"]
+				
+				# len(POINTS) WILL ALWAYS be 2, so Big O won't be that bad
+				for point in POINTS:
+					if KEYS[ii] != point:
+						continue
+
+					ATTRIB_DICT = edge.obj_dict["attributes"]
+					ATTRIB = (ATTRIB_DICT["color"], ATTRIB_DICT["label"])
+
+					# replace the old node's connections
+					if KEYS[ii] == POINTS[0]:
+						self.__addEdge((newName, POINTS[1]),
+							(ATTRIB[0], ATTRIB[1]))
+					else:
+						self.__addEdge((POINTS[0], newName),
+							(ATTRIB[0], ATTRIB[1]))
+					self.__subG.del_edge(POINTS)
+
 	def __renameSubgraphs(self) -> None:
 		cnt = 0
 		for value in self.__graphs.values():
 			NAME = f"cluster_{cnt}"
 			NEW_NAME = f"cluster_{value}"
-			
+
 			self.__masterGraph.obj_dict["subgraphs"][NEW_NAME] = [self.__masterGraph.obj_dict["subgraphs"][NAME].pop()]
 			self.__masterGraph.obj_dict["subgraphs"][NEW_NAME][0]["name"] = NEW_NAME
 			del self.__masterGraph.obj_dict["subgraphs"][NAME]
@@ -140,38 +177,7 @@ class MergeLevelGraphs():
 				self.__masterGraph.add_subgraph(self.__subG)
 				continue
 
-			KEYS = list(self.__subG.obj_dict["nodes"])
-
-			# rename all the nodes
-			for ii in range(len(KEYS)):
-				NODE_DATA = self.__subG.obj_dict["nodes"][KEYS[ii]][0]
-				# delete old node
-				self.__subG.del_node(KEYS[ii])
-				# create new node to replace old node
-				newName = f"{self.__graphCnt}_{KEYS[ii]}" # fileNumber_nodeName
-				self.__subG.add_node(pydot.Node(name=newName,
-					label=NODE_DATA["attributes"]["label"]))
-
-				# remap the node edges
-				for edge in self.__subG.get_edge_list():
-					POINTS = edge.obj_dict["points"]
-					# len(POINTS) WILL ALWAYS be 2, so Big O won't be that bad
-
-					for point in POINTS:
-						if KEYS[ii] != point:
-							continue
-
-						ATTRIB_DICT = edge.obj_dict["attributes"]
-						ATTRIB = (ATTRIB_DICT["color"], ATTRIB_DICT["label"])
-
-						# replace the old node's connections
-						if KEYS[ii] == POINTS[0]:
-							self.__addEdge((newName, POINTS[1]),
-								(ATTRIB[0], ATTRIB[1]))
-						else:
-							self.__addEdge((POINTS[0], newName),
-								(ATTRIB[0], ATTRIB[1]))
-						self.__subG.del_edge(POINTS)
+			self.__renameNodes()
 
 			self.__delNodes = []
 			for key in self.__subG.obj_dict["nodes"]:
@@ -181,7 +187,7 @@ class MergeLevelGraphs():
 				if(((LABEL in self.__nodeMap) == False) or ("NoFactory" in LABEL)):
 					self.__nodeMap[LABEL] = self.__subG.get_node(key)
 					continue
-				
+
 				edgeLst = self.__subG.get_edge_list()
 				searchPoint = ""
 
@@ -213,7 +219,7 @@ class MergeLevelGraphs():
 						searchPoint = POINTS[1]
 						self.__replaceConnection(LABEL,
 							edge.obj_dict["attributes"], False)
-					
+
 					if searchPoint != "":
 						if (searchPoint in self.__delNodes) == False: 
 							self.__delNodes.append(searchPoint)
@@ -223,10 +229,11 @@ class MergeLevelGraphs():
 			self.__masterGraph.add_subgraph(self.__subG)
 			self.__graphCnt += 1
 		self.__renameSubgraphs()
-	
+
 	def __getFileName(self, PATH: str, ext: str=".dot") -> int:
 		'''
 		Finds a file number that does not exists and sets fileCnt to it.
+
 		# Params:
 		PATH - file path to save the .dot/.png file\n
 		fileName - the file extension determin if an image file
@@ -239,7 +246,7 @@ class MergeLevelGraphs():
 		while os.path.exists(os.path.join(PATH, f"{fileCnt}{ext}")):
 			fileCnt += 1
 		return fileCnt
-	
+
 	def write(self) -> None:
 		'''Save each subgraph to a file.'''
 		PATH = os.path.dirname(__file__)
@@ -251,13 +258,13 @@ class MergeLevelGraphs():
 				graphFile = sys.argv[-2]
 			except:
 				raise RuntimeError("Pass two file paths in the command line arguments to save to file")
-			
+
 			imageFile = sys.argv[-1]
 
 			if os.access(graphFile, os.X_OK) == False:
 				if graphFile[-4:] != ".dot":
 					raise RuntimeError(f"File must be a .dot file {graphFile}")
-			
+
 			if os.access(imageFile, os.X_OK) == False:
 				if imageFile[-4:] != ".png":
 					raise RuntimeError(f"File must be a .png file {imageFile}")
