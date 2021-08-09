@@ -657,7 +657,7 @@ namespace MueLu {
     Coords_       = Coords;
     Nullspace_    = Nullspace;
 
-    dump(*Kn_Matrix_, "Kn.m");
+    if(!Kn_Matrix_.is_null()) dump(*Kn_Matrix_, "Kn.m");
     if (!Nullspace_.is_null())    dump(*Nullspace_, "nullspace.m");
     if (!Coords_.is_null())       dumpCoords(*Coords_, "coords.m");
 
