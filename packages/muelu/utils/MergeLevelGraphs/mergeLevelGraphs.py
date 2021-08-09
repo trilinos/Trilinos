@@ -25,7 +25,7 @@ class MergeLevelGraphs:
 
 	def __init__(self):
 		'''Convert each .dot file to a graph and append to graph list'''
-		if len(sys.argv) <= 1:
+		if len(sys.argv) < 1:
 			raise ValueError("0 command line argument passed, but expected at least 1")
 
 		graphLst = []
@@ -36,19 +36,29 @@ class MergeLevelGraphs:
 			graphLst = sys.argv[1:]
 
 		for ii in graphLst:
+			isContinue = False
+
 			while os.path.exists(ii) == False:
 				ans = input(f"File {ii} does not exists. Enter \"y\" to replace it: ")
 
 				if ans.lower().strip() == "y":
 					ii = input("Enter file location: ")
 				else:
-					continue
+					isContinue = True
+					break
+			
+			if isContinue:
+				continue
 
 			index = ii.rfind("\\")+1
 			if index == -1:
 				index = ii.rindex("/")+1
 
 			fileName = ii[index: ii.rindex(".")]
+
+			if fileName in self.__graphs.values():
+				raise ValueError("File names cannot be the same, even if path is different:", fileName)
+
 			self.__graphs[pydot.graph_from_dot_file(ii)[0]] = fileName
 
 	def __deleteNodes(self) -> None:
@@ -72,7 +82,7 @@ class MergeLevelGraphs:
 		# Params:
 		NAME - name of the node being searched for
 		# Returns:
-		contains the node that was being searched for
+		a list contains the node that was being searched for
 		'''
 		num = "0"
 
@@ -148,7 +158,9 @@ class MergeLevelGraphs:
 					self.__subG.del_edge(POINTS)
 
 	def __renameSubgraphs(self) -> None:
+		'''Change each subgraph name from cluster_# to cluster_fileName.'''
 		cnt = 0
+
 		for value in self.__graphs.values():
 			NAME = f"cluster_{cnt}"
 			NEW_NAME = f"cluster_{value}"
