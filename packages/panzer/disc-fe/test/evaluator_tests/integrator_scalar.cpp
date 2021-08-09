@@ -104,15 +104,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
 
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+      coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+      coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+      coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+      coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    });
 
   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -366,23 +368,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0; coords(0,3,2) = 0.0;
-  coords(0,4,0) = 1.0; coords(0,4,1) = 0.0; coords(0,4,2) = 1.0;
-  coords(0,5,0) = 1.0; coords(0,5,1) = 1.0; coords(0,5,2) = 1.0;
-  coords(0,6,0) = 0.0; coords(0,6,1) = 1.0; coords(0,6,2) = 1.0;
-  coords(0,7,0) = 0.0; coords(0,7,1) = 0.0; coords(0,7,2) = 1.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0; coords(0,3,2) = 0.0;
+      coords(0,4,0) = 1.0; coords(0,4,1) = 0.0; coords(0,4,2) = 1.0;
+      coords(0,5,0) = 1.0; coords(0,5,1) = 1.0; coords(0,5,2) = 1.0;
+      coords(0,6,0) = 0.0; coords(0,6,1) = 1.0; coords(0,6,2) = 1.0;
+      coords(0,7,0) = 0.0; coords(0,7,1) = 0.0; coords(0,7,2) = 1.0;
 
-  coords(1,0,0) = 0.0; coords(1,0,1) = 0.0; coords(1,0,2) = 0.0;
-  coords(1,1,0) =-1.0; coords(1,1,1) = 1.0; coords(1,1,2) = 0.0;
-  coords(1,2,0) = 2.0; coords(1,2,1) = 2.0; coords(1,2,2) = 0.0;
-  coords(1,3,0) = 1.0; coords(1,3,1) = 1.0; coords(1,3,2) = 0.0;
-  coords(1,4,0) = 0.0; coords(1,4,1) = 0.0; coords(1,4,2) = 2.0;
-  coords(1,5,0) =-1.0; coords(1,5,1) = 1.0; coords(1,5,2) = 2.0;
-  coords(1,6,0) = 2.0; coords(1,6,1) = 2.0; coords(1,6,2) = 2.0;
-  coords(1,7,0) = 1.0; coords(1,7,1) = 1.0; coords(1,7,2) = 2.0;
+      coords(1,0,0) = 0.0; coords(1,0,1) = 0.0; coords(1,0,2) = 0.0;
+      coords(1,1,0) =-1.0; coords(1,1,1) = 1.0; coords(1,1,2) = 0.0;
+      coords(1,2,0) = 2.0; coords(1,2,1) = 2.0; coords(1,2,2) = 0.0;
+      coords(1,3,0) = 1.0; coords(1,3,1) = 1.0; coords(1,3,2) = 0.0;
+      coords(1,4,0) = 0.0; coords(1,4,1) = 0.0; coords(1,4,2) = 2.0;
+      coords(1,5,0) =-1.0; coords(1,5,1) = 1.0; coords(1,5,2) = 2.0;
+      coords(1,6,0) = 2.0; coords(1,6,1) = 2.0; coords(1,6,2) = 2.0;
+      coords(1,7,0) = 1.0; coords(1,7,1) = 1.0; coords(1,7,2) = 2.0;
+    });
 
   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
