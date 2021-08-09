@@ -197,9 +197,6 @@ namespace MueLu {
       this->Input(currentLevel,"Aggregates");
     }
     else if (type_ == "HIPTMAIR") {
-
-      currentLevel.print(std::cout,Debug);//CMS
-
       // Hiptmair needs D0 and NodeMatrix
       this->Input(currentLevel,"NodeMatrix");
       this->Input(currentLevel,"D0");
