@@ -269,7 +269,10 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
 
   if (outArgs.Np()>0) {
    if (outArgs.get_DfDp(0).getMultiVector() != Teuchos::null)
-     std::cout << "InvertMassMatrixDecorator:: NOT IMPLEMENTED FOR dfdp!! " << std::endl;
+     TEUCHOS_TEST_FOR_EXCEPTION(true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error! Piro::InvertMassMatrixDecorator, needed for explicit time-stepping, does not have DfDp implemented!\n" <<
+          "Forward sensitivities will not work; please re-run without them or run with an implicit time-stepper.\n";)
   }
 
   if (outArgs.get_f() == Teuchos::null) {

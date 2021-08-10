@@ -73,8 +73,12 @@ Piro::TransientSolver<Scalar>::TransientSolver(
   Teuchos::RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
   if (tempusPL->isSublist("Sensitivities")){
     Teuchos::ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities", true);
-    response_fn_index_ = tempusSensPL.get<int>("Response Function Index", 0);
-    sens_param_index_ = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
+    if (sensitivityMethod_ != ADJOINT) {
+      response_fn_index_ = tempusSensPL.get<int>("Response Function Index", 0);
+    }
+    if (sensitivityMethod_ != NONE) {
+      sens_param_index_ = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
+    }
   }
   else {
     response_fn_index_ = 0; 
