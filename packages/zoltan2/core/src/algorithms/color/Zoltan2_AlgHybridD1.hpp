@@ -774,7 +774,7 @@ class AlgDistance1 : public Algorithm<Adapter>
         //set the old ghost colors
 	//get the colors from the femv
         Kokkos::View<int**, Kokkos::LayoutLeft, device_type> femvColors =
-	  femv->template getLocalView<memory_space>(Tpetra::Access::ReadWrite); // Partial write
+	  femv->template getLocalView<device_type>(Tpetra::Access::ReadWrite); // Partial write
         Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
         Kokkos::parallel_for(rand.size()-nVtx,KOKKOS_LAMBDA(const int& i){
           ghost_colors(i) = femv_colors(i+nVtx);

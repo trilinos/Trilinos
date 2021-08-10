@@ -1412,17 +1412,17 @@ int main(int narg, char *arg[])
     bool test_boxes = false;
     bool rectilinear = false;
 
-#if defined(KOKKOS_ENABLE_CUDA)
     // make a new node type so we can run BasicVectorAdapter with UVM off
     // The Tpetra MV will still run with UVM on and we'll compare the results.
     // For Serial/OpenMP the 2nd test will be turned off at the CMake level.
     // For CUDA we control uvm on/off with parameter uvm set to 0 or 1.
+    // For HIP uvm is simply always off.
     // TODO: Probably this should all change eventually so we don't have a node
     // declared like this.
+#if defined(KOKKOS_ENABLE_CUDA)
     using uvm_off_node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
       Kokkos::Cuda, Kokkos::CudaSpace>;
-#endif
-#if defined(KOKKOS_ENABLE_HIP)
+#elif defined(KOKKOS_ENABLE_HIP)
     using uvm_off_node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
       Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
 #endif
