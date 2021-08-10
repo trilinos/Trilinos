@@ -90,12 +90,15 @@ evaluateFields(typename TRAITS::EvalData workset)
 { 
   // const Kokkos::DynRankView<double,PHX::Device> & quadCoords = this->wda(workset).int_rules[quadIndex_]->ip_coordinates;  
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quadIndex_];
+  auto s_ip_coordinates = iv.ip_coordinates;
+  auto d_quadCoordinates = quadCoordinates_;
 
   // just copy the array
-  for(int i=0;i<iv.ip_coordinates.extent_int(0);i++)
-    for(int j=0;j<iv.ip_coordinates.extent_int(1);j++)
-      for(int k=0;k<iv.ip_coordinates.extent_int(2);k++)
-	quadCoordinates_(i,j,k) = iv.ip_coordinates(i,j,k);
+  Kokkos::parallel_for("GatherIntegrationCoords", s_ip_coordinates.extent_int(0), KOKKOS_LAMBDA (int i) {
+    for(int j=0;j<s_ip_coordinates.extent_int(1);j++)
+      for(int k=0;k<s_ip_coordinates.extent_int(2);k++)
+	d_quadCoordinates(i,j,k) = s_ip_coordinates(i,j,k);
+    });
 }
 
 // **********************************************************************
