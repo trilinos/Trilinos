@@ -141,7 +141,7 @@ public:
   void getIDsKokkosView(
     Kokkos::View<const gno_t *, typename node_t::device_type> &ids) const {
     if (map_->lib() == Xpetra::UseTpetra) {
-      typedef typename node_t::execution_space execution_space;
+      using device_type = typename node_t::device_type;
       const xt_mvector_t *tvector =
         dynamic_cast<const xt_mvector_t *>(vector_.get());
       // MJ can be running Host, CudaSpace, or CudaUVMSpace while Map now
@@ -151,7 +151,7 @@ public:
       // Map such as getMyGlobalIndicesDevice() which could be direct assigned
       // here. Since Tpetra is still UVM dependent that is not going to happen
       // yet so just leaving this as Host to device_type conversion for now.
-      ids = Kokkos::create_mirror_view_and_copy(execution_space(),
+      ids = Kokkos::create_mirror_view_and_copy(device_type(),
         tvector->getTpetra_MultiVector()->getMap()->getMyGlobalIndices());
     }
     else if (map_->lib() == Xpetra::UseEpetra) {
