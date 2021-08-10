@@ -246,8 +246,8 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         Generate dummy command line arguments
         """
         args = copy.deepcopy(self.dummy_args())
-        args.pullrequest_build_name = "Trilinos-pullrequest-python-3"
-        args.genconfig_build_name = "Trilinos-pullrequest-python-3"
+        args.pullrequest_build_name = "python-3"
+        args.genconfig_build_name = "python-3"
         return args
 
 
@@ -363,7 +363,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(build_name, expected_build_name)
 
 
-    def test_TrilinosPRConfigurationBasePackageEnablesPython2(self):
+    def test_TrilinosPRConfigurationBasePackageEnablesPython3(self):
         print("")
         args = self.dummy_args_python3()
         pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
@@ -380,7 +380,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
                 m_open.assert_has_calls(calls, any_order=True)
 
 
-    def test_TrilinosPRConfigurationBasePackageEnablesPython2_dryrun(self):
+    def test_TrilinosPRConfigurationBasePackageEnablesPython3_dryrun(self):
         """
         Test the PackageEnables generator in DryRun mode
         """
