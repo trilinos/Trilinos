@@ -297,14 +297,29 @@ void Piro::TempusSolver<Scalar>::initialize(
     *out_ << "\nD) Create the stepper and integrator for the forward problem ...\n";
 
     //Create Tempus integrator with observer using tempusPL, model_ and sensitivity method
+    bool sens_param_index = 0; 
+    if (tempusPL->isSublist("Sensitivities")){
+      Teuchos::ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities", true);
+      sens_param_index = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
+    }
+    typedef Thyra::ModelEvaluatorBase MEB;
+    const bool is_scalar_param = model_->createOutArgs().supports(MEB::OUT_ARG_DfDp, sens_param_index).supports(MEB::DERIV_MV_JACOBIAN_FORM);
+    if ((sens_method_ == FORWARD) && (is_scalar_param == false)) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error! Piro::TempusSolver: forward sensitivities do not work with distributed parameters!\n");
+    }
+    
+
     piroTempusIntegrator_ = Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, sens_method_));
     this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 
     //Get stepper from integrator
     fwdStateStepper_ = piroTempusIntegrator_->getStepper();
 
-    //Set observer
     supports_x_dotdot_ = model_->createInArgs().supports(Thyra::ModelEvaluatorBase::IN_ARG_x_dot_dot);
+    //Set observer
     setObserver();  
 
   }
