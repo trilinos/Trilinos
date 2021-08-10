@@ -247,5 +247,8 @@ set (SEACASIoss_exodus_fpp_serialize_DISABLE ON CACHE BOOL "Turn off tests for n
 # Stratimikos UVM = OFF tests
 set (Stratimikos_test_single_amesos2_tpetra_solver_driver_KLU2_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 
+# MueLu UVM = OFF tests
+set (MueLu_ReitzingerPFactory_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+set (MueLu_Maxwell3D-Tpetra_2_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

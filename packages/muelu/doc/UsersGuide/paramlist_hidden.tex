@@ -397,6 +397,12 @@ optimized neighbor discovery for Importer construction.}
         
 \cbb{debug: graph level}{int}{-2}{Output dependency graph on level X (use -1 for all levels).}
         
+\cbb{maxwell1: mode}{string}{"standard"}{Specifying the order of solve of the block system. Allowed values are: "standard" (default), "refmaxwell"}
+        
+\cba{maxwell1: 11list}{\parameterlist}{Specifies the multigrid solver for the 11 block}
+        
+\cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
+        
 \cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
         
 \cbb{refmaxwell: disable addon}{bool}{true}{Specifing whether the addon should be built for stabilization}

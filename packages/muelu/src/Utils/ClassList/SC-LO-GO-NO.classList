@@ -80,6 +80,7 @@ RebalanceBlockInterpolationFactory
 RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
 RegionRFactory - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+ReitzingerPFactory
 ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RepartitionBlockDiagonalFactory - #ifdef HAVE_MPI

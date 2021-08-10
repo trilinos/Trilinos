@@ -349,6 +349,9 @@ namespace MueLu {
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-2\"/>"
+  "<Parameter name=\"maxwell1: mode\" type=\"string\" value=\"standard\"/>"
+  "<ParameterList name=\"maxwell1: 11list\"/>"
+  "<ParameterList name=\"maxwell1: 22list\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"refmaxwell: 11list\"/>"
@@ -902,6 +905,12 @@ namespace MueLu {
          ("amgx:params","amgx:params")
       
          ("debug: graph level","debug: graph level")
+      
+         ("maxwell1: mode","maxwell1: mode")
+      
+         ("maxwell1: 11list","maxwell1: 11list")
+      
+         ("maxwell1: 22list","maxwell1: 22list")
       
          ("refmaxwell: mode","refmaxwell: mode")
       

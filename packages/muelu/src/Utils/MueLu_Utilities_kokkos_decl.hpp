@@ -251,6 +251,17 @@ namespace MueLu {
     */
     static Kokkos::View<bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
 
+
+    /*! @brief Find non-zero values in an ArrayRCP
+      Compares the value to 2 * machine epsilon 
+
+      @param[in]  vals - ArrayRCP<const Scalar> of values to be tested
+      @param[out] nonzeros - ArrayRCP<bool> of true/false values for whether each entry in vals is nonzero
+    */
+    static void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
+                             Kokkos::View<bool*, typename Node::device_type> nonzeros);
+
+
     /*! @brief Detect Dirichlet columns based on Dirichlet rows
 
         The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
@@ -262,6 +273,19 @@ namespace MueLu {
         @return boolean array.  The ith entry is true iff row i is a Dirichlet column.
     */
     static Kokkos::View<bool*, typename NO::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows);
+
+
+    /*! @brief Detects Dirichlet columns & domains from a list of Dirichlet rows
+
+      @param[in] A - Matrix on which to apply Dirichlet column detection
+      @param[in] dirichletRows - View<bool> of indicators as to which rows are Dirichlet
+      @param[out] dirichletCols - View<bool> of indicators as to which cols are Dirichlet
+      @param[out] dirichletDomain - View<bool> of indicators as to which domains are Dirichlet
+    */
+    static void DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                              const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletDomain);
 
 
     static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
@@ -417,6 +441,14 @@ namespace MueLu {
     static Kokkos::View<bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
 
     static Kokkos::View<bool*, typename Node::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
+
+    static void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
+                             Kokkos::View<bool*, typename Node::device_type> nonzeros);
+
+    static void DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                              const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletDomain);
 
     static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
