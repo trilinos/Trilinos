@@ -350,7 +350,8 @@ getIntegrationValues(const panzer::IntegrationDescriptor & description) const
 
 const panzer::BasisValues2<double> &
 WorksetDetails::
-getBasisValues(const panzer::BasisDescriptor & description) const
+getBasisValues(const panzer::BasisDescriptor & description,
+               const bool lazy_version) const
 {
   TEUCHOS_ASSERT(setup_);
 
@@ -373,7 +374,7 @@ getBasisValues(const panzer::BasisDescriptor & description) const
   }
 
   // Now just use the other call
-  return getBasisValues(description, id);
+  return getBasisValues(description, id, lazy_version);
 
 }
 
@@ -381,7 +382,8 @@ getBasisValues(const panzer::BasisDescriptor & description) const
 panzer::BasisValues2<double> &
 WorksetDetails::
 getBasisValues(const panzer::BasisDescriptor & basis_description,
-               const panzer::IntegrationDescriptor & integration_description) const
+               const panzer::IntegrationDescriptor & integration_description,
+               const bool lazy_version) const
 {
   TEUCHOS_ASSERT(setup_);
 
@@ -397,51 +399,73 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
   // Get the integration values for this description
   const auto & iv = getIntegrationValues(integration_description);
-
   auto bir = Teuchos::rcp(new BasisIRLayout(basis_description.getType(), basis_description.getOrder(), *iv.int_rule));
 
-  auto biv = Teuchos::rcp(new BasisValues2<double>("", true, true));
-  biv->setupArrays(bir);
-  if((integration_description.getType() == IntegrationDescriptor::CV_BOUNDARY) or
-     (integration_description.getType() == IntegrationDescriptor::CV_SIDE) or
-     (integration_description.getType() == IntegrationDescriptor::CV_VOLUME)){
+  Teuchos::RCP<BasisValues2<double>> biv;
 
-    biv->evaluateValuesCV(iv.ref_ip_coordinates,
-                          iv.jac,
-                          iv.jac_det,
-                          iv.jac_inv,
-                          getCellVertices(),
-                          true,
-                          numCells());
+  if(lazy_version){
+
+    // Initialized for lazy evaluation
+
+    biv = Teuchos::rcp(new BasisValues2<double>());
+
+    biv->setOrientations(options_.orientations_);
+    biv->setWeightedMeasure(iv.weighted_measure);
+    biv->setCellVertexCoordinates(cell_vertex_coordinates);
+
+    if(integration_description.getType() == IntegrationDescriptor::VOLUME)
+      biv->setupUniform(bir, iv.cub_points, iv.jac, iv.jac_det, iv.jac_inv);
+    else
+      biv->setup(bir, iv.ref_ip_coordinates, iv.jac, iv.jac_det, iv.jac_inv);
+
   } else {
 
-    if(integration_description.getType() == IntegrationDescriptor::VOLUME){
+    // Standard, fully allocated version of BasisValues2
 
-      // TODO: Eventually we will use the other call, however, that will be part of the BasisValues2 refactor
-      // The reason we don't do it now is that there are small differences (machine precision) that break EMPIRE testing
-      biv->evaluateValues(iv.cub_points,
-                          iv.jac,
-                          iv.jac_det,
-                          iv.jac_inv,
-                          iv.weighted_measure,
-                          getCellVertices(),
-                          true,
-                          numCells());
+    biv = Teuchos::rcp(new BasisValues2<double>("", true, true));
+    biv->setupArrays(bir);
+    if((integration_description.getType() == IntegrationDescriptor::CV_BOUNDARY) or
+       (integration_description.getType() == IntegrationDescriptor::CV_SIDE) or
+       (integration_description.getType() == IntegrationDescriptor::CV_VOLUME)){
 
+      biv->evaluateValuesCV(iv.ref_ip_coordinates,
+                            iv.jac,
+                            iv.jac_det,
+                            iv.jac_inv,
+                            getCellVertices(),
+                            true,
+                            numCells());
     } else {
 
-      biv->evaluateValues(iv.ref_ip_coordinates,
-                          iv.jac,
-                          iv.jac_det,
-                          iv.jac_inv,
-                          iv.weighted_measure,
-                          getCellVertices(),
-                          true,
-                          numCells());
-    }
-  }
+      if(integration_description.getType() == IntegrationDescriptor::VOLUME){
 
-  applyBV2Orientations(numOwnedCells()+numGhostCells(),*biv,getLocalCellIDs(),options_.orientations_);
+        // TODO: Eventually we will use the other call, however, that will be part of the BasisValues2 refactor
+        // The reason we don't do it now is that there are small differences (machine precision) that break EMPIRE testing
+        biv->evaluateValues(iv.cub_points,
+                            iv.jac,
+                            iv.jac_det,
+                            iv.jac_inv,
+                            iv.weighted_measure,
+                            getCellVertices(),
+                            true,
+                            numCells());
+
+      } else {
+
+        biv->evaluateValues(iv.ref_ip_coordinates,
+                            iv.jac,
+                            iv.jac_det,
+                            iv.jac_inv,
+                            iv.weighted_measure,
+                            getCellVertices(),
+                            true,
+                            numCells());
+      }
+    }
+
+    applyBV2Orientations(numOwnedCells()+numGhostCells(),*biv,getLocalCellIDs(),options_.orientations_);
+
+  }
 
   basis_integration_values_map_[basis_description.getKey()][integration_description.getKey()] = biv;
   bases.push_back(biv);
@@ -486,7 +510,8 @@ getPointValues(const panzer::PointDescriptor & description) const
 const panzer::BasisValues2<double> &
 WorksetDetails::
 getBasisValues(const panzer::BasisDescriptor & basis_description,
-               const panzer::PointDescriptor & point_description) const
+               const panzer::PointDescriptor & point_description,
+               const bool lazy_version) const
 {
   TEUCHOS_ASSERT(setup_);
 
@@ -505,18 +530,37 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
   auto bir = Teuchos::rcp(new BasisIRLayout(basis_description.getType(), basis_description.getOrder(), *pv.point_rule));
 
-  auto bpv = Teuchos::rcp(new BasisValues2<double>("", true, false));
-  bpv->setupArrays(bir);
-  bpv->evaluateValues(pv.coords_ref,
-                      pv.jac,
-                      pv.jac_det,
-                      pv.jac_inv,
-                      numCells());
+  Teuchos::RCP<BasisValues2<double>> bpv;
 
-  // TODO: We call this separetely due to how BasisValues2 is structured - needs to be streamlined
-  bpv->evaluateBasisCoordinates(getCellVertices(),numCells());
+  if(lazy_version){
 
-  applyBV2Orientations(numOwnedCells()+numGhostCells(),*bpv, getLocalCellIDs(), options_.orientations_);
+    // Initialized for lazy evaluation
+
+    bpv = Teuchos::rcp(new BasisValues2<double>());
+
+    bpv->setOrientations(options_.orientations_);
+    bpv->setCellVertexCoordinates(cell_vertex_coordinates);
+
+    bpv->setupUniform(bir, pv.coords_ref, pv.jac, pv.jac_det, pv.jac_inv);
+
+  } else {
+
+    // Standard fully allocated version
+
+    bpv = Teuchos::rcp(new BasisValues2<double>("", true, false));
+    bpv->setupArrays(bir);
+    bpv->evaluateValues(pv.coords_ref,
+                        pv.jac,
+                        pv.jac_det,
+                        pv.jac_inv,
+                        numCells());
+
+    // TODO: We call this separately due to how BasisValues2 is structured - needs to be streamlined
+    bpv->evaluateBasisCoordinates(getCellVertices(),numCells());
+
+    applyBV2Orientations(numOwnedCells()+numGhostCells(),*bpv, getLocalCellIDs(), options_.orientations_);
+
+  }
 
   basis_point_values_map_[basis_description.getKey()][point_description.getKey()] = bpv;
 

@@ -154,8 +154,8 @@ namespace panzer {
     const BasisValues2<double> & hdiv_basis_values = worksets[0].getBasisValues(hdiv_basis_desc,hdiv_basis_desc.getPointDescriptor());
     const BasisValues2<double> & hcurl_basis_values = worksets[0].getBasisValues(hcurl_basis_desc,hdiv_basis_desc.getPointDescriptor());
 
-    auto hdiv_basis_vector = hdiv_basis_values.basis_vector;
-    auto hcurl_curl_basis = hcurl_basis_values.curl_basis_vector;
+    auto hdiv_basis_vector = hdiv_basis_values.getVectorBasisValues(false);
+    auto hcurl_curl_basis = hcurl_basis_values.getCurlVectorBasis(false);
 
     // check some sizing stuff
     ///////////////////////////////////////////////////////////////////////

@@ -250,11 +250,13 @@ namespace panzer {
      * \throws If setup has not been called
      *
      * \param[in] basis_description Description of requested basis
+     * \param[in] lazy_version Get an empty BasisValues2 object that will construct/allocate itself on demand (less memory - EXPERIMENTAL)
      *
      * \return Object containing basis values
      */
     const panzer::BasisValues2<double> &
-    getBasisValues(const panzer::BasisDescriptor & basis_description) const;
+    getBasisValues(const panzer::BasisDescriptor & basis_description,
+                   const bool lazy_version=false) const;
 
     /*
      * \brief Grab the basis values for a given basis description
@@ -265,12 +267,14 @@ namespace panzer {
      *
      * \param[in] basis_description Description of requested basis
      * \param[in] integration_description Descriptor for integration scheme
+     * \param[in] lazy_version Get an empty BasisValues2 object that will construct/allocate itself on demand (less memory - EXPERIMENTAL)
      *
      * \return Object containing basis values
      */
     panzer::BasisValues2<double> &
     getBasisValues(const panzer::BasisDescriptor & basis_description,
-                   const panzer::IntegrationDescriptor & integration_description) const;
+                   const panzer::IntegrationDescriptor & integration_description,
+                   const bool lazy_version=false) const;
 
     /*
      * \brief Grab the basis values for a given basis description
@@ -280,12 +284,14 @@ namespace panzer {
      *
      * \param[in] basis_description Description of requested basis
      * \param[in] point_description Descriptor for points
+     * \param[in] lazy_version Get an empty BasisValues2 object that will construct/allocate itself on demand (less memory - EXPERIMENTAL)
      *
      * \return Object containing basis values
      */
     const panzer::BasisValues2<double> &
     getBasisValues(const panzer::BasisDescriptor & basis_description,
-                   const panzer::PointDescriptor & point_description) const;
+                   const panzer::PointDescriptor & point_description,
+                   const bool lazy_version=false) const;
 
     /**
      * \brief Grab the basis values for a given basis description and integration description (throws error if it doesn't exist)

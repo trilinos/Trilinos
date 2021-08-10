@@ -160,18 +160,23 @@ evaluateFields(typename TRAITS::EvalData workset)
   const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
 
   if(is_vector_basis) {
-    int spaceDim  = basisValues.basis_vector.extent(3);
+    using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+    Array array = use_descriptors_ ? basisValues.getVectorBasisValues(false) : Array(basisValues.basis_vector);
+    const int spaceDim  = array.extent(3);
     if(spaceDim==3) {
-      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues.basis_vector,use_shared_memory);
+      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
       Kokkos::parallel_for(policy,functor,this->getName());
     }
     else {
-      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues.basis_vector,use_shared_memory);
+      dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
       Kokkos::parallel_for(policy,functor,this->getName());
     }
+
   }
   else {
-    dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues.basis_scalar);
+    using Array=typename BasisValues2<double>::ConstArray_CellBasisIP;
+    Array interpolation_array = use_descriptors_ ? basisValues.getBasisValues(false) : Array(basisValues.basis_scalar);
+    dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,Array> functor(dof_basis,dof_ip_scalar,interpolation_array);
     Kokkos::parallel_for(workset.num_cells,functor);
   }
 }
@@ -312,37 +317,43 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   if(is_vector_basis) {
     if(accelerate_jacobian) {
-      int spaceDim  = basisValues.basis_vector.extent(3);
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+      Array array = use_descriptors_ ? basisValues.getVectorBasisValues(false) : Array(basisValues.basis_vector);
+      const int spaceDim  = array.extent(3);
       if(spaceDim==3) {
-        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis,dof_ip_vector,offsets_array,basisValues.basis_vector);
+        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,Array,3> functor(dof_basis,dof_ip_vector,offsets_array,array);
         Kokkos::parallel_for(workset.num_cells,functor);
       }
       else {
-        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis,dof_ip_vector,offsets_array,basisValues.basis_vector);
+        dof_functors::EvaluateDOFFastSens_Vector<ScalarT,Array,2> functor(dof_basis,dof_ip_vector,offsets_array,array);
         Kokkos::parallel_for(workset.num_cells,functor);
       }
     }
     else {
       const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
       const auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
-      const int spaceDim  = basisValues.basis_vector.extent(3);
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+      Array array = use_descriptors_ ? basisValues.getVectorBasisValues(false) : Array(basisValues.basis_vector);
+      const int spaceDim  = array.extent(3);
       if(spaceDim==3) {
-        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues.basis_vector,use_shared_memory);
+        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,3> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
 	Kokkos::parallel_for(policy,functor,this->getName());
       }
       else {
-        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),basisValues.basis_vector,use_shared_memory);
+        dof_functors::EvaluateDOFWithSens_Vector<ScalarT,Array,2> functor(dof_basis.get_static_view(),dof_ip_vector.get_static_view(),array,use_shared_memory);
 	Kokkos::parallel_for(policy,functor,this->getName());
       }
     }
   }
   else {
+    using Array=typename BasisValues2<double>::ConstArray_CellBasisIP;
+    Array array = use_descriptors_ ? basisValues.getBasisValues(false) : Array(basisValues.basis_scalar);
     if(accelerate_jacobian) {
-      dof_functors::EvaluateDOFFastSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,offsets_array,basisValues.basis_scalar);
+      dof_functors::EvaluateDOFFastSens_Scalar<ScalarT,Array> functor(dof_basis,dof_ip_scalar,offsets_array,array);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_basis,dof_ip_scalar,basisValues.basis_scalar);
+      dof_functors::EvaluateDOFWithSens_Scalar<ScalarT,Array> functor(dof_basis,dof_ip_scalar,array);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
   }

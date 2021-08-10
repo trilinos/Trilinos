@@ -121,7 +121,6 @@ BasisValues2(const std::string & pre,
     , references_evaluated(false)
     , orientations_applied_(false)
     , num_cells_(0)
-    , num_real_cells_(0)
     , num_evaluate_cells_(0)
     , is_uniform_(false)
 
@@ -159,7 +158,6 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
 {
 
   build_weighted = false;
-  orientations_applied_ = orientations_ != Teuchos::null;
 
   setupUniform(basis_layout, cub_points, jac, jac_det, jac_inv, in_num_cells);
 
@@ -208,6 +206,8 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
   if(elmtspace == PureBasis::HDIV and compute_derivatives)
     getDivVectorBasis(false,true,true);
 
+  // Orientations have been applied only if this pointer is valid
+  orientations_applied_ = orientations_ != Teuchos::null;
 }
 
 template <typename Scalar>
@@ -259,6 +259,8 @@ evaluateValues(const PHX::MDField<Scalar,IP,Dim> & cub_points,
     getBasisCoordinates(true,true);
   }
 
+  // Orientations have been applied only if this pointer is valid
+  orientations_applied_ = orientations_ != Teuchos::null;
 }
 
 template <typename Scalar>
@@ -273,7 +275,6 @@ evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
                const int in_num_cells)
 {
 
-  orientations_applied_ = orientations_ != Teuchos::null;
   cell_vertex_coordinates_ = vertex_coordinates;
 
   setup(basis_layout, cub_points, jac, jac_det, jac_inv, in_num_cells);
@@ -318,6 +319,9 @@ evaluateValues(const PHX::MDField<Scalar,Cell,IP,Dim> & cub_points,
     getBasisCoordinatesRef(true,true);
     getBasisCoordinates(true,true);
   }
+
+  // Orientations have been applied only if this pointer is valid
+  orientations_applied_ = orientations_ != Teuchos::null;
 
 }
 
@@ -438,7 +442,6 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
   compute_derivatives = computeDerivatives;
   basis_layout = layout;
   num_cells_ = basis_layout->numCells();
-  num_real_cells_ = basis_layout->numCells();
   Teuchos::RCP<const panzer::PureBasis> basisDesc = layout->getBasis();
 
   // for convience pull out basis and quadrature information
@@ -650,12 +653,24 @@ void
 BasisValues2<Scalar>::
 setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations)
 {
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(orientations == Teuchos::null,
-                              "BasisValues2::setOrientations : Orientations have already been set.");
-  orientations_ = orientations;
+  if(orientations == Teuchos::null){
+    orientations_applied_ = false;
+    orientations_ = Teuchos::null;
+    // Normally we would reset arrays here, but it seems to causes a lot of problems
+  } else {
+    orientations_ = orientations;
+    orientations_applied_ = true;
+    // Setting orientations means that we need to reset our arrays
+    resetArrays();
+  }
+}
 
-  // Setting orientations means that we need to reset our arrays
-  resetArrays();
+template <typename Scalar>
+void
+BasisValues2<Scalar>::
+setCellVertexCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates)
+{
+  cell_vertex_coordinates_ = vertex_coordinates;
 }
 
 template <typename Scalar>
@@ -1145,7 +1160,7 @@ getBasisValues(const bool weighted,
     // fix the logic.
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(basis_scalar);
@@ -1326,7 +1341,7 @@ getVectorBasisValues(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(basis_vector);
@@ -1471,7 +1486,7 @@ getGradBasisValues(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_grad_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_grad_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(grad_basis);
@@ -1614,7 +1629,7 @@ getCurl2DVectorBasis(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_curl_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_curl_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(curl_basis_scalar);
@@ -1760,7 +1775,7 @@ getCurlVectorBasis(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_curl_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_curl_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(curl_basis_vector);
@@ -1895,7 +1910,7 @@ getDivVectorBasis(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(std::min(num_evaluate_cells_,num_real_cells_), tmp_div_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_div_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(div_basis);

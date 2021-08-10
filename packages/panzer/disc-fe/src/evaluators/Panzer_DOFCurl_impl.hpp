@@ -549,11 +549,15 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   if(!accelerate_jacobian) {
     if(basis_dimension==3) {
-      EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+      Array curl_basis_vector = use_descriptors_ ? basisValues.getCurlVectorBasis(false) : Array(basisValues.curl_basis_vector);
+      EvaluateCurlWithSens_Vector<ScalarT,Array,3> functor(dof_value,dof_curl_vector,curl_basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      EvaluateCurlWithSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,basisValues.curl_basis_scalar);
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIP;
+      Array curl_basis_scalar = use_descriptors_ ? basisValues.getCurl2DVectorBasis(false) : Array(basisValues.curl_basis_scalar);
+      EvaluateCurlWithSens_Scalar<ScalarT,Array> functor(dof_value,dof_curl_scalar,curl_basis_scalar);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
 
@@ -562,11 +566,15 @@ evaluateFields(typename TRAITS::EvalData workset)
   else {
 
     if(basis_dimension==3) {
-      EvaluateCurlFastSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,offsets_array,basisValues.curl_basis_vector);
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+      Array curl_basis_vector = use_descriptors_ ? basisValues.getCurlVectorBasis(false) : Array(basisValues.curl_basis_vector);
+      EvaluateCurlFastSens_Vector<ScalarT,Array,3> functor(dof_value,dof_curl_vector,offsets_array,curl_basis_vector);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
     else {
-      EvaluateCurlFastSens_Scalar<ScalarT,typename BasisValues2<double>::Array_CellBasisIP> functor(dof_value,dof_curl_scalar,offsets_array,basisValues.curl_basis_scalar);
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIP;
+      Array curl_basis_scalar = use_descriptors_ ? basisValues.getCurl2DVectorBasis(false) : Array(basisValues.curl_basis_scalar);
+      EvaluateCurlFastSens_Scalar<ScalarT,Array> functor(dof_value,dof_curl_scalar,offsets_array,curl_basis_scalar);
       Kokkos::parallel_for(workset.num_cells,functor);
     }
   }

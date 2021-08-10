@@ -262,19 +262,21 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
   /////////////////////////////////
 
   // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) {
+  if((globalIndexer_==Teuchos::null) and (wkstFactory_->getOrientationsInterface() == Teuchos::null)) {
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
     fout.setOutputToRootOnly(0);
 
-    fout << "Panzer Warning: No global indexer assigned to a workset container. "
+    fout << "Panzer Warning: No global indexer assigned to a workset container or factory. "
          << "Orientation of the basis for edge basis functions cannot be applied, "
          << "if those basis functions are used, there will be problems!" << std::endl;
     return;
   }
 
   // this should be matched to global indexer size (not sure how to retrive it)
-  TEUCHOS_TEST_FOR_EXCEPTION(orientations_ == Teuchos::null, std::logic_error,
-                             "intrepid2 orientation is not constructed");
+  if(globalIndexer_!=Teuchos::null){
+    TEUCHOS_TEST_FOR_EXCEPTION(orientations_ == Teuchos::null, std::logic_error,
+                               "intrepid2 orientation is not constructed");
+  }
 
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
@@ -380,11 +382,11 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
   /////////////////////////////////
   
   // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) {
+  if((globalIndexer_==Teuchos::null) and (wkstFactory_->getOrientationsInterface() == Teuchos::null)) {
     Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
     fout.setOutputToRootOnly(0);
     
-    fout << "Panzer Warning: No global indexer assigned to a workset container. "
+    fout << "Panzer Warning: No global indexer assigned to a workset container or factory. "
          << "Orientation of the basis for edge basis functions cannot be applied, "
          << "if those basis functions are used, there will be problems!";
     return;
