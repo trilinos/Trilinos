@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8; mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 """
 """
@@ -19,7 +19,7 @@ if sys.version_info >= (3,0):               # pragma: no cover
 else:                                       # pragma: no cover
     from io import BytesIO as StringIO      # pragma: no cover
 
-#import unittest
+import unittest
 from unittest import TestCase
 
 try:                                        # pragma: no cover
@@ -39,10 +39,7 @@ except:                                     # pragma: no cover
 
 import argparse
 import multiprocessing
-#import subprocess
-
-#from trilinosprhelpers import setenvironment
-#from trilinosprhelpers import sysinfo
+from pathlib import Path
 
 
 import trilinosprhelpers
@@ -85,11 +82,12 @@ def mock_subprocess_check_output(*args, **kwargs):
 
 def mock_module_apply(*args, **kwargs):
     """
-    simple function call mock that returns 0
+    Mock handler for ModuleHelper.module() calls.
     """
     cmd = ", ".join(["'{}'".format(x) for x in args])                          # pragma: no cover
     print("MOCK> module({})".format(cmd))                                      # pragma: no cover
-    return 0                                                                   # pragma: no cover
+    return 0
+
 
 
 #==============================================================================
@@ -97,16 +95,18 @@ def mock_module_apply(*args, **kwargs):
 #                                T E S T S
 #
 #==============================================================================
-class TrilinosPRConfigurationInstallationTest(TestCase):
+class TrilinosPRConfigurationStandardTest(TestCase):
     """
-    Test TrilinsoPRConfigurationInstallation class
+    Test TrilinsoPRConfigurationStandard class
     """
     def setUp(self):
         os.environ["PULLREQUEST_CDASH_TRACK"] = "Pull Request"
 
-        # Find the config file
-        config_file = 'trilinos_pr_test.ini'
-        self._config_file = self.find_config_ini(config_file)
+        # Find the config files
+        env_config_file = 'trilinos_pr_test.ini'
+        self._env_config_file = self.find_config_ini(env_config_file)
+        gen_config_file = 'gen-config.ini'
+        self._gen_config_file = self.find_config_ini(gen_config_file)
 
         # Set up dummy command line arguments
         self._args = self.dummy_args()
@@ -123,10 +123,10 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         self.mock_subprocess_check_call = self.patch_subprocess_check_call.start()
 
         self.patch_subprocess_check_output = patch('subprocess.check_output',
-                                                 side_effect=mock_subprocess_check_output)
+                                                   side_effect=mock_subprocess_check_output)
         self.mock_subprocess_check_output = self.patch_subprocess_check_output.start()
 
-        self.patch_modulehelper_module = patch('trilinosprhelpers.setenvironment.ModuleHelper.module',
+        self.patch_modulehelper_module = patch('LoadEnv.setenvironment.ModuleHelper.module',
                                                side_effect=mock_module_apply)
         self.mock_modulehelper_module  = self.patch_modulehelper_module.start()
 
@@ -151,11 +151,13 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             source_branch_name="source_branch_name",
             target_repo_url="https://github.com/trilinos/Trilinos",
             target_branch_name="develop",
-            pullrequest_build_name="Trilinos_pullrequest_gcc_8.3.0_installation_testing",
+            pullrequest_build_name="Trilinos-pullrequest-gcc-7.2.0",
+            genconfig_build_name="rhel7_sems-gnu-7.2.0-openmpi-1.10.1-openmp_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_trilinos-pr",
             pullrequest_cdash_track="Pull Request",
             jenkins_job_number=99,
             pullrequest_number='0000',
-            pullrequest_config_file=self._config_file,
+            pullrequest_env_config_file=self._env_config_file,
+            pullrequest_gen_config_file=self._gen_config_file,
             workspace_dir=".",
             filename_packageenables="../packageEnables.cmake",
             filename_subprojects="../package_subproject_list.cmake",
@@ -168,26 +170,7 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         return output
 
 
-#    def dummy_args_python2(self):
-#        """
-#        Extend dummy args to change the pullrequest_build_name to use the
-#        Python 2.x test set.
-#        """
-#        args = copy.deepcopy(self.dummy_args())                         # pragma: no cover
-#        args.pullrequest_build_name = "Trilinos_pullrequest_python_2"   # pragma: no cover
-#        return args                                                     # pragma: no cover
-
-
-    def dummy_args_dry_run(self):
-        """
-        Extend dummy args to enable dry-run mode.
-        """
-        args = copy.deepcopy(self.dummy_args())                         # pragma: no cover
-        args.dry_run = True                                             # pragma: no cover
-        return args                                                     # pragma: no cover
-
-
-    def find_config_ini(self, filename="config.ini"):
+    def find_config_ini(self, filename="trilinos_pr_test.ini"):
         rootpath = "."
         output = None
         for dirpath,dirnames,filename_list in os.walk(rootpath):
@@ -197,13 +180,13 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         return output
 
 
-    def test_TrilinosPRConfigurationInstallationExec(self):
+    def test_TrilinosPRConfigurationStandardExec(self):
         """
-        Test the Installation Configuration
+        Test the Standard Configuration
         """
         print("")
         args = self.dummy_args()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationInstallation(args)
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step
         ret = pr_config.prepare_test()
@@ -213,16 +196,22 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         # execute step
         ret = pr_config.execute_test()
         self.mock_chdir.assert_called_once()
-        self.mock_subprocess_check_call.assert_called_once()
+        self.mock_subprocess_check_call.assert_called()
         self.assertEqual(ret, 0)
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "generatedPRFragment.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "generatedPRFragment.cmake"))
 
 
-    def test_TrilinosPRConfigurationInstallationDryRun(self):
+    def test_TrilinosPRConfigurationStandardDryRun(self):
         """
-        Test the Installation Configuration
+        Test the Standard Configuration
+        - Change args to enable dry_run mode.
         """
-        args = self.dummy_args_dry_run()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationInstallation(args)
+        args = self.dummy_args()
+        args.dry_run = True
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step
         ret = pr_config.prepare_test()
@@ -233,3 +222,35 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
         ret = pr_config.execute_test()
         self.assertEqual(ret, 0)
 
+
+    def test_TrilinosPRConfigurationStandardPython3(self):
+        """
+        Test the Standard Configuration
+        - Change args to enable:
+            - pullrequest_build_name = "Trilinos-pullrequest-python_3"
+            - dry_run = True
+        - Change args to enable dry_run mode.
+        """
+        args = self.dummy_args()
+        args.pullrequest_build_name = "Trilinos-pullrequest-python-3"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
+
+        # prepare step
+        ret = pr_config.prepare_test()
+        self.assertEqual(ret, 0)
+        self.mock_cpu_count.assert_called()
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "packageEnables.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "packageEnables.cmake"))
+        self.assertTrue(Path(os.path.join(args.workspace_dir,
+                                          "package_subproject_list.cmake")).is_file())
+        os.unlink(os.path.join(args.workspace_dir,
+                               "package_subproject_list.cmake"))
+
+        # execute step
+        #ret = pr_config.execute_test()
+        #self.assertEqual(ret, 0)
+
+if __name__ == '__main__':
+    unittest.main()  # pragma nocover
