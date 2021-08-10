@@ -303,12 +303,14 @@ void Piro::TempusSolver<Scalar>::initialize(
       sens_param_index = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
     }
     typedef Thyra::ModelEvaluatorBase MEB;
-    const bool is_scalar_param = model_->createOutArgs().supports(MEB::OUT_ARG_DfDp, sens_param_index).supports(MEB::DERIV_MV_JACOBIAN_FORM);
-    if ((sens_method_ == FORWARD) && (is_scalar_param == false)) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-          true,
-          Teuchos::Exceptions::InvalidParameter,
-          "\n Error! Piro::TempusSolver: forward sensitivities do not work with distributed parameters!\n");
+    if (sens_method_ != NONE) {
+      const bool is_scalar_param = model_->createOutArgs().supports(MEB::OUT_ARG_DfDp, sens_param_index).supports(MEB::DERIV_MV_JACOBIAN_FORM);
+      if ((sens_method_ == FORWARD) && (is_scalar_param == false)) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+            true,
+            Teuchos::Exceptions::InvalidParameter,
+            "\n Error! Piro::TempusSolver: forward sensitivities do not work with distributed parameters!\n");
+      }
     }
     
 
