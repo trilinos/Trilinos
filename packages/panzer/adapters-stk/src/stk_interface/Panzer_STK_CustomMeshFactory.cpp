@@ -353,7 +353,7 @@ namespace panzer_stk {
         for (std::size_t k=0;k<dim_1;++k) {
           const auto loc = q*dim_1 + k;
           charge_density_by_local_ids(q,k) = ChargeDensity_[loc];
-          charge_density_by_local_ids(q,k) = ElectricPotential_[loc];
+          electric_potential_by_local_ids(q,k) = ElectricPotential_[loc];
         }
       }
 

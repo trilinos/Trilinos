@@ -1431,10 +1431,12 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
                                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
    const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+   auto solutionValues_h = Kokkos::create_mirror_view(solutionValues);
+   Kokkos::deep_copy(solutionValues_h, solutionValues);
 
    int field_axis = -1;
    if(isMeshCoordField(blockId,fieldName,field_axis)) {
-     setDispFieldData(fieldName,blockId,field_axis,localElementIds,solutionValues);
+     setDispFieldData(fieldName,blockId,field_axis,localElementIds,solutionValues_h);
      return;
    }
 
@@ -1452,7 +1454,7 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 
         double * solnData = stk::mesh::field_data(*field,node);
         // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-        solnData[0] = scaleValue*solutionValues(cell,i);
+        solnData[0] = scaleValue*solutionValues_h(cell,i);
       }
    }
 }
@@ -1524,13 +1526,16 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 
    SolutionFieldType * field = this->getCellField(fieldName,blockId);
 
+   auto solutionValues_h = Kokkos::create_mirror_view(solutionValues);
+   Kokkos::deep_copy(solutionValues_h, solutionValues);
+
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       std::size_t localId = localElementIds[cell];
       stk::mesh::Entity element = elements[localId];
 
       double * solnData = stk::mesh::field_data(*field,element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*solutionValues.access(cell,0);
+      solnData[0] = scaleValue*solutionValues_h.access(cell,0);
    }
 }
 
@@ -1542,13 +1547,16 @@ void STK_Interface::setEdgeFieldData(const std::string & fieldName,const std::st
 
    SolutionFieldType * field = this->getEdgeField(fieldName,blockId);
 
+   auto edgeValues_h = Kokkos::create_mirror_view(edgeValues);
+   Kokkos::deep_copy(edgeValues_h, edgeValues);
+
    for(std::size_t idx=0;idx<localEdgeIds.size();idx++) {
       std::size_t localId = localEdgeIds[idx];
       stk::mesh::Entity edge = edges[localId];
 
       double * solnData = stk::mesh::field_data(*field,edge);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*edgeValues.access(idx,0);
+      solnData[0] = scaleValue*edgeValues_h.access(idx,0);
    }
 }
 
@@ -1560,13 +1568,16 @@ void STK_Interface::setFaceFieldData(const std::string & fieldName,const std::st
 
    SolutionFieldType * field = this->getFaceField(fieldName,blockId);
 
+   auto faceValues_h = Kokkos::create_mirror_view(faceValues);
+   Kokkos::deep_copy(faceValues_h, faceValues);
+
    for(std::size_t idx=0;idx<localFaceIds.size();idx++) {
       std::size_t localId = localFaceIds[idx];
       stk::mesh::Entity face = faces[localId];
 
       double * solnData = stk::mesh::field_data(*field,face);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*faceValues.access(idx,0);
+      solnData[0] = scaleValue*faceValues_h.access(idx,0);
    }
 }
 
