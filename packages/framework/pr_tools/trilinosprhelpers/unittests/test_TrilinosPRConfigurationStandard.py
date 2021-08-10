@@ -232,7 +232,7 @@ class TrilinosPRConfigurationStandardTest(TestCase):
         - Change args to enable dry_run mode.
         """
         args = self.dummy_args()
-        args.pullrequest_build_name = "Trilinos-pullrequest-python-3"
+        args.pullrequest_build_name = "python-3"
         pr_config = trilinosprhelpers.TrilinosPRConfigurationStandard(args)
 
         # prepare step
