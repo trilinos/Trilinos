@@ -50,11 +50,11 @@ class MergeLevelGraphs:
 			if isContinue:
 				continue
 
-			index = ii.rfind("\\")
-			if index == -1:
-				index = ii.rindex("/")+1
+			index = ""
+			if sys.platform == "win32":
+				index = ii.rindex("\\") + 1
 			else:
-				index += 1
+				index = ii.rindex("/") + 1
 
 			fileName = ii[index: ii.rindex(".")]
 
