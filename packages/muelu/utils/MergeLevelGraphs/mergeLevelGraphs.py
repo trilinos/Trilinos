@@ -84,7 +84,7 @@ class MergeLevelGraphs:
 		# Params:
 		NAME - name of the node being searched for
 		# Returns:
-		a list contains the node that was being searched for
+		A list that contains the node that was being searched for
 		'''
 		num = "0"
 
@@ -178,6 +178,7 @@ class MergeLevelGraphs:
 			graph.obj_dict["type"] = "subgraph"
 			graph.obj_dict["name"] = f"cluster_{self.__graphCnt}"
 			graph.set_suppress_disconnected(True)
+			graph.set_label(f"cluster_{self.__graphs[graph]}")
 
 			self.__subG = pydot.Subgraph(graph_name=f"cluster_{self.__graphCnt}",
 				obj_dict=graph.obj_dict, suppress_disconnected=True)
