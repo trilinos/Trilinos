@@ -253,6 +253,7 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
 
     for (std::size_t cell = 0; cell < side.second.size(); ++cell) {
       cell_local_ids.push_back(side.second[cell].second);
+      const auto dim0 = side.second[cell].first;
 
       Kokkos::parallel_for(
           vertex_coordinates.extent(1), KOKKOS_LAMBDA(std::size_t vertex)
@@ -261,21 +262,23 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
 
             for (std::size_t dim = 0; dim < extent; ++dim)
             {
-              coords_view(cell, vertex, dim) = vertex_coordinates(side.second[cell].first, vertex, dim);
+              coords_view(cell, vertex, dim) = vertex_coordinates(dim0, vertex, dim);
             }
           }
       );
     }
 
-    auto cell_local_ids_k = PHX::View<int*>("Workset:cell_local_ids", worksets[side.first].cell_local_ids.size());
-    Kokkos::parallel_for(
-        worksets[side.first].cell_local_ids.size(), KOKKOS_LAMBDA(std::size_t i) {
-          cell_local_ids_k(i) = worksets.at(side.first).cell_local_ids[i];
-        }
-    );
+    const auto cell_local_ids_size = worksets[side.first].cell_local_ids.size();
+    auto cell_local_ids_k = PHX::View<int*>("Workset:cell_local_ids", cell_local_ids_size);
+    auto cell_local_ids_k_h = Kokkos::create_mirror_view(cell_local_ids_k);
+
+    for(std::size_t i = 0; i < cell_local_ids_size; ++i){
+      cell_local_ids_k_h(i) = worksets.at(side.first).cell_local_ids[i];
+    }
+
+    Kokkos::deep_copy(cell_local_ids_k, cell_local_ids_k_h);
 
     worksets[side.first].cell_local_ids_k = cell_local_ids_k;
-
     worksets[side.first].num_cells = worksets[side.first].cell_local_ids.size();
     worksets[side.first].block_id = elementBlock;
     worksets[side.first].subcell_dim = needs.cellData.baseCellDimension() - 1;
