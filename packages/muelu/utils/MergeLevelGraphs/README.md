@@ -19,7 +19,7 @@ are in each file will be placed into a graph. That graph will be saved to a
 <h2>How to Use</h2>
 <ol>
 	<li>The python file <b>MUST</b> take at least one comman line argument. Each argument <b>MUST</b> be a .dot file. For example, in the terminal type: <code>python3 mergeLevelGraphs.py file.dot file1.dot</code>.</li>
-	<li>There is a optional command line argument <code>-o</code>. If used the user <b>MUST</b> pass two files paths that the outputted .dot file and .png file will be saved to, for example, <code>python3 mergeLevelGraphs.py file.dot file1.dot -o fileLocation2SaveDot.dot fileLocation2SavePng.png</code>.</li>
+	<li>There is a optional command line argument <code>-o</code>. If used the user <b>MUST</b> pass two files paths that the outputted .dot file and .png file will be saved to, for example, <code>python3 mergeLevelGraphs.py file.dot file1.dot -o fileLocation2SaveDot.dot fileLocation2SavePng.png</code>. If the optional -o command is not used then mergeLevelGraphs.py will write to output.dot and output.png. If those files exist then they will be overwritten.</li>
 	<li>Create an instance of the class, for example, <code>merge = MergeLevelGraphs()</code>.</li>
 	<li>To merge all the factories call the merge method, for example, <code>merge.merge()</code>.</li>
 	<li>To see either the subgraph or master graph use the properties <code>merge.getSubGraph</code> and <code>merge.getMasterGraph</code>.</li>
