@@ -95,9 +95,12 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
   dof_field.deep_copy(ScalarT(0.0));
 
   // copy coordinates
-  for (int i = 0; i < coordinates.extent_int(0); ++i)
-    for (int j = 0; j < coordinates.extent_int(1); ++j)
-      intrpCoords(i,j) = Sacado::ScalarValue<ScalarT>::eval(coordinates(i,j));
+  auto l_intrpCoords = intrpCoords;
+  auto l_coordinates = coordinates;
+  Kokkos::parallel_for("DOF PointFields", l_coordinates.extent_int(0), KOKKOS_LAMBDA (int i) {
+     for (int j = 0; j < l_coordinates.extent_int(1); ++j)
+      l_intrpCoords(i,j) = Sacado::ScalarValue<ScalarT>::eval(l_coordinates(i,j));
+    });
 
   if(workset.num_cells>0) {
     // evaluate at reference points
@@ -111,6 +114,7 @@ void DOF_PointField<EvalT,TRAITST>::evaluateFields(typename TRAITST::EvalData wo
     Intrepid2::FunctionSpaceTools<PHX::exec_space>::
       evaluate(dof_field.get_view(),dof_coeff.get_view(),basis);
   }
+  Kokkos::fence();
 }
 
 //**********************************************************************
