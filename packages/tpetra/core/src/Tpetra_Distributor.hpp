@@ -2122,6 +2122,15 @@ namespace Tpetra {
        "See Trilinos GitHub issue #1088.");
 #endif // KOKKOS_ENABLE_CUDA
 
+#ifdef KOKKOS_ENABLE_SYCL
+    static_assert
+      (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
+       ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+       "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
+       "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
+#endif // KOKKOS_ENABLE_SYCL
+
+
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
@@ -2564,6 +2573,14 @@ namespace Tpetra {
                    "Please do not use Tpetra::Distributor with UVM "
                    "allocations.  See GitHub issue #1088.");
 #endif // KOKKOS_ENABLE_CUDA
+
+#ifdef KOKKOS_ENABLE_SYCL
+    static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
+                   ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
+                   "Please do not use Tpetra::Distributor with SharedUSM "
+                   "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
+#endif // KOKKOS_ENABLE_SYCL
+
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {

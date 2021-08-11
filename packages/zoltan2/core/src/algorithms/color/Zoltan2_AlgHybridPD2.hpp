@@ -85,7 +85,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
       kh.get_distance2_graph_coloring_handle()->set_verbose(this->verbose);
 
       //set initial colors to be the colors from femv
-      auto femvColors = femv->template getLocalView<MemorySpace>(Tpetra::Access::ReadWrite);
+      auto femvColors = femv->template getLocalView<Kokkos::Device<ExecutionSpace,MemorySpace> >(Tpetra::Access::ReadWrite);
       auto sv = subview(femvColors,Kokkos::ALL, 0);
       kh.get_distance2_graph_coloring_handle()->set_vertex_colors(sv);
 
@@ -159,6 +159,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 			    bool recolor_degrees){
       
       Kokkos::RangePolicy<ExecutionSpace> policy(0,boundary_verts_view.extent(0));
+      size_t local_recoloring_size;
       Kokkos::parallel_reduce("PD2 conflict detection",policy, KOKKOS_LAMBDA(const uint64_t& i,size_t& recoloring_size){
 	  //we only detect conflicts for vertices in the boundary
           const size_t curr_lid = boundary_verts_view(i);
@@ -219,7 +220,8 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
             }      //              to completely move on to the next vertex.    |
             if(found) break;//<--------------------------------------------------
           }
-        },recoloringSize(0));
+        },local_recoloring_size);
+      Kokkos::deep_copy(recoloringSize, local_recoloring_size);
         Kokkos::fence();
 	//update the verts_to_send and verts_to_recolor views
         Kokkos::parallel_for("rebuild verts_to_send and verts_to_recolor",

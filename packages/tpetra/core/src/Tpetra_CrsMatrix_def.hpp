@@ -5565,11 +5565,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
        "of the conversion) is not fill complete.  You must first call "
        "fillComplete() (possibly with the domain and range Map) without an "
        "intervening call to resumeFill(), before you may call this method.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! this->isStaticGraph (), std::logic_error, "This matrix (the source "
-       "of the conversion) claims to be fill complete, but does not have a "
-       "static (i.e., constant) graph.  Please report this bug to the Tpetra "
-       "developers.");
 
     RCP<output_matrix_type> newMatrix
       (new output_matrix_type (this->getCrsGraph ()));

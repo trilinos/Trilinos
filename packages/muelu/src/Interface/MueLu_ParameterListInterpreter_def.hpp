@@ -91,6 +91,7 @@
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_ReitzingerPFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_ScaledNullspaceFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory.hpp"
@@ -569,7 +570,7 @@ namespace MueLu {
         Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical"}).count(multigridAlgo) == 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical","smoothed reitzinger","unsmoothed reitzinger"}).count(multigridAlgo) == 0,
         Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -613,7 +614,10 @@ namespace MueLu {
       UpdateFactoryManager_BlockNumber(paramList, defaultList, manager, levelID, keeps);
     
     // === Aggregation ===
-    UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
+    if(multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger")
+      UpdateFactoryManager_Reitzinger(paramList, defaultList, manager, levelID, keeps);
+    else
+      UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
 
     // === Nullspace ===
     RCP<Factory> nullSpaceFactory; // Cache thcAN is guy for the combination of semi-coarsening & repartitioning
@@ -628,7 +632,7 @@ namespace MueLu {
       // User prolongator
       manager.SetFactory("P", NoFactory::getRCP());
 
-    } else if (multigridAlgo == "unsmoothed") {
+    } else if (multigridAlgo == "unsmoothed" || multigridAlgo == "unsmoothed reitzinger") {
       // Unsmoothed aggregation
       manager.SetFactory("P", manager.GetFactory("Ptent"));
 
@@ -636,7 +640,7 @@ namespace MueLu {
       // Classical AMG
       manager.SetFactory("P", manager.GetFactory("Ptent"));
 
-    } else if (multigridAlgo == "sa") {
+    } else if (multigridAlgo == "sa" || multigridAlgo == "smoothed reitzinger") {
       // Smoothed aggregation
       UpdateFactoryManager_SA(paramList, defaultList, manager, levelID, keeps);
 
@@ -989,8 +993,33 @@ namespace MueLu {
      }
    }
 
+
+    // =====================================================================================================
+   // ========================================= TentativeP=================================================
    // =====================================================================================================
-   // ========================================= Smoothers =================================================
+   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+   UpdateFactoryManager_Reitzinger(ParameterList& paramList, const ParameterList& defaultList,
+                                               FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const
+   {
+     RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
+     
+     // These are all going to be user provided, so NoFactory
+     rFactory->SetFactory("Pnodal", NoFactory::getRCP());
+     rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
+     
+     if(levelID > 1)
+       rFactory->SetFactory("D0", this->GetFactoryManager(levelID-1)->GetFactory("D0"));
+     else 
+       rFactory->SetFactory("D0", NoFactory::getRCP());     
+
+     manager.SetFactory("Ptent", rFactory);
+     manager.SetFactory("D0", rFactory);
+ 
+   }
+
+   // =====================================================================================================
+   // ========================================= TentativeP=================================================
    // =====================================================================================================
    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
    void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1043,6 +1072,7 @@ namespace MueLu {
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
+       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: greedy Dirichlet",          bool, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical algo", std::string, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian directional weights",Teuchos::Array<double>,dropParams);
@@ -2554,7 +2584,7 @@ namespace MueLu {
       MatrixUtils::checkLocalRowMapMatchesColMap(A);
 #endif // HAVE_MUELU_DEBUG
 
-    } catch (std::bad_cast& e) {
+    } catch (std::bad_cast&) {
       this->GetOStream(Warnings0) << "Skipping setting block size as the operator is not a matrix" << std::endl;
     }
   }

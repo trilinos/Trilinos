@@ -50,6 +50,7 @@ project votd
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
     <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
+    <target-os>darwin:<define>_GNU_SOURCE=1
     <include>$(stk_util-root-inc)
   : usage-requirements
     <define>STK_BUILT_IN_SIERRA
@@ -327,6 +328,7 @@ lib stk_util_command_line
     stk_util_util
     stk_util_environment
     stk_util_registry
+    stk_util_diag
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

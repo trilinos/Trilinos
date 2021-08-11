@@ -180,6 +180,12 @@ public:
                            const std::vector<std::string> & coordField,
                            const std::string & dispPrefix);
 
+   /** Add a vector of strings to the Information Records block.  Each string
+     * will be it's own record.  The info records will be deduped before they
+     * are added to IOSS.
+     */
+   void addInformationRecords(const std::vector<std::string> & info_records);
+
    //////////////////////////////////////////
 
    /** Initialize the mesh with the current dimension This also calls
@@ -298,7 +304,7 @@ public:
    /** Get a vector of edges owned by this processor
      */
    void getMyEdges(std::vector<stk::mesh::Entity> & edges) const;
-   
+
    /** Get Entities corresponding to the edge block requested.
      * The Entites in the vector should be a dimension
      * lower than <code>getDimension()</code>.
@@ -340,7 +346,7 @@ public:
    /** Get a vector of faces owned by this processor
      */
    void getMyFaces(std::vector<stk::mesh::Entity> & faces) const;
-   
+
    /** Get Entities corresponding to the face block requested.
      * The Entites in the vector should be a dimension
      * lower than <code>getDimension()</code>.
@@ -598,7 +604,7 @@ public:
    Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
 
 #ifdef PANZER_HAVE_PERCEPT
-  //! Get the uniformly refined PerceptMesh object. 
+  //! Get the uniformly refined PerceptMesh object.
   Teuchos::RCP<percept::PerceptMesh> getRefinedMesh() const
   { TEUCHOS_ASSERT(Teuchos::nonnull(refinedMesh_)); return refinedMesh_; }
 #endif
@@ -652,7 +658,7 @@ public:
      * \param[in,out] names Vector of names of the edge blocks.
      */
    void getEdgeBlockNames(std::vector<std::string> & names) const;
-   
+
    /** Get a vector containing the names of the face blocks.
      * This function always returns the current set of face blocks
      * in lexiographic order (uses the sorting built into the std::map).
@@ -805,12 +811,12 @@ public:
    /** Get a face's global index
      */
    inline stk::mesh::EntityId faceGlobalId(std::size_t lid) const
-   { return bulkData_->identifier((*orderedEdgeVector_)[lid]); }
+   { return bulkData_->identifier((*orderedFaceVector_)[lid]); }
 
    /** Get a face's global index
      */
-   inline stk::mesh::EntityId faceGlobalId(stk::mesh::Entity edge) const
-   { return bulkData_->identifier(edge); }
+   inline stk::mesh::EntityId faceGlobalId(stk::mesh::Entity face) const
+   { return bulkData_->identifier(face); }
 
   /** Get an Entity's parallel owner (process rank)
    */
@@ -1317,6 +1323,9 @@ protected:
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToEdgeField_;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToFaceField_;
 
+   // use a set to maintain a list of unique information records
+   std::set<std::string> informationRecords_;
+
    unsigned dimension_;
 
    bool initialized_;
@@ -1422,10 +1431,12 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
                                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
    const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
+   auto solutionValues_h = Kokkos::create_mirror_view(solutionValues);
+   Kokkos::deep_copy(solutionValues_h, solutionValues);
 
    int field_axis = -1;
    if(isMeshCoordField(blockId,fieldName,field_axis)) {
-     setDispFieldData(fieldName,blockId,field_axis,localElementIds,solutionValues);
+     setDispFieldData(fieldName,blockId,field_axis,localElementIds,solutionValues_h);
      return;
    }
 
@@ -1443,7 +1454,7 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 
         double * solnData = stk::mesh::field_data(*field,node);
         // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-        solnData[0] = scaleValue*solutionValues(cell,i);
+        solnData[0] = scaleValue*solutionValues_h(cell,i);
       }
    }
 }
@@ -1515,13 +1526,16 @@ void STK_Interface::setCellFieldData(const std::string & fieldName,const std::st
 
    SolutionFieldType * field = this->getCellField(fieldName,blockId);
 
+   auto solutionValues_h = Kokkos::create_mirror_view(solutionValues);
+   Kokkos::deep_copy(solutionValues_h, solutionValues);
+
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       std::size_t localId = localElementIds[cell];
       stk::mesh::Entity element = elements[localId];
 
       double * solnData = stk::mesh::field_data(*field,element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*solutionValues.access(cell,0);
+      solnData[0] = scaleValue*solutionValues_h.access(cell,0);
    }
 }
 
@@ -1533,13 +1547,16 @@ void STK_Interface::setEdgeFieldData(const std::string & fieldName,const std::st
 
    SolutionFieldType * field = this->getEdgeField(fieldName,blockId);
 
+   auto edgeValues_h = Kokkos::create_mirror_view(edgeValues);
+   Kokkos::deep_copy(edgeValues_h, edgeValues);
+
    for(std::size_t idx=0;idx<localEdgeIds.size();idx++) {
       std::size_t localId = localEdgeIds[idx];
       stk::mesh::Entity edge = edges[localId];
 
       double * solnData = stk::mesh::field_data(*field,edge);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*edgeValues.access(idx,0);
+      solnData[0] = scaleValue*edgeValues_h.access(idx,0);
    }
 }
 
@@ -1551,13 +1568,16 @@ void STK_Interface::setFaceFieldData(const std::string & fieldName,const std::st
 
    SolutionFieldType * field = this->getFaceField(fieldName,blockId);
 
+   auto faceValues_h = Kokkos::create_mirror_view(faceValues);
+   Kokkos::deep_copy(faceValues_h, faceValues);
+
    for(std::size_t idx=0;idx<localFaceIds.size();idx++) {
       std::size_t localId = localFaceIds[idx];
       stk::mesh::Entity face = faces[localId];
 
       double * solnData = stk::mesh::field_data(*field,face);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
-      solnData[0] = scaleValue*faceValues.access(idx,0);
+      solnData[0] = scaleValue*faceValues_h.access(idx,0);
    }
 }
 
@@ -1697,9 +1717,9 @@ template <typename ArrayT>
 void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const
 {
    // nothing to do! silently return
-   if(elements.size()==0) {
-     vertices = Kokkos::createDynRankView(vertices,"vertices",0,0,0);
-      return;
+   if(elements.size() == 0) {
+     vertices = Kokkos::createDynRankView(vertices, "vertices", 0, 0, 0);
+     return;
    }
 
    //
@@ -1707,38 +1727,41 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::E
    //
 
    // get *master* cell toplogy...(belongs to first element)
-   unsigned masterVertexCount
+   const auto masterVertexCount
      = stk::mesh::get_cell_topology(bulkData_->bucket(elements[0]).topology()).getCellTopologyData()->vertex_count;
 
    // allocate space
-   vertices = Kokkos::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
+   vertices = Kokkos::createDynRankView(vertices, "vertices", elements.size(), masterVertexCount,getDimension());
+   auto vertices_h = Kokkos::create_mirror_view(vertices);
+   Kokkos::deep_copy(vertices_h, vertices);
 
    // loop over each requested element
-   unsigned dim = getDimension();
-   for(std::size_t cell=0;cell<elements.size();cell++) {
-      stk::mesh::Entity element = elements[cell];
-      TEUCHOS_ASSERT(element!=0);
+   const auto dim = getDimension();
+   for(std::size_t cell = 0; cell < elements.size(); cell++) {
+      const auto element = elements[cell];
+      TEUCHOS_ASSERT(element != 0);
 
-      unsigned vertexCount
+      const auto vertexCount
         = stk::mesh::get_cell_topology(bulkData_->bucket(element).topology()).getCellTopologyData()->vertex_count;
-      TEUCHOS_TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(vertexCount != masterVertexCount, std::runtime_error,
                          "In call to STK_Interface::getElementVertices all elements "
                          "must have the same vertex count!");
 
       // loop over all element nodes
       const size_t num_nodes = bulkData_->num_nodes(element);
-      stk::mesh::Entity const* nodes = bulkData_->begin_nodes(element);
+      auto const* nodes = bulkData_->begin_nodes(element);
       TEUCHOS_TEST_FOR_EXCEPTION(num_nodes!=masterVertexCount,std::runtime_error,
                          "In call to STK_Interface::getElementVertices cardinality of "
                                  "element node relations must be the vertex count!");
-      for(std::size_t node=0; node<num_nodes; ++node) {
+      for(std::size_t node = 0; node < num_nodes; ++node) {
         const double * coord = getNodeCoordinates(nodes[node]);
 
         // set each dimension of the coordinate
         for(unsigned d=0;d<dim;d++)
-          vertices(cell,node,d) = coord[d];
+          vertices_h(cell,node,d) = coord[d];
       }
    }
+   Kokkos::deep_copy(vertices, vertices_h);
 }
 
 template <typename ArrayT>
@@ -1759,6 +1782,7 @@ void STK_Interface::getElementVertices_FromCoordsNoResize(const std::vector<stk:
 
    // loop over each requested element
    unsigned dim = getDimension();
+   auto vertices_h = Kokkos::create_mirror_view(vertices);
    for(std::size_t cell=0;cell<elements.size();cell++) {
       stk::mesh::Entity element = elements[cell];
       TEUCHOS_ASSERT(element!=0);
@@ -1780,9 +1804,10 @@ void STK_Interface::getElementVertices_FromCoordsNoResize(const std::vector<stk:
 
         // set each dimension of the coordinate
         for(unsigned d=0;d<dim;d++)
-          vertices(cell,node,d) = coord[d];
+          vertices_h(cell,node,d) = coord[d];
       }
    }
+   Kokkos::deep_copy(vertices, vertices_h);
 }
 
 template <typename ArrayT>

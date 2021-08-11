@@ -39,7 +39,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture

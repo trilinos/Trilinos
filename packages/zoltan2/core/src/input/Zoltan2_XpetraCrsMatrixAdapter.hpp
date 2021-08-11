@@ -179,18 +179,22 @@ public:
     rowIds = rowView.getRawPtr();
   }
 
-  void getCRSView(const offset_t *&offsets, const gno_t *&colIds) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets, ArrayRCP<const gno_t> &colIds) const
   {
-    offsets = offset_.getRawPtr();
-    colIds = columnIds_.getRawPtr();
+
+    ArrayRCP< const lno_t > localColumnIds;
+    ArrayRCP<const scalar_t> values;
+    matrix_->getAllValues(offsets,localColumnIds,values);
+    colIds = columnIds_;
   }
 
-  void getCRSView(const offset_t *&offsets, const gno_t *&colIds,
-                    const scalar_t *&values) const
+  void getCRSView(ArrayRCP<const offset_t> &offsets,
+                  ArrayRCP<const gno_t> &colIds,
+                  ArrayRCP<const scalar_t> &values) const
   {
-    offsets = offset_.getRawPtr();
-    colIds = columnIds_.getRawPtr();
-    values = values_.getRawPtr();
+    ArrayRCP< const lno_t > localColumnIds;
+    matrix_->getAllValues(offsets,localColumnIds,values);
+    colIds = columnIds_;
   }
 
 
@@ -228,9 +232,6 @@ private:
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > rowMap_;
   RCP<const Xpetra::Map<lno_t, gno_t, node_t> > colMap_;
   lno_t base_;
-  ArrayRCP< const offset_t > offset_;
-  ArrayRCP< const lno_t > localColumnIds_;
-  ArrayRCP< const scalar_t > values_;
   ArrayRCP<gno_t> columnIds_;  // TODO:  Refactor adapter to localColumnIds_
 
   int nWeightsPerRow_;
@@ -248,7 +249,7 @@ template <typename User, typename UserCoord>
   XpetraCrsMatrixAdapter<User,UserCoord>::XpetraCrsMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
       inmatrix_(inmatrix), matrix_(), rowMap_(), colMap_(),
-      offset_(), columnIds_(),
+      columnIds_(),
       nWeightsPerRow_(nWeightsPerRow), rowWeights_(), numNzWeight_(),
       mayHaveDiagonalEntries(true)
 {
@@ -266,11 +267,14 @@ template <typename User, typename UserCoord>
   size_t nnz = matrix_->getNodeNumEntries();
 
   // Get ArrayRCP pointers to the structures in the underlying matrix
-  matrix_->getAllValues(offset_,localColumnIds_,values_);
+  ArrayRCP< const offset_t > offset;
+  ArrayRCP< const lno_t > localColumnIds;
+  ArrayRCP< const scalar_t > values;
+  matrix_->getAllValues(offset,localColumnIds,values);
   columnIds_.resize(nnz, 0);
 
-  for(offset_t i = 0; i < offset_[nrows]; i++) {
-    columnIds_[i] = colMap_->getGlobalElement(localColumnIds_[i]);
+  for(offset_t i = 0; i < offset[nrows]; i++) {
+    columnIds_[i] = colMap_->getGlobalElement(localColumnIds[i]);
   }
 
   if (nWeightsPerRow_ > 0){

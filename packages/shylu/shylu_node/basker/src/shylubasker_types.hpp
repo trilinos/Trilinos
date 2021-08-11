@@ -32,14 +32,14 @@
 
 #define BASKER_EPSILON       1e-6
 
-#define BASKER_PIVOT_TOL     .0001
-#define BASKER_PIVOT_BIAS    1.001
+#define BASKER_PIVOT_TOL     0.001
 
 //Error Codes
 enum BASKER_ERROR_CODE 
 {
   BASKER_ERROR_NOERROR,     //No error
   BASKER_ERROR_SINGULAR,    //Singular during factorization
+  BASKER_ERROR_NAN,         //NaN during factorization
   BASKER_ERROR_REMALLOC,    //Need to be realloc
   BASKER_ERROR_NOMALLOC,    //Failed with nomalloc option
   BASKER_ERROR_OTHER
@@ -56,12 +56,14 @@ enum BASKER_MATCHING_CODE
 };
 
 //MACRO BTF METHOD
-#define BASKER_BTF_MAX_PERCENT  1.00
-#define BASKER_BTF_LARGE        500  //Made smaller for unit test
+#define BASKER_BTF_MAX_PERCENT   1.00
+#define BASKER_BTF_LARGE         500  //Made smaller for unit test
 #define BASKER_BTF_IMBALANCE     0.10
 #define BASKER_BTF_SMALL         100
 #define BASKER_BTF_NNZ_OVER      2.0 //Upped from 1.20
 #define BASKER_BTF_PRUNE_SIZE    100
+
+#define BASKER_DOM_NNZ_OVER      1.0 //Added to control estimate for DOM/SEP blocks
 
 enum BASKER_INCOMPLETE_CODE
 {
@@ -102,7 +104,7 @@ enum BASKER_INCOMPLETE_CODE
     if(!(a))                     \
       {printf("\n\n%s \nLINE: %d \nFILE: %s\n\n", s, __LINE__, __FILE__);} \
     ASSERT(a);                   \
-    assert(a);			 \
+    assert(a);		 \
     if(!(a))                     \
       exit(0);                  \
   }
@@ -149,125 +151,167 @@ enum BASKER_INCOMPLETE_CODE
 //MALLOC
 #define MALLOC_INT_1DARRAY_PAIRS(a,s)   \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC malloc_pairs_1d: size to alloc > 0 fails"); \
-    a = INT_1DARRAY_PAIRS(KOKKOS_NOINIT("pairs_1d"),s); \
-    if(a.data() == NULL)           \
-      throw std::bad_alloc();	   \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC malloc_pairs_1d: size to alloc >= 0 fails"); \
+    if (s > 0) {                                          \
+      a = INT_1DARRAY_PAIRS(KOKKOS_NOINIT("pairs_1d"),s); \
+      if(a.data() == NULL)                                \
+        throw std::bad_alloc();                           \
+    }                                                     \
   }
 #define MALLOC_INT_1DARRAY(a,s)   \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC int_1d: size to alloc > 0 fails"); \
-    a = INT_1DARRAY(KOKKOS_NOINIT("int_1d"),s); \
-    if(a.data() == NULL)           \
-      throw std::bad_alloc();	   \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC int_1d: size to alloc >= 0 fails"); \
+    if (s > 0) {                                  \
+      a = INT_1DARRAY(KOKKOS_NOINIT("int_1d"),s); \
+      if(a.data() == NULL)                        \
+        throw std::bad_alloc();                   \
+    }                                             \
   }
 #define MALLOC_INT_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0,"BASKER ASSERT MALLOC int_2d: size to alloc > 0 fails"); \
-    a = INT_2DARRAY("int_2d",s); \
-    if(a.data() == NULL)         \
-      throw std::bad_alloc();    \
+    BASKER_ASSERT(s >= 0,"BASKER ASSERT MALLOC int_2d: size to alloc >= 0 fails"); \
+    if (s > 0) {                   \
+      a = INT_2DARRAY("int_2d",s); \
+      if(a.data() == NULL)         \
+        throw std::bad_alloc();    \
+    }                              \
   }
 #define MALLOC_ENTRY_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC entry_1d: size to alloc > 0 fails"); \
-    a = ENTRY_1DARRAY(KOKKOS_NOINIT("entry_1d"),s); \
-    if(a.data() == NULL)           \
-      throw std::bad_alloc();      \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC entry_1d: size to alloc >= 0 fails"); \
+    if (s > 0) {                                      \
+      a = ENTRY_1DARRAY(KOKKOS_NOINIT("entry_1d"),s); \
+      if(a.data() == NULL)                            \
+        throw std::bad_alloc();                       \
+    }                                                 \
   }
 #define MALLOC_ENTRY_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC entry_2d: size to alloc > 0 fails"); \
-    a = ENTRY_2DARRAY("entry_2d",s); \
-    if(a.data() == NULL)             \
-      throw std::bad_alloc();        \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC entry_2d: size to alloc >= 0 fails"); \
+    if (s > 0) {                       \
+      a = ENTRY_2DARRAY("entry_2d",s); \
+      if(a.data() == NULL)             \
+        throw std::bad_alloc();        \
+    }                                  \
   }
 #define MALLOC_BOOL_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC bool_1d: size to alloc > 0 fails"); \
-    a = BOOL_1DARRAY(KOKKOS_NOINIT("bool_1d"), s); \
-    if(a.data() == NULL)           \
-      throw std::bad_alloc();      \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC bool_1d: size to alloc >= 0 fails"); \
+    if (s > 0) {                                     \
+      a = BOOL_1DARRAY(KOKKOS_NOINIT("bool_1d"), s); \
+      if(a.data() == NULL)                           \
+        throw std::bad_alloc();                      \
+    }                                                \
   }
 #define MALLOC_BOOL_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC bool_2d: size to alloc > 0 fails"); \
-    a = BOOL_2DARRAY("bool_2d", s); \
-    if(a.data() == NULL)            \
-      throw std::bad_alloc();       \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC bool_2d: size to alloc >= 0 fails"); \
+    if (s > 0) {                      \
+      a = BOOL_2DARRAY("bool_2d", s); \
+      if(a.data() == NULL)            \
+        throw std::bad_alloc();       \
+    }                                 \
   }
 #define MALLOC_MATRIX_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_1d: size to alloc > 0 fails"); \
-    a = MATRIX_1DARRAY("matrix_1d",s); \
-    if(a.data() == NULL)              \
-      throw std::bad_alloc();         \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_1d: size to alloc >= 0 fails"); \
+    if (s > 0) {                         \
+      a = MATRIX_1DARRAY("matrix_1d",s); \
+      if(a.data() == NULL)               \
+        throw std::bad_alloc();          \
+    }                                    \
   }
 #define MALLOC_MATRIX_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_2d: size to alloc > 0 fails"); \
-    a = MATRIX_2DARRAY("matrix_2d",s); \
-    if(a.data() == NULL)              \
-      throw std::bad_alloc();         \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_2d: size to alloc >= 0 fails"); \
+    if (s > 0) {                         \
+      a = MATRIX_2DARRAY("matrix_2d",s); \
+      if(a.data() == NULL)               \
+        throw std::bad_alloc();          \
+    }                                    \
   }
 #define MALLOC_MATRIX_VIEW_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_view_1d: size to alloc > 0 fails"); \
-    a = MATRIX_VIEW_1DARRAY("matrix_view_1d",s); \
-    if(a.data() == NULL)                 \
-      throw std::bad_alloc();            \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_view_1d: size to alloc >= 0 fails"); \
+    if (s > 0) {                                   \
+      a = MATRIX_VIEW_1DARRAY("matrix_view_1d",s); \
+      if(a.data() == NULL)                         \
+        throw std::bad_alloc();                    \
+    }                                              \
   }
 #define MALLOC_MATRIX_VIEW_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC matrix_view_2d: size to alloc > 0 fails"); \
-    a = MATRIX_VIEW_2DARRAY("matrix_view_2d",s); \
-    if(a.data() == NULL)                 \
-      throw std::bad_alloc();            \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC matrix_view_2d: size to alloc >= 0 fails"); \
+    if (s > 0) {                                   \
+      a = MATRIX_VIEW_2DARRAY("matrix_view_2d",s); \
+      if(a.data() == NULL)                         \
+        throw std::bad_alloc();                    \
+    }                                              \
   }
 #define MALLOC_THREAD_1DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC thread_1d: size to alloc > 0 fails"); \
-    a = THREAD_1DARRAY("thread_1d",s); \
-    if(a.data() == NULL)              \
-      throw std::bad_alloc();         \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC thread_1d: size to alloc >= 0 fails"); \
+    if (s > 0) {                         \
+      a = THREAD_1DARRAY("thread_1d",s); \
+      if(a.data() == NULL)               \
+        throw std::bad_alloc();          \
+    }                                    \
   }
 #define MALLOC_THREAD_2DARRAY(a,s) \
   { \
-    BASKER_ASSERT(s>0, "BASKER ASSERT MALLOC thread_2d: size to alloc > 0 fails"); \
-    a = THREAD_2DARRAY("thread_2d",s); \
-    if(a.data() == NULL)             \
-      throw std::bakd_alloc();       \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT MALLOC thread_2d: size to alloc >= 0 fails"); \
+    if (s > 0) {                         \
+      a = THREAD_2DARRAY("thread_2d",s); \
+      if(a.data() == NULL)               \
+        throw std::bad_alloc();         \
+    }                                    \
   }
 //RESIZE (with copy)
-#define RESIZE_1DARRAY(a,os,s)           Kokkos::resize(a,s)
-#define RESIZE_2DARRAY(a,os1,os2,s1,s2)   Kokkos::resize(a,s1,s2)
+#define RESIZE_1DARRAY(a,os,s)           \
+  { \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT RESIZE 1D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::resize(a,s);                 \
+  }
+#define RESIZE_2DARRAY(a,os1,os2,s1,s2)  \
+  { \
+    BASKER_ASSERT(s1 >= 0 && s2 >= 0, "BASKER ASSERT RESIZE 2D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::resize(a,s1,s2);             \
+  }
 #define RESIZE_INT_1DARRAY(a,os,s)       RESIZE_1DARRAY(a,os,s)
 #define RESIZE_ENTRY_1DARRAY(a,os,s)     RESIZE_1DARRAY(a,os,s)
 //REALLOC (no copy)
-#define REALLOC_1DARRAY(a,os,s)          Kokkos::realloc(a,s)
-#define REALLOC_2DRRAAY(a,os1,os2,s1,s2) Kokkos::realloc(a,s1,s2)
+#define REALLOC_1DARRAY(a,os,s)          \
+  { \
+    BASKER_ASSERT(s >= 0, "BASKER ASSERT REALLOC 1D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::realloc(a,s);                 \
+  }
+#define REALLOC_2DRRAAY(a,os1,os2,s1,s2) \
+  { \
+    BASKER_ASSERT(s1 >= 0 && s2 >= 0, "BASKER ASSERT REALLOC 2D ARRAY: size to alloc >= 0 fails"); \
+    Kokkos::realloc(a,s1,s2);            \
+  }
 #define REALLOC_INT_1DARRAY(a,os,s)      REALLOC_1DARRAY(a,os,s)
 #define REALLOC_ENTRY_1DARRAY(a,os,s)    REALLOC_1DARRAY(a,os,s)
 //Set values
-#define SET_INT_1DARRAY(a, b, s)    	\
-  {						\
-  MALLOC_INT_1DARRAY(a,s);			     \
-  for(BASKER_INT MACRO_I = 0; MACRO_I< s; MACRO_I++)	\
-    a[MACRO_I] = b[MACRO_I];				\
+#define SET_INT_1DARRAY(a, b, s)    \
+  {                                 \
+  MALLOC_INT_1DARRAY(a,s);          \
+  for(BASKER_INT MACRO_I = 0; MACRO_I< s; MACRO_I++)\
+    a[MACRO_I] = b[MACRO_I];        \
   }
        
-#define SET_ENTRY_1DARRAY(a, b,s)		\
-  {						\
-  MALLOC_ENTRY_1DARRAY(a,s);			    \
-  for(BASKER_INT MACRO_I =0; MACRO_I <s; MACRO_I++)	\
-    a[MACRO_I] = b[MACRO_I];				\
+#define SET_ENTRY_1DARRAY(a, b,s)   \
+  {                                 \
+  MALLOC_ENTRY_1DARRAY(a,s);        \
+  for(BASKER_INT MACRO_I =0; MACRO_I <s; MACRO_I++)\
+    a[MACRO_I] = b[MACRO_I];        \
   }
   
-#define SET_BOOL_1DARRAY(a, b, s)		\
-  {						\
-  MALLOC_BOOL_1DARRY(a,s);			    \
-  for(BASKER_INT MACRO_I =0; MACRO_I <s; MACRO_I++)	\
-    a[MACRO_I] = b[MACRO_I];				\
+#define SET_BOOL_1DARRAY(a, b, s)   \
+  {                                 \
+  MALLOC_BOOL_1DARRY(a,s);          \
+  for(BASKER_INT MACRO_I =0; MACRO_I <s; MACRO_I++)\
+    a[MACRO_I] = b[MACRO_I];        \
   }
 
 #define FREE(a)                        BASKER_NO_OP

@@ -139,26 +139,6 @@ template< typename Scalar , class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7 >
 class Field : public FieldBase {
 public:
-  Field(
-       MetaData                   * arg_mesh_meta_data ,
-       unsigned                     arg_ordinal ,
-       const std::string          & arg_name ,
-       const DataTraits           & arg_traits ,
-       unsigned                     arg_rank,
-       const shards::ArrayDimTag  * const * arg_dim_tags,
-       unsigned                     arg_number_of_states ,
-       FieldState                   arg_this_state
-       )
-    : FieldBase(arg_mesh_meta_data,
-        arg_ordinal,
-        arg_name,
-        arg_traits,
-        arg_rank,
-        arg_dim_tags,
-        arg_number_of_states,
-        arg_this_state
-        )
-  {}
 
   Field(
        MetaData                   * arg_mesh_meta_data ,

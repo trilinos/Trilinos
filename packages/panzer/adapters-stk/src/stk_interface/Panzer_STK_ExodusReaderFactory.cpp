@@ -77,7 +77,7 @@ int getMeshDimension(const std::string & meshStr,
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
   : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), keepPerceptData_(false),
-    keepPerceptParentElements_(false), meshScaleFactor_(0.0), levelsOfRefinement_(0),
+    keepPerceptParentElements_(false), rebalancing_("default"), meshScaleFactor_(0.0), levelsOfRefinement_(0),
     createEdgeBlocks_(false), createFaceBlocks_(false)
 { }
 
@@ -85,8 +85,8 @@ STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,
                                                  const int restartIndex,
                                                  const bool isExodus)
   : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false),
-    keepPerceptData_(false), keepPerceptParentElements_(false), meshScaleFactor_(0.0), levelsOfRefinement_(0),
-    createEdgeBlocks_(false), createFaceBlocks_(false)
+    keepPerceptData_(false), keepPerceptParentElements_(false), rebalancing_("default"), 
+    meshScaleFactor_(0.0), levelsOfRefinement_(0), createEdgeBlocks_(false), createFaceBlocks_(false)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -274,8 +274,14 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    // clean up mesh data object
    delete meshData;
 
-   // calls Stk_MeshFactory::rebalance
-   this->rebalance(mesh);
+   if(rebalancing_ == "default")
+     // calls Stk_MeshFactory::rebalance
+     this->rebalance(mesh);
+   else if(rebalancing_ != "none")
+   {
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+				"ERROR: Rebalancing was not set to a valid choice");
+   }
 }
 
 //! From ParameterListAcceptor
@@ -314,6 +320,9 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    if(!paramList->isParameter("Keep Percept Parent Elements"))
      paramList->set<bool>("Keep Percept Parent Elements", false);
 
+   if(!paramList->isParameter("Rebalancing"))
+     paramList->set<std::string>("Rebalancing", "default");
+
    if(!paramList->isParameter("Create Edge Blocks"))
      // default to false to prevent massive exodiff test failures
      paramList->set<bool>("Create Edge Blocks", false);
@@ -349,10 +358,11 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
 
    keepPerceptParentElements_ = paramList->get<bool>("Keep Percept Parent Elements");
 
+   rebalancing_ = paramList->get<std::string>("Rebalancing");
+
    levelsOfRefinement_ = paramList->get<int>("Levels of Uniform Refinement");
 
    createEdgeBlocks_ = paramList->get<bool>("Create Edge Blocks");
-
    createFaceBlocks_ = paramList->get<bool>("Create Face Blocks");
 }
 
@@ -388,10 +398,10 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
 
       validParams->set("Keep Percept Parent Elements",false,"Keep the parent element information in the Percept data");
 
-      // default to false to prevent massive exodiff test failures
-      validParams->set("Create Edge Blocks",false,"Create or copy edge blocks in the mesh");
+      validParams->set("Rebalancing","default","The type of rebalancing to be performed on the mesh after creation (default, none)");
 
-      // default to false to prevent massive exodiff test failures
+      // default to false for backward compatibility
+      validParams->set("Create Edge Blocks",false,"Create or copy edge blocks in the mesh");
       validParams->set("Create Face Blocks",false,"Create or copy face blocks in the mesh");
    }
 

@@ -96,28 +96,30 @@ namespace panzer {
 
     const size_type x = 0;
     const size_type y = 1;
+    auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_static_view());
     for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int xleft = cell % 2;
       int yleft = int(cell/2);
 
-      node_coordinates(cell,0,x) = xleft*0.5;
-      node_coordinates(cell,0,y) = yleft*0.5;
+      node_coordinates_host(cell,0,x) = xleft*0.5;
+      node_coordinates_host(cell,0,y) = yleft*0.5;
 
-      node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5;
+      node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,1,y) = yleft*0.5;
 
-      node_coordinates(cell,2,x) = (xleft+1)*0.5;
-      node_coordinates(cell,2,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,2,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
 
-      node_coordinates(cell,3,x) = xleft*0.5;
-      node_coordinates(cell,3,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,3,x) = xleft*0.5;
+      node_coordinates_host(cell,3,y) = (yleft+1)*0.5;
 
       out << "Cell " << cell << " = ";
       for(int i=0;i<4;i++)
-         out << "(" << node_coordinates(cell,i,x) << ", "
-                    << node_coordinates(cell,i,y) << ") ";
+         out << "(" << node_coordinates_host(cell,i,x) << ", "
+                    << node_coordinates_host(cell,i,y) << ") ";
       out << std::endl;
     }
+    Kokkos::deep_copy(node_coordinates.get_static_view(),node_coordinates_host);
 
     int_values.evaluateValues(node_coordinates);
 
@@ -141,23 +143,29 @@ namespace panzer {
 
     out << "check output" << std::endl;
     double relCellVol = 0.25*0.25; // this is the relative (to the reference cell) volume
+    auto cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_weights.get_static_view());
+    auto cub_weighted_measure_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.weighted_measure.get_view()); 
+    auto basis_ref_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_ref_scalar.get_static_view());
+    auto jac_det_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.jac_det.get_static_view());
+    auto weighted_basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_basis_scalar.get_static_view());
+    auto basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_scalar.get_static_view());
     for(int i=0;i<num_qp;i++) {
        // double x = int_values.cub_points(i,0);
        // double y = int_values.cub_points(i,1);
-       double weight = int_values.cub_weights(i);
+       double weight = cub_weights_host(i);
 
        // check reference values
-       TEST_EQUALITY(basis_values.basis_ref_scalar(0,i),1.0);
+       TEST_EQUALITY(basis_ref_scalar_host(0,i),1.0);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
 
-          out << "wm = " << int_values.weighted_measure(cell,i) << " " << std::endl;;
-          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
+          out << "wm = " << cub_weighted_measure_host(cell,i) << " " << std::endl;;
+          TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
           // check out basis on transformed elemented
-          TEST_EQUALITY(basis_values.basis_ref_scalar(0,i),basis_values.basis_scalar(cell,0,i));
-          TEST_EQUALITY(basis_values.weighted_basis_scalar(cell,0,i),relCellVol*weight*basis_values.basis_scalar(cell,0,i));
+          TEST_EQUALITY(basis_ref_scalar_host(0,i),basis_scalar_host(cell,0,i));
+          TEST_EQUALITY(weighted_basis_scalar_host(cell,0,i),relCellVol*weight*basis_scalar_host(cell,0,i));
        }
        out << std::endl;
     }
@@ -200,28 +208,30 @@ namespace panzer {
     {
       const size_type x = 0;
       const size_type y = 1;
+      auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_view());
       for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
         int xleft = cell % 2;
         int yleft = int(cell/2);
 
-        node_coordinates(cell,0,x) = xleft*0.5;
-        node_coordinates(cell,0,y) = yleft*0.5;
+        node_coordinates_host(cell,0,x) = xleft*0.5;
+        node_coordinates_host(cell,0,y) = yleft*0.5;
 
-        node_coordinates(cell,1,x) = (xleft+1)*0.5;
-        node_coordinates(cell,1,y) = yleft*0.5;
+        node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,1,y) = yleft*0.5;
 
-        node_coordinates(cell,2,x) = (xleft+1)*0.5;
-        node_coordinates(cell,2,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,2,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
 
-        node_coordinates(cell,3,x) = xleft*0.5;
-        node_coordinates(cell,3,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,3,x) = xleft*0.5;
+        node_coordinates_host(cell,3,y) = (yleft+1)*0.5;
 
         out << "Cell " << cell << " = ";
         for(int i=0;i<4;i++)
-          out << "(" << node_coordinates(cell,i,x) << ", "
-              << node_coordinates(cell,i,y) << ") ";
+          out << "(" << node_coordinates_host(cell,i,x) << ", "
+              << node_coordinates_host(cell,i,y) << ") ";
         out << std::endl;
       }
+      Kokkos::deep_copy(node_coordinates.get_view(),node_coordinates_host);
     }
 
     int_values.evaluateValues(node_coordinates);
@@ -241,30 +251,39 @@ namespace panzer {
                                 node_coordinates);
 
     double relCellVol = 0.25*0.25; // this is the relative (to the reference cell) volume
+    auto cub_points_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_points.get_view());
+    auto cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_weights.get_view());
+    auto basis_ref_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_ref_scalar.get_view());
+    auto basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_scalar.get_view());
+    auto grad_basis_ref_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.grad_basis_ref.get_view());
+    auto weighted_basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_basis_scalar.get_view());
+    auto grad_basis_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.grad_basis.get_view());
+    auto weighted_grad_basis_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_grad_basis.get_view());
+    auto jac_det_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.jac_det.get_view());
     for(int i=0;i<num_qp;i++) {
-       double x = int_values.cub_points(i,0);
-       double y = int_values.cub_points(i,1);
-       double weight = int_values.cub_weights(i);
+       double x = cub_points_host(i,0);
+       double y = cub_points_host(i,1);
+       double weight = cub_weights_host(i);
 
        // check reference values
-       TEST_EQUALITY(basis_values.basis_ref_scalar(0,i),0.25*(x-1.0)*(y-1.0));
-       TEST_EQUALITY(basis_values.grad_basis_ref(0,i,0),0.25*(y-1.0));
-       TEST_EQUALITY(basis_values.grad_basis_ref(0,i,1),0.25*(x-1.0));
+       TEST_EQUALITY(basis_ref_scalar_host(0,i),0.25*(x-1.0)*(y-1.0));
+       TEST_EQUALITY(grad_basis_ref_host(0,i,0),0.25*(y-1.0));
+       TEST_EQUALITY(grad_basis_ref_host(0,i,1),0.25*(x-1.0));
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
 
-          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
+          TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
           // check out basis on transformed elemented
-          TEST_EQUALITY(basis_values.basis_ref_scalar(0,i),basis_values.basis_scalar(cell,0,i));
-          TEST_EQUALITY(basis_values.weighted_basis_scalar(cell,0,i),relCellVol*weight*basis_values.basis_scalar(cell,0,i));
+          TEST_EQUALITY(basis_ref_scalar_host(0,i),basis_scalar_host(cell,0,i));
+          TEST_EQUALITY(weighted_basis_scalar_host(cell,0,i),relCellVol*weight*basis_scalar_host(cell,0,i));
 
-          TEST_EQUALITY(basis_values.grad_basis(cell,0,i,0),4.0*basis_values.grad_basis_ref(0,i,0));
-          TEST_EQUALITY(basis_values.grad_basis(cell,0,i,1),4.0*basis_values.grad_basis_ref(0,i,1));
+          TEST_EQUALITY(grad_basis_host(cell,0,i,0),4.0*grad_basis_ref_host(0,i,0));
+          TEST_EQUALITY(grad_basis_host(cell,0,i,1),4.0*grad_basis_ref_host(0,i,1));
 
-          TEST_EQUALITY(basis_values.weighted_grad_basis(cell,0,i,0),relCellVol*weight*basis_values.grad_basis(cell,0,i,0));
-          TEST_EQUALITY(basis_values.weighted_grad_basis(cell,0,i,1),relCellVol*weight*basis_values.grad_basis(cell,0,i,1));
+          TEST_EQUALITY(weighted_grad_basis_host(cell,0,i,0),relCellVol*weight*grad_basis_host(cell,0,i,0));
+          TEST_EQUALITY(weighted_grad_basis_host(cell,0,i,1),relCellVol*weight*grad_basis_host(cell,0,i,1));
        }
     }
   }
@@ -314,28 +333,30 @@ namespace panzer {
     {
       const size_type x = 0;
       const size_type y = 1;
+      auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_view());
       for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
         int xleft = cell % 2;
         int yleft = int(cell/2);
 
-        node_coordinates(cell,0,x) = xleft*0.5;
-        node_coordinates(cell,0,y) = yleft*0.5;
+        node_coordinates_host(cell,0,x) = xleft*0.5;
+        node_coordinates_host(cell,0,y) = yleft*0.5;
 
-        node_coordinates(cell,1,x) = (xleft+1)*0.5;
-        node_coordinates(cell,1,y) = yleft*0.5;
+        node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,1,y) = yleft*0.5;
 
-        node_coordinates(cell,2,x) = (xleft+1)*0.5;
-        node_coordinates(cell,2,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,2,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
 
-        node_coordinates(cell,3,x) = xleft*0.5;
-        node_coordinates(cell,3,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,3,x) = xleft*0.5;
+        node_coordinates_host(cell,3,y) = (yleft+1)*0.5;
 
         out << "Cell " << cell << " = ";
         for(int i=0;i<4;i++)
-          out << "(" << node_coordinates(cell,i,x) << ", "
-              << node_coordinates(cell,i,y) << ") ";
+          out << "(" << node_coordinates_host(cell,i,x) << ", "
+              << node_coordinates_host(cell,i,y) << ") ";
         out << std::endl;
       }
+      Kokkos::deep_copy(node_coordinates.get_view(),node_coordinates_host);
     }
 
     int_values.evaluateValues(node_coordinates);
@@ -366,38 +387,47 @@ namespace panzer {
     TEST_EQUALITY(basis_values.curl_basis_ref_scalar.extent(1),num_qp);
 
     double relCellVol = 0.25*0.25; // this is the relative (to the reference cell) volume
+    auto cub_points_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_points.get_view());
+    auto cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_weights.get_view());
+    auto jac_det_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.jac_det.get_view());
+    auto basis_ref_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_ref_vector.get_view());
+    auto basis_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_vector.get_view());
+    auto curl_basis_ref_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.curl_basis_ref_scalar.get_view());
+    auto curl_basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.curl_basis_scalar.get_view());
+    auto weighted_basis_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_basis_vector.get_view());
+    auto weighted_curl_basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_curl_basis_scalar.get_view());
     for(unsigned int i=0;i<num_qp;i++) {
        // double x = int_values.cub_points(i,0);
-       double y = int_values.cub_points(i,1);
-       double weight = int_values.cub_weights(i);
+       double y = cub_points_host(i,1);
+       double weight = cub_weights_host(i);
 
        // check reference values
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,0),-0.5*(y-1.0));
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,1),0.0);
-       TEST_EQUALITY(basis_values.curl_basis_ref_scalar(0,i),0.5);
+       TEST_EQUALITY(basis_ref_vector_host(0,i,0),-0.5*(y-1.0));
+       TEST_EQUALITY(basis_ref_vector_host(0,i,1),0.0);
+       TEST_EQUALITY(curl_basis_ref_scalar_host(0,i),0.5);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
 
-          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
+          TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
           // check out basis on transformed elemented
-          TEST_EQUALITY(basis_values.basis_ref_vector(0,i,0),0.25*basis_values.basis_vector(cell,0,i,0));
-          TEST_EQUALITY(basis_values.basis_ref_vector(0,i,1),0.25*basis_values.basis_vector(cell,0,i,1));
-          TEST_EQUALITY(basis_values.curl_basis_ref_scalar(0,i),relCellVol*basis_values.curl_basis_scalar(cell,0,i));
+          TEST_EQUALITY(basis_ref_vector_host(0,i,0),0.25*basis_vector_host(cell,0,i,0));
+          TEST_EQUALITY(basis_ref_vector_host(0,i,1),0.25*basis_vector_host(cell,0,i,1));
+          TEST_EQUALITY(curl_basis_ref_scalar_host(0,i),relCellVol*curl_basis_scalar_host(cell,0,i));
 
-          TEST_EQUALITY(basis_values.basis_ref_vector(1,i,0),0.25*basis_values.basis_vector(cell,1,i,0));
-          TEST_EQUALITY(basis_values.basis_ref_vector(1,i,1),0.25*basis_values.basis_vector(cell,1,i,1));
-          TEST_EQUALITY(basis_values.curl_basis_ref_scalar(1,i),relCellVol*basis_values.curl_basis_scalar(cell,1,i));
+          TEST_EQUALITY(basis_ref_vector_host(1,i,0),0.25*basis_vector_host(cell,1,i,0));
+          TEST_EQUALITY(basis_ref_vector_host(1,i,1),0.25*basis_vector_host(cell,1,i,1));
+          TEST_EQUALITY(curl_basis_ref_scalar_host(1,i),relCellVol*curl_basis_scalar_host(cell,1,i));
 
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,0,i,0),relCellVol*weight*basis_values.basis_vector(cell,0,i,0));
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,0,i,1),relCellVol*weight*basis_values.basis_vector(cell,0,i,1));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,0,i,0),relCellVol*weight*basis_vector_host(cell,0,i,0));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,0,i,1),relCellVol*weight*basis_vector_host(cell,0,i,1));
 
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,1,i,0),relCellVol*weight*basis_values.basis_vector(cell,1,i,0));
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,1,i,1),relCellVol*weight*basis_values.basis_vector(cell,1,i,1));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,1,i,0),relCellVol*weight*basis_vector_host(cell,1,i,0));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,1,i,1),relCellVol*weight*basis_vector_host(cell,1,i,1));
 
-          TEST_EQUALITY(basis_values.weighted_curl_basis_scalar(cell,0,i),relCellVol*weight*basis_values.curl_basis_scalar(cell,0,i));
-          TEST_EQUALITY(basis_values.weighted_curl_basis_scalar(cell,1,i),relCellVol*weight*basis_values.curl_basis_scalar(cell,1,i));
+          TEST_EQUALITY(weighted_curl_basis_scalar_host(cell,0,i),relCellVol*weight*curl_basis_scalar_host(cell,0,i));
+          TEST_EQUALITY(weighted_curl_basis_scalar_host(cell,1,i),relCellVol*weight*curl_basis_scalar_host(cell,1,i));
        }
     }
   }
@@ -432,33 +462,35 @@ namespace panzer {
       const size_type x = 0;
       const size_type y = 1;
       const size_type z = 2;
+      auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_view());
       for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
         int xleft = cell % 2;
         int yleft = int(cell/2);
 
-        node_coordinates(cell,0,x) = xleft*0.5;
-        node_coordinates(cell,0,y) = yleft*0.5;
-        node_coordinates(cell,0,z) = 0.0;
+        node_coordinates_host(cell,0,x) = xleft*0.5;
+        node_coordinates_host(cell,0,y) = yleft*0.5;
+        node_coordinates_host(cell,0,z) = 0.0;
 
-        node_coordinates(cell,1,x) = (xleft+1)*0.5;
-        node_coordinates(cell,1,y) = yleft*0.5;
-        node_coordinates(cell,1,z) = 0.0;
+        node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,1,y) = yleft*0.5;
+        node_coordinates_host(cell,1,z) = 0.0;
 
-        node_coordinates(cell,2,x) = xleft*0.5;
-        node_coordinates(cell,2,y) = (yleft+1)*0.5;
-        node_coordinates(cell,2,z) = 0.0;
+        node_coordinates_host(cell,2,x) = xleft*0.5;
+        node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,2,z) = 0.0;
 
-        node_coordinates(cell,3,x) = xleft*0.5;
-        node_coordinates(cell,3,y) = yleft*0.5;
-        node_coordinates(cell,3,z) = 1.0/3.0;
+        node_coordinates_host(cell,3,x) = xleft*0.5;
+        node_coordinates_host(cell,3,y) = yleft*0.5;
+        node_coordinates_host(cell,3,z) = 1.0/3.0;
 
         out << "Cell " << cell << " = ";
         for(int i=0;i<4;i++)
-          out << "(" << node_coordinates(cell,i,x) << ", "
-              << node_coordinates(cell,i,y) << ", "
-              << node_coordinates(cell,i,z) << ") ";
+          out << "(" << node_coordinates_host(cell,i,x) << ", "
+              << node_coordinates_host(cell,i,y) << ", "
+              << node_coordinates_host(cell,i,z) << ") ";
         out << std::endl;
       }
+      Kokkos::deep_copy(node_coordinates.get_view(),node_coordinates_host);
     }
 
     int_values.evaluateValues(node_coordinates);
@@ -489,40 +521,49 @@ namespace panzer {
     TEST_EQUALITY(basis_values.div_basis_ref.extent(1),num_qp);
 
     double relCellVol = (1.0/72) / (1.0/6.0);
+    auto cub_points_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_points.get_view());
+    auto cub_weights_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.cub_weights.get_view());
+    auto jac_det_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.jac_det.get_view());
+    auto basis_ref_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_ref_vector.get_view());
+    auto basis_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_vector.get_view());
+    auto div_basis_ref_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.div_basis_ref.get_view());
+    auto div_basis_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.div_basis.get_view());
+    auto weighted_basis_vector_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_basis_vector.get_view());
+    auto weighted_div_basis_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.weighted_div_basis.get_view());
     for(unsigned int i=0;i<num_qp;i++) {
-       double x = int_values.cub_points(i,0);
-       double y = int_values.cub_points(i,1);
-       double z = int_values.cub_points(i,2);
-       double weight = int_values.cub_weights(i);
+       double x = cub_points_host(i,0);
+       double y = cub_points_host(i,1);
+       double z = cub_points_host(i,2);
+       double weight = cub_weights_host(i);
 
        // check reference values
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,0),x);
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,1),(y-1.0));
-       TEST_EQUALITY(basis_values.basis_ref_vector(0,i,2),z);
+       TEST_EQUALITY(basis_ref_vector_host(0,i,0),x);
+       TEST_EQUALITY(basis_ref_vector_host(0,i,1),(y-1.0));
+       TEST_EQUALITY(basis_ref_vector_host(0,i,2),z);
 
-       TEST_EQUALITY(basis_values.div_basis_ref(0,i),3.0);
+       TEST_EQUALITY(div_basis_ref_host(0,i),3.0);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
 
-          TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
+          TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
           // check out basis on transformed elemented
-          TEST_EQUALITY(0.5*basis_values.basis_ref_vector(0,i,0)/relCellVol,basis_values.basis_vector(cell,0,i,0));
-          TEST_EQUALITY(0.5*basis_values.basis_ref_vector(0,i,1)/relCellVol,basis_values.basis_vector(cell,0,i,1));
-          TEST_EQUALITY((1.0/3.0)*basis_values.basis_ref_vector(0,i,2)/relCellVol,basis_values.basis_vector(cell,0,i,2));
+          TEST_EQUALITY(0.5*basis_ref_vector_host(0,i,0)/relCellVol,basis_vector_host(cell,0,i,0));
+          TEST_EQUALITY(0.5*basis_ref_vector_host(0,i,1)/relCellVol,basis_vector_host(cell,0,i,1));
+          TEST_EQUALITY((1.0/3.0)*basis_ref_vector_host(0,i,2)/relCellVol,basis_vector_host(cell,0,i,2));
 
-          TEST_EQUALITY(basis_values.div_basis_ref(0,i)/relCellVol,basis_values.div_basis(cell,0,i));
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,0,i,0),relCellVol*weight*basis_values.basis_vector(cell,0,i,0));
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,0,i,1),relCellVol*weight*basis_values.basis_vector(cell,0,i,1));
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,0,i,2),relCellVol*weight*basis_values.basis_vector(cell,0,i,2));
+          TEST_EQUALITY(div_basis_ref_host(0,i)/relCellVol,div_basis_host(cell,0,i));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,0,i,0),relCellVol*weight*basis_vector_host(cell,0,i,0));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,0,i,1),relCellVol*weight*basis_vector_host(cell,0,i,1));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,0,i,2),relCellVol*weight*basis_vector_host(cell,0,i,2));
 
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,1,i,0),relCellVol*weight*basis_values.basis_vector(cell,1,i,0));
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,1,i,1),relCellVol*weight*basis_values.basis_vector(cell,1,i,1));
-          TEST_EQUALITY(basis_values.weighted_basis_vector(cell,1,i,2),relCellVol*weight*basis_values.basis_vector(cell,1,i,2));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,1,i,0),relCellVol*weight*basis_vector_host(cell,1,i,0));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,1,i,1),relCellVol*weight*basis_vector_host(cell,1,i,1));
+          TEST_EQUALITY(weighted_basis_vector_host(cell,1,i,2),relCellVol*weight*basis_vector_host(cell,1,i,2));
 
-          TEST_EQUALITY(basis_values.weighted_div_basis(cell,0,i),relCellVol*weight*basis_values.div_basis(cell,0,i));
-          TEST_EQUALITY(basis_values.weighted_div_basis(cell,1,i),relCellVol*weight*basis_values.div_basis(cell,1,i));
+          TEST_EQUALITY(weighted_div_basis_host(cell,0,i),relCellVol*weight*div_basis_host(cell,0,i));
+          TEST_EQUALITY(weighted_div_basis_host(cell,1,i),relCellVol*weight*div_basis_host(cell,1,i));
        }
     }
 
@@ -551,29 +592,34 @@ namespace panzer {
 
     basis_values.applyOrientations(orientations);
 
+    Kokkos::deep_copy(basis_vector_host,basis_values.basis_vector.get_view());
+    Kokkos::deep_copy(div_basis_host,basis_values.div_basis.get_view());
+    Kokkos::deep_copy(weighted_basis_vector_host,basis_values.weighted_basis_vector.get_view());
+    Kokkos::deep_copy(weighted_div_basis_host,basis_values.weighted_div_basis.get_view());
+
     // check with orientations
     const double ortVal[6] = {  1.0,  1.0,  1.0,
                                -1.0, -1.0, -1.0 };
     for(unsigned int i=0;i<num_qp;i++) {
-       double weight = int_values.cub_weights(i);
+       double weight = cub_weights_host(i);
 
        // check basis values
        for(int cell=0;cell<num_cells;cell++) {
-         TEST_EQUALITY(int_values.jac_det(cell,i),relCellVol);
+         TEST_EQUALITY(jac_det_host(cell,i),relCellVol);
 
          for(int b=0;b<4;b++) {
            // check out basis on transformed elemented
-           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,0)/relCellVol,  basis_values.basis_vector(cell,b,i,0));
-           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_values.basis_ref_vector(b,i,1)/relCellVol,  basis_values.basis_vector(cell,b,i,1));
-           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*(1.0/3.0)*basis_values.basis_ref_vector(b,i,2)/relCellVol,  basis_values.basis_vector(cell,b,i,2));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_ref_vector_host(b,i,0)/relCellVol,  basis_vector_host(cell,b,i,0));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*0.5      *basis_ref_vector_host(b,i,1)/relCellVol,  basis_vector_host(cell,b,i,1));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*(1.0/3.0)*basis_ref_vector_host(b,i,2)/relCellVol,  basis_vector_host(cell,b,i,2));
 
-           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*basis_values.div_basis_ref(b,i)/relCellVol,basis_values.div_basis(cell,b,i));
+           TEST_EQUALITY(ortVal[faceOrts[cell][b]]*div_basis_ref_host(b,i)/relCellVol,div_basis_host(cell,b,i));
 
-           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,0),relCellVol*weight*basis_values.basis_vector(cell,b,i,0));
-           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,1),relCellVol*weight*basis_values.basis_vector(cell,b,i,1));
-           TEST_EQUALITY(basis_values.weighted_basis_vector(cell,b,i,2),relCellVol*weight*basis_values.basis_vector(cell,b,i,2));
+           TEST_EQUALITY(weighted_basis_vector_host(cell,b,i,0),relCellVol*weight*basis_vector_host(cell,b,i,0));
+           TEST_EQUALITY(weighted_basis_vector_host(cell,b,i,1),relCellVol*weight*basis_vector_host(cell,b,i,1));
+           TEST_EQUALITY(weighted_basis_vector_host(cell,b,i,2),relCellVol*weight*basis_vector_host(cell,b,i,2));
 
-           TEST_EQUALITY(basis_values.weighted_div_basis(cell,b,i),relCellVol*weight*basis_values.div_basis(cell,b,i));
+           TEST_EQUALITY(weighted_div_basis_host(cell,b,i),relCellVol*weight*div_basis_host(cell,b,i));
          }
        }
     }
@@ -583,7 +629,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, hcurl_basis_3d_pv)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-
 
     Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
@@ -627,51 +672,53 @@ namespace panzer {
     const size_type x = 0;
     const size_type y = 1;
     const size_type z = 2;
+    auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_view());
     for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
       int znum = cell % 4;
       int xleft = znum % 2;
       int yleft = int(znum/2);
       int zleft = int(cell/4);
 
-      node_coordinates(cell,0,x) = xleft*0.5;
-      node_coordinates(cell,0,y) = yleft*0.5;
-      node_coordinates(cell,0,z) = zleft*0.5;
+      node_coordinates_host(cell,0,x) = xleft*0.5;
+      node_coordinates_host(cell,0,y) = yleft*0.5;
+      node_coordinates_host(cell,0,z) = zleft*0.5;
 
-      node_coordinates(cell,1,x) = (xleft+1)*0.5;
-      node_coordinates(cell,1,y) = yleft*0.5;
-      node_coordinates(cell,1,z) = zleft*0.5;
+      node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,1,y) = yleft*0.5;
+      node_coordinates_host(cell,1,z) = zleft*0.5;
 
-      node_coordinates(cell,2,x) = (xleft+1)*0.5;
-      node_coordinates(cell,2,y) = (yleft+1)*0.5;
-      node_coordinates(cell,2,z) = zleft*0.5;
+      node_coordinates_host(cell,2,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,2,z) = zleft*0.5;
 
-      node_coordinates(cell,3,x) = xleft*0.5;
-      node_coordinates(cell,3,y) = (yleft+1)*0.5;
-      node_coordinates(cell,3,z) = zleft*0.5;
+      node_coordinates_host(cell,3,x) = xleft*0.5;
+      node_coordinates_host(cell,3,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,3,z) = zleft*0.5;
 
-      node_coordinates(cell,4,x) = xleft*0.5;
-      node_coordinates(cell,4,y) = yleft*0.5;
-      node_coordinates(cell,4,z) = (zleft+1)*0.5;
+      node_coordinates_host(cell,4,x) = xleft*0.5;
+      node_coordinates_host(cell,4,y) = yleft*0.5;
+      node_coordinates_host(cell,4,z) = (zleft+1)*0.5;
 
-      node_coordinates(cell,5,x) = (xleft+1)*0.5;
-      node_coordinates(cell,5,y) = yleft*0.5;
-      node_coordinates(cell,5,z) = (zleft+1)*0.5;
+      node_coordinates_host(cell,5,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,5,y) = yleft*0.5;
+      node_coordinates_host(cell,5,z) = (zleft+1)*0.5;
 
-      node_coordinates(cell,6,x) = (xleft+1)*0.5;
-      node_coordinates(cell,6,y) = (yleft+1)*0.5;
-      node_coordinates(cell,6,z) = (zleft+1)*0.5;
+      node_coordinates_host(cell,6,x) = (xleft+1)*0.5;
+      node_coordinates_host(cell,6,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,6,z) = (zleft+1)*0.5;
 
-      node_coordinates(cell,7,x) = xleft*0.5;
-      node_coordinates(cell,7,y) = (yleft+1)*0.5;
-      node_coordinates(cell,7,z) = (zleft+1)*0.5;
+      node_coordinates_host(cell,7,x) = xleft*0.5;
+      node_coordinates_host(cell,7,y) = (yleft+1)*0.5;
+      node_coordinates_host(cell,7,z) = (zleft+1)*0.5;
 
       out << "Cell " << cell << " = ";
       for(int i=0;i<8;i++)
-         out << "(" << node_coordinates(cell,i,x) << ", "
-                    << node_coordinates(cell,i,y) << ", "
-                    << node_coordinates(cell,i,z) << ") ";
+         out << "(" << node_coordinates_host(cell,i,x) << ", "
+                    << node_coordinates_host(cell,i,y) << ", "
+                    << node_coordinates_host(cell,i,z) << ") ";
       out << std::endl;
     }
+    Kokkos::deep_copy(node_coordinates.get_view(),node_coordinates_host);
 
     int_values.evaluateValues(node_coordinates);
 
@@ -911,28 +958,30 @@ namespace panzer {
     {
       const size_type x = 0;
       const size_type y = 1;
+      auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_view());
       for (size_type cell = 0; cell < node_coordinates.extent(0); ++cell) {
         int xleft = cell % 2;
         int yleft = int(cell/2);
 
-        node_coordinates(cell,0,x) = xleft*0.5;
-        node_coordinates(cell,0,y) = yleft*0.5;
+        node_coordinates_host(cell,0,x) = xleft*0.5;
+        node_coordinates_host(cell,0,y) = yleft*0.5;
 
-        node_coordinates(cell,1,x) = (xleft+1)*0.5;
-        node_coordinates(cell,1,y) = yleft*0.5;
+        node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,1,y) = yleft*0.5;
 
-        node_coordinates(cell,2,x) = (xleft+1)*0.5;
-        node_coordinates(cell,2,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,2,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
 
-        node_coordinates(cell,3,x) = xleft*0.5;
-        node_coordinates(cell,3,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,3,x) = xleft*0.5;
+        node_coordinates_host(cell,3,y) = (yleft+1)*0.5;
 
         out << "Cell " << cell << " = ";
         for(int i=0;i<4;i++)
-          out << "(" << node_coordinates(cell,i,x) << ", "
-              << node_coordinates(cell,i,y) << ") ";
+          out << "(" << node_coordinates_host(cell,i,x) << ", "
+              << node_coordinates_host(cell,i,y) << ") ";
         out << std::endl;
       }
+      Kokkos::deep_copy(node_coordinates.get_view(),node_coordinates_host);
     }
 
     int_values_vol.evaluateValues(node_coordinates);
@@ -954,18 +1003,20 @@ namespace panzer {
     TEST_EQUALITY(basis_values.basis_scalar.extent(1),4);
     TEST_EQUALITY(basis_values.basis_scalar.extent(2),num_qp);
 
-   // check basis values, control volume integration points are defined on physical cells
+    // check basis values, control volume integration points are defined on physical cells
+    auto ref_ip_coordinates_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values_vol.ref_ip_coordinates.get_view());
+    auto basis_scalar_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),basis_values.basis_scalar.get_view());
     for(int cell=0;cell<num_cells;cell++) {
 
        for(unsigned int i=0;i<num_qp;i++) {
-          double x = int_values_vol.ref_ip_coordinates(cell,i,0);
-          double y = int_values_vol.ref_ip_coordinates(cell,i,1);
+          double x = ref_ip_coordinates_host(cell,i,0);
+          double y = ref_ip_coordinates_host(cell,i,1);
 
           // check values
-          TEST_EQUALITY(basis_values.basis_scalar(cell,0,i),0.25*(1.0-x)*(1.0-y));
-          TEST_EQUALITY(basis_values.basis_scalar(cell,1,i),0.25*(1.0+x)*(1.0-y));
-          TEST_EQUALITY(basis_values.basis_scalar(cell,2,i),0.25*(1.0+x)*(1.0+y));
-          TEST_EQUALITY(basis_values.basis_scalar(cell,3,i),0.25*(1.0-x)*(1.0+y));
+          TEST_EQUALITY(basis_scalar_host(cell,0,i),0.25*(1.0-x)*(1.0-y));
+          TEST_EQUALITY(basis_scalar_host(cell,1,i),0.25*(1.0+x)*(1.0-y));
+          TEST_EQUALITY(basis_scalar_host(cell,2,i),0.25*(1.0+x)*(1.0+y));
+          TEST_EQUALITY(basis_scalar_host(cell,3,i),0.25*(1.0-x)*(1.0+y));
        }
     }
   }

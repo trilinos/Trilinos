@@ -136,17 +136,17 @@ namespace panzer {
     //! Value correspondes to integration order.  Use the offest for indexing.
     //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<int> > ir_degrees;
-    
+
     //TEUCHOS_DEPRECATED
-    std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
-    
+    mutable std::vector<Teuchos::RCP<panzer::IntegrationValues2<double> > > int_rules;
+
     //! Value corresponds to basis type.  Use the offest for indexing.
     //TEUCHOS_DEPRECATED
     Teuchos::RCP< std::vector<std::string> > basis_names;
 
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     //TEUCHOS_DEPRECATED
-    std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
+    mutable std::vector<Teuchos::RCP< panzer::BasisValues2<double> > > bases;
 
     /** Grab the face connectivity for this workset
      * DEPRECATED - use: workset.getSubcellConnectivity(workset.numDimensions()-1)
@@ -343,7 +343,7 @@ namespace panzer {
 
   };
 
-  /** This is the main workset object. Not that it inherits from WorksetDetails, this
+  /** This is the main workset object. Note that it inherits from WorksetDetails, this
     * is to maintain backwards compatibility in the use of the workset object. The addition
     * of a details vector supports things like DG based assembly.
     */
@@ -391,7 +391,7 @@ namespace panzer {
     size_t numDetails() const { return Teuchos::nonnull(other) ? 2 : 1; }
 
   private:
-    std::size_t identifier_;    
+    std::size_t identifier_;
   };
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);

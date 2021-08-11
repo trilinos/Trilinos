@@ -157,8 +157,8 @@ BackwardEulerStepper<Scalar>::unSetInterpolator()
 {
   RCP<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
   interpolator_ = Teuchos::null;
-  return(temp_interpolator);
-  isInitialized_ = false;
+  //isInitialized_ = false;
+  return temp_interpolator; // Fix Rythmos_BackwardEulerStepper_def.hpp:162:1: error: control reaches end of non-void function [-Werror=return-type]
 }
 
 

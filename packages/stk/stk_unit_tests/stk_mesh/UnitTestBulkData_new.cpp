@@ -35,7 +35,6 @@
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::iterator
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityCommListInfo.hpp"
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, operator<<
@@ -646,7 +645,7 @@ TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 
   if ( to_remove_not_ghosted.size() > 0 )
   {
-    ASSERT_THROW ( bulk.change_ghosting ( ghosting , empty_send , to_remove_not_ghosted ) , std::runtime_error );
+    ASSERT_NO_THROW( bulk.change_ghosting ( ghosting , empty_send , to_remove_not_ghosted ) );
   }
   else
   {

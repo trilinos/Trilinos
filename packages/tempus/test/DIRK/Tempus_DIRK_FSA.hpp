@@ -169,7 +169,7 @@ void test_sincos_fsa(const std::string& method_name,
       pl->sublist("Default Integrator")
          .sublist("Time Step Control").set("Initial Time Step", dt);
       RCP<Tempus::IntegratorForwardSensitivity<double> > integrator =
-        Tempus::integratorForwardSensitivity<double>(pl, model);
+        Tempus::createIntegratorForwardSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();
 
       // Initial Conditions

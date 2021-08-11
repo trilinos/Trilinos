@@ -180,24 +180,22 @@ void identityRowIndices(const Tpetra::Map<LO,GO,NT> & rowMap, const Tpetra::CrsM
       GO rowGID = rowMap.getGlobalElement(i);
 
       size_t numEntries = mat.getNumEntriesInGlobalRow (i);
-      std::vector<GO> indices(numEntries);
-      std::vector<ST> values(numEntries);
-      const Teuchos::ArrayView<GO> indices_av(indices);
-      const Teuchos::ArrayView<ST> values_av(values);
+      auto indices = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_global_inds_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
+      auto values = typename Tpetra::CrsMatrix<ST,LO,GO,NT>::nonconst_values_host_view_type(Kokkos::ViewAllocateWithoutInitializing("rowIndices"),numEntries);
 
-      mat.getGlobalRowCopy(rowGID,indices_av,values_av,numEntries);
+      mat.getGlobalRowCopy(rowGID,indices,values,numEntries);
 
       // loop over the columns of this row
       for(size_t j=0;j<numEntries;j++) {
-         GO colGID = indices_av[j];
+        GO colGID = indices(j);
 
-         // look at row entries
-         if(colGID==rowGID) rowIsIdentity &= values_av[j]==1.0;
-         else               rowIsIdentity &= values_av[j]==0.0;
+        // look at row entries
+        if(colGID==rowGID) rowIsIdentity &= values(j)==1.0;
+        else               rowIsIdentity &= values(j)==0.0;
 
-         // not a dirchlet row...quit
-         if(not rowIsIdentity)
-            break;
+        // not a dirchlet row...quit
+        if(not rowIsIdentity)
+          break;
       }
 
       // save a row that is dirchlet

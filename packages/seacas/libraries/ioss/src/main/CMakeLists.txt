@@ -219,22 +219,6 @@ ENDIF()
 
 IF (TPL_ENABLE_CGNS)
 
-if ( CGNS_CGNSLIST_BINARY )
-   # Do nothing. Set earlier in config process...
-else()
-   find_program (CGNS_CGNSLIST_BINARY
-	     NAME cgnslist
-	     PATHS
-	       ${CGNS_BINARY_DIR}
-               ${CGNS_LIBRARY_DIRS}/../bin
-               $ENV{ACCESS}/bin
-               $ENV{CGNS_DIR}/bin
-               $ENV{CGNS_DIR}/cgnslist
-               ENV PATH
-	        ${CGNS_DIR}/bin
-	     )
-endif()
-
 if ( CGNS_CGNSDIFF_BINARY )
    # Do nothing. Set earlier in config process...
 else()
@@ -251,15 +235,13 @@ else()
 	     )
 endif()
 
-if ( CGNS_CGNSLIST_BINARY )
+if ( CGNS_CGNSDIFF_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(exodus64_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --64 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld 8-block64.cgns
-     OUTPUT_FILE exodus64_to_unstructured_cgns.tmp
-   TEST_2 CMND grep ARGS -v Information exodus64_to_unstructured_cgns.tmp OUTPUT_FILE exodus64_to_unstructured_cgns.out
-   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus64_to_unstructured_cgns.out
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d 8-block64.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.cgns.gold
+     NUM_MPI_PROCS 1
   COMM mpi serial
   )
 
@@ -267,10 +249,7 @@ TRIBITS_ADD_ADVANCED_TEST(generated32_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS --in_type generated 2x2x8+times:2+variables:nodal,2,element,3 generated32.cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1-4
-   TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld generated32.cgns
-     OUTPUT_FILE generated32_to_unstructured_cgns.tmp
-   TEST_2 CMND grep ARGS -v Information generated32_to_unstructured_cgns.tmp OUTPUT_FILE generated32_to_unstructured_cgns.out
-   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated32_to_unstructured_cgns.out
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d generated32.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/generated.cgns.gold
   COMM mpi serial
   )
 
@@ -278,10 +257,7 @@ TRIBITS_ADD_ADVANCED_TEST(generated64_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS --in_type generated --64 2x2x8+times:2+variables:nodal,2,element,3 generated64.cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1-4
-   TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld generated64.cgns
-     OUTPUT_FILE generated64_to_unstructured_cgns.tmp
-   TEST_2 CMND grep ARGS -v Information generated64_to_unstructured_cgns.tmp OUTPUT_FILE generated64_to_unstructured_cgns.out
-   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/generated_to_unstructured_cgns.gold generated64_to_unstructured_cgns.out
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d generated64.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/generated.cgns.gold
   COMM mpi serial
   )
 
@@ -289,10 +265,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus32_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block32.cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS ${NPROCS}
-   TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld 8-block32.cgns
-     OUTPUT_FILE exodus32_to_unstructured_cgns.tmp
-   TEST_2 CMND grep ARGS -v Information exodus32_to_unstructured_cgns.tmp OUTPUT_FILE exodus32_to_unstructured_cgns.out
-   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus32_to_unstructured_cgns.out
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d 8-block32.cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.cgns.gold
   COMM mpi serial
   )
 endif()
@@ -613,16 +586,11 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS --in_type pamgen ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.i pamgen.cgns
      NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1-4
-   TEST_1 CMND ${CGNS_CGNSLIST_BINARY} ARGS -ld pamgen.cgns
-     OUTPUT_FILE pamgen_to_unstructured_cgns.tmp
-   TEST_2 CMND grep ARGS -v Information pamgen_to_unstructured_cgns.tmp OUTPUT_FILE pamgen_to_unstructured_cgns.out
-   TEST_3 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen_to_unstructured_cgns.gold pamgen_to_unstructured_cgns.out
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/pamgen.cgns.gold pamgen.cgns
   COMM mpi serial
   )
 ENDIF()
-endif()
 
-if (CGNS_CGNSDIFF_BINARY)
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_assembly_copy
    TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/assemblies.cgns assemblies-out.cgns
      NUM_MPI_PROCS 1-4
@@ -644,10 +612,10 @@ if (TPL_ENABLE_MPI)
         NUM_MPI_PROCS 1
      COMM mpi
      )
-endif(TPL_ENABLE_MPI)
-endif(CGNS_CGNSDIFF_BINARY)
+endif()
+endif()
 
-ENDIF(TPL_ENABLE_CGNS)
+ENDIF()
 
 IF (TPL_ENABLE_MPI AND ${PROJECT_NAME}_ENABLE_Zoltan)
 TRIBITS_ADD_TEST(

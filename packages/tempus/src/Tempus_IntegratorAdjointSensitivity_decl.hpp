@@ -11,7 +11,7 @@
 
 // Tempus
 #include "Tempus_config.hpp"
-#include "Tempus_IntegratorBasicOld.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointAuxSensitivityModelEvaluator.hpp"
 
 namespace Tempus {
@@ -39,17 +39,34 @@ namespace Tempus {
  *
  * Because of limitations on the steppers, the implementation currently assumes
  * df/dxdot is a constant matrix.
+ *
+ * To extract the final solution x(T) and sensitivity dg/dp(T) one should use
+ * the getX() and getDgDp() methods, which return these quantities directly.
+ * One can also extract this data for all times from the solution history,
+ * however the data is stored in Thyra product vectors which requires
+ * knowledge of the internal implementation.
  */
 template<class Scalar>
 class IntegratorAdjointSensitivity :
-    virtual public Tempus::Integrator<Scalar>,
-    virtual public Teuchos::ParameterListAcceptor
+    virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /** \brief Constructor with ParameterList and model, and will be fully
-   * initialized. */
-  /*!
+  /** \brief Full Constructor with model, and will be fully initialized. 
+   *
+   * \param[in] model                 The forward physics ModelEvaluator
+   * \param[in] state_integrator      Forward state Integrator for the forward problem
+   * \param[in] adjoint_model         ModelEvaluator for the adjoint physics/problem 
+   * \param[in] adjoint_aux_model     ModelEvaluator for the auxiliary adjoint physics/problem 
+   * \param[in] adjoint_integrator    Time integrator for the adjoint problem
+   * \param[in] solution_history      The forward state solution history
+   * \param[in] p_index               Sensitivity parameter index
+   * \param[in] g_index               Response function index
+   * \param[in] g_depends_on_p        Does response depends on parameters?
+   * \param[in] f_depends_on_p        Does residual depends on parameters?
+   * \param[in] ic_depends_on_p       Does the initial condition depends on parameters?
+   * \param[in] mass_matrix_is_identity Is the mass matrix an identity matrix?
+   *
    * In addition to all of the regular integrator options, the supplied
    * parameter list supports the following options contained within a sublist
    * "Sensitivities" from the top-level parameter list:
@@ -76,12 +93,35 @@ public:
    *    <li> "Mass Matrix Is Identity" (default: false) Whether the mass matrix
    *         is the identity matrix, in which some computations can be skipped.
    * </ul>
+   *
+   * To support use-cases with explicitly computed adjoint operators, the
+   * constructor takes an additional model evaluator for computing the adjoint
+   * W/W_op.  It is assumed the operator returned by this model evaluator is
+   * the adjoint, and so will not be transposed.  It is also assumed this
+   * model evaluator accepts the same inArgs as the forward model, however it
+   * only requires supporting the adjoint W/W_op outArgs.
+   */
+
+  /*! \brief Version of the constructor taking a single model evaluator. */
+  /*!
+   * This version takes a single model evaluator for the case when the adjoint
+   * is implicitly determined from the forward operator by the (conjugate)
+   * transpose.
    */
   IntegratorAdjointSensitivity(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model,
+      const Teuchos::RCP<IntegratorBasic<Scalar>> &state_integrator,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &adjoint_model,
+      const Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > &adjoint_aux_model,
+      const Teuchos::RCP<IntegratorBasic<Scalar>> &ajoint_integrator,
+      const Teuchos::RCP<SolutionHistory<Scalar> > &solution_history,
+      const int p_index,
+      const int g_index,
+      const bool g_depends_on_p,
+      const bool f_depends_on_p,
+      const bool ic_depends_on_p,
+      const bool mass_matrix_is_identity);
 
-  /// Destructor
   /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
   IntegratorAdjointSensitivity();
 
@@ -149,17 +189,6 @@ public:
   /// Return adjoint sensitivity stored in gradient format
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
 
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
-      override;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override;
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
-
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
-      const override;
-  //@}
-
   /// \name Overridden from Teuchos::Describable
   //@{
     std::string description() const override;
@@ -173,38 +202,57 @@ protected:
   Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >
   createAdjointModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
 
   void buildSolutionHistory(
     const Teuchos::RCP<const SolutionHistory<Scalar> >& state_solution_history,
     const Teuchos::RCP<const SolutionHistory<Scalar> >& adjoint_solution_history);
 
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > adjoint_integrator_;
-  Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> model_;
+  Teuchos::RCP<IntegratorBasic<Scalar>> state_integrator_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> adjoint_model_;
+  Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_aux_model_;
+  Teuchos::RCP<IntegratorBasic<Scalar>> adjoint_integrator_;
+  Teuchos::RCP<SolutionHistory<Scalar>> solutionHistory_;
   int p_index_;
   int g_index_;
   bool g_depends_on_p_;
   bool f_depends_on_p_;
   bool ic_depends_on_p_;
   bool mass_matrix_is_identity_;
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > dxdp_init_;
-  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > dgdp_;
+  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> dxdp_init_;
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> dgdp_;
 };
 
 /// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
-integratorAdjointSensitivity(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+/**
+ * @brief Nonmember constructor
+ *
+ * This nonmember constructor calls parses the `pList` provided to constructor
+ * the sub-objects needed to call the full `IntegratorAdjointSensitivity`
+ * construtor
+ *
+ * @param pList         ParameterList defining the integrator options and options
+ *                      defining the sensitivity analysis
+ * @param model         ModelEvaluator for the problem
+ * @param adjoing_model ModelEvaluator for the adjoint problem. Optional. Default value is null.
+ *                      When not provided, the adjoint_model will be constructed
+ *                      from the forward physics model.
+ *
+ * @return Time integrator implementing adjoint sensitivity
+ */
+template <class Scalar>
+Teuchos::RCP<IntegratorAdjointSensitivity<Scalar>>
+createIntegratorAdjointSensitivity(
+    Teuchos::RCP<Teuchos::ParameterList> pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar>> &model
+    ,const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& adjoint_model=Teuchos::null);
 
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
-integratorAdjointSensitivity();
+createIntegratorAdjointSensitivity();
 
 } // namespace Tempus
 

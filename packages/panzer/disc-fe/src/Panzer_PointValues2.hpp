@@ -108,11 +108,11 @@ namespace panzer {
       evaluateValues(in_num_cells); }
 
     //! Return reference cell coordinates this class uses (IP,Dim) sized
-    PHX::MDField<Scalar,IP,Dim> & getRefCoordinates() const 
+    const PHX::MDField<Scalar,IP,Dim> & getRefCoordinates() const
     { return coords_ref; }
 
     //! Return the vertex coordinates this class uses (Cell,NODE,Dim) sized
-    PHX::MDField<Scalar,Cell,NODE,Dim> & getVertexCoordinates() const
+    const PHX::MDField<Scalar,Cell,NODE,Dim> & getVertexCoordinates() const
     { return node_coordinates; }
 
     // input fields: both mutable because of getRefCoordinates/getVertexCoordinates

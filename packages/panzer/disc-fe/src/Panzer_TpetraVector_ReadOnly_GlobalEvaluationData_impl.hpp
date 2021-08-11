@@ -136,18 +136,15 @@ initializeData()
    PHX::ExecSpace().fence();
 
    typedef typename VectorType::dual_view_type::t_dev::memory_space DMS;
-   auto values_2d = ghostedVector_->template getLocalView<DMS>();
-   auto values = Kokkos::subview(values_2d, Kokkos::ALL (), 0);
-   auto values_h = Kokkos::create_mirror_view(values);
+   auto values = ghostedVector_->getLocalViewHost(Tpetra::Access::OverwriteAll);
 
    // initialize some ghosted values to the user specified values
    for(std::size_t i=0;i<filteredPairs_.size();i++) {
      const std::vector<int> & lids = filteredPairs_[i].first;
      double value = filteredPairs_[i].second;
      for(std::size_t j=0;j<lids.size();j++)
-       values_h(lids[j]) = value;
+       values(lids[j], 0) = value;
    }
-   Kokkos::deep_copy(values, values_h);
 }
 
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>

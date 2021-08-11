@@ -35,8 +35,9 @@
 #ifndef STKTOPOLOGY_DETAIL_EQUIVALENT_HELPER_HPP
 #define STKTOPOLOGY_DETAIL_EQUIVALENT_HELPER_HPP
 
+#include "stk_topology/topology_decl.hpp"
+#include "stk_util/stk_config.h"
 #include <algorithm>
-
 #include <type_traits>
 
 namespace stk { namespace topology_detail {

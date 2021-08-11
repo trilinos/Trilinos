@@ -24,9 +24,23 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.24 (2021/05/04)";
+  const char *       version_string = "5.29 (2021/07/22)";
 
   void output_copyright();
+
+  std::string get_value(const std::string &option, const std::string &optional_value)
+  {
+    size_t      index = option.find_first_of('=');
+    std::string value;
+
+    if (index != std::string::npos) {
+      value = option.substr(index + 1);
+    }
+    else {
+      value = optional_value;
+    }
+    return value;
+  }
 
   unsigned hash_symbol(const char *symbol)
   {
@@ -55,6 +69,10 @@ namespace SEAMS {
     if (!outputStream.empty()) {
       outputStream.top()->flush();
     }
+
+    // May need to delete this if set via --info=filename command.
+    // May need a flag to determine this...
+    infoStream->flush();
 
     if ((stringScanner != nullptr) && stringScanner != lexer) {
       delete stringScanner;
@@ -223,7 +241,7 @@ namespace SEAMS {
       return;
     }
 
-    bool              colorize = (infoStream == &std::cerr) && isatty(fileno(stderr));
+    bool              colorize = (infoStream == &std::cout) && isatty(fileno(stdout));
     std::stringstream ss;
     if (prefix) {
       if (colorize) {
@@ -288,8 +306,8 @@ namespace SEAMS {
     }
 
     /* If pointer still null, print error message */
-    if (pointer == nullptr || pointer->bad() || !pointer->good()) {
-      std::string err = "Can't open " + file;
+    if (pointer == nullptr || pointer->fail() || pointer->bad() || !pointer->good()) {
+      std::string err = "Can't open '" + file + "'. " + strerror(errno);
       error(err, false);
       delete pointer;
       pointer = nullptr;
@@ -443,17 +461,18 @@ namespace SEAMS {
     else if (option == "--exit_on" || option == "-e") {
       ap_options.end_on_exit = true;
     }
-    else if (option.find("--include") != std::string::npos || (option[1] == 'I')) {
-      std::string value;
+    else if (option.find("--info") != std::string::npos) {
+      std::string value = get_value(option, optional_value);
+      ret_value         = value == optional_value ? 1 : 0;
 
-      size_t index = option.find_first_of('=');
-      if (index != std::string::npos) {
-        value = option.substr(index + 1);
+      auto info = open_file(value, "w");
+      if (info != nullptr) {
+        set_error_streams(nullptr, nullptr, info);
       }
-      else {
-        value     = optional_value;
-        ret_value = 1;
-      }
+    }
+    else if (option.find("--include") != std::string::npos || (option[1] == 'I')) {
+      std::string value = get_value(option, optional_value);
+      ret_value         = value == optional_value ? 1 : 0;
 
       if (is_directory(value)) {
         ap_options.include_path = value;
@@ -473,14 +492,8 @@ namespace SEAMS {
         comment = option.substr(2);
       }
       else {
-        size_t index = option.find_first_of('=');
-        if (index != std::string::npos) {
-          comment = option.substr(index + 1);
-        }
-        else {
-          comment   = optional_value;
-          ret_value = 1;
-        }
+        comment   = get_value(option, optional_value);
+        ret_value = comment == optional_value ? 1 : 0;
       }
       symrec *ptr = getsym("_C_");
       if (ptr != nullptr) {
@@ -500,7 +513,7 @@ namespace SEAMS {
              "encountered\n"
           << " --errors_and_warnings_fatal or -F: Exit program with nonzero status if "
              "warnings are encountered\n"
-          << "--require_defined or -R: Tread undefined variable warnings as fatal\n"
+          << "--require_defined or -R: Treat undefined variable warnings as fatal\n"
           << "--one_based_index or -1: Array indexing is one-based (default = zero-based)\n"
           << "    --interactive or -i: Interactive use, no buffering           \n"
           << "    --include=P or -I=P: Include file or include path            \n"
@@ -511,8 +524,9 @@ namespace SEAMS {
           << "        --exit_on or -e: End when 'Exit|EXIT|exit' entered       \n"
           << "           --help or -h: Print this list                         \n"
           << "        --message or -M: Print INFO messages                     \n"
+          << "            --info=file: Output INFO messages (e.g. DUMP() output) to file.\n"
           << "      --nowarning or -W: Do not print WARN messages              \n"
-          << "  --comment=char or -c=char: Change comment character to 'char'      \n"
+          << "  --comment=char or -c=char: Change comment character to 'char'  \n"
           << "      --copyright or -C: Print copyright message                 \n"
           << "   --keep_history or -k: Keep a history of aprepro substitutions.\n"
           << "                         (not for general interactive use)       \n"

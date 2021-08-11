@@ -1517,8 +1517,8 @@ namespace Ioex {
 
         std::vector<Ioss::Field> fields;
         int64_t                  count = entity->entity_count();
-        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::TRANSIENT, get_field_recognition(),
-                                get_field_separator(), local_truth, fields);
+        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::TRANSIENT, this, local_truth,
+                                fields);
 
         for (const auto &field : fields) {
           entity->field_add(field);
@@ -1579,8 +1579,8 @@ namespace Ioex {
 
         std::vector<Ioss::Field> fields;
         int64_t                  count = 1;
-        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::REDUCTION, get_field_recognition(),
-                                get_field_separator(), local_truth, fields);
+        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::REDUCTION, this, local_truth,
+                                fields);
 
         for (const auto &field : fields) {
           entity->field_add(field);
@@ -2090,14 +2090,10 @@ namespace Ioex {
       // attribute named "attribute_1", "attribute_2", ..., "attribute_#"
       // This is controlled by the database property
       // "IGNORE_ATTRIBUTE_NAMES"
-      char field_suffix_separator = get_field_separator();
-      bool attributes_named       = true; // Possibly reset below; note that even if ignoring
+      bool attributes_named = true; // Possibly reset below; note that even if ignoring
       // attribute names, they are still 'named'
 
       if (properties.exists("IGNORE_ATTRIBUTE_NAMES")) {
-        field_suffix_separator = ' '; // Do not combine into a
-        // higher-order storage type.
-
         for (int i = 0; i < attribute_count; i++) {
           std::string tmp = fmt::format("attribute_{}", i + 1);
           Ioss::Utils::copy_string(names[i], tmp, maximumNameLength + 1);
@@ -2143,8 +2139,7 @@ namespace Ioex {
       if (attributes_named) {
         std::vector<Ioss::Field> attributes;
         Ioss::Utils::get_fields(my_element_count, names, attribute_count, Ioss::Field::ATTRIBUTE,
-                                get_field_recognition(), field_suffix_separator, nullptr,
-                                attributes);
+                                this, nullptr, attributes);
         int offset = 1;
         for (const auto &field : attributes) {
           if (block->field_exists(field.get_name())) {

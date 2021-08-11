@@ -55,7 +55,7 @@ public:
   ~EmptyStkFieldSyncDebugger() = default;
 
   inline void host_stale_access_entity_check(const stk::mesh::Entity &, const char *, int) {}
-  inline void host_stale_access_entity_check(const unsigned &, const Bucket::size_type &, const char *, int) {}
+  inline void host_stale_access_entity_check(const unsigned &, const unsigned &, const char *, int) {}
   inline void host_stale_access_bucket_check(const stk::mesh::Bucket &, const char *, int) {}
   inline void host_stale_access_bucket_check(const unsigned &, const char *, int) {}
   inline void clear_last_field_value() {}
@@ -70,7 +70,7 @@ public:
   ~StkFieldSyncDebugger() = default;
 
   void host_stale_access_entity_check(const stk::mesh::Entity & entity, const char * fileName, int lineNumber);
-  void host_stale_access_entity_check(const unsigned & bucketId, const Bucket::size_type & bucketOrd, const char * fileName, int lineNumber);
+  void host_stale_access_entity_check(const unsigned & bucketId, const unsigned & bucketOrd, const char * fileName, int lineNumber);
   void host_stale_access_bucket_check(const stk::mesh::Bucket & bucket, const char * fileName, int lineNumber);
   void host_stale_access_bucket_check(const unsigned & bucketId, const char * fileName, int lineNumber);
   void clear_last_field_value();

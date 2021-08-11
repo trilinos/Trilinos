@@ -94,7 +94,7 @@ namespace panzer {
       // construct orientation information
       for (int c=0;c<numElementsPerBlock;++c) {
         const int localCellId = elementBlock.at(c);
-        PHX::View<const panzer::GlobalOrdinal*>
+        Kokkos::View<const panzer::GlobalOrdinal*,Kokkos::HostSpace>
           nodes(connMgr.getConnectivity(localCellId), numVertexPerCell);
         orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
       }

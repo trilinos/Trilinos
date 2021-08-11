@@ -241,10 +241,12 @@ bool IDs<id_t>::TpetraDDTest()
 
   // Use the multivector for counting number of occurrences of each id
 
-  vectordata_t idData = idVec.getDataNonConst();
-  for (auto it = uniqueIds.begin(); it != uniqueIds.end(); it++) {
-    id_t idx = idMap->getLocalElement(it->first);
-    idData[idx] = it->second;
+  {
+    vectordata_t idData = idVec.getDataNonConst();
+    for (auto it = uniqueIds.begin(); it != uniqueIds.end(); it++) {
+      id_t idx = idMap->getLocalElement(it->first);
+      idData[idx] = it->second;
+    }
   }
 
   printMap(*idMap, "idMap ");
@@ -300,9 +302,11 @@ bool IDs<id_t>::TpetraDDTest()
 
   // Check the result
   size_t cntShared = 0;
-  idData = idVec.getDataNonConst();
-  for (size_t i = 0; i < idVec.getLocalLength(); i++)
-    if (idData[i] > 1) cntShared++;
+  {
+    auto idData = idVec.getDataNonConst();
+    for (size_t i = 0; i < idVec.getLocalLength(); i++)
+      if (idData[i] > 1) cntShared++;
+  }
 
   std::cout << comm->getRank() << " cntShared = " << cntShared
                                << "; nShared = " << nShared << std::endl;

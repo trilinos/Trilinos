@@ -2372,6 +2372,12 @@ namespace Tpetra {
     void
     assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
 
+    /// \brief Return another MultiVector with the same entries, but
+    ///   converted to a different Scalar type \c T.
+    template <class T>
+    Teuchos::RCP<MultiVector<T, LocalOrdinal, GlobalOrdinal, Node> >
+    convert () const;
+
 
     // \brief Checks to see if the local length, number of vectors and size of Scalar type match
     /// \param src [in] MultiVector

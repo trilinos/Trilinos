@@ -177,7 +177,7 @@ public:
 
     struct _variable
     {
-      Variable *variable;
+      Variable* variable;
     } variable;
 
     struct _function
@@ -949,10 +949,7 @@ parseRValue(
 
 } // namespace Parser
 
-Eval::Eval(
-  VariableMap::Resolver & resolver,
-  const std::string & expression,
-  Variable::ArrayOffset arrayOffsetType)
+Eval::Eval(VariableMap::Resolver & resolver, const std::string & expression, Variable::ArrayOffset arrayOffsetType)
   : m_variableMap(resolver),
     m_expression(expression),
     m_syntaxStatus(false),
@@ -961,9 +958,7 @@ Eval::Eval(
     m_arrayOffsetType(arrayOffsetType)
 {}
 
-Eval::Eval(
-  const std::string & expression,
-  Variable::ArrayOffset arrayOffsetType)
+Eval::Eval(const std::string & expression, Variable::ArrayOffset arrayOffsetType)
   : m_variableMap(VariableMap::getDefaultResolver()),
     m_expression(expression),
     m_syntaxStatus(false),
@@ -972,29 +967,24 @@ Eval::Eval(
     m_arrayOffsetType(arrayOffsetType)
 {}
 
-Eval::~Eval()
-{
-  auto& myThreadData = m_nodes.getMyThreadEntry();
-  for (auto& node : myThreadData) {
-    delete node;
-  }
-}
+Eval::Eval(const Eval& otherEval) 
+  : m_variableMap(otherEval.m_variableMap),
+    m_expression(otherEval.m_expression),
+    m_syntaxStatus(otherEval.m_syntaxStatus),
+    m_parseStatus(otherEval.m_parseStatus),
+    m_headNode(otherEval.m_headNode),
+    m_nodes(otherEval.m_nodes),
+    m_arrayOffsetType(otherEval.m_arrayOffsetType)
+{} 
 
-Node *
-Eval::newNode(
-  int           opcode)
-{
-  auto& myThreadData = m_nodes.getMyThreadEntry();
-  myThreadData.push_back(new Node(static_cast<Opcode>(opcode), this));
-  return myThreadData.back();
-}
+Eval::~Eval() 
+{}
 
-std::size_t concurrency() {
-#if defined( _OPENMP )
-  return omp_get_max_threads();
-#else
-  return 1;
-#endif
+Node*
+Eval::newNode(int opcode)
+{
+  m_nodes.push_back(std::make_shared<Node>(static_cast<Opcode>(opcode), this));
+  return m_nodes.back().get();
 }
 
 void
@@ -1003,23 +993,16 @@ Eval::syntax()
   m_syntaxStatus = false;
   m_parseStatus = false;
 
-#ifdef _OPENMP
-  std::size_t N = concurrency();
-#pragma omp parallel for
-  for(std::size_t j = 0; j < N; ++j)
-#endif
-  {
-    try {
-      // Validate the characters
-      LexemVector lex_vector = tokenize(m_expression);
+  try {
+    // Validate the characters
+    LexemVector lex_vector = tokenize(m_expression);
 
-      // Call the multiparse routine to parse subexpressions
-      m_headNode.getMyThreadEntry() = Parser::parseStatements(*this, lex_vector.begin(), lex_vector.end());
+    // Call the multiparse routine to parse subexpressions
+    m_headNode = Parser::parseStatements(*this, lex_vector.begin(), lex_vector.end());
 
-      m_syntaxStatus = true;
-    }
-    catch (std::runtime_error &) {
-    }
+    m_syntaxStatus = true;
+  }
+  catch (std::runtime_error &) {
   }
 }
 
@@ -1053,9 +1036,8 @@ Eval::parse()
 void
 Eval::resolve()
 {
-  auto& variableMap = m_variableMap.getMyThreadEntry();
-  for (VariableMap::iterator it = variableMap.begin(); it != variableMap.end(); ++it) {
-    variableMap.getResolver().resolve(it);
+  for (VariableMap::iterator it = m_variableMap.begin(); it != m_variableMap.end(); ++it) {
+    m_variableMap.getResolver().resolve(it);
   }
 }
 
@@ -1070,9 +1052,8 @@ Eval::evaluate() const
   double returnValue = 0.0;
   try
   {
-    auto headNode = m_headNode.getMyThreadEntry();
-    if(headNode) {
-      returnValue = headNode->eval();
+    if(m_headNode) {
+      returnValue = m_headNode->eval();
     }
   }
   catch(expression_evaluation_exception &)
@@ -1086,11 +1067,77 @@ bool
 Eval::undefinedFunction() const
 {
   /* Check for an undefined function in any allocated node */
-  auto& myThreadData = m_nodes.getMyThreadEntry();
-  for (unsigned int i=0; i<myThreadData.size(); i++) {
-    if (myThreadData[i]->m_data.function.undefinedFunction) return true;
+  for (unsigned int i=0; i<m_nodes.size(); i++) {
+    if (m_nodes[i]->m_data.function.undefinedFunction) return true;
   }
   return false;
+}
+
+bool 
+Eval::is_constant_expression() const
+{
+  return m_variableMap.empty();
+}
+
+bool 
+Eval::is_variable(const std::string& variableName) const
+{
+  return (m_variableMap.count(variableName) > 0);
+}
+
+bool
+Eval::is_scalar(const std::string& variableName) const
+{
+  auto variableIterator = m_variableMap.find(variableName);
+
+  if (variableIterator == m_variableMap.end()) { 
+    return false; 
+  }
+  
+  int variableLength = variableIterator->second->getLength();
+  return variableLength == 1 || variableLength == std::numeric_limits<int>::max();  
+}
+
+std::vector<std::string> 
+Eval::get_variable_names() const
+{
+  std::vector<std::string> variableList;
+  for(auto& currentVariable : m_variableMap) {
+    std::string variableName = currentVariable.first;
+    variableList.push_back(variableName);
+  }
+  
+  return variableList;
+}
+
+std::vector<std::string> 
+Eval::get_dependent_variable_names() const
+{
+  std::vector<std::string> dependentVariableList;
+  for(auto& currentVariable : m_variableMap) {
+    std::string variableName = currentVariable.first;
+    stk::expreval::Variable* variable = currentVariable.second.get();
+    if (variable->isDependent()) {
+      dependentVariableList.push_back(variableName);
+    }
+  }
+  
+  return dependentVariableList;
+}
+
+std::vector<std::string> 
+Eval::get_independent_variable_names() const
+{
+  std::vector<std::string> independentVariableList;
+  for(auto& currentVariable : m_variableMap) {
+    std::string variableName = currentVariable.first;
+    stk::expreval::Variable* variable = currentVariable.second.get();
+    if (!(variable->isDependent())) {
+      independentVariableList.push_back(variableName);
+    }
+  }
+  
+  return independentVariableList;
 }
 
 } // namespace expreval

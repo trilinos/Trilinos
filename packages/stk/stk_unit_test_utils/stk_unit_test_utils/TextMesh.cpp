@@ -19,7 +19,6 @@
 #include <vector>                                    // for vector
 
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for field_data
@@ -491,8 +490,10 @@ private:
 
   void add_element(const ElementData& elem)
   {
-    stk::mesh::Part* part = m_meta.get_part(elem.partName);
-    stk::mesh::declare_element(m_bulk, *part, elem.identifier, elem.nodeIds);
+    stk::mesh::PartVector parts;
+    parts.push_back(m_meta.get_part(elem.partName));
+    parts.push_back(&m_meta.get_topology_root_part(elem.topology));
+    stk::mesh::declare_element(m_bulk, parts, elem.identifier, elem.nodeIds);
   }
 
   void setup_node_sharing()

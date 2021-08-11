@@ -36,7 +36,6 @@
 // clang-format off
 #include <stk_io/IossBridge.hpp>
 #include <Ioss_IOFactory.h>                          // for IOFactory
-#include <Ioss_NullEntity.h>                         // for NullEntity
 #include <assert.h>                                  // for assert
 #include <math.h>                                    // for log10
 #include <Shards_Array.hpp>                          // for ArrayDimension
@@ -84,7 +83,6 @@
 #include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
 #include "mpi.h"                                     // for MPI_COMM_SELF
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase, etc
 #include "stk_mesh/base/FieldRestriction.hpp"
@@ -1029,12 +1027,15 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         return is_part_io_part(part);
     }
 
+    struct IossPartAttribute
+    {
+      bool value;
+    };
+
     void put_io_part_attribute(mesh::Part & part)
     {
       if (!is_part_io_part(part)) {
-        mesh::MetaData & meta = mesh::MetaData::get(part);
-        Ioss::GroupingEntity *attr = new Ioss::NullEntity();
-        meta.declare_attribute_with_delete(part, attr);
+        set_ioss_part_attribute<IossPartAttribute>(part, true);
       }
     }
 
@@ -1162,21 +1163,12 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     void remove_io_part_attribute(mesh::Part & part)
     {
-      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-      if (entity != nullptr) {
+      const IossPartAttribute* ioPartAttr = part.attribute<IossPartAttribute>();
+      if (ioPartAttr != nullptr) {
         mesh::MetaData & meta = mesh::MetaData::get(part);
-        bool success = meta.remove_attribute(part, entity);
-        if (!success) {
-          std::string msg = "stk::io::remove_io_part_attribute( ";
-          msg += part.name();
-          msg += " ) FAILED:";
-          msg += " meta.remove_attribute(..) returned failure.";
-          throw std::runtime_error( msg );
-        }
-
-        if (entity->type() == Ioss::INVALID_TYPE) {
-          delete entity;
-        }
+        bool success = meta.remove_attribute(part, ioPartAttr);
+        ThrowRequireMsg(success, "stk::io::remove_io_part_attribute(" << part.name() << ") FAILED.");
+        delete ioPartAttr;
       }
     }
 
@@ -3429,7 +3421,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
     bool is_part_io_part(const stk::mesh::Part &part)
     {
-      return nullptr != part.attribute<Ioss::GroupingEntity>();
+      return has_ioss_part_attribute<IossPartAttribute>(part);
     }
 
     // TODO: NOTE: The use of "FieldBase" here basically eliminates the use of the attribute
@@ -3445,7 +3437,11 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                                        const stk::mesh::FieldBase &df_field)
     {
       stk::mesh::MetaData &m = mesh::MetaData::get(p);
-      m.declare_attribute_no_delete(p,&df_field);
+      if (const stk::mesh::FieldBase * existingDistFactField = p.attribute<stk::mesh::FieldBase>()) {
+        m.remove_attribute(p, existingDistFactField);
+      }
+
+      m.declare_attribute_no_delete(p, &df_field);
     }
 
     const Ioss::Field::RoleType* get_field_role(const stk::mesh::FieldBase &f)

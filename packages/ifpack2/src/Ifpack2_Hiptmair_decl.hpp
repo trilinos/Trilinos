@@ -111,6 +111,10 @@ namespace Ifpack2 {
     // \name Constructors and Destructors
     //@{
 
+    //! Constructor that takes 1 Tpetra matrix (assumes we'll get the rest off the parameter list)
+    explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A);
+
+
     //! Constructor that takes 3 Tpetra matrices.
     explicit Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
                        const Teuchos::RCP<const row_matrix_type>& PtAP,

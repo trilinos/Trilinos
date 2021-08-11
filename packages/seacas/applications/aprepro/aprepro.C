@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
           double dval = std::stod(value);
           aprepro.add_variable(var, dval, true);
         }
-        catch (std::exception &/* e */) {
+        catch (std::exception & /* e */) {
           // If cannot convert to double; make it a string variable...
           aprepro.add_variable(var, value, true); // Make it immutable
         }

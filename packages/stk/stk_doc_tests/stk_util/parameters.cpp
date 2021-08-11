@@ -38,7 +38,6 @@
 
 #include "gtest/gtest.h"
 #include "stk_util/util/ParameterList.hpp"  // for ParameterList, Type, etc
-#include "boost/any.hpp"                    // for any_cast
 #include <stddef.h>                         // for size_t
 #include <sys/types.h>                      // for int64_t
 #include <complex>                          // for complex, operator<<, etc
@@ -152,21 +151,21 @@ namespace
     
     {
       //+ Access a variable of unknown type...
-      //+ The parameter uses boost::any to store the actual value.
+      //+ The parameter uses STK_ANY_NAMESPACE::any to store the actual value.
       stk::util::Parameter &param = params.get_param("Answer");
       double value_as_double = 0.0;
       switch (param.type) {
       case stk::util::ParameterType::DOUBLE:
-	value_as_double = boost::any_cast<double>(param.value);
+	value_as_double = STK_ANY_NAMESPACE::any_cast<double>(param.value);
 	break;
       case stk::util::ParameterType::FLOAT:
-	value_as_double = static_cast<double>(boost::any_cast<float>(param.value));
+	value_as_double = static_cast<double>(STK_ANY_NAMESPACE::any_cast<float>(param.value));
 	break;
       case stk::util::ParameterType::INTEGER:
-	value_as_double = static_cast<double>(boost::any_cast<int>(param.value));
+	value_as_double = static_cast<double>(STK_ANY_NAMESPACE::any_cast<int>(param.value));
 	break;
       case stk::util::ParameterType::INT64:
-	value_as_double = static_cast<double>(boost::any_cast<int64_t>(param.value));
+	value_as_double = static_cast<double>(STK_ANY_NAMESPACE::any_cast<int64_t>(param.value));
 	break;
       default:
 	std::cerr << "ERROR: I can not convert 'Answers' value to a double\n";
@@ -176,7 +175,7 @@ namespace
     }
 
     {
-      //+ Access a variable of unknown type without using boost::any_cast
+      //+ Access a variable of unknown type without using STK_ANY_NAMESPACE::any_cast
       stk::util::Parameter &param = params.get_param("Answer");
       double value_as_double = 0.0;
       switch (param.type) {

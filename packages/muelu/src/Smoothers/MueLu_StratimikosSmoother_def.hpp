@@ -80,13 +80,14 @@ namespace MueLu {
   StratimikosSmoother<double, LocalOrdinal, GlobalOrdinal, Node>::StratimikosSmoother(const std::string type, const Teuchos::ParameterList& paramList)
   : type_(type)
   {
+    std::transform(type_.begin(), type_.end(), type_.begin(), ::toupper);
     ParameterList& pList = const_cast<ParameterList&>(paramList);
 
     if (pList.isParameter("smoother: recurMgOnFilteredA")) {
       recurMgOnFilteredA_ = true;
       pList.remove("smoother: recurMgOnFilteredA");
     }
-    bool isSupported = type == "STRATIMIKOS";
+    bool isSupported = type_ == "STRATIMIKOS";
     this->declareConstructionOutcome(!isSupported, "Stratimikos does not provide the smoother '" + type_ + "'.");
     if (isSupported)
       SetParameterList(paramList);

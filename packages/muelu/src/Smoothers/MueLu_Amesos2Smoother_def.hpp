@@ -170,12 +170,6 @@ namespace MueLu {
       }
 
       ArrayRCP<const SC> nullspaceRCP, nullspaceImpRCP;
-      ArrayView<const SC> nullspace, nullspaceImp;
-      nullspaceRCP = Nullspace->getData(0);
-      nullspace = nullspaceRCP();
-      nullspaceImpRCP = NullspaceImp->getData(0);
-      nullspaceImp = nullspaceImpRCP();
-
       RCP<CrsMatrixWrap> Acrs = rcp_dynamic_cast<CrsMatrixWrap>(A);
 
       TEUCHOS_TEST_FOR_EXCEPTION(Acrs.is_null(), Exceptions::RuntimeError,
@@ -201,6 +195,12 @@ namespace MueLu {
 
       SC normalization = Nullspace->getVector(0)->norm2();
       normalization = Teuchos::ScalarTraits<Scalar>::one()/(normalization*normalization);
+
+      ArrayView<const SC> nullspace, nullspaceImp;
+      nullspaceRCP = Nullspace->getData(0);
+      nullspace = nullspaceRCP();
+      nullspaceImpRCP = NullspaceImp->getData(0);
+      nullspaceImp = nullspaceImpRCP();
 
       // form nullspace * nullspace^T
       for (size_t i = 0; i < N; i++) {

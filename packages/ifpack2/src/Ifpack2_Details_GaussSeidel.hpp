@@ -59,6 +59,9 @@ namespace Details
     using rowmap_t = typename local_matrix_device_type::row_map_type::HostMirror;
     using entries_t = typename local_matrix_device_type::index_type::HostMirror;
     using values_t = typename local_matrix_device_type::values_type::HostMirror;
+    using const_rowmap_t = typename rowmap_t::const_type;
+    using const_entries_t = typename entries_t::const_type;
+    using const_values_t = typename values_t::const_type;
     using Offset = typename rowmap_t::non_const_value_type;
     using IST = typename crs_matrix_type::impl_scalar_type;
     using KAT = Kokkos::ArithTraits<IST>;
@@ -71,74 +74,66 @@ namespace Details
     typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
 
     //Setup for CrsMatrix
-    GaussSeidel(const crs_matrix_type& A, Teuchos::RCP<vector_type>& inverseDiagVec_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
+    GaussSeidel(Teuchos::RCP<const crs_matrix_type> A_, Teuchos::RCP<vector_type>& inverseDiagVec_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
     {
-      numRows = A.getNodeNumRows();
+      A = A_;
+      numRows = A_->getNodeNumRows();
+      haveRowMatrix = false;
       inverseDiagVec = inverseDiagVec_;
       applyRows = applyRows_;
       blockSize = 1;
       omega = omega_;
-      auto Alocal = A.getLocalMatrixDevice();
-      Arowmap = Kokkos::create_mirror_view(Alocal.graph.row_map);
-      Aentries = Kokkos::create_mirror_view(Alocal.graph.entries);
-      Avalues = Kokkos::create_mirror_view(Alocal.values);
-      Kokkos::deep_copy(Arowmap, Alocal.graph.row_map);
-      Kokkos::deep_copy(Aentries, Alocal.graph.entries);
-      Kokkos::deep_copy(Avalues, Alocal.values);
     }
 
-    GaussSeidel(const row_matrix_type& A, Teuchos::RCP<vector_type>& inverseDiagVec_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
+    GaussSeidel(Teuchos::RCP<const row_matrix_type> A_, Teuchos::RCP<vector_type>& inverseDiagVec_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
     {
-      numRows = A.getNodeNumRows();
+      A = A_;
+      numRows = A_->getNodeNumRows();
+      haveRowMatrix = true;
       inverseDiagVec = inverseDiagVec_;
       applyRows = applyRows_;
       blockSize = 1;
       omega = omega_;
       //Here, need to make a deep CRS copy to avoid slow access via getLocalRowCopy
-      Arowmap = rowmap_t(Kokkos::ViewAllocateWithoutInitializing("Arowmap"), numRows + 1);
-      Aentries = entries_t(Kokkos::ViewAllocateWithoutInitializing("Aentries"), A.getNodeNumEntries());
-      Avalues = values_t(Kokkos::ViewAllocateWithoutInitializing("Avalues"), A.getNodeNumEntries());
-      size_t maxDegree = A.getNodeMaxNumRowEntries();
-      nonconst_values_host_view_type rowValues("rowValues",maxDegree);
-      nonconst_local_inds_host_view_type rowEntries("rowEntries",maxDegree);
+      rowMatrixRowmap = rowmap_t(Kokkos::ViewAllocateWithoutInitializing("Arowmap"), numRows + 1);
+      rowMatrixEntries = entries_t(Kokkos::ViewAllocateWithoutInitializing("Aentries"), A_->getNodeNumEntries());
+      rowMatrixValues = values_t(Kokkos::ViewAllocateWithoutInitializing("Avalues"), A_->getNodeNumEntries());
+      size_t maxDegree = A_->getNodeMaxNumRowEntries();
+      nonconst_values_host_view_type rowValues("rowValues", maxDegree);
+      nonconst_local_inds_host_view_type rowEntries("rowEntries", maxDegree);
       size_t accum = 0;
       for(LO i = 0; i <= numRows; i++)
       {
-        Arowmap(i) = accum;
+        rowMatrixRowmap(i) = accum;
         if(i == numRows)
           break;
         size_t degree;
-        A.getLocalRowCopy(i, rowEntries, rowValues, degree);
+        A_->getLocalRowCopy(i, rowEntries, rowValues, degree);
         accum += degree;
-        size_t rowBegin = Arowmap(i);
+        size_t rowBegin = rowMatrixRowmap(i);
         for(size_t j = 0; j < degree; j++)
         {
-          Aentries(rowBegin + j) = rowEntries[j];
-          Avalues(rowBegin + j) = rowValues[j];
+          rowMatrixEntries(rowBegin + j) = rowEntries[j];
+          rowMatrixValues(rowBegin + j) = rowValues[j];
         }
       }
     }
 
-    GaussSeidel(const bcrs_matrix_type& A, const InverseBlocks& inverseBlockDiag_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
+    GaussSeidel(Teuchos::RCP<const bcrs_matrix_type> A_, const InverseBlocks& inverseBlockDiag_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
     {
-      numRows = A.getNodeNumRows();
+      A = A_;
+      numRows = A_->getNodeNumRows();
+      haveRowMatrix = false;
       //note: next 2 lines are no-ops if inverseBlockDiag_ is already host-accessible
       inverseBlockDiag = Kokkos::create_mirror_view(inverseBlockDiag_);
       Kokkos::deep_copy(inverseBlockDiag, inverseBlockDiag_);
       applyRows = applyRows_;
       omega = omega_;
-      auto AlocalGraph = A.getCrsGraph().getLocalGraphDevice();
-      //A.sync_host();  //note: this only syncs values, not graph
-      Avalues = A.getValuesHostNonConst();
-      Arowmap = Kokkos::create_mirror_view(AlocalGraph.row_map);
-      Aentries = Kokkos::create_mirror_view(AlocalGraph.entries);
-      Kokkos::deep_copy(Arowmap, AlocalGraph.row_map);
-      Kokkos::deep_copy(Aentries, AlocalGraph.entries);
-      blockSize = A.getBlockSize();
+      blockSize = A_->getBlockSize();
     }
 
     template<bool useApplyRows, bool multipleRHS, bool omegaNotOne>
-    void applyImpl(multivector_type& x, const multivector_type& b, Tpetra::ESweepDirection direction)
+    void applyImpl(const const_values_t& Avalues, const const_rowmap_t& Arowmap, const const_entries_t& Aentries, multivector_type& x, const multivector_type& b, Tpetra::ESweepDirection direction)
     {
       //note: direction is either Forward or Backward (Symmetric is handled in apply())
       LO numApplyRows = useApplyRows ? (LO) applyRows.size() : numRows;
@@ -221,6 +216,13 @@ namespace Details
         applyBlock(x, b, Tpetra::Backward);
         return;
       }
+      auto Abcrs = Teuchos::rcp_dynamic_cast<const bcrs_matrix_type>(A);
+      if(Abcrs.is_null())
+        throw std::runtime_error("Ifpack2::Details::GaussSeidel::applyBlock: A must be a BlockCrsMatrix");
+      auto Avalues = Abcrs->getValuesHost();
+      auto AlclGraph = Abcrs->getCrsGraph().getLocalGraphHost();
+      auto Arowmap = AlclGraph.row_map;
+      auto Aentries = AlclGraph.entries;
       //Number of scalars in Avalues per block entry.
       Offset bs2 = blockSize * blockSize;
       LO numVecs = x.getNumVectors();
@@ -251,7 +253,7 @@ namespace Details
         for(Offset j = rowBegin; j < rowEnd; j++)
         {
           LO col = Aentries(j);
-          IST* blk = &Avalues(j * bs2);
+          const IST* blk = &Avalues(j * bs2);
           for(LO v = 0; v < numVecs; v++)
           {
             auto xCol = x.getLocalBlockHost (col, v, Tpetra::Access::ReadOnly);
@@ -298,6 +300,7 @@ namespace Details
       }
     }
 
+    //Version of apply for CrsMatrix/RowMatrix (for BlockCrsMatrix, call applyBlock)
     void apply(multivector_type& x, const multivector_type& b, Tpetra::ESweepDirection direction)
     {
       if(direction == Tpetra::Symmetric)
@@ -306,28 +309,50 @@ namespace Details
         apply(x, b, Tpetra::Backward);
         return;
       }
-      else if(applyRows.is_null())
+      const_values_t Avalues;
+      const_rowmap_t Arowmap;
+      const_entries_t Aentries;
+      if(haveRowMatrix)
+      {
+        Avalues = rowMatrixValues;
+        Arowmap = rowMatrixRowmap;
+        Aentries = rowMatrixEntries;
+      }
+      else
+      {
+        auto Acrs = Teuchos::rcp_dynamic_cast<const crs_matrix_type>(A);
+        if(Acrs.is_null())
+          throw std::runtime_error("Ifpack2::Details::GaussSeidel::apply: either haveRowMatrix, or A is CrsMatrix");
+        auto Alcl = Acrs->getLocalMatrixHost();
+        Avalues = Alcl.values;
+        Arowmap = Alcl.graph.row_map;
+        Aentries = Alcl.graph.entries;
+      }
+      if(applyRows.is_null())
       {
         if(x.getNumVectors() > 1)
-          this->template applyImpl<false, true, true>(x, b, direction);
+          this->template applyImpl<false, true, true>(Avalues, Arowmap, Aentries, x, b, direction);
         else
         {
           //Optimize for the all-rows, single vector, omega = 1 case
           if(omega == KAT::one())
-            this->template applyImpl<false, false, false>(x, b, direction);
+            this->template applyImpl<false, false, false>(Avalues, Arowmap, Aentries, x, b, direction);
           else
-            this->template applyImpl<false, false, true>(x, b, direction);
+            this->template applyImpl<false, false, true>(Avalues, Arowmap, Aentries, x, b, direction);
         }
       }
       else
       {
-        this->template applyImpl<true, true, true>(x, b, direction);
+        this->template applyImpl<true, true, true>(Avalues, Arowmap, Aentries, x, b, direction);
       }
     }
 
-    values_t Avalues; //length = Aentries.extent(0) * blockSize * blockSize
-    rowmap_t Arowmap;
-    entries_t Aentries;
+    Teuchos::RCP<const row_matrix_type> A;
+    //For efficiency, if input is a RowMatrix, keep a persistent copy of the CRS formatted local matrix.
+    bool haveRowMatrix;
+    values_t rowMatrixValues;
+    rowmap_t rowMatrixRowmap;
+    entries_t rowMatrixEntries;
     LO numRows;
     IST omega;
     //If set up with BlockCrsMatrix, the block size. Otherwise 1.

@@ -87,7 +87,7 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
       kh.set_verbose(this->verbose);
 
       //set initial colors to be the colors from the femv
-      auto femvColors = femv->template getLocalView<MemorySpace>(Tpetra::Access::ReadWrite);
+      auto femvColors = femv->template getLocalView<Kokkos::Device<ExecutionSpace,MemorySpace> >(Tpetra::Access::ReadWrite);
       auto sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_graph_coloring_handle()->set_vertex_colors(sv);
       
@@ -175,6 +175,7 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 			   Kokkos::View<gno_t*,
 			                Kokkos::Device<ExecutionSpace, MemorySpace> > ghost_degrees,
 			   bool recolor_degrees){
+      size_t local_recoloring_size;
       Kokkos::RangePolicy<ExecutionSpace> policy(n_local,rand.size());
       Kokkos::parallel_reduce("D1-2GL Conflict Detection",policy, KOKKOS_LAMBDA (const int& i, size_t& recoloring_size){
         lno_t localIdx = i;
@@ -212,7 +213,8 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
             }
           }
         }
-      },recoloringSize(0));
+      },local_recoloring_size);
+      Kokkos::deep_copy(recoloringSize, local_recoloring_size);
       Kokkos::fence();
       Kokkos::parallel_for("rebuild verts_to_send and verts_to_recolor",
 		           Kokkos::RangePolicy<ExecutionSpace>(0,femv_colors.size()), 

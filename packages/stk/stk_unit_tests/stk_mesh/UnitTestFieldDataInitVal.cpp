@@ -41,7 +41,6 @@
 #include <vector>                       // for operator!=
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc

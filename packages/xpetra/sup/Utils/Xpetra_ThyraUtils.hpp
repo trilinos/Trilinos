@@ -939,7 +939,6 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
       return xpMultVec;
     } // end standard case
-    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
   // non-const version

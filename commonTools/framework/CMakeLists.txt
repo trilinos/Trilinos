@@ -52,13 +52,31 @@ TRIBITS_ADD_ADVANCED_TEST( clean_workspace_UnitTests
 
 
 # Run the discoverable unit tests under the cmake/std directory tree
-TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_UnitTests
+TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_old_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     OVERALL_NUM_MPI_PROCS 1
     EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
     TEST_0 CMND bash
         ARGS pr_python_test_driver.sh ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std
+        SKIP_CLEAN_WORKING_DIRECTORY
+        PASS_REGULAR_EXPRESSION "=+ [0-9]+ passed in"
+        #ALWAYS_FAIL_ON_NONZERO_RETURN
+)
+# Note: pytest output looks like this:
+# Passing tests:
+# ========...======= 36 passed in 0.79s ====...======
+# Failing tests:
+# ========...======= 1 failed, 35 passed in 0.80s ======...=======
+
+# Run the discoverable unit tests under the packages/framework/pr_tools directory tree
+TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_UnitTests
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    OVERALL_NUM_MPI_PROCS 1
+    EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
+    TEST_0 CMND bash
+        ARGS pr_python_test_driver.sh ${PYTHON_EXECUTABLE} ${PYTHON_PIP_EXECUTABLE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../packages/framework/pr_tools
         SKIP_CLEAN_WORKING_DIRECTORY
         PASS_REGULAR_EXPRESSION "=+ [0-9]+ passed in"
         #ALWAYS_FAIL_ON_NONZERO_RETURN

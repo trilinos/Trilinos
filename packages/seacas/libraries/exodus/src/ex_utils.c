@@ -173,7 +173,7 @@ int ex__check_file_type(const char *path, int *type)
 
 #define MAGIC_NUMBER_LEN 4
 
-  char magic[MAGIC_NUMBER_LEN+1];
+  char magic[MAGIC_NUMBER_LEN + 1];
   EX_FUNC_ENTER();
 
   *type = 0;

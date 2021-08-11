@@ -252,7 +252,7 @@ namespace {
     return next_id * 100;
   }
 
-  Ioss::PropertyManager set_properties(const Modify::Interface &/* interFace */)
+  Ioss::PropertyManager set_properties(const Modify::Interface & /* interFace */)
   {
     Ioss::PropertyManager properties{};
     return properties;
@@ -1229,7 +1229,7 @@ namespace {
   }
 
 #if defined(SEACAS_HAVE_CGNS)
-  void update_cgns_assembly_info(Ioss::Region &region, const Modify::Interface &/* interFace */)
+  void update_cgns_assembly_info(Ioss::Region &region, const Modify::Interface & /* interFace */)
   {
     region.end_mode(Ioss::STATE_DEFINE_MODEL);
     int file_ptr = region.get_database()->get_file_pointer();

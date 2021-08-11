@@ -526,34 +526,6 @@ tol = 0.;
     }
 
 
-#ifndef _WIN32
-    static void PauseForDebugger() {
-      RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-      int myPID = comm->getRank();
-      int pid   = getpid();
-      char hostname[80];
-      for (int i = 0; i <comm->getSize(); i++) {
-        if (i == myPID) {
-          gethostname(hostname, sizeof(hostname));
-          std::cout << "Host: " << hostname << "\tMPI rank: " << myPID << ",\tPID: " << pid << "\n\tattach " << pid << std::endl;
-          sleep(1);
-        }
-      }
-      if (myPID == 0) {
-        std::cout << "** Enter a character to continue > " << std::endl;
-        char go = ' ';
-        int r = scanf("%c", &go);
-        (void)r;
-        assert(r > 0);
-      }
-      comm->barrier();
-    }
-#else
-    static void PauseForDebugger() {
-         throw(Exceptions::RuntimeError("MueLu Utils: PauseForDebugger not implemented on Windows."));
-     }
-#endif
-
     /*! @brief Power method.
 
     @param A matrix
@@ -770,6 +742,72 @@ tol = 0.;
       }
       return boundaryNodes;
     }
+
+    /*! @brief Find non-zero values in an ArrayRCP
+      Compares the value to 2 * machine epsilon 
+
+      @param[in]  vals - ArrayRCP<const Scalar> of values to be tested
+      @param[out] nonzeros - ArrayRCP<bool> of true/false values for whether each entry in vals is nonzero
+    */
+    
+    static void FindNonZeros(const Teuchos::ArrayRCP<const Scalar> vals,
+                             Teuchos::ArrayRCP<bool> nonzeros) {
+      TEUCHOS_ASSERT(vals.size() == nonzeros.size());
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+      const magnitudeType eps = 2.0*Teuchos::ScalarTraits<magnitudeType>::eps();
+      for(size_t i=0; i<static_cast<size_t>(vals.size()); i++) {
+        nonzeros[i] = (Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > eps);
+      }
+    }
+
+    /*! @brief Detects Dirichlet columns & domains from a list of Dirichlet rows
+
+      @param[in] A - Matrix on which to apply Dirichlet column detection
+      @param[in] dirichletRows - ArrayRCP<bool> of indicators as to which rows are Dirichlet
+      @param[out] dirichletCols - ArrayRCP<bool> of indicators as to which cols are Dirichlet
+      @param[out] dirichletDomain - ArrayRCP<bool> of indicators as to which domains are Dirichlet
+    */
+
+    static void DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                              const Teuchos::ArrayRCP<bool>& dirichletRows,
+                                              Teuchos::ArrayRCP<bool> dirichletCols,
+                                              Teuchos::ArrayRCP<bool> dirichletDomain) {
+      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A .getDomainMap();
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
+      RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == rowMap->getNodeNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletCols.size()) == colMap->getNodeNumElements());
+      TEUCHOS_ASSERT(static_cast<size_t>(dirichletDomain.size()) == domMap->getNodeNumElements());
+      RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, 1, /*zeroOut=*/true);
+      // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
+      for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
+        if (dirichletRows[i]) {
+          ArrayView<const LocalOrdinal> indices;
+          ArrayView<const Scalar> values;
+          A.getLocalRowView(i,indices,values);
+          for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
+            myColsToZero->replaceLocalValue(indices[j],0,one);
+        }
+      }
+      
+      RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero;
+      RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A.getCrsGraph()->getImporter();
+      if (!importer.is_null()) {
+        globalColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(domMap, 1, /*zeroOut=*/true);
+        // export to domain map
+        globalColsToZero->doExport(*myColsToZero,*importer,Xpetra::ADD);
+        // import to column map
+      myColsToZero->doImport(*globalColsToZero,*importer,Xpetra::INSERT);
+      }
+      else
+        globalColsToZero = myColsToZero;
+      
+      FindNonZeros(globalColsToZero->getData(0),dirichletDomain);
+      FindNonZeros(myColsToZero->getData(0),dirichletCols);
+    }
+
+
 
    /*! @brief Apply Rowsum Criterion
 

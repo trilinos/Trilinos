@@ -77,6 +77,7 @@ APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RebalanceBlockInterpolationFacto
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RebalanceBlockRestrictionFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RebalanceTransferFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RegionRFactory-.?if.defined[HAVE_MUELU_KOKKOS_REFACTOR] )
+APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::ReitzingerPFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::ReorderBlockAFactory )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RepartitionFactory-.?ifdef.HAVE_MPI )
 APPEND_SET(MUELU_SC_LO_GO_NO_ETI_CLASSES MueLu::RepartitionBlockDiagonalFactory-.?ifdef.HAVE_MPI )

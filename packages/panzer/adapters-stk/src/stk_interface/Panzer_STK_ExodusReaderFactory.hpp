@@ -155,6 +155,9 @@ private:
   //! Did the user request to keep the Percept parent element data
   bool keepPerceptParentElements_;
 
+  //! The type of mesh rebalancing to be performed after creation
+  std::string rebalancing_;
+
   //! If requested, scale the input mesh by this factor
   double meshScaleFactor_;
 

@@ -98,12 +98,12 @@ stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
                                       const stk::mesh::MetaData &meta);
 
 struct GlobalAnyVariable {
-  GlobalAnyVariable(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
+  GlobalAnyVariable(const std::string &name, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
     : m_name(name), m_value(value), m_type(type)
   {}
 
   std::string m_name;
-  const boost::any *m_value;
+  const STK_ANY_NAMESPACE::any *m_value;
   stk::util::ParameterType::Type m_type;
 };
 

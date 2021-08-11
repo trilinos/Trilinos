@@ -1757,11 +1757,14 @@ protected:
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
 
-#ifdef KOKKOS_ENABLE_CUDA
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<
-      Kokkos::Cuda, Kokkos::CudaSpace>  node_t;
+#if defined(KOKKOS_ENABLE_CUDA)
+    using node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
+      Kokkos::Cuda, Kokkos::CudaSpace>;
+#elif defined(KOKKOS_ENABLE_HIP)
+    using node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
+      Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
 #else
-  typedef typename Adapter::node_t node_t;
+  using node_t = typename Adapter::node_t;
 #endif
 
 #endif

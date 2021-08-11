@@ -112,30 +112,13 @@ namespace MueLu {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetMatrixDiagonal(const Matrix& A) {
-    // FIXME_KOKKOS
+    const auto rowMap = A.getRowMap();
+    auto diag = Xpetra::VectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, true);
 
-    size_t numRows = A.getRowMap()->getNodeNumElements();
-    Teuchos::ArrayRCP<SC> diag(numRows);
-
-    Teuchos::ArrayView<const LO> cols;
-    Teuchos::ArrayView<const SC> vals;
-    for (size_t i = 0; i < numRows; ++i) {
-      A.getLocalRowView(i, cols, vals);
-
-      LO j = 0;
-      for (; j < cols.size(); ++j) {
-        if (Teuchos::as<size_t>(cols[j]) == i) {
-          diag[i] = vals[j];
-          break;
-        }
-      }
-      if (j == cols.size()) {
-        // Diagonal entry is absent
-        diag[i] = Teuchos::ScalarTraits<SC>::zero();
-      }
-    }
+    A.getLocalDiagCopy(*diag);
 
     return diag;
   } //GetMatrixDiagonal
@@ -226,11 +209,9 @@ namespace MueLu {
        crsOp->getLocalDiagCopy(*localDiag,offsets());
     }
     else {
-      ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
-      Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
-      for (LO i = 0; i < localDiagVals.size(); i++)
-        localDiagVals[i] = diagVals[i];
-      localDiagVals = diagVals = null;
+      auto localDiagVals = localDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
+      const auto diagVals = GetMatrixDiagonal(A)->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      Kokkos::deep_copy(localDiagVals, diagVals);
     }
 
     RCP<Vector> diagonal = VectorFactory::Build(colMap);
@@ -494,6 +475,104 @@ namespace MueLu {
   }
 
 
+  // Find Nonzeros in a device view
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
+                    Kokkos::View<bool*, typename Node::device_type> nonzeros) {
+    using ATS        = Kokkos::ArithTraits<Scalar>;
+    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+    TEUCHOS_ASSERT(vals.extent(0) == nonzeros.extent(0));
+    const typename ATS::magnitudeType eps = 2.0*impl_ATS::eps();
+
+    Kokkos::parallel_for("MueLu:Maxwell1::FindNonZeros", range_type(0,vals.extent(0)),
+                         KOKKOS_LAMBDA (const size_t i) {
+                           nonzeros(i) = (impl_ATS::magnitude(vals(i,0)) > eps);
+                         });
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
+                    Kokkos::View<bool*, typename Node::device_type> nonzeros) {
+    MueLu::FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(vals,nonzeros);
+  }
+
+  template <class Node>
+  void 
+  Utilities_kokkos<double,int,int,Node>::
+  FindNonZeros(const typename Xpetra::MultiVector<double,int,int,Node>::dual_view_type::t_dev_const_um vals,
+               Kokkos::View<bool*, typename Node::device_type> nonzeros) {
+    MueLu::FindNonZeros<double,int,int,Node>(vals,nonzeros);
+  }
+
+  // Detect Dirichlet cols and domains
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                     const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                     Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                     Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
+    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
+    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
+    TEUCHOS_ASSERT(dirichletRows.extent(0) == rowMap->getNodeNumElements());
+    TEUCHOS_ASSERT(dirichletCols.extent(0) == colMap->getNodeNumElements());
+    TEUCHOS_ASSERT(dirichletDomain.extent(0) == domMap->getNodeNumElements());
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, /*zeroOut=*/true);
+    // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
+    auto myColsToZeroView = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto localMatrix = A.getLocalMatrixDevice();
+    Kokkos::parallel_for("MueLu:Maxwell1::DetectDirichletCols", range_type(0,rowMap->getNodeNumElements()),
+                         KOKKOS_LAMBDA(const LocalOrdinal row) {
+                           if (dirichletRows(row)) {
+                             auto rowView = localMatrix.row(row);
+                             auto length  = rowView.length;
+
+                             for (decltype(length) colID = 0; colID < length; colID++)
+                               myColsToZeroView(rowView.colidx(colID),0) = one;
+                           }
+                         });
+
+    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero;
+    RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A.getCrsGraph()->getImporter();
+    if (!importer.is_null()) {
+      globalColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(domMap, /*zeroOut=*/true);
+      // export to domain map
+      globalColsToZero->doExport(*myColsToZero,*importer,Xpetra::ADD);
+      // import to column map
+      myColsToZero->doImport(*globalColsToZero,*importer,Xpetra::INSERT);
+    }
+    else
+      globalColsToZero = myColsToZero;
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly),dirichletDomain);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly),dirichletCols);
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void 
+  Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
+    MueLu::DetectDirichletColsAndDomains<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A,dirichletRows,dirichletCols,dirichletDomain);
+  }
+
+  template <class Node>
+  void
+  Utilities_kokkos<double,int,int,Node>::
+  DetectDirichletColsAndDomains(const Xpetra::Matrix<double,int,int,Node>& A,
+                                const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
+    MueLu::DetectDirichletColsAndDomains<double,int,int,Node>(A,dirichletRows,dirichletCols,dirichletDomain);
+  }
+
+
   // Zeros out rows
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -612,7 +691,7 @@ namespace MueLu {
     return MueLu::ZeroDirichletCols<double,int,int,Node>(A, dirichletCols, replaceWith);
   }
 
-  // Applies rowsum criterion 
+  // Applies rowsum criterion
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
                             const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
@@ -711,7 +790,7 @@ namespace MueLu {
       <device, typename local_graph_type::row_map_type, typename local_graph_type::entries_type, lno_nnz_view_t>
       (localGraph.row_map, localGraph.entries);
 
-    RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval = 
+    RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval =
       Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
 
     // Copy out and reorder data
@@ -723,7 +802,7 @@ namespace MueLu {
                          });
     return retval;
   }
-  
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > CuthillMcKee(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Op) {
     using local_matrix_type = typename Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type;
@@ -740,7 +819,7 @@ namespace MueLu {
       <device, typename local_graph_type::row_map_type, typename local_graph_type::entries_type, lno_nnz_view_t>
       (localGraph.row_map, localGraph.entries);
 
-    RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval = 
+    RCP<Xpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> > retval =
       Xpetra::VectorFactory<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node>::Build(Op.getRowMap());
 
     // Copy out data
@@ -761,7 +840,7 @@ namespace MueLu {
   }
 
   template <class Node>
-  Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >  
+  Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >
   Utilities_kokkos<double,int,int,Node>::ReverseCuthillMcKee(const Matrix &Op) {
     return MueLu::ReverseCuthillMcKee<double,int,int,Node>(Op);
   }
@@ -773,7 +852,7 @@ namespace MueLu {
   }
 
   template <class Node>
-  Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >  
+  Teuchos::RCP<Xpetra::Vector<int,int,int,Node> >
   Utilities_kokkos<double,int,int,Node>::CuthillMcKee(const Matrix &Op) {
     return MueLu::CuthillMcKee<double,int,int,Node>(Op);
   }

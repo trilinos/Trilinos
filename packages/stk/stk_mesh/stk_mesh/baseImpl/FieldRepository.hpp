@@ -37,7 +37,6 @@
 
 #include <stddef.h>                     // for NULL
 #include <stk_mesh/base/Types.hpp>      // for PartVector
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>  // for FieldBaseImpl
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
@@ -101,20 +100,20 @@ class FieldRepository {
       const T *
       declare_attribute_with_delete( FieldBase & f , const T * a )
       {
-        return f.m_impl.declare_attribute_with_delete(a);
+        return f.declare_attribute_with_delete(a);
       }
 
     template<class T>
       const T *
       declare_attribute_no_delete( FieldBase & f , const T * a )
       {
-        return f.m_impl.declare_attribute_no_delete(a);
+        return f.declare_attribute_no_delete(a);
       }
 
     template<class T>
       bool remove_attribute( FieldBase & f , const T * a )
       {
-	return f.m_impl.remove_attribute<T>( a );
+	return f.remove_attribute<T>( a );
       }
 
     void declare_field_restriction(
@@ -126,7 +125,7 @@ class FieldRepository {
         const unsigned   arg_first_dimension ,
         const void     * arg_init_value = NULL)
     {
-      arg_field.m_impl.insert_restriction( arg_method, arg_part, arg_num_scalars_per_entity, arg_first_dimension, arg_init_value);
+      arg_field.insert_restriction( arg_method, arg_part, arg_num_scalars_per_entity, arg_first_dimension, arg_init_value);
     }
 
     void declare_field_restriction(
@@ -138,7 +137,7 @@ class FieldRepository {
         const unsigned   arg_first_dimension ,
         const void     * arg_init_value = NULL)
     {
-      arg_field.m_impl.insert_restriction( arg_method, arg_selector, arg_num_scalars_per_entity, arg_first_dimension, arg_init_value);
+      arg_field.insert_restriction( arg_method, arg_selector, arg_num_scalars_per_entity, arg_first_dimension, arg_init_value);
     }
 
   private:

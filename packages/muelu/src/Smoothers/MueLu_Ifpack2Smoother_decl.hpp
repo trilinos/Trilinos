@@ -216,8 +216,9 @@ namespace MueLu {
     void SetupBlockRelaxation (Level& currentLevel);
     void SetupTopological     (Level& currentLevel);
     void SetupAggregate       (Level& currentLevel);
+    void SetupHiptmair        (Level& currentLevel);
     void SetupGeneric         (Level& currentLevel);
-
+    Scalar SetupChebyshevEigenvalues(Level & currentLevel, const std::string & matrixName, const std::string & label, Teuchos::ParameterList & paramList) const;
   private:
 
     //!

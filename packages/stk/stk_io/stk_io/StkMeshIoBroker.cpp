@@ -84,11 +84,9 @@
 #include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
 #include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
 #include "stk_mesh/base/SidesetUpdater.hpp"
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
 #include "stk_mesh/base/FieldParallel.hpp"
@@ -915,7 +913,7 @@ void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
 }
 
 bool StkMeshIoBroker::get_global(const std::string &globalVarName,
-                                 boost::any &value, stk::util::ParameterType::Type type,
+                                 STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type,
                                  bool abort_if_not_found) const
 {
     validate_input_file_index(m_activeMeshIndex);
@@ -979,14 +977,14 @@ bool StkMeshIoBroker::has_global(size_t output_file_index, const std::string &gl
 }
 
 void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
-                                 const boost::any &value, stk::util::ParameterType::Type type)
+                                 const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->add_global(name, value, type);
 }
 
 void StkMeshIoBroker::add_global_ref(size_t output_file_index, const std::string &name,
-                                     const boost::any *value, stk::util::ParameterType::Type type)
+                                     const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->add_global_ref(name, value, type);
@@ -1011,7 +1009,7 @@ void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &gl
 }
 
 void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
-                                   const boost::any &value, stk::util::ParameterType::Type type) const
+                                   const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type) const
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->write_global(globalVarName, value, type);
