@@ -704,9 +704,10 @@ namespace MueLuTests {
     ArrayView<const GO> allRowGIDs = A->getRowMap()->getNodeElementList();
     Array<GO> myMapGIDs;
     for (LO lid = 0; lid < Teuchos::as<LO>(nx); ++lid) {
-      if (lid % 3 == 0)
+      if (lid % 3 == 0) {
         myMapGIDs.push_back(allRowGIDs[lid]);
         myMapGIDs.push_back(allRowGIDs[lid+1]);
+      }
     }
     GO gNumFineEntries = 0;
     reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<GO>(myMapGIDs.size()), Teuchos::outArg(gNumFineEntries));
