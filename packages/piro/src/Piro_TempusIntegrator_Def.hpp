@@ -60,12 +60,6 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
 {
   if (sens_method == NONE) {
     //no sensitivities
-    //Throw if providing 'Sensitivities' sublist, which is not relevant here
-    if (pList->isSublist("Sensitivities")){
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-                 "Error in Piro::TempusIntegrator: you are providing a 'Sensitivities' sublist " <<
-		 "but not using a Tempus integrator that computes sensitivities.\n");
-    }
     basicIntegrator_ = Tempus::integratorBasic<Scalar>(pList, model);
     fwdSensIntegrator_ = Teuchos::null; 
     adjSensIntegrator_ = Teuchos::null; 
@@ -81,14 +75,14 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
         tempusSensPL.remove("Response Function Index");
       }
     }
-    fwdSensIntegrator_ = Tempus::integratorForwardSensitivity<Scalar>(pList, model);
+    fwdSensIntegrator_ = Tempus::createIntegratorForwardSensitivity<Scalar>(pList, model);
     adjSensIntegrator_ = Teuchos::null; 
   }
   else if (sens_method == ADJOINT) {
     //adjoint sensitivities
     basicIntegrator_ = Teuchos::null;
     fwdSensIntegrator_ = Teuchos::null; 
-    adjSensIntegrator_ = Tempus::integratorAdjointSensitivity<Scalar>(pList, model);
+    adjSensIntegrator_ = Tempus::createIntegratorAdjointSensitivity<Scalar>(pList, model);
   }
 }
 

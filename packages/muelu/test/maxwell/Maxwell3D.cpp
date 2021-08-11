@@ -64,6 +64,7 @@
 
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
+#include <MueLu_Maxwell1.hpp>
 #include <MueLu_TestHelpers_Common.hpp>
 #include <MueLu_Exceptions.hpp>
 
@@ -452,6 +453,11 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
       preconditioner = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,Ms_Matrix,M0inv_Matrix,
                                                                M1_Matrix,nullspace,coords,params) );
     }
+    else if (precType=="MueLu-Maxwell1" || precType=="MueLu-Reitzinger") {
+      preconditioner = rcp( new MueLu::Maxwell1<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,nullspace,coords,params) );
+
+    }
+
 #ifdef HAVE_MUELU_EPETRA
     else if (precType=="ML-RefMaxwell") {
       Xpetra::UnderlyingLib  lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
@@ -725,11 +731,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   if (xml == ""){
     if (precType == "MueLu-RefMaxwell")
       xml = "Maxwell.xml";
+    else if (precType == "MueLu-Reitzinger" || precType == "MueLu=Maxwell1")
+      xml = "Maxwell_Reitzinger.xml";
     else if (precType == "ML-RefMaxwell")
       xml = "Maxwell_ML.xml";
     else if (precType == "ML-Maxwell")
       xml = "Maxwell_ML1.xml";
     else if (precType == "Hypre")
+
       xml = "Hypre.xml";
   }
 

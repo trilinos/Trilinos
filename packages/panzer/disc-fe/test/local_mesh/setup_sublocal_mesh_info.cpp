@@ -84,10 +84,10 @@ TEUCHOS_UNIT_TEST(setupSubLocalMeshInfo, basic)
     Teuchos::RCP<panzer::LocalMeshInfoBase> mesh = generateLocalMeshInfoBase();
 
     // Skip cell 1 to make it a ghost cell
-    std::vector<panzer::LocalOrdinal> local_cells = {0,2};
+    std::vector<panzer::LocalOrdinal> n_local_cells = {0,2};
     panzer::LocalMeshInfoBase sub_mesh;
 
-    partitioning_utilities::setupSubLocalMeshInfo(*mesh,local_cells,sub_mesh);
+    partitioning_utilities::setupSubLocalMeshInfo(*mesh,n_local_cells,sub_mesh);
 
     TEST_EQUALITY(sub_mesh.num_owned_cells,2);
     TEST_EQUALITY(sub_mesh.num_ghstd_cells,2);
@@ -112,46 +112,56 @@ TEUCHOS_UNIT_TEST(setupSubLocalMeshInfo, basic)
     //  ---------------------
     //      3   2   1   0
 
-    TEST_EQUALITY(sub_mesh.local_cells(0),0);
-    TEST_EQUALITY(sub_mesh.local_cells(1),2);
-    TEST_EQUALITY(sub_mesh.local_cells(2),1);
-    TEST_EQUALITY(sub_mesh.local_cells(3),3);
-    TEST_EQUALITY(sub_mesh.local_cells(4),4);
+    auto local_cells   = Kokkos::create_mirror_view(sub_mesh.local_cells);
+    auto global_cells  = Kokkos::create_mirror_view(sub_mesh.global_cells);
+    auto face_to_cells = Kokkos::create_mirror_view(sub_mesh.face_to_cells);
+    auto face_to_lidx  = Kokkos::create_mirror_view(sub_mesh.face_to_lidx);
+    auto cell_to_faces = Kokkos::create_mirror_view(sub_mesh.cell_to_faces);
+    Kokkos::deep_copy(local_cells  , sub_mesh.local_cells);
+    Kokkos::deep_copy(global_cells , sub_mesh.global_cells);
+    Kokkos::deep_copy(face_to_cells, sub_mesh.face_to_cells);
+    Kokkos::deep_copy(face_to_lidx , sub_mesh.face_to_lidx);
+    Kokkos::deep_copy(cell_to_faces, sub_mesh.cell_to_faces);
+    TEST_EQUALITY(local_cells(0),0);
+    TEST_EQUALITY(local_cells(1),2);
+    TEST_EQUALITY(local_cells(2),1);
+    TEST_EQUALITY(local_cells(3),3);
+    TEST_EQUALITY(local_cells(4),4);
 
-    TEST_EQUALITY(sub_mesh.global_cells(0),8);
-    TEST_EQUALITY(sub_mesh.global_cells(1),2);
-    TEST_EQUALITY(sub_mesh.global_cells(2),6);
-    TEST_EQUALITY(sub_mesh.global_cells(3),1);
-    TEST_EQUALITY(sub_mesh.global_cells(4),9);
+    TEST_EQUALITY(global_cells(0),8);
+    TEST_EQUALITY(global_cells(1),2);
+    TEST_EQUALITY(global_cells(2),6);
+    TEST_EQUALITY(global_cells(3),1);
+    TEST_EQUALITY(global_cells(4),9);
 
-    TEST_EQUALITY(sub_mesh.face_to_cells(0,0),1);
-    TEST_EQUALITY(sub_mesh.face_to_cells(0,1),4);
-    TEST_EQUALITY(sub_mesh.face_to_cells(1,0),1);
-    TEST_EQUALITY(sub_mesh.face_to_cells(1,1),2);
-    TEST_EQUALITY(sub_mesh.face_to_cells(2,0),0);
-    TEST_EQUALITY(sub_mesh.face_to_cells(2,1),2);
-    TEST_EQUALITY(sub_mesh.face_to_cells(3,0),0);
-    TEST_EQUALITY(sub_mesh.face_to_cells(3,1),3);
+    TEST_EQUALITY(face_to_cells(0,0),1);
+    TEST_EQUALITY(face_to_cells(0,1),4);
+    TEST_EQUALITY(face_to_cells(1,0),1);
+    TEST_EQUALITY(face_to_cells(1,1),2);
+    TEST_EQUALITY(face_to_cells(2,0),0);
+    TEST_EQUALITY(face_to_cells(2,1),2);
+    TEST_EQUALITY(face_to_cells(3,0),0);
+    TEST_EQUALITY(face_to_cells(3,1),3);
 
-    TEST_EQUALITY(sub_mesh.face_to_lidx(0,0),1);
-    TEST_EQUALITY(sub_mesh.face_to_lidx(0,1),0);
-    TEST_EQUALITY(sub_mesh.face_to_lidx(1,0),0);
-    TEST_EQUALITY(sub_mesh.face_to_lidx(1,1),1);
-    TEST_EQUALITY(sub_mesh.face_to_lidx(2,0),1);
-    TEST_EQUALITY(sub_mesh.face_to_lidx(2,1),0);
-    TEST_EQUALITY(sub_mesh.face_to_lidx(3,0),0);
-    TEST_EQUALITY(sub_mesh.face_to_lidx(3,1),0);
+    TEST_EQUALITY(face_to_lidx(0,0),1);
+    TEST_EQUALITY(face_to_lidx(0,1),0);
+    TEST_EQUALITY(face_to_lidx(1,0),0);
+    TEST_EQUALITY(face_to_lidx(1,1),1);
+    TEST_EQUALITY(face_to_lidx(2,0),1);
+    TEST_EQUALITY(face_to_lidx(2,1),0);
+    TEST_EQUALITY(face_to_lidx(3,0),0);
+    TEST_EQUALITY(face_to_lidx(3,1),0);
 
-    TEST_EQUALITY(sub_mesh.cell_to_faces(0,0),3);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(0,1),2);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(1,0),1);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(1,1),0);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(2,0),2);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(2,1),1);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(3,0),3);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(3,1),-1);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(4,0),0);
-    TEST_EQUALITY(sub_mesh.cell_to_faces(4,1),-1);
+    TEST_EQUALITY(cell_to_faces(0,0),3);
+    TEST_EQUALITY(cell_to_faces(0,1),2);
+    TEST_EQUALITY(cell_to_faces(1,0),1);
+    TEST_EQUALITY(cell_to_faces(1,1),0);
+    TEST_EQUALITY(cell_to_faces(2,0),2);
+    TEST_EQUALITY(cell_to_faces(2,1),1);
+    TEST_EQUALITY(cell_to_faces(3,0),3);
+    TEST_EQUALITY(cell_to_faces(3,1),-1);
+    TEST_EQUALITY(cell_to_faces(4,0),0);
+    TEST_EQUALITY(cell_to_faces(4,1),-1);
 
   }
 }

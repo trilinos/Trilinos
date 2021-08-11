@@ -48,6 +48,7 @@ APPEND_SET(SOURCES
   PgPFactory.cpp
   RAPFactory.cpp
   RAPShiftFactory.cpp
+  ReitzingerPFactory.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp
   Smoothers/SmootherFactory.cpp

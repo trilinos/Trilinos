@@ -248,6 +248,9 @@ typedef MueLu::RebalanceTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> 
 #ifdef MUELU_REGIONRFACTORY_SHORT
 typedef MueLu::RegionRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> RegionRFactory;
 #endif
+#ifdef MUELU_REITZINGERPFACTORY_SHORT
+typedef MueLu::ReitzingerPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReitzingerPFactory;
+#endif
 #ifdef MUELU_REORDERBLOCKAFACTORY_SHORT
 typedef MueLu::ReorderBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReorderBlockAFactory;
 #endif

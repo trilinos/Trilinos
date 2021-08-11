@@ -253,19 +253,20 @@ namespace panzer {
 	 element != normals.end(); ++element) {
 
       const Kokkos::DynRankView<double,PHX::Device>& values = element->second;
-
+      auto values_h = Kokkos::create_mirror_view(values);
+      Kokkos::deep_copy(values_h, values);
       *pout << "local element id = " << element->first << std::endl;
-      TEST_EQUALITY(values.size(),24);
+      TEST_EQUALITY(values_h.size(),24);
 
-      for (int point = 0; point < values.extent_int(0); ++point) {
-	*pout << "  value(" << point << "," << 0 << ") = " << values(point,0) << std::endl;
-	*pout << "  value(" << point << "," << 1 << ") = " << values(point,1) << std::endl;
-	*pout << "  value(" << point << "," << 2 << ") = " << values(point,2) << std::endl;
+      for (int point = 0; point < values_h.extent_int(0); ++point) {
+	*pout << "  value(" << point << "," << 0 << ") = " << values_h(point,0) << std::endl;
+	*pout << "  value(" << point << "," << 1 << ") = " << values_h(point,1) << std::endl;
+	*pout << "  value(" << point << "," << 2 << ") = " << values_h(point,2) << std::endl;
 
 	double tol = 100.0 * Teuchos::ScalarTraits<double>::eps();
 	
-	TEST_FLOATING_EQUALITY(values(point,0), 0.0, tol);
-	TEST_FLOATING_EQUALITY(values(point,2), 0.0, tol);
+	TEST_FLOATING_EQUALITY(values_h(point,0), 0.0, tol);
+	TEST_FLOATING_EQUALITY(values_h(point,2), 0.0, tol);
 	
 	if ( (element->first == 2) ||
 	     (element->first == 6) ||
@@ -275,14 +276,14 @@ namespace panzer {
 	       (point == 3) ||
 	       (point == 6) ||
 	       (point == 7) ) {
-	    TEST_FLOATING_EQUALITY(values(point,1), 1.0, tol);
+	    TEST_FLOATING_EQUALITY(values_h(point,1), 1.0, tol);
 	  }
 	  else {
-	    TEST_FLOATING_EQUALITY(values(point,1), 0.0, tol);
+	    TEST_FLOATING_EQUALITY(values_h(point,1), 0.0, tol);
 	  }
 	}
 	else {
-	  TEST_FLOATING_EQUALITY(values(point,1), 0.0, tol);
+	  TEST_FLOATING_EQUALITY(values_h(point,1), 0.0, tol);
 	}
 
       }

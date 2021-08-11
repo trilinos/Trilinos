@@ -34,10 +34,7 @@
 #include <stk_mesh/baseImpl/ConnectEdgesImpl.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
-#include "stk_topology/apply_functor.hpp"  // for topology::apply_host_functor
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes
-#include "stk_topology/topology_type.hpp"  // for topology::topology_type
 
 namespace stk {
 namespace mesh {

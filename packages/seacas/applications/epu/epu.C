@@ -1961,7 +1961,7 @@ namespace {
       size_t max_nodes = glob_blocks[b].entity_count() * glob_blocks[b].nodesPerElement;
       linkage.resize(max_nodes);
       attributes.resize(static_cast<size_t>(glob_blocks[b].attributeCount) *
-			glob_blocks[b].entity_count());
+                        glob_blocks[b].entity_count());
 
       int error = 0;
       for (int p = 0; p < part_count; p++) {
@@ -2008,7 +2008,7 @@ namespace {
 
           // Get attributes list,  if it exists
           if (blocks[p][b].attributeCount > 0) {
-            size_t         max_attr = blocks[p][b].entity_count() * blocks[p][b].attributeCount;
+            size_t max_attr = blocks[p][b].entity_count() * blocks[p][b].attributeCount;
             local_attr.resize(max_attr);
 
             error = ex_get_attr(id, EX_ELEM_BLOCK, blocks[p][b].id, local_attr.data());
@@ -2039,8 +2039,8 @@ namespace {
       int id_out = ExodusFile::output(); // output file identifier
 
       if (!linkage.empty()) {
-        error = ex_put_conn(id_out, EX_ELEM_BLOCK, glob_blocks[b].id, linkage.data(), nullptr,
-                            nullptr);
+        error =
+            ex_put_conn(id_out, EX_ELEM_BLOCK, glob_blocks[b].id, linkage.data(), nullptr, nullptr);
         if (error < 0) {
           exodus_error(__LINE__);
         }
@@ -3635,8 +3635,8 @@ namespace {
 
               if (local_mesh[p]
                       .truthTable[static_cast<int>(vars.objectType)][input_truth_table_loc] > 0) {
-                int error = ex_get_var(id, time_step + 1, exodus_object_type(vars.objectType), i + 1,
-                                   local_sets[p][b].id, entity_count, values.data());
+                int error = ex_get_var(id, time_step + 1, exodus_object_type(vars.objectType),
+                                       i + 1, local_sets[p][b].id, entity_count, values.data());
                 if (error < 0) {
                   exodus_error(__LINE__);
                 }

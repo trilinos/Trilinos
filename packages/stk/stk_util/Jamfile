@@ -328,6 +328,7 @@ lib stk_util_command_line
     stk_util_util
     stk_util_environment
     stk_util_registry
+    stk_util_diag
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user

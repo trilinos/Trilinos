@@ -123,8 +123,8 @@ namespace Thyra {
       else if (paramList.isType<RCP<TpCrsMat> >(parameterName)) {
         RCP<TpCrsMat> tM = paramList.get<RCP<TpCrsMat> >(parameterName);
         paramList.remove(parameterName);
-        RCP<XpCrsMat> xM = rcp_dynamic_cast<XpCrsMat>(tM, true);
-        paramList.set<RCP<XpCrsMat> >(parameterName, xM);
+        RCP<XpMat> xM = MueLu::TpetraCrs_To_XpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tM);
+        paramList.set<RCP<XpMat> >(parameterName, xM);
         return true;
       } else if (paramList.isType<RCP<tMV> >(parameterName)) {
         RCP<tMV> tpetra_X = paramList.get<RCP<tMV> >(parameterName);
@@ -261,6 +261,8 @@ namespace Thyra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void MueLuPreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   initializePrec(const RCP<const LinearOpSourceBase<Scalar> >& fwdOpSrc, PreconditionerBase<Scalar>* prec, const ESupportSolveUse supportSolveUse) const {
+    Teuchos::TimeMonitor tM(*Teuchos::TimeMonitor::getNewTimer(std::string("ThyraMueLu::initializePrec")));
+
     using Teuchos::rcp_dynamic_cast;
 
     // we are using typedefs here, since we are using objects from different packages (Xpetra, Thyra,...)
@@ -383,6 +385,10 @@ namespace Thyra {
 
       if (useHalfPrecision) {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+
+        // CAG: There is nothing special about the combination double-float,
+        //      except that I feel somewhat confident that Trilinos builds
+        //      with both scalar types.
 
         // convert to half precision
         RCP<XphMat> halfA = Xpetra::convertToHalfPrecision(A);

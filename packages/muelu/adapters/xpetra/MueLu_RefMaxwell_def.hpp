@@ -72,6 +72,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_Maxwell_Utils.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_AmalgamationFactory_kokkos.hpp"
@@ -119,120 +120,6 @@
 
 
 namespace MueLu {
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void FindNonZeros(const Teuchos::ArrayRCP<const Scalar> vals,
-                    Teuchos::ArrayRCP<bool> nonzeros) {
-    TEUCHOS_ASSERT(vals.size() == nonzeros.size());
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-    const magnitudeType eps = 2.0*Teuchos::ScalarTraits<magnitudeType>::eps();
-    for(size_t i=0; i<static_cast<size_t>(vals.size()); i++) {
-      nonzeros[i] = (Teuchos::ScalarTraits<Scalar>::magnitude(vals[i]) > eps);
-    }
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-                           const Teuchos::ArrayRCP<bool>& dirichletRows,
-                           Teuchos::ArrayRCP<bool> dirichletCols,
-                           Teuchos::ArrayRCP<bool> dirichletDomain) {
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
-    TEUCHOS_ASSERT(static_cast<size_t>(dirichletRows.size()) == rowMap->getNodeNumElements());
-    TEUCHOS_ASSERT(static_cast<size_t>(dirichletCols.size()) == colMap->getNodeNumElements());
-    TEUCHOS_ASSERT(static_cast<size_t>(dirichletDomain.size()) == domMap->getNodeNumElements());
-    RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, 1, /*zeroOut=*/true);
-    // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
-    for(size_t i=0; i<(size_t) dirichletRows.size(); i++) {
-      if (dirichletRows[i]) {
-        ArrayView<const LocalOrdinal> indices;
-        ArrayView<const Scalar> values;
-        A.getLocalRowView(i,indices,values);
-        for(size_t j=0; j<static_cast<size_t>(indices.size()); j++)
-          myColsToZero->replaceLocalValue(indices[j],0,one);
-      }
-    }
-
-    RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero;
-    RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A.getCrsGraph()->getImporter();
-    if (!importer.is_null()) {
-      globalColsToZero = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(domMap, 1, /*zeroOut=*/true);
-      // export to domain map
-      globalColsToZero->doExport(*myColsToZero,*importer,Xpetra::ADD);
-      // import to column map
-      myColsToZero->doImport(*globalColsToZero,*importer,Xpetra::INSERT);
-    }
-    else
-      globalColsToZero = myColsToZero;
-
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getData(0),dirichletDomain);
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getData(0),dirichletCols);
-  }
-
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
-                    Kokkos::View<bool*, typename Node::device_type> nonzeros) {
-    using ATS        = Kokkos::ArithTraits<Scalar>;
-    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
-    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
-    TEUCHOS_ASSERT(vals.extent(0) == nonzeros.extent(0));
-    const typename ATS::magnitudeType eps = 2.0*impl_ATS::eps();
-
-    Kokkos::parallel_for("MueLu:RefMaxwell::FindNonZeros", range_type(0,vals.extent(0)),
-                         KOKKOS_LAMBDA (const size_t i) {
-                           nonzeros(i) = (impl_ATS::magnitude(vals(i,0)) > eps);
-                         });
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void DetectDirichletCols(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-                           const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
-                           Kokkos::View<bool*, typename Node::device_type> dirichletCols,
-                           Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
-    using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
-    const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domMap = A.getDomainMap();
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = A.getRowMap();
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colMap = A.getColMap();
-    TEUCHOS_ASSERT(dirichletRows.extent(0) == rowMap->getNodeNumElements());
-    TEUCHOS_ASSERT(dirichletCols.extent(0) == colMap->getNodeNumElements());
-    TEUCHOS_ASSERT(dirichletDomain.extent(0) == domMap->getNodeNumElements());
-    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, /*zeroOut=*/true);
-    // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
-    auto myColsToZeroView = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite);
-    auto localMatrix = A.getLocalMatrixDevice();
-    Kokkos::parallel_for("MueLu:RefMaxwell::DetectDirichletCols", range_type(0,rowMap->getNodeNumElements()),
-                         KOKKOS_LAMBDA(const LocalOrdinal row) {
-                           if (dirichletRows(row)) {
-                             auto rowView = localMatrix.row(row);
-                             auto length  = rowView.length;
-
-                             for (decltype(length) colID = 0; colID < length; colID++)
-                               myColsToZeroView(rowView.colidx(colID),0) = one;
-                           }
-                         });
-
-    RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > globalColsToZero;
-    RCP<const Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = A.getCrsGraph()->getImporter();
-    if (!importer.is_null()) {
-      globalColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(domMap, /*zeroOut=*/true);
-      // export to domain map
-      globalColsToZero->doExport(*myColsToZero,*importer,Xpetra::ADD);
-      // import to column map
-      myColsToZero->doImport(*globalColsToZero,*importer,Xpetra::INSERT);
-    }
-    else
-      globalColsToZero = myColsToZero;
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly),dirichletDomain);
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(Xpetra::Access::ReadOnly),dirichletCols);
-  }
-
-#endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
@@ -348,148 +235,6 @@ namespace MueLu {
   }
 
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::detectBoundaryConditionsSM() {
-    // clean rows associated with boundary conditions
-    // Find rows with only 1 or 2 nonzero entries, record them in BCrows_.
-    // BCrows_[i] is true, iff i is a boundary row
-    // BCcols_[i] is true, iff i is a boundary column
-    int BCedgesLocal = 0;
-    int BCnodesLocal = 0;
-    magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol",-1.0);
-#ifdef HAVE_MUELU_KOKKOS_REFACTOR
-    if (useKokkos_) {
-      BCrowsKokkos_ = Utilities_kokkos::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true);
-
-      if (rowSumTol > 0.)
-        Utilities_kokkos::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrowsKokkos_);
-
-      BCcolsKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getColMap()->getNodeNumElements());
-      BCdomainKokkos_ = Kokkos::View<bool*,typename Node::device_type>(Kokkos::ViewAllocateWithoutInitializing("dirichletCols"), D0_Matrix_->getDomainMap()->getNodeNumElements());
-      DetectDirichletCols<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*D0_Matrix_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_);
-
-      dump(BCrowsKokkos_,   "BCrows.m");
-      dump(BCcolsKokkos_,   "BCcols.m");
-      dump(BCdomainKokkos_, "BCdomain.m");
-
-      for (size_t i = 0; i<BCrowsKokkos_.size(); i++)
-        if (BCrowsKokkos_(i))
-          BCedgesLocal += 1;
-      for (size_t i = 0; i<BCdomainKokkos_.size(); i++)
-        if (BCdomainKokkos_(i))
-          BCnodesLocal += 1;
-    } else
-#endif // HAVE_MUELU_KOKKOS_REFACTOR
-    {
-      BCrows_ = Teuchos::arcp_const_cast<bool>(Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true));
-
-      if (rowSumTol > 0.)
-        Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
-
-      BCcols_.resize(D0_Matrix_->getColMap()->getNodeNumElements());
-      BCdomain_.resize(D0_Matrix_->getDomainMap()->getNodeNumElements());
-      DetectDirichletCols<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*D0_Matrix_,BCrows_,BCcols_,BCdomain_);
-
-      dump(BCrows_,   "BCrows.m");
-      dump(BCcols_,   "BCcols.m");
-      dump(BCdomain_, "BCdomain.m");
-
-      for (auto it = BCrows_.begin(); it != BCrows_.end(); ++it)
-        if (*it)
-          BCedgesLocal += 1;
-      for (auto it = BCdomain_.begin(); it != BCdomain_.end(); ++it)
-        if (*it)
-          BCnodesLocal += 1;
-    }
-
-    MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCedgesLocal, BCedges_);
-    MueLu_sumAll(SM_Matrix_->getRowMap()->getComm(), BCnodesLocal, BCnodes_);
-
-    if (IsPrint(Statistics2)) {
-      GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
-    }
-
-    allEdgesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements();
-    allNodesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCnodes_) >= D0_Matrix_->getDomainMap()->getGlobalNumElements();
-  }
-
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::removeExplicitZeros() {
-
-    bool defaultFilter = false;
-
-    // Remove zero entries from D0 if necessary.
-    // In the construction of the prolongator we use the graph of the
-    // matrix, so zero entries mess it up.
-    if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getNodeMaxNumRowEntries()>2) {
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",D0_Matrix_);
-      fineLevel.setlib(D0_Matrix_->getDomainMap()->lib());
-      // We expect D0 to have entries +-1, so any threshold value will do.
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",1.0e-8,/*keepDiagonal=*/false,/*expectedNNZperRow=*/2));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      D0_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
-
-      // If D0 has too many zeros, maybe SM and M1 do as well.
-      defaultFilter = true;
-    }
-
-    if (parameterList_.get<bool>("refmaxwell: filter M1", defaultFilter)) {
-      RCP<Vector> diag = VectorFactory::Build(M1_Matrix_->getRowMap());
-      // find a reasonable absolute value threshold
-      M1_Matrix_->getLocalDiagCopy(*diag);
-      magnitudeType threshold = 1.0e-8 * diag->normInf();
-
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",M1_Matrix_);
-      fineLevel.setlib(M1_Matrix_->getDomainMap()->lib());
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      M1_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
-    }
-
-    if (parameterList_.get<bool>("refmaxwell: filter Ms", defaultFilter)) {
-      RCP<Vector> diag = VectorFactory::Build(Ms_Matrix_->getRowMap());
-      // find a reasonable absolute value threshold
-      Ms_Matrix_->getLocalDiagCopy(*diag);
-      magnitudeType threshold = 1.0e-8 * diag->normInf();
-
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",Ms_Matrix_);
-      fineLevel.setlib(Ms_Matrix_->getDomainMap()->lib());
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      Ms_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
-    }
-
-    if (parameterList_.get<bool>("refmaxwell: filter SM", defaultFilter)) {
-      RCP<Vector> diag = VectorFactory::Build(SM_Matrix_->getRowMap());
-      // find a reasonable absolute value threshold
-      SM_Matrix_->getLocalDiagCopy(*diag);
-      magnitudeType threshold = 1.0e-8 * diag->normInf();
-
-      Level fineLevel;
-      fineLevel.SetFactoryManager(null);
-      fineLevel.SetLevelID(0);
-      fineLevel.Set("A",SM_Matrix_);
-      fineLevel.setlib(SM_Matrix_->getDomainMap()->lib());
-      RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A",threshold,/*keepDiagonal=*/true));
-      fineLevel.Request("A",ThreshFact.get());
-      ThreshFact->Build(fineLevel);
-      SM_Matrix_ = fineLevel.Get< RCP<Matrix> >("A",ThreshFact.get());
-    }
-
-  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute(bool reuse) {
@@ -507,7 +252,7 @@ namespace MueLu {
 
     ////////////////////////////////////////////////////////////////////////////////
     // Remove explicit zeros from matrices
-    removeExplicitZeros();
+    Maxwell_Utils<SC,LO,GO,NO>::removeExplicitZeros(parameterList_,D0_Matrix_,SM_Matrix_,M1_Matrix_,Ms_Matrix_);
 
     if (IsPrint(Statistics2)) {
       RCP<ParameterList> params = rcp(new ParameterList());;
@@ -518,8 +263,18 @@ namespace MueLu {
 
     ////////////////////////////////////////////////////////////////////////////////
     // Detect Dirichlet boundary conditions
-    if (!reuse)
-       detectBoundaryConditionsSM();
+    if (!reuse) {
+      magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
+      Maxwell_Utils<SC,LO,GO,NO>::detectBoundaryConditionsSM(SM_Matrix_,D0_Matrix_,rowSumTol,
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+                                                             useKokkos_,BCrowsKokkos_,BCcolsKokkos_,BCdomainKokkos_,
+#endif
+                                                             BCedges_,BCnodes_,BCrows_,BCcols_,BCdomain_,
+                                                             allEdgesBoundary_,allNodesBoundary_);
+      if (IsPrint(Statistics2)) {
+        GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
+      }
+    }
 
     if (allEdgesBoundary_) {
       // All edges have been detected as boundary edges.
@@ -564,7 +319,7 @@ namespace MueLu {
         for (size_t j=0; j < Nullspace_->getMap()->getNodeNumElements(); j++) {
           Scalar lenSC = Teuchos::ScalarTraits<Scalar>::zero();
           for (size_t i=0; i < Nullspace_->getNumVectors(); i++)
-            lenSC += localNullspace[i][j]*localNullspace[i][j];
+           lenSC += localNullspace[i][j]*localNullspace[i][j];
           coordinateType len = sqrt(Teuchos::ScalarTraits<Scalar>::real(lenSC));
           localMinLen = std::min(localMinLen, len);
           localMaxLen = std::max(localMaxLen, len);
@@ -895,7 +650,7 @@ namespace MueLu {
             ParameterList& userParamList = precList11_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
           }
-          thyraPrecH_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(AH_, rcp(&precList11_, false));
+          thyraPrecH_ = Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(AH_, rcp(&precList11_, false));
         } else
 #endif
           {
@@ -1140,7 +895,7 @@ namespace MueLu {
             ParameterList& userParamList = precList22_.sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", Coords_);
           }
-          thyraPrec22_ = StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(A22_, rcp(&precList22_, false));
+          thyraPrec22_ = Maxwell_Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(A22_, rcp(&precList22_, false));
         } else
 #endif
           {
@@ -1236,11 +991,10 @@ namespace MueLu {
       if (parameterList_.isSublist("matvec params"))
         {
           RCP<ParameterList> matvecParams = rcpFromRef(parameterList_.sublist("matvec params"));
-          setMatvecParams(*SM_Matrix_, matvecParams);
-          setMatvecParams(*D0_Matrix_, matvecParams);
-          setMatvecParams(*P11_, matvecParams);
-          if (!D0_T_Matrix_.is_null()) setMatvecParams(*D0_T_Matrix_, matvecParams);
-          if (!R11_.is_null())         setMatvecParams(*R11_, matvecParams);
+          Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*D0_Matrix_, matvecParams);
+          Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*P11_, matvecParams);
+          if (!D0_T_Matrix_.is_null()) Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*D0_T_Matrix_, matvecParams);
+          if (!R11_.is_null())         Maxwell_Utils<SC,LO,GO,NO>::setMatvecParams(*R11_, matvecParams);
           if (!ImporterH_.is_null())   ImporterH_->setDistributorParameters(matvecParams);
           if (!Importer22_.is_null())  Importer22_->setDistributorParameters(matvecParams);
         }
@@ -1704,9 +1458,6 @@ namespace MueLu {
 
       if (skipFirstLevel_) {
 	// Get data out of P_nodal_imported and D0.
-	auto localD0 = D0_Matrix_->getLocalMatrixHost();
-
-        auto localP = P_nodal_imported->getLocalMatrixHost();
 
         if (algo == "mat-mat") {
           RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap());
@@ -1717,7 +1468,7 @@ namespace MueLu {
 #endif
 
           // Get data out of D0*P.
-          auto localD0P = D0_P_nodal->getLocalMatrixHost();
+          auto localD0P = D0_P_nodal->getLocalMatrixDevice();
 
           // Create the matrix object
           RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
@@ -1754,6 +1505,8 @@ namespace MueLu {
 
             magnitudeType tol = Teuchos::ScalarTraits<magnitudeType>::eps();
 
+	    auto localD0 = D0_Matrix_->getLocalMatrixDevice();
+	    auto localP = P_nodal_imported->getLocalMatrixDevice();
             Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_enterValues_D0wZeros", range_type(0,numLocalRows),
                                  KOKKOS_LAMBDA(const size_t i) {
                                    for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
@@ -1781,6 +1534,8 @@ namespace MueLu {
                                  });
 
           } else {
+	    auto localD0 = D0_Matrix_->getLocalMatrixDevice();
+	    auto localP = P_nodal_imported->getLocalMatrixDevice();
             Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_enterValues", range_type(0,numLocalRows),
                                  KOKKOS_LAMBDA(const size_t i) {
                                    for (size_t ll = localD0.graph.row_map(i); ll < localD0.graph.row_map(i+1); ll++) {
@@ -1826,7 +1581,7 @@ namespace MueLu {
 
       } else { // !skipFirstLevel_
 	// Get data out of P_nodal_imported and D0.
-	auto localD0 = D0_Matrix_->getLocalMatrixHost();
+	auto localD0 = D0_Matrix_->getLocalMatrixDevice();
 
         CoordsH_ = Coords_;
 
@@ -2431,15 +2186,19 @@ namespace MueLu {
       // If we did not apply BCs to A_nodal, we now need to correct
       // the zero diagonals of AH, since we did nuke the nullspace.
 
-      const bool fixZeroDiagonal = precList11_.get<bool>("rap: fix zero diagonals", !applyBCsToAnodal_);
+      bool fixZeroDiagonal = !applyBCsToAnodal_;
+      if (precList11_.isParameter("rap: fix zero diagonals"))
+        fixZeroDiagonal = precList11_.get<bool>("rap: fix zero diagonals");
 
       if (fixZeroDiagonal) {
-        magnitudeType threshold;
+        magnitudeType threshold = 1e-16;
+        Scalar replacement = 1.0;
         if (precList11_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
           threshold = precList11_.get<magnitudeType>("rap: fix zero diagonals threshold");
-        else
-          threshold = Teuchos::as<magnitudeType>(precList11_.get<double>("rap: fix zero diagonals threshold", 1e-16));
-        Scalar replacement = Teuchos::as<Scalar>(precList11_.get<double>("rap: fix zero diagonals replacement", 1.0));
+        else if (precList11_.isType<double>("rap: fix zero diagonals threshold"))
+          threshold = Teuchos::as<magnitudeType>(precList11_.get<double>("rap: fix zero diagonals threshold"));
+        if (precList11_.isType<double>("rap: fix zero diagonals replacement"))
+          replacement = Teuchos::as<Scalar>(precList11_.get<double>("rap: fix zero diagonals replacement"));
         Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(AH_, true, GetOStream(Warnings1), threshold, replacement);
       }
 
@@ -2775,7 +2534,7 @@ namespace MueLu {
 
   }
 
-
+    
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {
     return false;
@@ -3020,48 +2779,6 @@ namespace MueLu {
 
   }
 
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP<Thyra::PreconditionerBase<Scalar> > StratimikosWrapper<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
-                                                                                                                                       RCP<ParameterList> params) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                               "Stratimikos only supports Scalar=double");
-  }
-
-
-  template<class LocalOrdinal, class GlobalOrdinal, class Node>
-    RCP<Thyra::PreconditionerBase<double> > StratimikosWrapper<double,LocalOrdinal,GlobalOrdinal,Node>::setupStratimikosPreconditioner(RCP<Xpetra::Matrix<double,LocalOrdinal,GlobalOrdinal,Node> > A,
-                                                                                                                                       RCP<ParameterList> params) {
-
-    typedef double Scalar;
-
-    // Build Thyra linear algebra objects
-    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>>(A)->getCrsMatrix());
-
-    Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-    typedef Thyra::PreconditionerFactoryBase<Scalar>                                     Base;
-    typedef Thyra::MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> ImplMueLu;
-    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, ImplMueLu>(), "MueLu");
-#ifdef HAVE_MUELU_IFPACK2
-    // Register Ifpack2 as a Stratimikos preconditioner strategy.
-    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
-    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif
-
-    linearSolverBuilder.setParameterList(params);
-
-    // Build a new "solver factory" according to the previously specified parameter list.
-    // RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
-
-    auto precFactory = Thyra::createPreconditioningStrategy(linearSolverBuilder);
-    auto prec = precFactory->createPrec();
-
-    precFactory->initializePrec(Thyra::defaultLinearOpSource(thyraA), prec.get(), Thyra::SUPPORT_SOLVE_UNSPECIFIED);
-
-    return prec;
-  }
-#endif
 
 } // namespace
 

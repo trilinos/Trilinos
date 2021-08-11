@@ -607,7 +607,7 @@ namespace {
   bool define_field(size_t nmatch, size_t match_length, char **names,
                     std::vector<Ioss::Suffix> &suffices, size_t entity_count,
                     Ioss::Field::RoleType fld_role, std::vector<Ioss::Field> &fields,
-		    bool strip_trailing_)
+                    bool strip_trailing_)
   {
     // Try to define a field of size 'nmatch' with the suffices in 'suffices'.
     // If this doesn't define a known field, then assume it is a scalar instead
@@ -620,9 +620,9 @@ namespace {
       else {
         char *name         = names[0];
         name[match_length] = '\0';
-	if (strip_trailing_ && name[match_length-1] == '_') {
-	  name[match_length-1] = '\0';
-	}
+        if (strip_trailing_ && name[match_length - 1] == '_') {
+          name[match_length - 1] = '\0';
+        }
         Ioss::Field field(name, Ioss::Field::REAL, type, fld_role, entity_count);
         if (field.is_valid()) {
           fields.push_back(field);
@@ -655,15 +655,15 @@ namespace {
 void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in this entity.
                              char ** names,        // Raw list of field names from exodus
                              size_t  num_names,    // Number of names in list
-                             Ioss::Field::RoleType fld_role, // Role of field
-			     const Ioss::DatabaseIO *db,
-			     int *local_truth, // Truth table for this entity;
+                             Ioss::Field::RoleType   fld_role, // Role of field
+                             const Ioss::DatabaseIO *db,
+                             int *                   local_truth, // Truth table for this entity;
                              // null if not applicable.
                              std::vector<Ioss::Field> &fields) // The fields that were found.
 {
   bool enable_field_recognition = db->get_field_recognition();
-  bool strip_trailing_ = db->get_field_strip_trailing_();
-  char suffix_separator = db->get_field_separator();
+  bool strip_trailing_          = db->get_field_strip_trailing_();
+  char suffix_separator         = db->get_field_separator();
 
   if (!enable_field_recognition) {
     // Create a separate field for each name.
@@ -732,8 +732,8 @@ void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in t
         }
         else {
 
-          bool multi_component =
-	    define_field(nmatch, pmat, &names[ibeg], suffices, entity_count, fld_role, fields, strip_trailing_);
+          bool multi_component = define_field(nmatch, pmat, &names[ibeg], suffices, entity_count,
+                                              fld_role, fields, strip_trailing_);
           if (!multi_component) {
             // Although we matched multiple suffices, it wasn't a
             // higher-order field, so we only used 1 name instead of
@@ -758,8 +758,8 @@ void Ioss::Utils::get_fields(int64_t entity_count, // The number of objects in t
     // that had been gathered.
     if (ibeg < num_names) {
       if (local_truth == nullptr || local_truth[ibeg] == 1) {
-        bool multi_component =
-	  define_field(nmatch, pmat, &names[ibeg], suffices, entity_count, fld_role, fields, strip_trailing_);
+        bool multi_component = define_field(nmatch, pmat, &names[ibeg], suffices, entity_count,
+                                            fld_role, fields, strip_trailing_);
         clear(suffices);
         if (nmatch > 1 && !multi_component) {
           ibeg++;

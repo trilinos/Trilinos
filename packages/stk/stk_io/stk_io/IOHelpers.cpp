@@ -80,10 +80,8 @@
 #include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
 #include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
 #include "stk_mesh/base/FieldParallel.hpp"
@@ -246,44 +244,44 @@ bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::st
 
 
 void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const boost::any &any_value,
+                              const std::string &name, const STK_ANY_NAMESPACE::any &any_value,
                               stk::util::ParameterType::Type type)
 {
     try {
         switch(type)
         {
             case stk::util::ParameterType::INTEGER: {
-                int value = boost::any_cast<int>(any_value);
+                int value = STK_ANY_NAMESPACE::any_cast<int>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::INT64: {
-                int64_t value = boost::any_cast<int64_t>(any_value);
+                int64_t value = STK_ANY_NAMESPACE::any_cast<int64_t>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::DOUBLE: {
-                double value = boost::any_cast<double>(any_value);
+                double value = STK_ANY_NAMESPACE::any_cast<double>(any_value);
                 internal_write_global(output_region, name, value);
                 break;
             }
 
             case stk::util::ParameterType::DOUBLEVECTOR: {
-                std::vector<double> vec = boost::any_cast<std::vector<double> >(any_value);
+                std::vector<double> vec = STK_ANY_NAMESPACE::any_cast<std::vector<double> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
 
             case stk::util::ParameterType::INTEGERVECTOR: {
-                std::vector<int> vec = boost::any_cast<std::vector<int> >(any_value);
+                std::vector<int> vec = STK_ANY_NAMESPACE::any_cast<std::vector<int> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
 
             case stk::util::ParameterType::INT64VECTOR: {
-                std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(any_value);
+                std::vector<int64_t> vec = STK_ANY_NAMESPACE::any_cast<std::vector<int64_t> >(any_value);
                 internal_write_global(output_region, name, vec);
                 break;
             }
@@ -307,7 +305,7 @@ void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
 {
     for (size_t i=0; i < global_any_fields.size(); i++) {
         const std::string &name = global_any_fields[i].m_name;
-        const boost::any *value = global_any_fields[i].m_value;
+        const STK_ANY_NAMESPACE::any *value = global_any_fields[i].m_value;
         stk::util::ParameterType::Type type = global_any_fields[i].m_type;
         internal_write_parameter(region, name, *value, type);
     }
@@ -315,7 +313,7 @@ void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
 
 bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
                              const std::string &globalVarName,
-                             boost::any &any_value, stk::util::ParameterType::Type type,
+                             STK_ANY_NAMESPACE::any &any_value, stk::util::ParameterType::Type type,
                              bool abort_if_not_found)
 {
     bool success = false;

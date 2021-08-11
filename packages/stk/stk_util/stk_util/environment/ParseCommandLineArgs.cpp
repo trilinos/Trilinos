@@ -60,7 +60,7 @@ void make_sure_all_required_were_found(const OptionsSpecification& optionsDesc,
   for(const auto& option : optionsDesc.get_options_plus_sub_options()) {
     ThrowRequireMsg(!option->isRequired || parsedOptions.count(option->name) == 1,
                     "Error in stk::parse_command_line_args: "
-                    << "required option '"<<dash_it(option->name)<<"' not found.");
+                    << "Required option '"<<dash_it(option->name)<<"' not found");
   }
 }
 
@@ -73,10 +73,9 @@ void parse_command_line_args(int argc, const char** argv,
       insert_option(*option, "", parsedOptions);
     }
   }
+
   std::vector<bool> argHasBeenUsed(argc, false);
   for(int i=1; i<argc; ++i) {
-//std::cerr<<"prs-cmd-line-args, i="<<i<<", argc="<<argc<<", argv["<<i<<"]: '"
-//         <<(argv[i]==nullptr?std::string("nullptr"):std::string(argv[i]))<<"'"<<std::endl;
     const char* arg = argv[i];
     if (arg == nullptr) {
       continue;
@@ -96,33 +95,29 @@ void parse_command_line_args(int argc, const char** argv,
       argContainedEquals = true;
       value = optionKey.substr(posOfEqualSign+1);
       optionKey = optionKey.substr(0, posOfEqualSign);
+      ThrowRequireMsg(!value.empty(), "stk::parse_command_line_args: Missing value for option " << dash_it(optionKey));
     }
 
     const Option& option = optionsDesc.find_option(optionKey);
     if (option.name.empty()) {
       continue;
     }
-//std::cerr<<"   found option '"<<option.name<<"' isFlag="<<option.isFlag<<", isImplicit="<<option.isImplicit<<std::endl;
 
     argHasBeenUsed[i] = true;
 
-    bool useNextArgAsValue = !option.isFlag && !argContainedEquals;
+    const bool useNextArgAsValue = !option.isFlag && !argContainedEquals;
 
-//std::cerr<<"   useNextArgAsValue="<<useNextArgAsValue<<std::endl;
     if (useNextArgAsValue) {
-      if (option.isImplicit &&
-          ((i >= (argc-1)) || (argv[i+1]==nullptr) || (argv[i+1][0] == '-'))) {
-        useNextArgAsValue = false;
+      const bool nextArgContainsAValue = ((argc >= 3) && (i < (argc-1)) && (argv[i+1] != nullptr) && (argv[i+1][0] != '-'));
+      if (nextArgContainsAValue) {
+        value = argv[i+1];
+        argHasBeenUsed[i+1] = true;
+        ++i;
+      }
+      else {
+        ThrowRequireMsg(option.isImplicit, "stk::parse_command_line_args: Missing value for option " << dash_it(option.name));
         value = option.defaultValue;
       }
-    }
-
-    if (useNextArgAsValue) {
-      ThrowRequireMsg(i < (argc-1), "stk::parse_command_line_args: reached end of command line "
-                      <<" without finding value for option "<<dash_it(option.name));
-      value = argv[i+1];
-      argHasBeenUsed[i+1] = true;
-      ++i;
     }
 
     insert_option(option, value, parsedOptions);

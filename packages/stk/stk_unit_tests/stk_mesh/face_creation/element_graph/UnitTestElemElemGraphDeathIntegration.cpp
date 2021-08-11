@@ -11,7 +11,6 @@
 #include "BulkDataElementGraphTester.hpp"
 #include "ElementGraphTester.hpp"       // for ElemElemGraphTester
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector
 #include "stk_unit_test_utils/ioUtils.hpp"  // for fill_mesh_using_stk_io

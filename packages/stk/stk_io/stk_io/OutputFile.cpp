@@ -81,10 +81,8 @@
 #include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
 #include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
 #include "stk_mesh/base/FieldParallel.hpp"
@@ -387,7 +385,7 @@ void OutputFile::add_user_data(const std::vector<std::string>& partNames, const 
 
 }
 
-void OutputFile::add_global_ref(const std::string &name, const boost::any *value, stk::util::ParameterType::Type type)
+void OutputFile::add_global_ref(const std::string &name, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -402,7 +400,7 @@ bool OutputFile::has_global(const std::string &globalVarName) const
     return m_region->field_exists(globalVarName);
 }
 
-void OutputFile::add_global(const std::string &name, const boost::any &value, stk::util::ParameterType::Type type)
+void OutputFile::add_global(const std::string &name, const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -440,7 +438,7 @@ void OutputFile::add_global(const std::string &globalVarName, const std::string 
 }
 
 void OutputFile::write_global(const std::string &globalVarName,
-                                    const boost::any &value, stk::util::ParameterType::Type type)
+                                    const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
 {
     internal_write_parameter(m_region, globalVarName, value, type);
 }

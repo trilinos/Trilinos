@@ -27,15 +27,6 @@ cd ${build_dir}
 # Cleanup old cache before we configure
 rm -rf CMakeFiles CMakeCache.txt
 
-mpi_base_dir=${MPI_HOME}
-if [ -z "${mpi_base_dir}" ] ; then
-  mpi_base_dir=${MPI_ROOT};
-fi
-if [ -z "${mpi_base_dir}" ] ; then
-  echo "Neither MPI_HOME nor MPI_ROOT is set. Make sure MPI is available."
-  exit 1;
-fi
-
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
 -DTrilinos_ENABLE_CXX11=ON \
@@ -46,7 +37,6 @@ cmake \
 -DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
 -DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
 -DTPL_ENABLE_MPI=ON \
--DMPI_BASE_DIR:PATH=$mpi_base_dir \
 -DTrilinos_ENABLE_Tpetra:BOOL=ON \
 -DTpetraCore_ENABLE_TESTS:BOOL=OFF \
 -DTpetra_ENABLE_DEPRECATED_CODE:BOOL=ON \

@@ -84,6 +84,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, edge_count)
    pl->set("X Elements",(int)xelems);
    pl->set("Y Elements",(int)yelems);
    pl->set("Z Elements",(int)zelems);
+   pl->set("Create Edge Blocks",true);
    
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -168,6 +169,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, is_edge_local)
    pl->set("X Elements",(int)xelems);
    pl->set("Y Elements",(int)yelems);
    pl->set("Z Elements",(int)zelems);
+   pl->set("Create Edge Blocks",true);
    
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -218,6 +220,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, add_edge_field)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
+   pl->set("Create Edge Blocks",true);
    
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);
@@ -274,6 +277,7 @@ TEUCHOS_UNIT_TEST(tExodusEdgeBlock, set_edge_field_data)
    pl->set("X Elements",2);
    pl->set("Y Elements",4);
    pl->set("Z Elements",5);
+   pl->set("Create Edge Blocks",true);
    
    CubeHexMeshFactory factory; 
    factory.setParameterList(pl);

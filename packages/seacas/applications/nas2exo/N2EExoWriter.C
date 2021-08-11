@@ -104,10 +104,10 @@ namespace ExoModules {
     bool result{true};
 
     // Now we write the nodes
-    size_t num_nodes = this->gridList.size();
-    double * x         = new double[num_nodes];
-    double * y         = new double[num_nodes];
-    double * z         = new double[num_nodes];
+    size_t  num_nodes = this->gridList.size();
+    double *x         = new double[num_nodes];
+    double *y         = new double[num_nodes];
+    double *z         = new double[num_nodes];
     for (size_t i = 0; i < num_nodes; i++) {
 
       N2EPoint3D crd = std::get<1>(this->gridList[i]);
@@ -162,7 +162,7 @@ namespace ExoModules {
       std::vector<elementType> thisBlock;
       int64_t                  block = (int)std::get<0>(sect);
 
-      int                    retvalue{0};
+      int retvalue{0};
 
       for (const elementType &elem : this->elementList) {
 
@@ -193,7 +193,7 @@ namespace ExoModules {
 
       for (const elementType &elem : thisBlock) {
 
-	const N2EModules::N2EGridPtList  &pts{std::get<3>(elem)};
+        const N2EModules::N2EGridPtList &pts{std::get<3>(elem)};
         std::copy(pts.v, pts.v + nodes_per_elem, elemCon.data() + numNodesCopied);
         numNodesCopied += nodes_per_elem;
       }

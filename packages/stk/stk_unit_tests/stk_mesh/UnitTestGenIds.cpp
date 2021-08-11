@@ -51,7 +51,6 @@
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData

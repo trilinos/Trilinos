@@ -1517,7 +1517,8 @@ namespace Ioex {
 
         std::vector<Ioss::Field> fields;
         int64_t                  count = entity->entity_count();
-        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::TRANSIENT, this, local_truth, fields);
+        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::TRANSIENT, this, local_truth,
+                                fields);
 
         for (const auto &field : fields) {
           entity->field_add(field);
@@ -1578,7 +1579,8 @@ namespace Ioex {
 
         std::vector<Ioss::Field> fields;
         int64_t                  count = 1;
-        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::REDUCTION, this, local_truth, fields);
+        Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::REDUCTION, this, local_truth,
+                                fields);
 
         for (const auto &field : fields) {
           entity->field_add(field);
@@ -2088,7 +2090,7 @@ namespace Ioex {
       // attribute named "attribute_1", "attribute_2", ..., "attribute_#"
       // This is controlled by the database property
       // "IGNORE_ATTRIBUTE_NAMES"
-      bool attributes_named       = true; // Possibly reset below; note that even if ignoring
+      bool attributes_named = true; // Possibly reset below; note that even if ignoring
       // attribute names, they are still 'named'
 
       if (properties.exists("IGNORE_ATTRIBUTE_NAMES")) {

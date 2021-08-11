@@ -80,10 +80,6 @@ Piro::TransientSolver<Scalar>::TransientSolver(
       sens_param_index_ = tempusSensPL.get<int>("Sensitivity Parameter Index", 0);
     }
   }
-  else {
-    response_fn_index_ = 0; 
-    sens_param_index_ = 0; 
-  }
 }
 
 template <typename Scalar>

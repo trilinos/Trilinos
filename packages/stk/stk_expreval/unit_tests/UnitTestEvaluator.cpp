@@ -40,14 +40,9 @@
 
 #include <Kokkos_Core.hpp>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include <gtest/gtest.h>
 
 #include <stk_expreval/Evaluator.hpp>
-#include <stk_util/util/ThreadLocalData.hpp>
 
 using ExecutionSpace = Kokkos::Serial;
 
@@ -89,55 +84,119 @@ has_variable(const std::vector<std::string>& variableNames, const std::string& v
   return (std::find(variableNames.begin(), variableNames.end(), variableName) != variableNames.end());
 }
 
+bool
+test_is_scalar(const stk::expreval::Eval& eval, const std::string& variableName)
+{
+  return eval.is_scalar(variableName);
+}
+
 TEST(UnitTestEvaluator, isConstantExpression_empty)
 {
   stk::expreval::Eval eval;
   eval.parse();
-  EXPECT_EQ(eval.is_constant_expression(), true);
+  EXPECT_TRUE(eval.is_constant_expression());
 }
 
 TEST(UnitTestEvaluator, isConstantExpression_constant)
 {
   stk::expreval::Eval eval("2");
   eval.parse();
-  EXPECT_EQ(eval.is_constant_expression(), true);
+  EXPECT_TRUE(eval.is_constant_expression());
 }
 
 TEST(UnitTestEvaluator, isConstantExpression_variable)
 {
   stk::expreval::Eval eval("x");
   eval.parse();
-  EXPECT_EQ(eval.is_constant_expression(), false);
+  EXPECT_FALSE(eval.is_constant_expression());
 }
 
 TEST(UnitTestEvaluator, isVariable_no)
 {
   stk::expreval::Eval eval;
   eval.parse();
-  EXPECT_EQ(eval.is_variable("x"), false);
+  EXPECT_FALSE(eval.is_variable("x"));
 }
 
 TEST(UnitTestEvaluator, isVariable_yes)
 {
   stk::expreval::Eval eval("x");
   eval.parse();
-  EXPECT_EQ(eval.is_variable("x"), true);
+  EXPECT_TRUE(eval.is_variable("x"));
 }
 
 TEST(UnitTestEvaluator, isVariable_twoVariables_yes)
 {
   stk::expreval::Eval eval("x + y");
   eval.parse();
-  EXPECT_EQ(eval.is_variable("x"), true);
-  EXPECT_EQ(eval.is_variable("y"), true);
+  EXPECT_TRUE(eval.is_variable("x"));
+  EXPECT_TRUE(eval.is_variable("y"));
 }
 
 TEST(UnitTestEvaluator, isVariable_twoVariables_no)
 {
   stk::expreval::Eval eval("x + y");
   eval.parse();
-  EXPECT_EQ(eval.is_variable("x"), true);
-  EXPECT_EQ(eval.is_variable("z"), false);
+  EXPECT_TRUE(eval.is_variable("x"));
+  EXPECT_FALSE(eval.is_variable("z"));
+}
+
+TEST(UnitTestEvaluator, isScalar_default)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  EXPECT_TRUE(test_is_scalar(eval, "x"));
+}
+
+TEST(UnitTestEvaluator, isScalar_notPresent)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  EXPECT_FALSE(test_is_scalar(eval, "y"));
+}
+
+TEST(UnitTestEvaluator, isScalar_assignYes)
+{
+  stk::expreval::Eval eval("x = 2.0");
+  eval.parse();
+  EXPECT_TRUE(test_is_scalar(eval, "x"));
+}
+
+TEST(UnitTestEvaluator, isScalar_bindDefaultYes)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  double x = 3.0;
+  eval.bindVariable("x", x);
+  EXPECT_TRUE(test_is_scalar(eval, "x"));
+}
+
+TEST(UnitTestEvaluator, isScalar_bindYes)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  double x = 3.0;
+  eval.bindVariable("x", x, 1);
+  EXPECT_TRUE(test_is_scalar(eval, "x"));
+}
+
+TEST(UnitTestEvaluator, isScalar_bindNo)
+{
+  stk::expreval::Eval eval("x");
+  eval.parse();
+  double x[3] = {4.0, 5.0, 6.0};
+  eval.bindVariable("x", *x, 3);
+  EXPECT_FALSE(test_is_scalar(eval, "x"));
+}
+
+TEST(UnitTestEvaluator, isScalar_bindYesAndNo)
+{
+  stk::expreval::Eval eval("z = y[1]");
+  eval.parse();
+  double y[3] = {4.0, 5.0, 6.0};
+  eval.bindVariable("y", *y, 3);
+  EXPECT_FALSE(test_is_scalar(eval, "y"));
+  EXPECT_TRUE(test_is_scalar(eval, "z"));
 }
 
 TEST(UnitTestEvaluator, getAllVariables_noVariables)
@@ -326,28 +385,6 @@ TEST(UnitTestEvaluator, getIndependentVariables_twoVariables)
   EXPECT_EQ(variableNames.size(), 2u);
   EXPECT_TRUE(has_variable(variableNames, "x"));
   EXPECT_TRUE(has_variable(variableNames, "z"));
-}
-
-TEST(UnitTestEvaluator, testThreadedEvaluation)
-{
-  // complicated expression that simplifies into 'x'
-  std::string expression = " k = 7; h = -7; 1.0*x + 2.0 - (1.0/1.0) - 1.0*1.0 + 0.0*x + (x - x) + (k+h)";
-  stk::expreval::Eval expr_eval(generate_expression(expression));
-
-  expr_eval.parse();
-
-  stk::ThreadLocalData<double> x;
-  expr_eval.bindVariable("x", x);
-
-  const int N = 10000;
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (int i = 0; i < N; ++i) {
-    x.getMyThreadEntry() = i;
-    double y = expr_eval.evaluate();
-    EXPECT_EQ(x.getMyThreadEntry(), y);
-  }
 }
 
 TEST( UnitTestEvaluator, testEvaluateEmptyString)

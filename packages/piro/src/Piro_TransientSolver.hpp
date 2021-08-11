@@ -144,8 +144,8 @@ private:
   int num_g_;
 
   //The following are for sensitivities
-  mutable int response_fn_index_; 
-  mutable int sens_param_index_; 
+  mutable int response_fn_index_{0}; 
+  mutable int sens_param_index_{0}; 
 
   SENS_METHOD sensitivityMethod_;
 

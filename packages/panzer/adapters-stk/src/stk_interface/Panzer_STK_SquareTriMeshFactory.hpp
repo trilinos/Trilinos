@@ -96,6 +96,7 @@ protected:
 
    void addSideSets(STK_Interface & mesh) const;
    void addNodeSets(STK_Interface & mesh) const;
+   void addEdgeBlocks(STK_Interface & mesh) const;
 
    double x0_, y0_;
    double xf_, yf_;
@@ -107,6 +108,8 @@ protected:
 
    mutable unsigned int machRank_, machSize_;
    mutable Teuchos::Tuple<std::size_t,2> procTuple_;
+
+   bool createEdgeBlocks_;
 };
 
 }

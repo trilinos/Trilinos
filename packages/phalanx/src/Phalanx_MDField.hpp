@@ -487,6 +487,15 @@ namespace PHX {
     PHX::any get_static_view_as_any()
     {return get_static_view_as_any(ViewSpecialization<traits::rank>());}
 
+    /// Resets the underlying view ptr to null.
+    void releaseFieldData()
+    {
+#if defined(PHX_DEBUG)
+      m_data_set = false;
+#endif
+      m_view = array_type();
+    }
+
   private:
     template<int R> KOKKOS_INLINE_FUNCTION constexpr size_type rank(ViewSpecialization<R>) const {return traits::rank;}
     KOKKOS_INLINE_FUNCTION constexpr size_type rank(ViewSpecialization<0>) const {return m_view.rank();}
