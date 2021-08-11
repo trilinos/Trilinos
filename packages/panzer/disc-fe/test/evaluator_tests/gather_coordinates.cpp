@@ -214,7 +214,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   fm->getFieldData<EvalType>(fmCoords);
 
   fmCoords.print(out,true);
-  bool error = false;
+  int error = false;
   Kokkos::parallel_reduce(fmCoords.extent_int(0), KOKKOS_LAMBDA (int cell, bool &err) {
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
       for(int d=0;d<fmCoords.extent_int(2);++d)
@@ -357,7 +357,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 
   fmCoords.print(out,true);
 
-  bool error = false;
+  int error = false;
   auto q_coords = quadValues->ip_coordinates;
   Kokkos::parallel_reduce(fmCoords.extent_int(0), KOKKOS_LAMBDA (int cell, bool &err) {
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
