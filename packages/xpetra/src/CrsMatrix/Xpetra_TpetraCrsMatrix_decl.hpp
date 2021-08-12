@@ -59,6 +59,8 @@
 
 #include "Xpetra_CrsMatrix.hpp"
 #include "Xpetra_TpetraMap_decl.hpp"
+#include "Xpetra_TpetraImport_decl.hpp"
+#include "Xpetra_TpetraExport_decl.hpp"
 #include "Xpetra_TpetraMultiVector_decl.hpp"
 #include "Xpetra_TpetraVector_decl.hpp"
 #include "Xpetra_TpetraCrsGraph.hpp"
@@ -172,6 +174,17 @@ namespace Xpetra {
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
         const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null);
+
+    /// \brief Constructor specifying local matrix, four maps, import and export objects.
+    TpetraCrsMatrix (
+        const local_matrix_type& lclMatrix,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap,
+        const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >& importer,
+        const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> >& exporter,
         const Teuchos::RCP<Teuchos::ParameterList>& params = null);
 #endif
 #endif

@@ -86,7 +86,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, face_count)
    pl->set("Z Elements",(int)zelems);
    pl->set("Create Face Blocks",true);
 
-   CubeHexMeshFactory factory; 
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -121,7 +121,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, face_count)
                                   +yelems*zelems*(xelems+1));
    }
    else if(numprocs==2 && rank==0) {
-     // rank0 owns all faces in it's half of the mesh including the 
+     // rank0 owns all faces in it's half of the mesh including the
      // faces on the plane shared with rank1
      std::size_t my_xelems=xelems/2;
      std::size_t my_yelems=yelems;
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, is_face_local)
    pl->set("Z Elements",(int)zelems);
    pl->set("Create Face Blocks",true);
 
-   CubeHexMeshFactory factory; 
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -221,7 +221,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, add_face_field)
    pl->set("Z Elements",5);
    pl->set("Create Face Blocks",true);
 
-   CubeHexMeshFactory factory; 
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -278,7 +278,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, set_face_field_data)
    pl->set("Z Elements",5);
    pl->set("Create Face Blocks",true);
 
-   CubeHexMeshFactory factory; 
+   CubeHexMeshFactory factory;
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
    TEST_ASSERT(mesh!=Teuchos::null);
@@ -291,6 +291,7 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, set_face_field_data)
 
    Kokkos::DynRankView<double,PHX::Device> faceValues;
    faceValues = Kokkos::createDynRankView(faceValues,"faceValues",faces.size());
+   auto faceValues_h = Kokkos::create_mirror_view(faceValues);
 
    std::vector<std::size_t> faceIds;
    for(auto face : faces) {
@@ -299,20 +300,20 @@ TEUCHOS_UNIT_TEST(tExodusFaceBlock, set_face_field_data)
    sort(faceIds.begin(),faceIds.end());
 
    for(std::size_t i=0;i<faceIds.size();i++) {
-     faceValues(i) = 3*mesh->faceGlobalId(faceIds[i]);
+     faceValues_h(i) = 3*mesh->faceGlobalId(faceIds[i]);
    }
    mesh->setFaceFieldData("face_field_3",
                           "eblock-0_0_0",
                           faceIds,
-                          faceValues);
+                          faceValues_h);
 
    for(std::size_t i=0;i<faceIds.size();i++) {
-     faceValues(i) = 4*mesh->faceGlobalId(faceIds[i]);
+     faceValues_h(i) = 4*mesh->faceGlobalId(faceIds[i]);
    }
    mesh->setFaceFieldData("face_field_4",
                           "eblock-0_0_0",
                           faceIds,
-                          faceValues);
+                          faceValues_h);
 
    if(mesh->isWritable())
       mesh->writeToExodus("FaceBlock4.exo");

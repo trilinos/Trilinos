@@ -244,7 +244,7 @@ void Multiply(
 
   // Import any needed remote rows and populate the Bview struct.
   if (!use_optimized_ATB)
-    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label, params);
+    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), Aprime->getGraph()->getImporter().is_null(), label, params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   } //stop MM_importExtract here
@@ -418,7 +418,7 @@ void Jacobi(Scalar omega,
       ip2slist.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
   }
 
-  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label,importParams2);
+  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), Aprime->getGraph()->getImporter().is_null(), label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   }

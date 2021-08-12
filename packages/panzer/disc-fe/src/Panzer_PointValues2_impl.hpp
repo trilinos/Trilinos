@@ -53,6 +53,39 @@
 
 namespace panzer {
 
+  
+
+  template<typename Scalar,typename CoordinateArray>
+  struct CopyNodeCoords {
+    using size_type = typename panzer::PointValues2<Scalar>::size_type;
+    const CoordinateArray source_;
+    PHX::MDField<Scalar,Cell,NODE,Dim> target_;
+    CopyNodeCoords(const CoordinateArray in_source,
+                   PHX::MDField<Scalar,Cell,NODE,Dim> in_target)
+      : source_(in_source),target_(in_target) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type cell,const size_type node,const size_type dim) const {
+      target_(cell,node,dim) = source_(cell,node,dim);
+    }
+  };
+
+  template<typename Scalar,typename CoordinateArray>
+  struct CopyPointCoords {
+    using size_type = typename panzer::PointValues2<Scalar>::size_type;
+    const CoordinateArray source_;
+    PHX::MDField<Scalar,IP,Dim> target_;
+    CopyPointCoords(const CoordinateArray in_source,
+                    PHX::MDField<Scalar,IP,Dim> in_target
+                    )
+      :source_(in_source),target_(in_target) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator() (const size_type pt,const size_type dim) const {
+      target_(pt,dim) = source_(pt,dim);
+    }
+  };
+
   template <typename Scalar>
   void PointValues2<Scalar>::
   setupArrays(const Teuchos::RCP<const PointRule> & pr)
@@ -114,14 +147,13 @@ namespace panzer {
   {
     // copy cell node coordinates
     {
-      size_type num_cells = in_node_coords.extent(0);
-      size_type num_nodes = in_node_coords.extent(1);
-      size_type num_dims = in_node_coords.extent(2);
-     
-      for (size_type cell = 0; cell < num_cells;  ++cell)
-	for (size_type node = 0; node < num_nodes; ++node)
-	  for (size_type dim = 0; dim < num_dims; ++dim)
-	    node_coordinates(cell,node,dim) = in_node_coords(cell,node,dim);
+      const size_type num_cells = in_node_coords.extent(0);
+      const size_type num_nodes = in_node_coords.extent(1);
+      const size_type num_dims = in_node_coords.extent(2);
+
+      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<3>> policy({0,0,0},{num_cells,num_nodes,num_dims});
+      Kokkos::parallel_for("PointValues2::copyNodeCoords",policy,panzer::CopyNodeCoords<Scalar,CoordinateArray>(in_node_coords,node_coordinates));
+      PHX::Device::execution_space().fence();
     }
   }
 
@@ -132,12 +164,12 @@ namespace panzer {
   {
     // copy reference point values
     {
-      size_type num_points = in_point_coords.extent(0);
-      size_type num_dims = in_point_coords.extent(1);
-     
-      for (size_type point = 0; point < num_points; ++point)
-        for (size_type dim = 0; dim < num_dims; ++dim)
-          coords_ref(point,dim) = in_point_coords(point,dim);
+      const size_type num_points = in_point_coords.extent(0);
+      const size_type num_dims = in_point_coords.extent(1);
+
+      Kokkos::MDRangePolicy<PHX::Device::execution_space,Kokkos::Rank<2>> policy({0,0},{num_points,num_dims});
+      Kokkos::parallel_for("PointValues2::copyPointCoords",policy,panzer::CopyPointCoords<Scalar,CoordinateArray>(in_point_coords,coords_ref));
+      PHX::Device::execution_space().fence();
     }
   }
 

@@ -166,6 +166,16 @@ namespace Xpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  const RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > toTpetra(const RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > &importObj) {
+    typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TpetraImportClass;
+    if (importObj != Teuchos::null) {
+      XPETRA_RCP_DYNAMIC_CAST(const TpetraImportClass, rcpFromRef(*importObj), tpetraImport, "toTpetra");
+      return tpetraImport->getTpetra_Import();
+    }
+    return Teuchos::null;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > toXpetra(const RCP< const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node > >& import) {
     if (!import.is_null())
       return rcp(new TpetraImport<LocalOrdinal,GlobalOrdinal,Node>(import));

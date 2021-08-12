@@ -95,10 +95,9 @@ void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_In
    build_local_ids(mesh,localIds);
 
    // loop over all element blocks
-   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > >::const_iterator itr;
-   for(itr=localIds.begin();itr!=localIds.end();++itr) {
-      std::string blockId = itr->first;
-      const std::vector<std::size_t> & localCellIds = *(itr->second);
+   for(const auto & itr : localIds) {
+      const auto blockId = itr.first;
+      const auto & localCellIds = *(itr.second);
 
       std::map<std::string,FieldContainer> data;
 
@@ -106,9 +105,8 @@ void write_solution_data(const panzer::GlobalIndexer& dofMngr,panzer_stk::STK_In
       gather_in_block(blockId,dofMngr,x,localCellIds,data);
 
       // write out to stk mesh
-      std::map<std::string,FieldContainer>::iterator dataItr;
-      for(dataItr=data.begin();dataItr!=data.end();++dataItr) 
-         mesh.setSolutionFieldData(prefix+dataItr->first+postfix,blockId,localCellIds,dataItr->second);
+      for(const auto & dataItr : data)
+         mesh.setSolutionFieldData(prefix+dataItr.first+postfix,blockId,localCellIds,dataItr.second);
    }
 }
 
@@ -131,14 +129,14 @@ void gather_in_block(const std::string & blockId, const panzer::GlobalIndexer& d
          std::vector<panzer::GlobalOrdinal> GIDs;
          std::vector<int> LIDs;
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
-      
+
          dofMngr.getElementGIDs(cellLocalId,GIDs);
-      
+
          // caculate the local IDs for this element
          LIDs.resize(GIDs.size());
          for(std::size_t i=0;i<GIDs.size();i++)
             LIDs[i] = x.Map().LID(GIDs[i]);
-   
+
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
