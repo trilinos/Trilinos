@@ -36,7 +36,7 @@ ReporterBase*& getDeviceReporterAddress()
 }
 
 #ifdef KOKKOS_ENABLE_CUDA
-using DeviceReporter = Reporter<Kokkos::CudaUVMSpace>;
+using DeviceReporter = Reporter<Kokkos::CudaHostPinnedSpace>;
 #else
 using DeviceReporter = Reporter<Kokkos::DefaultExecutionSpace::device_type>;
 #endif

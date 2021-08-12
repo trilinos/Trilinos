@@ -55,6 +55,7 @@
 #include <Xpetra_ConfigDefs.hpp>   // global_size_t
 #include <Xpetra_Map.hpp>
 
+#include "MueLu_VerbosityLevel.hpp"
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
 
 #include "MueLu_Exceptions.hpp"
@@ -104,7 +105,7 @@ namespace MueLu {
 
     //! LWGraph constructor
     //
-    // @param[in] graph: local graph of type Kokkos::CsrStaticGraph containing CSR data
+    // @param[in] graph: local graph of type Kokkos::StaticCrsGraph containing CRS data
     // @param[in] domainMap: non-overlapping (domain) map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
     // @param[in] importMap: overlapping map for graph. Usually provided by AmalgamationFactory stored in UnAmalgamationInfo container
     // @param[in] objectLabel: label string
@@ -183,7 +184,7 @@ namespace MueLu {
     }
 
     //! Print the Graph with some verbosity level to an FancyOStream object.
-    // void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
+    void print(Teuchos::FancyOStream &out, const VerbLevel verbLevel = Default) const;
 
   private:
 

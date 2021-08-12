@@ -36,6 +36,7 @@
 
 #include "stk_util/stk_config.h"
 #include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/diag/StringUtil.hpp"
 #include <sstream>
 #include <string>
 #include <map>
@@ -65,11 +66,13 @@ public:
   const T& as() const
   {
     ThrowRequireMsg(!val.empty(), "Error in VariableType::as, internal value is empty.");
-    ThrowRequireMsg(sizeof(T) <= maxSize, std::string("Error: ") + typeid(T).name() + " size too big in in VariableType::as()");
+    ThrowRequireMsg(sizeof(T) <= maxSize, std::string("Error: ") + sierra::demangle(typeid(T).name())
+                    + " size too big in in VariableType::as()");
     std::istringstream iss(val);
     T* Tptr = new (asData) T(0);
     iss >> *Tptr;
-    ThrowRequireMsg(!iss.fail(), "Error in VariableType::as, failed to parse '"<<val<<"'");
+    ThrowRequireMsg(!iss.fail(), "Error in VariableType::as, failed to convert '" << val <<
+                    "' to type " << sierra::demangle(typeid(T).name()) );
     return *Tptr;
   }
 

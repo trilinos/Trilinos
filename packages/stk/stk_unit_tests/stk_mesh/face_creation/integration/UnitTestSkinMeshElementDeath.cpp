@@ -12,7 +12,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <vector>                       // for vector
 #include "mpi.h"                        // for ompi_communicator_t, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for operator<<, Entity
 #include "stk_mesh/base/Selector.hpp"   // for Selector, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, etc

@@ -50,7 +50,6 @@
 #include "stk_io/IossBridge.hpp"        // for is_part_io_part, etc
 #include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, field_data, etc

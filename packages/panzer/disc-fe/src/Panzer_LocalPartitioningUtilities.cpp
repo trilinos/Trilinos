@@ -680,7 +680,7 @@ setupSubLocalMeshInfo(const panzer::LocalMeshInfoBase & parent_info,
 
 
   // Default the system with invalid cell index
-  Kokkos::deep_copy(sub_info.cell_to_faces, -1);
+  Kokkos::deep_copy(cell_to_faces_h, -1);
 
   for(int face_index=0;face_index<num_faces;++face_index){
     const face_t & face = faces[face_index];

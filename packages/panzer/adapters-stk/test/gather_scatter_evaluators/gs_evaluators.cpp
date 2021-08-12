@@ -87,22 +87,6 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-   void pause_to_attach()
-   {
-      MPI_Comm mpicomm = MPI_COMM_WORLD;
-      Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
-            Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
-      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-      out.setShowProcRank(true);
-      out.setOutputToRootOnly(-1);
-
-      out << "PID = " << getpid();
-
-      if (comm->getRank() == 0)
-         getchar();
-      comm->barrier();
-   }
-
   Teuchos::RCP<panzer::BasisIRLayout> buildLinearBasis(std::size_t worksetSize);
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,

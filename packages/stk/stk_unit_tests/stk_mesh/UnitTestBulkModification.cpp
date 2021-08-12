@@ -49,7 +49,6 @@
 
 #include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"
 #include "stk_mesh/base/Bucket.hpp"                          // for Bucket, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/EntityKey.hpp"
 #include "stk_mesh/base/EntityLess.hpp"
 #include "stk_mesh/base/Part.hpp"                            // for Part

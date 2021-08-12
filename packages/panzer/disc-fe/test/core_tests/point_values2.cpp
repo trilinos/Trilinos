@@ -157,6 +157,7 @@ namespace panzer {
     const int num_vertices = point_rule->topology->getNodeCount();
     ArrayType node_coordinates = af.buildArray<ScalarType,Cell,NODE,Dim>("node_coordinates",num_cells, num_vertices, base_cell_dimension);
     node_coordinates.setFieldData(ViewFactory::buildView(node_coordinates.fieldTag(),ddims));
+    auto node_coordinates_host = Kokkos::create_mirror_view(node_coordinates.get_static_view());
     {
       const size_type x = 0;
       const size_type y = 1;
@@ -164,36 +165,39 @@ namespace panzer {
         int xleft = cell % 2;
         int yleft = int(cell/2);
 
-        node_coordinates(cell,0,x) = xleft*0.5;
-        node_coordinates(cell,0,y) = yleft*0.5;
+        node_coordinates_host(cell,0,x) = xleft*0.5;
+        node_coordinates_host(cell,0,y) = yleft*0.5;
 
-        node_coordinates(cell,1,x) = (xleft+1)*0.5;
-        node_coordinates(cell,1,y) = yleft*0.5;
+        node_coordinates_host(cell,1,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,1,y) = yleft*0.5;
 
-        node_coordinates(cell,2,x) = (xleft+1)*0.5;
-        node_coordinates(cell,2,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,2,x) = (xleft+1)*0.5;
+        node_coordinates_host(cell,2,y) = (yleft+1)*0.5;
 
-        node_coordinates(cell,3,x) = xleft*0.5;
-        node_coordinates(cell,3,y) = (yleft+1)*0.5;
+        node_coordinates_host(cell,3,x) = xleft*0.5;
+        node_coordinates_host(cell,3,y) = (yleft+1)*0.5;
 
         out << "Cell " << cell << " = ";
         for(int i=0;i<4;i++)
-          out << "(" << node_coordinates(cell,i,x) << ", "
-              << node_coordinates(cell,i,y) << ") ";
+          out << "(" << node_coordinates_host(cell,i,x) << ", "
+              << node_coordinates_host(cell,i,y) << ") ";
         out << std::endl;
       }
+      Kokkos::deep_copy(node_coordinates.get_static_view(),node_coordinates_host);
     }
 
     // Build the evaluation points
 
     ArrayType point_coordinates =  af.buildArray<ScalarType,IP,Dim>("points",num_points, base_cell_dimension);
     point_coordinates.setFieldData(ViewFactory::buildView(point_coordinates.fieldTag(),ddims));
-    point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
-    point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
-    point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
+    auto point_coordinates_host = Kokkos::create_mirror_view(point_coordinates.get_static_view());
+    point_coordinates_host(0,0) =  0.0; point_coordinates_host(0,1) = 0.0; // mid point
+    point_coordinates_host(1,0) =  0.5; point_coordinates_host(1,1) = 0.5; // mid point of upper left quadrant
+    point_coordinates_host(2,0) = -0.5; point_coordinates_host(2,1) = 0.0; // mid point of line from center to left side
+    Kokkos::deep_copy(point_coordinates.get_static_view(),point_coordinates_host);
 
-    point_values2.getRefCoordinates().setFieldData(ViewFactory::buildView(point_values2.getRefCoordinates().fieldTag(),ddims));
-    point_values2.getVertexCoordinates().setFieldData(ViewFactory::buildView(point_values2.getVertexCoordinates().fieldTag(),ddims));
+    const_cast<PHX::MDField<ScalarType,IP,Dim>&>(point_values2.getRefCoordinates()).setFieldData(ViewFactory::buildView(point_values2.getRefCoordinates().fieldTag(),ddims));
+    const_cast<PHX::MDField<ScalarType,Cell,NODE,Dim>&>(point_values2.getVertexCoordinates()).setFieldData(ViewFactory::buildView(point_values2.getVertexCoordinates().fieldTag(),ddims));
 
     point_values2.point_coords.setFieldData(ViewFactory::buildView(point_values2.point_coords.fieldTag(),ddims));
     point_values2.jac.setFieldData(ViewFactory::buildView(point_values2.jac.fieldTag(),ddims));
@@ -203,50 +207,55 @@ namespace panzer {
     point_values2.evaluateValues(node_coordinates,point_coordinates);
 
     // check the reference values (ensure copying)
+    auto ref_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),point_values2.getRefCoordinates().get_static_view());
     for(int p=0;p<num_points;p++)
        for(size_type d=0;d<static_cast<size_type>(base_cell_dimension);d++)
-          TEST_EQUALITY(point_values2.getRefCoordinates()(p,d),point_coordinates(p,d));
+          TEST_EQUALITY(ref_coords_host(p,d),point_coordinates_host(p,d));
 
     // check the shifted values (ensure physical mapping)
+    auto pv2_point_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),point_values2.point_coords.get_static_view());
     for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
-          double x = dx*(point_coordinates(p,0)+1.0)/2.0 + node_coordinates(c,0,0);
-          double y = dy*(point_coordinates(p,1)+1.0)/2.0 + node_coordinates(c,0,1);
-          TEST_FLOATING_EQUALITY(point_values2.point_coords(c,p,0),x,1e-10);
-          TEST_FLOATING_EQUALITY(point_values2.point_coords(c,p,1),y,1e-10);
+          double x = dx*(point_coordinates_host(p,0)+1.0)/2.0 + node_coordinates_host(c,0,0);
+          double y = dy*(point_coordinates_host(p,1)+1.0)/2.0 + node_coordinates_host(c,0,1);
+          TEST_FLOATING_EQUALITY(pv2_point_coords_host(c,p,0),x,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_point_coords_host(c,p,1),y,1e-10);
        }
     }
 
     // check the jacobian
+    auto pv2_jac_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),point_values2.jac.get_static_view());
     for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
-          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,0,0),dx/2.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,0,1),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,1,0),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_values2.jac(c,p,1,1),dy/2.0,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_host(c,p,0,0),dx/2.0,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_host(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_host(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_host(c,p,1,1),dy/2.0,1e-10);
        }
     }
+    auto pv2_jac_det_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),point_values2.jac_det.get_static_view());
     for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
-          TEST_FLOATING_EQUALITY(point_values2.jac_det(c,p),dy*dx/4.0,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_det_host(c,p),dy*dx/4.0,1e-10);
        }
     }
 
     // check the inverse jacobian
+    auto pv2_jac_inv_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),point_values2.jac_inv.get_static_view());
     for(int c=0;c<num_cells;c++) {
        double dx = 0.5;
        double dy = 0.5;
        for(int p=0;p<num_points;p++) {
-          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,0,0),2.0/dx,1e-10);
-          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,0,1),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,1,0),0.0,1e-10);
-          TEST_FLOATING_EQUALITY(point_values2.jac_inv(c,p,1,1),2.0/dy,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_inv_host(c,p,0,0),2.0/dx,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_inv_host(c,p,0,1),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_inv_host(c,p,1,0),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(pv2_jac_inv_host(c,p,1,1),2.0/dy,1e-10);
        }
     }
   }

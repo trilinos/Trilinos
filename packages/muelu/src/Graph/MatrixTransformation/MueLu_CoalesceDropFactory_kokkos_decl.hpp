@@ -65,9 +65,13 @@ namespace MueLu {
 
   /*!
     @class CoalesceDropFactory_kokkos
-    @brief Factory for creating a graph base on a given matrix.
+    @brief Factory for creating a graph based on a given matrix.
 
     Factory for creating graphs from matrices with entries selectively dropped.
+    This factory combines the functionality of CoalesceDropFactory and FilteredAFactory from the non-Kokkos
+    code path.
+
+    For an in-depth discussion, see https://github.com/trilinos/Trilinos/issues/1676.
 
     ## Code paths ##
 

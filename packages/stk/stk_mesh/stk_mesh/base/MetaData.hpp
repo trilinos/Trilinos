@@ -143,7 +143,7 @@ public:
 
 
   inline static MetaData & get( const Part & part ) { return part.meta_data(); }
-  inline static MetaData & get( const FieldBase & field ) { return field.meta_data(); }
+  inline static MetaData & get( const FieldBase & field ) { return field.mesh_meta_data(); }
 
   static const MetaData & get( const BulkData & bulk_data );
 
@@ -877,7 +877,7 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
     }
 
     for ( unsigned i = 0 ; i < number_of_states ; ++i ) {
-      f[i]->m_impl.set_field_states( f );
+      f[i]->set_field_states( f );
     }
   }
 

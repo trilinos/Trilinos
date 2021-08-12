@@ -38,8 +38,6 @@
 #include <gtest/gtest.h>
 #include <stk_util/util/ParameterList.hpp>
 
-#ifdef STK_HAVE_BOOST
-
 inline void validate_parameters_equal_value(const stk::util::Parameter &parameter,
 					    const stk::util::Parameter &gold_parameter)
 {
@@ -48,18 +46,18 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
     {
     case stk::util::ParameterType::INTEGER:
       {
-	ASSERT_EQ(boost::any_cast<int>(parameter.value), boost::any_cast<int>(gold_parameter.value));
+	ASSERT_EQ(STK_ANY_NAMESPACE::any_cast<int>(parameter.value), STK_ANY_NAMESPACE::any_cast<int>(gold_parameter.value));
 	break;
       }
     case stk::util::ParameterType::DOUBLE:
       {
-	ASSERT_EQ(boost::any_cast<double>(parameter.value), boost::any_cast<double>(gold_parameter.value));
+	ASSERT_EQ(STK_ANY_NAMESPACE::any_cast<double>(parameter.value), STK_ANY_NAMESPACE::any_cast<double>(gold_parameter.value));
 	break;
       }
     case stk::util::ParameterType::DOUBLEVECTOR:
       {
-	std::vector<double> vec = boost::any_cast<std::vector<double> >(parameter.value);
-	std::vector<double> gvec = boost::any_cast<std::vector<double> >(gold_parameter.value);
+	std::vector<double> vec = STK_ANY_NAMESPACE::any_cast<std::vector<double> >(parameter.value);
+	std::vector<double> gvec = STK_ANY_NAMESPACE::any_cast<std::vector<double> >(gold_parameter.value);
 	ASSERT_EQ(vec.size(), gvec.size());
 	for (size_t j = 0; j < vec.size(); ++j) {
 	  ASSERT_EQ(vec[j], gvec[j]);
@@ -68,8 +66,8 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       }
     case stk::util::ParameterType::INTEGERVECTOR:
       {
-	std::vector<int> vec = boost::any_cast<std::vector<int> >(parameter.value);
-	std::vector<int> gvec = boost::any_cast<std::vector<int> >(gold_parameter.value);
+	std::vector<int> vec = STK_ANY_NAMESPACE::any_cast<std::vector<int> >(parameter.value);
+	std::vector<int> gvec = STK_ANY_NAMESPACE::any_cast<std::vector<int> >(gold_parameter.value);
 	ASSERT_EQ(vec.size(), gvec.size());
 	for (size_t j = 0; j < vec.size(); ++j) {
 	  ASSERT_EQ(vec[j], gvec[j]);
@@ -80,8 +78,6 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       ASSERT_EQ(1,0) << "Invalid type found in validate_parameters_equal_value";
     }
 }
-
-#endif //STK_HAVE_BOOST
 
 #endif //include-guard
 

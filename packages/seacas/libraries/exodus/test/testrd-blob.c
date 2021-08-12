@@ -28,15 +28,15 @@
 
 int main(int argc, char **argv)
 {
-  int exoid;
-  int num_blob;
-  int num_red_vars;
-  int num_vars;
-  int error;
-  int i;
-  int CPU_word_size;
-  int IO_word_size;
-  int idum;
+  int   exoid;
+  int   num_blob;
+  int   num_red_vars;
+  int   num_vars;
+  int   error;
+  int   i;
+  int   CPU_word_size;
+  int   IO_word_size;
+  int   idum;
   char *blob_names[10];
 
   float version;

@@ -109,20 +109,23 @@ evaluateFields(
     if(normalize) {
       // normalize vector: getPhysicalSideNormals does not 
       // return normalized vectors
-      for(index_t c=0;c<workset.num_cells;c++) {
-        for(std::size_t q=0;q<num_qp;q++) {
+      auto local_normals = normals;
+      auto local_num_qp = num_qp;
+      auto local_num_dim = num_dim;
+      Kokkos::parallel_for("normalize", workset.num_cells, KOKKOS_LAMBDA (index_t c) {
+        for(std::size_t q=0;q<local_num_qp;q++) {
           ScalarT norm = 0.0;
    
           // compute squared norm
-          for(std::size_t d=0;d<num_dim;d++)
-            norm += normals(c,q,d)*normals(c,q,d);
+          for(std::size_t d=0;d<local_num_dim;d++)
+            norm += local_normals(c,q,d)*local_normals(c,q,d);
     
           // adjust for length of vector, now unit vectors
           norm = sqrt(norm);
-          for(std::size_t d=0;d<num_dim;d++)
-            normals(c,q,d) /= norm;
+          for(std::size_t d=0;d<local_num_dim;d++)
+            local_normals(c,q,d) /= norm;
         }
-      }
+      });
     }
     // else normals correspond to differential
   }

@@ -1130,7 +1130,7 @@ public:
     const Kokkos::View<mj_part_t *, Kokkos::HostSpace> & first_level_distribution_
       = Kokkos::View<mj_part_t *, Kokkos::HostSpace>());
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   public:
 #else
   private:
@@ -3551,7 +3551,7 @@ struct Zoltan2_MJArrayType {
   }
 };
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 
 template<class policy_t, class scalar_t, class part_t>
 struct ArrayCombinationReducer {
@@ -3627,7 +3627,7 @@ struct ArrayCombinationReducer {
     }
   }
 };
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
 
 template<class policy_t, class scalar_t, class part_t, class index_t,
   class device_t, class array_t>
@@ -3635,7 +3635,7 @@ struct ReduceWeightsFunctor {
   typedef typename policy_t::member_type member_type;
   typedef Kokkos::View<scalar_t*> scalar_view_t;
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   typedef array_t value_type[];
 #endif
 
@@ -3658,11 +3658,11 @@ struct ReduceWeightsFunctor {
   bool uniform_weights0;
   scalar_t sEpsilon;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   Kokkos::View<double *, device_t> current_part_weights;
   Kokkos::View<scalar_t *, device_t> current_left_closest;
   Kokkos::View<scalar_t *, device_t> current_right_closest;
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || defined(KOKKOS_ENABLE_HIP)
 
   ReduceWeightsFunctor(
     int mj_loop_count,
@@ -3681,11 +3681,11 @@ struct ReduceWeightsFunctor {
     Kokkos::View<index_t *, device_t> & mj_part_xadj,
     bool mj_uniform_weights0,
     scalar_t mj_sEpsilon
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ,Kokkos::View<double *, device_t> & mj_current_part_weights,
     Kokkos::View<scalar_t *, device_t> & mj_current_left_closest,
     Kokkos::View<scalar_t *, device_t> & mj_current_right_closest
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     ) :
       loop_count(mj_loop_count),
       max_scalar(mj_max_scalar),
@@ -3704,16 +3704,16 @@ struct ReduceWeightsFunctor {
       part_xadj(mj_part_xadj),
       uniform_weights0(mj_uniform_weights0),
       sEpsilon(mj_sEpsilon)
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       ,current_part_weights(mj_current_part_weights),
       current_left_closest(mj_current_left_closest),
       current_right_closest(mj_current_right_closest)
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
   {
   }
 
   size_t team_shmem_size (int team_size) const {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     int result = sizeof(array_t) *
       (value_count_weights + value_count_rightleft);
 #else
@@ -3730,7 +3730,7 @@ struct ReduceWeightsFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   void operator() (const member_type & teamMember) const {
 #else
   void operator() (const member_type & teamMember, value_type teamSum) const {
@@ -3757,7 +3757,7 @@ struct ReduceWeightsFunctor {
       end = all_end;
     }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     size_t sh_mem_size = sizeof(array_t) * (value_count_weights +
       value_count_rightleft);
 
@@ -3780,7 +3780,7 @@ struct ReduceWeightsFunctor {
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (index_t ii) {
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // create the team shared data - each thread gets one of the arrays
     size_t sh_mem_size = sizeof(array_t) * (value_count_weights +
       value_count_rightleft) * teamMember.team_size();
@@ -3801,7 +3801,7 @@ struct ReduceWeightsFunctor {
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       int i = permutations(ii);
       scalar_t coord = coordinates(i);
@@ -3819,7 +3819,7 @@ struct ReduceWeightsFunctor {
         scalar_t b = (part == num_cuts) ? max_scalar : cut_coordinates(part);
 
         if(coord >= a + sEpsilon && coord <= b - sEpsilon) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
           Kokkos::atomic_add(&shared_ptr[part*2], w);
 #else
           threadSum.ptr[part*2] += w;
@@ -3828,7 +3828,7 @@ struct ReduceWeightsFunctor {
           parts(i) = part*2;
 
           // now handle the left/right closest part
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
           array_t new_value = (array_t) coord;
           array_t prev_value = shared_ptr[value_count_weights + part * 2 + 1];
           while(new_value < prev_value) {
@@ -3862,7 +3862,7 @@ struct ReduceWeightsFunctor {
             // Note if on cut we set right/left closest to the cut itself
             // but we add +2 because we buffered the area with an extra slot
             // to reduce cuda branching. So it's +2, +3 instead of +0, +1.
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
             Kokkos::atomic_add(&shared_ptr[part*2+1], w);
             shared_ptr[value_count_weights + part * 2 + 2] = b;
             shared_ptr[value_count_weights + part * 2 + 3] = b;
@@ -3889,7 +3889,7 @@ struct ReduceWeightsFunctor {
                 // Note if on cut we set right/left closest to the cut itself
                 // but we add +2 because we buffered the area with an extra slot
                 // to reduce cuda branching. So it's +2, +3 instead of +0, +1.
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
                 Kokkos::atomic_add(&shared_ptr[part*2+1], w);
                 shared_ptr[value_count_weights + part * 2 + 2] = b;
                 shared_ptr[value_count_weights + part * 2 + 3] = b;
@@ -3911,7 +3911,7 @@ struct ReduceWeightsFunctor {
                 // Note if on cut we set right/left closest to the cut itself
                 // but we add +2 because we buffered the area with an extra slot
                 // to reduce cuda branching. So it's +2, +3 instead of +0, +1.
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
                 Kokkos::atomic_add(&shared_ptr[part*2+1], w);
                 shared_ptr[value_count_weights + part * 2 + 2] = b;
                 shared_ptr[value_count_weights + part * 2 + 3] = b;
@@ -3958,33 +3958,33 @@ struct ReduceWeightsFunctor {
           }
         }
       }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     });
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     }, arraySumReducer);
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
     teamMember.team_barrier();
 
     // collect all the team's results
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
       for(int n = 0; n < value_count_weights; ++n) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&current_part_weights(n),
           static_cast<double>(shared_ptr[n]));
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
         teamSum[n] += array.ptr[n];
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
       }
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       int insert_left = 0;
       int insert_right = 0;
 #endif
 
       for(int n = 2 + value_count_weights;
         n < value_count_weights + value_count_rightleft - 2; n += 2) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         scalar_t new_value = shared_ptr[n+1];
         scalar_t prev_value = current_right_closest(insert_right);
         while(new_value < prev_value) {
@@ -4001,21 +4001,21 @@ struct ReduceWeightsFunctor {
 
         ++insert_left;
         ++insert_right;
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
         if(array.ptr[n] > teamSum[n]) {
           teamSum[n] = array.ptr[n];
         }
         if(array.ptr[n+1] < teamSum[n+1]) {
           teamSum[n+1] = array.ptr[n+1];
         }
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
       }
     });
 
     teamMember.team_barrier();
   }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   KOKKOS_INLINE_FUNCTION
   void join(value_type dst, const value_type src)  const {
     for(int n = 0; n < value_count_weights; ++n) {
@@ -4061,7 +4061,7 @@ struct ReduceWeightsFunctor {
       dst[n+1] =  max_scalar;
     }
   }
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 };
 
 /*! \brief Function that calculates the weights of each part according to given
@@ -4130,7 +4130,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     auto policy_ReduceWeightsFunctor = policy_t(
       mj_num_teams ? mj_num_teams : 60, Kokkos::AUTO);
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
     int total_array_length =
       weight_array_length + right_left_array_length;
 #endif
@@ -4141,10 +4141,10 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
     // Just use scalar_t to match the original algorithm.
     typedef mj_scalar_t array_t;
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
     array_t * reduce_array =
       new array_t[static_cast<size_t>(total_array_length)];
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA && KOKKOS_ENABLE_HIP
 
     int offset_cuts = 0;
     for(int kk2 = 0; kk2 < kk; ++kk2) {
@@ -4168,7 +4168,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
 
     array_t max_scalar = std::numeric_limits<array_t>::max();
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     // initialize values
     Kokkos::parallel_for(
       Kokkos::RangePolicy<typename mj_node_t::execution_space, int> (0, 1),
@@ -4205,21 +4205,21 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t,mj_part_t, mj_node_t>::
         part_xadj,
         mj_uniform_weights(0), // host and currently only relevant to slot 0
         sEpsilon
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         ,my_current_part_weights,
         my_current_left_closest,
         my_current_right_closest
 #endif
         );
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     Kokkos::parallel_for(policy_ReduceWeightsFunctor, teamFunctor);
 #else
     Kokkos::parallel_reduce(policy_ReduceWeightsFunctor,
       teamFunctor, reduce_array);
 #endif
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
     auto hostArray = Kokkos::create_mirror_view(my_current_part_weights);
 
     for(int i = 0; i < static_cast<int>(total_part_count); ++i) {
@@ -4419,7 +4419,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   new_cut_position = coordinate_range * required_shift + cut_lower_bound;
 }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 
 template<class policy_t, class scalar_t>
 struct ArrayReducer {
@@ -4471,7 +4471,7 @@ struct ReduceArrayFunctor {
   typedef typename policy_t::member_type member_type;
   typedef Kokkos::View<scalar_t*> scalar_view_t;
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   typedef array_t value_type[];
 #endif
 
@@ -4483,9 +4483,9 @@ struct ReduceArrayFunctor {
   Kokkos::View<index_t *, device_t> part_xadj;
   Kokkos::View<index_t *, device_t> track_on_cuts;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   Kokkos::View<int *, device_t> local_point_counts;
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
   ReduceArrayFunctor(
     part_t mj_concurrent_current_part,
@@ -4495,9 +4495,9 @@ struct ReduceArrayFunctor {
     Kokkos::View<part_t*, device_t> & mj_parts,
     Kokkos::View<index_t *, device_t> & mj_part_xadj,
     Kokkos::View<index_t *, device_t> & mj_track_on_cuts
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ,Kokkos::View<int *, device_t> & mj_local_point_counts
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     ) :
       concurrent_current_part(mj_concurrent_current_part),
       value_count(mj_weight_array_size),
@@ -4506,14 +4506,14 @@ struct ReduceArrayFunctor {
       parts(mj_parts),
       part_xadj(mj_part_xadj),
       track_on_cuts(mj_track_on_cuts)
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       ,local_point_counts(mj_local_point_counts)
 #endif
   {
   }
 
   size_t team_shmem_size (int team_size) const {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     int result = sizeof(array_t) * (value_count);
 #else
     int result = sizeof(array_t) * (value_count) * team_size;
@@ -4528,7 +4528,7 @@ struct ReduceArrayFunctor {
   }
 
   KOKKOS_INLINE_FUNCTION
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   void operator() (const member_type & teamMember) const {
 #else
   void operator() (const member_type & teamMember, value_type teamSum) const {
@@ -4554,7 +4554,7 @@ struct ReduceArrayFunctor {
     int track_on_cuts_insert_index = track_on_cuts.size() - 1;
 
     // create the team shared data - each thread gets one of the arrays
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     size_t sh_mem_size = sizeof(array_t) * (value_count);
 #else
     size_t sh_mem_size =
@@ -4564,7 +4564,7 @@ struct ReduceArrayFunctor {
     array_t * shared_ptr = (array_t *) teamMember.team_shmem().get_shmem(
       sh_mem_size);
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     // init the shared array to 0
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
       for(int n = 0; n < value_count; ++n) {
@@ -4575,7 +4575,7 @@ struct ReduceArrayFunctor {
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (index_t ii) {
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // select the array for this thread
     Zoltan2_MJArrayType<array_t> array(&shared_ptr[teamMember.team_rank() *
         (value_count)]);
@@ -4586,13 +4586,13 @@ struct ReduceArrayFunctor {
     Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(teamMember, begin, end),
       [=] (size_t ii, Zoltan2_MJArrayType<array_t>& threadSum) {
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
       index_t coordinate_index = permutations(ii);
       part_t place = parts(coordinate_index);
       part_t part = place / 2;
       if(place % 2 == 0) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&shared_ptr[part], 1);
 #else
         threadSum.ptr[part] += 1;
@@ -4607,29 +4607,29 @@ struct ReduceArrayFunctor {
             &track_on_cuts(track_on_cuts_insert_index), 1);
         track_on_cuts(set_index) = ii;
       }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     });
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     }, arrayReducer);
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
 
     teamMember.team_barrier();
 
     // collect all the team's results
     Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
       for(int n = 0; n < value_count; ++n) {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         Kokkos::atomic_add(&local_point_counts(n), shared_ptr[n]);
-#else // KOKKOS_ENABLE_CUDA
+#else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
         teamSum[n] += array.ptr[n];
-#endif // KOKKOS_ENABLE_CUDA
+#endif // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
       }
     });
 
     teamMember.team_barrier();
   }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
 
   KOKKOS_INLINE_FUNCTION
   void join(value_type dst, const value_type src)  const {
@@ -4785,7 +4785,7 @@ mj_create_new_partitions(
 
   // just need parts - on the cuts will be handled in a separate serial
   // call after this.
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   array_t * reduce_array = new array_t[static_cast<size_t>(num_parts)];
 #endif
 
@@ -4798,18 +4798,18 @@ mj_create_new_partitions(
       assigned_part_ids,
       part_xadj,
       track_on_cuts
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
       ,local_point_counts
 #endif
       );
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   Kokkos::parallel_for(policy_ReduceFunctor, teamFunctor);
 #else
   Kokkos::parallel_reduce(policy_ReduceFunctor, teamFunctor, reduce_array);
 #endif
 
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP)
   for(mj_part_t part = 0; part < num_parts; ++part) {
     local_point_counts(part) = reduce_array[part];
   }
@@ -4935,7 +4935,7 @@ mj_create_new_partitions(
   // here we will determine insert indices for N teams
   // then all the teams can fill
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 
   // This is the fastest so far - just straight atomic writes for CUDA
   // However this is not a deterministic result since it is atomic.

@@ -246,7 +246,7 @@ namespace panzer_stk {
 
     // build the elements
     std::vector<std::string> block_ids;
-    mesh.getElementBlockNames(block_ids);  
+    mesh.getElementBlockNames(block_ids);
 
     for (int i=0;i<NumElementsPerProc_;++i) {
 
@@ -326,50 +326,47 @@ namespace panzer_stk {
   void
   CustomMeshFactory::fillSolutionFieldData(STK_Interface &mesh) const
   {
+    constexpr std::size_t dim_1 = 8;
+
     for (int blk=0;blk<NumBlocks_;++blk) {
 
       std::stringstream block_id;
       block_id << "eblock-" << blk;
-      
+
       // elements in this processor for this block
-      std::vector<stk::mesh::Entity> elements;    
+      std::vector<stk::mesh::Entity> elements;
       mesh.getMyElements(block_id.str(), elements);
 
       // size of elements in the current block
-      std::size_t n_elements = elements.size();
-      
+      const auto n_elements = elements.size();
+
       // build local element index
       std::vector<std::size_t> local_ids;
-      for (std::vector<stk::mesh::Entity>::const_iterator
-             itr=elements.begin();itr!=elements.end();++itr) 
-        local_ids.push_back(mesh.elementLocalId(*itr));
 
-      // re-index solution fields in the same order of local_ids
-      std::vector<double> charge_density_by_local_ids, electric_potential_by_local_ids;
-      for (std::vector<stk::mesh::Entity>::const_iterator
-             itr=elements.begin();itr!=elements.end();++itr) {
-        int q = mesh.elementGlobalId(*itr) - OffsetToGlobalElementIDs_;
-        for (int k=0;k<8;++k) {
-          int loc = q*8 + k;
-          charge_density_by_local_ids.push_back(ChargeDensity_[loc]);
-          electric_potential_by_local_ids.push_back(ElectricPotential_[loc]);
+      Kokkos::View<double**, Kokkos::HostSpace> charge_density_by_local_ids("charge_density_by_local_ids", n_elements, dim_1);
+      Kokkos::View<double**, Kokkos::HostSpace> electric_potential_by_local_ids("electric_potential_by_local_ids", n_elements, dim_1);
+
+      for (const auto& elem : elements){
+        local_ids.push_back(mesh.elementLocalId(elem));
+        const auto q = mesh.elementGlobalId(elem) - OffsetToGlobalElementIDs_;
+
+        for (std::size_t k=0;k<dim_1;++k) {
+          const auto loc = q*dim_1 + k;
+          charge_density_by_local_ids(q,k) = ChargeDensity_[loc];
+          electric_potential_by_local_ids(q,k) = ElectricPotential_[loc];
         }
       }
-
-      // wrap the buffer with a proper container
-      FieldContainer charge_density(n_elements, 8, &charge_density_by_local_ids[0]),
-        electric_potential(n_elements, 8, &electric_potential_by_local_ids[0]);
 
       // write out to stk mesh
       mesh.setSolutionFieldData("CHARGE_DENSITY",
                                 block_id.str(),
                                 local_ids,
-                                charge_density, 1.0);
-      
+                                charge_density_by_local_ids, 1.0);
+
       mesh.setSolutionFieldData("ELECTRIC_POTENTIAL",
                                 block_id.str(),
                                 local_ids,
-                                electric_potential, 1.0);
+                                electric_potential_by_local_ids, 1.0);
     }
   }
 } // end panzer_stk

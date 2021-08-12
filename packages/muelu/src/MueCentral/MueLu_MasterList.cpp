@@ -224,6 +224,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: brick z Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: greedy Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: coloring algorithm\" type=\"string\" value=\"serial\"/>"
   "<Parameter name=\"aggregation: coloring: use color graph\" type=\"bool\" value=\"false\"/>"
@@ -347,7 +348,10 @@ namespace MueLu {
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
-  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
+  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-2\"/>"
+  "<Parameter name=\"maxwell1: mode\" type=\"string\" value=\"standard\"/>"
+  "<ParameterList name=\"maxwell1: 11list\"/>"
+  "<ParameterList name=\"maxwell1: 22list\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"refmaxwell: 11list\"/>"
@@ -652,6 +656,8 @@ namespace MueLu {
       
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
       
+         ("aggregation: greedy Dirichlet","aggregation: greedy Dirichlet")
+      
          ("aggregation: deterministic","aggregation: deterministic")
       
          ("aggregation: coloring algorithm","aggregation: coloring algorithm")
@@ -899,6 +905,12 @@ namespace MueLu {
          ("amgx:params","amgx:params")
       
          ("debug: graph level","debug: graph level")
+      
+         ("maxwell1: mode","maxwell1: mode")
+      
+         ("maxwell1: 11list","maxwell1: 11list")
+      
+         ("maxwell1: 22list","maxwell1: 22list")
       
          ("refmaxwell: mode","refmaxwell: mode")
       
