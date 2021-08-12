@@ -35,140 +35,169 @@
 #ifndef stk_util_util_CSet_hpp
 #define stk_util_util_CSet_hpp
 
+#include "stk_util/util/ReportHandler.hpp"
 #include <typeinfo>  // for type_info
-#include <utility>   // for pair
 #include <vector>    // for vector
+#include <iterator>   // for advance
+#include <memory>
 
 namespace stk {
 
-//----------------------------------------------------------------------
-/** \ingroup util_module
- * \class CSet
- * \brief Set of entities of arbitrary types.
- *
- * @todo REFACTOR Use smart pointers to avoid destruction issue.
- *
- *  Example usage of the three methods:
- *
- * <PRE>
- *  class A { ... };
- *  class B { ... };
- *
- *  CSet cset ;
- *
- *  // Insert pointers to objects:
- *
- *  cset.insert<A>( new A ); // Do not delete on destruction
- *  cset.insert<B>( new B , true ); // Delete on destruction
- *
- *  // Query the collection of objects of a given type:
- *
- *  const A * sa = cset.get<A>();
- *  const B * sb = cset.get<B>();
- *
- *  // Remove a member:
- *
- *  {
- *    B * b = ... ;
- *    cset.remove<B>( b ); // Remove never deletes
- *    delete b ;
- *  }
- * </PRE>
- */
 class CSet {
 public:
+  CSet() = default;
+  ~CSet() = default;
 
-  /** Get member conforming to the given type. */
-  template<class T> const T * get() const ;
+  CSet(const CSet & rhs) = default;
+  CSet(CSet && rhs) = default;
+  CSet & operator=(const CSet & rhs) = default;
+  CSet & operator=(CSet && rhs) = default;
 
-  /** Insert a new member.  Invoke 'delete' upon destruction.
-   *  If already exists then return existing member, insert fails.
-   */
-  template<class T> const T * insert_with_delete( const T *);
+  template<class T> const T * get() const;
+  template<class T> const T * insert_with_delete(const T * value);
+  template<class T> const T * insert_no_delete(const T * value);
+  template<class T> bool remove(const T * value);
 
-  /** Insert a new member.  Do nothing to it upon destruction.
-   *  If already exists then return existing member, insert fails.
-   */
-  template<class T> const T * insert_no_delete( const T * );
-
-  /** Erase a member without deleting.
-   *  Return if the remove operation was successful.
-   */
-  template<class T> bool remove( const T * );
-
-  //--------------------------------
-
-  ~CSet();
-  CSet();
-
-  typedef void (*DeleteFunction)(void *);
-
-  typedef std::pair< const std::type_info * , DeleteFunction > Manager ;
+  using TypeVector = std::vector<const std::type_info *>;
+  using ValueVector = std::vector<std::shared_ptr<const void>>;
 
 private:
 
-  const void * p_get( const std::type_info & ) const ;
+  template <typename T>
+  class Deleter
+  {
+  public:
+    Deleter()
+      : m_doDelete(true)
+    { }
+    ~Deleter() = default;
+    void operator()(const void * v) {
+      if (m_doDelete) {
+        delete reinterpret_cast<const T*>(v);
+      }
+    }
+    void cancel_delete() { m_doDelete = false; }
 
-  const void * p_insert( const Manager & , const void * );
+  private:
+    bool m_doDelete;
+  };
 
-  bool p_remove( const std::type_info & , const void * );
+  class InactiveDeleter
+  {
+  public:
+    InactiveDeleter() = default;
+    ~InactiveDeleter() = default;
+    void operator()(const void * ) { }
+  };
 
-  std::vector< Manager > m_manager ;
-  std::vector< const void * > m_value ;
+  const void * p_get(const std::type_info & type) const;
 
-  CSet( const CSet & );
-  CSet & operator = ( const CSet & );
+  template <typename DELETER, typename T>
+  const T * p_insert(const DELETER & deleter, const T * value);
+
+  template <typename T>
+  bool p_remove(const std::type_info & manager, const void * value);
+
+  TypeVector m_type;
+  ValueVector m_value;
 };
 
-} // namespace stk
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-// Inlined template methods have casting.
-
-#ifndef DOXYGEN_COMPILE
-
-namespace stk {
-
-namespace {
-template<class T>
-void cset_member_delete( void * v ) { delete reinterpret_cast<T*>( v ); }
-}
 
 template<class T>
 inline
 const T * CSet::get() const
-{ return static_cast<const T*>(p_get( typeid(T)) ); }
-
-template<class T>
-inline
-const T * CSet::insert_with_delete( const T * arg_value)
 {
-  Manager m ;
-  m.first = & typeid(T);
-  m.second = & cset_member_delete<T> ;
-
-  return static_cast<const T*>(p_insert( m , arg_value ));
+  return static_cast<const T*>(p_get(typeid(T)));
 }
 
 template<class T>
 inline
-const T * CSet::insert_no_delete( const T * arg_value)
+const T * CSet::insert_with_delete(const T * arg_value)
 {
-  Manager m ;
-  m.first = & typeid(T);
-  m.second = 0 ;
-
-  return static_cast<const T*>(p_insert( m , arg_value ));
+  return p_insert(Deleter<T>(), arg_value);
 }
 
 template<class T>
 inline
-bool CSet::remove( const T * arg_value )
-{ return p_remove( typeid(T) , arg_value ); }
+const T * CSet::insert_no_delete(const T * arg_value)
+{
+  return p_insert(InactiveDeleter(), arg_value);
+}
 
-} // namespace stk
+template<class T>
+inline
+bool CSet::remove(const T * value)
+{
+  return p_remove<T>(typeid(T), value);
+}
 
-#endif /* DOXYGEN_COMPILE */
+
+namespace cset {
+
+struct less_cset {
+  bool operator()(const std::type_info * lhs,
+                  const std::type_info * rhs) const
+  {
+    return lhs->before(*rhs);
+  }
+};
+
+CSet::TypeVector::iterator
+lower_bound(CSet::TypeVector & v, const std::type_info * t);
+
+}
+
+template <typename DELETER, typename T>
+inline
+const T * CSet::p_insert(const DELETER & deleter, const T * value)
+{
+  const std::type_info * type = &typeid(T);
+
+  auto im = cset::lower_bound(m_type, type);
+  const size_t offset = im - m_type.begin();
+
+  ThrowAssert(m_value.size() == m_type.size());
+  auto iv = m_value.begin();
+  std::advance(iv, offset);
+
+  if (im == m_type.end() || *type != **im) {
+    im = m_type.insert(im, type);
+    iv = m_value.insert(iv , std::shared_ptr<const void>(value, deleter));
+  }
+
+  ThrowAssert(iv != m_value.end());
+  return static_cast<const T*>((*iv).get());
+}
+
+template <typename T>
+bool CSet::p_remove(const std::type_info & type, const void * value)
+{
+  bool result = false;
+  const auto im = cset::lower_bound(m_type, &type);
+
+  if (im != m_type.end()) {
+    const size_t offset = im - m_type.begin();
+
+    if (offset <= m_value.size()) {
+      auto iv = m_value.begin();
+      std::advance(iv, offset);
+
+      result = (type == **im) && (value == (*iv).get());
+
+      if (result) {
+        m_type.erase(im);
+
+        if (Deleter<T> * deleter = std::get_deleter<Deleter<T>>(*iv)) {
+          deleter->cancel_delete();
+        }
+        m_value.erase(iv);
+      }
+    }
+  }
+
+  return result;
+}
+
+}
 
 #endif // stk_util_util_CSet_hpp

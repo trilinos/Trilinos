@@ -118,6 +118,7 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: drop tol");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
+    SET_VALID_ENTRY("aggregation: greedy Dirichlet");
     SET_VALID_ENTRY("aggregation: row sum drop tol");
     SET_VALID_ENTRY("aggregation: drop scheme");
     SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
@@ -724,11 +725,20 @@ namespace MueLu {
             // TODO: Here we have different options of how to define a node to be a boundary (or Dirichlet)
             // node.
             bool isBoundary = false;
-            isBoundary = true;
-            for (LO j = 0; j < blkPartSize; j++) {
-              if (!pointBoundaryNodes[row*blkPartSize+j]) {
-                isBoundary = false;
-                break;
+            if (pL.get<bool>("aggregation: greedy Dirichlet") == true) {
+              for (LO j = 0; j < blkPartSize; j++) {
+                if (pointBoundaryNodes[row*blkPartSize+j]) {
+                  isBoundary = true;
+                  break;
+                }
+              }
+            } else {
+              isBoundary = true;
+              for (LO j = 0; j < blkPartSize; j++) {
+                if (!pointBoundaryNodes[row*blkPartSize+j]) {
+                  isBoundary = false;
+                  break;
+                }
               }
             }
 
@@ -850,11 +860,20 @@ namespace MueLu {
             // TODO: Here we have different options of how to define a node to be a boundary (or Dirichlet)
             // node.
             bool isBoundary = false;
-            isBoundary = true;
-            for (LO j = 0; j < blkPartSize; j++) {
-              if (!pointBoundaryNodes[row*blkPartSize+j]) {
-                isBoundary = false;
-                break;
+            if (pL.get<bool>("aggregation: greedy Dirichlet") == true) {
+              for (LO j = 0; j < blkPartSize; j++) {
+                if (pointBoundaryNodes[row*blkPartSize+j]) {
+                  isBoundary = true;
+                  break;
+                }
+              }
+            } else {
+              isBoundary = true;
+              for (LO j = 0; j < blkPartSize; j++) {
+                if (!pointBoundaryNodes[row*blkPartSize+j]) {
+                  isBoundary = false;
+                  break;
+                }
               }
             }
 

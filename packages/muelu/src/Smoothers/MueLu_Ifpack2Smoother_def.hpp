@@ -196,6 +196,12 @@ namespace MueLu {
       // Aggregate smoothing needs aggregates
       this->Input(currentLevel,"Aggregates");
     }
+    else if (type_ == "HIPTMAIR") {
+      // Hiptmair needs D0 and NodeMatrix
+      this->Input(currentLevel,"NodeMatrix");
+      this->Input(currentLevel,"D0");
+    }
+
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -274,6 +280,9 @@ namespace MueLu {
     }
     else if (type_ == "AGGREGATE") 
       SetupAggregate(currentLevel);
+
+    else if (type_ == "HIPTMAIR") 
+      SetupHiptmair(currentLevel);
 
     else
     {
@@ -657,6 +666,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshev(Level& currentLevel) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+    using STS = Teuchos::ScalarTraits<SC>;
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
     if (!bA.is_null())
       A_ = bA->Merge();
@@ -679,81 +689,11 @@ namespace MueLu {
       }
     }
 
-    typedef Teuchos::ScalarTraits<SC> STS;
+    // Take care of the eigenvalues
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
     SC negone = -STS::one();
+    SC lambdaMax = SetupChebyshevEigenvalues(currentLevel,"A","",paramList);
 
-    SC lambdaMax = negone;
-    {
-      std::string maxEigString   = "chebyshev: max eigenvalue";
-      std::string eigRatioString = "chebyshev: ratio eigenvalue";
-
-      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
-
-      // Get/calculate the maximum eigenvalue
-      if (paramList.isParameter(maxEigString)) {
-        if (paramList.isType<double>(maxEigString))
-          lambdaMax = paramList.get<double>(maxEigString);
-        else
-          lambdaMax = paramList.get<SC>(maxEigString);
-        this->GetOStream(Statistics1) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
-
-      } else {
-        lambdaMax = A_->GetMaxEigenvalueEstimate();
-        if (lambdaMax != negone) {
-          this->GetOStream(Statistics1) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
-          paramList.set(maxEigString, lambdaMax);
-        }
-      }
-
-      // Calculate the eigenvalue ratio
-      const SC defaultEigRatio = 20;
-
-      SC ratio = defaultEigRatio;
-      if (paramList.isParameter(eigRatioString)) {
-        if (paramList.isType<double>(eigRatioString))
-          ratio = paramList.get<double>(eigRatioString);
-        else
-          ratio = paramList.get<SC>(eigRatioString);
-      }
-      if (currentLevel.GetLevelID()) {
-        // Update ratio to be
-        //   ratio = max(number of fine DOFs / number of coarse DOFs, defaultValue)
-        //
-        // NOTE: We don't need to request previous level matrix as we know for sure it was constructed
-        RCP<const Matrix> fineA = currentLevel.GetPreviousLevel()->Get<RCP<Matrix> >("A");
-        size_t nRowsFine   = fineA->getGlobalNumRows();
-        size_t nRowsCoarse = A_->getGlobalNumRows();
-
-        SC levelRatio = as<SC>(as<float>(nRowsFine)/nRowsCoarse);
-        if (STS::magnitude(levelRatio) > STS::magnitude(ratio))
-          ratio = levelRatio;
-      }
-
-      this->GetOStream(Statistics1) << eigRatioString << " (computed) = " << ratio << std::endl;
-      paramList.set(eigRatioString, ratio);
-
-      if (paramList.isParameter("chebyshev: use rowsumabs diagonal scaling")) {
-        this->GetOStream(Runtime1) << "chebyshev: using rowsumabs diagonal scaling" << std::endl;
-        bool doScale = false;
-        doScale = paramList.get<bool>("chebyshev: use rowsumabs diagonal scaling");
-        paramList.remove("chebyshev: use rowsumabs diagonal scaling");
-        double chebyReplaceTol = Teuchos::ScalarTraits<Scalar>::eps()*100;
-        if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement tolerance")) {
-          paramList.get<double>("chebyshev: rowsumabs diagonal replacement tolerance",chebyReplaceTol);
-          paramList.remove("chebyshev: rowsumabs diagonal replacement tolerance");
-        }
-        double chebyReplaceVal = Teuchos::ScalarTraits<double>::zero();
-        if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement value")) {
-          paramList.get<double>("chebyshev: rowsumabs diagonal replacement value",chebyReplaceVal);
-          paramList.remove("chebyshev: rowsumabs diagonal replacement value");
-        }
-        if (doScale) {
-          RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*(currentLevel.Get<RCP<Matrix> >("A")),true, chebyReplaceTol, chebyReplaceVal);
-          const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
-          paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
-        }
-      }
-    }
 
     if (!reusePreconditioner) {
       prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
@@ -782,6 +722,155 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): no maximum eigenvalue estimate");
     }
   }
+
+
+ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHiptmair(Level&  currentLevel ) {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
+
+    RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+
+    bool reusePreconditioner = false;
+    if (this->IsSetup() == true) {
+      // Reuse the constructed preconditioner
+      this->GetOStream(Runtime1) << "MueLu::Ifpack2Smoother::SetupHiptmair(): Setup() has already been called, assuming reuse" << std::endl;
+
+      RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
+      if (!prec.is_null()) {
+        prec->setMatrix(tA);
+        reusePreconditioner = true;
+      } else {
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupHiptmair(): reuse of this type is not available (failed cast to CanChangeMatrix), "
+            "reverting to full construction" << std::endl;
+      }
+    }
+
+    // If we're doing Chebyshev subsmoothing, we'll need to get the eigenvalues
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+    std::string smoother1  = paramList.get("hiptmair: smoother type 1","CHEBYSHEV");
+    std::string smoother2  = paramList.get("hiptmair: smoother type 2","CHEBYSHEV");
+    //    SC lambdaMax11,lambdaMax22;
+
+    if(smoother1 == "CHEBYSHEV") {
+      ParameterList & list1 = paramList.sublist("hiptmair: smoother list 1");
+      //lambdaMax11 = 
+      SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list1);
+    }
+    if(smoother2 == "CHEBYSHEV") {
+      ParameterList & list2 = paramList.sublist("hiptmair: smoother list 2");
+      //lambdaMax22 = 
+      SetupChebyshevEigenvalues(currentLevel,"A","EdgeMatrix ",list2);
+    }
+
+    // FIXME: Should really add some checks to make sure the eigenvalue calcs worked like in
+    // the regular SetupChebyshev
+
+    // Grab the auxillary matrices and stick them on the list
+    RCP<Matrix> NodeMatrix = currentLevel.Get<RCP<Matrix> >("NodeMatrix");
+    RCP<Matrix> D0         = currentLevel.Get<RCP<Matrix> >("D0");
+
+    RCP<tRowMatrix> tNodeMatrix = Utilities::Op2NonConstTpetraRow(NodeMatrix);
+    RCP<tRowMatrix> tD0         = Utilities::Op2NonConstTpetraRow(D0);
+
+
+    Teuchos::ParameterList newlist;
+    newlist.set("P",tD0);
+    newlist.set("PtAP",tNodeMatrix);
+    if (!reusePreconditioner) {
+      prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+      SetPrecParameters(newlist);
+      prec_->initialize();
+    }
+
+    prec_->compute();
+  }
+
+
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  Scalar Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshevEigenvalues(Level & currentLevel, const std::string & matrixName, const std::string & label, ParameterList & paramList) const {
+    // Helper: This gets used for smoothers that want to set up Chebyhev
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC negone = -STS::one();
+    RCP<const Matrix> currentA = currentLevel.Get<RCP<Matrix> >(matrixName);
+    SC lambdaMax = negone;
+
+    std::string maxEigString   = "chebyshev: max eigenvalue";
+    std::string eigRatioString = "chebyshev: ratio eigenvalue";
+    
+    // Get/calculate the maximum eigenvalue      
+    if (paramList.isParameter(maxEigString)) {
+      if (paramList.isType<double>(maxEigString))
+        lambdaMax = paramList.get<double>(maxEigString);
+      else
+        lambdaMax = paramList.get<SC>(maxEigString);
+      this->GetOStream(Statistics1) << label << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+      
+    } else {
+      lambdaMax = currentA->GetMaxEigenvalueEstimate();
+      if (lambdaMax != negone) {
+        this->GetOStream(Statistics1) << label << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
+        paramList.set(maxEigString, lambdaMax);
+      }
+    }
+    
+    // Calculate the eigenvalue ratio
+    const SC defaultEigRatio = 20;
+    
+    SC ratio = defaultEigRatio;
+    if (paramList.isParameter(eigRatioString)) {
+      if (paramList.isType<double>(eigRatioString))
+        ratio = paramList.get<double>(eigRatioString);
+      else
+          ratio = paramList.get<SC>(eigRatioString);
+    }
+    if (currentLevel.GetLevelID()) {
+      // Update ratio to be
+      //   ratio = max(number of fine DOFs / number of coarse DOFs, defaultValue)
+      //
+      // NOTE: We don't need to request previous level matrix as we know for sure it was constructed
+      RCP<const Matrix> fineA = currentLevel.GetPreviousLevel()->Get<RCP<Matrix> >(matrixName);
+      size_t nRowsFine   = fineA->getGlobalNumRows();
+      size_t nRowsCoarse = currentA->getGlobalNumRows();
+      
+      SC levelRatio = as<SC>(as<float>(nRowsFine)/nRowsCoarse);
+      if (STS::magnitude(levelRatio) > STS::magnitude(ratio))
+        ratio = levelRatio;
+    }
+    
+    this->GetOStream(Statistics1) << label << eigRatioString << " (computed) = " << ratio << std::endl;
+    paramList.set(eigRatioString, ratio);
+    
+    if (paramList.isParameter("chebyshev: use rowsumabs diagonal scaling")) {
+      this->GetOStream(Runtime1) << "chebyshev: using rowsumabs diagonal scaling" << std::endl;
+      bool doScale = false;
+      doScale = paramList.get<bool>("chebyshev: use rowsumabs diagonal scaling");
+      paramList.remove("chebyshev: use rowsumabs diagonal scaling");
+      double chebyReplaceTol = Teuchos::ScalarTraits<Scalar>::eps()*100;
+      if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement tolerance")) {
+        paramList.get<double>("chebyshev: rowsumabs diagonal replacement tolerance",chebyReplaceTol);
+        paramList.remove("chebyshev: rowsumabs diagonal replacement tolerance");
+      }
+      double chebyReplaceVal = Teuchos::ScalarTraits<double>::zero();
+      if (paramList.isParameter("chebyshev: rowsumabs diagonal replacement value")) {
+        paramList.get<double>("chebyshev: rowsumabs diagonal replacement value",chebyReplaceVal);
+        paramList.remove("chebyshev: rowsumabs diagonal replacement value");
+      }
+      if (doScale) {
+        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*currentA,true, chebyReplaceTol, chebyReplaceVal);
+        const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
+        paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
+      }
+    }
+
+    return lambdaMax;
+  }
+
+
+
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& /* currentLevel */) {

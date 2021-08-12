@@ -87,6 +87,8 @@
           
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
           
+\cbb{aggregation: greedy Dirichlet}{bool}{false}{Force the aggregate to be Dirichlet if any DOFs in the aggregate are Dirichlet (default is aggregates are Dirichlet only if all DOFs in the aggregate are Dirichlet).}
+          
 \cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
           
 \cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.}
@@ -216,6 +218,12 @@
 \cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
           
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
+          
+\cbb{maxwell1: mode}{string}{"standard"}{Specifying the order of solve of the block system. Allowed values are: "standard" (default), "refmaxwell"}
+          
+\cba{maxwell1: 11list}{\parameterlist}{Specifies the multigrid solver for the 11 block}
+          
+\cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
           
 \cbb{refmaxwell: mode}{string}{"additive"}{Specifying the order of solve of the block system. Allowed values are: "additive" (default), "121", "212", "1", "2"}
           

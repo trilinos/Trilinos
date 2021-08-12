@@ -38,8 +38,13 @@
 #include "stk_util/stk_config.h"  // for STK_HAVE_BOOST
 
 #ifdef STK_HAVE_BOOST
-
 #include "boost/any.hpp"          // for any, any_cast
+#define STK_ANY_NAMESPACE boost
+#else
+#include "Teuchos_any.hpp"
+#define STK_ANY_NAMESPACE Teuchos
+#endif
+
 #include <cstdint>                // for int64_t
 #include <iostream>               // for operator<<, basic_ostream, ostream, cerr
 #include <map>                    // for _Rb_tree_iterator, map<>::const_iterator, map, map<>::m...
@@ -112,7 +117,7 @@ inline ParameterType::Type get_type(const std::vector<std::string> &value)
      * just uses the defult "non-value" Param member data
      */
 struct Parameter{
-  boost::any value;
+  STK_ANY_NAMESPACE::any value;
   ParameterType::Type type;
   bool toResultsFile;
   bool toRestartFile;
@@ -173,7 +178,7 @@ public:
   {
     Parameter p = get_param(name);
     if (p.type == ParameterType::get_type(T())) {
-      return boost::any_cast<T>(p.value);
+      return STK_ANY_NAMESPACE::any_cast<T>(p.value);
     } else {
       std::cerr << "ERROR: Parameter named '" << name
                 << "' has an incorrect type specified for the get_value"
@@ -192,7 +197,5 @@ private:
 };
 }
 }
-
-#endif //STK_HAVE_BOOST
 
 #endif /* PARAMETERLIST_HPP */

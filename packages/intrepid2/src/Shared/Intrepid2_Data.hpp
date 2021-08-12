@@ -152,6 +152,32 @@ namespace Intrepid2 {
     return combinedDimensionInfo;
   }
 
+/**
+\class  Intrepid2::ZeroView
+\brief  A singleton class for a DynRankView containing exactly one zero entry.  (Technically, the entry is DataScalar(), the default value for the scalar type.)  This allows View-wrapping classes to return a reference to zero, even when that zero is not explicitly stored in the wrapped views.
+ 
+This is used by Interpid2::Data for its getEntry() and getWritableEntry() methods.
+ 
+ \note There is no protection against the zero value being overwritten; perhaps we should add some (i.e., const-qualify DataScalar).  Because of implementation details in Intrepid2::Data, we don't do so yet.
+ */
+template<class DataScalar,typename DeviceType>
+class ZeroView {
+public:
+  static ScalarView<DataScalar,DeviceType> zeroView()
+  {
+    static ScalarView<DataScalar,DeviceType> zeroView = ScalarView<DataScalar,DeviceType>("zero",1);
+    static bool havePushedFinalizeHook = false;
+    if (!havePushedFinalizeHook)
+    {
+      Kokkos::push_finalize_hook( [=] {
+        zeroView = ScalarView<DataScalar,DeviceType>();
+      });
+      havePushedFinalizeHook = true;
+    }
+    return zeroView;
+  }
+};
+
     /**
       \class  Intrepid2::Data
       \brief  Wrapper around a Kokkos::View that allows data that is constant or repeating in various logical dimensions to be stored just once, while providing a similar interface to that of View.
@@ -200,7 +226,7 @@ namespace Intrepid2 {
     // we use reference_type as the return for operator() for performance reasons, especially significant when using Sacado types
     using return_type = const_reference_type;
     
-    ScalarView<DataScalar,DeviceType> zeroView_; // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
+    ScalarView<DataScalar,DeviceType> zeroView_ = ZeroView<DataScalar,DeviceType>::zeroView(); // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
     
     //! Returns the number of non-diagonal entries based on the last non-diagonal.  Only applicable for BLOCK_PLUS_DIAGONAL DataVariationType.
     KOKKOS_INLINE_FUNCTION
@@ -248,9 +274,6 @@ namespace Intrepid2 {
       {
         INTREPID2_TEST_FOR_EXCEPTION(extents_[d] > 1, std::invalid_argument, "Nominal extents may not be > 1 in dimensions beyond the rank of the container");
       }
-      
-      // by default, this should initialize with zero -- no need to deep_copy a 0 into it
-      zeroView_ = ScalarView<DataScalar,DeviceType>("zero",1);
       
       numActiveDims_ = 0;
       int blockPlusDiagonalCount = 0;

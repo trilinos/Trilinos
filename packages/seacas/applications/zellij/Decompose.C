@@ -22,7 +22,6 @@
 
 extern unsigned int debug_level;
 
-
 namespace {
 #ifdef USE_ZOLTAN
 #define STRINGIFY(x) #x

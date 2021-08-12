@@ -142,10 +142,12 @@ lib stk_unit_test_utils
       [ glob $(stk_unit_test_utils-root)/stk_unit_test_utils/*.cpp ]
       /sierra/stk_io//stk_io
       /sierra/stk_simd//stk_simd_headers
-      /sierra/stk_math//stk_math
       /sierra/stk_ngp_test//stk_ngp_test
       /sierra/stk_util//stk_util_parallel
       /sierra/stk_util//stk_util_util
+      /sierra/stk_topology//stk_topology
+      /sierra/stk_mesh//stk_mesh_base
+      /sierra/stk_balance//stk_balance_lib
       /tpl/gtest//gtest
       /tpl/gtest//gmock
     ]

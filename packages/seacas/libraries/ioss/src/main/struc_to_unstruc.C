@@ -176,8 +176,7 @@ namespace {
     int step_count = region.get_optional_property("state_count", 0);
     if (step_count > 0) {
       if (rank == 0) {
-        fmt::print(stderr, "\n Number of time steps on database     = {:12L}\n\n",
-                   step_count);
+        fmt::print(stderr, "\n Number of time steps on database     = {:12L}\n\n", step_count);
       }
 
       output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);

@@ -183,6 +183,7 @@ void makeSphereNodalKDTree(const std::vector<Sphere<Num_T> > &input, ProximitySe
 
   typedef ObjectBoundingBox_T<sphere_type> obj_box_type;
   std::vector<obj_box_type> input_boxes;
+  input_boxes.reserve(numSpheres);
   for (int i = 0; i < numSpheres; ++i) {
     input_boxes.push_back(obj_box_type(input[i], i));
   }
@@ -204,6 +205,7 @@ void makeAABBTightenedSphereKDTree(const std::vector<Sphere<Num_T> > &input, Pro
 
   typedef ObjectBoundingBox_T<aabb_type> obj_box_type;
   std::vector<obj_box_type> obj_aabbs;
+  obj_aabbs.reserve(numSpheres);
   for (int i = 0; i < numSpheres; ++i) {
     const sphere_type &s = input[i];
     aabb_type box(s.get_x_min(), s.get_y_min(), s.get_z_min(), s.get_x_max(), s.get_y_max(), s.get_z_max());

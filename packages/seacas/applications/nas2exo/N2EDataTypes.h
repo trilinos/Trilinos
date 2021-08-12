@@ -10,8 +10,8 @@
 #ifndef INCLUDE_N2EDATATYPES_H_
 #define INCLUDE_N2EDATATYPES_H_
 
-#include <exodusII.h>
 #include <cstring>
+#include <exodusII.h>
 #include <string>
 #include <tuple>
 

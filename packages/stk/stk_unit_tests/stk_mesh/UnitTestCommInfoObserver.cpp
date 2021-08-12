@@ -6,7 +6,6 @@
 #include <stk_unit_test_utils/ioUtils.hpp>  // for fill_mesh_using_stk_io
 #include <vector>                       // for vector, vector<>::reference
 #include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Comm, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Types.hpp"      // for EntityRank, EntityProc, etc

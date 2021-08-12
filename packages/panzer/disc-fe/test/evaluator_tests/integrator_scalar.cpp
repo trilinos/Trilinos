@@ -53,6 +53,7 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
+#include "Kokkos_View_Fad.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
@@ -104,15 +105,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
 
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+      coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+      coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+      coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+      coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    });
 
   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -201,8 +204,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
   integral.print(out,true);
 
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral(1)),2.0*std::sqrt(2.0),1e-15);
+  integral.print(out,true);
+  auto integral_v = integral.get_static_view();
+  auto integral_h = Kokkos::create_mirror_view(integral_v);
+  Kokkos::deep_copy(integral_h, integral_v);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),2.0*std::sqrt(2.0),1e-15);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
@@ -231,24 +238,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0; coords(0,3,2) = 0.0;
-  coords(0,4,0) = 1.0; coords(0,4,1) = 0.0; coords(0,4,2) = 1.0;
-  coords(0,5,0) = 1.0; coords(0,5,1) = 1.0; coords(0,5,2) = 1.0;
-  coords(0,6,0) = 0.0; coords(0,6,1) = 1.0; coords(0,6,2) = 1.0;
-  coords(0,7,0) = 0.0; coords(0,7,1) = 0.0; coords(0,7,2) = 1.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0; coords(0,3,2) = 0.0;
+      coords(0,4,0) = 1.0; coords(0,4,1) = 0.0; coords(0,4,2) = 1.0;
+      coords(0,5,0) = 1.0; coords(0,5,1) = 1.0; coords(0,5,2) = 1.0;
+      coords(0,6,0) = 0.0; coords(0,6,1) = 1.0; coords(0,6,2) = 1.0;
+      coords(0,7,0) = 0.0; coords(0,7,1) = 0.0; coords(0,7,2) = 1.0;
 
-  coords(1,0,0) = 0.0; coords(1,0,1) = 0.0; coords(1,0,2) = 0.0;
-  coords(1,1,0) =-1.0; coords(1,1,1) = 1.0; coords(1,1,2) = 0.0;
-  coords(1,2,0) = 2.0; coords(1,2,1) = 2.0; coords(1,2,2) = 0.0;
-  coords(1,3,0) = 1.0; coords(1,3,1) = 1.0; coords(1,3,2) = 0.0;
-  coords(1,4,0) = 0.0; coords(1,4,1) = 0.0; coords(1,4,2) = 2.0;
-  coords(1,5,0) =-1.0; coords(1,5,1) = 1.0; coords(1,5,2) = 2.0;
-  coords(1,6,0) = 2.0; coords(1,6,1) = 2.0; coords(1,6,2) = 2.0;
-  coords(1,7,0) = 1.0; coords(1,7,1) = 1.0; coords(1,7,2) = 2.0;
-
+      coords(1,0,0) = 0.0; coords(1,0,1) = 0.0; coords(1,0,2) = 0.0;
+      coords(1,1,0) =-1.0; coords(1,1,1) = 1.0; coords(1,1,2) = 0.0;
+      coords(1,2,0) = 2.0; coords(1,2,1) = 2.0; coords(1,2,2) = 0.0;
+      coords(1,3,0) = 1.0; coords(1,3,1) = 1.0; coords(1,3,2) = 0.0;
+      coords(1,4,0) = 0.0; coords(1,4,1) = 0.0; coords(1,4,2) = 2.0;
+      coords(1,5,0) =-1.0; coords(1,5,1) = 1.0; coords(1,5,2) = 2.0;
+      coords(1,6,0) = 2.0; coords(1,6,1) = 2.0; coords(1,6,2) = 2.0;
+      coords(1,7,0) = 1.0; coords(1,7,1) = 1.0; coords(1,7,2) = 2.0;
+  });
   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
 
@@ -336,8 +344,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
   integral.print(out,true);
 
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral(1)),4.0*std::sqrt(2),1e-15);
+  integral.print(out,true);
+  auto integral_v = integral.get_static_view();
+  auto integral_h = Kokkos::create_mirror_view(integral_v);
+  Kokkos::deep_copy(integral_h, integral_v);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),4.0*std::sqrt(2),1e-15);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
@@ -366,23 +378,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0; coords(0,3,2) = 0.0;
-  coords(0,4,0) = 1.0; coords(0,4,1) = 0.0; coords(0,4,2) = 1.0;
-  coords(0,5,0) = 1.0; coords(0,5,1) = 1.0; coords(0,5,2) = 1.0;
-  coords(0,6,0) = 0.0; coords(0,6,1) = 1.0; coords(0,6,2) = 1.0;
-  coords(0,7,0) = 0.0; coords(0,7,1) = 0.0; coords(0,7,2) = 1.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0; coords(0,0,2) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0; coords(0,1,2) = 0.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0; coords(0,2,2) = 0.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0; coords(0,3,2) = 0.0;
+      coords(0,4,0) = 1.0; coords(0,4,1) = 0.0; coords(0,4,2) = 1.0;
+      coords(0,5,0) = 1.0; coords(0,5,1) = 1.0; coords(0,5,2) = 1.0;
+      coords(0,6,0) = 0.0; coords(0,6,1) = 1.0; coords(0,6,2) = 1.0;
+      coords(0,7,0) = 0.0; coords(0,7,1) = 0.0; coords(0,7,2) = 1.0;
 
-  coords(1,0,0) = 0.0; coords(1,0,1) = 0.0; coords(1,0,2) = 0.0;
-  coords(1,1,0) =-1.0; coords(1,1,1) = 1.0; coords(1,1,2) = 0.0;
-  coords(1,2,0) = 2.0; coords(1,2,1) = 2.0; coords(1,2,2) = 0.0;
-  coords(1,3,0) = 1.0; coords(1,3,1) = 1.0; coords(1,3,2) = 0.0;
-  coords(1,4,0) = 0.0; coords(1,4,1) = 0.0; coords(1,4,2) = 2.0;
-  coords(1,5,0) =-1.0; coords(1,5,1) = 1.0; coords(1,5,2) = 2.0;
-  coords(1,6,0) = 2.0; coords(1,6,1) = 2.0; coords(1,6,2) = 2.0;
-  coords(1,7,0) = 1.0; coords(1,7,1) = 1.0; coords(1,7,2) = 2.0;
+      coords(1,0,0) = 0.0; coords(1,0,1) = 0.0; coords(1,0,2) = 0.0;
+      coords(1,1,0) =-1.0; coords(1,1,1) = 1.0; coords(1,1,2) = 0.0;
+      coords(1,2,0) = 2.0; coords(1,2,1) = 2.0; coords(1,2,2) = 0.0;
+      coords(1,3,0) = 1.0; coords(1,3,1) = 1.0; coords(1,3,2) = 0.0;
+      coords(1,4,0) = 0.0; coords(1,4,1) = 0.0; coords(1,4,2) = 2.0;
+      coords(1,5,0) =-1.0; coords(1,5,1) = 1.0; coords(1,5,2) = 2.0;
+      coords(1,6,0) = 2.0; coords(1,6,1) = 2.0; coords(1,6,2) = 2.0;
+      coords(1,7,0) = 1.0; coords(1,7,1) = 1.0; coords(1,7,2) = 2.0;
+    });
 
   Teuchos::RCP<shards::CellTopology> topo
     = Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
@@ -470,9 +484,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
   fm->getFieldData<EvalType>(integral);
 
   integral.print(out,true);
-
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral(1)),8.0,1e-15);
+  auto integral_v = integral.get_static_view();
+  auto integral_h = Kokkos::create_mirror_view(integral_v);
+  Kokkos::deep_copy(integral_h, integral_v);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),8.0,1e-15);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

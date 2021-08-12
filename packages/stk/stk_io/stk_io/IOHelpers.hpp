@@ -56,7 +56,6 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
-namespace boost { class any; }
 namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -94,7 +93,7 @@ bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::st
                           bool abort_if_not_found);
 
 void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
-                              const std::string &name, const boost::any &any_value,
+                              const std::string &name, const STK_ANY_NAMESPACE::any &any_value,
                               stk::util::ParameterType::Type type);
 
 void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
@@ -102,7 +101,7 @@ void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
 
 bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
                              const std::string &globalVarName,
-                             boost::any &any_value, stk::util::ParameterType::Type type,
+                             STK_ANY_NAMESPACE::any &any_value, stk::util::ParameterType::Type type,
                              bool abort_if_not_found);
 
 void internal_add_global(Teuchos::RCP<Ioss::Region> region,
