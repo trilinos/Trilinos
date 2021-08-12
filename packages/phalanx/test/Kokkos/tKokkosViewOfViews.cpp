@@ -29,6 +29,8 @@ TEUCHOS_UNIT_TEST(ViewOfViews,double) {
     v_host(1) = b;
     v_host(2) = c;
 
+    // Requirement 3: Need to deep_copy the host view to device to
+    // initialize the inner views correctly.
     OuterView v_dev("outer device",3);
     Kokkos::deep_copy(v_dev,v_host);
 
@@ -38,7 +40,6 @@ TEUCHOS_UNIT_TEST(ViewOfViews,double) {
     });
 
     auto c_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),c);
-    Kokkos::deep_copy(c_host,c);
 
     const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
     for (int cell=0; cell < num_cells; ++cell)
