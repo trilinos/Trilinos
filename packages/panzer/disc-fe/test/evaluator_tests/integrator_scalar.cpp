@@ -65,6 +65,8 @@ using Teuchos::rcp;
 #include "Panzer_Integrator_Scalar.hpp"
 
 #include "Phalanx_FieldManager.hpp"
+#include "Phalanx_MDField_UnmanagedAllocator.hpp"
+#include "Phalanx_Evaluator_UnmanagedFieldDummy.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -291,6 +293,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
      p.set("Integrand Name","Unit Value");
      p.set("Multiplier",2.0);
      p.set("IR",quadRule);
+     RCP<const std::vector<std::string>> fms = rcp(new std::vector<std::string>{"Dummy Field"});
+     p.set("Field Multipliers",fms);
     
      RCP<panzer::Integrator_Scalar<EvalType,panzer::Traits> > eval 
         = rcp(new panzer::Integrator_Scalar<EvalType,panzer::Traits>(p));
@@ -324,6 +328,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
+  {
+    PHX::MDField<typename EvalType::ScalarT,Cell,IP> field_mult =
+      PHX::allocateUnmanagedMDField<typename EvalType::ScalarT,Cell,IP>("Dummy Field",quadRule->dl_scalar,derivative_dimensions);
+    Kokkos::deep_copy(field_mult.get_static_view(),1.0);
+    fm->setUnmanagedField<EvalType>(field_mult);
+    auto e = rcp(new PHX::UnmanagedFieldDummy<EvalType,panzer::Traits,PHX::MDField<typename EvalType::ScalarT,Cell,IP>>(field_mult));
+    fm->registerEvaluator<EvalType>(e);
+  }
+
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
