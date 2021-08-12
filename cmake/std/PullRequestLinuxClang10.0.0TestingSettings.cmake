@@ -19,6 +19,8 @@ set (MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none" CACHE STRING "Set by default f
 # NOTE: The above is a workaround for the problem of having threads on MPI
 # ranks bind to the same cores (see #2422).
 
+set(Trilinos_ENABLE_EXPLICIT_INSTANTIATION OFF CACHE STRING "ETI = OFF")
+
 # Disable just one Teko sub-unit test that fails with openmpi 1.10 (#2712)
 set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily disabled in PR testing")
 
@@ -26,8 +28,6 @@ set (Teko_DISABLE_LSCSTABALIZED_TPETRA_ALPAH_INV_D ON CACHE BOOL "Temporarily di
 set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_gdsw_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (ShyLU_DDFROSch_test_frosch_laplacian_epetra_2d_rgdsw_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set (ShyLU_DDFROSch_test_frosch_interfacesets_2D_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
-
-include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 #Disable for clang
 set(FEI_elemDOF_Aztec_MPI_2_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
@@ -37,3 +37,44 @@ set(FEI_multifield_vbr_az_MPI_2_DISABLE ON CACHE BOOL "Temporarily disabled in P
 set(FEI_multifield_vbr_az_MPI_3_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set(ROL_example_PinT_parabolic-control_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 set(Rythmos_StepperBuilder_UnitTest_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+
+# # Disable for ETI = OFF
+set(MueLu_BlockCrs-Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_DriverTpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_DriverTpetraYaml_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_DriverTpetraSingleReduceCG_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Maxwell3D-Tpetra_0_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Maxwell3D-Tpetra_1_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_ParameterListInterpreterTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_ParameterListInterpreterTpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_SimpleTpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_SimpleTpetraYaml_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_StandardReuse-Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Elasticity3D_Tpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Elasticity3D_Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Interp_Laplace2D_kokkos_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Interp_Laplace2D_kokkos_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Interp_SA_Laplace2D_kokkos_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Interp_SA_Laplace2D_kokkos_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace2D_Shift_Tpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace2D_Shift_Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace2D_Tpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace2D_Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace3D_SCP_Tpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace3D_SCP_Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace3D_SPARC_Tpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Laplace3D_SPARC_Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Line_Tpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Line_Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Tentative_Laplace2D_kokkos_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_Structured_Tentative_Laplace2D_kokkos_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_UnitTestsCreatePreconditionerTpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_UnitTestsIntrepid2Tpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_UnitTestsTpetra_kokkos_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(MueLu_UnitTestsTpetra_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(PanzerMiniEM_MiniEM-BlockPrec_Augmentation_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(Stokhos_TpetraCrsMatrixMPVectorUnitTest_Serial_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(TrilinosCouplings_fenl_ensemble_8x8x8_belos_muelu_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+set(TrilinosCouplings_fenl_pce_8x8x8_belos_muelu_mean_based_MPI_4_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
+
+include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
