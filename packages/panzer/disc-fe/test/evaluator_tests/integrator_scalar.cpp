@@ -333,7 +333,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   {
     PHX::MDField<typename EvalType::ScalarT,Cell,IP> field_mult =
       PHX::allocateUnmanagedMDField<typename EvalType::ScalarT,Cell,IP>("Dummy Field",quadRule->dl_scalar,derivative_dimensions);
-    Kokkos::deep_copy(field_mult.get_static_view(),1.0);
+    Kokkos::deep_copy(field_mult.get_static_view(),2.0);
     fm->setUnmanagedField<EvalType>(field_mult);
     auto e = rcp(new PHX::UnmanagedFieldDummy<EvalType,panzer::Traits,PHX::MDField<typename EvalType::ScalarT,Cell,IP>>(field_mult));
     fm->registerEvaluator<EvalType>(e);
@@ -363,8 +363,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
   auto integral_v = integral.get_static_view();
   auto integral_h = Kokkos::create_mirror_view(integral_v);
   Kokkos::deep_copy(integral_h, integral_v);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),2.0,1e-15);
-  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),4.0*std::sqrt(2),1e-15);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(0)),4.0,1e-15);
+  TEST_FLOATING_EQUALITY(ScalarValue::eval(integral_h(1)),8.0*std::sqrt(2),1e-15);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
