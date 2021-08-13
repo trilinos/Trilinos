@@ -226,7 +226,7 @@ public:
     // we use reference_type as the return for operator() for performance reasons, especially significant when using Sacado types
     using return_type = const_reference_type;
     
-    ScalarView<DataScalar,DeviceType> zeroView_ = ZeroView<DataScalar,DeviceType>::zeroView(); // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
+    ScalarView<DataScalar,DeviceType> zeroView_; // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
     
     //! Returns the number of non-diagonal entries based on the last non-diagonal.  Only applicable for BLOCK_PLUS_DIAGONAL DataVariationType.
     KOKKOS_INLINE_FUNCTION
@@ -269,6 +269,7 @@ public:
     //! class initialization method.  Called by constructors.
     void setActiveDims()
     {
+      zeroView_ = ZeroView<DataScalar,DeviceType>::zeroView(); // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
       // check that rank is compatible with the claimed extents:
       for (int d=rank_; d<7; d++)
       {
