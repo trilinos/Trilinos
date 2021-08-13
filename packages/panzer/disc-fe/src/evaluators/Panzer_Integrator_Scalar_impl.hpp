@@ -78,18 +78,16 @@ Integrator_Scalar(
     const std::vector<std::string>& field_multiplier_names = 
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
-    field_multipliers_h = typename PHX::View<PHX::View<const ScalarT**>* >::HostMirror("FieldMultipliersHost", field_multiplier_names.size());
-    field_multipliers = PHX::View<PHX::View<const ScalarT**>* >("FieldMultipliersDevice", field_multiplier_names.size());
+    field_multipliers_h = typename PHX::View<PHX::UnmanagedView<const ScalarT**>* >::HostMirror("FieldMultipliersHost", field_multiplier_names.size());
+    field_multipliers = PHX::View<PHX::UnmanagedView<const ScalarT**>* >("FieldMultipliersDevice", field_multiplier_names.size());
 
     int cnt=0;
     for (std::vector<std::string>::const_iterator name = 
 	   field_multiplier_names.begin(); 
 	 name != field_multiplier_names.end(); ++name, ++cnt) {
       PHX::MDField<const ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      field_multipliers_h(cnt) = tmp_field.get_static_view();
-      this->addDependentField(tmp_field);
+      this->addDependentField(tmp_field.fieldTag(),field_multipliers_h(cnt));
     }
-    Kokkos::deep_copy(field_multipliers, field_multipliers_h);
   }
 
   std::string n = "Integrator_Scalar: " + integral.fieldTag().name();
@@ -107,6 +105,8 @@ postRegistrationSetup(
   num_qp = scalar.extent(1);
   tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp", scalar.extent(0), num_qp);
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
+
+  Kokkos::deep_copy(field_multipliers, field_multipliers_h);
 }
 
 

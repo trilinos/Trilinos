@@ -94,8 +94,8 @@ class Integrator_Scalar
     
   PHX::MDField<const ScalarT,Cell,IP> scalar; // function to be integrated
 
-  PHX::View<PHX::View<const ScalarT**>* > field_multipliers;
-  typename PHX::View<PHX::View<const ScalarT**>* >::HostMirror field_multipliers_h;
+  typename PHX::View<PHX::UnmanagedView<const ScalarT**>* >::HostMirror field_multipliers_h;
+  PHX::View<PHX::UnmanagedView<const ScalarT**>* > field_multipliers;
 
   std::size_t num_qp;
   std::size_t quad_index;

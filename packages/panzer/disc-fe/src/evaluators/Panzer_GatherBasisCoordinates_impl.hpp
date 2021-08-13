@@ -93,10 +93,14 @@ evaluateFields(typename TRAITS::EvalData workset)
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basisIndex_];
 
   // just copy the array
-  for(int i=0;i<bv->basis_coordinates.extent_int(0);i++)
-    for(int j=0;j<bv->basis_coordinates.extent_int(1);j++)
-      for(int k=0;k<bv->basis_coordinates.extent_int(2);k++)
-          basisCoordinates_(i,j,k)= bv->basis_coordinates(i,j,k);
+  auto d_basisCoordinates = basisCoordinates_;
+  auto s_basis_coordinates = bv->basis_coordinates;
+  Kokkos::parallel_for("GatherBasisCoords",s_basis_coordinates.extent_int(0), KOKKOS_LAMBDA(int i) {
+    for(int j=0;j<s_basis_coordinates.extent_int(1);j++)
+      for(int k=0;k<s_basis_coordinates.extent_int(2);k++)
+          d_basisCoordinates(i,j,k)= s_basis_coordinates(i,j,k);
+    });
+  Kokkos::fence();
 }
 
 #endif
