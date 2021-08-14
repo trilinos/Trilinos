@@ -79,11 +79,6 @@ template<class T> class ArrayView;
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of Distributor
-class Distributor;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 //
 // Users must never rely on anything in the Details namespace.
 //
@@ -112,8 +107,6 @@ namespace Details {
 ///   to expect a possibly /// different ("nonconstant") number of packets per local index
 ///   (i.e., a possibly different number of entries per row).
 ///
-/// \param distor [in] The distributor (not used)
-///
 /// This is the public interface to the pack machinery
 /// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
@@ -125,8 +118,7 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
                Teuchos::Array<typename CrsGraph<LO,GO,NT>::packet_type>& exports,
                const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                const Teuchos::ArrayView<const LO>& exportLIDs,
-               size_t& constantNumPackets,
-               Distributor& distor);
+               size_t& constantNumPackets);
 
 /// \brief Pack specified entries of the given local sparse graph for
 ///   communication, for "new" DistObject interface.
@@ -152,8 +144,6 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 ///   output argument of Tpetra::DistObject::packAndPrepare (which
 ///   see).
 ///
-/// \param distor [in] (Not used.)
-///
 /// This method implements CrsGraph::packNew, and thus
 /// CrsGraph::packAndPrepare, for the case where the graph to
 /// pack has a valid KokkosSparse::CrsGraph.
@@ -177,8 +167,7 @@ packCrsGraphNew (const CrsGraph<LO, GO, NT>& sourceGraph,
                    typename CrsGraph<LO, GO, NT>::buffer_device_type
                  > numPacketsPerLID,
                  size_t& constantNumPackets,
-                 const bool pack_pids,
-                 Distributor& distor);
+                 const bool pack_pids);
 
 /// \brief Pack specified entries of the given local sparse graph for
 ///   communication.
@@ -203,8 +192,6 @@ packCrsGraphNew (const CrsGraph<LO, GO, NT>& sourceGraph,
 ///   to expect a possibly /// different ("nonconstant") number of packets per local index
 ///   (i.e., a possibly different number of entries per row).
 ///
-/// \param distor [in] The distributor (not used)
-///
 /// This is the public interface to the pack machinery
 /// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
@@ -219,8 +206,7 @@ packCrsGraphWithOwningPIDs (const CrsGraph<LO,GO,NT>& sourceGraph,
                             const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                             const Teuchos::ArrayView<const LO>& exportLIDs,
                             const Teuchos::ArrayView<const int>& sourcePIDs,
-                            size_t& constantNumPackets,
-                            Distributor& distor);
+                            size_t& constantNumPackets);
 
 } // namespace Details
 } // namespace Tpetra

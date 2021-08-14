@@ -1637,7 +1637,7 @@ namespace Tpetra {
       try {
         this->packAndPrepare (src, exportLIDs, this->exports_,
             this->numExportPacketsPerLID_,
-            constantNumPackets, distor);
+            constantNumPackets);
         lclSuccess = true;
       }
       catch (std::exception& e) {
@@ -1659,7 +1659,7 @@ namespace Tpetra {
     else {
       this->packAndPrepare (src, exportLIDs, this->exports_,
           this->numExportPacketsPerLID_,
-          constantNumPackets, distor);
+          constantNumPackets);
     }
   }
 
@@ -1689,7 +1689,7 @@ namespace Tpetra {
       try {
         this->unpackAndCombine (remoteLIDs, this->imports_,
             this->numImportPacketsPerLID_,
-            constantNumPackets, distor, CM);
+            constantNumPackets, CM);
         lclSuccess = true;
       }
       catch (std::exception& e) {
@@ -1711,7 +1711,7 @@ namespace Tpetra {
     else {
       this->unpackAndCombine (remoteLIDs, this->imports_,
           this->numImportPacketsPerLID_,
-          constantNumPackets, distor, CM);
+          constantNumPackets, CM);
     }
   }
 
@@ -1744,8 +1744,7 @@ namespace Tpetra {
    Kokkos::DualView<
      size_t*,
      buffer_device_type>,
-   size_t&,
-   Distributor&)
+   size_t&)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1762,7 +1761,6 @@ namespace Tpetra {
      size_t*,
      buffer_device_type> /* numPacketsPerLID */,
    const size_t /* constantNumPackets */,
-   Distributor& /* distor */,
    const CombineMode /* combineMode */)
   {}
 

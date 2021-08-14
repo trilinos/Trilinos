@@ -45,7 +45,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Core.hpp"
-#include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
@@ -134,13 +133,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   auto num_packets_per_lid = Array<size_t>(num_loc_rows, 0); // output argument
   size_t const_num_packets; // output argument
 
-  // We're not actually communicating in this test; we just need the Distributor
-  // for the interface of packCrsGraph (which doesn't use it).  Consider changing
-  // packCrsGraph's interface so it doesn't take a Distributor?  No, because
-  // Distributor has index permutation information that we could use to pack in
-  // a particular order and thus avoid the slow path in Distributor::doPosts.
-  auto distor = Tpetra::Distributor(comm);
-
   out << "Calling packCrsGraph" << endl;
 
   {
@@ -148,7 +140,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
     std::ostringstream msg;
     try {
       packCrsGraph<LO,GO,NT>(*B, exports, num_packets_per_lid(), export_lids(),
-          const_num_packets, distor);
+          const_num_packets);
       local_op_ok = 1;
     } catch (std::exception& e) {
       local_op_ok = 0;
@@ -178,7 +170,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
     int local_op_ok;
     std::ostringstream msg;
     unpackCrsGraphAndCombine<LO,GO,NT>(*A, exports, num_packets_per_lid(),
-        export_lids(), const_num_packets, distor, Tpetra::REPLACE);
+        export_lids(), const_num_packets, Tpetra::REPLACE);
     local_op_ok = 1;
 
     TEST_ASSERT(local_op_ok == 1);

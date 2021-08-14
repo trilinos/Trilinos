@@ -3074,8 +3074,7 @@ public:
        buffer_device_type>& exportLIDs,
      Kokkos::DualView<char*, buffer_device_type>& exports,
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor) override;
+     size_t& constantNumPackets) override;
 
   private:
     /// \brief Unpack the imported column indices and values, and
@@ -3087,7 +3086,6 @@ public:
       Kokkos::DualView<char*, buffer_device_type> imports,
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
       const size_t constantNumPackets,
-      Distributor& distor,
       const CombineMode combineMode,
       const bool verbose);
 
@@ -3100,7 +3098,6 @@ public:
       Kokkos::DualView<char*, buffer_device_type> imports,
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
       const size_t constantNumPackets,
-      Distributor& distor,
       const CombineMode combineMode);
 
   public:
@@ -3119,7 +3116,6 @@ public:
      Kokkos::DualView<char*, buffer_device_type> imports,
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
      const size_t constantNumPackets,
-     Distributor& distor,
      const CombineMode CM) override;
 
     /// \brief Pack this object's data for an Import or Export.
@@ -3138,8 +3134,6 @@ public:
     ///   output, then that number gives the constant number of
     ///   entries for all packed rows <i>on all processes in the
     ///   matrix's communicator</i>.
-    /// \param distor [in/out] The Distributor object which implements
-    ///   the Import or Export operation that is calling this method.
     ///
     /// \subsection Tpetra_CrsMatrix_packNew_summary Packing scheme
     ///
@@ -3233,8 +3227,7 @@ public:
     packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
              Kokkos::DualView<char*, buffer_device_type>& exports,
              const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-             size_t& constantNumPackets,
-             Distributor& dist) const;
+             size_t& constantNumPackets) const;
 
   private:
     /// \brief Pack this matrix (part of implementation of packAndPrepare).
@@ -3247,8 +3240,7 @@ public:
     packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                       Kokkos::DualView<char*, buffer_device_type>& exports,
                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-                      size_t& constantNumPackets,
-                      Distributor& distor) const;
+                      size_t& constantNumPackets) const;
 
     /// \brief Pack data for the current row to send.
     ///
