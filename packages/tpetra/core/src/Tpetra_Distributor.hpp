@@ -40,6 +40,9 @@
 #ifndef TPETRA_DISTRIBUTOR_HPP
 #define TPETRA_DISTRIBUTOR_HPP
 
+#include "Tpetra_Details_DistributorActor.hpp"
+#include "Tpetra_Details_DistributorPlan.hpp"
+
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_Describable.hpp"
@@ -55,47 +58,6 @@
 #include <type_traits>
 
 namespace Tpetra {
-
-  namespace Details {
-    /// \brief The type of MPI send that Distributor should use.
-    ///
-    /// This is an implementation detail of Distributor.  Please do
-    /// not rely on these values in your code.
-    enum EDistributorSendType {
-      DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
-      DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
-      DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
-      DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
-    };
-
-    /// \brief Convert an EDistributorSendType enum value to a string.
-    ///
-    /// This is an implementation detail of Distributor.  Please do
-    /// not rely on this function in your code.
-    std::string
-    DistributorSendTypeEnumToString (EDistributorSendType sendType);
-
-    /// \brief Enum indicating how and whether a Distributor was initialized.
-    ///
-    /// This is an implementation detail of Distributor.  Please do
-    /// not rely on these values in your code.
-    enum EDistributorHowInitialized {
-      DISTRIBUTOR_NOT_INITIALIZED, // Not initialized yet
-      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS, // By createFromSends
-      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS, // By createFromRecvs
-      DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS, // By createFromSendsAndRecvs
-      DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
-      DISTRIBUTOR_INITIALIZED_BY_COPY, // By copy constructor
-    };
-
-    /// \brief Convert an EDistributorHowInitialized enum value to a string.
-    ///
-    /// This is an implementation detail of Distributor.  Please do
-    /// not rely on this function in your code.
-    std::string
-    DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
-
-  } // namespace Details
 
   /// \brief Valid values for Distributor's "Send type" parameter.
   ///
@@ -404,8 +366,8 @@ namespace Tpetra {
     ///
     /// This is an implementation detail of Tpetra.  Please do not
     /// call this method or rely on it existing in your code.
-    Details::EDistributorHowInitialized howInitialized () const {
-      return howInitialized_;
+    Details::EDistributorHowInitialized howInitialized() const {
+      return plan_.howInitialized();
     }
 
     //@}
@@ -790,20 +752,11 @@ namespace Tpetra {
     //@}
 
   private:
-    //! The communicator over which to perform distributions.
-    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-
-    //! How the Distributor was initialized (if it was).
-    Details::EDistributorHowInitialized howInitialized_;
+    Details::DistributorPlan plan_;
+    Details::DistributorActor actor_;
 
     //! @name Parameters read in from the Teuchos::ParameterList
     //@{
-
-    //! The variant of send to use in do[Reverse]Posts().
-    Details::EDistributorSendType sendType_;
-
-    //! Whether to do a barrier between receives and sends in do[Reverse]Posts().
-    bool barrierBetween_;
 
     //! Get default value of verbose_ (see below).
     static bool getVerbose();
@@ -819,122 +772,6 @@ namespace Tpetra {
     bool verbose_ = getVerbose();
     //@}
 
-    /// \brief Whether I am supposed to send a message to myself.
-    ///
-    /// This is set in createFromSends or createReverseDistributor.
-    bool selfMessage_;
-
-    /// \brief The number of sends from this process to other process.
-    ///
-    /// This is always less than or equal to the number of processes.
-    /// It does <i>not</i> count self receives (that is, messages from
-    /// the calling process to itself).
-    ///
-    /// This value is computed by the createFromSends() method.  That
-    /// method first includes self receives in the count, but at the
-    /// end subtracts one if selfMessage_ is true.
-    size_t numSends_;
-
-    /// \brief List of process IDs to which to send.
-    ///
-    /// This array has length numSends_ + selfMessage_ (that is, it
-    /// includes the self message, if there is one).
-    Teuchos::Array<int> procsTo_;
-
-    /// \brief Starting index of the block of Packets to send to each process.
-    ///
-    /// Given an export buffer that contains all of the data being
-    /// sent by this process, the block of Packets to send to process
-    /// p will start at position startsTo_[p].
-    ///
-    /// This array has length numSends_ + selfMessage_ (that is, it
-    /// includes the self message, if there is one).
-    Teuchos::Array<size_t> startsTo_;
-
-    /// \brief Length (in number of Packets) of my process' send to each process.
-    ///
-    /// lengthsTo_[p] is the length of my process' send to process p.
-    /// This array has length numSends_ + selfMessage_ (that is, it
-    /// includes the self message, if there is one).
-    Teuchos::Array<size_t> lengthsTo_;
-
-    /// \brief The maximum send length (in number of Packets) to another process.
-    ///
-    /// maxSendLength_ = max(lengthsTo_[p]) for p != my process rank.
-    size_t maxSendLength_;
-
-    /// \brief Offset (by message, not by number of Packets) into exports array.
-    ///
-    /// This array is used by both versions of doPosts().  In that
-    /// method, <tt>indicesTo_[j]*numPackets</tt> is the offset into
-    /// the <tt>exports</tt> array, where <tt>j = startsTo_[p]</tt>
-    /// and p is an index iterating through the sends in reverse order
-    /// (starting with the process rank right before the self message,
-    /// if there is a self message, else the largest process rank to
-    /// which this process sends).
-    ///
-    /// This array is only used if export data are not blocked (laid
-    /// out) by process rank, that is, if we need to use a send
-    /// buffer.  Otherwise, this array has no entries.  (In fact,
-    /// Distributor currently uses this in both overloads of doPosts()
-    /// to test whether data are laid out by process.)
-    Teuchos::Array<size_t> indicesTo_;
-
-    /// \brief The number of messages received by my process from other processes.
-    ///
-    /// This does <i>not</i> count self receives.  If selfMessage_ is
-    /// true, the actual number of receives is one more (we assume
-    /// that we only receive zero or one messages from ourself).
-    ///
-    /// This value is computed by the \c computeReceives() method.
-    /// That method first includes self receives in the count, but at
-    /// the end subtracts one if selfMessage_ is true.
-    size_t numReceives_;
-
-    /// \brief sum(lengthsFrom_)
-    ///
-    /// This is computed by \c createFromSends() and is used to
-    /// allocate the receive buffer.  The reverse communicator's total
-    /// receive length is the total send length of the forward
-    /// communicator.
-    size_t totalReceiveLength_;
-
-    /// \brief Array of lengths of incoming messages.
-    ///
-    /// This array has length numReceives_ + selfMessage_.  Incoming
-    /// message i from process procsFrom_[i] has length
-    /// lengthsFrom_[i].
-    Teuchos::Array<size_t> lengthsFrom_;
-
-    /// \brief Array of ranks of the process from which the calling
-    ///   process will receive a message.
-    ///
-    /// This array has length numReceives_ + selfMessage_.  Incoming
-    /// message i was sent by process procsFrom_[i].
-    Teuchos::Array<int> procsFrom_;
-
-    /// \brief Array of offsets of incoming messages.
-    ///
-    /// This array has length numReceives_ + selfMessage_.  It is an
-    /// exclusive prefix sum of lengthsFrom_.  It is only used for
-    /// constructing the reverse Distributor.
-    Teuchos::Array<size_t> startsFrom_;
-
-    /// \brief List that becomes the reverse communicator's indicesTo_.
-    ///
-    /// Array of length totalReceiveLength_.  When creating the
-    /// reverse Distributor, this is assigned to the reverse
-    /// Distributor's indicesTo_.
-    Teuchos::Array<size_t> indicesFrom_;
-
-    /// \brief Communication requests associated with nonblocking receives and sends.
-    ///
-    /// \note To implementers: Distributor uses requests_.size() as
-    ///   the number of outstanding nonblocking receives and sends.
-    ///   This means you should always resize to zero after completing
-    ///   receive and send requests.
-    Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int> > > requests_;
-
     /// \brief The reverse distributor.
     ///
     /// This is created on demand in getReverse() and cached for
@@ -946,68 +783,6 @@ namespace Tpetra {
 
     /// \brief The number of bytes received by this proc in the last call to do/doReverse
     size_t lastRoundBytesRecv_;
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_;
-    Teuchos::RCP<Teuchos::Time> timer_doWaits_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3TA_sends_fast_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4TA_sends_fast_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_recvs_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_barrier_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_slow_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts3KV_sends_fast_;
-    Teuchos::RCP<Teuchos::Time> timer_doPosts4KV_sends_fast_;
-
-    //! Make the instance's timers.  (Call only in constructor.)
-    void makeTimers ();
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    /// \brief Whether to use different tags for different code paths.
-    ///
-    /// There are currently three code paths in Distributor that post
-    /// receives and sends:
-    ///
-    /// 1. Three-argument variant of doPosts()
-    /// 2. Four-argument variant of doPosts()
-    /// 3. computeReceives()
-    ///
-    /// If this option is true, Distributor will use a distinct
-    /// message tag for each of these paths.
-    bool useDistinctTags_;
-
-    //! Get the tag to use for receives and sends.
-    ///
-    /// See useDistinctTags_.  This is called in doPosts() (both
-    /// variants) and computeReceives().
-    int getTag (const int pathTag) const;
-
-    /// \brief Compute receive info from sends.
-    ///
-    /// This method computes numReceives_, lengthsFrom_, procsFrom_,
-    /// totalReceiveLength_, indicesFrom_, and startsFrom_.
-    ///
-    /// \note This method currently ignores the sendType_ and
-    ///   barrierBetween_ parameters, and always uses ireceive() /
-    ///   send() for communication of the process IDs from which our
-    ///   process is receiving and their corresponding receive packet
-    ///   counts.
-    void computeReceives ();
 
     /// \brief Compute send (GID,PID) pairs from receive (GID,PID) pairs.
     ///
@@ -1049,12 +824,6 @@ namespace Tpetra {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
     typedef typename ArrayRCP<const Packet>::size_type size_type;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << requests_.size () <<
-      " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
 
     // doPosts() accepts the exports and imports arrays as ArrayRCPs,
     // requiring that the memory location is persisting (as is
@@ -1100,12 +869,6 @@ namespace Tpetra {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits: There are " << requests_.size () << " outstanding "
-      "nonblocking messages pending.  It is incorrect to call doPostsAndWaits "
-      "with posts outstanding.");
-
     // doPosts() accepts the exports and imports arrays as ArrayRCPs,
     // requiring that the memory location is persisting (as is
     // necessary for nonblocking receives).  However, it need only
@@ -1142,380 +905,9 @@ namespace Tpetra {
            size_t numPackets,
            const Teuchos::ArrayRCP<Packet>& imports)
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::as;
-    using Teuchos::FancyOStream;
-    using Teuchos::includesVerbLevel;
-    using Teuchos::ireceive;
-    using Teuchos::isend;
-    using Teuchos::readySend;
-    using Teuchos::send;
-    using Teuchos::ssend;
-    using Teuchos::TypeNameTraits;
-    using Teuchos::typeName;
-    using std::endl;
-    using size_type = Array<size_t>::size_type;
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts3TA_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    const bool debug = Details::Behavior::debug("Distributor");
-    const int myRank = comm_->getRank ();
-    // Run-time configurable parameters that come from the input
-    // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("doPosts(3-arg, ArrayRCP)");
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier, std::logic_error,
-      "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): Ready-send "
-      "version requires a barrier between posting receives and posting ready "
-      "sends.  This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
-
-    size_t selfReceiveOffset = 0;
-
-    // mfh 30 Mar 2016: See Github Issue #227 to see why we need to
-    // check whether we're doing reverse mode before checking the
-    // length of the imports array.
-    if (howInitialized_ != Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE) {
-      // Each message has the same number of packets.
-      //
-      // FIXME (mfh 18 Jul 2014): Relaxing this test from strict
-      // inequality to a less-than seems to have fixed Bug 6170.  It's
-      // OK for the 'imports' array to be longer than it needs to be;
-      // I'm just curious why it would be.
-      const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (imports.size ()) < totalNumImportPackets,
-         std::invalid_argument,
-         "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
-         "The 'imports' array must have enough entries to hold the expected number "
-         "of import packets.  imports.size() = " << imports.size () << " < "
-         "totalNumImportPackets = " << totalNumImportPackets << ".");
-    }
-
-    // MPI tag for nonblocking receives and blocking sends in this
-    // method.  Some processes might take the "fast" path
-    // (indicesTo_.empty()) and others might take the "slow" path for
-    // the same doPosts() call, so the path tag must be the same for
-    // both.
-    const int pathTag = 0;
-    const int tag = this->getTag (pathTag);
-
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (requests_.size () != 0,
-         std::logic_error,
-         "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): Process "
-         << myRank << ": requests_.size() = " << requests_.size () << " != 0.");
-    }
-
-    // Distributor uses requests_.size() as the number of outstanding
-    // nonblocking message requests, so we resize to zero to maintain
-    // this invariant.
-    //
-    // numReceives_ does _not_ include the self message, if there is
-    // one.  Here, we do actually send a message to ourselves, so we
-    // include any self message in the "actual" number of receives to
-    // post.
-    //
-    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
-    // doesn't (re)allocate its array of requests.  That happens in
-    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
-    // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-         << ": Post receives" << endl;
-      std::cerr << os.str();
-    }
-
-    // Post the nonblocking receives.  It's common MPI wisdom to post
-    // receives before sends.  In MPI terms, this means favoring
-    // adding to the "posted queue" (of receive requests) over adding
-    // to the "unexpected queue" (of arrived messages not yet matched
-    // with a receive).
-    {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3TA_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      size_t curBufOffset = 0;
-      for (size_type i = 0; i < actualNumReceives; ++i) {
-        const size_t curBufLen = lengthsFrom_[i] * numPackets;
-        if (procsFrom_[i] != myRank) {
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-               << ": Post irecv: {source: " << procsFrom_[i]
-               << ", tag: " << tag << "}" << endl;
-            std::cerr << os.str();
-          }
-          // If my process is receiving these packet(s) from another
-          // process (not a self-receive):
-          //
-          // 1. Set up the persisting view (recvBuf) of the imports
-          //    array, given the offset and size (total number of
-          //    packets from process procsFrom_[i]).
-          // 2. Start the Irecv and save the resulting request.
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            curBufOffset + curBufLen > static_cast<size_t> (imports.size ()),
-            std::logic_error,
-            "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
-            "Exceeded size of 'imports' array in packing loop on Process " <<
-            myRank << ".  imports.size() = " << imports.size () << " < "
-            "curBufOffset(" << curBufOffset << ") + curBufLen(" << curBufLen
-            << ").");
-          ArrayRCP<Packet> recvBuf =
-            imports.persistingView (curBufOffset, curBufLen);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
-                                                      tag, *comm_));
-        }
-        else { // Receiving from myself
-          selfReceiveOffset = curBufOffset; // Remember the self-recv offset
-        }
-        curBufOffset += curBufLen;
-      }
-    }
-
-    if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3TA_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-           << ": Barrier" << endl;
-        std::cerr << os.str();
-      }
-      // If we are using ready sends (MPI_Rsend) below, we need to do
-      // a barrier before we post the ready sends.  This is because a
-      // ready send requires that its matching receive has already
-      // been posted before the send has been posted.  The only way to
-      // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
-    }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts3TA_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    // setup scan through procsTo_ list starting with higher numbered procs
-    // (should help balance message traffic)
-    //
-    // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
-    // It doesn't depend on the input at all.
-    size_t numBlocks = numSends_ + selfMessage_;
-    size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
-      ++procIndex;
-    }
-    if (procIndex == numBlocks) {
-      procIndex = 0;
-    }
-
-    size_t selfNum = 0;
-    size_t selfIndex = 0;
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << (indicesTo_.empty () ? "Fast" : "Slow")
-         << ": Post sends" << endl;
-      std::cerr << os.str();
-    }
-
-    if (indicesTo_.empty ()) {
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3TA_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      // Data are already blocked (laid out) by process, so we don't
-      // need a separate send buffer (besides the exports array).
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myRank) {
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << ": Post send: {target: "
-               << procsTo_[p] << ", tag: " << tag << "}" << endl;
-            std::cerr << os.str();
-          }
-
-          ArrayView<const Packet> tmpSend =
-            exports.view (startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-
-          if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int, Packet> (tmpSend.getRawPtr (),
-                               as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              exports.persistingView (startsTo_[p] * numPackets,
-                                      lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                     tag, *comm_));
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.getRawPtr (),
-                                    as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.getRawPtr (),
-                                as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *comm_);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-        }
-      }
-
-      if (selfMessage_) {
-        if (verbose_) {
-          std::ostringstream os;
-          os << *prefix << "Fast: Self-send" << endl;
-          std::cerr << os.str();
-        }
-        // This is how we "send a message to ourself": we copy from
-        // the export buffer to the import buffer.  That saves
-        // Teuchos::Comm implementations other than MpiComm (in
-        // particular, SerialComm) the trouble of implementing self
-        // messages correctly.  (To do this right, SerialComm would
-        // need internal buffer space for messages, keyed on the
-        // message's tag.)
-        std::copy (exports.begin()+startsTo_[selfNum]*numPackets,
-                   exports.begin()+startsTo_[selfNum]*numPackets+lengthsTo_[selfNum]*numPackets,
-                   imports.begin()+selfReceiveOffset);
-      }
-    }
-    else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3TA_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
-      // sends), because the buffer is only long enough for one send.
-      ArrayRCP<Packet> sendArray (maxSendLength_ * numPackets); // send buffer
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND, std::logic_error,
-        "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
-        "The \"send buffer\" code path doesn't currently work with "
-        "nonblocking sends.");
-
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myRank) {
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << "Slow: Post send: "
-              "{target: " << procsTo_[p] << ", tag: " << tag << "}" << endl;
-            std::cerr << os.str();
-          }
-
-          typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
-          size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
-            srcBegin = exports.begin() + indicesTo_[j]*numPackets;
-            srcEnd   = srcBegin + numPackets;
-            std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
-            sendArrayOffset += numPackets;
-          }
-          ArrayView<const Packet> tmpSend =
-            sendArray.view (0, lengthsTo_[p]*numPackets);
-
-          if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int, Packet> (tmpSend.getRawPtr (),
-                               as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              sendArray.persistingView (0, lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                     tag, *comm_));
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.getRawPtr (),
-                                    as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.getRawPtr (),
-                                as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *comm_);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Teuchos::ArrayRCP): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-          selfIndex = startsTo_[p];
-        }
-      }
-
-      if (selfMessage_) {
-        if (verbose_) {
-          std::ostringstream os;
-          os << *prefix << "Slow: Self-send" << endl;
-          std::cerr << os.str();
-        }
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
-          std::copy (exports.begin()+indicesTo_[selfIndex]*numPackets,
-                     exports.begin()+indicesTo_[selfIndex]*numPackets + numPackets,
-                     imports.begin() + selfReceiveOffset);
-          ++selfIndex;
-          selfReceiveOffset += numPackets;
-        }
-      }
-    }
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done!" << endl;
-      std::cerr << os.str();
-    }
+    Kokkos::View<const Packet*, Kokkos::HostSpace> exportsView(exports.get(), exports.size());
+    Kokkos::View<Packet*, Kokkos::HostSpace> importsView(imports.get(), imports.size());
+    doPosts(exportsView, numPackets, importsView);
   }
 
   template <class Packet>
@@ -1525,372 +917,9 @@ namespace Tpetra {
            const Teuchos::ArrayRCP<Packet>& imports,
            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::as;
-    using Teuchos::ireceive;
-    using Teuchos::isend;
-    using Teuchos::readySend;
-    using Teuchos::send;
-    using Teuchos::ssend;
-    using Teuchos::TypeNameTraits;
-    using std::endl;
-    typedef Array<size_t>::size_type size_type;
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("doPosts(4-arg, Teuchos)");
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts4TA_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    // Run-time configurable parameters that come from the input
-    // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
-
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     // Prepare for verbose output, if applicable.
-//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-//     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream ();
-//     const bool doPrint = out.get () && (comm_->getRank () == 0) &&
-//       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-
-//     if (doPrint) {
-//       // Only need one process to print out parameters.
-//       *out << "Distributor::doPosts (4 args)" << endl;
-//     }
-//     // Add one tab level.  We declare this outside the doPrint scopes
-//     // so that the tab persists until the end of this method.
-//     if (doPrint) {
-//       *out << "Parameters:" << endl;
-//       {
-//         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
-//              << endl << "barrierBetween: " << doBarrier << endl;
-//       }
-//     }
-// #endif // HAVE_TEUCHOS_DEBUG
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error,
-      "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Ready-send "
-      "version requires a barrier between posting receives and posting ready "
-      "ends.  This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
-
-    const int myProcID = comm_->getRank ();
-    size_t selfReceiveOffset = 0;
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    // Different messages may have different numbers of packets.
-    size_t totalNumImportPackets = 0;
-    for (size_t ii = 0; ii < static_cast<size_t> (numImportPacketsPerLID.size ()); ++ii) {
-      totalNumImportPackets += numImportPacketsPerLID[ii];
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      static_cast<size_t> (imports.size ()) < totalNumImportPackets,
-      std::runtime_error,
-      "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): The 'imports' "
-      "array must have enough entries to hold the expected number of import "
-      "packets.  imports.size() = " << imports.size() << " < "
-      "totalNumImportPackets = " << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
-
-    // MPI tag for nonblocking receives and blocking sends in this
-    // method.  Some processes might take the "fast" path
-    // (indicesTo_.empty()) and others might take the "slow" path for
-    // the same doPosts() call, so the path tag must be the same for
-    // both.
-    const int pathTag = 1;
-    const int tag = this->getTag (pathTag);
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size () != 0,
-       std::logic_error,
-       "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Process "
-       << myProcID << ": requests_.size() = " << requests_.size ()
-       << " != 0.");
-#endif // HAVE_TEUCHOS_DEBUG
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << (indicesTo_.empty () ? "fast" : "slow")
-         << " path" << endl;
-      std::cerr << os.str();
-    }
-
-    // Distributor uses requests_.size() as the number of outstanding
-    // nonblocking message requests, so we resize to zero to maintain
-    // this invariant.
-    //
-    // numReceives_ does _not_ include the self message, if there is
-    // one.  Here, we do actually send a message to ourselves, so we
-    // include any self message in the "actual" number of receives to
-    // post.
-    //
-    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
-    // doesn't (re)allocate its array of requests.  That happens in
-    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
-    // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
-
-    // Post the nonblocking receives.  It's common MPI wisdom to post
-    // receives before sends.  In MPI terms, this means favoring
-    // adding to the "posted queue" (of receive requests) over adding
-    // to the "unexpected queue" (of arrived messages not yet matched
-    // with a receive).
-    {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4TA_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      size_t curBufferOffset = 0;
-      size_t curLIDoffset = 0;
-      for (size_type i = 0; i < actualNumReceives; ++i) {
-        size_t totalPacketsFrom_i = 0;
-        for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
-          totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
-        }
-        curLIDoffset += lengthsFrom_[i];
-        if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
-          // If my process is receiving these packet(s) from another
-          // process (not a self-receive), and if there is at least
-          // one packet to receive:
-          //
-          // 1. Set up the persisting view (recvBuf) into the imports
-          //    array, given the offset and size (total number of
-          //    packets from process procsFrom_[i]).
-          // 2. Start the Irecv and save the resulting request.
-          ArrayRCP<Packet> recvBuf =
-            imports.persistingView (curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int, Packet> (recvBuf, procsFrom_[i],
-                                                      tag, *comm_));
-        }
-        else { // Receiving these packet(s) from myself
-          selfReceiveOffset = curBufferOffset; // Remember the offset
-        }
-        curBufferOffset += totalPacketsFrom_i;
-      }
-    }
-
-    if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4TA_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      // If we are using ready sends (MPI_Rsend) below, we need to do
-      // a barrier before we post the ready sends.  This is because a
-      // ready send requires that its matching receive has already
-      // been posted before the send has been posted.  The only way to
-      // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
-    }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts4TA_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    // setup arrays containing starting-offsets into exports for each send,
-    // and num-packets-to-send for each send.
-    Array<size_t> sendPacketOffsets(numSends_,0), packetsPerSend(numSends_,0);
-    size_t maxNumPackets = 0;
-    size_t curPKToffset = 0;
-    for (size_t pp=0; pp<numSends_; ++pp) {
-      sendPacketOffsets[pp] = curPKToffset;
-      size_t numPackets = 0;
-      for (size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
-        numPackets += numExportPacketsPerLID[j];
-      }
-      if (numPackets > maxNumPackets) maxNumPackets = numPackets;
-      packetsPerSend[pp] = numPackets;
-      curPKToffset += numPackets;
-    }
-
-    // setup scan through procsTo_ list starting with higher numbered procs
-    // (should help balance message traffic)
-    size_t numBlocks = numSends_+ selfMessage_;
-    size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
-      ++procIndex;
-    }
-    if (procIndex == numBlocks) {
-      procIndex = 0;
-    }
-
-    size_t selfNum = 0;
-    size_t selfIndex = 0;
-
-    if (indicesTo_.empty()) {
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4TA_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "fast path: posting sends" << endl;
-        std::cerr << os.str();
-      }
-
-      // Data are already blocked (laid out) by process, so we don't
-      // need a separate send buffer (besides the exports array).
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myProcID && packetsPerSend[p] > 0) {
-          ArrayView<const Packet> tmpSend =
-            exports.view (sendPacketOffsets[p], packetsPerSend[p]);
-
-          if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
-            send<int, Packet> (tmpSend.getRawPtr (),
-                               as<int> (tmpSend.size ()),
-                               procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int, Packet> (tmpSend.getRawPtr (),
-                                    as<int> (tmpSend.size ()),
-                                    procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            ArrayRCP<const Packet> tmpSendBuf =
-              exports.persistingView (sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                     tag, *comm_));
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int, Packet> (tmpSend.getRawPtr (),
-                                as<int> (tmpSend.size ()),
-                                procsTo_[p], tag, *comm_);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error,
-              "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): "
-              "Invalid send type.  We should never get here.  Please report "
-              "this bug to the Tpetra developers.");
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-        }
-      }
-
-      if (selfMessage_) {
-        std::copy (exports.begin()+sendPacketOffsets[selfNum],
-                   exports.begin()+sendPacketOffsets[selfNum]+packetsPerSend[selfNum],
-                   imports.begin()+selfReceiveOffset);
-      }
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "fast path: done" << endl;
-        std::cerr << os.str();
-      }
-    }
-    else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4TA_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "slow path: posting sends" << endl;
-        std::cerr << os.str();
-      }
-
-      // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
-      ArrayRCP<Packet> sendArray (maxNumPackets); // send buffer
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): "
-        "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
-
-      Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
-      size_t ioffset = 0;
-      for (int j=0; j<numExportPacketsPerLID.size(); ++j) {
-        indicesOffsets[j] = ioffset;
-        ioffset += numExportPacketsPerLID[j];
-      }
-
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myProcID) {
-          typename ArrayView<const Packet>::iterator srcBegin, srcEnd;
-          size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
-          size_t numPacketsTo_p = 0;
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
-            srcBegin = exports.begin() + indicesOffsets[j];
-            srcEnd   = srcBegin + numExportPacketsPerLID[j];
-            numPacketsTo_p += numExportPacketsPerLID[j];
-            std::copy (srcBegin, srcEnd, sendArray.begin()+sendArrayOffset);
-            sendArrayOffset += numExportPacketsPerLID[j];
-          }
-          if (numPacketsTo_p > 0) {
-            ArrayView<const Packet> tmpSend =
-              sendArray.view (0, numPacketsTo_p);
-
-            if (sendType == Details::DISTRIBUTOR_RSEND) {
-              readySend<int, Packet> (tmpSend.getRawPtr (),
-                                      as<int> (tmpSend.size ()),
-                                      procsTo_[p], tag, *comm_);
-            }
-            else if (sendType == Details::DISTRIBUTOR_ISEND) {
-              ArrayRCP<const Packet> tmpSendBuf =
-                sendArray.persistingView (0, numPacketsTo_p);
-              requests_.push_back (isend<int, Packet> (tmpSendBuf, procsTo_[p],
-                                                       tag, *comm_));
-            }
-            else if (sendType == Details::DISTRIBUTOR_SSEND) {
-              ssend<int, Packet> (tmpSend.getRawPtr (),
-                                  as<int> (tmpSend.size ()),
-                                  procsTo_[p], tag, *comm_);
-            }
-            else { // if (sendType == Details::DISTRIBUTOR_SSEND)
-              send<int, Packet> (tmpSend.getRawPtr (),
-                                 as<int> (tmpSend.size ()),
-                                 procsTo_[p], tag, *comm_);
-            }
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-          selfIndex = startsTo_[p];
-        }
-      }
-
-      if (selfMessage_) {
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
-          std::copy (exports.begin()+indicesOffsets[selfIndex],
-                     exports.begin()+indicesOffsets[selfIndex]+numExportPacketsPerLID[selfIndex],
-                     imports.begin() + selfReceiveOffset);
-          selfReceiveOffset += numExportPacketsPerLID[selfIndex];
-          ++selfIndex;
-        }
-      }
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "slow path: done" << endl;
-        std::cerr << os.str();
-      }
-    }
+    Kokkos::View<const Packet*, Kokkos::HostSpace> exportsView(exports.get(), exports.size());
+    Kokkos::View<Packet*, Kokkos::HostSpace> importsView(imports.get(), imports.size());
+    doPosts(exportsView, numExportPacketsPerLID, importsView, numImportPacketsPerLID);
   }
 
   template <class Packet>
@@ -1940,12 +969,6 @@ namespace Tpetra {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doReversePostsAndWaits(4 args): There are " << requests_.size ()
-      << " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
-
     // doReversePosts() accepts the exports and imports arrays as
     // ArrayRCPs, requiring that the memory location is persisting (as
     // is necessary for nonblocking receives).  However, it need only
@@ -1978,7 +1001,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -1996,7 +1019,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do reverse "
       "communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -2013,44 +1036,7 @@ namespace Tpetra {
                    size_t numPackets,
                    const ImpView& imports)
   {
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using std::endl;
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("doPostsAndWaits(3-arg, Kokkos)");
-      std::ostringstream os;
-      os << *prefix << "sendType: "
-         << DistributorSendTypeEnumToString(sendType_)
-         << ", barrierBetween: "
-         << (barrierBetween_ ? "true" : "false") << endl;
-      std::cerr << os.str();
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      requests_.size () != 0, std::runtime_error, "Tpetra::Distributor::"
-      "doPostsAndWaits(3 args): There are " << requests_.size () <<
-      " outstanding nonblocking messages pending.  It is incorrect to call "
-      "this method with posts outstanding.");
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call doPosts" << endl;
-      std::cerr << os.str();
-    }
-    doPosts (exports, numPackets, imports);
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call doWaits" << endl;
-      std::cerr << os.str();
-    }
-    doWaits ();
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
-    }
+    actor_.doPostsAndWaits(plan_, exports, numPackets, imports);
   }
 
   template <class ExpView, class ImpView>
@@ -2061,29 +1047,7 @@ namespace Tpetra {
                   const ImpView& imports,
                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    using std::endl;
-    const char rawPrefix[] = "doPostsAndWaits(4-arg, Kokkos)";
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix(rawPrefix);
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size() != 0, std::runtime_error,
-       "Tpetra::Distributor::" << rawPrefix << ": There is/are "
-      << requests_.size() << " outstanding nonblocking message(s) "
-       "pending.  It is incorrect to call this method with posts "
-       "outstanding.");
-    doPosts(exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
-    doWaits();
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
-    }
+    actor_.doPostsAndWaits(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
 
 
@@ -2094,452 +1058,7 @@ namespace Tpetra {
            size_t numPackets,
            const ImpView &imports)
   {
-    using Teuchos::Array;
-    using Teuchos::as;
-    using Teuchos::FancyOStream;
-    using Teuchos::includesVerbLevel;
-    using Teuchos::ireceive;
-    using Teuchos::isend;
-    using Teuchos::readySend;
-    using Teuchos::send;
-    using Teuchos::ssend;
-    using Teuchos::TypeNameTraits;
-    using Teuchos::typeName;
-    using std::endl;
-    using Kokkos::Compat::create_const_view;
-    using Kokkos::Compat::create_view;
-    using Kokkos::Compat::subview_offset;
-    using Kokkos::Compat::deep_copy_offset;
-    typedef Array<size_t>::size_type size_type;
-    typedef ExpView exports_view_type;
-    typedef ImpView imports_view_type;
-
-#ifdef KOKKOS_ENABLE_CUDA
-    static_assert
-      (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
-       ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
-       "Please do not use Tpetra::Distributor with UVM allocations.  "
-       "See Trilinos GitHub issue #1088.");
-#endif // KOKKOS_ENABLE_CUDA
-
-#ifdef KOKKOS_ENABLE_SYCL
-    static_assert
-      (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
-       ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
-       "Please do not use Tpetra::Distributor with SharedUSM allocations.  "
-       "See Trilinos GitHub issue #1088 (corresponding to CUDA).");
-#endif // KOKKOS_ENABLE_SYCL
-
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts3KV_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    const int myRank = comm_->getRank ();
-    // Run-time configurable parameters that come from the input
-    // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("doPosts(3-arg, Kokkos)");
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error,
-      "Tpetra::Distributor::doPosts(3 args, Kokkos): Ready-send version "
-      "requires a barrier between posting receives and posting ready sends.  "
-      "This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
-
-    size_t selfReceiveOffset = 0;
-
-    // mfh 30 Mar 2016: See Github Issue #227 to see why we need to
-    // check whether we're doing reverse mode before checking the
-    // length of the imports array.
-    if (false /* howInitialized_ != Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE */) {
-      // Each message has the same number of packets.
-      const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "totalNumImportPackets = " <<
-          totalNumImportPackets << " = " << totalReceiveLength_ << " * " <<
-          numPackets << "; imports.extent(0) = " << imports.extent (0)
-           << endl;
-        std::cerr << os.str();
-      }
-
-#ifdef HAVE_TPETRA_DEBUG
-      // mfh 31 Mar 2016: Extra special all-reduce check to help diagnose #227.
-      {
-        const size_t importBufSize = static_cast<size_t> (imports.extent (0));
-        const int lclBad = (importBufSize < totalNumImportPackets) ? 1 : 0;
-        int gblBad = 0;
-        using Teuchos::reduceAll;
-        using Teuchos::REDUCE_MAX;
-        using Teuchos::outArg;
-        reduceAll (*comm_, REDUCE_MAX, lclBad, outArg (gblBad));
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (gblBad != 0,
-           std::runtime_error,
-           "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-           "On one or more MPI processes, the 'imports' array "
-           "does not have enough entries to hold the expected number of "
-           "import packets.  ");
-      }
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (imports.extent (0)) < totalNumImportPackets,
-         std::runtime_error,
-         "Tpetra::Distributor::doPosts(3 args, Kokkos): The 'imports' "
-         "array must have enough entries to hold the expected number of import "
-         "packets.  imports.extent(0) = " << imports.extent (0) << " < "
-         "totalNumImportPackets = " << totalNumImportPackets << " = "
-         "totalReceiveLength_ (" << totalReceiveLength_ << ") * numPackets ("
-         << numPackets << ").");
-#endif // HAVE_TPETRA_DEBUG
-    }
-
-    // MPI tag for nonblocking receives and blocking sends in this
-    // method.  Some processes might take the "fast" path
-    // (indicesTo_.empty()) and others might take the "slow" path for
-    // the same doPosts() call, so the path tag must be the same for
-    // both.
-    const int pathTag = 0;
-    const int tag = this->getTag (pathTag);
-
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size () != 0,
-       std::logic_error,
-       "Tpetra::Distributor::doPosts(3 args, Kokkos): Process "
-       << myRank << ": requests_.size() = " << requests_.size () << " != 0.");
-#endif // HAVE_TPETRA_DEBUG
-
-    // Distributor uses requests_.size() as the number of outstanding
-    // nonblocking message requests, so we resize to zero to maintain
-    // this invariant.
-    //
-    // numReceives_ does _not_ include the self message, if there is
-    // one.  Here, we do actually send a message to ourselves, so we
-    // include any self message in the "actual" number of receives to
-    // post.
-    //
-    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
-    // doesn't (re)allocate its array of requests.  That happens in
-    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
-    // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
-         << " path: post receives" << endl;
-      std::cerr << os.str();
-    }
-
-    // Post the nonblocking receives.  It's common MPI wisdom to post
-    // receives before sends.  In MPI terms, this means favoring
-    // adding to the "posted queue" (of receive requests) over adding
-    // to the "unexpected queue" (of arrived messages not yet matched
-    // with a receive).
-    {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts3KV_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      size_t curBufferOffset = 0;
-      for (size_type i = 0; i < actualNumReceives; ++i) {
-        const size_t curBufLen = lengthsFrom_[i] * numPackets;
-        if (procsFrom_[i] != myRank) {
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix
-               << (indicesTo_.empty() ? "fast" : "slow") << " path: "
-               << "post irecv: {source: " << procsFrom_[i]
-               << ", tag: " << tag << "}" << endl;
-            std::cerr << os.str();
-          }
-          // If my process is receiving these packet(s) from another
-          // process (not a self-receive):
-          //
-          // 1. Set up the persisting view (recvBuf) of the imports
-          //    array, given the offset and size (total number of
-          //    packets from process procsFrom_[i]).
-          // 2. Start the Irecv and save the resulting request.
-          TEUCHOS_TEST_FOR_EXCEPTION(
-            curBufferOffset + curBufLen > static_cast<size_t> (imports.size ()),
-            std::logic_error, "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-            "Exceeded size of 'imports' array in packing loop on Process " <<
-            myRank << ".  imports.size() = " << imports.size () << " < "
-            "curBufferOffset(" << curBufferOffset << ") + curBufLen(" <<
-            curBufLen << ").");
-          imports_view_type recvBuf =
-            subview_offset (imports, curBufferOffset, curBufLen);
-          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
-                                              tag, *comm_));
-        }
-        else { // Receiving from myself
-          selfReceiveOffset = curBufferOffset; // Remember the self-recv offset
-        }
-        curBufferOffset += curBufLen;
-      }
-    }
-
-    if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3KV_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
-           << " path: barrier" << endl;
-        std::cerr << os.str();
-      }
-      // If we are using ready sends (MPI_Rsend) below, we need to do
-      // a barrier before we post the ready sends.  This is because a
-      // ready send requires that its matching receive has already
-      // been posted before the send has been posted.  The only way to
-      // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
-    }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts3KV_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    // setup scan through procsTo_ list starting with higher numbered procs
-    // (should help balance message traffic)
-    //
-    // FIXME (mfh 20 Feb 2013) Why haven't we precomputed this?
-    // It doesn't depend on the input at all.
-    size_t numBlocks = numSends_ + selfMessage_;
-    size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myRank)) {
-      ++procIndex;
-    }
-    if (procIndex == numBlocks) {
-      procIndex = 0;
-    }
-
-    size_t selfNum = 0;
-    size_t selfIndex = 0;
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
-         << " path: post sends" << endl;
-      std::cerr << os.str();
-    }
-
-    if (indicesTo_.empty()) {
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "fast path: posting sends" << endl;
-        std::cerr << os.str();
-      }
-
-      // Data are already blocked (laid out) by process, so we don't
-      // need a separate send buffer (besides the exports array).
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myRank) {
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << "fast path: post send: {target: "
-               << procsTo_[p] << ", tag: " << tag << "}" << endl;
-            std::cerr << os.str();
-          }
-          exports_view_type tmpSend = subview_offset(
-            exports, startsTo_[p]*numPackets, lengthsTo_[p]*numPackets);
-
-          if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int> (tmpSend,
-                       as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            exports_view_type tmpSendBuf =
-              subview_offset (exports, startsTo_[p] * numPackets,
-                              lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
-                            as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int> (tmpSend,
-                        as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
-          } else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-        }
-      }
-
-      if (selfMessage_) {
-        if (verbose_) {
-          std::ostringstream os;
-          os << *prefix << "fast path: self-send" << endl;
-          std::cerr << os.str();
-        }
-        // This is how we "send a message to ourself": we copy from
-        // the export buffer to the import buffer.  That saves
-        // Teuchos::Comm implementations other than MpiComm (in
-        // particular, SerialComm) the trouble of implementing self
-        // messages correctly.  (To do this right, SerialComm would
-        // need internal buffer space for messages, keyed on the
-        // message's tag.)
-        deep_copy_offset(imports, exports, selfReceiveOffset,
-                         startsTo_[selfNum]*numPackets,
-                         lengthsTo_[selfNum]*numPackets);
-      }
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "fast path: done" << endl;
-        std::cerr << os.str();
-      }
-    }
-    else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts3KV_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "slow path: posting sends" << endl;
-        std::cerr << os.str();
-      }
-      typedef typename ExpView::non_const_value_type Packet;
-      typedef typename ExpView::array_layout Layout;
-      typedef typename ExpView::device_type Device;
-      typedef typename ExpView::memory_traits Mem;
-      Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
-                                               maxSendLength_ * numPackets);
-
-      // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
-      // sends), because the buffer is only long enough for one send.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(3 args, Kokkos): The \"send buffer\" code path "
-        "doesn't currently work with nonblocking sends.");
-
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myRank) {
-          if (verbose_) {
-            std::ostringstream os;
-            os << *prefix << "slow path: post send: {target: "
-               << procsTo_[p] << ", tag: " << tag << "}" << endl;
-            std::cerr << os.str();
-          }
-
-          size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
-            deep_copy_offset(sendArray, exports, sendArrayOffset,
-                             indicesTo_[j]*numPackets, numPackets);
-            sendArrayOffset += numPackets;
-          }
-          ImpView tmpSend =
-            subview_offset(sendArray, size_t(0), lengthsTo_[p]*numPackets);
-
-          if (sendType == Details::DISTRIBUTOR_SEND) {
-            send<int> (tmpSend,
-                       as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            exports_view_type tmpSendBuf =
-              subview_offset (sendArray, size_t(0), lengthsTo_[p] * numPackets);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
-                            as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int> (tmpSend,
-                        as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-          selfIndex = startsTo_[p];
-        }
-      }
-
-      if (selfMessage_) {
-        if (verbose_) {
-          std::ostringstream os;
-          os << *prefix << "slow path: self-send" << endl;
-          std::cerr << os.str();
-        }
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
-          deep_copy_offset(imports, exports, selfReceiveOffset,
-                           indicesTo_[selfIndex]*numPackets, numPackets);
-          ++selfIndex;
-          selfReceiveOffset += numPackets;
-        }
-      }
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "slow path: done" << endl;
-        std::cerr << os.str();
-      }
-    }
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
-    }
+    actor_.doPosts(plan_, exports, numPackets, imports);
   }
 
   template <class ExpView, class ImpView>
@@ -2550,385 +1069,7 @@ namespace Tpetra {
            const ImpView &imports,
            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    using Teuchos::Array;
-    using Teuchos::as;
-    using Teuchos::ireceive;
-    using Teuchos::isend;
-    using Teuchos::readySend;
-    using Teuchos::send;
-    using Teuchos::ssend;
-    using Teuchos::TypeNameTraits;
-    using std::endl;
-    using Kokkos::Compat::create_const_view;
-    using Kokkos::Compat::create_view;
-    using Kokkos::Compat::subview_offset;
-    using Kokkos::Compat::deep_copy_offset;
-    typedef Array<size_t>::size_type size_type;
-    typedef ExpView exports_view_type;
-    typedef ImpView imports_view_type;
-
-#ifdef KOKKOS_ENABLE_CUDA
-    static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
-                   ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
-                   "Please do not use Tpetra::Distributor with UVM "
-                   "allocations.  See GitHub issue #1088.");
-#endif // KOKKOS_ENABLE_CUDA
-
-#ifdef KOKKOS_ENABLE_SYCL
-    static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value &&
-                   ! std::is_same<typename ImpView::memory_space, Kokkos::Experimental::SYCLSharedUSMSpace>::value,
-                   "Please do not use Tpetra::Distributor with SharedUSM "
-                   "allocations.  See GitHub issue #1088 (corresponding to CUDA).");
-#endif // KOKKOS_ENABLE_SYCL
-
-
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("doPosts(4-arg, Kokkos)");
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMon (*timer_doPosts4KV_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    // Run-time configurable parameters that come from the input
-    // ParameterList set by setParameterList().
-    const Details::EDistributorSendType sendType = sendType_;
-    const bool doBarrier = barrierBetween_;
-
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     // Prepare for verbose output, if applicable.
-//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-//     RCP<Teuchos::FancyOStream> out = this->getOStream ();
-//     const bool doPrint = out.get () && (comm_->getRank () == 0) &&
-//       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-
-//     if (doPrint) {
-//       // Only need one process to print out parameters.
-//       *out << "Distributor::doPosts (4 args)" << endl;
-//     }
-//     // Add one tab level.  We declare this outside the doPrint scopes
-//     // so that the tab persists until the end of this method.
-//     if (doPrint) {
-//       *out << "Parameters:" << endl;
-//       {
-//         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
-//              << endl << "barrierBetween: " << doBarrier << endl;
-//       }
-//     }
-// #endif // HAVE_TEUCHOS_DEBUG
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): Ready-send "
-      "version requires a barrier between posting receives and posting ready "
-      "sends.  This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
-
-    const int myProcID = comm_->getRank ();
-    size_t selfReceiveOffset = 0;
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    // Different messages may have different numbers of packets.
-    size_t totalNumImportPackets = 0;
-    for (size_type ii = 0; ii < numImportPacketsPerLID.size (); ++ii) {
-      totalNumImportPackets += numImportPacketsPerLID[ii];
-    }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      imports.extent (0) < totalNumImportPackets, std::runtime_error,
-      "Tpetra::Distributor::doPosts(4 args, Kokkos): The 'imports' array must have "
-      "enough entries to hold the expected number of import packets.  "
-      "imports.extent(0) = " << imports.extent (0) << " < "
-      "totalNumImportPackets = " << totalNumImportPackets << ".");
-#endif // HAVE_TEUCHOS_DEBUG
-
-    // MPI tag for nonblocking receives and blocking sends in this
-    // method.  Some processes might take the "fast" path
-    // (indicesTo_.empty()) and others might take the "slow" path for
-    // the same doPosts() call, so the path tag must be the same for
-    // both.
-    const int pathTag = 1;
-    const int tag = this->getTag (pathTag);
-
-#ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (requests_.size () != 0, std::logic_error, "Tpetra::Distributor::"
-       "doPosts(4 args, Kokkos): Process " << myProcID << ": requests_.size () = "
-       << requests_.size () << " != 0.");
-#endif // HAVE_TEUCHOS_DEBUG
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << (indicesTo_.empty() ? "fast" : "slow")
-         << " path, tag=" << tag << endl;
-      std::cerr << os.str();
-    }
-    // Distributor uses requests_.size() as the number of outstanding
-    // nonblocking message requests, so we resize to zero to maintain
-    // this invariant.
-    //
-    // numReceives_ does _not_ include the self message, if there is
-    // one.  Here, we do actually send a message to ourselves, so we
-    // include any self message in the "actual" number of receives to
-    // post.
-    //
-    // NOTE (mfh 19 Mar 2012): Epetra_MpiDistributor::DoPosts()
-    // doesn't (re)allocate its array of requests.  That happens in
-    // CreateFromSends(), ComputeRecvs_(), DoReversePosts() (on
-    // demand), or Resize_().
-    const size_type actualNumReceives = as<size_type> (numReceives_) +
-      as<size_type> (selfMessage_ ? 1 : 0);
-    requests_.resize (0);
-
-    // Post the nonblocking receives.  It's common MPI wisdom to post
-    // receives before sends.  In MPI terms, this means favoring
-    // adding to the "posted queue" (of receive requests) over adding
-    // to the "unexpected queue" (of arrived messages not yet matched
-    // with a receive).
-    {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonRecvs (*timer_doPosts4KV_recvs_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      size_t curBufferOffset = 0;
-      size_t curLIDoffset = 0;
-      for (size_type i = 0; i < actualNumReceives; ++i) {
-        size_t totalPacketsFrom_i = 0;
-        for (size_t j = 0; j < lengthsFrom_[i]; ++j) {
-          totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset+j];
-        }
-        curLIDoffset += lengthsFrom_[i];
-        if (procsFrom_[i] != myProcID && totalPacketsFrom_i) {
-          // If my process is receiving these packet(s) from another
-          // process (not a self-receive), and if there is at least
-          // one packet to receive:
-          //
-          // 1. Set up the persisting view (recvBuf) into the imports
-          //    array, given the offset and size (total number of
-          //    packets from process procsFrom_[i]).
-          // 2. Start the Irecv and save the resulting request.
-          imports_view_type recvBuf =
-            subview_offset (imports, curBufferOffset, totalPacketsFrom_i);
-          requests_.push_back (ireceive<int> (recvBuf, procsFrom_[i],
-                                              tag, *comm_));
-        }
-        else { // Receiving these packet(s) from myself
-          selfReceiveOffset = curBufferOffset; // Remember the offset
-        }
-        curBufferOffset += totalPacketsFrom_i;
-      }
-    }
-
-    if (doBarrier) {
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4KV_barrier_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      // If we are using ready sends (MPI_Rsend) below, we need to do
-      // a barrier before we post the ready sends.  This is because a
-      // ready send requires that its matching receive has already
-      // been posted before the send has been posted.  The only way to
-      // guarantee that in this case is to use a barrier.
-      comm_->barrier ();
-    }
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    Teuchos::TimeMonitor timeMonSends (*timer_doPosts4KV_sends_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-    // setup arrays containing starting-offsets into exports for each send,
-    // and num-packets-to-send for each send.
-    Array<size_t> sendPacketOffsets(numSends_,0), packetsPerSend(numSends_,0);
-    size_t maxNumPackets = 0;
-    size_t curPKToffset = 0;
-    for (size_t pp=0; pp<numSends_; ++pp) {
-      sendPacketOffsets[pp] = curPKToffset;
-      size_t numPackets = 0;
-      for (size_t j=startsTo_[pp]; j<startsTo_[pp]+lengthsTo_[pp]; ++j) {
-        numPackets += numExportPacketsPerLID[j];
-      }
-      if (numPackets > maxNumPackets) maxNumPackets = numPackets;
-      packetsPerSend[pp] = numPackets;
-      curPKToffset += numPackets;
-    }
-
-    // setup scan through procsTo_ list starting with higher numbered procs
-    // (should help balance message traffic)
-    size_t numBlocks = numSends_+ selfMessage_;
-    size_t procIndex = 0;
-    while ((procIndex < numBlocks) && (procsTo_[procIndex] < myProcID)) {
-      ++procIndex;
-    }
-    if (procIndex == numBlocks) {
-      procIndex = 0;
-    }
-
-    size_t selfNum = 0;
-    size_t selfIndex = 0;
-    if (indicesTo_.empty()) {
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_fast_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "fast path: posting sends" << endl;
-        std::cerr << os.str();
-      }
-
-      // Data are already blocked (laid out) by process, so we don't
-      // need a separate send buffer (besides the exports array).
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myProcID && packetsPerSend[p] > 0) {
-          exports_view_type tmpSend =
-            subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
-
-          if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
-            send<int> (tmpSend,
-                       as<int> (tmpSend.size ()),
-                       procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
-                            as<int> (tmpSend.size ()),
-                            procsTo_[p], tag, *comm_);
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            exports_view_type tmpSendBuf =
-              subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
-            requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                             tag, *comm_));
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int> (tmpSend,
-                        as<int> (tmpSend.size ()),
-                        procsTo_[p], tag, *comm_);
-          }
-          else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error,
-              "Tpetra::Distributor::doPosts(4 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-        }
-      }
-
-      if (selfMessage_) {
-        deep_copy_offset(imports, exports, selfReceiveOffset,
-                         sendPacketOffsets[selfNum], packetsPerSend[selfNum]);
-      }
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "fast path: done" << endl;
-        std::cerr << os.str();
-      }
-    }
-    else { // data are not blocked by proc, use send buffer
-
-#ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-      Teuchos::TimeMonitor timeMonSends2 (*timer_doPosts4KV_sends_slow_);
-#endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "slow path: posting sends" << endl;
-        std::cerr << os.str();
-      }
-      // FIXME (mfh 05 Mar 2013) This may be broken for Isend.
-      typedef typename ExpView::non_const_value_type Packet;
-      typedef typename ExpView::array_layout Layout;
-      typedef typename ExpView::device_type Device;
-      typedef typename ExpView::memory_traits Mem;
-      Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", maxNumPackets); // send buffer
-
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(4-arg, Kokkos): "
-        "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
-
-      Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
-      size_t ioffset = 0;
-      for (int j=0; j<numExportPacketsPerLID.size(); ++j) {
-        indicesOffsets[j] = ioffset;
-        ioffset += numExportPacketsPerLID[j];
-      }
-
-      for (size_t i = 0; i < numBlocks; ++i) {
-        size_t p = i + procIndex;
-        if (p > (numBlocks - 1)) {
-          p -= numBlocks;
-        }
-
-        if (procsTo_[p] != myProcID) {
-          size_t sendArrayOffset = 0;
-          size_t j = startsTo_[p];
-          size_t numPacketsTo_p = 0;
-          for (size_t k = 0; k < lengthsTo_[p]; ++k, ++j) {
-            numPacketsTo_p += numExportPacketsPerLID[j];
-            deep_copy_offset(sendArray, exports, sendArrayOffset,
-                             indicesOffsets[j], numExportPacketsPerLID[j]);
-            sendArrayOffset += numExportPacketsPerLID[j];
-          }
-          if (numPacketsTo_p > 0) {
-            ImpView tmpSend =
-              subview_offset(sendArray, size_t(0), numPacketsTo_p);
-
-            if (sendType == Details::DISTRIBUTOR_RSEND) {
-              readySend<int> (tmpSend,
-                              as<int> (tmpSend.size ()),
-                              procsTo_[p], tag, *comm_);
-            }
-            else if (sendType == Details::DISTRIBUTOR_ISEND) {
-              exports_view_type tmpSendBuf =
-                subview_offset (sendArray, size_t(0), numPacketsTo_p);
-              requests_.push_back (isend<int> (tmpSendBuf, procsTo_[p],
-                                               tag, *comm_));
-            }
-            else if (sendType == Details::DISTRIBUTOR_SSEND) {
-              ssend<int> (tmpSend,
-                          as<int> (tmpSend.size ()),
-                          procsTo_[p], tag, *comm_);
-            }
-            else { // if (sendType == Details::DISTRIBUTOR_SSEND)
-              send<int> (tmpSend,
-                         as<int> (tmpSend.size ()),
-                         procsTo_[p], tag, *comm_);
-            }
-          }
-        }
-        else { // "Sending" the message to myself
-          selfNum = p;
-          selfIndex = startsTo_[p];
-        }
-      }
-
-      if (selfMessage_) {
-        for (size_t k = 0; k < lengthsTo_[selfNum]; ++k) {
-          deep_copy_offset(imports, exports, selfReceiveOffset,
-                           indicesOffsets[selfIndex],
-                           numExportPacketsPerLID[selfIndex]);
-          selfReceiveOffset += numExportPacketsPerLID[selfIndex];
-          ++selfIndex;
-        }
-      }
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "slow path: done" << endl;
-        std::cerr << os.str();
-      }
-    }
+    actor_.doPosts(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
   }
 
   template <class ExpView, class ImpView>
@@ -2950,11 +1091,6 @@ namespace Tpetra {
                           const ImpView& imports,
                           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
-      "Tpetra::Distributor::doReversePostsAndWaits(4 args): There are "
-      << requests_.size() << " outstanding nonblocking messages pending.  It "
-      "is incorrect to call this method with posts outstanding.");
-
     doReversePosts (exports, numExportPacketsPerLID, imports,
                     numImportPacketsPerLID);
     doReverseWaits ();
@@ -2969,7 +1105,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -2988,7 +1124,7 @@ namespace Tpetra {
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
-      ! indicesTo_.empty (), std::runtime_error,
+      ! plan_.getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
     if (reverseDistributor_.is_null ()) {
@@ -3020,14 +1156,7 @@ namespace Tpetra {
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
-    const int myRank = comm_->getRank ();
-    std::unique_ptr<std::string> prefix;
-    if (verbose_) {
-      prefix = createPrefix("computeSends");
-      std::ostringstream os;
-      os << *prefix << "Start" << endl;
-      std::cerr << os.str();
-    }
+    const int myRank = plan_.getComm()->getRank ();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (importGIDs.size () != importProcIDs.size (),
@@ -3046,12 +1175,7 @@ namespace Tpetra {
     // Use a temporary Distributor to send the (importGIDs[i], myRank)
     // pairs to importProcIDs[i].
     //
-    Distributor tempPlan(comm_);
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call tempPlan.createFromSends" << endl;
-      std::cerr << os.str();
-    }
+    Distributor tempPlan(plan_.getComm());
     // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
     // signed, in order to forestall any possible causes for Bug 6069.
     const size_t numExportsAsSizeT =
@@ -3095,23 +1219,12 @@ namespace Tpetra {
        << numExports << "." << suffix);
 
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Call tempPlan.doPostsAndWaits" << endl;
-      std::cerr << os.str();
-    }
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportProcIDs.
     for (size_type i = 0; i < numExports; ++i) {
       exportGIDs[i] = static_cast<OrdinalType> (exportObjs[2*i]);
       exportProcIDs[i] = static_cast<int> (exportObjs[2*i+1]);
-    }
-
-    if (verbose_) {
-      std::ostringstream os;
-      os << *prefix << "Done" << endl;
-      std::cerr << os.str();
     }
   }
 
@@ -3124,7 +1237,7 @@ namespace Tpetra {
   {
     using std::endl;
     const char errPrefix[] = "Tpetra::Distributor::createFromRecvs: ";
-    const int myRank = comm_->getRank();
+    const int myRank = plan_.getComm()->getRank();
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -3144,7 +1257,7 @@ namespace Tpetra {
       const int errProc =
         (remoteGIDs.size () != remoteProcIDs.size ()) ? myRank : -1;
       int maxErrProc = -1;
-      reduceAll(*comm_, REDUCE_MAX, errProc, outArg(maxErrProc));
+      reduceAll(*plan_.getComm(), REDUCE_MAX, errProc, outArg(maxErrProc));
       TEUCHOS_TEST_FOR_EXCEPTION
         (maxErrProc != -1, std::runtime_error, errPrefix << "Lists "
          "of remote IDs and remote process IDs must have the same "
@@ -3163,22 +1276,7 @@ namespace Tpetra {
 
     computeSends(remoteGIDs, remoteProcIDs, exportGIDs, exportProcIDs);
 
-    const size_t numProcsSendingToMe = createFromSends(exportProcIDs ());
-
-    if (verbose_) {
-      // NOTE (mfh 20 Mar 2014) If remoteProcIDs could contain
-      // duplicates, then its length might not be the right check here,
-      // even if we account for selfMessage_.  selfMessage_ is set in
-      // createFromSends.
-      std::ostringstream os;
-      os << *prefix << "numProcsSendingToMe: "
-         << numProcsSendingToMe << ", remoteProcIDs.size(): "
-         << remoteProcIDs.size () << ", selfMessage_: "
-         << (selfMessage_ ? "true" : "false") << "" << endl;
-      std::cerr << os.str();
-    }
-
-    howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
+    plan_.createFromRecvs(remoteProcIDs);
 
     if (verbose_) {
       std::ostringstream os;
