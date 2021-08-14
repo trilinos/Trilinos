@@ -751,6 +751,11 @@ namespace Tpetra {
                 Teuchos::Describable::verbLevel_default) const;
     //@}
 
+    /// \brief Get this Distributor's DistributorPlan
+    ///
+    /// FIXME: Delete this method when it's no longer needed for non-blocking
+    ///        communication in the DistObject
+    const Details::DistributorPlan& getPlan() const { return plan_; }
   private:
     Details::DistributorPlan plan_;
     Details::DistributorActor actor_;
