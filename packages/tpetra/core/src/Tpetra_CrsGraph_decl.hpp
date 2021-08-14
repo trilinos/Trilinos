@@ -1302,22 +1302,19 @@ public:
       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
       Kokkos::DualView<packet_type*, buffer_device_type>& exports,
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-      size_t& constantNumPackets,
-      Distributor& distor) override;
+      size_t& constantNumPackets) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
           Teuchos::Array<global_ordinal_type>& exports,
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Distributor& distor) const override;
+          size_t& constantNumPackets) const override;
 
     void
     packFillActive (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
                     Teuchos::Array<global_ordinal_type>& exports,
                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor) const;
+                    size_t& constantNumPackets) const;
 
     void
     packFillActiveNew (const Kokkos::DualView<const local_ordinal_type*,
@@ -1326,8 +1323,7 @@ public:
                          buffer_device_type>& exports,
                        Kokkos::DualView<size_t*,
                          buffer_device_type> numPacketsPerLID,
-                       size_t& constantNumPackets,
-                       Distributor& distor) const;
+                       size_t& constantNumPackets) const;
 
     virtual void
     unpackAndCombine
@@ -1338,7 +1334,6 @@ public:
      Kokkos::DualView<size_t*,
        buffer_device_type> numPacketsPerLID,
      const size_t constantNumPackets,
-     Distributor& distor,
      const CombineMode combineMode) override;
 
     //@}

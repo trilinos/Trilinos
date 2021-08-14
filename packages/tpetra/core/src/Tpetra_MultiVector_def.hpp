@@ -1365,8 +1365,7 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numExportPacketsPerLID */,
-   size_t& constantNumPackets,
-   Distributor & /* distor */ )
+   size_t& constantNumPackets)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1742,7 +1741,6 @@ namespace Tpetra {
    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
    const size_t constantNumPackets,
-   Distributor& /* distor */,
    const CombineMode CM)
   {
     using ::Tpetra::Details::Behavior;

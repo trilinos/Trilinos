@@ -897,9 +897,6 @@ namespace Tpetra {
     /// \param constantNumPackets [out] On exit, 0 if the number of
     ///   packets per LID could differ, else (if nonzero) the number
     ///   of packets per LID (which must be constant).
-    ///
-    /// \param distor [in] The Distributor object we are using.  Most
-    ///   implementations will not use this.
     virtual void
     packAndPrepare (const SrcDistObject& source,
                     const Kokkos::DualView<const local_ordinal_type*,
@@ -908,8 +905,7 @@ namespace Tpetra {
                       buffer_device_type>& exports,
                     Kokkos::DualView<size_t*,
                       buffer_device_type> numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor);
+                    size_t& constantNumPackets);
 
     /// \brief Perform any unpacking and combining after
     ///   communication.
@@ -948,9 +944,6 @@ namespace Tpetra {
     ///   <tt>numPacketsPerLID[i]</tt> is the number of packets to
     ///   unpack for LID <tt>importLIDs[i]</tt>.
     ///
-    /// \param distor [in] The Distributor object we are using.  Most
-    ///   implementations will not use this.
-    ///
     /// \param combineMode [in] The CombineMode to use when combining
     ///   the imported entries with existing entries.
     virtual void
@@ -961,7 +954,6 @@ namespace Tpetra {
                       Kokkos::DualView<size_t*,
                         buffer_device_type> numPacketsPerLID,
                       const size_t constantNumPackets,
-                      Distributor& distor,
                       const CombineMode combineMode);
 
 
