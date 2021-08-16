@@ -108,7 +108,7 @@ namespace panzer {
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     {
       Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
-    
+
       std::map<std::string,std::string> block_ids_to_physics_ids;
       block_ids_to_physics_ids["eblock-0_0"] = "test physics";
       block_ids_to_physics_ids["eblock-1_0"] = "test physics";
@@ -116,7 +116,7 @@ namespace panzer {
       std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
       block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
       block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
-      
+
       Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
 
       panzer::buildPhysicsBlocks(block_ids_to_physics_ids,
@@ -137,7 +137,7 @@ namespace panzer {
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
           *mesh, pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
                  pb_b->getWorksetNeeds(),pb_b->elementBlockID(), sideset);
-     
+
       if(myRank==0) {
         TEST_EQUALITY(worksets->size(),0); // no elements on this processor
       }
@@ -149,7 +149,7 @@ namespace panzer {
         TEST_EQUALITY(workset.num_cells,2);
         TEST_EQUALITY(workset.subcell_dim,1);
         TEST_EQUALITY(workset.numDetails(),2);
-  
+
         // this is identical to workset(0)
         TEST_EQUALITY(workset.subcell_index, 1);
         TEST_EQUALITY(workset.block_id, "eblock-0_0");
@@ -170,7 +170,7 @@ namespace panzer {
         TEST_EQUALITY(workset(0).int_rules.size(),1);
         TEST_EQUALITY(workset(0).basis_names->size(),2);
         TEST_EQUALITY(workset(0).bases.size(),2);
-  
+
         TEST_EQUALITY(workset(1).subcell_index, 3);
         TEST_EQUALITY(workset(1).block_id, "eblock-1_0");
         TEST_EQUALITY(workset(1).cell_local_ids[0],5);
@@ -191,7 +191,7 @@ namespace panzer {
       Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk::buildBCWorksets(
           *mesh, pb_a->getWorksetNeeds(),pb_a->elementBlockID(),
                  pb_b->getWorksetNeeds(),pb_b->elementBlockID(), sideset);
-     
+
       if(myRank==1) {
         TEST_EQUALITY(worksets->size(),0); // no elements on this processor
       }
@@ -202,7 +202,7 @@ namespace panzer {
         TEST_EQUALITY(workset.num_cells,2);
         TEST_EQUALITY(workset.subcell_dim,1);
         TEST_EQUALITY(workset.numDetails(),2);
-  
+
         // this is identical to details[0]
         TEST_EQUALITY(workset.subcell_index, 3);
         TEST_EQUALITY(workset.block_id, "eblock-1_0");
@@ -223,7 +223,7 @@ namespace panzer {
         TEST_EQUALITY(workset(0).int_rules.size(),1);
         TEST_EQUALITY(workset(0).basis_names->size(),2);
         TEST_EQUALITY(workset(0).bases.size(),2);
-  
+
         TEST_EQUALITY(workset(1).subcell_index, 1);
         TEST_EQUALITY(workset(1).block_id, "eblock-0_0");
         TEST_EQUALITY(workset(1).cell_local_ids[0],4);
@@ -236,7 +236,7 @@ namespace panzer {
         testIpMatch(workset(0), workset(1), workset.num_cells, out, success);
       }
     }
-    
+
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -273,10 +273,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }    
+    }
     {
       std::size_t bc_id = 0;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -287,10 +287,10 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
-    }   
+    }
     {
       std::size_t bc_id = 0;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -301,7 +301,7 @@ namespace panzer {
       double value = 5.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name,
 		    strategy, p);
       bcs.push_back(bc);
     }
@@ -310,17 +310,24 @@ namespace panzer {
   void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
                    const index_t num_cells, Teuchos::FancyOStream& out, bool& success)
   {
-#define TED01(m) TEST_EQUALITY(d0.m, d1.m)
-    TED01(int_rules.size());
+    TEST_EQUALITY(d0.int_rules.size(), d1.int_rules.size());
     for (std::size_t iri = 0; iri < d0.int_rules.size(); ++iri) {
       const std::size_t num_ip = d0.int_rules[iri]->cub_points.extent(0),
         num_dim = d0.int_rules[iri]->cub_points.extent(1);
+
+      auto d0_rules_view = d0.int_rules[iri]->ip_coordinates.get_view();
+      auto d0_rules_h = Kokkos::create_mirror_view(d0_rules_view);
+      Kokkos::deep_copy(d0_rules_h, d0_rules_view);
+
+      auto d1_rules_view = d1.int_rules[iri]->ip_coordinates.get_view();
+      auto d1_rules_h = Kokkos::create_mirror_view(d1_rules_view);
+      Kokkos::deep_copy(d1_rules_h, d1_rules_view);
+
       for (index_t cell = 0; cell < num_cells; ++cell)
         for (std::size_t ip = 0; ip < num_ip; ++ip)
           for (std::size_t dim = 0; dim < num_dim; ++dim)
-            TED01(int_rules[iri]->ip_coordinates(cell, ip, dim));
+            TEST_EQUALITY(d0_rules_h(cell, ip, dim), d1_rules_h(cell, ip, dim))
     }
-#undef TED01
   }
 
 }
