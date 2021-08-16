@@ -531,6 +531,18 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     //TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Kokkos cast DynRankView accessor
+    {
+      auto kva = a.get_view();
+      Kokkos::deep_copy(kva, a.get_view());
+
+      auto kva_s = a.get_static_view();
+      Kokkos::deep_copy(kva_s, a.get_view());
+
+      auto kvc = c.get_view();
+      Kokkos::deep_copy(kvc, c.get_static_view());
+    }
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors
     {
       // non-const view

@@ -418,6 +418,18 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Kokkos cast DynRankView accessor
+    {
+      auto kva = a.get_view();
+      Kokkos::deep_copy(kva, a.get_view());
+
+      auto kva_s = a.get_static_view();
+      Kokkos::deep_copy(kva_s, a.get_view());
+
+      auto kvc = c.get_view();
+      Kokkos::deep_copy(kvc, c.get_static_view());
+    }
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Kokkos static View accessors
     {
       // non-const view
