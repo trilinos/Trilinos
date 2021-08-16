@@ -887,6 +887,7 @@ namespace Tpetra {
 
     const size_t numSameIDs = transfer.getNumSameIDs ();
     Distributor& distor = transfer.getDistributor ();
+    const Details::DistributorPlan& distributorPlan = distor.getPlan();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (debug && restrictedMode &&
@@ -1122,7 +1123,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
-        doPosts(distor, constantNumPackets, commOnHost, revOp, prefix, canTryAliasing, CM);
+        doPosts(distributorPlan, constantNumPackets, commOnHost, revOp, prefix, canTryAliasing, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
   }
@@ -1241,6 +1242,7 @@ namespace Tpetra {
     }
 
     Distributor& distor = transfer.getDistributor ();
+    const Details::DistributorPlan& distributorPlan = distor.getPlan();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (debug && restrictedMode &&
@@ -1319,7 +1321,7 @@ namespace Tpetra {
         }
       }
       else {
-        doWaits(distor, revOp);
+        doWaits(distributorPlan, revOp);
 
         if (verbose) {
           std::ostringstream os;
@@ -1346,7 +1348,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doPosts(Distributor& distor,
+  doPosts(const Details::DistributorPlan& distributorPlan,
           size_t constantNumPackets,
           bool commOnHost,
           ReverseOption revOp,
@@ -1391,10 +1393,10 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits (numExp_h, 1, numImp_h);
+          distributorActor_.doPostsAndWaits(*distributorPlan.getReversePlan(), numExp_h, 1, numImp_h);
         }
         else {
-          distor.doPostsAndWaits (numExp_h, 1, numImp_h);
+          distributorActor_.doPostsAndWaits(distributorPlan, numExp_h, 1, numImp_h);
         }
 
         if (verbose) {
@@ -1422,10 +1424,10 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits (numExp_d, 1, numImp_d);
+          distributorActor_.doPostsAndWaits(*distributorPlan.getReversePlan(), numExp_d, 1, numImp_d);
         }
         else {
-          distor.doPostsAndWaits (numExp_d, 1, numImp_d);
+          distributorActor_.doPostsAndWaits(distributorPlan, numExp_d, 1, numImp_d);
         }
 
         if (verbose) {
@@ -1487,15 +1489,17 @@ namespace Tpetra {
       if (commOnHost) {
         this->imports_.modify_host ();
         if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_host ()),
+          distributorActor_.doPosts
+            (*distributorPlan.getReversePlan(),
+             create_const_view (this->exports_.view_host ()),
              numExportPacketsPerLID_av,
              this->imports_.view_host (),
              numImportPacketsPerLID_av);
         }
         else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_host ()),
+          distributorActor_.doPosts
+            (distributorPlan,
+             create_const_view (this->exports_.view_host ()),
              numExportPacketsPerLID_av,
              this->imports_.view_host (),
              numImportPacketsPerLID_av);
@@ -1505,15 +1509,17 @@ namespace Tpetra {
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
         if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_device ()),
+          distributorActor_.doPosts
+            (*distributorPlan.getReversePlan(),
+             create_const_view (this->exports_.view_device ()),
              numExportPacketsPerLID_av,
              this->imports_.view_device (),
              numImportPacketsPerLID_av);
         }
         else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_device ()),
+          distributorActor_.doPosts
+            (distributorPlan,
+             create_const_view (this->exports_.view_device ()),
              numExportPacketsPerLID_av,
              this->imports_.view_device (),
              numImportPacketsPerLID_av);
@@ -1550,14 +1556,16 @@ namespace Tpetra {
       if (commOnHost) {
         this->imports_.modify_host ();
         if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_host ()),
+          distributorActor_.doPosts
+            (*distributorPlan.getReversePlan(),
+             create_const_view (this->exports_.view_host ()),
              constantNumPackets,
              this->imports_.view_host ());
         }
         else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_host ()),
+          distributorActor_.doPosts
+            (distributorPlan,
+             create_const_view (this->exports_.view_host ()),
              constantNumPackets,
              this->imports_.view_host ());
         }
@@ -1566,14 +1574,16 @@ namespace Tpetra {
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
         if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_device ()),
+          distributorActor_.doPosts
+            (*distributorPlan.getReversePlan(),
+             create_const_view (this->exports_.view_device ()),
              constantNumPackets,
              this->imports_.view_device ());
         }
         else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_device ()),
+          distributorActor_.doPosts
+            (distributorPlan,
+             create_const_view (this->exports_.view_device ()),
              constantNumPackets,
              this->imports_.view_device ());
         }
@@ -1584,14 +1594,14 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doWaits(Distributor& distor,
+  doWaits(const Details::DistributorPlan& distributorPlan,
           ReverseOption revOp)
   {
     if (revOp == DoReverse) {
-      distor.doReverseWaits();
+      distributorActor_.doWaits(*distributorPlan.getReversePlan());
     }
     else {
-      distor.doWaits();
+      distributorActor_.doWaits(distributorPlan);
     }
   }
 

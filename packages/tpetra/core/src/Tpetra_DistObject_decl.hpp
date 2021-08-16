@@ -784,7 +784,7 @@ namespace Tpetra {
                      const CombineMode CM,
                      const bool restrictedMode);
 
-    void doPosts(Distributor& distor,
+    void doPosts(const Details::DistributorPlan& distributorPlan,
                  size_t constantNumPackets,
                  bool commOnHost,
                  ReverseOption revOp,
@@ -792,7 +792,7 @@ namespace Tpetra {
                  const bool canTryAliasing,
                  const CombineMode CM);
 
-    void doWaits(Distributor& distor,
+    void doWaits(const Details::DistributorPlan& distributorPlan,
                  ReverseOption revOp);
 
     void doPackAndPrepare(const SrcDistObject& src,
