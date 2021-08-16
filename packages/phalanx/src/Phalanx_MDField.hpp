@@ -460,6 +460,9 @@ namespace PHX {
     }
 
     KOKKOS_FORCEINLINE_FUNCTION
+    operator array_type () const { return get_static_view();}
+    
+    KOKKOS_FORCEINLINE_FUNCTION
     Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view()
     {return m_view;}
 

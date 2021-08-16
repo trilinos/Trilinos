@@ -446,6 +446,13 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Kokkos cast View accessor
+    {
+      decltype(a.get_static_view()) av;
+      av = a;
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // PHX as_view accessor
     {
       Kokkos::deep_copy(a.get_static_view(), 5.);
