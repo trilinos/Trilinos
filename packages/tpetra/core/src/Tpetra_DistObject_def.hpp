@@ -1049,7 +1049,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      doPackAndPrepare(src, exportLIDs, constantNumPackets, distor);
+      doPackAndPrepare(src, exportLIDs, constantNumPackets);
       if (commOnHost) {
         this->exports_.sync_host();
       }
@@ -1326,7 +1326,7 @@ namespace Tpetra {
           os << *prefix << "8. unpackAndCombine" << endl;
           std::cerr << os.str ();
         }
-        doUnpackAndCombine(remoteLIDs, constantNumPackets, distor, CM);
+        doUnpackAndCombine(remoteLIDs, constantNumPackets, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1600,8 +1600,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doPackAndPrepare(const SrcDistObject& src,
                    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                   size_t& constantNumPackets,
-                   Distributor& distor)
+                   size_t& constantNumPackets)
   {
     using Details::ProfilingRegion;
     using std::endl;
@@ -1668,7 +1667,6 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                      size_t constantNumPackets,
-                     Distributor& distor,
                      CombineMode CM)
   {
     using Details::ProfilingRegion;
