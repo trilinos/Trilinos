@@ -43,6 +43,7 @@
 /// \file Tpetra_DistObject_decl.hpp
 /// \brief Declaration of the Tpetra::DistObject class
 
+#include "Tpetra_Details_DistributorActor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -1037,6 +1038,8 @@ namespace Tpetra {
 
   private:
     using this_type = DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>;
+
+    Details::DistributorActor distributorActor_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
