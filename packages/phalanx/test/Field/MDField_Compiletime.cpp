@@ -418,18 +418,6 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // Kokkos cast DynRankView accessor
-    {
-      auto kva = a.get_view();
-      Kokkos::deep_copy(kva, a.get_view());
-
-      auto kva_s = a.get_static_view();
-      Kokkos::deep_copy(kva_s, a.get_view());
-
-      auto kvc = c.get_view();
-      Kokkos::deep_copy(kvc, c.get_static_view());
-    }
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Kokkos static View accessors
     {
       // non-const view
@@ -455,6 +443,27 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
       Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kva(0,0) = 1.0;});
       const auto const_kvc = c.get_view();
       Kokkos::parallel_for("t1",Kokkos::RangePolicy<PHX::Device>(0,1),KOKKOS_LAMBDA(const int ){const_kvc(0,0) = MyTraits::FadType(1.0);});
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Kokkos cast View accessor
+    {
+      decltype(a.get_static_view()) av;
+      av = a;
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // PHX as_view accessor
+    {
+      Kokkos::deep_copy(a.get_static_view(), 5.);
+      auto a_h = Kokkos::create_mirror_view(as_view(a));
+      Kokkos::deep_copy(a_h, as_view(a));
+      TEST_EQUALITY(a_h(0,0), 5);
+      
+      auto a_v = a.get_static_view();
+      auto a_v_h = Kokkos::create_mirror_view(as_view(a_v));
+      Kokkos::deep_copy(a_v_h, as_view(a_v));
+      TEST_EQUALITY(a_v_h(0,0), 5);
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
