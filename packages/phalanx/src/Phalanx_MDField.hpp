@@ -467,7 +467,7 @@ namespace PHX {
     {return m_view;}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    const array_type get_view() const
+    const Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view() const
     {return m_view;}
 
     /// Returns a static view of the underlying kokkos static view.
