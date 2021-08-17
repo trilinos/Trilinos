@@ -544,15 +544,15 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       Scalar normal[3];
 
       for(int i=0;i<3;i++){normal[i]=0.;}
-        
+
       for(int dim=0; dim<cell_dim; ++dim){
         normal[dim] = surface_normals_k(cell,point,dim);
       }
-      
+
       Scalar transverse[3];
       Scalar binormal[3];
       panzer::convertNormalToRotationMatrix(normal,transverse,binormal);
-      
+
       for(int dim=0; dim<3; ++dim){
         surface_rotation_matrices_k(cell,point,0,dim) = normal[dim];
         surface_rotation_matrices_k(cell,point,1,dim) = transverse[dim];
@@ -564,7 +564,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
   // =========================================================
   // Enforce alignment across surface quadrature points
-  
+
   const int num_points = ip_coordinates.extent_int(1);
   const int num_faces_per_cell = face_connectivity.numSubcellsOnCellHost(0);
   const int num_points_per_face = num_points / num_faces_per_cell;
@@ -612,7 +612,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
       // If the cell exists, then the local face index needs to exist
       KOKKOS_ASSERT(lidx_1 >= 0);
-      
+
       // To compare points on planes, it is good to center the planes around the origin
       // Find the face center for the left and right cell (may not be the same point - e.g. periodic conditions)
       // We also define a length scale r2 which gives an order of magnitude approximation to the cell size squared
@@ -622,7 +622,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
         for(int dim=0; dim<cell_dim; ++dim){
           xc0[dim] += ip_coordinates_k(cell_0,lidx_0*num_points_per_face + face_point,dim);
           xc1[dim] += ip_coordinates_k(cell_1,lidx_1*num_points_per_face + face_point,dim);
-          const Scalar dx = ip_coordinates_k(cell_0,lidx_0*num_points_per_face + face_point,dim) - ip_coordinates_k(cell_0,lidx_0*num_points_per_face,dim); 
+          const Scalar dx = ip_coordinates_k(cell_0,lidx_0*num_points_per_face + face_point,dim) - ip_coordinates_k(cell_0,lidx_0*num_points_per_face,dim);
           dx2 += dx*dx;
         }
 
@@ -642,14 +642,14 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       // We use the first point on the face to define the normal (may break for curved faces)
       const int example_point_0 = lidx_0*num_points_per_face;
       const int example_point_1 = lidx_1*num_points_per_face;
-      
+
       // Load the transverse and binormal for the 0 cell (default)
       Scalar t[3] = {surface_rotation_matrices_k(cell_0,example_point_0,1,0), surface_rotation_matrices_k(cell_0,example_point_0,1,1), surface_rotation_matrices_k(cell_0,example_point_0,1,2)};
       Scalar b[3] = {surface_rotation_matrices_k(cell_0,example_point_0,2,0), surface_rotation_matrices_k(cell_0,example_point_0,2,1), surface_rotation_matrices_k(cell_0,example_point_0,2,2)};
 
       // In case the faces are not antiparallel (e.g. periodic wedge), we may need to change the transverse and binormal
       {
-      
+
         // Get the normals for each face for constructing one of the plane vectors (transverse)
         const Scalar n0[3] = {surface_rotation_matrices_k(cell_0,example_point_0,0,0), surface_rotation_matrices_k(cell_0,example_point_0,0,1), surface_rotation_matrices_k(cell_0,example_point_0,0,2)};
         const Scalar n1[3] = {surface_rotation_matrices_k(cell_1,example_point_1,0,0), surface_rotation_matrices_k(cell_1,example_point_1,0,1), surface_rotation_matrices_k(cell_1,example_point_1,0,2)};
@@ -686,7 +686,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
           b[0] /= mag_b;
           b[1] /= mag_b;
           b[2] /= mag_b;
-          
+
         }
       }
 
@@ -715,7 +715,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
 
         // Set the default for the point order
         point_order(face,face_point_1) = face_point_1;
-        
+
         // Compare to points on the other surface
         for(int face_point_0=0; face_point_0<num_points_per_face; ++face_point_0){
 
@@ -770,12 +770,12 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     });
     PHX::Device::execution_space().fence();
   }
-    
+
 #undef PANZER_DOT
 #undef PANZER_CROSS
 
   // =========================================================
-    
+
   // I'm not sure if these should exist for surface integrals, but here we go!
 
   // Shakib contravarient metric tensor
@@ -806,7 +806,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
     auto s_contravarient = Kokkos::subview(contravarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
     auto s_covarient = Kokkos::subview(covarient.get_view(), std::make_pair(0,num_cells),Kokkos::ALL,Kokkos::ALL,Kokkos::ALL);
     Intrepid2::RealSpaceTools<PHX::Device::execution_space>::inverse(s_contravarient, s_covarient);
-    PHX::Device::execution_space().fence();    
+    PHX::Device::execution_space().fence();
   }
 
   // norm of g_ij
@@ -823,7 +823,7 @@ generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_
       }
       norm_contravarient_k(cell,ip) = Kokkos::Experimental::sqrt(norm_contravarient_k(cell,ip));
     });
-    PHX::Device::execution_space().fence();    
+    PHX::Device::execution_space().fence();
   }
 
 }
@@ -962,6 +962,15 @@ permuteToOther(const PHX::MDField<Scalar,Cell,IP,Dim>& coords,
   const size_type num_ip = coords.extent(1), num_dim = coords.extent(2);
   permutation.resize(num_ip);
   std::vector<char> taken(num_ip, 0);
+
+  auto coords_view = coords.get_view();
+  auto coords_h = Kokkos::create_mirror_view(coords_view);
+  Kokkos::deep_copy(coords_h, coords_view);
+
+  auto other_coords_view = other_coords.get_view();
+  auto other_coords_h = Kokkos::create_mirror_view(other_coords_view);
+  Kokkos::deep_copy(other_coords_h, other_coords_view);
+
   for (size_type ip = 0; ip < num_ip; ++ip) {
     // Find an other point to associate with ip.
     size_type i_min = 0;
@@ -972,7 +981,7 @@ permuteToOther(const PHX::MDField<Scalar,Cell,IP,Dim>& coords,
       // Compute the distance between the two points.
       Scalar d(0);
       for (size_type dim = 0; dim < num_dim; ++dim) {
-        const Scalar diff = coords(cell, ip, dim) - other_coords(cell, other_ip, dim);
+        const Scalar diff = coords_h(cell, ip, dim) - other_coords_h(cell, other_ip, dim);
         d += diff*diff;
       }
       if (d_min < 0 || d < d_min) {
