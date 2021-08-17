@@ -1050,3 +1050,8 @@ namespace {
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }
+
+int main(int argc, char* argv[]) {
+  Tpetra::ScopeGuard scopeGuard(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+}

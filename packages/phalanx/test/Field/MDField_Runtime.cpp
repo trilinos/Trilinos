@@ -546,6 +546,20 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // PHX as_view accessor
+    {
+      Kokkos::deep_copy(a.get_view(), 5.);
+      auto a_h = Kokkos::create_mirror_view(as_view(a));
+      Kokkos::deep_copy(a_h, as_view(a));
+      TEST_EQUALITY(a_h(0,0), 5);
+      
+      auto a_v = a.get_static_view();
+      auto a_v_h = Kokkos::create_mirror_view(as_view(a_v));
+      Kokkos::deep_copy(a_v_h, as_view(a_v));
+      TEST_EQUALITY(a_v_h(0,0), 5);
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ostream
     out << "Testing operator<<()...";
     ostringstream output;
