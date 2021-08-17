@@ -220,9 +220,11 @@ evaluateFields(typename Traits::EvalData workset)
   const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                                       : *this->wda(workset).bases[basis_index];
 
-  typedef decltype(basisValues.grad_basis) ArrayT;
+  using Array=typename panzer::BasisValues2<double>::ConstArray_CellBasisIPDim;
+  Array grad_basis = use_descriptors_ ? basisValues.getGradBasisValues(false) : Array(basisValues.grad_basis);
+
   bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
-  evaluateGrad_withSens<ScalarT, ArrayT> eval(dof_gradient,dof_value,basisValues.grad_basis,use_shared_memory);
+  evaluateGrad_withSens<ScalarT, Array> eval(dof_gradient,dof_value,grad_basis,use_shared_memory);
   auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::Device>(workset.num_cells);
   Kokkos::parallel_for(policy, eval, "panzer::DOFGradient::evaluateFields");
 }

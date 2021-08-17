@@ -386,7 +386,7 @@ namespace panzer
       /**
        *  \brief The vector basis information necessary for integration.
        */
-      PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
+      PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP,
         panzer::Dim> basis_;
 
   }; // end of class Integrator_BasisTimesVector
