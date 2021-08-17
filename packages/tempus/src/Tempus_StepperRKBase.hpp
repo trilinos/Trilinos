@@ -16,6 +16,7 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperRKAppAction.hpp"
 #include "Tempus_StepperRKModifierDefault.hpp"
+#include "Tempus_Stepper_ErrorNorm.hpp"
 
 
 namespace Tempus {
@@ -51,6 +52,18 @@ public:
   }
 
   virtual bool getUseEmbedded() const { return useEmbedded_; }
+
+  virtual  void setErrorNorm(const Teuchos::RCP<Stepper_ErrorNorm<Scalar>> &errCalculator=Teuchos::null)
+  {
+    if (errCalculator != Teuchos::null) {
+      stepperErrorNormCalculator_ = errCalculator;
+    }
+    else {
+      auto er = Teuchos::rcp(new Stepper_ErrorNorm<Scalar>());
+      stepperErrorNormCalculator_ = er;
+    }
+  }
+
 
   virtual void setAppAction(Teuchos::RCP<StepperRKAppAction<Scalar> > appAction)
   {
@@ -197,6 +210,8 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >  abs_u0;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >  abs_u;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >  sc;
+
+  Teuchos::RCP<Stepper_ErrorNorm<Scalar>> stepperErrorNormCalculator_;
 
   /// The current Runge-Kutta stage number, {0,...,s-1}.  -1 indicates outside stage loop.
   int stageNumber_;
