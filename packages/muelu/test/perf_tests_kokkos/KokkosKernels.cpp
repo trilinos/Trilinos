@@ -351,6 +351,12 @@ int main(int argc, char* argv[]) {
 #else
     std::cout << "Error: CUDA node type is disabled" << std::endl;
 #endif
+  } else if (node == "hip") {
+#ifdef KOKKOS_ENABLE_HIP
+    return main_<double,int,Kokkos::Experimental::HIP>(argc, argv);
+#else
+    std::cout << "Error: HIP node type is disabled" << std::endl;
+#endif
   }
 
   Kokkos::finalize();
