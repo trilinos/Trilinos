@@ -89,6 +89,7 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
+    using device_type     = typename LWGraph_kokkos::device_type;
     using execution_space = typename LWGraph_kokkos::execution_space;
     using memory_space    = typename LWGraph_kokkos::memory_space;
 
@@ -112,19 +113,19 @@ namespace MueLu {
     void BuildAggregates(const ParameterList& params,
                          const LWGraph_kokkos& graph,
                          Aggregates_kokkos& aggregates,
-                         Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                         Kokkos::View<unsigned*, device_type>& aggStat,
                          LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesRandom(const ParameterList& params,
                                const LWGraph_kokkos& graph,
                                Aggregates_kokkos& aggregates,
-                               Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                               Kokkos::View<unsigned*, device_type>& aggStat,
                                LO& numNonAggregatedNodes) const;
 
     void BuildAggregatesDeterministic(const ParameterList& params,
                                       const LWGraph_kokkos& graph,
                                       Aggregates_kokkos& aggregates,
-                                      Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                                      Kokkos::View<unsigned*, device_type>& aggStat,
                                       LO& numNonAggregatedNodes) const;
     //@}
 

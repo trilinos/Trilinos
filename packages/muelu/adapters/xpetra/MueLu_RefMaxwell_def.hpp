@@ -230,6 +230,10 @@ namespace MueLu {
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
       useKokkos_ = true;
 # endif
+# ifdef HAVE_MUELU_HIP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+      useKokkos_ = true;
+# endif
     useKokkos_ = list.get("use kokkos refactor",useKokkos_);
 #endif
   }
@@ -1524,7 +1528,7 @@ namespace MueLu {
                                          for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                            if (P11colind(m) == jNew)
                                              break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                          TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                          P11vals(m) += half * v * n;
@@ -1550,7 +1554,7 @@ namespace MueLu {
                                          for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                            if (P11colind(m) == jNew)
                                              break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                          TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                          P11vals(m) += half * v * n;
@@ -1636,7 +1640,7 @@ namespace MueLu {
                                        for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                          if (P11colind(m) == jNew)
                                            break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                        P11vals(m) += half * n;
@@ -1656,7 +1660,7 @@ namespace MueLu {
                                        for (m = P11rowptr(i); m < P11rowptr(i+1); m++)
                                          if (P11colind(m) == jNew)
                                            break;
-#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA)
+#if defined(HAVE_MUELU_DEBUG) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_HIP)
                                        TEUCHOS_ASSERT_EQUALITY(P11colind(m),jNew);
 #endif
                                        P11vals(m) += half * n;

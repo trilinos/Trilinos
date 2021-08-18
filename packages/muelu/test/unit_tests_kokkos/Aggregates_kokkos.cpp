@@ -364,7 +364,7 @@ namespace MueLuTests {
     aggregates = rcp(new Aggregates_kokkos(*graph));
     aggregates->setObjectLabel("UC");
 
-    Kokkos::View<unsigned*, typename device_type> aggStat("aggStat", numNodes);
+    Kokkos::View<unsigned*, device_type> aggStat("aggStat", numNodes);
     Kokkos::deep_copy(aggStat, MueLu::READY);
 
     // Performing fake aggregates to generate a discontiguous aggregate
