@@ -157,21 +157,25 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       may be more expensive!
 
    // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+   auto LIDs = globalIndexer_->getLIDs();
+   auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+   Kokkos::deep_copy(LIDs_h, LIDs);
+   // loop over each field to be scattered
+   for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+     int fieldNum = fieldIds_[fieldIndex];
+     auto field = PHX::as_view(scatterFields_[fieldIndex]);
+     auto field_h = Kokkos::create_mirror_view(field);
+     Kokkos::deep_copy(field_h, field);
 
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-      // loop over each field to be scattered
-      for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+     const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
-            (*r)[lid] += (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+            int lid = LIDs_h(cellLocalId, offset);
+            (*r)[lid] += field_h(worksetCellIndex,basis);
          }
       }
    }
