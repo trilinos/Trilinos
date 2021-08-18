@@ -518,13 +518,13 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
   for(ordinal_type ie=0; ie<numEdges; ++ie)
     numEdgeDofs += cellBasis->getDofCount(edgeDim,ie);
 
-  ordinal_type numFaceDofs(0);
+  ordinal_type numTotalFaceDofs(0);
   for(ordinal_type iface=0; iface<numFaces; ++iface)
-    numFaceDofs += cellBasis->getDofCount(faceDim,iface);
+    numTotalFaceDofs += cellBasis->getDofCount(faceDim,iface);
 
   auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), cellBasis->getAllDofOrdinal());
 
-  Kokkos::View<ordinal_type*, DeviceType> computedDofs("computedDofs",numEdgeDofs+numFaceDofs);
+  Kokkos::View<ordinal_type*, DeviceType> computedDofs("computedDofs",numEdgeDofs+numTotalFaceDofs);
 
   auto targetEPointsRange  = projStruct->getTargetPointsRange();
   auto targetCurlEPointsRange  = projStruct->getTargetDerivPointsRange();
