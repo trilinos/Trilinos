@@ -115,9 +115,11 @@ postRegistrationSetup(
   PHX::FieldManager<Traits>& /* fm */)
 {
   ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0], this->wda);
-  for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.extent(0); ++cell)
-    for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.extent(1); ++ip)
-      ones(cell,ip) = 1.0;
+  auto l_ones = ones.get_static_view();
+  Kokkos::parallel_for("GlobalStatistics", l_ones.extent(0), KOKKOS_LAMBDA(int cell) {
+      for (std::size_t ip = 0; ip < l_ones.extent(1); ++ip)
+	l_ones(cell,ip) = 1.0;
+    });
 }
 
 //**********************************************************************
