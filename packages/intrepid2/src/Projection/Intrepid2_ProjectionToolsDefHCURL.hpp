@@ -820,7 +820,7 @@ ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffs
         tagToOrdinal, hGradTagToOrdinal,
         numCellDofs, hgradCardinality,
         offsetBasis, offsetBasisCurl,  offsetTargetCurl,
-        numEdgeDofs+numFaceDofs, dim, derDim));
+        numEdgeDofs+numTotalFaceDofs, dim, derDim));
 
     ScalarViewType cellMassMat_("cellMassMat_", numCells, numCellDofs+hgradCardinality, numCellDofs+hgradCardinality),
         cellRhsMat_("rhsMat_", numCells, numCellDofs+hgradCardinality);
