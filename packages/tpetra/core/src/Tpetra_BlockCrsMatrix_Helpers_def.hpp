@@ -527,8 +527,6 @@ namespace Tpetra {
     row_map_type_const blockRowptr = blockLocalGraph.row_map;
     entries_type_const blockColind = blockLocalGraph.entries;
 
-    printf("blocksize = %d block_rows = %d point_rows = %d block_nnz = %d point_nnz = %d\n",blocksize,block_rows,point_rows,(int)block_nnz,(int)point_nnz);
-
     // Generate the point matrix rowptr / colind / values
     row_map_type rowptr("row_map", point_rows+1);
     entries_type colind("entries", point_nnz);
