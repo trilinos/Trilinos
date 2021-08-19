@@ -113,12 +113,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
       useKokkos = true;
 # endif
+# ifdef HAVE_MUELU_HIP
+    if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+      useKokkos = true;
+# endif
 #endif
   }
   bool compareWithGold = true;
 #ifdef KOKKOS_ENABLE_CUDA
   if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
     // Behavior of some algorithms on Cuda is non-deterministic, so we won't check the output.
+    compareWithGold = false;
+#endif
+#ifdef KOKKOS_ENABLE_HIP
+  if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+    // Behavior of some algorithms on HIP is non-deterministic, so we won't check the output.
     compareWithGold = false;
 #endif
   clp.setOption("kokkosRefactor", "noKokkosRefactor", &useKokkos, "use kokkos refactor");

@@ -138,6 +138,10 @@ namespace MueLu {
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
         useKokkos_ = true;
 # endif
+# ifdef HAVE_MUELU_HIP
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
+        useKokkos_ = true;
+# endif
 #endif
     }
 
@@ -158,6 +162,10 @@ namespace MueLu {
 # endif
 # ifdef HAVE_MUELU_CUDA
       if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosCudaWrapperNode).name())
+        useKokkos_ = true;
+# endif
+# ifdef HAVE_MUELU_HIP
+      if (typeid(Node).name() == typeid(Kokkos::Compat::KokkosHIPWrapperNode).name())
         useKokkos_ = true;
 # endif
 #endif
