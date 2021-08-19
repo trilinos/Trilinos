@@ -461,7 +461,7 @@ namespace PHX {
 
     KOKKOS_FORCEINLINE_FUNCTION
     operator array_type () const { return get_static_view();}
-    
+
     KOKKOS_FORCEINLINE_FUNCTION
     Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view()
     {return m_view;}
@@ -663,6 +663,17 @@ namespace PHX {
   template <typename ...Args>
   const auto as_view(const PHX::MDField<Args...> &a) { return a.get_static_view(); }
 
+}
+
+namespace Kokkos{
+  template <typename ...Args>
+  const auto create_mirror_view(const PHX::MDField<Args...> &a) { return Kokkos::create_mirror_view(a.get_static_view()); }
+
+  template <typename KokkosType, typename ...Args>
+  void deep_copy(const KokkosType& k, const PHX::MDField<Args...> &a) { Kokkos::deep_copy(k, a.get_static_view()); }
+
+  template <typename KokkosType, typename ...Args>
+  void deep_copy(const PHX::MDField<Args...> &a, const KokkosType& k) { Kokkos::deep_copy(a.get_static_view(), k); }
 }
 
 #endif
