@@ -132,12 +132,16 @@ namespace panzer {
     typename Traits::EvalData workset)
   { 
      std::size_t numcells = workset.num_cells;
+     int l_nodes = nodes;
+     auto xcoord_v = PHX::as_view(xcoord);
+     auto cvc = PHX::as_view(this->wda(workset).cell_vertex_coordinates);
 
-     for(std::size_t n=0;n<numcells;n++) {
-        for(int v=0;v<nodes;v++) {
-           xcoord(n,v) = this->wda(workset).cell_vertex_coordinates(n,v,0);
+     Kokkos::parallel_for(numcells, KOKKOS_LAMBDA (int n) {
+        for(int v=0;v<l_nodes;v++) {
+	  xcoord_v(n,v) = cvc(n,v,0);
         }
-     }
+       });
+     Kokkos::fence();
   }
 
   Teuchos::RCP<panzer::PureBasis> buildLinearBasis(std::size_t worksetSize);

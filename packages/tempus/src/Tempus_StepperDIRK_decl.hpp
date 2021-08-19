@@ -82,7 +82,7 @@ namespace Tempus {
  *      \item \qquad  $\dot{X}_i \leftarrow 0$
  *                    \hfill {\it * Not needed for later calculations.}
  *      \item \quad {\bf else if ($a_{ii} = 0$) then}
- *                  \hfill {\it * Explicit stage.}
+ *                 \hfill {\it * Explicit stage.}
  *      \item \qquad  {\bf if ($i=0$ and ``Use FSAL'' and (previous step not failed))}
  *      \item \qquad \quad  $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
  *                          \hfill {\it * Use $\dot{X}_{s-1}$ from $n-1$ time step.}

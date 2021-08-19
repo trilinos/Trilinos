@@ -55,6 +55,7 @@
 #include "Panzer_WorksetNeeds.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_IntegrationDescriptor.hpp"
+#include "Panzer_OrientationsInterface.hpp"
 #include "Panzer_BasisDescriptor.hpp"
 #include "Panzer_Evaluator_DomainInterface.hpp"
 #include "Panzer_Traits.hpp"
@@ -147,20 +148,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hgradBD);
-  worksetNeeds.addBasis(hcurlBD);
-  worksetNeeds.addBasis(hdivBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
-  std::vector<std::string> eBlockNames;
-  mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
-
   // Build Connection Manager
   using LO = int;
   using GO = panzer::GlobalOrdinal;
@@ -169,6 +156,8 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
   auto dim = cellTopology->getDimension();
 
@@ -241,10 +230,17 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
   targetGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build targetGlobalIndexer");
 
+  // Create worksets
+  RCP<WorksetContainer> worksetContainer;
+  {
+    RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
+    worksetFactory->setOrientationsInterface(rcp(new OrientationsInterface(sourceGlobalIndexer)));
+    worksetContainer = rcp(new WorksetContainer(worksetFactory));
+  }
+
   // Build projection factory
   timer->start("projectionFactory.setup()");
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
@@ -363,7 +359,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const auto offsetsE = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,E_Index);
         const auto offsetsB = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,B_Index);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.basis_coordinates;
+        const auto& coords = basisValues.getBasisCoordinates();
         const auto& x = sourceValues->getLocalViewDevice(Tpetra::Access::ReadWrite);
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
         const int numBasisE = static_cast<int>(offsetsE.extent(0));
@@ -630,7 +626,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.basis_coordinates;
+        const auto& coords = basisValues.getBasisCoordinates();
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
@@ -737,7 +733,7 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.basis_coordinates;
+        const auto& coords = basisValues.getBasisCoordinates();
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
@@ -824,19 +820,6 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hcurlBD);
-  worksetNeeds.addBasis(hdivBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
-  std::vector<std::string> eBlockNames;
-  mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
-
   // Build Connection Manager
   using LO = int;
   using GO = panzer::GlobalOrdinal;
@@ -845,6 +828,8 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
 
   auto curlBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hcurlBD.getType(),hcurlBD.getOrder(),*cellTopology);
@@ -861,10 +846,17 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   sourceGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build sourceGlobalIndexer");
 
+  // Create worksets
+  RCP<WorksetContainer> worksetContainer;
+  {
+    RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
+    worksetFactory->setOrientationsInterface(rcp(new OrientationsInterface(sourceGlobalIndexer)));
+    worksetContainer = rcp(new WorksetContainer(worksetFactory));
+  }
+
   // Build projection factory
   timer->start("projectionFactory.setup()");
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hcurlBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
@@ -978,18 +970,6 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hgradBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
-  std::vector<std::string> eBlockNames;
-  mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
-
   // Build Connection Manager
   using LO = int;
   using GO = panzer::GlobalOrdinal;
@@ -998,6 +978,8 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
 
   auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
@@ -1020,10 +1002,17 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
   targetGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build targetGlobalIndexer");
 
+  // Create worksets
+  RCP<WorksetContainer> worksetContainer;
+  {
+    RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
+    worksetFactory->setOrientationsInterface(rcp(new OrientationsInterface(sourceGlobalIndexer)));
+    worksetContainer = rcp(new WorksetContainer(worksetFactory));
+  }
+
   // Build projection factory
   timer->start("projectionFactory.setup()");
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
@@ -1102,7 +1091,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
         const auto offsetsPHI = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,PHI_Index);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.basis_coordinates;
+        const auto& coords = basisValues.getBasisCoordinates();
         const auto& x = sourceValues->getLocalViewDevice(Tpetra::Access::OverwriteAll);
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
 
@@ -1224,7 +1213,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.basis_coordinates;
+        const auto& coords = basisValues.getBasisCoordinates();
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
@@ -1314,7 +1303,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.basis_coordinates;
+        const auto& coords = basisValues.getBasisCoordinates();
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
@@ -1390,24 +1379,14 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   const int intOrder = 2;
   IntegrationDescriptor integrationDescriptor(intOrder,IntegrationDescriptor::VOLUME);
 
-  WorksetNeeds worksetNeeds;
-  worksetNeeds.addBasis(hgradBD);
-  worksetNeeds.addIntegrator(integrationDescriptor);
-
-  RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
-  std::vector<std::string> eBlockNames;
-  mesh->getElementBlockNames(eBlockNames);
-  std::map<std::string,WorksetNeeds> eblockNeeds;
-  for (const auto& block : eBlockNames)
-    eblockNeeds[block] = worksetNeeds;
-  RCP<WorksetContainer> worksetContainer(new WorksetContainer(worksetFactory,eblockNeeds));
-
   // Build Connection Manager
   timer->start("ConnManager ctor");
   const RCP<panzer::ConnManager> connManager = rcp(new panzer_stk::STKConnManager(mesh));
   timer->stop("ConnManager ctor");
 
   // Set up bases for projections
+  std::vector<std::string> eBlockNames;
+  mesh->getElementBlockNames(eBlockNames);
   auto cellTopology = mesh->getCellTopology(eBlockNames[0]);
 
   auto hgradBasis = panzer::createIntrepid2Basis<PHX::Device,double,double>(hgradBD.getType(),hgradBD.getOrder(),*cellTopology);
@@ -1430,10 +1409,17 @@ TEUCHOS_UNIT_TEST(L2Projection, ElementBlockMultiplier)
   targetGlobalIndexer->buildGlobalUnknowns();
   timer->stop("Build targetGlobalIndexer");
 
+  // Create worksets
+  RCP<WorksetContainer> worksetContainer;
+  {
+    RCP<WorksetFactory> worksetFactory(new WorksetFactory(mesh));
+    worksetFactory->setOrientationsInterface(rcp(new OrientationsInterface(sourceGlobalIndexer)));
+    worksetContainer = rcp(new WorksetContainer(worksetFactory));
+  }
+
   // Build projection factory
   timer->start("projectionFactory.setup()");
   panzer::L2Projection projectionFactory;
-  worksetContainer->setGlobalIndexer(sourceGlobalIndexer);
   projectionFactory.setup(hgradBD,integrationDescriptor,comm,connManager,eBlockNames,worksetContainer);
   timer->stop("projectionFactory.setup()");
 
