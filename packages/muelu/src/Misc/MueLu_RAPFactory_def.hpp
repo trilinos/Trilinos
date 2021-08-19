@@ -148,7 +148,8 @@ namespace MueLu {
           GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for Epetra.\n";
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         if (pL.get<bool>("rap: triple product") && isGPU)
-          GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for Cuda.\n";
+          GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for "
+				<< Node::execution_space::name() << std::endl;
 #endif
 
         // Reuse pattern if available (multiple solve)
