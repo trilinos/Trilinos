@@ -90,6 +90,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("R",                   null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",           null, "Factory of the nullspace that need to be rebalanced (only used if type=Interpolation)");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",         null, "Factory of the coordinates that need to be rebalanced (only used if type=Interpolation)");
+    validParamList->set< RCP<const FactoryBase> >("BlockNumber",         null, "Factory of the block ids that need to be rebalanced (only used if type=Interpolation)");
     validParamList->set< RCP<const FactoryBase> >("Importer",            null, "Factory of the importer object used for the rebalancing");
     validParamList->set< int >                   ("write start",           -1, "First level at which coordinates should be written to file");
     validParamList->set< int >                   ("write end",             -1, "Last level at which coordinates should be written to file");
@@ -111,6 +112,8 @@ namespace MueLu {
         Input(coarseLevel, "Nullspace");
       if (pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
         Input(coarseLevel, "Coordinates");
+      if (pL.get< RCP<const FactoryBase> >("BlockNumber") != Teuchos::null)
+        Input(coarseLevel, "BlockNumber");
 
     } else {
       if (pL.get<bool>("transpose: use implicit") == false)
@@ -136,6 +139,13 @@ namespace MueLu {
       RCP<xdMV> fineCoords = fineLevel.Get< RCP<xdMV> >("Coordinates");
       if (fineCoords != Teuchos::null)
         Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *fineCoords);
+    }
+
+    if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd && IsAvailable(fineLevel, "BlockNumber")) {
+      std::string fileName = "BlockNumber_level_0.m";
+      RCP<LocalOrdinalVector> fineBlockNumber = fineLevel.Get< RCP<LocalOrdinalVector> >("BlockNumber");
+      if (fineBlockNumber != Teuchos::null)
+        Xpetra::IO<LO,LO,GO,NO>::Write(fileName, *fineBlockNumber);
     }
 
     RCP<const Import> importer = Get<RCP<const Import> >(coarseLevel, "Importer");
@@ -218,6 +228,10 @@ namespace MueLu {
           if (IsAvailable(coarseLevel, "Coordinates"))
             Set(coarseLevel, "Coordinates", Get< RCP<xdMV> >(coarseLevel, "Coordinates"));
 
+        if (pL.isParameter("BlockNumber") && pL.get< RCP<const FactoryBase> >("BlockNumber") != Teuchos::null)
+          if (IsAvailable(coarseLevel, "BlockNumber"))
+            Set(coarseLevel, "BlockNumber", Get< RCP<LocalOrdinalVector> >(coarseLevel, "BlockNumber"));
+
         return;
       }
 
@@ -272,6 +286,30 @@ namespace MueLu {
         std::string fileName = "rebalanced_coordinates_level_" + toString(coarseLevel.GetLevelID()) + ".m";
         if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedCoords->getMap() != Teuchos::null)
           Xpetra::IO<typename Teuchos::ScalarTraits<Scalar>::magnitudeType,LO,GO,NO>::Write(fileName, *permutedCoords);
+      }
+
+      if (pL.isParameter("BlockNumber") &&
+          pL.get< RCP<const FactoryBase> >("BlockNumber") != Teuchos::null &&
+          IsAvailable(coarseLevel, "BlockNumber")) {
+        RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector> >(coarseLevel, "BlockNumber");
+
+        // This line must be after the Get call
+        SubFactoryMonitor subM(*this, "Rebalancing BlockNumber", coarseLevel);
+
+        RCP<LocalOrdinalVector> permutedBlockNumber  = LocalOrdinalVectorFactory::Build(importer->getTargetMap(), false);
+        permutedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
+
+        if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
+          permutedBlockNumber->replaceMap(permutedBlockNumber->getMap()->removeEmptyProcesses());
+
+        if (permutedBlockNumber->getMap() == Teuchos::null)
+          permutedBlockNumber = Teuchos::null;
+
+        Set(coarseLevel, "BlockNumber", permutedBlockNumber);
+
+        std::string fileName = "rebalanced_BlockNumber_level_" + toString(coarseLevel.GetLevelID()) + ".m";
+        if (writeStart <= coarseLevel.GetLevelID() && coarseLevel.GetLevelID() <= writeEnd && permutedBlockNumber->getMap() != Teuchos::null)
+          Xpetra::IO<LO,LO,GO,NO>::Write(fileName, *permutedBlockNumber);
       }
 
       if (IsAvailable(coarseLevel, "Nullspace")) {
