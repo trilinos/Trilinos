@@ -439,14 +439,14 @@ namespace MueLu {
           ArrayRCP<const MT> negMaxOffDiagonal;
           if(useSignedClassical) {
             if(ghostedBlockNumber.is_null()) {
-              if (GetVerbLevel() & Statistics1)
-                GetOStream(Statistics1) << "Calculating max point off-diagonal"<<std::endl;
               negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A);
+              if (GetVerbLevel() & Statistics1)
+                GetOStream(Statistics1) << "Calculated max point off-diagonal" << std::endl;
             }
             else {
-              if (GetVerbLevel() & Statistics1)
-                GetOStream(Statistics1) << "Calculating max block off-diagonal"<<std::endl;
               negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A,*ghostedBlockNumber);
+              if (GetVerbLevel() & Statistics1)
+                GetOStream(Statistics1) << "Calculating max block off-diagonal" << std::endl;
             }
           }
           else {
@@ -455,10 +455,15 @@ namespace MueLu {
           }
           ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
           if (rowSumTol > 0.) {
-            if(ghostedBlockNumber.is_null())
+            if(ghostedBlockNumber.is_null()) {
+              if (GetVerbLevel() & Statistics1)
+                GetOStream(Statistics1) << "Applying point row sum criterion." << std::endl;
               Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);          
-            else
-              Utilities::ApplyRowSumCriterion(*A, *ghostedBlockNumber, rowSumTol, boundaryNodes);          
+            } else {
+              if (GetVerbLevel() & Statistics1)
+                GetOStream(Statistics1) << "Applying block row sum criterion." << std::endl;
+              Utilities::ApplyRowSumCriterion(*A, *ghostedBlockNumber, rowSumTol, boundaryNodes);
+            }
           }
 
           LO realnnz = 0;
@@ -1835,8 +1840,8 @@ typedef Teuchos::ScalarTraits<SC> STS;
       for (LO colID = 0; colID < Teuchos::as<LO>(indices.size()); colID++) {
         LO col = indices[colID];
         LO col_block = col_block_number[col];
-        
-        if(row_block == col_block) {
+
+        if((row_block == col_block) && (col < Teuchos::as<LO>(inputGraph->GetDomainMap()->getNodeNumElements()))) {
           columns[realnnz++] = col;
           rownnz++;
         } else
