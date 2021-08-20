@@ -252,8 +252,8 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
     auto coords_view = worksets[side.first].cell_vertex_coordinates.get_view();
     auto coords_h = Kokkos::create_mirror_view(coords_view);
 
-    auto vertex_coordinates_h = Kokkos::create_mirror_view(vertex_coordinates);
-    Kokkos::deep_copy(vertex_coordinates_h, vertex_coordinates);
+    auto vertex_coordinates_h = Kokkos::create_mirror_view(PHX::as_view(vertex_coordinates));
+    Kokkos::deep_copy(vertex_coordinates_h, PHX::as_view(vertex_coordinates));
 
     for (std::size_t cell = 0; cell < side.second.size(); ++cell) {
       cell_local_ids.push_back(side.second[cell].second);

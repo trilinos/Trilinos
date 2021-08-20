@@ -1022,16 +1022,16 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
             "old_dyn_side_cub_points", num_ip, num_dim);
           old_dyn_side_cub_points.deep_copy(dyn_side_cub_points);
 
-          auto dyn_side_cub_points_h = Kokkos::create_mirror_view(dyn_side_cub_points);
-          auto old_dyn_side_cub_points_h = Kokkos::create_mirror_view(old_dyn_side_cub_points);
-          Kokkos::deep_copy(old_dyn_side_cub_points_h, old_dyn_side_cub_points);
+          auto dyn_side_cub_points_h = Kokkos::create_mirror_view(as_view(dyn_side_cub_points));
+          auto old_dyn_side_cub_points_h = Kokkos::create_mirror_view(as_view(old_dyn_side_cub_points));
+          Kokkos::deep_copy(old_dyn_side_cub_points_h, as_view(old_dyn_side_cub_points));
 
           for (size_type ip = 0; ip < num_ip; ++ip)
             if (ip != permutation[ip])
               for (size_type dim = 0; dim < num_dim; ++dim)
                 dyn_side_cub_points_h(ip, dim) = old_dyn_side_cub_points_h(permutation[ip], dim);
 
-          Kokkos::deep_copy(dyn_side_cub_points, dyn_side_cub_points_h);
+          Kokkos::deep_copy(as_view(dyn_side_cub_points), dyn_side_cub_points_h);
         }
         {
           const size_type num_dim = dyn_cub_points.extent(1);
@@ -1039,31 +1039,31 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
             "old_dyn_cub_points", num_ip, num_dim);
           old_dyn_cub_points.deep_copy(dyn_cub_points);
 
-          auto dyn_cub_points_h = Kokkos::create_mirror_view(dyn_cub_points);
-          auto old_dyn_cub_points_h = Kokkos::create_mirror_view(old_dyn_cub_points);
-          Kokkos::deep_copy(old_dyn_cub_points_h, old_dyn_cub_points);
+          auto dyn_cub_points_h = Kokkos::create_mirror_view(as_view(dyn_cub_points));
+          auto old_dyn_cub_points_h = Kokkos::create_mirror_view(as_view(old_dyn_cub_points));
+          Kokkos::deep_copy(old_dyn_cub_points_h, as_view(old_dyn_cub_points));
 
           for (size_type ip = 0; ip < num_ip; ++ip)
             if (ip != permutation[ip])
               for (size_type dim = 0; dim < num_dim; ++dim)
                 dyn_cub_points_h(ip, dim) = old_dyn_cub_points_h(permutation[ip], dim);
 
-          Kokkos::deep_copy(dyn_cub_points, dyn_cub_points_h);
+          Kokkos::deep_copy(as_view(dyn_cub_points), dyn_cub_points_h);
         }
         {
           DblArrayDynamic old_dyn_cub_weights = af.template buildArray<double,IP>(
             "old_dyn_cub_weights", num_ip);
           old_dyn_cub_weights.deep_copy(dyn_cub_weights);
 
-          auto dyn_cub_weights_h = Kokkos::create_mirror_view(dyn_cub_weights);
-          auto old_dyn_cub_weights_h = Kokkos::create_mirror_view(old_dyn_cub_weights);
-          Kokkos::deep_copy(old_dyn_cub_weights_h, old_dyn_cub_weights);
+          auto dyn_cub_weights_h = Kokkos::create_mirror_view(as_view(dyn_cub_weights));
+          auto old_dyn_cub_weights_h = Kokkos::create_mirror_view(as_view(old_dyn_cub_weights));
+          Kokkos::deep_copy(old_dyn_cub_weights_h, as_view(old_dyn_cub_weights));
 
           for (size_type ip = 0; ip < dyn_cub_weights.extent(0); ++ip)
             if (ip != permutation[ip])
               dyn_cub_weights_h(ip) = old_dyn_cub_weights_h(permutation[ip]);
 
-          Kokkos::deep_copy(dyn_cub_weights, old_dyn_cub_weights_h);
+          Kokkos::deep_copy(as_view(dyn_cub_weights), old_dyn_cub_weights_h);
         }
       }
       {
@@ -1072,9 +1072,10 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
         Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
             "old_ip_coordinates", ip_coordinates.extent(0), num_ip, num_dim);
 
-        auto ip_coordinates_h = Kokkos::create_mirror_view(ip_coordinates);
-        auto old_ip_coordinates_h = Kokkos::create_mirror_view(old_ip_coordinates);
-        Kokkos::deep_copy(old_ip_coordinates_h, old_ip_coordinates);
+        auto ip_coordinates_h = Kokkos::create_mirror_view(as_view(ip_coordinates));
+        auto old_ip_coordinates_h = Kokkos::create_mirror_view(as_view(old_ip_coordinates));
+        Kokkos::deep_copy(old_ip_coordinates_h, as_view(ip_coordinates));
+        Kokkos::deep_copy(ip_coordinates_h, as_view(ip_coordinates));
 
         for (int cell = 0; cell < num_cells; ++cell)
           for (size_type ip = 0; ip < num_ip; ++ip)
@@ -1082,7 +1083,7 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
               for (size_type dim = 0; dim < num_dim; ++dim)
                 ip_coordinates_h(cell, ip, dim) = old_ip_coordinates_h(cell, permutation[ip], dim);
 
-        Kokkos::deep_copy(ip_coordinates, ip_coordinates_h);
+        Kokkos::deep_copy(as_view(ip_coordinates), ip_coordinates_h);
       }
       // All subsequent calculations inherit the permutation.
     }
