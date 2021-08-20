@@ -126,6 +126,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_StackedTimer.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -407,6 +408,7 @@ int body(int argc, char *argv[]) {
   bool verbose, debug, jiggle, dump;
   std::string solverName;
   double scaling = 1.0;
+  bool use_stacked_timer;
 
   // Set default values of command-line arguments.
   nx = 10;
@@ -419,6 +421,7 @@ int body(int argc, char *argv[]) {
   debug = false;
   jiggle = false;
   dump = false;
+  use_stacked_timer = false;
   // Parse and validate command-line arguments.
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("nx", &nx, "Number of cells along the x dimension");
@@ -443,6 +446,8 @@ int body(int argc, char *argv[]) {
                   "Whether to randomly perturb the mesh.");
   cmdp.setOption ("dump", "nodump", &dump,
                   "Whether to dump data.");
+  cmdp.setOption ("stacked-timer", "no-stacked-timer", &use_stacked_timer,
+                  "Run with or without stacked timer output");
 
   if (MyPID == 0) {
     std::cout                                                           \
@@ -485,6 +490,14 @@ int body(int argc, char *argv[]) {
     // with command-line arguments.  We printed help already, so quit
     // with a happy return code.
     return EXIT_SUCCESS;
+  }
+
+  Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
+  if (use_stacked_timer) {
+    stacked_timer = rcp(new Teuchos::StackedTimer("TC Maxwell Tpetra"));
+    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+    stacked_timer->setVerboseOstream(out);
+    Teuchos::TimeMonitor::setStackedTimer(stacked_timer);
   }
 
   long long *  node_comm_proc_ids   = NULL;
@@ -2458,7 +2471,14 @@ int body(int argc, char *argv[]) {
   }
 
   // Summarize timings
-  Teuchos::TimeMonitor::report (comm.ptr(), std::cout);
+  if (use_stacked_timer) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcpFromRef(std::cout)));
+    stacked_timer->stop("TC Maxwell Tpetra");
+    Teuchos::StackedTimer::OutputOptions options;
+    options.output_fraction = options.output_histogram = options.output_minmax = true;
+    stacked_timer->report(*out, comm, options);
+  } else
+    Teuchos::TimeMonitor::report (comm.ptr(), std::cout);
 
   return 0;
 }
