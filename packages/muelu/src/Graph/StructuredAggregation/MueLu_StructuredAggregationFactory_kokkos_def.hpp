@@ -144,8 +144,9 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    typedef typename LWGraph_kokkos::local_graph_type::device_type::execution_space execution_space;
-    typedef typename LWGraph_kokkos::local_graph_type::device_type::memory_space memory_space;
+    using device_type     = typename LWGraph_kokkos::local_graph_type::device_type;
+    using execution_space = typename LWGraph_kokkos::local_graph_type::device_type::execution_space;
+    using memory_space    = typename LWGraph_kokkos::local_graph_type::device_type::memory_space;
 
     *out << "Entering structured aggregation" << std::endl;
 
@@ -224,7 +225,7 @@ namespace MueLu {
       aggregates->SetNumAggregates(geoData->getNumCoarseNodes());
 
       LO numNonAggregatedNodes = geoData->getNumLocalFineNodes();
-      Kokkos::View<unsigned*, memory_space> aggStat("aggStat", numNonAggregatedNodes);
+      Kokkos::View<unsigned*, device_type> aggStat("aggStat", numNonAggregatedNodes);
       Kokkos::parallel_for("StructuredAggregation: initialize aggStat",
                            Kokkos::RangePolicy<execution_space>(0, numNonAggregatedNodes),
                            KOKKOS_LAMBDA(const LO nodeIdx) {aggStat(nodeIdx) = READY;});

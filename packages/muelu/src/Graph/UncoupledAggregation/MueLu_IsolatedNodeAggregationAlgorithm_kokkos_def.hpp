@@ -67,11 +67,11 @@ namespace MueLu {
   BuildAggregates(const ParameterList& /* params */,
                   const LWGraph_kokkos& graph,
                   Aggregates_kokkos& /* aggregates */,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggstat,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggstat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    typename Kokkos::View<unsigned*, memory_space>::HostMirror aggstatHost
+    typename Kokkos::View<unsigned*, device_type>::HostMirror aggstatHost
       = Kokkos::create_mirror(aggstat);
     Kokkos::deep_copy(aggstatHost, aggstat);
     std::vector<unsigned> aggStat;
