@@ -118,7 +118,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   try {
     // Parameters
     Teuchos::CommandLineProcessor clp(false);
-    std::string node   = "";    clp.setOption("node",               &node,   "node type (serial | openmp | cuda)");
+    std::string node   = "";    clp.setOption("node",               &node,   "node type (serial | openmp | cuda | hip)");
     bool        config = false; clp.setOption("config", "noconfig", &config, "display kokkos configuration");
 #ifdef HAVE_TEUCHOS_STACKTRACE
     bool stacktrace = true;     clp.setOption("stacktrace", "nostacktrace", &stacktrace, "display stacktrace");
@@ -299,6 +299,41 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #  endif
 #else
         throw RuntimeError("CUDA node type is disabled");
+#endif
+      } else if (node == "hip") {
+#ifdef KOKKOS_ENABLE_HIP
+	typedef Kokkos::Compat::KokkosHIPWrapperNode Node;
+
+        if (config)
+          Kokkos::Experimental::HIP::print_configuration(std::cout, true/*details*/);
+
+#  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
+        return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
+#  else
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+        if (inst == Xpetra::DOUBLE_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGINT)
+        if (inst == Xpetra::DOUBLE_INT_LONGINT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_DOUBLE_INT_LONGLONGINT)
+        if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
+        if (inst == Xpetra::COMPLEX_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+#    if defined(HAVE_TPETRA_INST_HIP) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
+        if (inst == Xpetra::FLOAT_INT_INT)
+          return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
+#    endif
+        throw RuntimeError("Found no suitable HIP instantiation");
+#  endif
+#else
+        throw RuntimeError("HIP node type is disabled");
 #endif
       } else {
         throw RuntimeError("Unrecognized node type");

@@ -47,6 +47,7 @@ void StepperDIRK<Scalar>::setup(
   this->setZeroInitialGuess(   zeroInitialGuess);
 
   this->setStageNumber(-1);
+  this->setErrorNorm(); 
   this->setAppAction(stepperRKAppAction);
   this->setSolver(solver);
 
@@ -107,6 +108,7 @@ void StepperDIRK<Scalar>::setModel(
   assign(xTilde_.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
   this->setEmbeddedMemory();
+  this->setErrorNorm();
 
   this->isInitialized_ = false;
 }
@@ -272,6 +274,10 @@ void StepperDIRK<Scalar>::takeStep(
       const Scalar tolRel = workingState->getTolRel();
       const Scalar tolAbs = workingState->getTolAbs();
 
+      // update the tolerance
+      this->stepperErrorNormCalculator_->setRelativeTolerance(tolRel);
+      this->stepperErrorNormCalculator_->setAbsoluteTolerance(tolAbs);
+
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
       Teuchos::SerialDenseVector<int,Scalar> errWght = b ;
@@ -286,17 +292,7 @@ void StepperDIRK<Scalar>::takeStep(
          }
       }
 
-      // compute: Atol + max(|u^n|, |u^{n+1}| ) * Rtol
-      Thyra::abs( *(currentState->getX()), this->abs_u0.ptr());
-      Thyra::abs( *(workingState->getX()), this->abs_u.ptr());
-      Thyra::pair_wise_max_update(tolRel, *this->abs_u0, this->abs_u.ptr());
-      Thyra::add_scalar(tolAbs, this->abs_u.ptr());
-
-      // compute: || ee / sc ||
-      assign(this->sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *this->ee_, *this->abs_u, this->sc.ptr());
-      const auto space_dim = this->ee_->space()->dim();
-      Scalar err = std::abs(Thyra::norm(*this->sc)) / space_dim ;
+      Scalar err = this->stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
       workingState->setErrorRel(err);
 
       // test if step should be rejected

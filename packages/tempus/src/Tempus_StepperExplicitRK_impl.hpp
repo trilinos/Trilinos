@@ -11,6 +11,7 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
+
 #include "Tempus_RKButcherTableau.hpp"
 
 
@@ -40,6 +41,7 @@ void StepperExplicitRK<Scalar>::setup(
   this->setICConsistencyCheck( ICConsistencyCheck);
   this->setUseEmbedded(        useEmbedded);
   this->setStageNumber(-1);
+  this->setErrorNorm();
 
   this->setAppAction(stepperRKAppAction);
 
@@ -85,22 +87,11 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    outArgs.set_f(stageXDot[0]); // K1
    this->appModel_->evalModel(inArgs, outArgs);
 
-   auto err_func = [] (Teuchos::RCP<Thyra::VectorBase<Scalar> > U,
-         const Scalar rtol, const Scalar atol,
-         Teuchos::RCP<Thyra::VectorBase<Scalar> > absU)
-   {
-      // compute err = Norm_{WRMS} with w = Atol + Rtol * | U |
-      Thyra::assign(absU.ptr(), *U);
-      Thyra::abs(*U, absU.ptr()); // absU = | X0 |
-      Thyra::Vt_S(absU.ptr(), rtol); // absU *= Rtol
-      Thyra::Vp_S(absU.ptr(), atol); // absU += Atol
-      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *U, *absU, absU.ptr());
-      Scalar err = Thyra::norm_inf(*absU);
-      return err;
-   };
+   this->stepperErrorNormCalculator_->setRelativeTolerance(errorRel);
+   this->stepperErrorNormCalculator_->setAbsoluteTolerance(errorAbs);
 
-   Scalar d0 = err_func(stageX, errorRel, errorAbs, scratchX);
-   Scalar d1 = err_func(stageXDot[0], errorRel, errorAbs, scratchX);
+   Scalar d0 = this->stepperErrorNormCalculator_->errorNorm(stageX);
+   Scalar d1 = this->stepperErrorNormCalculator_->errorNorm(stageXDot[0]);
 
    // b) first guess for the step size
    dt = Teuchos::as<Scalar>(0.01)*(d0/d1);
@@ -121,7 +112,7 @@ Scalar StepperExplicitRK<Scalar>::getInitTimeStep(
    errX = Thyra::createMember(this->appModel_->get_f_space());
    assign(errX.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
    Thyra::V_VmV(errX.ptr(), *(stageXDot[1]), *(stageXDot[0]));
-   Scalar d2 = err_func(errX, errorRel, errorAbs, scratchX) / dt;
+   Scalar d2 = this->stepperErrorNormCalculator_->errorNorm(errX) / dt;
 
    // e) compute step size h_1 (from m = 0 order Taylor series)
    Scalar max_d1_d2 = std::max(d1, d2);
@@ -186,6 +177,7 @@ void StepperExplicitRK<Scalar>::setModel(
   }
 
   this->setEmbeddedMemory();
+  this->setErrorNorm();
 
   this->isInitialized_ = false;
 }
@@ -333,6 +325,10 @@ void StepperExplicitRK<Scalar>::takeStep(
       const Scalar tolRel = workingState->getTolRel();
       const Scalar tolAbs = workingState->getTolAbs();
 
+      // update the tolerance
+      this->stepperErrorNormCalculator_->setRelativeTolerance(tolRel);
+      this->stepperErrorNormCalculator_->setAbsoluteTolerance(tolAbs);
+
       // just compute the error weight vector
       // (all that is needed is the error, and not the embedded solution)
       Teuchos::SerialDenseVector<int,Scalar> errWght = b ;
@@ -347,18 +343,8 @@ void StepperExplicitRK<Scalar>::takeStep(
          }
       }
 
-      // Compute: Atol + max(|u^n|, |u^{n+1}| ) * Rtol
-      Thyra::abs( *(currentState->getX()), this->abs_u0.ptr());
-      Thyra::abs( *(workingState->getX()), this->abs_u.ptr());
-      Thyra::pair_wise_max_update(tolRel, *this->abs_u0, this->abs_u.ptr());
-      Thyra::add_scalar(tolAbs, this->abs_u.ptr());
 
-      // Compute: || ee / sc ||
-      assign(this->sc.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-      Thyra::ele_wise_divide(Teuchos::as<Scalar>(1.0), *this->ee_, *this->abs_u,this->sc.ptr());
-
-      const auto space_dim = this->ee_->space()->dim();
-      Scalar err = std::abs(Thyra::norm(*this->sc)) / space_dim ;
+      Scalar err = this->stepperErrorNormCalculator_->computeWRMSNorm(currentState->getX(), workingState->getX(), this->ee_);
       workingState->setErrorRel(err);
 
       // Test if step should be rejected

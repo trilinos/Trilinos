@@ -122,7 +122,7 @@ namespace Tpetra {
       }
 
       Tpetra::deep_copy(*X_, X);
-      op_->apply (*X_, *Y_, mode, alpha, beta);
+      op_->apply (*X_, *Y_, mode, Teuchos::as<OpScalar>(alpha), Teuchos::as<OpScalar>(beta));
       Tpetra::deep_copy(Y, *Y_);
     }
 

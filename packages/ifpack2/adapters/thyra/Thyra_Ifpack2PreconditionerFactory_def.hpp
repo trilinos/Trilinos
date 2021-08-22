@@ -65,6 +65,15 @@
 #include <string>
 
 
+// CAG: This is not entirely ideal, since it disables half-precision
+//      altogether when we have e.g. double, float and
+//      complex<double>, but not complex<float>, although a
+//      double-float preconditioner would be possible.
+#if (!defined(HAVE_TPETRA_INST_DOUBLE) || (defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT))) && \
+    (!defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) || (defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)))
+# define THYRA_IFPACK2_ENABLE_HALF_PRECISION
+#endif
+
 namespace Thyra {
 
 
@@ -205,7 +214,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   typedef Ifpack2::Preconditioner<scalar_type, local_ordinal_type, global_ordinal_type, node_type> Ifpack2Prec;
   Teuchos::RCP<Ifpack2Prec> concretePrecOp;
 
-#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#ifdef THYRA_IFPACK2_ENABLE_HALF_PRECISION
   // CAG: There is nothing special about the combination double-float,
   //      except that I feel somewhat confident that Trilinos builds
   //      with both scalar types.
@@ -215,7 +224,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
 #endif
 
   if (useHalfPrecision) {
-#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#ifdef THYRA_IFPACK2_ENABLE_HALF_PRECISION
     if (Teuchos::nonnull(out) && Teuchos::includesVerbLevel(verbLevel, Teuchos::VERB_LOW)) {
       Teuchos::OSTab(out).o() << "> Creating half precision preconditioner\n";
     }
@@ -244,7 +253,7 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   // Initialize and compute the initial preconditioner
 
   if (useHalfPrecision) {
-#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#ifdef THYRA_IFPACK2_ENABLE_HALF_PRECISION
     concretePrecOpHalf->setParameters(*packageParamList);
     concretePrecOpHalf->initialize();
     concretePrecOpHalf->compute();

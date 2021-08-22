@@ -69,7 +69,7 @@ namespace MueLu {
   BuildAggregates(const ParameterList& params,
                   const LWGraph_kokkos& graph,
                   Aggregates_kokkos& aggregates,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
 
     if(params.get<bool>("aggregation: deterministic")) {
@@ -87,7 +87,7 @@ namespace MueLu {
   BuildAggregatesRandom(const ParameterList& params,
                         const LWGraph_kokkos& graph,
                         Aggregates_kokkos& aggregates,
-                        Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                        Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                         LO& numNonAggregatedNodes) const
   {
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
@@ -113,8 +113,8 @@ namespace MueLu {
     // I'm not sure a view is needed to perform atomic updates.
     // If we can avoid this and use a simple LO that would be
     // simpler for later maintenance.
-    Kokkos::View<LO, memory_space> numLocalAggregates("numLocalAggregates");
-    typename Kokkos::View<LO, memory_space>::HostMirror h_numLocalAggregates =
+    Kokkos::View<LO, device_type> numLocalAggregates("numLocalAggregates");
+    typename Kokkos::View<LO, device_type>::HostMirror h_numLocalAggregates =
       Kokkos::create_mirror_view(numLocalAggregates);
     h_numLocalAggregates() = aggregates.GetNumAggregates();
     Kokkos::deep_copy(numLocalAggregates, h_numLocalAggregates);
@@ -204,7 +204,7 @@ namespace MueLu {
   BuildAggregatesDeterministic(const ParameterList& params,
                                const LWGraph_kokkos& graph,
                                Aggregates_kokkos& aggregates,
-                               Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                               Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                                LO& numNonAggregatedNodes) const
   {
     const int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
@@ -225,8 +225,8 @@ namespace MueLu {
     double       factor    = as<double>(numLocalAggregated)/(numLocalNodes+1);
     factor = pow(factor, aggFactor);
 
-    Kokkos::View<LO, memory_space> numLocalAggregates("numLocalAggregates");
-    typename Kokkos::View<LO, memory_space>::HostMirror h_numLocalAggregates =
+    Kokkos::View<LO, device_type> numLocalAggregates("numLocalAggregates");
+    typename Kokkos::View<LO, device_type>::HostMirror h_numLocalAggregates =
       Kokkos::create_mirror_view(numLocalAggregates);
     h_numLocalAggregates() = aggregates.GetNumAggregates();
     Kokkos::deep_copy(numLocalAggregates, h_numLocalAggregates);
@@ -244,8 +244,8 @@ namespace MueLu {
 
     //numNonAggregatedNodes is the best available upper bound for the number of aggregates
     //which may be created in this phase, so use it for the size of newRoots
-    Kokkos::View<LO*, memory_space> newRoots("New root LIDs", numNonAggregatedNodes);
-    Kokkos::View<LO, memory_space> numNewRoots("Number of new aggregates of current color");
+    Kokkos::View<LO*, device_type> newRoots("New root LIDs", numNonAggregatedNodes);
+    Kokkos::View<LO, device_type> numNewRoots("Number of new aggregates of current color");
     auto h_numNewRoots = Kokkos::create_mirror_view(numNewRoots);
     for(int color = 1; color < numColors + 1; ++color) {
       h_numNewRoots() = 0;

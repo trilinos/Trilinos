@@ -264,9 +264,6 @@ namespace panzer {
     // Number of total cells (owned + ghost + virtual)
     int num_cells_;
 
-    // Number of owned and ghost cells
-    int num_real_cells_;
-
     // Number of cells to evaluate (HACK for backward compatability)
     int num_evaluate_cells_;
 
@@ -362,6 +359,10 @@ namespace panzer {
     /// Set the cubature weights (weighted measure) for the basis values object - required to get weighted basis objects
     void
     setWeightedMeasure(PHX::MDField<Scalar, Cell, IP> weighted_measure);
+
+    /// Set the cell vertex coordinates (required for getBasisCoordinates())
+    void
+    setCellVertexCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates);
 
     /// Check if reference point space is uniform across all cells (faster evaluation)
     bool
