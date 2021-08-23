@@ -67,7 +67,7 @@ namespace MueLu {
   BuildAggregates(Teuchos::ParameterList const & params,
                   LWGraph_kokkos const & graph,
                   Aggregates_kokkos & aggregates,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
     using local_ordinal_type = typename LWGraph_kokkos::local_ordinal_type;
@@ -85,7 +85,7 @@ namespace MueLu {
     auto procWinner     = aggregates.GetProcWinner()  ->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
     // A view is needed to count on the fly the current number of local aggregates
-    Kokkos::View<LO, memory_space> aggCount("aggCount");
+    Kokkos::View<LO, device_type> aggCount("aggCount");
     if(preserve) {
       Kokkos::deep_copy(aggCount, aggregates.GetNumAggregates());
     }
@@ -104,7 +104,7 @@ namespace MueLu {
                              }
                            }
                          });
-    typename Kokkos::View<LO, memory_space>::HostMirror aggCount_h
+    typename Kokkos::View<LO, device_type>::HostMirror aggCount_h
       = Kokkos::create_mirror_view(aggCount);
     Kokkos::deep_copy(aggCount_h, aggCount);
     // In this phase the number of new aggregates is the same

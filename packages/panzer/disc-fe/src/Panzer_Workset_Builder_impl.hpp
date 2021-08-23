@@ -66,8 +66,8 @@ template<typename ArrayT>
 Teuchos::RCP< std::vector<panzer::Workset> >
 panzer::buildWorksets(const WorksetNeeds & needs,
                       const std::string & elementBlock,
-		      const std::vector<std::size_t>& local_cell_ids,
-		      const ArrayT& vertex_coordinates)
+		                  const std::vector<std::size_t>& local_cell_ids,
+		                  const ArrayT& vertex_coordinates)
 {
   using std::vector;
   using std::string;
@@ -177,9 +177,9 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     auto cell_vertex_coordinates = wkst->cell_vertex_coordinates;
     Kokkos::parallel_for(wkst->num_cells, KOKKOS_LAMBDA (int cell) {
       for (std::size_t vertex = 0; vertex < vertex_coordinates.extent(1); ++ vertex)
-	for (std::size_t dim = 0; dim < vertex_coordinates.extent(2); ++ dim) {
-	  //wkst->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
-	  cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
+	      for (std::size_t dim = 0; dim < vertex_coordinates.extent(2); ++ dim) {
+	      //wkst->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
+	        cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates(cell + offset,vertex,dim);
         }
       });
     Kokkos::fence();
@@ -249,24 +249,26 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
                                                           side.second.size(),
                                                           vertex_coordinates.extent(1),
                                                           vertex_coordinates.extent(2));
-    auto coords_view = worksets[side.first].cell_vertex_coordinates;
+    auto coords_view = worksets[side.first].cell_vertex_coordinates.get_view();
+    auto coords_h = Kokkos::create_mirror_view(coords_view);
+
+    auto vertex_coordinates_h = Kokkos::create_mirror_view(PHX::as_view(vertex_coordinates));
+    Kokkos::deep_copy(vertex_coordinates_h, PHX::as_view(vertex_coordinates));
 
     for (std::size_t cell = 0; cell < side.second.size(); ++cell) {
       cell_local_ids.push_back(side.second[cell].second);
       const auto dim0 = side.second[cell].first;
 
-      Kokkos::parallel_for(
-          vertex_coordinates.extent(1), KOKKOS_LAMBDA(std::size_t vertex)
-          {
-            const auto extent = Teuchos::as<std::size_t>(vertex_coordinates.extent(2));
+      for(std::size_t vertex = 0; vertex < vertex_coordinates.extent(1); ++vertex)
+      {
+        const auto extent = Teuchos::as<std::size_t>(vertex_coordinates.extent(2));
 
-            for (std::size_t dim = 0; dim < extent; ++dim)
-            {
-              coords_view(cell, vertex, dim) = vertex_coordinates(dim0, vertex, dim);
-            }
-          }
-      );
+        for (std::size_t dim = 0; dim < extent; ++dim)
+          coords_h(cell, vertex, dim) = vertex_coordinates_h(dim0, vertex, dim);
+      }
     }
+
+    Kokkos::deep_copy(coords_view, coords_h);
 
     const auto cell_local_ids_size = worksets[side.first].cell_local_ids.size();
     auto cell_local_ids_k = PHX::View<int*>("Workset:cell_local_ids", cell_local_ids_size);
@@ -447,14 +449,14 @@ template<typename ArrayT>
 Teuchos::RCP<std::vector<panzer::Workset> >
 panzer::buildEdgeWorksets(const WorksetNeeds & needs_a,
                    const std::string & eblock_a,
-	 	   const std::vector<std::size_t>& local_cell_ids_a,
-		   const std::vector<std::size_t>& local_side_ids_a,
-		   const ArrayT& vertex_coordinates_a,
+	 	               const std::vector<std::size_t>& local_cell_ids_a,
+		               const std::vector<std::size_t>& local_side_ids_a,
+		               const ArrayT& vertex_coordinates_a,
                    const WorksetNeeds & needs_b,
                    const std::string & eblock_b,
-		   const std::vector<std::size_t>& local_cell_ids_b,
-		   const std::vector<std::size_t>& local_side_ids_b,
-		   const ArrayT& vertex_coordinates_b)
+		               const std::vector<std::size_t>& local_cell_ids_b,
+		               const std::vector<std::size_t>& local_side_ids_b,
+		               const ArrayT& vertex_coordinates_b)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -533,14 +535,11 @@ panzer::buildEdgeWorksets(const WorksetNeeds & needs_a,
   for (std::size_t cell=0; cell < local_cell_ids_a.size(); ++cell)
     element_list[std::make_pair(local_side_ids_a[cell],local_side_ids_b[cell])].push_back(cell);
 
-  // this is the lone iterator that will be used to loop over the element edge list
-  std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> >::const_iterator edge;
-
   // figure out how many worksets will be needed, resize workset vector accordingly
   std::size_t num_worksets = 0;
-  for(edge=element_list.begin(); edge!=element_list.end();++edge) {
-    std::size_t num_worksets_for_edge = edge->second.size() / workset_size;
-    std::size_t last_workset_size = edge->second.size() % workset_size;
+  for(const auto& edge : element_list) {
+    std::size_t num_worksets_for_edge = edge.second.size() / workset_size;
+    std::size_t last_workset_size = edge.second.size() % workset_size;
     if(last_workset_size!=0)
       num_worksets_for_edge += 1;
 
@@ -550,9 +549,9 @@ panzer::buildEdgeWorksets(const WorksetNeeds & needs_a,
 
   // fill the worksets
   std::vector<Workset>::iterator current_workset = worksets.begin();
-  for(edge=element_list.begin(); edge!=element_list.end();++edge) {
+  for(const auto& edge : element_list) {
     // loop over each workset
-    const std::vector<std::size_t> & cell_indices = edge->second;
+    const std::vector<std::size_t> & cell_indices = edge.second;
 
     current_workset = buildEdgeWorksets(cell_indices,
                                        needs_a,eblock_a,local_cell_ids_a,local_side_ids_a,vertex_coordinates_a,
@@ -571,14 +570,14 @@ std::vector<panzer::Workset>::iterator
 panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
                           const WorksetNeeds & needs_a,
                           const std::string & eblock_a,
-	 	          const std::vector<std::size_t>& local_cell_ids_a,
-		          const std::vector<std::size_t>& local_side_ids_a,
-		          const ArrayT& vertex_coordinates_a,
+	 	                      const std::vector<std::size_t>& local_cell_ids_a,
+		                      const std::vector<std::size_t>& local_side_ids_a,
+		                      const ArrayT& vertex_coordinates_a,
                           const WorksetNeeds & needs_b,
                           const std::string & eblock_b,
-	      	          const std::vector<std::size_t>& local_cell_ids_b,
-		          const std::vector<std::size_t>& local_side_ids_b,
-		          const ArrayT& vertex_coordinates_b,
+	      	                const std::vector<std::size_t>& local_cell_ids_b,
+		                      const std::vector<std::size_t>& local_side_ids_b,
+		                      const ArrayT& vertex_coordinates_b,
                           std::vector<Workset>::iterator beg)
 {
   panzer::MDFieldArrayFactory mdArrayFactory("",true);
@@ -616,25 +615,50 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
     wkst->details(0).cell_local_ids.resize(workset_size);
     wkst->details(1).cell_local_ids.resize(workset_size);
 
+    auto dim0_cell_vertex_coordinates_view = wkst->details(0).cell_vertex_coordinates.get_static_view();
+    auto dim0_cell_vertex_coordinates_h = Kokkos::create_mirror_view(dim0_cell_vertex_coordinates_view);
+    Kokkos::deep_copy(dim0_cell_vertex_coordinates_h, dim0_cell_vertex_coordinates_view);
+
+    auto dim1_cell_vertex_coordinates_view = wkst->details(1).cell_vertex_coordinates.get_static_view();
+    auto dim1_cell_vertex_coordinates_h = Kokkos::create_mirror_view(dim1_cell_vertex_coordinates_view);
+    Kokkos::deep_copy(dim1_cell_vertex_coordinates_h, dim1_cell_vertex_coordinates_view);
+
+    auto vertex_coordinates_a_h = Kokkos::create_mirror_view(vertex_coordinates_a);
+    Kokkos::deep_copy(vertex_coordinates_a_h, vertex_coordinates_a);
+
+    auto vertex_coordinates_b_h = Kokkos::create_mirror_view(vertex_coordinates_b);
+    Kokkos::deep_copy(vertex_coordinates_b_h, vertex_coordinates_b);
+
     for(std::size_t cell=0;cell<workset_size; cell++,current_cell_index++) {
 
       wkst->details(0).cell_local_ids[cell] = local_cell_ids_a[cell_indices[current_cell_index]];
       wkst->details(1).cell_local_ids[cell] = local_cell_ids_b[cell_indices[current_cell_index]];
 
       for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates_a.extent(1)); ++ vertex) {
-	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates_a.extent(2)); ++ dim) {
-          wkst->details(0).cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_a(cell_indices[current_cell_index],vertex,dim);
-          wkst->details(1).cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_b(cell_indices[current_cell_index],vertex,dim);
+	      for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates_a.extent(2)); ++ dim) {
+          dim0_cell_vertex_coordinates_h(cell,vertex,dim) = vertex_coordinates_a_h(cell_indices[current_cell_index],vertex,dim);
+          dim1_cell_vertex_coordinates_h(cell,vertex,dim) = vertex_coordinates_b_h(cell_indices[current_cell_index],vertex,dim);
         }
       }
     }
 
-    PHX::View<int*> cell_local_ids_k_0 = PHX::View<int*>("Workset:cell_local_ids",wkst->details(0).cell_local_ids.size());
-    PHX::View<int*> cell_local_ids_k_1 = PHX::View<int*>("Workset:cell_local_ids",wkst->details(1).cell_local_ids.size());
+    Kokkos::deep_copy(dim0_cell_vertex_coordinates_view, dim0_cell_vertex_coordinates_h);
+    Kokkos::deep_copy(dim1_cell_vertex_coordinates_view, dim1_cell_vertex_coordinates_h);
+
+    auto cell_local_ids_k_0 = PHX::View<int*>("Workset:cell_local_ids",wkst->details(0).cell_local_ids.size());
+    auto cell_local_ids_k_0_h = Kokkos::create_mirror_view(cell_local_ids_k_0);
+
+    auto cell_local_ids_k_1 = PHX::View<int*>("Workset:cell_local_ids",wkst->details(1).cell_local_ids.size());
+    auto cell_local_ids_k_1_h = Kokkos::create_mirror_view(cell_local_ids_k_1);
+
     for(std::size_t i=0;i<wkst->details(0).cell_local_ids.size();i++)
-      cell_local_ids_k_0(i) = wkst->details(0).cell_local_ids[i];
+      cell_local_ids_k_0_h(i) = wkst->details(0).cell_local_ids[i];
     for(std::size_t i=0;i<wkst->details(1).cell_local_ids.size();i++)
-      cell_local_ids_k_1(i) = wkst->details(1).cell_local_ids[i];
+      cell_local_ids_k_1_h(i) = wkst->details(1).cell_local_ids[i];
+
+    Kokkos::deep_copy(cell_local_ids_k_0, cell_local_ids_k_0_h);
+    Kokkos::deep_copy(cell_local_ids_k_1, cell_local_ids_k_1_h);
+
     wkst->details(0).cell_local_ids_k = cell_local_ids_k_0;
     wkst->details(1).cell_local_ids_k = cell_local_ids_k_1;
 

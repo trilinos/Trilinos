@@ -264,7 +264,7 @@ namespace MueLuTests {
 				    correct = true;
 				  
 				} else {
-				  if (as<int>(lgraph.getNeighborVertices(0).length) == blockSize)
+				  if (static_cast<int>(lgraph.getNeighborVertices(0).length) == blockSize)
 				    correct = true;
 				}
 			      }

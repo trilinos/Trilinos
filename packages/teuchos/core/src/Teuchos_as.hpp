@@ -2576,6 +2576,21 @@ public:
   }
 };
 
+
+//! Convert std::complex<double> to std::complex<float>.
+template<>
+class ValueTypeConversionTraits<std::complex<float>, std::complex<double> > {
+public:
+  inline static std::complex<float> convert (const std::complex<double> t) {
+    // Let double->float conversion handle real and imaginary part.
+    return std::complex<float> (as<float> (t.real ()), as<float> (t.imag ()));
+  }
+  static std::complex<float> safeConvert (const std::complex<double> t) {
+    // Let double->float conversion handle real and imaginary part.
+    return std::complex<float> (asSafe<float> (t.real ()), asSafe<float> (t.imag ()));
+  }
+};
+
 #endif // HAVE_TEUCHOS_COMPLEX
 
 //
