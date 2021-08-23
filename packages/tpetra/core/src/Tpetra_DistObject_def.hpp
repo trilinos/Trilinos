@@ -887,7 +887,7 @@ namespace Tpetra {
 
     const size_t numSameIDs = transfer.getNumSameIDs ();
     Distributor& distor = transfer.getDistributor ();
-    const Details::DistributorPlan& distributorPlan = distor.getPlan();
+    const Details::DistributorPlan& distributorPlan = (revOp == DoForward) ? distor.getPlan() : *distor.getPlan().getReversePlan();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (debug && restrictedMode &&
@@ -1123,7 +1123,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
-        doPosts(distributorPlan, constantNumPackets, commOnHost, revOp, prefix, canTryAliasing, CM);
+        doPosts(distributorPlan, constantNumPackets, commOnHost, prefix, canTryAliasing, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
   }
@@ -1321,7 +1321,7 @@ namespace Tpetra {
         }
       }
       else {
-        doWaits(distributorPlan);
+        distributorActor_.doWaits(distributorPlan);
 
         if (verbose) {
           std::ostringstream os;
@@ -1351,7 +1351,6 @@ namespace Tpetra {
   doPosts(const Details::DistributorPlan& distributorPlan,
           size_t constantNumPackets,
           bool commOnHost,
-          ReverseOption revOp,
           std::shared_ptr<std::string> prefix,
           const bool canTryAliasing,
           const CombineMode CM)
@@ -1387,17 +1386,11 @@ namespace Tpetra {
         // MPI communication happens here.
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Call do"
-            << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+          os << *prefix << "Call doPostsAndWaits"
             << endl;
           std::cerr << os.str ();
         }
-        if (revOp == DoReverse) {
-          distributorActor_.doPostsAndWaits(*distributorPlan.getReversePlan(), numExp_h, 1, numImp_h);
-        }
-        else {
-          distributorActor_.doPostsAndWaits(distributorPlan, numExp_h, 1, numImp_h);
-        }
+        distributorActor_.doPostsAndWaits(distributorPlan, numExp_h, 1, numImp_h);
 
         if (verbose) {
           std::ostringstream os;
@@ -1418,17 +1411,11 @@ namespace Tpetra {
         // MPI communication happens here.
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Call do"
-            << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+          os << *prefix << "Call doPostsAndWaits"
             << endl;
           std::cerr << os.str ();
         }
-        if (revOp == DoReverse) {
-          distributorActor_.doPostsAndWaits(*distributorPlan.getReversePlan(), numExp_d, 1, numImp_d);
-        }
-        else {
-          distributorActor_.doPostsAndWaits(distributorPlan, numExp_d, 1, numImp_d);
-        }
+        distributorActor_.doPostsAndWaits(distributorPlan, numExp_d, 1, numImp_d);
 
         if (verbose) {
           std::ostringstream os;
@@ -1481,49 +1468,28 @@ namespace Tpetra {
         std::ostringstream os;
         os << *prefix << "Comm on "
           << (commOnHost ? "host" : "device")
-          << "; call do" << (revOp == DoReverse ? "Reverse" : "")
-          << "PostsAndWaits" << endl;
+          << "; call doPosts" << endl;
         std::cerr << os.str ();
       }
 
       if (commOnHost) {
         this->imports_.modify_host ();
-        if (revOp == DoReverse) {
-          distributorActor_.doPosts
-            (*distributorPlan.getReversePlan(),
-             create_const_view (this->exports_.view_host ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_host (),
-             numImportPacketsPerLID_av);
-        }
-        else {
-          distributorActor_.doPosts
-            (distributorPlan,
-             create_const_view (this->exports_.view_host ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_host (),
-             numImportPacketsPerLID_av);
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_host ()),
+           numExportPacketsPerLID_av,
+           this->imports_.view_host (),
+           numImportPacketsPerLID_av);
       }
       else { // pack on device
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
-        if (revOp == DoReverse) {
-          distributorActor_.doPosts
-            (*distributorPlan.getReversePlan(),
-             create_const_view (this->exports_.view_device ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_device (),
-             numImportPacketsPerLID_av);
-        }
-        else {
-          distributorActor_.doPosts
-            (distributorPlan,
-             create_const_view (this->exports_.view_device ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_device (),
-             numImportPacketsPerLID_av);
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_device ()),
+           numExportPacketsPerLID_av,
+           this->imports_.view_device (),
+           numImportPacketsPerLID_av);
       }
     }
     else { // constant number of packets per LID
@@ -1549,54 +1515,27 @@ namespace Tpetra {
         std::ostringstream os;
         os << *prefix << "7.2. Comm on "
           << (commOnHost ? "host" : "device")
-          << "; call do" << (revOp == DoReverse ? "Reverse" : "")
-          << "PostsAndWaits" << endl;
+          << "; call doPosts" << endl;
         std::cerr << os.str ();
       }
       if (commOnHost) {
         this->imports_.modify_host ();
-        if (revOp == DoReverse) {
-          distributorActor_.doPosts
-            (*distributorPlan.getReversePlan(),
-             create_const_view (this->exports_.view_host ()),
-             constantNumPackets,
-             this->imports_.view_host ());
-        }
-        else {
-          distributorActor_.doPosts
-            (distributorPlan,
-             create_const_view (this->exports_.view_host ()),
-             constantNumPackets,
-             this->imports_.view_host ());
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_host ()),
+           constantNumPackets,
+           this->imports_.view_host ());
       }
       else { // pack on device
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
-        if (revOp == DoReverse) {
-          distributorActor_.doPosts
-            (*distributorPlan.getReversePlan(),
-             create_const_view (this->exports_.view_device ()),
-             constantNumPackets,
-             this->imports_.view_device ());
-        }
-        else {
-          distributorActor_.doPosts
-            (distributorPlan,
-             create_const_view (this->exports_.view_device ()),
-             constantNumPackets,
-             this->imports_.view_device ());
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_device ()),
+           constantNumPackets,
+           this->imports_.view_device ());
       } // commOnHost
     } // constant or variable num packets per LID
-  }
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doWaits(const Details::DistributorPlan& distributorPlan)
-  {
-    distributorActor_.doWaits(distributorPlan);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

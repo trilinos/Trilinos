@@ -787,12 +787,9 @@ namespace Tpetra {
     void doPosts(const Details::DistributorPlan& distributorPlan,
                  size_t constantNumPackets,
                  bool commOnHost,
-                 ReverseOption revOp,
                  std::shared_ptr<std::string> prefix,
                  const bool canTryAliasing,
                  const CombineMode CM);
-
-    void doWaits(const Details::DistributorPlan& distributorPlan);
 
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
