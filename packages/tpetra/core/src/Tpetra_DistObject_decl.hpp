@@ -792,8 +792,7 @@ namespace Tpetra {
                  const bool canTryAliasing,
                  const CombineMode CM);
 
-    void doWaits(const Details::DistributorPlan& distributorPlan,
-                 ReverseOption revOp);
+    void doWaits(const Details::DistributorPlan& distributorPlan);
 
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,

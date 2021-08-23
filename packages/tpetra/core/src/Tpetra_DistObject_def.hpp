@@ -1242,7 +1242,7 @@ namespace Tpetra {
     }
 
     Distributor& distor = transfer.getDistributor ();
-    const Details::DistributorPlan& distributorPlan = distor.getPlan();
+    const Details::DistributorPlan& distributorPlan = (revOp == DoForward) ? distor.getPlan() : *distor.getPlan().getReversePlan();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (debug && restrictedMode &&
@@ -1321,7 +1321,7 @@ namespace Tpetra {
         }
       }
       else {
-        doWaits(distributorPlan, revOp);
+        doWaits(distributorPlan);
 
         if (verbose) {
           std::ostringstream os;
@@ -1594,15 +1594,9 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doWaits(const Details::DistributorPlan& distributorPlan,
-          ReverseOption revOp)
+  doWaits(const Details::DistributorPlan& distributorPlan)
   {
-    if (revOp == DoReverse) {
-      distributorActor_.doWaits(*distributorPlan.getReversePlan());
-    }
-    else {
-      distributorActor_.doWaits(distributorPlan);
-    }
+    distributorActor_.doWaits(distributorPlan);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
