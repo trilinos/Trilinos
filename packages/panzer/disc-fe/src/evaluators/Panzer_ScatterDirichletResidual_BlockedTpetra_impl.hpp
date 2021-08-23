@@ -552,8 +552,10 @@ evaluateFields(typename TRAITS::EvalData workset)
   // lids for the sub-block that it is scattering to. The subviews
   // below are to offset the LID blocks correctly.
   const auto& globalIndexers = globalIndexer_->getFieldDOFManagers();
+  auto blockOffsets_h = Kokkos::create_mirror_view(blockOffsets_);
+  Kokkos::deep_copy(blockOffsets_h, blockOffsets_);
   for (size_t block=0; block < globalIndexers.size(); ++block) {
-    const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_(block),blockOffsets_(block+1)));
+    const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_h(block),blockOffsets_h(block+1)));
     globalIndexers[block]->getElementLIDs(localCellIds,subviewOfBlockLIDs);
   }
 
