@@ -592,7 +592,7 @@ namespace panzer
         /**
          *  \brief The vector basis information necessary for integration.
          */
-        PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
+        PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP,
           panzer::Dim> weightedCurlBasis;
 
         /**
@@ -665,7 +665,7 @@ namespace panzer
         /**
          *  \brief The vector basis information necessary for integration.
          */
-        PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP>
+        PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP>
         weightedCurlBasis;
 
         /**
@@ -731,7 +731,8 @@ namespace panzer
       Integrate2D<ScalarT> integrate;
       integrate.result            = result2D_;
       integrate.field             = field_;
-      integrate.weightedCurlBasis = bv.weighted_curl_basis_scalar;
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIP;
+      integrate.weightedCurlBasis = useDescriptors_ ? bv.getCurl2DVectorBasis(true) : Array(bv.weighted_curl_basis_scalar);
       integrate.evalStyle         = evalStyle_;
       parallel_for(workset.num_cells, integrate);
     }
@@ -765,7 +766,8 @@ namespace panzer
       Integrate3D<ScalarT, 3> integrate;
       integrate.result            = result3D_;
       integrate.field             = field_;
-      integrate.weightedCurlBasis = bv.weighted_curl_basis_vector;
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+      integrate.weightedCurlBasis = useDescriptors_ ? bv.getCurlVectorBasis(true) : Array(bv.weighted_curl_basis_vector);
       integrate.evalStyle         = evalStyle_;
       parallel_for(workset.num_cells, integrate);
     } // end if spaceDim_ is 2 or 3

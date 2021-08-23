@@ -115,8 +115,8 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_scalar.get_static_view();
-          const auto weightedBasis = basisValues.weighted_basis_scalar.get_static_view();
+          const auto unweightedBasis = basisValues.getBasisValues(false).get_static_view();
+          const auto weightedBasis = basisValues.getBasisValues(true).get_static_view();
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
@@ -129,7 +129,7 @@ namespace panzer {
               targetGlobalIndexer_->getElementBlockGIDCount(block));
 
           // Remove the ghosted cell ids or the call to getElementLocalIds will spill array bounds
-          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
+          const auto cellLocalIdsNoGhost = Kokkos::subview(workset.getLocalCellIDs(),std::make_pair(0,workset.numOwnedCells()));
 
           targetGlobalIndexer_->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
@@ -215,8 +215,8 @@ namespace panzer {
 
           const auto basisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
 
-          const auto unweightedBasis = basisValues.basis_vector.get_static_view();
-          const auto weightedBasis = basisValues.weighted_basis_vector.get_static_view();
+          const auto unweightedBasis = basisValues.getVectorBasisValues(false).get_static_view();
+          const auto weightedBasis = basisValues.getVectorBasisValues(true).get_static_view();
 
           // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
@@ -418,7 +418,7 @@ namespace panzer {
 
         // Get target basis values: current implementation assumes target basis is HGrad
         const auto& targetBasisValues = workset.getBasisValues(targetBasisDescriptor_,integrationDescriptor_);
-        const auto& targetWeightedBasis = targetBasisValues.weighted_basis_scalar.get_static_view();
+        const auto& targetWeightedBasis = targetBasisValues.getBasisValues(true).get_static_view();
 
         // Sources can be any basis
         const auto& sourceBasisValues = workset.getBasisValues(sourceBasisDescriptor,integrationDescriptor_);
@@ -427,15 +427,15 @@ namespace panzer {
         bool useRankThreeBasis = false; // default to gradient or vector basis
         if ( (sourceBasisDescriptor.getType() == "HGrad") || (sourceBasisDescriptor.getType() == "Const") || (sourceBasisDescriptor.getType() == "HVol") ) {
           if (directionIndex == -1) { // Project dof value
-            sourceUnweightedScalarBasis = sourceBasisValues.basis_scalar.get_static_view();
+            sourceUnweightedScalarBasis = sourceBasisValues.getBasisValues(false).get_static_view();
             useRankThreeBasis = true;
           }
           else { // Project dof gradient of scalar basis
-            sourceUnweightedVectorBasis = sourceBasisValues.grad_basis.get_static_view();
+            sourceUnweightedVectorBasis = sourceBasisValues.getGradBasisValues(false).get_static_view();
           }
         }
         else { // Project vector value
-          sourceUnweightedVectorBasis = sourceBasisValues.basis_vector.get_static_view();
+          sourceUnweightedVectorBasis = sourceBasisValues.getVectorBasisValues(false).get_static_view();
         }
 
         // Get the element local ids

@@ -45,7 +45,7 @@
 // @HEADER
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML)
 #include <ml_ValidateParameters.h>
 #include <ml_MultiLevelPreconditioner.h> // for default values
 #include <ml_RefMaxwell.h>
@@ -198,7 +198,7 @@ namespace MueLu {
 
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)); // TODO: use internal out (GetOStream())
 
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML)
 
     // TODO alternative with standard parameterlist from ML user guide?
 
@@ -240,7 +240,7 @@ namespace MueLu {
       bool validate = paramList.get("ML validate parameter list", true); /* true = default in ML */
       if (validate && defaultVals!="refmaxwell") {
 
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML)
         // Validate parameter list using ML validator
         int depth = paramList.get("ML validate depth", 5); /* 5 = default in ML */
         TEUCHOS_TEST_FOR_EXCEPTION(! ML_Epetra::ValidateMLPParameters(paramList, depth), Exceptions::RuntimeError,

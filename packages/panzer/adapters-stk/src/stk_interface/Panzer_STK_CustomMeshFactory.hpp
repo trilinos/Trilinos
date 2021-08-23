@@ -102,23 +102,6 @@ namespace panzer_stk {
     double *ChargeDensity_;
     double *ElectricPotential_;
 
-    // wrapper for 
-    struct FieldContainer {
-      std::size_t _dim0, _dim1;
-      double *_buffer;
-
-      FieldContainer(const std::size_t dim0, const std::size_t dim1, double *buffer) 
-        : _dim0(dim0), _dim1(dim1), _buffer(buffer) { }
-
-      // row-major indexing: Intrepid2_FieldContainerDef.hpp
-      double operator()(const std::size_t i, 
-                        const std::size_t j) const { return _buffer[i*_dim1+j]; }
-
-      double& operator()(const std::size_t i, 
-                         const std::size_t j) { return _buffer[i*_dim1+j]; }
-      
-    };
-
     mutable unsigned int machRank_, machSize_;
   };
 

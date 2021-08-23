@@ -90,7 +90,7 @@ ScatterVectorFields(const std::string & scatterName,
   names_ = names;
   scatterFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    scatterFields_[fd] = 
+    scatterFields_[fd] =
       PHX::MDField<const ScalarT,Cell,IP,Dim>(names_[fd]+"_"+pointRule->getName(),pointRule->dl_vector);
     this->addDependentField(scatterFields_[fd]);
   }
@@ -131,17 +131,17 @@ evaluateFields(panzer::Traits::EvalData workset)
       PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & field = scatterFields_[fieldIndex];
       std::string fieldName = names_[fieldIndex]+dimStrings[d];
 
-      PHX::MDField<double,panzer::Cell,panzer::NODE> cellValue 
+      PHX::MDField<double,panzer::Cell,panzer::NODE> cellValue
           = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.extent(0),1);
 
       // scaline field value only if the scaling parameter is specified, otherwise use 1.0
       double scaling = (scaling_.size()>0) ? scaling_[fieldIndex] : 1.0;
 
-      for(unsigned i=0; i<field.extent(0);i++) 
+      for(unsigned i=0; i<field.extent(0);i++)
         cellValue(i,0) = field(i,0,d);
 
       // add in vector value at d^th dimension
-      mesh_->setCellFieldData(fieldName,blockId,localCellIds,cellValue,scaling);
+      mesh_->setCellFieldData(fieldName,blockId,localCellIds,cellValue.get_view(),scaling);
     }
   }
 }

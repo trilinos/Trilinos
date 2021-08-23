@@ -107,6 +107,16 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
   const int faces_per_cell = cell_topology->getSubcellCount(space_dim-1);
   const int points          = iv->surface_normals.extent_int(1);
   const int points_per_face = points / faces_per_cell;
+
+  auto surface_normals_view = PHX::as_view(iv->surface_normals);
+  auto surface_normals_h = Kokkos::create_mirror_view(surface_normals_view);
+  Kokkos::deep_copy(surface_normals_h, surface_normals_view);
+
+  auto surface_rotation_matrices_view = PHX::as_view(iv->surface_rotation_matrices);
+  auto surface_rotation_matrices_h = Kokkos::create_mirror_view(surface_rotation_matrices_view);
+  Kokkos::deep_copy(surface_rotation_matrices_h, surface_rotation_matrices_view);
+
+
   for (int virtual_cell_ordinal=0; virtual_cell_ordinal<num_virtual_cells; virtual_cell_ordinal++)
   {
     const panzer::LocalOrdinal virtual_cell = virtual_cell_ordinal+num_real_cells;
@@ -114,7 +124,7 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
     int face_ordinal = -1;
     for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
     {
-      face_ordinal = face_connectivity.subcellForCell(virtual_cell, local_face_id);
+      face_ordinal = face_connectivity.subcellForCellHost(virtual_cell, local_face_id);
       if (face_ordinal >= 0)
       {
         virtual_local_face_id = local_face_id;
@@ -123,10 +133,10 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
     }
     if (face_ordinal >= 0)
     {
-      const int first_cell_for_face = face_connectivity.cellForSubcell(face_ordinal, 0);
+      const int first_cell_for_face = face_connectivity.cellForSubcellHost(face_ordinal, 0);
       const panzer::LocalOrdinal other_side = (first_cell_for_face == virtual_cell) ? 1 : 0;
-      const panzer::LocalOrdinal real_cell = face_connectivity.cellForSubcell(face_ordinal,other_side);
-      const panzer::LocalOrdinal face_in_real_cell = face_connectivity.localSubcellForSubcell(face_ordinal,other_side);
+      const panzer::LocalOrdinal real_cell = face_connectivity.cellForSubcellHost(face_ordinal,other_side);
+      const panzer::LocalOrdinal face_in_real_cell = face_connectivity.localSubcellForSubcellHost(face_ordinal,other_side);
       TEUCHOS_ASSERT(real_cell < num_real_cells);
       for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
       {
@@ -143,17 +153,17 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
 
         for (int d=0; d<space_dim; d++)
         {
-          const auto n_d = iv->surface_normals(real_cell,real_cell_point,d);
-          iv->surface_normals(virtual_cell,virtual_cell_point,d) = -n_d;
+          const auto n_d = surface_normals_h(real_cell,real_cell_point,d);
+          surface_normals_h(virtual_cell,virtual_cell_point,d) = -n_d;
           normal[d] = -n_d;
         }
 
         panzer::convertNormalToRotationMatrix(normal,transverse,binormal);
 
         for(int dim=0; dim<3; ++dim){
-          iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,0,dim) = normal[dim];
-          iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,1,dim) = transverse[dim];
-          iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,2,dim) = binormal[dim];
+          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,0,dim) = normal[dim];
+          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,1,dim) = transverse[dim];
+          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,2,dim) = binormal[dim];
         }
       }
       // clear the other normals and rotation matrices for the virtual cell:
@@ -165,19 +175,23 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
           int point = local_face_id * points_per_face + point_ordinal;
           for (int dim=0; dim<space_dim; dim++)
           {
-            iv->surface_normals(virtual_cell,point,dim) = 0.0;
+            surface_normals_h(virtual_cell,point,dim) = 0.0;
           }
+
           for(int dim1=0; dim1<3; ++dim1)
           {
             for(int dim2=0; dim2<3; ++dim2)
             {
-              iv->surface_rotation_matrices(virtual_cell,point,dim1,dim2) = 0;
+              surface_rotation_matrices_h(virtual_cell,point,dim1,dim2) = 0;
             }
           }
         }
       }
     }
   }
+
+  Kokkos::deep_copy(surface_normals_view, surface_normals_h);
+  Kokkos::deep_copy(surface_rotation_matrices_view, surface_rotation_matrices_h);
 }
 
 }
@@ -350,7 +364,8 @@ getIntegrationValues(const panzer::IntegrationDescriptor & description) const
 
 const panzer::BasisValues2<double> &
 WorksetDetails::
-getBasisValues(const panzer::BasisDescriptor & description) const
+getBasisValues(const panzer::BasisDescriptor & description,
+               const bool lazy_version) const
 {
   TEUCHOS_ASSERT(setup_);
 
@@ -373,7 +388,7 @@ getBasisValues(const panzer::BasisDescriptor & description) const
   }
 
   // Now just use the other call
-  return getBasisValues(description, id);
+  return getBasisValues(description, id, lazy_version);
 
 }
 
@@ -381,7 +396,8 @@ getBasisValues(const panzer::BasisDescriptor & description) const
 panzer::BasisValues2<double> &
 WorksetDetails::
 getBasisValues(const panzer::BasisDescriptor & basis_description,
-               const panzer::IntegrationDescriptor & integration_description) const
+               const panzer::IntegrationDescriptor & integration_description,
+               const bool lazy_version) const
 {
   TEUCHOS_ASSERT(setup_);
 
@@ -397,51 +413,73 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
   // Get the integration values for this description
   const auto & iv = getIntegrationValues(integration_description);
-
   auto bir = Teuchos::rcp(new BasisIRLayout(basis_description.getType(), basis_description.getOrder(), *iv.int_rule));
 
-  auto biv = Teuchos::rcp(new BasisValues2<double>("", true, true));
-  biv->setupArrays(bir);
-  if((integration_description.getType() == IntegrationDescriptor::CV_BOUNDARY) or
-     (integration_description.getType() == IntegrationDescriptor::CV_SIDE) or
-     (integration_description.getType() == IntegrationDescriptor::CV_VOLUME)){
+  Teuchos::RCP<BasisValues2<double>> biv;
 
-    biv->evaluateValuesCV(iv.ref_ip_coordinates,
-                          iv.jac,
-                          iv.jac_det,
-                          iv.jac_inv,
-                          getCellVertices(),
-                          true,
-                          numCells());
+  if(lazy_version){
+
+    // Initialized for lazy evaluation
+
+    biv = Teuchos::rcp(new BasisValues2<double>());
+
+    biv->setOrientations(options_.orientations_);
+    biv->setWeightedMeasure(iv.weighted_measure);
+    biv->setCellVertexCoordinates(cell_vertex_coordinates);
+
+    if(integration_description.getType() == IntegrationDescriptor::VOLUME)
+      biv->setupUniform(bir, iv.cub_points, iv.jac, iv.jac_det, iv.jac_inv);
+    else
+      biv->setup(bir, iv.ref_ip_coordinates, iv.jac, iv.jac_det, iv.jac_inv);
+
   } else {
 
-    if(integration_description.getType() == IntegrationDescriptor::VOLUME){
+    // Standard, fully allocated version of BasisValues2
 
-      // TODO: Eventually we will use the other call, however, that will be part of the BasisValues2 refactor
-      // The reason we don't do it now is that there are small differences (machine precision) that break EMPIRE testing
-      biv->evaluateValues(iv.cub_points,
-                          iv.jac,
-                          iv.jac_det,
-                          iv.jac_inv,
-                          iv.weighted_measure,
-                          getCellVertices(),
-                          true,
-                          numCells());
+    biv = Teuchos::rcp(new BasisValues2<double>("", true, true));
+    biv->setupArrays(bir);
+    if((integration_description.getType() == IntegrationDescriptor::CV_BOUNDARY) or
+       (integration_description.getType() == IntegrationDescriptor::CV_SIDE) or
+       (integration_description.getType() == IntegrationDescriptor::CV_VOLUME)){
 
+      biv->evaluateValuesCV(iv.ref_ip_coordinates,
+                            iv.jac,
+                            iv.jac_det,
+                            iv.jac_inv,
+                            getCellVertices(),
+                            true,
+                            numCells());
     } else {
 
-      biv->evaluateValues(iv.ref_ip_coordinates,
-                          iv.jac,
-                          iv.jac_det,
-                          iv.jac_inv,
-                          iv.weighted_measure,
-                          getCellVertices(),
-                          true,
-                          numCells());
-    }
-  }
+      if(integration_description.getType() == IntegrationDescriptor::VOLUME){
 
-  applyBV2Orientations(numOwnedCells()+numGhostCells(),*biv,getLocalCellIDs(),options_.orientations_);
+        // TODO: Eventually we will use the other call, however, that will be part of the BasisValues2 refactor
+        // The reason we don't do it now is that there are small differences (machine precision) that break EMPIRE testing
+        biv->evaluateValues(iv.cub_points,
+                            iv.jac,
+                            iv.jac_det,
+                            iv.jac_inv,
+                            iv.weighted_measure,
+                            getCellVertices(),
+                            true,
+                            numCells());
+
+      } else {
+
+        biv->evaluateValues(iv.ref_ip_coordinates,
+                            iv.jac,
+                            iv.jac_det,
+                            iv.jac_inv,
+                            iv.weighted_measure,
+                            getCellVertices(),
+                            true,
+                            numCells());
+      }
+    }
+
+    applyBV2Orientations(numOwnedCells()+numGhostCells(),*biv,getLocalCellIDs(),options_.orientations_);
+
+  }
 
   basis_integration_values_map_[basis_description.getKey()][integration_description.getKey()] = biv;
   bases.push_back(biv);
@@ -486,7 +524,8 @@ getPointValues(const panzer::PointDescriptor & description) const
 const panzer::BasisValues2<double> &
 WorksetDetails::
 getBasisValues(const panzer::BasisDescriptor & basis_description,
-               const panzer::PointDescriptor & point_description) const
+               const panzer::PointDescriptor & point_description,
+               const bool lazy_version) const
 {
   TEUCHOS_ASSERT(setup_);
 
@@ -505,18 +544,37 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
   auto bir = Teuchos::rcp(new BasisIRLayout(basis_description.getType(), basis_description.getOrder(), *pv.point_rule));
 
-  auto bpv = Teuchos::rcp(new BasisValues2<double>("", true, false));
-  bpv->setupArrays(bir);
-  bpv->evaluateValues(pv.coords_ref,
-                      pv.jac,
-                      pv.jac_det,
-                      pv.jac_inv,
-                      numCells());
+  Teuchos::RCP<BasisValues2<double>> bpv;
 
-  // TODO: We call this separetely due to how BasisValues2 is structured - needs to be streamlined
-  bpv->evaluateBasisCoordinates(getCellVertices(),numCells());
+  if(lazy_version){
 
-  applyBV2Orientations(numOwnedCells()+numGhostCells(),*bpv, getLocalCellIDs(), options_.orientations_);
+    // Initialized for lazy evaluation
+
+    bpv = Teuchos::rcp(new BasisValues2<double>());
+
+    bpv->setOrientations(options_.orientations_);
+    bpv->setCellVertexCoordinates(cell_vertex_coordinates);
+
+    bpv->setupUniform(bir, pv.coords_ref, pv.jac, pv.jac_det, pv.jac_inv);
+
+  } else {
+
+    // Standard fully allocated version
+
+    bpv = Teuchos::rcp(new BasisValues2<double>("", true, false));
+    bpv->setupArrays(bir);
+    bpv->evaluateValues(pv.coords_ref,
+                        pv.jac,
+                        pv.jac_det,
+                        pv.jac_inv,
+                        numCells());
+
+    // TODO: We call this separately due to how BasisValues2 is structured - needs to be streamlined
+    bpv->evaluateBasisCoordinates(getCellVertices(),numCells());
+
+    applyBV2Orientations(numOwnedCells()+numGhostCells(),*bpv, getLocalCellIDs(), options_.orientations_);
+
+  }
 
   basis_point_values_map_[basis_description.getKey()][point_description.getKey()] = bpv;
 

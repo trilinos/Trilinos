@@ -69,7 +69,7 @@ namespace MueLu {
   void AggregationStructuredAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregates(const Teuchos::ParameterList& /* params */, const LWGraph_kokkos& graph,
                   Aggregates_kokkos& aggregates,
-                  Kokkos::View<unsigned*, memory_space>& aggStat,
+                  Kokkos::View<unsigned*, device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
@@ -205,7 +205,7 @@ namespace MueLu {
   AggregationStructuredAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   fillAggregatesFunctor::fillAggregatesFunctor(RCP<IndexManager_kokkos> geoData,
                                                const int myRank,
-                                               Kokkos::View<unsigned*, memory_space> aggStat,
+                                               Kokkos::View<unsigned*, device_type> aggStat,
                                                LOVectorView vertex2AggID,
                                                LOVectorView procWinner) :
     geoData_(*geoData), myRank_(myRank), aggStat_(aggStat),

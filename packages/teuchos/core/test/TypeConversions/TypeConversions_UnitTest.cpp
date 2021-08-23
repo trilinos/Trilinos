@@ -1057,6 +1057,115 @@ UNIT_TEST_GROUP_SIGNED_INTEGER( long_long_type )
 //UNIT_TEST_GROUP_ANY_INTEGER( unsigned long long )
 UNIT_TEST_GROUP_ANY_INTEGER( unsigned_long_long_type )
 
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#include <complex>
+
+//
+// Tests for conversions involving complex types.
+//
+TEUCHOS_UNIT_TEST( asSafe, complexToComplex ) {
+  using Teuchos::as;
+  using Teuchos::asSafe;
+
+  const std::complex<float>  iF = std::complex<float>(0,1);
+  const std::complex<double> iD = std::complex<double>(0,1);
+
+  const std::complex<float> minF = -std::numeric_limits<float>::max ();
+  const std::complex<float> minImagF = -iF*std::numeric_limits<float>::max ();
+  const std::complex<float> minusOneF = -1;
+  const std::complex<float> minusOneImagF = -iF;
+  const std::complex<float> maxF = std::numeric_limits<float>::max ();
+  const std::complex<float> maxImagF = iF*std::numeric_limits<float>::max ();
+
+  const std::complex<double> minD = -std::numeric_limits<double>::max ();
+  const std::complex<double> minImagD = -iD*std::numeric_limits<double>::max ();
+  const std::complex<double> minusOneD = -1;
+  const std::complex<double> minusOneImagD = -iD;
+  const std::complex<double> maxD = std::numeric_limits<double>::max ();
+  const std::complex<double> maxImagD = iD*std::numeric_limits<double>::max ();
+
+  std::complex<float> valF = 0;
+
+  std::complex<double> valD = 0;
+
+  //
+  // Test std::complex<float> -> std::complex<float> conversions.
+  //
+
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (minF));
+  TEST_EQUALITY_CONST(valF, minF);
+  TEST_NOTHROW(valF = as<std::complex<float> > (minF));
+  TEST_EQUALITY_CONST(valF, minF);
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (minImagF));
+  TEST_EQUALITY_CONST(valF, minImagF);
+  TEST_NOTHROW(valF = as<std::complex<float> > (minImagF));
+  TEST_EQUALITY_CONST(valF, minImagF);
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (maxF));
+  TEST_EQUALITY_CONST(valF, maxF);
+  TEST_NOTHROW(valF = as<std::complex<float> > (maxF));
+  TEST_EQUALITY_CONST(valF, maxF);
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (maxImagF));
+  TEST_EQUALITY_CONST(valF, maxImagF);
+  TEST_NOTHROW(valF = as<std::complex<float> > (maxImagF));
+  TEST_EQUALITY_CONST(valF, maxImagF);
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (minusOneF));
+  TEST_EQUALITY_CONST(valF, minusOneF);
+  TEST_NOTHROW(valF = as<std::complex<float> > (minusOneF));
+  TEST_EQUALITY_CONST(valF, minusOneF);
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (minusOneImagF));
+  TEST_EQUALITY_CONST(valF, minusOneImagF);
+  TEST_NOTHROW(valF = as<std::complex<float> > (minusOneImagF));
+  TEST_EQUALITY_CONST(valF, minusOneImagF);
+
+
+  //
+  // Test std::complex<double> -> std::complex<double> conversions.
+  //
+
+  TEST_NOTHROW(valD = asSafe<std::complex<double> > (minD));
+  TEST_EQUALITY_CONST(valD, minD);
+  TEST_NOTHROW(valD = as<std::complex<double> > (minD));
+  TEST_EQUALITY_CONST(valD, minD);
+  TEST_NOTHROW(valD = asSafe<std::complex<double> > (minImagD));
+  TEST_EQUALITY_CONST(valD, minImagD);
+  TEST_NOTHROW(valD = as<std::complex<double> > (minImagD));
+  TEST_EQUALITY_CONST(valD, minImagD);
+  TEST_NOTHROW(valD = asSafe<std::complex<double> > (maxD));
+  TEST_EQUALITY_CONST(valD, maxD);
+  TEST_NOTHROW(valD = as<std::complex<double> > (maxD));
+  TEST_EQUALITY_CONST(valD, maxD);
+  TEST_NOTHROW(valD = asSafe<std::complex<double> > (maxImagD));
+  TEST_EQUALITY_CONST(valD, maxImagD);
+  TEST_NOTHROW(valD = as<std::complex<double> > (maxImagD));
+  TEST_EQUALITY_CONST(valD, maxImagD);
+  TEST_NOTHROW(valD = asSafe<std::complex<double> > (minusOneD));
+  TEST_EQUALITY_CONST(valD, minusOneD);
+  TEST_NOTHROW(valD = as<std::complex<double> > (minusOneD));
+  TEST_EQUALITY_CONST(valD, minusOneD);
+  TEST_NOTHROW(valD = asSafe<std::complex<double> > (minusOneImagD));
+  TEST_EQUALITY_CONST(valD, minusOneImagD);
+  TEST_NOTHROW(valD = as<std::complex<double> > (minusOneImagD));
+  TEST_EQUALITY_CONST(valD, minusOneImagD);
+
+  //
+  // Test std::complex<double> -> std::complex<float> conversions.
+  //
+
+  TEST_NOTHROW(valF = as<std::complex<float> > (minusOneD));
+  TEST_EQUALITY_CONST(valF, minusOneF);
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (minusOneD));
+  TEST_EQUALITY_CONST(valF, minusOneF);
+  TEST_NOTHROW(valF = as<std::complex<float> > (minusOneImagD));
+  TEST_EQUALITY_CONST(valF, minusOneImagF);
+  TEST_NOTHROW(valF = asSafe<std::complex<float> > (minusOneImagD));
+  TEST_EQUALITY_CONST(valF, minusOneImagF);
+
+}
+
+#endif // HAVE_TEUCHOS_COMPLEX
+
 } // namespace (anonymous)
 
 

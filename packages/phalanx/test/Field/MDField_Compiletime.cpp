@@ -446,6 +446,27 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // Kokkos cast View accessor
+    {
+      decltype(a.get_static_view()) av;
+      av = a;
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // PHX as_view accessor
+    {
+      Kokkos::deep_copy(a.get_static_view(), 5.);
+      auto a_h = Kokkos::create_mirror_view(as_view(a));
+      Kokkos::deep_copy(a_h, as_view(a));
+      TEST_EQUALITY(a_h(0,0), 5);
+      
+      auto a_v = a.get_static_view();
+      auto a_v_h = Kokkos::create_mirror_view(as_view(a_v));
+      Kokkos::deep_copy(a_v_h, as_view(a_v));
+      TEST_EQUALITY(a_v_h(0,0), 5);
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for debug build array rank enforcement
     TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,typename PHX::DevLayout<double>::type,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
 
