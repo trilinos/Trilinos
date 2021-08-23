@@ -159,7 +159,7 @@ namespace panzer {
 
     // check some sizing stuff
     ///////////////////////////////////////////////////////////////////////
-    
+
     TEST_EQUALITY(Teuchos::as<int>(hdiv_basis_vector.extent(1)),hdiv_intrepid_basis->getCardinality());
     TEST_EQUALITY(hdiv_basis_vector.extent(1),hdiv_basis_vector.extent(2));
 
@@ -175,6 +175,10 @@ namespace panzer {
     // print out basis values
     ///////////////////////////////////////////////////////////////////////
 
+    auto hdiv_basis_vector_view = PHX::as_view(hdiv_basis_vector);
+    auto hdiv_basis_vector_h = Kokkos::create_mirror_view(hdiv_basis_vector_view);
+    Kokkos::deep_copy(hdiv_basis_vector_h, hdiv_basis_vector_view);
+
     // print out phi_i(x_j).phi_j(x_j)
     for(size_t c=0;c<hdiv_basis_vector.extent(0);c++) {
       out << "cell " << c << std::endl;
@@ -182,15 +186,15 @@ namespace panzer {
         // compute diagonal magnitude
         double diagonal = 0.0;
         for(size_t d=0;d<hdiv_basis_vector.extent(3);d++)
-          diagonal += hdiv_basis_vector(c,i,i,d)* hdiv_basis_vector(c,i,i,d);
+          diagonal += hdiv_basis_vector_h(c,i,i,d)* hdiv_basis_vector_h(c,i,i,d);
 
         out << "   ";
-        for(size_t j=0;j<hdiv_basis_vector.extent(2);j++) {
+        for(size_t j=0;j<hdiv_basis_vector_h.extent(2);j++) {
           double entry = 0.0;
 
           // loop over dimension
           for(size_t d=0;d<hdiv_basis_vector.extent(3);d++)
-            entry += hdiv_basis_vector(c,i,j,d)* hdiv_basis_vector(c,j,j,d);
+            entry += hdiv_basis_vector_h(c,i,j,d)* hdiv_basis_vector_h(c,j,j,d);
 
           out << std::fixed << std::setprecision(2) << std::setw(8) << entry / diagonal;
 
@@ -303,7 +307,14 @@ namespace panzer {
         << " " << (*worksets[0].basis_names)[1] << std::endl;
 
     auto hdiv_weighted_basis_vector = hdiv_basis_values.weighted_basis_vector;
+    auto hdiv_weighted_basis_vector_view = PHX::as_view(hdiv_weighted_basis_vector);
+    auto hdiv_weighted_basis_vector_h = Kokkos::create_mirror_view(hdiv_weighted_basis_vector_view);
+    Kokkos::deep_copy(hdiv_weighted_basis_vector_h, hdiv_weighted_basis_vector_view);
+
     auto hdiv_basis_vector = hdiv_basis_values.basis_vector;
+    auto hdiv_basis_vector_view = PHX::as_view(hdiv_basis_vector);
+    auto hdiv_basis_vector_h = Kokkos::create_mirror_view(hdiv_basis_vector_view);
+    Kokkos::deep_copy(hdiv_basis_vector_h, hdiv_basis_vector_view);
 
     // check some sizing stuff
     ///////////////////////////////////////////////////////////////////////
@@ -333,7 +344,7 @@ namespace panzer {
         for(size_t q=0;q<hdiv_basis_vector.extent(2);q++) {
           out << "[ ";
           for(size_t d=0;d<hdiv_basis_vector.extent(3);d++) {
-            out << hdiv_basis_vector(c,b,q,d) << ", ";
+            out << hdiv_basis_vector_h(c,b,q,d) << ", ";
           } // end d
           out << "], ";
         } // end q
@@ -342,8 +353,8 @@ namespace panzer {
       out << std::endl;
     } // end c
 
-    double sign_diff =   hdiv_basis_vector(0,1,0,0)/std::fabs(hdiv_basis_vector(0,1,0,0))
-                       - hdiv_basis_vector(1,3,0,0)/std::fabs(hdiv_basis_vector(1,3,0,0));
+    double sign_diff =   hdiv_basis_vector_h(0,1,0,0)/std::fabs(hdiv_basis_vector_h(0,1,0,0))
+                       - hdiv_basis_vector_h(1,3,0,0)/std::fabs(hdiv_basis_vector_h(1,3,0,0));
     TEST_ASSERT(std::fabs(sign_diff) <= 1e-15);
 
     out << "WEIGHTED BASIS VECTOR\n" << std::endl;
@@ -362,7 +373,7 @@ namespace panzer {
         for(size_t q=0;q<hdiv_weighted_basis_vector.extent(2);q++) {
           out << "[ ";
           for(size_t d=0;d<hdiv_weighted_basis_vector.extent(3);d++) {
-            out << hdiv_weighted_basis_vector(c,b,q,d) << ", ";
+            out << hdiv_weighted_basis_vector_h(c,b,q,d) << ", ";
           } // end d
           out << "], ";
         } // end q
