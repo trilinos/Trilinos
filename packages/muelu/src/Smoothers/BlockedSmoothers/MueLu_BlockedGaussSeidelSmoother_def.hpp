@@ -43,12 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * MueLu_BlockedGaussSeidelSmoother_def.hpp
- *
- *  Created on: 30.01.2012
- *      Author: tobias
- */
 
 #ifndef MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_DEF_HPP_
 #define MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_DEF_HPP_
@@ -102,10 +96,10 @@ namespace MueLu {
     size_t myPos = Teuchos::as<size_t>(pos);
 
     if (myPos < FactManager_.size()) {
-      // replace existing entris in FactManager_ vector
+      // replace existing entries in FactManager_ vector
       FactManager_.at(myPos) = FactManager;
-    } else if( myPos == FactManager_.size()) {
-      // add new Factory manager in the end of the vector
+    } else if(myPos == FactManager_.size()) {
+      // append new Factory manager at the end of the vector
       FactManager_.push_back(FactManager);
     } else { // if(myPos > FactManager_.size())
       RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -133,13 +127,10 @@ namespace MueLu {
       // request "A" for current subblock row (only needed for Thyra mode)
       currentLevel.DeclareInput("A",(*it)->GetFactory("A").get());
     }
-
-    //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level &currentLevel) {
-    //typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsOMatrix;
 
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
@@ -202,8 +193,6 @@ namespace MueLu {
       //this->GetOStream(Runtime1) << "BlockedGaussSeidel: X is a MultiVector of size " << X.getMap()->getGlobalNumElements() << std::endl;
       //TEUCHOS_TEST_FOR_EXCEPTION(bA->getFullDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
     }
-
-
 #endif
     SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
@@ -377,11 +366,7 @@ namespace MueLu {
     // FIXME: This is a placeholder
     return Teuchos::OrdinalTraits<size_t>::invalid();
   }
-  
-
 
 } // namespace MueLu
-
-
 
 #endif /* MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_DEF_HPP_ */

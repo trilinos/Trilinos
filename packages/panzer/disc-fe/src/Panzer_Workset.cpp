@@ -107,6 +107,16 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
   const int faces_per_cell = cell_topology->getSubcellCount(space_dim-1);
   const int points          = iv->surface_normals.extent_int(1);
   const int points_per_face = points / faces_per_cell;
+
+  auto surface_normals_view = PHX::as_view(iv->surface_normals);
+  auto surface_normals_h = Kokkos::create_mirror_view(surface_normals_view);
+  Kokkos::deep_copy(surface_normals_h, surface_normals_view);
+
+  auto surface_rotation_matrices_view = PHX::as_view(iv->surface_rotation_matrices);
+  auto surface_rotation_matrices_h = Kokkos::create_mirror_view(surface_rotation_matrices_view);
+  Kokkos::deep_copy(surface_rotation_matrices_h, surface_rotation_matrices_view);
+
+
   for (int virtual_cell_ordinal=0; virtual_cell_ordinal<num_virtual_cells; virtual_cell_ordinal++)
   {
     const panzer::LocalOrdinal virtual_cell = virtual_cell_ordinal+num_real_cells;
@@ -114,7 +124,7 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
     int face_ordinal = -1;
     for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
     {
-      face_ordinal = face_connectivity.subcellForCell(virtual_cell, local_face_id);
+      face_ordinal = face_connectivity.subcellForCellHost(virtual_cell, local_face_id);
       if (face_ordinal >= 0)
       {
         virtual_local_face_id = local_face_id;
@@ -123,10 +133,10 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
     }
     if (face_ordinal >= 0)
     {
-      const int first_cell_for_face = face_connectivity.cellForSubcell(face_ordinal, 0);
+      const int first_cell_for_face = face_connectivity.cellForSubcellHost(face_ordinal, 0);
       const panzer::LocalOrdinal other_side = (first_cell_for_face == virtual_cell) ? 1 : 0;
-      const panzer::LocalOrdinal real_cell = face_connectivity.cellForSubcell(face_ordinal,other_side);
-      const panzer::LocalOrdinal face_in_real_cell = face_connectivity.localSubcellForSubcell(face_ordinal,other_side);
+      const panzer::LocalOrdinal real_cell = face_connectivity.cellForSubcellHost(face_ordinal,other_side);
+      const panzer::LocalOrdinal face_in_real_cell = face_connectivity.localSubcellForSubcellHost(face_ordinal,other_side);
       TEUCHOS_ASSERT(real_cell < num_real_cells);
       for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
       {
@@ -143,17 +153,17 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
 
         for (int d=0; d<space_dim; d++)
         {
-          const auto n_d = iv->surface_normals(real_cell,real_cell_point,d);
-          iv->surface_normals(virtual_cell,virtual_cell_point,d) = -n_d;
+          const auto n_d = surface_normals_h(real_cell,real_cell_point,d);
+          surface_normals_h(virtual_cell,virtual_cell_point,d) = -n_d;
           normal[d] = -n_d;
         }
 
         panzer::convertNormalToRotationMatrix(normal,transverse,binormal);
 
         for(int dim=0; dim<3; ++dim){
-          iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,0,dim) = normal[dim];
-          iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,1,dim) = transverse[dim];
-          iv->surface_rotation_matrices(virtual_cell,virtual_cell_point,2,dim) = binormal[dim];
+          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,0,dim) = normal[dim];
+          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,1,dim) = transverse[dim];
+          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,2,dim) = binormal[dim];
         }
       }
       // clear the other normals and rotation matrices for the virtual cell:
@@ -165,19 +175,23 @@ correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv
           int point = local_face_id * points_per_face + point_ordinal;
           for (int dim=0; dim<space_dim; dim++)
           {
-            iv->surface_normals(virtual_cell,point,dim) = 0.0;
+            surface_normals_h(virtual_cell,point,dim) = 0.0;
           }
+
           for(int dim1=0; dim1<3; ++dim1)
           {
             for(int dim2=0; dim2<3; ++dim2)
             {
-              iv->surface_rotation_matrices(virtual_cell,point,dim1,dim2) = 0;
+              surface_rotation_matrices_h(virtual_cell,point,dim1,dim2) = 0;
             }
           }
         }
       }
     }
   }
+
+  Kokkos::deep_copy(surface_normals_view, surface_normals_h);
+  Kokkos::deep_copy(surface_rotation_matrices_view, surface_rotation_matrices_h);
 }
 
 }
