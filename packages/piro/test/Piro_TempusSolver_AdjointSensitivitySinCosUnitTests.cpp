@@ -118,6 +118,10 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
     RCP<SinCosModel> model = Teuchos::rcp(new SinCosModel(scm_pl));
 
+    //Set up adjoint model for adjoint sensivitities 
+    RCP<SinCosModelAdjoint> adjoint_model =
+      Teuchos::rcp(new SinCosModelAdjoint(scm_pl));
+
     dt /= 2;
 
      // Set up Tempus PL
