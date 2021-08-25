@@ -787,7 +787,6 @@ evaluateFields(
 
   // Deal with the sensitivities.
     if (applySensitivities_)  {
-      MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
       int fieldNum(fieldIds_[fieldInd]);
       const vector<int>& elmtOffset =
         globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
