@@ -150,7 +150,7 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
        .sublist("Time Step Control").set("Initial Time Step", dt);
     
     Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
-        = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempus_pl, model, sens_method));
+        = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempus_pl, model, adjoint_model, sens_method));
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions
@@ -192,7 +192,6 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     Thyra::MEB::OutArgs<double> outArgs = tempus_solver->createOutArgs();
     const int solutionResponseIndex = tempus_solver->Ng() - 1;
     const int parameterIndex = 0;
-    std::cout << "IKT solutionResponseIndex, parameterIndex = " << solutionResponseIndex << ", " << parameterIndex << "\n"; 
     tempus_solver->resetSensitivityParamIndex(parameterIndex); 
     tempus_solver->resetResponseFnIndex(solutionResponseIndex); 
     const Thyra::MEB::Derivative<double> dxdp_deriv =

@@ -87,6 +87,26 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
 }
 
 template <typename Scalar>
+Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, 
+   const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
+   const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &adjoint_model,
+   const SENS_METHOD sens_method) : 
+   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+  if (sens_method == ADJOINT) {
+    //adjoint sensitivities
+    basicIntegrator_ = Teuchos::null;
+    fwdSensIntegrator_ = Teuchos::null; 
+    adjSensIntegrator_ = Tempus::createIntegratorAdjointSensitivity<Scalar>(pList, model, adjoint_model);
+  }
+  else { //throw
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: constructor taking adjoint model evaluator " <<
+		 "is only valid for Adjoint sensitivities\n");
+  }
+}
+
+template <typename Scalar>
 Teuchos::RCP<Tempus::Stepper<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getStepper() const
 {

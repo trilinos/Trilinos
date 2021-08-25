@@ -68,6 +68,11 @@ public:
   TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
                    const SENS_METHOD sens_method = NONE);
 
+  //Second constructor which takes in forward and adjoint ME - needed/valid for adjoint transient sensitivities only
+  TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
+		   const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &adjoint_model,
+                   const SENS_METHOD sens_method = NONE);
+
   Teuchos::RCP<Tempus::Stepper<Scalar>> getStepper() const;
 
   bool advanceTime(const Scalar time_final);
