@@ -92,16 +92,14 @@ DirichletResidual<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-
-  auto l_residual = PHX::as_view(residual);
-  auto l_dof = PHX::as_view(dof);
-  auto l_value = PHX::as_view(value);
-  auto l_cell_data_size = cell_data_size;
-
-  Kokkos::parallel_for ("DirichletResidual", workset.num_cells, KOKKOS_LAMBDA (int i){
-    for (std::size_t j = 0; j < l_cell_data_size; ++j)
-      l_residual(i,j)=l_dof(i,j)-l_value(i,j);
-    });
+  auto residual_v = residual.get_static_view();
+  auto dof_v = dof.get_static_view();
+  auto value_v = value.get_static_view();
+  auto local_cell_data_size = cell_data_size;
+  Kokkos::parallel_for (workset.num_cells, KOKKOS_LAMBDA (index_t i) {
+    for (std::size_t j = 0; j < local_cell_data_size; ++j)
+      residual_v(i,j)=dof_v(i,j)-value_v(i,j);
+  });
 }
 
 //**********************************************************************
