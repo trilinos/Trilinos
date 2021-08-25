@@ -128,6 +128,7 @@
 #include "SetupRegionVector_def.hpp"
 #include "SetupRegionMatrix_def.hpp"
 #include "SetupRegionHierarchy_def.hpp"
+#include "SolveRegionHierarchy_def.hpp"
 
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -700,7 +701,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
                         keepCoarseCoords);
 
   hierarchyData->print();
-  
+
 
 
   comm->barrier();
