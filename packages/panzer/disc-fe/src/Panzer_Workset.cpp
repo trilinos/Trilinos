@@ -83,9 +83,12 @@ applyBV2Orientations(const int num_cells,
   const auto & local_orientations = *orientations_interface->getOrientations();
   std::vector<Intrepid2::Orientation> workset_orientations(num_cells);
 
+  auto local_cell_ids_h = Kokkos::create_mirror_view(local_cell_ids);
+  Kokkos::deep_copy(local_cell_ids_h, local_cell_ids);
+
   // We can only apply orientations to owned and ghost cells - virtual cells are ignored (no orientations available)
   for(int i=0; i<num_cells; ++i)
-    workset_orientations[i] = local_orientations[local_cell_ids[i]];
+    workset_orientations[i] = local_orientations[local_cell_ids_h[i]];
   basis_values.applyOrientations(workset_orientations,num_cells);
 }
 
