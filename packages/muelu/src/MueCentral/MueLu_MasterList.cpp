@@ -228,6 +228,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: coloring algorithm\" type=\"string\" value=\"serial\"/>"
   "<Parameter name=\"aggregation: coloring: use color graph\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: coloring: localize color graph\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 1\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
@@ -663,6 +664,8 @@ namespace MueLu {
          ("aggregation: coloring algorithm","aggregation: coloring algorithm")
       
          ("aggregation: coloring: use color graph","aggregation: coloring: use color graph")
+      
+         ("aggregation: coloring: localize color graph","aggregation: coloring: localize color graph")
       
          ("aggregation: enable phase 1","aggregation: enable phase 1")
       
