@@ -118,7 +118,6 @@ namespace panzer {
           const auto unweightedBasis = basisValues.getBasisValues(false).get_static_view();
           const auto weightedBasis = basisValues.getBasisValues(true).get_static_view();
 
-          // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
           PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
           auto kOffsets_h = Kokkos::create_mirror_view(kOffsets);
@@ -223,7 +222,6 @@ namespace panzer {
           const auto unweightedBasis = basisValues.getVectorBasisValues(false).get_static_view();
           const auto weightedBasis = basisValues.getVectorBasisValues(true).get_static_view();
 
-          // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
           PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
           auto kOffsets_h = Kokkos::create_mirror_view(kOffsets);

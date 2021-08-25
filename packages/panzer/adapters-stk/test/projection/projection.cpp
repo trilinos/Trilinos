@@ -350,7 +350,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
             sourceGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             sourceGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
@@ -628,7 +627,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
             targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
@@ -744,7 +742,6 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
             targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
@@ -1111,7 +1108,6 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
             sourceGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             sourceGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
@@ -1242,7 +1238,6 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
             targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
@@ -1341,7 +1336,6 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
             targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
