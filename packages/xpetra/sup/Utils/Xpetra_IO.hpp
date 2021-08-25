@@ -993,7 +993,7 @@ namespace Xpetra {
 
       rowptr2_RCP.resize(rowptr.size());
       ArrayView<LocalOrdinal> rowptr2 = rowptr2_RCP();
-      for (size_t j = 0; j<rowptr.size(); j++)
+      for (size_t j = 0; j<Teuchos::as<size_t>(rowptr.size()); j++)
         rowptr2[j] = rowptr[j];
 
       Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;

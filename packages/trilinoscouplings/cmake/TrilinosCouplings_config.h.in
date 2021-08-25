@@ -63,6 +63,9 @@
 /* Define if TASMANIAN TPL is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_TASMANIAN
 
+/* Define if want to build Ifpack2 */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_IFPACK2
+
 /* Define if want to build intrepid */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_INTREPID
 
