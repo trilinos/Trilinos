@@ -64,7 +64,8 @@ public:
   //@{
   /** \brief . */
   explicit TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model,
-		           const Teuchos::RCP<Teuchos::ParameterList> &appParams); 
+		           const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+			   const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null); 
 
   TransientSolver(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&model,
 		  const int sens_param_index = -1, 
@@ -139,6 +140,7 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
+  Teuchos::RCP<Piro::ObserverBase<Scalar> > piroObserver_; 
 
   int num_p_;
   int num_g_;

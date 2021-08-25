@@ -63,9 +63,11 @@
 template <typename Scalar>
 Piro::TransientSolver<Scalar>::TransientSolver(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model, 
-  const Teuchos::RCP<Teuchos::ParameterList> &appParams) :
+  const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+  const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver) :
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
-  model_(model), 
+  model_(model),
+  piroObserver_(piroObserver),
   num_p_(model->Np()), 
   num_g_(model->Ng()),
   sensitivityMethod_(NONE)
@@ -602,6 +604,16 @@ Piro::TransientSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
             } 
 	    //Copy dgdp_mv_from_tempus into dgdp_mv - IKT, there may be better way to do this
 	    dgdp_mv->assign(*dgdp_mv_from_tempus);
+	    //Uncomment to observe DgDp from within Piro
+	    /*if (piroObserver_ != Teuchos::null) {
+	      std::cout << "IKT start observing dgdp\n";
+	      //Observe also the solution, since observeSolution requires passing this field
+	      //This would be relevant if observing DgDp to a separate file, in which it may be useful to 
+	      //also have the solution.
+              Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution = piroTempusIntegrator_->getX(); 
+              piroObserver_->observeSolution(*solution, *dgdp_mv_from_tempus, piroTempusIntegrator_->getTime());
+	      std::cout << "IKT end observing dgdp\n";
+	    }*/
 	  }
 	}
       }

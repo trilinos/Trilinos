@@ -87,7 +87,7 @@ Piro::TempusSolver<Scalar>::TempusSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &in_model,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver):
-  TransientSolver<Scalar>(in_model, appParams), 
+  TransientSolver<Scalar>(in_model, appParams, piroObserver), 
   out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
   isInitialized_(false),
   piroObserver_(piroObserver),
