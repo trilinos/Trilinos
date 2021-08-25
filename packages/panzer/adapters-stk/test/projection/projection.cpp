@@ -1124,7 +1124,7 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
 
         const auto offsetsPHI = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,PHI_Index);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.getBasisCoordinates();
+        const auto& coords = basisValues.getBasisCoordinates().get_view();
         const auto& x = sourceValues->getLocalViewDevice(Tpetra::Access::OverwriteAll);
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
 
