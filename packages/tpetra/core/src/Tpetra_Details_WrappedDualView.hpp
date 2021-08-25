@@ -118,6 +118,10 @@ public:
   using HostViewType = typename DualViewType::t_host;
   using DeviceViewType = typename DualViewType::t_dev;
 
+  using DVT = DualViewType;
+  using t_host = typename DualViewType::t_host;
+  using t_dev  = typename DualViewType::t_dev;
+
 private:
   static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
   static constexpr bool deviceMemoryIsHostAccessible =
@@ -130,6 +134,13 @@ public:
     : originalDualView(dualV),
       dualView(originalDualView)
   { }
+
+  // Should this be expert only?
+  WrappedDualView(DualViewType dualV,DualViewType origDualV)
+    : originalDualView(origDualV),
+      dualView(dualV)
+  { }
+
 
   WrappedDualView(const DeviceViewType deviceView) {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -151,14 +162,26 @@ public:
     dualView = originalDualView;
   }
 
-  WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
+ WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
     originalDualView = parent.originalDualView;
     dualView = getSubview(parent.dualView, offset, numEntries);
+ }
+
+  WrappedDualView(const WrappedDualView parent,Kokkos::pair<int,int> offset0, const Kokkos::Impl::ALL_t&) {
+    originalDualView = parent.originalDualView;
+    dualView = getSubview2D(parent.dualView, offset0,Kokkos::ALL());
   }
 
+
   size_t extent(const int i) const {
-    return dualView.extent(i);
+    return dualView.h_view.extent(i);
   }
+  
+
+  void stride(size_t * stride_) const {
+    dualView.stride(stride_);
+  }
+
 
   typename HostViewType::const_type
   getHostView(Access::ReadOnlyStruct
@@ -317,11 +340,35 @@ public:
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
   }
 
+
+  // Should I mark these expert only?
+  const  DualViewType getOriginalDualView() const {
+    return originalDualView;
+  }
+
+  const DualViewType getDualView() const {
+    return dualView;
+  }
+
+
+
 private:
   template <typename ViewType>
   ViewType getSubview(ViewType view, int offset, int numEntries) const {
     return Kokkos::subview(view, Kokkos::pair<int, int>(offset, offset+numEntries));
   }
+
+  template <typename ViewType>
+  ViewType getSubview2D(ViewType view, Kokkos::pair<int,int> offset0, const Kokkos::Impl::ALL_t&) const {
+    return Kokkos::subview(view,offset0,Kokkos::ALL());
+  }
+
+  template <typename ViewType>
+  ViewType getSubview2D(ViewType view, const Kokkos::Impl::ALL_t&, Kokkos::pair<int,int> offset1) const {
+    return Kokkos::subview(view,Kokkos::ALL(),offset1);
+  }
+
+
 
   void throwIfHostViewAlive() const {
     if( deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data()) return;
