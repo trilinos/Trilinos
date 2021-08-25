@@ -115,9 +115,11 @@ postRegistrationSetup(
   PHX::FieldManager<Traits>& /* fm */)
 {
   ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0], this->wda);
-  for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.extent(0); ++cell)
-    for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.extent(1); ++ip)
-      ones(cell,ip) = 1.0;
+  auto l_ones = ones.get_static_view();
+  Kokkos::parallel_for("GlobalStatistics", l_ones.extent(0), KOKKOS_LAMBDA(int cell) {
+      for (std::size_t ip = 0; ip < l_ones.extent(1); ++ip)
+	l_ones(cell,ip) = 1.0;
+    });
 }
 
 //**********************************************************************
@@ -133,9 +135,11 @@ evaluateFields(
   Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(volumes.get_view(),
                                                                          ones.get_view(), 
                                                                          (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
+  auto volumes_h = Kokkos::create_mirror_view(as_view(volumes));
+  Kokkos::deep_copy(volumes_h, as_view(volumes));
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell)
-    total_volume += volumes(cell);
+    total_volume += volumes_h(cell);
 
   typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::size_type field_index = 0;
   for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_values.begin();
@@ -144,13 +148,18 @@ evaluateFields(
     Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>::integrate(tmp.get_view(),
                                                                            field->get_view(), 
                                                                            (this->wda(workset).int_rules[ir_index])->weighted_measure.get_view());
-    
+    auto tmp_h = Kokkos::create_mirror_view(tmp.get_static_view());
+    auto field_h = Kokkos::create_mirror_view( field->get_static_view());
+    Kokkos::deep_copy(tmp_h, tmp.get_static_view());
+    Kokkos::deep_copy(field_h, field->get_static_view());
+
+
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      averages[field_index] += tmp(cell);
+      averages[field_index] += tmp_h(cell);
 
       for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < (field->extent(1)); ++ip) {
-        maxs[field_index] = std::max( (*field)(cell,ip), maxs[field_index]);
-        mins[field_index] = std::min( (*field)(cell,ip), mins[field_index]);
+        maxs[field_index] = std::max( field_h(cell,ip), maxs[field_index]);
+        mins[field_index] = std::min( field_h(cell,ip), mins[field_index]);
       }
     }
     

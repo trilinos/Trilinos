@@ -224,14 +224,15 @@ namespace MueLu {
       RCP<const CrsMatrix> Acrs = rcp_dynamic_cast<const CrsMatrixWrap>(A)->getCrsMatrix();
       RCP<CrsMatrix> Aghost_crs = CrsMatrixFactory::Build(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap());
       Aghost = rcp(new CrsMatrixWrap(Aghost_crs));
-      // We also may need need to ghost myPointType for Aghos
-      RCP<const Import> Importer2 = Aghost->getCrsGraph()->getImporter();
-      if(Importer2.is_null()) {
-        RCP<LocalOrdinalVector> fc_splitting_ghost_nonconst = LocalOrdinalVectorFactory::Build(Aghost->getColMap());
-        fc_splitting_ghost_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
-        fc_splitting_ghost = fc_splitting_ghost_nonconst;
-        myPointType_ghost  = fc_splitting_ghost->getData(0);      
-      }
+      // CAG: It seems that this isn't actually needed?
+      // We also may need need to ghost myPointType for Aghost
+      // RCP<const Import> Importer2 = Aghost->getCrsGraph()->getImporter();
+      // if(Importer2.is_null()) {
+      //   RCP<LocalOrdinalVector> fc_splitting_ghost_nonconst = LocalOrdinalVectorFactory::Build(Aghost->getColMap());
+      //   fc_splitting_ghost_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
+      //   fc_splitting_ghost = fc_splitting_ghost_nonconst;
+      //   myPointType_ghost  = fc_splitting_ghost->getData(0);
+      // }
     }
 
     /* Generate the ghosted Coarse map using the "Tuminaro maneuver" (if needed)*/   
@@ -351,7 +352,8 @@ namespace MueLu {
     // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
 #ifdef CMS_DEBUG
-    Xpetra::IO<SC,LO,GO,NO>::Write("classical_p.mat", *P);
+    Xpetra::IO<SC,LO,GO,NO>::Write("classical_p.mat."+std::to_string(coarseLevel.GetLevelID()), *P);
+    // Xpetra::IO<SC,LO,GO,NO>::WriteLocal("classical_p.mat."+std::to_string(coarseLevel.GetLevelID()), *P);
 #endif
 
     // Save output
@@ -1076,9 +1078,9 @@ GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<s
     // Both of these guys should be in the same (sorted) order, but let's check
     bool is_ok=true;
     for(LO j=0; j<A_size-1; j++)
-      if (A_indices[j] > A_indices[j+1]) { is_ok=false; break;}
+      if (A_indices[j] >= A_indices[j+1]) { is_ok=false; break;}
     for(LO j=0; j<G_size-1; j++)
-      if (G_indices[j] > G_indices[j+1]) { is_ok=false; break;}
+      if (G_indices[j] >= G_indices[j+1]) { is_ok=false; break;}
     TEUCHOS_TEST_FOR_EXCEPTION(!is_ok, Exceptions::RuntimeError,"ClassicalPFactory: Exected A and Graph to be sorted");
     
     // Now cycle through and set the flags - if the edge is in G it is strong
