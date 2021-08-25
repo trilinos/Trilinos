@@ -94,13 +94,13 @@ namespace panzer {
     ghostedMatrix->resumeFill();
     ghostedMatrix->setAllToScalar(0.0);
 
-    auto M = ghostedMatrix->getLocalMatrixDevice();
     const int fieldIndex = targetGlobalIndexer_->getFieldNum(targetBasisDescriptor_.getType());
 
     const bool is_scalar = targetBasisDescriptor_.getType()=="HGrad" || targetBasisDescriptor_.getType()=="Const" || targetBasisDescriptor_.getType()=="HVol";
 
     // Loop over element blocks and fill mass matrix
     if(is_scalar){
+      auto M = ghostedMatrix->getLocalMatrixDevice();
       for (const auto& block : elementBlockNames_) {
 
         double ebMultiplier = 1.0;
@@ -118,11 +118,14 @@ namespace panzer {
           const auto unweightedBasis = basisValues.getBasisValues(false).get_static_view();
           const auto weightedBasis = basisValues.getBasisValues(true).get_static_view();
 
-          // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
           PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
+          auto kOffsets_h = Kokkos::create_mirror_view(kOffsets);
+
           for(const auto& i : offsets)
-            kOffsets(i) = offsets[i];
+            kOffsets_h(i) = offsets[i];
+
+          Kokkos::deep_copy(kOffsets, kOffsets_h);
 
           // Local Ids
           PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
@@ -201,6 +204,7 @@ namespace panzer {
         }
       }
     } else {
+      auto M = ghostedMatrix->getLocalMatrixDevice();
       for (const auto& block : elementBlockNames_) {
 
         double ebMultiplier = 1.0;
@@ -218,11 +222,14 @@ namespace panzer {
           const auto unweightedBasis = basisValues.getVectorBasisValues(false).get_static_view();
           const auto weightedBasis = basisValues.getVectorBasisValues(true).get_static_view();
 
-          // Offsets (this assumes UVM, need to fix)
           const std::vector<panzer::LocalOrdinal>& offsets = targetGlobalIndexer_->getGIDFieldOffsets(block,fieldIndex);
           PHX::View<panzer::LocalOrdinal*> kOffsets("MassMatrix: Offsets",offsets.size());
+          auto kOffsets_h = Kokkos::create_mirror_view(kOffsets);
+
           for(const auto& i : offsets)
-            kOffsets(i) = offsets[i];
+            kOffsets_h(i) = offsets[i];
+
+          Kokkos::deep_copy(kOffsets, kOffsets_h);
 
           // Local Ids
           PHX::View<panzer::LocalOrdinal**> localIds("MassMatrix: LocalIds", workset.numOwnedCells()+workset.numGhostCells()+workset.numVirtualCells(),
@@ -348,7 +355,7 @@ namespace panzer {
         targetGlobalIndexer_->getElementGIDs(elements[elmt],row_gids);
         sourceGlobalIndexer.getElementGIDs(elements[elmt],col_gids);
         for(std::size_t row=0;row<row_gids.size();row++) {
-          panzer::LocalOrdinal lid = 
+          panzer::LocalOrdinal lid =
                                ghostedTargetMap->getLocalElement(row_gids[row]);
           nEntriesPerRow[lid] += col_gids.size();
         }
