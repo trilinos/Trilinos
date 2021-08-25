@@ -279,15 +279,11 @@ public:
       throwIfHostViewAlive();
       impl::sync_device(originalDualView);
     }
-    else if (std::is_same<TargetDeviceType,HostType>::value) {
+    else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadOnly");
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
     }
-    else {
-      throw std::runtime_error("View template is garbage");
-    }
-    
     
     return dualView.template view<TargetDeviceType>();
   } 
