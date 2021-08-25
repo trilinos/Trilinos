@@ -87,8 +87,10 @@ applyBV2Orientations(const int num_cells,
   Kokkos::deep_copy(local_cell_ids_h, local_cell_ids);
 
   // We can only apply orientations to owned and ghost cells - virtual cells are ignored (no orientations available)
+  auto local_cell_ids_host = Kokkos::create_mirror_view(local_cell_ids);
+  Kokkos::deep_copy(local_cell_ids_host, local_cell_ids);
   for(int i=0; i<num_cells; ++i)
-    workset_orientations[i] = local_orientations[local_cell_ids_h[i]];
+    workset_orientations[i] = local_orientations[local_cell_ids_host[i]];
   basis_values.applyOrientations(workset_orientations,num_cells);
 }
 

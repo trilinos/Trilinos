@@ -1898,8 +1898,9 @@ getDivVectorBasis(const bool weighted,
         Kokkos::deep_copy(cell_div_basis_ref_host,cell_div_basis_ref.get_view());
 
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HDIVtransformDIV(cell_div_basis_host,cell_jac_det_host,cell_div_basis_ref_host);
-        // PHX::Device().fence();
+        fst::HDIVtransformDIV(cell_div_basis.get_view(),cell_jac_det.get_view(),cell_div_basis_ref.get_view());
+	Kokkos::deep_copy(cell_div_basis_host, cell_div_basis.get_static_view());
+
 
         // Copy cell quantity back into main array
         for(int b=0; b<num_card; ++b)
