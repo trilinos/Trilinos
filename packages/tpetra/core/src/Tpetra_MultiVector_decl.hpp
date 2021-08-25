@@ -1573,37 +1573,22 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
     getLocalView (Access::ReadOnlyStruct s) const
     {
-      // FIXME: This probably doesn't work.  But it might.
-      if(std::is_same<TargetDeviceType,typename wrapped_dual_view_type::DeviceViewType>::value)
-	return view_.getDeviceView(s);
-      else
-	return view_.getHostView(s);
+      return view_.template getView<TargetDeviceType>(s);
     }
+
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView (Access::ReadWriteStruct s)
     {
-      if(std::is_same<TargetDeviceType,typename wrapped_dual_view_type::DeviceViewType>::value)
-	return view_.getDeviceView(s);
-      else
-	return view_.getHostView(s);
-
-     
+      return view_.template getView<TargetDeviceType>(s);
     }
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView (Access::OverwriteAllStruct s)
     {
-      if (owningView_.h_view != view_.h_view) {
-        // view_ is a subview of owningView_; for safety, need to use ReadWrite
-        return getLocalView<TargetDeviceType>(Access::ReadWrite);
-      }
-      if(std::is_same<TargetDeviceType,typename wrapped_dual_view_type::DeviceViewType>::value)
-	return view_.getDeviceView(s);
-      else
-	return view_.getHostView(s);
+      return view_.template getView<TargetDeviceType>(s);
     }
 
 

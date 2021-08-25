@@ -45,7 +45,7 @@
 #include "Teuchos_TestForException.hpp"
 #include <sstream>
 
-// #define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
@@ -118,6 +118,9 @@ public:
   using HostViewType = typename DualViewType::t_host;
   using DeviceViewType = typename DualViewType::t_dev;
 
+  using HostType   = typename HostViewType::device_type;
+  using DeviceType = typename DeviceViewType::device_type;
+
   using DVT = DualViewType;
   using t_host = typename DualViewType::t_host;
   using t_dev  = typename DualViewType::t_dev;
@@ -162,10 +165,10 @@ public:
     dualView = originalDualView;
   }
 
- WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
+  WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
     originalDualView = parent.originalDualView;
     dualView = getSubview(parent.dualView, offset, numEntries);
- }
+  }
 
   WrappedDualView(const WrappedDualView parent,Kokkos::pair<int,int> offset0, const Kokkos::Impl::ALL_t&) {
     originalDualView = parent.originalDualView;
@@ -268,6 +271,80 @@ public:
     return dualView.view_device();
   }
 
+  template<class TargetDeviceType>
+  typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type
+  getView (Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
+    if(std::is_same<TargetDeviceType,DeviceType>::value) {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadOnly");
+      throwIfHostViewAlive();
+      impl::sync_device(originalDualView);
+    }
+    else if (std::is_same<TargetDeviceType,HostType>::value) {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadOnly");
+      throwIfDeviceViewAlive();
+      impl::sync_host(originalDualView);
+    }
+    else {
+      throw std::runtime_error("View template is garbage");
+    }
+    
+    
+    return dualView.template view<TargetDeviceType>();
+  } 
+
+
+  template<class TargetDeviceType>
+  typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
+  getView (Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
+    if(std::is_same<TargetDeviceType,DeviceType>::value) {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadWrite");
+      static_assert(dualViewHasNonConstData,
+                    "ReadWrite views are not available for DualView with const data");
+      throwIfHostViewAlive();
+      impl::sync_device(originalDualView);
+      originalDualView.modify_device();
+    }
+    else {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadWrite");
+      static_assert(dualViewHasNonConstData,
+                    "ReadWrite views are not available for DualView with const data");
+      throwIfDeviceViewAlive();
+      impl::sync_host(originalDualView);
+      originalDualView.modify_host();      
+    }
+    
+    return dualView.template view<TargetDeviceType>();
+  } 
+
+
+  template<class TargetDeviceType>
+  typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
+  getView (Access::OverwriteAllStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
+    if (iAmASubview())
+      return getView<TargetDeviceType>(Access::ReadWrite);
+
+    if(std::is_same<TargetDeviceType,DeviceType>::value) {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>OverwriteAll");
+      static_assert(dualViewHasNonConstData,
+                    "OverwriteAll views are not available for DualView with const data");
+      throwIfDeviceViewAlive();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence();
+      dualView.clear_sync_state();
+      dualView.modify_host();
+    }
+    else {
+      DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>OverwriteAll");
+      static_assert(dualViewHasNonConstData,
+                    "OverwriteAll views are not available for DualView with const data");
+      throwIfHostViewAlive();
+      dualView.clear_sync_state();
+      dualView.modify_device();     
+    }
+    
+    return dualView.template view<TargetDeviceType>();
+  } 
+
+
   typename HostViewType::const_type
   getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
@@ -341,7 +418,15 @@ public:
   }
 
 
-  // Should I mark these expert only?
+
+  // A Kokkos implementation of WrappedDualView will have to make these
+  // functions publically accessable, but in the Tpetra version, I'm
+  // not sure we want this.  There are two options on proceeding here:
+  // 1) Mark these as "Expert" only in the comments.  This will be consistent
+  //    with a future Kokkos version.
+  // 2) Make these protected and then friend Vector/MultiVector.  This will
+  //    keep out users from shooting themselves in the feet.
+
   const  DualViewType getOriginalDualView() const {
     return originalDualView;
   }

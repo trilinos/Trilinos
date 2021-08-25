@@ -250,7 +250,7 @@ namespace Tpetra {
     }
 
     // Need 'this->' to get view_ from parent class.
-    return rcp (new V (subMap, wrapped_dual_view_type(this->view_,Kokkos::pair<int,int>(offset,newNumRows),ALL())));
+    return rcp (new V (subMap, wrapped_dual_view_type(this->view_,Kokkos::pair<int,int>(offset,offset+newNumRows),ALL())));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
