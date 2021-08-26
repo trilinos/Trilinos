@@ -77,10 +77,16 @@ postRegistrationSetup(
 
   TEUCHOS_ASSERT(static_cast<std::size_t>(flux.extent(2)) == values.size());
 
-  for (int cell = 0; cell < flux.extent_int(0); ++cell)
-    for (int ip = 0; ip < flux.extent_int(1); ++ip)
-      for (int dim = 0; dim < flux.extent_int(2); ++dim)
-	flux(cell,ip,dim) = values[dim];
+  auto flux_v = flux.get_static_view();
+  
+  for (int dim = 0; dim < flux_v.extent_int(2); ++dim) {
+    auto val = values[dim];
+    Kokkos::parallel_for ("ConstantFlux", flux.extent_int(0), KOKKOS_LAMBDA( const int cell) {
+	for (int ip = 0; ip < flux_v.extent_int(1); ++ip)
+	  flux_v(cell,ip,dim) = val;
+      });
+  }
+  Kokkos::fence();
 }
 
 //**********************************************************************
