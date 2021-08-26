@@ -251,9 +251,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     typedef typename tpetra_vec::dual_view_type::t_dev view_type;
     typedef typename tpetra_vec::execution_space execution_space;
     typedef Kokkos::TeamPolicy<execution_space> team_policy;
-    Teuchos::rcp_const_cast<tpetra_vec>(u)->template sync<execution_space>();
-    integralOp_->template sync<execution_space>();
-    integralOp_->template modify<execution_space>();
     const int myRank = comm_->getRank();
     const GO myMinGID = xMap_->getMinGlobalIndex();
     {
@@ -276,7 +273,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
       // Reduce local contributions and fill the vector
       if (comm_->getSize() > 1) {
-        localSum->template modify<execution_space>();
         localSum->reduce();
         if (myRank == proc) {
           view_type source = localSum->template getLocalView<execution_space>();
@@ -293,9 +289,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const std::size_t numMyElements = xMap_->getNodeNumElements();
     if (fill_f) {
       Teuchos::TimeMonitor timer(*residTimer_);
-      f->template sync<execution_space>();
-      f->template modify<execution_space>();
-
       ResidualEvaluatorFunctor<tpetra_vec> functor(*f, *u, *integralOp_);
       Kokkos::parallel_for("residual evaluation", numMyElements, functor);
       Kokkos::fence();
@@ -396,10 +389,6 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
   typedef typename tpetra_vec::dual_view_type::t_dev view_type;
   typedef typename tpetra_vec::execution_space execution_space;
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
-  const_cast<tpetra_mv&>(X).template sync<execution_space>();
-  Y.template sync<execution_space>();
-  Y.template modify<execution_space>();
-  integralOp_->template sync<execution_space>();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = map_->getComm();
   const int myRank = comm->getRank();
   const GO myMinGID = map_->getMinGlobalIndex();
@@ -407,8 +396,6 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
 
   // Loop over vecs
   for (std::size_t col = 0; col < X.getNumVectors(); ++col) {
-    integralOpX_->template sync<execution_space>();
-    integralOpX_->template modify<execution_space>();
     integralOpX_->putScalar(zero);
 
     // Loop over sections of vec
@@ -428,7 +415,6 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
       Kokkos::parallel_for("integral operator", team_policy(procNumElements, Kokkos::AUTO), functor);
 
       if (comm->getSize() > 1) {
-        localResult->template modify<execution_space>();
         localResult->reduce();
         if (myRank == proc) {
           view_type source = localResult->template getLocalView<execution_space>();
