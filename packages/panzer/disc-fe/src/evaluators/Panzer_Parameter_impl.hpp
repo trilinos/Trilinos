@@ -78,17 +78,14 @@ void Parameter<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
   //std::cout << "Parameter::evalauteFields() ParamValue = " << param->getValue() << std::endl;
-  auto target_field_h = Kokkos::create_mirror_view(target_field.get_view());
+  auto param_val = param->getValue();
+  auto target_field_v = target_field.get_static_view();
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
-	 pt < target_field.extent(1); ++pt) {
-      target_field_h(cell,pt) = param->getValue();
-    }
-  }
-
-  Kokkos::deep_copy(PHX::as_view(target_field), target_field_h);
-
+  Kokkos::parallel_for ("Parameter", workset.num_cells, KOKKOS_LAMBDA (const int cell) {
+      for (std::size_t pt=0; pt<target_field_v.extent(1); ++pt)
+      	target_field_v(cell,pt) = param_val;
+    });
+  Kokkos::fence();
 }
 
 //**********************************************************************
