@@ -1628,7 +1628,7 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView () const
     {
-      return view_.template view<TargetDeviceType>();
+      return view_.getDualView().template view<TargetDeviceType>();
     }
 
     //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
