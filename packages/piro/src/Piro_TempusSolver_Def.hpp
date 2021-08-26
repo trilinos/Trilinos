@@ -338,7 +338,7 @@ void Piro::TempusSolver<Scalar>::initialize(
     //Create Piro::TempusIntegrator
     const bool does_not_require_second_ME = ((is_explicit_ == true) && (lump_mass_matrix == true)) || (sens_method_ != ADJOINT);
     //Throw an error if the adjoint ME is required and adjointModel_ is null
-    if ((does_not_require_second_ME == false) && (adjointModel_ != Teuchos::null)) {
+    if ((does_not_require_second_ME == false) && (adjointModel_ == Teuchos::null)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
           true,
           Teuchos::Exceptions::InvalidParameter,
