@@ -85,7 +85,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for (std::size_t pt=0; pt<target_field_v.extent(1); ++pt)
       	target_field_v(cell,pt) = param_val;
     });
-
+  Kokkos::fence();
 }
 
 //**********************************************************************
