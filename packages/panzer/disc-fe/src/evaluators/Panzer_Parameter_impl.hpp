@@ -59,13 +59,13 @@ Parameter(const std::string parameter_name,
 	  const std::string field_name,
 	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	  panzer::ParamLib& param_lib)
-{ 
+{
   target_field = PHX::MDField<ScalarT, Cell, Point>(field_name, data_layout);
-  
+
   this->addEvaluatedField(target_field);
- 
+
   //param = panzer::accessScalarParameter<EvalT>(parameter_name,param_lib);
-  param = panzer::createAndRegisterScalarParameter<EvalT>(parameter_name,param_lib); 
+  param = panzer::createAndRegisterScalarParameter<EvalT>(parameter_name,param_lib);
     // no initialization, this will be done by someone else (possibly the ME) later
 
   std::string n = "Parameter Evaluator";
@@ -76,15 +76,18 @@ Parameter(const std::string parameter_name,
 template<typename EvalT, typename TRAITS>
 void Parameter<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   //std::cout << "Parameter::evalauteFields() ParamValue = " << param->getValue() << std::endl;
+  auto target_field_h = Kokkos::create_mirror_view(target_field.get_view());
 
   for (index_t cell = 0; cell < workset.num_cells; ++cell) {
     for (typename PHX::MDField<ScalarT, Cell, Point>::size_type pt = 0;
 	 pt < target_field.extent(1); ++pt) {
-      target_field(cell,pt) = param->getValue();
+      target_field_h(cell,pt) = param->getValue();
     }
   }
+
+  Kokkos::deep_copy(PHX::as_view(target_field), target_field_h);
 
 }
 
