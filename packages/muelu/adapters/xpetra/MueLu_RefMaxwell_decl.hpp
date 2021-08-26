@@ -53,6 +53,7 @@
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"

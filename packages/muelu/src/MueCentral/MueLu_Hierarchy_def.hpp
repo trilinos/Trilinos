@@ -65,6 +65,7 @@
 #include "MueLu_TopRAPFactory.hpp"
 #include "MueLu_TopSmootherFactory.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_PFactory.hpp"
@@ -1399,29 +1400,29 @@ namespace MueLu {
     if (GetProcRankVerbose() != 0)
       return;
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL) && defined(BOOST_VERSION) && (BOOST_VERSION >= 104400)
-    
+
     BoostGraph      graph;
-    
+
     BoostProperties dp;
     dp.property("label", boost::get(boost::vertex_name,  graph));
     dp.property("id",    boost::get(boost::vertex_index, graph));
     dp.property("label", boost::get(boost::edge_name,    graph));
     dp.property("color", boost::get(boost::edge_color,   graph));
-    
+
     // create local maps
     std::map<const FactoryBase*, BoostVertex>                                     vindices;
     typedef std::map<std::pair<BoostVertex,BoostVertex>, std::string> emap; emap  edges;
-    
+
     static int call_id=0;
-    
+
     RCP<Operator> A = Levels_[0]->template Get<RCP<Operator> >("A");
     int rank = A->getDomainMap()->getComm()->getRank();
-    
+
     //    printf("[%d] CMS: ----------------------\n",rank);
     for (int i = currLevel; i <= currLevel+1 && i < GetNumLevels(); i++) {
       edges.clear();
       Levels_[i]->UpdateGraph(vindices, edges, dp, graph);
-      
+
       for (emap::const_iterator eit = edges.begin(); eit != edges.end(); eit++) {
         std::pair<BoostEdge, bool> boost_edge = boost::add_edge(eit->first.first, eit->first.second, graph);
         // printf("[%d] CMS:   Hierarchy, adding edge (%d->%d) %d\n",rank,(int)eit->first.first,(int)eit->first.second,(int)boost_edge.second);
@@ -1434,7 +1435,7 @@ namespace MueLu {
           boost::put("color", dp, boost_edge.first, std::string("blue"));
       }
     }
-    
+
     std::ofstream out(dumpFile_.c_str()+std::string("_")+std::to_string(currLevel)+std::string("_")+std::to_string(call_id)+std::string("_")+ std::to_string(rank) + std::string(".dot"));
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
     out.close();
@@ -1608,6 +1609,47 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeleteLevelMultiVecto
   sizeOfAllocatedLevelMultiVectors_ = 0;
 }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+CycleType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultCycle()
+{
+  return MasterList::getDefault<std::string>("cycle type") == "V" ? VCYCLE : WCYCLE;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultCycleStartLevel()
+{
+  return MasterList::getDefault<int>("W cycle start level");
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultImplicitTranspose()
+{
+  return MasterList::getDefault<bool>("transpose: use implicit");
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultFuseProlongationAndUpdate()
+{
+  return MasterList::getDefault<bool>("fuse prolongation and update");
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Xpetra::global_size_t Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultMaxCoarseSize()
+{
+  return MasterList::getDefault<int>("coarse: max size");
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultMaxLevels()
+{
+  return MasterList::getDefault<int>("max levels");
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDefaultPRrebalance()
+{
+  return MasterList::getDefault<bool>("repartition: rebalance P and R");
+}
 
 } //namespace MueLu
 

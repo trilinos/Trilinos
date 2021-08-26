@@ -67,7 +67,6 @@
 #include "MueLu_HierarchyUtils_fwd.hpp"
 #include "MueLu_KeepType.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "MueLu_MasterList.hpp"
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory_fwd.hpp"
@@ -142,14 +141,14 @@ namespace MueLu {
     //! @name Set/Get Methods.
     //@{
 
-    //!
-    static CycleType             GetDefaultCycle()                                     { return MasterList::getDefault<std::string>("cycle type") == "V" ? VCYCLE : WCYCLE; }
-    static int                   GetDefaultCycleStartLevel()                           { return MasterList::getDefault<int>("W cycle start level"); }
-    static bool                  GetDefaultImplicitTranspose()                         { return MasterList::getDefault<bool>("transpose: use implicit");  }
-    static bool                  GetDefaultFuseProlongationAndUpdate()                 { return MasterList::getDefault<bool>("fuse prolongation and update"); }
-    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return MasterList::getDefault<int>("coarse: max size");   }
-    static int                   GetDefaultMaxLevels()                                 { return MasterList::getDefault<int>("max levels");     }
-    static bool                  GetDefaultPRrebalance()                               { return MasterList::getDefault<bool>("repartition: rebalance P and R");   }
+    //! Get default values
+    static CycleType             GetDefaultCycle();
+    static int                   GetDefaultCycleStartLevel();
+    static bool                  GetDefaultImplicitTranspose();
+    static bool                  GetDefaultFuseProlongationAndUpdate();
+    static Xpetra::global_size_t GetDefaultMaxCoarseSize();
+    static int                   GetDefaultMaxLevels();
+    static bool                  GetDefaultPRrebalance();
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
     bool                         GetImplicitTranspose() const                          { return implicitTranspose_; }
