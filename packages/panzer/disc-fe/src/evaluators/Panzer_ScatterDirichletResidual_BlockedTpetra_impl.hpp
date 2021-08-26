@@ -279,7 +279,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      const auto fieldOffsets = fieldOffsets_[fieldIndex];
      const auto basisIndices = basisIndexForMDFieldOffsets_[fieldIndex];
      const auto worksetLIDs = worksetLIDs_;
-     const auto fieldValues = scatterFields_[fieldIndex];
+     const auto fieldValues = scatterFields_[fieldIndex].get_static_view();
      const auto applyBC = applyBC_[fieldIndex].get_static_view();
      const bool checkApplyBC = checkApplyBC_;
 
