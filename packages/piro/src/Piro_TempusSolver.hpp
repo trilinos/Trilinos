@@ -76,6 +76,7 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
@@ -108,7 +109,8 @@ public:
 
   void initialize(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel);
 
   void addStepperFactory(const std::string & stepperName,
                          const Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > & stepperFactories);
@@ -181,6 +183,7 @@ private:
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver_;
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjointModel_;
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel_;
 
   Scalar t_initial_;
@@ -229,7 +232,8 @@ Teuchos::RCP<TempusSolver<Scalar> >
 tempusSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-    const Teuchos::RCP<ObserverBase<Scalar> > &piroObserver);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
+    const Teuchos::RCP<ObserverBase<Scalar> > &piroObserver =  Teuchos::null);
 
 }
 
