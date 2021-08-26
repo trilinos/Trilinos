@@ -45,7 +45,7 @@
 #include "Teuchos_TestForException.hpp"
 #include <sstream>
 
-//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
@@ -192,8 +192,10 @@ public:
   ) const 
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
-    throwIfDeviceViewAlive();
-    impl::sync_host(originalDualView);
+    if(!memoryIsAliased()) {
+      throwIfDeviceViewAlive();
+      impl::sync_host(originalDualView);
+    }
     return dualView.view_host();
   }
 
@@ -205,9 +207,11 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    throwIfDeviceViewAlive();
-    impl::sync_host(originalDualView);
-    originalDualView.modify_host();
+    if(!memoryIsAliased()) {
+      throwIfDeviceViewAlive();
+      impl::sync_host(originalDualView);
+      originalDualView.modify_host();
+    }
     return dualView.view_host();
   }
 
@@ -222,10 +226,12 @@ public:
     if (iAmASubview()) {
       return getHostView(Access::ReadWrite);
     }
-    throwIfDeviceViewAlive();
-    if (deviceMemoryIsHostAccessible) Kokkos::fence();
-    dualView.clear_sync_state();
-    dualView.modify_host();
+    if(!memoryIsAliased()) {
+      throwIfDeviceViewAlive();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence();
+      dualView.clear_sync_state();
+      dualView.modify_host();
+    }
     return dualView.view_host();
   }
 
@@ -235,8 +241,10 @@ public:
   ) const 
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
-    throwIfHostViewAlive();
-    impl::sync_device(originalDualView);
+    if(!memoryIsAliased()) {
+      throwIfHostViewAlive();
+      impl::sync_device(originalDualView);
+    }
     return dualView.view_device();
   }
 
@@ -248,9 +256,11 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    throwIfHostViewAlive();
-    impl::sync_device(originalDualView);
-    originalDualView.modify_device();
+    if(!memoryIsAliased()) {
+      throwIfHostViewAlive();
+      impl::sync_device(originalDualView);
+      originalDualView.modify_device();
+    }
     return dualView.view_device();
   }
 
@@ -265,9 +275,11 @@ public:
     if (iAmASubview()) {
       return getDeviceView(Access::ReadWrite);
     }
-    throwIfHostViewAlive();
-    dualView.clear_sync_state();
-    dualView.modify_device();
+    if(!memoryIsAliased()) {
+      throwIfHostViewAlive();
+      dualView.clear_sync_state();
+      dualView.modify_device();
+    }
     return dualView.view_device();
   }
 
@@ -276,13 +288,17 @@ public:
   getView (Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
     if(std::is_same<TargetDeviceType,DeviceType>::value) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadOnly");
-      throwIfHostViewAlive();
-      impl::sync_device(originalDualView);
+      if(!memoryIsAliased()) {
+	throwIfHostViewAlive();
+	impl::sync_device(originalDualView);
+      }
     }
     else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadOnly");
-      throwIfDeviceViewAlive();
-      impl::sync_host(originalDualView);
+      if(!memoryIsAliased()) {
+	throwIfDeviceViewAlive();
+	impl::sync_host(originalDualView);
+      }
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -296,17 +312,21 @@ public:
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadWrite");
       static_assert(dualViewHasNonConstData,
                     "ReadWrite views are not available for DualView with const data");
-      throwIfHostViewAlive();
-      impl::sync_device(originalDualView);
-      originalDualView.modify_device();
+      if(!memoryIsAliased()) {
+	throwIfHostViewAlive();
+	impl::sync_device(originalDualView);
+	originalDualView.modify_device();
+      }
     }
     else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadWrite");
       static_assert(dualViewHasNonConstData,
                     "ReadWrite views are not available for DualView with const data");
-      throwIfDeviceViewAlive();
-      impl::sync_host(originalDualView);
-      originalDualView.modify_host();      
+      if(!memoryIsAliased()) {
+	throwIfDeviceViewAlive();
+	impl::sync_host(originalDualView);
+	originalDualView.modify_host();      
+      }
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -323,18 +343,22 @@ public:
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
-      throwIfDeviceViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();
-      dualView.clear_sync_state();
-      dualView.modify_host();
+      if(!memoryIsAliased()) {
+	throwIfHostViewAlive();
+	if (deviceMemoryIsHostAccessible) Kokkos::fence();
+	dualView.clear_sync_state();
+	dualView.modify_host();
+      }
     }
     else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
-      throwIfHostViewAlive();
-      dualView.clear_sync_state();
-      dualView.modify_device();     
+      if(!memoryIsAliased()) {
+	throwIfDeviceViewAlive();
+	dualView.clear_sync_state();
+	dualView.modify_device();     
+      }
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -347,8 +371,10 @@ public:
   ) const 
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadOnly");
-    throwIfDeviceViewAlive();
-    impl::sync_host(originalDualView);
+    if(!memoryIsAliased()) {
+      throwIfDeviceViewAlive();
+      impl::sync_host(originalDualView);
+    }
     return getSubview(dualView.view_host(), offset, numEntries);
   }
 
@@ -360,9 +386,11 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    throwIfDeviceViewAlive();
-    impl::sync_host(originalDualView);
-    originalDualView.modify_host();
+    if(!memoryIsAliased()) {
+      throwIfDeviceViewAlive();
+      impl::sync_host(originalDualView);
+      originalDualView.modify_host();
+    }
     return getSubview(dualView.view_host(), offset, numEntries);
   }
 
@@ -383,8 +411,10 @@ public:
   ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadOnly");
-    throwIfHostViewAlive();
-    impl::sync_device(originalDualView);
+    if(!memoryIsAliased()) {
+      throwIfHostViewAlive();
+      impl::sync_device(originalDualView);
+    }
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
@@ -396,9 +426,11 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    throwIfHostViewAlive();
-    impl::sync_device(originalDualView);
-    originalDualView.modify_device();
+    if(!memoryIsAliased()) {
+      throwIfHostViewAlive();
+      impl::sync_device(originalDualView);
+      originalDualView.modify_device();
+    }
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
@@ -449,11 +481,12 @@ private:
     return Kokkos::subview(view,Kokkos::ALL(),offset1);
   }
 
+  bool memoryIsAliased() const {
+    return deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data();
+  }
 
 
   void throwIfHostViewAlive() const {
-    if( deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data()) return;
-
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() 
@@ -465,8 +498,6 @@ private:
   }
 
   void throwIfDeviceViewAlive() const {
-    if(deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data()) return;
-
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()

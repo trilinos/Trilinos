@@ -5258,6 +5258,10 @@ namespace {
 
 #ifdef KOKKOS_ENABLE_OPENMP
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
+    // Restrict to OpenMPNode
+    if(typeid(Node)!=typeid(Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>))
+       return;
+
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
@@ -5266,9 +5270,8 @@ namespace {
     x.putScalar(0.0);
     LO N= (LO) map->getNodeNumElements();
 
-    // NOTE: This might do something weird if you're building with multiple node types
-
     // Vector parallel fill
+    // If we
 #pragma omp parallel for
     for(LO i=0; i<N; i++) {
       GO global_idx = map->getGlobalElement(i);
