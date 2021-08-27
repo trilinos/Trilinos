@@ -43,6 +43,7 @@
 /// \file Tpetra_DistObject_decl.hpp
 /// \brief Declaration of the Tpetra::DistObject class
 
+#include "Tpetra_Details_DistributorActor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -783,25 +784,19 @@ namespace Tpetra {
                      const CombineMode CM,
                      const bool restrictedMode);
 
-    void doPosts(Distributor& distor,
+    void doPosts(const Details::DistributorPlan& distributorPlan,
                  size_t constantNumPackets,
                  bool commOnHost,
-                 ReverseOption revOp,
                  std::shared_ptr<std::string> prefix,
                  const bool canTryAliasing,
                  const CombineMode CM);
 
-    void doWaits(Distributor& distor,
-                 ReverseOption revOp);
-
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                          size_t& constantNumPackets,
-                          Distributor& distor);
+                          size_t& constantNumPackets);
 
     void doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                             size_t constantNumPackets,
-                            Distributor& distor,
                             CombineMode CM);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
@@ -1037,6 +1032,8 @@ namespace Tpetra {
 
   private:
     using this_type = DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>;
+
+    Details::DistributorActor distributorActor_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
