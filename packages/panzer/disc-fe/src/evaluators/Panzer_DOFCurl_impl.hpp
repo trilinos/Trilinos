@@ -447,11 +447,11 @@ DOFCurl(const Teuchos::ParameterList & p) :
     offsets = *p.get<Teuchos::RCP<const std::vector<int> > >("Jacobian Offsets Vector");
 
     // allocate and copy offsets vector to Kokkos array
-    PHX::View<int*> offsets_array_nc
-        = PHX::View<int*>("offsets",offsets.size());
+    PHX::View<int*> offsets_array("offsets",offsets.size());
+    auto offsets_array_nc = Kokkos::create_mirror_view(offsets_array);
     for(std::size_t i=0;i<offsets.size();i++)
       offsets_array_nc(i) = offsets[i];
-    offsets_array = offsets_array_nc;
+    Kokkos::deep_copy(offsets_array, offsets_array_nc);
 
     accelerate_jacobian = true;  // short cut for identity matrix
   }
