@@ -1544,6 +1544,32 @@ public:
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                  const Teuchos::RCP<const import_type>& newImporter);
 
+    /// \brief Replace the current Range Map with the given objects.
+    ///
+    /// The Graph's Export object will be recomputed if needed.
+    ///
+    /// \pre <tt>isFillComplete() == true<tt>
+    /// \pre <tt>isFillActive() == false<tt>
+    void
+    replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap);
+
+    /// \brief Replace the current Range Map and Export with the
+    ///   given parameters.
+    ///
+    /// \warning This method is ONLY for use by experts.
+    /// \warning We make NO promises of backwards compatibility.
+    ///   This method may change or disappear at any time.
+    ///
+    /// \pre <tt>isFillComplete() == true<tt>
+    /// \pre <tt>isFillActive() == false<tt>
+    /// \pre Either the given Export object is null, or the target Map
+    ///   of the given Export is the same as this graph's Range Map.
+    /// \pre Either the given Export object is null, or the source Map
+    ///    of the given Export is the same as this graph's Row Map.
+    void
+    replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                                const Teuchos::RCP<const export_type>& newExporter);
+
     /// \brief Remove processes owning zero rows from the Maps and
     ///   their communicator.
     ///
