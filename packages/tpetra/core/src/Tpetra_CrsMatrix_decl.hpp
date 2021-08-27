@@ -52,6 +52,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "Teuchos_DataAccess.hpp"
 
 #include <memory> // std::shared_ptr
 

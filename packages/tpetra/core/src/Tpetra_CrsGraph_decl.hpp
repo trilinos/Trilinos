@@ -647,6 +647,7 @@ public:
     ///   parameters from \c params sublist "CrsGraph". The domain map
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
+
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///
     /// \warning THIS METHOD IS FOR TPETRA DEVELOPERS ONLY.  DO NOT
