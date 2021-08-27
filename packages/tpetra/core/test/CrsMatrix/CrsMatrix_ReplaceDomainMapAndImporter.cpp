@@ -98,7 +98,42 @@ namespace {
   //
   // UNIT TESTS
   //
-
+#define applyAndCheckResult( A, B, newMap) \
+  { \
+    typedef typename STS::magnitudeType MT; \
+    MT norm = ScalarTraits<MT>::zero (); \
+    \
+    /* Fill a random vector on the original map */ \
+    Vector<Scalar,LO,GO,Node> AVecX((A).getDomainMap()); \
+    AVecX.randomize(); \
+    \
+    /* Import this vector to the new domainmap */ \
+    Vector<Scalar,LO,GO,Node> BVecX((B).getDomainMap()); \
+    Tpetra::Import<LO,GO,Node> TempImport((A).getDomainMap(), (newMap));  \
+    BVecX.doImport(AVecX,TempImport,Tpetra::ADD); \
+    \
+    /* Now do some multiplies */ \
+    Vector<Scalar,LO,GO,Node> AVecY((A).getRangeMap()); \
+    Vector<Scalar,LO,GO,Node> BVecY((B).getRangeMap()); \
+    (A).apply(AVecX,AVecY); \
+    B.apply(BVecX,BVecY); \
+    \
+    BVecY.update (-STS::one (), AVecY, STS::one ()); \
+    norm = BVecY.norm2(); \
+    \
+    out << "Residual 2-norm: " << norm << endl \
+        << "Residual 1-norm: " << BVecY.norm1 () << endl \
+        << "Residual Inf-norm: " << BVecY.normInf () << endl; \
+    \
+    /* Macros don't like spaces, so we put the test outside the */ \
+    /* macro.  Use <= rather than <, so the test passes even if */ \
+    /* Scalar is an integer type. */ \
+    /* FIXME (mfh 10 Mar 2013) We should pick the tolerance relative */ \
+    /* to the Scalar type and problem size. */ \
+    const bool normSmallEnough = norm <= as<MT> (1e-10); \
+    TEST_EQUALITY ( normSmallEnough, true ); \
+  } 
+  
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceDomainMap, LO, GO, Scalar, Node )
   {
@@ -106,8 +141,6 @@ namespace {
 
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType MT;
-    typedef ScalarTraits<MT> STM;
 
     const size_t ONE  = OrdinalTraits<size_t>::one();
     const size_t ZERO = OrdinalTraits<GO>::zero();
@@ -148,49 +181,17 @@ namespace {
     A.fillComplete();
     B.fillComplete();
 
+
     // Build a one-process Map.
-    if (comm->getSize() > 1) {
-      MT norm = STM::zero ();
+    // we know the map is contiguous...
+    const size_t NumMyElements = (comm->getRank () == 0) ?
+      A.getDomainMap ()->getGlobalNumElements () : 0;
+    RCP<const Map<LO,GO,Node> > NewMap =
+      rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm));
 
-      // we know the map is contiguous...
-      const size_t NumMyElements = (comm->getRank () == 0) ?
-        A.getDomainMap ()->getGlobalNumElements () : 0;
-      RCP<const Map<LO,GO,Node> > NewMap =
-        rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm));
+    B.replaceDomainMap (NewMap);
 
-      B.replaceDomainMap (NewMap);
-
-      // Fill a random vector on the original map
-      Vector<Scalar,LO,GO,Node> AVecX(A.getDomainMap());
-      AVecX.randomize();
-
-      // Import this vector to the new domainmap
-      Vector<Scalar,LO,GO,Node> BVecX(B.getDomainMap());
-      Tpetra::Import<LO,GO,Node> TempImport(A.getDomainMap(),NewMap); 
-      BVecX.doImport(AVecX,TempImport,Tpetra::ADD);
-
-      // Now do some multiplies
-      Vector<Scalar,LO,GO,Node> AVecY(A.getRangeMap());
-      Vector<Scalar,LO,GO,Node> BVecY(B.getRangeMap());
-      A.apply(AVecX,AVecY);
-      B.apply(BVecX,BVecY);
-
-      BVecY.update (-STS::one (), AVecY, STS::one ());
-      norm = BVecY.norm2();
-
-      out << "Residual 2-norm: " << norm << endl
-          << "Residual 1-norm: " << BVecY.norm1 () << endl
-          << "Residual Inf-norm: " << BVecY.normInf () << endl;
-
-      // Macros don't like spaces, so we put the test outside the
-      // macro.  Use <= rather than <, so the test passes even if
-      // Scalar is an integer type.
-      //
-      // FIXME (mfh 10 Mar 2013) We should pick the tolerance relative
-      // to the Scalar type and problem size.
-      const bool normSmallEnough = norm <= as<MT> (1e-10);
-      TEST_EQUALITY ( normSmallEnough, true );
-    }
+    applyAndCheckResult(A, B, NewMap);
   }
  
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceDomainMapAndImporter, LO, GO, Scalar, Node )
@@ -199,8 +200,6 @@ namespace {
 
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType MT;
-    typedef ScalarTraits<MT> STM;
 
     const size_t ONE  = OrdinalTraits<size_t>::one();
     const size_t ZERO = OrdinalTraits<GO>::zero();
@@ -241,59 +240,23 @@ namespace {
     A.fillComplete();
     B.fillComplete();
 
-    // Build a one-process Map.
-    if (comm->getSize() > 1) {
-      MT norm = STM::zero ();
+    // we know the map is contiguous...
+    const size_t NumMyElements = (comm->getRank () == 0) ?
+      A.getDomainMap ()->getGlobalNumElements () : 0;
+    RCP<const Map<LO,GO,Node> > NewMap =
+      rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm));
+    RCP<const Tpetra::Import<LO,GO,Node> > NewImport =
+      rcp (new Import<LO,GO,Node> (NewMap, A.getColMap ()));
 
-      // we know the map is contiguous...
-      const size_t NumMyElements = (comm->getRank () == 0) ?
-        A.getDomainMap ()->getGlobalNumElements () : 0;
-      RCP<const Map<LO,GO,Node> > NewMap =
-        rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm));
-      RCP<const Tpetra::Import<LO,GO,Node> > NewImport =
-        rcp (new Import<LO,GO,Node> (NewMap, A.getColMap ()));
+    B.replaceDomainMapAndImporter (NewMap, NewImport);
 
-      B.replaceDomainMapAndImporter (NewMap, NewImport);
-
-      // Fill a random vector on the original map
-      Vector<Scalar,LO,GO,Node> AVecX(A.getDomainMap());
-      AVecX.randomize();
-
-      // Import this vector to the new domainmap
-      Vector<Scalar,LO,GO,Node> BVecX(B.getDomainMap());
-      Tpetra::Import<LO,GO,Node> TempImport(A.getDomainMap(),NewMap); // (source,target)
-      BVecX.doImport(AVecX,TempImport,Tpetra::ADD);
-
-      // Now do some multiplies
-      Vector<Scalar,LO,GO,Node> AVecY(A.getRangeMap());
-      Vector<Scalar,LO,GO,Node> BVecY(B.getRangeMap());
-      A.apply(AVecX,AVecY);
-      B.apply(BVecX,BVecY);
-
-      BVecY.update (-STS::one (), AVecY, STS::one ());
-      norm = BVecY.norm2();
-
-      out << "Residual 2-norm: " << norm << endl
-          << "Residual 1-norm: " << BVecY.norm1 () << endl
-          << "Residual Inf-norm: " << BVecY.normInf () << endl;
-
-      // Macros don't like spaces, so we put the test outside the
-      // macro.  Use <= rather than <, so the test passes even if
-      // Scalar is an integer type.
-      //
-      // FIXME (mfh 10 Mar 2013) We should pick the tolerance relative
-      // to the Scalar type and problem size.
-      const bool normSmallEnough = norm <= as<MT> (1e-10);
-      TEST_EQUALITY ( normSmallEnough, true );
-    }
+    applyAndCheckResult(A, B, NewMap);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, DomainMapEqualsColMap, LO, GO, Scalar, Node )
   {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> STS;
-    typedef typename STS::magnitudeType MT;
-    typedef ScalarTraits<MT> STM;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -331,46 +294,13 @@ namespace {
     A.fillComplete();
     B.fillComplete();
 
-    {
-      MT norm = STM::zero ();
+    // Use the column map to exercise the check for Domain Map == Column Map
+    // in replaceDomainMap; By construction, Column Map is 1-to-1
+    RCP<const Map<LO,GO,Node> > NewMap = B.getColMap();
 
-      // Use the column map to exercise the check for Domain Map == Column Map
-      // in replaceDomainMap; By construction, Column Map is 1-to-1
-      RCP<const Map<LO,GO,Node> > NewMap = B.getColMap();
+    B.replaceDomainMap (NewMap);
 
-      B.replaceDomainMap (NewMap);
-
-      // Fill a random vector on the original map
-      Vector<Scalar,LO,GO,Node> AVecX(A.getDomainMap());
-      AVecX.randomize();
-
-      // Import this vector to the new domainmap
-      Vector<Scalar,LO,GO,Node> BVecX(B.getDomainMap());
-      Tpetra::Import<LO,GO,Node> TempImport(A.getDomainMap(),NewMap); 
-      BVecX.doImport(AVecX,TempImport,Tpetra::ADD);
-
-      // Now do some multiplies
-      Vector<Scalar,LO,GO,Node> AVecY(A.getRangeMap());
-      Vector<Scalar,LO,GO,Node> BVecY(B.getRangeMap());
-      A.apply(AVecX,AVecY);
-      B.apply(BVecX,BVecY);
-
-      BVecY.update (-STS::one (), AVecY, STS::one ());
-      norm = BVecY.norm2();
-
-      out << "Residual 2-norm: " << norm << endl
-          << "Residual 1-norm: " << BVecY.norm1 () << endl
-          << "Residual Inf-norm: " << BVecY.normInf () << endl;
-
-      // Macros don't like spaces, so we put the test outside the
-      // macro.  Use <= rather than <, so the test passes even if
-      // Scalar is an integer type.
-      //
-      // FIXME (mfh 10 Mar 2013) We should pick the tolerance relative
-      // to the Scalar type and problem size.
-      const bool normSmallEnough = norm <= as<MT> (1e-10);
-      TEST_EQUALITY ( normSmallEnough, true );
-    }
+    applyAndCheckResult(A, B, NewMap);
   }
 //
 // INSTANTIATIONS
