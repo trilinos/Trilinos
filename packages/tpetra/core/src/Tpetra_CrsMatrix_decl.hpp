@@ -2150,11 +2150,22 @@ namespace Tpetra {
                     const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
                     const bool sortEachRow = true);
 
+    /// \brief Replace the current domain Map with the given objects.
+    ///
+    /// The matrix's Import object will be recomputed if needed.
+    ///
+    /// \param newDomainMap [in] New domain Map.  Must be nonnull.
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// 
+    void
+    replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap);
+
     /// \brief Replace the current domain Map and Import with the given objects.
     ///
     /// \param newDomainMap [in] New domain Map.  Must be nonnull.
-    /// \param newImporter [in] Optional Import object.  If null, we
-    ///   will compute it.
+    /// \param newImporter [in] Optional Import object.  If null, the new Domain Map must equal the matrix's Column Map
     ///
     /// \pre The matrix must be fill complete:
     ///   <tt>isFillComplete() == true</tt>.
@@ -2162,6 +2173,8 @@ namespace Tpetra {
     ///   same as the column Map of the matrix.
     /// \pre If the Import is provided, its source Map must be the
     ///   same as the provided new domain Map.
+    /// \pre If the Import is not provided, the new Domain Map must be the
+    ///   same as the matrix's Column Map.
     void
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                  Teuchos::RCP<const import_type>& newImporter);

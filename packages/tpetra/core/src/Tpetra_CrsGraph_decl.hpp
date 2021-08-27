@@ -1518,6 +1518,15 @@ public:
                     const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
                     const bool sortIndicesInEachRow = true);
 
+    /// \brief Replace the current domain Map with the given objects.
+    ///
+    /// The Graph's Import object will be recomputed if needed.
+    ///
+    /// \pre <tt>isFillComplete() == true<tt>
+    /// \pre <tt>isFillActive() == false<tt>
+    void
+    replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap);
+
     /// \brief Replace the current domain Map and Import with the
     ///   given parameters.
     ///

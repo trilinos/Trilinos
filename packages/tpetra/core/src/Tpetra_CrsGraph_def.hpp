@@ -4326,6 +4326,26 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap)
+  {
+    const char prefix[] = "Tpetra::CrsGraph::replaceDomainMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      colMap_.is_null (), std::invalid_argument, prefix << "You may not call "
+      "this method unless the graph already has a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newDomainMap.is_null (), std::invalid_argument,
+      prefix << "The new domain Map must be nonnull.");
+
+    // Create a new importer, if needed
+    Teuchos::RCP<const import_type> newImporter = Teuchos::null;
+    if (newDomainMap != colMap_ && (! newDomainMap->isSameAs (*colMap_))) {
+      newImporter = rcp(new import_type(newDomainMap, colMap_));
+    }
+    this->replaceDomainMapAndImporter(newDomainMap, newImporter);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
