@@ -79,7 +79,7 @@ namespace { // (anonymous)
   //
 
   // Test for Bug 9583: locally empty ranks should not have impact on
-  // multivectorinnerproduct value
+  // multivector innerproduct value
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Vector, Bug9583_1, S, LO, GO, NODE)
   {
     using Teuchos::outArg;
