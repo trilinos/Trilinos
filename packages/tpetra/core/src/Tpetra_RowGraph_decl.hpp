@@ -322,8 +322,7 @@ namespace Tpetra {
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
           Teuchos::Array<GlobalOrdinal>& exports,
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Distributor& distor) const;
+          size_t& constantNumPackets) const;
     //@}
   }; // class RowGraph
 } // namespace Tpetra

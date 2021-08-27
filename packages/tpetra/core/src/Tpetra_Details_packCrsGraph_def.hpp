@@ -77,11 +77,6 @@
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of Distributor
-class Distributor;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 //
 // Users must never rely on anything in the Details namespace.
 //
@@ -678,8 +673,7 @@ packCrsGraph
    typename CrsGraph<LO, GO, NT>::buffer_device_type
  >& export_pids,
  size_t& constant_num_packets,
- const bool pack_pids,
- Distributor& /* dist */)
+ const bool pack_pids)
 {
   using Kokkos::View;
   using crs_graph_type = CrsGraph<LO, GO, NT>;
@@ -769,8 +763,7 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
               Teuchos::Array<typename CrsGraph<LO,GO,NT>::packet_type>& exports,
               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
               const Teuchos::ArrayView<const LO>& exportLIDs,
-              size_t& constantNumPackets,
-              Distributor& distor)
+              size_t& constantNumPackets)
 {
   using Kokkos::HostSpace;
   using Kokkos::MemoryUnmanaged;
@@ -828,7 +821,7 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 
   PackCrsGraphImpl::packCrsGraph
     (sourceGraph, exports_dv, num_packets_per_lid_d, export_lids_d,
-     export_pids_d, constantNumPackets, pack_pids, distor);
+     export_pids_d, constantNumPackets, pack_pids);
 
   // The counts are an output of packCrsGraph, so we have to copy
   // them back to host.
@@ -872,8 +865,7 @@ packCrsGraphNew (const CrsGraph<LO,GO,NT>& sourceGraph,
                    typename CrsGraph<LO,GO,NT>::buffer_device_type
                  > num_packets_per_lid,
                  size_t& constant_num_packets,
-                 const bool pack_pids,
-                 Distributor& /* dist */)
+                 const bool pack_pids)
 {
   using Kokkos::View;
   using crs_graph_type = CrsGraph<LO,GO,NT>;
@@ -962,8 +954,7 @@ packCrsGraphWithOwningPIDs
  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
  const Teuchos::ArrayView<const LO>& exportLIDs,
  const Teuchos::ArrayView<const int>& sourcePIDs,
- size_t& constantNumPackets,
- Distributor& distor)
+ size_t& constantNumPackets)
 {
   using Kokkos::HostSpace;
   using Kokkos::MemoryUnmanaged;
@@ -998,7 +989,7 @@ packCrsGraphWithOwningPIDs
   constexpr bool pack_pids = true;
   PackCrsGraphImpl::packCrsGraph
     (sourceGraph, exports_dv, num_packets_per_lid_d, export_lids_d,
-     export_pids_d, constantNumPackets, pack_pids, distor);
+     export_pids_d, constantNumPackets, pack_pids);
 
   // The counts are an output of packCrsGraph, so we
   // have to copy them back to host.
@@ -1017,8 +1008,7 @@ packCrsGraphWithOwningPIDs
     Teuchos::Array<CrsGraph<LO,GO,NT>::packet_type>&, \
     const Teuchos::ArrayView<size_t>&, \
     const Teuchos::ArrayView<const LO>&, \
-    size_t&, \
-    Distributor&); \
+    size_t&); \
   template void \
   Details::packCrsGraphNew<LO, GO, NT> ( \
     const CrsGraph<LO, GO, NT>&, \
@@ -1035,8 +1025,7 @@ packCrsGraphWithOwningPIDs
       size_t*, \
       CrsGraph<LO,GO,NT>::buffer_device_type>, \
     size_t&, \
-    const bool, \
-    Distributor&); \
+    const bool); \
   template void \
   Details::packCrsGraphWithOwningPIDs<LO, GO, NT> ( \
     const CrsGraph<LO, GO, NT>&, \
@@ -1044,7 +1033,6 @@ packCrsGraphWithOwningPIDs
     const Teuchos::ArrayView<size_t>&, \
     const Teuchos::ArrayView<const LO>&, \
     const Teuchos::ArrayView<const int>&, \
-    size_t&, \
-    Distributor&);
+    size_t&);
 
 #endif // TPETRA_DETAILS_PACKCRSGRAPH_DEF_HPP

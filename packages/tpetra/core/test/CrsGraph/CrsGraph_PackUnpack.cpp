@@ -45,7 +45,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Core.hpp"
-#include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsGraph.hpp"
@@ -162,7 +161,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   Array<packet_type> exports; // output argument; to be realloc'd
   Array<size_t> numPacketsPerLID (num_loc_rows, 0); // output argument
   size_t constantNumPackets; // output argument
-  Tpetra::Distributor distor (comm); // argument required, but not used
 
   out << "Calling packCrsGraph" << endl;
 
@@ -171,7 +169,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
     std::ostringstream msg;
     try {
       packCrsGraph<LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
-          constantNumPackets, distor);
+          constantNumPackets);
       local_op_ok = 1;
     } catch (std::exception& e) {
       local_op_ok = 0;
@@ -331,13 +329,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
     Array<packet_type> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     {
       int local_op_ok;
       std::ostringstream msg;
       try {
         packCrsGraph<LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
-            constantNumPackets, distor);
+            constantNumPackets);
         local_op_ok = 1;
       } catch (std::exception& e) {
         local_op_ok = 0;
@@ -374,14 +371,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackWithError, LO, GO, NT)
     Array<packet_type> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     out << "Calling packCrsGraph" << endl;
     {
       int local_op_ok;
       std::ostringstream msg;
       try {
         packCrsGraph<LO,GO,NT>(*A, exports, numPacketsPerLID(), exportLIDs(),
-            constantNumPackets, distor);
+            constantNumPackets);
         local_op_ok = 1;
       } catch (std::exception& e) {
         local_op_ok = 0;

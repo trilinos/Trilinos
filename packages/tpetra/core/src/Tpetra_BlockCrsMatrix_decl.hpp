@@ -740,8 +740,7 @@ protected:
      buffer_device_type>& exports,
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets,
-   Distributor& /* distor */) override;
+   size_t& constantNumPackets) override;
 
   virtual void
   unpackAndCombine
@@ -752,7 +751,6 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t constantNumPackets,
-   Distributor& /* distor */,
    const CombineMode combineMode) override;
   //@}
 
