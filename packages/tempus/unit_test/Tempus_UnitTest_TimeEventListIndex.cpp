@@ -62,7 +62,7 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, Construction)
   testVector.push_back(-5);
 
   auto te = rcp(new Tempus::TimeEventListIndex<double>(
-                "TestName", testVector));
+                testVector, "TestName"));
 
   TEST_COMPARE(te->getName(), ==, "TestName");
 
@@ -129,7 +129,7 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, indexToNextEvent)
   testListIndex.push_back(-9);
 
   auto te = rcp(new Tempus::TimeEventListIndex<double>(
-                "teListIndex", testListIndex));
+                testListIndex, "teListIndex"));
 
   // Test indexToNextEvent.
   //   Around first event.
@@ -161,7 +161,7 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, indexOfNextEvent)
   testListIndex.push_back(-9);
 
   auto te = rcp(new Tempus::TimeEventListIndex<double>(
-                "teListIndex", testListIndex));
+                testListIndex, "teListIndex"));
 
   // Test indexOfNextEvent.
   //   Around first event.
@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, eventInRangeIndex)
   testListIndex.push_back(-9);
 
   auto te = rcp(new Tempus::TimeEventListIndex<double>(
-                "teListIndex", testListIndex));
+                testListIndex, "teListIndex"));
 
   // Test eventInRangeIndex.
   //   Right end.
@@ -221,6 +221,66 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, eventInRangeIndex)
   TEST_COMPARE(te->eventInRangeIndex(3, 8), ==, true );   // Around last event.
   TEST_COMPARE(te->eventInRangeIndex(4, 8), ==, true );
   TEST_COMPARE(te->eventInRangeIndex(5, 8), ==, false);
+}
+
+
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeEventListIndex, getValidParameters)
+{
+  auto teli = rcp(new Tempus::TimeEventListIndex<double>());
+
+  auto pl = teli->getValidParameters();
+
+  TEST_COMPARE( pl->get<std::string>("Type"), ==, "List Index");
+  TEST_COMPARE( pl->get<std::string>("Name"), ==, "TimeEventListIndex");
+  TEST_COMPARE( pl->get<std::string>("Index List"), ==, "");
+
+  { // Ensure that parameters are "used", excluding sublists.
+    std::ostringstream unusedParameters;
+    pl->unused(unusedParameters);
+    TEST_COMPARE ( unusedParameters.str(), ==, "");
+  }
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeEventListIndex, createTimeEventListIndex)
+{
+  // Construct parameterList similar to getValidParameters().
+  Teuchos::RCP<Teuchos::ParameterList> pl =
+    Teuchos::parameterList("Time Event List Index");
+
+  pl->set("Name", "Unit Test Time Event List Index");
+  pl->set("Type", "List Index");
+
+  std::vector<int> indices;
+  indices.push_back(-99);
+  indices.push_back( 13);
+  indices.push_back( 97);
+  indices.push_back(101);
+  std::ostringstream list;
+  for(std::size_t i = 0; i < indices.size()-1; ++i) list << indices[i] << ", ";
+  list << indices[indices.size()-1];
+  pl->set<std::string>("Index List", list.str());
+
+  // Construct TimeEventListIndex from ParameterList.
+  auto teli = Tempus::createTimeEventListIndex<double>(pl);
+
+  //Teuchos::RCP<Teuchos::FancyOStream> my_out =
+  //  Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  //teli->describe(*my_out, Teuchos::VERB_EXTREME);
+
+  TEST_COMPARE( teli->getName()         , ==, "Unit Test Time Event List Index");
+  TEST_COMPARE( teli->getType()         , ==, "List Index");
+  auto teList = teli->getIndexList();
+  TEST_COMPARE( teList[0]               , ==, -99);
+  TEST_COMPARE( teList[1]               , ==,  13);
+  TEST_COMPARE( teList[2]               , ==,  97);
+  TEST_COMPARE( teList[3]               , ==, 101);
 }
 
 

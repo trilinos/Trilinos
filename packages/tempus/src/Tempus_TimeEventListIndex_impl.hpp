@@ -15,15 +15,25 @@ namespace Tempus {
 template<class Scalar>
 TimeEventListIndex<Scalar>::TimeEventListIndex()
 {
+  this->setType("List Index");
   this->setName("TimeEventListIndex");
 }
 
 
 template<class Scalar>
 TimeEventListIndex<Scalar>::TimeEventListIndex(
-  std::string name, std::vector<int> indexList)
+  std::vector<int> indexList, std::string name)
 {
-  this->setName(name);
+  this->setType("List Index");
+  if (name == "" && !indexList.empty()) {
+    std::ostringstream oss;
+    oss << "TimeEventListIndex (" << indexList_.front() << ", ... ,"
+                                  << indexList_.back() << ")";
+    this->setName(oss.str());
+  } else {
+    this->setName(name);
+  }
+
   this->setIndexList(indexList);
 }
 
@@ -122,17 +132,88 @@ bool TimeEventListIndex<Scalar>::eventInRangeIndex(int index1, int index2) const
 
 
 template<class Scalar>
-void TimeEventListIndex<Scalar>::describe() const
+void TimeEventListIndex<Scalar>::describe(Teuchos::FancyOStream          &out,
+                                const Teuchos::EVerbosityLevel verbLevel) const
 {
-  Teuchos::RCP<Teuchos::FancyOStream> out =
-    Teuchos::VerboseObjectBase::getDefaultOStream();
-  out->setOutputToRootOnly(0);
-  *out << "TimeEventListIndex:" << "\n"
-       << "name       = " << this->getName() << "\n"
-       << "IndexList_ = " << std::endl;
-  for (auto it = indexList_.begin(); it != indexList_.end()-1; ++it)
-    *out << *it << ", ";
-  *out << *(indexList_.end()-1) << "\n";
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, "TimeEventListIndex");
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "TimeEventListIndex:" << "\n"
+         << "  name       = " << this->getName() << "\n"
+         << "  Type       = " << this->getType() << "\n"
+         << "  IndexList_ = ";
+  if (!indexList_.empty()) {
+    for (auto it = indexList_.begin(); it != indexList_.end()-1; ++it)
+      *l_out << *it << ", ";
+    *l_out << *(indexList_.end()-1) << std::endl;
+  } else {
+    *l_out << "<empty>" << std::endl;
+  }
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const Teuchos::ParameterList>
+TimeEventListIndex<Scalar>::getValidParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl =
+    Teuchos::parameterList("Time Event List Index");
+
+  pl->setName(this->getName());
+  pl->set("Name", this->getName());
+  pl->set("Type", this->getType());
+
+  std::ostringstream list;
+  if (!indexList_.empty()) {
+    for (std::size_t i = 0; i < indexList_.size()-1; ++i)
+      list << indexList_[i] << ", ";
+    list << indexList_[indexList_.size()-1];
+  }
+  pl->set<std::string>("Index List", list.str(),
+    "Comma deliminated list of indices");
+
+  return pl;
+}
+
+
+// Nonmember constructors.
+// ------------------------------------------------------------------------
+
+template<class Scalar>
+Teuchos::RCP<TimeEventListIndex<Scalar> > createTimeEventListIndex(
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto teli = Teuchos::rcp(new TimeEventListIndex<Scalar>());
+  if (pl == Teuchos::null) return teli;  // Return default TimeEventListIndex.
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    pl->get<std::string>("Type", "List Index") != "List Index",
+    std::logic_error,
+    "Error - Time Event Type != 'List Index'.  (='"
+    + pl->get<std::string>("Type")+"')\n");
+
+  pl->validateParametersAndSetDefaults(*teli->getValidParameters());
+
+  teli->setName          (pl->get("Name",    "From createTimeEventListIndex"));
+
+  std::vector<int> indexList;
+  indexList.clear();
+  std::string str = pl->get<std::string>("Index List");
+  std::string delimiters(",");
+  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+  std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+  while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+    std::string token = str.substr(lastPos,pos-lastPos);
+    indexList.push_back(int(std::stoi(token)));
+    if(pos==std::string::npos) break;
+
+    lastPos = str.find_first_not_of(delimiters, pos);
+    pos = str.find_first_of(delimiters, lastPos);
+  }
+  teli->setIndexList(indexList);
+
+  return teli;
 }
 
 
