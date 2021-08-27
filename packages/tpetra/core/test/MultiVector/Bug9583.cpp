@@ -78,8 +78,8 @@ namespace { // (anonymous)
   // UNIT TESTS
   //
 
-  // Test for Bug 5474: getData and getDataNonConst should return
-  // Teuchos::null if the vector is locally empty.
+  // Test for Bug 9583: locally empty ranks should not have impact on
+  // multivectorinnerproduct value
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Vector, Bug9583_1, S, LO, GO, NODE)
   {
     using Teuchos::outArg;
