@@ -73,11 +73,11 @@ namespace {
   using magnitude_t = typename Teuchos::ScalarTraits<SC>::magnitudeType; \
   const magnitude_t tol = 0.000005; \
   TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm1(), yCyclic.norm1(), tol, \
-                                 out, success); \
+                                 std::cout, success); \
   TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm2(), yCyclic.norm2(), tol, \
-                                 out, success); \
+                                 std::cout, success); \
   TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.normInf(), yCyclic.normInf(), tol, \
-                                 out, success);  \
+                                 std::cout, success);  \
 }
 
 template <typename map_t>
@@ -179,7 +179,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
   // Build ACyclic from scratch, using new domain and range maps
   try {
     if (me == 0) 
-      out << "Trying to create matrix from scratch " << std::endl;
+      std::cout << "\nTrying to create matrix from scratch " << std::endl;
     matrix_t ACyclic(blockMap, nnzPerRow);
     for (size_t i = 0; i < blockMap->getNodeNumElements(); i++) {
       row = blockMap->getGlobalElement(i);
@@ -198,19 +198,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
     SpMV_and_Norm_Check();
 
     if (me == 0) 
-      out << "GOOD:  created matrix from scratch" << std::endl;
+      std::cout << "GOOD:  created matrix from scratch " << std::endl;
   }
   catch (std::exception &e) {
     if (me == 0) 
-      out << "BAD:  could not create matrix using getLocalMatrixHost(); "
-          << e.what() << std::endl;
+      std::cout << "BAD:  could not create matrix from scratch "
+                << e.what() << std::endl;
   }
 
   // Build ACyclic using same local graph, row map, col map as ABlock, and
   // new domain and range maps
   try {
     if (me == 0) 
-      out << "Trying to create matrix using getLocalMatrixHost()" << std::endl;
+      std::cout << "\nTrying to create matrix using getLocalMatrixHost " 
+                << std::endl;
     matrix_t ACyclic(ABlock.getLocalMatrixDevice(),
                      ABlock.getRowMap(), ABlock.getColMap(),
                      domainMapCyclic, rangeMapCyclic);
@@ -218,11 +219,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
     SpMV_and_Norm_Check();
 
     if (me == 0) 
-      out << "GOOD:  created matrix using getLocalMatrixHost()" << std::endl;
+      std::cout << "GOOD:  created matrix using getLocalMatrixHost " 
+                << std::endl;
   }
   catch (std::exception &e) {
     if (me == 0) 
-      out << "BAD:  could not create matrix using getLocalMatrixHost(); "
+      std::cout << "BAD:  could not create matrix using getLocalMatrixHost "
           << e.what() << std::endl;
   }
 
@@ -230,7 +232,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
   // domain and range maps
   try {
     if (me == 0) 
-      out << "Trying to create matrix using copyConstructor" << std::endl;
+      std::cout << "\nTrying to create matrix using copyConstructor " 
+                << std::endl;
     matrix_t ACyclic(ABlock, Teuchos::Copy);
     ACyclic.replaceDomainMap(domainMapCyclic);
     ACyclic.replaceRangeMap(rangeMapCyclic);
@@ -238,44 +241,44 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
     SpMV_and_Norm_Check();
 
     if (me == 0) 
-      out << "GOOD:  created matrix using copyConstructor" << std::endl;
+      std::cout << "GOOD:  created matrix using copyConstructor " << std::endl;
   }
   catch (std::exception &e) {
     // Copy constructor uses the same graph as a StaticGraph 
     // and deep copies only the values
     if (me == 0) 
-      out << "BAD:  could not create matrix using copyConstructor"
+      std::cout << "BAD:  could not create matrix using copyConstructor "
           << e.what() << std::endl;
   }
 
   // Build ACyclic using method Matt B used in Zoltan2
   try {
     if (me == 0) 
-      out << "Trying to create matrix using graph copy" << std::endl;
+      std::cout << "\nTrying to create matrix using graph copy " << std::endl;
 
     using graph_t = Tpetra::CrsGraph<LO, GO, NT>;
-    auto block_graph = ABlock->getCrsGraph();
+    auto block_graph = ABlock.getCrsGraph();
     Teuchos::RCP<graph_t> cyclic_graph = rcp(new graph_t(*block_graph));
     cyclic_graph->resumeFill();
     cyclic_graph->fillComplete(domainMapCyclic, rangeMapCyclic);
     matrix_t ACyclic(cyclic_graph);
-    ACyclic->resumeFill();
+    ACyclic.resumeFill();
     {
-      auto val_s = ABlock->getLocalMatrixHost().values;
-      auto val_d = ACyclic->getLocalMatrixHost().values;
+      auto val_s = ABlock.getLocalMatrixHost().values;
+      auto val_d = ACyclic.getLocalMatrixHost().values;
       TEUCHOS_ASSERT(val_s.extent(0) == val_d.extent(0));
       Kokkos::deep_copy(val_d, val_s);
     }
-    ACyclic->fillComplete();
+    ACyclic.fillComplete();
 
     SpMV_and_Norm_Check();
 
     if (me == 0) 
-      out << "GOOD:  created matrix using graph copy" << std::endl;
+      std::cout << "GOOD:  created matrix using graph copy " << std::endl;
   }
   catch (std::exception &e) {
     if (me == 0) 
-      out << "BAD:  could not create matrix using graph copy"
+      std::cout << "BAD:  could not create matrix using graph copy "
           << e.what() << std::endl;
   }
 }
