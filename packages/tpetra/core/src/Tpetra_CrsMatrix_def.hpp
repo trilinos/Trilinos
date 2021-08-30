@@ -4392,6 +4392,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap)
+  {
+    const char tfecfFuncName[] = "replaceDomainMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceDomainMap (newDomainMap);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                Teuchos::RCP<const import_type>& newImporter)
   {
@@ -4403,6 +4418,37 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       " method necessarily must modify the graph, since the graph owns the "
       "matrix's domain Map and Import objects.");
     myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap)
+  {
+    const char tfecfFuncName[] = "replaceRangeMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceRangeMap (newRangeMap);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                              Teuchos::RCP<const export_type>& newExporter)
+  {
+    const char tfecfFuncName[] = "replaceRangeMapAndExporter: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceRangeMapAndExporter (newRangeMap, newExporter);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -4160,6 +4160,7 @@ namespace Tpetra {
 
       const LO C_lclNumRows = C_tmp->getLocalLength ();
       const LO C_numVecs = C_tmp->getNumVectors ();
+
       auto C_lcl = C_tmp->getLocalViewDevice(Access::ReadWrite);
       auto C_sub = Kokkos::subview (C_lcl,
                                     std::make_pair (LO (0), C_lclNumRows),
@@ -4171,8 +4172,6 @@ namespace Tpetra {
       const impl_scalar_type alpha_IST (alpha);
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
-
-      //this->modify_device ();
 
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
