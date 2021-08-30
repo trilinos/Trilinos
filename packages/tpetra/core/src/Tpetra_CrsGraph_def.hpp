@@ -4369,7 +4369,7 @@ namespace Tpetra {
         // than once.  It's polite for them to do so, but not required.
         const bool colSameAsDom = colMap_->isSameAs (*newDomainMap);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (colSameAsDom, std::invalid_argument, "If the new Import is null, "
+          (!colSameAsDom, std::invalid_argument, "If the new Import is null, "
            "then the new domain Map must be the same as the current column Map.");
       }
       else {
@@ -4432,7 +4432,7 @@ namespace Tpetra {
         // than once.  It's polite for them to do so, but not required.
         const bool rowSameAsRange = rowMap_->isSameAs (*newRangeMap);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (rowSameAsRange, std::invalid_argument, "If the new Export is null, "
+          (!rowSameAsRange, std::invalid_argument, "If the new Export is null, "
            "then the new range Map must be the same as the current row Map.");
       }
       else {

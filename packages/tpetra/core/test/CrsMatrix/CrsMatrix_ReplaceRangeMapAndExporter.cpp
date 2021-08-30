@@ -51,7 +51,6 @@ namespace {
   using std::string;
 
   using Teuchos::as;
-  using Teuchos::FancyOStream;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -98,43 +97,47 @@ namespace {
   //
   // UNIT TESTS
   //
-#define applyAndCheckResult( A, B, newMap) \
-  { \
-    typedef typename STS::magnitudeType MT; \
-    MT norm = ScalarTraits<MT>::zero (); \
-    \
-    /* Fill a random vector on the original map */ \
-    Vector<Scalar,LO,GO,Node> vecX((A).getDomainMap()); \
-    vecX.randomize(); \
-    \
-    /* Now do some multiplies */ \
-    Vector<Scalar,LO,GO,Node> AVecY((A).getRangeMap()); \
-    Vector<Scalar,LO,GO,Node> BVecY((B).getRangeMap()); \
-    (A).apply(vecX,AVecY); \
-    (B).apply(vecX,BVecY); \
-    \
-    /* Export BVecY to the original range map for comparisons */ \
-    Vector<Scalar,LO,GO,Node> BVecYOrig((A).getRangeMap()); \
-    Tpetra::Export<LO,GO,Node> TempExport(newMap, (A).getRangeMap());  \
-    BVecYOrig.doExport(BVecY,TempExport,Tpetra::INSERT); \
-    \
-    BVecYOrig.update (-STS::one (), AVecY, STS::one ()); \
-    norm = BVecYOrig.norm2(); \
-    \
-    out << "Residual 2-norm: " << norm << endl \
-        << "Residual 1-norm: " << BVecYOrig.norm1 () << endl \
-        << "Residual Inf-norm: " << BVecYOrig.normInf () << endl; \
-    \
-    /* Macros don't like spaces, so we put the test outside the */ \
-    /* macro.  Use <= rather than <, so the test passes even if */ \
-    /* Scalar is an integer type. */ \
-    /* FIXME (mfh 10 Mar 2013) We should pick the tolerance relative */ \
-    /* to the Scalar type and problem size. */ \
-    const bool normSmallEnough = norm <= as<MT> (1e-10); \
-    TEST_EQUALITY ( normSmallEnough, true ); \
-  } 
-  
-  ////
+  template <typename Scalar, typename LO, typename GO, typename Node>
+  void applyAndCheckResult(
+    Tpetra::CrsMatrix<Scalar, LO, GO, Node> &A,
+    Tpetra::CrsMatrix<Scalar, LO, GO, Node> &B,
+    Teuchos::RCP<const Tpetra::Map<LO, GO, Node> > &newMap,
+    Teuchos::FancyOStream &out,
+    bool &success
+  )
+  {
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType MT;
+    MT norm = ScalarTraits<MT>::zero ();
+
+    /* Fill a random vector on the original map */
+    Tpetra::Vector<Scalar,LO,GO,Node> vecX(A.getDomainMap());
+    vecX.randomize();
+
+    /* Now do some multiplies */
+    Tpetra::Vector<Scalar,LO,GO,Node> AVecY(A.getRangeMap());
+    Tpetra::Vector<Scalar,LO,GO,Node> BVecY(B.getRangeMap());
+    A.apply(vecX,AVecY);
+    B.apply(vecX,BVecY);
+
+    /* Export BVecY to the original range map for comparisons */
+    Tpetra::Vector<Scalar,LO,GO,Node> BVecYOrig(A.getRangeMap());
+    Tpetra::Export<LO,GO,Node> TempExport(newMap, A.getRangeMap());
+    BVecYOrig.doExport(BVecY,TempExport,Tpetra::INSERT);
+
+    BVecYOrig.update (-STS::one (), AVecY, STS::one ());
+    norm = BVecYOrig.norm2();
+
+    std::cout << "Residual 2-norm: " << norm << std::endl
+              << "Residual 1-norm: " << BVecYOrig.norm1 () << std::endl
+              << "Residual Inf-norm: " << BVecYOrig.normInf () << std::endl;
+
+    const bool normSmallEnough = (norm <= as<MT> (1e-10));
+    TEST_EQUALITY ( normSmallEnough, true );
+  }
+
+  //////////////////////////////////////////////////////////////////////////
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceRangeMap, LO, GO, Scalar, Node )
   {
     // Based on the FullTriDiag tests...
@@ -151,9 +154,8 @@ namespace {
     const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,ONE,comm);
-
-    // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
+    RCP<const Map<LO,GO,Node> > map =
+              createContigMapWithNode<LO,GO,Node>(INVALID,ONE,comm);
 
     /* Create the following matrix:
     0  [2 1       ]   [2 1]
@@ -191,9 +193,11 @@ namespace {
 
     B.replaceRangeMap (NewMap);
 
-    applyAndCheckResult(A, B, NewMap);
+    applyAndCheckResult(A, B, NewMap, out, success);
   }
- 
+
+  //////////////////////////////////////////////////////////////////////////
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceRangeMapAndExporter, LO, GO, Scalar, Node )
   {
     // Based on the FullTriDiag tests...
@@ -210,9 +214,8 @@ namespace {
     const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,ONE,comm);
-
-    // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
+    RCP<const Map<LO,GO,Node> > map =
+              createContigMapWithNode<LO,GO,Node>(INVALID,ONE,comm);
 
     /* Create the following matrix:
     0  [2 1       ]   [2 1]
@@ -250,8 +253,10 @@ namespace {
 
     B.replaceRangeMapAndExporter (NewMap, NewExport);
 
-    applyAndCheckResult(A, B, NewMap);
+    applyAndCheckResult(A, B, NewMap, out, success);
   }
+
+  //////////////////////////////////////////////////////////////////////////
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, RangeMapEqualsRowMap, LO, GO, Scalar, Node )
   {
@@ -265,14 +270,12 @@ namespace {
     const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
-    RCP<const Map<LO,GO,Node> > map = 
+    RCP<const Map<LO,GO,Node> > map =
               createContigMapWithNode<LO,GO,Node>(INVALID,2,comm);
-
-    // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
 
     /* Create the following matrix:
     0  [2 1       ]   [2 1]
-    1  [1 2       ]   [1 2] 
+    1  [1 2       ]   [1 2]
     2  [    2 1   ]         + [2 1]
     3  [    1 2   ] =         [1 2] +
        [       2 1]
@@ -300,7 +303,7 @@ namespace {
 
     B.replaceRangeMap (NewMap);
 
-    applyAndCheckResult(A, B, NewMap);
+    applyAndCheckResult(A, B, NewMap, out, success);
   }
 //
 // INSTANTIATIONS
