@@ -174,6 +174,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostView, LO, GO, Scalar , Node 
   vector_t defaultVec(defaultMap);
   defaultVec.putScalar(scalar);
 
+  Kokkos::fence();
+
   // Check result; all vector entries should be scalar
   auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
 

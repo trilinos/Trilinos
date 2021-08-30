@@ -192,7 +192,7 @@ public:
   ) const 
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
     }
@@ -207,11 +207,12 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
       originalDualView.modify_host();
     }
+
     return dualView.view_host();
   }
 
@@ -226,9 +227,9 @@ public:
     if (iAmASubview()) {
       return getHostView(Access::ReadWrite);
     }
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
+      if (deviceMemoryIsHostAccessible) Kokkos::fence();      
       throwIfDeviceViewAlive();
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();
       dualView.clear_sync_state();
       dualView.modify_host();
     }
@@ -241,7 +242,7 @@ public:
   ) const 
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfHostViewAlive();
       impl::sync_device(originalDualView);
     }
@@ -256,7 +257,7 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfHostViewAlive();
       impl::sync_device(originalDualView);
       originalDualView.modify_device();
@@ -275,7 +276,8 @@ public:
     if (iAmASubview()) {
       return getDeviceView(Access::ReadWrite);
     }
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
+      if (deviceMemoryIsHostAccessible) Kokkos::fence();
       throwIfHostViewAlive();
       dualView.clear_sync_state();
       dualView.modify_device();
@@ -288,14 +290,14 @@ public:
   getView (Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
     if(std::is_same<TargetDeviceType,DeviceType>::value) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadOnly");
-      if(!memoryIsAliased()) {
+      if(needsSyncPath()) {
 	throwIfHostViewAlive();
 	impl::sync_device(originalDualView);
       }
     }
     else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadOnly");
-      if(!memoryIsAliased()) {
+      if(needsSyncPath()) {
 	throwIfDeviceViewAlive();
 	impl::sync_host(originalDualView);
       }
@@ -312,7 +314,7 @@ public:
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadWrite");
       static_assert(dualViewHasNonConstData,
                     "ReadWrite views are not available for DualView with const data");
-      if(!memoryIsAliased()) {
+      if(needsSyncPath()) {
 	throwIfHostViewAlive();
 	impl::sync_device(originalDualView);
 	originalDualView.modify_device();
@@ -322,7 +324,7 @@ public:
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadWrite");
       static_assert(dualViewHasNonConstData,
                     "ReadWrite views are not available for DualView with const data");
-      if(!memoryIsAliased()) {
+      if(needsSyncPath()) {
 	throwIfDeviceViewAlive();
 	impl::sync_host(originalDualView);
 	originalDualView.modify_host();      
@@ -343,9 +345,8 @@ public:
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
-      if(!memoryIsAliased()) {
+      if(needsSyncPath()) {
 	throwIfHostViewAlive();
-	if (deviceMemoryIsHostAccessible) Kokkos::fence();
 	dualView.clear_sync_state();
 	dualView.modify_host();
       }
@@ -354,7 +355,7 @@ public:
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
-      if(!memoryIsAliased()) {
+      if(needsSyncPath()) {
 	throwIfDeviceViewAlive();
 	dualView.clear_sync_state();
 	dualView.modify_device();     
@@ -371,7 +372,7 @@ public:
   ) const 
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadOnly");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
     }
@@ -386,7 +387,7 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfDeviceViewAlive();
       impl::sync_host(originalDualView);
       originalDualView.modify_host();
@@ -411,7 +412,7 @@ public:
   ) const
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadOnly");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfHostViewAlive();
       impl::sync_device(originalDualView);
     }
@@ -426,7 +427,7 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
-    if(!memoryIsAliased()) {
+    if(needsSyncPath()) {
       throwIfHostViewAlive();
       impl::sync_device(originalDualView);
       originalDualView.modify_device();
@@ -445,16 +446,15 @@ public:
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
   }
 
-
-
   // A Kokkos implementation of WrappedDualView will have to make these
   // functions publically accessable, but in the Tpetra version, I'm
   // not sure we want this.  There are two options on proceeding here:
   // 1) Mark these as "Expert" only in the comments.  This will be consistent
   //    with a future Kokkos version.
   // 2) Make these protected and then friend Vector/MultiVector.  This will
-  //    keep out users from shooting themselves in the feet.
-
+  //    keep out users from shooting themselves in the feet.  This would require
+  //    another layer of "impl" wrapping as WrappedDualView cannot see 
+  //    MultiVector's template paramters and cannot friend these classes directly.
   const  DualViewType getOriginalDualView() const {
     return originalDualView;
   }
@@ -485,6 +485,9 @@ private:
     return deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data();
   }
 
+  bool needsSyncPath() const {
+    return std::is_same<typename t_dev::memory_space,Kokkos::CudaUVMSpace>::value || !memoryIsAliased();
+  }
 
   void throwIfHostViewAlive() const {
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
@@ -497,7 +500,7 @@ private:
     }
   }
 
-  void throwIfDeviceViewAlive() const {
+  void throwIfDeviceViewAlive() const {  
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
