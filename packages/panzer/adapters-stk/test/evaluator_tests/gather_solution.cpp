@@ -581,17 +581,22 @@ namespace panzer {
        fm.getFieldData<panzer::Traits::Tangent>(fieldData1_q1);
        fm.getFieldData<panzer::Traits::Tangent>(fieldData2_q1);
 
+       auto fieldData1_q1_h = Kokkos::create_mirror_view(fieldData1_q1.get_static_view());
+       auto fieldData2_q1_h = Kokkos::create_mirror_view(fieldData2_q1.get_static_view());
+       Kokkos::deep_copy(fieldData1_q1_h, fieldData1_q1.get_static_view());
+       Kokkos::deep_copy(fieldData2_q1_h, fieldData2_q1.get_static_view());
+
        for(unsigned int cell=0;cell<fieldData1_q1.extent(0);++cell) {
         for(unsigned int pt=0;pt<fieldData1_q1.extent(1);pt++) {
           if (enable_tangents) {
-            TEST_EQUALITY(fieldData1_q1(cell,pt).val(),123.0+myRank);
-            TEST_EQUALITY(fieldData1_q1(cell,pt).availableSize(),num_tangent);
+            TEST_EQUALITY(fieldData1_q1_h(cell,pt).val(),123.0+myRank);
+            TEST_EQUALITY(fieldData1_q1_h(cell,pt).availableSize(),num_tangent);
             for (int i=0; i<num_tangent; ++i)
-              TEST_EQUALITY(fieldData1_q1(cell,pt).dx(i),0.123+myRank+i);
+              TEST_EQUALITY(fieldData1_q1_h(cell,pt).dx(i),0.123+myRank+i);
           }
           else {
-            TEST_EQUALITY(fieldData1_q1(cell,pt),123.0+myRank);
-            TEST_EQUALITY(fieldData1_q1(cell,pt).availableSize(),0);
+            TEST_EQUALITY(fieldData1_q1_h(cell,pt),123.0+myRank);
+            TEST_EQUALITY(fieldData1_q1_h(cell,pt).availableSize(),0);
           }
         }
        }
@@ -601,13 +606,13 @@ namespace panzer {
             TEST_EQUALITY(fieldData2_q1(cell,pt).val(),123.0+myRank);
             TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),num_tangent);
             for (int i=0; i<num_tangent; ++i) {
-              TEST_EQUALITY(fieldData1_q1(cell,pt).dx(i),0.123+myRank+i);
-              TEST_EQUALITY(fieldData2_q1(cell,pt).dx(i),0.123+myRank+i);
+              TEST_EQUALITY(fieldData2_q1_h(cell,pt).dx(i),0.123+myRank+i);
+              TEST_EQUALITY(fieldData2_q1_h(cell,pt).dx(i),0.123+myRank+i);
             }
           }
           else {
-            TEST_EQUALITY(fieldData2_q1(cell,pt),123.0+myRank);
-            TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),0);
+            TEST_EQUALITY(fieldData2_q1_h(cell,pt),123.0+myRank);
+            TEST_EQUALITY(fieldData2_q1_h(cell,pt).availableSize(),0);
           }
         }
        }
@@ -618,17 +623,20 @@ namespace panzer {
 
        fm.getFieldData<panzer::Traits::Tangent>(fieldData_qedge1);
 
+       auto fieldData_qedge1_h = Kokkos::create_mirror_view(fieldData_qedge1.get_static_view());
+       Kokkos::deep_copy(fieldData_qedge1_h, fieldData_qedge1.get_static_view());
+
        for(unsigned int cell=0;cell<fieldData_qedge1.extent(0);++cell) {
         for(unsigned int pt=0;pt<fieldData_qedge1.extent(1);++pt) {
           if (enable_tangents) {
-            TEST_EQUALITY(fieldData_qedge1(cell,pt).val(),123.0+myRank);
-            TEST_EQUALITY(fieldData_qedge1(cell,pt).availableSize(),num_tangent);
+            TEST_EQUALITY(fieldData_qedge1_h(cell,pt).val(),123.0+myRank);
+            TEST_EQUALITY(fieldData_qedge1_h(cell,pt).availableSize(),num_tangent);
             for (int i=0; i<num_tangent; ++i)
-              TEST_EQUALITY(fieldData_qedge1(cell,pt).dx(i),0.123+myRank+i);
+              TEST_EQUALITY(fieldData_qedge1_h(cell,pt).dx(i),0.123+myRank+i);
           }
           else {
-            TEST_EQUALITY(fieldData_qedge1(cell,pt),123.0+myRank);
-            TEST_EQUALITY(fieldData_qedge1(cell,pt).availableSize(),0);
+            TEST_EQUALITY(fieldData_qedge1_h(cell,pt),123.0+myRank);
+            TEST_EQUALITY(fieldData_qedge1_h(cell,pt).availableSize(),0);
           }
         }
        }
