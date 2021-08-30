@@ -52,16 +52,13 @@
 #include <Teuchos_Array.hpp>
 
 #include <Xpetra_Operator.hpp>
-#include <Xpetra_IO.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_Exceptions.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_HierarchyFactory.hpp"
-#include "MueLu_Level.hpp"
+#include "MueLu_Level_fwd.hpp"
 #include "MueLu_MasterList.hpp"
-#include "MueLu_PerfUtils.hpp"
 
 #ifdef HAVE_MUELU_INTREPID2
 #include "Kokkos_DynRankView.hpp"

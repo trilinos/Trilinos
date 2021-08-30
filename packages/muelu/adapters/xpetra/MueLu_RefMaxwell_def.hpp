@@ -59,6 +59,7 @@
 #include "MueLu_RefMaxwell_decl.hpp"
 
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_PerfUtils.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_ThresholdAFilterFactory.hpp"
 #include "MueLu_TransPFactory.hpp"

@@ -61,6 +61,9 @@
 #include <BelosXpetraAdapter.hpp>
 #include <BelosMueLuAdapter.hpp>
 
+// Xpetra
+#include <Xpetra_IO.hpp>
+
 template <typename GlobalOrdinal>
 void read_Lagr2Dof(std::string filemane, std::map<GlobalOrdinal, GlobalOrdinal> &lagr2Dof)
 {

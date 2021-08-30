@@ -49,6 +49,8 @@
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
+#include <Xpetra_IO.hpp>
+
 #include <MueLu.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_VisualizationHelpers.hpp>

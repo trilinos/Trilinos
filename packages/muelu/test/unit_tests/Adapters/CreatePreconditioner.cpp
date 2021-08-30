@@ -49,8 +49,9 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
-#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_IO.hpp>
 #include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Hierarchy.hpp"

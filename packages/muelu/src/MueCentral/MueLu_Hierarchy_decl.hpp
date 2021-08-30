@@ -52,13 +52,11 @@
 #include <Xpetra_ConfigDefs.hpp>  // global_size_t
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
-#include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
 
 #include <MueLu_SmootherCloner.hpp>
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
-#include "MueLu_Hierarchy_fwd.hpp"
 
 #include "MueLu_Types.hpp"
 
