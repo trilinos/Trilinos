@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,12 +14,10 @@ void scale_diag(double *vec,      /* the vector to scale */
                 double *diag      /* vector to scale by */
 )
 {
-  int i;
-
   if (diag != NULL) {
     vec  = vec + beg;
     diag = diag + beg;
-    for (i = end - beg + 1; i; i--) {
+    for (int i = end - beg + 1; i; i--) {
       *vec++ *= *diag++;
     }
   }
@@ -32,13 +30,10 @@ void scale_diag_float(float *vec,       /* the vector to scale */
                       float *diag       /* vector to scale by */
 )
 {
-
-  int i;
-
   if (diag != NULL) {
     vec  = vec + beg;
     diag = diag + beg;
-    for (i = end - beg + 1; i; i--) {
+    for (int i = end - beg + 1; i; i--) {
       *vec++ *= *diag++;
     }
   }

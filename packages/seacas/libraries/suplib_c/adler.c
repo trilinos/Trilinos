@@ -3,7 +3,7 @@
  * zlib project The zlib source is subject to the following copyright
  * and license:
  *
- *   Copyright (C) 1995-2010 Jean-loup Gailly and Mark Adler
+ *   Copyright (C) 1995-2010, 2021 Jean-loup Gailly and Mark Adler
  *
  *   This software is provided 'as-is', without any express or implied
  *   warranty.  In no event will the authors be held liable for any damages
@@ -55,14 +55,13 @@ size_t adler(size_t adler, const void *vbuf, size_t len)
 
   size_t s1 = adler & 0xffff;
   size_t s2 = (adler >> 16) & 0xffff;
-  int    k  = 0;
 
   if (buf == NULL || len == 0) {
     return 1L;
   }
 
   while (len > 0) {
-    k = len < NMAX ? len : NMAX;
+    int k = len < NMAX ? len : NMAX;
     len -= k;
     while (k >= 16) {
       DO16(buf);

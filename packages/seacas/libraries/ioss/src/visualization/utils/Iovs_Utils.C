@@ -15,13 +15,14 @@
 #include <dlfcn.h>
 #endif
 
+#ifndef _WIN32
 #include <libgen.h>
+#endif
 #include <sys/stat.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
 
 namespace Iovs {
   std::string persistentLdLibraryPathEnvForCatalyst = "";
@@ -59,6 +60,7 @@ namespace Iovs {
 
   CatalystManagerBase *Utils::createCatalystManagerInstance()
   {
+#ifdef IOSS_DLOPEN_ENABLED
     void *dlh = this->getDlHandle();
 
     if (!dlh) {
@@ -77,6 +79,9 @@ namespace Iovs {
                                "'CreateCatalystManagerInstance'");
     }
     return (*mkr)();
+#else
+    return nullptr;
+#endif
   }
 
   std::unique_ptr<Iovs_exodus::CatalystExodusMeshBase>
@@ -385,7 +390,7 @@ namespace Iovs {
 #ifdef _WIN32
     char *cbuf = _fullpath(nullptr, sierraInsDir.c_str(), _MAX_PATH);
 #else
-    char *cbuf = realpath(sierraInsDir.c_str(), nullptr);
+    char *cbuf  = realpath(sierraInsDir.c_str(), nullptr);
 #endif
     std::string sierraInsPath = cbuf;
     free(cbuf);
@@ -398,6 +403,13 @@ namespace Iovs {
       IOSS_ERROR(errmsg);
     }
 
+#ifdef _WIN32
+    {
+      std::ostringstream errmsg;
+      errmsg << "This code is not yet supported on windows...\n";
+      IOSS_ERROR(errmsg);
+    }
+#else
     char *cbase = strdup(sierraInsPath.c_str());
     char *cdir  = strdup(sierraInsPath.c_str());
     char *bname = basename(cbase);
@@ -414,6 +426,7 @@ namespace Iovs {
 
     free(cbase);
     free(cdir);
+#endif
 
     return sierraInsPath + "/" + CATALYST_PLUGIN_PATH + "/" + sierraSystem +
            CATALYST_IOSS_CATALYST_PLUGIN_DIR;

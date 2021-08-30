@@ -3,7 +3,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1268,7 +1268,6 @@ namespace Iocgns {
 
     // Get the StructuredBlock that this NodeBlock is contained in:
     const Ioss::GroupingEntity *sb         = nb->contained_in();
-    int                         base       = 1;
     int                         zone       = Iocgns::Utils::get_db_zone(sb);
     cgsize_t                    num_to_get = field.verify(data_size);
 
@@ -1278,6 +1277,7 @@ namespace Iocgns {
       // TODO: do this at read_meta_data() and store...
       int step = get_region()->get_current_state();
 
+      int base = 1;
       int solution_index =
           Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
 

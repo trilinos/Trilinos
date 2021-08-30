@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,8 +40,7 @@ char *ne_ret_string;
 int ne__id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne_var_id)
 {
   int       status;
-  int       varid, ndims, dimid[1], ret = -1;
-  nc_type   var_type;
+  int       varid, ret = -1;
   size_t    length, start[1];
   int64_t   my_index, begin, end;
   long long id_val;
@@ -58,6 +57,9 @@ int ne__id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id n
   /* check if I need the length for this variable */
   if (idx[1] == -1) {
     /* Get the dimension IDs for this variable */
+    int     ndims;
+    int     dimid[1];
+    nc_type var_type;
     if ((status = nc_inq_var(exoid, varid, (char *)0, &var_type, &ndims, dimid, (int *)0)) !=
         NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
@@ -119,7 +121,7 @@ int ex__get_file_type(int exoid, char *ftype)
 
   EX_FUNC_ENTER();
 
-  if ((status = nc_inq_varid(exoid, VAR_FILE_TYPE, &varid)) != NC_NOERR) {
+  if (nc_inq_varid(exoid, VAR_FILE_TYPE, &varid) != NC_NOERR) {
 
     /* If no file type is found, assume parallel */
     ftype[0] = 'p';

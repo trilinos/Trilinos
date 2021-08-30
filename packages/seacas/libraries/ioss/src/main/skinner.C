@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   double end = Ioss::Utils::timer();
 
   if (my_rank == 0) {
-    fmt::print("\n\tTotal Execution time = {:.4} seconds\n", end - begin);
+    fmt::print("\n\tTotal Execution Time = {:.4} seconds\n", end - begin);
     fmt::print("\n{} execution successful.\n\n", codename);
   }
   return EXIT_SUCCESS;

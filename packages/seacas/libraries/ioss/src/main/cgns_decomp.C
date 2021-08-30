@@ -9,6 +9,7 @@
 
 #include <Ionit_Initializer.h>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
@@ -778,7 +779,7 @@ int main(int argc, char *argv[])
 
   cleanup(zones);
   fmt::print(stderr,
-             "\nTotal Execution time = {:.5} seconds to decompose for {:L} processors. (decomp: "
+             "\nTotal Execution Time = {:.5} seconds to decompose for {:L} processors. (decomp: "
              "{:.5}, resolve_zgc: {:.5})\n",
              end2 - begin, interFace.proc_count, end1 - begin, end2 - end1);
   if (valid) {

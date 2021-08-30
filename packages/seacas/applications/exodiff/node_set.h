@@ -23,7 +23,7 @@ public:
 
   ~Node_Set() override;
 
-  void       apply_map(const INT *node_map);
+  void       apply_map(const std::vector<INT> &node_map);
   const INT *Nodes() const;
   size_t     Node_Id(size_t position) const;
   size_t     Node_Index(size_t position) const;
@@ -40,7 +40,7 @@ private:
   const char *label() const override { return "Nodeset"; }
   const char *short_label() const override { return "nodeset"; }
 
-  void load_nodes(const INT *node_map = nullptr) const;
+  void load_nodes(const std::vector<INT> &node_map) const;
 
   size_t num_dist_factors{0};
 

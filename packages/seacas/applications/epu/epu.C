@@ -294,7 +294,7 @@ namespace {
                                 std::vector<U> &global_sets, std::vector<Excn::Mesh> &local_mesh,
                                 std::vector<std::vector<U>> &local_sets,
                                 MasterValueVector<T> &master_values, std::vector<T> &values,
-                                int part_count, int time_step,
+                                int part_count, int time_step, int time_step_out,
                                 const std::vector<std::vector<INT>> &local_element_to_global);
 
   void get_variable_params(int id, Excn::Variables &vars,
@@ -1360,7 +1360,8 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
 
     if (element_vars.count(InOut::IN) > 0) {
       read_write_master_values(element_vars, global, glob_blocks, local_mesh, blocks, master_values,
-                               values, part_count, time_step, local_element_to_global);
+                               values, part_count, time_step, time_step_out,
+                               local_element_to_global);
     }
 
     // If adding the processor_id field, do it here...
@@ -1383,7 +1384,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
 
       if (sideset_vars.count(InOut::IN) > 0) {
         read_write_master_values(sideset_vars, global, glob_ssets, local_mesh, sidesets,
-                                 master_values, values, part_count, time_step,
+                                 master_values, values, part_count, time_step, time_step_out,
                                  local_element_to_global);
       }
     }
@@ -1399,7 +1400,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
 
       if (nodeset_vars.count(InOut::IN) > 0) {
         read_write_master_values(nodeset_vars, global, glob_nsets, local_mesh, nodesets,
-                                 master_values, values, part_count, time_step,
+                                 master_values, values, part_count, time_step, time_step_out,
                                  local_element_to_global);
       }
     }
@@ -3598,7 +3599,7 @@ namespace {
                                 std::vector<U> &global_sets, std::vector<Excn::Mesh> &local_mesh,
                                 std::vector<std::vector<U>> &local_sets,
                                 std::vector<T> &master_values, std::vector<T> &values,
-                                int part_count, int time_step,
+                                int part_count, int time_step, int time_step_out,
                                 const std::vector<std::vector<INT>> &local_element_to_global)
   {
     bool is_sidenodeset =
@@ -3664,7 +3665,7 @@ namespace {
 
           if (global.truthTable[static_cast<int>(vars.objectType)][truth_table_loc]) {
             int error =
-                ex_put_var(id_out, time_step + 1, exodus_object_type(vars.objectType), ivar + 1,
+                ex_put_var(id_out, time_step_out, exodus_object_type(vars.objectType), ivar + 1,
                            global_sets[b].id, global_sets[b].entity_count(), master_values.data());
             if (error < 0) {
               exodus_error(__LINE__);

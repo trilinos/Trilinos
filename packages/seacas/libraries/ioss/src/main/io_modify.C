@@ -501,10 +501,8 @@ namespace {
     }
   }
 
-  void set_db_properties(const Modify::Interface &interFace, Ioss::DatabaseIO *dbi)
+  void set_db_properties(const Modify::Interface & /* interFace */, Ioss::DatabaseIO *dbi)
   {
-    std::string inpfile = interFace.filename();
-
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -996,11 +994,8 @@ namespace {
       handle_list(tokens, region, true);
       return false;
     }
-    else {
-      fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized attribute command.\n");
-      handle_help("attribute");
-      return false;
-    }
+    fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized attribute command.\n");
+    handle_help("attribute");
     return false;
   }
 
