@@ -14,20 +14,14 @@ namespace Tempus {
 
 template<class Scalar>
 TimeEventRange<Scalar>::TimeEventRange()
-  : start_ (0.0),
-    stop_  (0.0),
-    stride_(0.0),
-    numEvents_(1),
-    timeScale_(1.0),
-    relTol_(1.0e-14),
-    absTol_(1.0e-14),
-    landOnExactly_(true)
 {
   this->setType("Range");
+  setRelTol(this->getDefaultTol()),
+  setTimeRange(0.0, 0.0, 0.0);
+  setLandOnExactly(true);
   std::ostringstream oss;
   oss << "TimeEventRange (" << start_<< "; " << stop_<< "; " << stride_<< ")";
   this->setName(oss.str());
-  setTimeRange(start_, stop_, stride_);
 }
 
 

@@ -41,7 +41,7 @@ public:
     : timeEventType_("Base"),
       name_("TimeEventBase"),
       defaultTime_ (std::numeric_limits<Scalar>::max()),
-      defaultTol_  (std::numeric_limits<Scalar>::min()),
+      defaultTol_  (std::numeric_limits<Scalar>::epsilon()*Scalar(100.0)),
       defaultIndex_(std::numeric_limits<int>::max())
   {}
 
@@ -208,7 +208,16 @@ public:
 
   /// Return ParameterList with current values.
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const
-  { return Teuchos::null; }
+  {
+    Teuchos::RCP<Teuchos::ParameterList> pl =
+      Teuchos::parameterList("Time Event Base");
+
+    pl->setName(this->getName());
+    pl->set("Name", this->getName());
+    pl->set("Type", this->getType());
+
+    return pl;
+  }
 
 protected:
 

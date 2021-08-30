@@ -41,7 +41,9 @@ TEUCHOS_UNIT_TEST(TimeEventRange, Default_Construction)
   TEST_FLOATING_EQUALITY(te->getTimeStride(), 0.0, 1.0e-14);
   TEST_COMPARE(te->getNumEvents (), ==, 1);
 
-  TEST_FLOATING_EQUALITY(te->getRelTol(), 1.0e-14, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getRelTol(), std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getAbsTol(), std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
+
   TEST_COMPARE(te->getLandOnExactly(), ==, true);
 }
 
@@ -177,6 +179,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, isTime)
 {
   auto te = rcp(new Tempus::TimeEventRange<double>());
   te->setTimeRange(0.0, PI, 1.0);
+  te->setRelTol(1.0e-14);
 
   //   Before first event.  (This is exactly one stride before range.)
   TEST_COMPARE(te->isTime(-1.0 + -10.0e-14), ==, false);   // Just outside tolerance.
@@ -222,6 +225,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, timeToNextEvent)
 {
   auto te = rcp(new Tempus::TimeEventRange<double>());
   te->setTimeRange(0.0, PI, 1.0);
+  te->setRelTol(1.0e-14);
 
   // Test timeToNextEvent.
   //   Around first event.
@@ -253,6 +257,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, timeOfNextEvent)
 {
   auto te = rcp(new Tempus::TimeEventRange<double>());
   te->setTimeRange(0.0, PI, 1.0);
+  te->setRelTol(1.0e-14);
 
   // Test timeOfNextEvent.
   //   Around first event.
@@ -284,6 +289,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, eventInRange)
 {
   auto te = rcp(new Tempus::TimeEventRange<double>());
   te->setTimeRange(0.0, PI, 1.0);
+  te->setRelTol(1.0e-14);
 
   // Test eventInRange.
   //   Right end.
@@ -340,14 +346,15 @@ TEUCHOS_UNIT_TEST(TimeEventRange, getValidParameters)
 
   auto pl = ter->getValidParameters();
 
-  TEST_COMPARE          ( pl->get<std::string>("Type"), ==, "Range");
-  TEST_COMPARE          ( pl->get<std::string>("Name"), ==, "TimeEventRange (0; 0; 0)");
-  TEST_FLOATING_EQUALITY( pl->get<double>("Start Time"),   0.0, 1.0e-14);
-  TEST_FLOATING_EQUALITY( pl->get<double>("Stop Time") ,   0.0, 1.0e-14);
-  TEST_FLOATING_EQUALITY( pl->get<double>("Stride Time") , 0.0, 1.0e-14);
-  TEST_COMPARE          ( pl->get<int>("Number of Events"), ==, 1);
-  TEST_FLOATING_EQUALITY( pl->get<double>("Relative Tolerance"), 1.0e-14, 1.0e-14);
-  TEST_COMPARE          ( pl->get<bool>("Land On Exactly"), ==, true);
+  TEST_COMPARE          (pl->get<std::string>("Type"), ==, "Range");
+  TEST_COMPARE          (pl->get<std::string>("Name"), ==, "TimeEventRange (0; 0; 0)");
+  TEST_FLOATING_EQUALITY(pl->get<double>("Start Time"),   0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(pl->get<double>("Stop Time") ,   0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(pl->get<double>("Stride Time") , 0.0, 1.0e-14);
+  TEST_COMPARE          (pl->get<int>("Number of Events"), ==, 1);
+  TEST_FLOATING_EQUALITY(pl->get<double>("Relative Tolerance"),
+                         std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
+  TEST_COMPARE          (pl->get<bool>("Land On Exactly"), ==, true);
 
   { // Ensure that parameters are "used", excluding sublists.
     std::ostringstream unusedParameters;

@@ -35,7 +35,9 @@ TEUCHOS_UNIT_TEST(TimeEventList, Default_Construction)
   TEST_COMPARE(te->getName(), ==, "TimeEventList");
 
   TEST_COMPARE(te->getTimeList().size(), ==, 0);
-  TEST_FLOATING_EQUALITY(te->getRelTol(), 1.0e-14, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getRelTol(), std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getAbsTol(), std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
+
   TEST_COMPARE(te->getLandOnExactly(), ==, true);
 
   // Check base class defaults (functions not implemented in TimeEventList).
@@ -135,6 +137,7 @@ TEUCHOS_UNIT_TEST(TimeEventList, isTime)
   te->addTime(-1.0);
   te->addTime( 2.0);
   te->addTime( 5.0);
+  te->setRelTol(1.0e-14);
 
   // Test isTime.
   //   Around first event.
@@ -210,7 +213,7 @@ TEUCHOS_UNIT_TEST(TimeEventList, timeOfNextEvent)
   testList.push_back( 5.0);
 
   auto te = rcp(new Tempus::TimeEventList<double>(
-                testList, "testList", true, 2.0e-14));
+                testList, "testList", true, 1.0e-14));
 
   // Test timeOfNextEvent.
   //   Around first event.
@@ -299,11 +302,12 @@ TEUCHOS_UNIT_TEST(TimeEventList, getValidParameters)
 
   auto pl = tel->getValidParameters();
 
-  TEST_COMPARE          ( pl->get<std::string>("Type"), ==, "List");
-  TEST_COMPARE          ( pl->get<std::string>("Name"), ==, "TimeEventList");
-  TEST_FLOATING_EQUALITY( pl->get<double>("Relative Tolerance"), 1.0e-14, 1.0e-14);
-  TEST_COMPARE          ( pl->get<bool>("Land On Exactly"), ==, true);
-  TEST_COMPARE          ( pl->get<std::string>("Time List"), ==, "");
+  TEST_COMPARE          (pl->get<std::string>("Type"), ==, "List");
+  TEST_COMPARE          (pl->get<std::string>("Name"), ==, "TimeEventList");
+  TEST_FLOATING_EQUALITY(pl->get<double>("Relative Tolerance"),
+                         std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
+  TEST_COMPARE          (pl->get<bool>("Land On Exactly"), ==, true);
+  TEST_COMPARE          (pl->get<std::string>("Time List"), ==, "");
 
   { // Ensure that parameters are "used", excluding sublists.
     std::ostringstream unusedParameters;

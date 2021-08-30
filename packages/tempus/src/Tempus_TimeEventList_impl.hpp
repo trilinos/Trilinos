@@ -17,7 +17,7 @@ TimeEventList<Scalar>::TimeEventList()
 {
   this->setType("List");
   this->setName("TimeEventList");
-  setRelTol(1.0e-14);
+  setRelTol(this->getDefaultTol());
   setTimeScale();
   setLandOnExactly(true);
 }

@@ -811,7 +811,9 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, getValidParameters)
   TEST_FLOATING_EQUALITY( terPL.get<double>("Stop Time") ,   0.0, 1.0e-14);
   TEST_FLOATING_EQUALITY( terPL.get<double>("Stride Time") , 0.0, 1.0e-14);
   TEST_COMPARE          ( terPL.get<int>("Number of Events"), ==, 1);
-  TEST_FLOATING_EQUALITY( terPL.get<double>("Relative Tolerance"), 1.0e-14, 1.0e-14);
+  TEST_FLOATING_EQUALITY( terPL.get<double>("Relative Tolerance"),
+                         std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
+
   TEST_COMPARE          ( terPL.get<bool>("Land On Exactly"), ==, true);
 
   { // Ensure that parameters are "used", excluding sublists.
@@ -836,7 +838,8 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, getValidParameters)
   auto telPL = pl->sublist("Test List");
   TEST_COMPARE          ( telPL.get<std::string>("Type"), ==, "List");
   TEST_COMPARE          ( telPL.get<std::string>("Name"), ==, "Test List");
-  TEST_FLOATING_EQUALITY( telPL.get<double>("Relative Tolerance"), 1.0e-14, 1.0e-14);
+  TEST_FLOATING_EQUALITY( telPL.get<double>("Relative Tolerance"),
+                         std::numeric_limits<double>::epsilon()*100.0, 1.0e-14);
   TEST_COMPARE          ( telPL.get<bool>("Land On Exactly"), ==, true);
   TEST_COMPARE          ( telPL.get<std::string>("Time List"), ==, "");
 

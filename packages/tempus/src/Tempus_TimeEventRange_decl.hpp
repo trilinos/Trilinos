@@ -34,14 +34,16 @@ public:
   TimeEventRange();
 
   /// Construct from start, stop and stride.
-  TimeEventRange(Scalar start, Scalar stop, Scalar stride,
-                 std::string name = "", bool landOnExactly = true,
-                 Scalar relTol = 1.0e-14);
+  TimeEventRange(
+    Scalar start, Scalar stop, Scalar stride,
+    std::string name = "", bool landOnExactly = true,
+    Scalar relTol = std::numeric_limits<Scalar>::epsilon()*Scalar(100.0));
 
   /// Construct from start, stop and number of events.
-  TimeEventRange(Scalar start, Scalar stop, int numEvents,
-                 std::string name = "", bool landOnExactly = true,
-                 Scalar relTol = 1.0e-14);
+  TimeEventRange(
+    Scalar start, Scalar stop, int numEvents,
+    std::string name = "", bool landOnExactly = true,
+    Scalar relTol = std::numeric_limits<Scalar>::epsilon()*Scalar(100.0));
 
   /// Destructor
   virtual ~TimeEventRange() {}

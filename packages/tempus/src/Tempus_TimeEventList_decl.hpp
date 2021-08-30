@@ -34,10 +34,11 @@ public:
   TimeEventList();
 
   /// Construct with full argument list of data members.
-  TimeEventList(std::vector<Scalar> timeList,
-                std::string name = "TimeEventList",
-                bool landOnExactly = true,
-                Scalar relTol = 1.0e-14);
+  TimeEventList(
+    std::vector<Scalar> timeList,
+    std::string name = "TimeEventList",
+    bool landOnExactly = true,
+    Scalar relTol = std::numeric_limits<Scalar>::epsilon()*Scalar(100.0));
 
   /// Destructor
   virtual ~TimeEventList() {}
