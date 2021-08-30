@@ -242,14 +242,20 @@ namespace { // (anonymous)
 
       Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > viewsConst =
         X_noncontig->get2dView ();
-      TEST_ASSERT( ! X_noncontig->need_sync_host () );
+      if (! std::is_same<typename MV::dual_view_type::t_dev::memory_space,
+	  typename MV::dual_view_type::t_host::memory_space>::value) {
+	TEST_ASSERT( ! X_noncontig->need_sync_host () );
+      }
     }
 
     out << "Test X_noncontig->get2dViewNonConst()" << endl;
     {
       Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > viewsNonConst =
         X_noncontig->get2dViewNonConst ();
-      TEST_ASSERT( ! X_noncontig->need_sync_host () );
+      if (! std::is_same<typename MV::dual_view_type::t_dev::memory_space,
+	  typename MV::dual_view_type::t_host::memory_space>::value) {
+	TEST_ASSERT( ! X_noncontig->need_sync_host () );
+      }
 
       // get2dViewNonConst is supposed to mark the host data as
       // modified.  Thus, the device data need a sync, if host and
