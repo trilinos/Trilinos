@@ -35,7 +35,8 @@
 #ifndef STKTOPOLOGY_DETAIL_TOPOLOGY_DATA_HPP
 #define STKTOPOLOGY_DETAIL_TOPOLOGY_DATA_HPP
 
-#include <stk_topology/topology_decl.hpp>
+// IWYU pragma: private, include "stk_topology/topology.hpp"
+#include "stk_topology/topology_decl.hpp"
 #include <type_traits>
 
 //TODO implement permutations for tets, pyramids, wedges and hexes

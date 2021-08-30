@@ -47,6 +47,10 @@
 #include "stk_util/util/ParameterList.hpp"
 #include "Ioss_Field.h"
 
+#ifdef STK_HAVE_BOOST
+#include <boost/any.hpp>
+#endif
+
 namespace stk { namespace io   { class StkMeshIoBroker; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }

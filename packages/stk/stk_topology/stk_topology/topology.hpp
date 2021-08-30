@@ -35,7 +35,7 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_HPP
 #define STKTOPOLOGY_TOPOLOGY_HPP
 
-#include <stk_topology/topology_decl.hpp>
-#include <stk_topology/topology_defn.hpp>
+#include "stk_topology/topology_decl.hpp"
+#include "stk_topology/topology_defn.hpp"
 
 #endif //STKTOPOLOGY_TOPOLOGY_HPP

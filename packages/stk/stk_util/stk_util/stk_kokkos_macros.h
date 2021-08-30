@@ -6,7 +6,7 @@
 // This should eventually need to be supplemented with checks for ROCM and
 // other accelerator platforms
 //
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   #ifndef STK_USE_DEVICE_MESH
     #define STK_USE_DEVICE_MESH
   #endif

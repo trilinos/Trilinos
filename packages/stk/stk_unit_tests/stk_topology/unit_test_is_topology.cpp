@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
+#include "gtest/gtest.h"              // for AssertionResult, Test, Message, SuiteApiResolver
+#include "stk_topology/topology.hpp"  // for topology, topology::END_TOPOLOGY, topology::topology_t
 
 TEST(stk_topology, isTri)
 {

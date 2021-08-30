@@ -38,7 +38,7 @@
 #include <Kokkos_Core.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 
 namespace stk {
 namespace mesh {
@@ -146,7 +146,7 @@ struct ReductionTeamFunctor
   ReductionTeamFunctor(const Mesh m, stk::NgpVector<unsigned> b, Accessor a)
     : mesh(m), bucketIds(b), accessor(a) {}
 
-  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type;
+  using TeamHandleType = typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type;
   STK_FUNCTION
   void join(value_type& dest, const value_type& src) const {
     accessor.reduction.join(dest,src);

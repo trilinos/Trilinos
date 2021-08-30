@@ -32,11 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_ngp_test/ngp_test.hpp>
-#include <stk_topology/topology.hpp>
-#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
-#include "topology_test_utils.hpp"
+#include "Kokkos_Core.hpp"                   // for parallel_for, KOKKOS_LAMBDA
+#include "gtest/gtest.h"                     // for AssertionResult, Message, TestPartResult
+#include "stk_ngp_test/ngp_test.hpp"         // for NGP_EXPECT_EQ, NGP_EXPECT_FALSE, NGP_EXPECT_...
+#include "stk_topology/topology.hpp"         // for topology, topology::QUAD_4, topology::QUAD_8
+#include "stk_util/environment/CPUTime.hpp"  // for cpu_time
+#include "topology_test_utils.hpp"           // for check_edge_node_ordinals, check_edge_node_or...
+#include <cstddef>                           // for size_t
+#include <iostream>                          // for operator<<, basic_ostream, basic_ostream<>::...
+#include <vector>                            // for vector
 
 TEST(stk_topology, DISABLED_hex_8_defined_on_spatial_dimension_perf)
 {

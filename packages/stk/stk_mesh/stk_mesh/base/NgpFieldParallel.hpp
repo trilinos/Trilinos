@@ -160,10 +160,10 @@ struct NgpFieldInfo
 };
 
 template <typename T>
-using FieldDataViewType = Kokkos::View<T*, MemSpace>;
+using FieldDataViewType = Kokkos::View<T*, stk::ngp::MemSpace>;
 
 template <typename T>
-using FieldView = Kokkos::View<NgpFieldInfo<T>*, MemSpace>;
+using FieldView = Kokkos::View<NgpFieldInfo<T>*, stk::ngp::MemSpace>;
 
 template <typename T>
 class ParallelSumDataExchangeSymPackUnpackHandler
