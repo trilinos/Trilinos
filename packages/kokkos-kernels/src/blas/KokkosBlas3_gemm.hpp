@@ -139,8 +139,9 @@ gemm (const char transA[],
   #endif // KOKKOSKERNELS_DEBUG_LEVEL > 0
 
   // Return if degenerated matrices are provided
-  if((A.extent(0) == 0) || (A.extent(1) == 0) || (C.extent(1) == 0))
-    return;
+//9583 This early exit caused bug; see in Trilinos #9583, Kokkos-Kernels #1088
+//9583  if((A.extent(0) == 0) || (A.extent(1) == 0) || (C.extent(1) == 0))
+//9583    return;
 
   // Minimize the number of Impl::GEMV instantiations, by
   // standardizing on particular View specializations for its template
