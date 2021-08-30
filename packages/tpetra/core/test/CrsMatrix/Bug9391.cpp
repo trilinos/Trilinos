@@ -51,33 +51,52 @@
 
 namespace {
 
+static const double alpha = 2.;
+static const double beta = 10.;
 
-#define SpMV_and_Norm_Check() \
-{ \
-  if (np > 1) { \
-    /* Range & Domain maps of ACyclic should differ from those of ABlock.*/ \
-    TEUCHOS_ASSERT(!(ACyclic.getDomainMap()->isSameAs( \
-                                             *(ABlock.getDomainMap()))));\
-    TEUCHOS_ASSERT(!(ACyclic.getRangeMap()->isSameAs( \
-                                             *(ABlock.getRangeMap())))); \
-  } \
-  \
-  /* Create vectors and run SpMV for each matrix; compare norms */ \
-  vector_t xCyclic(ACyclic.getDomainMap()); \
-  vector_t yCyclic(ACyclic.getRangeMap()); \
-  xCyclic.putScalar(SC(1)); \
-  initVector(yCyclic); \
-  \
-  ACyclic.apply(xCyclic, yCyclic, Teuchos::NO_TRANS, alpha, beta); \
-  \
-  using magnitude_t = typename Teuchos::ScalarTraits<SC>::magnitudeType; \
-  const magnitude_t tol = 0.000005; \
-  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm1(), yCyclic.norm1(), tol, \
-                                 std::cout, success); \
-  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm2(), yCyclic.norm2(), tol, \
-                                 std::cout, success); \
-  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.normInf(), yCyclic.normInf(), tol, \
-                                 std::cout, success);  \
+template <typename vector_t>
+void initVector(vector_t &y)
+{
+  // initialize vector entries to their global element number
+  auto data = y.getLocalViewHost(Tpetra::Access::OverwriteAll);
+  for (size_t i = 0; i < y.getMap()->getNodeNumElements(); i++)
+    data(i, 0) = y.getMap()->getGlobalElement(i);
+}
+
+template <typename SC, typename LO, typename GO, typename NT>
+inline void SpMV_and_Norm_Check(
+  const Tpetra::CrsMatrix<SC, LO, GO, NT> &ACyclic,
+  const Tpetra::CrsMatrix<SC, LO, GO, NT> &ABlock,
+  const Tpetra::Vector<SC, LO, GO, NT> &yBlock,
+  std::ostream &out,
+  bool &success
+)
+{
+  if (yBlock.getMap()->getComm()->getSize() > 1) { 
+    /* Range & Domain maps of ACyclic should differ from those of ABlock.*/ 
+    TEUCHOS_ASSERT(!(ACyclic.getDomainMap()->isSameAs( 
+                                             *(ABlock.getDomainMap()))));
+    TEUCHOS_ASSERT(!(ACyclic.getRangeMap()->isSameAs( 
+                                             *(ABlock.getRangeMap())))); 
+  } 
+  
+  /* Create vectors and run SpMV for each matrix; compare norms */ 
+  using vector_t = Tpetra::Vector<SC, LO, GO, NT>;
+  vector_t xCyclic(ACyclic.getDomainMap()); 
+  vector_t yCyclic(ACyclic.getRangeMap()); 
+  xCyclic.putScalar(SC(1)); 
+  initVector(yCyclic); 
+  
+  ACyclic.apply(xCyclic, yCyclic, Teuchos::NO_TRANS, SC(alpha), SC(beta)); 
+  
+  using magnitude_t = typename Teuchos::ScalarTraits<SC>::magnitudeType; 
+  const magnitude_t tol = 0.000005; 
+  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm1(), yCyclic.norm1(), tol, 
+                                 out, success); 
+  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm2(), yCyclic.norm2(), tol, 
+                                 out, success); 
+  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.normInf(), yCyclic.normInf(), tol, 
+                                 out, success);  
 }
 
 template <typename map_t>
@@ -101,15 +120,6 @@ Teuchos::RCP<const map_t> getCyclicMap(
           Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
   return rcp(new map_t(dummy, indices(0,cnt), 0, comm));
-}
-
-template <typename vector_t>
-void initVector(vector_t &y)
-{
-  // initialize vector entries to their global element number
-  auto data = y.getLocalViewHost(Tpetra::Access::OverwriteAll);
-  for (size_t i = 0; i < y.getMap()->getNodeNumElements(); i++)
-    data(i, 0) = y.getMap()->getGlobalElement(i);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -154,13 +164,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
   ABlock.fillComplete();
 
   // Do SpMV with the matrix
-  SC alpha = SC(2);
-  SC beta = SC(10);
   vector_t xBlock(blockMap);
   vector_t yBlock(blockMap);
   xBlock.putScalar(SC(1));
   initVector(yBlock);
-  ABlock.apply(xBlock, yBlock, Teuchos::NO_TRANS, alpha, beta);
+  ABlock.apply(xBlock, yBlock, Teuchos::NO_TRANS, SC(alpha), SC(beta));
 
   // Make ACyclic:  same matrix with different Domain and Range maps
   // Use cyclic domain and range maps
@@ -195,7 +203,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
     }
     ACyclic.fillComplete(domainMapCyclic, rangeMapCyclic);
 
-    SpMV_and_Norm_Check();
+    SpMV_and_Norm_Check(ACyclic, ABlock, yBlock, out, success);
 
     if (me == 0) 
       std::cout << "GOOD:  created matrix from scratch " << std::endl;
@@ -216,7 +224,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
                      ABlock.getRowMap(), ABlock.getColMap(),
                      domainMapCyclic, rangeMapCyclic);
 
-    SpMV_and_Norm_Check();
+    SpMV_and_Norm_Check(ACyclic, ABlock, yBlock, out, success);
 
     if (me == 0) 
       std::cout << "GOOD:  created matrix using getLocalMatrixHost " 
@@ -238,7 +246,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
     ACyclic.replaceDomainMap(domainMapCyclic);
     ACyclic.replaceRangeMap(rangeMapCyclic);
 
-    SpMV_and_Norm_Check();
+    SpMV_and_Norm_Check(ACyclic, ABlock, yBlock, out, success);
 
     if (me == 0) 
       std::cout << "GOOD:  created matrix using copyConstructor " << std::endl;
@@ -271,7 +279,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
     }
     ACyclic.fillComplete();
 
-    SpMV_and_Norm_Check();
+    SpMV_and_Norm_Check(ACyclic, ABlock, yBlock, out, success);
 
     if (me == 0) 
       std::cout << "GOOD:  created matrix using graph copy " << std::endl;
@@ -283,7 +291,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
   }
 }
 
-#define UNIT_TEST_GROUP( SC, LO, GO, NT ) \
+#define UNIT_TEST_GROUP( SC, LO, GO, NT )  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrix, Bug9391, SC, LO, GO, NT)
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
