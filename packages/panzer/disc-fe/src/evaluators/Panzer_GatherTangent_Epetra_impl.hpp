@@ -217,15 +217,17 @@ evaluateFields(
   //        can be cheaper.  However the lookup for LIDs may be more expensive!
 
   // Gather operation for each cell in the workset.
-  for (int cell(0); cell < numCells; ++cell)
+  auto LIDs = globalIndexer_->getLIDs();
+  auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+  Kokkos::deep_copy(LIDs_h, LIDs);
+  // Loop over the fields to be gathered.
+  for (int fieldIndex(0); fieldIndex < numFields; ++fieldIndex)
   {
-    size_t cellLocalId(localCellIds[cell]);
-    auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-    // Loop over the fields to be gathered.
-    for (int fieldIndex(0); fieldIndex < numFields; ++fieldIndex)
+    MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldIndex];
+    auto field_h = Kokkos::create_mirror_view(field.get_static_view());
+    for (int cell(0); cell < numCells; ++cell)
     {
-      MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldIndex];
+      size_t cellLocalId(localCellIds[cell]);
       int fieldNum(fieldIds_[fieldIndex]);
       const vector<int>& elmtOffset =
         globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
@@ -234,11 +236,12 @@ evaluateFields(
       // Loop over the basis functions and fill the fields.
       for (int basis(0); basis < numBases; ++basis)
       {
-        int offset(elmtOffset[basis]), lid(LIDs[offset]);
-        field(cell, basis) = (*dxdpEvRoGed_)[lid];
+        int offset(elmtOffset[basis]), lid(LIDs_h(cellLocalId, offset));
+        field_h(cell, basis) = (*dxdpEvRoGed_)[lid];
       } // end loop over the basis functions
-    } // end loop over the fields to be gathered
-  } // end loop over the cells in the workset
+    } // end loop over the cells in the workset
+    Kokkos::deep_copy(field.get_static_view(), field_h);
+  } // end loop over the fields to be gathered
 } // end of evaluateFields()
 
 #endif // __Panzer_GatherTangent_Epetra_impl_hpp__
