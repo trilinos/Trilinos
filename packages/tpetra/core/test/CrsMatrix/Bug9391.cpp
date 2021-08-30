@@ -51,6 +51,35 @@
 
 namespace {
 
+
+#define SpMV_and_Norm_Check() \
+{ \
+  if (np > 1) { \
+    /* Range & Domain maps of ACyclic should differ from those of ABlock.*/ \
+    TEUCHOS_ASSERT(!(ACyclic.getDomainMap()->isSameAs( \
+                                             *(ABlock.getDomainMap()))));\
+    TEUCHOS_ASSERT(!(ACyclic.getRangeMap()->isSameAs( \
+                                             *(ABlock.getRangeMap())))); \
+  } \
+  \
+  /* Create vectors and run SpMV for each matrix; compare norms */ \
+  vector_t xCyclic(ACyclic.getDomainMap()); \
+  vector_t yCyclic(ACyclic.getRangeMap()); \
+  xCyclic.putScalar(SC(1)); \
+  initVector(yCyclic); \
+  \
+  ACyclic.apply(xCyclic, yCyclic, Teuchos::NO_TRANS, alpha, beta); \
+  \
+  using magnitude_t = typename Teuchos::ScalarTraits<SC>::magnitudeType; \
+  const magnitude_t tol = 0.000005; \
+  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm1(), yCyclic.norm1(), tol, \
+                                 out, success); \
+  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm2(), yCyclic.norm2(), tol, \
+                                 out, success); \
+  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.normInf(), yCyclic.normInf(), tol, \
+                                 out, success);  \
+}
+
 template <typename map_t>
 Teuchos::RCP<const map_t> getCyclicMap(
   size_t nIndices, 
@@ -91,12 +120,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
   // Construct identical matrix (ACyclic) with cyclic range and domain maps
   // Do SpMV with both; compare norms of results
 
-  using map_t = Tpetra::Map<>;
-  using matrix_t = Tpetra::CrsMatrix<SC>;
-  using vector_t = Tpetra::Vector<SC>;
+  using map_t = Tpetra::Map<LO, GO, NT>;
+  using matrix_t = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using vector_t = Tpetra::Vector<SC, LO, GO, NT>;
 
   auto comm = Tpetra::getDefaultComm();
   int np = comm->getSize();
+  int me = comm->getRank();
 
   // Build ABlock matrix -- a simple matrix with block rowMap and
   // domainMap == rangeMap == rowMap
@@ -123,6 +153,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
   }
   ABlock.fillComplete();
 
+  // Do SpMV with the matrix
+  SC alpha = SC(2);
+  SC beta = SC(10);
+  vector_t xBlock(blockMap);
+  vector_t yBlock(blockMap);
+  xBlock.putScalar(SC(1));
+  initVector(yBlock);
+  ABlock.apply(xBlock, yBlock, Teuchos::NO_TRANS, alpha, beta);
+
   // Make ACyclic:  same matrix with different Domain and Range maps
   // Use cyclic domain and range maps
   // To make domain and range maps differ for square matrices,
@@ -134,37 +173,111 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug9391, SC, LO, GO, NT)
                getCyclicMap<map_t>(nGlobalRowsAndCols, np-2, comm);
 
   auto lclMatrix = ABlock.getLocalMatrixHost();
-  matrix_t ACyclic(ABlock.getLocalMatrixHost(),
-                   ABlock.getRowMap(), ABlock.getColMap(),
-                   domainMapCyclic, rangeMapCyclic);
 
-  // Create vectors and run SpMV for each matrix; compare norms
-  SC alpha = SC(2);
-  SC beta = SC(10);
+  // Try different ways to build matrix with the cyclic range and domain maps
 
-  vector_t xBlock(blockMap);
-  vector_t yBlock(blockMap);
-  xBlock.putScalar(SC(1));
-  initVector(yBlock);
-  ABlock.apply(xBlock, yBlock, Teuchos::NO_TRANS, alpha, beta);
+  // Build ACyclic from scratch, using new domain and range maps
+  try {
+    if (me == 0) 
+      out << "Trying to create matrix from scratch " << std::endl;
+    matrix_t ACyclic(blockMap, nnzPerRow);
+    for (size_t i = 0; i < blockMap->getNodeNumElements(); i++) {
+      row = blockMap->getGlobalElement(i);
+      int cnt = 0;
+      for (int j = -2; j <= 2; j++) {
+        if ((row+j >= 0) && (row+j < nGlobalRowsAndCols)) {
+          cols[cnt] = row+j;
+          vals[cnt] = row;
+          cnt++;
+        }
+      }
+      ACyclic.insertGlobalValues(row, cols(0, cnt), vals(0, cnt));
+    }
+    ACyclic.fillComplete(domainMapCyclic, rangeMapCyclic);
 
-  vector_t xCyclic(domainMapCyclic);
-  vector_t yCyclic(rangeMapCyclic);
-  xCyclic.putScalar(SC(1));
-  initVector(yCyclic);
-  ACyclic.apply(xCyclic, yCyclic, Teuchos::NO_TRANS, alpha, beta);
+    SpMV_and_Norm_Check();
 
-  using magnitude_t = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-//  const magnitude_t tol = magnitude_t(10) 
-//                        * Teuchos::ScalarTraits<magnitude_t>::eps();
-  const magnitude_t tol = 0.000005;
+    if (me == 0) 
+      out << "GOOD:  created matrix from scratch" << std::endl;
+  }
+  catch (std::exception &e) {
+    if (me == 0) 
+      out << "BAD:  could not create matrix using getLocalMatrixHost(); "
+          << e.what() << std::endl;
+  }
 
-  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm1(), yCyclic.norm1(), tol,
-                                 out, success);
-  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.norm2(), yCyclic.norm2(), tol,
-                                 out, success);
-  TEUCHOS_TEST_FLOATING_EQUALITY(yBlock.normInf(), yCyclic.normInf(), tol,
-                                 out, success);
+  // Build ACyclic using same local graph, row map, col map as ABlock, and
+  // new domain and range maps
+  try {
+    if (me == 0) 
+      out << "Trying to create matrix using getLocalMatrixHost()" << std::endl;
+    matrix_t ACyclic(ABlock.getLocalMatrixDevice(),
+                     ABlock.getRowMap(), ABlock.getColMap(),
+                     domainMapCyclic, rangeMapCyclic);
+
+    SpMV_and_Norm_Check();
+
+    if (me == 0) 
+      out << "GOOD:  created matrix using getLocalMatrixHost()" << std::endl;
+  }
+  catch (std::exception &e) {
+    if (me == 0) 
+      out << "BAD:  could not create matrix using getLocalMatrixHost(); "
+          << e.what() << std::endl;
+  }
+
+  // Build ACyclic using deep copy constructor; call replace*Map for 
+  // domain and range maps
+  try {
+    if (me == 0) 
+      out << "Trying to create matrix using copyConstructor" << std::endl;
+    matrix_t ACyclic(ABlock, Teuchos::Copy);
+    ACyclic.replaceDomainMap(domainMapCyclic);
+    ACyclic.replaceRangeMap(rangeMapCyclic);
+
+    SpMV_and_Norm_Check();
+
+    if (me == 0) 
+      out << "GOOD:  created matrix using copyConstructor" << std::endl;
+  }
+  catch (std::exception &e) {
+    // Copy constructor uses the same graph as a StaticGraph 
+    // and deep copies only the values
+    if (me == 0) 
+      out << "BAD:  could not create matrix using copyConstructor"
+          << e.what() << std::endl;
+  }
+
+  // Build ACyclic using method Matt B used in Zoltan2
+  try {
+    if (me == 0) 
+      out << "Trying to create matrix using graph copy" << std::endl;
+
+    using graph_t = Tpetra::CrsGraph<LO, GO, NT>;
+    auto block_graph = ABlock->getCrsGraph();
+    Teuchos::RCP<graph_t> cyclic_graph = rcp(new graph_t(*block_graph));
+    cyclic_graph->resumeFill();
+    cyclic_graph->fillComplete(domainMapCyclic, rangeMapCyclic);
+    matrix_t ACyclic(cyclic_graph);
+    ACyclic->resumeFill();
+    {
+      auto val_s = ABlock->getLocalMatrixHost().values;
+      auto val_d = ACyclic->getLocalMatrixHost().values;
+      TEUCHOS_ASSERT(val_s.extent(0) == val_d.extent(0));
+      Kokkos::deep_copy(val_d, val_s);
+    }
+    ACyclic->fillComplete();
+
+    SpMV_and_Norm_Check();
+
+    if (me == 0) 
+      out << "GOOD:  created matrix using graph copy" << std::endl;
+  }
+  catch (std::exception &e) {
+    if (me == 0) 
+      out << "BAD:  could not create matrix using graph copy"
+          << e.what() << std::endl;
+  }
 }
 
 #define UNIT_TEST_GROUP( SC, LO, GO, NT ) \
