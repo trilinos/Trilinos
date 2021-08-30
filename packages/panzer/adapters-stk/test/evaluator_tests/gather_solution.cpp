@@ -603,8 +603,8 @@ namespace panzer {
        for(unsigned int cell=0;cell<fieldData2_q1.extent(0);++cell) {
         for(unsigned int pt=0;pt<fieldData2_q1.extent(1);pt++) {
           if (enable_tangents) {
-            TEST_EQUALITY(fieldData2_q1(cell,pt).val(),123.0+myRank);
-            TEST_EQUALITY(fieldData2_q1(cell,pt).availableSize(),num_tangent);
+            TEST_EQUALITY(fieldData2_q1_h(cell,pt).val(),123.0+myRank);
+            TEST_EQUALITY(fieldData2_q1_h(cell,pt).availableSize(),num_tangent);
             for (int i=0; i<num_tangent; ++i) {
               TEST_EQUALITY(fieldData2_q1_h(cell,pt).dx(i),0.123+myRank+i);
               TEST_EQUALITY(fieldData2_q1_h(cell,pt).dx(i),0.123+myRank+i);

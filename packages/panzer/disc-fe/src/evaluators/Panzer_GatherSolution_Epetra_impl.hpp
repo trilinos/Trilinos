@@ -517,7 +517,7 @@ evaluateFields(
 	  // Loop over the basis functions.
 	  for (int basis(0); basis < numBases; ++basis){
             field_h(cell, basis).fastAccessDx(i) =
-              tangentFields_[fieldInd][i](cell, basis).val();
+              tf(cell, basis).val();
 	  } // end loop over the basis functions
 	} // end loop over the cells in the workset
       } // end loop over numTangentFields
