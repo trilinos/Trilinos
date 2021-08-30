@@ -486,7 +486,11 @@ private:
   }
 
   bool needsSyncPath() const {
+#ifdef KOKKOS_ENABLE_CUDA
     return std::is_same<typename t_dev::memory_space,Kokkos::CudaUVMSpace>::value || !memoryIsAliased();
+#else
+    return !memoryIsAliased();
+#endif
   }
 
   void throwIfHostViewAlive() const {
