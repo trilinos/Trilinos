@@ -164,6 +164,8 @@ namespace MueLu {
       else { mueluss << "<Parameter name=\"chebyshev: degree\" type=\"int\" value=\"2\"/>" << std::endl; }
       if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
       else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
+      if ( paramList.isParameter("eigen-analysis: type") ) {  mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"" << paramList.get<std::string>("eigen-analysis: type") << "\"/>" << std::endl; adaptingParamList.remove("eigen-analysis: type",false); }
+      else { mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"cg\"/>" << std::endl; }
     }
 
     // MLS
@@ -174,6 +176,8 @@ namespace MueLu {
       if ( paramList.isParameter("smoother: MLS alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: MLS alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: MLS alpha",false); }
       else if ( paramList.isParameter("smoother: Chebyshev alpha") ) { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"" << paramList.get<double>("smoother: Chebyshev alpha") << "\"/>" << std::endl; adaptingParamList.remove("smoother: Chebyshev alpha",false); }
       else { mueluss << "<Parameter name=\"chebyshev: ratio eigenvalue\" type=\"double\" value=\"20\"/>" << std::endl; }
+      if ( paramList.isParameter("eigen-analysis: type") ) {  mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"" << paramList.get<std::string>("eigen-analysis: type") << "\"/>" << std::endl; adaptingParamList.remove("eigen-analysis: type",false); }
+      else { mueluss << "<Parameter name=\"eigen-analysis: type\" type=\"string\" value=\"cg\"/>" << std::endl; }
     }
 
     // parameters for ILU based preconditioners
