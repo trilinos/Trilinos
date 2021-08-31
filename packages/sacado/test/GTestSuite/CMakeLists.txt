@@ -1,11 +1,3 @@
-# Set some variables controlling the internal googletest package
-SET(INSTALL_GTEST OFF CACHE BOOL "Install GTest")
-SET(BUILD_GMOCK OFF CACHE BOOL "Build GMock")
-SET(gtest_disable_pthreads ON CACHE BOOL "Disable uses of pthreads in gtest")
-
-# Configure googletest
-add_subdirectory(googletest)
-
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/Fad)
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/utils)
 
@@ -55,5 +47,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "PASSED"
   )
-
-TARGET_LINK_LIBRARIES(Sacado_GTestSuite sacado-gtest)

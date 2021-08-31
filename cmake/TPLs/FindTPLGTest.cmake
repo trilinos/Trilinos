@@ -53,8 +53,37 @@
 # ************************************************************************
 # @HEADER
 
+# First, set up the variables for the (backward-compatible) TriBITS way of
+# finding GTest.  These are used in case FIND_PACKAGE(GTest ...) is
+# not called or does not find GTest.  Also, these variables need to be
+# non-null in order to trigger the right behavior in the function
+# TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES().
+SET(REQUIRED_HEADERS gtest.h)
+SET(REQUIRED_LIBS_NAMES gtest)
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( gtest
-  REQUIRED_HEADERS gtest/gtest.h 
-  REQUIRED_LIBS_NAMES gtest
+# Second, search for GTest components (if allowed) using the standard
+# FIND_PACKAGE(GTest ...).
+TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE(GTest  GTest_ALLOW_PREFIND)
+IF (GTest_ALLOW_PREFIND)
+  MESSAGE("-- Using FIND_PACKAGE(GTest ...) ...") 
+  FIND_PACKAGE(GTest CONFIG)
+  IF (GTest_FOUND)
+    GET_TARGET_PROPERTY(GTest_INCLUDE_DIRS GTest::gtest INTERFACE_INCLUDE_DIRECTORIES)
+    GET_TARGET_PROPERTY(GTest_CONFIGURATION GTest::gtest IMPORTED_CONFIGURATIONS)
+    GET_TARGET_PROPERTY(GTest_LIBRARIES GTest::gtest IMPORTED_LOCATION_${GTest_CONFIGURATION})
+    # Tell TriBITS that we found GTest and there no need to look any further!
+    SET(TPL_GTest_INCLUDE_DIRS ${GTest_INCLUDE_DIRS} CACHE PATH "...")
+    SET(TPL_GTest_LIBRARIES ${GTest_LIBRARIES} CACHE FILEPATH "...")
+    SET(TPL_GTest_LIBRARY_DIRS ${GTest_LIBRARY_DIRS} CACHE PATH "...")
+  ENDIF()
+ENDIF()
+
+# Third, call TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( GTest
+  REQUIRED_HEADERS ${REQUIRED_HEADERS}
+  REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
   )
+# NOTE: If FIND_PACKAGE(GTest ...) was called and successfully found
+# GTest, then TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES() will use the
+# already-set variables and just print them out.  This is the final "hook"
+# into the TriBITS TPL system.
