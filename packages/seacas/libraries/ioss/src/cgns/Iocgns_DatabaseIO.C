@@ -4,7 +4,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1312,7 +1312,6 @@ namespace Iocgns {
     if (zone > 1) { // Donor zone is always lower numbered, so zone 1 has no donor zone.
       int nconn = 0;
       CGCHECKM(cg_nconns(get_file_pointer(), base, zone, &nconn));
-      cgsize_t num_shared = 0;
       for (int i = 0; i < nconn; i++) {
         char                      connectname[CGNS_MAX_NAME_LENGTH + 1];
         CG_GridLocation_t         location;
@@ -1353,7 +1352,6 @@ namespace Iocgns {
         // A "previous" zone will have a lower zone number this this zone...
         auto donor_iter = m_zoneNameMap.find(donorname);
         if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
-          num_shared += npnts;
 #if IOSS_DEBUG_OUTPUT
           fmt::print("Zone {} shares {} nodes with {}\n", zone, npnts, donorname);
 #endif
@@ -2122,24 +2120,24 @@ namespace Iocgns {
           size_t eb_offset_plus_one = eb->get_offset() + 1;
           if (field.get_type() == Ioss::Field::INT64) {
             auto *idata = static_cast<int64_t *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int64_t>(eb_offset_plus_one));
           }
           else {
             SMART_ASSERT(field.get_type() == Ioss::Field::INT32);
             int *idata = static_cast<int *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int>(eb_offset_plus_one));
           }
         }
         else if (field.get_name() == "implicit_ids") {
           size_t eb_offset_plus_one = eb->get_offset() + 1;
           if (field.get_type() == Ioss::Field::INT64) {
             auto *idata = static_cast<int64_t *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int64_t>(eb_offset_plus_one));
           }
           else {
             SMART_ASSERT(field.get_type() == Ioss::Field::INT32);
             int *idata = static_cast<int *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int>(eb_offset_plus_one));
           }
         }
         else {
@@ -2274,7 +2272,7 @@ namespace Iocgns {
 
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
-        auto coord_lambda = [this, base, zone, &coord, rmin, rmax, phys_dimension, num_to_get,
+        auto coord_lambda = [this, base, zone, &coord, &rmin, &rmax, phys_dimension, num_to_get,
                              &rdata](const char *ord_name, int ordinate) {
           CGCHECKM(cg_coord_read(get_file_pointer(), base, zone, ord_name, CG_RealDouble, rmin,
                                  rmax, coord.data()));

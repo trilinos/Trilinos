@@ -29,7 +29,6 @@ namespace {
     std::string sline = line;
     chop_whitespace(sline);
     Error(fmt::format("parsing input file, currently at \"{}\".\n", sline));
-    exit(1);
   }
 
   std::string Parse_Variables(std::string xline, std::ifstream &cmd_file, bool &all_flag,
@@ -58,12 +57,10 @@ namespace {
       Error(fmt::format(" Problem converting the string '{}'"
                         " to a double value while parsing tolerance.  Aborting...\n",
                         str_val));
-      exit(1);
     }
 
     if (val < 0.0) {
       Error(fmt::format(" Parsed a negative value \"{}\".  Aborting...\n", val));
-      exit(1);
     }
     return val;
   }
@@ -158,7 +155,6 @@ namespace {
       Error(fmt::format("Parsing error: Cannot specify both "
                         "variables to include and exclude without using the "
                         "'(all)' specifier.  Aborting...\n"));
-      exit(1);
     }
     if (num_include == 0 && num_exclude > 0) {
       all_flag = true;
@@ -185,7 +181,6 @@ namespace {
       if (ival1 < 1) {
         Error(fmt::format("parsing exclusion times from command "
                           "line .. value was less than 1\n"));
-        exit(1);
       }
 
       ++num_excluded_steps;
@@ -199,7 +194,6 @@ namespace {
         if (ival2 < 1) {
           Error(fmt::format("parsing exclusion times from command "
                             "line .. value was less than 1\n"));
-          exit(1);
         }
 
         if (ival1 < ival2) {
@@ -211,7 +205,6 @@ namespace {
           Error(fmt::format("parsing exclusion times from command "
                             "line .. first value in a range was greater than the "
                             "second.\n"));
-          exit(1);
         }
       }
 
@@ -570,7 +563,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
   else {
     Error("no files specified\n\n");
-    return false;
   }
 
   // Get options from environment variable also...
@@ -669,7 +661,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
         Error(fmt::format("parse error for -explicit keyword. "
                           "Expected '<int|last>:<int|last>', found '{}' Aborting...\n",
                           temp));
-        exit(1);
       }
     }
   }
@@ -850,7 +841,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
       command_file = temp;
       if (!summary_flag && (File_Exists(command_file) == 0)) {
         Error(fmt::format("Can't open file \"{}\".\n", command_file));
-        exit(1);
       }
 
       // Command file exists, parse contents...
@@ -862,7 +852,6 @@ bool SystemInterface::parse_options(int argc, char **argv)
         command_file = t2;
         if (!summary_flag && (File_Exists(command_file) == 0)) {
           Error(fmt::format("Can't open file \"{}\".\n", command_file));
-          exit(1);
         }
 
         // Command file exists, parse contents...
@@ -963,7 +952,6 @@ void SystemInterface::Parse_Command_File()
           Error(fmt::format(" expected \"TOLERANCE\" after the \"FINAL TIME\" keyword. "
                             "Found \"{}\" instead. Aborting...\n",
                             tok3));
-          exit(1);
         }
         std::string tok = extract_token(xline, " \n\t=,");
         if (tok == "") {
@@ -1432,7 +1420,6 @@ namespace {
           !abbreviation(tok, "eigen_combine", 7) && !abbreviation(tok, "ignore", 3) &&
           !abbreviation(tok, "floor", 3)) {
         Error(fmt::format("in parsing command file: unrecognized keyword \"{}\"\n", tok));
-        exit(1);
       }
 
       if (tok == "(all)" || tok == "all") {
@@ -1447,7 +1434,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error(" Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1459,7 +1445,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1471,7 +1456,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1483,7 +1467,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1495,7 +1478,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1507,7 +1489,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1519,7 +1500,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1531,7 +1511,6 @@ namespace {
         if (tok == "floor" || tok == "") {
           Error("Input file specifies a tolerance type "
                 "but no tolerance\n");
-          exit(1);
         }
         def_tol.value = To_Double(tok);
         tok           = extract_token(xline, " \n\t=,");
@@ -1548,7 +1527,6 @@ namespace {
         tok = extract_token(xline, " \n\t=,");
         if (tok == "" || tok[0] == '#') {
           Error("Floor specified but couldn't find value\n");
-          exit(1);
         }
         def_tol.floor = To_Double(tok);
       }

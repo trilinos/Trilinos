@@ -43,7 +43,7 @@ error = ex_put_coord_names (exoid, coord_names);
 
  */
 
-int ex_put_coord_names(int exoid, char *coord_names[])
+int ex_put_coord_names(int exoid, char *const coord_names[])
 {
   int    status;
   int    ndimdim, varid;

@@ -46,10 +46,10 @@
  * \ingroup ModelDescription
  * \undoc
  */
-int ex_put_loadbal_param_cc(int exoid, void_int *num_int_nodes, void_int *num_bor_nodes,
-                            void_int *num_ext_nodes, void_int *num_int_elems,
-                            void_int *num_bor_elems, void_int *num_node_cmaps,
-                            void_int *num_elem_cmaps)
+int ex_put_loadbal_param_cc(int exoid, const void_int *num_int_nodes, const void_int *num_bor_nodes,
+                            const void_int *num_ext_nodes, const void_int *num_int_elems,
+                            const void_int *num_bor_elems, const void_int *num_node_cmaps,
+                            const void_int *num_elem_cmaps)
 {
   int    status;
   int    iproc, varid, dimid_npf, dimid[3];

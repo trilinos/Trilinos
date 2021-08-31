@@ -139,7 +139,7 @@ int main()
   coord_names[1] = "ycoor";
   coord_names[2] = "zcoor";
 
-  EXCHECK(ex_put_coord_names(exoid, (char **)coord_names));
+  EXCHECK(ex_put_coord_names(exoid, (char *const *)coord_names));
 
   std::vector<ex_block> blocks(num_elem_blk);
 
@@ -204,7 +204,7 @@ int main()
   info[1] = "";
   info[2] = "                                     ";
 
-  EXCHECK(ex_put_info(exoid, num_info, (char **)info));
+  EXCHECK(ex_put_info(exoid, num_info, (char *const *)info));
 
   /* write results variables parameters and names */
   const int num_glo_vars = 1;
@@ -213,7 +213,7 @@ int main()
   var_names[0] = "glo_vars";
 
   EXCHECK(ex_put_variable_param(exoid, EX_GLOBAL, num_glo_vars));
-  EXCHECK(ex_put_variable_names(exoid, EX_GLOBAL, num_glo_vars, (char **)var_names));
+  EXCHECK(ex_put_variable_names(exoid, EX_GLOBAL, num_glo_vars, (char *const *)var_names));
 
   const int num_nod_vars = 2;
   /*              12345678901234567890123456789012 */
@@ -221,7 +221,7 @@ int main()
   var_names[1] = "nod_var1";
 
   EXCHECK(ex_put_variable_param(exoid, EX_NODAL, num_nod_vars));
-  EXCHECK(ex_put_variable_names(exoid, EX_NODAL, num_nod_vars, (char **)var_names));
+  EXCHECK(ex_put_variable_names(exoid, EX_NODAL, num_nod_vars, (char *const *)var_names));
 
   const int num_ele_vars = 3;
   /*              0        1         2         3   */
@@ -231,7 +231,7 @@ int main()
   var_names[2] = "this_variable_name_is_tooooo_long";
 
   EXCHECK(ex_put_variable_param(exoid, EX_ELEM_BLOCK, num_ele_vars));
-  EXCHECK(ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_ele_vars, (char **)var_names));
+  EXCHECK(ex_put_variable_names(exoid, EX_ELEM_BLOCK, num_ele_vars, (char *const *)var_names));
 
   // for each time step, write the analysis results;
   // the code below fills the arrays glob_var_vals,

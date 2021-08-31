@@ -1006,13 +1006,13 @@ namespace SEAMS {
   {
     size_t rows_to_skip = static_cast<size_t>(skip);
 
-    const char *  delim = ",\t ";
-    std::fstream *file  = aprepro->open_file(filename, "r");
+    std::fstream *file = aprepro->open_file(filename, "r");
     if (file != nullptr) {
 
       size_t rows = 0;
       size_t cols = 0;
 
+      const char *delim = ",\t ";
       std::string line;
       while (std::getline(*file, line)) {
         rows++;

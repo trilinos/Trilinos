@@ -1,8 +1,3 @@
-## Copyright(C) 1999-2020 National Technology & Engineering Solutions
-## of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
-## NTESS, the U.S. Government retains certain rights in this software.
-##
-## See packages/seacas/LICENSE for details
 ## General Properties
 
   Property | Value    | Description
@@ -115,13 +110,13 @@ of the environment variable `IOSS_PROPERTIES`.  The value of the
 variable is one or more colon-separated property/property-value pairs.
 For example, to set the `DECOMPOSITION_METHOD` and the `FILE_TYPE`
 externally, the following would be used:
-```
+```bash
     export IOSS_PROPERTIES="DECOMPOSITION_METHOD=rib:FILE_TYPE=netcdf4"
 ```
 If the environment variable is set correctly, there should be an
 informational message output during running of the application similar
 to:
-```
+```bash
 	IOSS: Adding property 'DECOMPOSITION_METHOD' with value 'rib'
 	IOSS: Adding property 'FILE_TYPE' with value 'netcdf4'
 ```

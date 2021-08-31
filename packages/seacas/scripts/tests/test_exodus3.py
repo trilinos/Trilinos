@@ -12,13 +12,14 @@ import sys
 import os
 import tempfile
 import ctypes
+from contextlib import contextmanager
 
 path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 sys.path.append(os.path.join(path, "lib"))
 import exodus as exo
 
 
-class MyTestCase(unittest.TestCase):
+class TestAssemblies(unittest.TestCase):
 
     def setUp(self):
         exofile = exo.exodus("test-assembly.exo", mode='r')
@@ -86,7 +87,7 @@ class MyTestCase(unittest.TestCase):
                             [100, 200, 300, 400],
                             [100, 222]]
             x.entity_list = entity_lists[i]
-        self.maxDiff=None
+        self.maxDiff = None
         self.assertEqual(str(expected), str(assemblies))
 
     def test_put_assembly(self):
@@ -145,12 +146,10 @@ class MyTestCase(unittest.TestCase):
 
     def test_get_reduction_variable_values_assembly_no_values(self):
         temp_exofile = exo.exodus("test-assembly.exo", mode='r')
-        times = temp_exofile.get_times()
         assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
         assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
         values = temp_exofile.get_reduction_variable_values('EX_ASSEMBLY', assemblies[5].id, 1)
         self.assertListEqual([0.00, 0.00, 0.00, 0.00], list(values))
-
 
     def test_put_assemblies(self):
         new = exo.assembly(name='Unit_test', type='EX_ASSEMBLY', id=444)
@@ -164,7 +163,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(16, assemblies[6].type)
         self.assertEqual(new.id, assemblies[6].id)
         self.assertEqual(new.entity_list, assemblies[6].entity_list)
-
 
     def test_put_assemblies_multiple_assemblies(self):
         new = exo.assembly(name='Unit_test1', type='EX_ASSEMBLY', id=444)
@@ -185,6 +183,44 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(16, assemblies[7].type)
         self.assertEqual(new2.id, assemblies[7].id)
         self.assertEqual(new2.entity_list, assemblies[7].entity_list)
+
+
+class TestExodusUtilities(unittest.TestCase):
+    def setUp(self):
+        self.tempdir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.tempdir.cleanup()
+
+    def test_basename(self):
+        self.assertEqual("test", exo.basename("test.e"))
+        self.assertEqual("fake/path/to/test", exo.basename("fake/path/to/test.e"))
+
+    def test_getExodusVersion(self):
+        include_path = os.path.join(self.tempdir.name, "include")
+        os.makedirs(include_path)
+        with open(os.path.join(include_path, "exodusII.h"), 'w') as fptr:
+            fptr.write("#define EXODUS_VERSION_MAJOR 1\n")
+            fptr.write("#define EXODUS_VERSION_MINOR 22\n")
+        with swap_ACCESS_value(self.tempdir.name):
+            self.assertEqual(122, exo.getExodusVersion())
+
+    def test_getExodusVersion_not_found(self):
+        include_path = os.path.join(self.tempdir.name, "include")
+        os.makedirs(include_path)
+        with open(os.path.join(include_path, "exodusII.h"), 'w') as fptr:
+            fptr.write("#define NOT_EXODUS_VERSION 1\n")
+            fptr.write("#define ALSO_NOT_EXODUS_VERSION 22\n")
+        with swap_ACCESS_value(self.tempdir.name):
+            self.assertEqual(0, exo.getExodusVersion())
+
+
+@contextmanager
+def swap_ACCESS_value(new_access_value):
+    old_value = exo.ACCESS
+    exo.ACCESS = new_access_value
+    yield
+    exo.ACCESS = old_value
 
 
 if __name__ == '__main__':

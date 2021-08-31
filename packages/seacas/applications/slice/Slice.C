@@ -24,6 +24,7 @@
 #include <exodusII.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdlib>

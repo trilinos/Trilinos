@@ -118,25 +118,25 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
       stkIo.create_input_mesh();
 
       const std::vector<std::string> &info_records = stkIo.get_info_records();
-      // First 2 lines of info records are host information (node name,
+      // First line of info records is host information (node name,
       // os version) (2) Next record is the file name of the input file
       // data that follows (1) File contains 4 records; 1 is longer than
       // 80 characters, so it wraps (4+1) Next line is the
       // "additional_info_record" added above (1)
       // Last records are the IOSS configuration summary (35).
-      size_t expected_min_info_record_count = 2 + (4+1) + 1 + 1;
+      size_t expected_min_info_record_count = 1 + (4+1) + 1 + 1;
       EXPECT_TRUE(expected_min_info_record_count <= info_records.size());
 
-      EXPECT_STREQ(input_file.c_str(), info_records[2].c_str());
+      EXPECT_STREQ(input_file.c_str(), info_records[1].c_str());
 
-      EXPECT_STREQ(info1.c_str(), info_records[3].c_str());
-      EXPECT_STREQ(info2.substr(0,79).c_str(), info_records[4].substr(0,79).c_str());
-      EXPECT_STREQ(info2.substr(79).c_str(), info_records[5].c_str());
-      EXPECT_STREQ(info3.c_str(), info_records[6].c_str());
-      EXPECT_STREQ(info4.c_str(), info_records[7].c_str());
-      EXPECT_STREQ(additional_info_record.c_str(), info_records[8].c_str());
+      EXPECT_STREQ(info1.c_str(), info_records[2].c_str());
+      EXPECT_STREQ(info2.substr(0,79).c_str(), info_records[3].substr(0,79).c_str());
+      EXPECT_STREQ(info2.substr(79).c_str(), info_records[4].c_str());
+      EXPECT_STREQ(info3.c_str(), info_records[5].c_str());
+      EXPECT_STREQ(info4.c_str(), info_records[6].c_str());
+      EXPECT_STREQ(additional_info_record.c_str(), info_records[7].c_str());
 
-      unlink(filename.c_str());
+      //      unlink(filename.c_str());
       unlink(input_file.c_str());
     }
 }
