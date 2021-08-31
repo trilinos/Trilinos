@@ -295,12 +295,15 @@ public:
 	impl::sync_device(originalDualView);
       }
     }
-    else {
+    else if(std::is_same<TargetDeviceType,HostType>::value) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadOnly");
       if(needsSyncPath()) {
 	throwIfDeviceViewAlive();
 	impl::sync_host(originalDualView);
       }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "WrappedDualView: Template argumenbt to getView<>() must match either host of device types");
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -320,7 +323,7 @@ public:
 	originalDualView.modify_device();
       }
     }
-    else {
+    else if(std::is_same<TargetDeviceType,HostType>::value) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadWrite");
       static_assert(dualViewHasNonConstData,
                     "ReadWrite views are not available for DualView with const data");
@@ -329,6 +332,9 @@ public:
 	impl::sync_host(originalDualView);
 	originalDualView.modify_host();      
       }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "WrappedDualView: Template argumenbt to getView<>() must match either host of device types");
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -351,7 +357,7 @@ public:
 	dualView.modify_host();
       }
     }
-    else {
+    else if(std::is_same<TargetDeviceType,HostType>::value) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
@@ -360,6 +366,9 @@ public:
 	dualView.clear_sync_state();
 	dualView.modify_device();     
       }
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "WrappedDualView: Template argumenbt to getView<>() must match either host of device types");
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -446,15 +455,14 @@ public:
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
   }
 
+
   // A Kokkos implementation of WrappedDualView will have to make these
   // functions publically accessable, but in the Tpetra version, I'm
   // not sure we want this.  There are two options on proceeding here:
   // 1) Mark these as "Expert" only in the comments.  This will be consistent
   //    with a future Kokkos version.
   // 2) Make these protected and then friend Vector/MultiVector.  This will
-  //    keep out users from shooting themselves in the feet.  This would require
-  //    another layer of "impl" wrapping as WrappedDualView cannot see 
-  //    MultiVector's template paramters and cannot friend these classes directly.
+  //    keep out users from shooting themselves in the feet.  
   const  DualViewType getOriginalDualView() const {
     return originalDualView;
   }
