@@ -43,7 +43,7 @@ namespace mesh {
 template <typename T> STK_FUNCTION
 void atomic_add(T *dest, const T src)
 {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_OPENMP)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_OPENMP) || defined(KOKKOS_ENABLE_HIP)
   Kokkos::atomic_add(dest, src);
 #else
   *dest += src;

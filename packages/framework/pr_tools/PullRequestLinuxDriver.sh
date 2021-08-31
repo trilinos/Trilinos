@@ -70,10 +70,10 @@ test -d ${REPO_ROOT:?}/.git || REPO_ROOT=`readlink -f ${WORKSPACE:?}/Trilinos`
 message_std "PRDriver> " "REPO_ROOT : ${REPO_ROOT}"
 
 # Get the md5 checksum of this script:
-sig_script_old=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriver.sh)
+sig_script_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 
 # Get the md5 checksum of the Merge script
-sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverMerge.py)
+sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
 
 
 print_banner "Merge Source into Target"
@@ -87,7 +87,7 @@ merge_cmd_options=(
     ${TRILINOS_SOURCE_SHA:?}
     ${WORKSPACE:?}
     )
-merge_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
+merge_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
 
 
 # Call the script to handle merging the incoming branch into
@@ -105,13 +105,13 @@ print_banner "Merge completed"
 
 
 # Get the md5 checksum of this script:
-sig_script_new=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriver.sh)
+sig_script_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh)
 message_std "PRDriver> " "Old md5 checksum ${sig_script_old:?} for ${SCRIPTFILE:?}"
 message_std "PRDriver> " "New md5 checksum ${sig_script_new:?} for ${SCRIPTFILE:?}"
 message_std "PRDriver> " ""
 
 # Get the md5 checksum of the Merge script
-sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverMerge.py)
+sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriverMerge.py)
 message_std "PRDriver> " "Old md5 checksum ${sig_merge_old:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
 message_std "PRDriver> " "New md5 checksum ${sig_merge_new:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
 
@@ -120,7 +120,7 @@ then
     message_std "PRDriver> " ""
     message_std "PRDriver> " "Driver or Merge script change detected. Re-launching PR Driver"
     message_std "PRDriver> " ""
-    ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriver.sh
+    ${REPO_ROOT:?}/packages/framework/pr_tools/PullRequestLinuxDriver.sh
     exit $?
 fi
 

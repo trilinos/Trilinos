@@ -96,19 +96,17 @@ namespace
       hb_props.add(Ioss::Property("PRECISION", 10));
 
       //+ Define the heartbeat output and the format (CSV)
-      size_t hb =
-	stkIo.add_heartbeat_output(file_name, stk::io::CSV, hb_props);
+      size_t hb = stkIo.add_heartbeat_output(file_name, stk::io::CSV, hb_props);
       //-END
 
       stk::util::ParameterMapType::const_iterator i = params.begin();
       stk::util::ParameterMapType::const_iterator iend = params.end();
       for (; i != iend; ++i) {
-	const std::string parameterName = (*i).first;
-	stk::util::Parameter &parameter = params.get_param(parameterName);
+          const std::string parameterName = (*i).first;
+          stk::util::Parameter &parameter = params.get_param(parameterName);
 
-	//+ Tell heartbeat which variables to output at each step...
-	stkIo.add_heartbeat_global(hb, parameterName,
-				   &parameter.value, parameter.type);
+          //+ Tell heartbeat which variables to output at each step...
+          stkIo.add_heartbeat_global(hb, parameterName, parameter);
       }
 
       int timestep_count = 1;

@@ -42,7 +42,7 @@ namespace stk {
 namespace mesh {
 
 template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const ExecSpace& execSpace)
+NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
 {
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 

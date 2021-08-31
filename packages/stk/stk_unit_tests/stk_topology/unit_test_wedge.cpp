@@ -32,10 +32,14 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_ngp_test/ngp_test.hpp>
-#include <stk_topology/topology.hpp>
-#include "topology_test_utils.hpp"
+#include "Kokkos_Core.hpp"            // for parallel_for, KOKKOS_LAMBDA
+#include "gtest/gtest.h"              // for AssertionResult, Message, TestPartResult, EXPECT_EQ
+#include "stk_ngp_test/ngp_test.hpp"  // for NGP_EXPECT_EQ, NGP_EXPECT_FALSE, NGP_EXPECT_TRUE
+#include "stk_topology/topology.hpp"  // for topology, topology::TRI_6, topology::WEDGE_6, topol...
+#include "topology_test_utils.hpp"    // for INVALID, check_edge_node_ordinals, check_edge_node_...
+#include <stdio.h>                    // for printf
+#include <iostream>                   // for operator<<, endl, basic_ostream, cout, ostream
+#include <vector>                     // for vector
 
 TEST(stk_topology, wedge_6)
 {
