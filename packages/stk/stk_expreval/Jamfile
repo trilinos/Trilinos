@@ -154,6 +154,7 @@ lib stk_expreval
     ]
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_util
+    /sierra/stk_util//stk_util_ngp
     /mpi//mpi
   : 
     [ ifuserbuild

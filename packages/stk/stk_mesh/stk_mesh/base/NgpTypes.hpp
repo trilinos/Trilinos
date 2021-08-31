@@ -35,33 +35,33 @@
 #ifndef NGPTYPES_HPP
 #define NGPTYPES_HPP
 
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include "stk_mesh/base/Types.hpp"
 #include <Kokkos_Core.hpp>
 
 namespace stk {
 namespace mesh {
 
-using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, MemSpace>;
-using EntityKeyViewType         = Kokkos::View<EntityKey*, MemSpace>;
-using EntityViewType            = Kokkos::View<Entity*, MemSpace>;
-using BucketConnectivityType    = Kokkos::View<Entity**, MemSpace>;
-using UnsignedViewType          = Kokkos::View<unsigned*, MemSpace>;
-using BoolViewType              = Kokkos::View<bool*, MemSpace>;
-using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, MemSpace>;
-using PartOrdinalViewType       = Kokkos::View<PartOrdinal*, MemSpace>;
-using PermutationViewType       = Kokkos::View<Permutation*, MemSpace>;
-using FastSharedCommMapViewType = Kokkos::View<FastMeshIndex*, MemSpace>;
+using DeviceCommMapIndices      = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
+using EntityKeyViewType         = Kokkos::View<EntityKey*, stk::ngp::MemSpace>;
+using EntityViewType            = Kokkos::View<Entity*, stk::ngp::MemSpace>;
+using BucketConnectivityType    = Kokkos::View<Entity**, stk::ngp::MemSpace>;
+using UnsignedViewType          = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
+using BoolViewType              = Kokkos::View<bool*, stk::ngp::MemSpace>;
+using OrdinalViewType           = Kokkos::View<ConnectivityOrdinal*, stk::ngp::MemSpace>;
+using PartOrdinalViewType       = Kokkos::View<PartOrdinal*, stk::ngp::MemSpace>;
+using PermutationViewType       = Kokkos::View<Permutation*, stk::ngp::MemSpace>;
+using FastSharedCommMapViewType = Kokkos::View<FastMeshIndex*, stk::ngp::MemSpace>;
 using HostMeshIndexType         = Kokkos::View<FastMeshIndex*>::HostMirror;
-using MeshIndexType             = Kokkos::View<const FastMeshIndex*, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
+using MeshIndexType             = Kokkos::View<const FastMeshIndex*, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
 
-template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, MemSpace>;
-template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, HostPinnedSpace>;
+template <typename T> using FieldDataDeviceViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace>;
+template <typename T> using FieldDataHostViewType   = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::HostPinnedSpace>;
 
 template <typename T> using UnmanagedHostInnerView = Kokkos::View<T**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+template <typename T> using UnmanagedDevInnerView = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 #define ORDER_INDICES(i,j) j,i
 #else
 #define ORDER_INDICES(i,j) i,j

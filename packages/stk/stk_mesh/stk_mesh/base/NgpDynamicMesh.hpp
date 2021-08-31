@@ -49,13 +49,15 @@
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Field.hpp"
 
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/NgpUtils.hpp"
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_util/util/StkNgpVector.hpp"
 
 #ifdef KOKKOS_ENABLE_CUDA
 typedef Kokkos::Cuda Device;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIP Device;
 #else
 typedef Kokkos::Serial Device;
 #endif
@@ -64,14 +66,14 @@ namespace stk {
 namespace mesh {
 
 
-typedef Kokkos::View<unsigned*,MemSpace> UnsignedViewType;
-typedef Kokkos::View<stk::mesh::EntityRank*,MemSpace> RankViewType;
-typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, MemSpace> PartOrdViewType;
-typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, MemSpace, Kokkos::MemoryUnmanaged> UnmanagedPartOrdViewType;
-typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
-typedef Kokkos::View<stk::mesh::Entity*, MemSpace, Kokkos::MemoryUnmanaged> UnmanagedEntityViewType;
-typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, MemSpace> BktConnectivityType;
-typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, MemSpace, Kokkos::MemoryUnmanaged> UnmanagedBktConnectivityType;
+typedef Kokkos::View<unsigned*, stk::ngp::MemSpace> UnsignedViewType;
+typedef Kokkos::View<stk::mesh::EntityRank*, stk::ngp::MemSpace> RankViewType;
+typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, stk::ngp::MemSpace> PartOrdViewType;
+typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryUnmanaged> UnmanagedPartOrdViewType;
+typedef Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace> EntityViewType;
+typedef Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace, Kokkos::MemoryUnmanaged> UnmanagedEntityViewType;
+typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, stk::ngp::MemSpace> BktConnectivityType;
+typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryUnmanaged> UnmanagedBktConnectivityType;
 
 STK_FUNCTION
 inline
@@ -207,7 +209,7 @@ struct DynamicBucket {
 class DynamicMesh
 {
 public:
-  typedef stk::mesh::ExecSpace MeshExecSpace;
+  typedef stk::ngp::ExecSpace MeshExecSpace;
   typedef DynamicBucket::ConnectedNodes ConnectedNodes;
   typedef DynamicBucket BucketType;
 
@@ -234,7 +236,7 @@ public:
   {
     indexOfFirstEmptyBucket = UnsignedViewType("indexOfFirstEmptyBucket",stk::topology::NUM_RANKS);
     hostIndexOfFirstEmptyBucket = Kokkos::create_mirror_view(indexOfFirstEmptyBucket);
-    hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*,MemSpace>::HostMirror("host_mesh_indices", bulk->get_size_of_entity_index_space());
+    hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace>::HostMirror("host_mesh_indices", bulk->get_size_of_entity_index_space());
     hostEntityRanks = RankViewType::HostMirror("host_entity_ranks", bulk->get_size_of_entity_index_space());
 
     stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
@@ -470,9 +472,9 @@ private:
 
     Kokkos::deep_copy(buckets[rank], hostBuckets[rank]);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace,alloc_part_ords_tag>(0,numStkBuckets), *this);
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace,alloc_entities_tag>(0,numStkBuckets), *this);
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace,alloc_connectivity_tag>(0,numStkBuckets), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<stk::ngp::ExecSpace,alloc_part_ords_tag>(0,numStkBuckets), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<stk::ngp::ExecSpace,alloc_entities_tag>(0,numStkBuckets), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<stk::ngp::ExecSpace,alloc_connectivity_tag>(0,numStkBuckets), *this);
 
     Kokkos::deep_copy(indexOfFirstEmptyBucket, hostIndexOfFirstEmptyBucket);
     Kokkos::deep_copy(hostBuckets[rank], buckets[rank]);
@@ -538,7 +540,7 @@ private:
   void copy_mesh_indices_and_ranks_to_device()
   {
     unsigned length = hostMeshIndices.size();
-    Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace> tmp_device_mesh_indices("tmp_dev_mesh_indices", length);
+    Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace> tmp_device_mesh_indices("tmp_dev_mesh_indices", length);
     Kokkos::deep_copy(tmp_device_mesh_indices, hostMeshIndices);
     deviceMeshIndices = tmp_device_mesh_indices;
     RankViewType tmp_device_entity_ranks("tmp_dev_ent_ranks", length);
@@ -552,7 +554,7 @@ private:
   }
 
 
-  typedef Kokkos::View<DynamicBucket*, Kokkos::LayoutRight, MemSpace> BucketView;
+  typedef Kokkos::View<DynamicBucket*, Kokkos::LayoutRight, stk::ngp::MemSpace> BucketView;
   const stk::mesh::BulkData *bulk;
 
   unsigned maxNumParts;
@@ -577,8 +579,8 @@ private:
   UnsignedViewType indexOfFirstEmptyBucket;
   UnsignedViewType::HostMirror hostIndexOfFirstEmptyBucket;
   BucketView::HostMirror hostBuckets[stk::topology::NUM_RANKS];
-  Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace>::HostMirror hostMeshIndices;
-  Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace> deviceMeshIndices;
+  Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace>::HostMirror hostMeshIndices;
+  Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace> deviceMeshIndices;
   RankViewType deviceEntityRanks;
   RankViewType::HostMirror hostEntityRanks;
 };

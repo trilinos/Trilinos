@@ -244,6 +244,12 @@ bool internal_read_global(Teuchos::RCP<Ioss::Region> input_region, const std::st
 
 
 void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
+                              const std::string &name, const stk::util::Parameter &param)
+{
+  internal_write_parameter(output_region, name, param.value, param.type);
+}
+
+void internal_write_parameter(Teuchos::RCP<Ioss::Region> output_region,
                               const std::string &name, const STK_ANY_NAMESPACE::any &any_value,
                               stk::util::ParameterType::Type type)
 {
@@ -309,6 +315,14 @@ void write_defined_global_any_fields(Teuchos::RCP<Ioss::Region> region,
         stk::util::ParameterType::Type type = global_any_fields[i].m_type;
         internal_write_parameter(region, name, *value, type);
     }
+}
+
+bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
+                             const std::string &globalVarName,
+                             stk::util::Parameter& param,
+                             bool abort_if_not_found)
+{
+  return internal_read_parameter(input_region, globalVarName, param.value, param.type, abort_if_not_found);
 }
 
 bool internal_read_parameter(Teuchos::RCP<Ioss::Region> input_region,
