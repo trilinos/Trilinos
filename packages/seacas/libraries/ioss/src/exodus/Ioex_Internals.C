@@ -2957,10 +2957,10 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets, bool count_onl
     }
 
     // define variable to store node set node list here instead of in expns
-    int dims[1] = {dimid};
+    int dims1[1] = {dimid};
     int varid;
     status =
-        nc_def_var(exodusFilePtr, VAR_NODE_NS(cur_num_node_sets + 1), bulk_type, 1, dims, &varid);
+        nc_def_var(exodusFilePtr, VAR_NODE_NS(cur_num_node_sets + 1), bulk_type, 1, dims1, &varid);
     if (status != NC_NOERR) {
       ex_opts(EX_VERBOSE);
       if (status == NC_ENAMEINUSE) {
@@ -2994,7 +2994,7 @@ int Internals::put_metadata(const std::vector<NodeSet> &nodesets, bool count_onl
       }
       // create variable for distribution factors
       status = nc_def_var(exodusFilePtr, VAR_FACT_NS(cur_num_node_sets + 1),
-                          nc_flt_code(exodusFilePtr), 1, dims, &varid);
+                          nc_flt_code(exodusFilePtr), 1, dims1, &varid);
       if (status != NC_NOERR) {
         ex_opts(EX_VERBOSE);
         if (status == NC_ENAMEINUSE) {
