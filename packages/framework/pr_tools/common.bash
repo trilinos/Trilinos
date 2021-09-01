@@ -28,20 +28,96 @@ fi
 
 
 # message_std
+# Print a message with an optional prefix
 #
-# param1: prefix
-# param2: message text
-function message_std
-{
+# param1: prefix, use empty string for no prefix (can be empty)
+# param2: message text (can be empty)
+message_std() {
     local prefix=${1}
     local message=${2}
-    echo -e "${prefix}${message}"
+    echo -e "${prefix}${message}" 2>&1
+}
+
+
+# executable_exists()
+# Determines if a file exists and is executable.
+#
+# param1: executable (with path if necessary)
+function executable_exists()
+{
+    local cmd=${1:?}
+    local output=1
+    if [ ! command -v ${cmd:?} &> /dev/null ]; then
+        output=0
+    fi
+    echo ${output:?}
+}
+
+
+# execute_command()
+# Executes a command with some extra checking plus formatting and logging
+#
+# param1: command to execute
+function execute_command()
+{
+    local command=${1:?}
+    message_std "PRDriver> " "${magenta}${command:?}${normal}"
+
+    local is_executable=$(executable_exists ${command:?})
+
+    if [[ "${is_executable}" == "1" ]]; then
+        local _start=`date +%s`
+        eval ${command:?}
+        local err=$?
+        local _stop=`date +%s`
+        local _runtime=$((_stop-_start))
+
+        if [ $err -ne 0 ]; then
+            message_std "PRDriver> " "${red}FAILED $(color 100)(${_runtime} s)${normal}"
+        else
+            message_std "PRDriver> " "${green}OK $(color 100)(${_runtime} s)${normal}"
+        fi
+    else
+        message_std "PRDriver> " "${red}ERROR: command '${command:?}' is not executable"
+        message_std "PRDriver> " "${red}FAILED${normal}"
+    fi
+    return $err
+}
+
+
+# execute_command_checked()
+# Executes a command with extra checking with some formatting, etc.
+# Will call exit() if the command fails.
+#
+# param1: command to execute
+function execute_command_checked()
+{
+    local command=${1:?}
+    message_std "PRDriver> " "${magenta}${command:?}${normal}"
+
+    local is_executable=$(executable_exists ${command:?})
+
+    if [[ "${is_executable}" == "1" ]]; then
+        eval ${command:?}
+        local err=$?
+        if [ $err -ne 0 ]; then
+            message_std "PRDriver> " "Command failed with status: ${err}"
+            message_std "PRDriver> " ""
+            exit $err
+        else
+            message_std "PRDriver> " "${green}OK${normal}"
+        fi
+    else
+        message_std "PRDriver> " "${red}ERROR: command '${command:?}' is not executable"
+        message_std "PRDriver> " "${red}FAILED${normal}"
+        message_std "PRDriver> " ""
+        exit 32
+    fi
 }
 
 
 
-# print_centered_text
-#
+# print_centered_text()
 # Prints out a centered text string with endcaps
 #
 # param1: width
@@ -56,13 +132,13 @@ function print_centered_text()
     local capsize=${#endcap}
     local span1=$((($width + $textsize - $capsize * 2)/2))
     local span2=$(($width - $span1 - $capsize * 2))
-    printf "%s%${span1}s%${span2}s%s\n" "${endcap}" "${text}" "" "${endcap}"
+    printf "%s%${span1}s%${span2}s%s\n" "${endcap}" "${text}" "" "${endcap}" 2>&1
 }
 
 
 
 # print_banner()
-#
+#dd
 # Prints out a banner block with date/time stamp.
 #
 # param1: banner text to print
@@ -71,12 +147,12 @@ function print_banner()
     local banner_text=${1:?}
     local textdate=$(date +"%Y-%m-%d %H:%M:%S")
     local width=60
-    echo -e ""
-    echo -e "+----------------------------------------------------------+"
+    echo -e "" 2>&1
+    echo -e "+----------------------------------------------------------+" 2>&1
     print_centered_text ${width} "|" "${banner_text}"
     print_centered_text ${width} "|" " "
     print_centered_text ${width} "|" "${textdate}"
-    echo -e "+----------------------------------------------------------+"
+    echo -e "+----------------------------------------------------------+" 2>&1
 }
 
 
@@ -92,50 +168,63 @@ function print_banner_2lines()
     local banner_text_line2=${2:?}
     local textdate=$(date +"%Y-%m-%d %H:%M:%S")
     local width=60
-    echo -e ""
-    echo -e "+----------------------------------------------------------+"
+    echo -e "" 2>&1
+    echo -e "+----------------------------------------------------------+" 2>&1
     print_centered_text ${width} "|" "${banner_text_line1}"
     print_centered_text ${width} "|" "${banner_text_line2}"
     print_centered_text ${width} "|" " "
     print_centered_text ${width} "|" "${textdate}"
-    echo -e "+----------------------------------------------------------+"
+    echo -e "+----------------------------------------------------------+" 2>&1
 }
 
 
-# envvar_append_or_create
+# envvar_append_or_create()
+# Append a value to an envvar if it exists or create the envvar if it does not.
+#
 #  $1 = envvar name
 #  $2 = string to append
 function envvar_append_or_create() {
+    message_std "PRDriver> " "ENVVAR: Append '${2}' to '${1}'"
     # envvar $1 is not set
     if [[ ! -n "${!1+1}" ]]; then
+        message_std "PRDriver> " "export ${1}=${2}"
         export ${1}="${2}"
     else
+        message_std "PRDriver> " "export ${1}=${!1}:${2}"
         export ${1}="${!1}:${2}"
     fi
 }
 
 
-# envvar_prepend_or_create
+# envvar_prepend_or_create()
+# Prepend a value to an envvar if it exists or create the envvar if it doesn't.
+#
 #  $1 = envvar name
 #  $2 = string to prepend
 function envvar_prepend_or_create() {
+    message_std "PRDriver> " "ENVVAR: Prepend '${2}' to '${1}'"
     # envvar $1 is not set
     if [[ ! -n "${!1+1}" ]]; then
+        message_std "PRDriver> " "export ${1}=${2}"
         export ${1}="${2}"
     else
+        message_std "PRDriver> " "export ${1}=${2}:${!1}"
         export ${1}="${2}:${!1}"
     fi
 }
 
 
-# envvar_set_or_create
+# envvar_set_or_create()
+# Set an envvar.
+#
 #  $1 = envvar name
 #  $2 = string to prepend
 function envvar_set_or_create() {
+    message_std "PRDriver> " "ENVVAR: Set ${1} <- '${2}'"
     export ${1}="${2}"
 }
 
-
+# get_scriptname()
 # Gets the current script name (full path + filename)
 function get_scriptname() {
     # Get the full path to the current script
@@ -146,6 +235,7 @@ function get_scriptname() {
 }
 
 
+# get_scriptpath()
 # Gets the path to the current script (full path)
 function get_scriptpath() {
     # Get the full path to the current script
@@ -155,16 +245,17 @@ function get_scriptpath() {
 }
 
 
-
+# get_md5sum()
 # Get the md5sum of a filename.
+#
 # param1: filename
+#
 # returns: md5sum of the file.
 function get_md5sum() {
     local filename=${1:?}
     local sig=$(md5sum ${filename:?} | cut -d' ' -f1)
     echo "${sig:?}"
 }
-
 
 
 #
@@ -193,15 +284,15 @@ function get_md5sum() {
 
 
 
+# get_python_packages()
+# Install required Python packages using pip.
+# installs: configparser, mock, pytest, pytest-cov
 #
-# Install Python pacakges using pip
-#
-# - @param1 pip_exe - the pip binary to use, i.e., pip3.
-#
+# param1: pip_exe - the pip binary to use, i.e., pip3.
 function get_python_packages() {
     local pip_exe=${1:?}
 
-    echo -e "--- Pip   : ${pip_exe:?}"
+    message_std "PRDriver> " "pip executable: ${pip_exe:?}"
 
     pip_args=(
         configparser
@@ -209,7 +300,94 @@ function get_python_packages() {
         pytest
         pytest-cov
     )
-    echo -e "--- ${pip_exe:?} install --user ${pip_args[@]}"
-    ${pip_exe:?} install --user ${pip_args[@]}
+    message_std "PRDriver> " ""
+    # ${pip_exe:?} install --user ${pip_args[@]}
+    execute_command "${pip_exe:?} install --user ${pip_args[@]}"
+}
+
+
+# executable_exists()
+# - Determines if a file exists and is executable.
+# param1: executable (with path if necessary)
+function executable_exists()
+{
+    local cmd=${1:?}
+    local output=1
+    if [ ! command -v ${cmd:?} &> /dev/null ]; then
+        output=0
+    fi
+    echo ${output:?}
+}
+
+
+# execute_command_checked
+# - Attempt to run a command and call exit() if it fails.
+# param1: command to execute
+function execute_command_checked()
+{
+    local command=${1:?}
+    echo -e "PRDriver> ${magenta}${command:?}${normal}"
+
+    local is_executable=$(executable_exists ${command:?})
+
+    if [[ "${is_executable}" == "1" ]]; then
+        eval ${command:?}
+        local err=$?
+        if [ $err -ne 0 ]; then
+            echo -e "PRDriver> Command failed with status: ${err}"
+            echo -e " "
+            exit $err
+        else
+            echo -e "PRDriver> ${green}OK${normal}"
+        fi
+    else
+        echo -e "PRDriver> ${red}ERROR: command '${command:?}' is not executable"
+        echo -e "PRDriver> ${red}FAILED${normal}"
+        echo -e " "
+        exit 32
+    fi
+}
+
+
+# executable_exists()
+# - Determines if a file exists and is executable.
+# param1: executable (with path if necessary)
+function executable_exists()
+{
+    local cmd=${1:?}
+    local output=1
+    if [ ! command -v ${cmd:?} &> /dev/null ]; then
+        output=0
+    fi
+    echo ${output:?}
+}
+
+
+# execute_command_checked
+# - Attempt to run a command and call exit() if it fails.
+# param1: command to execute
+function execute_command_checked()
+{
+    local command=${1:?}
+    echo -e "PRDriver> ${magenta}${command:?}${normal}"
+
+    local is_executable=$(executable_exists ${command:?})
+
+    if [[ "${is_executable}" == "1" ]]; then
+        eval ${command:?}
+        local err=$?
+        if [ $err -ne 0 ]; then
+            echo -e "PRDriver> Command failed with status: ${err}"
+            echo -e " "
+            exit $err
+        else
+            echo -e "PRDriver> ${green}OK${normal}"
+        fi
+    else
+        echo -e "PRDriver> ${red}ERROR: command '${command:?}' is not executable"
+        echo -e "PRDriver> ${red}FAILED${normal}"
+        echo -e " "
+        exit 32
+    fi
 }
 
