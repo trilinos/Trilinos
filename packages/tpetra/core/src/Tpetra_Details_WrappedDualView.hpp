@@ -288,22 +288,25 @@ public:
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type::const_type
   getView (Access::ReadOnlyStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
-    if(std::is_same<TargetDeviceType,DeviceType>::value) {
+    bool returnDevice = true;
+    {
+      auto tmp = dualView.template view<TargetDeviceType>();
+      if (tmp == this->dualView.view_host()) returnDevice = false;
+    }
+
+    if(returnDevice) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadOnly");
       if(needsSyncPath()) {
 	throwIfHostViewAlive();
 	impl::sync_device(originalDualView);
       }
     }
-    else if(std::is_same<TargetDeviceType,HostType>::value) {
+    else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadOnly");
       if(needsSyncPath()) {
 	throwIfDeviceViewAlive();
 	impl::sync_host(originalDualView);
       }
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "WrappedDualView: Template argumenbt to getView<>() must match either host of device types");
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -313,7 +316,13 @@ public:
   template<class TargetDeviceType>
   typename std::remove_reference<decltype(std::declval<DualViewType>().template view<TargetDeviceType>())>::type
   getView (Access::ReadWriteStruct s DEBUG_UVM_REMOVAL_ARGUMENT) const {    
-    if(std::is_same<TargetDeviceType,DeviceType>::value) {
+    bool returnDevice = true;
+    {
+      auto tmp = dualView.template view<TargetDeviceType>();
+      if (tmp == this->dualView.view_host()) returnDevice = false;
+    }
+
+    if(returnDevice) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>ReadWrite");
       static_assert(dualViewHasNonConstData,
                     "ReadWrite views are not available for DualView with const data");
@@ -323,7 +332,7 @@ public:
 	originalDualView.modify_device();
       }
     }
-    else if(std::is_same<TargetDeviceType,HostType>::value) {
+    else {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>ReadWrite");
       static_assert(dualViewHasNonConstData,
                     "ReadWrite views are not available for DualView with const data");
@@ -332,9 +341,6 @@ public:
 	impl::sync_host(originalDualView);
 	originalDualView.modify_host();      
       }
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "WrappedDualView: Template argumenbt to getView<>() must match either host of device types");
     }
     
     return dualView.template view<TargetDeviceType>();
@@ -347,7 +353,13 @@ public:
     if (iAmASubview())
       return getView<TargetDeviceType>(Access::ReadWrite);
 
-    if(std::is_same<TargetDeviceType,DeviceType>::value) {
+    bool returnDevice = true;
+    {
+      auto tmp = dualView.template view<TargetDeviceType>();
+      if (tmp == this->dualView.view_host()) returnDevice = false;
+    }
+    
+    if(returnDevice) {
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Device>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
@@ -357,7 +369,7 @@ public:
 	dualView.modify_host();
       }
     }
-    else if(std::is_same<TargetDeviceType,HostType>::value) {
+    else { 
       DEBUG_UVM_REMOVAL_PRINT_CALLER("getView<Host>OverwriteAll");
       static_assert(dualViewHasNonConstData,
                     "OverwriteAll views are not available for DualView with const data");
@@ -366,9 +378,6 @@ public:
 	dualView.clear_sync_state();
 	dualView.modify_device();     
       }
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "WrappedDualView: Template argumenbt to getView<>() must match either host of device types");
     }
     
     return dualView.template view<TargetDeviceType>();
