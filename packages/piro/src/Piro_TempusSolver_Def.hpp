@@ -288,28 +288,20 @@ void Piro::TempusSolver<Scalar>::initialize(
       }
       is_explicit_ = true; 
     }
-    //Set 'Tempus'->'Sensitivities'->'Mass Matrix Is Identity' to true in the case of explicit
-    //scheme and mass lumping.  Only relevant for adjoint transient sensitivities.  If 
-    //user explicitly sets this parameter to 'false', throw.
-    if ((is_explicit_ == true) && (lump_mass_matrix == true)) {
-      ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities");
-      if (tempusSensPL.isParameter("Mass Matrix Is Identity")) {
-        const bool is_const_mass_matrix = tempusSensPL.get<bool>("Mass Matrix Is Identity");
-        if (is_const_mass_matrix == false) { //Throw if setting 'Mass Matrix Is Identity = false' with explicit
-		                             //stepper and mass lumping
+    //The adjoint transient sensitivities will not work correctly if 'Mass Matrix Is Identity' is set.
+    //Detect this option, and throw if true.
+    ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities");
+    if (tempusSensPL.isParameter("Mass Matrix Is Identity")) {
+      const bool is_const_mass_matrix = tempusSensPL.get<bool>("Mass Matrix Is Identity");
+      if (is_const_mass_matrix == true) { //Throw if setting 'Mass Matrix Is Identity = true' 
           TEUCHOS_TEST_FOR_EXCEPTION(
              true,
              Teuchos::Exceptions::InvalidParameter,
-             "\n Error! Piro::TempusSolver: please set 'Tempus'->'Sensitivities'->'Mass Matrix Is Identity=true' when using"
-	     << " mass lumping + explicit stepper!\n");
-	}	
-      }
-      else {
-	if (sens_method_ == ADJOINT) {
-          tempusSensPL.set("Mass Matrix Is Identity", true); // Necessary for explicit + adjoint sensitivities
-	}
-      }
+             "\n Error! Piro::TempusSolver: please set 'Tempus'->'Sensitivities'->'Mass Matrix Is Identity=false'.\n"
+	     << "Transient sensitivities will not work correctly through Piro if 'Mass Matrix Is Identity=true'.\n");
+      }	
     }
+    
     // C.2) Create the Thyra-wrapped ModelEvaluator
 
     thyraModel_ = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model_, lowsFactory));
@@ -336,17 +328,16 @@ void Piro::TempusSolver<Scalar>::initialize(
     }
     
     //Create Piro::TempusIntegrator
-    const bool does_not_require_second_ME = ((is_explicit_ == true) && (lump_mass_matrix == true)) || (sens_method_ != ADJOINT);
-    //Throw an error if the adjoint ME is required and adjointModel_ is null
-    if ((does_not_require_second_ME == false) && (adjointModel_ == Teuchos::null)) {
+    //Throw an error if adjointModel_ is null
+    if ((adjointModel_ == Teuchos::null) && (sens_method_ == ADJOINT)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
           true,
           Teuchos::Exceptions::InvalidParameter,
-          "\n Error! Piro::TempusSolver: adjoint ME is required but null!\n");
-    } 
-    piroTempusIntegrator_ = (does_not_require_second_ME == true) ?
-	                    Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, sens_method_)) :
-	                    Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, adjointModel_, sens_method_));
+          "\n Error! Piro::TempusSolver: adjoint ModelEvaluator passed in is null!\n");
+    }
+    piroTempusIntegrator_ = (sens_method_ == ADJOINT) ?
+                            Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, adjointModel_, sens_method_)) :
+                            Teuchos::rcp(new Piro::TempusIntegrator<Scalar>(tempusPL, model_, sens_method_));
     this->setPiroTempusIntegrator(piroTempusIntegrator_);  
 
     //Get stepper from integrator
