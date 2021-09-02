@@ -284,6 +284,10 @@ namespace panzer {
 
     PHX::MDField<Scalar,Cell,NODE,Dim> cell_vertex_coordinates_;
 
+    // Number of cells to apply orientations to (required in situations where virtual cells exist)
+    int num_orientations_cells_;
+
+    // Orientations object
     Teuchos::RCP<const OrientationsInterface>   orientations_;
 
     /// Used to check if arrays have been cached
@@ -354,7 +358,8 @@ namespace panzer {
 
     /// Set the orientations object for applying orientations using the lazy evaluation path - required for certain bases
     void
-    setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations);
+    setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations,
+                    const int num_orientations_cells = -1);
 
     /// Set the cubature weights (weighted measure) for the basis values object - required to get weighted basis objects
     void
