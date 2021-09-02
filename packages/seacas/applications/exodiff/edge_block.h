@@ -28,14 +28,11 @@ private:
   Edge_Block(const Edge_Block &) = delete;                  // Not written.
   const Edge_Block &operator=(const Edge_Block &) = delete; // Not written.
 
-  void load_edges(const INT *elmt_map = nullptr) const;
   void entity_load_params() override;
 
   EXOTYPE     exodus_type() const override;
   const char *label() const override { return "Edgeblock"; }
   const char *short_label() const override { return "edgeblock"; }
-
-  mutable INT *edgeIndex{nullptr};
 
   std::string elmt_type;
   int         num_edges_per_elmt{-1};

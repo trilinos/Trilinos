@@ -2377,8 +2377,7 @@ public:
      buffer_device_type>& exports, // output
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID, // output
-   size_t& constantNumPackets,
-   Distributor& /* distor */)
+   size_t& constantNumPackets)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
@@ -2634,7 +2633,6 @@ public:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t /* constantNumPackets */,
-   Distributor& /* distor */,
    const CombineMode combineMode)
   {
     using ::Tpetra::Details::Behavior;

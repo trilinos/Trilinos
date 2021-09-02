@@ -75,7 +75,7 @@ void finalize_reporters() {
 }
 
 NGP_TEST_INLINE ReporterBase* get_reporter() {
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
   return global::getDeviceReporterOnDevice();
 #else
   return global::getHostReporter();

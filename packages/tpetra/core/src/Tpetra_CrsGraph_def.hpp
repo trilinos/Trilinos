@@ -5690,8 +5690,7 @@ namespace Tpetra {
      buffer_device_type>& exports,
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets,
-   Distributor& distor)
+   size_t& constantNumPackets)
   {
     using Tpetra::Details::ProfilingRegion;
     using GO = global_ordinal_type;
@@ -5759,7 +5758,7 @@ namespace Tpetra {
       ArrayView<size_t> numPacketsPerLID_av (numPacketsPerLID_h.data (),
                                              numPacketsPerLID_h.extent (0));
       srcRowGraphPtr->pack (exportLIDs_av, exports_a, numPacketsPerLID_av,
-                            constantNumPackets, distor);
+                            constantNumPackets);
       const size_t newSize = static_cast<size_t> (exports_a.size ());
       if (static_cast<size_t> (exports.extent (0)) != newSize) {
         using exports_dv_type = Kokkos::DualView<packet_type*, buffer_device_type>;
@@ -5788,11 +5787,11 @@ namespace Tpetra {
       using Tpetra::Details::packCrsGraphNew;
       packCrsGraphNew<LO,GO,NT> (*srcCrsGraphPtr, exportLIDs, exportPIDs,
                                  exports, numPacketsPerLID,
-                                 constantNumPackets, false, distor);
+                                 constantNumPackets, false);
     }
     else {
       srcCrsGraphPtr->packFillActiveNew (exportLIDs, exports, numPacketsPerLID,
-                                         constantNumPackets, distor);
+                                         constantNumPackets);
     }
 
     if (verbose) {
@@ -5808,19 +5807,18 @@ namespace Tpetra {
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
         Teuchos::Array<GlobalOrdinal>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-        size_t& constantNumPackets,
-        Distributor& distor) const
+        size_t& constantNumPackets) const
   {
     auto col_map = this->getColMap();
     // packCrsGraph requires k_rowPtrsPacked to be set
     if( !col_map.is_null() && (rowPtrsPacked_dev_.extent(0) != 0  ||  getRowMap()->getNodeNumElements() ==0)) {
       using Tpetra::Details::packCrsGraph;
       packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
-                                                    exportLIDs, constantNumPackets, distor);
+                                                    exportLIDs, constantNumPackets);
     }
     else {
       this->packFillActive(exportLIDs, exports, numPacketsPerLID,
-                           constantNumPackets, distor);
+                           constantNumPackets);
     }
   }
 
@@ -5830,8 +5828,7 @@ namespace Tpetra {
   packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
                   Teuchos::Array<GlobalOrdinal>& exports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  Distributor& /* distor */) const
+                  size_t& constantNumPackets) const
   {
     using std::endl;
     using LO = LocalOrdinal;
@@ -6021,8 +6018,7 @@ namespace Tpetra {
                        buffer_device_type>& exports,
                      Kokkos::DualView<size_t*,
                        buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     Distributor& distor) const
+                     size_t& constantNumPackets) const
   {
     using std::endl;
     using LO = local_ordinal_type;
@@ -6251,7 +6247,6 @@ namespace Tpetra {
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t /* constantNumPackets */,
-   Distributor& /* distor */,
    const CombineMode /* combineMode */ )
   {
     using Details::ProfilingRegion;
@@ -7067,7 +7062,7 @@ namespace Tpetra {
 
     // The basic algorithm here is:
     //
-    // 1. Call the moral equivalent of "distor.do" to handle the import.
+    // 1. Call the moral equivalent of "Distor.do" to handle the import.
     // 2. Copy all the Imported and Copy/Permuted data into the raw
     //    CrsGraph pointers, still using GIDs.
     // 3. Call an optimized version of MakeColMap that avoids the
@@ -7274,7 +7269,7 @@ namespace Tpetra {
       // Pack & Prepare w/ owning PIDs
       packCrsGraphWithOwningPIDs(*this, destGraph->exports_,
                                  numExportPacketsPerLID, ExportLIDs,
-                                 SourcePids, constantNumPackets, Distor);
+                                 SourcePids, constantNumPackets);
     }
 
     // Do the exchange of remote data.
@@ -7401,7 +7396,7 @@ namespace Tpetra {
     size_t mynnz =
       unpackAndCombineWithOwningPIDsCount(*this, RemoteLIDs, hostImports,
                                            numImportPacketsPerLID,
-                                           constantNumPackets, Distor, INSERT,
+                                           constantNumPackets, INSERT,
                                            NumSameIDs, PermuteToLIDs, PermuteFromLIDs);
     size_t N = BaseRowMap->getNodeNumElements();
 
@@ -7427,7 +7422,7 @@ namespace Tpetra {
     // takes five methods.
     unpackAndCombineIntoCrsArrays(*this, RemoteLIDs, hostImports,
                                   numImportPacketsPerLID, constantNumPackets,
-                                  Distor, INSERT, NumSameIDs, PermuteToLIDs,
+                                  INSERT, NumSameIDs, PermuteToLIDs,
                                   PermuteFromLIDs, N, mynnz, MyPID,
                                   CSR_rowptr(), CSR_colind_GID(),
                                   SourcePids(), TargetPids);

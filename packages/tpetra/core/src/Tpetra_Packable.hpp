@@ -54,9 +54,6 @@ namespace Teuchos {
   template <class T> class ArrayView;
 } // namespace Teuchos
 
-namespace Tpetra {
-  class Distributor; // forward declaration
-} // namespace Tpetra
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
@@ -118,16 +115,11 @@ namespace Tpetra {
     ///   size for each local index).  If nonzero, then it is expected
     ///   that the number of packets per local index is constant, and
     ///   that <tt>constantNumPackets</tt> is that value.
-    ///
-    /// \param distor [in] The Distributor object we are using.
-    ///   Implementations may ignore this object.  We provide it for
-    ///   consistency with DistObject's packAndPrepare method.
     virtual void
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
           Teuchos::Array<Packet>& exports,
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Distributor &distor) const = 0;
+          size_t& constantNumPackets) const = 0;
 
     //! Destructor (virtual for memory safety of derived classes).
     virtual ~Packable () {}

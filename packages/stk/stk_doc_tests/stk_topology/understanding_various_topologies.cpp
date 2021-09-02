@@ -32,19 +32,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
+#include "stk_util/stk_config.h"
 
 #ifdef STK_HAVE_STKIO
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
-#include <Ioss_Utils.h>
-#include <Ioss_ElementTopology.h>
-// #include <Ioss_Initializer.h>
-#include <init/Ionit_Initializer.h>
-#include <stk_io/IossBridge.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-
+#include "gtest/gtest.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_Utils.h"
+#include "init/Ionit_Initializer.h"
+#include "stk_io/IossBridge.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_topology/topology.hpp"
 #include <vector>
 
 namespace {

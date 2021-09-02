@@ -9,13 +9,13 @@ if [ "${Trilinos_CTEST_DO_ALL_AT_ONCE}" == "" ] ; then
 fi
 
 # comment out sh and add what we need individually.
-#source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
+#source $WORKSPACE/Trilinos/packages/framework/pr_tools/atdm/load-env.sh $JOB_NAME
 
 set -x
 
 #TODO: review appropriate job size
 bsub -Is -nnodes 2 -J ${JOB_NAME} -W ${BSUB_CTEST_TIME_LIMIT} \
-  ${WORKSPACE}/Trilinos/cmake/std/PullRequestLinuxDriver.sh
+  ${WORKSPACE}/Trilinos/packages/framework/pr_tools/PullRequestLinuxDriver.sh
 
 # NOTE: Above, this bsub command should grab a two
 # nodes.  The option '-x' makes sure that only this

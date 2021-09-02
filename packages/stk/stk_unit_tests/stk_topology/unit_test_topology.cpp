@@ -32,14 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
+#include "gtest/gtest.h"              // for Message, TestPartResult, Test, EXPECT_EQ, Assertion...
+#include "stk_topology/topology.hpp"  // for topology, operator<<, create_superedge_topology
+#include <cstddef>                    // for size_t
+#include <array>                      // for array
+#include <iostream>                   // for operator<<, ostringstream, ostream, basic_ostream
+#include <string>                     // for string, char_traits
 
-#include <array>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <algorithm>
 
 
 TEST( stk_topology, lexicographical_smallest_permutation)

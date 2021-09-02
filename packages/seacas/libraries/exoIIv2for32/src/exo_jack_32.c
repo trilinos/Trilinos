@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -80,23 +80,21 @@ static void ex_fcdcpy(char *fstring, /* output string to be blank-filled */
                       int   fslen,   /* length of output string */
                       char *sstring)
 { /* input string, null-terminated */
-  int i, len;
-
   if (sstring != NULL) {
-    len = strlen(sstring);
+    int len = strlen(sstring);
     if (len > fslen) {
       len = fslen;
     }
 
-    for (i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
       *(fstring + i) = *(sstring + i);
     }
-    for (i = len; i < fslen; i++) {
+    for (int i = len; i < fslen; i++) {
       *(fstring + i) = ' ';
     }
   }
   else {
-    for (i = 0; i < fslen; i++) {
+    for (int i = 0; i < fslen; i++) {
       *(fstring + i) = ' ';
     }
   }

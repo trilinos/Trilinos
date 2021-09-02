@@ -1,0 +1,13 @@
+diff --git a/packages/kokkos/cmake/kokkos_tpls.cmake b/packages/kokkos/cmake/kokkos_tpls.cmake
+index d8d044c9d75..3bd4ec7f3ed 100644
+--- a/packages/kokkos/cmake/kokkos_tpls.cmake
++++ b/packages/kokkos/cmake/kokkos_tpls.cmake
+@@ -44,7 +44,7 @@ IF(KOKKOS_ENABLE_HIP AND NOT KOKKOS_CXX_COMPILER_ID STREQUAL HIPCC)
+ ELSE()
+   SET(ROCM_DEFAULT OFF)
+ ENDIF()
+-KOKKOS_TPL_OPTION(ROCM    ${ROCM_DEFAULT})
++KOKKOS_TPL_OPTION(ROCM    ${ROCM_DEFAULT} TRIBITS ROCM)
+ 
+ IF (WIN32)
+   SET(LIBDL_DEFAULT Off)

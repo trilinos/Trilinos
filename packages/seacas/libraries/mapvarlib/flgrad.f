@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -16,7 +16,7 @@ C  coefficients using the stuff that was set up in ELGRAD.
 C  Start by translating into isoparametric coords (very helpful for
 C  shells and makes some sense for continuum and is very useful for
 C  subsequent interpolation.
-C  Then do constrained least sqares to f=a0+a1eta+a2ksi+a3phi to
+C  Then do constrained least squares to f=a0+a1eta+a2ksi+a3phi to
 C  compute a1, a2, and a3 and stuff results into SOLGRA
 
 C  Calls subroutines ERROR

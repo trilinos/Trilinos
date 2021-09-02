@@ -1,6 +1,7 @@
 #ifndef TOPOLOGY_DEFN_HPP
 #define TOPOLOGY_DEFN_HPP
 
+// IWYU pragma: private, include "stk_topology/topology.hpp"
 #include "stk_topology/topology_decl.hpp"
 #include "stk_topology/topology_utils.hpp"
 #include "stk_topology/apply_functor.hpp"

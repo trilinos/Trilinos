@@ -100,11 +100,11 @@ namespace
       stk::util::ParameterMapType::const_iterator i = parameters.begin();
       stk::util::ParameterMapType::const_iterator iend = parameters.end();
       for (; i != iend; ++i) {
-	const std::string parameterName = (*i).first;
-	stk::util::Parameter &parameter = parameters.get_param(parameterName);
+          const std::string parameterName = (*i).first;
+          stk::util::Parameter &parameter = parameters.get_param(parameterName);
 
-	// Tell heartbeat database which global variables should be output at each step...
-	stkIo.add_heartbeat_global(hb, parameterName, &parameter.value, parameter.type);
+          // Tell heartbeat database which global variables should be output at each step...
+          stkIo.add_heartbeat_global(hb, parameterName, parameter);
       }
 
       // Now output the global variables...

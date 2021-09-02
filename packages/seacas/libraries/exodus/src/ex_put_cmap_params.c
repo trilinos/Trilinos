@@ -35,8 +35,9 @@
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, ex__leavedef, etc
 
-int ex_put_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_node_cnts,
-                       void_int *elem_cmap_ids, void_int *elem_cmap_elem_cnts, int64_t processor)
+int ex_put_cmap_params(int exoid, const void_int *node_cmap_ids,
+                       const void_int *node_cmap_node_cnts, const void_int *elem_cmap_ids,
+                       const void_int *elem_cmap_elem_cnts, int64_t processor)
 {
   size_t  num_n_comm_maps, num_e_comm_maps;
   size_t  ncnt_cmap, ecnt_cmap;
