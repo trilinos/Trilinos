@@ -599,10 +599,10 @@ template <typename Scalar>
 void
 BasisValues2<Scalar>::
 setup(const Teuchos::RCP<const panzer::BasisIRLayout> & basis,
-      PHX::MDField<Scalar, Cell, IP, Dim>               reference_points,
-      PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian,
-      PHX::MDField<Scalar, Cell, IP>                    point_jacobian_determinant,
-      PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian_inverse,
+      PHX::MDField<const Scalar, Cell, IP, Dim>         reference_points,
+      PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian,
+      PHX::MDField<const Scalar, Cell, IP>              point_jacobian_determinant,
+      PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian_inverse,
       const int                                         num_evaluated_cells)
 {
   basis_layout = basis;
@@ -626,10 +626,10 @@ template <typename Scalar>
 void
 BasisValues2<Scalar>::
 setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> &  basis,
-             PHX::MDField<Scalar, IP, Dim>                      reference_points,
-             PHX::MDField<Scalar, Cell, IP, Dim, Dim>           point_jacobian,
-             PHX::MDField<Scalar, Cell, IP>                     point_jacobian_determinant,
-             PHX::MDField<Scalar, Cell, IP, Dim, Dim>           point_jacobian_inverse,
+             PHX::MDField<const Scalar, IP, Dim>                reference_points,
+             PHX::MDField<const Scalar, Cell, IP, Dim, Dim>     point_jacobian,
+             PHX::MDField<const Scalar, Cell, IP>               point_jacobian_determinant,
+             PHX::MDField<const Scalar, Cell, IP, Dim, Dim>     point_jacobian_inverse,
              const int                                          num_evaluated_cells)
 {
   basis_layout = basis;
@@ -735,7 +735,7 @@ resetArrays()
 template <typename Scalar>
 void
 BasisValues2<Scalar>::
-setWeightedMeasure(PHX::MDField<Scalar, Cell, IP> weighted_measure)
+setWeightedMeasure(PHX::MDField<const Scalar, Cell, IP> weighted_measure)
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(build_weighted,
                               "BasisValues2::setWeightedMeasure : Weighted measure already set. Can only set weighted measure once after setup or setupUniform have beens called.");
@@ -807,7 +807,12 @@ getBasisValuesRef(const bool cache,
   const int num_card  = basis_layout->cardinality();
 
   auto tmp_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(tmp_basis_ref_scalar.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_VALUE);
+
+  // FIXME: Intrepid does not appear to be const correct
+  auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+  Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+  intrepid_basis->getValues(tmp_basis_ref_scalar.get_view(), nonconst_cub_points.get_view(), Intrepid2::OPERATOR_VALUE);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -840,7 +845,12 @@ getVectorBasisValuesRef(const bool cache,
   const int num_dim   = basis_layout->dimension();
 
   auto tmp_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(tmp_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
+
+  // FIXME: Intrepid does not appear to be const correct
+  auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+  Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+  intrepid_basis->getValues(tmp_basis_ref_vector.get_view(),nonconst_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -873,7 +883,12 @@ getGradBasisValuesRef(const bool cache,
   const int num_dim   = basis_layout->dimension();
 
   auto tmp_grad_basis_ref = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(tmp_grad_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_GRAD);
+
+  // FIXME: Intrepid does not appear to be const correct
+  auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+  Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+  intrepid_basis->getValues(tmp_grad_basis_ref.get_view(), nonconst_cub_points.get_view(), Intrepid2::OPERATOR_GRAD);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -906,7 +921,12 @@ getCurl2DVectorBasisRef(const bool cache,
   const int num_card  = basis_layout->cardinality();
 
   auto tmp_curl_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("dyn_curl_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(tmp_curl_basis_ref_scalar.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
+
+  // FIXME: Intrepid does not appear to be const correct
+  auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+  Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+  intrepid_basis->getValues(tmp_curl_basis_ref_scalar.get_view(), nonconst_cub_points.get_view(), Intrepid2::OPERATOR_CURL);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -940,7 +960,12 @@ getCurlVectorBasisRef(const bool cache,
   const int num_dim   = basis_layout->dimension();
 
   auto tmp_curl_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_curl_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(tmp_curl_basis_ref_vector.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
+
+  // FIXME: Intrepid does not appear to be const correct
+  auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+  Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+  intrepid_basis->getValues(tmp_curl_basis_ref_vector.get_view(), nonconst_cub_points.get_view(), Intrepid2::OPERATOR_CURL);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -972,7 +997,12 @@ getDivVectorBasisRef(const bool cache,
   const int num_card  = basis_layout->cardinality();
 
   auto tmp_div_basis_ref = af.buildStaticArray<Scalar,BASIS,IP>("dyn_div_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(tmp_div_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_DIV);
+
+  // FIXME: Intrepid does not appear to be const correct
+  auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+  Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+  intrepid_basis->getValues(tmp_div_basis_ref.get_view(), nonconst_cub_points.get_view(), Intrepid2::OPERATOR_DIV);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -1081,8 +1111,12 @@ getBasisValues(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
+      // FIXME: Intrepid does not appear to be const correct
+      auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+      Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
       // Apply a single reference representation to all cells
-      intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
+      intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),nonconst_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
@@ -1239,8 +1273,13 @@ getVectorBasisValues(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
+
+      // FIXME: Intrepid does not appear to be const correct
+      auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+      Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
       // Apply a single reference representation to all cells
-      intrepid_basis->getValues(cell_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
+      intrepid_basis->getValues(cell_basis_ref_vector.get_view(),nonconst_cub_points.get_view(),Intrepid2::OPERATOR_VALUE);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1414,8 +1453,13 @@ getGradBasisValues(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
+
+      // FIXME: Intrepid does not appear to be const correct
+      auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+      Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
       // Apply a single reference representation to all cells
-      intrepid_basis->getValues(cell_grad_basis_ref.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_GRAD);
+      intrepid_basis->getValues(cell_grad_basis_ref.get_view(),nonconst_cub_points.get_view(),Intrepid2::OPERATOR_GRAD);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_grad_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1560,7 +1604,11 @@ getCurl2DVectorBasis(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
-      intrepid_basis->getValues(cell_curl_basis_ref_scalar.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_CURL);
+      // FIXME: Intrepid does not appear to be const correct
+      auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+      Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+      intrepid_basis->getValues(cell_curl_basis_ref_scalar.get_view(),nonconst_cub_points.get_view(),Intrepid2::OPERATOR_CURL);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_curl_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
@@ -1703,7 +1751,11 @@ getCurlVectorBasis(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
-      intrepid_basis->getValues(cell_curl_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_CURL);
+      // FIXME: Intrepid does not appear to be const correct
+      auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+      Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+      intrepid_basis->getValues(cell_curl_basis_ref_vector.get_view(),nonconst_cub_points.get_view(),Intrepid2::OPERATOR_CURL);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_curl_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1848,7 +1900,11 @@ getDivVectorBasis(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
-      intrepid_basis->getValues(cell_div_basis_ref.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_DIV);
+      // FIXME: Intrepid does not appear to be const correct
+      auto nonconst_cub_points = af.buildStaticArray<Scalar,IP,Dim>("scratch: cub_points", cubature_points_uniform_ref_.extent(0), cubature_points_uniform_ref_.extent(1));
+      Kokkos::deep_copy(nonconst_cub_points.get_view(), cubature_points_uniform_ref_.get_view());
+
+      intrepid_basis->getValues(cell_div_basis_ref.get_view(),nonconst_cub_points.get_view(),Intrepid2::OPERATOR_DIV);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_div_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
