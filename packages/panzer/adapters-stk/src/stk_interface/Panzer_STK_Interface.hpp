@@ -1827,7 +1827,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::En
 
    // allocate space
    vertices = Kokkos::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
-
+   auto vertices_h = Kokkos::create_mirror_view(vertices);
    std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
    if(itr==meshCoordFields_.end()) {
      // no coordinate field set for this element block
@@ -1856,10 +1856,11 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::En
 
           // recall mesh field coordinates are stored as displacements
           // from the mesh coordinates, make sure to add them together
-          vertices(cell,i,d) = solnData[0]+coord[d];
+	vertices_h(cell,i,d) = solnData[0]+coord[d];
         }
       }
    }
+   Kokkos::deep_copy(vertices, vertices_h);
 }
 
 template <typename ArrayT>
