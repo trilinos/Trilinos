@@ -207,7 +207,7 @@ namespace Iopg {
       retval = Create_Pamgen_Mesh(mesh_description.c_str(), dimension, util().parallel_rank(),
                                   util().parallel_size(), INT_MAX);
     }
-    catch (const std::exception &x) {
+    catch (...) {
       error_detected = true;
     }
 

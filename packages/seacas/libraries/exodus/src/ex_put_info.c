@@ -70,7 +70,7 @@ error = ex_put_info(exoid, num_info, info);
 
  */
 
-int ex_put_info(int exoid, int num_info, char *info[])
+int ex_put_info(int exoid, int num_info, char *const info[])
 {
   int    status;
   int    i, lindim, num_info_dim, dims[2], varid;

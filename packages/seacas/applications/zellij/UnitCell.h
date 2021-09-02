@@ -6,6 +6,7 @@
 #ifndef ZE_UnitCell_H
 #define ZE_UnitCell_H
 
+#include <array>
 #include <map>
 #include <string>
 #include <vector>

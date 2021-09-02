@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -75,7 +75,7 @@ int ex_get_coord(int exoid, void *x_coor, void *y_coor, void *z_coor)
   int coordidx, coordidy, coordidz;
 
   int    numnoddim, ndimdim;
-  size_t num_nod, num_dim, start[2], count[2], i;
+  size_t num_nod, num_dim;
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
@@ -111,10 +111,12 @@ int ex_get_coord(int exoid, void *x_coor, void *y_coor, void *z_coor)
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    for (i = 0; i < num_dim; i++) {
-      char *which = NULL;
-      start[0]    = i;
-      start[1]    = 0;
+    for (size_t i = 0; i < num_dim; i++) {
+      char * which = NULL;
+      size_t start[2];
+      size_t count[2];
+      start[0] = i;
+      start[1] = 0;
 
       count[0] = 1;
       count[1] = num_nod;
@@ -188,7 +190,7 @@ int ex_get_coord(int exoid, void *x_coor, void *y_coor, void *z_coor)
     }
 
     /* write out the coordinates  */
-    for (i = 0; i < num_dim; i++) {
+    for (size_t i = 0; i < num_dim; i++) {
       void *coor  = NULL;
       char *which = NULL;
 

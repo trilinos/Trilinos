@@ -1019,10 +1019,9 @@ unsigned int Ioss::Utils::hash(const std::string &name)
 
   const char * symbol = name.c_str();
   unsigned int hashval;
-  unsigned int g;
   for (hashval = 0; *symbol != '\0'; symbol++) {
     hashval = (hashval << 4) + *symbol;
-    g       = hashval & 0xf0000000;
+    auto g  = hashval & 0xf0000000;
     if (g != 0) {
       hashval = hashval ^ (g >> 24);
       hashval = hashval ^ g;
@@ -1085,7 +1084,8 @@ bool Ioss::Utils::substr_equal(const std::string &prefix, const std::string &str
 
 std::string Ioss::Utils::uppercase(std::string name)
 {
-  std::transform(name.begin(), name.end(), name.begin(), [](char c) { return std::toupper(c); });
+  std::transform(name.begin(), name.end(), name.begin(),
+                 [](char c) { return static_cast<char>(std::toupper(c)); });
   return name;
 }
 

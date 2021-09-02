@@ -4,6 +4,8 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <Ioss_CodeTypes.h>
+
 #include <Ioss_Assembly.h>
 #include <Ioss_Blob.h>
 #include <Ioss_CommSet.h>

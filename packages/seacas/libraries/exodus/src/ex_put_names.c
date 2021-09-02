@@ -34,7 +34,7 @@
  * \param names       ptr array of entity names
  */
 
-int ex_put_names(int exoid, ex_entity_type obj_type, char *names[])
+int ex_put_names(int exoid, ex_entity_type obj_type, char *const names[])
 {
   int    status;
   int    varid;
