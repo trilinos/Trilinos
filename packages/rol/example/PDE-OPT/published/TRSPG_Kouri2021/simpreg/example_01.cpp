@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     for (int j = 0; j < nVars; ++j) {
       w[j] = dist(generator);
     }
-    RealT yval(0);
+    //RealT yval(0);
     std::vector<RealT> y(nInstances,0);
     for (int i = 0; i < nInstances; ++i) {
       y[i] = dist(generator);

@@ -87,7 +87,7 @@ private:
   }
 
   void applyK(std::vector<Real> &Kx, const std::vector<Real> &x, Real alpha, Real beta, bool trans) const {
-    const Real zero(0), one(1);
+    //const Real zero(0), one(1);
     if (trans)
       blas_->GEMV(   Teuchos::TRANS,nrows_,ncols_,alpha,X_.values(),nrows_,&x[0],1,beta,&Kx[0],1);
     else
