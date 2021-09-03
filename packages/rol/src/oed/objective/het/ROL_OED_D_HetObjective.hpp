@@ -65,7 +65,7 @@ class D_Objective : public ObjectiveBase<Real,std::vector<Real>> {
 private:
   const Ptr<BilinearConstraint<Real>> con0_;
   const Ptr<VectorController<Real,int>> ustore_;
-  const Ptr<Vector<Real>> g_, u_;
+  const Ptr<Vector<Real>> u_, g_;
   const int dim_;
   Ptr<Vector<Real>> p_;
   Real det0_, det1_;

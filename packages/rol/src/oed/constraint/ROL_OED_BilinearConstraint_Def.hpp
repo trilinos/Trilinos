@@ -199,7 +199,7 @@ void BilinearConstraint<Real>::applyInverseAdjointJacobian_1(Vector<Real> &iajv,
   startTimer("applyInverseAdjointJacobian_1");
   applyInverseJacobian_1(iajv,v,u,z,tol);
   stopTimer("applyInverseAdjointJacobian_1");
-};
+}
 
 template<typename Real>
 void BilinearConstraint<Real>::applyAdjointHessian_11(Vector<Real> &ahwv,
