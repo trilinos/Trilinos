@@ -141,8 +141,6 @@ void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer
                                                 WorksetDetailsAccessor& wda,
                                                 const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const
 {
-  PHX::View<const LO*> LIDs;
-
   // for convenience pull out some objects from workset
   std::string blockId = wda(workset).block_id;
 
@@ -154,23 +152,24 @@ void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer
   auto cellIntegral_h = Kokkos::create_mirror_view(cellIntegral.get_view());
   Kokkos::deep_copy(cellIntegral_h, cellIntegral.get_view());
 
-  // scatter operation for each cell in workset
   const std::vector<std::size_t> & localCellIds = wda(workset).cell_local_ids;
-  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-    std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-    for(std::size_t b=0;b<ugis_.size();b++) {
-      int start = blockOffsets[b];
+  for(std::size_t b=0;b<ugis_.size();b++) {
+    int start = blockOffsets[b];
 
-      LIDs = ugis_[b]->getElementLIDs(cellLocalId);
-      auto LIDs_h = Kokkos::create_mirror_view(LIDs);
-      Kokkos::deep_copy(LIDs_h, LIDs);
+    auto LIDs = ugis_[b]->getLIDs();
+    auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+    Kokkos::deep_copy(LIDs_h, LIDs);
 
-      Teuchos::ArrayRCP<double> dgdx_b = dgdx[b];
+    Teuchos::ArrayRCP<double> dgdx_b = dgdx[b];
+
+    // scatter operation for each cell in workset
+    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+      std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       // loop over basis functions
-      for(std::size_t i=0;i<LIDs.size();i++) {
-        dgdx_b[LIDs_h[i]] += cellIntegral_h(worksetCellIndex).dx(start+i); // its possible functional is independent of solution value!
+      for(std::size_t i=0;i<LIDs_h.extent(1);i++) {
+        dgdx_b[LIDs_h(cellLocalId, i)] += cellIntegral_h(worksetCellIndex).dx(start+i); // its possible functional is independent of solution value!
       }
     }
   }
