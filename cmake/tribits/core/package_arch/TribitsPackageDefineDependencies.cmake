@@ -37,10 +37,10 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsGeneralMacros)
+include(TribitsGeneralMacros)
 
 
-# @MACRO: TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()
+# @MACRO: tribits_package_define_dependencies()
 #
 # Define the dependencies for a given `TriBITS SE Package`_ (i.e. a top-level
 # `TriBITS Package`_ or a `TriBITS Subpackage`_) in the package's
@@ -48,7 +48,7 @@ INCLUDE(TribitsGeneralMacros)
 #
 # Usage::
 #
-#   TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+#   tribits_package_define_dependencies(
 #      [LIB_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
 #      [LIB_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
 #      [TEST_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
@@ -124,7 +124,7 @@ INCLUDE(TribitsGeneralMacros)
 #     of some type.
 #
 # Only upstream SE packages can be listed (as defined by the order the SE
-# packages are listed in `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ in the
+# packages are listed in `tribits_repository_define_packages()`_ in the
 # `<repoDir>/PackagesList.cmake`_ file).  Otherwise an error will occur and
 # processing will stop.  Misspelled SE package names are caught as well.
 #
@@ -158,7 +158,7 @@ INCLUDE(TribitsGeneralMacros)
 # Likewise the order that dependent TPLs are listed is not significant.
 #
 # If some upstream SE packages are allowed to be missing, this can be specified
-# by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
+# by calling the macro `tribits_allow_missing_external_packages()`_.
 #
 # A top-level `TriBITS Package`_ can also be broken down into `TriBITS
 # Subpackages`_.  In this case, the following argument must be passed in:
@@ -186,7 +186,7 @@ INCLUDE(TribitsGeneralMacros)
 #       ``GRS``, ``GPG``, ``GPM``, and ``UM``, separated by a coma ',' with no
 #       spaces in between (e.g. ``"PT,GPM"``).  These have exactly the same
 #       meaning as for full packages (see
-#       `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
+#       `tribits_repository_define_packages()`_).
 #
 #     * **OPTREQ** (Column 3): Determines if the outer parent package has an
 #       ``OPTIONAL`` or ``REQUIRED`` dependence on this subpackage.
@@ -220,9 +220,9 @@ INCLUDE(TribitsGeneralMacros)
 # This is an error checking property of the TriBITS system to avoid misspelling
 # the names of these variables.
 #
-MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
+macro(tribits_package_define_dependencies)
 
-  CMAKE_PARSE_ARGUMENTS(
+  cmake_parse_arguments(
      #prefix
      PARSE
      #options
@@ -234,18 +234,18 @@ MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
      ${ARGN}
      )
 
-  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+  tribits_check_for_unparsed_arguments()
 
-  SET(LIB_REQUIRED_DEP_PACKAGES ${PARSE_LIB_REQUIRED_PACKAGES})
-  SET(LIB_OPTIONAL_DEP_PACKAGES ${PARSE_LIB_OPTIONAL_PACKAGES})
-  SET(TEST_REQUIRED_DEP_PACKAGES ${PARSE_TEST_REQUIRED_PACKAGES})
-  SET(TEST_OPTIONAL_DEP_PACKAGES ${PARSE_TEST_OPTIONAL_PACKAGES})
-  SET(LIB_REQUIRED_DEP_TPLS ${PARSE_LIB_REQUIRED_TPLS})
-  SET(LIB_OPTIONAL_DEP_TPLS ${PARSE_LIB_OPTIONAL_TPLS})
-  SET(TEST_REQUIRED_DEP_TPLS ${PARSE_TEST_REQUIRED_TPLS})
-  SET(TEST_OPTIONAL_DEP_TPLS ${PARSE_TEST_OPTIONAL_TPLS})
-  SET(REGRESSION_EMAIL_LIST ${PARSE_REGRESSION_EMAIL_LIST})
-  SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+  set(LIB_REQUIRED_DEP_PACKAGES ${PARSE_LIB_REQUIRED_PACKAGES})
+  set(LIB_OPTIONAL_DEP_PACKAGES ${PARSE_LIB_OPTIONAL_PACKAGES})
+  set(TEST_REQUIRED_DEP_PACKAGES ${PARSE_TEST_REQUIRED_PACKAGES})
+  set(TEST_OPTIONAL_DEP_PACKAGES ${PARSE_TEST_OPTIONAL_PACKAGES})
+  set(LIB_REQUIRED_DEP_TPLS ${PARSE_LIB_REQUIRED_TPLS})
+  set(LIB_OPTIONAL_DEP_TPLS ${PARSE_LIB_OPTIONAL_TPLS})
+  set(TEST_REQUIRED_DEP_TPLS ${PARSE_TEST_REQUIRED_TPLS})
+  set(TEST_OPTIONAL_DEP_TPLS ${PARSE_TEST_OPTIONAL_TPLS})
+  set(REGRESSION_EMAIL_LIST ${PARSE_REGRESSION_EMAIL_LIST})
+  set(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     ${PARSE_SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS})
 
   # ToDo:
@@ -253,4 +253,4 @@ MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
   # * Assert that SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS is divisible
   #   by the number of columns!
 
-ENDMACRO()
+endmacro()

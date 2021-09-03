@@ -1,4 +1,4 @@
-INCLUDE(CheckCXXSourceCompiles)
+include(CheckCXXSourceCompiles)
 
 # This compiler test checks to see if the compiler supports a intrinic
 # datatype __int64, such as on some 64 bit Windows compilers.
@@ -6,9 +6,9 @@ INCLUDE(CheckCXXSourceCompiles)
 # The below test program checks to see that __int64 is defined, different from
 # any existing standard intrinsic 'int' types, except for 'long long int'.
 #
-FUNCTION(CHECK_FOR___INT64 VARNAME)
+function(check_for___int64 VARNAME)
 
-  SET(SOURCE
+  set(SOURCE
   "
 template<typename T> struct MyOrdinalTraits {};
 
@@ -26,6 +26,6 @@ int main()
 "
   )
 
-  CHECK_CXX_SOURCE_COMPILES("${SOURCE}" ${VARNAME})
+  check_cxx_source_compiles("${SOURCE}" ${VARNAME})
 
-ENDFUNCTION()
+endfunction()

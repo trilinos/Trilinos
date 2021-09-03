@@ -45,7 +45,7 @@
 # Mock program that takes input arguments and produces stdout by reading from
 # a file .mockprogram_inout.txt in the current directory or the file specified
 # by the env var MOCKPROGRAM_INOUT_FILE_OVERRIDE (which can be in any
-# diretory).  This script is used to take the place of real commands during a
+# directory).  This script is used to take the place of real commands during a
 # test that involves calling commands on the commandline.
 #
 # The file .mockprogram_inout.txt (or pointed to by

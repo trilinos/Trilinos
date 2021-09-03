@@ -38,83 +38,83 @@
 # @HEADER
 
 
-# @FUNCTION: TRIBITS_PRINT_INITIAL_DEPENDENCY_INFO()
+# @FUNCTION: tribits_print_initial_dependency_info()
 #
 # Usage::
 #
-#   TRIBITS_PRINT_INITIAL_DEPENDENCY_INFO()
+#   tribits_print_initial_dependency_info()
 #
 # Function that prints whatever initial dependency information that is
 # available that is requested by the user after the initial construction of
 # the package dependency graph but **before** the call of
-# `TRIBITS_ADJUST_PACKAGE_ENABLES()`_.
+# `tribits_adjust_package_enables()`_.
 #
 # Calls:
 #
-# * `TRIBITS_PRINT_TENTATIVELY_ENABLED_TPLS()`_
-# * `TRIBITS_DUMP_PACKAGE_DEPENDENCIES_INFO()`_
+# * `tribits_print_tentatively_enabled_tpls()`_
+# * `tribits_dump_package_dependencies_info()`_
 #
-FUNCTION(TRIBITS_PRINT_INITIAL_DEPENDENCY_INFO)
-  TRIBITS_PRINT_TENTATIVELY_ENABLED_TPLS()
-  TRIBITS_DUMP_PACKAGE_DEPENDENCIES_INFO()
-ENDFUNCTION()
+function(tribits_print_initial_dependency_info)
+  tribits_print_tentatively_enabled_tpls()
+  tribits_dump_package_dependencies_info()
+endfunction()
 
 
-# @FUNCTION: TRIBITS_PRINT_TENTATIVELY_ENABLED_TPLS()
+# @FUNCTION: tribits_print_tentatively_enabled_tpls()
 #
 # Usage::
 #
-#   TRIBITS_PRINT_TENTATIVELY_ENABLED_TPLS()
+#   tribits_print_tentatively_enabled_tpls()
 #
 # Function that print the set of tentatively enabled TPLs.
 #
 # Does **not** modify any state!
 #
-FUNCTION(TRIBITS_PRINT_TENTATIVELY_ENABLED_TPLS)
-  FOREACH(TPL ${${PROJECT_NAME}_TPLS})
-    IF (TPL_TENTATIVE_ENABLE_${TPL})
-      MESSAGE("-- Tentatively enabling TPL '${TPL}'")
-      #PRINT_VAR(TPL_ENABLE_${TPL})
-    ENDIF()
-  ENDFOREACH()
-ENDFUNCTION()
+function(tribits_print_tentatively_enabled_tpls)
+  foreach(TPL ${${PROJECT_NAME}_TPLS})
+    if (TPL_TENTATIVE_ENABLE_${TPL})
+      message("-- Tentatively enabling TPL '${TPL}'")
+      #print_var(TPL_ENABLE_${TPL})
+    endif()
+  endforeach()
+endfunction()
 
 
-# @FUNCTION: TRIBITS_DUMP_PACKAGE_DEPENDENCIES_INFO()
+# @FUNCTION: tribits_dump_package_dependencies_info()
 #
 # Usage:
 #
-#  TRIBITS_DUMP_PACKAGE_DEPENDENCIES_INFO()
+#  tribits_dump_package_dependencies_info()
 #
 # Function that dumps (prints to STDOUT) the package dependency info if
 # ``${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES==TRUE``.
 #
 # Does **not** modify state!
 #
-FUNCTION(TRIBITS_DUMP_PACKAGE_DEPENDENCIES_INFO)
+function(tribits_dump_package_dependencies_info)
 
-  ADVANCED_OPTION(${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES
+  advanced_option(${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES
     "Dump the package dependency information."
     "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
 
-  ADVANCED_OPTION(${PROJECT_NAME}_DUMP_FORWARD_PACKAGE_DEPENDENCIES
+  advanced_option(${PROJECT_NAME}_DUMP_FORWARD_PACKAGE_DEPENDENCIES
     "Dump the package forward dependency information."
     "${${PROJECT_NAME}_VERBOSE_CONFIGURE}" )
 
-  IF (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
-    MESSAGE("")
-    MESSAGE("Printing package dependencies ...")
-    MESSAGE("")
-    PRINT_NONEMPTY_VAR_WITH_SPACES(${PROJECT_NAME}_PACKAGES  DUMMY_OUT)
-    MESSAGE("")
-    PRINT_NONEMPTY_VAR_WITH_SPACES(${PROJECT_NAME}_SE_PACKAGES  DUMMY_OUT)
-    MESSAGE("")
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
-      TRIBITS_PRINT_PACKAGE_DEPENDENCIES(${TRIBITS_PACKAGE})
-      MESSAGE("")
-    ENDFOREACH()
-  ENDIF()
+  if (${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES)
+    message("")
+    message("Printing package dependencies ...")
+    message("")
+    print_nonempty_var_with_spaces(${PROJECT_NAME}_PACKAGES  DUMMY_OUT)
+    message("")
+    print_nonempty_var_with_spaces(${PROJECT_NAME}_SE_PACKAGES  DUMMY_OUT)
+    message("")
+    foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+      tribits_print_package_dependencies(${TRIBITS_PACKAGE})
+      message("")
+    endforeach()
+  endif()
 
-ENDFUNCTION()
+endfunction()
 
 #  LocalWords:  TRIBITS

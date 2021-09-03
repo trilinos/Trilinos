@@ -44,48 +44,48 @@
 #
 
 
-FUNCTION(TRIBITS_WRITE_DEPS_TO_XML_STRING  PACKAGE_NAME  LIST_TYPE
+function(tribits_write_deps_to_xml_string  PACKAGE_NAME  LIST_TYPE
   XML_VAR
   )
 
-  SET(LOC_XML "${${XML_VAR}}")
+  set(LOC_XML "${${XML_VAR}}")
 
-  SET(DEPS_VAR ${PACKAGE_NAME}_${LIST_TYPE})
-  ASSERT_DEFINED(DEPS_VAR)
-  SET(DEPS ${${DEPS_VAR}})
+  set(DEPS_VAR ${PACKAGE_NAME}_${LIST_TYPE})
+  assert_defined(DEPS_VAR)
+  set(DEPS ${${DEPS_VAR}})
 
-  #PRINT_VAR(PACKAGE_NAME)
-  #PRINT_VAR(DEPS)
+  #print_var(PACKAGE_NAME)
+  #print_var(DEPS)
 
-  IF (NOT DEPS)
+  if (NOT DEPS)
 
-    LIST(APPEND LOC_XML
+    list(APPEND LOC_XML
       "    <${LIST_TYPE}/>\n" )
 
-  ELSE()
+  else()
 
-    SET(VALUE_STR "")
+    set(VALUE_STR "")
 
-    FOREACH(DEP ${DEPS})
+    foreach(DEP ${DEPS})
 
-      IF(VALUE_STR)
-        SET(VALUE_STR "${VALUE_STR},")
-      ENDIF()
+      if(VALUE_STR)
+        set(VALUE_STR "${VALUE_STR},")
+      endif()
 
-      SET(VALUE_STR "${VALUE_STR}${DEP}")
+      set(VALUE_STR "${VALUE_STR}${DEP}")
 
-    ENDFOREACH()
+    endforeach()
 
-    LIST(APPEND LOC_XML
+    list(APPEND LOC_XML
       "    <${LIST_TYPE} value=\"${VALUE_STR}\"/>\n" )
 
-  ENDIF()
+  endif()
 
-  IF (LOC_XML)
-    SET(${XML_VAR} "${LOC_XML}" PARENT_SCOPE)
-  ENDIF()
+  if (LOC_XML)
+    set(${XML_VAR} "${LOC_XML}" PARENT_SCOPE)
+  endif()
 
-ENDFUNCTION()
+endfunction()
 
 
 #
@@ -93,117 +93,117 @@ ENDFUNCTION()
 # an XML file for other tools to use.
 #
 
-FUNCTION(TRIBITS_DUMP_DEPS_XML_FILE)
+function(tribits_dump_deps_xml_file)
 
-  SET(DEPS_XM)
+  set(DEPS_XM)
 
-  GET_FILENAME_COMPONENT(PROJECT_BASE_DIR_NAME  "${${PROJECT_NAME}_SOURCE_DIR}"  NAME)
+  get_filename_component(PROJECT_BASE_DIR_NAME  "${${PROJECT_NAME}_SOURCE_DIR}"  NAME)
 
-  LIST(APPEND DEPS_XML
+  list(APPEND DEPS_XML
     "<PackageDependencies project=\"${PROJECT_NAME}\" baseDirName=\"${PROJECT_BASE_DIR_NAME}\">\n"
      )
 
-  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
+  foreach(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
 
-    #MESSAGE("")
-    #PRINT_VAR(TRIBITS_PACKAGE)
+    #message("")
+    #print_var(TRIBITS_PACKAGE)
 
-    LIST(APPEND DEPS_XML
+    list(APPEND DEPS_XML
       "  <Package name=\"${TRIBITS_PACKAGE}\" dir=\"${${TRIBITS_PACKAGE}_REL_SOURCE_DIR}\" type=\"${${TRIBITS_PACKAGE}_TESTGROUP}\">\n")
 
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} LIB_REQUIRED_DEP_PACKAGES DEPS_XML)
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} LIB_OPTIONAL_DEP_PACKAGES DEPS_XML)
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} TEST_REQUIRED_DEP_PACKAGES DEPS_XML)
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} TEST_OPTIONAL_DEP_PACKAGES DEPS_XML)
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} LIB_REQUIRED_DEP_TPLS DEPS_XML)
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} LIB_OPTIONAL_DEP_TPLS DEPS_XML)
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} TEST_REQUIRED_DEP_TPLS DEPS_XML)
-    TRIBITS_WRITE_DEPS_TO_XML_STRING(${TRIBITS_PACKAGE} TEST_OPTIONAL_DEP_TPLS DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} LIB_REQUIRED_DEP_PACKAGES DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} LIB_OPTIONAL_DEP_PACKAGES DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} TEST_REQUIRED_DEP_PACKAGES DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} TEST_OPTIONAL_DEP_PACKAGES DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} LIB_REQUIRED_DEP_TPLS DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} LIB_OPTIONAL_DEP_TPLS DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} TEST_REQUIRED_DEP_TPLS DEPS_XML)
+    tribits_write_deps_to_xml_string(${TRIBITS_PACKAGE} TEST_OPTIONAL_DEP_TPLS DEPS_XML)
 
-    LIST(APPEND DEPS_XML
+    list(APPEND DEPS_XML
       "    <EmailAddresses>\n"
       "      <Regression address=\"${${TRIBITS_PACKAGE}_REGRESSION_EMAIL_LIST}\"/>\n"
       "    </EmailAddresses>\n"
       )
 
-    LIST(APPEND DEPS_XML
+    list(APPEND DEPS_XML
       "    <ParentPackage value=\"${${TRIBITS_PACKAGE}_PARENT_PACKAGE}\"/>\n"
       )
 
-    LIST(APPEND DEPS_XML
+    list(APPEND DEPS_XML
       "  </Package>\n" )
 
-  ENDFOREACH()
+  endforeach()
 
-  LIST(APPEND DEPS_XML
+  list(APPEND DEPS_XML
     "</PackageDependencies>\n" )
 
-  #PRINT_VAR(DEPS_XML)
-  STRING(REPLACE "\n;" "\n" DEPS_XML "${DEPS_XML}")
-  FILE(WRITE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} "${DEPS_XML}" )
+  #print_var(DEPS_XML)
+  string(REPLACE "\n;" "\n" DEPS_XML "${DEPS_XML}")
+  file(WRITE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} "${DEPS_XML}" )
 
-ENDFUNCTION()
+endfunction()
 
 
-# @MACRO: TRIBITS_WRITE_XML_DEPENDENCY_FILES()
+# @MACRO: tribits_write_xml_dependency_files()
 #
 # Usage::
 #
-#   TRIBITS_WRITE_XML_DEPENDENCY_FILES()
+#   tribits_write_xml_dependency_files()
 #
 # Macro that output XML dependency files if asked based in the global project
 # package dependency graph previously constructed..
 #
-MACRO(TRIBITS_WRITE_XML_DEPENDENCY_FILES)
+macro(tribits_write_xml_dependency_files)
 
-  TRIBITS_CONFIG_CODE_START_TIMER(WRITE_DEPENDENCY_FILES_TIME_START_SECONDS)
+  tribits_config_code_start_timer(WRITE_DEPENDENCY_FILES_TIME_START_SECONDS)
 
-  #PRINT_VAR(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
-  IF (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
-    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
-      SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+  #print_var(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+  if (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    if (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
+      set(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
         ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
-    ENDIF()
-    MESSAGE("" )
-    MESSAGE("Dumping the XML dependencies file ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ..." )
-    TRIBITS_DUMP_DEPS_XML_FILE()
-  ENDIF()
+    endif()
+    message("" )
+    message("Dumping the XML dependencies file ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ..." )
+    tribits_dump_deps_xml_file()
+  endif()
 
-  #PRINT_VAR(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
-  IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
-    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
-      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
+  #print_var(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
+  if (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    if (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
+      set(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
         ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
-    ENDIF()
-    MESSAGE("" )
-    MESSAGE("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
-    EXECUTE_PROCESS(
+    endif()
+    message("" )
+    message("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
+    execute_process(
       COMMAND ${PYTHON_EXECUTABLE}
         ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CI_SUPPORT_DIR}/dump-package-dep-table.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
-  ENDIF()
+  endif()
 
-  #PRINT_VAR(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE)
-  IF (${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
-    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
-      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
-    ENDIF()
-    MESSAGE("" )
-    MESSAGE("Dumping the CDash XML dependencies file ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
-    EXECUTE_PROCESS(
+  #print_var(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE)
+  if (${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    if (NOT IS_ABSOLUTE ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
+      set(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
+    endif()
+    message("" )
+    message("Dumping the CDash XML dependencies file ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
+    execute_process(
       COMMAND ${PYTHON_EXECUTABLE}
         ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CTEST_DRIVER_DIR}/dump-cdash-deps-xml-file.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} )
-  ENDIF()
+  endif()
 
-  IF (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+  if (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
     OR ${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
     OR ${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
     )
-    TRIBITS_CONFIG_CODE_STOP_TIMER(WRITE_DEPENDENCY_FILES_TIME_START_SECONDS
+    tribits_config_code_stop_timer(WRITE_DEPENDENCY_FILES_TIME_START_SECONDS
       "\nTotal time to write dependency files")
-  ENDIF()
+  endif()
 
-ENDMACRO()
+endmacro()

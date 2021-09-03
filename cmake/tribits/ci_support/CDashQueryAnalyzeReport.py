@@ -230,7 +230,7 @@ def foreachTransform(list_inout, transformFunctor):
 
 # Remove elements from a list given a list of indexes
 #
-# This modifies the orginal list inplace but also returns it.  Therefore, if
+# This modifies the original list inplace but also returns it.  Therefore, if
 # you want to keep the original list, you better create a copy of the base
 # list object before passing it in.
 #
@@ -272,7 +272,7 @@ def writeCsvFileStructureToStr(csvFileStruct):
 #
 
 
-# Collecton of data used to create the final HTML CDash report that is
+# Collection of data used to create the final HTML CDash report that is
 # updated and queried by various functions.
 #
 # NOTE: This is put into a class object so that these vars can be updated in
@@ -280,7 +280,7 @@ def writeCsvFileStructureToStr(csvFileStruct):
 #
 class CDashReportData(object):
   def __init__(self):
-    # Gives the final result (assume passing by defualt)
+    # Gives the final result (assume passing by default)
     self.globalPass = True
     # This is the top of the HTML body
     self.htmlEmailBodyTop = ""
@@ -300,7 +300,7 @@ def cdashColorPassed(): return 'green'
 def cdashColorFailed(): return 'red'
 def cdashColorNotRun(): return 'orange'
 def cdashColorMissing(): return 'gray'
-# ToDo: Make the above return different colors for a color-blind pallette
+# ToDo: Make the above return different colors for a color-blind palette
 
 
 def getStandardTestsetAcroList():
@@ -368,6 +368,15 @@ def getStandardTestsetTypeInfo(testsetAcro, testsetColor=None):
   return tsti
 
 
+# Return the 'status' field from a test dict
+#
+# Return 'Not Run' if the 'status' field is missing.  (This happens with one
+# customer's tests apparently, see SESW-383.)
+#
+def getTestDictStatusField(testDict):
+  return testDict.get('status', 'Not Run')
+
+
 # Get the Test-set acronym from the fields of a test dict
 #
 def getTestsetAcroFromTestDict(testDict):
@@ -429,7 +438,7 @@ def getDefaultTestDictsSortKeyList() : return ['testname', 'buildName', 'site']
 # The returned Python object will be a simple nested set of Python dicts and
 # lists.
 #
-# NOTE: This function can't really be unit tested becuase it actually gets
+# NOTE: This function can't really be unit tested because it actually gets
 # data from CDash.  Therefore, the code below will be structured such that it
 # we can avoid getting call it in any automated tests.
 #
@@ -487,7 +496,7 @@ def readCsvFileIntoListOfDicts(csvFileName, requiredColumnHeadersList=[],
     # Read the rows of the CSV file into dicts
     dataRow = 0
     for lineList in csvReader:
-      if not lineList: continue # Ingore blank line
+      if not lineList: continue # Ignore blank line
       stripWhiltespaceFromStrList(lineList)
       assertExpectedNumColsFromCsvFile(csvFileName, dataRow, lineList,
         columnHeadersList)
@@ -661,7 +670,7 @@ def pprintPythonDataToFile(pythonData, filePath):
 #
 # If alwaysUseCacheFileIfExists==True and the file cdashQueryDataCacheFile
 # already exists, then the file cdashQueryDataCacheFile will be used to get
-# the dta instead of callig CDash.
+# the dta instead of calling CDash.
 #
 # Otherwise, CDash will be called at cdashQueryUrl to get the data and then
 # the data will be written to the the file cdashQueryDataCacheFile if
@@ -728,7 +737,16 @@ def getCDashIndexBrowserUrl(cdashUrl, projectName, date, filterFields):
 def getCDashQueryTestsQueryUrl(cdashUrl, projectName, date, filterFields):
   if date: dateArg = "&date="+date
   else: dateArg = ""
-  return cdashUrl+"/api/v1/queryTests.php?project="+projectName+dateArg+"&"+filterFields
+  cdashTestUrl = cdashUrl+"/api/v1/queryTests.php?project="+projectName+dateArg+"&"+filterFields
+  return replaceNonUrlCharsInUrl(cdashTestUrl)
+
+
+# Replace non-URL chars and return new URL string
+def replaceNonUrlCharsInUrl(url):
+  urlNew = url
+  urlNew = urlNew.replace(' ', '%20')
+  # ToDo: Replace other chars as needed
+  return urlNew
 
 
 # Construct full cdash/queryTests.php browser URL given the pieces
@@ -934,7 +952,7 @@ def flattenCDashQueryTestsToListOfDicts(fullCDashQueryTestsJson):
 # same exact key/value pairs, then the later elements will be removed from the
 # list.  But if just the key/value pairs listed in listOfKeys are duplicated
 # but one or more of the other key/value pairs is different, then then an
-# excpetion is thrown.
+# exception is thrown.
 #
 # NOTE: This is an implementation function that is used in the class
 # SearchableListOfDicts.  Please use that class instead of this raw function.
@@ -1075,13 +1093,13 @@ def lookupDictGivenLookupDict(lookupDict, listOfKeys, listOfValues,
 # multi-key/value pairs to find them.
 #
 # NOTE: The key values for the list of keys given in listOfKeys must be
-# unique!  If it is not, then an excpetion will be thrown.
+# unique!  If it is not, then an exception will be thrown.
 #
 class SearchableListOfDicts(object):
 
   # Constructor
   #
-  # listOfDicts [stored, may be modifed]: List of dicts that a search
+  # listOfDicts [stored, may be modified]: List of dicts that a search
   # data-structure will be created for.
   #
   # listOfKeys [stored, will not be modified]: List of the names of keys in
@@ -1111,7 +1129,7 @@ class SearchableListOfDicts(object):
     if keyMapList:
       if len(listOfKeys) != len(keyMapList):
         raise Exception("Error, listOfKeys="+str(listOfKeys)+\
-          " keyMapList="+str(listOfKeys)+" have different lenghts!" )
+          " keyMapList="+str(listOfKeys)+" have different lengths!" )
     self.__listOfDicts = listOfDicts
     self.__listOfKeys = listOfKeys
     self.__keyMapList = keyMapList
@@ -1189,7 +1207,7 @@ def createSearchableListOfTests( testsListOfDicts,
 
 # Create a SearchableListOfDicts object for a list of build dicts allows
 # lookups that match the 'site' and 'buildname' fields but uses input for the
-# search that are test dicts that have the fiels 'site' and 'buildName'.
+# search that are test dicts that have the fields 'site' and 'buildName'.
 def createTestToBuildSearchableListOfDicts(buildsLOD,
     removeExactDuplicateElements=False,
   ):
@@ -1342,9 +1360,9 @@ def dateFromBuildStartTime(buildStartTime):
 #   shallow copied before it is sorted and returned.
 #
 #   currentTestDate [in]: The current testing day (as a string "YYYY-MM-DD").
-#   This is needed to define a frame of reference for interpeting if the test
+#   This is needed to define a frame of reference for interpreting if the test
 #   is currently 'Passed', 'Failed', 'Not Run', or is 'Missing' (i.e. does not
-#   have any test results for curent testing date).
+#   have any test results for current testing date).
 #
 #   testingDayStartTimeUtc [in]: The CDash project testing day start time
 #   "<hh>:<mm>" in UTC.  For example, if the CDash project testing day start
@@ -1369,8 +1387,8 @@ def dateFromBuildStartTime(buildStartTime):
 #   sortedTestHistoryLOD: The sorted list of test dicts with most recent dict
 #   at the top. New list object with references to the same test dict
 #   elements.  Therefore, if the list elements themselves are modified after
-#   the function returns, then the elements in the orignal list testHistoryLOD
-#   will be modifed as well.
+#   the function returns, then the elements in the original list testHistoryLOD
+#   will be modified as well.
 #
 #   testHistoryStats: Dict that gives statistics for the test with fields:
 #     - 'pass_last_x_days': Number of times test 'Passed'
@@ -1438,10 +1456,10 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
 
   # testStatus (for this test based on history)
   if topTestDictTestingDayDT == currentTestDateDT:
-    testStatus = topTestDict['status']
+    testStatus = getTestDictStatusField(topTestDict)
   else:
     testStatus = "Missing"
-  #print("testStatus = "+testStatus)
+  #print("testStatus = '"+testStatus+"'")
 
   # testHistoryStats
 
@@ -1465,7 +1483,7 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
 
   # Loop over test history for each of the kth entries and update quantities
   for pastTestDict_k in sortedTestHistoryLOD:
-    pastTestStatus_k = pastTestDict_k['status']
+    pastTestStatus_k = getTestDictStatusField(pastTestDict_k)
     pastTestDateUtc_k = testingDayTimeObj.getTestingDayDateFromBuildStartTimeStr(
       pastTestDict_k['buildstarttime'])
     # Count the initial consecutive streaks for passing and nonpassing
@@ -1500,9 +1518,9 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
   return (sortedTestHistoryLOD, testHistoryStats, testStatus)
 
 
-# Get a new list with unique entires from an input sorted list of test dicts.
+# Get a new list with unique entries from an input sorted list of test dicts.
 #
-# The returned list is new and does not modify any of the entires in the input
+# The returned list is new and does not modify any of the entries in the input
 # sorted inputSortedTestHistoryLOD object.
 #
 def getUniqueSortedTestsHistoryListOfDicts(inputSortedTestHistoryLOD):
@@ -1522,7 +1540,7 @@ def getUniqueSortedTestsHistoryListOfDicts(inputSortedTestHistoryLOD):
     if not checkCDashTestDictsAreSame(candidateTestDict, "a", lastUniqueTestDict, "b")[0]:
       uniqueSortedTestHistoryLOD.append(candidateTestDict)
       lastUniqueTestDict = candidateTestDict
-    # Else, this is dupliate test entry so skip
+    # Else, this is duplicate test entry so skip
     idx += 1
 
   return uniqueSortedTestHistoryLOD
@@ -1629,7 +1647,7 @@ class AddTestHistoryToTestDictFunctor(object):
   # Constructor which takes additional data needed to get the test history and
   # other stuff.
   #
-  # By default, this wil always read the data from the cache file if that file
+  # By default, this will always read the data from the cache file if that file
   # already exists.
   #
   def __init__(self, cdashUrl, projectName, date, testingDayStartTimeUtc, daysOfHistory,
@@ -1695,7 +1713,7 @@ class AddTestHistoryToTestDictFunctor(object):
     testHistoryQueryUrl = \
       getCDashQueryTestsQueryUrl(cdashUrl, projectName, None, testHistoryQueryFilters)
 
-    # URL to imbed in email to show the history of the test to humans
+    # URL to embed in email to show the history of the test to humans
     testHistoryBrowserUrl = \
       getCDashQueryTestsBrowserUrl(cdashUrl, projectName, None, testHistoryQueryFilters)
 
@@ -1872,7 +1890,7 @@ class AddCDashTestingDayFunctor(object):
 #
 #    {'group':"???", 'site':"???", 'buildname':"???", 'status':"???", ...}
 #
-# wher the '...' will be the rest of the fields for builds that exist on CDash
+# where the '...' will be the rest of the fields for builds that exist on CDash
 # but don't have full results.
 #
 # The field 'status' will either be given either:
@@ -1909,7 +1927,7 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
       if not buildSummaryDict.get('test', None):
         compilationDict = buildSummaryDict.get('compilation', None)
         if compilationDict and compilationDict['time'] == '0s':
-          missingPartsList.append("build") # See NOTE below for explaination!
+          missingPartsList.append("build") # See NOTE below for explanation!
         missingPartsList.append("tests")
       # See if any parts are missing and report if there are as a missing
       # build
@@ -1931,7 +1949,7 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
   # we will assume that no build data was submitted to the dashboard.
   # Otherwise, we can't detect when build results are missing because if just
   # 'configure' data is updated to CDash, then CDash will automatically create
-  # a 'compilation' subdict and will set the initail time to '0s'.  So we
+  # a 'compilation' subdict and will set the initial time to '0s'.  So we
   # can't directly tell if build has missing build/compilation data or if it
   # just has configure data.  (I consider this to be a defect in CDash and we
   # may ask Kitware to fix this but for now we can just use this heuristic.)
@@ -2036,7 +2054,7 @@ def downloadTestsOffCDashQueryTestsAndFlatten(
     cdashQueryTestsUrl, fullCDashQueryTestsJsonCacheFile, useCachedCDashData,
     alwaysUseCacheFileIfExists, verbose=verbose,
     extractCDashApiQueryData_in=extractCDashApiQueryData_in )
-  # Get flattend set of tests
+  # Get flattened set of tests
   testsListOfDicts = \
     flattenCDashQueryTestsToListOfDicts(fullCDashQueryTestsJson)
   return testsListOfDicts
@@ -2203,7 +2221,7 @@ class TableColumnData(object):
     self.colHeader = colHeader
     self.dictKey = dictKey
     if not colAlign in self.validColAlignList:
-      raise Excpetion(
+      raise Exception(
         "Error, colAlign="+colAlign+" not valid.  Please choose from"+\
         " the list ['" + "', '".join(validColAlignList) + "']!" )
     self.colAlign = colAlign
@@ -2437,14 +2455,14 @@ def createCDashDataSummaryHtmlTableStr( dataTitle, dataCountAcronym,
 # from the data).
 #
 # limitRowsToDisplay [in]: Limit of the number of rows to display.  If this
-# limited then this arugment is needed in order to print "(limited it ???)" in
+# limited then this argument is needed in order to print "(limited it ???)" in
 # the table title.  Should be 'None' if this listing is not limited. (default
 # None)
 #
-# htmlStyle [in]: HTML sytle for the entire table (see createHtmlTableStr())
+# htmlStyle [in]: HTML style for the entire table (see createHtmlTableStr())
 # (default None)
 #
-# htmlTableStyle [in]: Sytle inside of <table ... > (see createHtmlTableStr())
+# htmlTableStyle [in]: Style inside of <table ... > (see createHtmlTableStr())
 # (default None)
 #
 def createCDashTestHtmlTableStr(testsetTypeInfo, testTypeCountNum, testsLOD,
@@ -2562,7 +2580,7 @@ class IssueTrackerTestsStatusReporter(object):
 # Get the issue tracker fields from a list of test dicts and assert they are
 # all the same.
 #
-# Formal Paremeters:
+# Formal Parameters:
 #
 #   testsLOD [in]: List of test dicts the must have the 'issue_tracker' and
 #   the 'issuer_tracker_url' fields and they must all be identical to each
@@ -2747,7 +2765,7 @@ class SingleTestsetReporter(object):
   # CDashReportData).
   #
   # testDictsSortKeyList [persisting]: The sort order array tests dicts (input
-  # to DictSortFunctor()). (Defualt getDefaultTestDictsSortKeyList()).
+  # to DictSortFunctor()). (Default getDefaultTestDictsSortKeyList()).
   #
   # addTestHistoryStrategy [persisting]: Strategy object that can set the test
   # history on a list of dicts.  Must have member function
@@ -2896,7 +2914,7 @@ class TestsetsReporter(object):
 #    { 'testname':'test6' ... 'issue_tracker':'#1235' },
 #    { 'testname':'test7' ... 'issue_tracker':'#1236' },
 #
-# would yeild:
+# would yield:
 #
 #   testDictsByIssueTracker = {
 #     '#1234' : [
@@ -2953,7 +2971,7 @@ def binTestDictsByIssueTracker(testsLOD):
 #     { 'testname':'test6', 'status':'Missing' ... 'issue_tracker':'#1235' },
 #     { 'testname':'test7', 'status':'Not Run' ... 'issue_tracker':'#1236' },
 #
-# would yeild:
+# would yield:
 #
 #   testDictsByTestsetAcro = {
 #     'twoif' : [

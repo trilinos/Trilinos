@@ -37,5 +37,5 @@
 # ************************************************************************
 # @HEADER
 
-SET(CMAKE_BUILD_TYPES_LIST
+set(CMAKE_BUILD_TYPES_LIST
   DEBUG MINSIZEREL RELEASE RELWITHDEBINFO NONE)

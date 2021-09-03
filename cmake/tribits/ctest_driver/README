@@ -131,8 +131,8 @@ D.1) Test out individual CTest dashboard builds first:
 Before running your outer cron driver script, you would be wise to first test
 out your individual CTest driver scripts (e.g. MPI_OPT, SERIAL_DEBUG, etc.).
 You can test individual basic ctest driver scripts to clone the project and
-create the BUILD directroy by creating your own temp base directory and then
-overridding CTEST_DASHBOARD_ROOT for example as:
+create the BUILD directory by creating your own temp base directory and then
+overriding CTEST_DASHBOARD_ROOT for example as:
 
   $ mkdir MOCK_MPI_OPT
   $ cd MOCK_MPI_OPT
@@ -197,7 +197,7 @@ submit works, you can run a final trial build with:
      CTEST_DO_SUBMIT=ON CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      ctest -V -S <somedir>/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
-If this submits to the 'Experimental' CDash dashbaord, you should be
+If this submits to the 'Experimental' CDash dashboard, you should be
 in good shape for the nightly test.  If you can't find you
 experimental build on the CDash dashboard, then something is wrong.
 

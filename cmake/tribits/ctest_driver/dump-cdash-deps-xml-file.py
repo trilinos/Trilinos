@@ -81,7 +81,7 @@ clp.add_option(
 
 clp.add_option(
   "--output-cdash-deps-xml-file", dest="outputCDashDepsXmlFile", type="string",
-  help="Output XML file giving the TriBITS project dependices in XML form" \
+  help="Output XML file giving the TriBITS project dependencies in XML form" \
   + " that CDash understands.")
 
 (options, args) = clp.parse_args()

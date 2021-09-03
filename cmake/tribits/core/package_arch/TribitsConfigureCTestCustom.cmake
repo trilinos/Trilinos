@@ -37,13 +37,13 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsGeneralMacros)
+include(TribitsGeneralMacros)
 
-FUNCTION(TRIBITS_CONFIGURE_CTEST_CUSTOM  TRIBITS_PROJECT_SOURCE_DIR  OUTPUT_BINARY_DIR)
-  SET(CTEST_CUSTOM_IN ${TRIBITS_PROJECT_SOURCE_DIR}/cmake/ctest/CTestCustom.cmake.in)
-  #PRINT_VAR(CTEST_CUSTOM_IN)
-  IF(EXISTS ${CTEST_CUSTOM_IN})
-    TRIBITS_TRACE_FILE_PROCESSING(PROJECT  CONFIGURE "${CTEST_CUSTOM_IN}")
-    CONFIGURE_FILE(${CTEST_CUSTOM_IN} ${OUTPUT_BINARY_DIR}/CTestCustom.cmake)
-  ENDIF()
-ENDFUNCTION()
+function(tribits_configure_ctest_custom  TRIBITS_PROJECT_SOURCE_DIR  OUTPUT_BINARY_DIR)
+  set(CTEST_CUSTOM_IN ${TRIBITS_PROJECT_SOURCE_DIR}/cmake/ctest/CTestCustom.cmake.in)
+  #print_var(CTEST_CUSTOM_IN)
+  if(EXISTS ${CTEST_CUSTOM_IN})
+    tribits_trace_file_processing(PROJECT  CONFIGURE "${CTEST_CUSTOM_IN}")
+    configure_file(${CTEST_CUSTOM_IN} ${OUTPUT_BINARY_DIR}/CTestCustom.cmake)
+  endif()
+endfunction()

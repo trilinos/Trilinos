@@ -37,18 +37,18 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsCreateClientTemplateHeaders)
-INCLUDE(CMakeParseArguments)
-INCLUDE(GlobalSet)
-INCLUDE(AppendSet)
-INCLUDE(AppendGlob)
-INCLUDE(AppendGlobalSet)
-INCLUDE(AppendStringVar)
-INCLUDE(PrependGlobalSet)
-INCLUDE(RemoveGlobalDuplicates)
-INCLUDE(TribitsGeneralMacros)
-INCLUDE(TribitsReportInvalidTribitsUsage)
-INCLUDE(SetAndIncDirs)
+include(TribitsCreateClientTemplateHeaders)
+include(CMakeParseArguments)
+include(GlobalSet)
+include(AppendSet)
+include(AppendGlob)
+include(AppendGlobalSet)
+include(AppendStringVar)
+include(PrependGlobalSet)
+include(RemoveGlobalDuplicates)
+include(TribitsGeneralMacros)
+include(TribitsReportInvalidTribitsUsage)
+include(SetAndIncDirs)
 
 ###
 ### WARNING: See "NOTES TO DEVELOPERS" at the bottom of the file
@@ -59,28 +59,28 @@ INCLUDE(SetAndIncDirs)
 #
 # Macro that configures the package's main config.h file
 #
-FUNCTION(TRIBITS_ADD_CONFIG_DEFINE DEFINE)
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("-- " "Package ${PARENT_PACKAGE_NAME}: adding compiler"
+function(tribits_add_config_define DEFINE)
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("-- " "Package ${PARENT_PACKAGE_NAME}: adding compiler"
       " define to config file: ${DEFINE}")
-  ENDIF()
-  GLOBAL_SET(${PARENT_PACKAGE_NAME}_CONFIG_DEFINES
+  endif()
+  global_set(${PARENT_PACKAGE_NAME}_CONFIG_DEFINES
     "${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}\n#define ${DEFINE}")
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("-- ${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}")
-  ENDIF()
-ENDFUNCTION()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("-- ${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}")
+  endif()
+endfunction()
 
 
 #
-# @FUNCTION: TRIBITS_CONFIGURE_FILE()
+# @FUNCTION: tribits_configure_file()
 #
 # Macro that configures the package's main configured header file (typically
 # called ``${PACKAGE_NAME}_config.h`` but any name can be used).
 #
 # Usage::
 #
-#   TRIBITS_CONFIGURE_FILE(<packageConfigFile>)
+#   tribits_configure_file(<packageConfigFile>)
 #
 # This function requires the file::
 #
@@ -90,26 +90,26 @@ ENDFUNCTION()
 #
 #   ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
 #
-# by calling the built-in ``CONFIGURE_FILE()`` command::
+# by calling the built-in ``configure_file()`` command::
 #
-#   CONFIGURE_FILE(
+#   configure_file(
 #     ${PACKAGE_SOURCE_DIR}/cmake/<packageConfigFile>.in
 #     ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
 #     )
 #
 # which does basic substitution of CMake variables (see documentation for
-# built-in CMake `CONFIGURE_FILE()`_ command for rules on how it performs
+# built-in CMake `configure_file()`_ command for rules on how it performs
 # substitutions).  This command is typically used to configure the package's
 # main `<packageDir>/cmake/<packageName>_config.h.in`_ file.
 #
-# In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
+# In addition to just calling ``configure_file()``, this function also aids in
 # creating configured header files adding macros for deprecating code as
 # described below.
 #
 # **Deprecated Code Macros**
 #
 # If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE`` (see
-# `TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()`_), then the local CMake
+# `tribits_add_show_deprecated_warnings_option()`_), then the local CMake
 # variable ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS`` is set which
 # adds a define ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where
 # ``<PARENT_PACKAGE_NAME_UC>`` is the package name in all upper-case letters)
@@ -130,15 +130,15 @@ ENDFUNCTION()
 # macro is defined to be empty.  See `Regulated Backward Compatibility and
 # Deprecated Code`_ for more details.
 #
-FUNCTION(TRIBITS_CONFIGURE_FILE  PACKAGE_NAME_CONFIG_FILE)
+function(tribits_configure_file  PACKAGE_NAME_CONFIG_FILE)
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPACKAGE_CONFIGURE_FILE: ${PACKAGE_NAME_CONFIG_FILE}")
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("\nPACKAGE_CONFIGURE_FILE: ${PACKAGE_NAME_CONFIG_FILE}")
+  endif()
 
   # Set up the deprecated attribute if showing deprecated warnings
-  IF (${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS)
-    MULTILINE_SET(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
+  if (${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS)
+    multiline_set(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
       "#ifndef ${PARENT_PACKAGE_NAME_UC}_DEPRECATED\n"
       "#  if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))\n"
       "#    define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED  __attribute__((__deprecated__))\n"
@@ -157,24 +157,24 @@ FUNCTION(TRIBITS_CONFIGURE_FILE  PACKAGE_NAME_CONFIG_FILE)
       "#  endif\n"
       "#endif\n"
       )
-  ELSE()
-    MULTILINE_SET(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
+  else()
+    multiline_set(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
       "#define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED\n"
       "#define ${PARENT_PACKAGE_NAME_UC}_DEPRECATED_MSG(MSG)\n"
       )
-  ENDIF()
+  endif()
 
-  IF (${PARENT_PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
-    APPEND_STRING_VAR(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
+  if (${PARENT_PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
+    append_string_var(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
       "\n#define ${PARENT_PACKAGE_NAME_UC}_HIDE_DEPRECATED_CODE")
-  ENDIF()
+  endif()
 
   # Set up the macro to create the define for time monitor
-  SET(TIME_MONITOR_DEFINE_NAME ${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR)
-  SET(FUNC_TIME_MONITOR_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR)
-  SET(FUNC_TIME_MONITOR_DIFF_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR_DIFF)
-  IF (${PARENT_PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR)
-    MULTILINE_SET(${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR_DECLARATIONS
+  set(TIME_MONITOR_DEFINE_NAME ${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR)
+  set(FUNC_TIME_MONITOR_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR)
+  set(FUNC_TIME_MONITOR_DIFF_MACRO_NAME ${PARENT_PACKAGE_NAME_UC}_FUNC_TIME_MONITOR_DIFF)
+  if (${PARENT_PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR)
+    multiline_set(${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR_DECLARATIONS
       "#ifndef ${FUNC_TIME_MONITOR_MACRO_NAME}\n"
       "#  define ${TIME_MONITOR_DEFINE_NAME}\n"
       "#  define ${FUNC_TIME_MONITOR_MACRO_NAME}(FUNCNAME) \\\n"
@@ -183,30 +183,30 @@ FUNCTION(TRIBITS_CONFIGURE_FILE  PACKAGE_NAME_CONFIG_FILE)
       "     TEUCHOS_FUNC_TIME_MONITOR_DIFF(FUNCNAME, DIFF)\n"
       "#endif\n"
       )
-  ELSE()
-    MULTILINE_SET(${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR_DECLARATIONS
+  else()
+    multiline_set(${PARENT_PACKAGE_NAME_UC}_TEUCHOS_TIME_MONITOR_DECLARATIONS
       "#define ${FUNC_TIME_MONITOR_MACRO_NAME}(FUNCNAME)\n"
       "#define ${FUNC_TIME_MONITOR_DIFF_MACRO_NAME}(FUNCNAME, DIFF)\n"
       )
-  ENDIF()
+  endif()
 
   # Configure the file
-  CONFIGURE_FILE(
+  configure_file(
     ${PACKAGE_SOURCE_DIR}/cmake/${PACKAGE_NAME_CONFIG_FILE}.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME_CONFIG_FILE}
     )
 
-ENDFUNCTION()
+endfunction()
 
 
 #
-# @FUNCTION: TRIBITS_ADD_LIBRARY()
+# @FUNCTION: tribits_add_library()
 #
-# Function used to add a CMake library and target using ``ADD_LIBRARY()``.
+# Function used to add a CMake library and target using ``add_library()``.
 #
 # Usage::
 #
-#   TRIBITS_ADD_LIBRARY(
+#   tribits_add_library(
 #     <libBaseName>
 #     [HEADERS <h0> <h1> ...]
 #     [HEADERS_INSTALL_SUBDIR <headerssubdir>]
@@ -223,15 +223,15 @@ ENDFUNCTION()
 #
 # *Sections:*
 #
-# * `Formal Arguments (TRIBITS_ADD_LIBRARY())`_
-# * `Include Directories (TRIBITS_ADD_LIBRARY())`_
-# * `Install Targets (TRIBITS_ADD_LIBRARY())`_
-# * `Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())`_
-# * `Miscellaneous Notes (TRIBITS_ADD_LIBRARY())`_
+# * `Formal Arguments (tribits_add_library())`_
+# * `Include Directories (tribits_add_library())`_
+# * `Install Targets (tribits_add_library())`_
+# * `Additional Library and Source File Properties (tribits_add_library())`_
+# * `Miscellaneous Notes (tribits_add_library())`_
 #
-# .. _Formal Arguments (TRIBITS_ADD_LIBRARY()):
+# .. _Formal Arguments (tribits_add_library()):
 #
-# **Formal Arguments (TRIBITS_ADD_LIBRARY())**
+# **Formal Arguments (tribits_add_library())**
 #
 #   ``<libBaseName>``
 #
@@ -241,13 +241,13 @@ ENDFUNCTION()
 #     
 #       <libTargetName> = ${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}<libBaseName>
 #
-#     This is the name passed to ``ADD_LIBRARY(<libTargetName> ...)``.  The
+#     This is the name passed to ``add_library(<libTargetName> ...)``.  The
 #     name is *not* prefixed by the package name.  CMake will of course add
 #     any standard prefix or post-fix to the library file name appropriate for
 #     the platform and if this is a static or shared library build (e.g. on
 #     Linux prefix = ``'lib'``, postfix = ``'.so'`` for shared lib and postfix
 #     = ``'.a'`` static lib) (see documentation for the built-in CMake command
-#     ``ADD_LIBRARY()``.
+#     ``add_library()``.
 #
 #   ``HEADERS <h0> <h1> ...``
 #
@@ -255,10 +255,10 @@ ENDFUNCTION()
 #     header files are assumed to be in the current source directory.  They
 #     can also contain the relative path or absolute path to the files if they
 #     are not in the current source directory.  This list of headers is passed
-#     into ``ADD_LIBRARY(...)`` as well (which is not strictly needed but is
+#     into ``add_library(...)`` as well (which is not strictly needed but is
 #     helpful for some build tools, like MS Visual Studio).  By default, these
 #     headers will be installed (see `Install Targets
-#     (TRIBITS_ADD_LIBRARY())`_).
+#     (tribits_add_library())`_).
 #
 #   ``HEADERS_INSTALL_SUBDIR <headerssubdir>``
 #
@@ -267,27 +267,27 @@ ENDFUNCTION()
 #     headers will be installed under
 #     ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/<headerssubdir>``.  Otherwise,
 #     they will be installed under ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/``.
-#     `Install Targets (TRIBITS_ADD_LIBRARY())`_.
+#     `Install Targets (tribits_add_library())`_.
 #
 #   ``NOINSTALLHEADERS <nih0> <hih1> ...``
 #
 #     List of private header files which are used by this library. These
 #     headers are not installed and do not needed to be passed in for any
-#     purpose other than to pass them into ``ADD_LIBRARY()`` as some build
+#     purpose other than to pass them into ``add_library()`` as some build
 #     tools like to have these listed (e.g. MS Visual Studio).
 #
 #   ``SOURCES <src0> <src1> ...``
 #
-#     List of source files passed into ``ADD_LIBRARY()`` that are compiled
+#     List of source files passed into ``add_library()`` that are compiled
 #     into header files and included in the library.  The compiler used to
 #     compile the files is determined automatically based on the file
-#     extension (see CMake documentation for ``ADD_LIBRARY()``).
+#     extension (see CMake documentation for ``add_library()``).
 #
 #   ``DEPLIBS <deplib0> <deplib1> ...``
 #
 #     List of dependent libraries that are built in the current SE package
 #     that this library is dependent on.  These libraries are passed into
-#     ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+#     ``target_link_libraries(<libTargetName> ...)`` so that CMake knows about
 #     the dependency structure of the libraries within this SE package.
 #     **NOTE:** One must **not** list libraries in other upstream `TriBITS SE
 #     Packages`_ or libraries built externally from this TriBITS CMake project
@@ -300,7 +300,7 @@ ENDFUNCTION()
 #
 #     List of dependent libraries built externally from this TriBITS CMake
 #     project.  These libraries are passed into
-#     ``TARGET_LINK_LIBRARIES(<libTargetName> ...)`` so that CMake knows about
+#     ``target_link_libraries(<libTargetName> ...)`` so that CMake knows about
 #     the dependency.  However, note that external libraries are often better
 #     handled as `TriBITS TPLs`_.  A well constructed TriBITS package and
 #     library should never have to use this option!  So far, the only case
@@ -332,7 +332,7 @@ ENDFUNCTION()
 #     ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
 #     not be added.  In this case, the current include directories will be set
 #     in the global variable ``<libTargetName>_INCLUDE_DIR`` which will be
-#     used in `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked
+#     used in `tribits_add_executable()`_ when a test-only library is linked
 #     in through its ``DEPLIBS`` argument.
 #
 #   ``NO_INSTALL_LIB_OR_HEADERS``
@@ -342,45 +342,45 @@ ENDFUNCTION()
 #
 #   ``CUDALIBRARY``
 #
-#     If specified then ``CUDA_ADD_LIBRARY()`` is used instead of
-#     ``ADD_LIBRARY()`` where ``CUDA_ADD_LIBRARY()`` is assumed to be defined
+#     If specified then ``cuda_add_library()`` is used instead of
+#     ``add_library()`` where ``cuda_add_library()`` is assumed to be defined
 #     by the standard ``FindCUDA.cmake`` module as processed using the
 #     standard TriBITS ``FindTPLCUDA.cmake`` file (see `Standard TriBITS
 #     TPLs`_).  For this option to work, this SE package must have an enabled
 #     direct or indirect dependency on the TriBITS CUDA TPL or a
 #     configure-time error may occur about not knowing about
-#     ``CUDA_ALL_LIBRARY()``.
+#     ``cuda_all_library()``.
 #
 #   ``ADDED_LIB_TARGET_NAME_OUT <libTargetName>``
 #
 #     If specified, then on output the variable ``<libTargetName>`` will be
-#     set with the name of the library passed to ``ADD_LIBRARY()``.  Having
+#     set with the name of the library passed to ``add_library()``.  Having
 #     this name allows the calling ``CMakeLists.txt`` file access and set
 #     additional target properties (see `Additional Library and Source File
-#     Properties (TRIBITS_ADD_LIBRARY())`_).
+#     Properties (tribits_add_library())`_).
 #
-# .. _Include Directories (TRIBITS_ADD_LIBRARY()):
+# .. _Include Directories (tribits_add_library()):
 #
-# **Include Directories (TRIBITS_ADD_LIBRARY())**
+# **Include Directories (tribits_add_library())**
 #
 # Any base directories for the header files listed in the arguments
 # ``HEADERS`` or ``NOINSTALLHEADERS`` should be passed into the standard CMake
-# command ``INCLUDE_DIRECTORIES()`` **before** calling this function.  For
+# command ``include_directories()`` **before** calling this function.  For
 # example, a CMakeLists.txt file will look like::
 #
 #   ...
 #
-#   TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-#   CONFIGURE_FILE(...)
+#   tribits_configure_file(${PACKAGE_NAME}_config.h)
+#   configure_file(...)
 #
 #   ...
 #
-#   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-#   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+#   include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+#   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 #
 #   ...
 #
-#   TRIBITS_ADD_LIBRARY( <libName>
+#   tribits_add_library( <libName>
 #     SOURCES
 #       <src0>.c
 #       <subdir0>/<src1>.cpp
@@ -395,13 +395,13 @@ ENDFUNCTION()
 #     )
 #
 # The include of ``${CMAKE_CURRENT_BINARY_DIR}`` is needed for any generated
-# header files (e.g. using raw ``CONFIGURE_FILE()`` or
-# `TRIBITS_CONFIGURE_FILE()`_) or any generated Fortran ``*.mod`` module files
+# header files (e.g. using raw ``configure_file()`` or
+# `tribits_configure_file()`_) or any generated Fortran ``*.mod`` module files
 # generated as a byproduct of compiling F90+ source files (that contain one or
 # more Fortran module declarations).
 #
-# The function ``TRIBITS_ADD_LIBRARY()`` will grab the list of all of the
-# include directories in scope from prior calls to ``INCLUDE_DIRECTORIES()``
+# The function ``tribits_add_library()`` will grab the list of all of the
+# include directories in scope from prior calls to ``include_directories()``
 # and will append these to the variable ``${PACKAGE_NAME}_INCLUDE_DIRS``.
 # This list of include directories is exported to downstream SE packages so
 # they appear on the compile lines of all downstream object file compiles.
@@ -409,12 +409,12 @@ ENDFUNCTION()
 # up automatically (just by clearing dependencies in
 # `<packageDir>/cmake/Dependencies.cmake`_ files).
 #
-# .. _Install Targets (TRIBITS_ADD_LIBRARY()):
+# .. _Install Targets (tribits_add_library()):
 #
-# **Install Targets (TRIBITS_ADD_LIBRARY())**
+# **Install Targets (tribits_add_library())**
 #
 # By default, an install target for the library is created using
-# ``INSTALL(TARGETS <libTargetName> ...)`` to install into the directory
+# ``install(TARGETS <libTargetName> ...)`` to install into the directory
 # ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
 # ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix`_).
 # However, this install target will not get created if
@@ -424,7 +424,7 @@ ENDFUNCTION()
 # ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
 #
 # By default, an install target for the headers listed in ``HEADERS`` will get
-# added using ``INSTALL(FILES <h0> <h1> ...)``, but only if ``TESTONLY`` and
+# added using ``install(FILES <h0> <h1> ...)``, but only if ``TESTONLY`` and
 # ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  Also, the install
 # target for the headers will not get added if
 # `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE``.  If this
@@ -437,99 +437,99 @@ ENDFUNCTION()
 # Note that an install target will *not* get created for the headers listed in
 # ``NOINSTALLHEADERS``.
 #
-# .. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
+# .. _Additional Library and Source File Properties (tribits_add_library()):
 #
-# **Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
+# **Additional Library and Source File Properties (tribits_add_library())**
 #
-# Once ``ADD_LIBRARY(<libTargetName> ... <src0> <src1> ...)`` is called, one
+# Once ``add_library(<libTargetName> ... <src0> <src1> ...)`` is called, one
 # can set and change properties on the ``<libTargetName>`` library target
-# using the built-in CMake command ``SET_TARGET_PROPERTIES()`` as well as set
+# using the built-in CMake command ``set_target_properties()`` as well as set
 # and change properties on any of the source files listed in ``SOURCES`` using
-# the built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
+# the built-in CMake command ``set_source_file_properties()`` just like in any
 # CMake project.  For example::
 #
-#   TRIBITS_ADD_LIBRARY( somelib ...
+#   tribits_add_library( somelib ...
 #     ADDED_LIB_TARGET_NAME_OUT  somelib_TARGET_NAME )
 #
-#   SET_TARGET_PROPERTIES( ${somelib_TARGET_NAME}
+#   set_target_properties( ${somelib_TARGET_NAME}
 #     PROPERTIES  LINKER_LANGUAGE  CXX )
 #
-# .. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
+# .. _Miscellaneous Notes (tribits_add_library()):
 #
-# **Miscellaneous Notes (TRIBITS_ADD_LIBRARY())**
+# **Miscellaneous Notes (tribits_add_library())**
 #
 # When the file ``Version.cmake`` exists and the CMake variables
 # ``${PROJECT_NAME}_VERSION`` and ``${PROJECT_NAME}_MAJOR_VERSION`` are
 # defined, then produced shared libraries will be given the standard SOVERSION
 # symlinks (see `<projectDir>/Version.cmake`_).
 #
-# **WARNING:** Do **NOT** use the built-in CMake command ``ADD_DEFINITIONS()``
+# **WARNING:** Do **NOT** use the built-in CMake command ``add_definitions()``
 # to add defines ``-D<someDefine>`` to the compile command line that will
 # affect any of the header files in the package!  These CMake-added defines
 # are only set locally in this directory and child directories.  These defines
 # will **NOT** be set when code in peer directories (e.g. a downstream TriBITS
 # packages) compiles that may include these header files.  To add defines that
 # affect header files, please use a configured header file (see
-# `TRIBITS_CONFIGURE_FILE()`_).
+# `tribits_configure_file()`_).
 #
-FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
+function(tribits_add_library LIBRARY_NAME_IN)
 
   #
   # Confirm that package and subpackage macros/functions have been called in the correct order
   #
 
-  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
+  if (CURRENTLY_PROCESSING_SUBPACKAGE)
 
     # This is a subpackage being processed
 
-    IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_LIBRARY()"
+    if(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_subpackage() before tribits_add_library()"
         " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    endif()
 
-    IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_ADD_LIBRARY() before "
-        " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_add_library() before "
+        " tribits_subpackage_postprocess() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
+    endif()
 
-  ELSE()
+  else()
 
     # This is a package being processed
 
-    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
-        " TRIBITS_ADD_LIBRARY() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_package() or tribits_package_decl() before"
+        " tribits_add_library() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    endif()
 
-    IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_ADD_LIBRARY() before "
-        " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_add_library() before "
+        " tribits_package_postprocess() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    endif()
 
-  ENDIF()
+  endif()
 
-  SET(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
-  SET(LIBRARY_NAME ${LIBRARY_NAME_PREFIX}${LIBRARY_NAME_IN})
+  set(LIBRARY_NAME_PREFIX "${${PROJECT_NAME}_LIBRARY_NAME_PREFIX}")
+  set(LIBRARY_NAME ${LIBRARY_NAME_PREFIX}${LIBRARY_NAME_IN})
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nTRIBITS_ADD_LIBRARY: ${LIBRARY_NAME}")
-    IF(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
-      MESSAGE("\n${PACKAGE_NAME}_LIBRARIES In installation testing mode,"
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("\nTRIBITS_ADD_LIBRARY: ${LIBRARY_NAME}")
+    if(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+      message("\n${PACKAGE_NAME}_LIBRARIES In installation testing mode,"
         " libraries will be found instead of created.")
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    PRINT_VAR(${PACKAGE_NAME}_INCLUDE_DIRS)
-    PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
-    PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    print_var(${PACKAGE_NAME}_INCLUDE_DIRS)
+    print_var(${PACKAGE_NAME}_LIBRARY_DIRS)
+    print_var(${PACKAGE_NAME}_LIBRARIES)
+  endif()
 
-  CMAKE_PARSE_ARGUMENTS(
+  cmake_parse_arguments(
     #prefix
     PARSE
     #Options    
@@ -541,31 +541,31 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     ${ARGN}
     )
 
-  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+  tribits_check_for_unparsed_arguments()
 
   # ToDo: Assert that HEADERS_INSTALL_SUBDIR has 0 or 1 entries!
   # ToDo: Assert that ADDED_LIB_TARGET_NAME_OUT as 0 or 1 entries!
 
-  IF(PARSE_HEADERS)
-    LIST(REMOVE_DUPLICATES PARSE_HEADERS)
-  ENDIF()
-  IF(PARSE_SOURCES)
-    LIST(REMOVE_DUPLICATES PARSE_SOURCES)
-  ENDIF()
+  if(PARSE_HEADERS)
+    list(REMOVE_DUPLICATES PARSE_HEADERS)
+  endif()
+  if(PARSE_SOURCES)
+    list(REMOVE_DUPLICATES PARSE_SOURCES)
+  endif()
 
-  IF(PARSE_ADDED_LIB_TARGET_NAME_OUT)
-    SET(${PARSE_ADDED_LIB_TARGET_NAME_OUT} PARENT_SCOPE)
-  ENDIF()
+  if(PARSE_ADDED_LIB_TARGET_NAME_OUT)
+    set(${PARSE_ADDED_LIB_TARGET_NAME_OUT} PARENT_SCOPE)
+  endif()
 
   # ToDo: Deprecate and remove the usage of DEFINES!  People should be putting
   # defines into configured header files, not adding -D<macroName> to the
   # compile lines!
 
-  IF (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_TESTONLY)
+  if (NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING OR PARSE_TESTONLY)
 
     # Add the link directory for this library.
 
-    SET_PROPERTY(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
+    set_property(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
       ${CMAKE_CURRENT_BINARY_DIR})
 
     # NOTE: Above, this link path not really used here for anything.
@@ -575,25 +575,25 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
 
     # Add whatever include directories have been defined so far
 
-    INCLUDE_DIRECTORIES(AFTER ${${PACKAGE_NAME}_INCLUDE_DIRS})
+    include_directories(AFTER ${${PACKAGE_NAME}_INCLUDE_DIRS})
 
     # Add whatever link directories have been added so far
 
-    SET_PROPERTY(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
+    set_property(DIRECTORY  APPEND  PROPERTY  PACKAGE_LIBRARY_DIRS
       ${${PACKAGE_NAME}_LIBRARY_DIRS})
 
     # Local variable to hold all of the libraries that will be directly linked
     # to this library.
-    SET(LINK_LIBS)
+    set(LINK_LIBS)
 
     # Add dependent libraries passed directly in
 
-    IF (PARSE_DEPLIBS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("-- " "DEPLIBS = ${PARSE_DEPLIBS}")
-    ENDIF()
-    IF (PARSE_IMPORTEDLIBS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("-- " "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
-    ENDIF()
+    if (PARSE_DEPLIBS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message("-- " "DEPLIBS = ${PARSE_DEPLIBS}")
+    endif()
+    if (PARSE_IMPORTEDLIBS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message("-- " "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
+    endif()
 
     #
     # Add the DEPLIBS to the LINK_LIBS, assert correct usage of DEPLIBS, and
@@ -617,55 +617,55 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     # give enough time for people to clean up their codes.
     #
 
-    SET(ADD_DEP_PACKAGE_AND_TPL_LIBS TRUE)
+    set(ADD_DEP_PACKAGE_AND_TPL_LIBS TRUE)
 
-    SET(PREFIXED_DEPLIBS)
+    set(PREFIXED_DEPLIBS)
 
-    FOREACH(LIB ${PARSE_DEPLIBS})
+    foreach(LIB ${PARSE_DEPLIBS})
 
-      SET(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${LIB}")
+      set(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${LIB}")
 
       # LIB_IN_SE_PKG?
-      LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
-      IF (FOUND_IDX GREATER -1)
-        SET(LIB_IN_SE_PKG TRUE)
-      ELSE()
-        SET(LIB_IN_SE_PKG FALSE)
-      ENDIF()
+      list(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+      if (FOUND_IDX GREATER -1)
+        set(LIB_IN_SE_PKG TRUE)
+      else()
+        set(LIB_IN_SE_PKG FALSE)
+      endif()
 
       # PREFIXED_LIB_IS_TESTONLY?
-      IF (${PREFIXED_LIB}_INCLUDE_DIRS)
-        SET(LIB_TESTONLY TRUE)
-      ELSE()
-        SET(LIB_TESTONLY FALSE)
-      ENDIF()
+      if (${PREFIXED_LIB}_INCLUDE_DIRS)
+        set(LIB_TESTONLY TRUE)
+      else()
+        set(LIB_TESTONLY FALSE)
+      endif()
 
       # Check for valid usage (sorted by most common to least common)
-      IF (LIB_IN_SE_PKG AND NOT LIB_TESTONLY) #PARSE_TESTONLY=TRUE/FASLE
+      if (LIB_IN_SE_PKG AND NOT LIB_TESTONLY) #PARSE_TESTONLY=TRUE/FASLE
         # The library being created here is a library dependent on a regular
         # (non-TESTONLY) lib in this SE package.  This is valid usage of
         # DEPLIBS.  There is no need to link this new lib to the SE package's
         # upstream dependent SE package and TPL libraries because thse are
         # already linked into the lib ${LIB}.
-        SET(ADD_DEP_PACKAGE_AND_TPL_LIBS FALSE)
-      ELSEIF (PARSE_TESTONLY AND LIB_IN_SE_PKG AND NOT LIB_TESTONLY)
+        set(ADD_DEP_PACKAGE_AND_TPL_LIBS FALSE)
+      elseif (PARSE_TESTONLY AND LIB_IN_SE_PKG AND NOT LIB_TESTONLY)
         # The library being created here is TESTONLY library and is
         # dependent on a regular (non-TESTONLY) lib.  This is valid usage of
         # DEPLIBS.  In the case of test-only libraries, we always link in
         # the upstream libs.
-      ELSEIF (PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE
+      elseif (PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE
         # The library being created here is TESTONLY library and is dependent
         # on another TESTONLY library.  This is valid usage of DEPLIBS.  In
         # this case we just hope that this SE package correctly specified a
         # TEST dependency on the upstream SE package that owns this upstream
         # TESTONLY library.
-        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-          MESSAGE("-- "
+        if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+          message("-- "
             "Adding include directories for TESTONLY ${PREFIXED_LIB}_INCLUDE_DIRS ...")
-        ENDIF()
-        INCLUDE_DIRECTORIES(${${PREFIXED_LIB}_INCLUDE_DIRS})
-      ELSEIF (NOT PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is a TESTONLY lib"
+        endif()
+        include_directories(${${PREFIXED_LIB}_INCLUDE_DIRS})
+      elseif (NOT PARSE_TESTONLY AND LIB_TESTONLY) # LIB_IN_SE_PKG=TRUE/FASLE
+        message(WARNING "WARNING: '${LIB}' in DEPLIBS is a TESTONLY lib"
           " and it is illegal to link to this non-TESTONLY library '${LIBRARY_NAME}'."
           "  Such usage is deprecated (and this warning will soon become an error)!"
           "  If this is a regular library in this SE package or in an dependent upstream SE"
@@ -674,8 +674,8 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
           " this SE package's dependencies file"
           " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
         # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
-      ELSEIF (NOT LIB_IN_SE_PKG AND TARGET ${PREFIXED_LIB} ) # PARSE_TESTONLY=TRUE/FALSE
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
+      elseif (NOT LIB_IN_SE_PKG AND TARGET ${PREFIXED_LIB} ) # PARSE_TESTONLY=TRUE/FALSE
+        message(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
           " a lib in this SE package but is a library defined in the current"
           " cmake project!  Such usage is  deprecated (and"
           " will result in a configure error soon).  If this is a library in"
@@ -685,57 +685,57 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
           " not link, then you need to add a new SE package dependency to"
           " this SE package's dependencies file"
           " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
-      ELSEIF (NOT LIB_IN_SE_PKG AND NOT TARGET ${PREFIXED_LIB} )
-        MESSAGE(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
+      elseif (NOT LIB_IN_SE_PKG AND NOT TARGET ${PREFIXED_LIB} )
+        message(WARNING "WARNING: '${LIB}' in DEPLIBS is not"
           " a lib defined in the current cmake project!  Such usage is deprecated (and"
           " will result in a configure error soon).  If this is an external"
           " lib you are trying to link in, it should likely be handled as a TriBITS"
           " TPL.  Otherwise, it should be passed in through IMPORTEDLIBS.  However,"
           " the only case we have found where IMPORTEDLIBS had to be used instead of"
           " through a proper TriBITS TPL is the C math library 'm'.")
-      ELSE()
-        MESSAGE(WARNING "WARNING: The case PARSE_TESTONLY=${PARSE_TESTONLY},"
+      else()
+        message(WARNING "WARNING: The case PARSE_TESTONLY=${PARSE_TESTONLY},"
           " LIB_IN_SE_PKG=${LIB_IN_SE_PKG}, LIB_TESTONLY=${LIB_TESTONLY}, has"
           " not yet been handled!")
-      ENDIF()
+      endif()
 
-      LIST(APPEND PREFIXED_DEPLIBS "${LIBRARY_NAME_PREFIX}${LIB}")
+      list(APPEND PREFIXED_DEPLIBS "${LIBRARY_NAME_PREFIX}${LIB}")
 
-    ENDFOREACH()
+    endforeach()
 
-    APPEND_SET(LINK_LIBS ${PREFIXED_DEPLIBS})
+    append_set(LINK_LIBS ${PREFIXED_DEPLIBS})
 
     #
     # Check IMPORTEDLIBS
     #
 
-    FOREACH(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
-      SET(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${IMPORTEDLIB}")
-      LIST(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
-      IF (${PREFIXED_LIB}_INCLUDE_DIRS)
-        MESSAGE(WARNING "WARNING: '${IMPORTEDLIB}' in IMPORTEDLIBS is a TESTONLY lib"
+    foreach(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
+      set(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${IMPORTEDLIB}")
+      list(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+      if (${PREFIXED_LIB}_INCLUDE_DIRS)
+        message(WARNING "WARNING: '${IMPORTEDLIB}' in IMPORTEDLIBS is a TESTONLY lib"
           " and it is illegal to pass in through IMPORTEDLIBS!"
           "  Such usage is deprecated (and this warning will soon become an error)!"
           "  Should '${IMPORTEDLIB}' instead be passed through DEPLIBS?")
         # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
-      ELSEIF (FOUND_IDX GREATER -1)
-        MESSAGE(WARNING "WARNING: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
+      elseif (FOUND_IDX GREATER -1)
+        message(WARNING "WARNING: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
         " this SE package and is *not* an external lib!"
         "  TriBITS takes care of linking against libs the current"
         " SE package automatically.  Please remove it from IMPORTEDLIBS!")
-      ELSEIF (TARGET ${PREFIXED_LIB})
-        MESSAGE(WARNING "WARNING: Lib '${IMPORTEDLIB}' being passed through"
+      elseif (TARGET ${PREFIXED_LIB})
+        message(WARNING "WARNING: Lib '${IMPORTEDLIB}' being passed through"
         " IMPORTEDLIBS is *not* an external library but instead is a library"
         " defined in this CMake project!"
         "  TriBITS takes care of linking against libraries in dependent upstream"
         " SE packages.  If you want to link to a library in an upstream SE"
         " package then add the SE package name to the appropriate category"
-        " in this SE package's depencencies file: "
+        " in this SE package's dependencies file: "
         " ${${PACKAGE_NAME}_SOURCE_DIR}/cmake/Dependencies.cmake")
-      ENDIF()
+      endif()
       # ToDo: Assert that this is not a test-only lib
-      LIST(APPEND LINK_LIBS ${IMPORTEDLIB})
-    ENDFOREACH()
+      list(APPEND LINK_LIBS ${IMPORTEDLIB})
+    endforeach()
 
     #
     # Link in the upstream TEST SE package and TPL libs
@@ -745,78 +745,78 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
     # should not really matter but it looks better on the link line.
     #
 
-    IF (PARSE_TESTONLY)
+    if (PARSE_TESTONLY)
 
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Pulling in header and libraries dependencies"
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        message("-- " "Pulling in header and libraries dependencies"
           " for TEST dependencies ...")
-      ENDIF()
+      endif()
 
-      TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+      tribits_sort_and_append_package_include_and_link_dirs_and_libs(
         ${PACKAGE_NAME}  TEST  LINK_LIBS)
 
-      TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+      tribits_sort_and_append_tpl_include_and_link_dirs_and_libs(
         ${PACKAGE_NAME}  TEST  LINK_LIBS)
 
-    ENDIF()
+    endif()
 
     #
     # Add the dependent LIB SE package and TPL libs
     #
 
-    IF (ADD_DEP_PACKAGE_AND_TPL_LIBS)
+    if (ADD_DEP_PACKAGE_AND_TPL_LIBS)
 
       # If there are no dependent libs passed in, then this library can not
       # possibly depend on the package's other libraries so we must link to
       # the dependent libraries in dependent libraries and TPLs.
 
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Pulling in header and libraries dependencies"
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        message("-- " "Pulling in header and libraries dependencies"
           " for LIB dependencies ...")
-      ENDIF()
+      endif()
 
       #
-      # Call INCLUDE_DIRECTORIES() and LINK_DIRECTORIES(...) for all upstream
+      # Call include_directories() and link_directories(...) for all upstream
       # dependent Packages and TPLs and accumulate the libraries to link against.
       #
       # NOTE: Adding these directories serves two purposes.  First, so that the includes
       # get added the the sources that get built for this library.  Second, so
       # that list full list of include directories can be extracted as a
-      # propery and set on ${PACKAGE_NAME}_INCLUDE_DIRS
+      # property and set on ${PACKAGE_NAME}_INCLUDE_DIRS
       #
 
-      TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+      tribits_sort_and_append_package_include_and_link_dirs_and_libs(
         ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
-      TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+      tribits_sort_and_append_tpl_include_and_link_dirs_and_libs(
         ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
-    ENDIF()
+    endif()
 
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      PRINT_VAR(LINK_LIBS)
-    ENDIF()
+    if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      print_var(LINK_LIBS)
+    endif()
 
     # Add the library and all the dependencies
 
-    IF (PARSE_DEFINES)
-      ADD_DEFINITIONS(${PARSE_DEFINES})
-    ENDIF()
+    if (PARSE_DEFINES)
+      add_definitions(${PARSE_DEFINES})
+    endif()
 
-    If (PARSE_STATIC)
-      SET(STATIC_KEYWORD "STATIC")
-    ELSE()
-      SET(STATIC_KEYWORD)
-    ENDIF()
+    if (PARSE_STATIC)
+      set(STATIC_KEYWORD "STATIC")
+    else()
+      set(STATIC_KEYWORD)
+    endif()
 
-    If (PARSE_SHARED)
-      SET(SHARED_KEYWORD "SHARED")
-    ELSE()
-      SET(SHARED_KEYWORD)
-    ENDIF()
+    if (PARSE_SHARED)
+      set(SHARED_KEYWORD "SHARED")
+    else()
+      set(SHARED_KEYWORD)
+    endif()
 
-    IF (NOT PARSE_CUDALIBRARY)
-      ADD_LIBRARY(
+    if (NOT PARSE_CUDALIBRARY)
+      add_library(
         ${LIBRARY_NAME}
         ${STATIC_KEYWORD}
         ${SHARED_KEYWORD}
@@ -824,92 +824,92 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
         ${PARSE_NOINSTALLHEADERS}
         ${PARSE_SOURCES}
         )
-    ELSE()
-      CUDA_ADD_LIBRARY(
+    else()
+      cuda_add_library(
         ${LIBRARY_NAME}
         ${PARSE_HEADERS}
         ${PARSE_NOINSTALLHEADERS}
         ${PARSE_SOURCES}
         )
-    ENDIF()
+    endif()
 
-    IF(PARSE_ADDED_LIB_TARGET_NAME_OUT)
-      SET(${PARSE_ADDED_LIB_TARGET_NAME_OUT} ${LIBRARY_NAME} PARENT_SCOPE)
-    ENDIF()
+    if(PARSE_ADDED_LIB_TARGET_NAME_OUT)
+      set(${PARSE_ADDED_LIB_TARGET_NAME_OUT} ${LIBRARY_NAME} PARENT_SCOPE)
+    endif()
 
-    SET_PROPERTY(
+    set_property(
       TARGET ${LIBRARY_NAME}
       APPEND PROPERTY
       LABELS ${PACKAGE_NAME}Libs ${PARENT_PACKAGE_NAME}Libs
       )
 
-    IF (NOT "${${PROJECT_NAME}_VERSION}" STREQUAL "" AND
+    if (NOT "${${PROJECT_NAME}_VERSION}" STREQUAL "" AND
       NOT "${${PROJECT_NAME}_MAJOR_VERSION}" STREQUAL ""
       )
-      SET_TARGET_PROPERTIES(
+      set_target_properties(
         ${LIBRARY_NAME}
         PROPERTIES
         VERSION ${${PROJECT_NAME}_VERSION}
         SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}
         )
-    ENDIF()
+    endif()
 
-    PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
-    PREPEND_GLOBAL_SET(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
+    prepend_global_set(${PARENT_PACKAGE_NAME}_LIB_TARGETS ${LIBRARY_NAME})
+    prepend_global_set(${PARENT_PACKAGE_NAME}_ALL_TARGETS ${LIBRARY_NAME})
 
-    IF (${PROJECT_NAME}_DUMP_LINK_LIBS)
-      MESSAGE("-- ${LIBRARY_NAME_IN}:LINK_LIBS='${LINK_LIBS}'")
-    ENDIF()
+    if (${PROJECT_NAME}_DUMP_LINK_LIBS)
+      message("-- ${LIBRARY_NAME_IN}:LINK_LIBS='${LINK_LIBS}'")
+    endif()
 
-    TARGET_LINK_LIBRARIES(${LIBRARY_NAME}  ${LINK_LIBS})
+    target_link_libraries(${LIBRARY_NAME} PUBLIC ${LINK_LIBS})
 
-    IF (${PROJECT_NAME}_CXX_STANDARD_FEATURE)
-      TARGET_COMPILE_FEATURES(${LIBRARY_NAME} PUBLIC "${${PROJECT_NAME}_CXX_STANDARD_FEATURE}")
+    if (${PROJECT_NAME}_CXX_STANDARD_FEATURE)
+      target_compile_features(${LIBRARY_NAME} PUBLIC "${${PROJECT_NAME}_CXX_STANDARD_FEATURE}")
     ENDIF ()
 
     # Add to the install target
 
-    SET(INSTALL_LIB ON)
-    SET(INSTALL_HEADERS ON)
-    SET(APPEND_LIB_AND_HEADERS_TO_PACKAGE ON)
+    set(INSTALL_LIB ON)
+    set(INSTALL_HEADERS ON)
+    set(APPEND_LIB_AND_HEADERS_TO_PACKAGE ON)
 
-    IF (PARSE_TESTONLY)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Skipping installation hooks for this library"
+    if (PARSE_TESTONLY)
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        message("-- " "Skipping installation hooks for this library"
           " because 'TESTONLY' was passed in ...")
-      ENDIF()
-      SET(INSTALL_LIB OFF)
-      SET(INSTALL_HEADERS OFF)
-      SET(APPEND_LIB_AND_HEADERS_TO_PACKAGE OFF)
-    ELSEIF (PARSE_NO_INSTALL_LIB_OR_HEADERS)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Skipping installation hooks for this library"
+      endif()
+      set(INSTALL_LIB OFF)
+      set(INSTALL_HEADERS OFF)
+      set(APPEND_LIB_AND_HEADERS_TO_PACKAGE OFF)
+    elseif (PARSE_NO_INSTALL_LIB_OR_HEADERS)
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        message("-- " "Skipping installation hooks for this library"
           " because 'NO_INSTALL_LIB_OR_HEADERS' was passed in ...")
-      ENDIF()
-      SET(INSTALL_LIB OFF)
-      SET(INSTALL_HEADERS OFF)
-    ELSEIF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS AND NOT BUILD_SHARED_LIBS)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Skipping installation of headers and libraries"
+      endif()
+      set(INSTALL_LIB OFF)
+      set(INSTALL_HEADERS OFF)
+    elseif (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS AND NOT BUILD_SHARED_LIBS)
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        message("-- " "Skipping installation of headers and libraries"
           " because ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE and BUILD_SHARED_LIBS=FALSE  ...")
-      ENDIF()
-      SET(INSTALL_LIB OFF)
-      SET(INSTALL_HEADERS OFF)
-    ELSEIF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS AND BUILD_SHARED_LIBS)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Skipping installation of headers but installing libraries"
+      endif()
+      set(INSTALL_LIB OFF)
+      set(INSTALL_HEADERS OFF)
+    elseif (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS AND BUILD_SHARED_LIBS)
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        message("-- " "Skipping installation of headers but installing libraries"
           " because ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE and BUILD_SHARED_LIBS=TRUE  ...")
-      ENDIF()
-      SET(INSTALL_HEADERS OFF)
-    ENDIF()
+      endif()
+      set(INSTALL_HEADERS OFF)
+    endif()
 
-    IF (INSTALL_LIB OR INSTALL_HEADERS)
-      SET_PROPERTY(GLOBAL PROPERTY ${PROJECT_NAME}_HAS_INSTALL_TARGETS ON)
-      SET_PROPERTY(GLOBAL PROPERTY ${PACKAGE_NAME}_HAS_INSTALL_TARGETS ON)
-    ENDIF()
+    if (INSTALL_LIB OR INSTALL_HEADERS)
+      set_property(GLOBAL PROPERTY ${PROJECT_NAME}_HAS_INSTALL_TARGETS ON)
+      set_property(GLOBAL PROPERTY ${PACKAGE_NAME}_HAS_INSTALL_TARGETS ON)
+    endif()
 
-    IF (INSTALL_LIB)
-      INSTALL(
+    if (INSTALL_LIB)
+      install(
         TARGETS ${LIBRARY_NAME}
         EXPORT ${PACKAGE_NAME}
         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}"
@@ -917,89 +917,89 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME_IN)
         ARCHIVE DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
         COMPONENT ${PACKAGE_NAME}
         )
-    ENDIF()
+    endif()
 
-    IF (INSTALL_HEADERS)
-      TRIBITS_INSTALL_HEADERS(
+    if (INSTALL_HEADERS)
+      tribits_install_headers(
         HEADERS  ${PARSE_HEADERS}
         INSTALL_SUBDIR  ${PARSE_HEADERS_INSTALL_SUBDIR}
         COMPONENT  ${PACKAGE_NAME}
         )
-    ENDIF()
+    endif()
 
     # Append the new include dirs, library dirs, and libraries to this package's lists
 
-    GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT  INCLUDE_DIRECTORIES)
-    GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT  PACKAGE_LIBRARY_DIRS)
+    get_directory_property(INCLUDE_DIRS_CURRENT  INCLUDE_DIRECTORIES)
+    get_directory_property(LIBRARY_DIRS_CURRENT  PACKAGE_LIBRARY_DIRS)
 
-    IF (APPEND_LIB_AND_HEADERS_TO_PACKAGE)
+    if (APPEND_LIB_AND_HEADERS_TO_PACKAGE)
 
-      PREPEND_GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
-      PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
-      PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES  ${LIBRARY_NAME})
+      prepend_global_set(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
+      prepend_global_set(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
+      prepend_global_set(${PACKAGE_NAME}_LIBRARIES  ${LIBRARY_NAME})
 
-      REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_INCLUDE_DIRS)
-      REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARY_DIRS)
-      REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARIES)
+      remove_global_duplicates(${PACKAGE_NAME}_INCLUDE_DIRS)
+      remove_global_duplicates(${PACKAGE_NAME}_LIBRARY_DIRS)
+      remove_global_duplicates(${PACKAGE_NAME}_LIBRARIES)
 
-      IF (INSTALL_LIB)
-        GLOBAL_SET(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL TRUE)
-      ENDIF()
+      if (INSTALL_LIB)
+        global_set(${PACKAGE_NAME}_HAS_NATIVE_LIBRARIES_TO_INSTALL TRUE)
+      endif()
 
-    ELSE()
+    else()
 
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE("-- " "Skipping augmentation of package's lists of include"
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        message("-- " "Skipping augmentation of package's lists of include"
           " directories and libraries! ...")
-      ENDIF()
+      endif()
 
-      LIST(REMOVE_DUPLICATES INCLUDE_DIRS_CURRENT)
-      GLOBAL_SET(${LIBRARY_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})
+      list(REMOVE_DUPLICATES INCLUDE_DIRS_CURRENT)
+      global_set(${LIBRARY_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})
 
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        PRINT_VAR(${LIBRARY_NAME}_INCLUDE_DIRS)
-      ENDIF()
+      if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        print_var(${LIBRARY_NAME}_INCLUDE_DIRS)
+      endif()
 
-    ENDIF()
-  ENDIF() #if not in installation testing mode
+    endif()
+  endif() #if not in installation testing mode
 
   #
   # Adjust for installation testing
   #
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
+  if (${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
 
-    LIST(FIND ${PROJECT_NAME}_INSTALLATION_PACKAGE_LIST ${PACKAGE_NAME}
+    list(FIND ${PROJECT_NAME}_INSTALLATION_PACKAGE_LIST ${PACKAGE_NAME}
       ${PACKAGE_NAME}_WAS_INSTALLED)
-    IF(${${PACKAGE_NAME}_WAS_INSTALLED} EQUAL -1)
-      MESSAGE(FATAL_ERROR
+    if(${${PACKAGE_NAME}_WAS_INSTALLED} EQUAL -1)
+      message(FATAL_ERROR
         "The package ${PACKAGE_NAME} was not installed with ${PROJECT_NAME}!"
         "  Please disable package ${PACKAGE_NAME} or install it.")
-    ENDIF()
+    endif()
 
-    INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING  BEFORE
+    include_directories(REQUIRED_DURING_INSTALLATION_TESTING  BEFORE
        ${${PACKAGE_NAME}_INSTALLATION_INCLUDE_DIRS}
        ${${TRIBITS_PACKAGE}_INSTALLATION_TPL_INCLUDE_DIRS})
-    SET_PROPERTY(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
+    set_property(DIRECTORY APPEND PROPERTY PACKAGE_LIBRARY_DIRS
       ${${PACKAGE_NAME}_INSTALLATION_LIBRARY_DIRS})
 
-    GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT INCLUDE_DIRECTORIES)
-    GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT PACKAGE_LIBRARY_DIRS)
+    get_directory_property(INCLUDE_DIRS_CURRENT INCLUDE_DIRECTORIES)
+    get_directory_property(LIBRARY_DIRS_CURRENT PACKAGE_LIBRARY_DIRS)
 
-    GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})
-    GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS ${LIBRARY_DIRS_CURRENT})
-    GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES    ${${PACKAGE_NAME}_INSTALLATION_LIBRARIES})
+    global_set(${PACKAGE_NAME}_INCLUDE_DIRS ${INCLUDE_DIRS_CURRENT})
+    global_set(${PACKAGE_NAME}_LIBRARY_DIRS ${LIBRARY_DIRS_CURRENT})
+    global_set(${PACKAGE_NAME}_LIBRARIES    ${${PACKAGE_NAME}_INSTALLATION_LIBRARIES})
 
-  ENDIF() #installation testing mode
+  endif() #installation testing mode
 
   #
   # Print the updates to the linkage variables
   #
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    PRINT_VAR(${PACKAGE_NAME}_INCLUDE_DIRS)
-    PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
-    PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    print_var(${PACKAGE_NAME}_INCLUDE_DIRS)
+    print_var(${PACKAGE_NAME}_LIBRARY_DIRS)
+    print_var(${PACKAGE_NAME}_LIBRARIES)
+  endif()
 
-ENDFUNCTION()
+endfunction()

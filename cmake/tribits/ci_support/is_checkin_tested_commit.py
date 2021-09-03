@@ -78,10 +78,10 @@ checkin-test.py script.  Currently, this just looks for the string:
    "Build/Test Cases Summary"
 
 in the log message which is written there by the checkin-test.py script when
-it ammends the top commit message before it pushes.
+it amends the top commit message before it pushes.
 
 This script is used with 'git bisect' to help week out commits that might not
-build or pass all of the tests and therefore not approriate to bother testing
+build or pass all of the tests and therefore not appropriate to bother testing
 when doing a 'git bisect' on to find an issue for a customer.
 
 Basically, this script should be added to the top of a 'test-commit.sh' script
