@@ -42,15 +42,8 @@ template <typename EvalT,typename Traits>
 void Permittivity<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
+  Kokkos::deep_copy(permittivity.get_static_view(), epsilon);
 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < permittivity.extent_int(1); ++point) {
-      // const ScalarT& x = coords(cell,point,0);
-      // const ScalarT& y = coords(cell,point,1);
-      // const ScalarT& z = coords(cell,point,2);
-      permittivity(cell,point) = epsilon;
-    }
-  }
 }
 
 //**********************************************************************
