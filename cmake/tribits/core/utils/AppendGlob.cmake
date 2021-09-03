@@ -37,21 +37,21 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(AppendSet)
+include(AppendSet)
 
 #
-# @MACRO: APPEND_GLOB()
+# @MACRO: append_glob()
 #
-# Utility macro that does a ``FILE(GLOB ...)`` and appends to an existing list
+# Utility macro that does a ``file(GLOB ...)`` and appends to an existing list
 # (removes boiler-plate code).
 #
 # Usage::
 #
-#   APPEND_GLOB(<fileListVar> <glob0> <glob1> ...)
+#   append_glob(<fileListVar> <glob0> <glob1> ...)
 #
 # On output, ``<fileListVar>`` will have the list of glob files appended.
 #
-MACRO(APPEND_GLOB VAR)
-  FILE(GLOB LOCAL_TMP_VAR ${ARGN})
-  APPEND_SET(${VAR} ${LOCAL_TMP_VAR})
-ENDMACRO()
+macro(append_glob VAR)
+  file(GLOB LOCAL_TMP_VAR ${ARGN})
+  append_set(${VAR} ${LOCAL_TMP_VAR})
+endmacro()

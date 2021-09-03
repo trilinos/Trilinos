@@ -87,7 +87,7 @@ clp.add_option(
 
 clp.add_option(
   "--project-dir", dest="projectDir", type="string", default="",
-  help="Base proejct directory.  Used to acces more specialized logic beyond" \
+  help="Base project directory.  Used to access more specialized logic beyond" \
     +" what is known in the <DEPSXMLFILE>.  If empty '', then it will be set" \
     +" automatically if TriBITS is is the standard location w.r.t. the project" \
     +" in relation to this script run from the TriBITS dir.")

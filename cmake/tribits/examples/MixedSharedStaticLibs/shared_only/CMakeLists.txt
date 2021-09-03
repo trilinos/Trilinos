@@ -1,14 +1,14 @@
-TRIBITS_SUBPACKAGE(SharedOnly)
+tribits_subpackage(SharedOnly)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_LIBRARY(
+tribits_add_library(
   shared_only_lib
   SHARED
   HEADERS SharedOnly.hpp
   SOURCES SharedOnly.cpp
   )
 
-TRIBITS_ADD_TEST_DIRECTORIES(test)
+tribits_add_test_directories(test)
 
-TRIBITS_SUBPACKAGE_POSTPROCESS()
+tribits_subpackage_postprocess()

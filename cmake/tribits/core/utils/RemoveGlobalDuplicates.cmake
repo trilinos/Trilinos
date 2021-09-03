@@ -37,32 +37,32 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(AssertDefined)
-INCLUDE(GlobalSet)
+include(AssertDefined)
+include(GlobalSet)
 
 #
-# @FUNCTION: REMOVE_GLOBAL_DUPLICATES()
+# @FUNCTION: remove_global_duplicates()
 #
 # Remove duplicate elements from a global list variable (removes boiler-plate
 # code and errors).
 #
 # Usage::
 #
-#   REMOVE_GLOBAL_DUPLICATES(<globalVarName>)
+#   remove_global_duplicates(<globalVarName>)
 #
 # This function is necessary in order to preserve the "global" nature of the
-# variable.  If one just calls ``LIST(REMOVE_DUPLICATES ...)`` it will
+# variable.  If one just calls ``list(REMOVE_DUPLICATES ...)`` it will
 # actually create a local variable of the same name and shadow the global
 # variable!  That is a fun bug to track down!  The variable
 # ``<globalVarName>`` must be defined before this function is called.  If
 # ``<globalVarName>`` is actually not a global cache variable before this
 # function is called it will be after it completes.
 #
-FUNCTION(REMOVE_GLOBAL_DUPLICATES VARNAME)
-  ASSERT_DEFINED(${VARNAME})
-  IF (${VARNAME})
-    SET(TMP ${${VARNAME}})
-    LIST(REMOVE_DUPLICATES TMP)
-    GLOBAL_SET(${VARNAME} ${TMP})
-  ENDIF()
-ENDFUNCTION()
+function(remove_global_duplicates VARNAME)
+  assert_defined(${VARNAME})
+  if (${VARNAME})
+    set(TMP ${${VARNAME}})
+    list(REMOVE_DUPLICATES TMP)
+    global_set(${VARNAME} ${TMP})
+  endif()
+endfunction()
