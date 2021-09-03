@@ -268,47 +268,28 @@ namespace { // (anonymous)
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
                const std::pair<size_t, size_t>& rowRng,
-               const Kokkos::Impl::ALL_t&)
+               const Kokkos::Impl::ALL_t& colRng)
 
   {
-    return WrappedDualViewType(subview (X.getDualView(), rowRng, Kokkos::ALL ()), X.getOriginalDualView());
+    return WrappedDualViewType(X,rowRng,colRng);
   }
 
-
-  // mfh 14 Apr 2015: Work-around for bug in Kokkos::subview, where
-  // taking a subview of a 0 x N DualView incorrectly always results
-  // in a 0 x 0 DualView.
   template<class WrappedDualViewType>
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
-               const Kokkos::Impl::ALL_t&,
+               const Kokkos::Impl::ALL_t& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
-    using DualViewType = typename WrappedDualViewType::DVT;
-    if (X.extent (0) == 0 && X.extent (1) != 0) {
-      return WrappedDualViewType(DualViewType ("MV::DualView", 0, colRng.second - colRng.first), X.getOriginalDualView());
-    }
-    else {
-      return WrappedDualViewType(subview (X.getDualView(), Kokkos::ALL (), colRng), X.getOriginalDualView());
-    }
+    return WrappedDualViewType(X,rowRng,colRng);
   }
 
-  // mfh 14 Apr 2015: Work-around for bug in Kokkos::subview, where
-  // taking a subview of a 0 x N DualView incorrectly always results
-  // in a 0 x 0 DualView.
   template<class WrappedDualViewType>
   WrappedDualViewType
   takeSubview (const WrappedDualViewType& X,
                const std::pair<size_t, size_t>& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
-    using DualViewType = typename WrappedDualViewType::DVT;
-    if (X.extent (0) == 0 && X.extent (1) != 0) {
-      return WrappedDualViewType(DualViewType ("MV::DualView", 0, colRng.second - colRng.first), X.getOriginalDualView());
-    }
-    else {
-      return WrappedDualViewType(subview (X.getDualView(), rowRng, colRng), X.getOriginalDualView());
-    }
+    return WrappedDualViewType(X,rowRng,colRng);
   }
 
   template<class WrappedOrNotDualViewType>
@@ -3513,14 +3494,14 @@ namespace Tpetra {
     }
 
     if (isConstantStride ()) {
-      return rcp (new MV (this->getMap (), view_.getDualView(), view_.getOriginalDualView(), cols));
+      return rcp (new MV (this->getMap (), view_, cols));
     }
     else {
       Array<size_t> newcols (cols.size ());
       for (size_t j = 0; j < numViewCols; ++j) {
         newcols[j] = whichVectors_[cols[j]];
       }
-      return rcp (new MV (this->getMap (), view_.getDualView(), view_.getOriginalDualView(), newcols ()));
+      return rcp (new MV (this->getMap (), view_, newcols ()));
     }
   }
 
@@ -3570,7 +3551,7 @@ namespace Tpetra {
     if (colRng.size () == 0) {
       const std::pair<size_t, size_t> cols (0, 0); // empty range
       wrapped_dual_view_type X_sub = takeSubview (this->view_, ALL (), cols);
-      X_ret = rcp (new MV (this->getMap (), X_sub.getDualView(), view_.getOriginalDualView()));
+      X_ret = rcp (new MV (this->getMap (), X_sub));
     }
     else {
       // Returned MultiVector is constant stride only if *this is.
@@ -3578,7 +3559,7 @@ namespace Tpetra {
         const std::pair<size_t, size_t> cols (colRng.lbound (),
                                               colRng.ubound () + 1);
         wrapped_dual_view_type X_sub = takeSubview (this->view_, ALL (), cols);
-        X_ret = rcp (new MV (this->getMap (), X_sub.getDualView(), view_.getOriginalDualView()));
+        X_ret = rcp (new MV (this->getMap (), X_sub));
       }
       else {
         if (static_cast<size_t> (colRng.size ()) == static_cast<size_t> (1)) {
@@ -3587,12 +3568,12 @@ namespace Tpetra {
           const std::pair<size_t, size_t> col (whichVectors_[0] + colRng.lbound (),
                                                whichVectors_[0] + colRng.ubound () + 1);
           wrapped_dual_view_type X_sub = takeSubview (view_, ALL (), col);
-          X_ret = rcp (new MV (this->getMap (), X_sub.getDualView(), view_.getOriginalDualView()));
+          X_ret = rcp (new MV (this->getMap (), X_sub));
         }
         else {
           Array<size_t> which (whichVectors_.begin () + colRng.lbound (),
                                whichVectors_.begin () + colRng.ubound () + 1);
-          X_ret = rcp (new MV (this->getMap (), view_.getDualView(), view_.getOriginalDualView(), which));
+          X_ret = rcp (new MV (this->getMap (), view_, which));
         }
       }
     }

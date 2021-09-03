@@ -112,6 +112,7 @@ sync_device(DualViewType dualView) { }
 
 }
 
+
 template <typename DualViewType>
 class WrappedDualView {
 public:
@@ -170,9 +171,19 @@ public:
     dualView = getSubview(parent.dualView, offset, numEntries);
   }
 
-  WrappedDualView(const WrappedDualView parent,Kokkos::pair<int,int> offset0, const Kokkos::Impl::ALL_t&) {
+  WrappedDualView(const WrappedDualView parent,const Kokkos::pair<size_t,size_t>& rowRng, const Kokkos::Impl::ALL_t& colRng) {
     originalDualView = parent.originalDualView;
-    dualView = getSubview2D(parent.dualView, offset0,Kokkos::ALL());
+    dualView = getSubview2D(parent.dualView,rowRng,colRng);
+  }
+
+  WrappedDualView(const WrappedDualView parent,const Kokkos::Impl::ALL_t &rowRng, const Kokkos::pair<size_t,size_t>& colRng) {
+    originalDualView = parent.originalDualView;
+    dualView = getSubview2D(parent.dualView,rowRng,colRng);
+  }
+
+  WrappedDualView(const WrappedDualView parent,const Kokkos::pair<size_t,size_t>& rowRng, const Kokkos::pair<size_t,size_t>& colRng) {
+    originalDualView = parent.originalDualView;
+    dualView = getSubview2D(parent.dualView,rowRng,colRng);
   }
 
 
@@ -488,15 +499,21 @@ private:
     return Kokkos::subview(view, Kokkos::pair<int, int>(offset, offset+numEntries));
   }
 
-  template <typename ViewType>
-  ViewType getSubview2D(ViewType view, Kokkos::pair<int,int> offset0, const Kokkos::Impl::ALL_t&) const {
+  template <typename ViewType,typename int_type>
+  ViewType getSubview2D(ViewType view, Kokkos::pair<int_type,int_type> offset0, const Kokkos::Impl::ALL_t&) const {
     return Kokkos::subview(view,offset0,Kokkos::ALL());
   }
 
-  template <typename ViewType>
-  ViewType getSubview2D(ViewType view, const Kokkos::Impl::ALL_t&, Kokkos::pair<int,int> offset1) const {
+  template <typename ViewType,typename int_type>
+  ViewType getSubview2D(ViewType view, const Kokkos::Impl::ALL_t&, Kokkos::pair<int_type,int_type> offset1) const {
     return Kokkos::subview(view,Kokkos::ALL(),offset1);
   }
+
+  template <typename ViewType,typename int_type>
+  ViewType getSubview2D(ViewType view, Kokkos::pair<int_type,int_type> offset0, Kokkos::pair<int_type,int_type> offset1) const {
+    return Kokkos::subview(view,offset0,offset1);
+  }
+
 
   bool memoryIsAliased() const {
     return deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data();
