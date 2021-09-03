@@ -166,9 +166,7 @@ public:
 
     // Reconstruct matrix from compression vector
     Teuchos::RCP<matrix_t> Jp = rcp(new matrix_t(*J, Teuchos::Copy));
-    Jp->resumeFill();
     Jp->setAllToScalar(static_cast<zscalar_t>(-1.));
-    Jp->fillComplete();
 
     colorer.reconstructMatrix(W, *Jp);
 

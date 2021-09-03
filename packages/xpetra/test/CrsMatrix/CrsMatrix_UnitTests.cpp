@@ -1331,9 +1331,7 @@ namespace {
       TEST_EQUALITY(values[0], FORTY_TWO);  // changes in the view also changes matrix values
     }
 
-    A->resumeFill();
     A->setAllToScalar(-123.4);
-    A->fillComplete();
 
     {
       auto view2 = A->getLocalMatrixHost();
