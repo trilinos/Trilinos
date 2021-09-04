@@ -428,14 +428,14 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
     biv = Teuchos::rcp(new BasisValues2<double>());
 
-    biv->setOrientations(options_.orientations_);
-    biv->setWeightedMeasure(iv.weighted_measure);
-    biv->setCellVertexCoordinates(cell_vertex_coordinates);
-
     if(integration_description.getType() == IntegrationDescriptor::VOLUME)
       biv->setupUniform(bir, iv.cub_points, iv.jac, iv.jac_det, iv.jac_inv);
     else
       biv->setup(bir, iv.ref_ip_coordinates, iv.jac, iv.jac_det, iv.jac_inv);
+
+    biv->setOrientations(options_.orientations_, numOwnedCells()+numGhostCells());
+    biv->setWeightedMeasure(iv.weighted_measure);
+    biv->setCellVertexCoordinates(cell_vertex_coordinates);
 
   } else {
 
@@ -557,10 +557,10 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
     bpv = Teuchos::rcp(new BasisValues2<double>());
 
-    bpv->setOrientations(options_.orientations_);
-    bpv->setCellVertexCoordinates(cell_vertex_coordinates);
-
     bpv->setupUniform(bir, pv.coords_ref, pv.jac, pv.jac_det, pv.jac_inv);
+
+    bpv->setOrientations(options_.orientations_, numOwnedCells()+numGhostCells());
+    bpv->setCellVertexCoordinates(cell_vertex_coordinates);
 
   } else {
 
