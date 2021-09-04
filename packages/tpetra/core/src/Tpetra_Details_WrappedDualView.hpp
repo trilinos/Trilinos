@@ -41,6 +41,7 @@
 #define TPETRA_DETAILS_WRAPPEDDUALVIEW_HPP
 
 #include <Tpetra_Access.hpp>
+#include <Tpetra_Details_temporaryViewUtils.hpp>
 #include <Kokkos_DualView.hpp>
 #include "Teuchos_TestForException.hpp"
 #include <sstream>
@@ -166,6 +167,7 @@ public:
     dualView = originalDualView;
   }
 
+  // Subview constructors
   WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
     originalDualView = parent.originalDualView;
     dualView = getSubview(parent.dualView, offset, numEntries);
@@ -191,10 +193,15 @@ public:
     return dualView.h_view.extent(i);
   }
   
-
   void stride(size_t * stride_) const {
     dualView.stride(stride_);
   }
+
+
+  size_t origExtent(const int i) const {
+    return originalDualView.h_view.extent(i);
+  }
+  
 
 
   typename HostViewType::const_type
@@ -473,6 +480,47 @@ public:
     static_assert(dualViewHasNonConstData,
         "OverwriteAll views are not available for DualView with const data");
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
+  }
+
+
+  // Debugging functions to get copies of the view state
+  typename HostViewType::HostMirror getHostCopy() const {
+    auto X_dev = dualView.view_host();
+    if(X_dev.span_is_contiguous()) {
+      auto mirror = Kokkos::create_mirror_view (X_dev);
+      Kokkos::deep_copy(X_dev,mirror);
+      return mirror;
+    }
+    else {
+      auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
+      auto mirror = Kokkos::create_mirror_view (X_contig);
+      Kokkos::deep_copy(X_contig,mirror);
+      return mirror;
+    }
+  }
+
+  typename DeviceViewType::HostMirror getDeviceCopy() const {
+    auto X_dev = dualView.view_device();
+    if(X_dev.span_is_contiguous()) {
+      auto mirror = Kokkos::create_mirror_view (X_dev);
+      Kokkos::deep_copy(X_dev,mirror);
+      return mirror;
+    }
+    else {
+      auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
+      auto mirror = Kokkos::create_mirror_view (X_contig);
+      Kokkos::deep_copy(X_contig,mirror);
+      return mirror;
+    }
+  }
+
+  // Debugging functions for validity checks
+  bool is_valid_host() const {
+    return dualView.view_host().size() == 0   || dualView.view_host().data();
+  }
+
+  bool is_valid_device() const {
+    return dualView.view_device().size() == 0 || dualView.view_device().data();
   }
 
 

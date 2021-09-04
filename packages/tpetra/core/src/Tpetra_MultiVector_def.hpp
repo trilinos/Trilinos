@@ -542,13 +542,13 @@ namespace Tpetra {
     using ::Tpetra::Details::Behavior;
     const bool debug = Behavior::debug ();
     if (debug) {
-      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      using ::Tpetra::Details::checkGlobalWrappedDualViewValidity;
       std::ostringstream gblErrStrm;
       const bool verbose = Behavior::verbose ();
       const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const bool gblValid =
-        checkGlobalDualViewValidity (&gblErrStrm, view.getDualView(), verbose,
-                                     comm.getRawPtr ());
+        checkGlobalWrappedDualViewValidity (&gblErrStrm, view, verbose,
+                                            comm.getRawPtr ());
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! gblValid, std::runtime_error, gblErrStrm.str ());
     }
@@ -583,13 +583,13 @@ namespace Tpetra {
     using ::Tpetra::Details::Behavior;
     const bool debug = Behavior::debug ();
     if (debug) {
-      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      using ::Tpetra::Details::checkGlobalWrappedDualViewValidity;
       std::ostringstream gblErrStrm;
       const bool verbose = Behavior::verbose ();
       const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const bool gblValid =
-        checkGlobalDualViewValidity (&gblErrStrm, view_.getDualView(), verbose,
-                                     comm.getRawPtr ());
+        checkGlobalWrappedDualViewValidity (&gblErrStrm, view_, verbose,
+                                            comm.getRawPtr ());
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! gblValid, std::runtime_error, gblErrStrm.str ());
     }
@@ -743,12 +743,12 @@ namespace Tpetra {
     using ::Tpetra::Details::Behavior;
     const bool debug = Behavior::debug ();
     if (debug) {
-      using ::Tpetra::Details::checkGlobalDualViewValidity;
+      using ::Tpetra::Details::checkGlobalWrappedDualViewValidity;
       std::ostringstream gblErrStrm;
       const bool verbose = Behavior::verbose ();
       const auto comm = map.is_null () ? Teuchos::null : map->getComm ();
       const bool gblValid =
-        checkGlobalDualViewValidity (&gblErrStrm, view.getDualView(), verbose,
+        checkGlobalWrappedDualViewValidity (&gblErrStrm, view, verbose,
                                      comm.getRawPtr ());
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! gblValid, std::runtime_error, gblErrStrm.str ());
@@ -3277,14 +3277,14 @@ namespace Tpetra {
   size_t
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getOrigNumLocalRows () const {
-    return view_.getOriginalDualView().extent(0);
+    return view_.origExtent(0);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getOrigNumLocalCols () const {
-    return view_.getOriginalDualView().extent(1);
+    return view_.origExtent(1);
   }
 
   template <class Scalar, class LO, class GO, class Node>
@@ -3361,7 +3361,7 @@ namespace Tpetra {
 
     using range_type = std::pair<LO, LO>;
     const range_type origRowRng
-      (rowOffset, static_cast<LO> (X.view_.getOriginalDualView().extent (0)));
+      (rowOffset, static_cast<LO> (X.view_.origExtent (0)));
     const range_type rowRng
       (rowOffset, rowOffset + newNumRows);
 
@@ -4635,9 +4635,10 @@ namespace Tpetra {
         // so we can't use our regular accessor functins
 
         // NOTE: This is an occasion where we do *not* want the auto-sync stuff
-        // to trigger (since this function is conceptually const)                
-        auto X_dev  = view_.getDualView().view_device();
-        auto X_host = view_.getDualView().view_host();
+        // to trigger (since this function is conceptually const).  Thus, we 
+        // get *copies* of the view's data instead.
+        auto X_dev  = view_.getDeviceCopy();
+        auto X_host = view_.getHostCopy();
 
         if(X_dev.data() == X_host.data()) {
           // One single allocation
@@ -4645,20 +4646,10 @@ namespace Tpetra {
         }
         else {          
           Details::print_vector(out,"host",X_host);
-          if(X_dev.span_is_contiguous())
-          {
-            auto X_dev_on_host = Kokkos::create_mirror_view_and_copy (Kokkos::HostSpace(), X_dev);
-            Details::print_vector(out,"dev",X_dev_on_host);
-          }
-          else
-          {
-            auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
-            auto X_dev_on_host = Kokkos::create_mirror_view_and_copy (Kokkos::HostSpace(), X_contig);
-            Details::print_vector(out,"dev",X_dev_on_host);
-          }
+          Details::print_vector(out,"dev",X_dev);
         }
       }
-    }    
+    } 
     out.flush (); // make sure the ostringstream got everything
     return outStringP->str ();
   }

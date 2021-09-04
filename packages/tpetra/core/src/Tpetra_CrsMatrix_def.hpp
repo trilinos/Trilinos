@@ -5496,6 +5496,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          std::runtime_error, "X and Y must be constant stride.");
       // If the two pointers are null, then they don't alias one
       // another, even though they are equal.
+
+      printf("X_lcl.data() = %#0x  Y_lcl.data() = %#0x\n",X_lcl.data(),Y_lcl.data());
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr,
          std::runtime_error, "X and Y may not alias one another.");
