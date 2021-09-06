@@ -126,8 +126,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldIds_[fd]);
     scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
-    for(std::size_t i=0;i<offsets.size();i++)
-      scratch_offsets_[fd](i) = offsets[i];
+    Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
   }
   scratch_lids_ = PHX::View<LO**>("lids",scatterFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
@@ -336,8 +335,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
     scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
-    for(std::size_t i=0;i<offsets.size();i++)
-      scratch_offsets_[fd](i) = offsets[i];
+    Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
   }
 
   my_derivative_size_ = globalIndexer_->getElementBlockGIDCount(blockId);
