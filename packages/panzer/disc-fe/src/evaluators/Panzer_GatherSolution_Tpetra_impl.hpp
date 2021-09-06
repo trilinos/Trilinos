@@ -604,6 +604,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      else
        Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device,NoSeed>(0,workset.num_cells),*this);
    }
+   functor_data.x_data = Kokkos::View<const double**, Kokkos::LayoutLeft,PHX::Device>();
 }
 
 // **********************************************************************
