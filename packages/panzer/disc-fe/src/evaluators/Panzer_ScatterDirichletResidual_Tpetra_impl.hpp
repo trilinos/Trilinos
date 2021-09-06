@@ -189,22 +189,25 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       may be more expensive!
 
 
-   // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
+   // loop over each field to be scattered
+   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+     int fieldNum = fieldIds_[fieldIndex];
+     auto scatterFields_h = Kokkos::create_mirror_view(scatterFields_[fieldIndex].get_static_view());
+     Kokkos::deep_copy(scatterFields_h, scatterFields_[fieldIndex].get_static_view());
 
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++)
+     // scatter operation for each cell in workset
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+       std::size_t cellLocalId = localCellIds[worksetCellIndex];
+       
+       globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
+
+       // caculate the local IDs for this element
+       LIDs.resize(GIDs.size());
+       for(std::size_t i=0;i<GIDs.size();i++)
          LIDs[i] = r->getMap()->getLocalElement(GIDs[i]);
 
-      // loop over each field to be scattered
-      for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-
-         if (!scatterIC_) {
+       if (!scatterIC_) {
            // this call "should" get the right ordering according to the Intrepid2 basis
            const std::pair<std::vector<int>,std::vector<int> > & indicePair 
              = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
@@ -224,7 +227,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
                  continue;
 
-             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+             r_array[lid] = scatterFields_h(worksetCellIndex,basisId);
 
              // record that you set a dirichlet condition
              dc_array[lid] = 1.0;
@@ -240,7 +243,7 @@ evaluateFields(typename TRAITS::EvalData workset)
              if(lid<0) // not on this processor!
                continue;
 
-             r_array[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+             r_array[lid] = scatterFields_h(worksetCellIndex,basis);
 
              // record that you set a dirichlet condition
              dc_array[lid] = 1.0;
