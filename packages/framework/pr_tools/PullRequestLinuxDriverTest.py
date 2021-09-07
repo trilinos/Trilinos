@@ -115,23 +115,26 @@ def parse_args():
                           help='The Jenkins build number',
                           required=True)
 
-    required.add_argument('--source-dir',
+    optional.add_argument('--source-dir',
                           dest="source_dir",
                           action='store',
+                          default="UNKNOWN",
                           help="Directory containing the source code to compile/test.",
-                          required=True)
+                          required=False)
 
-    required.add_argument('--build-dir',
+    optional.add_argument('--build-dir',
                           dest="build_dir",
                           action='store',
+                          default="UNKNOWN",
                           help="Path to the build directory.",
-                          required=True)
+                          required=False)
 
-    required.add_argument('--ctest-driver',
+    optional.add_argument('--ctest-driver',
                           dest="ctest_driver",
                           action='store',
+                          default="UNKNOWN",
                           help="Location of the CTest driver script to load via `-S`.",
-                          required=True)
+                          required=False)
 
 
     optional.add_argument('--pullrequest-cdash-track',
