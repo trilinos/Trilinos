@@ -42,15 +42,17 @@ template <typename EvalT,typename Traits>
 void InversePermeability<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
-
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < permeability.extent_int(1); ++point) {
-      // const ScalarT& x = coords(cell,point,0);
-      // const ScalarT& y = coords(cell,point,1);
-      // const ScalarT& z = coords(cell,point,2);
-      permeability(cell,point) = 1.0/mu;
-    }
-  }
+  auto perm = permeability.get_static_view();
+  auto inv_mu = 1./mu;
+  Kokkos::parallel_for (workset.num_cells, KOKKOS_LAMBDA (int cell) {
+      for (int point = 0; point < perm.extent_int(1); ++point) {
+	// const ScalarT& x = coords(cell,point,0);
+	// const ScalarT& y = coords(cell,point,1);
+	// const ScalarT& z = coords(cell,point,2);
+	perm(cell,point) = inv_mu;
+      }
+    });
+  Kokkos::fence();
 }
 
 //**********************************************************************

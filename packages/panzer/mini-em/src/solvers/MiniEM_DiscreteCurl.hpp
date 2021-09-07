@@ -133,10 +133,10 @@ void addDiscreteCurlToRequestHandler(
     // allocate some view
     Kokkos::DynRankView<double,DeviceSpace> dofCoords("dofCoords", 1, hdivCardinality, dim);
     Kokkos::DynRankView<double,DeviceSpace> basisCoeffsLI("basisCoeffsLI", 1, hcurlCardinality, hdivCardinality);
-    Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts("elemOrts", 1);
+    typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>::HostMirror elemOrts("elemOrts", 1);
     typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes("elemNodes", 1, numElemVertices);
-    Kokkos::DynRankView<int, DeviceSpace> fOrt("fOrt", hdivCardinality);
-    Kokkos::DynRankView<double, DeviceSpace> ortJacobian("ortJacobian", 2, 2);
+    typename Kokkos::DynRankView<int, DeviceSpace>::HostMirror fOrt("fOrt", hdivCardinality);
+    typename Kokkos::DynRankView<double, DeviceSpace>::HostMirror ortJacobian("ortJacobian", 2, 2);
 
     // the ranks of these depend on dimension
     Kokkos::DynRankView<double,DeviceSpace> dofCoeffs;
@@ -155,13 +155,16 @@ void addDiscreteCurlToRequestHandler(
       curlAtDofCoords            = Kokkos::DynRankView<double,DeviceSpace>("curlAtDofCoords", 1, hcurlCardinality, hdivCardinality);
     }
     face_basis->getDofCoeffs(refDofCoeffs);
-
+    auto dofCoeffs_h = Kokkos::create_mirror_view(dofCoeffs);
+    auto refDofCoeffs_h = Kokkos::create_mirror_view(refDofCoeffs);
+    Kokkos::deep_copy(refDofCoeffs_h, refDofCoeffs);
     // set up the topology of each face in an element for computing DOF coefficients
     // in 2D coefficients are same as reference coefficients
-    Kokkos::DynRankView<shards::CellTopology,DeviceSpace> sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
+    typename Kokkos::DynRankView<shards::CellTopology,DeviceSpace>::HostMirror
+      sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
     if(dim < 3)
       for(int i = 0; i < hdivCardinality; i++)
-        dofCoeffs(0,i) = refDofCoeffs(i);
+        dofCoeffs_h(0,i) = refDofCoeffs_h(i);
     else {
       for(int iface = 0; iface < hdivCardinality; iface++){
         shards::CellTopology sub_topology(topology.getCellTopologyData(dim-1,iface));
@@ -200,27 +203,36 @@ void addDiscreteCurlToRequestHandler(
             Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies(iface), fOrt(iface));
             auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
             for(int idim = 0; idim < dim; idim++)
-              dofCoeffs(0,iface,idim) = refDofCoeffs(iface,idim)*ortJacobianDet;
+              dofCoeffs_h(0,iface,idim) = refDofCoeffs_h(iface,idim)*ortJacobianDet;
           }
         }
 
+	Kokkos::deep_copy(dofCoeffs, dofCoeffs_h);
         //orient basis
+	Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d("elemOrts_d", 1);
+	Kokkos::deep_copy(elemOrts_d, elemOrts);
         ots::modifyBasisByOrientation(curlAtDofCoords,
                                       curlAtDofCoordsNonOriented,
-                                      elemOrts,
+                                      elemOrts_d,
                                       edge_basis.get());
 
         //get basis coefficients (dofs)
         for(int curlIter=0; curlIter<hcurlCardinality; curlIter++)
           li::getBasisCoeffs(Kokkos::subview(basisCoeffsLI,Kokkos::ALL(),curlIter,Kokkos::ALL()), Kokkos::subview(curlAtDofCoords,Kokkos::ALL(),curlIter,Kokkos::ALL(),Kokkos::ALL()), dofCoeffs);
+	auto basisCoeffsLI_h = Kokkos::create_mirror_view(basisCoeffsLI);
+	Kokkos::deep_copy(basisCoeffsLI_h, basisCoeffsLI);
 
         // get IDs for edges and faces
         std::vector<GlobalOrdinal> fGIDs;
         face_ugi->getElementGIDs(elementIds[elemIter],fGIDs);
         std::vector<GlobalOrdinal> eGIDs;
         edge_ugi->getElementGIDs(elementIds[elemIter],eGIDs);
-        auto fLIDs = face_ugi->getElementLIDs(elementIds[elemIter]);
-        auto eLIDs = edge_ugi->getElementLIDs(elementIds[elemIter]);
+        auto eLIDs_k = edge_ugi->getElementLIDs(elementIds[elemIter]);
+        auto fLIDs_k = face_ugi->getElementLIDs(elementIds[elemIter]);
+	auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
+	auto fLIDs = Kokkos::create_mirror_view(fLIDs_k);
+	Kokkos::deep_copy(eLIDs, eLIDs_k);
+	Kokkos::deep_copy(fLIDs, fLIDs_k);
 
         // need to know which faces are owned by this proc
         std::vector<bool> isOwned(fGIDs.size());
@@ -248,8 +260,8 @@ void addDiscreteCurlToRequestHandler(
               auto it = std::find(edges_on_face.begin(), edges_on_face.end(), curlIter);
               if(it!=edges_on_face.end()){
                 // normalize the values
-                if(std::abs(basisCoeffsLI(0,curlIter,fIter)) > 1.0e-10)
-                  values[curlIter] = basisCoeffsLI(0,curlIter,fIter)*area_scaling;
+                if(std::abs(basisCoeffsLI_h(0,curlIter,fIter)) > 1.0e-10)
+                  values[curlIter] = basisCoeffsLI_h(0,curlIter,fIter)*area_scaling;
               }
             }
 
@@ -337,10 +349,10 @@ void addDiscreteCurlToRequestHandler(
     // allocate some view
     Kokkos::DynRankView<double,DeviceSpace> dofCoords("dofCoords", 1, hdivCardinality, dim);
     Kokkos::DynRankView<double,DeviceSpace> basisCoeffsLI("basisCoeffsLI", 1, hcurlCardinality, hdivCardinality);
-    Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts("elemOrts", 1);
+    typename Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace>::HostMirror elemOrts("elemOrts", 1);
     typename Kokkos::DynRankView<GlobalOrdinal, DeviceSpace>::HostMirror elemNodes("elemNodes", 1, numElemVertices);
-    Kokkos::DynRankView<int, DeviceSpace> fOrt("fOrt", hdivCardinality);
-    Kokkos::DynRankView<double, DeviceSpace> ortJacobian("ortJacobian", 2, 2);
+    typename Kokkos::DynRankView<int, DeviceSpace>::HostMirror fOrt("fOrt", hdivCardinality);
+    typename Kokkos::DynRankView<double, DeviceSpace>::HostMirror ortJacobian("ortJacobian", 2, 2);
 
     // the ranks of these depend on dimension
     Kokkos::DynRankView<double,DeviceSpace> dofCoeffs;
@@ -360,12 +372,16 @@ void addDiscreteCurlToRequestHandler(
     }
     face_basis->getDofCoeffs(refDofCoeffs);
 
+    auto dofCoeffs_h = Kokkos::create_mirror_view(dofCoeffs);
+    auto refDofCoeffs_h = Kokkos::create_mirror_view(refDofCoeffs);
+    Kokkos::deep_copy(refDofCoeffs_h, refDofCoeffs);
     // set up the topology of each face in an element for computing DOF coefficients
     // in 2D coefficients are same as reference coefficients
-    Kokkos::DynRankView<shards::CellTopology,DeviceSpace> sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
+    typename Kokkos::DynRankView<shards::CellTopology,DeviceSpace>::HostMirror
+      sub_topologies(Kokkos::ViewAllocateWithoutInitializing("sub_topologies"), hdivCardinality);
     if(dim < 3)
       for(int i = 0; i < hdivCardinality; i++)
-        dofCoeffs(0,i) = refDofCoeffs(i);
+        dofCoeffs_h(0,i) = refDofCoeffs_h(i);
     else {
       for(int iface = 0; iface < hdivCardinality; iface++){
         shards::CellTopology sub_topology(topology.getCellTopologyData(dim-1,iface));
@@ -404,27 +420,36 @@ void addDiscreteCurlToRequestHandler(
             Intrepid2::Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, sub_topologies(iface), fOrt(iface));
             auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
             for(int idim = 0; idim < dim; idim++)
-              dofCoeffs(0,iface,idim) = refDofCoeffs(iface,idim)*ortJacobianDet;
+              dofCoeffs_h(0,iface,idim) = refDofCoeffs_h(iface,idim)*ortJacobianDet;
           }
         }
+	Kokkos::deep_copy(dofCoeffs, dofCoeffs_h);
 
         //orient basis
+	Kokkos::DynRankView<Intrepid2::Orientation,DeviceSpace> elemOrts_d("elemOrts_d", 1);
+	Kokkos::deep_copy(elemOrts_d, elemOrts);
         ots::modifyBasisByOrientation(curlAtDofCoords,
                                       curlAtDofCoordsNonOriented,
-                                      elemOrts,
+                                      elemOrts_d,
                                       edge_basis.get());
 
         //get basis coefficients (dofs)
         for(int curlIter=0; curlIter<hcurlCardinality; curlIter++)
           li::getBasisCoeffs(Kokkos::subview(basisCoeffsLI,Kokkos::ALL(),curlIter,Kokkos::ALL()), Kokkos::subview(curlAtDofCoords,Kokkos::ALL(),curlIter,Kokkos::ALL(),Kokkos::ALL()), dofCoeffs);
+	auto basisCoeffsLI_h = Kokkos::create_mirror_view(basisCoeffsLI);
+	Kokkos::deep_copy(basisCoeffsLI_h, basisCoeffsLI);
 
         // get IDs for edges and faces
         std::vector<GlobalOrdinal> fGIDs;
         face_ugi->getElementGIDs(elementIds[elemIter],fGIDs);
         std::vector<GlobalOrdinal> eGIDs;
         edge_ugi->getElementGIDs(elementIds[elemIter],eGIDs);
-        auto fLIDs = face_ugi->getElementLIDs(elementIds[elemIter]);
-        auto eLIDs = edge_ugi->getElementLIDs(elementIds[elemIter]);
+        auto eLIDs_k = edge_ugi->getElementLIDs(elementIds[elemIter]);
+        auto fLIDs_k = face_ugi->getElementLIDs(elementIds[elemIter]);
+	auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
+	auto fLIDs = Kokkos::create_mirror_view(fLIDs_k);
+	Kokkos::deep_copy(eLIDs, eLIDs_k);
+	Kokkos::deep_copy(fLIDs, fLIDs_k);
 
         // need to know which faces are owned by this proc
         std::vector<bool> isOwned(fGIDs.size());
@@ -452,8 +477,8 @@ void addDiscreteCurlToRequestHandler(
               auto it = std::find(edges_on_face.begin(), edges_on_face.end(), curlIter);
               if(it!=edges_on_face.end()){
                 // normalize the values
-                if(std::abs(basisCoeffsLI(0,curlIter,fIter)) > 1.0e-10)
-                  values[curlIter] = basisCoeffsLI(0,curlIter,fIter)*area_scaling;
+                if(std::abs(basisCoeffsLI_h(0,curlIter,fIter)) > 1.0e-10)
+                  values[curlIter] = basisCoeffsLI_h(0,curlIter,fIter)*area_scaling;
               }
             }
 
