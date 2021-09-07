@@ -731,8 +731,8 @@ namespace Tpetra {
 
     lclIndsPacked_wdv = local_inds_wdv_type(lclGraph.entries);
     lclIndsUnpacked_wdv = lclIndsPacked_wdv;
-    setRowPtrsUnpacked(lclGraph.row_map);
-    setRowPtrsPacked(lclGraph.row_map);
+    this->setRowPtrsUnpacked(lclGraph.row_map);
+    this->setRowPtrsPacked(lclGraph.row_map);
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -1243,7 +1243,7 @@ namespace Tpetra {
     }
 
     // "Commit" the resulting row offsets.
-    setRowPtrsUnpacked(k_rowPtrs);
+    this->setRowPtrsUnpacked(k_rowPtrs);
   }
 
     const size_type numInds = rowPtrsUnpacked_host_(numRows);
@@ -3014,8 +3014,8 @@ namespace Tpetra {
     noRedundancies_      = true;
     lclIndsPacked_wdv= local_inds_wdv_type(columnIndices);
     lclIndsUnpacked_wdv          = lclIndsPacked_wdv;
-    setRowPtrsUnpacked(rowPointers);
-    setRowPtrsPacked(rowPointers);
+    this->setRowPtrsUnpacked(rowPointers);
+    this->setRowPtrsPacked(rowPointers);
 
     set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
 
@@ -4014,11 +4014,12 @@ namespace Tpetra {
         }
       }
       // Build the local graph.
-      setRowPtrsPacked(ptr_d_const);
+      this->setRowPtrsPacked(ptr_d_const);
       lclIndsPacked_wdv = local_inds_wdv_type(ind_d);
     }
     else { // We don't have to pack, so just set the pointers.
-      setRowPtrsPacked(rowPtrsUnpacked_dev_);
+      rowPtrsPacked_dev_ = rowPtrsUnpacked_dev_;
+      rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
       lclIndsPacked_wdv = lclIndsUnpacked_wdv; 
 
       if (debug_) {
@@ -4070,7 +4071,8 @@ namespace Tpetra {
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      setRowPtrsUnpacked(rowPtrsPacked_dev_);
+      rowPtrsUnpacked_dev_ = rowPtrsPacked_dev_;
+      rowPtrsUnpacked_host_ = rowPtrsPacked_host_;
       lclIndsUnpacked_wdv = lclIndsPacked_wdv;
 
       storageStatus_ = Details::STORAGE_1D_PACKED;

@@ -1582,7 +1582,8 @@ namespace Tpetra {
       valuesPacked_wdv = values_wdv_type(k_vals);
     }
     else { // We don't have to pack, so just set the pointers.
-      myGraph_->setRowPtrsPacked(myGraph_->rowPtrsUnpacked_dev_);
+      myGraph_->rowPtrsPacked_dev_ = myGraph->rowPtrsUnpacked_dev_;
+      myGraph_->rowPtrsPacked_host_ = myGraph->rowPtrsUnpacked_host_;
       myGraph_->lclIndsPacked_wdv = myGraph_->lclIndsUnpacked_wdv;
       valuesPacked_wdv = valuesUnpacked_wdv;
 
@@ -1678,10 +1679,10 @@ namespace Tpetra {
       myGraph_->k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      myGraph_->setRowPtrsUnpacked(myGraph_->rowPtrsPacked_dev_);
+      myGraph_->rowPtrsUnpacked_dev_ = myGraph_->rowPtrsPacked_dev_;
+      myGraph_->rowPtrsUnpacked_host_ = myGraph_->rowPtrsPacked_host_;
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
       valuesUnpacked_wdv = valuesPacked_wdv;
-//      k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
       myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
       this->storageStatus_ = Details::STORAGE_1D_PACKED;

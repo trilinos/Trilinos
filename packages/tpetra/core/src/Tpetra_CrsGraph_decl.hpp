@@ -2227,8 +2227,8 @@ public:
       rowPtrsUnpacked_dev_ = dview;
       rowPtrsUnpacked_host_ = 
            Kokkos::create_mirror_view_and_copy(
-                          typename row_ptrs_device_view_type::host_mirror_space(),
-                          dview);
+                        typename row_ptrs_device_view_type::host_mirror_space(),
+                        dview);
     }
 
     // Row offsets into the actual graph local indices 
@@ -2241,11 +2241,10 @@ public:
       rowPtrsPacked_dev_ = dview;
       rowPtrsPacked_host_ = 
            Kokkos::create_mirror_view_and_copy(
-                          typename row_ptrs_device_view_type::host_mirror_space(),
-                          dview);
+                        typename row_ptrs_device_view_type::host_mirror_space(),
+                        dview);
     }
     
-  
 //KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Local ordinals of colum indices for all rows
     /// KDDKDD UVM Removal:   Device view takes place of k_lclInds1D_
