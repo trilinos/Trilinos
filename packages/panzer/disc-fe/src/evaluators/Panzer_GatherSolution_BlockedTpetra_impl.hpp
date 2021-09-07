@@ -494,7 +494,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
     hostBlockOffsets(blk) = blockOffset;
   }
-  blockOffsets_(numBlocks) = blockOffsets_(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
+  hostBlockOffsets(numBlocks) = hostBlockOffsets(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
   indexerNames_.clear();  // Don't need this anymore
@@ -558,8 +558,10 @@ evaluateFields(typename TRAITS::EvalData workset)
     const PHX::View<const LO**> worksetLIDs = worksetLIDs_;
     const PHX::View<ScalarT**> fieldValues = gatherFields_[fieldIndex].get_static_view();        
     const PHX::View<const LO*> blockOffsets = blockOffsets_;
-    const int blockStart = blockOffsets(blockRowIndex);
-    const int numDerivatives = blockOffsets(numFieldBlocks);
+    auto blockOffsets_h = Kokkos::create_mirror_view(blockOffsets);
+    Kokkos::deep_copy(blockOffsets_h, blockOffsets);
+    const int blockStart = blockOffsets_h(blockRowIndex);
+    const int numDerivatives = blockOffsets_h(numFieldBlocks);
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {  
       for (int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {

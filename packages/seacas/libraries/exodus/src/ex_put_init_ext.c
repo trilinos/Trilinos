@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -187,23 +187,22 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
 static void invalidate_id_status(int exoid, const char *var_stat, const char *var_id, int count,
                                  int *ids)
 {
-  int i;
-  int id_var, stat_var;
-
   if (count > 0) {
     if (var_id != 0) {
-      for (i = 0; i < count; i++) {
+      for (int i = 0; i < count; i++) {
         ids[i] = EX_INVALID_ID;
       }
+      int id_var;
       (void)nc_inq_varid(exoid, var_id, &id_var);
       (void)nc_put_var_int(exoid, id_var, ids);
     }
 
     if (var_stat != 0) {
-      for (i = 0; i < count; i++) {
+      for (int i = 0; i < count; i++) {
         ids[i] = 0;
       }
 
+      int stat_var;
       (void)nc_inq_varid(exoid, var_stat, &stat_var);
       (void)nc_put_var_int(exoid, stat_var, ids);
     }
@@ -289,7 +288,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
     struct ex__file_item *file = ex__find_file_item(exoid);
     file->time_varid           = temp;
   }
-  ex__compress_variable(exoid, temp, 2);
+  ex__compress_variable(exoid, temp, -2); /* Don't compress, but do set collective io */
 
   if (model->num_dim > 0) {
     if ((status = nc_def_dim(exoid, DIM_NUM_DIM, model->num_dim, &numdimdim)) != NC_NOERR) {

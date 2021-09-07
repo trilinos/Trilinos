@@ -718,14 +718,13 @@ namespace SEAMS {
   void Aprepro::dumpsym(int type, const char *pre, bool doInternal) const
   {
     std::string comment = getsym("_C_")->value.svar;
-    int         width   = 10; // controls spacing/padding for the variable names
-    int         fwidth  = 20; // controls spacing/padding for the function names
     std::string spre;
 
     if (pre) {
       spre = pre;
     }
 
+    int width = 10; // controls spacing/padding for the variable names
     if (type == Parser::token::VAR || type == Parser::token::SVAR || type == Parser::token::AVAR) {
       (*infoStream) << "\n" << comment << "   Variable    = Value" << '\n';
 
@@ -777,6 +776,7 @@ namespace SEAMS {
     }
     else if (type == Parser::token::FNCT || type == Parser::token::SFNCT ||
              type == Parser::token::AFNCT) {
+      int fwidth = 20; // controls spacing/padding for the function names
       (*infoStream) << trmclr::blue << "\nFunctions returning double:" << trmclr::normal << '\n';
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
         for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {

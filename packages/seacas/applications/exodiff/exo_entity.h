@@ -61,6 +61,15 @@ public:
   const std::vector<std::string> &Attribute_Names() const { return attributeNames; }
   int                             Find_Attribute_Index(const std::string &name) const;
 
+  // Return "Element Block", "Nodeset", "Sideset, depending on underlying type.
+  virtual const char *label() const = 0;
+
+  // Return "block", "nodelist", "surface", depending on underlying type.
+  virtual const char *short_label() const = 0;
+
+  // Return EX_ELEM_BLOCK, EX_NODE_SET, ... of underlying type
+  virtual EXOTYPE exodus_type() const = 0;
+
 protected:
   std::string  name_;
   int          fileId{-1};
@@ -71,15 +80,6 @@ protected:
 private:
   virtual void entity_load_params() = 0;
   void         internal_load_params();
-
-  // Return "Element Block", "Nodeset", "Sideset, depending on underlying type.
-  virtual const char *label() const = 0;
-
-  // Return "block", "nodelist", "surface", depending on underlying type.
-  virtual const char *short_label() const = 0;
-
-  // Return EX_ELEM_BLOCK, EX_NODE_SET, ... of underlying type
-  virtual EXOTYPE exodus_type() const = 0;
 
   void get_truth_table() const;
 

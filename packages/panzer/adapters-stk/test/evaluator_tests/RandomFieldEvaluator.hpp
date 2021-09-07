@@ -116,8 +116,10 @@ RandomFieldEvaluator<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData  /* workset */)
 {
+  auto field_h = Kokkos::create_mirror_view(field.get_view());
    for(int i=0;i<static_cast<int>(field.size());i++)
-      field[i] = double(std::rand())/double(RAND_MAX);
+      field_h[i] = double(std::rand())/double(RAND_MAX);
+   Kokkos::deep_copy(field.get_view(),field_h);
 }
 
 //**********************************************************************

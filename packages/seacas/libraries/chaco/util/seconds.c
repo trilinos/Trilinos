@@ -10,7 +10,9 @@
 #else
 #include <time.h>
 #endif
-#if !defined(__CYGWIN__) && !defined(_MSC_VER)
+
+#if defined(__unix__) || defined(__unix) || defined(unix) ||                                       \
+    (defined(__APPLE__) && defined(__MACH__))
 #include <sys/resource.h>
 #endif
 

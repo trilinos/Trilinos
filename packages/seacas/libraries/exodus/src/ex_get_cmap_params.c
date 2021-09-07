@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -38,10 +38,10 @@
 int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_node_cnts,
                        void_int *elem_cmap_ids, void_int *elem_cmap_elem_cnts, int processor)
 {
-  size_t  cnt, num_n_comm_maps, num_e_comm_maps, start[1], count[1];
-  int64_t cmap_info_idx[2], cmap_data_idx[2];
-  int     nmstat;
+  size_t  start[1], count[1];
   int     status, map_idx, varid, dimid;
+  int     nmstat;
+  int64_t cmap_data_idx[2];
 
   char errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
@@ -58,6 +58,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   /*****************************************************************************/
 
   /* get the cmap information variables index */
+  int64_t cmap_info_idx[2];
   if (ex_get_idx(exoid, VAR_N_COMM_INFO_IDX, cmap_info_idx, processor) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
              VAR_N_COMM_INFO_IDX, exoid);
@@ -82,7 +83,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
       cmap_info_idx[1] = count[0];
     } /* End "if (cmap_info_idx[1] == -1) */
 
-    num_n_comm_maps = cmap_info_idx[1] - cmap_info_idx[0];
+    size_t num_n_comm_maps = cmap_info_idx[1] - cmap_info_idx[0];
 
     if (num_n_comm_maps > 0) {
       count[0] = num_n_comm_maps;
@@ -124,7 +125,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         if (node_cmap_node_cnts != NULL) {
 
           /* Get the node counts in each of the nodal communication maps */
-          for (cnt = 0; cnt < num_n_comm_maps; cnt++) {
+          for (size_t cnt = 0; cnt < num_n_comm_maps; cnt++) {
             int64_t cmap_id;
             if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
               cmap_id = ((int64_t *)node_cmap_ids)[cnt];
@@ -242,7 +243,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
       cmap_info_idx[1] = count[0];
     } /* End "if (cmap_info_idx[1] == -1) */
 
-    num_e_comm_maps = cmap_info_idx[1] - cmap_info_idx[0];
+    size_t num_e_comm_maps = cmap_info_idx[1] - cmap_info_idx[0];
 
     if (num_e_comm_maps > 0) {
       count[0] = num_e_comm_maps;
@@ -285,7 +286,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
            * Get the element counts in each of the elemental
            * communication maps
            */
-          for (cnt = 0; cnt < num_e_comm_maps; cnt++) {
+          for (size_t cnt = 0; cnt < num_e_comm_maps; cnt++) {
             int64_t cmap_id;
             if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
               cmap_id = ((int64_t *)elem_cmap_ids)[cnt];

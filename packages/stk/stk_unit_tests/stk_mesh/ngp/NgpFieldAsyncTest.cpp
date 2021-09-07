@@ -51,7 +51,7 @@
 #include <stk_mesh/base/GetNgpExecutionSpace.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/util/StkNgpVector.hpp>
 #include "NgpUnitTestUtils.hpp"

@@ -40,8 +40,8 @@
  */
 
 int ex_put_partial_node_cmap(int exoid, ex_entity_id map_id, int64_t start_entity_num,
-                             int64_t num_entities, void_int *node_ids, void_int *proc_ids,
-                             int processor)
+                             int64_t num_entities, const void_int *node_ids,
+                             const void_int *proc_ids, int processor)
 {
   int     map_idx, varid, dimid, status;
   size_t  start[1], count[1], ret_val;

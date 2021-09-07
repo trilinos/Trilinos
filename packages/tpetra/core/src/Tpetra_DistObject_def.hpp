@@ -887,6 +887,7 @@ namespace Tpetra {
 
     const size_t numSameIDs = transfer.getNumSameIDs ();
     Distributor& distor = transfer.getDistributor ();
+    const Details::DistributorPlan& distributorPlan = (revOp == DoForward) ? distor.getPlan() : *distor.getPlan().getReversePlan();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (debug && restrictedMode &&
@@ -1049,7 +1050,7 @@ namespace Tpetra {
         std::cerr << os.str ();
       }
 
-      doPackAndPrepare(src, exportLIDs, constantNumPackets, distor);
+      doPackAndPrepare(src, exportLIDs, constantNumPackets);
       if (commOnHost) {
         this->exports_.sync_host();
       }
@@ -1122,7 +1123,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
-        doPosts(distor, constantNumPackets, commOnHost, revOp, prefix, canTryAliasing, CM);
+        doPosts(distributorPlan, constantNumPackets, commOnHost, prefix, canTryAliasing, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
   }
@@ -1241,6 +1242,7 @@ namespace Tpetra {
     }
 
     Distributor& distor = transfer.getDistributor ();
+    const Details::DistributorPlan& distributorPlan = (revOp == DoForward) ? distor.getPlan() : *distor.getPlan().getReversePlan();
 
     TEUCHOS_TEST_FOR_EXCEPTION
       (debug && restrictedMode &&
@@ -1319,14 +1321,14 @@ namespace Tpetra {
         }
       }
       else {
-        doWaits(distor, revOp);
+        distributorActor_.doWaits(distributorPlan);
 
         if (verbose) {
           std::ostringstream os;
           os << *prefix << "8. unpackAndCombine" << endl;
           std::cerr << os.str ();
         }
-        doUnpackAndCombine(remoteLIDs, constantNumPackets, distor, CM);
+        doUnpackAndCombine(remoteLIDs, constantNumPackets, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1346,10 +1348,9 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doPosts(Distributor& distor,
+  doPosts(const Details::DistributorPlan& distributorPlan,
           size_t constantNumPackets,
           bool commOnHost,
-          ReverseOption revOp,
           std::shared_ptr<std::string> prefix,
           const bool canTryAliasing,
           const CombineMode CM)
@@ -1385,17 +1386,11 @@ namespace Tpetra {
         // MPI communication happens here.
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Call do"
-            << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+          os << *prefix << "Call doPostsAndWaits"
             << endl;
           std::cerr << os.str ();
         }
-        if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits (numExp_h, 1, numImp_h);
-        }
-        else {
-          distor.doPostsAndWaits (numExp_h, 1, numImp_h);
-        }
+        distributorActor_.doPostsAndWaits(distributorPlan, numExp_h, 1, numImp_h);
 
         if (verbose) {
           std::ostringstream os;
@@ -1416,17 +1411,11 @@ namespace Tpetra {
         // MPI communication happens here.
         if (verbose) {
           std::ostringstream os;
-          os << *prefix << "Call do"
-            << (revOp == DoReverse ? "Reverse" : "") << "PostsAndWaits"
+          os << *prefix << "Call doPostsAndWaits"
             << endl;
           std::cerr << os.str ();
         }
-        if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits (numExp_d, 1, numImp_d);
-        }
-        else {
-          distor.doPostsAndWaits (numExp_d, 1, numImp_d);
-        }
+        distributorActor_.doPostsAndWaits(distributorPlan, numExp_d, 1, numImp_d);
 
         if (verbose) {
           std::ostringstream os;
@@ -1479,45 +1468,28 @@ namespace Tpetra {
         std::ostringstream os;
         os << *prefix << "Comm on "
           << (commOnHost ? "host" : "device")
-          << "; call do" << (revOp == DoReverse ? "Reverse" : "")
-          << "PostsAndWaits" << endl;
+          << "; call doPosts" << endl;
         std::cerr << os.str ();
       }
 
       if (commOnHost) {
         this->imports_.modify_host ();
-        if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_host ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_host (),
-             numImportPacketsPerLID_av);
-        }
-        else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_host ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_host (),
-             numImportPacketsPerLID_av);
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_host ()),
+           numExportPacketsPerLID_av,
+           this->imports_.view_host (),
+           numImportPacketsPerLID_av);
       }
       else { // pack on device
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
-        if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_device ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_device (),
-             numImportPacketsPerLID_av);
-        }
-        else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_device ()),
-             numExportPacketsPerLID_av,
-             this->imports_.view_device (),
-             numImportPacketsPerLID_av);
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_device ()),
+           numExportPacketsPerLID_av,
+           this->imports_.view_device (),
+           numImportPacketsPerLID_av);
       }
     }
     else { // constant number of packets per LID
@@ -1543,40 +1515,25 @@ namespace Tpetra {
         std::ostringstream os;
         os << *prefix << "7.2. Comm on "
           << (commOnHost ? "host" : "device")
-          << "; call do" << (revOp == DoReverse ? "Reverse" : "")
-          << "PostsAndWaits" << endl;
+          << "; call doPosts" << endl;
         std::cerr << os.str ();
       }
       if (commOnHost) {
         this->imports_.modify_host ();
-        if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_host ()),
-             constantNumPackets,
-             this->imports_.view_host ());
-        }
-        else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_host ()),
-             constantNumPackets,
-             this->imports_.view_host ());
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_host ()),
+           constantNumPackets,
+           this->imports_.view_host ());
       }
       else { // pack on device
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
-        if (revOp == DoReverse) {
-          distor.doReversePosts
-            (create_const_view (this->exports_.view_device ()),
-             constantNumPackets,
-             this->imports_.view_device ());
-        }
-        else {
-          distor.doPosts
-            (create_const_view (this->exports_.view_device ()),
-             constantNumPackets,
-             this->imports_.view_device ());
-        }
+        distributorActor_.doPosts
+          (distributorPlan,
+           create_const_view (this->exports_.view_device ()),
+           constantNumPackets,
+           this->imports_.view_device ());
       } // commOnHost
     } // constant or variable num packets per LID
   }
@@ -1584,24 +1541,9 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doWaits(Distributor& distor,
-          ReverseOption revOp)
-  {
-    if (revOp == DoReverse) {
-      distor.doReverseWaits();
-    }
-    else {
-      distor.doWaits();
-    }
-  }
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doPackAndPrepare(const SrcDistObject& src,
                    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
-                   size_t& constantNumPackets,
-                   Distributor& distor)
+                   size_t& constantNumPackets)
   {
     using Details::ProfilingRegion;
     using std::endl;
@@ -1637,7 +1579,7 @@ namespace Tpetra {
       try {
         this->packAndPrepare (src, exportLIDs, this->exports_,
             this->numExportPacketsPerLID_,
-            constantNumPackets, distor);
+            constantNumPackets);
         lclSuccess = true;
       }
       catch (std::exception& e) {
@@ -1659,7 +1601,7 @@ namespace Tpetra {
     else {
       this->packAndPrepare (src, exportLIDs, this->exports_,
           this->numExportPacketsPerLID_,
-          constantNumPackets, distor);
+          constantNumPackets);
     }
   }
 
@@ -1668,7 +1610,6 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
                      size_t constantNumPackets,
-                     Distributor& distor,
                      CombineMode CM)
   {
     using Details::ProfilingRegion;
@@ -1689,7 +1630,7 @@ namespace Tpetra {
       try {
         this->unpackAndCombine (remoteLIDs, this->imports_,
             this->numImportPacketsPerLID_,
-            constantNumPackets, distor, CM);
+            constantNumPackets, CM);
         lclSuccess = true;
       }
       catch (std::exception& e) {
@@ -1711,7 +1652,7 @@ namespace Tpetra {
     else {
       this->unpackAndCombine (remoteLIDs, this->imports_,
           this->numImportPacketsPerLID_,
-          constantNumPackets, distor, CM);
+          constantNumPackets, CM);
     }
   }
 
@@ -1744,8 +1685,7 @@ namespace Tpetra {
    Kokkos::DualView<
      size_t*,
      buffer_device_type>,
-   size_t&,
-   Distributor&)
+   size_t&)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1762,7 +1702,6 @@ namespace Tpetra {
      size_t*,
      buffer_device_type> /* numPacketsPerLID */,
    const size_t /* constantNumPackets */,
-   Distributor& /* distor */,
    const CombineMode /* combineMode */)
   {}
 

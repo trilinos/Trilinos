@@ -187,6 +187,7 @@ namespace MueLu {
       RCP<RealValuedMultiVector> mv;
            
 
+      GetOStream(Statistics1) << "Reading FC splitting from " << color_file << ", using map file " << map_file << ". On rank " << A->getRowMap()->getComm()->getRank() << " local size is " << A->getRowMap()->getNodeNumElements() << std::endl;
       if(mapfile) {
         fclose(mapfile);
         RCP<const Map> colorMap = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadMap(map_file, A->getRowMap()->lib(), A->getRowMap()->getComm());

@@ -128,6 +128,18 @@ struct Parameter{
       toResultsFile(false),
       toRestartFile(false)
   {}
+
+  template<typename T>
+  T get_value() const
+  {
+    if (type == ParameterType::get_type(T())) {
+      return STK_ANY_NAMESPACE::any_cast<T>(value);
+    } else {
+      std::cerr << "ERROR: Parameter has an incorrect type specified for the get_value"
+                << " template type.\n";
+    }
+    return T();
+  }
 };
 
 typedef std::map<const std::string, Parameter> ParameterMapType;
@@ -177,14 +189,7 @@ public:
   template <typename T> T get_value (const std::string name)
   {
     Parameter p = get_param(name);
-    if (p.type == ParameterType::get_type(T())) {
-      return STK_ANY_NAMESPACE::any_cast<T>(p.value);
-    } else {
-      std::cerr << "ERROR: Parameter named '" << name
-                << "' has an incorrect type specified for the get_value"
-                << " template type.\n";
-    }
-    return T();
+    return p.get_value<T>();
   }
 
   void write_parameter_list(std::ostream & stream);

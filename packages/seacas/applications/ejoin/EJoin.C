@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -540,7 +540,7 @@ double ejoin(SystemInterface &interFace, std::vector<Ioss::Region *> &part_mesh,
   }
   output_region.output_summary(std::cout);
   fmt::print("******* END *******\n");
-  fmt::print(stderr, "\nTotal Execution time     = {:.5} seconds.\n", end - begin);
+  fmt::print(stderr, "\nTotal Execution Time     = {:.5} seconds.\n", end - begin);
   if (steps > 0) {
     fmt::print(stderr, "\tMesh = {:.5} seconds; Timesteps = {:.5} seconds / step.\n\n",
                (ts_begin - begin), (end - ts_begin) / (double)(steps));
@@ -560,8 +560,7 @@ namespace {
     static int         used_blocks = 0;
     const std::string &prefix      = region.name();
 
-    const Ioss::ElementBlockContainer &ebs            = region.get_element_blocks();
-    size_t                             total_elements = 0;
+    const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
     for (auto eb : ebs) {
       if (!entity_is_omitted(eb)) {
         std::string name = eb->name();
@@ -577,7 +576,6 @@ namespace {
         }
         std::string type     = eb->topology()->name();
         size_t      num_elem = eb->entity_count();
-        total_elements += num_elem;
 
         if (num_elem > 0) {
           auto ebn = new Ioss::ElementBlock(output_region.get_database(), name, type, num_elem);
@@ -602,8 +600,7 @@ namespace {
   {
     const std::string &prefix = region.name();
 
-    const Ioss::SideSetContainer &fss         = region.get_sidesets();
-    size_t                        total_sides = 0;
+    const Ioss::SideSetContainer &fss = region.get_sidesets();
     for (auto &fs : fss) {
       if (!entity_is_omitted(fs)) {
         std::string name = fs->name();
@@ -629,7 +626,6 @@ namespace {
           std::string fbtype   = fb->topology()->name();
           std::string partype  = fb->parent_element_topology()->name();
           size_t      num_side = fb->entity_count();
-          total_sides += num_side;
 
           auto block =
               new Ioss::SideBlock(output_region.get_database(), fbname, fbtype, partype, num_side);

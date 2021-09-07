@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
+#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
 #include <sys/times.h>
 #include <sys/utsname.h>
 #endif
@@ -22,7 +22,7 @@
 
 void add_to_log(const char *my_name, double elapsed)
 {
-#ifndef _MSC_VER
+#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
 #define LEN 512
   char time_string[LEN];
   char log_string[LEN];

@@ -223,9 +223,12 @@ evaluateFields(typename TRAITS::EvalData workset)
   const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                                       : *this->wda(workset).bases[basis_index];
 
+  using Array=typename panzer::BasisValues2<double>::ConstArray_CellBasisIP;
+  Array div_basis = use_descriptors_ ? basisValues.getDivVectorBasis(false) : Array(basisValues.div_basis);
+
   const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
   auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
-  auto f = EvaluateDOFDiv_withSens<ScalarT,typename panzer::BasisValues2<double>::Array_CellBasisIP>(dof_div,dof_value,basisValues.div_basis,use_shared_memory);
+  auto f = EvaluateDOFDiv_withSens<ScalarT,Array>(dof_div,dof_value,div_basis,use_shared_memory);
   Kokkos::parallel_for(policy,f,this->getName());
 }
 
@@ -325,10 +328,13 @@ evaluateFields(typename TRAITS::EvalData workset)
   const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
                                                                       : *this->wda(workset).bases[basis_index];
 
+  using Array=typename panzer::BasisValues2<double>::ConstArray_CellBasisIP;
+  Array div_basis = use_descriptors_ ? basisValues.getDivVectorBasis(false) : Array(basisValues.div_basis);
+
   if(!accelerate_jacobian) {
     const bool use_shared_memory = panzer::HP::inst().useSharedMemory<ScalarT>();
     auto policy = panzer::HP::inst().teamPolicy<ScalarT,PHX::exec_space>(workset.num_cells);
-    auto f = EvaluateDOFDiv_withSens<ScalarT,typename panzer::BasisValues2<double>::Array_CellBasisIP>(dof_div,dof_value,basisValues.div_basis,use_shared_memory);
+    auto f = EvaluateDOFDiv_withSens<ScalarT,Array>(dof_div,dof_value,div_basis,use_shared_memory);
     Kokkos::parallel_for(policy,f,this->getName());
     return;
   }

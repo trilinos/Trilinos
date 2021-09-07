@@ -27,8 +27,8 @@
 #include "exodusII.h"     // for ex_err, EXERRVAL, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_NOERR, etc
 
-int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids, void *pt_coordinates,
-                             const char *tags)
+int ex_put_coordinate_frames(int exoid, int nframes, const void_int *cf_ids,
+                             const void *pt_coordinates, const char *tags)
 {
   int  status;
   int  dim, dim9;              /* dimension id for nframes, nframes*9 */

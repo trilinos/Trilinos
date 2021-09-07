@@ -460,6 +460,9 @@ namespace PHX {
     }
 
     KOKKOS_FORCEINLINE_FUNCTION
+    operator array_type () const { return get_static_view();}
+
+    KOKKOS_FORCEINLINE_FUNCTION
     Kokkos::DynRankView<Scalar,typename PHX::DevLayout<Scalar>::type,PHX::Device> get_view()
     {return m_view;}
 
@@ -651,6 +654,14 @@ namespace PHX {
     f.print(os, false);
     return os;
   }
+
+  /// \brief free function to allow one to pass in a kokkos view or MDField and get out a view
+  template <typename ...Args>
+  const auto as_view(const Kokkos::View<Args...> &a) { return a; }
+  template <typename ...Args>
+  const auto as_view(const Kokkos::DynRankView<Args...> &a) { return a; }
+  template <typename ...Args>
+  const auto as_view(const PHX::MDField<Args...> &a) { return a.get_static_view(); }
 
 }
 

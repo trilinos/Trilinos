@@ -32,9 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_ngp_test/ngp_test.hpp>
-#include <stk_topology/topology.hpp>
+#include "gtest/gtest.h"
+#include "stk_ngp_test/ngp_test.hpp"
+#include "stk_topology/topology.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 #include <limits>
 #define INVALID UINT_MAX

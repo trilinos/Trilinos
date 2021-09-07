@@ -69,7 +69,7 @@ namespace MueLu {
   BuildAggregates(const ParameterList& params,
                   const LWGraph_kokkos& graph,
                   Aggregates_kokkos& aggregates,
-                  Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                  Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                   LO& numNonAggregatedNodes) const {
 
     if(params.get<bool>("aggregation: deterministic")) {
@@ -87,7 +87,7 @@ namespace MueLu {
   BuildAggregatesRandom(const ParameterList& params,
                         const LWGraph_kokkos& graph,
                         Aggregates_kokkos& aggregates,
-                        Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                        Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                         LO& numNonAggregatedNodes) const {
 
     const LO  numRows = graph.GetNodeNumVertices();
@@ -102,9 +102,9 @@ namespace MueLu {
     const LO defaultConnectWeight = 100;
     const LO penaltyConnectWeight = 10;
 
-    Kokkos::View<LO*, memory_space> aggWeight    ("aggWeight",     numLocalAggregates);
-    Kokkos::View<LO*, memory_space> connectWeight("connectWeight", numRows);
-    Kokkos::View<LO*, memory_space> aggPenalties ("aggPenalties",  numLocalAggregates);
+    Kokkos::View<LO*, device_type> aggWeight    ("aggWeight",     numLocalAggregates);
+    Kokkos::View<LO*, device_type> connectWeight("connectWeight", numRows);
+    Kokkos::View<LO*, device_type> aggPenalties ("aggPenalties",  numLocalAggregates);
 
     Kokkos::deep_copy(connectWeight, defaultConnectWeight);
 
@@ -189,7 +189,7 @@ namespace MueLu {
   BuildAggregatesDeterministic(const ParameterList& params,
                                const LWGraph_kokkos& graph,
                                Aggregates_kokkos& aggregates,
-                               Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space>& aggStat,
+                               Kokkos::View<unsigned*, typename LWGraph_kokkos::device_type>& aggStat,
                                LO& numNonAggregatedNodes) const {
 
     const LO  numRows = graph.GetNodeNumVertices();
@@ -204,10 +204,10 @@ namespace MueLu {
     const int defaultConnectWeight = 100;
     const int penaltyConnectWeight = 10;
 
-    Kokkos::View<int*, memory_space> connectWeight    ("connectWeight",     numRows);
-    Kokkos::View<int*, memory_space> aggWeight        ("aggWeight",         numLocalAggregates);
-    Kokkos::View<int*, memory_space> aggPenaltyUpdates("aggPenaltyUpdates", numLocalAggregates);
-    Kokkos::View<int*, memory_space> aggPenalties     ("aggPenalties",      numLocalAggregates);
+    Kokkos::View<int*, device_type> connectWeight    ("connectWeight",     numRows);
+    Kokkos::View<int*, device_type> aggWeight        ("aggWeight",         numLocalAggregates);
+    Kokkos::View<int*, device_type> aggPenaltyUpdates("aggPenaltyUpdates", numLocalAggregates);
+    Kokkos::View<int*, device_type> aggPenalties     ("aggPenalties",      numLocalAggregates);
 
     Kokkos::deep_copy(connectWeight, defaultConnectWeight);
 

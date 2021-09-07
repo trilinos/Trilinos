@@ -1,4 +1,3 @@
-		time_whole:_DeflateLevel = 1 ;
 		coordx:_DeflateLevel = 1 ;
 		coordy:_DeflateLevel = 1 ;
 		coordz:_DeflateLevel = 1 ;

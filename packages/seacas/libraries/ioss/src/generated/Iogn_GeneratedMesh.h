@@ -74,6 +74,9 @@ namespace Iogn {
        split into 6 tetrahedral elements.  Cannot currently be used with
        shells or sidesets.
 
+       - pyramids -- no argument - specifies that each hex should be
+       split into 6 pyramidal elements.
+
        - shell -- argument = xXyYzZ which specifies whether there is a shell
        block at that location. 'x' is minimum x face, 'X' is maximum x face,
        similarly for y and z.  Note that the argument string is a single
@@ -176,6 +179,12 @@ namespace Iogn {
      * Cannot currently be used with sidesets or shells.
      */
     void create_tets(bool yesno);
+
+    /**
+     * Split each hexahedral element into 6 pyramidal elements.
+     * Cannot currently be used with sidesets or shells.
+     */
+    void create_pyramids(bool yesno);
 
     /**
      * Add a shell block along the specified face of the hex mesh.
@@ -488,6 +497,7 @@ namespace Iogn {
                                        * sclY*i+offY, sclZ*i+offZ) */
     bool doRotation{false};
     bool createTets{false};
+    bool createPyramids{false};
   };
 } // namespace Iogn
 #endif

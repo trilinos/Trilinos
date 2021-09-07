@@ -34,7 +34,7 @@
 #ifndef STK_MESH_NGPFIELD_AUX_HPP
 #define STK_MESH_NGPFIELD_AUX_HPP
 
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include <Kokkos_Core.hpp>
 
 namespace stk {
@@ -51,6 +51,7 @@ enum NgpFieldSyncMode {
 
 struct AsyncCopyState {
 
+  KOKKOS_FUNCTION
   AsyncCopyState()
   : execSpace(Kokkos::DefaultExecutionSpace()),
     syncMode(INVALID)
@@ -62,13 +63,13 @@ struct AsyncCopyState {
     syncMode(state.syncMode)
   {}
 
-  void set_state(const ExecSpace& space, NgpFieldSyncMode mode)
+  void set_state(const stk::ngp::ExecSpace& space, NgpFieldSyncMode mode)
   {
     execSpace = space;
     syncMode = mode;
   }
 
-  void set_execution_space(const ExecSpace& space)
+  void set_execution_space(const stk::ngp::ExecSpace& space)
   {
     execSpace = space;
   }
@@ -79,7 +80,7 @@ struct AsyncCopyState {
     syncMode = INVALID;
   }
 
-  ExecSpace execSpace;
+  stk::ngp::ExecSpace execSpace;
   NgpFieldSyncMode syncMode;
 };
 

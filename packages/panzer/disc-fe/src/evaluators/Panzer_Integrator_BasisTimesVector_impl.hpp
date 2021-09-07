@@ -261,8 +261,10 @@ namespace panzer
     using std::size_t;
 
     // Get the PHX::Views of the field multipliers.
+    auto kokkosFieldMults_h = Kokkos::create_mirror_view(kokkosFieldMults_);
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+      kokkosFieldMults_h(i) = fieldMults_[i].get_static_view();
+    Kokkos::deep_copy(kokkosFieldMults_, kokkosFieldMults_h);
 
     // Determine the number of quadrature points and the dimensionality of the
     // vector that we're integrating.
@@ -371,7 +373,8 @@ namespace panzer
     const panzer::BasisValues2<double>& bv = useDescriptors_ ?
       this->wda(workset).getBasisValues(bd_,id_) :
       *this->wda(workset).bases[basisIndex_];
-    basis_ = bv.weighted_basis_vector;
+    using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+    basis_ = useDescriptors_ ? bv.getVectorBasisValues(true) : Array(bv.weighted_basis_vector);
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells

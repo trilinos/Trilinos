@@ -264,9 +264,6 @@ namespace panzer {
     // Number of total cells (owned + ghost + virtual)
     int num_cells_;
 
-    // Number of owned and ghost cells
-    int num_real_cells_;
-
     // Number of cells to evaluate (HACK for backward compatability)
     int num_evaluate_cells_;
 
@@ -287,6 +284,10 @@ namespace panzer {
 
     PHX::MDField<Scalar,Cell,NODE,Dim> cell_vertex_coordinates_;
 
+    // Number of cells to apply orientations to (required in situations where virtual cells exist)
+    int num_orientations_cells_;
+
+    // Orientations object
     Teuchos::RCP<const OrientationsInterface>   orientations_;
 
     /// Used to check if arrays have been cached
@@ -357,11 +358,16 @@ namespace panzer {
 
     /// Set the orientations object for applying orientations using the lazy evaluation path - required for certain bases
     void
-    setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations);
+    setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations,
+                    const int num_orientations_cells = -1);
 
     /// Set the cubature weights (weighted measure) for the basis values object - required to get weighted basis objects
     void
     setWeightedMeasure(PHX::MDField<Scalar, Cell, IP> weighted_measure);
+
+    /// Set the cell vertex coordinates (required for getBasisCoordinates())
+    void
+    setCellVertexCoordinates(PHX::MDField<Scalar,Cell,NODE,Dim> vertex_coordinates);
 
     /// Check if reference point space is uniform across all cells (faster evaluation)
     bool

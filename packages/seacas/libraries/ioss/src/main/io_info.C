@@ -16,10 +16,6 @@
 // ========================================================================
 
 namespace {
-
-  // Data space shared by most field input/output routines...
-  std::vector<char> data;
-
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace);
   void info_edgeblock(Ioss::Region &region);
   void info_faceblock(Ioss::Region &region);
@@ -195,8 +191,10 @@ namespace {
     if (interFace.compute_bbox()) {
       Ioss::AxisAlignedBoundingBox bbox = nb.get_bounding_box();
       fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                 "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
-                 bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax);
+                 "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
+                 "\t                Range X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
+                 bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax,
+                 bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin, bbox.zmax - bbox.zmin);
     }
   }
 
@@ -263,8 +261,10 @@ namespace {
       if (interFace.compute_bbox()) {
         Ioss::AxisAlignedBoundingBox bbox = sb->get_bounding_box();
         fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                   "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
-                   bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax);
+                   "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
+                   "\t                Range X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
+                   bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax,
+                   bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin, bbox.zmax - bbox.zmin);
       }
     }
   }
@@ -340,8 +340,10 @@ namespace {
       if (interFace.compute_bbox()) {
         Ioss::AxisAlignedBoundingBox bbox = eb->get_bounding_box();
         fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                   "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
-                   bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax);
+                   "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
+                   "\t                Range X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
+                   bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax,
+                   bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin, bbox.zmax - bbox.zmin);
       }
     }
   }

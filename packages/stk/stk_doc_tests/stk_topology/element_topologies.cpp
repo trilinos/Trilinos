@@ -32,9 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
-#include <vector>
+#include "gtest/gtest.h"              // for AssertionResult, Message, TestPartResult, EXPECT_TRUE
+#include "stk_topology/topology.hpp"  // for topology, topology::FACE_RANK, topology::EDGE_RANK
+#include <vector>                     // for vector
 
 namespace {
 

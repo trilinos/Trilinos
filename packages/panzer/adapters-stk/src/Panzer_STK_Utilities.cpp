@@ -123,6 +123,8 @@ void gather_in_block(const std::string & blockId, const panzer::GlobalIndexer& d
       // grab the field
       const std::vector<int> & elmtOffset = dofMngr.getGIDFieldOffsets(blockId,fieldNum);
       fc[fieldStr] = Kokkos::DynRankView<double,PHX::Device>("fc",localCellIds.size(),elmtOffset.size());
+      auto field = Kokkos::create_mirror_view(fc[fieldStr]);
+
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
@@ -141,9 +143,10 @@ void gather_in_block(const std::string & blockId, const panzer::GlobalIndexer& d
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
-            fc[fieldStr](worksetCellIndex,basis) = x[lid];
+            field(worksetCellIndex,basis) = x[lid];
          }
       }
+      Kokkos::deep_copy(fc[fieldStr], field);
    }
 }
 

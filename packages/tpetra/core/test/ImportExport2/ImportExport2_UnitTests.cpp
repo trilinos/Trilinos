@@ -2303,7 +2303,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     }
     Tpetra::Details::packCrsMatrixWithOwningPIDs<Scalar, LO, GO, Node>(
         *A, exports, numExportPackets(), Importer->getExportLIDs(),
-        SourcePids(), constantNumPackets, distor);
+        SourcePids(), constantNumPackets);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done with packCrsMatrixWithOwningPIDs" << std::endl;
@@ -2370,7 +2370,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     size_t nnz2 =
       unpackAndCombineWithOwningPIDsCount<Scalar, LO, GO, Node> (*A, Importer->getRemoteLIDs (),
                                                                  imports (), numImportPackets (),
-                                                                 constantNumPackets, distor,
+                                                                 constantNumPackets,
                                                                  Tpetra::INSERT,
                                                                  Importer->getNumSameIDs (),
                                                                  Importer->getPermuteToLIDs (),
@@ -2406,7 +2406,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       imports (),
       numImportPackets (),
       constantNumPackets,
-      distor,
       Tpetra::INSERT,
       Importer->getNumSameIDs (),
       Importer->getPermuteToLIDs (),

@@ -54,13 +54,13 @@ void Build_Variable_Names(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool *
   // Build (and compare) element variable names.
   build_variable_names("element", interFace.elmt_var_names, interFace.elmt_var,
                        interFace.elmt_var_default, interFace.elmt_var_do_all_flag,
-                       file1.Elmt_Var_Names(), file2.Elmt_Var_Names(), diff_found);
+                       file1.Element_Var_Names(), file2.Element_Var_Names(), diff_found);
 
   // Build (and compare) element variable names.
   if (!interFace.ignore_attributes) {
     build_variable_names("element attribute", interFace.elmt_att_names, interFace.elmt_att,
                          interFace.elmt_att_default, interFace.elmt_att_do_all_flag,
-                         file1.Elmt_Att_Names(), file2.Elmt_Att_Names(), diff_found);
+                         file1.Element_Att_Names(), file2.Element_Att_Names(), diff_found);
   }
 
   // Build (and compare) nodeset variable names.
@@ -117,7 +117,6 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
     out_file_id = ex_create(diffile_name.c_str(), mode, &compws, &iows);
     if (out_file_id < 0) {
       Error(fmt::format("Couldn't create output file \"{}\".\n", diffile_name));
-      exit(1);
     }
     ex_copy(file1.File_ID(), out_file_id);
   }
@@ -154,9 +153,10 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
         DIFF_OUT(info, fmt::color::yellow);
       }
       if (interFace.coord_tol.type != ToleranceMode::IGNORE_) {
-        fmt::print("\nNodal coordinates will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
-                   interFace.coord_tol.value, interFace.coord_tol.typestr(),
-                   interFace.coord_tol.floor);
+        fmt::print(
+            "\nNodal coordinates will be compared:\n   {:<{}} tol: {:8g} ({}), floor: {:8g}\n",
+            "...", name_length(), interFace.coord_tol.value, interFace.coord_tol.typestr(),
+            interFace.coord_tol.floor);
       }
       else {
         std::ostringstream info;
@@ -165,8 +165,8 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
       }
 
       if (interFace.time_tol.type != ToleranceMode::IGNORE_) {
-        fmt::print("Time step values will be compared  .. tol: {:8g} ({}), floor: {:8g}\n",
-                   interFace.time_tol.value, interFace.time_tol.typestr(),
+        fmt::print("Time step values will be compared:\n   {:<{}} tol: {:8g} ({}), floor: {:8g}\n",
+                   "...", name_length(), interFace.time_tol.value, interFace.time_tol.typestr(),
                    interFace.time_tol.floor);
       }
       else {
@@ -182,10 +182,10 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
                            file1.Num_Nodal_Vars(), file2.Num_Nodal_Vars());
 
       output_compare_names("Element", interFace.elmt_var_names, interFace.elmt_var,
-                           file1.Num_Elmt_Vars(), file2.Num_Elmt_Vars());
+                           file1.Num_Element_Vars(), file2.Num_Element_Vars());
 
       output_compare_names("Element Attribute", interFace.elmt_att_names, interFace.elmt_att,
-                           file1.Num_Elmt_Atts(), file2.Num_Elmt_Atts());
+                           file1.Num_Element_Atts(), file2.Num_Element_Atts());
 
       output_compare_names("Nodeset", interFace.ns_var_names, interFace.ns_var, file1.Num_NS_Vars(),
                            file2.Num_NS_Vars());
@@ -194,9 +194,10 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
                            file2.Num_SS_Vars());
       if (!interFace.ignore_sideset_df && interFace.ss_df_tol.type != ToleranceMode::IGNORE_ &&
           file1.Num_Side_Sets() > 0 && file2.Num_Side_Sets() > 0) {
-        fmt::print(
-            "Sideset Distribution Factors will be compared .. tol: {:8g} ({}), floor: {:8g}\n",
-            interFace.ss_df_tol.value, interFace.ss_df_tol.typestr(), interFace.ss_df_tol.floor);
+        fmt::print("Sideset Distribution Factors will be compared:\n   {:<{}} tol: {:8g} ({}), "
+                   "floor: {:8g}\n",
+                   "...", name_length(), interFace.ss_df_tol.value, interFace.ss_df_tol.typestr(),
+                   interFace.ss_df_tol.floor);
       }
       else {
         if (interFace.ignore_sideset_df || interFace.ss_df_tol.type == ToleranceMode::IGNORE_) {
@@ -217,8 +218,8 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::strin
 
   std::vector<int> truth_tab;
   build_truth_table(EX_ELEM_BLOCK, "Element Block", interFace.elmt_var_names,
-                    file1.Num_Elmt_Blocks(), file1, file2, file1.Elmt_Var_Names(),
-                    file2.Elmt_Var_Names(), truth_tab, interFace.quiet_flag, diff_found);
+                    file1.Num_Element_Blocks(), file1, file2, file1.Element_Var_Names(),
+                    file2.Element_Var_Names(), truth_tab, interFace.quiet_flag, diff_found);
 
   std::vector<int> ns_truth_tab;
   build_truth_table(EX_NODE_SET, "Nodeset", interFace.ns_var_names, file1.Num_Node_Sets(), file1,
@@ -279,12 +280,12 @@ namespace {
       fmt::print("{} variables to be compared:\n", type);
       for (unsigned v = 0; v < names.size(); ++v) {
         if (v == 0) {
-          fmt::print("{:<32} tol: {:8g} ({}), floor: {:8g}\n", names[v], tol[v].value,
-                     tol[v].typestr(), tol[v].floor);
+          fmt::print("   {:<{}} tol: {:8g} ({}), floor: {:8g}\n", names[v], name_length(),
+                     tol[v].value, tol[v].typestr(), tol[v].floor);
         }
         else {
-          fmt::print("{:<32}      {:8g} ({}),        {:8g}\n", names[v], tol[v].value,
-                     tol[v].typestr(), tol[v].floor);
+          fmt::print("   {:<{}}      {:8g} ({}),        {:8g}\n", names[v], name_length(),
+                     tol[v].value, tol[v].typestr(), tol[v].floor);
         }
       }
     }
@@ -467,7 +468,6 @@ namespace {
           int                idx2 = find_string(var_names2, name, interFace.nocase_var_names);
           if (idx1 < 0 || idx2 < 0) {
             Error(fmt::format("Unable to find variable named '{}' on database.\n", name));
-            exit(1);
           }
 
           if (set1->is_valid_var(idx1)) {

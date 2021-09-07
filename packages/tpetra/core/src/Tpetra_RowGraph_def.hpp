@@ -42,8 +42,6 @@
 #ifndef TPETRA_ROWGRAPH_DEF_HPP
 #define TPETRA_ROWGRAPH_DEF_HPP
 
-#include "Tpetra_Distributor.hpp" // avoid error C2027: use of undefined type 'Tpetra::Distributor' at (void) distor below
-
 namespace Tpetra {
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -51,15 +49,13 @@ namespace Tpetra {
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
         Teuchos::Array<GlobalOrdinal>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-        size_t& constantNumPackets,
-        Distributor& distor) const
+        size_t& constantNumPackets) const
   {
     using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef Map<LO, GO, Node> map_type;
     const char tfecfFuncName[] = "packAndPrepare";
-    (void) distor; // forestall "unused argument" compiler warning
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,

@@ -85,10 +85,11 @@ namespace MueLu {
 #include "MueLu_UseShortNamesOrdinal.hpp"
 
   public:
-    typedef typename Node::execution_space execution_space;
-    typedef typename execution_space::memory_space memory_space;
-    typedef typename Kokkos::View<int[3], memory_space> intTupleView;
-    typedef typename Kokkos::View<LO[3],  memory_space> LOTupleView;
+    using execution_space = typename Node::execution_space;
+    using memory_space    = typename Node::memory_space;
+    using device_type     = Kokkos::Device<execution_space, memory_space>;
+    using intTupleView    = typename Kokkos::View<int[3], device_type>;
+    using LOTupleView     = typename Kokkos::View<LO[3],  device_type>;
 
   private:
 

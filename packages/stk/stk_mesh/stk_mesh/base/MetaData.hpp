@@ -615,7 +615,6 @@ private:
   mutable FieldBase* m_coord_field;
 
   std::vector< std::string >   m_entity_rank_names ;
-  std::vector<shards::CellTopologyManagedData*> m_created_topologies;  // Delete after 2019-07-18
 
   unsigned m_spatial_dimension;
   SurfaceBlockMap m_surfaceToBlock;

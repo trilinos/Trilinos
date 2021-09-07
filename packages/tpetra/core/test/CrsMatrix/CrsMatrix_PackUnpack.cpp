@@ -43,7 +43,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Core.hpp"
-#include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
@@ -170,7 +169,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
   Array<char> exports; // output argument; to be realloc'd
   Array<size_t> numPacketsPerLID (num_loc_rows, 0); // output argument
   size_t constantNumPackets; // output argument
-  Tpetra::Distributor distor (comm); // argument required, but not used
 
   out << "Calling packCrsMatrix" << endl;
 
@@ -180,7 +178,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     try {
       packCrsMatrix (*A, exports, numPacketsPerLID (),
                      exportLIDs ().getConst (),
-                     constantNumPackets, distor);
+                     constantNumPackets);
       local_op_ok = 1;
     }
     catch (std::exception& e) {
@@ -220,7 +218,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     try {
       unpackCrsMatrixAndCombine (*B, exports, numPacketsPerLID (),
                                  exportLIDs ().getConst (),
-                                 constantNumPackets, distor,
+                                 constantNumPackets,
                                  Tpetra::REPLACE);
       local_op_ok = 1;
     }
@@ -319,7 +317,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackThenUnpackAndCombine, SC, LO, G
     try {
       unpackCrsMatrixAndCombine (*B, exports, numPacketsPerLID (),
                                  exportLIDs ().getConst (),
-                                 constantNumPackets, distor,
+                                 constantNumPackets,
                                  Tpetra::ADD);
       local_op_ok = 1;
     }
@@ -438,14 +436,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
     Array<char> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     {
       int local_op_ok;
       std::ostringstream msg;
       try {
         packCrsMatrix (*A, exports, numPacketsPerLID (),
                        exportLIDs ().getConst (),
-                       constantNumPackets, distor);
+                       constantNumPackets);
         local_op_ok = 1;
       }
       catch (std::exception& e) {
@@ -483,7 +480,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
     Array<char> exports;
     Array<size_t> numPacketsPerLID(num_loc_rows, 0);
     size_t constantNumPackets;
-    Tpetra::Distributor distor(comm);
     out << "Calling packCrsMatrix" << endl;
     {
       int local_op_ok;
@@ -491,7 +487,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackWithError, SC, LO, GO, NT)
       try {
         packCrsMatrix (*A, exports, numPacketsPerLID (),
                        exportLIDs ().getConst (),
-                       constantNumPackets, distor);
+                       constantNumPackets);
         local_op_ok = 1;
       }
       catch (std::exception& e) {
@@ -546,7 +542,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
   Array<char> exports; // output argument; to be realloc'd
   Array<size_t> numPacketsPerLID (num_loc_rows, 0); // output argument
   size_t constantNumPackets; // output argument
-  Tpetra::Distributor distor (comm); // argument required, but not used
 
   out << "Calling packCrsMatrix" << endl;
 
@@ -556,7 +551,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
     try {
       packCrsMatrix (*A, exports, numPacketsPerLID (),
                      exportLIDs ().getConst (),
-                     constantNumPackets, distor);
+                     constantNumPackets);
       local_op_ok = 1;
     }
     catch (std::exception& e) {
@@ -596,7 +591,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, PackPartial, SC, LO, GO, NT)
     try {
       unpackCrsMatrixAndCombine (*B, exports, numPacketsPerLID (),
                                  exportLIDs ().getConst (),
-                                 constantNumPackets, distor,
+                                 constantNumPackets,
                                  Tpetra::REPLACE);
       local_op_ok = 1;
     }

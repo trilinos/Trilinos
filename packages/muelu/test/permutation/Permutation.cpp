@@ -333,7 +333,7 @@ int main(int argc, char* argv[]) {
   Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
   Xpetra::Parameters xpetraParameters(clp);
 
-  std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
+  std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda | hip)");
 
   switch (clp.parse(argc, argv, NULL)) {
     case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;

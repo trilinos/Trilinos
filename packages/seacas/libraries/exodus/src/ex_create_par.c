@@ -168,6 +168,11 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
 
   nc_mode = ex__handle_mode(my_mode, is_parallel, run_version);
 
+#if defined NC_NOATTCREORD
+  /* Disable attribute creation order tracking if available... */
+  nc_mode |= NC_NOATTCREORD;
+#endif
+
   if ((status = nc_create_par(path, nc_mode, comm, info, &exoid)) != NC_NOERR) {
     if (my_mode & EX_NETCDF4) {
 #if NC_HAS_PARALLEL4

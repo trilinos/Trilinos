@@ -4,6 +4,7 @@ Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20
+ eigen-analysis: type = cg
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -39,6 +40,7 @@ Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20   [unused]
+ eigen-analysis: type = cg
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -74,6 +76,7 @@ Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20   [unused]
+ eigen-analysis: type = cg
 Level 3
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -109,6 +112,7 @@ Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
 smoother -> 
  chebyshev: degree = 2
  chebyshev: ratio eigenvalue = 20   [unused]
+ eigen-analysis: type = cg
 Level 4
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)

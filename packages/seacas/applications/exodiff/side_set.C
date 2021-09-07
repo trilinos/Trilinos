@@ -53,16 +53,15 @@ template <typename INT> void Side_Set<INT>::entity_load_params()
   if (err < 0) {
     Error(fmt::format("{}: Failed to get sideset parameters for sideset {}. !  Aborting...\n",
                       __func__, id_));
-    exit(1);
   }
 
   numEntity        = sets[0].num_entry;
   num_dist_factors = sets[0].num_distribution_factor;
 }
 
-template <typename INT> void Side_Set<INT>::apply_map(const INT *elmt_map)
+template <typename INT> void Side_Set<INT>::apply_map(const std::vector<INT> &elmt_map)
 {
-  SMART_ASSERT(elmt_map != nullptr);
+  SMART_ASSERT(!elmt_map.empty());
   if (elmts != nullptr) {
     delete[] elmts;
     elmts = nullptr;
@@ -74,7 +73,7 @@ template <typename INT> void Side_Set<INT>::apply_map(const INT *elmt_map)
   load_sides(elmt_map);
 }
 
-template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) const
+template <typename INT> void Side_Set<INT>::load_sides(const std::vector<INT> &elmt_map) const
 {
   int err = 0;
   if ((elmts == nullptr || sides == nullptr) && numEntity > 0) {
@@ -86,10 +85,9 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
 
     if (err < 0) {
       Error(fmt::format("{}: Failed to read side set {}!  Aborting...\n", __func__, id_));
-      exit(1);
     }
 
-    if (elmt_map != nullptr) {
+    if (!elmt_map.empty()) {
       for (size_t i = 0; i < numEntity; i++) {
         elmts[i] = 1 + elmt_map[elmts[i] - 1];
       }
@@ -120,7 +118,8 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
 template <typename INT> void Side_Set<INT>::load_df() const
 {
   if (elmts == nullptr) {
-    load_sides();
+    std::vector<INT> tmp;
+    load_sides(tmp);
   }
 
   if (dist_factors != nullptr) {
@@ -142,7 +141,6 @@ template <typename INT> void Side_Set<INT>::load_df() const
     if (err < 0) {
       Error(fmt::format("{}: Failed to read side set node count for sideset {}!  Aborting...\n",
                         __func__, id_));
-      exit(1);
     }
   }
 
@@ -160,7 +158,6 @@ template <typename INT> void Side_Set<INT>::load_df() const
                       "file says there should be {},\n\t\tbut ex_get_side_set_node_count says "
                       "there should be {}!  Aborting...\n",
                       __func__, id_, num_dist_factors, index));
-    exit(1);
   }
   SMART_ASSERT(index == num_dist_factors);
   dist_factors = new double[index];
@@ -169,32 +166,35 @@ template <typename INT> void Side_Set<INT>::load_df() const
     Error(fmt::format(
         "{}: Failed to read side set distribution factors for sideset {}!  Aborting...\n", __func__,
         id_));
-    exit(1);
   }
 }
 
 template <typename INT> const INT *Side_Set<INT>::Elements() const
 {
-  load_sides();
+  std::vector<INT> tmp;
+  load_sides(tmp);
   return elmts;
 }
 
 template <typename INT> const INT *Side_Set<INT>::Sides() const
 {
-  load_sides();
+  std::vector<INT> tmp;
+  load_sides(tmp);
   return sides;
 }
 
 template <typename INT> std::pair<INT, INT> Side_Set<INT>::Side_Id(size_t position) const
 {
-  load_sides();
+  std::vector<INT> tmp;
+  load_sides(tmp);
   SMART_ASSERT(position < numEntity);
   return std::make_pair(elmts[sideIndex[position]], sides[sideIndex[position]]);
 }
 
 template <typename INT> size_t Side_Set<INT>::Side_Index(size_t position) const
 {
-  load_sides();
+  std::vector<INT> tmp;
+  load_sides(tmp);
   SMART_ASSERT(position < numEntity);
   return sideIndex[position];
 }
@@ -224,7 +224,6 @@ std::pair<INT, INT> Side_Set<INT>::Distribution_Factor_Range(size_t side) const
   if (dfIndex == nullptr) {
     Error(fmt::format("{}: Failed to get distribution factors for sideset {}!  Aborting...\n",
                       __func__, id_));
-    exit(1);
   }
   size_t side_index = sideIndex[side];
   return std::make_pair(dfIndex[side_index], dfIndex[side_index + 1]);

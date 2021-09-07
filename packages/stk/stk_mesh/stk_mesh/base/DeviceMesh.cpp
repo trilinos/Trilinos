@@ -380,7 +380,7 @@ void DeviceMesh::copy_entity_keys_to_device()
 void DeviceMesh::copy_mesh_indices_to_device()
 {
   unsigned length = hostMeshIndices.size();
-  Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace> nonconst_device_mesh_indices(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_dev_mesh_indices"), length);
+  Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace> nonconst_device_mesh_indices(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_dev_mesh_indices"), length);
   Kokkos::deep_copy(nonconst_device_mesh_indices, hostMeshIndices);
   deviceMeshIndices = nonconst_device_mesh_indices;
 }

@@ -38,7 +38,7 @@
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/Entity.hpp"
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_mesh/base/DeviceMesh.hpp"
 #include "stk_mesh/base/NgpFieldBase.hpp"
@@ -535,7 +535,7 @@ private:
   }
 
 
-  using FieldNameType = Kokkos::View<char*, UVMMemSpace>;
+  using FieldNameType = Kokkos::View<char*, stk::ngp::UVMMemSpace>;
   template <typename U> using HostArrayType = Kokkos::View<U*, Kokkos::HostSpace>;
 
   StkFieldSyncDebuggerType* m_stkFieldSyncDebugger;

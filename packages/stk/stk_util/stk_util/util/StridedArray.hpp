@@ -57,7 +57,7 @@ public:
   STK_FUNCTION
   T operator[](unsigned i) const
   {
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
     return dataPointer[stride*i];
 #else
     return dataPointer[i];

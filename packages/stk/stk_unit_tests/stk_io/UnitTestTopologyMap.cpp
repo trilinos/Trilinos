@@ -76,6 +76,7 @@ int testElement(const std::string &name, unsigned spatialDim)
   if (element->name() == "unknown"   ||
       element->name() == "bar4"      ||
       element->name() == "edge4"     ||
+      element->name() == "hex9"      ||
       element->name() == "hex16"     ||
       element->name() == "hex32"     ||
       element->name() == "hex64"     ||
