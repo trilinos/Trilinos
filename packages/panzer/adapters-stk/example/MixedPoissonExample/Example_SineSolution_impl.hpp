@@ -82,16 +82,19 @@ template <typename EvalT,typename Traits>
 void SineSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < solution.extent_int(1); ++point) {
+  auto ip_coordinates = this->wda(workset).int_rules[ir_index]->ip_coordinates.get_static_view();
+  auto solution_v = solution.get_static_view();
 
-      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
-      const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);
+  Kokkos::parallel_for (workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
+    for (int point = 0; point < solution_v.extent_int(1); ++point) {
 
-      solution(cell,point) = std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
+      const double & x = ip_coordinates(cell,point,0);
+      const double & y = ip_coordinates(cell,point,1);
+      const double & z = ip_coordinates(cell,point,2);
+
+      solution_v(cell,point) = std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
     }
-  }
+  });
 }
 
 //**********************************************************************
