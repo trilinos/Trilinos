@@ -76,7 +76,7 @@ namespace {
   using Tpetra::CrsMatrix;
   using Tpetra::CrsGraph;
   using Tpetra::RowMatrix;
-  using Tpetra::Import;
+  using Tpetra::Export;
   using Tpetra::global_size_t;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createVector;
@@ -97,7 +97,6 @@ namespace {
   //
   // UNIT TESTS
   //
-
   template <typename Scalar, typename LO, typename GO, typename Node>
   void applyAndCheckResult(
     Tpetra::CrsMatrix<Scalar, LO, GO, Node> &A,
@@ -112,26 +111,26 @@ namespace {
     MT norm = ScalarTraits<MT>::zero ();
 
     /* Fill a random vector on the original map */
-    Vector<Scalar,LO,GO,Node> AVecX(A.getDomainMap());
-    AVecX.randomize();
-
-    /* Import this vector to the new domainmap */
-    Vector<Scalar,LO,GO,Node> BVecX(B.getDomainMap());
-    Tpetra::Import<LO,GO,Node> TempImport(A.getDomainMap(), (newMap));
-    BVecX.doImport(AVecX,TempImport,Tpetra::INSERT);
+    Tpetra::Vector<Scalar,LO,GO,Node> vecX(A.getDomainMap());
+    vecX.randomize();
 
     /* Now do some multiplies */
-    Vector<Scalar,LO,GO,Node> AVecY(A.getRangeMap());
-    Vector<Scalar,LO,GO,Node> BVecY(B.getRangeMap());
-    A.apply(AVecX,AVecY);
-    B.apply(BVecX,BVecY);
+    Tpetra::Vector<Scalar,LO,GO,Node> AVecY(A.getRangeMap());
+    Tpetra::Vector<Scalar,LO,GO,Node> BVecY(B.getRangeMap());
+    A.apply(vecX,AVecY);
+    B.apply(vecX,BVecY);
 
-    BVecY.update (-STS::one (), AVecY, STS::one ());
-    norm = BVecY.norm2();
+    /* Export BVecY to the original range map for comparisons */
+    Tpetra::Vector<Scalar,LO,GO,Node> BVecYOrig(A.getRangeMap());
+    Tpetra::Export<LO,GO,Node> TempExport(newMap, A.getRangeMap());
+    BVecYOrig.doExport(BVecY,TempExport,Tpetra::INSERT);
+
+    BVecYOrig.update (-STS::one (), AVecY, STS::one ());
+    norm = BVecYOrig.norm2();
 
     std::cout << "Residual 2-norm: " << norm << std::endl
-              << "Residual 1-norm: " << BVecY.norm1 () << std::endl
-              << "Residual Inf-norm: " << BVecY.normInf () << std::endl;
+              << "Residual 1-norm: " << BVecYOrig.norm1 () << std::endl
+              << "Residual Inf-norm: " << BVecYOrig.normInf () << std::endl;
 
     const bool normSmallEnough = (norm <= as<MT> (1e-10));
     TEST_EQUALITY ( normSmallEnough, true );
@@ -139,7 +138,7 @@ namespace {
 
   //////////////////////////////////////////////////////////////////////////
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceDomainMap, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceRangeMap, LO, GO, Scalar, Node )
   {
     // Based on the FullTriDiag tests...
 
@@ -188,18 +187,18 @@ namespace {
     // Build a one-process Map.
     // we know the map is contiguous...
     const size_t NumMyElements = (comm->getRank () == 0) ?
-      A.getDomainMap ()->getGlobalNumElements () : 0;
+      A.getRangeMap ()->getGlobalNumElements () : 0;
     RCP<const Map<LO,GO,Node> > NewMap =
       rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm));
 
-    B.replaceDomainMap (NewMap);
+    B.replaceRangeMap (NewMap);
 
     applyAndCheckResult(A, B, NewMap, out, success);
   }
 
   //////////////////////////////////////////////////////////////////////////
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceDomainMapAndImporter, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ReplaceRangeMapAndExporter, LO, GO, Scalar, Node )
   {
     // Based on the FullTriDiag tests...
 
@@ -246,20 +245,20 @@ namespace {
 
     // we know the map is contiguous...
     const size_t NumMyElements = (comm->getRank () == 0) ?
-      A.getDomainMap ()->getGlobalNumElements () : 0;
+      A.getRangeMap ()->getGlobalNumElements () : 0;
     RCP<const Map<LO,GO,Node> > NewMap =
       rcp (new Map<LO,GO,Node> (INVALID, NumMyElements, ZERO, comm));
-    RCP<const Tpetra::Import<LO,GO,Node> > NewImport =
-      rcp (new Import<LO,GO,Node> (NewMap, A.getColMap ()));
+    RCP<const Tpetra::Export<LO,GO,Node> > NewExport =
+      rcp (new Export<LO,GO,Node> (B.getRowMap (), NewMap));
 
-    B.replaceDomainMapAndImporter (NewMap, NewImport);
+    B.replaceRangeMapAndExporter (NewMap, NewExport);
 
     applyAndCheckResult(A, B, NewMap, out, success);
   }
 
   //////////////////////////////////////////////////////////////////////////
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, DomainMapEqualsColMap, LO, GO, Scalar, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, RangeMapEqualsRowMap, LO, GO, Scalar, Node )
   {
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> STS;
@@ -298,11 +297,11 @@ namespace {
     A.fillComplete();
     B.fillComplete();
 
-    // Use the column map to exercise the check for Domain Map == Column Map
-    // in replaceDomainMap; By construction, Column Map is 1-to-1
-    RCP<const Map<LO,GO,Node> > NewMap = B.getColMap();
+    // Use the row map to exercise the check for Range Map == Row Map
+    // in replaceRangeMap; By construction, Column Map is 1-to-1
+    RCP<const Map<LO,GO,Node> > NewMap = B.getRowMap();
 
-    B.replaceDomainMap (NewMap);
+    B.replaceRangeMap (NewMap);
 
     applyAndCheckResult(A, B, NewMap, out, success);
   }
@@ -311,9 +310,9 @@ namespace {
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ReplaceDomainMap, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ReplaceDomainMapAndImporter, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, DomainMapEqualsColMap, LO, GO, SCALAR, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ReplaceRangeMap, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ReplaceRangeMapAndExporter, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, RangeMapEqualsRowMap, LO, GO, SCALAR, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
