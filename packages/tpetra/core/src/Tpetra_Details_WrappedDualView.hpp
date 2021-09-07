@@ -46,17 +46,18 @@
 #include "Teuchos_TestForException.hpp"
 #include <sstream>
 
-//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
-#define DEBUG_UVM_REMOVAL_ARGUMENT ,const char* callerstr = __builtin_FUNCTION()
+#define DEBUG_UVM_REMOVAL_ARGUMENT ,const char* callerstr = __builtin_FUNCTION(),const char * filestr=__builtin_FILE(),const int linnum = __builtin_LINE()
 
 #define DEBUG_UVM_REMOVAL_PRINT_CALLER(fn) \
   { \
   auto envVarSet = std::getenv("TPETRA_UVM_REMOVAL"); \
   if (envVarSet && (std::strcmp(envVarSet,"1") == 0)) \
     std::cout << (fn) << " called from " << callerstr \
+              << " at " << filestr << ":"<<linnum \
               << " host cnt " << dualView.h_view.use_count()  \
               << " device cnt " << dualView.d_view.use_count()  \
               << std::endl; \
@@ -487,14 +488,14 @@ public:
   typename HostViewType::HostMirror getHostCopy() const {
     auto X_dev = dualView.view_host();
     if(X_dev.span_is_contiguous()) {
-      auto mirror = Kokkos::create_mirror_view (X_dev);
-      Kokkos::deep_copy(X_dev,mirror);
+      auto mirror = Kokkos::create_mirror_view(X_dev);
+      Kokkos::deep_copy(mirror,X_dev);
       return mirror;
     }
     else {
       auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
-      auto mirror = Kokkos::create_mirror_view (X_contig);
-      Kokkos::deep_copy(X_contig,mirror);
+      auto mirror = Kokkos::create_mirror_view(X_contig);
+      Kokkos::deep_copy(mirror,X_contig);
       return mirror;
     }
   }
@@ -502,14 +503,14 @@ public:
   typename DeviceViewType::HostMirror getDeviceCopy() const {
     auto X_dev = dualView.view_device();
     if(X_dev.span_is_contiguous()) {
-      auto mirror = Kokkos::create_mirror_view (X_dev);
-      Kokkos::deep_copy(X_dev,mirror);
+      auto mirror = Kokkos::create_mirror_view(X_dev);
+      Kokkos::deep_copy(mirror,X_dev);
       return mirror;
     }
     else {
       auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
-      auto mirror = Kokkos::create_mirror_view (X_contig);
-      Kokkos::deep_copy(X_contig,mirror);
+      auto mirror = Kokkos::create_mirror_view(X_contig);
+      Kokkos::deep_copy(mirror,X_contig);
       return mirror;
     }
   }
