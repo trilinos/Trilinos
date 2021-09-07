@@ -46,7 +46,6 @@
 #ifndef MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP
 #define MUELU_SEMICOARSENPFACTORY_KOKKOS_DEF_HPP
 
-#define HAVE_MUELU_KOKKOS_REFACTOR
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
 #include <stdlib.h>
@@ -81,26 +80,24 @@ SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
                                DeviceType>>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-#define SET_VALID_ENTRY(name)                                                  \
-  validParamList->setEntry(name, MasterList::getEntry(name))
-  SET_VALID_ENTRY("semicoarsen: coarsen rate");
-#undef SET_VALID_ENTRY
+  std::string name = "semicoarsen: coarsen rate";
+  validParamList->setEntry(name, MasterList::getEntry(name));
   validParamList->set<RCP<const FactoryBase>>(
       "A", Teuchos::null, "Generating factory of the matrix A");
   validParamList->set<RCP<const FactoryBase>>(
       "Nullspace", Teuchos::null, "Generating factory of the nullspace");
   validParamList->set<RCP<const FactoryBase>>(
-      "Coordinates", Teuchos::null, "Generating factory for coorindates");
+      "Coordinates", Teuchos::null, "Generating factory for coordinates");
 
   validParamList->set<RCP<const FactoryBase>>(
       "LineDetection_VertLineIds", Teuchos::null,
-      "Generating factory for LineDetection information");
+      "Generating factory for LineDetection vertical line ids");
   validParamList->set<RCP<const FactoryBase>>(
       "LineDetection_Layers", Teuchos::null,
-      "Generating factory for LineDetection information");
+      "Generating factory for LineDetection layer ids");
   validParamList->set<RCP<const FactoryBase>>(
       "CoarseNumZLayers", Teuchos::null,
-      "Generating factory for LineDetection information");
+      "Generating factory for number of coarse z-layers");
 
   return validParamList;
 }
@@ -136,7 +133,6 @@ void SemiCoarsenPFactory_kokkos<
     }
     if (fineLevel.IsAvailable("Coordinates", myCoordsFact.get())) {
       fineLevel.DeclareInput("Coordinates", myCoordsFact.get(), this);
-      bTransferCoordinates_ = true;
     }
   }
 }
@@ -215,8 +211,6 @@ void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
   // transfer coordinates
   if (bTransferCoordinates_) {
     SubFactoryMonitor m2(*this, "TransferCoordinates", coarseLevel);
-    // Teuchos::FancyOStream> out =
-    // Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     typedef Xpetra::MultiVector<
         typename Teuchos::ScalarTraits<Scalar>::coordinateType, LO, GO, NO>
         xdMV;
@@ -291,13 +285,6 @@ void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
     // number of vertical lines on current node:
     LO numVertLines = Nnodes / FineNumZLayers;
     LO numLocalCoarseNodes = numVertLines * myCoarseZLayers;
-
-    // std::cout << "rowMap elements: " << rowMap->getNodeNumElements() <<
-    // std::endl; std::cout << "fineCoords: " <<
-    // fineCoords->getDataNonConst(0).size() << std::endl; std::cout <<
-    // "TVertLineId.size(): " << TVertLineId.size() << std::endl; std::cout <<
-    // "numVertLines=" << numVertLines << std::endl; std::cout <<
-    // "numLocalCoarseNodes=" << numLocalCoarseNodes << std::endl;
 
     RCP<const Map> coarseCoordMap = MapFactory::Build(
         fineCoords->getMap()->lib(),
@@ -376,13 +363,10 @@ void SemiCoarsenPFactory_kokkos<
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = LayerId[row / DofsPerNode];
     const auto localTempView = localTemp->getDeviceLocalView();
-    // const auto localTempView = localTemp->template getLocalView<DeviceType>();
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2LayerVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
   const auto FCol2LayerView = FCol2LayerVector->getDeviceLocalView();
-  // const auto FCol2LayerView =
-  //     FCol2LayerVector->template getLocalView<DeviceType>();
   const auto FCol2Layer = Kokkos::subview(FCol2LayerView, Kokkos::ALL(), 0);
 
   // Construct a map from fine level column to local dof per node id (including
@@ -395,12 +379,10 @@ void SemiCoarsenPFactory_kokkos<
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = row % DofsPerNode;
     const auto localTempView = localTemp->getDeviceLocalView();
-    // const auto localTempView = localTemp->template getLocalView<DeviceType>();
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2DofVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
   const auto FCol2DofView = FCol2DofVector->getDeviceLocalView();
-  // const auto FCol2DofView = FCol2DofVector->template getLocalView<DeviceType>();
   const auto FCol2Dof = Kokkos::subview(FCol2DofView, Kokkos::ALL(), 0);
 
   // Compute NVertLines
@@ -691,10 +673,6 @@ void SemiCoarsenPFactory_kokkos<
   const int numVectors = fineNullspace->getNumVectors();
   const auto fineNullspaceView = fineNullspace->getDeviceLocalView();
   const auto coarseNullspaceView = coarseNullspace->getDeviceLocalView();
-  // const auto fineNullspaceView =
-  //     fineNullspace->template getLocalView<DeviceType>();
-  // const auto coarseNullspaceView =
-  //     coarseNullspace->template getLocalView<DeviceType>();
   using range_policy = Kokkos::RangePolicy<execution_space>;
   Kokkos::parallel_for(
       "MueLu::SemiCoarsenPFactory_kokkos::BuildSemiCoarsenP Inject Nullspace",
