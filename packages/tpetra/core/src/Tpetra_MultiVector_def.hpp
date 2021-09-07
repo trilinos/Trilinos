@@ -271,6 +271,7 @@ namespace { // (anonymous)
                const Kokkos::Impl::ALL_t& colRng)
 
   {
+    // The bug we saw below should be harder to trigger here.
     return WrappedDualViewType(X,rowRng,colRng);
   }
 
@@ -280,7 +281,15 @@ namespace { // (anonymous)
                const Kokkos::Impl::ALL_t& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
-    return WrappedDualViewType(X,rowRng,colRng);
+    using DualViewType = typename WrappedDualViewType::DVT;
+    // Look carefullly at the comment in the below version of this function.
+    // The comment applies here as well.
+    if (X.extent (0) == 0 && X.extent (1) != 0) {
+      return WrappedDualViewType(DualViewType ("MV::DualView", 0, colRng.second - colRng.first));
+    }
+    else {
+      return  WrappedDualViewType(X,rowRng,colRng);
+    }
   }
 
   template<class WrappedDualViewType>
@@ -289,7 +298,22 @@ namespace { // (anonymous)
                const std::pair<size_t, size_t>& rowRng,
                const std::pair<size_t, size_t>& colRng)
   {
-    return WrappedDualViewType(X,rowRng,colRng);
+    using DualViewType = typename WrappedDualViewType::DVT;
+    // If you take a subview of a view with zero rows Kokkos::subview()
+    // always returns a DualView with the same data pointers.  This will break
+    // pointer equality testing in between two subviews of the same 2D View if
+    // it has zero row extent.  While the one (known) case where this was actually used 
+    // has been fixed, that sort of check could very easily be reintroduced in the future, 
+    // hence I've added this if check here.
+    //
+    // This is not a bug in Kokkos::subview(), just some very subtle behavior which
+    // future developers should be wary of.
+    if (X.extent (0) == 0 && X.extent (1) != 0) {
+      return WrappedDualViewType(DualViewType ("MV::DualView", 0, colRng.second - colRng.first));
+    }
+    else {
+      return WrappedDualViewType(X,rowRng,colRng);
+    }
   }
 
   template<class WrappedOrNotDualViewType>
