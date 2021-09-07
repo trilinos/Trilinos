@@ -2441,10 +2441,6 @@ namespace Tpetra {
     ///   \|A\|_F = \sqrt{\sum_{i,j} \|A(i,j)\|^2}.
     /// \f\].
     ///
-    /// If the matrix is fill complete, then the computed value is
-    /// cached; the cache is cleared whenever resumeFill() is called.
-    /// Otherwise, the value is computed every time the method is
-    /// called.
     mag_type getFrobeniusNorm () const override;
 
     /// \brief Return \c true if getLocalRowView() and
