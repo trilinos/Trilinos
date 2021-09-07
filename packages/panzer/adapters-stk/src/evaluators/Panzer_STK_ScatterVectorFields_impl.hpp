@@ -137,8 +137,12 @@ evaluateFields(panzer::Traits::EvalData workset)
       // scaline field value only if the scaling parameter is specified, otherwise use 1.0
       double scaling = (scaling_.size()>0) ? scaling_[fieldIndex] : 1.0;
 
-      for(unsigned i=0; i<field.extent(0);i++)
-        cellValue(i,0) = field(i,0,d);
+      auto cellValue_v = cellValue.get_static_view();
+      auto field_v = field.get_static_view();
+      Kokkos::parallel_for(field_v.extent(0), KOKKOS_LAMBDA (int i) {
+	  cellValue_v(i,0) = field_v(i,0,d);
+	});
+      Kokkos::fence();
 
       // add in vector value at d^th dimension
       mesh_->setCellFieldData(fieldName,blockId,localCellIds,cellValue.get_view(),scaling);
