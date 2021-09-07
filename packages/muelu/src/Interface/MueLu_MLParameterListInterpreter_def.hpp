@@ -778,7 +778,7 @@ namespace MueLu {
   void MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator & Op) const {
     try {
       Matrix& A = dynamic_cast<Matrix&>(Op);
-      if (A.GetFixedBlockSize() != blksize_)
+      if (A.IsFixedBlockSizeSet() && (A.GetFixedBlockSize() != blksize_))
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blksize_ << " (value of the parameter in the list) "
             << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
 
