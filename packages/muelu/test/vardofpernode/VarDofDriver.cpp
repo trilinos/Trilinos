@@ -56,6 +56,7 @@
 #include <MueLu_VisualizationHelpers.hpp>
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
+#include <MueLu_HierarchyManager.hpp>
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>

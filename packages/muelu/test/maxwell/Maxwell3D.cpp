@@ -63,6 +63,7 @@
 #include <Xpetra_IO.hpp>
 
 // MueLu
+#include <MueLu_HierarchyManager.hpp>
 #include <MueLu_RefMaxwell.hpp>
 #include <MueLu_Maxwell1.hpp>
 #include <MueLu_TestHelpers_Common.hpp>

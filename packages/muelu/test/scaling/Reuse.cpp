@@ -63,6 +63,7 @@
 #include <MueLu_Level.hpp>
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Exceptions.hpp>
+#include <MueLu_HierarchyManager.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 
 #include <MueLu_MutuallyExclusiveTime.hpp>

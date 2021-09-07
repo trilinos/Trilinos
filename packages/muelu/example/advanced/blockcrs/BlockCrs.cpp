@@ -55,25 +55,29 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
-#include "Xpetra_ConfigDefs.hpp"
-
-#include <MueLu.hpp>
-#include <MueLu_Level.hpp>
-#include <Tpetra_Operator.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-#include <Tpetra_CrsMatrixMultiplyOp.hpp>
-#include <Tpetra_BlockCrsMatrix_Helpers.hpp>
-#include <MueLu_TpetraOperator.hpp>
-#include <MueLu_Utilities.hpp>
-#include <Xpetra_TpetraVector.hpp>
-#include <Xpetra_TpetraBlockCrsMatrix.hpp>
-#include <MueLu_CreateTpetraPreconditioner.hpp>
 #include <Ifpack2_Factory.hpp>
 
+#include <MueLu.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <MueLu_HierarchyManager.hpp>
+#include <MueLu_Level.hpp>
+#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_Utilities.hpp>
+
+#include <MatrixMarket_Tpetra.hpp>
+
+#include <Tpetra_BlockCrsMatrix_Helpers.hpp>
+#include <Tpetra_CrsMatrixMultiplyOp.hpp>
+#include <Tpetra_Operator.hpp>
+
+#include <Xpetra_ConfigDefs.hpp>
+#include <Xpetra_TpetraBlockCrsMatrix.hpp>
+#include <Xpetra_TpetraVector.hpp>
+
 // Belos
-#include "BelosConfigDefs.hpp"
-#include "BelosLinearProblem.hpp"
-#include "BelosSolverFactory.hpp"
+#include <BelosConfigDefs.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosSolverFactory.hpp>
 #include <BelosTpetraAdapter.hpp>
 
 using Teuchos::RCP;

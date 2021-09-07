@@ -54,6 +54,8 @@
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 
+#include "MueLu_HierarchyManager.hpp"
+
 /*#include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_UnitTestRepository.hpp>

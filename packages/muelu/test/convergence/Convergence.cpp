@@ -63,10 +63,11 @@
 #include <Galeri_XpetraMaps.hpp>
 
 // MueLu
-#include "MueLu.hpp"
-#include "MueLu_Level.hpp"
-#include "MueLu_BaseClass.hpp"
-#include "MueLu_ParameterListInterpreter.hpp"
+#include <MueLu.hpp>
+#include <MueLu_Level.hpp>
+#include <MueLu_BaseClass.hpp>
+#include <MueLu_HierarchyManager.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
 
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_TestHelpers.hpp>

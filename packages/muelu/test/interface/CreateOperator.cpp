@@ -60,6 +60,7 @@
 #include <Xpetra_MultiVector.hpp>
 
 #include <MueLu.hpp>
+#include <MueLu_HierarchyManager.hpp>
 #include <MueLu_Level.hpp>
 #include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
