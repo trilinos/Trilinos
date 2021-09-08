@@ -502,7 +502,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    ScatterResidual_Jacobian_Functor<ScalarT,LO,GO,NodeT,LocalMatrixT> functor;
    functor.fillResidual = (r!=Teuchos::null);
    if(functor.fillResidual)
-     functor.r_data = r->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
    functor.jac = Jac->getLocalMatrixDevice();
    functor.lids = scratch_lids_;
 
