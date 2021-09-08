@@ -4326,6 +4326,26 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap)
+  {
+    const char prefix[] = "Tpetra::CrsGraph::replaceDomainMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      colMap_.is_null (), std::invalid_argument, prefix << "You may not call "
+      "this method unless the graph already has a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newDomainMap.is_null (), std::invalid_argument,
+      prefix << "The new domain Map must be nonnull.");
+
+    // Create a new importer, if needed
+    Teuchos::RCP<const import_type> newImporter = Teuchos::null;
+    if (newDomainMap != colMap_ && (! newDomainMap->isSameAs (*colMap_))) {
+      newImporter = rcp(new import_type(newDomainMap, colMap_));
+    }
+    this->replaceDomainMapAndImporter(newDomainMap, newImporter);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4349,7 +4369,7 @@ namespace Tpetra {
         // than once.  It's polite for them to do so, but not required.
         const bool colSameAsDom = colMap_->isSameAs (*newDomainMap);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (colSameAsDom, std::invalid_argument, "If the new Import is null, "
+          (!colSameAsDom, std::invalid_argument, "If the new Import is null, "
            "then the new domain Map must be the same as the current column Map.");
       }
       else {
@@ -4367,6 +4387,69 @@ namespace Tpetra {
 
     domainMap_ = newDomainMap;
     importer_ = Teuchos::rcp_const_cast<import_type> (newImporter);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap)
+  {
+    const char prefix[] = "Tpetra::CrsGraph::replaceRangeMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rowMap_.is_null (), std::invalid_argument, prefix << "You may not call "
+      "this method unless the graph already has a row Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newRangeMap.is_null (), std::invalid_argument,
+      prefix << "The new range Map must be nonnull.");
+
+    // Create a new exporter, if needed
+    Teuchos::RCP<const export_type> newExporter = Teuchos::null;
+    if (newRangeMap != rowMap_ && (! newRangeMap->isSameAs (*rowMap_))) {
+      newExporter = rcp(new export_type(rowMap_, newRangeMap));
+    }
+    this->replaceRangeMapAndExporter(newRangeMap, newExporter);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                              const Teuchos::RCP<const export_type>& newExporter)
+  {
+    const char prefix[] = "Tpetra::CrsGraph::replaceRangeMapAndExporter: ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rowMap_.is_null (), std::invalid_argument, prefix << "You may not call "
+      "this method unless the graph already has a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newRangeMap.is_null (), std::invalid_argument,
+      prefix << "The new domain Map must be nonnull.");
+
+    if (debug_) {
+      if (newExporter.is_null ()) {
+        // It's not a good idea to put expensive operations in a macro
+        // clause, even if they are side effect - free, because macros
+        // don't promise that they won't evaluate their arguments more
+        // than once.  It's polite for them to do so, but not required.
+        const bool rowSameAsRange = rowMap_->isSameAs (*newRangeMap);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (!rowSameAsRange, std::invalid_argument, "If the new Export is null, "
+           "then the new range Map must be the same as the current row Map.");
+      }
+      else {
+        const bool newRangeSameAsTgt =
+          newRangeMap->isSameAs (* (newExporter->getTargetMap ()));
+        const bool rowSameAsSrc =
+          rowMap_->isSameAs (* (newExporter->getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! rowSameAsSrc || ! newRangeSameAsTgt, std::invalid_argument, "If the "
+           "new Export is nonnull, then the current row Map must be the same "
+           "as the new Export's source Map, and the new range Map must be the "
+           "same as the new Export's target Map.");
+      }
+    }
+
+    rangeMap_ = newRangeMap;
+    exporter_ = Teuchos::rcp_const_cast<export_type> (newExporter);
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
