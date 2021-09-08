@@ -73,9 +73,8 @@ class TrilinosPRConfigurationInstallation(TrilinosPRConfigurationBase):
         print("--- cmd = {}".format(" \\\n   ".join(cmd)))
         print("--- ")
 
-        raise NotImplementedError("This is just stub code -- do not execute")
-
         if not self.args.dry_run:
+            raise NotImplementedError("This is just stub code -- do not execute")
             try:
                 subprocess.check_call(cmd, env=os.environ)
                 # Note: check_call will throw an exception if there's a problem.
