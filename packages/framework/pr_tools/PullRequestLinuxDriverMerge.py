@@ -34,6 +34,7 @@ def print_wrapper(text: str, prefix="PRLinuxDriverMerge> ", file=sys.stdout, end
     """
     """
     rval = print(f"{prefix}{text}", file=file, end=end)
+    sys.stdout.flush()
     return rval
 
 
