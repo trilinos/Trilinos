@@ -34,7 +34,7 @@ class Test_header(unittest.TestCase):
     '''Test that we can properly echo the header information'''
 
     def test_writeHeader(self):
-        with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
+        with mock.patch('sys.stdout', new=StringIO()) as m_stdout:
             PullRequestLinuxDriverMerge.write_header()
             stdout_actual = m_stdout.getvalue()
             print(f"stdout_actual = `{stdout_actual}`")
