@@ -41,7 +41,7 @@ class Test_header(unittest.TestCase):
             PullRequestLinuxDriverMerge.write_header()
             #stdout_actual = m_stdout.getvalue()
             #print(f"stdout_actual = `{stdout_actual}`")
-            self.assertIn("Begin: PullRequestLinuxDriver-Merge.py", m_stdout.getvalue())
+            self.assertIn("Begin: PullRequestLinuxDriverMerge.py", m_stdout.getvalue())
 
         return
 
