@@ -36,17 +36,13 @@ class Test_header(unittest.TestCase):
     def test_writeHeader(self):
         with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
             PullRequestLinuxDriverMerge.write_header()
-        self.assertIn("Begin: PullRequestLinuxDriver-Merge.py", m_stdout.getvalue())
 
+        stdout_actual = m_stdout.getvalue()
 
-#        self.assertEqual('''--------------------------------------------------------a------------------------
-#-
-#- Begin: PullRequestLinuxDriver-Merge.py
-#-
-#--------------------------------------------------------------------------------
-#''',
-#                         m_stdout.getvalue())
+        print(f"stdout_actual = `{stdout_actual`")
 
+        self.assertIn("Begin: PullRequestLinuxDriver-Merge.py", stdout_actual)
+        return
 
 
 class Test_EchoJenkinsVars(unittest.TestCase):
@@ -59,6 +55,7 @@ class Test_EchoJenkinsVars(unittest.TestCase):
         tmp_environ['WORKSPACE']     = os.path.join(os.sep, 'dev', 'null', 'TEST_WORKSPACE')
         tmp_environ['NODE_NAME']     = 'TEST_NODE_NAME'
         self.m_environ = mock.patch.dict(os.environ, tmp_environ, clear=True)
+        return
 
 
     def test_echoJenkinsVars(self):
@@ -78,8 +75,7 @@ class Test_EchoJenkinsVars(unittest.TestCase):
         self.assertIn("JOB_NAME = TEST_JOB_NAME", stdout_actual)
         self.assertIn("WORKSPACE = /dev/null/TEST_WORKSPACE", stdout_actual)
         self.assertIn("NODE_NAME = TEST_NODE_NAME", stdout_actual)
-
-
+        return
 
 
 class Test_parsing(unittest.TestCase):
@@ -220,6 +216,7 @@ class Test_mergeBranch(unittest.TestCase):
                                                   'source_remote/neverland']),
                                        ])
         self.assertEqual("git remote exists, removing it\n", m_stdout.getvalue())
+        return
 
 
     def test_mergeBranch_fails_on_source_fetch(self):
