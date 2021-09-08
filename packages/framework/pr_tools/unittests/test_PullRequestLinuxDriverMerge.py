@@ -36,12 +36,10 @@ class Test_header(unittest.TestCase):
     def test_writeHeader(self):
         with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
             PullRequestLinuxDriverMerge.write_header()
+            stdout_actual = m_stdout.getvalue()
+            print(f"stdout_actual = `{stdout_actual}`")
+            self.assertIn("Begin: PullRequestLinuxDriver-Merge.py", stdout_actual)
 
-        stdout_actual = m_stdout.getvalue()
-
-        print(f"stdout_actual = `{stdout_actual}`")
-
-        self.assertIn("Begin: PullRequestLinuxDriver-Merge.py", stdout_actual)
         return
 
 
