@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993, 2020 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2020, 2021 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -19,7 +19,7 @@
  * Note:  This version has been updated by Mike Gleason <mgleason@ncftp.com>
  */
 
-#if defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
 
 #define __windows__ 1
 #include <conio.h>
@@ -435,19 +435,16 @@ static void ap_gl_putc(int c)
 
 static void ap_gl_puts(const char *const buf)
 {
-  int len;
-
   if (buf) {
-    len = strlen(buf);
+    int len = strlen(buf);
     write(1, buf, len);
   }
 }
 
 static void ap_gl_error(const char *const buf)
 {
-  int len = strlen(buf);
-
   ap_gl_cleanup();
+  int len = strlen(buf);
   write(2, buf, len);
   exit(1);
 }
@@ -1536,49 +1533,31 @@ static void ap_gl_beep(void)
 
 static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
 {
-  char * startp;
-  size_t startoff, amt;
-  int    c;
-  int    qmode;
-  char * qstart;
-  char * lastspacestart;
-  char * cp;
-  int    ntoalloc, nused, nalloced, i;
-  char **newap_gl_matchlist;
-  char * strtoadd, *strtoadd1;
-  int    addquotes;
-  size_t llen, mlen, glen;
-  int    allmatch;
-  char * curposp;
-  size_t lenaftercursor;
-  char * matchpfx;
-  int    wasateol;
-  char   ellipsessave[4];
-
   /* Zero out the rest of the buffer, so we can move stuff around
    * and know we'll still be NUL-terminated.
    */
-  llen = strlen(buf);
+  size_t llen = strlen(buf);
   memset(buf + llen, 0, bufsize - llen);
   bufsize -= 4; /* leave room for a NUL, space, and two quotes. */
-  curposp        = buf + *loc;
-  wasateol       = (*curposp == '\0');
-  lenaftercursor = llen - (curposp - buf);
+  char * curposp        = buf + *loc;
+  int    wasateol       = (*curposp == '\0');
+  size_t lenaftercursor = llen - (curposp - buf);
   if (ap_gl_ellipses_during_completion != 0) {
+    char ellipsessave[4];
     memcpy(ellipsessave, curposp, (size_t)4);
     memcpy(curposp, "... ", (size_t)4);
     ap_gl_fixup(ap_gl_prompt, ap_gl_pos, ap_gl_pos + 3);
     memcpy(curposp, ellipsessave, (size_t)4);
   }
 
-  qmode          = 0;
-  qstart         = NULL;
-  lastspacestart = NULL;
-  matchpfx       = NULL;
+  int   qmode          = 0;
+  char *qstart         = NULL;
+  char *lastspacestart = NULL;
+  char *matchpfx       = NULL;
 
-  cp = buf;
+  char *cp = buf;
   while (cp < curposp) {
-    c = (int)*cp++;
+    int c = (int)*cp++;
     if (c == '\0')
       break;
     if ((c == '"') || (c == '\'')) {
@@ -1605,6 +1584,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
     }
   }
 
+  char *startp;
   if (qstart != NULL)
     startp = qstart + 1;
   else if (lastspacestart != NULL)
@@ -1612,8 +1592,8 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   else
     startp = buf;
 
-  cp   = startp;
-  mlen = (curposp - cp);
+  cp          = startp;
+  size_t mlen = (curposp - cp);
 
   matchpfx = (char *)malloc(mlen + 1);
   memcpy(matchpfx, cp, mlen);
@@ -1621,17 +1601,17 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
 
 #define AP_GL_COMPLETE_VECTOR_BLOCK_SIZE 64
 
-  nused              = 0;
-  ntoalloc           = AP_GL_COMPLETE_VECTOR_BLOCK_SIZE;
-  newap_gl_matchlist = (char **)malloc((size_t)(sizeof(char *) * (ntoalloc + 1)));
+  int    nused              = 0;
+  int    ntoalloc           = AP_GL_COMPLETE_VECTOR_BLOCK_SIZE;
+  char **newap_gl_matchlist = (char **)malloc((size_t)(sizeof(char *) * (ntoalloc + 1)));
   if (newap_gl_matchlist == NULL) {
     free(matchpfx);
     ap_gl_beep();
     return 0;
   }
   ap_gl_matchlist = newap_gl_matchlist;
-  nalloced        = ntoalloc;
-  for (i = nused; i <= nalloced; i++)
+  int nalloced    = ntoalloc;
+  for (int i = nused; i <= nalloced; i++)
     ap_gl_matchlist[i] = NULL;
 
   ap_gl_completion_exact_match_extra_char = ' ';
@@ -1642,7 +1622,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
           (char **)realloc((char *)ap_gl_matchlist, (size_t)(sizeof(char *) * (ntoalloc + 1)));
       if (newap_gl_matchlist == NULL) {
         /* not enough memory to expand list -- abort */
-        for (i = 0; i < nused; i++)
+        for (int i = 0; i < nused; i++)
           free(ap_gl_matchlist[i]);
         free(ap_gl_matchlist);
         ap_gl_matchlist = NULL;
@@ -1652,7 +1632,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
       }
       ap_gl_matchlist = newap_gl_matchlist;
       nalloced        = ntoalloc;
-      for (i = nused; i <= nalloced; i++)
+      for (int i = nused; i <= nalloced; i++)
         ap_gl_matchlist[i] = NULL;
     }
     cp                     = ap_gl_completion_proc(matchpfx, nused);
@@ -1667,13 +1647,12 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   }
 
   /* We now have an array strings, whose last element is NULL. */
-  strtoadd  = NULL;
-  strtoadd1 = NULL;
-  amt       = 0;
+  char *strtoadd  = NULL;
+  char *strtoadd1 = NULL;
 
-  addquotes = (ap_gl_filename_quoting_desired > 0) ||
-              ((ap_gl_filename_quoting_desired < 0) &&
-               (ap_gl_completion_proc == ap_gl_local_filename_completion_proc));
+  int addquotes = (ap_gl_filename_quoting_desired > 0) ||
+                  ((ap_gl_filename_quoting_desired < 0) &&
+                   (ap_gl_completion_proc == ap_gl_local_filename_completion_proc));
 
   if (nused == 1) {
     /* Exactly one match. */
@@ -1681,10 +1660,10 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   }
   else if ((nused > 1) && (mlen > 0)) {
     /* Find the greatest amount that matches. */
-    glen = 1;
-    for (glen = 1;; glen++) {
-      allmatch = 1;
-      for (i = 1; i < nused; i++) {
+    size_t glen = 1;
+    for (;; glen++) {
+      int allmatch = 1;
+      for (int i = 1; i < nused; i++) {
         if (ap_gl_matchlist[0][glen] != ap_gl_matchlist[i][glen]) {
           allmatch = 0;
           break;
@@ -1710,8 +1689,8 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
         *startp++ = (char)qmode;
       }
     }
-    startoff = (size_t)(startp - buf);
-    amt      = strlen(strtoadd);
+    size_t startoff = (size_t)(startp - buf);
+    size_t amt      = strlen(strtoadd);
     if ((amt + startoff + lenaftercursor) >= bufsize)
       amt = bufsize - (amt + startoff + lenaftercursor);
     memmove(curposp + amt - mlen, curposp, lenaftercursor + 1 /* NUL */);
@@ -1746,7 +1725,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   }
 
   /* Don't need this any more. */
-  for (i = 0; i < nused; i++)
+  for (int i = 0; i < nused; i++)
     free(ap_gl_matchlist[i]);
   free(ap_gl_matchlist);
   ap_gl_matchlist = NULL;

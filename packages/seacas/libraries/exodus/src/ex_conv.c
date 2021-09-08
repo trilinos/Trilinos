@@ -111,8 +111,7 @@ int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
                   int int64_status, bool is_parallel, bool is_hdf5, bool is_pnetcdf, bool is_write)
 {
   char                  errmsg[MAX_ERR_LENGTH];
-  struct ex__file_item *new_file;
-  int                   filetype = 0;
+  struct ex__file_item *new_file = NULL;
 
   /*! ex__conv_init() initializes the floating point conversion process.
    *
@@ -220,6 +219,7 @@ int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
    *  3 -- netcdf4 classic  (NC_FORMAT_NETCDF4_CLASSIC -1)
    */
 
+  int filetype = 0;
   nc_inq_format(exoid, &filetype);
 
   if (!(new_file = malloc(sizeof(struct ex__file_item)))) {
@@ -279,8 +279,6 @@ int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
  */
 void ex__conv_exit(int exoid)
 {
-
-  char                  errmsg[MAX_ERR_LENGTH];
   struct ex__file_item *file = file_list;
   struct ex__file_item *prev = NULL;
 
@@ -295,6 +293,7 @@ void ex__conv_exit(int exoid)
   }
 
   if (!file) {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: failure to clear file id %d - not in list.", exoid);
     ex_err(__func__, errmsg, -EX_BADFILEID);
     EX_FUNC_VOID();
@@ -389,10 +388,6 @@ int ex_set_int64_status(int exoid, int mode)
      | #EX_ALL_INT64_API | (#EX_MAPS_INT64_API \| #EX_IDS_INT64_API \| #EX_BULK_INT64_API \|
     #EX_INQ_INT64_API) |
   */
-
-  int api_mode = 0;
-  int db_mode  = 0;
-
   EX_FUNC_ENTER();
   struct ex__file_item *file = ex__find_file_item(exoid);
 
@@ -404,8 +399,8 @@ int ex_set_int64_status(int exoid, int mode)
   }
 
   /* Strip of all non-INT64_API values */
-  api_mode = mode & EX_ALL_INT64_API;
-  db_mode  = file->int64_status & EX_ALL_INT64_DB;
+  int api_mode = mode & EX_ALL_INT64_API;
+  int db_mode  = file->int64_status & EX_ALL_INT64_DB;
 
   file->int64_status = api_mode | db_mode;
   EX_FUNC_LEAVE(file->int64_status);
@@ -537,8 +532,7 @@ int ex__is_parallel(int exoid)
 int ex_set_parallel(int exoid, int is_parallel)
 {
   EX_FUNC_ENTER();
-  int                   old_value = 0;
-  struct ex__file_item *file      = ex__find_file_item(exoid);
+  struct ex__file_item *file = ex__find_file_item(exoid);
 
   if (!file) {
     char errmsg[MAX_ERR_LENGTH];
@@ -547,7 +541,7 @@ int ex_set_parallel(int exoid, int is_parallel)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  old_value         = file->is_parallel;
+  int old_value     = file->is_parallel;
   file->is_parallel = is_parallel;
   /* Stored as 1 for parallel, 0 for serial or file-per-processor */
   EX_FUNC_LEAVE(old_value);

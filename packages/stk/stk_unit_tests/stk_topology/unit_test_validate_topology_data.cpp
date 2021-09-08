@@ -32,12 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
+#include "gtest/gtest.h"              // for AssertionResult, Message, TestPartResult, EXPECT_TRUE
+#include "stk_topology/topology.hpp"  // for topology, topology::topology_t, topology_data, oper...
+#include <map>                        // for map, _Rb_tree_const_iterator, map<>::const_iterator
+#include <type_traits>                // for enable_if
+#include <utility>                    // for pair
+#include <vector>                     // for vector, operator<, operator==
 
-#include <map>
-#include <vector>
-#include <type_traits>
 
 using namespace stk;
 using namespace stk::topology_detail;

@@ -178,7 +178,7 @@ std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, 
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(centroid);
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::View<double*, stk::mesh::MemSpace> DeviceAverageView;
+  typedef Kokkos::View<double*, stk::ngp::MemSpace> DeviceAverageView;
   typedef typename DeviceAverageView::HostMirror HostAverageView;
 
   DeviceAverageView deviceAverageView("averageVew", 4);

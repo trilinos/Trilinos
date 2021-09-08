@@ -168,11 +168,11 @@ int main(int argc, char *argv[])
 
   if (rank == 0 && !interFace.quiet) {
     if (num_proc > 1) {
-      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds on {} processors.\n",
+      fmt::print(stderr, "\n\n\tTotal Execution Time = {:.5} seconds on {} processors.\n",
                  end - begin, num_proc);
     }
     else {
-      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds.\n", end - begin);
+      fmt::print(stderr, "\n\n\tTotal Execution Time = {:.5} seconds.\n", end - begin);
     }
   }
 

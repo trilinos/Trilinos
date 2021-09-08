@@ -1,7 +1,8 @@
 #ifndef TOPOLOGY_DECL_HPP
 #define TOPOLOGY_DECL_HPP
 
-#include <stk_util/stk_config.h>
+// IWYU pragma: private, include "stk_topology/topology.hpp"
+#include "stk_util/stk_config.h"
 #include <string>
 
 namespace stk {

@@ -49,7 +49,7 @@
 #include <string>
 #include <memory>
 
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 
@@ -65,7 +65,7 @@ struct HostMeshIndex
 class HostMesh : public NgpMeshBase
 {
 public:
-  using MeshExecSpace     = stk::mesh::HostExecSpace;
+  using MeshExecSpace     = stk::ngp::HostExecSpace;
   using MeshIndex         = HostMeshIndex;
   using BucketType        = stk::mesh::Bucket;
   using ConnectedNodes    = util::StridedArray<const stk::mesh::Entity>;

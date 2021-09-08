@@ -51,19 +51,6 @@ namespace mesh {
 
 typedef shards::CellTopology CellTopology;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2019-07-18
-template< typename id_type >
-STK_DEPRECATED
-int findPermutation( const CellTopology top ,
-                     const id_type * const expected_node ,
-                     const id_type * const actual_node )
-{
-  return shards::findPermutation( *top.getCellTopologyData() , expected_node , actual_node );
-}
-#endif
-
-/** \} */
-
 } // namespace mesh
 } // namespace stk
 

@@ -427,7 +427,7 @@ namespace Iofaodel {
     };
   }
 
-  std::string get_entity_name(const kelpie::Key &k, std::string target)
+  std::string get_entity_name(const kelpie::Key &k, const std::string &target)
   {
     std::string name;
 
@@ -440,7 +440,8 @@ namespace Iofaodel {
     return name;
   }
 
-  std::set<std::string> get_entity_names(const std::vector<kelpie::Key> &keys, std::string target)
+  std::set<std::string> get_entity_names(const std::vector<kelpie::Key> &keys,
+                                         const std::string &             target)
   {
     std::set<std::string> names;
     for (auto k : keys) {

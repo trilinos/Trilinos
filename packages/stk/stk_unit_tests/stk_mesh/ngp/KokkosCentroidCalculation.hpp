@@ -53,7 +53,7 @@
 
 namespace {
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 typedef double my_double;
 #else
 typedef long double my_double;
@@ -63,6 +63,8 @@ typedef long double my_double;
 typedef Kokkos::OpenMP   ExecSpace ;
 #elif defined(KOKKOS_ENABLE_CUDA)
 typedef Kokkos::Cuda     ExecSpace ;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIP      ExecSpace ;
 #else
 typedef Kokkos::Serial   ExecSpace ;
 #endif
@@ -79,6 +81,8 @@ typedef Kokkos::HostSpace    MemSpace;
 typedef Kokkos::OpenMP       UVMMemSpace;
 #elif defined(KOKKOS_ENABLE_CUDA)
 typedef Kokkos::CudaUVMSpace UVMMemSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIPHostPinnedSpace UVMMemSpace;
 #else
 typedef Kokkos::HostSpace    UVMMemSpace;
 #endif
@@ -92,7 +96,7 @@ typedef Kokkos::View<my_double*, Kokkos::HostSpace>   HostViewVectorType;
 typedef Kokkos::TeamPolicy<ExecSpace>               team_policy ;
 typedef Kokkos::TeamPolicy<ExecSpace>::member_type  member_type ;
 
-#if defined(KOKKOS_ENABLE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 typedef Kokkos::LayoutLeft   Layout ;
 #else
 typedef Kokkos::LayoutRight   Layout ;

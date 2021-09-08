@@ -11,6 +11,7 @@ ADD_SUBDIRECTORIES(
   Comm
   Core
   CrsGraph
+  CrsGraphTransposer
   CrsMatrix
   Directory
   Distributor

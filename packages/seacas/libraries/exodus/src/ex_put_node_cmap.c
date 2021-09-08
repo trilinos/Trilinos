@@ -30,8 +30,8 @@
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NCNT_CMAP, etc
 
-int ex_put_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_int *proc_ids,
-                     int processor)
+int ex_put_node_cmap(int exoid, ex_entity_id map_id, const void_int *node_ids,
+                     const void_int *proc_ids, int processor)
 {
   int     map_idx, varid, dimid, status;
   size_t  start[1], count[1], ret_val;

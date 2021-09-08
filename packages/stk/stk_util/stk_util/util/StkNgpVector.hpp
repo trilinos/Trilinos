@@ -106,6 +106,8 @@ public:
 protected:
 #ifdef KOKKOS_ENABLE_CUDA
   using DeviceSpace = Kokkos::CudaSpace;
+#elif defined(KOKKOS_ENABLE_HIP)
+  using DeviceSpace = Kokkos::Experimental::HIPSpace;
 #else
   using DeviceSpace = Kokkos::HostSpace;
 #endif
@@ -118,7 +120,7 @@ public:
     {
       return deviceVals(i);
     }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     template <class Device>
     STK_FUNCTION Datatype & get(
       typename std::enable_if<

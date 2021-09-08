@@ -1209,8 +1209,7 @@ protected:
      buffer_device_type>& exports,
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets,
-   ::Tpetra::Distributor& /* distor */)
+   size_t& constantNumPackets)
   {
     using Teuchos::Comm;
     using Teuchos::RCP;
@@ -1406,7 +1405,6 @@ protected:
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t /* constantNumPackets */,
-   ::Tpetra::Distributor& /* distor */,
    const ::Tpetra::CombineMode /* combineMode */)
   {
     using Teuchos::Comm;

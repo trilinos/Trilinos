@@ -29,7 +29,8 @@
 #include <exodusII.h>
 #include <exodusII_int.h>
 
-int ex_put_ss_param_global(int exoid, void_int *global_ids, void_int *side_cnts, void_int *df_cnts)
+int ex_put_ss_param_global(int exoid, const void_int *global_ids, const void_int *side_cnts,
+                           const void_int *df_cnts)
 {
   int varid;
 

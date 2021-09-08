@@ -82,20 +82,23 @@ template <typename EvalT,typename Traits>
 void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   using panzer::index_t;
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < source.extent_int(1); ++point) {
+  auto ip_coordinates = workset.int_rules[ir_index]->ip_coordinates.get_static_view();
+  auto source_v = source.get_static_view();
 
-      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
+  Kokkos::parallel_for ("SimpleSource", workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
+    for (int point = 0; point < source_v.extent_int(1); ++point) {
 
-      source(cell,point,0) = 2.0+y-y*y + cos(2.0*M_PI*x)*sin(2.0*M_PI*y);
-      source(cell,point,1) = 2.0+x-x*x + sin(2.0*M_PI*x)*cos(2.0*M_PI*y);
+      const double & x = ip_coordinates(cell,point,0);
+      const double & y = ip_coordinates(cell,point,1);
+
+      source_v(cell,point,0) = 2.0+y-y*y + cos(2.0*M_PI*x)*sin(2.0*M_PI*y);
+      source_v(cell,point,1) = 2.0+x-x*x + sin(2.0*M_PI*x)*cos(2.0*M_PI*y);
 
       // if three d
-      if(source.extent(2)==3)
-        source(cell,point,2) = 0.0;
+      if(source_v.extent(2)==3)
+        source_v(cell,point,2) = 0.0;
     }
-  }
+  });
 }
 
 //**********************************************************************

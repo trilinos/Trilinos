@@ -71,18 +71,18 @@ template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>::
 ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & /* indexer */,
                               const Teuchos::ParameterList& p)
-{ 
+{
   std::string scatterName = p.get<std::string>("Scatter Name");
   Teuchos::RCP<PHX::FieldTag> scatterHolder =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   // get names to be evaluated
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
+  Teuchos::RCP<PHX::DataLayout> dl =
     p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
-  
+
   // build the vector of fields that this is dependent on
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
     PHX::MDField<const ScalarT,Cell,NODE> field = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
@@ -105,23 +105,23 @@ template <typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
 ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & indexer,
                               const Teuchos::ParameterList& p)
-  : globalIndexer_(indexer) 
+  : globalIndexer_(indexer)
   , globalDataKey_("Residual Scatter Container")
-{ 
+{
   std::string scatterName = p.get<std::string>("Scatter Name");
-  scatterHolder_ = 
+  scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   // get names to be evaluated
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
 
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
+  Teuchos::RCP<PHX::DataLayout> dl =
     p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
-  
+
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
@@ -143,7 +143,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & inde
 // **********************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
+postRegistrationSetup(typename TRAITS::SetupData d,
 		      PHX::FieldManager<TRAITS>& /* fm */)
 {
   const Workset & workset_0 = (*d.worksets_)[0];
@@ -192,12 +192,12 @@ preEvaluate(typename TRAITS::PreEvalData d)
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   using Thyra::VectorBase;
   using Thyra::ProductVectorBase;
-  
+
   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
   const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f(),true);
 
@@ -216,12 +216,12 @@ evaluateFields(typename TRAITS::EvalData workset)
     // Class data fields for lambda capture
     const auto& fieldOffsets = fieldOffsets_[fieldIndex];
     const auto& worksetLIDs = worksetLIDs_;
-    const auto& fieldValues = scatterFields_[fieldIndex];
+    const auto& fieldValues = scatterFields_[fieldIndex].get_static_view();
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {       
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
-	const int lid = worksetLIDs(cell,fieldOffsets(basis));
-	Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis));
+	      const int lid = worksetLIDs(cell,fieldOffsets(basis));
+	      Kokkos::atomic_add(&kokkosResidual(lid,0), fieldValues(cell,basis));
       }
     });
   }
@@ -237,21 +237,21 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager> & inde
                               const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
-{ 
+{
   std::string scatterName = p.get<std::string>("Scatter Name");
-  scatterHolder_ = 
+  scatterHolder_ =
     Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
 
   // get names to be evaluated
-  const std::vector<std::string>& names = 
+  const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Dependent Names"));
 
   // grab map from evaluated names to field names
   fieldMap_ = p.get< Teuchos::RCP< std::map<std::string,std::string> > >("Dependent Map");
 
-  Teuchos::RCP<PHX::DataLayout> dl = 
+  Teuchos::RCP<PHX::DataLayout> dl =
     p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis")->functional;
-  
+
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
@@ -278,7 +278,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 {
   const Workset & workset_0 = (*d.worksets_)[0];
   const std::string blockId = this->wda(workset_0).block_id;
-  
+
   fieldIds_.resize(scatterFields_.size());
   fieldOffsets_.resize(scatterFields_.size());
   productVectorBlockIndex_.resize(scatterFields_.size());
@@ -318,7 +318,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
     hostBlockOffsets(blk) = blockOffset;
   }
-  blockOffsets_(numBlocks) = blockOffsets_(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
+  hostBlockOffsets(numBlocks) = hostBlockOffsets(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
   // Make sure the that hard coded derivative dimension in the
@@ -356,7 +356,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
+{
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   using Thyra::VectorBase;
@@ -364,7 +364,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   using Thyra::BlockedLinearOpBase;
 
   const auto& localCellIds = this->wda(workset).cell_local_ids_k;
-  
+
   const int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
   const RCP<const ContainerType> blockedContainer = blockedContainer_;
   const RCP<ProductVectorBase<double>> thyraBlockResidual = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_f());
@@ -404,7 +404,7 @@ evaluateFields(typename TRAITS::EvalData workset)
           const auto tpetraCrsMatrix = rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);
           const auto managedMatrix = tpetraCrsMatrix->getLocalMatrixDevice();
           const auto managedGraph = managedMatrix.graph;
-          
+
           // Create runtime unmanaged versions
           using StaticCrsGraphType = typename LocalMatrixType::StaticCrsGraphType;
           StaticCrsGraphType unmanagedGraph;
@@ -416,7 +416,7 @@ evaluateFields(typename TRAITS::EvalData workset)
           LocalMatrixType unmanagedMatrix(managedMatrix.values.label(), managedMatrix.numCols(), unmanagedValues, unmanagedGraph);
           new (&hostJacTpetraBlocks(row,col)) LocalMatrixType(unmanagedMatrix);
         }
-        
+
         hostBlockExistsInJac(row,col) = 1;
       }
       else {
@@ -425,7 +425,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     }
   }
   typename PHX::View<LocalMatrixType**>
-    jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numFieldBlocks); 
+    jacTpetraBlocks("panzer::ScatterResidual_BlockedTpetra<Jacobian>::jacTpetraBlocks",numFieldBlocks,numFieldBlocks);
   Kokkos::deep_copy(jacTpetraBlocks,hostJacTpetraBlocks);
   Kokkos::deep_copy(blockExistsInJac,hostBlockExistsInJac);
 
@@ -435,8 +435,10 @@ evaluateFields(typename TRAITS::EvalData workset)
   // lids for the sub-block that it is scattering to. The subviews
   // below are to offset the LID blocks correctly.
   const auto& globalIndexers = globalIndexer_->getFieldDOFManagers();
+  auto blockOffsets_h = Kokkos::create_mirror_view(blockOffsets_);
+  Kokkos::deep_copy(blockOffsets_h, blockOffsets_);
   for (size_t block=0; block < globalIndexers.size(); ++block) {
-    const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_(block),blockOffsets_(block+1)));
+    const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_h(block),blockOffsets_h(block+1)));
     globalIndexers[block]->getElementLIDs(localCellIds,subviewOfBlockLIDs);
   }
 
@@ -453,7 +455,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     // Class data fields for lambda capture
     const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];
     const PHX::View<const LO**> worksetLIDs = worksetLIDs_;
-    const PHX::View<const ScalarT**> fieldValues = scatterFields_[fieldIndex].get_static_view();        
+    const PHX::View<const ScalarT**> fieldValues = scatterFields_[fieldIndex].get_static_view();
     const PHX::View<const LO*> blockOffsets = blockOffsets_;
 
     Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
@@ -462,7 +464,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
-        typename FieldType::array_type::reference_type tmpFieldVal = fieldValues(cell,basis); 
+        typename FieldType::array_type::reference_type tmpFieldVal = fieldValues(cell,basis);
 	const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
 
         if (haveResidual)
@@ -477,7 +479,7 @@ evaluateFields(typename TRAITS::EvalData workset)
             for (int i=0; i < sensSize; ++i) {
               cLIDs[i] = worksetLIDs(cell,start+i);
               vals[i] = tmpFieldVal.fastAccessDx(start+i);
-            }            
+            }
             jacTpetraBlocks(blockRowIndex,blockColIndex).sumIntoValues(rowLID,cLIDs,sensSize,vals,true,true);
           }
         }

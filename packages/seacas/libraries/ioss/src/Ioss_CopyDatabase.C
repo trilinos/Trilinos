@@ -231,8 +231,14 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   // Minimize number of times that we grow the memory buffer used for transferring field data.
   auto max_field = calculate_maximum_field_size(region);
   if (options.verbose && rank == 0) {
-    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {:L} bytes for field '{}'.\n",
-               max_field.first, max_field.second);
+    std::string label = "MiB";
+    double size = (double)max_field.first / 1024 / 1024;
+    if (size > 1024.0) {
+      label = "GiB";
+      size /= 1024.0;
+    }
+    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {:L} bytes ({:.3} {}) for field '{}'.\n",
+               max_field.first, size, label, max_field.second);
   }
 
   DataPool data_pool;

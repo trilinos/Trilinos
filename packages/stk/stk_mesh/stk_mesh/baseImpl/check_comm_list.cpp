@@ -101,12 +101,12 @@ void check_recvd_key_and_ghost_id_against_expected_recv_data(stk::CommBuffer& bu
     }
 }
 
-void check_for_expected_recv_data_that_failed_to_arrive(const std::vector<KeyProcGhostId>& expected_recv_data, std::ostream& os)
+void check_for_expected_recv_data_that_failed_to_arrive(const std::vector<KeyProcGhostId>& expected_recv_data, int localProc, std::ostream& os)
 {
     if (!expected_recv_data.empty()) {
         for(const KeyProcGhostId& data : expected_recv_data) {
            if (!data.alreadyFound) {
-              os << "\tFailed to recv {"<<data.key<<",ghost_id="<<data.ghostId<<"} from proc "<<data.proc<<"\n";
+              os << "\tP"<<localProc<<" Failed to recv {"<<data.key<<",ghost_id="<<data.ghostId<<"} from proc "<<data.proc<<"\n";
            }
         }
     }
@@ -166,7 +166,7 @@ bool is_comm_list_globally_consistent(const stk::mesh::BulkData& mesh, const Ent
     std::ostringstream os;
     unpack_and_check_recvd_data(comm, local_proc, num_procs, expected_recv_data, os);
 
-    check_for_expected_recv_data_that_failed_to_arrive(expected_recv_data, os);
+    check_for_expected_recv_data_that_failed_to_arrive(expected_recv_data, local_proc, os);
 
     std::string str = os.str();
     if (!str.empty()) {

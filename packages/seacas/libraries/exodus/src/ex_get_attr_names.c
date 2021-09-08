@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,7 +34,6 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
 {
   int         status;
   int         varid, numattrdim, obj_id_ndx;
-  size_t      num_attr, i;
   char        errmsg[MAX_ERR_LENGTH];
   const char *dnumobjatt;
   const char *vattrbname;
@@ -121,6 +120,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
     EX_FUNC_LEAVE(EX_WARN); /* no attributes for this object */
   }
 
+  size_t num_attr = 0;
   if ((status = nc_inq_dimlen(exoid, numattrdim, &num_attr)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of attributes for %s %" PRId64 " in file id %d",
@@ -147,7 +147,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
     /* Names variable does not exist on the database; probably since this is an
      * older version of the database.  Return an empty array...
      */
-    for (i = 0; i < num_attr; i++) {
+    for (int i = 0; i < num_attr; i++) {
       names[i][0] = '\0';
     }
   }
