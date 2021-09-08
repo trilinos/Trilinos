@@ -36,13 +36,16 @@ class Test_header(unittest.TestCase):
     def test_writeHeader(self):
         with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout:
             PullRequestLinuxDriverMerge.write_header()
-        self.assertEqual('''--------------------------------------------------------------------------------
--
-- Begin: PullRequestLinuxDriver-Merge.py
--
---------------------------------------------------------------------------------
-''',
-                         m_stdout.getvalue())
+        self.assertIn("Begin: PullRequestLinuxDriver-Merge.py", m_stdout.getvalue())
+
+
+#        self.assertEqual('''--------------------------------------------------------a------------------------
+#-
+#- Begin: PullRequestLinuxDriver-Merge.py
+#-
+#--------------------------------------------------------------------------------
+#''',
+#                         m_stdout.getvalue())
 
 
 
@@ -50,14 +53,12 @@ class Test_EchoJenkinsVars(unittest.TestCase):
     '''Test that the Jenkins environment is echoed properly'''
 
     def setUp(self):
-        self.m_environ = mock.patch.dict(os.environ, {'JOB_BASE_NAME':'TEST_JOB_BASE_NAME',
-                                         'JOB_NAME':'TEST_JOB_NAME',
-                                         'WORKSPACE':os.path.join(os.sep,
-                                                                  'dev',
-                                                                  'null',
-                                                                  'TEST_WORKSPACE'),
-                                         'NODE_NAME':'TEST_NODE_NAME'},
-                            clear=True)
+        tmp_environ = {}
+        tmp_environ['JOB_BASE_NAME'] = 'TEST_JOB_BASE_NAME'
+        tmp_environ['JOB_NAME']      = 'TEST_JOB_NAME'
+        tmp_environ['WORKSPACE']     = os.path.join(os.sep, 'dev', 'null', 'TEST_WORKSPACE')
+        tmp_environ['NODE_NAME']     = 'TEST_NODE_NAME'
+        self.m_environ = mock.patch.dict(os.environ, tmp_environ, clear=True)
 
 
     def test_echoJenkinsVars(self):
@@ -67,28 +68,17 @@ class Test_EchoJenkinsVars(unittest.TestCase):
                 print(key + ' = ' + os.environ[key],
                       file=env_string_io)
 
-        expected_string = '''
-================================================================================
-Jenkins Environment Variables:
-- WORKSPACE    : /dev/null/TEST_WORKSPACE
+        tmp_path = os.path.join(os.sep, 'dev', 'null', 'TEST_WORKSPACE')
 
-================================================================================
-Environment:
+        with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout, self.m_environ:
+            PullRequestLinuxDriverMerge.echoJenkinsVars( tmp_path )
 
-  pwd = {cwd}
+        stdout_actual = m_stdout.getvalue()
+        self.assertIn("JOB_BASE_NAME = TEST_JOB_BASE_NAME", stdout_actual)
+        self.assertIn("JOB_NAME = TEST_JOB_NAME", stdout_actual)
+        self.assertIn("WORKSPACE = /dev/null/TEST_WORKSPACE", stdout_actual)
+        self.assertIn("NODE_NAME = TEST_NODE_NAME", stdout_actual)
 
-{environ}
-================================================================================
-'''.format(cwd=os.getcwd(),
-           environ=env_string_io.getvalue())
-
-        with mock.patch('sys.stdout', new_callable=StringIO) as m_stdout, \
-            self.m_environ:
-            PullRequestLinuxDriverMerge.echoJenkinsVars(os.path.join(os.sep,
-                                                                     'dev',
-                                                                     'null',
-                                                                     'TEST_WORKSPACE'))
-        self.assertEqual(expected_string, m_stdout.getvalue())
 
 
 
