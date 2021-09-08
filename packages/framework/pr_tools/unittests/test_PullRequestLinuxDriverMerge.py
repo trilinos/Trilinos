@@ -39,7 +39,7 @@ class Test_header(unittest.TestCase):
 
         stdout_actual = m_stdout.getvalue()
 
-        print(f"stdout_actual = `{stdout_actual`")
+        print(f"stdout_actual = `{stdout_actual}`")
 
         self.assertIn("Begin: PullRequestLinuxDriver-Merge.py", stdout_actual)
         return
