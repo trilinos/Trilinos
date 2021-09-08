@@ -468,7 +468,6 @@ namespace Tpetra {
 
     const size_t lclNumRows = this->getLocalLength ();
     view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
-    owningView_ = view_.getOriginalDualView();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -477,7 +476,6 @@ namespace Tpetra {
                const Teuchos::DataAccess copyOrView) :
     base_type (source),
     view_ (source.view_),
-    owningView_ (source.owningView_),
     whichVectors_ (source.whichVectors_)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
@@ -491,7 +489,6 @@ namespace Tpetra {
       // a deep copy.
       MV cpy = createCopy (source);
       this->view_ = cpy.view_;
-      this->owningView_ = cpy.owningView_;
       this->whichVectors_ = cpy.whichVectors_;
     }
     else if (copyOrView == Teuchos::View) {
@@ -510,8 +507,7 @@ namespace Tpetra {
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const dual_view_type& view) :
     base_type (map),
-    view_ (wrapped_dual_view_type(view)),
-    owningView_ (view)
+    view_ (wrapped_dual_view_type(view))
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
@@ -547,8 +543,7 @@ namespace Tpetra {
   MultiVector (const Teuchos::RCP<const map_type>& map,
                const wrapped_dual_view_type& view) :
     base_type (map),
-    view_ (view),
-    owningView_ (view.getOriginalDualView())
+    view_ (view)
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
@@ -621,7 +616,6 @@ namespace Tpetra {
     // initial contents, we mark the DualView as "modified on device."
     // That way, the next sync will synchronize it with the host view.
     dual_view.modify_device ();
-    owningView_ = dual_view;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -630,8 +624,7 @@ namespace Tpetra {
                const dual_view_type& view,
                const dual_view_type& origView) :
     base_type (map),
-    view_ (wrapped_dual_view_type(view,origView)),
-    owningView_ (origView)
+    view_ (wrapped_dual_view_type(view,origView))
   {
     const char tfecfFuncName[] = "MultiVector(map,view,origView): ";
 
@@ -671,7 +664,6 @@ namespace Tpetra {
                const Teuchos::ArrayView<const size_t>& whichVectors) :
     base_type (map),
     view_ (view),
-    owningView_ (view),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
   {
     using Kokkos::ALL;
@@ -741,7 +733,6 @@ namespace Tpetra {
       // original columns.  This ensures that the use of origView_ in
       // offsetView works correctly.
       //
-      // However, owningView_ is not a subview.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
       view_ = takeSubview (view_, ALL (), colRng);
@@ -757,7 +748,6 @@ namespace Tpetra {
                const Teuchos::ArrayView<const size_t>& whichVectors) :
     base_type (map),
     view_ (view),
-    owningView_ (view_.getOriginalDualView()),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
   {
     using Kokkos::ALL;
@@ -827,7 +817,6 @@ namespace Tpetra {
       // original columns.  This ensures that the use of origView_ in
       // offsetView works correctly.
       //
-      // However, owningView_ is not a subview.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
       view_ = takeSubview (view_, ALL (), colRng);
@@ -845,7 +834,6 @@ namespace Tpetra {
                const Teuchos::ArrayView<const size_t>& whichVectors) :
     base_type (map),
     view_ (wrapped_dual_view_type(view,origView)),
-    owningView_ (origView),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
   {
     using Kokkos::ALL;
@@ -962,8 +950,6 @@ namespace Tpetra {
     this->view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
     //Note: X_out will be completely overwritten
     auto X_out = this->getLocalViewDevice(Access::OverwriteAll);
-    //    origView_ = view_;
-    owningView_ = view_.getOriginalDualView();
 
     // Make an unmanaged host Kokkos::View of the input data.  First
     // create a View (X_in_orig) with the original stride.  Then,
@@ -1047,7 +1033,6 @@ namespace Tpetra {
       auto X_j_out = Kokkos::subview (X_out, rowRng, j);
       Kokkos::deep_copy (X_j_out, X_j_in);
     }
-    owningView_ = view_.getOriginalDualView();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3406,8 +3391,6 @@ namespace Tpetra {
       MV (subMap, newView) :
       MV (subMap, newView, X.whichVectors_ ());
 
-    subViewMV.owningView_ = X.owningView_;
-
     if (debug) {
       const LO lclNumRowsRet = static_cast<LO> (subViewMV.getLocalLength ());
       const LO numColsRet = static_cast<LO> (subViewMV.getNumVectors ());
@@ -3679,7 +3662,6 @@ namespace Tpetra {
       static_cast<size_t> (j) :
       static_cast<size_t> (X.whichVectors_[j]);
     this->view_ = takeSubview (X.view_, Kokkos::ALL (), range_type (jj, jj+1));
-    this->owningView_ = X.owningView_;
 
     // mfh 31 Jul 2017: It would be unwise to execute concurrent
     // Export or Import operations with different subviews of a
@@ -3785,7 +3767,7 @@ namespace Tpetra {
       throw std::runtime_error("Tpetra::MultiVector: A non-const view is alive outside and we cannot give a copy where host or device view can be modified outside");
     }
     else { 
-      const bool useHostView = owningView_.h_view.use_count() >= owningView_.d_view.use_count();
+      const bool useHostView = view_.host_view_use_count() >= view_.device_view_use_count();
       if (this->isConstantStride ()) {
         if (useHostView) {
           auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
@@ -4471,21 +4453,21 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clear_sync_state () {
-    owningView_.clear_sync_state ();
+    view_.getOriginalDualView().clear_sync_state ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_host () {
-    owningView_.sync_host ();
+    view_.getOriginalDualView().sync_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_device () {
-    owningView_.sync_device ();
+    view_.getOriginalDualView().sync_device ();
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -4493,14 +4475,14 @@ namespace Tpetra {
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   need_sync_host () const {
-    return owningView_.need_sync_host ();
+    return  view_.need_sync_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   need_sync_device () const {
-    return owningView_.need_sync_device ();
+    return  view_.need_sync_device ();
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -4508,14 +4490,14 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   modify_device () {
-    owningView_.modify_device ();
+    view_.getOriginalDualView().modify_device ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   modify_host () {
-    owningView_.modify_host ();
+    view_.getOriginalDualView().modify_host ();
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -4857,7 +4839,6 @@ namespace Tpetra {
   swap(MultiVector<ST, LO, GO, NT> & mv) {
     std::swap(mv.map_, this->map_);
     std::swap(mv.view_, this->view_);
-    std::swap(mv.owningView_, this->owningView_);
     std::swap(mv.whichVectors_, this->whichVectors_);
   }
 

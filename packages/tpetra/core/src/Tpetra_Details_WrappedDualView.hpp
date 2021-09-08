@@ -525,6 +525,23 @@ public:
   }
 
 
+  bool need_sync_host() const {
+    return originalDualView.need_sync_host();
+  }
+
+  bool need_sync_device() const {
+    return originalDualView.need_sync_device();
+  }
+    
+  int host_view_use_count() const {
+    return originalDualView.h_view.use_count();
+  }
+
+  int device_view_use_count() const {
+    return originalDualView.d_view.use_count();
+  }
+
+
   // A Kokkos implementation of WrappedDualView will have to make these
   // functions publically accessable, but in the Tpetra version, I'm
   // not sure we want this.  There are two options on proceeding here:
@@ -532,13 +549,15 @@ public:
   //    with a future Kokkos version.
   // 2) Make these protected and then friend Vector/MultiVector.  This will
   //    keep out users from shooting themselves in the feet.  
-  const  DualViewType getOriginalDualView() const {
+  DualViewType getOriginalDualView() const {
     return originalDualView;
   }
 
   const DualViewType getDualView() const {
     return dualView;
   }
+
+
 
 
 

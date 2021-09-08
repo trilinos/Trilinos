@@ -2333,41 +2333,6 @@ namespace Tpetra {
     /// Use \c const sparingly!
     mutable wrapped_dual_view_type view_;
 
-    /// \brief The "original view" of the MultiVector's data.
-    ///
-    /// Methods like offsetView() return a view of a contiguous subset
-    /// of rows.  At some point, we might like to get all of the rows
-    /// back, by taking another view of a <i>super</i>set of rows.
-    /// For example, we might like to get a column Map view of a
-    /// (domain Map view of a (column Map MultiVector)).  Ifpack2's
-    /// implementation of Gauss-Seidel and SOR in CrsMatrix relies on
-    /// this functionality.  However, Kokkos (rightfully) forbids us
-    /// from taking a superset of rows of the current view.
-    ///
-    /// We deal with this at the Tpetra level by keeping around the
-    /// original view of <i>all</i> the rows (and columns), which is
-    /// \c origView_.  Methods like offsetView() then use origView_,
-    /// not view_, to make the subview for the returned MultiVector.
-    /// Furthermore, offsetView() can do error checking by getting the
-    /// original number of rows from origView_.
-    ///
-    /// This may pose some problems for offsetView if it is given an
-    /// offset other than zero, but that case is hardly exercised, so
-    /// I am not going to worry about it for now.
-    ///
-    /// Note that the "original" view isn't always original.  It
-    /// always has the original number of rows.  However, some special
-    /// cases of constructors that take a whichVectors argument, when
-    /// whichVectors.size() is 1, may point origView_ to the column to
-    /// view.  Those constructors do this so that the resulting
-    /// MultiVector has constant stride.  This special case does not
-    /// affect correctness of offsetView and related methods.
-    //    mutable wrapped_dual_view_type origView_;
-
-    /// \brief The true original DualView - it owns the memory of this
-    ///  MultiVector, and was not constructed as a subview of any other DualView.
-    mutable dual_view_type owningView_;
-
     /// \brief Indices of columns this multivector is viewing.
     ///
     /// If this array has nonzero size, then this multivector is a
