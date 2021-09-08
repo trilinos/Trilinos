@@ -41,11 +41,11 @@ def print_wrapper(text: str, prefix="PRLinuxDriverMerge> ", file=sys.stdout, end
 def write_header():
     """
     """
-    print_wrapper("-"*80)
-    print_wrapper("-")
-    print_wrapper("- Begin: PullRequestLinuxDriverMerge.py")
-    print_wrapper("-")
-    print_wrapper("-"*80)
+    print("-"*80)
+    print("-")
+    print("- Begin: PullRequestLinuxDriverMerge.py")
+    print("-")
+    print("-"*80)
 
 
 def echoJenkinsVars(workspace):
