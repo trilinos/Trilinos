@@ -55,6 +55,8 @@
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
+#include <Xpetra_IO.hpp>
+
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -312,9 +314,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     Teuchos::RCP<MultiVector> xpetraXXX = MultiVectorFactory::Build(LapMap,1);
     Teuchos::RCP<MultiVector> xpetraYYY = MultiVectorFactory::Build(LapMap,1);
 
-    RCP<MultiVector> temp = IO::ReadMultiVector ("xxx.mm", LinearMap);
+    RCP<MultiVector> temp = Xpetra::IO<SC,LO,GO,NO>::ReadMultiVector ("xxx.mm", LinearMap);
     xpetraXXX->doImport(*temp, *Importer, Xpetra::INSERT);
-    temp = IO::ReadMultiVector ("yyy.mm", LinearMap);
+    temp = Xpetra::IO<SC,LO,GO,NO>::ReadMultiVector ("yyy.mm", LinearMap);
     xpetraYYY->doImport(*temp, *Importer, Xpetra::INSERT);
 
     Teuchos::RCP<MultiVector> coordinates = MultiVectorFactory::Build(LapMap,2);
@@ -374,7 +376,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<MultiVector> RHS  = MultiVectorFactory::Build(DistributedMap,1);
     RCP<MultiVector> LHS  = MultiVectorFactory::Build(DistributedMap,1);
 
-    temp = IO::ReadMultiVector ("rhs.mm", dofLinearMap);
+    temp = Xpetra::IO<SC,LO,GO,NO>::ReadMultiVector ("rhs.mm", dofLinearMap);
     RHS->doImport(*temp, *dofImporter, Xpetra::INSERT);
     LHS->putScalar(zero);
 

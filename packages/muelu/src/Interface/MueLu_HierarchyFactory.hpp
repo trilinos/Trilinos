@@ -68,7 +68,7 @@ namespace MueLu {
     //@{ Constructors/Destructors.
 
     //! Destructor.
-    virtual ~HierarchyFactory() { }
+    virtual ~HierarchyFactory() = default;
 
     //@}
 
