@@ -24,6 +24,7 @@ except ImportError:  # pragma nocover
     import mock
 
 from argparse import Namespace
+import contextlib
 from subprocess import CalledProcessError
 
 import PullRequestLinuxDriverMerge
@@ -34,7 +35,9 @@ class Test_header(unittest.TestCase):
     '''Test that we can properly echo the header information'''
 
     def test_writeHeader(self):
-        with mock.patch('sys.stdout', new=StringIO()) as m_stdout:
+        #with mock.patch('sys.stdout', new=StringIO()) as m_stdout:
+        m_stdout = StringIO()
+        with contextlib.redirect_stdout(m_stdout):
             PullRequestLinuxDriverMerge.write_header()
             #stdout_actual = m_stdout.getvalue()
             #print(f"stdout_actual = `{stdout_actual}`")
