@@ -553,6 +553,10 @@ namespace stk {
           m_outputFiles[output_file_index]->write_global(globalVarName, p);
       }
 
+      void write_global(size_t output_file_index,
+                        const std::string& variableName,
+                        const stk::util::Parameter& param) const;
+
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
       STK_DEPRECATED void write_global(size_t output_file_index,
               const std::string &variableName,

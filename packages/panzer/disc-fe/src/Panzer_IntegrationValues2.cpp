@@ -1024,6 +1024,7 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
 
           auto dyn_side_cub_points_h = Kokkos::create_mirror_view(as_view(dyn_side_cub_points));
           auto old_dyn_side_cub_points_h = Kokkos::create_mirror_view(as_view(old_dyn_side_cub_points));
+          Kokkos::deep_copy(dyn_side_cub_points_h, as_view(dyn_side_cub_points));
           Kokkos::deep_copy(old_dyn_side_cub_points_h, as_view(old_dyn_side_cub_points));
 
           for (size_type ip = 0; ip < num_ip; ++ip)
@@ -1041,6 +1042,7 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
 
           auto dyn_cub_points_h = Kokkos::create_mirror_view(as_view(dyn_cub_points));
           auto old_dyn_cub_points_h = Kokkos::create_mirror_view(as_view(old_dyn_cub_points));
+          Kokkos::deep_copy(dyn_cub_points_h, as_view(dyn_cub_points));
           Kokkos::deep_copy(old_dyn_cub_points_h, as_view(old_dyn_cub_points));
 
           for (size_type ip = 0; ip < num_ip; ++ip)
@@ -1057,6 +1059,7 @@ evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
 
           auto dyn_cub_weights_h = Kokkos::create_mirror_view(as_view(dyn_cub_weights));
           auto old_dyn_cub_weights_h = Kokkos::create_mirror_view(as_view(old_dyn_cub_weights));
+          Kokkos::deep_copy(dyn_cub_weights_h, as_view(dyn_cub_weights));
           Kokkos::deep_copy(old_dyn_cub_weights_h, as_view(old_dyn_cub_weights));
 
           for (size_type ip = 0; ip < dyn_cub_weights.extent(0); ++ip)

@@ -113,6 +113,7 @@
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #endif
@@ -1806,7 +1807,7 @@ namespace MueLu {
                                    int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     // === Semi-coarsening ===
-    RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
+    RCP<Factory>  semicoarsenFactory = Teuchos::null;
     if (paramList.isParameter("semicoarsen: number of levels") &&
         paramList.get<int>("semicoarsen: number of levels") > 0) {
 
@@ -1819,7 +1820,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
 
-      semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
+      MUELU_KOKKOS_FACTORY_NO_DECL(semicoarsenFactory, SemiCoarsenPFactory, SemiCoarsenPFactory_kokkos);
       RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
       RCP<TogglePFactory>       togglePFactory       = rcp(new TogglePFactory());
 
@@ -1842,7 +1843,6 @@ namespace MueLu {
       manager.SetFactory("Ptent",     togglePFactory);
       manager.SetFactory("Nullspace", togglePFactory);
     }
-
 
     if (paramList.isParameter("semicoarsen: number of levels")) {
       auto tf = rcp(new ToggleCoordinatesTransferFactory());

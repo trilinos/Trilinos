@@ -92,7 +92,7 @@ namespace
       for (i = params.begin(); i != ie; ++i) {
 	const std::string parameterName = (*i).first;
 	stk::util::Parameter &param = params.get_param(parameterName);
-	stkIo.write_global(idx, parameterName, param.value, param.type);
+	stkIo.write_global(idx, parameterName, param);
       }
 
       stkIo.end_output_step(idx);/*@\label{io:global:write_end}*/
