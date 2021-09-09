@@ -66,6 +66,9 @@
 #include <MueLu_MLParameterListInterpreter.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 
+#include <MueLu_Hierarchy.hpp>
+#include <MueLu_HierarchyManager.hpp>
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif

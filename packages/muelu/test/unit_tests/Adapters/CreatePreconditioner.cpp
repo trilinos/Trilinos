@@ -55,6 +55,7 @@
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Hierarchy.hpp"
+#include "MueLu_HierarchyManager.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
