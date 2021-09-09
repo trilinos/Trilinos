@@ -30,22 +30,22 @@ import sys
 from textwrap import dedent
 
 
-def print_wrapper(text: str, prefix="PRLinuxDriverMerge> ", file=sys.stdout, end="\n"):
+def print_wrapper(text: str, prefix="PRLinuxDriverMerge> ", end="\n"):
     """
     """
-    rval = print(f"{prefix}{text}", file=file, end=end)
-    sys.stdout.flush()
+    rval = print(f"{prefix}{text}", end=end)
+    #sys.stdout.flush()
     return rval
 
 
 def write_header():
     """
     """
-    print("-"*80)
+    print_wrapper("-"*80)
+    print_wrapper("-")
+    print_wrapper("- Begin: PullRequestLinuxDriverMerge.py")
     print("-")
-    print("- Begin: PullRequestLinuxDriverMerge.py")
-    print("-")
-    print("-"*80)
+    print_wrapper("-"*80)
 
 
 def echoJenkinsVars(workspace):
@@ -102,7 +102,7 @@ def check_call_wrapper(args):
     """
     # print("PRLinuxDriverMerge> {}".format(" ".join(args)))
     print_wrapper("Checked Call:")
-    print_wrapper(" ".join(args))
+    print_wrapper(" ".join( [str(x) for x in args] ))
     subprocess.check_call(args)
     print_wrapper("")
     sys.stdout.flush()
