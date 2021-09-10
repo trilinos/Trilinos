@@ -64,7 +64,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     out << "version: " << MueLu::Version() << std::endl;
-    
+
     using Teuchos::RCP;
     using Teuchos::rcp;
     using real_type = typename Teuchos::ScalarTraits<SC>::coordinateType;
@@ -91,9 +91,67 @@ namespace MueLuTests {
     TEST_EQUALITY(1,1);
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, DetectDirichletRows, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    using TST = Teuchos::ScalarTraits<Scalar>;
+    using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    auto A = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build1DPoisson(100);
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar>  values;
+
+    LocalOrdinal localRowToZero = 5;
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    Array<Scalar> newValues(values.size(), TST::zero());
+
+    for (int j = 0; j < indices.size(); j++){
+      //keep diagonal
+      if (indices[j] == localRowToZero) {
+        newValues[j] = values[j];
+      }
+    }
+
+    A->replaceLocalValues(localRowToZero, indices, newValues);
+    A->fillComplete();
+
+    auto drows = Utils_Kokkos::DetectDirichletRows(*A);
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+
+    for (int j = 0; j < indices.size(); j++) {
+      //keep diagonal
+      if (indices[j] == localRowToZero) {
+        newValues[j] = values[j];
+      }
+      else {
+        newValues[j] = Teuchos::as<Scalar>(0.25);
+      }
+    }
+
+    A->replaceLocalValues(localRowToZero, indices, newValues);
+
+    //row 5 should not be Dirichlet
+    drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.24));
+    TEST_EQUALITY(drows[localRowToZero], false);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    //row 5 should be Dirichlet
+    drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.26));
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+  } //DetectDirichletRows
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, CuthillMcKee, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, CuthillMcKee, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, DetectDirichletRows, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
