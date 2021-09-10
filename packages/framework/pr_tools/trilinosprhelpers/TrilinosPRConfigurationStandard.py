@@ -39,12 +39,17 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         self.chdir_logged(self.arg_build_dir, create_if_missing=True)
 
         # Use GenConfig to write the configure script for cmake
+        genconfig_arglist = ["-y",
+                             "--force",
+                             "--cmake-fragment",
+                             os.path.join(self.arg_workspace_dir, self.config_script),
+                             self.arg_pr_genconfig_job_name
+                             ]
+
+        genconfig_inifile = Path(self.arg_pr_gen_config_file)
+
         self.message( "--- GenConfig:")
-        gc = GenConfig(["-y", "--force",
-                        "--cmake-fragment",
-                        os.path.join(self.arg_workspace_dir,self.config_script),
-                        self.arg_pr_genconfig_job_name],
-                        gen_config_ini_file=(Path(self.arg_pr_gen_config_file)))
+        gc = GenConfig(genconfig_arglist, gen_config_ini_file=genconfig_inifile)
 
         if not self.args.dry_run:
             gc.write_cmake_fragment()
