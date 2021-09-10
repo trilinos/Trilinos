@@ -37,21 +37,21 @@
 # ************************************************************************
 # @HEADER
 
-IF (EXTRA_REPO_INCLUDE_MISSING_OPTIONAL_DEP_PACKAGE)
-   SET(MISSING_OPTIONAL_DEP_PACKAGE MissingUpstreamPackage)
-  TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MissingUpstreamPackage)
-ELSE()
-   SET(MISSING_OPTIONAL_DEP_PACKAGE)
-ENDIF()
+if (EXTRA_REPO_INCLUDE_MISSING_OPTIONAL_DEP_PACKAGE)
+   set(MISSING_OPTIONAL_DEP_PACKAGE MissingUpstreamPackage)
+  tribits_allow_missing_external_packages(MissingUpstreamPackage)
+else()
+   set(MISSING_OPTIONAL_DEP_PACKAGE)
+endif()
 
-IF (EXTRA_REPO_INCLUDE_MISSING_REQUIRED_DEP_PACKAGE)
-   SET(MISSING_REQUIRED_DEP_PACKAGE MissingUpstreamPackage)
-  TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MissingUpstreamPackage)
-ELSE()
-   SET(MISSING_REQUIRED_DEP_PACKAGE)
-ENDIF()
+if (EXTRA_REPO_INCLUDE_MISSING_REQUIRED_DEP_PACKAGE)
+   set(MISSING_REQUIRED_DEP_PACKAGE MissingUpstreamPackage)
+  tribits_allow_missing_external_packages(MissingUpstreamPackage)
+else()
+   set(MISSING_REQUIRED_DEP_PACKAGE)
+endif()
 
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+tribits_package_define_dependencies(
   LIB_REQUIRED_PACKAGES Teuchos ${MISSING_REQUIRED_DEP_PACKAGE}
   LIB_OPTIONAL_PACKAGES ${MISSING_OPTIONAL_DEP_PACKAGE}
   LIB_REQUIRED_TPLS Boost

@@ -1,14 +1,14 @@
-TRIBITS_PACKAGE_DECL(WithSubpackages)
+tribits_package_decl(WithSubpackages)
 
-TRIBITS_ADD_DEBUG_OPTION()
+tribits_add_debug_option()
 
-TRIBITS_PROCESS_SUBPACKAGES()
+tribits_process_subpackages()
 
-TRIBITS_EXCLUDE_FILES(
+tribits_exclude_files(
   b/ExcludeFromRelease.txt
   b/src/AlsoExcludeFromTarball.txt
   )
 
-TRIBITS_PACKAGE_DEF()
+tribits_package_def()
 
-TRIBITS_PACKAGE_POSTPROCESS()
+tribits_package_postprocess()

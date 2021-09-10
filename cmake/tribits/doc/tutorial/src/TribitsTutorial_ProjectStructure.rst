@@ -123,10 +123,10 @@ Summary
 The basic unit of a TriBITS build system is the TriBITS package where
 source files are identified and targets are built.  Tribits has a
 standard way to handle dependencies within packages and will
-automatically enable/disable all apprpriate packages for a specified
+automatically enable/disable all appropriate packages for a specified
 configuration.  A TriBITS project is made up of one or more TriBITS
 packages that is either defined in the project's repo or in a TriBITS
-repository.  This document is intended to be breif and give just a
+repository.  This document is intended to be brief and give just a
 high level summary of the structure of a TriBITS project.  Please see
 the tutorial on converting a project to TriBITS or the TriBITS Example
 Project tutorial for much more detail and examples.

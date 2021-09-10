@@ -43,8 +43,8 @@ ELSE()
 ENDIF()
 
 IF(HAVE_STOKHOS_ENSEMBLE_GEMV)
-  SET(Stokhos_Ensemble_GEMV_Cache_Size 180224 CACHE INTEGER "Cache size used in the ensemble GEMV")
-  SET(Stokhos_Ensemble_GEMV_Team_Size 1 CACHE INTEGER "Team size used in the ensemble GEMV")
+  SET(Stokhos_Ensemble_GEMV_Cache_Size 180224 CACHE STRING "Cache size used in the ensemble GEMV")
+  SET(Stokhos_Ensemble_GEMV_Team_Size 1 CACHE STRING "Team size used in the ensemble GEMV")
 ENDIF()
 
 # FIXME: Remove this hard-coded setting.  We always have C++11 now.

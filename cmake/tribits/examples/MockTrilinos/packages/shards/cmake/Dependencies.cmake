@@ -37,6 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+tribits_package_define_dependencies(
   TEST_OPTIONAL_PACKAGES Teuchos
   )

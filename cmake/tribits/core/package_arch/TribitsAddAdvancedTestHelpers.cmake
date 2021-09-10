@@ -38,68 +38,68 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddTestHelpers)
+include(TribitsAddTestHelpers)
 
 
-# Set default ax number of TEST_<idx> blocks in TRIBITS_ADD_ADVANCED_TEST()
-IF ("${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS}" STREQUAL "")
-  SET(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS 20)
-ENDIF()
+# Set default ax number of TEST_<idx> blocks in tribits_add_advanced_test()
+if ("${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS}" STREQUAL "")
+  set(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS 20)
+endif()
 # NOTE: Given how includes are done in CMake, above is the only safe way to set
 # the default.
 
 
 # Compute TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX given
 # TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS
-MACRO(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX_COMPUTE)
-  MATH(EXPR TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX
+macro(tribits_add_advanced_test_max_num_test_cmnd_idx_compute)
+  math(EXPR TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX
     "${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS}-1")
-ENDMACRO()
+endmacro()
 
 
 # Check that the numbers of TEST_<idx> blocks is not violated.
 #
 # This gets called on the last # TEST_<idx> block of arguments in the parser.
 #
-FUNCTION(TRIBITS_ADD_ADVANCED_TEST_CHECK_EXCEED_MAX_NUM_TEST_BLOCKS)
-  IF (NOT "${PARSE_TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX}}"
+function(tribits_add_advanced_test_check_exceed_max_num_test_blocks)
+  if (NOT "${PARSE_TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX}}"
     STREQUAL ""
     )
-    LIST(FIND PARSE_TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX}
+    list(FIND PARSE_TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX}
       "TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS}"
       TEST_BLOCK_KEYWORD_FIND_IDX)
-    IF (NOT TEST_BLOCK_KEYWORD_FIND_IDX EQUAL -1)
-      MESSAGE_WRAPPER(FATAL_ERROR
-        "${TEST_NAME}: ERROR: Test block TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS} exceeds the max allowed test block TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX} as allowed by TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS=${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS}.  To fix this, call set(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS <larger-num>) before calling TRIBITS_ADD_ADVANCED_TEST()!")
+    if (NOT TEST_BLOCK_KEYWORD_FIND_IDX EQUAL -1)
+      message_wrapper(FATAL_ERROR
+        "${TEST_NAME}: ERROR: Test block TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS} exceeds the max allowed test block TEST_${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX} as allowed by TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS=${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS}.  To fix this, call set(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS <larger-num>) before calling tribits_add_advanced_test()!")
       # NOTE: The above error message is put on one line to simplify unit
       # testing checking the string.
-    ENDIF()
-  ENDIF()
-ENDFUNCTION()
+    endif()
+  endif()
+endfunction()
 
 
-# Join arguments together to add to a SET(...) statement to passed to
-# EXECUTE_PROCESS(...)
+# Join arguments together to add to a set(...) statement to passed to
+# execute_process(...)
 #
-FUNCTION(TRIBITS_JOIN_EXEC_PROCESS_SET_ARGS  OUTPUT_STRING_VAR)
-  SET(OUTPUT_STRING "")
-  FOREACH(STRING_VAL_RAW ${ARGN})
+function(tribits_join_exec_process_set_args  OUTPUT_STRING_VAR)
+  set(OUTPUT_STRING "")
+  foreach(STRING_VAL_RAW ${ARGN})
     # Remove quotes around arguments because CTest does not need them
-    STRING(REGEX REPLACE "\"" "" STRING_VAL "${STRING_VAL_RAW}")
-    IF (OUTPUT_STRING STREQUAL "")
-      SET(OUTPUT_STRING "\"${STRING_VAL}\"")
-    ELSE()
-      SET(OUTPUT_STRING "${OUTPUT_STRING} \"${STRING_VAL}\"")
-    ENDIF()
-  ENDFOREACH()
-  SET(${OUTPUT_STRING_VAR} "${OUTPUT_STRING}" PARENT_SCOPE)
-ENDFUNCTION()
+    string(REGEX REPLACE "\"" "" STRING_VAL "${STRING_VAL_RAW}")
+    if (OUTPUT_STRING STREQUAL "")
+      set(OUTPUT_STRING "\"${STRING_VAL}\"")
+    else()
+      set(OUTPUT_STRING "${OUTPUT_STRING} \"${STRING_VAL}\"")
+    endif()
+  endforeach()
+  set(${OUTPUT_STRING_VAR} "${OUTPUT_STRING}" PARENT_SCOPE)
+endfunction()
 
 
-# Unit test helper function for TRIBITS_ADD_ADVANCED_TEST(...) that resets
-# state before calling TRIBITS_ADD_ADVANCED_TEST(...) in unit test mode.
+# Unit test helper function for tribits_add_advanced_test(...) that resets
+# state before calling tribits_add_advanced_test(...) in unit test mode.
 #
-# NOTE: The varaibles:
+# NOTE: The variables:
 #
 #   TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
 #
@@ -112,17 +112,17 @@ ENDFUNCTION()
 #
 # If that variable is empty, then the advanced test did *not* get added.
 #
-FUNCTION(TRIBITS_ADD_ADVANCED_TEST_UNITTEST_RESET)
+function(tribits_add_advanced_test_unittest_reset)
 
-  GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_UNITTEST TRUE)
+  global_set(TRIBITS_ADD_ADVANCED_TEST_UNITTEST TRUE)
 
-  GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS "")
+  global_set(TRIBITS_ADD_ADVANCED_TEST_NUM_CMNDS "")
 
-  TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX_COMPUTE()
-  FOREACH( TEST_CMND_IDX RANGE
+  tribits_add_advanced_test_max_num_test_cmnd_idx_compute()
+  foreach( TEST_CMND_IDX RANGE
       ${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX}
     )
-    GLOBAL_SET(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX} "")
-  ENDFOREACH()
+    global_set(TRIBITS_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX} "")
+  endforeach()
 
-ENDFUNCTION()
+endfunction()

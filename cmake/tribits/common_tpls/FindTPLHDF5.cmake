@@ -4,76 +4,76 @@
 
 #
 # First, set up the variables for the (backward-compatible) TriBITS way of
-# finding HDF5.  These are used in case FIND_PACKAGE(HDF5 ...) is not called
+# finding HDF5.  These are used in case find_package(HDF5 ...) is not called
 # or does not find HDF5.  Also, these variables need to be non-null in order
 # to trigger the right behavior in the function
-# TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES().
+# tribits_tpl_find_include_dirs_and_libraries().
 #
 
-SET(REQUIRED_HEADERS hdf5.h)
-SET(REQUIRED_LIBS_NAMES hdf5)
+set(REQUIRED_HEADERS hdf5.h)
+set(REQUIRED_LIBS_NAMES hdf5)
 
-IF (HDF5_REQUIRE_FORTRAN)
-  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_fortran)
-ENDIF()
+if (HDF5_REQUIRE_FORTRAN)
+  set(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_fortran)
+endif()
 
-IF (TPL_ENABLE_MPI)
-  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} z)
-ENDIF()
+if (TPL_ENABLE_MPI)
+  set(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} z)
+endif()
 
-IF (TPL_ENABLE_Netcdf)
-  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_hl)
-ENDIF()
+if (TPL_ENABLE_Netcdf)
+  set(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} hdf5_hl)
+endif()
 
 #
 # Second, search for HDF5 components (if allowed) using the standard
-# FIND_PACKAGE(HDF5 ...).
+# find_package(HDF5 ...).
 #
-TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE(HDF5  HDF5_ALLOW_PREFIND)
-IF (HDF5_ALLOW_PREFIND)
+tribits_tpl_allow_pre_find_package(HDF5  HDF5_ALLOW_PREFIND)
+if (HDF5_ALLOW_PREFIND)
 
-  MESSAGE("-- Using FIND_PACKAGE(HDF5 ...) ...")
+  message("-- Using find_package(HDF5 ...) ...")
 
-  SET(HDF5_COMPONENTS C)
-  IF (HDF5_REQUIRE_FORTRAN)
-    LIST(APPEND HDF5_COMPONENTS Fortran)
-  ENDIF()
+  set(HDF5_COMPONENTS C)
+  if (HDF5_REQUIRE_FORTRAN)
+    list(APPEND HDF5_COMPONENTS Fortran)
+  endif()
 
-  IF (TPL_ENABLE_MPI)
-    SET(HDF5_PREFER_PARALLEL TRUE)
-  ENDIF()
+  if (TPL_ENABLE_MPI)
+    set(HDF5_PREFER_PARALLEL TRUE)
+  endif()
 
-  FIND_PACKAGE(HDF5 COMPONENTS ${HDF5_COMPONENTS})
+  find_package(HDF5 COMPONENTS ${HDF5_COMPONENTS})
 
   # Make sure that HDF5 is parallel.
-  IF (TPL_ENABLE_MPI AND NOT HDF5_IS_PARALLEL)
-    MESSAGE(FATAL_ERROR "Trilinos is configured for MPI, HDF5 is not.
+  if (TPL_ENABLE_MPI AND NOT HDF5_IS_PARALLEL)
+    message(FATAL_ERROR "Trilinos is configured for MPI, HDF5 is not.
     Did CMake find the correct libraries?
     Try setting HDF5_INCLUDE_DIRS and/or HDF5_LIBRARY_DIRS explicitly.
     ")
-  ENDIF()
+  endif()
 
-  IF (HDF5_FOUND)
+  if (HDF5_FOUND)
     # Tell TriBITS that we found HDF5 and there no need to look any further!
-    SET(TPL_HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} CACHE PATH
+    set(TPL_HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} CACHE PATH
       "HDF5 include dirs")
-    SET(TPL_HDF5_LIBRARIES ${HDF5_LIBRARIES} CACHE FILEPATH
+    set(TPL_HDF5_LIBRARIES ${HDF5_LIBRARIES} CACHE FILEPATH
       "HDF5 libraries")
-    SET(TPL_HDF5_LIBRARY_DIRS ${HDF5_LIBRARY_DIRS} CACHE PATH
+    set(TPL_HDF5_LIBRARY_DIRS ${HDF5_LIBRARY_DIRS} CACHE PATH
       "HDF5 library dirs")
-  ENDIF()
+  endif()
 
-ENDIF()
+endif()
 
 #
-# Third, call TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()
+# Third, call tribits_tpl_find_include_dirs_and_libraries()
 #
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( HDF5
+tribits_tpl_find_include_dirs_and_libraries( HDF5
   REQUIRED_HEADERS ${REQUIRED_HEADERS}
   REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
   )
-# NOTE: If FIND_PACKAGE(HDF5 ...) was called and successfully found HDF5, then
-# TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES() will use the already-set
+# NOTE: If find_package(HDF5 ...) was called and successfully found HDF5, then
+# tribits_tpl_find_include_dirs_and_libraries() will use the already-set
 # variables TPL_HDF5_INCLUDE_DIRS and TPL_HDF5_LIBRARIES and then print them
 # out (and set some other standard variables as well).  This is the final
 # "hook" into the TriBITS TPL system.
