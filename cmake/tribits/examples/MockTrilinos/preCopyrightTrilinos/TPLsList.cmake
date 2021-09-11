@@ -39,7 +39,7 @@
 
 
 # Only for unit testing
-TRIBITS_REPOSITORY_DEFINE_TPLS(
+tribits_repository_define_tpls(
   TekoDepTPL    cmake/    PT
   )
 

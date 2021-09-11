@@ -63,7 +63,7 @@ contains
     
     ! >>> BODY
     
-    ! intialize d
+    ! initialize d
     d = 1.0e14
 
     ! calculate the size of the edges array

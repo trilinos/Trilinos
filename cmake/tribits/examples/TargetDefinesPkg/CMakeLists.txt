@@ -1,13 +1,13 @@
-TRIBITS_PACKAGE(TargetDefinesPkg)
+tribits_package(TargetDefinesPkg)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_LIBRARY(
+tribits_add_library(
   targetdefinespkg
   HEADERS TargetDefinesPkg.hpp
   SOURCES TargetDefinesPkg.cpp
   )
 
-TRIBITS_ADD_TEST_DIRECTORIES(test)
+tribits_add_test_directories(test)
 
-TRIBITS_PACKAGE_POSTPROCESS()
+tribits_package_postprocess()

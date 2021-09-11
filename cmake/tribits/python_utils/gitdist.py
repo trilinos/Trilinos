@@ -1080,7 +1080,7 @@ def getCmndOutput(cmnd, rtnCode=False):
   return s(output)
 
 
-# Run a command and syncronize the output
+# Run a command and synchronize the output
 def runCmnd(options, cmnd):
   if options.debug:
     print("*** Running command: %s" % cmnd)

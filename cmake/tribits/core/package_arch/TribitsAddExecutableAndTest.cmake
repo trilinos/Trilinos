@@ -38,8 +38,8 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddTest)
+include(TribitsAddExecutable)
+include(TribitsAddTest)
 
 
 #
@@ -47,46 +47,46 @@ INCLUDE(TribitsAddTest)
 #
 
 
-MACRO(TRIBITS_FWD_PARSE_ARG  VAR_TO_SET_OUT  ARGNAME)
-  IF (PARSE_${ARGNAME})
-    SET(${VAR_TO_SET_OUT} ${${VAR_TO_SET_OUT}} ${ARGNAME} ${PARSE_${ARGNAME}})
-  ENDIF()
-ENDMACRO()
+macro(tribits_fwd_parse_arg  VAR_TO_SET_OUT  ARGNAME)
+  if (PARSE_${ARGNAME})
+    set(${VAR_TO_SET_OUT} ${${VAR_TO_SET_OUT}} ${ARGNAME} ${PARSE_${ARGNAME}})
+  endif()
+endmacro()
 
 
-MACRO(TRIBITS_FWD_PARSE_OPT  VAR_TO_SET_OUT  OPTNAME)
-  IF (PARSE_${OPTNAME})
-    SET(${VAR_TO_SET_OUT} ${${VAR_TO_SET_OUT}} ${OPTNAME})
-  ENDIF()
-ENDMACRO()
+macro(tribits_fwd_parse_opt  VAR_TO_SET_OUT  OPTNAME)
+  if (PARSE_${OPTNAME})
+    set(${VAR_TO_SET_OUT} ${${VAR_TO_SET_OUT}} ${OPTNAME})
+  endif()
+endmacro()
 
 
-MACRO(TRIBITS_ADD_EXECUTABLE_WRAPPER)
-  IF (TRIBITS_ADD_EXECUTABLE_AND_TEST_TEST_MODE)
-    SET(TRIBITS_ADD_EXECUTABLE_CAPTURE_ARGS ${ARGN} CACHE INTERNAL "")
-  ELSE()
-    TRIBITS_ADD_EXECUTABLE(${ARGN})
-  ENDIF()
-ENDMACRO()
+macro(tribits_add_executable_wrapper)
+  if (TRIBITS_ADD_EXECUTABLE_AND_TEST_TEST_MODE)
+    set(TRIBITS_ADD_EXECUTABLE_CAPTURE_ARGS ${ARGN} CACHE INTERNAL "")
+  else()
+    tribits_add_executable(${ARGN})
+  endif()
+endmacro()
 
 
-MACRO(TRIBITS_ADD_TEST_WRAPPER)
-  IF (TRIBITS_ADD_EXECUTABLE_AND_TEST_TEST_MODE)
-    SET(TRIBITS_ADD_TEST_CAPTURE_ARGS ${ARGN} CACHE INTERNAL "")
-  ELSE()
-    TRIBITS_ADD_TEST(${ARGN})
-  ENDIF()
-ENDMACRO()
+macro(tribits_add_test_wrapper)
+  if (TRIBITS_ADD_EXECUTABLE_AND_TEST_TEST_MODE)
+    set(TRIBITS_ADD_TEST_CAPTURE_ARGS ${ARGN} CACHE INTERNAL "")
+  else()
+    tribits_add_test(${ARGN})
+  endif()
+endmacro()
 
 #
-# @FUNCTION: TRIBITS_ADD_EXECUTABLE_AND_TEST()
+# @FUNCTION: tribits_add_executable_and_test()
 #
 # Add an executable and a test (or several tests) all in one shot (just calls
-# `TRIBITS_ADD_EXECUTABLE()`_ followed by `TRIBITS_ADD_TEST()`_).
+# `tribits_add_executable()`_ followed by `tribits_add_test()`_).
 #
 # Usage::
 #
-#   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   tribits_add_executable_and_test(
 #     <exeRootName>  [NOEXEPREFIX]  [NOEXESUFFIX]  [ADD_DIR_TO_NAME]
 #     SOURCES <src0> <src1> ...
 #     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
@@ -118,40 +118,40 @@ ENDMACRO()
 #     )
 #
 # This function takes a fairly common set of arguments to
-# `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ but not the full set
-# passed to ``TRIBITS_ADD_TEST()``.  See the documentation for
-# `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ to see which arguments
+# `tribits_add_executable()`_ and `tribits_add_test()`_ but not the full set
+# passed to ``tribits_add_test()``.  See the documentation for
+# `tribits_add_executable()`_ and `tribits_add_test()`_ to see which arguments
 # are accepted by which functions.
 #
 # Arguments that are specific to this function and not directly passed on to
-# ``TRIBITS_ADD_EXECUTABLE()`` or ``TRIBITS_ADD_TEST()`` include:
+# ``tribits_add_executable()`` or ``tribits_add_test()`` include:
 #
 #   ``XHOST_TEST <xhost0> <xhost1> ...``
 #
 #     When specified, this disables just running the tests for the named hosts
 #     ``<xhost0>``, ``<xhost0>`` etc. but still builds the executable for the
 #     test.  These are just passed in through the ``XHOST`` argument to
-#     ``TRIBITS_ADD_TEST()``.
+#     ``tribits_add_test()``.
 #
 #   ``XHOSTTYPE_TEST <xhosttype0> <hosttype1> ...``
 #
 #     When specified, this disables just running the tests for the named host
 #     types ``<hosttype0>``, ``<hosttype0>``, ..., but still builds the
 #     executable for the test.  These are just passed in through the
-#     ``XHOSTTYPE`` argument to ``TRIBITS_ADD_TEST()``.
+#     ``XHOSTTYPE`` argument to ``tribits_add_test()``.
 #
 # This is the function to use for simple test executables that you want to run
 # that either takes no arguments or just a simple set of arguments passed in
 # through ``ARGS``.  For more flexibility, just use
-# ``TRIBITS_ADD_EXECUTABLE()`` followed by ``TRIBITS_ADD_TEST()``.
+# ``tribits_add_executable()`` followed by ``tribits_add_test()``.
 #
-FUNCTION(TRIBITS_ADD_EXECUTABLE_AND_TEST EXE_NAME)
+function(tribits_add_executable_and_test EXE_NAME)
 
   #
   # A) Parse the input arguments
   #
 
-  CMAKE_PARSE_ARGUMENTS(
+  cmake_parse_arguments(
      #prefix
      PARSE
      #options
@@ -163,95 +163,95 @@ FUNCTION(TRIBITS_ADD_EXECUTABLE_AND_TEST EXE_NAME)
      ${ARGN}
      )
 
-  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+  tribits_check_for_unparsed_arguments()
 
-  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("")
-    MESSAGE("TRIBITS_ADD_EXECUTABLE_AND_TEST: ${EXE_NAME} ${ARGN}")
-  ENDIF()
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("")
+    message("TRIBITS_ADD_EXECUTABLE_AND_TEST: ${EXE_NAME} ${ARGN}")
+  endif()
 
-  IF(PARSE_ADDED_EXE_TARGET_NAME_OUT)
-    SET(${PARSE_ADDED_EXE_TARGET_NAME_OUT} "" PARENT_SCOPE)
-  ENDIF()
-  IF(PARSE_ADDED_TESTS_NAMES_OUT)
-    SET(${PARSE_ADDED_TESTS_NAMES_OUT} "" PARENT_SCOPE)
-  ENDIF()
+  if(PARSE_ADDED_EXE_TARGET_NAME_OUT)
+    set(${PARSE_ADDED_EXE_TARGET_NAME_OUT} "" PARENT_SCOPE)
+  endif()
+  if(PARSE_ADDED_TESTS_NAMES_OUT)
+    set(${PARSE_ADDED_TESTS_NAMES_OUT} "" PARENT_SCOPE)
+  endif()
 
   #
   # B) Arguments common to both
   #
 
-  SET(COMMON_CALL_ARGS "")
-  TRIBITS_FWD_PARSE_ARG(COMMON_CALL_ARGS COMM)
-  TRIBITS_FWD_PARSE_ARG(COMMON_CALL_ARGS CATEGORIES)
-  TRIBITS_FWD_PARSE_ARG(COMMON_CALL_ARGS HOST)
-  TRIBITS_FWD_PARSE_ARG(COMMON_CALL_ARGS XHOST)
-  TRIBITS_FWD_PARSE_ARG(COMMON_CALL_ARGS HOSTTYPE)
-  TRIBITS_FWD_PARSE_ARG(COMMON_CALL_ARGS XHOSTTYPE)
-  TRIBITS_FWD_PARSE_ARG(COMMON_CALL_ARGS EXCLUDE_IF_NOT_TRUE)
-  TRIBITS_FWD_PARSE_OPT(COMMON_CALL_ARGS NOEXEPREFIX)
-  TRIBITS_FWD_PARSE_OPT(COMMON_CALL_ARGS NOEXESUFFIX)
+  set(COMMON_CALL_ARGS "")
+  tribits_fwd_parse_arg(COMMON_CALL_ARGS COMM)
+  tribits_fwd_parse_arg(COMMON_CALL_ARGS CATEGORIES)
+  tribits_fwd_parse_arg(COMMON_CALL_ARGS HOST)
+  tribits_fwd_parse_arg(COMMON_CALL_ARGS XHOST)
+  tribits_fwd_parse_arg(COMMON_CALL_ARGS HOSTTYPE)
+  tribits_fwd_parse_arg(COMMON_CALL_ARGS XHOSTTYPE)
+  tribits_fwd_parse_arg(COMMON_CALL_ARGS EXCLUDE_IF_NOT_TRUE)
+  tribits_fwd_parse_opt(COMMON_CALL_ARGS NOEXEPREFIX)
+  tribits_fwd_parse_opt(COMMON_CALL_ARGS NOEXESUFFIX)
 
   #
-  # C) TribitsAddExecutable(...)
+  # C) tribitsaddexecutable(...)
   #
 
-  SET(CALL_ARGS "")
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS SOURCES)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS DEPLIBS)  # Deprecated
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS TESTONLYLIBS)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS IMPORTEDLIBS)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS DIRECTORY)
-  TRIBITS_FWD_PARSE_OPT(CALL_ARGS ADD_DIR_TO_NAME)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS LINKER_LANGUAGE)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS TARGET_DEFINES)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS DEFINES)
-  TRIBITS_FWD_PARSE_OPT(CALL_ARGS INSTALLABLE)
-  IF (PARSE_ADDED_EXE_TARGET_NAME_OUT)
-    LIST(APPEND  CALL_ARGS  ADDED_EXE_TARGET_NAME_OUT  ADDED_EXE_TARGET_NAME)
-  ENDIF()
+  set(CALL_ARGS "")
+  tribits_fwd_parse_arg(CALL_ARGS SOURCES)
+  tribits_fwd_parse_arg(CALL_ARGS DEPLIBS)  # Deprecated
+  tribits_fwd_parse_arg(CALL_ARGS TESTONLYLIBS)
+  tribits_fwd_parse_arg(CALL_ARGS IMPORTEDLIBS)
+  tribits_fwd_parse_arg(CALL_ARGS DIRECTORY)
+  tribits_fwd_parse_opt(CALL_ARGS ADD_DIR_TO_NAME)
+  tribits_fwd_parse_arg(CALL_ARGS LINKER_LANGUAGE)
+  tribits_fwd_parse_arg(CALL_ARGS TARGET_DEFINES)
+  tribits_fwd_parse_arg(CALL_ARGS DEFINES)
+  tribits_fwd_parse_opt(CALL_ARGS INSTALLABLE)
+  if (PARSE_ADDED_EXE_TARGET_NAME_OUT)
+    list(APPEND  CALL_ARGS  ADDED_EXE_TARGET_NAME_OUT  ADDED_EXE_TARGET_NAME)
+  endif()
 
-  TRIBITS_ADD_EXECUTABLE_WRAPPER(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
+  tribits_add_executable_wrapper(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
 
-  IF(PARSE_ADDED_EXE_TARGET_NAME_OUT)
-    SET( ${PARSE_ADDED_EXE_TARGET_NAME_OUT}  "${ADDED_EXE_TARGET_NAME}"
+  if(PARSE_ADDED_EXE_TARGET_NAME_OUT)
+    set( ${PARSE_ADDED_EXE_TARGET_NAME_OUT}  "${ADDED_EXE_TARGET_NAME}"
       PARENT_SCOPE )
-  ENDIF()
+  endif()
 
   #
-  # D) TribitsAddTest(...)
+  # D) tribitsaddtest(...)
   #
 
-  SET(CALL_ARGS "")
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS NAME)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS NAME_POSTFIX)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS DIRECTORY)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS KEYWORDS)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS NUM_MPI_PROCS)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS ARGS)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS PASS_REGULAR_EXPRESSION)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS FAIL_REGULAR_EXPRESSION)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS ENVIRONMENT)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS DISABLED)
-  TRIBITS_FWD_PARSE_OPT(CALL_ARGS STANDARD_PASS_OUTPUT)
-  TRIBITS_FWD_PARSE_OPT(CALL_ARGS WILL_FAIL)
-  TRIBITS_FWD_PARSE_ARG(CALL_ARGS TIMEOUT)
-  TRIBITS_FWD_PARSE_OPT(CALL_ARGS ADD_DIR_TO_NAME)
-  TRIBITS_FWD_PARSE_OPT(CALL_ARGS ADDED_TESTS_NAMES_OUT)
-  IF (PARSE_XHOST_TEST)
-    SET(CALL_ARGS ${CALL_ARGS} XHOST ${PARSE_XHOST_TEST})
-  ENDIF()
-  IF (PARSE_XHOSTTYPE_TEST)
-    SET(CALL_ARGS ${CALL_ARGS} XHOSTTYPE ${PARSE_XHOSTTYPE_TEST})
-  ENDIF()
-  IF (PARSE_ADDED_TESTS_NAMES_OUT)
-    LIST(APPEND  CALL_ARGS  ADDED_TESTS_NAMES_OUT  ADDED_TESTS_NAMES)
-  ENDIF()
+  set(CALL_ARGS "")
+  tribits_fwd_parse_arg(CALL_ARGS NAME)
+  tribits_fwd_parse_arg(CALL_ARGS NAME_POSTFIX)
+  tribits_fwd_parse_arg(CALL_ARGS DIRECTORY)
+  tribits_fwd_parse_arg(CALL_ARGS KEYWORDS)
+  tribits_fwd_parse_arg(CALL_ARGS NUM_MPI_PROCS)
+  tribits_fwd_parse_arg(CALL_ARGS ARGS)
+  tribits_fwd_parse_arg(CALL_ARGS PASS_REGULAR_EXPRESSION)
+  tribits_fwd_parse_arg(CALL_ARGS FAIL_REGULAR_EXPRESSION)
+  tribits_fwd_parse_arg(CALL_ARGS ENVIRONMENT)
+  tribits_fwd_parse_arg(CALL_ARGS DISABLED)
+  tribits_fwd_parse_opt(CALL_ARGS STANDARD_PASS_OUTPUT)
+  tribits_fwd_parse_opt(CALL_ARGS WILL_FAIL)
+  tribits_fwd_parse_arg(CALL_ARGS TIMEOUT)
+  tribits_fwd_parse_opt(CALL_ARGS ADD_DIR_TO_NAME)
+  tribits_fwd_parse_opt(CALL_ARGS ADDED_TESTS_NAMES_OUT)
+  if (PARSE_XHOST_TEST)
+    set(CALL_ARGS ${CALL_ARGS} XHOST ${PARSE_XHOST_TEST})
+  endif()
+  if (PARSE_XHOSTTYPE_TEST)
+    set(CALL_ARGS ${CALL_ARGS} XHOSTTYPE ${PARSE_XHOSTTYPE_TEST})
+  endif()
+  if (PARSE_ADDED_TESTS_NAMES_OUT)
+    list(APPEND  CALL_ARGS  ADDED_TESTS_NAMES_OUT  ADDED_TESTS_NAMES)
+  endif()
 
-  TRIBITS_ADD_TEST_WRAPPER(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
+  tribits_add_test_wrapper(${EXE_NAME} ${COMMON_CALL_ARGS} ${CALL_ARGS})
 
-  IF(PARSE_ADDED_TESTS_NAMES_OUT)
-    SET(${PARSE_ADDED_TESTS_NAMES_OUT} "${ADDED_TESTS_NAMES}" PARENT_SCOPE)
-  ENDIF()
+  if(PARSE_ADDED_TESTS_NAMES_OUT)
+    set(${PARSE_ADDED_TESTS_NAMES_OUT} "${ADDED_TESTS_NAMES}" PARENT_SCOPE)
+  endif()
 
-ENDFUNCTION()
+endfunction()

@@ -12,7 +12,7 @@
  * with a maximum value of 2^32 / 2 - 1 = 2147483647.  Therefore, the maximum
  * date that can be handled is the year 2147 with the max date/time of 2147 12
  * 31 23 = 2147123123.  Modern C/C++ compilers (and other implementations of
- * the C preprocesor) should be able to handle 32-bit integers.
+ * the C preprocessor) should be able to handle 32-bit integers.
  * 
  * This header file is meant to be included by downstream codes to determine
  * the version of @REPOSITORY_NAME@ being used and allows

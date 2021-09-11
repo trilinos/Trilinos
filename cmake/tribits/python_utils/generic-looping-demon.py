@@ -54,7 +54,7 @@ usageHelp = r"""generic-looping-demon.py [OPTIONS]
 
 This simple program takes a command as input and runs it over and over again
 (pausing in-between iterations for a given time) and then stops at the given
-abolute time.
+absolute time.
 
 The reason that the script takes an absolute time instead of a relative time
 is that this script is desiged to drive continuous itegration (CI) processes
@@ -177,7 +177,7 @@ elif options.todayRunTill:
   finalDateTime = parseDateTimeString(todayDateStr+" "+options.todayRunTill)
 
 if pauseFileExists(options.pauseFile):
-  print("\nThe file " + options.pauseFile + " exists at start so deleteing it!")
+  print("\nThe file " + options.pauseFile + " exists at start so deleting it!")
   os.remove(options.pauseFile)
 
 print("\nThe script will run iterations till = " + formatDateTime(finalDateTime)

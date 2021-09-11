@@ -84,7 +84,7 @@ def main():
 
   clp.add_option(
     "-x", dest="noDirectorySep", action="store_true",
-    help="Remove the directory seperators and continuation lines.",
+    help="Remove the directory separators and continuation lines.",
     default=False )
 
   clp.add_option(
