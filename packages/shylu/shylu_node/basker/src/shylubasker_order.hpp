@@ -1408,7 +1408,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       {
       // ND blocks
         //x[i] = xconv(p(i)); 
-        x[i] = xconv(permi); 
+        x[i] = xconv(permi);
       } 
       else {
       // btf blocks
@@ -1420,6 +1420,56 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     return 0;
   }
 
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute_and_init_for_solve
+  (
+   Entry* y,
+   ENTRY_1DARRAY &xcon,
+   ENTRY_1DARRAY &ycon,
+   INT_1DARRAY  &p, 
+   Int n
+  )
+  {
+    //Permute
+    for(Int i = 0; i < n; i++) {
+      xcon(i)  = y[p(i)];
+      ycon(i)     = (Entry) 0.0;
+    }
+    return 0;
+  }
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  int Basker<Int, Entry, Exe_Space>::permute_inv_and_finalcopy_after_solve
+  (
+   Entry* x,
+   ENTRY_1DARRAY &xconv,
+   ENTRY_1DARRAY &yconv,
+   INT_1DARRAY  &p,
+   Int n
+  )
+  {
+
+    const Int poffset = btf_tabs(btf_tabs_offset);
+    // pre-offset indices of xconv solution in ND block partition
+    // >= poffset indices of yconv solution in small BTF block partition
+    for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
+    { 
+      Int permi = p(i);
+      if ( i < poffset )
+      {
+      // ND blocks
+        x[permi] = xconv(i); 
+      } 
+      else {
+      // small btf blocks
+        x[permi] = yconv(i); 
+      }
+    }
+
+    return 0;
+  }
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE

@@ -17,6 +17,8 @@
 #include "shylubasker_stats.hpp"
 #include "shylubasker_order.hpp"
 
+#include "shylubasker_solve_rhs_tr.hpp"
+
 /*Kokkos Includes*/
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
@@ -99,6 +101,27 @@ namespace BaskerNS
    
     FREE_INT_1DARRAY(LL_size);
     FREE_INT_1DARRAY(LU_size);
+
+    // Delete arrays added for runtime transpose solve
+    FREE_INT_RANK2DARRAY(LDENSE_NDBLOCK_ROW_COL);
+    FREE_INT_RANK2DARRAY(UDENSE_NDBLOCK_ROW_COL);
+
+    FREE_INT_1DARRAY(L_size);
+    FREE_INT_1DARRAY(L_first);
+    FREE_INT_1DARRAY(L_second);
+
+    FREE_INT_1DARRAY(U_size);
+    FREE_INT_1DARRAY(U_first);
+    FREE_INT_1DARRAY(U_second);
+
+    FREE_INT_1DARRAY(LT_size);
+    FREE_INT_1DARRAY(LT_first);
+    FREE_INT_1DARRAY(LT_second);
+
+    FREE_INT_1DARRAY(UT_size);
+    FREE_INT_1DARRAY(UT_first);
+    FREE_INT_1DARRAY(UT_second);
+
     
     //BTF structure
     FREE_INT_1DARRAY(btf_tabs);
@@ -2034,14 +2057,14 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::SolveTest()
   {
-    test_solve();
+    //test_solve();
     return 0;
   }//end SolveTest
 
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, Entry *x)
+  int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, Entry *x, bool transpose)
   {
     #ifdef BASKER_TIMER 
     Kokkos::Timer timer;
@@ -2061,7 +2084,10 @@ namespace BaskerNS
       return BASKER_ERROR;
     }
 
-    solve_interface(x,b);
+    if (transpose == false)
+      solve_interface(x,b);
+    else
+      solve_interfacetr(x,b);
 
     if(Options.verbose == BASKER_TRUE)
     {
@@ -2079,7 +2105,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x)
+  int Basker<Int,Entry,Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x, bool transpose)
   {
     #ifdef BASKER_TIMER 
     Kokkos::Timer timer;
@@ -2099,7 +2125,10 @@ namespace BaskerNS
       return BASKER_ERROR;
     }
 
-    solve_interface(_nrhs,x,b);
+    if (transpose == false)
+      solve_interface(_nrhs,x,b);
+    else
+      solve_interfacetr(_nrhs,x,b);
 
     if(Options.verbose == BASKER_TRUE)
     {
@@ -2117,7 +2146,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Solve(ENTRY_1DARRAY b, ENTRY_1DARRAY x)
+  int Basker<Int, Entry, Exe_Space>::Solve(ENTRY_1DARRAY b, ENTRY_1DARRAY x, bool transpose)
   {
     printf("Basker: This solve call not implemented\n");
     return -1;
@@ -2126,7 +2155,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x, Int option)
+  int Basker<Int, Entry, Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x, Int option, bool transpose)
   {    
     int err = 0;
     printf("Basker: This solve call not implemented\n");

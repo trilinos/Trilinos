@@ -1,4 +1,6 @@
 //Simple Util to help with test
+#ifndef SHYLUBASKER_TEST_UTIL_HPP
+#define SHYLUBASKER_TEST_UTIL_HPP
 
 #include <iostream>
 #include <fstream>
@@ -172,3 +174,30 @@ void multiply
   }//over column
 }//end multiply
 
+template <class Int, class Entry>
+void multiply_tr
+(
+ Int m, 
+ Int n, 
+ Int col_ptr[],
+ Int row_idx[], 
+ Entry val[], 
+ Entry x[], 
+ Entry y[]
+)
+{
+  for(Int i = 0; i < m; i++)
+    {y[i] = (Entry) 0.0;}
+  
+  // treat k as row in crs transpose, i.e. col in ccs non-tr
+  for(Int k = 0; k < n; k++)
+  {
+    for(Int i = col_ptr[k]; i < col_ptr[k+1]; i++)
+    {
+      const Int j = row_idx[i]; // j is colid in crs transpose, i.e. rowid in ccs non-tr
+      y[k] += val[i]*x[j];
+    }//over row
+  }//over column
+}//end multiply
+
+#endif

@@ -767,6 +767,12 @@ namespace BaskerNS
     init_value(U_view_count, nblks, (Int)0);
     init_value(L_view_count, nblks, (Int)0);
 
+    MALLOC_INT_RANK2DARRAY(LDENSE_NDBLOCK_ROW_COL,nblks,nblks);
+    Kokkos::deep_copy(LDENSE_NDBLOCK_ROW_COL, 0);
+
+    MALLOC_INT_RANK2DARRAY(UDENSE_NDBLOCK_ROW_COL,nblks,nblks);
+    Kokkos::deep_copy(UDENSE_NDBLOCK_ROW_COL, 0);
+
     //Should also do LL and LU while it
     #ifdef BASKER_DEBUG_TREE
     flat.info();
@@ -786,14 +792,100 @@ namespace BaskerNS
     #endif
     // ------------------------
 
+    // i <= j: (i,j) (lowertri) and (j,i) (uppertri) are block index pairs of partitioned 2D blocks
+    // Note block structure is symmetric
     for(Int i=0; i < nblks; i++)
     {
       for(Int j=i; j != -flat.ncol; nnzblks++, j=(tree.treetab[j]))
       {
         U_view_count[j] = U_view_count[j] + 1;
         L_view_count[i] = L_view_count[i] + 1;
+        LDENSE_NDBLOCK_ROW_COL(i,j) = 1;
+        UDENSE_NDBLOCK_ROW_COL(j,i) = 1;
       }
     }
+
+/*
+    using pair_t = std::pair<Int,Int>;
+    Kokkos::View<pair_t**, BASKER_EXE_SPACE> Lower_2dmap_by_mtx("L2dmap", nblks, nblks);
+    Kokkos::View<pair_t**, BASKER_EXE_SPACE> Upper_2dmap_by_mtx("U2dmap", nblks, nblks);
+
+    // Store col-based relative ordering of (col, rel-nz-row) pairs with L and U blocks partition matrix
+    for(Int col=0; col < nblks; col++)
+    {
+      Int L_row_count = 0;
+      Int U_row_count = 0;
+      for(Int row=0; row < nblks; row++)
+      {
+        if (LDENSE_NDBLOCK_ROW_COL(row,col) == 1) {
+          pair_t entry(col,L_row_count);
+          Lower_2dmap_by_mtx(row,col) = entry;
+          L_row_count++;
+        }
+        else if (LDENSE_NDBLOCK_ROW_COL(row,col) == 0) {
+          pair_t entry(-1,-1);
+          Lower_2dmap_by_mtx(row,col) = entry;
+        }
+
+        if (UDENSE_NDBLOCK_ROW_COL(row,col) == 1) {
+          pair_t entry(col,U_row_count);
+          Upper_2dmap_by_mtx(row,col) = entry;
+          U_row_count++;
+        }
+        else if (UDENSE_NDBLOCK_ROW_COL(row,col) == 0) {
+          pair_t entry(-1,-1);
+          Upper_2dmap_by_mtx(row,col) = entry;
+        }
+      }
+    }
+
+    // Iterate by col, then row in col, to store the local 2d map within compressed offset arrays
+    Int L_offset_count = 0;
+    Int U_offset_count = 0;
+    for(Int col=0; col < nblks; col++)
+    {
+      for(Int row=0; row < nblks; row++)
+      {
+        auto lentry = Lower_2dmap_by_mtx(row,col);
+        if (lentry.first != -1) {
+          L_first[L_offset_count] = lentry.first;
+          L_second[L_offset_count] = lentry.second;
+          L_offset_count++;
+        }
+
+        auto uentry = Upper_2dmap_by_mtx(row,col);
+        if (uentry.first != -1) {
+          U_first[U_offset_count] = uentry.first;
+          U_second[U_offset_count] = uentry.second;
+          U_offset_count++;
+        }
+      }
+    }
+
+
+    // For transpose, iterate across row then by cols in the row, but store in same pattern for 2d map within compressed offset arrays
+    L_offset_count = 0;
+    U_offset_count = 0;
+    for(Int row=0; row < nblks; row++)
+    {
+      for(Int col=0; col < nblks; col++)
+      {
+        auto lentry = Lower_2dmap_by_mtx(row,col);
+        if (lentry.first != -1) {
+          LT_first[L_offset_count] = lentry.first;
+          LT_second[L_offset_count] = lentry.second;
+          L_offset_count++;
+        }
+
+        auto uentry = Upper_2dmap_by_mtx(row,col);
+        if (uentry.first != -1) {
+          UT_first[U_offset_count] = uentry.first;
+          UT_second[U_offset_count] = uentry.second;
+          U_offset_count++;
+        }
+      }
+    }
+*/
    
     #ifdef BASKER_DEBUG_TREE
     printf("Make Hier View of size: %d %d \n", nblks, nnzblks);
