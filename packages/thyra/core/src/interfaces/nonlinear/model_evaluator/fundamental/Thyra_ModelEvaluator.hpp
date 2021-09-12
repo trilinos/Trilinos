@@ -1057,6 +1057,8 @@ public:
    */
   virtual RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
   /** \brief If supported, create a linear operator derivative object for
    * \f$\sum_k \lambda_k \frac{\partial^2 f_k}{\partial \boldsymbol{x}^2}\f$.
    *
@@ -1128,6 +1130,8 @@ public:
    * </ul>
    */
   virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const = 0;
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   //@}
 

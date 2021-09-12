@@ -108,6 +108,7 @@ void PerformSolveImpl(
             }
           }
         }
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
         for (int l = 0; l < parameterCount; ++l) {
           if (Teuchos::nonnull(inArgs.get_p_direction(l))) {
             if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, j, l, l)) {
@@ -118,6 +119,7 @@ void PerformSolveImpl(
             }
           }
         }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
       }
     }
   }

@@ -202,6 +202,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs, *appParams);
   
   bool computeReducedHessian = false;
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   for (int g_index=0; g_index<this->num_g(); ++g_index) {
     for (int p_index=0; p_index<this->num_p(); ++p_index)
       if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index, p_index, p_index))
@@ -210,6 +211,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           break;
         }
   }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   if(computeReducedHessian == true)   
     this->evalReducedHessian(modelInArgs, outArgs, *appParams);
