@@ -613,7 +613,7 @@ namespace MueLu {
           Teuchos::ArrayRCP<Scalar> coordsi  = coordinates->getDataNonConst(i);
           const size_t              myLength = coordinates->getLocalLength();
           for (size_t j = 0; j < myLength; j++) {
-            coordsi[j] = coordPTR[0][j];
+            coordsi[j] = coordPTR[i][j];
           }
         }
         fineLevel->Set("Coordinates",coordinates);
