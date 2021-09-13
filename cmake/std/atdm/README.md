@@ -659,61 +659,12 @@ example, skip the configure, skip the build, skip running tests, etc.
 
 ## Specific instructions for each system
 
-* <a href="#ridewhite">ride/white</a>
 * <a href="#tlcc-2-and-cts-1">TLCC-2 and CTS-1</a>
 * <a href="#sems-rhel7-environment">SEMS RHEL7 Environment</a>
 * <a href="#cee-rhel7-environment">CEE RHEL7 Environment</a>
 * <a href="#ats-2">ATS-2</a>
 * <a href="#astra-vanguard-arm-system">ASTRA (Vanguard ARM System)</a>
 * <a href="#ats-1">ATS-1</a>
-
-
-### ride/white
-
-Once logged on to 'white' (on the SON) or 'ride' (on the SRN), one can
-directly configure and build on the login node (being careful not to overload
-the node) using the `ride` env.  But to run the tests, one must run on the
-compute nodes using the `bsub` command to run if using a CUDA build.  For
-example, to configure, build and run the tests for the `cuda-debug` build for
-say `MueLu` on 'white', (after cloning Trilinos on the `develop` branch) one
-would do:
-
-```
-$ cd <some_build_dir>/
-
-$ source $TRILINOS_DIR/cmake/std/atdm/load-env.sh cuda-debug
-
-$ cmake \
-  -GNinja \
-  -DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/atdm/ATDMDevEnv.cmake \
-  -DTrilinos_ENABLE_TESTS=ON -DTrilinos_ENABLE_MueLu=ON \
-  $TRILINOS_DIR
-
-$ make NP=16
-
-$ bsub -x -Is -q rhel7F -n 16 ctest -j4
-```
-
-The ATDM configuration of Trilinos is set up to run on the Firestone nodes
-(Dual-Socket POWER8, 8 cores per socket, K80 GPUs).  This configuration will
-not work on the other GPU nodes currently.
-
-**NOTE:** While the above example shows loading the environment, configuring
-and building on the login node, one can also do these on the compute nodes as
-well.  In fact, that is what the CTest -S drivers do in automated testing on
-'white' and 'ride'.
-
-Note that one can also run the same build and tests using the <a
-href="#checkin-test-atdmsh">checkin-test-atdm.sh</a> script as:
-
-```
-$ cd <some_build_dir>/
-$ ln -s $TRILINOS_DIR/cmake/std/atdm/checkin-test-atdm.sh .
-$ bsub -x -I -q rhel7F -n 16 \
-  ./checkin-test-atdm.sh cuda-debug \
-  --enable-packages=MueLu \
-  --local-do-all
-```
 
 
 ### TLCC-2 and CTS-1

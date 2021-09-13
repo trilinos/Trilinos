@@ -464,12 +464,9 @@ there is no tractability for changes in these settings!
 ## Specific <system_name> directories
 
 The following `<system_name>` sub-directories exist (in alphabetical order):
- 
+
 * `cee-rhel7/`: Contains files to drive builds on CEE LAN RHEL7 machines with
   the 'sparc-dev' modules.
-
-* `ride/`: Contains the files to drive builds on the SRN test bed machine
-  `ride` which also can be run on the SON machine `white`.
 
 * `tlcc2/`: Contains files to drive builds on the SRN HPC TLCC-2 machines
   (e.g. 'chama', 'skybridge', etc.).
@@ -508,8 +505,7 @@ ATDM_KNOWN_SYSTEM_NAMES_LIST=(
 
 Then, if the system selection is done by matching to the `hostname`, add a new
 `elif` statement for that set of machines.  Note that more than one `hostname`
-machine may map to the same `<new_system_name>` (e.g. both `white` and `ride`
-machines map to the system env `ride`).
+machine may map to the same `<new_system_name>`.
 
 However, if adding a new system type that will run on many machines and not
 looking at the `hostname` on the machine, then add a new `if` block to the
