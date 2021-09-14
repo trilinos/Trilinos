@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -822,8 +822,7 @@ namespace {
 
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region, bool debug)
   {
-    const auto &fss         = region.get_sidesets();
-    size_t      total_sides = 0;
+    const auto &fss = region.get_sidesets();
     for (const auto &ss : fss) {
       const std::string &name = ss->name();
       if (debug) {
@@ -846,8 +845,7 @@ namespace {
       }
     }
     if (!debug) {
-      DO_OUTPUT << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\t"
-                << "Number of element sides =" << std::setw(12) << total_sides << "\n";
+      DO_OUTPUT << " Number of        SideSets            =" << std::setw(12) << fss.size() << "\n";
     }
     else {
       DO_OUTPUT << '\n';

@@ -178,7 +178,8 @@ namespace {
     ssize_t min_proc = -1;
     for (ssize_t i = 0; i < (ssize_t)work.size(); i++) {
       if (work[i] < min_work &&
-          proc_adam_map.find(std::make_pair(zone->m_adam->m_zone, static_cast<int>(i))) == proc_adam_map.end()) {
+          proc_adam_map.find(std::make_pair(zone->m_adam->m_zone, static_cast<int>(i))) ==
+              proc_adam_map.end()) {
         min_work = work[i];
         min_proc = i;
         if (min_work == 0) {
@@ -358,7 +359,7 @@ namespace {
     // Get maximum name and face_count length...
     size_t max_name = std::string("Block Name").length();
     size_t max_face = std::string("Face Count").length();
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       const std::string &name = eb->name();
       if (name.length() > max_name) {
         max_name = name.length();
@@ -372,7 +373,7 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
     fmt::print("\t|{2:^{0}}|{3:^{1}}|\n", max_name, max_face, "Block Name", "Face Count");
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       const std::string &name = eb->name();
       fmt::print("\t|{2:^{0}}|{3:{1}L}  |\n", max_name, max_face - 2, name,
                  boundary_faces[name].size());
@@ -937,7 +938,7 @@ void Iocgns::Utils::write_state_meta_data(int file_ptr, const Ioss::Region &regi
 
   region.get_database()->progress("\tElement Blocks");
   const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
-  for (auto eb : ebs) {
+  for (auto &eb : ebs) {
     const std::string &name    = eb->name();
     int                db_zone = 0;
     cgsize_t           size[3] = {0, 0, 0};
@@ -1996,7 +1997,7 @@ void Iocgns::Utils::generate_boundary_faces(
     face_generator.generate_faces((int64_t)0, true);
   }
   const Ioss::ElementBlockContainer &ebs = region->get_element_blocks();
-  for (auto eb : ebs) {
+  for (auto &eb : ebs) {
     const std::string &name     = eb->name();
     auto &             boundary = boundary_faces[name];
     auto &             faces    = face_generator.faces(name);
@@ -2343,7 +2344,7 @@ void Iocgns::Utils::set_line_decomposition(int cgns_file_ptr, const std::string 
     }
   }
 
-  for (auto zone : zones) {
+  for (auto &zone : zones) {
     // Read BCs applied to this zone and see if they match any of
     // the BCs in 'bcs' list.  If so, determine the face the BC is
     // applied to and set the m_lineOrdinal to the ordinal
@@ -2499,7 +2500,7 @@ void Iocgns::Utils::decompose_model(std::vector<Iocgns::StructuredZoneData *> &z
     num_split = 0;
     if (px > 0) {
       auto zone_new(zones);
-      for (auto zone : zones) {
+      for (auto &zone : zones) {
         if (zone->is_active() && exceeds[zone->m_proc]) {
           // Since 'zones' is sorted from most work to least,
           // we just iterate zones and check whether the zone
@@ -2739,7 +2740,7 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
     }
   }
   else {
-    for (auto zone : zones) {
+    for (auto &zone : zones) {
       int num_active = 0;
       if (zone->work() <= max_avg) {
         // This zone is already in `new_zones`; just skip doing anything else with it.

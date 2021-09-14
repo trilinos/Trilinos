@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -25,8 +25,8 @@
 void excpus_(FTNREAL *cpusec)
 #endif /* interix */
 
-#if defined(aix) || defined(__VACPP__) || defined(hpux) || defined(sun) || defined(sgi) ||         \
-    defined(__osf__) || defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
+#if defined(aix) || defined(__VACPP__) || defined(hpux) || defined(sgi) || defined(__osf__) ||     \
+    defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
 
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -78,7 +78,7 @@ void excpus_(FTNREAL *cpusec)
   }
 #endif
 
-#if defined(sun) || defined(sgi) || defined(__osf__) || defined(__linux__) || defined(aix) ||      \
+#if defined(sgi) || defined(__osf__) || defined(__linux__) || defined(aix) ||                      \
     defined(__VACPP__) || defined(paragon) || defined(hpux) || defined(__APPLE__)
   struct rusage rusage;
   int           secs, mics;

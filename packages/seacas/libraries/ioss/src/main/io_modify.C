@@ -423,7 +423,7 @@ namespace {
 
     fmt::print("\n{} id: {:6d}, contains: {} member(s) of type {:>10s}.{}\n\tMembers: ", name(as),
                id(as), as->member_count(), as->contains_string(), modifier);
-    for (const auto mem : as->get_members()) {
+    for (const auto &mem : as->get_members()) {
       fmt::print("'{}' ", mem->name());
     }
     fmt::print("\n");
@@ -467,7 +467,7 @@ namespace {
 #endif
     }
     const Ioss::SideBlockContainer &fbs = ss->get_side_blocks();
-    for (auto fb : fbs) {
+    for (auto &fb : fbs) {
       int64_t count      = fb->entity_count();
       int64_t num_attrib = fb->get_property("attribute_count").get_int();
       int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();

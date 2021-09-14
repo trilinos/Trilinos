@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,7 +9,7 @@
     getopt.c - Enhanced implementation of BSD getopt(1)
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
+    the Free Software Foundation; either version 3 of the License, or
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
@@ -291,10 +291,9 @@ void add_longopt(const char *name, int has_arg)
  */
 void add_long_options(char *options)
 {
-  int   arg_opt;
   char *tokptr = strtok(options, ", \t\n");
   while (tokptr) {
-    arg_opt = no_argument;
+    int arg_opt = no_argument;
     if (strlen(tokptr) > 0) {
       if (tokptr[strlen(tokptr) - 1] == ':') {
         if (tokptr[strlen(tokptr) - 2] == ':') {

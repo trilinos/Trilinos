@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -88,8 +88,6 @@ int main(int argc, char **argv)
   int   io_ws = 0, cpu_ws = 0, t_pass = 0, t_fail = 0;
 
   char *file_name = "ne_test.exo";
-
-  /*-----------------------------Execution Begins-----------------------------*/
 
   /*---------------------------------------------------------------------------*/
   /*                      OUTPUT TEST SECTION                                  */
@@ -480,10 +478,7 @@ int ne_test_piinf(int fileid)
 /*****************************************************************************/
 int ne_test_pinig(int fileid)
 {
-
   int nng = NNG, neg = NEG, nebg = NEBG, nnsg = NNSG, nssg = NSSG;
-
-  /*-----------------------------Execution Begins-----------------------------*/
 
   return (ex_put_init_global(fileid, nng, neg, nebg, nnsg, nssg));
 }
@@ -491,11 +486,9 @@ int ne_test_pinig(int fileid)
 /*****************************************************************************/
 int ne_test_pelbid(int fileid)
 {
-  int i, elblk_ids[NEBG], elblk_cnt[NEBG];
+  int elblk_ids[NEBG], elblk_cnt[NEBG];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (i = 0; i < NEBG; i++) {
+  for (int i = 0; i < NEBG; i++) {
     elblk_ids[i] = (i + 1);
     elblk_cnt[i] = NEBCG;
   }
@@ -506,11 +499,9 @@ int ne_test_pelbid(int fileid)
 /*****************************************************************************/
 int ne_test_pnsp(int fileid)
 {
-  int i, global_ids[NNSG], global_n_cnts[NNSG], global_df_cnts[NNSG];
+  int global_ids[NNSG], global_n_cnts[NNSG], global_df_cnts[NNSG];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (i = 0; i < NNSG; i++) {
+  for (int i = 0; i < NNSG; i++) {
     global_ids[i]     = 2 * (i + 1);
     global_n_cnts[i]  = 3 * (i + 1);
     global_df_cnts[i] = 1;
@@ -522,11 +513,9 @@ int ne_test_pnsp(int fileid)
 /*****************************************************************************/
 int ne_test_pssp(int fileid)
 {
-  int i, global_ids[NSSG], global_el_cnts[NSSG], global_df_cnts[NSSG];
+  int global_ids[NSSG], global_el_cnts[NSSG], global_df_cnts[NSSG];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (i = 0; i < NSSG; i++) {
+  for (int i = 0; i < NSSG; i++) {
     global_ids[i]     = 3 * (i + 1);
     global_el_cnts[i] = 2 * (i + 1);
     global_df_cnts[i] = 1;
@@ -538,23 +527,21 @@ int ne_test_pssp(int fileid)
 /*****************************************************************************/
 int ne_test_pnm(int fileid)
 {
-  int iproc, j, error, j1 = 0;
   int node_mapi[NINTN], node_mapb[NBORN], node_mape[NEXTN];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-    for (j = 0; j < NINTN; node_mapi[j++] = j1++) {
+  int j1 = 0;
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
+    for (int j = 0; j < NINTN; node_mapi[j++] = j1++) {
       ;
     }
-    for (j = 0; j < NBORN; node_mapb[j++] = j1++) {
+    for (int j = 0; j < NBORN; node_mapb[j++] = j1++) {
       ;
     }
-    for (j = 0; j < NEXTN; node_mape[j++] = j1++) {
+    for (int j = 0; j < NEXTN; node_mape[j++] = j1++) {
       ;
     }
-    j1    = 0;
-    error = ex_put_processor_node_maps(fileid, node_mapi, node_mapb, node_mape, iproc);
+    j1        = 0;
+    int error = ex_put_processor_node_maps(fileid, node_mapi, node_mapb, node_mape, iproc);
     if (error < 0) {
       return error;
     }
@@ -566,20 +553,18 @@ int ne_test_pnm(int fileid)
 /*****************************************************************************/
 int ne_test_pem(int fileid)
 {
-  int iproc, j, error, j1 = 0;
   int elem_mapi[NINTE], elem_mapb[NBORE];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-    for (j = 0; j < NINTE; elem_mapi[j++] = j1++) {
+  int j1 = 0;
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
+    for (int j = 0; j < NINTE; elem_mapi[j++] = j1++) {
       ;
     }
-    for (j = 0; j < NBORE; elem_mapb[j++] = j1++) {
+    for (int j = 0; j < NBORE; elem_mapb[j++] = j1++) {
       ;
     }
-    j1    = 0;
-    error = ex_put_processor_elem_maps(fileid, elem_mapi, elem_mapb, iproc);
+    j1        = 0;
+    int error = ex_put_processor_elem_maps(fileid, elem_mapi, elem_mapb, iproc);
     if (error < 0) {
       return error;
     }
@@ -591,25 +576,22 @@ int ne_test_pem(int fileid)
 /*****************************************************************************/
 int ne_test_pcmp(int fileid)
 {
-  int i, iproc, error;
   int node_map_ids[NNCMAP], node_map_node_cnts[NNCMAP];
   int elem_map_ids[NECMAP], elem_map_elem_cnts[NECMAP];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-    for (i = 0; i < NNCMAP; i++) {
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
+    for (int i = 0; i < NNCMAP; i++) {
       node_map_ids[i]       = (i + 1);
       node_map_node_cnts[i] = NCNTCM;
     }
 
-    for (i = 0; i < NECMAP; i++) {
+    for (int i = 0; i < NECMAP; i++) {
       elem_map_ids[i]       = 2 * (i + 1);
       elem_map_elem_cnts[i] = ECNTCM;
     }
 
-    error = ex_put_cmap_params(fileid, node_map_node_cnts, node_map_ids, elem_map_elem_cnts,
-                               elem_map_ids, iproc);
+    int error = ex_put_cmap_params(fileid, node_map_node_cnts, node_map_ids, elem_map_elem_cnts,
+                                   elem_map_ids, iproc);
     if (error < 0) {
       return error;
     }
@@ -621,22 +603,19 @@ int ne_test_pcmp(int fileid)
 /*****************************************************************************/
 int ne_test_pncm(int fileid)
 {
-  int i, iproc, error;
   int node_map_ids[NNCMAP], node_ids[NCNTCM], proc_ids[NCNTCM];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-    for (i = 0; i < NNCMAP; i++) {
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
+    for (int i = 0; i < NNCMAP; i++) {
       node_map_ids[i] = (i + 1);
     }
-    for (i = 0; i < NCNTCM; i++) {
+    for (int i = 0; i < NCNTCM; i++) {
       node_ids[i] = 2 * (i + 1);
       proc_ids[i] = 3 * (i + 1);
     }
 
-    for (i = 0; i < NNCMAP; i++) {
-      error = ex_put_node_cmap(fileid, node_map_ids[i], node_ids, proc_ids, iproc);
+    for (int i = 0; i < NNCMAP; i++) {
+      int error = ex_put_node_cmap(fileid, node_map_ids[i], node_ids, proc_ids, iproc);
       if (error < 0) {
         return error;
       }
@@ -649,24 +628,21 @@ int ne_test_pncm(int fileid)
 /*****************************************************************************/
 int ne_test_pecm(int fileid)
 {
-  int i, iproc, error;
   int elem_map_ids[NECMAP], elem_ids[ECNTCM], side_ids[ECNTCM];
   int proc_ids[ECNTCM];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-    for (i = 0; i < NECMAP; i++) {
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
+    for (int i = 0; i < NECMAP; i++) {
       elem_map_ids[i] = 2 * (i + 1);
     }
-    for (i = 0; i < ECNTCM; i++) {
+    for (int i = 0; i < ECNTCM; i++) {
       elem_ids[i] = 2 * (i + 1);
       side_ids[i] = 3 * (i + 1);
       proc_ids[i] = 4 * (i + 1);
     }
 
-    for (i = 0; i < NECMAP; i++) {
-      error = ex_put_elem_cmap(fileid, elem_map_ids[i], elem_ids, side_ids, proc_ids, iproc);
+    for (int i = 0; i < NECMAP; i++) {
+      int error = ex_put_elem_cmap(fileid, elem_map_ids[i], elem_ids, side_ids, proc_ids, iproc);
       if (error < 0) {
         return error;
       }
@@ -679,12 +655,10 @@ int ne_test_pecm(int fileid)
 /*****************************************************************************/
 int ne_test_giinf(int fileid)
 {
-  int  error, nproc, nprocf;
+  int  nproc, nprocf;
   char ftype[2];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-  error = ex_get_init_info(fileid, &nproc, &nprocf, ftype);
-
+  int error = ex_get_init_info(fileid, &nproc, &nprocf, ftype);
   if (error < 0) {
     return error;
   }
@@ -705,14 +679,10 @@ int ne_test_giinf(int fileid)
 /*****************************************************************************/
 int ne_test_ginig(int fileid)
 {
-
-  int error;
   int num_nodes_g, num_elems_g, num_elem_blks_g, num_ns_g, num_ss_g;
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  error = ex_get_init_global(fileid, &num_nodes_g, &num_elems_g, &num_elem_blks_g, &num_ns_g,
-                             &num_ss_g);
+  int error = ex_get_init_global(fileid, &num_nodes_g, &num_elems_g, &num_elem_blks_g, &num_ns_g,
+                                 &num_ss_g);
 
   if (error < 0) {
     return error;
@@ -740,19 +710,15 @@ int ne_test_ginig(int fileid)
 /*****************************************************************************/
 int ne_test_gelbid(int fileid)
 {
-
-  int i, error;
   int el_blk_ids[NEBG], el_blk_cnt[NEBG];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  error = ex_get_eb_info_global(fileid, el_blk_ids, el_blk_cnt);
+  int error = ex_get_eb_info_global(fileid, el_blk_ids, el_blk_cnt);
 
   if (error < 0) {
     return error;
   }
 
-  for (i = 0; i < NEBG; i++) {
+  for (int i = 0; i < NEBG; i++) {
     if (el_blk_ids[i] != (i + 1)) {
       return -1;
     }
@@ -767,19 +733,15 @@ int ne_test_gelbid(int fileid)
 /*****************************************************************************/
 int ne_test_gnsp(int fileid)
 {
-
-  int i, error;
   int global_ids[NNSG], global_n_cnts[NNSG], global_df_cnts[NNSG];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  error = ex_get_ns_param_global(fileid, global_ids, global_n_cnts, global_df_cnts);
+  int error = ex_get_ns_param_global(fileid, global_ids, global_n_cnts, global_df_cnts);
 
   if (error < 0) {
     return error;
   }
 
-  for (i = 0; i < NNSG; i++) {
+  for (int i = 0; i < NNSG; i++) {
     if (global_ids[i] != 2 * (i + 1)) {
       return -1;
     }
@@ -797,19 +759,15 @@ int ne_test_gnsp(int fileid)
 /*****************************************************************************/
 int ne_test_gssp(int fileid)
 {
-
-  int i, error;
   int global_ids[NSSG], global_e_cnts[NSSG], global_df_cnts[NSSG];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  error = ex_get_ss_param_global(fileid, global_ids, global_e_cnts, global_df_cnts);
+  int error = ex_get_ss_param_global(fileid, global_ids, global_e_cnts, global_df_cnts);
 
   if (error < 0) {
     return error;
   }
 
-  for (i = 0; i < NSSG; i++) {
+  for (int i = 0; i < NSSG; i++) {
     if (global_ids[i] != 3 * (i + 1)) {
       return -1;
     }
@@ -827,15 +785,11 @@ int ne_test_gssp(int fileid)
 /*****************************************************************************/
 int ne_test_glbp(int fileid)
 {
-
-  int iproc, error;
   int nintn, nborn, nextn, ninte, nbore, nncmap, necmap;
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-    error = ex_get_loadbal_param(fileid, &nintn, &nborn, &nextn, &ninte, &nbore, &nncmap, &necmap,
-                                 iproc);
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
+    int error = ex_get_loadbal_param(fileid, &nintn, &nborn, &nextn, &ninte, &nbore, &nncmap,
+                                     &necmap, iproc);
 
     if (error < 0) {
       return error;
@@ -870,29 +824,27 @@ int ne_test_glbp(int fileid)
 /*****************************************************************************/
 int ne_test_gnm(int fileid)
 {
-  int iproc, j, error, j1 = 0;
   int node_mapi[NINTN], node_mapb[NBORN], node_mape[NEXTN];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-    error = ex_get_processor_node_maps(fileid, node_mapi, node_mapb, node_mape, iproc);
+  int j1 = 0;
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
+    int error = ex_get_processor_node_maps(fileid, node_mapi, node_mapb, node_mape, iproc);
 
     if (error < 0) {
       return error;
     }
 
-    for (j = 0; j < NINTN; j++) {
+    for (int j = 0; j < NINTN; j++) {
       if (node_mapi[j] != j1++) {
         return -1;
       }
     }
-    for (j = 0; j < NBORN; j++) {
+    for (int j = 0; j < NBORN; j++) {
       if (node_mapb[j] != j1++) {
         return -1;
       }
     }
-    for (j = 0; j < NEXTN; j++) {
+    for (int j = 0; j < NEXTN; j++) {
       if (node_mape[j] != j1++) {
         return -1;
       }
@@ -907,25 +859,23 @@ int ne_test_gnm(int fileid)
 /*****************************************************************************/
 int ne_test_gem(int fileid)
 {
-  int iproc, j, error, j1 = 0;
+  int j1 = 0;
   int elem_mapi[NINTE], elem_mapb[NBORE];
 
-  /*-----------------------------Execution Begins-----------------------------*/
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
 
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-
-    error = ex_get_processor_elem_maps(fileid, elem_mapi, elem_mapb, iproc);
+    int error = ex_get_processor_elem_maps(fileid, elem_mapi, elem_mapb, iproc);
 
     if (error < 0) {
       return error;
     }
 
-    for (j = 0; j < NINTE; j++) {
+    for (int j = 0; j < NINTE; j++) {
       if (elem_mapi[j] != j1++) {
         return -1;
       }
     }
-    for (j = 0; j < NBORE; j++) {
+    for (int j = 0; j < NBORE; j++) {
       if (elem_mapb[j] != j1++) {
         return -1;
       }
@@ -939,28 +889,25 @@ int ne_test_gem(int fileid)
 /*****************************************************************************/
 int ne_test_gncm(int fileid)
 {
-  int i, j, iproc, error;
   int node_map_ids[NNCMAP], node_map_cnts[NNCMAP];
   int node_ids[NCNTCM], proc_ids[NCNTCM];
 
-  /*-----------------------------Execution Begins-----------------------------*/
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
 
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-
-    error = ex_get_cmap_params(fileid, node_map_ids, node_map_cnts, NULL, NULL, iproc);
+    int error = ex_get_cmap_params(fileid, node_map_ids, node_map_cnts, NULL, NULL, iproc);
 
     if (error < 0) {
       return error;
     }
 
-    for (i = 0; i < NNCMAP; i++) {
+    for (int i = 0; i < NNCMAP; i++) {
       error = ex_get_node_cmap(fileid, node_map_ids[i], node_ids, proc_ids, iproc);
 
       if (error < 0) {
         return error;
       }
 
-      for (j = 0; j < NCNTCM; j++) {
+      for (int j = 0; j < NCNTCM; j++) {
         if (node_ids[j] != 2 * (j + 1)) {
           return -1;
         }
@@ -977,28 +924,25 @@ int ne_test_gncm(int fileid)
 /*****************************************************************************/
 int ne_test_gecm(int fileid)
 {
-  int i, j, iproc, error;
   int elem_ids[ECNTCM], elem_map_cnts[NECMAP], proc_ids[ECNTCM];
   int side_ids[ECNTCM], elem_map_ids[NECMAP];
 
-  /*-----------------------------Execution Begins-----------------------------*/
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
 
-  for (iproc = 0; iproc < NPROCF; iproc++) {
-
-    error = ex_get_cmap_params(fileid, NULL, NULL, elem_map_ids, elem_map_cnts, iproc);
+    int error = ex_get_cmap_params(fileid, NULL, NULL, elem_map_ids, elem_map_cnts, iproc);
 
     if (error < 0) {
       return error;
     }
 
-    for (i = 0; i < NECMAP; i++) {
+    for (int i = 0; i < NECMAP; i++) {
       error = ex_get_elem_cmap(fileid, elem_map_ids[i], elem_ids, side_ids, proc_ids, iproc);
 
       if (error < 0) {
         return error;
       }
 
-      for (j = 0; j < ECNTCM; j++) {
+      for (int j = 0; j < ECNTCM; j++) {
         if (elem_ids[j] != 2 * (j + 1)) {
           return -1;
         }
@@ -1018,16 +962,12 @@ int ne_test_gecm(int fileid)
 /*****************************************************************************/
 int ne_test_plbpc(int fileid)
 {
-  int iproc;
-
   int num_int_nodes[NPROCF], num_bor_nodes[NPROCF], num_ext_nodes[NPROCF];
   int num_int_elems[NPROCF], num_bor_elems[NPROCF];
   int num_node_cmaps[NPROCF], num_elem_cmaps[NPROCF];
 
-  /*-----------------------------Execution Begins-----------------------------*/
-
   /* Set up the vectors */
-  for (iproc = 0; iproc < NPROCF; iproc++) {
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
     num_int_nodes[iproc] = NINTN;
     num_bor_nodes[iproc] = NBORN;
     num_ext_nodes[iproc] = NEXTN;
@@ -1046,26 +986,23 @@ int ne_test_plbpc(int fileid)
 /*****************************************************************************/
 int ne_test_pcmpc(int fileid)
 {
-  int iproc, j, n_cntr, e_cntr;
-
   int nmap_ids[NNCMAP * NPROCF], nmap_n_cnts[NNCMAP * NPROCF];
   int nmap_proc_ptr[NPROCF + 1];
   int emap_ids[NECMAP * NPROCF], emap_e_cnts[NECMAP * NPROCF];
   int emap_proc_ptr[NPROCF + 1];
-  /*-----------------------------Execution Begins-----------------------------*/
 
   nmap_proc_ptr[0] = 0;
   emap_proc_ptr[0] = 0;
-  n_cntr           = 0;
-  e_cntr           = 0;
-  for (iproc = 0; iproc < NPROCF; iproc++) {
+  int n_cntr       = 0;
+  int e_cntr       = 0;
+  for (int iproc = 0; iproc < NPROCF; iproc++) {
 
-    for (j = 0; j < NNCMAP; j++) {
+    for (int j = 0; j < NNCMAP; j++) {
       nmap_ids[n_cntr]      = (j + 1);
       nmap_n_cnts[n_cntr++] = NCNTCM;
     }
 
-    for (j = 0; j < NECMAP; j++) {
+    for (int j = 0; j < NECMAP; j++) {
       emap_ids[e_cntr]      = 2 * (j + 1);
       emap_e_cnts[e_cntr++] = ECNTCM;
     }

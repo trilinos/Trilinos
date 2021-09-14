@@ -43,7 +43,7 @@ struct GeneratedSideBlock
 class UnitCell
 {
 public:
-  UnitCell(std::shared_ptr<Ioss::Region> region);
+  explicit UnitCell(std::shared_ptr<Ioss::Region> region);
   UnitCell(const UnitCell &) = delete;
 
   //! Create a vector of `node_count` length which has the following values:

@@ -57,7 +57,7 @@ namespace {
   template <typename T>
   Ioss::GroupingEntity *get_entity_internal(int64_t id, const std::vector<T> &entities)
   {
-    for (auto ent : entities) {
+    for (auto &ent : entities) {
       if (ent->property_exists(id_str())) {
         if (id == ent->get_property(id_str()).get_int()) {
           return ent;
@@ -71,7 +71,7 @@ namespace {
   size_t internal_get_variable_count(const std::vector<T> &entities, Ioss::Field::RoleType role)
   {
     Ioss::NameList names;
-    for (auto ent : entities) {
+    for (auto &ent : entities) {
       ent->field_describe(role, &names);
     }
     Ioss::Utils::uniquify(names);
@@ -91,7 +91,7 @@ namespace {
   template <typename T> int64_t get_entity_count(const std::vector<T> &entities)
   {
     int64_t count = 0;
-    for (auto ent : entities) {
+    for (auto &ent : entities) {
       count += ent->entity_count();
     }
     return count;
@@ -379,55 +379,55 @@ namespace Ioss {
     // Region owns all sub-grouping entities it contains...
     try {
       IOSS_FUNC_ENTER(m_);
-      for (auto nb : nodeBlocks) {
+      for (auto &nb : nodeBlocks) {
         delete (nb);
       }
 
-      for (auto eb : edgeBlocks) {
+      for (auto &eb : edgeBlocks) {
         delete (eb);
       }
 
-      for (auto fb : faceBlocks) {
+      for (auto &fb : faceBlocks) {
         delete (fb);
       }
 
-      for (auto eb : elementBlocks) {
+      for (auto &eb : elementBlocks) {
         delete (eb);
       }
 
-      for (auto sb : structuredBlocks) {
+      for (auto &sb : structuredBlocks) {
         delete (sb);
       }
 
-      for (auto ss : sideSets) {
+      for (auto &ss : sideSets) {
         delete (ss);
       }
 
-      for (auto ns : nodeSets) {
+      for (auto &ns : nodeSets) {
         delete (ns);
       }
 
-      for (auto es : edgeSets) {
+      for (auto &es : edgeSets) {
         delete (es);
       }
 
-      for (auto fs : faceSets) {
+      for (auto &fs : faceSets) {
         delete (fs);
       }
 
-      for (auto es : elementSets) {
+      for (auto &es : elementSets) {
         delete (es);
       }
 
-      for (auto cs : commSets) {
+      for (auto &cs : commSets) {
         delete (cs);
       }
 
-      for (auto as : assemblies) {
+      for (auto &as : assemblies) {
         delete (as);
       }
 
-      for (auto bl : blobs) {
+      for (auto &bl : blobs) {
         delete (bl);
       }
 
@@ -484,7 +484,7 @@ namespace Ioss {
 
     int64_t                       total_sides = 0;
     const Ioss::SideSetContainer &sss         = get_sidesets();
-    for (auto fs : sss) {
+    for (auto &fs : sss) {
       total_sides += get_entity_count(fs->get_side_blocks());
     }
 
@@ -532,7 +532,7 @@ namespace Ioss {
 
     size_t                       num_ss_vars = 0;
     const Ioss::SideSetContainer fss         = get_sidesets();
-    for (auto fs : fss) {
+    for (auto &fs : fss) {
       num_ss_vars += get_variable_count(fs->get_side_blocks());
     }
 
@@ -664,15 +664,14 @@ namespace Ioss {
    */
   bool Region::end_mode(State current_state)
   {
-    bool success = true;
     {
       IOSS_FUNC_ENTER(m_);
-      success = end_mode__(current_state);
+      end_mode__(current_state);
     }
 
     // Pass the 'end state' message on to the database so it can do any
     // cleanup/data checking/manipulations it needs to do.
-    success = get_database()->end(current_state);
+    bool success = get_database()->end(current_state);
     begin_mode(STATE_CLOSED);
     return success;
   }
@@ -717,21 +716,21 @@ namespace Ioss {
         // Now update the block offsets based on this new order...
         {
           int64_t offset = 0;
-          for (auto eb : elementBlocks) {
+          for (auto &eb : elementBlocks) {
             eb->set_offset(offset);
             offset += eb->entity_count();
           }
         }
         {
           int64_t offset = 0;
-          for (auto fb : faceBlocks) {
+          for (auto &fb : faceBlocks) {
             fb->set_offset(offset);
             offset += fb->entity_count();
           }
         }
         {
           int64_t offset = 0;
-          for (auto eb : edgeBlocks) {
+          for (auto &eb : edgeBlocks) {
             eb->set_offset(offset);
             offset += eb->entity_count();
           }
@@ -1849,7 +1848,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     Assembly *ge = nullptr;
-    for (auto as : assemblies) {
+    for (auto &as : assemblies) {
       if (db_hash == as->hash() && as->name() == db_name) {
         ge = as;
         break;
@@ -1870,7 +1869,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     Blob *ge = nullptr;
-    for (auto bl : blobs) {
+    for (auto &bl : blobs) {
       if (db_hash == bl->hash() && bl->name() == db_name) {
         ge = bl;
         break;
@@ -1891,7 +1890,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     NodeBlock *ge = nullptr;
-    for (auto nb : nodeBlocks) {
+    for (auto &nb : nodeBlocks) {
       if (db_hash == nb->hash() && nb->name() == db_name) {
         ge = nb;
         break;
@@ -1912,7 +1911,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     EdgeBlock *ge = nullptr;
-    for (auto eb : edgeBlocks) {
+    for (auto &eb : edgeBlocks) {
       if (db_hash == eb->hash() && eb->name() == db_name) {
         ge = eb;
         break;
@@ -1933,7 +1932,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     FaceBlock *ge = nullptr;
-    for (auto fb : faceBlocks) {
+    for (auto &fb : faceBlocks) {
       if (db_hash == fb->hash() && fb->name() == db_name) {
         ge = fb;
         break;
@@ -1954,7 +1953,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     ElementBlock *ge = nullptr;
-    for (auto eb : elementBlocks) {
+    for (auto &eb : elementBlocks) {
       if (db_hash == eb->hash() && eb->name() == db_name) {
         ge = eb;
         break;
@@ -1975,7 +1974,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     StructuredBlock *ge = nullptr;
-    for (auto sb : structuredBlocks) {
+    for (auto &sb : structuredBlocks) {
       if (db_hash == sb->hash() && sb->name() == db_name) {
         ge = sb;
         break;
@@ -1996,7 +1995,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     SideSet *ge = nullptr;
-    for (auto ss : sideSets) {
+    for (auto &ss : sideSets) {
       if (db_hash == ss->hash() && ss->name() == db_name) {
         ge = ss;
         break;
@@ -2014,7 +2013,7 @@ namespace Ioss {
   {
     IOSS_FUNC_ENTER(m_);
     SideBlock *ge = nullptr;
-    for (auto ss : sideSets) {
+    for (auto &ss : sideSets) {
       ge = ss->get_side_block(my_name);
       if (ge != nullptr) {
         break;
@@ -2035,7 +2034,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     NodeSet *ge = nullptr;
-    for (auto ns : nodeSets) {
+    for (auto &ns : nodeSets) {
       if (db_hash == ns->hash() && ns->name() == db_name) {
         ge = ns;
         break;
@@ -2056,7 +2055,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     EdgeSet *ge = nullptr;
-    for (auto es : edgeSets) {
+    for (auto &es : edgeSets) {
       if (db_hash == es->hash() && es->name() == db_name) {
         ge = es;
         break;
@@ -2077,7 +2076,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     FaceSet *ge = nullptr;
-    for (auto fs : faceSets) {
+    for (auto &fs : faceSets) {
       if (db_hash == fs->hash() && fs->name() == db_name) {
         ge = fs;
         break;
@@ -2098,7 +2097,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     ElementSet *ge = nullptr;
-    for (auto es : elementSets) {
+    for (auto &es : elementSets) {
       if (db_hash == es->hash() && es->name() == db_name) {
         ge = es;
         break;
@@ -2119,7 +2118,7 @@ namespace Ioss {
     unsigned int      db_hash = Ioss::Utils::hash(db_name);
 
     CommSet *ge = nullptr;
-    for (auto cs : commSets) {
+    for (auto &cs : commSets) {
       if (db_hash == cs->hash() && cs->name() == db_name) {
         ge = cs;
         break;
@@ -2254,7 +2253,7 @@ namespace Ioss {
   ElementBlock *Region::get_element_block(size_t local_id) const
   {
     IOSS_FUNC_ENTER(m_);
-    for (auto eb : elementBlocks) {
+    for (auto &eb : elementBlocks) {
       if (eb->contains(local_id)) {
         return eb;
       }
@@ -2277,7 +2276,7 @@ namespace Ioss {
   StructuredBlock *Region::get_structured_block(size_t global_offset) const
   {
     IOSS_FUNC_ENTER(m_);
-    for (auto sb : structuredBlocks) {
+    for (auto &sb : structuredBlocks) {
       if (sb->contains(global_offset)) {
         return sb;
       }
@@ -2375,7 +2374,7 @@ namespace Ioss {
 
     if (my_name == "element_count") {
       int64_t count = 0;
-      for (auto eb : elementBlocks) {
+      for (auto &eb : elementBlocks) {
         count += eb->entity_count();
       }
       return Property(my_name, count);
@@ -2383,7 +2382,7 @@ namespace Ioss {
 
     if (my_name == "cell_count") {
       int64_t count = 0;
-      for (auto eb : structuredBlocks) {
+      for (auto &eb : structuredBlocks) {
         count += eb->get_property("cell_count").get_int();
       }
       return Property(my_name, count);
@@ -2391,7 +2390,7 @@ namespace Ioss {
 
     if (my_name == "face_count") {
       int64_t count = 0;
-      for (auto fb : faceBlocks) {
+      for (auto &fb : faceBlocks) {
         count += fb->entity_count();
       }
       return Property(my_name, count);
@@ -2399,7 +2398,7 @@ namespace Ioss {
 
     if (my_name == "edge_count") {
       int64_t count = 0;
-      for (auto eb : edgeBlocks) {
+      for (auto &eb : edgeBlocks) {
         count += eb->entity_count();
       }
       return Property(my_name, count);
@@ -2407,7 +2406,7 @@ namespace Ioss {
 
     if (my_name == "node_count") {
       int64_t count = 0;
-      for (auto nb : nodeBlocks) {
+      for (auto &nb : nodeBlocks) {
         count += nb->entity_count();
       }
       return Property(my_name, count);
