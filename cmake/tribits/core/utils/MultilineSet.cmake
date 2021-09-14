@@ -39,13 +39,13 @@
 
 
 #
-# @FUNCTION: MULTILINE_SET()
+# @FUNCTION: multiline_set()
 #
 # Function to set a single string by concatenating a list of separate strings
 #
 # Usage::
 #
-#   MULTILINE_SET(<outputStrVar>
+#   multiline_set(<outputStrVar>
 #     "<string0>"
 #     "<string1>"
 #     ...
@@ -58,17 +58,17 @@
 # The purpose of this is function to make it easier to set longer strings over
 # multiple lines.
 #
-# This function is exactly the same as `CONCAT_STRINGS()`_ and should not even
+# This function is exactly the same as `concat_strings()`_ and should not even
 # exist :-(
 #
-FUNCTION(MULTILINE_SET VARAIBLE_NAME)
+function(multiline_set VARAIBLE_NAME)
 
-  SET(MULTILINE_SET_LOCAL_STR "")
+  set(MULTILINE_SET_LOCAL_STR "")
 
-  FOREACH(LINE_STR ${ARGN})
-    SET(MULTILINE_SET_LOCAL_STR "${MULTILINE_SET_LOCAL_STR}${LINE_STR}")
-  ENDFOREACH()
+  foreach(LINE_STR ${ARGN})
+    set(MULTILINE_SET_LOCAL_STR "${MULTILINE_SET_LOCAL_STR}${LINE_STR}")
+  endforeach()
 
-  SET(${VARAIBLE_NAME} "${MULTILINE_SET_LOCAL_STR}" PARENT_SCOPE)
+  set(${VARAIBLE_NAME} "${MULTILINE_SET_LOCAL_STR}" PARENT_SCOPE)
 
-ENDFUNCTION()
+endfunction()

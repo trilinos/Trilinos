@@ -39,8 +39,8 @@
 
 # Define policies for CMake
 # It is assumed that the project has already called CMAKE_MINIMUM_REQUIRED.
-CMAKE_POLICY(SET CMP0003 NEW)
-CMAKE_POLICY(SET CMP0007 NEW)
-CMAKE_POLICY(SET CMP0011 NEW)
-CMAKE_POLICY(SET CMP0053 NEW)
-CMAKE_POLICY(SET CMP0082 NEW)
+cmake_policy(SET CMP0003 NEW)
+cmake_policy(SET CMP0007 NEW)
+cmake_policy(SET CMP0011 NEW)
+cmake_policy(SET CMP0053 NEW)
+cmake_policy(SET CMP0082 NEW)

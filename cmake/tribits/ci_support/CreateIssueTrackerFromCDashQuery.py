@@ -22,7 +22,7 @@ g_pp = pprint.PrettyPrinter(indent=2)
 #   given the data provided by the argument 'issueTrackerData' of type
 #   'IssueTrackerData'.  The format of this text can be anything such as
 #   Markdown, RestructredText, JIRA Issue Markup, etc.  The only assumption
-#   about formatting is in the HTML table passed in the arugment
+#   about formatting is in the HTML table passed in the argument
 #   'issueTrackerData.testHistoryHtmlTableText'.
 #
 # The object 'issueTrackerFormatter' can format the issue tracker text anyway

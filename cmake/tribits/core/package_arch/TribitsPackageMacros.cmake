@@ -37,26 +37,26 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsPackageSetupCompilerFlags)
-INCLUDE(TribitsWriteClientExportFiles)
-INCLUDE(TribitsGeneralMacros)
+include(TribitsPackageSetupCompilerFlags)
+include(TribitsWriteClientExportFiles)
+include(TribitsGeneralMacros)
 
-INCLUDE(CMakeParseArguments)
-INCLUDE(GlobalNullSet)
-INCLUDE(AppendGlobalSet)
-INCLUDE(PrintVar)
-INCLUDE(PrependSet)
-INCLUDE(PrependGlobalSet)
-INCLUDE(RemoveGlobalDuplicates)
+include(CMakeParseArguments)
+include(GlobalNullSet)
+include(AppendGlobalSet)
+include(PrintVar)
+include(PrependSet)
+include(PrependGlobalSet)
+include(RemoveGlobalDuplicates)
 
-INCLUDE(TribitsAddOptionAndDefine)
-INCLUDE(TribitsLibraryMacros)
-INCLUDE(TribitsAddExecutable)
-INCLUDE(TribitsAddExecutableAndTest)
-INCLUDE(TribitsAddTest)
-INCLUDE(TribitsAddAdvancedTest)
-INCLUDE(TribitsCopyFilesToBinaryDir)
-INCLUDE(TribitsReportInvalidTribitsUsage)
+include(TribitsAddOptionAndDefine)
+include(TribitsLibraryMacros)
+include(TribitsAddExecutable)
+include(TribitsAddExecutableAndTest)
+include(TribitsAddTest)
+include(TribitsAddAdvancedTest)
+include(TribitsCopyFilesToBinaryDir)
+include(TribitsReportInvalidTribitsUsage)
 
 
 ###
@@ -70,56 +70,56 @@ INCLUDE(TribitsReportInvalidTribitsUsage)
 
 
 #
-# Macro that defines the package architecture system varaibles used to link
+# Macro that defines the package architecture system variables used to link
 # different SE packages together
 #
-# See README.DEPENDENCIES for information on what these varaibles mean and how
+# See README.DEPENDENCIES for information on what these variables mean and how
 # they are used.
 #
-MACRO(TRIBITS_DEFINE_LINKAGE_VARS PACKAGE_NAME_IN)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
-  GLOBAL_NULL_SET(${PACKAGE_NAME_IN}_LIBRARIES)
-  GLOBAL_SET(${PACKAGE_NAME_IN}_HAS_NATIVE_LIBRARIES_TO_INSTALL FALSE)
-ENDMACRO()
+macro(tribits_define_linkage_vars PACKAGE_NAME_IN)
+  global_null_set(${PACKAGE_NAME_IN}_INCLUDE_DIRS)
+  global_null_set(${PACKAGE_NAME_IN}_LIBRARY_DIRS)
+  global_null_set(${PACKAGE_NAME_IN}_LIBRARIES)
+  global_set(${PACKAGE_NAME_IN}_HAS_NATIVE_LIBRARIES_TO_INSTALL FALSE)
+endmacro()
 
 
 #
-# Macro that defines varaibles that create global targets
+# Macro that defines variables that create global targets
 #
-MACRO(TRIBITS_DEFINE_TARGET_VARS PARENT_PACKAGE_NAME_IN)
-  GLOBAL_NULL_SET(${PARENT_PACKAGE_NAME_IN}_LIB_TARGETS)
-  GLOBAL_NULL_SET(${PARENT_PACKAGE_NAME_IN}_ALL_TARGETS)
-ENDMACRO()
+macro(tribits_define_target_vars PARENT_PACKAGE_NAME_IN)
+  global_null_set(${PARENT_PACKAGE_NAME_IN}_LIB_TARGETS)
+  global_null_set(${PARENT_PACKAGE_NAME_IN}_ALL_TARGETS)
+endmacro()
 
 #
-# Set up some common varaibles used in the creation of an SE package
+# Set up some common variables used in the creation of an SE package
 #
 
-MACRO(TRIBITS_SET_COMMON_VARS PACKAGE_NAME_IN)
+macro(tribits_set_common_vars PACKAGE_NAME_IN)
 
-  STRING(TOUPPER ${PACKAGE_NAME_IN} PACKAGE_NAME_UC)
+  string(TOUPPER ${PACKAGE_NAME_IN} PACKAGE_NAME_UC)
 
   # Write TRIBITS_PACKAGE versions of common variables
-  SET(PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-  SET(PACKAGE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+  set(PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+  set(PACKAGE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
   # Get the name of the directory this ${PROJECT_NAME} package is in
-  FILE(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR} STANDARD_PACKAGE_SOURCE_DIR)
-  STRING(REGEX REPLACE "/.+/(.+)" "\\1" PACKAGE_DIR_NAME "${STANDARD_PACKAGE_SOURCE_DIR}")
+  file(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR} STANDARD_PACKAGE_SOURCE_DIR)
+  string(REGEX REPLACE "/.+/(.+)" "\\1" PACKAGE_DIR_NAME "${STANDARD_PACKAGE_SOURCE_DIR}")
 
-ENDMACRO()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_PACKAGE_DECL()
+# @MACRO: tribits_package_decl()
 #
 # Macro called at the very beginning of a package's top-level
 # `<packageDir>/CMakeLists.txt`_ file when a package has subpackages.
 #
 # Usage::
 #
-#   TRIBITS_PACKAGE_DECL(
+#   tribits_package_decl(
 #     <packageName>
 #     [ENABLE_SHADOWING_WARNINGS]
 #     [DISABLE_STRONG_WARNINGS]
@@ -158,7 +158,7 @@ ENDMACRO()
 #   ``DISABLE_CIRCULAR_REF_DETECTION_FAILURE``
 #
 #     If specified, then the standard grep looking for RCPNode circular
-#     references in `TRIBITS_ADD_TEST()`_ and `TRIBITS_ADD_ADVANCED_TEST()`_
+#     references in `tribits_add_test()`_ and `tribits_add_advanced_test()`_
 #     that causes tests to fail will be disabled.  Note that if these warnings
 #     are being produced then it means that the test is leaking memory and
 #     user like may also be leaking memory.
@@ -177,43 +177,43 @@ ENDMACRO()
 #
 # * This packages's cmake subdir ``${PACKAGE_SOURCE_DIR}/cmake`` is added to
 #   ``CMAKE_MODULE_PATH`` locally so that the package's try-compile modules
-#   can be read in with just a raw ``INCLUDE()`` leaving off the full path and
+#   can be read in with just a raw ``include()`` leaving off the full path and
 #   the ``*.cmake`` extension.
 #
-# If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+# If the package does not have subpackages, just call `tribits_package()`_
 # which calls this macro.
 #
-MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
+macro(tribits_package_decl PACKAGE_NAME_IN)
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nTRIBITS_PACKAGE_DECL: ${PACKAGE_NAME_IN}")
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("\nTRIBITS_PACKAGE_DECL: ${PACKAGE_NAME_IN}")
+  endif()
 
-  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "Cannot call TRIBITS_PACKAGE_DECL() in a subpackage."
-      " Use TRIBITS_SUBPACKAGE() instead"
+  if (CURRENTLY_PROCESSING_SUBPACKAGE)
+    tribits_report_invalid_tribits_usage(
+      "Cannot call tribits_package_decl() in a subpackage."
+      " Use tribits_subpackage() instead"
       " error in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-  ENDIF()
+  endif()
 
-  IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "TRIBITS_PACKAGE_DECL() called more than once in Package ${PACKAGE_NAME}"
-      " This may be because TRIBITS_PACKAGE_DECL was expicitly called more than once or"
+  if(${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
+    tribits_report_invalid_tribits_usage(
+      "tribits_package_decl() called more than once in Package ${PACKAGE_NAME}"
+      " This may be because tribits_package_decl() was explicitly called more than once or"
       " TRIBITS_PACKAGE_DECL was called after TRIBITS_PACKAGE. You do not need both."
-      " If your package has subpackages then do not call TRIBITS_PACKAGE() instead call:"
-      " TRIBITS_PACAKGE_DECL then TRIBITS_PROCESS_SUBPACKAGES then TRIBITS PACKAGE_DEF"
+      " If your package has subpackages then do not call tribits_package() instead call:"
+      " tribits_pacakge_decl() then tribits_process_subpackages() then tribits package_def()"
     )
-  ENDIF()
+  endif()
 
   # Set flag to check that macros are called in the correct order
-  SET(${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED TRUE)
+  set(${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED TRUE)
 
   #
   # A) Parse the input arguments
   #
 
-  CMAKE_PARSE_ARGUMENTS(
+  cmake_parse_arguments(
     #prefix
     PARSE
     #options
@@ -225,60 +225,60 @@ MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
     ${ARGN}
     )
 
-  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+  tribits_check_for_unparsed_arguments()
 
   #
   # B) Assert that the global and local package names are the same!
   #
 
-  IF (DEFINED PACKAGE_NAME)
-    IF (NOT ${PACKAGE_NAME_IN} STREQUAL ${PACKAGE_NAME})
-      MESSAGE(FATAL_ERROR "Error, the package-defined package name"
+  if (DEFINED PACKAGE_NAME)
+    if (NOT ${PACKAGE_NAME_IN} STREQUAL ${PACKAGE_NAME})
+      message(FATAL_ERROR "Error, the package-defined package name"
         " '${PACKAGE_NAME_IN}' is not the same as the package name"
         " defined at the global level '${PACKAGE_NAME}'")
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
   #
   # C) Set up the CMake support for this ${PROJECT_NAME} package and define some
-  # top-level varaibles.
+  # top-level variables.
   #
 
-  TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME_IN})
+  tribits_set_common_vars(${PACKAGE_NAME_IN})
 
-  SET(${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS OFF
+  set(${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS OFF
      CACHE BOOL
      "If set to true, then strong warnings for package ${PACKAGE_NAME_IN} will be disabled."
      )
 
   # Set up the compile flags for the package
-  TRIBITS_SETUP_COMPILER_FLAGS(${PACKAGE_NAME_IN})
+  tribits_setup_compiler_flags(${PACKAGE_NAME_IN})
 
   # Set up circular reference detection test failure
-  IF (PARSE_DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
-    SET(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF)
-  ELSE()
-    SET(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE ON)
-  ENDIF()
+  if (PARSE_DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
+    set(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF)
+  else()
+    set(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE ON)
+  endif()
 
-  # Set up parent package linkage varaibles
-  TRIBITS_DEFINE_TARGET_VARS(${PACKAGE_NAME})
+  # Set up parent package linkage variables
+  tribits_define_target_vars(${PACKAGE_NAME})
 
   # Define this as a CMake/CTest "Subproject"
-  SET_DIRECTORY_PROPERTIES(PROPERTIES LABELS "${PACKAGE_NAME}")
+  set_directory_properties(PROPERTIES LABELS "${PACKAGE_NAME}")
 
   #
   # Append the local package's cmake directory in order to help pull in
   # configure-time testing macros
   #
 
-  PREPEND_SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+  prepend_set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-ENDMACRO()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_PACKAGE_DEF()
+# @MACRO: tribits_package_def()
 #
 # Macro called in `<packageDir>/CMakeLists.txt`_ after subpackages are
 # processed in order to handle the libraries, tests, and examples of the
@@ -286,9 +286,9 @@ ENDMACRO()
 #
 # Usage::
 #
-#   TRIBITS_PACKAGE_DEF()
+#   tribits_package_def()
 #
-# If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+# If the package does not have subpackages, just call `tribits_package()`_
 # which calls this macro.
 #
 # This macro has several side effects:
@@ -299,59 +299,59 @@ ENDMACRO()
 # * The intra-package dependency variables (i.e. list of include directories,
 #   list of libraries, etc.) are initialized to empty.
 #
-MACRO(TRIBITS_PACKAGE_DEF)
+macro(tribits_package_def)
 
   # check that this is not being called from a subpackage
-  IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-    IF (CURRENTLY_PROCESSING_SUBPACKAGE)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Cannot call TRIBITS_PACKAGE_DEF() in a subpackage."
-        " Use TRIBITS_SUBPACKAGE() instead"
+  if(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+    if (CURRENTLY_PROCESSING_SUBPACKAGE)
+      tribits_report_invalid_tribits_usage(
+        "Cannot call tribits_package_def() in a subpackage."
+        " Use tribits_subpackage() instead"
         " error in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
   # Reset since it was changed by the subpackages
-  SET(PACKAGE_NAME ${PARENT_PACKAGE_NAME})
+  set(PACKAGE_NAME ${PARENT_PACKAGE_NAME})
 
   # check that this is not called morethan once in a package
-  IF (${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "TRIBITS_PACKAGE_DEF was called more than once in"
+  if (${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED)
+    tribits_report_invalid_tribits_usage(
+      "tribits_package_def() was called more than once in"
       "${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-  ENDIF()
+  endif()
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nTRIBITS_PACKAGE_DEF: ${PACKAGE_NAME}")
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("\nTRIBITS_PACKAGE_DEF: ${PACKAGE_NAME}")
+  endif()
 
-  IF (NOT ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("\n${PACKAGE_NAME} not enabled so exiting package processing")
-    ENDIF()
-    RETURN()
-  ENDIF()
+  if (NOT ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
+    if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message("\n${PACKAGE_NAME} not enabled so exiting package processing")
+    endif()
+    return()
+  endif()
 
   # Reset in case were changed by subpackages
-  TRIBITS_SET_COMMON_VARS(${PACKAGE_NAME})
+  tribits_set_common_vars(${PACKAGE_NAME})
 
-  # Define package linkage varaibles
-  TRIBITS_DEFINE_LINKAGE_VARS(${PACKAGE_NAME})
+  # Define package linkage variables
+  tribits_define_linkage_vars(${PACKAGE_NAME})
 
-  SET(${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED TRUE)
+  set(${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED TRUE)
 
-ENDMACRO()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_PACKAGE()
+# @MACRO: tribits_package()
 #
 # Macro called at the very beginning of a package's top-level
 # `<packageDir>/CMakeLists.txt`_ file.
 #
 # Usage::
 #
-#   TRIBITS_PACKAGE(
+#   tribits_package(
 #     <packageName>
 #     [ENABLE_SHADOWING_WARNINGS]
 #     [DISABLE_STRONG_WARNINGS]
@@ -359,52 +359,52 @@ ENDMACRO()
 #     [DISABLE_CIRCULAR_REF_DETECTION_FAILURE]
 #     )
 #
-# See `TRIBITS_PACKAGE_DECL()`_ for the documentation for the arguments and
-# `TRIBITS_PACKAGE_DECL()`_ and `TRIBITS_PACKAGE()`_ for a description the
+# See `tribits_package_decl()`_ for the documentation for the arguments and
+# `tribits_package_decl()`_ and `tribits_package()`_ for a description the
 # side-effects (and variables set) after calling this macro.
 #
-MACRO(TRIBITS_PACKAGE PACKAGE_NAME_IN)
+macro(tribits_package PACKAGE_NAME_IN)
 
-  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
-    IF (NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Cannot call TRIBITS_PACKAGE() in a subpackage."
-        " Use TRIBITS_SUBPACKAGE() instead"
+  if (CURRENTLY_PROCESSING_SUBPACKAGE)
+    if (NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Cannot call tribits_package() in a subpackage."
+        " Use tribits_subpackage() instead"
         " error in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
-  IF(${PACKAGE_NAME}_SUBPACKAGES)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "This package has subpackages so you cannot use TRIBITS_PACKAGE()"
+  if(${PACKAGE_NAME}_SUBPACKAGES)
+    tribits_report_invalid_tribits_usage(
+      "This package has subpackages so you cannot use tribits_package()"
       "\n Instead use the following call order:"
-      "\n TRIBITS_PROJECT_DECL(${PACKAGE_NAME})"
-      "\n TRIBITS_PROCESS_SUBPACKAGES()"
+      "\n tribits_project_decl(${PACKAGE_NAME})"
+      "\n tribits_process_subpackages()"
       "\n [do other things you want to do]"
-      "\n TRIBITS_PACKAGE_DEF()"
-      "\n TRIBITS_PACKAGE_POSTPROCESS()" )
-  ENDIF()
+      "\n tribits_package_def()"
+      "\n tribits_package_postprocess()" )
+  endif()
 
-  IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+  if(${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED)
+    tribits_report_invalid_tribits_usage(
       "Package ${PACKAGE_NAME} declared more than once!")
-  ENDIF()
+  endif()
 
-  SET(${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED TRUE)
+  set(${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED TRUE)
 
-  TRIBITS_PACKAGE_DECL(${PACKAGE_NAME_IN} ${ARGN})
-  TRIBITS_PACKAGE_DEF()
-ENDMACRO()
+  tribits_package_decl(${PACKAGE_NAME_IN} ${ARGN})
+  tribits_package_def()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_ADD_TEST_DIRECTORIES()
+# @MACRO: tribits_add_test_directories()
 #
 # Macro called to add a set of test directories for an SE package.
 #
 # Usage::
 #
-#    TRIBITS_ADD_TEST_DIRECTORIES(<dir1> <dir2> ...)
+#    tribits_add_test_directories(<dir1> <dir2> ...)
 #
 # This macro only needs to be called from the top most ``CMakeLists.txt`` file
 # for which all subdirectories are all "tests".
@@ -412,57 +412,58 @@ ENDMACRO()
 # This macro can be called several times within a package and it will have the
 # right effect.
 #
-# Currently, all this macro does macro is to call ``ADD_SUBDIRECTORY(<diri>)``
+# Currently, all this macro does macro is to call ``add_subdirectory(<diri>)``
 # if ``${PACKAGE_NAME}_ENABLE_TESTS`` or
 # ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS`` are ``TRUE``. However, this macro
 # may be extended in the future in order to modify behavior related to adding
 # tests and examples in a uniform way.
 #
-MACRO(TRIBITS_ADD_TEST_DIRECTORIES)
+macro(tribits_add_test_directories)
 
-  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
+  if (CURRENTLY_PROCESSING_SUBPACKAGE)
 
     # This is a subpackage being processed
 
-    IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_TEST_DIRECTORIES()"
+    if(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_subpackage() before tribits_add_test_directories()"
         " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    endif()
 
-    IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_ADD_TEST_DIRECTORIES() before "
-        " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_add_test_directories() before"
+        " tribits_subpackage_postprocess() in"
+        " ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
+    endif()
 
-  ELSE()
+  else()
 
     # This is a package being processed
 
-    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
-        " TRIBITS_ADD_TEST_DIRECTORIES() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_package() or tribits_package_decl() before"
+        " tribits_add_test_directories() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    endif()
 
-    IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_ADD_TEST_DIRECTORIES() before "
-        " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_add_test_directories() before "
+        " tribits_package_postprocess() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    endif()
 
-  ENDIF()
+  endif()
 
-  IF(${PACKAGE_NAME}_ENABLE_TESTS OR ${PARENT_PACKAGE_NAME}_ENABLE_TESTS)
-    FOREACH(TEST_DIR ${ARGN})
-      TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+  if(${PACKAGE_NAME}_ENABLE_TESTS OR ${PARENT_PACKAGE_NAME}_ENABLE_TESTS)
+    foreach(TEST_DIR ${ARGN})
+      tribits_trace_file_processing(PACKAGE  ADD_SUBDIR
         "${CMAKE_CURRENT_SOURCE_DIR}/${TEST_DIR}/CMakeLists.txt")
-      ADD_SUBDIRECTORY(${TEST_DIR})
-    ENDFOREACH()
-  ENDIF()
+      add_subdirectory(${TEST_DIR})
+    endforeach()
+  endif()
 
-ENDMACRO()
+endmacro()
 
 
 #
@@ -471,94 +472,94 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_ADD_DEBUG_OPTION()
+# @MACRO: tribits_add_debug_option()
 #
 # Add the standard cache variable option ``${PACKAGE_NAME}_ENABLE_DEBUG`` for
 # the package.
 #
 # Usage::
 #
-#   TRIBITS_ADD_DEBUG_OPTION()
+#   tribits_add_debug_option()
 #
 # This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
 # true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
 # the package's configured header file).  This macro is typically called in
 # the package's `<packageDir>/CMakeLists.txt`_ file.
 #
-MACRO(TRIBITS_ADD_DEBUG_OPTION)
-  TRIBITS_ADD_OPTION_AND_DEFINE(
+macro(tribits_add_debug_option)
+  tribits_add_option_and_define(
     ${PACKAGE_NAME}_ENABLE_DEBUG
     HAVE_${PACKAGE_NAME_UC}_DEBUG
     "Enable a host of runtime debug checking."
     ${${PROJECT_NAME}_ENABLE_DEBUG}
     )
-ENDMACRO()
+endmacro()
 
 
-MACRO(TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION)
-  OPTION(
+macro(tribits_add_enable_teuchos_time_monitor_option)
+  option(
     ${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
      "Enable Teuchos time monitors for package ${PACKAGE_NAME}"
     ${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}
     )
-ENDMACRO()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+# @MACRO: tribits_add_show_deprecated_warnings_option()
 #
 # Add the standard option ``${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` for the
 # package.
 #
 # Usage::
 #
-#   TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+#   tribits_add_show_deprecated_warnings_option()
 #
 # This macro should be called in the package's <packageDir>/CMakeLists.txt`_
 # file.  This option is given the default value
 # ``${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}``.  This option is then looked
-# for in `TRIBITS_CONFIGURE_FILE()`_ to add macros to add deprecated warnings
+# for in `tribits_configure_file()`_ to add macros to add deprecated warnings
 # to deprecated parts of a package.
 #
-MACRO(TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION)
-  ADVANCED_SET(
+macro(tribits_add_show_deprecated_warnings_option)
+  advanced_set(
     ${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS  ${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}
     CACHE BOOL
     "Show warnings about deprecated code in ${PACKAGE_NAME}"
     )
-  ADVANCED_SET(
+  advanced_set(
     ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE  ${${PROJECT_NAME}_HIDE_DEPRECATED_CODE}
     CACHE BOOL
     "Fully exclude deprecated code in ${PACKAGE_NAME}"
     )
-ENDMACRO()
+endmacro()
 
 
-MACRO(TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION)
-  TRIBITS_ADD_OPTION_AND_DEFINE(
+macro(tribits_add_explicit_instantiation_option)
+  tribits_add_option_and_define(
     ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
     HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION
     "Enable the use of explicit template instantiation."
     ${${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION}
     )
-ENDMACRO()
+endmacro()
 
 
-MACRO(TRIBITS_ADD_ETI_SUPPORT)
-  APPEND_GLOBAL_SET(${PROJECT_NAME}_ETI_PACKAGES ${PACKAGE_NAME})
-  GLOBAL_NULL_SET(${PACKAGE_NAME}_ETI_LIBRARYSET)
-ENDMACRO()
+macro(tribits_add_eti_support)
+  append_global_set(${PROJECT_NAME}_ETI_PACKAGES ${PACKAGE_NAME})
+  global_null_set(${PACKAGE_NAME}_ETI_LIBRARYSET)
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_ADD_EXAMPLE_DIRECTORIES()
+# @MACRO: tribits_add_example_directories()
 #
 # Macro called to conditionally add a set of example directories for an SE
 # package.
 #
 # Usage::
 #
-#    TRIBITS_ADD_EXAMPLE_DIRECTORIES(<dir1> <dir2> ...)
+#    tribits_add_example_directories(<dir1> <dir2> ...)
 #
 # This macro typically is called from the top-level
 # `<packageDir>/CMakeLists.txt`_ file for which all subdirectories are all
@@ -567,55 +568,55 @@ ENDMACRO()
 # This macro can be called several times within a package as desired to break
 # up example directories any way one would like.
 #
-# Currently, all it does macro does is to call ``ADD_SUBDIRECTORY(<diri>)`` if
+# Currently, all it does macro does is to call ``add_subdirectory(<diri>)`` if
 # ``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
 # ``${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES`` are true. However, this macro may
 # be extended in the future in order to modify behavior related to adding
 # tests and examples in a uniform way.
 #
-MACRO(TRIBITS_ADD_EXAMPLE_DIRECTORIES)
+macro(tribits_add_example_directories)
 
-  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
+  if (CURRENTLY_PROCESSING_SUBPACKAGE)
 
     # This is a subpackage being processed
-    IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_SUBPACKAGE() before TRIBITS_ADD_EXAMPLE_DIRECTORIES()"
+    if(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_subpackage() before tribits_add_example_directories()"
         " in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    endif()
 
-    IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_ADD_EXAMPLE_DIRECTORIES() before "
-        " TRIBITS_SUBPACKAGE_POSTPROCESS() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_add_example_directories() before "
+        " tribits_subpackage_postprocess() in ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
+    endif()
 
-  ELSE()
+  else()
 
     # This is a package being processed
-    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DECL() before"
-        " TRIBITS_ADD_EXAMPLE_DIRECTORIES() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_package() or tribits_package_decl() before"
+        " tribits_add_example_directories() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    endif()
 
-    IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_ADD_EXAMPLE_DIRECTORIES() before "
-        " TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-    ENDIF()
+    if(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_add_example_directories() before "
+        " tribits_package_postprocess() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+    endif()
 
-  ENDIF()
+  endif()
 
-  IF(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES)
-    FOREACH(EXAMPLE_DIR ${ARGN})
-      TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+  if(${PACKAGE_NAME}_ENABLE_EXAMPLES OR ${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES)
+    foreach(EXAMPLE_DIR ${ARGN})
+      tribits_trace_file_processing(PACKAGE  ADD_SUBDIR
         "${CMAKE_CURRENT_SOURCE_DIR}/${EXAMPLE_DIR}/CMakeLists.txt")
-      ADD_SUBDIRECTORY(${EXAMPLE_DIR})
-    ENDFOREACH()
-  ENDIF()
+      add_subdirectory(${EXAMPLE_DIR})
+    endforeach()
+  endif()
 
-ENDMACRO()
+endmacro()
 
 
 #
@@ -623,105 +624,105 @@ ENDMACRO()
 # package has no libraries.
 #
 
-FUNCTION(TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS)
+function(tribits_package_finalize_dependency_vars)
 
-  IF(${PACKAGE_NAME}_SUBPACKAGES)
+  if(${PACKAGE_NAME}_SUBPACKAGES)
 
     # A package with subpackages should get all of its dependency vars from
     # its enabled subpackages.
 
-    SET(PARENT_PACKAGE_INCLUDE_DIRS)
-    SET(PARENT_PACKAGE_LIBRARY_DIRS)
-    SET(PARENT_PACKAGE_LIBRARIES)
+    set(PARENT_PACKAGE_INCLUDE_DIRS)
+    set(PARENT_PACKAGE_LIBRARY_DIRS)
+    set(PARENT_PACKAGE_LIBRARIES)
 
-    SET(SUBPACKAGE_IDX 0)
-    FOREACH(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
+    set(SUBPACKAGE_IDX 0)
+    foreach(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
 
-      SET(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
-      SET(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
+      set(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
+      set(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
 
-      IF (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
-        PREPEND_SET(PARENT_PACKAGE_INCLUDE_DIRS
+      if (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
+        prepend_set(PARENT_PACKAGE_INCLUDE_DIRS
           ${${SUBPACKAGE_FULLNAME}_INCLUDE_DIRS})
-        PREPEND_SET(PARENT_PACKAGE_LIBRARY_DIRS
+        prepend_set(PARENT_PACKAGE_LIBRARY_DIRS
           ${${SUBPACKAGE_FULLNAME}_LIBRARY_DIRS})
-        PREPEND_SET(PARENT_PACKAGE_LIBRARIES
+        prepend_set(PARENT_PACKAGE_LIBRARIES
           ${${SUBPACKAGE_FULLNAME}_LIBRARIES})
-      ENDIF()
+      endif()
 
-      MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
+      math(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
 
-    ENDFOREACH()
+    endforeach()
 
-    IF (PARENT_PACKAGE_INCLUDE_DIRS)
-      LIST(REMOVE_DUPLICATES PARENT_PACKAGE_INCLUDE_DIRS)
-    ENDIF()
-    IF (PARENT_PACKAGE_LIBRARY_DIRS)
-      LIST(REMOVE_DUPLICATES PARENT_PACKAGE_LIBRARY_DIRS)
-    ENDIF()
+    if (PARENT_PACKAGE_INCLUDE_DIRS)
+      list(REMOVE_DUPLICATES PARENT_PACKAGE_INCLUDE_DIRS)
+    endif()
+    if (PARENT_PACKAGE_LIBRARY_DIRS)
+      list(REMOVE_DUPLICATES PARENT_PACKAGE_LIBRARY_DIRS)
+    endif()
     # NOTE: Above, in the rare case that none of the subpackages contain any
     # libraries or any include directories, we need to not call
-    # LIST(REMOVE_DUPLICATES ...).
+    # list(REMOVE_DUPLICATES ...).
 
-    # NOTE: There can't be any dupicate libraries in PARENT_PACKAGE_LIBRARIES
+    # NOTE: There can't be any duplicate libraries in PARENT_PACKAGE_LIBRARIES
     # so no need to remove them.
 
-    GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS "${PARENT_PACKAGE_INCLUDE_DIRS}")
-    GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS "${PARENT_PACKAGE_LIBRARY_DIRS}")
-    GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES "${PARENT_PACKAGE_LIBRARIES}")
+    global_set(${PACKAGE_NAME}_INCLUDE_DIRS "${PARENT_PACKAGE_INCLUDE_DIRS}")
+    global_set(${PACKAGE_NAME}_LIBRARY_DIRS "${PARENT_PACKAGE_LIBRARY_DIRS}")
+    global_set(${PACKAGE_NAME}_LIBRARIES "${PARENT_PACKAGE_LIBRARIES}")
 
-  ELSEIF(NOT ${PACKAGE_NAME}_INCLUDE_DIRS)
+  elseif(NOT ${PACKAGE_NAME}_INCLUDE_DIRS)
 
     # No libraries have been defined for this package so we are going to set
     # them based on this package's dependencies.
 
-    TRIBITS_SORT_AND_APPEND_PACKAGE_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+    tribits_sort_and_append_package_include_and_link_dirs_and_libs(
       ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
-    TRIBITS_SORT_AND_APPEND_TPL_INCLUDE_AND_LINK_DIRS_AND_LIBS(
+    tribits_sort_and_append_tpl_include_and_link_dirs_and_libs(
       ${PACKAGE_NAME}  LIB  LINK_LIBS)
 
-    GET_DIRECTORY_PROPERTY(INCLUDE_DIRS_CURRENT  INCLUDE_DIRECTORIES)
-    GET_DIRECTORY_PROPERTY(LIBRARY_DIRS_CURRENT  PACKAGE_LIBRARY_DIRS)
+    get_directory_property(INCLUDE_DIRS_CURRENT  INCLUDE_DIRECTORIES)
+    get_directory_property(LIBRARY_DIRS_CURRENT  PACKAGE_LIBRARY_DIRS)
 
-    PREPEND_GLOBAL_SET(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
-    PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
-    PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES  ${LINK_LIBS})
+    prepend_global_set(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
+    prepend_global_set(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
+    prepend_global_set(${PACKAGE_NAME}_LIBRARIES  ${LINK_LIBS})
 
-  ENDIF()
+  endif()
 
-ENDFUNCTION()
+endfunction()
 
 
 #
-# Helper macro for [SUB]TRIBITS_PACKAGE_POSTPROCESS()
+# Helper macro for [SUB]tribits_package_postprocess()
 #
-MACRO(TRIBITS_PACKAGE_POSTPROCESS_COMMON)
+macro(tribits_package_postprocess_common)
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nTRIBITS_PACKAGE_POSTPROCESS_COMMON: ${PACKAGE_NAME}")
-    PRINT_VAR(${PACKAGE_NAME}_INCLUDE_DIRS)
-    PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
-    PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("\nTRIBITS_PACKAGE_POSTPROCESS_COMMON: ${PACKAGE_NAME}")
+    print_var(${PACKAGE_NAME}_INCLUDE_DIRS)
+    print_var(${PACKAGE_NAME}_LIBRARY_DIRS)
+    print_var(${PACKAGE_NAME}_LIBRARIES)
+  endif()
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OR
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES OR
     ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
     )
     # Create the configure file so external projects can find packages with a
     # call to find_package(<package_name>).  This also creates the
     # Makefile.export.* files.
-    TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES(${PACKAGE_NAME})
-  ENDIF()
+    tribits_write_package_client_export_files(${PACKAGE_NAME})
+  endif()
 
-  SET(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
+  set(${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE TRUE
     CACHE INTERNAL "")
 
-ENDMACRO()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_PACKAGE_POSTPROCESS()
+# @MACRO: tribits_package_postprocess()
 #
 # Macro called at the very end of a package's top-level
 # `<packageDir>/CMakeLists.txt`_ file that performs some critical
@@ -729,106 +730,106 @@ ENDMACRO()
 #
 # Usage::
 #
-#   TRIBITS_PACKAGE_POSTPROCESS()
+#   tribits_package_postprocess()
 #
 # NOTE: It is unfortunate that this macro must be called in a packages's
 # top-level ``CMakeLists.txt`` file but limitations of the CMake language make
 # it necessary to do so.
 #
-MACRO(TRIBITS_PACKAGE_POSTPROCESS)
+macro(tribits_package_postprocess)
 
   # check that this is not being called from inside a subpackage
-  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
-    IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Cannot call TRIBITS_PACKAGE_POSTPROCESS() in a subpackage."
-        " Use TRIBITS_SUBPACKAGE_POSTPROCESS() instead"
+  if (CURRENTLY_PROCESSING_SUBPACKAGE)
+    if(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      tribits_report_invalid_tribits_usage(
+        "Cannot call tribits_package_postprocess() in a subpackage."
+        " Use tribits_subpackage_postprocess() instead"
         " ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
-  IF(${PACKAGE_NAME}_SUBPACKAGES)
+  if(${PACKAGE_NAME}_SUBPACKAGES)
      
     # This is a package that has subpackages
-    IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED OR
+    if(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED OR
        NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED OR
        NOT ${PACKAGE_NAME}_TRIBITS_PROCESS_SUBPACKAGES_CALLED )
 
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-	"Must call TRIBITS_PACKAGE_DECL(), TRIBITS_PROCESS_SUBPACKAGES()"
-        "and TRIBITS_PACKAGE_DEF before TRIBITS_PACKAGE_POSTPROCESS()."
-        " Because this package has subpackages you cannot use TRIBITS_PACKAGE()"
+      tribits_report_invalid_tribits_usage(
+	"Must call tribits_package_decl(), tribits_process_subpackages()"
+        " and tribits_package_def() before tribits_package_postprocess()."
+        "  Because this package has subpackages you cannot use tribits_package()"
         " you must call these in the following order:"
-        " TRIBITS_PACKAGE_DECL"
-        " TRIBITS_PROCESS_SUBPACKAGES"
-        " TRIBITS_PACKAGE_DEF"
-        " TRIBITS_PACKAGE_POSTPROCESS"
-        " in file: "
+        " tribits_package_decl()"
+        " tribits_process_subpackages()"
+        " tribits_package_def()"
+        " tribits_package_postprocess()"
+        " in: "
         "${TRIBITS_PACKAGE_CMAKELIST_FILE}"
         )
-    ENDIF()
+    endif()
 
-  ELSE()
+  else()
 
     # This is a package without subpackages
 
-    IF (
+    if (
 	(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED)
 	AND
 	(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED)
       )
-      TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-        "Must call TRIBITS_PACKAGE() or TRIBITS_PACKAGE_DEF() before"
-	" TRIBITS_PACKAGE_POSTPROCESS()"
+      tribits_report_invalid_tribits_usage(
+        "Must call tribits_package() or tribits_package_def() before"
+	" tribits_package_postprocess()"
 	" at the top of the file:\n"
 	"  ${TRIBITS_PACKAGE_CMAKELIST_FILE}"
 	)
-    ENDIF()
+    endif()
 
-  ENDIF()
+  endif()
   
-  IF(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "Must call TRIBITS_PACKAGE() before TRIBITS_PACKAGE_POSTPROCESS()" 
-      "Or if your package has subpackages you must first call TRIBITS_PACKAGE_DECL, "
-      "then TRIBITS_PROCESS_SUBPACKAGES, then TRIBITS_PACKAGE_DEF, then"
-      " TRIBITS_PACKAGE_POSTPROCESS"
+  if(NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED)
+    tribits_report_invalid_tribits_usage(
+      "Must call tribits_package() before tribits_package_postprocess()." 
+      "  Or if your package has subpackages you must first call tribits_package_decl(),"
+      " then tribits_process_subpackages(), then tribits_package_def(), then"
+      " tribits_package_postprocess() in"
       " ${TRIBITS_PACKAGE_CMAKELIST_FILE}"
       )
-  ENDIF()
+  endif()
 
-  IF(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "TRIBITS_PACKAGE_POSTPROCESS() has been called more than once in"
+  if(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
+    tribits_report_invalid_tribits_usage(
+      "tribits_package_postprocess() has been called more than once in"
       " ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-  ENDIF()
+  endif()
 
   # Only parent packages have the targets (${PACKAGE_NAME}_libs and
   # (${PACKAGE_NAME}_all
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nTRIBITS_PACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
-    PRINT_VAR(${PACKAGE_NAME}_LIB_TARGETS)
-    PRINT_VAR(${PACKAGE_NAME}_ALL_TARGETS)
-  ENDIF()
-  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
-  ADD_CUSTOM_TARGET(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("\nTRIBITS_PACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
+    print_var(${PACKAGE_NAME}_LIB_TARGETS)
+    print_var(${PACKAGE_NAME}_ALL_TARGETS)
+  endif()
+  add_custom_target(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
+  add_custom_target(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
 
-  TRIBITS_PACKAGE_FINALIZE_DEPENDENCY_VARS()
-  TRIBITS_PACKAGE_POSTPROCESS_COMMON()
+  tribits_package_finalize_dependency_vars()
+  tribits_package_postprocess_common()
 
-  IF (${PACKAGE_NAME}_SOURCE_DIR STREQUAL ${PROJECT_NAME}_SOURCE_DIR)
-    SET(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS TRUE)
-  ELSE()
-    SET(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS TRUE PARENT_SCOPE)
-  ENDIF()
+  if (${PACKAGE_NAME}_SOURCE_DIR STREQUAL ${PROJECT_NAME}_SOURCE_DIR)
+    set(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS TRUE)
+  else()
+    set(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS TRUE PARENT_SCOPE)
+  endif()
 
-  SET(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED TRUE)
+  set(${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED TRUE)
 
-ENDMACRO()
+endmacro()
 
 
 #
-# @MACRO: TRIBITS_PROCESS_SUBPACKAGES()
+# @MACRO: tribits_process_subpackages()
 #
 # Macro that processes the `TriBITS Subpackages`_ for a parent `TriBITS
 # package`_ for packages that are broken down into subpackages.  This is
@@ -836,86 +837,86 @@ ENDMACRO()
 #
 # Usage::
 #
-#   TRIBITS_PROCESS_SUBPACKAGES()
+#   tribits_process_subpackages()
 #
-# This macro must be called after `TRIBITS_PACKAGE_DECL()`_ but before
-# `TRIBITS_PACKAGE_DEF()`_.
+# This macro must be called after `tribits_package_decl()`_ but before
+# `tribits_package_def()`_.
 #
-MACRO(TRIBITS_PROCESS_SUBPACKAGES)
+macro(tribits_process_subpackages)
 
-  IF (CURRENTLY_PROCESSING_SUBPACKAGE)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "Cannot call TRIBITS_PROCESS_SUBPACKAGES() in a subpackage."
+  if (CURRENTLY_PROCESSING_SUBPACKAGE)
+    tribits_report_invalid_tribits_usage(
+      "Cannot call tribits_process_subpackages() in a subpackage."
       " subpackages cannot contain other subpackages"
       " ${CURRENT_SUBPACKAGE_CMAKELIST_FILE}")
-  ENDIF()
+  endif()
 
-  IF (${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "Must call TRIBITS_PROCESS_SUBPACKAGES() before TRIBITS_PACKAGE_POSTPROCESS()"
+  if (${PACKAGE_NAME}_TRIBITS_PACKAGE_POSTPROCESS_CALLED)
+    tribits_report_invalid_tribits_usage(
+      "Must call tribits_process_subpackages() before tribits_package_postprocess()"
       " in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")    
-  ENDIF()
+  endif()
 
-  IF (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "Must call TRIBITS_PACKAGE_DECL() before TRIBITS_PROCESS_SUBPACKAGES()"
-       "in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-  ENDIF()
-
-  IF (${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
-      "Must call TRIBITS_PACKAGE_DEF() after TRIBITS_PROCESS_SUBPACKAGES()"
+  if (NOT ${PACKAGE_NAME}_TRIBITS_PACKAGE_DECL_CALLED)
+    tribits_report_invalid_tribits_usage(
+      "Must call tribits_package_decl() before tribits_process_subpackages()"
       " in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
-  ENDIF()
+  endif()
 
-  IF (NOT ${PARENT_PACKAGE_NAME}_SUBPACKAGES)
-    TRIBITS_REPORT_INVALID_TRIBITS_USAGE(
+  if (${PACKAGE_NAME}_TRIBITS_PACKAGE_DEF_CALLED)
+    tribits_report_invalid_tribits_usage(
+      "Must call tribits_package_def() after tribits_process_subpackages()"
+      " in ${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+  endif()
+
+  if (NOT ${PARENT_PACKAGE_NAME}_SUBPACKAGES)
+    tribits_report_invalid_tribits_usage(
       "The TriBITS Package '${PACKAGE_NAME}' does not have any subpackages."
-      "  Therefore, you are not allowed to call TRIBITS_PROCESS_SUBPACKAGES()!")
-  ENDIF()
+      "  Therefore, you are not allowed to call tribits_process_subpackages()!")
+  endif()
 
-  SET(SUBPACKAGE_IDX 0)
-  FOREACH(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
+  set(SUBPACKAGE_IDX 0)
+  foreach(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
 
-    #MESSAGE("")
-    #PRINT_VAR(SUBPACKAGE_IDX)
-    #PRINT_VAR(TRIBITS_SUBPACKAGE)
+    #message("")
+    #print_var(SUBPACKAGE_IDX)
+    #print_var(TRIBITS_SUBPACKAGE)
 
-    SET(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
-    SET(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
-    #PRINT_VAR(SUBPACKAGE_FULLNAME)
+    set(SUBPACKAGE_NAME ${TRIBITS_SUBPACKAGE})
+    set(SUBPACKAGE_FULLNAME ${PARENT_PACKAGE_NAME}${TRIBITS_SUBPACKAGE})
+    #print_var(SUBPACKAGE_FULLNAME)
 
-    IF (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
+    if (${PROJECT_NAME}_ENABLE_${SUBPACKAGE_FULLNAME})
 
-      LIST(GET ${PARENT_PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_IDX} SUBPACKAGE_DIR)
-      #PRINT_VAR(SUBPACKAGE_DIR)
+      list(GET ${PARENT_PACKAGE_NAME}_SUBPACKAGE_DIRS ${SUBPACKAGE_IDX} SUBPACKAGE_DIR)
+      #print_var(SUBPACKAGE_DIR)
 
-      IF (NOT ${PROJECT_NAME}_BINARY_DIR STREQUAL ${PARENT_PACKAGE_NAME}_BINARY_DIR)
-        DUAL_SCOPE_SET(${SUBPACKAGE_FULLNAME}_BINARY_DIR 
+      if (NOT ${PROJECT_NAME}_BINARY_DIR STREQUAL ${PARENT_PACKAGE_NAME}_BINARY_DIR)
+        dual_scope_set(${SUBPACKAGE_FULLNAME}_BINARY_DIR 
           ${${PARENT_PACKAGE_NAME}_BINARY_DIR}/${SUBPACKAGE_DIR})
-      ELSE()
-        SET(${SUBPACKAGE_FULLNAME}_BINARY_DIR 
+      else()
+        set(${SUBPACKAGE_FULLNAME}_BINARY_DIR 
           ${${PARENT_PACKAGE_NAME}_BINARY_DIR}/${SUBPACKAGE_DIR})
-      ENDIF()
+      endif()
 
-      SET(CURRENT_SUBPACKAGE_CMAKELIST_FILE
+      set(CURRENT_SUBPACKAGE_CMAKELIST_FILE
         "${${SUBPACKAGE_FULLNAME}_SOURCE_DIR}/CMakeLists.txt")
-      TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+      tribits_trace_file_processing(PACKAGE  ADD_SUBDIR
         ${CURRENT_SUBPACKAGE_CMAKELIST_FILE} )
-      SET(CURRENTLY_PROCESSING_SUBPACKAGE ${SUBPACKAGE_FULLNAME}) 
-      ADD_SUBDIRECTORY(${${SUBPACKAGE_FULLNAME}_SOURCE_DIR}
+      set(CURRENTLY_PROCESSING_SUBPACKAGE ${SUBPACKAGE_FULLNAME}) 
+      add_subdirectory(${${SUBPACKAGE_FULLNAME}_SOURCE_DIR}
         ${${SUBPACKAGE_FULLNAME}_BINARY_DIR})
 
-    ENDIF()
+    endif()
 
-    MATH(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
+    math(EXPR SUBPACKAGE_IDX "${SUBPACKAGE_IDX}+1")
 
-  ENDFOREACH()
+  endforeach()
   
-        SET(CURRENTLY_PROCESSING_SUBPACKAGE FALSE) 
-  SET(${PACKAGE_NAME}_TRIBITS_PROCESS_SUBPACKAGES_CALLED TRUE)
+        set(CURRENTLY_PROCESSING_SUBPACKAGE FALSE) 
+  set(${PACKAGE_NAME}_TRIBITS_PROCESS_SUBPACKAGES_CALLED TRUE)
 
-ENDMACRO()
+endmacro()
 
 
 ##################################################################
@@ -933,7 +934,7 @@ ENDMACRO()
 #   ${PARENT_PACKAGE_NAME}_LIB_TARGETS
 #   ${PARENT_PACKAGE_NAME}_ALL_TARGETS
 #
-# without carefully studying the documentation in README.DEPENENCIES and then
+# without carefully studying the documentation in README.DEPENDENCIES and then
 # carefully studying all of the code and issues that modify these variables!
 #
 # ToDo: Write some good unit tests that pin down the behavior of all of this!

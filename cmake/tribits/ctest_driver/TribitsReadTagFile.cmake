@@ -1,16 +1,21 @@
-INCLUDE(TribitsCMakePolicies)
-INCLUDE(Split)
-
-
+# @FUNCTION: tribits_read_ctest_tag_file()
 #
 # Read in the <build>/Testing/TAG file contents
 #
+# Usage::
 #
-FUNCTION(TRIBITS_READ_CTEST_TAG_FILE  TAG_FILE_IN  BUILD_START_TIME_OUT  CDASH_TRACK_OUT)
-  FILE(READ "${TAG_FILE_IN}" TAG_FILE_STR)
-  SPLIT("${TAG_FILE_STR}" "\n" TAG_FILE_STR_LIST)
-  LIST(GET TAG_FILE_STR_LIST 0 BUILD_START_TIME)
-  LIST(GET TAG_FILE_STR_LIST 1 CDASH_TRACK)
-  SET(${BUILD_START_TIME_OUT} "${BUILD_START_TIME}" PARENT_SCOPE)
-  SET(${CDASH_TRACK_OUT} "${CDASH_TRACK}" PARENT_SCOPE)
-ENDFUNCTION()
+#   tribits_read_ctest_tag_file( <tagFileIn>
+#     <buildStartTimeOut> <cdashGroupOut> <cdashModelOut> )
+#
+function(tribits_read_ctest_tag_file  tagFileIn
+    buildStartTimeOut  cdashGroupOut  cdashModelOut
+  )
+  file(READ "${tagFileIn}" tagFileStr)
+  string(REPLACE "\n" ";" tagFileStrList "${tagFileStr}")
+  list(GET tagFileStrList 0 buildStartTime)
+  list(GET tagFileStrList 1 cdashGroup)
+  list(GET tagFileStrList 2 cdashModel)
+  set(${buildStartTimeOut} "${buildStartTime}" PARENT_SCOPE)
+  set(${cdashGroupOut} "${cdashGroup}" PARENT_SCOPE)
+  set(${cdashModelOut} "${cdashModel}" PARENT_SCOPE)
+endfunction()

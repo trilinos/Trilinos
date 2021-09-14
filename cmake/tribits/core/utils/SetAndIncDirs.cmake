@@ -38,19 +38,19 @@
 # @HEADER
 
 #
-# @MACRO: SET_AND_INC_DIRS()
+# @MACRO: set_and_inc_dirs()
 #
-# Set a variable to an include directory and call ``INCLUDE_DIRECTORIES()``
+# Set a variable to an include directory and call ``include_directories()``
 # (removes boiler-plate code).
 #
 # Usage:
 #
-#   SET_AND_INC_DIRS(<dirVarName> <includeDir>)
+#   set_and_inc_dirs(<dirVarName> <includeDir>)
 #
 # On output, this sets ``<dirVarName>`` to ``<includeDir>`` in the local scope
-# and calls ``INCLUDE_DIRECTORIES(<includeDir>)``.
+# and calls ``include_directories(<includeDir>)``.
 #
-MACRO(SET_AND_INC_DIRS  DIR_VAR_NAME  INCLUDE_DIR)
-  SET(${DIR_VAR_NAME} ${INCLUDE_DIR})
-  INCLUDE_DIRECTORIES(${${DIR_VAR_NAME}})
-ENDMACRO()
+macro(set_and_inc_dirs  DIR_VAR_NAME  INCLUDE_DIR)
+  set(${DIR_VAR_NAME} ${INCLUDE_DIR})
+  include_directories(${${DIR_VAR_NAME}})
+endmacro()

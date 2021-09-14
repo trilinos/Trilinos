@@ -390,16 +390,18 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
 
-   // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+   // loop over each field to be scattered
+   auto LIDs = globalIndexer_->getLIDs();
+   auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+   Kokkos::deep_copy(LIDs_h, LIDs);
+   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+     int fieldNum = fieldIds_[fieldIndex];
+     auto scatterField_h = Kokkos::create_mirror_view(scatterFields_[fieldIndex].get_static_view());
+     Kokkos::deep_copy(scatterField_h, scatterFields_[fieldIndex].get_static_view());
 
-      // globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-
-      // loop over each field to be scattered
-      for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
+     // scatter operation for each cell in workset
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
          if (!scatterIC_) {
            // this call "should" get the right ordering according to the Intrepid2 basis
@@ -411,7 +413,7 @@ evaluateFields(typename TRAITS::EvalData workset)
            // loop over basis functions
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
              int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
+             int lid = LIDs_h(cellLocalId, offset);
              if(lid<0) // not on this processor!
                continue;
              
@@ -421,7 +423,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
                  continue;
 
-             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+             ScalarT value = scatterField_h(worksetCellIndex,basisId);
              // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
 
              // then scatter the sensitivity vectors
@@ -444,11 +446,11 @@ evaluateFields(typename TRAITS::EvalData workset)
            // loop over basis functions
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
              int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
+             int lid = LIDs_h(cellLocalId, offset);
              if(lid<0) // not on this processor!
                continue;
              
-             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+             ScalarT value = scatterField_h(worksetCellIndex,basis);
              // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
 
              // then scatter the sensitivity vectors
@@ -465,7 +467,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                (*dirichletCounter_)[lid] = 1.0;
            }
          }
-      }
+     }
    }
 }
 

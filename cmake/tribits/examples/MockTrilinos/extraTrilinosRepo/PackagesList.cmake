@@ -38,6 +38,6 @@
 # @HEADER
 
 
-TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+tribits_repository_define_packages(
   ExtraPack         extrapack     ST
   )

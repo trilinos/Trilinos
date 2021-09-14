@@ -37,32 +37,32 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(ConcatStrings)
+include(ConcatStrings)
 
 #
-# @FUNCTION: APPEND_STRING_VAR_WITH_SEP()
+# @FUNCTION: append_string_var_with_sep()
 #
 # Append strings to a given string variable, joining them using a separator
 # string.
 #
 # Usage::
 #
-#   APPEND_STRING_VAR_WITH_SEP(<stringVar> "<sepStr>" "<str0>" "<str1>" ...)
+#   append_string_var_with_sep(<stringVar> "<sepStr>" "<str0>" "<str1>" ...)
 #
 # Each of the strings ``<stri>`` are appended to ``<stringVar>`` using the
 # separation string ``<sepStr>``.
 #
-FUNCTION(APPEND_STRING_VAR_WITH_SEP  STRING_VAR  SEP_STR)
-  #MESSAGE("APPEND_STRING_VAR: '${STRING_VAR}' '${SEP_STR}' ${ARGN}")
-  #PRINT_VAR(STRING_VAR)
-  #PRINT_VAR(${STRING_VAR})
-  IF (${STRING_VAR})
-    CONCAT_STRINGS( TMP_STRING "${${STRING_VAR}}${SEP_STR}" ${ARGN} )
-  ELSE()
-    CONCAT_STRINGS( TMP_STRING ${ARGN} )
-  ENDIF()
-  #PRINT_VAR( TMP_STRING )
-  SET(${STRING_VAR} "${TMP_STRING}" PARENT_SCOPE)
-  #SET(${STRING_VAR} "${${STRING_VAR}}${LINE}" PARENT_SCOPE)
-  #PRINT_VAR(STRING_VAR)
-ENDFUNCTION()
+function(append_string_var_with_sep  STRING_VAR  SEP_STR)
+  #message("APPEND_STRING_VAR: '${STRING_VAR}' '${SEP_STR}' ${ARGN}")
+  #print_var(STRING_VAR)
+  #print_var(${STRING_VAR})
+  if (${STRING_VAR})
+    concat_strings( TMP_STRING "${${STRING_VAR}}${SEP_STR}" ${ARGN} )
+  else()
+    concat_strings( TMP_STRING ${ARGN} )
+  endif()
+  #print_var( TMP_STRING )
+  set(${STRING_VAR} "${TMP_STRING}" PARENT_SCOPE)
+  #set(${STRING_VAR} "${${STRING_VAR}}${LINE}" PARENT_SCOPE)
+  #print_var(STRING_VAR)
+endfunction()

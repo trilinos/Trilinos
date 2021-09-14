@@ -38,24 +38,24 @@
 # @HEADER
 
 #
-# @FUNCTION: PREPEND_CMNDLINE_ARGS()
+# @FUNCTION: prepend_cmndline_args()
 #
 # Utility function that prepends command-line arguments to a variable of
 # command-line arguments.
 #
 # Usage::
 #
-#   PREPEND_CMNDLINE_ARGS(<var> "<extraArgs>")
+#   prepend_cmndline_args(<var> "<extraArgs>")
 #
 # This function just prepends the command-line arguments in the string
 # ``"<extraArgs>"`` but does not add an extra space if ``<var>`` is empty on
 # input.
 #
-FUNCTION(PREPEND_CMNDLINE_ARGS  CMNDLINE_VAR_NAME  EXTRAARGS)
-  IF (${CMNDLINE_VAR_NAME})
-    SET(${CMNDLINE_VAR_NAME} "${EXTRAARGS} ${${CMNDLINE_VAR_NAME}}" PARENT_SCOPE)
-  ELSE()
-    SET(${CMNDLINE_VAR_NAME} "${EXTRAARGS}" PARENT_SCOPE)
-  ENDIF()
-  #PRINT_VAR(${CMNDLINE_VAR_NAME})
-ENDFUNCTION()
+function(prepend_cmndline_args  CMNDLINE_VAR_NAME  EXTRAARGS)
+  if (${CMNDLINE_VAR_NAME})
+    set(${CMNDLINE_VAR_NAME} "${EXTRAARGS} ${${CMNDLINE_VAR_NAME}}" PARENT_SCOPE)
+  else()
+    set(${CMNDLINE_VAR_NAME} "${EXTRAARGS}" PARENT_SCOPE)
+  endif()
+  #print_var(${CMNDLINE_VAR_NAME})
+endfunction()

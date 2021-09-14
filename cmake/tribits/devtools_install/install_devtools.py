@@ -188,7 +188,7 @@ The informational arguments to this function are:
   
     Specifies GCC and MPICH (and other compiler-specific tools) to download
     and install under gcc-<gcc-version>/toolset/.  One can pick specific
-    componets with:
+    components with:
   
       --compiler-toolset=gcc,mpich
   
@@ -203,7 +203,7 @@ The informational arguments to this function are:
 
       --compiler-toolset=''
 
-The action argumnets are:
+The action arguments are:
 
   --initial-setup: Create <dev_env_base>/ directories and install
     load_dev_env.sh
@@ -238,7 +238,7 @@ NOTE: The actual tool installs are performed using the scripts:
 More information about what versions are installed, how they are installed,
 etc. is found in these scripts.  Note that some of these scripts apply patches
 for certain versions.  For details, look at the --help output from these
-scripts and look at the implementaion of these scripts.
+scripts and look at the implementation of these scripts.
 """        
 
 
