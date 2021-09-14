@@ -174,7 +174,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
   // Copy cell vertex coordinates into local workset arrays
   std::size_t offset = 0;
   for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
-    auto cell_vertex_coordinates = wkst->cell_vertex_coordinates;
+    auto cell_vertex_coordinates = wkst->cell_vertex_coordinates.get_static_view();
     Kokkos::parallel_for(wkst->num_cells, KOKKOS_LAMBDA (int cell) {
       for (std::size_t vertex = 0; vertex < vertex_coordinates.extent(1); ++ vertex)
 	      for (std::size_t dim = 0; dim < vertex_coordinates.extent(2); ++ dim) {
