@@ -21,7 +21,7 @@ The MueLu tutorial is written as a hands-on tutorial for MueLu,
 the next generation multigrid framework in Trilinos.
 It covers the whole spectrum from absolute beginners' topics to expert level.
 Since the focus of this tutorial is on practical and technical aspects
-of multigrid methods in general and \muelu in particular,
+of multigrid methods in general and Muelu in particular,
 the reader should already have a basic understanding of multigrid methods and their general underlying concepts.
 Please refer to multigrid textbooks for the theoretical background.
 
@@ -60,15 +60,25 @@ we provide a chapter describing the migration process from ML to MueLu.
 
 .. toctree::
    :maxdepth: 2
-   :caption: First Steps
+   :caption: Beginners Tutorial
 
-   pages/chapter_one.rst
-   
+   pages/quick_start.rst
+   pages/level_smoothers.rst
+   pages/multigrid_for_non_symmetric_problems.rst
+   pages/useful_tools_for_analysis.rst
+   pages/cd_example.rst
+
 .. toctree::
    :maxdepth: 2
    :caption: Advanced Topics
 
-   pages/chapter_two.rst
+   pages/xml_interface_for_advanced_users.rst
+   pages/muelu_factories_for_transfer_operators.rst
+   pages/rebalancing_hypergraph_repartitioning.rst
+   pages/advanced_concepts.rst
+   pages/aggregation.rst
+   pages/useful_commands_and_debugging.rst
+   pages/challenge.rst
 
 .. toctree::
    :maxdepth: 3
@@ -76,6 +86,14 @@ we provide a chapter describing the migration process from ML to MueLu.
 
    pages/multigrid_for_multiphysics.rst
    pages/user_api.rst
+   pages/ml_parameterlist_interpreter.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: More useful informations
+
+   pages/virtual_box_image.rst
+   pages/error_messages.rst
 
 Indices and tables
 ==================

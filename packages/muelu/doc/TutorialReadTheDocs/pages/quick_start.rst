@@ -24,13 +24,13 @@ The problem domain is the unit square with a Cartesian (uniform) mesh.
 User interface
 ====================
 
-For this tutorial there is an easy-to-use user interfaxe to perform some experiments with multigrid methods for the given problem as described in :ref:`quick_start/example problem`. To use the user-interface run ``./hands-on.py`` in a terminal in the ``../../../test/tutorial`` folder.
+For this tutorial there is an easy-to-use user interfaxe to perform some experiments with multigrid methods for the given problem as described in :ref:`quick_start/example problem`. To use the user-interface run **./hands-on.py** in a terminal in the **../../../test/tutorial** folder.
 First one has to coose a problem. For this tutorial the right choice is the option 0 for the Laplaxe 2D problem on a :math:`50 \times 50` mesh.
 
 .. image:: pics/tut1_1.png
   :width: 10cm
 
-Next one has to choose a xml file with the multigrid parameters. Choose option 2 and put in ``s1_easy.xml`` as filename for the xml file containing the xml parameters that are used for the multigrid method.
+Next one has to choose a xml file with the multigrid parameters. Choose option 2 and put in **s1_easy.xml** as filename for the xml file containing the xml parameters that are used for the multigrid method.
 
 .. note:
 
@@ -50,8 +50,8 @@ Next, choose option 0 and run the example. That is, the linear system is created
 .. image:: pics/tut1_3.png
   :width: 10cm
 
-Note that the line ``mpirun -np 2 MueLu_tutorial_laplace2d.exe -nx ...`` is the command that is executed in the background. Per default are 2 processors used.
-After pressing a key we are ready for a first analysis as it is stated by the green letters ``Results up to date!``
+Note that the line **mpirun -np 2 MueLu_tutorial_laplace2d.exe -nx ...** is the command that is executed in the background. Per default are 2 processors used.
+After pressing a key we are ready for a first analysis as it is stated by the green letters **Results up to date!**
 
 .. image:: pics/tut1_4.png
   :width: 10cm
@@ -126,19 +126,19 @@ The XML input deck - multigrid parameters
 -----------------------------------------
 After we have learned the basics of the driver program for our experiments we now perform some experiments with our multigrid methods. We again use the simple 2D Laplace problem. First, we create a copy of the solver parameters using 
 
-``cp s1_easy.xml mysolver.xml``
+**cp s1_easy.xml mysolver.xml**
 
 Then, we run the driver program again using
 
-``./hands-on.sh``
+**./hands-on.sh**
 
-and choose option 0 for the 2D-Laplace example on the ``50\times50`` mesh. Use the xml parameters from the ``mysolver.xml```file, that is, choose option 2 and put in ``mysolver.xml``. Make sure that the problem can be solved with the parameters (option 0) and verify the solver output.
-Once that is done it is time for some first experiments. Open your ``mysolver.xml`` file in a text editor. You can try option 3 for doing that, but alternatively you can also do it by hand choosing your favorite text editor.
+and choose option 0 for the 2D-Laplace example on the **50\times50** mesh. Use the xml parameters from the **mysolver.xml**`file, that is, choose option 2 and put in **mysolver.xml**. Make sure that the problem can be solved with the parameters (option 0) and verify the solver output.
+Once that is done it is time for some first experiments. Open your **mysolver.xml** file in a text editor. You can try option 3 for doing that, but alternatively you can also do it by hand choosing your favorite text editor.
 
 .. image:: pics/tut1_10.png
   :width: 10cm
 
-Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml file, that is, change the calue of the parameter ``max levels`` from 3 to 10. Do not forget to save the file and rerun the example by choosing option 0 in the driver program. The screen output should be the following
+Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml file, that is, change the calue of the parameter **max levels** from 3 to 10. Do not forget to save the file and rerun the example by choosing option 0 in the driver program. The screen output should be the following
 
 .. warning:
 
@@ -156,7 +156,7 @@ Now, let's change the maximum number of multigrid levels from 3 to 10 in the xml
 
   What happens if you allow only for a 1 level method (i.e., no multigrid)? How does this affext the preconditioned CG method?
 
-The option sa for ``smoothed aggregation`` in the multigrid algorithm parameter can be considered to be optimal for symmetric positive definite problems. We can compare it with the option unsmoothed as a robust but slower alternative. Let’s choose a 3 level multigrid method with unsmoothed transfer operators (i.e., max levels = 3, multigrid algorithm = unsmoothed), then we obtain
+The option sa for **smoothed aggregation** in the multigrid algorithm parameter can be considered to be optimal for symmetric positive definite problems. We can compare it with the option unsmoothed as a robust but slower alternative. Let’s choose a 3 level multigrid method with unsmoothed transfer operators (i.e., max levels = 3, multigrid algorithm = unsmoothed), then we obtain
 
 .. warning:
 
@@ -170,7 +170,7 @@ Compared with the smoothed aggregation method (multigrid algorithm = sa) which u
 
 .. note:
 
-  You can find the corresponding xml files also in ``../../../test/tutorial/s1_easy_3levels_smoothed.xml``
+  You can find the corresponding xml files also in **../../../test/tutorial/s1_easy_3levels_smoothed.xml**
 
 .. admonition: Exercise 6
 
