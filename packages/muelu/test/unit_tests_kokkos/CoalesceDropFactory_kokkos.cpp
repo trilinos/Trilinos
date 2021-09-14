@@ -749,11 +749,109 @@ namespace MueLuTests {
   } // AmalgamationStridedOffsetDropping2LW
 #endif
 
+
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, AggresiveDroppingIsMarkedAsBoundary, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    // Test that when everything but the diagonal is dropped, the node is marked as boundary
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers_kokkos::Parameters::getLib();
+
+    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 12*comm->getSize(), 0, comm);
+    Teuchos::RCP<Matrix> mtx = TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
+
+    {
+      Level fineLevel;
+      TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+      mtx->SetFixedBlockSize(1);
+      fineLevel.Set("A", mtx);
+
+      CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+      RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+      dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
+      dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+      dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
+      fineLevel.Request("Graph", &dropFact);
+      fineLevel.Request("DofsPerNode", &dropFact);
+
+      dropFact.Build(fineLevel);
+
+      RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+
+      auto boundaryNodes = graph->GetBoundaryNodeMap();
+      auto boundaryNodesHost = Kokkos::create_mirror_view(boundaryNodes);
+      Kokkos::deep_copy(boundaryNodesHost, boundaryNodes);
+      bool allNodesAreOnBoundary = true;
+      for (LO i = 0; i < Teuchos::as<LO>(boundaryNodesHost.size()); i++)
+        allNodesAreOnBoundary &= boundaryNodesHost(i);
+      TEST_EQUALITY(allNodesAreOnBoundary, true);
+    }
+
+    // {
+    //   Level fineLevel;
+    //   TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    //   mtx->SetFixedBlockSize(2);
+    //   fineLevel.Set("A", mtx);
+
+    //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+    //   RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
+    //   dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+    //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
+    //   fineLevel.Request("Graph", &dropFact);
+    //   fineLevel.Request("DofsPerNode", &dropFact);
+
+    //   dropFact.Build(fineLevel);
+
+    //   RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+
+    //   auto boundaryNodes = graph->GetBoundaryNodeMap();
+    //   bool allNodesAreOnBoundary = true;
+    //   for (LO i = 0; i < Teuchos::as<LO>(boundaryNodes.size()); i++)
+    //     allNodesAreOnBoundary &= boundaryNodes[i];
+    //   TEST_EQUALITY(allNodesAreOnBoundary, true);
+    // }
+
+    // {
+    //   Level fineLevel;
+    //   TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+    //   mtx->SetFixedBlockSize(3);
+    //   fineLevel.Set("A", mtx);
+
+    //   CoalesceDropFactory_kokkos dropFact = CoalesceDropFactory_kokkos();
+    //   RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    //   dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
+    //   dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+    //   dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
+    //   fineLevel.Request("Graph", &dropFact);
+    //   fineLevel.Request("DofsPerNode", &dropFact);
+
+    //   dropFact.Build(fineLevel);
+
+    //   RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph", &dropFact);
+
+    //   auto boundaryNodes = graph->GetBoundaryNodeMap();
+    //   bool allNodesAreOnBoundary = true;
+    //   for (LO i = 0; i < Teuchos::as<LO>(boundaryNodes.size()); i++)
+    //     allNodesAreOnBoundary &= boundaryNodes[i];
+    //   TEST_EQUALITY(allNodesAreOnBoundary, true);
+    // }
+
+  } // AggresiveDroppingIsMarkedAsBoundary
+
 #define MUELU_ETI_GROUP(SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, Constructor,                   SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicScalarWithoutFiltering, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicScalarWithFiltering,    SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithoutFiltering,  SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, AggresiveDroppingIsMarkedAsBoundary,  SC, LO, GO, NO) \
 
   //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory_kokkos, ClassicBlockWithFiltering,     SC, LO, GO, NO) // not implemented yet
 
