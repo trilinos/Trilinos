@@ -47,10 +47,6 @@
 #define FAKEKOKKOS_CONFIGDEFS_H
 
 #include <Xpetra_ConfigDefs.hpp>
-#ifdef HAVE_XPETRA_KOKKOSCORE
-#  include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#else
-#  include "Kokkos_SerialNode.hpp"
-#endif
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #endif
