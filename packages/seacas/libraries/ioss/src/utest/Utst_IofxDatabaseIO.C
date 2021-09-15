@@ -186,7 +186,7 @@ namespace {
         std::vector<int64_t> connectivity_per_block;
 
         CHECK(block->field_exists("element_side_raw"));
-        block->get_field_data("element_side", side_ids_per_block);
+        block->get_field_data("element_side_raw", side_ids_per_block);
         for (size_t k = 0; k < side_ids_per_block.size(); k += 2) {
           element_ids.push_back(side_ids_per_block[k]);
           side_ids.push_back(side_ids_per_block[k + 1]);
