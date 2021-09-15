@@ -304,9 +304,9 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   for (const auto blockDOFMgr : globalIndexer_->getFieldDOFManagers())
     elementBlockGIDCount += blockDOFMgr->getElementBlockGIDCount(blockId);
 
-  worksetLIDs_ = PHX::View<LO**>("ScatterResidual_BlockedTpetra(Jacobian):worksetLIDs",
-                                                scatterFields_[0].extent(0),
-						elementBlockGIDCount);
+  worksetLIDs_ = Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device>(
+                    "ScatterResidual_BlockedTpetra(Jacobian):worksetLIDs_",
+                    scatterFields_[0].extent(0), elementBlockGIDCount );
 
   // Compute the block offsets
   const auto& blockGlobalIndexers = globalIndexer_->getFieldDOFManagers();
@@ -321,18 +321,17 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   hostBlockOffsets(numBlocks) = hostBlockOffsets(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
-  // Make sure the that hard coded derivative dimension in the
-  // evaluate call is large enough to hold all derivatives for each
-  // sub block load
+  // Make sure the that derivative dimension in the evaluate call is large
+  // enough to hold all derivatives for each sub block load
+  int max_blockDerivativeSize = 0;
   for (int blk=0;blk<numBlocks;blk++) {
     const int blockDerivativeSize = hostBlockOffsets(blk+1) - hostBlockOffsets(blk);
-    TEUCHOS_TEST_FOR_EXCEPTION(blockDerivativeSize > 256, std::runtime_error,
-                               "ERROR: the derivative dimension for sub block "
-                               << blk << "with a value of " << blockDerivativeSize
-                               << "is larger than the size allocated for cLIDs and vals "
-                               << "in the evaluate call! You must manually increase the "
-                               << "size and recompile!");
+    if ( blockDerivativeSize > max_blockDerivativeSize )
+      max_blockDerivativeSize = blockDerivativeSize;
   }
+  workset_vals_ = Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device>(
+                    "ScatterResidual_BlockedTpetra(Jacobian):workset_vals_",
+                    scatterFields_[0].extent(0), max_blockDerivativeSize );
 }
 
 // **********************************************************************
@@ -454,18 +453,17 @@ evaluateFields(typename TRAITS::EvalData workset)
 
     // Class data fields for lambda capture
     const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];
-    const PHX::View<const LO**> worksetLIDs = worksetLIDs_;
     const PHX::View<const ScalarT**> fieldValues = scatterFields_[fieldIndex].get_static_view();
     const PHX::View<const LO*> blockOffsets = blockOffsets_;
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
-      LO cLIDs[256];
-      typename Sacado::ScalarType<ScalarT>::type vals[256];
+    const Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> worksetLIDs = worksetLIDs_;
+    Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device> workset_vals = workset_vals_;
 
+    Kokkos::parallel_for(Kokkos::RangePolicy<PHX::Device>(0,workset.num_cells), KOKKOS_LAMBDA (const int& cell) {
       for(int basis=0; basis < static_cast<int>(fieldOffsets.size()); ++basis) {
         typedef PHX::MDField<const ScalarT,Cell,NODE> FieldType;
         typename FieldType::array_type::reference_type tmpFieldVal = fieldValues(cell,basis);
-	const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
+        const int rowLID = worksetLIDs(cell,fieldOffsets(basis));
 
         if (haveResidual)
           Kokkos::atomic_add(&kokkosResidual(rowLID,0), tmpFieldVal.val());
@@ -475,12 +473,11 @@ evaluateFields(typename TRAITS::EvalData workset)
             const int start = blockOffsets(blockColIndex);
             const int stop = blockOffsets(blockColIndex+1);
             const int sensSize = stop-start;
-            // Views may be padded. Use contiguous arrays here
-            for (int i=0; i < sensSize; ++i) {
-              cLIDs[i] = worksetLIDs(cell,start+i);
-              vals[i] = tmpFieldVal.fastAccessDx(start+i);
-            }
-            jacTpetraBlocks(blockRowIndex,blockColIndex).sumIntoValues(rowLID,cLIDs,sensSize,vals,true,true);
+
+            for (int i=0; i < sensSize; ++i)
+              workset_vals(cell,i) = tmpFieldVal.fastAccessDx(start+i);
+
+            jacTpetraBlocks(blockRowIndex,blockColIndex).sumIntoValues(rowLID, &worksetLIDs(cell,start), sensSize, &workset_vals(cell,0), true,true);
           }
         }
       }
