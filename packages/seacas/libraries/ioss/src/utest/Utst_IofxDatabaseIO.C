@@ -26,7 +26,7 @@
 #include <fmt/format.h>
 
 namespace {
-  std::string filename = "ADeDA.e";
+  std::string input_filename = "ADeDA.e";
 
   void test_topology(const Ioss::ElementTopology *topology, const std::string &gold_top,
                      const int parameteric_dim, const int num_vertices, const int num_nodes,
@@ -67,7 +67,7 @@ namespace {
 
   TEST_CASE("Ioex::constructor", "[Ioex::constructor]")
   {
-    Ioex::DatabaseIO *db_io = create_input_db_io(filename);
+    Ioex::DatabaseIO *db_io = create_input_db_io(input_filename);
 
     Ioss::Region region(db_io);
 
@@ -253,7 +253,7 @@ namespace {
   // BeginDocTest2
   TEST_CASE("Ioex::write_file", "[test_writing_of_file]")
   {
-    Ioex::DatabaseIO *db_in = create_input_db_io(filename);
+    Ioex::DatabaseIO *db_in = create_input_db_io(input_filename);
 
     Ioss::Region input_region(db_in);
 
@@ -343,15 +343,17 @@ namespace {
 
     output_region.begin_mode(Ioss::STATE_MODEL);
 
-    Ioss::NodeBlock *input_node_block = input_region.get_node_blocks()[0];
+    {
+      Ioss::NodeBlock *input_node_block = input_region.get_node_blocks()[0];
 
-    std::vector<double> coordinates;
-    input_node_block->get_field_data("mesh_model_coordinates", coordinates);
-    output_node_block->put_field_data("mesh_model_coordinates", coordinates);
+      std::vector<double> coordinates;
+      input_node_block->get_field_data("mesh_model_coordinates", coordinates);
+      output_node_block->put_field_data("mesh_model_coordinates", coordinates);
 
-    std::vector<int64_t> node_ids;
-    input_node_block->get_field_data("ids", node_ids);
-    output_node_block->put_field_data("ids", node_ids);
+      std::vector<int64_t> node_ids;
+      input_node_block->get_field_data("ids", node_ids);
+      output_node_block->put_field_data("ids", node_ids);
+    }
 
     std::vector<Ioss::ElementBlock *> output_element_blocks = output_region.get_element_blocks();
     for (size_t blk = 0; blk < output_element_blocks.size(); blk++) {
