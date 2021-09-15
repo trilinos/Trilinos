@@ -574,8 +574,8 @@ generateSurfacePermutations(const int num_cells,
 
 }
 
-template<typename DataType>
-using UnmanagedDynRankView = Kokkos::DynRankView<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+//template<typename DataType>
+//using UnmanagedDynRankView = Kokkos::DynRankView<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
 template <typename Scalar>
 IntegrationValues2<Scalar>::
@@ -773,7 +773,7 @@ setup(const Teuchos::RCP<const panzer::IntegrationRule>& ir,
 
     const int num_space_dim = int_rule->topology->getDimension();
     const int num_vertexes = int_rule->topology->getNodeCount();
-    TEUCHOS_ASSERT(vertex_coordinates.extent(1) == num_vertexes);
+    TEUCHOS_ASSERT(static_cast<int>(vertex_coordinates.extent(1)) == num_vertexes);
 
     auto aux = af.template buildStaticArray<Scalar,Cell,NODE,Dim>("node_coordinates",num_cells_,num_vertexes, num_space_dim);
     Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_vertexes,num_space_dim});
@@ -976,8 +976,13 @@ getJacobian(const bool cache,
   auto s_jac        = Kokkos::subdynrankview(aux.get_view(),       cell_range,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
 
   // FIXME: Intrepid requires some specific types, so we re-wrap our views in non-const views
-  UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
-  UnmanagedDynRankView<Scalar> nonconst_ref_coord(const_cast<Scalar*>(s_ref_coord.data()), num_evaluate_cells_,num_ip,num_space_dim);
+  //UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+  Kokkos::DynRankView<Scalar,PHX::Device> nonconst_node_coord("scratch: nonconst_node_coord", num_evaluate_cells_,num_nodes,num_space_dim);
+  Kokkos::deep_copy(nonconst_node_coord,s_node_coord);
+
+//  UnmanagedDynRankView<Scalar> nonconst_ref_coord(const_cast<Scalar*>(s_ref_coord.data()), num_evaluate_cells_,num_ip,num_space_dim);
+  Kokkos::DynRankView<Scalar,PHX::Device> nonconst_ref_coord("scratch: nonconst_ref_coord", num_evaluate_cells_,num_ip,num_space_dim);
+  Kokkos::deep_copy(nonconst_ref_coord,s_ref_coord);
 
   cell_tools.setJacobian(s_jac, nonconst_ref_coord, nonconst_node_coord,*(int_rule->topology));
 
@@ -1096,7 +1101,9 @@ getWeightedMeasure(const bool cache,
     auto s_weighted_measure = Kokkos::subdynrankview(aux.get_view(),           cell_range,Kokkos::ALL());
 
     // FIXME: Intrepid requires some specific types, so we re-wrap our views in non-const views
-    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+//    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::DynRankView<Scalar,PHX::Device> nonconst_node_coord("scratch: nonconst_node_coord", num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::deep_copy(nonconst_node_coord,s_node_coord);
 
     intrepid_cubature->getCubature(s_cub_points.get_view(),s_weighted_measure,nonconst_node_coord);
 
@@ -1273,7 +1280,9 @@ getWeightedNormals(const bool cache,
   auto s_node_coord       = Kokkos::subdynrankview(getNodeCoordinates().get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
 
   // FIXME: Intrepid requires some specific types, so we re-wrap our views in non-const views
-  UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+//  UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+  Kokkos::DynRankView<Scalar,PHX::Device> nonconst_node_coord("scratch: nonconst_node_coord", num_evaluate_cells_,num_nodes,num_space_dim);
+  Kokkos::deep_copy(nonconst_node_coord,s_node_coord);
 
   intrepid_cubature->getCubature(s_cub_points,s_weighted_normals,nonconst_node_coord);
 
@@ -1612,7 +1621,9 @@ getCubaturePoints(const bool cache,
     auto s_cub_points = Kokkos::subdynrankview(aux.get_view(),           cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     // FIXME: getCubature call requires a non-const node coordinates array
-    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+//    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::DynRankView<Scalar,PHX::Device> nonconst_node_coord("scratch: nonconst_node_coord", num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::deep_copy(nonconst_node_coord,s_node_coord);
 
     // TODO: We need to pull this apart for control volumes. Right now we calculate both weighted measures/norms and cubature points at the same time
     if(int_rule->cv_type == "side"){
@@ -1632,8 +1643,13 @@ getCubaturePoints(const bool cache,
     auto s_node_coord = Kokkos::subview(getNodeCoordinates().get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     // FIXME: Intrepid requires some specific types, so we re-wrap our views in non-const views
-    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
-    UnmanagedDynRankView<Scalar> nonconst_ref_coord(const_cast<Scalar*>(s_ref_coord.data()), num_evaluate_cells_,num_ip,num_space_dim);
+//    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::DynRankView<Scalar,PHX::Device> nonconst_node_coord("scratch: nonconst_node_coord", num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::deep_copy(nonconst_node_coord,s_node_coord);
+
+//    UnmanagedDynRankView<Scalar> nonconst_ref_coord(const_cast<Scalar*>(s_ref_coord.data()), num_evaluate_cells_,num_ip,num_space_dim);
+    Kokkos::DynRankView<Scalar,PHX::Device> nonconst_ref_coord("scratch: nonconst_ref_coord", num_evaluate_cells_,num_ip,num_space_dim);
+    Kokkos::deep_copy(nonconst_ref_coord,s_ref_coord);
 
     Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
     cell_tools.mapToPhysicalFrame(s_coord, nonconst_ref_coord, nonconst_node_coord, *(int_rule->topology));
@@ -1685,8 +1701,13 @@ getCubaturePointsRef(const bool cache,
     auto s_node_coord = Kokkos::subview(getNodeCoordinates().get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
 
     // FIXME: Intrepid requires some specific types, so we re-wrap our views in non-const views
-    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
-    UnmanagedDynRankView<Scalar> nonconst_coord(const_cast<Scalar*>(s_coord.data()), num_evaluate_cells_,num_ip,num_space_dim);
+//    UnmanagedDynRankView<Scalar> nonconst_node_coord(const_cast<Scalar*>(s_node_coord.data()), num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::DynRankView<Scalar,PHX::Device> nonconst_node_coord("scratch: nonconst_node_coord", num_evaluate_cells_,num_nodes,num_space_dim);
+    Kokkos::deep_copy(nonconst_node_coord,s_node_coord);
+
+//    UnmanagedDynRankView<Scalar> nonconst_coord(const_cast<Scalar*>(s_coord.data()), num_evaluate_cells_,num_ip,num_space_dim);
+    Kokkos::DynRankView<Scalar,PHX::Device> nonconst_coord("scratch: nonconst_coord", num_evaluate_cells_,num_ip,num_space_dim);
+    Kokkos::deep_copy(nonconst_coord,s_coord);
 
     cell_tools.mapToReferenceFrame(s_ref_coord, nonconst_coord, nonconst_node_coord, *(int_rule->topology));
 
