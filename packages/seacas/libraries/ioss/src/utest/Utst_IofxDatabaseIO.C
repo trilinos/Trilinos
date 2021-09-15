@@ -415,7 +415,7 @@ int main(int argc, char **argv)
 #endif
 
   auto cli =
-      session.cli() | Opt(filename, "filename")["-F"]["--filename"]("The filename path to ADeDA.e");
+      session.cli() | Opt(input_filename, "filename")["-F"]["--filename"]("The filename path to ADeDA.e");
 
   session.cli(cli);
 
