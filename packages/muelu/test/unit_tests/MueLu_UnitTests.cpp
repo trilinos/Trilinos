@@ -58,9 +58,7 @@ specific unit test suites.
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#ifdef HAVE_MUELU_KOKKOSCORE
 #include <Kokkos_Core.hpp>
-#endif
 
 #include "MueLu_TestHelpers.hpp"
 
@@ -68,9 +66,7 @@ int main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-#ifdef HAVE_MUELU_KOKKOSCORE
   Kokkos::initialize(argc , argv);
-#endif
 
   bool success = false;
   bool verbose = true;
@@ -113,9 +109,7 @@ int main(int argc, char* argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-#ifdef HAVE_MUELU_KOKKOSCORE
   Kokkos::finalize();
-#endif
 
   return (success ? ierr : EXIT_FAILURE);
 }

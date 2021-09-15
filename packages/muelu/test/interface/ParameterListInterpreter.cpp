@@ -447,6 +447,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 int main(int argc, char *argv[]) {
   Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+#ifdef KOKKOS_ENABLE_OPENMP
+  omp_set_num_threads(1);
+#endif
   return Automatic_Test_ETI(argc,argv);
 }
 

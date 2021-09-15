@@ -129,7 +129,7 @@ namespace MueLu {
     const bool   useMap               = pL.get<bool>  ("repartition: use map");
 
     int thread_per_mpi_rank = 1;
-#if defined(HAVE_MUELU_KOKKOSCORE) && defined(KOKKOS_ENABLE_OPENMP)
+#if defined(KOKKOS_ENABLE_OPENMP)
     using execution_space = typename Node::device_type::execution_space;
     if (std::is_same<execution_space, Kokkos::OpenMP>::value)
       thread_per_mpi_rank = execution_space::concurrency();

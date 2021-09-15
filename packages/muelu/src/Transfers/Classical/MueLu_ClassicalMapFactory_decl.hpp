@@ -60,9 +60,7 @@
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Graph_fwd.hpp"
 #include "MueLu_LWGraph_fwd.hpp"
-#ifdef HAVE_MUELU_KOKKOSCORE
 #include "MueLu_LWGraph_kokkos_fwd.hpp"
-#endif
 
 namespace MueLu {
 
