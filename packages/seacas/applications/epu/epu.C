@@ -111,16 +111,6 @@ namespace {
   std::string format_time(double seconds);
   int         get_width(int max_value);
 
-  void LOG(const std::string &message)
-  {
-    if ((debug_level & 1) != 0u) {
-      fmt::print("{}", time_stamp(tsFormat));
-    }
-    if (rank == 0) {
-      fmt::print("{}", message);
-    }
-  }
-
   void LOG(const char *message)
   {
     if ((debug_level & 1) != 0u) {
