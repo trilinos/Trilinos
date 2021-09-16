@@ -50,6 +50,7 @@
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #endif
@@ -91,8 +92,8 @@ NOX::StatusTest::Factory::~Factory()
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildStatusTests(const std::string& /* file_name */ , const NOX::Utils& u,
-          std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
-         tagged_tests) const
+                 std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+                 tagged_tests) const
 {
   Teuchos::RCP<NOX::StatusTest::Generic> status_tests;
 
@@ -112,8 +113,8 @@ buildStatusTests(const std::string& /* file_name */ , const NOX::Utils& u,
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& u,
-          std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
-         tagged_tests) const
+                 std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+                 tagged_tests) const
 {
   Teuchos::RCP<NOX::StatusTest::Generic> status_test;
 
@@ -163,23 +164,33 @@ buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& u,
 // ************************************************************************
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildComboTest(Teuchos::ParameterList& p, const NOX::Utils& u,
-           std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
-           tagged_tests) const
+               std::map<std::string,Teuchos::RCP<NOX::StatusTest::Generic>>* tagged_tests) const
 {
+  // Validation is tricky due to number of tests being runtime
+  // parameter.
+  int number_of_tests = p.get<int>("Number of Tests"); // Must be set by user
 
-  int number_of_tests = get<int>(p, "Number of Tests");
-
-  std::string combo_type_string = get<std::string>(p, "Combo Type");
-  NOX::StatusTest::Combo::ComboType combo_type;
-  if (combo_type_string == "AND")
-    combo_type = NOX::StatusTest::Combo::AND;
-  else if (combo_type_string == "OR")
-    combo_type = NOX::StatusTest::Combo::OR;
-  else{
-    std::string msg =
-      "Error - The \"Combo Type\" must be \"AND\" or \"OR\"!";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","Combo");
+  validParams.set<int>("Number of Tests",number_of_tests);
+  for (int t=0; t < number_of_tests; ++t) {
+    std::ostringstream subtest_name;
+    subtest_name << "Test " << t;
+    validParams.sublist(subtest_name.str());
   }
+  // ROGER disable recursive
+  Teuchos::setStringToIntegralParameter<NOX::StatusTest::Combo::ComboType>
+    ("Combo Type", "AND", "Type of combination test to use, \"AND\" or \"OR\".",
+     Teuchos::tuple<std::string> ("AND","OR"),
+     Teuchos::tuple<NOX::StatusTest::Combo::ComboType>(NOX::StatusTest::Combo::AND,
+                                                       NOX::StatusTest::Combo::OR),
+     &validParams);
+  validParams.set("Tag","");
+  int validation_depth = 0; // Do not validate the sublists, they are
+                            // validated separately for each test.
+  p.validateParametersAndSetDefaults(validParams,validation_depth);
+
+  auto combo_type = Teuchos::getIntegralValue<NOX::StatusTest::Combo::ComboType>(p,"Combo Type");
 
   RCP<NOX::StatusTest::Combo> combo_test =
     rcp(new NOX::StatusTest::Combo(combo_type, &u));
@@ -203,57 +214,49 @@ buildComboTest(Teuchos::ParameterList& p, const NOX::Utils& u,
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 {
-  double tolerance = p.get("Tolerance", 1.0e-8);
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","NormF");
+  validParams.set<double>("Tolerance",1.0e-8);
+  Teuchos::setStringToIntegralParameter<NOX::Abstract::Vector::NormType>
+    ("Norm Type", "Two Norm", "Type of norm to use.",
+     Teuchos::tuple<std::string>("Two Norm","One Norm","Max Norm"),
+     Teuchos::tuple<NOX::Abstract::Vector::NormType>(NOX::Abstract::Vector::TwoNorm,
+                                                     NOX::Abstract::Vector::OneNorm,
+                                                     NOX::Abstract::Vector::MaxNorm),
+     &validParams);
+  Teuchos::setStringToIntegralParameter<NOX::StatusTest::NormF::ScaleType>
+    ("Scale Type", "Unscaled", "Whether to use scaled or unscaled norms.",
+     Teuchos::tuple<std::string> ("Unscaled","Scaled"),
+     Teuchos::tuple<NOX::StatusTest::NormF::ScaleType>(NOX::StatusTest::NormF::Unscaled,
+                                                       NOX::StatusTest::NormF::Scaled),
+     &validParams);
+  validParams.set<Teuchos::RCP<NOX::Abstract::Group>>("Initial Guess",Teuchos::null);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
 
-  // Norm Type
-  std::string norm_type_string = p.get("Norm Type", "Two Norm");
-  NOX::Abstract::Vector::NormType norm_type = NOX::Abstract::Vector::TwoNorm;
-  if (norm_type_string == "Two Norm")
-    norm_type = NOX::Abstract::Vector::TwoNorm;
-  else if (norm_type_string == "One Norm")
-    norm_type = NOX::Abstract::Vector::OneNorm;
-  else if (norm_type_string == "Max Norm")
-    norm_type = NOX::Abstract::Vector::MaxNorm;
-  else {
-    std::string msg = "\"Norm Type\" must be either \"Two Norm\", \"One Norm\", or \"Max Norm\"!";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
-
-  // Scale Type
-  std::string scale_type_string = p.get("Scale Type", "Unscaled");
-  NOX::StatusTest::NormF::ScaleType scale_type =
-    NOX::StatusTest::NormF::Unscaled;
-  if (scale_type_string == "Unscaled")
-    scale_type = NOX::StatusTest::NormF::Unscaled;
-  else if (scale_type_string == "Scaled")
-    scale_type = NOX::StatusTest::NormF::Scaled;
-  else {
-    std::string msg = "\"Scale Type\" must be either \"Unscaled\" or \"Scaled\"!";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
+  double tolerance = p.get<double>("Tolerance");
+  auto norm_type = Teuchos::getIntegralValue<NOX::Abstract::Vector::NormType>(p,"Norm Type");
+  auto scale_type = Teuchos::getIntegralValue<NOX::StatusTest::NormF::ScaleType>(p,"Scale Type");
 
   // Relative or absoltue tolerance (relative requires f_0)
   bool use_relative_tolerance = false;
-  Teuchos::RCP<NOX::Abstract::Group> group;
-  if (isParameterType< RCP<NOX::Abstract::Group> >(p, "Initial Guess")) {
-    group = get< RCP<NOX::Abstract::Group> >(p, "Initial Guess");
+  auto group = p.get<Teuchos::RCP<NOX::Abstract::Group>>("Initial Guess");
+  if (nonnull(group))
     use_relative_tolerance = true;
-  }
 
   RCP<NOX::StatusTest::NormF> status_test;
 
   if (use_relative_tolerance)
     status_test = rcp(new NOX::StatusTest::NormF(*group,
-                         tolerance,
-                         norm_type,
-                         scale_type,
-                         &u));
+                                                 tolerance,
+                                                 norm_type,
+                                                 scale_type,
+                                                 &u));
   else
     status_test = rcp(new NOX::StatusTest::NormF(tolerance,
-                         norm_type,
-                         scale_type,
-                         &u));
-
+                                                 norm_type,
+                                                 scale_type,
+                                                 &u));
 
   return status_test;
 }
@@ -263,38 +266,31 @@ buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
-  double tolerance = p.get("Tolerance", 1.0e-3);
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","NormUpdate");
+  validParams.set<double>("Tolerance",1.0e-3);
+  Teuchos::setStringToIntegralParameter<NOX::Abstract::Vector::NormType>
+    ("Norm Type", "Two Norm", "Type of norm to use.",
+     Teuchos::tuple<std::string>("Two Norm","One Norm","Max Norm"),
+     Teuchos::tuple<NOX::Abstract::Vector::NormType>(NOX::Abstract::Vector::TwoNorm,
+                                                     NOX::Abstract::Vector::OneNorm,
+                                                     NOX::Abstract::Vector::MaxNorm),
+     &validParams);
+  Teuchos::setStringToIntegralParameter<NOX::StatusTest::NormUpdate::ScaleType>
+    ("Scale Type", "Unscaled", "Whether to scaled or unscaled norms.",
+     Teuchos::tuple<std::string> ("Unscaled","Scaled"),
+     Teuchos::tuple<NOX::StatusTest::NormUpdate::ScaleType>(NOX::StatusTest::NormUpdate::Unscaled,
+                                                            NOX::StatusTest::NormUpdate::Scaled),
+     &validParams);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
 
-  // Norm Type
-  std::string norm_type_string = p.get("Norm Type", "Two Norm");
-  NOX::Abstract::Vector::NormType norm_type = NOX::Abstract::Vector::TwoNorm;
-  if (norm_type_string == "Two Norm")
-    norm_type = NOX::Abstract::Vector::TwoNorm;
-  else if (norm_type_string == "One Norm")
-    norm_type = NOX::Abstract::Vector::OneNorm;
-  else if (norm_type_string == "Max Norm")
-    norm_type = NOX::Abstract::Vector::MaxNorm;
-  else {
-    std::string msg = "\"Norm Type\" must be either \"Two Norm\", \"One Norm\", or \"Max Norm\"!";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
-
-  // Scale Type
-  std::string scale_type_string = p.get("Scale Type", "Unscaled");
-  NOX::StatusTest::NormUpdate::ScaleType scale_type =
-    NOX::StatusTest::NormUpdate::Unscaled;
-  if (scale_type_string == "Unscaled")
-    scale_type = NOX::StatusTest::NormUpdate::Unscaled;
-  else if (scale_type_string == "Scaled")
-    scale_type = NOX::StatusTest::NormUpdate::Scaled;
-  else {
-    std::string msg = "\"Scale Type\" must be either \"Unscaled\" or \"Scaled\"!";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
+  double tolerance = p.get<double>("Tolerance");
+  auto norm_type = Teuchos::getIntegralValue<NOX::Abstract::Vector::NormType>(p,"Norm Type");
+  auto scale_type = Teuchos::getIntegralValue<NOX::StatusTest::NormUpdate::ScaleType>(p,"Scale Type");
 
   Teuchos::RCP<NOX::StatusTest::NormUpdate> status_test =
-    Teuchos::rcp(new NOX::StatusTest::NormUpdate(tolerance, norm_type,
-                         scale_type));
+    Teuchos::rcp(new NOX::StatusTest::NormUpdate(tolerance,norm_type,scale_type));
 
   return status_test;
 }
@@ -304,46 +300,60 @@ buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
-  double bdf_multiplier = p.get("BDF Multiplier", 1.0);
-  double tolerance = p.get("Tolerance", 1.0);
-  double alpha = p.get("Alpha", 1.0);
-  double beta = p.get("Beta", 0.5);
-  double rel_tol = p.get("Relative Tolerance", 1.0e-5);
-  bool disable_implicit_weighting = p.get("Disable Implicit Weighting", true);
-
+  // PList validation is tricky because the "Absolute Tolerance"
+  // parameter can be a scalar value or a vector value. Have to check
+  // the type up front to build the correct validator list.
   bool abs_tol_is_vector = false;
+  if (Teuchos::isParameterType<Teuchos::RCP<const NOX::Abstract::Vector>>(p, "Absolute Tolerance"))
+    abs_tol_is_vector = true;
+
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","NormWRMS");
+  validParams.set<double>("BDF Multiplier",1.0);
+  validParams.set<double>("Tolerance",1.0);
+  validParams.set<double>("Alpha",1.0);
+  validParams.set<double>("Beta",0.5);
+  validParams.set<double>("Relative Tolerance",1.0e-5);
+  validParams.set<bool>("Disable Implicit Weighting",true);
+  if (abs_tol_is_vector)
+    validParams.set<Teuchos::RCP<const NOX::Abstract::Vector>>("Absolute Tolerance",Teuchos::null);
+  else
+    validParams.set<double>("Absolute Tolerance",1.0e-8);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
+
+  double bdf_multiplier = p.get<double>("BDF Multiplier");
+  double tolerance = p.get<double>("Tolerance");
+  double alpha = p.get<double>("Alpha");
+  double beta = p.get<double>("Beta");
+  double rel_tol = p.get<double>("Relative Tolerance");
+  bool disable_implicit_weighting = p.get<bool>("Disable Implicit Weighting");
+
   Teuchos::RCP<const NOX::Abstract::Vector> abs_tol_vector;
   double abs_tol = 1.0;
-  if (isParameterType< RCP<const NOX::Abstract::Vector> >
-      (p, "Absolute Tolerance")) {
-    abs_tol_vector = get< Teuchos::RCP<const NOX::Abstract::Vector> >
-      (p, "Absolute Tolerance");
-    abs_tol_is_vector = true;
-  }
-  else {
-    abs_tol = p.get("Absolute Tolerance", 1.0e-8);
-  }
+  if (abs_tol_is_vector)
+    abs_tol_vector = get< Teuchos::RCP<const NOX::Abstract::Vector> >(p, "Absolute Tolerance");
+  else
+    abs_tol = p.get<double>("Absolute Tolerance");
 
   RCP<NOX::StatusTest::NormWRMS> status_test;
 
   if (abs_tol_is_vector)
     status_test = rcp(new NOX::StatusTest::NormWRMS(rel_tol,
-                            abs_tol_vector,
-                            bdf_multiplier,
-                            tolerance,
-                            alpha,
-                            beta,
-                            disable_implicit_weighting)
-              );
+                                                    abs_tol_vector,
+                                                    bdf_multiplier,
+                                                    tolerance,
+                                                    alpha,
+                                                    beta,
+                                                    disable_implicit_weighting));
   else
     status_test = rcp(new NOX::StatusTest::NormWRMS(rel_tol,
-                            abs_tol,
-                            bdf_multiplier,
-                            tolerance,
-                            alpha,
-                            beta,
-                            disable_implicit_weighting)
-              );
+                                                    abs_tol,
+                                                    bdf_multiplier,
+                                                    tolerance,
+                                                    alpha,
+                                                    beta,
+                                                    disable_implicit_weighting));
 
   return status_test;
 }
@@ -353,32 +363,26 @@ buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildFiniteValueTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
-  std::string vector_type_string = p.get("Vector Type","F Vector");
-  std::string norm_type_string = p.get("Norm Type", "Two Norm");
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","FiniteValue");
+  Teuchos::setStringToIntegralParameter<NOX::StatusTest::FiniteValue::VectorType>
+    ("Vector Type", "F Vector", "Which vector to check, F or X.",
+     Teuchos::tuple<std::string>("F Vector","Solution Vector"),
+     Teuchos::tuple<NOX::StatusTest::FiniteValue::VectorType>(NOX::StatusTest::FiniteValue::FVector,
+                                                              NOX::StatusTest::FiniteValue::SolutionVector),
+     &validParams);
+  Teuchos::setStringToIntegralParameter<NOX::Abstract::Vector::NormType>
+    ("Norm Type", "Two Norm", "Type of norm to use.",
+     Teuchos::tuple<std::string>("Two Norm","One Norm","Max Norm"),
+     Teuchos::tuple<NOX::Abstract::Vector::NormType>(NOX::Abstract::Vector::TwoNorm,
+                                                     NOX::Abstract::Vector::OneNorm,
+                                                     NOX::Abstract::Vector::MaxNorm),
+     &validParams);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
 
-  NOX::StatusTest::FiniteValue::VectorType vector_type =
-    NOX::StatusTest::FiniteValue::FVector;
-  NOX::Abstract::Vector::NormType norm_type = NOX::Abstract::Vector::TwoNorm;
-
-  if (vector_type_string == "F Vector")
-    vector_type = NOX::StatusTest::FiniteValue::FVector;
-  else if (vector_type_string == "Solution Vector")
-    vector_type = NOX::StatusTest::FiniteValue::SolutionVector;
-  else {
-    std::string msg = "\"Vector Type\" must be either \"F Vector\" or \"Solution Vector\"!";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
-
-  if (norm_type_string == "Two Norm")
-    norm_type = NOX::Abstract::Vector::TwoNorm;
-  else if (vector_type_string == "One Norm")
-    norm_type = NOX::Abstract::Vector::OneNorm;
-  else if (vector_type_string == "Max Norm")
-    norm_type = NOX::Abstract::Vector::MaxNorm;
-  else {
-    std::string msg = "\"Norm Type\" must be either \"Two Norm\", \"One Norm\", or \"Max Norm\"!";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
+  auto vector_type = Teuchos::getIntegralValue<NOX::StatusTest::FiniteValue::VectorType>(p,"Vector Type");
+  auto norm_type = Teuchos::getIntegralValue<NOX::Abstract::Vector::NormType>(p,"Norm Type");
 
   RCP<NOX::StatusTest::FiniteValue> status_test =
     rcp(new NOX::StatusTest::FiniteValue(vector_type, norm_type));
@@ -391,8 +395,15 @@ buildFiniteValueTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildDivergenceTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
-  double tolerance = p.get("Tolerance", 1.0e+12);
-  int iterations = p.get("Consecutive Iterations", 1);
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","Divergence");
+  validParams.set<double>("Tolerance",1.0e+12);
+  validParams.set<int>("Consecutive Iterations",1);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
+
+  double tolerance = p.get<double>("Tolerance");
+  int iterations = p.get<int>("Consecutive Iterations");
 
   RCP<NOX::StatusTest::Divergence> status_test =
     rcp(new NOX::StatusTest::Divergence(tolerance, iterations));
@@ -405,8 +416,15 @@ buildDivergenceTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildStagnationTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
-  double tolerance = p.get("Tolerance", 1.0e+12);
-  int iterations = p.get("Consecutive Iterations", 1);
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","Stagnation");
+  validParams.set<double>("Tolerance",1.0e+12);
+  validParams.set<int>("Consecutive Iterations",1);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
+
+  double tolerance = p.get<double>("Tolerance");
+  int iterations = p.get<int>("Consecutive Iterations");
 
   RCP<NOX::StatusTest::Stagnation> status_test =
     rcp(new NOX::StatusTest::Stagnation(iterations, tolerance));
@@ -419,7 +437,13 @@ buildStagnationTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildMaxItersTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 {
-  int max_iters = get<int>(p, "Maximum Iterations");
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","MaxIters");
+  validParams.set("Maximum Iterations",20);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
+
+  int max_iters = p.get<int>("Maximum Iterations");
 
   RCP<NOX::StatusTest::MaxIters> status_test =
     rcp(new NOX::StatusTest::MaxIters(max_iters, &u));
@@ -432,14 +456,30 @@ buildMaxItersTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildRelativeNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 {
-  double tolerance = p.get("Tolerance", 1.0e-8);
-  bool scale_by_length = p.get("Scale Norms by Length", false);
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","RelativeNormF");
+  validParams.set("Tolerance",1.0e-8);
+  validParams.set("Scale Norms by Length",false);
+  Teuchos::setStringToIntegralParameter<NOX::Abstract::Vector::NormType>
+    ("Norm Type", "Two Norm", "Type of norm to use",
+     Teuchos::tuple<std::string>("Two Norm","One Norm","Max Norm"),
+     Teuchos::tuple<NOX::Abstract::Vector::NormType>(NOX::Abstract::Vector::TwoNorm,
+                                                     NOX::Abstract::Vector::OneNorm,
+                                                     NOX::Abstract::Vector::MaxNorm),
+     &validParams);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
+
+  double tolerance = p.get<double>("Tolerance");
+  bool scale_by_length = p.get<bool>("Scale Norms by Length");
+  auto norm_type = Teuchos::getIntegralValue<NOX::Abstract::Vector::NormType>(p,"Norm Type");
 
   RCP<NOX::StatusTest::RelativeNormF> status_test;
 
   status_test = rcp(new NOX::StatusTest::RelativeNormF(tolerance,
-                               scale_by_length,
-                               &u));
+                                                       scale_by_length,
+                                                       &u,
+                                                       norm_type));
 
   return status_test;
 }
@@ -449,9 +489,17 @@ buildRelativeNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildNStepTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
-  int num_iters = p.get<int>("Number of Nonlinear Iterations", 1);
-  int num_ramping_steps = p.get<int>("Number of Initial Ramping Steps", 0);
-  int num_ramping_iters = p.get<int>("Number of Nonlinear Iterations in Ramping Phase", 10);
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","NStep");
+  validParams.set("Number of Nonlinear Iterations",1);
+  validParams.set("Number of Initial Ramping Steps",0);
+  validParams.set("Number of Nonlinear Iterations in Ramping Phase",10);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
+
+  int num_iters = p.get<int>("Number of Nonlinear Iterations");
+  int num_ramping_steps = p.get<int>("Number of Initial Ramping Steps");
+  int num_ramping_iters = p.get<int>("Number of Nonlinear Iterations in Ramping Phase");
 
   RCP<NOX::StatusTest::NStep> status_test;
 
@@ -466,14 +514,13 @@ buildNStepTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildUserDefinedTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 {
-  RCP<NOX::StatusTest::Generic> status_test;
+  Teuchos::ParameterList validParams;
+  validParams.set("Test Type","UserDefined");
+  validParams.set<Teuchos::RCP<NOX::StatusTest::Generic>>("User Status Test",Teuchos::null);
+  validParams.set("Tag","");
+  p.validateParametersAndSetDefaults(validParams);
 
-  if (isParameterType< RCP<NOX::StatusTest::Generic> >(p, "User Status Test"))
-    status_test = get< RCP<NOX::StatusTest::Generic> >(p, "User Status Test");
-  else {
-    std::string msg = "Error - NOX::StatusTest::Factory::buildUserDefinedTest() - a user defined status test has been selected, but the test has not been supplied as an RCP<NOX::StatusTest::Generic> in the parameter list.  please make sure it is set as a \"Generic\" object in the parameter list.";
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
-  }
+  auto status_test = p.get<Teuchos::RCP<NOX::StatusTest::Generic>>("User Status Test");
 
   return status_test;
 }
@@ -482,12 +529,13 @@ buildUserDefinedTest(Teuchos::ParameterList& p, const NOX::Utils& /* u */) const
 // ************************************************************************
 bool NOX::StatusTest::Factory::
 checkAndTagTest(const Teuchos::ParameterList& p,
-        const Teuchos::RCP<NOX::StatusTest::Generic>& test,
-        std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
-        tagged_tests) const
+                const Teuchos::RCP<NOX::StatusTest::Generic>& test,
+                std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+                tagged_tests) const
 {
-  if ( (isParameterType<std::string>(p, "Tag")) && (tagged_tests != NULL) ) {
-    (*tagged_tests)[getParameter<std::string>(p, "Tag")] = test;
+  auto tag_name = p.get<std::string>("Tag");
+  if ( (tag_name != "") && (tagged_tests != nullptr) ) {
+    (*tagged_tests)[tag_name] = test;
     return true;
   }
 
@@ -499,8 +547,8 @@ checkAndTagTest(const Teuchos::ParameterList& p,
 // Nonmember function
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::
 buildStatusTests(const std::string& file_name, const NOX::Utils& utils,
-         std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
-         tagged_tests)
+                 std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+                 tagged_tests)
 {
   NOX::StatusTest::Factory factory;
   return factory.buildStatusTests(file_name, utils, tagged_tests);
@@ -511,8 +559,8 @@ buildStatusTests(const std::string& file_name, const NOX::Utils& utils,
 // Nonmember function
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::
 buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& utils,
-         std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
-         tagged_tests)
+                 std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+                 tagged_tests)
 {
   NOX::StatusTest::Factory factory;
   return factory.buildStatusTests(p, utils, tagged_tests);

@@ -95,6 +95,11 @@ void NOX::Solver::LineSearchBased::init()
   directionPtr = NOX::Direction::
     buildDirection(globalDataPtr, paramsPtr->sublist("Direction"));
 
+  if ( paramsPtr->isType<bool>( "Catch Throws During Solve" ) )
+    catchThrowsDuringSolve = paramsPtr->get<bool>( "Catch Throws During Solve" );
+  else
+    catchThrowsDuringSolve = false;
+
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters))
   {
@@ -256,8 +261,31 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
   this->reset();
 
   // Iterate until converged or failed
-  while (status == NOX::StatusTest::Unconverged)
-    step();
+  if ( catchThrowsDuringSolve )
+  {
+    try
+    {
+      while (status == NOX::StatusTest::Unconverged)
+        step();
+    }
+    catch ( std::exception & e )
+    {
+      utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
+      utilsPtr->out()
+        << "-- WARNING --\n"
+        << "NOX::Solver::LineSearchBased::solve caught exception during solver iteration:\n\n"
+        << e.what() << "\n\n"
+        << "Setting solver status to Failed and continuing anyway since catchThrowsDuringSolve is true.\n";
+      utilsPtr->out() << NOX::Utils::fill(72) << "\n" << std::endl;
+
+      status = NOX::StatusTest::Failed;
+    }
+  }
+  else
+  {
+    while (status == NOX::StatusTest::Unconverged)
+      step();
+  }
 
   Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");
   outputParams.set("Nonlinear Iterations", nIter);
