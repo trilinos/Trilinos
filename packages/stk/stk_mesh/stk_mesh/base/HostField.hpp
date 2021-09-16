@@ -237,7 +237,7 @@ public:
     needSyncToDevice.swap(other.needSyncToDevice);
   }
 
-  stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
+  stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }
 
   unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
 

@@ -65,7 +65,7 @@ struct GpuGatherBucketScratchData
     return meshIndex.bucket_id * bucketCapacity + meshIndex.bucket_ord;
   }
 
-  STK_FUNCTION unsigned get_index(stk::mesh::Entity entity) const
+  KOKKOS_FUNCTION unsigned get_index(stk::mesh::Entity entity) const
   {
     const stk::mesh::FastMeshIndex& meshIndex = ngpMesh.device_mesh_index(entity);
     return meshIndex.bucket_id * bucketCapacity + meshIndex.bucket_ord;

@@ -90,10 +90,10 @@ struct DeviceBucket {
   KOKKOS_FUNCTION
   unsigned get_num_nodes_per_entity() const { return bucketTopology.num_nodes(); }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ConnectedOrdinals get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
 
   KOKKOS_FUNCTION
@@ -526,7 +526,7 @@ private:
   FastSharedCommMapViewType::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
 };
 
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceBucket::ConnectedEntities
 DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
@@ -538,7 +538,7 @@ DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::Entit
   return owningMesh->get_connected_entities(entity_rank(), meshIndex, connectedRank);
 }
 
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceBucket::ConnectedOrdinals
 DeviceBucket::get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
