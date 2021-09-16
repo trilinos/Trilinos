@@ -146,7 +146,7 @@ namespace MueLuTests {
     // in this special case, the third layer will have the correct coordinates
     using impl_SC = typename Kokkos::ArithTraits<SC>::val_type;
     using impl_ATS = Kokkos::ArithTraits<impl_SC>;
-    const auto fineCoordsDiffView = fineCoordsDiff->getDeviceLocalView();
+    const auto fineCoordsDiffView = fineCoordsDiff->getDeviceLocalView(Xpetra::Access::ReadOnly);
     const int numNodes = fineCoordsDiff->getLocalLength();
     const int numVectors = fineCoordsDiff->getNumVectors();
     const auto fineMap = fineCoordsDiff->getMap()->getLocalMap();
