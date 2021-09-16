@@ -45,20 +45,31 @@ public:
 
   /// \name Basic methods
   //@{
-    /// Test if time is near a TimeEvent (within tolerance).
+    /** \brief Test if time is near an event (within tolerance).
+     *
+     *  Test if any of the events in the list is near the input time.
+     *
+     *  \param[in] time The input time to check if it is near an event.
+     *
+     *  \return Return true if time is near a TimeEvent
+     *          ( timeEvent-absTol < time < timeEvent+absTol ), otherwise
+     *          return false.
+     */
     virtual bool isTime(Scalar time) const;
 
     /** \brief How much time until the next event.
      *
-     *  Return the amount of time to the next event (i.e., time of
-     *  next event minus the input time).
+     *  Determine the amount of time until the next timeEvent in the
+     *  list (i.e., time of next event minus the input time).
+     *  If the input time is after all events, the default time
+     *  (a time in the distant future) minus the input time is returned.
      *
      *  \param time      [in] The input time.
      *  \return The time to the next event.
      */
     virtual Scalar timeToNextEvent(Scalar time) const;
 
-    /** \brief Return the time of the next time event following the input time.
+    /** \brief Return the time of the next event following the input time.
      *
      *  Returns the time of the next event that follows the input time.
      *  If the input time is before all events, the time of the first
@@ -73,10 +84,10 @@ public:
 
     /** \brief Test if an event occurs within the time range.
      *
-     *  Find if an event is within the input range, inclusively
-     *  ( time1 <= event <= time2 ).  For TimeEventComposite,
-     *  test each TimeEvent to determine if the input time is
-     *  within the range.
+     *  Find if an event is within the input list,
+     *  (time1 < timeEvent-absTol and timeEvent-absTol <= time2),
+     *  including the event's absolute tolerance.  Note, this
+     *  does not include time1, but does include time2.
      *
      *  \param time1 [in] Input time of one end of the range.
      *  \param time2 [in] Input time of the other end of the range.
@@ -126,8 +137,9 @@ public:
     /** \brief Set the relative tolerance.
      *
      *  The relative tolerance is used to set the absolute
-     *  tolerance along with the TimeEvent time scale
-     *  (see getAbsTol() and setTimeScale()).
+     *  tolerance along with the TimeEvent time scale i.e.,
+     *  absTol_ = timeScale_ * relTol_.
+     *  Also see getAbsTol() and setTimeScale().
      *
      *  \param relTol [in] The input relative tolerance.
      */
@@ -137,16 +149,15 @@ public:
      *
      *  The absolute tolerance is primarily used to determine
      *  if two times are equal (i.e., t1 is equal to t2, if
-     *  t1-absTol_ < t2 < t1+absTol_).
+     *  t2-absTol_ < t1 < t2+absTol_).
+     *
+     *  For TimeEventList,
      *
      *  \return The absolute tolerance.
      */
     virtual Scalar getAbsTol() const { return absTol_; }
 
-    /// Return if the time event should be landed on exactly.
-    virtual bool getLandOnExactly() const { return landOnExactly_; }
-
-    /** \brief Set if the time events need to be landed on exactly.
+    /** \brief Return if the time events need to be landed on exactly.
      *
      *  If true, this sets whether the time events need to be landed
      *  on exactly, e.g., the time step needs to be adjusted so the
@@ -155,8 +166,11 @@ public:
      *  If false, this indicates that time event will still occur but
      *  can be stepped over without changing the time step.
      *
-     *  \param LOE [in] Flag indicating if TimeEvent should land on the time event exactly.
+     *  \return LOE Flag indicating if TimeEvent should land on the time event exactly.
      */
+    virtual bool getLandOnExactly() const { return landOnExactly_; }
+
+    /// Set if the time event should be landed on exactly.
     virtual void setLandOnExactly(bool LOE) { landOnExactly_ = LOE; }
   //@}
 
@@ -181,7 +195,7 @@ protected:
    *  determined from the time events in timeList_ (this is
    *  why it is a protected function).  It tries to find
    *  an appropriate scale for the time events, e.g.,
-   *  max(t0, ... , tn).
+   *  max(t0, ..., tn).
    */
   virtual void setTimeScale();
 

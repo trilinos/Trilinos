@@ -50,11 +50,11 @@ public:
 
   /// \name Basic methods
   //@{
-    /** \brief Test if time is near a TimeEvent (within tolerance).
+    /** \brief Test if time is near an event (within tolerance).
      *
-     *  Test if any of the events in the range is near time.
+     *  Test if any of the events in the range is near the input time.
      *
-     *  \param[in] time The time to check if it is near a TimeEvent.
+     *  \param[in] time The input time to check if it is near an event.
      *
      *  \return Return true if time is near a TimeEvent
      *          ( timeEvent-absTol < time < timeEvent+absTol ), otherwise
@@ -64,18 +64,18 @@ public:
 
     /** \brief How much time until the next event.
      *
-     *  Determine the amount of time until the next timeEvent in the range.
-     *  If the closest timeEvent is in the past, the amount of time is
-     *  negative.
+     *  Determine the amount of time until the next timeEvent in the
+     *  range (i.e., time of next event minus the input time).
+     *  If the input time is after all events, the default time
+     *  (a time in the distant future) minus the input time is returned.
      *
-     *  \param[in] time The time to measure to the next TimeEvent.
+     *  \param[in] time The input time to measure to the next TimeEvent.
      *
-     *  \return Return the amount of time to next TimeEvent
-     *          ( nextTimeEvent-time ).
+     *  \return The amount of time to next TimeEvent ( nextTimeEvent-time ).
      */
     virtual Scalar timeToNextEvent(Scalar time) const;
 
-    /** \brief Return the time of the next time event following the input time.
+    /** \brief Return the time of the next event following the input time.
      *
      *  Returns the time of the next event that follows the input time.
      *  If the input time is before all events, the time of the first
@@ -90,8 +90,10 @@ public:
 
     /** \brief Test if an event occurs within the time range.
      *
-     *  Find if an event is within the input range, inclusively
-     *  ( time1 <= event <= time2 ).
+     *  Find if an event is within the input range,
+     *  (time1 < timeEvent-absTol and timeEvent-absTol <= time2),
+     *  including the event's absolute tolerance.  Note, this
+     *  does not include time1, but does include time2.
      *
      *  \param time1 [in] Input time of one end of the range.
      *  \param time2 [in] Input time of the other end of the range.
@@ -104,7 +106,7 @@ public:
   //@{
     /** \brief Set the range of time events from start, stop and stride.
      *
-     *  This will completely replace the time range
+     *  This will completely replace the time range.
      *
      *  \param start  [in] The start of the time range.
      *  \param stop   [in] The stop of the time range.
@@ -134,6 +136,7 @@ public:
 
     /// Return the stride of the time range.
     virtual Scalar getTimeStride() const { return stride_; }
+
     /** \brief Set the stride of the time range.
      *
      *  If start_ = stop_, then stride_ = 0.0, set numEvents_ = 1, and return.
@@ -147,6 +150,7 @@ public:
 
     /// Return the number of time events in the time range.
     virtual int getNumEvents() const { return numEvents_; }
+
     /** \brief Set the number of time events.
      *
      *  - If numEvents_ < 0, then reset numEvents from start_, stop_ and stride_.
@@ -154,7 +158,7 @@ public:
      *  - ElseIf numEvents_ < 2, numEvents = 2, and stride = stop_ - start_.
      *  - Else stride = (stop_ - start_)/(numEvents_-1).
      *
-     *  If the resulting stride is less than twise the absolute tolerance,
+     *  If the resulting stride is less than twice the absolute tolerance,
      *  the stride is set to 2*absTol_.
      *
      *  \param numEvents [in] The number of events in time range.
@@ -167,8 +171,9 @@ public:
     /** \brief Set the relative tolerance.
      *
      *  The relative tolerance is used to set the absolute
-     *  tolerance along with the TimeEvent time scale
-     *  (see getAbsTol() and setTimeScale()).
+     *  tolerance along with the TimeEvent time scale, i.e.,
+     *  absTol_ = timeScale_ * relTol_.
+     *  Also see getAbsTol() and setTimeScale().
      *
      *  \param relTol [in] The input relative tolerance.
      */
@@ -178,14 +183,11 @@ public:
      *
      *  The absolute tolerance is primarily used to determine
      *  if two times are equal (i.e., t1 is equal to t2, if
-     *  t1-absTol_ < t2 < t1+absTol_).
+     *  t2-absTol_ < t1 < t2+absTol_).
      *
      *  \return The absolute tolerance.
      */
     virtual Scalar getAbsTol() const { return absTol_; }
-
-    /// Return if the time event should be landed on exactly.
-    virtual bool getLandOnExactly() const { return landOnExactly_; }
 
     /** \brief Set if the time events need to be landed on exactly.
      *
@@ -196,8 +198,11 @@ public:
      *  If false, this indicates that time event will still occur but
      *  can be stepped over without changing the time step.
      *
-     *  \param LOE [in] Flag indicating if TimeEvent should land on the time event exactly.
+     *  \return LOE Flag indicating if TimeEvent should land on the time event exactly.
      */
+    virtual bool getLandOnExactly() const { return landOnExactly_; }
+
+    /// Set if the time event should be landed on exactly.
     virtual void setLandOnExactly(bool LOE) { landOnExactly_ = LOE; }
 
   //@}

@@ -194,6 +194,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, Full_Construction)
 
   auto tec = rcp(new Tempus::TimeEventComposite<double>(timeEvents,
                 "Test TimeEventComposite"));
+  //tec->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE(tec->getType(), ==, "Composite");
   TEST_COMPARE(tec->getName(), ==, "Test TimeEventComposite");
@@ -210,7 +211,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, Full_Construction)
 
   TEST_COMPARE(tec->indexToNextEvent(-6), ==,  1);
   TEST_COMPARE(tec->indexToNextEvent( 1), ==,  1);
-  TEST_COMPARE(tec->indexToNextEvent( 7), ==,  0);
+  TEST_COMPARE(tec->indexToNextEvent( 7), ==,  1);
   TEST_COMPARE(tec->indexToNextEvent( 9), ==, tec->getDefaultIndex()-9);
 
   TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( -PI), -1.0, 1.0e-14);
@@ -220,7 +221,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, Full_Construction)
 
   TEST_COMPARE(tec->indexOfNextEvent(-6), ==, -5);
   TEST_COMPARE(tec->indexOfNextEvent( 1), ==,  2);
-  TEST_COMPARE(tec->indexOfNextEvent( 7), ==,  7);
+  TEST_COMPARE(tec->indexOfNextEvent( 7), ==,  8);
   TEST_COMPARE(tec->indexOfNextEvent( 9), ==,  tec->getDefaultIndex());
 
   TEST_COMPARE(tec->eventInRange(-5.0, -2.0), ==, false);
@@ -232,7 +233,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, Full_Construction)
   TEST_COMPARE(tec->eventInRangeIndex(-8, -6), ==, false);
   TEST_COMPARE(tec->eventInRangeIndex( 1,  1), ==, false);
   TEST_COMPARE(tec->eventInRangeIndex( 5,  7), ==, true );
-  TEST_COMPARE(tec->eventInRangeIndex( 8, 10), ==, true );
+  TEST_COMPARE(tec->eventInRangeIndex( 8, 10), ==, false);
   TEST_COMPARE(tec->eventInRangeIndex(12, 14), ==, false);
 
   timeEvents = tec->getTimeEvents();
@@ -462,11 +463,11 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, TwoSeparate_TimeEventRangeIndex)
   TEST_COMPARE(tec->indexOfNextEvent( 6), ==,  7);
   TEST_COMPARE(tec->indexOfNextEvent(16), ==, tec->getDefaultIndex());
   TEST_COMPARE(tec->eventInRangeIndex(-3, -2), ==, false);
-  TEST_COMPARE(tec->eventInRangeIndex(-1,  0), ==, true );
+  TEST_COMPARE(tec->eventInRangeIndex(-2,  0), ==, true );
   TEST_COMPARE(tec->eventInRangeIndex( 1,  2), ==, false);
-  TEST_COMPARE(tec->eventInRangeIndex( 7,  8), ==, true );
-  TEST_COMPARE(tec->eventInRangeIndex( 8,  9), ==, false);
-  TEST_COMPARE(tec->eventInRangeIndex(10, 13), ==, true );
+  TEST_COMPARE(tec->eventInRangeIndex( 6,  7), ==, true );
+  TEST_COMPARE(tec->eventInRangeIndex( 7,  8), ==, false);
+  TEST_COMPARE(tec->eventInRangeIndex(10, 13), ==, false);
   TEST_COMPARE(tec->eventInRangeIndex(14, 20), ==, true );
 
   auto timeEvents = tec->getTimeEvents();
@@ -507,7 +508,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, TwoOverlapping_TimeEventListIndex)
   //tec->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE(tec->isIndex(2), ==, true );
-  TEST_COMPARE(tec->indexToNextEvent(0), ==, 0);
+  TEST_COMPARE(tec->indexToNextEvent(0), ==, 2);
   TEST_COMPARE(tec->indexOfNextEvent(1), ==, 2);
   TEST_COMPARE(tec->eventInRangeIndex(-1, 3), ==, true );
 
@@ -529,9 +530,9 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, TwoSeparate_TimeEventListIndex)
   //tec->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE(tec->isIndex(14), ==, true );
-  TEST_COMPARE(tec->indexOfNextEvent(2), ==, 2);
+  TEST_COMPARE(tec->indexOfNextEvent(2), ==, 9);
   TEST_COMPARE(tec->indexOfNextEvent(5), ==, 9);
-  TEST_COMPARE(tec->indexOfNextEvent(19), ==, 14);
+  TEST_COMPARE(tec->indexOfNextEvent(19), ==, tec->getDefaultIndex());
   TEST_COMPARE(tec->eventInRangeIndex( 0,  1), ==, false);
   TEST_COMPARE(tec->eventInRangeIndex( 3, 10), ==, true );
   TEST_COMPARE(tec->eventInRangeIndex(15, 20), ==, false);
@@ -555,7 +556,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, OneOfEach_TimeEvent)
   tec->add(teList1);
   tec->add(teRangeIndex1);
   tec->add(teListIndex1);
-  tec->describe(out, Teuchos::VERB_EXTREME);
+  //tec->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE(tec->isTime (3.0), ==, true );
   TEST_COMPARE(tec->isTime (2.0), ==, true );
@@ -569,7 +570,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, OneOfEach_TimeEvent)
 
   TEST_COMPARE(tec->indexToNextEvent(-6), ==,  1);
   TEST_COMPARE(tec->indexToNextEvent( 1), ==,  1);
-  TEST_COMPARE(tec->indexToNextEvent( 7), ==,  0);
+  TEST_COMPARE(tec->indexToNextEvent( 7), ==,  1);
   TEST_COMPARE(tec->indexToNextEvent( 9), ==, tec->getDefaultIndex()-9);
 
   TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( -PI), -1.0, 1.0e-14);
@@ -579,7 +580,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, OneOfEach_TimeEvent)
 
   TEST_COMPARE(tec->indexOfNextEvent(-6), ==, -5);
   TEST_COMPARE(tec->indexOfNextEvent( 1), ==,  2);
-  TEST_COMPARE(tec->indexOfNextEvent( 7), ==,  7);
+  TEST_COMPARE(tec->indexOfNextEvent( 7), ==,  8);
   TEST_COMPARE(tec->indexOfNextEvent( 9), ==,  tec->getDefaultIndex());
 
   TEST_COMPARE(tec->eventInRange(-5.0, -2.0), ==, false);
@@ -591,7 +592,7 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, OneOfEach_TimeEvent)
   TEST_COMPARE(tec->eventInRangeIndex(-8, -6), ==, false);
   TEST_COMPARE(tec->eventInRangeIndex( 1,  1), ==, false);
   TEST_COMPARE(tec->eventInRangeIndex( 5,  7), ==, true );
-  TEST_COMPARE(tec->eventInRangeIndex( 8, 10), ==, true );
+  TEST_COMPARE(tec->eventInRangeIndex( 7, 10), ==, true );
   TEST_COMPARE(tec->eventInRangeIndex(12, 14), ==, false);
 
   auto timeEvents = tec->getTimeEvents();
@@ -613,37 +614,347 @@ TEUCHOS_UNIT_TEST(TimeEventComposite, OneOfEach_Plus_TimeEvent)
   tec->add(teList1);
   tec->add(teRangeIndex1);
   tec->add(teListIndex1);
-  tec->describe(out, Teuchos::VERB_EXTREME);
+  //tec->describe(out, Teuchos::VERB_EXTREME);
 
-  // Constraining TimeEvent
-  auto teCon = Teuchos::rcp(new Tempus::TimeEventBase<double>());
+  // Constraining TimeEvent(s)
+  std::vector<Teuchos::RCP<Tempus::TimeEventBase<double> > > teCons;
 
-  TEST_COMPARE(tec->isTime ( 3.0, teCon), ==, true ); TEST_COMPARE(teCon->getName(), ==, "teRange1");
-  TEST_COMPARE(tec->isTime (-1.0, teCon), ==, true ); TEST_COMPARE(teCon->getName(), ==, "teList1");
-  TEST_COMPARE(tec->isIndex(   2, teCon), ==, true ); TEST_COMPARE(teCon->getName(), ==, "teRangeIndex1");
-  TEST_COMPARE(tec->isIndex(  -2, teCon), ==, true ); TEST_COMPARE(teCon->getName(), ==, "teListIndex1");
+  TEST_COMPARE(tec->isTime ( 3.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRange1");
 
+  TEST_COMPARE(tec->isTime (-1.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teList1");
 
-  TEST_FLOATING_EQUALITY(tec->timeToNextEvent(-2.5, teCon),  1.5, 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teList1");
-  TEST_FLOATING_EQUALITY(tec->timeToNextEvent( 0.5, teCon),  0.5, 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teRange1");
-  TEST_FLOATING_EQUALITY(tec->timeToNextEvent( 4.5, teCon),  0.5, 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teList1");
-  TEST_FLOATING_EQUALITY(tec->timeToNextEvent( 7.5, teCon), tec->getDefaultTime(), 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teRange1");
+  TEST_COMPARE(tec->isIndex(   2, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRangeIndex1");
 
-  TEST_COMPARE(tec->indexToNextEvent(-6, teCon), ==,  1);  TEST_COMPARE(teCon->getName(), ==, "teListIndex1");
-  TEST_COMPARE(tec->indexToNextEvent( 1, teCon), ==,  1);  TEST_COMPARE(teCon->getName(), ==, "teRangeIndex1");
-  TEST_COMPARE(tec->indexToNextEvent( 7, teCon), ==,  0);  TEST_COMPARE(teCon->getName(), ==, "teListIndex1");
-  TEST_COMPARE(tec->indexToNextEvent( 9, teCon), ==, tec->getDefaultIndex()-9);  TEST_COMPARE(teCon->getName(), ==, "teRange1");
-
-  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( -PI, teCon), -1.0, 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teList1");
-  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent(-0.5, teCon),  0.0, 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teRange1");
-  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( 2.5, teCon),  3.0, 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teRange1");
-  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( 7.5, teCon), tec->getDefaultTime(), 1.0e-14);  TEST_COMPARE(teCon->getName(), ==, "teRange1");
+  TEST_COMPARE(tec->isIndex(  -2, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teListIndex1");
 
 
-  TEST_COMPARE(tec->indexOfNextEvent(-6, teCon), ==, -5);  TEST_COMPARE(teCon->getName(), ==, "teListIndex1");
-  TEST_COMPARE(tec->indexOfNextEvent( 1, teCon), ==,  2);  TEST_COMPARE(teCon->getName(), ==, "teRangeIndex1");
-  TEST_COMPARE(tec->indexOfNextEvent( 7, teCon), ==,  7);  TEST_COMPARE(teCon->getName(), ==, "teListIndex1");
-  TEST_COMPARE(tec->indexOfNextEvent( 9, teCon), ==, tec->getDefaultIndex());  TEST_COMPARE(teCon->getName(), ==, "teRange1");
+  TEST_FLOATING_EQUALITY(tec->timeToNextEvent(-2.5, teCons),  1.5, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teList1");
+
+  TEST_FLOATING_EQUALITY(tec->timeToNextEvent( 0.5, teCons),  0.5, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRange1");
+
+  TEST_FLOATING_EQUALITY(tec->timeToNextEvent( 4.5, teCons),  0.5, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teList1");
+
+  TEST_FLOATING_EQUALITY(tec->timeToNextEvent( 7.5, teCons), tec->getDefaultTime(), 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 0);
+
+
+  TEST_COMPARE(tec->indexToNextEvent(-6, teCons), ==,  1);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teListIndex1");
+
+  TEST_COMPARE(tec->indexToNextEvent( 1, teCons), ==,  1);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRangeIndex1");
+
+  TEST_COMPARE(tec->indexToNextEvent( 7, teCons), ==,  1);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRangeIndex1");
+
+  TEST_COMPARE(tec->indexToNextEvent( 9, teCons), ==, tec->getDefaultIndex()-9);
+  TEST_COMPARE(teCons.size(), ==, 0);
+
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( -PI, teCons), -1.0, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teList1");
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent(-0.5, teCons),  0.0, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 2);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRange1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teList1");
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( 2.5, teCons),  3.0, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRange1");
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( 7.5, teCons), tec->getDefaultTime(), 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 0);
+
+
+  TEST_COMPARE(tec->indexOfNextEvent(-6, teCons), ==, -5);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teListIndex1");
+
+  TEST_COMPARE(tec->indexOfNextEvent( 1, teCons), ==,  2);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRangeIndex1");
+
+  TEST_COMPARE(tec->indexOfNextEvent( 7, teCons), ==,  8);
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teRangeIndex1");
+
+  TEST_COMPARE(tec->indexOfNextEvent( 9, teCons), ==, tec->getDefaultIndex());
+  TEST_COMPARE(teCons.size(), ==, 0);
+
+  TEST_COMPARE(tec->eventInRange(-5.0, -2.0, teCons), ==, false);
+  TEST_COMPARE(teCons.size(), ==, 0);
+  TEST_COMPARE(tec->eventInRange(-2.0, -0.5, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(tec->eventInRange( 1.2,  1.8, teCons), ==, false);
+  TEST_COMPARE(teCons.size(), ==, 0);
+  TEST_COMPARE(tec->eventInRange( 3.1,  4.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(tec->eventInRange( 4.5,  6.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+
+  TEST_COMPARE(tec->eventInRangeIndex(-8, -6, teCons), ==, false);
+  TEST_COMPARE(teCons.size(), ==, 0);
+  TEST_COMPARE(tec->eventInRangeIndex( 1,  1, teCons), ==, false);
+  TEST_COMPARE(teCons.size(), ==, 0);
+  TEST_COMPARE(tec->eventInRangeIndex( 5,  7, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 1);
+  TEST_COMPARE(tec->eventInRangeIndex( 8, 10, teCons), ==, false);
+  TEST_COMPARE(teCons.size(), ==, 0);
+  TEST_COMPARE(tec->eventInRangeIndex(12, 14, teCons), ==, false);
+  TEST_COMPARE(teCons.size(), ==, 0);
+
+  auto timeEvents = tec->getTimeEvents();
+  TEST_COMPARE(timeEvents.size(), ==, 4);
+
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeEventComposite, Multiple_Simultaneous_Events)
+{
+  // Define Events
+  auto ter1 = rcp(new Tempus::TimeEventRange<double>(
+    0.0, 20.0, 5.0, "ter1", true, 1.0e-14));
+  auto ter2 = rcp(new Tempus::TimeEventRange<double>(
+    0.0, 20.0, 2.0, "ter2", false, 1.0e-14));
+
+  std::vector<double> testList1;
+  testList1.push_back( 0.0);
+  testList1.push_back( 4.0);
+  testList1.push_back( 5.0);
+  testList1.push_back( 9.0);
+  testList1.push_back(20.0);
+  auto tel1 = rcp(new Tempus::TimeEventList<double>(
+                  testList1, "tel1", true, 1.0e-14));
+
+  std::vector<double> testList2;
+  testList2.push_back( 0.0);
+  testList2.push_back( 3.0);
+  testList2.push_back( 5.0);
+  testList2.push_back(13.0);
+  testList2.push_back(20.0);
+  auto tel2 = rcp(new Tempus::TimeEventList<double>(
+                  testList2, "tel2", false, 1.0e-14));
+
+  auto teri1 = rcp(new Tempus::TimeEventRangeIndex<double>(
+                   0, 200, 50, "teri1"));
+  auto teri2 = rcp(new Tempus::TimeEventRangeIndex<double>(
+                   0, 200, 20, "teri2"));
+
+  std::vector<int> testListIndex1;
+  testListIndex1.push_back(  0);
+  testListIndex1.push_back( 40);
+  testListIndex1.push_back( 50);
+  testListIndex1.push_back( 90);
+  testListIndex1.push_back(200);
+  auto teli1 = rcp(new Tempus::TimeEventListIndex<double>(
+                   testListIndex1, "teli1"));
+
+  std::vector<int> testListIndex2;
+  testListIndex2.push_back(  0);
+  testListIndex2.push_back( 30);
+  testListIndex2.push_back( 50);
+  testListIndex2.push_back(130);
+  testListIndex2.push_back(200);
+  auto teli2 = rcp(new Tempus::TimeEventListIndex<double>(
+                   testListIndex2, "teli2"));
+
+
+  auto tec  = rcp(new Tempus::TimeEventComposite<double>());
+  tec->add(ter1 );
+  tec->add(ter2 );
+  tec->add(tel1 );
+  tec->add(tel2 );
+  tec->add(teri1);
+  tec->add(teri2);
+  tec->add(teli1);
+  tec->add(teli2);
+
+  //tec->describe(out, Teuchos::VERB_EXTREME);
+
+  // Constraining TimeEvent(s)
+  std::vector<Teuchos::RCP<Tempus::TimeEventBase<double> > > teCons;
+
+  TEST_COMPARE(tec->isTime ( 0.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "tel2");
+
+  TEST_COMPARE(tec->isTime ( 5.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 3);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "tel1");
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel2");
+
+  TEST_COMPARE(tec->isTime (10.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 2);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");
+
+  TEST_COMPARE(tec->isTime (20.0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "tel2");
+
+  TEST_COMPARE(tec->isIndex ( 0, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "teli2");
+
+  TEST_COMPARE(tec->isIndex ( 50, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 3);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teli1");
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli2");
+
+  TEST_COMPARE(tec->isIndex (100, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 2);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");
+
+  TEST_COMPARE(tec->isIndex (200, teCons), ==, true );
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "teli2");
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( -1.0, teCons), 0.0, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "tel2");
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( 4.0, teCons), 5.0, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 3);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "tel1");
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel2");
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( 9.0, teCons), 10.0, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 2);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");
+
+  TEST_FLOATING_EQUALITY(tec->timeOfNextEvent( 19.0, teCons), 20.0, 1.0e-14);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "tel2");
+
+  TEST_COMPARE(tec->indexOfNextEvent(-1, teCons), ==, 0);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "teli2");
+
+  TEST_COMPARE(tec->indexOfNextEvent( 40, teCons), ==, 50);
+  TEST_COMPARE(teCons.size(), ==, 3);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teli1");
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli2");
+
+  TEST_COMPARE(tec->indexOfNextEvent( 90, teCons), ==, 100);
+  TEST_COMPARE(teCons.size(), ==, 2);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");
+
+  TEST_COMPARE(tec->indexOfNextEvent(190, teCons), ==, 200);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "teli2");
+
+  // Sorted order is still input order.
+  TEST_COMPARE(tec->eventInRange(-1.0, 21.0, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "tel2");
+
+  // Sorted order is based on "time of next event".
+  TEST_COMPARE(tec->eventInRange( 0.0, 21.0, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter2");  TEST_FLOATING_EQUALITY(teCons[0]->timeOfNextEvent( 0.0), 2.0, 1.0e-14);
+  TEST_COMPARE(teCons[1]->getName(), ==, "tel2");  TEST_FLOATING_EQUALITY(teCons[1]->timeOfNextEvent( 0.0), 3.0, 1.0e-14);
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel1");  TEST_FLOATING_EQUALITY(teCons[2]->timeOfNextEvent( 0.0), 4.0, 1.0e-14);
+  TEST_COMPARE(teCons[3]->getName(), ==, "ter1");  TEST_FLOATING_EQUALITY(teCons[3]->timeOfNextEvent( 0.0), 5.0, 1.0e-14);
+
+  TEST_COMPARE(tec->eventInRange( 7.0, 21.0, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter2");  TEST_FLOATING_EQUALITY(teCons[0]->timeOfNextEvent( 7.0), 8.0, 1.0e-14);
+  TEST_COMPARE(teCons[1]->getName(), ==, "tel1");  TEST_FLOATING_EQUALITY(teCons[1]->timeOfNextEvent( 7.0), 9.0, 1.0e-14);
+  TEST_COMPARE(teCons[2]->getName(), ==, "ter1");  TEST_FLOATING_EQUALITY(teCons[2]->timeOfNextEvent( 7.0),10.0, 1.0e-14);
+  TEST_COMPARE(teCons[3]->getName(), ==, "tel2");  TEST_FLOATING_EQUALITY(teCons[3]->timeOfNextEvent( 7.0),13.0, 1.0e-14);
+
+  TEST_COMPARE(tec->eventInRange(19.0, 21.0, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "ter1");  TEST_FLOATING_EQUALITY(teCons[0]->timeOfNextEvent(19.0),20.0, 1.0e-14);
+  TEST_COMPARE(teCons[1]->getName(), ==, "ter2");  TEST_FLOATING_EQUALITY(teCons[1]->timeOfNextEvent(19.0),20.0, 1.0e-14);
+  TEST_COMPARE(teCons[2]->getName(), ==, "tel1");  TEST_FLOATING_EQUALITY(teCons[2]->timeOfNextEvent(19.0),20.0, 1.0e-14);
+  TEST_COMPARE(teCons[3]->getName(), ==, "tel2");  TEST_FLOATING_EQUALITY(teCons[3]->timeOfNextEvent(19.0),20.0, 1.0e-14);
+
+  // Sorted order is still input order.
+  TEST_COMPARE(tec->eventInRangeIndex(-10, 210, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli1");
+  TEST_COMPARE(teCons[3]->getName(), ==, "teli2");
+
+  // Sorted order is based on "time of next event".
+  TEST_COMPARE(tec->eventInRangeIndex( 0, 210, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri2");  TEST_COMPARE(teCons[0]->indexOfNextEvent( 0), == , 20);
+  TEST_COMPARE(teCons[1]->getName(), ==, "teli2");  TEST_COMPARE(teCons[1]->indexOfNextEvent( 0), == , 30);
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli1");  TEST_COMPARE(teCons[2]->indexOfNextEvent( 0), == , 40);
+  TEST_COMPARE(teCons[3]->getName(), ==, "teri1");  TEST_COMPARE(teCons[3]->indexOfNextEvent( 0), == , 50);
+
+  TEST_COMPARE(tec->eventInRangeIndex( 70, 210, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri2");  TEST_COMPARE(teCons[0]->indexOfNextEvent( 70), == , 80);
+  TEST_COMPARE(teCons[1]->getName(), ==, "teli1");  TEST_COMPARE(teCons[1]->indexOfNextEvent( 70), == , 90);
+  TEST_COMPARE(teCons[2]->getName(), ==, "teri1");  TEST_COMPARE(teCons[2]->indexOfNextEvent( 70), == ,100);
+  TEST_COMPARE(teCons[3]->getName(), ==, "teli2");  TEST_COMPARE(teCons[3]->indexOfNextEvent( 70), == ,130);
+
+  TEST_COMPARE(tec->eventInRangeIndex(190, 210, teCons), ==, true);
+  TEST_COMPARE(teCons.size(), ==, 4);
+  TEST_COMPARE(teCons[0]->getName(), ==, "teri1");  TEST_COMPARE(teCons[0]->indexOfNextEvent(190), == ,200);
+  TEST_COMPARE(teCons[1]->getName(), ==, "teri2");  TEST_COMPARE(teCons[1]->indexOfNextEvent(190), == ,200);
+  TEST_COMPARE(teCons[2]->getName(), ==, "teli1");  TEST_COMPARE(teCons[2]->indexOfNextEvent(190), == ,200);
+  TEST_COMPARE(teCons[3]->getName(), ==, "teli2");  TEST_COMPARE(teCons[3]->indexOfNextEvent(190), == ,200);
+
 }
 
 

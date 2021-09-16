@@ -292,7 +292,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, eventInRange)
   te->setRelTol(1.0e-14);
 
   // Test eventInRange.
-  //   Right end.
+  //   Right end of input range.
   //   Around first event.
   TEST_COMPARE(te->eventInRange(-1.0, -10.0e-14), ==, false);  // Just outside tolerance.
   TEST_COMPARE(te->eventInRange(-1.0,  -0.1e-14), ==, true );  // Just inside tolerance.
@@ -314,26 +314,26 @@ TEUCHOS_UNIT_TEST(TimeEventRange, eventInRange)
   TEST_COMPARE(te->eventInRange(2.5, 3.0 +   0.1e-14), ==, true );  // Just inside tolerance.
   TEST_COMPARE(te->eventInRange(2.5, 3.0 +  10.0e-14), ==, true );  // Just outside tolerance.
 
-  //   Left end.
+  //   Left end of input range.
   //   Around first event.
   TEST_COMPARE(te->eventInRange(-10.0e-14, 0.5), ==, true );  // Just outside tolerance.
-  TEST_COMPARE(te->eventInRange( -0.1e-14, 0.5), ==, true );  // Just inside tolerance.
-  TEST_COMPARE(te->eventInRange(  0.0    , 0.5), ==, true );  // Right on timeEvent.
-  TEST_COMPARE(te->eventInRange(  0.1e-14, 0.5), ==, true );  // Just inside tolerance.
+  TEST_COMPARE(te->eventInRange( -0.1e-14, 0.5), ==, false);  // Just inside tolerance.
+  TEST_COMPARE(te->eventInRange(  0.0    , 0.5), ==, false);  // Right on timeEvent.
+  TEST_COMPARE(te->eventInRange(  0.1e-14, 0.5), ==, false);  // Just inside tolerance.
   TEST_COMPARE(te->eventInRange( 10.0e-14, 0.5), ==, false);  // Just outside tolerance.
 
   //   Around mid event.
   TEST_COMPARE(te->eventInRange(1.0 + -10.0e-14, 1.5), ==, true );  // Just outside tolerance.
-  TEST_COMPARE(te->eventInRange(1.0 +  -0.1e-14, 1.5), ==, true );  // Just inside tolerance.
-  TEST_COMPARE(te->eventInRange(1.0 +   0.0    , 1.5), ==, true );  // Right on timeEvent.
-  TEST_COMPARE(te->eventInRange(1.0 +   0.1e-14, 1.5), ==, true );  // Just inside tolerance.
+  TEST_COMPARE(te->eventInRange(1.0 +  -0.1e-14, 1.5), ==, false);  // Just inside tolerance.
+  TEST_COMPARE(te->eventInRange(1.0 +   0.0    , 1.5), ==, false);  // Right on timeEvent.
+  TEST_COMPARE(te->eventInRange(1.0 +   0.1e-14, 1.5), ==, false);  // Just inside tolerance.
   TEST_COMPARE(te->eventInRange(1.0 +  10.0e-14, 1.5), ==, false);  // Just outside tolerance.
 
   //   Around last event.
   TEST_COMPARE(te->eventInRange(3.0 + -10.0e-14, 4.0), ==, true );  // Just outside tolerance.
-  TEST_COMPARE(te->eventInRange(3.0 +  -0.1e-14, 4.0), ==, true );  // Just inside tolerance.
-  TEST_COMPARE(te->eventInRange(3.0 +   0.0    , 4.0), ==, true );  // Right on timeEvent.
-  TEST_COMPARE(te->eventInRange(3.0 +   0.1e-14, 4.0), ==, true );  // Just inside tolerance.
+  TEST_COMPARE(te->eventInRange(3.0 +  -0.1e-14, 4.0), ==, false);  // Just inside tolerance.
+  TEST_COMPARE(te->eventInRange(3.0 +   0.0    , 4.0), ==, false);  // Right on timeEvent.
+  TEST_COMPARE(te->eventInRange(3.0 +   0.1e-14, 4.0), ==, false);  // Just inside tolerance.
   TEST_COMPARE(te->eventInRange(3.0 +  10.0e-14, 4.0), ==, false);  // Just outside tolerance.
 }
 

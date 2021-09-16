@@ -76,40 +76,36 @@ public:
 
     /** \brief Test if time is near a TimeEvent (within tolerance).
      *
-     *  Return true if one of the TimeEvents in the composite is near
-     *  the input time.
+     *  Return true if one of the TimeEvents in the composite is within
+     *  tolerance of the input time.
      *
      *  \param time [in] The input time.
      *  \return True if time is near an event (within absolute tolerance).
      */
     virtual bool isTime(Scalar time) const
     {
-      Teuchos::RCP<TimeEventBase<Scalar> > timeEvent;
-      return isTime(time, timeEvent);
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return isTime(time, timeEvents);
     }
 
-    /** \brief Test if time is near a TimeEvent (within tolerance) plus the constraining TimeEvent.
+    /** \brief Test if time is near a TimeEvent (within tolerance) plus the constraining TimeEvent(s).
      *
      *  Return true if one of the TimeEvents in the composite is near
-     *  the input time, and the constraining TimeEvent so additional details
-     *  about the event can be queried.
+     *  the input time, and the constraining TimeEvent(s) so additional
+     *  details about the event can be queried.
      *
-     *  \param time      [in] The input time.
-     *  \param timeEvent [out] The constraining TimeEvent.
+     *  \param time       [in]  The input time.
+     *  \param timeEvents [out] Vector of constraining TimeEvents.
      *  \return True if time is near an event (within absolute tolerance).
      */
-    virtual bool isTime(Scalar time, Teuchos::RCP<TimeEventBase<Scalar> > & timeEvent) const
+    virtual bool isTime(Scalar time,
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
     {
-      timeEvent = Teuchos::rcp(new TimeEventBase<Scalar>());
-      bool is_time = false;
+      timeEvents.clear();
       for(auto& e : timeEvents_) {
-        if (e->isTime(time)) {
-          is_time = true;
-          timeEvent = e;
-          break;
-        }
+        if (e->isTime(time)) timeEvents.push_back(e);
       }
-      return is_time;
+      return (!timeEvents.empty());
     }
 
     /** \brief How much time until the next event.
@@ -123,37 +119,34 @@ public:
     virtual Scalar timeToNextEvent(Scalar time) const
     { return timeOfNextEvent(time) - time; }
 
-    /** \brief How much time until the next event plus the constraining TimeEvent.
+    /** \brief How much time until the next event plus the constraining TimeEvent(s).
      *
      *  Return the amount of time to the next event (i.e., time of
      *  next event minus the input time), and the constraining TimeEvent
      *  so additional details about the event can be queried.
      *
-     *  \param time      [in] The input time.
-     *  \param timeEvent [out] The constraining TimeEvent.
+     *  \param time      [in]  The input time.
+     *  \param timeEvent [out] Vector of constraining TimeEvent.
      *  \return The time to the next event.
      */
-    virtual Scalar timeToNextEvent(
-      Scalar time, Teuchos::RCP<TimeEventBase<Scalar> > & timeEvent) const
-    {
-      timeEvent = Teuchos::rcp(new TimeEventBase<Scalar>());
-      return timeOfNextEvent(time, timeEvent) - time;
-    }
+    virtual Scalar timeToNextEvent(Scalar time,
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
+    { return timeOfNextEvent(time, timeEvents) - time; }
 
-    /** \brief Return the time of the next time event following the input time.
+    /** \brief Return the time of the next event following the input time.
      *
-     *  See timeOfNextEvent(Scalar time, & timeEvent).
+     *  See timeOfNextEvent(time, timeEvent).
      *
      *  \param time [in] Input time.
      *  \return Time of the next event.
      */
     virtual Scalar timeOfNextEvent(Scalar time) const
     {
-      Teuchos::RCP<TimeEventBase<Scalar> > timeEvent;
-      return timeOfNextEvent(time, timeEvent);
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return timeOfNextEvent(time, timeEvents);
     }
 
-    /** \brief Return the time of the next time event and constraining TimeEvent.
+    /** \brief Return the time of the next time event and constraining TimeEvent(s).
      *
      *  Returns the time of the next event that follows the input time.
      *  If the input time is before all events, the time of the first
@@ -164,66 +157,45 @@ public:
      *  For TimeEventComposite, find the next time event from all the
      *  TimeEvents in the composite.
      *
-     *  Additionally, output the constraining TimeEvent
-     *  so additional details about the event can be queried.
+     *  Additionally, output the constraining TimeEvents
+     *  so additional details about the events can be queried.
      *
      *  \param time      [in]  Input time.
      *  \param timeEvent [out] Constraining TimeEvent.
      *  \return Time of the next event.
      */
-    virtual Scalar timeOfNextEvent(
-      Scalar time, Teuchos::RCP<TimeEventBase<Scalar> > & timeEvent) const
+    virtual Scalar timeOfNextEvent(Scalar time,
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
     {
-      timeEvent = Teuchos::rcp(new TimeEventBase<Scalar>());
-      std::vector<std::pair<Scalar, Teuchos::RCP<TimeEventBase<Scalar> > > > timeEventPair;
+      timeEvents.clear();
+      typedef std::pair<Scalar, Teuchos::RCP<TimeEventBase<Scalar> > > TEPAIR;
+      std::vector<TEPAIR> timeEventPair;
       for(auto& e : timeEvents_)
         timeEventPair.push_back(std::make_pair(e->timeOfNextEvent(time), e));
 
-      if (timeEventPair.size() == 0) {
-        return this->getDefaultTime();
+      if (timeEventPair.empty()) return this->getDefaultTime();
+
+      auto compare=[](TEPAIR a, TEPAIR b) { return a.first < b.first; };
+      std::stable_sort(timeEventPair.begin(), timeEventPair.end(), compare);
+
+      // The first one is the "time of next event".
+      Scalar tone = timeEventPair.front().first;
+
+      // Check if there are multiple events that match "time of next event".
+      for (auto it = timeEventPair.begin(); it != timeEventPair.end(); ++it) {
+        if ((*it).second->isTime(tone)) timeEvents.push_back((*it).second);
       }
 
-      auto compare = [](std::pair<Scalar, Teuchos::RCP<TimeEventBase<Scalar> > > a,
-                        std::pair<Scalar, Teuchos::RCP<TimeEventBase<Scalar> > > b)
-        { return a.first < b.first; };
-      std::sort(timeEventPair.begin(), timeEventPair.end(), compare);
-
-      // Check if before first event.
-      Scalar tone   = timeEventPair.front().first;
-      Scalar absTol = timeEventPair.front().second->getAbsTol();
-      if (time < tone-absTol) {
-        timeEvent = timeEventPair.front().second;
-        return tone;
-      }
-
-      // Check if after or close to last event.
-      tone   = timeEventPair.back().first;
-      absTol = timeEventPair.back().second->getAbsTol();
-      if (time > tone-absTol) {
-        return this->getDefaultTime();
-      }
-
-      // Check timeOfNextEvent is near time.  If so, return the next event.
-      typename std::vector< std::pair<Scalar, Teuchos::RCP<TimeEventBase<Scalar> > > >::const_iterator it =
-        std::upper_bound(timeEventPair.begin(), timeEventPair.end(),
-                         std::make_pair(time, timeEventPair.front().second), compare);
-      tone   = (*it).first;
-      absTol = (*it).second->getAbsTol();
-      if ( tone-absTol < time && time < tone+absTol) {
-        timeEvent = (*(it+1)).second;
-        return (*(it+1)).first;
-      }
-
-      timeEvent = (*it).second;
       return tone;
     }
 
     /** \brief Test if an event occurs within the time range.
      *
-     *  Find if an event is within the input range, inclusively
-     *  ( time1 <= event <= time2 ).  For TimeEventComposite,
-     *  test each TimeEvent to determine if the input time is
-     *  within the range.
+     *  Find if an event is within the input range,
+     *  (time1 < event-absTol and timeEvent-absTol <= time2),
+     *  including the event's absolute tolerance.  For
+     *  TimeEventComposite, test each TimeEvent to determine if
+     *  the input time is within the range.
      *
      *  \param time1 [in] Input time of one end of the range.
      *  \param time2 [in] Input time of the other end of the range.
@@ -232,10 +204,45 @@ public:
      */
     virtual bool eventInRange(Scalar time1, Scalar time2) const
     {
-      for(auto& e : timeEvents_)
-        if (e->eventInRange(time1, time2)) return true;
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return eventInRange(time1, time2, timeEvents);
+    }
 
-      return false;
+    /** \brief Test if an event occurs within the time range plus the constraining TimeEvent(s).
+     *
+     *  Find if an event is within the input range,
+     *  (time1 < event-absTol and timeEvent-absTol <= time2),
+     *  including the event's absolute tolerance.  For
+     *  TimeEventComposite, test each TimeEvent to determine if
+     *  the input time is within the range.
+     *
+     *  Additionally, the constraining TimeEvents are sorted by "time of
+     *  next event", and returned, so additional details about the events
+     *  can be queried.
+     *
+     *  \param time1 [in] Input time of one end of the range.
+     *  \param time2 [in] Input time of the other end of the range.
+     *  \param timeEvents [out] Vector of sorted constraining TimeEvent(s).
+     *
+     *  \return True if a time event is within the range.
+     */
+    virtual bool eventInRange(Scalar time1, Scalar time2,
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
+    {
+      typedef std::pair<Scalar, Teuchos::RCP<TimeEventBase<Scalar> > > TEPAIR;
+      std::vector<TEPAIR> timeEventPair;
+      for(auto& e : timeEvents_) {
+        if (e->eventInRange(time1, time2))
+          timeEventPair.push_back(std::make_pair(e->timeOfNextEvent(time1), e));
+      }
+
+      auto compare = [](TEPAIR a, TEPAIR b) { return a.first < b.first; };
+      std::stable_sort(timeEventPair.begin(), timeEventPair.end(), compare);
+
+      timeEvents.clear();
+      for(auto& e : timeEventPair) timeEvents.push_back(e.second);
+
+      return (!timeEvents.empty());
     }
 
     /** \brief Test if index is a time event.
@@ -248,33 +255,28 @@ public:
      */
     virtual bool isIndex(int index) const
     {
-      Teuchos::RCP<TimeEventBase<Scalar> > timeEvent;
-      return isIndex(index, timeEvent);
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return isIndex(index, timeEvents);
     }
 
-    /** \brief Test if index is a time event.
+    /** \brief Test if index is a time event plus the constraining TimeEvent(s).
      *
-     *  Return true if one of the TimeEvents' indices in the composite is near
+     *  Return true if one of the TimeEvents indices in the composite is near
      *  the input index, and the constraining TimeEvent so additional details
      *  about the event can be queried.
      *
-     *  \param index     [in]  The input index.
-     *  \param timeEvent [out] The constraining TimeEvent.
+     *  \param index      [in]  The input index.
+     *  \param timeEvents [out] Vector of constraining TimeEvents.
      *  \return True if index is an event.
      */
     virtual bool isIndex(int index,
-      Teuchos::RCP<TimeEventBase<Scalar> > & timeEvent) const
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
     {
-      timeEvent = Teuchos::rcp(new TimeEventBase<Scalar>());
-      bool is_index = false;
+      timeEvents.clear();
       for(auto& e : timeEvents_) {
-        if (e->isIndex(index)) {
-          is_index = true;
-          timeEvent = e;
-          break;
-        }
+        if (e->isIndex(index)) timeEvents.push_back(e);
       }
-      return is_index;
+      return (!timeEvents.empty());
     }
 
     /** \brief How many indices until the next event.
@@ -284,8 +286,7 @@ public:
      */
     virtual int indexToNextEvent(int index) const
     {
-      Teuchos::RCP<TimeEventBase<Scalar> > timeEvent;
-      return indexOfNextEvent(index, timeEvent) - index;
+      return indexOfNextEvent(index) - index;
     }
 
     /** \brief How many indices until the next event.
@@ -295,10 +296,10 @@ public:
      *  \return The number of steps (indices) to the next event.
      */
     virtual int indexToNextEvent(int index,
-      Teuchos::RCP<TimeEventBase<Scalar> > & timeEvent) const
-    { return indexOfNextEvent(index, timeEvent) - index; }
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
+    { return indexOfNextEvent(index, timeEvents) - index; }
 
-    /** \brief Return the index of the next event following the input index plus.
+    /** \brief Return the index of the next event following the input index.
      *
      *  Returns the index of the next event that follows the input index.
      *  If the input index is before all events, the index of the first
@@ -311,11 +312,11 @@ public:
      */
     virtual int indexOfNextEvent(int index) const
     {
-      Teuchos::RCP<TimeEventBase<Scalar> > timeEvent;
-      return indexOfNextEvent(index, timeEvent);
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return indexOfNextEvent(index, timeEvents);
     }
 
-    /** \brief Return the index of the next event following the input index plus the constraining TimeEvent.
+    /** \brief Return the index of the next event following the input index plus the constraining TimeEvent(s).
      *
      *  Returns the index of the next event that follows the input index.
      *  If the input index is before all events, the index of the first
@@ -324,53 +325,32 @@ public:
      *  input index is an event index, the index of the next event is returned.
      *
      *  \param index     [in] Input index.
-     *  \param timeEvent [out] The constraining TimeEvent.
+     *  \param timeEvent [out] Vector of constraining TimeEvent(s).
      *  \return Index of the next event.
      */
     virtual int indexOfNextEvent(int index,
-      Teuchos::RCP<TimeEventBase<Scalar> > & timeEvent) const
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
     {
-      timeEvent = Teuchos::rcp(new TimeEventBase<Scalar>());
-      std::vector<std::pair<int, Teuchos::RCP<TimeEventBase<Scalar> > > > timeEventPair;
+      timeEvents.clear();
+      typedef std::pair<int, Teuchos::RCP<TimeEventBase<Scalar> > > TEPAIR;
+      std::vector<TEPAIR> timeEventPair;
       for(auto& e : timeEvents_)
         timeEventPair.push_back(std::make_pair(e->indexOfNextEvent(index), e));
 
       if (timeEventPair.size() == 0) return this->getDefaultIndex();
 
-      auto compare = [](std::pair<int, Teuchos::RCP<TimeEventBase<Scalar> > > a,
-                        std::pair<int, Teuchos::RCP<TimeEventBase<Scalar> > > b)
-        { return a.first < b.first; };
-      std::sort(timeEventPair.begin(), timeEventPair.end(), compare);
+      auto compare = [](TEPAIR a, TEPAIR b) { return a.first < b.first; };
+      std::stable_sort(timeEventPair.begin(), timeEventPair.end(), compare);
 
-      if (timeEventPair.size() == 0) return this->getDefaultIndex();
+      // The first one is the "index of next event".
+      int ione = timeEventPair.front().first;
 
-      // Check if before first event.
-      int ione   = timeEventPair.front().first;
-      if (index <= ione) {
-        timeEvent = timeEventPair.front().second;
-        return ione;
+      // Check if there are multiple events that match "index of next event".
+      for (auto it = timeEventPair.begin(); it != timeEventPair.end(); ++it) {
+        if ((*it).second->isIndex(ione)) timeEvents.push_back((*it).second);
       }
 
-      // Check if after last event.
-      ione   = timeEventPair.back().first;
-      if (index >= ione) {
-        timeEvent = timeEventPair.back().second;
-        return ione;
-      }
-
-      // Check if left-side index event
-      typename std::vector< std::pair<int, Teuchos::RCP<TimeEventBase<Scalar> > > >::const_iterator it =
-        std::upper_bound(timeEventPair.begin(), timeEventPair.end(),
-                         std::make_pair(index, timeEventPair.front().second), compare);
-      ione   = (*(it-1)).first;
-      if (index == ione) {
-        timeEvent = (*(it-1)).second;
-        return ione;
-      }
-
-      // Otherwise it is the next event.
-      timeEvent = (*it).second;
-      return (*it).first;
+      return ione;
     }
 
     /** \brief Test if an event occurs within the index range.
@@ -386,14 +366,108 @@ public:
      */
     virtual bool eventInRangeIndex(int index1, int index2) const
     {
-      bool inRange = false;
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return eventInRangeIndex(index1, index2, timeEvents);
+    }
+
+    /** \brief Test if an event occurs within the index range plus the constraining TimeEvent(s).
+     *
+     *  Find if an event is within the input range, inclusively
+     *  ( index1 <= event <= index2 ).  This may require testing
+     *  each event in the TimeEvent.
+     *
+     *  Additionally, the constraining TimeEvents are sorted by "index of
+     *  next event", and returned, so additional details about the events
+     *  can be queried.
+     *
+     *  \param index1 [in] Input index of one end of the range.
+     *  \param index2 [in] Input index of the other end of the range.
+     *  \param timeEvents [out] Vector of constraining TimeEvents.
+     *
+     *  \return True if a index event is within the range.
+     */
+    virtual bool eventInRangeIndex(int index1, int index2,
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
+    {
+      typedef std::pair<int, Teuchos::RCP<TimeEventBase<Scalar> > > TEPAIR;
+      std::vector<TEPAIR> timeEventPair;
       for(auto& e : timeEvents_) {
-        if (e->eventInRangeIndex(index1, index2)) {
-          inRange = true;
-          break;
-        }
+        if (e->eventInRangeIndex(index1, index2))
+          timeEventPair.push_back(std::make_pair(e->indexOfNextEvent(index1), e));
       }
-      return inRange;
+
+      auto compare = [](TEPAIR a, TEPAIR b) { return a.first < b.first; };
+      std::stable_sort(timeEventPair.begin(), timeEventPair.end(), compare);
+
+      timeEvents.clear();
+      for(auto& e : timeEventPair) timeEvents.push_back(e.second);
+
+      return (!timeEvents.empty());
+    }
+
+    /** \brief Return the largest absolute tolerance from all the TimeEvents.
+     *
+     *  \return The largest absolute tolerance of all the TimeEvents.
+     */
+    virtual Scalar getAbsTol() const
+    {
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return getAbsTol(timeEvents);
+    }
+
+    /** \brief Return the largest absolute tolerance from all the TimeEvents plus the constraining TimeEvent(s).
+     *
+     *  All the constraining TimeEvents have the same largest absolute
+     *  tolerance (within numerical tolerance).
+     *
+     *  \param timeEvents [out] Vector of constraining TimeEvent(s).
+     *  \return The largest absolute tolerance of all the TimeEvents.
+     */
+    virtual Scalar getAbsTol(
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
+    {
+      timeEvents.clear();
+      Scalar largestAbsTol = timeEvents_.front()->getAbsTol();
+      timeEvents.push_back(timeEvents_.front());
+      for(auto& e : timeEvents_)
+        if (e->getAbsTol() > largestAbsTol) largestAbsTol = e->getAbsTol();
+
+      for(auto& e : timeEvents_)
+        if (e->getAbsTol()-largestAbsTol < largestAbsTol * 1.0e-14)
+          timeEvents.push_back(e);
+
+      return largestAbsTol;
+    }
+
+    /** \brief Return if the time events need to be landed on exactly.
+     *
+     *  Will return true if any of the events requires to be landed on exactly.
+     *
+     *  \param LOE [in] Flag indicating if TimeEvent should land on the event exactly.
+     */
+    virtual bool getLandOnExactly() const
+    {
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > timeEvents;
+      return getLandOnExactly(timeEvents);
+    }
+
+    /** \brief Return if the time events need to be landed on exactly plus the constraining TimeEvent(s).
+     *
+     *  Will return true if any of the events requires to be landed on exactly.
+     *  All the constraining TimeEvents that require to be landed on exactly
+     *  will be returned through the input vector of TimeEvents.
+     *
+     *  \param timeEvents [out] Vector of constraining TimeEvent(s).
+     *  \return LOE Flag indicating if TimeEvent should land on the event exactly.
+     */
+    virtual bool getLandOnExactly(
+      std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > & timeEvents) const
+    {
+      timeEvents.clear();
+      for(auto& e : timeEvents_)
+        if (e->getLandOnExactly()) timeEvents.push_back(e);
+
+      return (!timeEvents.empty());
     }
   //@}
 

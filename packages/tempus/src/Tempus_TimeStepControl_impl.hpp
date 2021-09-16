@@ -226,7 +226,6 @@ void TimeStepControl<Scalar>::setNextTimeStep(
   Status & integratorStatus)
 {
   using Teuchos::RCP;
-  using Teuchos::rcp_dynamic_cast;
 
   checkInitialized();
 
@@ -291,14 +290,16 @@ void TimeStepControl<Scalar>::setNextTimeStep(
     }
 
 
-    // Check if this index is a TimeEvent and wheather it is an output event.
+    // Check if this index is a TimeEvent and whether it is an output event.
     bool outputDueToIndex = false;
-    Teuchos::RCP<TimeEventBase<Scalar> > constrainingTE;
-    bool teThisStep = timeEvent_->isIndex(iStep, constrainingTE);
-    if (teThisStep &&
-        (constrainingTE->getName() == "Output Index Interval" ||
-         constrainingTE->getName() == "Output Index List"        ))
-    { outputDueToIndex = true; }
+    std::vector<Teuchos::RCP<TimeEventBase<Scalar> > > constrainingTEs;
+    if (timeEvent_->isIndex(iStep, constrainingTEs)) {
+      for(auto& e : constrainingTEs) {
+        if (e->getName() == "Output Index Interval" ||
+            e->getName() == "Output Index List"        )
+        { outputDueToIndex = true; }
+      }
+    }
 
     // Check if during this time step is there a TimeEvent.
     Scalar endTime = lastTime+dt;
@@ -306,27 +307,27 @@ void TimeStepControl<Scalar>::setNextTimeStep(
     // the time step into two steps (e.g., time step lands within dt_min).
     if (getStepType() == "Variable") endTime = lastTime+dt+getMinTimeStep();
 
-    Scalar tone = timeEvent_->timeOfNextEvent(lastTime, constrainingTE);
-    teThisStep = lastTime < tone && tone <= endTime;
+    bool teThisStep = timeEvent_->eventInRange(lastTime, endTime, constrainingTEs);
 
     bool outputDueToTime = false;
-    if (teThisStep &&
-        (constrainingTE->getName() == "Output Time Interval" ||
-         constrainingTE->getName() == "Output Time List"        ))
-    { outputDueToTime = true; }
+    Scalar tone = endTime;
+    bool landOnExactly = false;
+    if (teThisStep) {
+      for (auto& e : constrainingTEs) {
+        if (e->getName() == "Output Time Interval" ||
+            e->getName() == "Output Time List"        )
+        { outputDueToTime = true; }
+
+        if (e->getLandOnExactly() == true) {
+          landOnExactly = true;
+          tone = e->timeOfNextEvent(lastTime);
+          break;
+        }
+      }
+    }
 
     Scalar reltol = 1.0e-6;
-    if (teThisStep &&  getStepType() == "Variable") {
-      bool landOnExactly = true;
-      // Check if we need to "land on exactly" the next TimeEvent.
-      if (constrainingTE->getType() == "Range") {
-        auto ter = rcp_dynamic_cast<TimeEventRange<Scalar> >(constrainingTE);
-        landOnExactly = ter->getLandOnExactly();
-      }
-      if (constrainingTE->getType() == "List" ) {
-        auto tel = rcp_dynamic_cast<TimeEventList<Scalar> >(constrainingTE);
-        landOnExactly = tel->getLandOnExactly();
-      }
+    if (teThisStep && getStepType() == "Variable") {
       if (landOnExactly == true) {
         // Adjust time step to hit TimeEvent.
         if ( time > tone ) {
@@ -448,15 +449,11 @@ template<class Scalar>
 bool TimeStepControl<Scalar>::getOutputExactly() const
 {
   auto event = timeEvent_->find("Output Time Interval");
-  if (event != Teuchos::null) {
-    auto ter = Teuchos::rcp_dynamic_cast<TimeEventRange<Scalar> >(event);
-    return ter->getLandOnExactly();
-  }
+  if (event != Teuchos::null) return event->getLandOnExactly();
+
   event = timeEvent_->find("Output Time List");
-  if (event != Teuchos::null) {
-    auto tel = Teuchos::rcp_dynamic_cast<TimeEventList<Scalar> >(event);
-    return tel->getLandOnExactly();
-  }
+  if (event != Teuchos::null) return event->getLandOnExactly();
+
   return true;
 }
 

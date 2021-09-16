@@ -125,7 +125,17 @@ public:
     virtual int getFinalIndex() const { return finalIndex_; }
     virtual Scalar getMaxAbsError() const { return maxAbsError_; }
     virtual Scalar getMaxRelError() const { return maxRelError_; }
+
+    /** \brief Return if the output needs to exactly happen on output time.
+     *
+     *  Output TimeEvents, "Output Time Interval" and "Output Time List",
+     *  will always have the same OutputExactly value, so just
+     *  find one or the other.  Otherwise return the default of true.
+     *
+     *  \return True if output needs to happen exactly on output times.
+     */
     virtual bool getOutputExactly() const;
+
     virtual std::vector<int> getOutputIndices() const;
     virtual std::vector<Scalar> getOutputTimes() const;
     virtual int getOutputIndexInterval() const;

@@ -253,7 +253,7 @@ bool TimeEventRange<Scalar>::eventInRange(Scalar time1, Scalar time2) const
 
   // Check if range is completely outside time events.
   const Scalar timeOfLast = start_ + (numEvents_-1) * stride_;
-  if (time2+absTol_ < start_ || timeOfLast < time1-absTol_) return false;
+  if (time2 < start_-absTol_ || timeOfLast+absTol_ < time1) return false;
 
   const int strideJustBeforeTime1 = std::min(int(numEvents_-1),
     std::max(int(0), int((time1 - start_ + absTol_) / stride_ - 0.5)));
@@ -263,7 +263,7 @@ bool TimeEventRange<Scalar>::eventInRange(Scalar time1, Scalar time2) const
 
   for ( int i = strideJustBeforeTime1; i <= strideJustAfterTime2; i++ ) {
     const Scalar timeEvent = start_ + i * stride_;
-    if (time1-absTol_ < timeEvent && timeEvent < time2+absTol_) return true;
+    if (time1 < timeEvent-absTol_ && timeEvent-absTol_ <= time2) return true;
   }
 
   return false;

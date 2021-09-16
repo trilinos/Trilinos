@@ -213,15 +213,15 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, eventInRangeIndex)
 
   //   Left end.
   TEST_COMPARE(te->eventInRangeIndex(-6.0, -3), ==, true );   // Around first event.
-  TEST_COMPARE(te->eventInRangeIndex(-5.0, -3), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(-5.0, -3), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(-4.0, -3), ==, false);
 
   TEST_COMPARE(te->eventInRangeIndex(-3, 0), ==, true );   // Around mid event.
-  TEST_COMPARE(te->eventInRangeIndex(-2, 0), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(-2, 0), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(-1, 0), ==, false);
 
   TEST_COMPARE(te->eventInRangeIndex(3, 8), ==, true );   // Around last event.
-  TEST_COMPARE(te->eventInRangeIndex(4, 8), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(4, 8), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(5, 8), ==, false);
 }
 

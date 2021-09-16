@@ -71,7 +71,7 @@ void TimeEventListIndex<Scalar>::addIndex(int index)
 template<class Scalar>
 bool TimeEventListIndex<Scalar>::isIndex(int index) const
 {
-  return (indexToNextEvent(index) == 0);
+  return (std::find(indexList_.begin(), indexList_.end(), index) != indexList_.end() );
 }
 
 
@@ -88,20 +88,15 @@ int TimeEventListIndex<Scalar>::indexOfNextEvent(int index) const
   if (indexList_.size() == 0) return this->getDefaultIndex();
 
   // Check if before first event.
-  if (indexList_.front() >= index) return indexList_.front();
+  if (index < indexList_.front()) return indexList_.front();
 
   // Check if after last event.
-  if (indexList_.back() <= index) return indexList_.back();
+  if (index >= indexList_.back()) return this->getDefaultIndex();
 
   std::vector<int>::const_iterator it =
     std::upper_bound(indexList_.begin(), indexList_.end(), index);
 
-  // Check if left-side index event
-  const Scalar indexOfLeftEvent = *(it-1);
-  if (indexOfLeftEvent == index) return indexOfLeftEvent;
-
-  // Otherwise it is the next event.
-  return *it;
+  return int(*it);
 }
 
 
@@ -125,7 +120,7 @@ bool TimeEventListIndex<Scalar>::eventInRangeIndex(int index1, int index2) const
   if (indexEvent1 != indexEvent2) return true;
 
   // Check if indices bracket index event.
-  if (index1 <= indexEvent1 && indexEvent1 <= index2) return true;
+  if (index1 < indexEvent1 && indexEvent1 <= index2) return true;
 
   return false;
 }

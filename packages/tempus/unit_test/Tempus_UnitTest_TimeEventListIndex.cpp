@@ -35,7 +35,7 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, Default_Construction)
   TEST_COMPARE(te->getIndexList().size(), ==, 0);
 
   TEST_COMPARE(te->isIndex(-1), ==, false);
-  TEST_COMPARE(te->isIndex(te->getDefaultIndex()), ==, true );
+  TEST_COMPARE(te->isIndex( 0), ==, false);
   TEST_COMPARE(te->isIndex( 1), ==, false);
 
   TEST_COMPARE(te->indexToNextEvent(0), ==, te->getDefaultIndex());
@@ -134,18 +134,18 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, indexToNextEvent)
   // Test indexToNextEvent.
   //   Around first event.
   TEST_COMPARE(te->indexToNextEvent(-12), ==,  3);
-  TEST_COMPARE(te->indexToNextEvent( -9), ==,  0);
+  TEST_COMPARE(te->indexToNextEvent( -9), ==,  4);
   TEST_COMPARE(te->indexToNextEvent( -8), ==,  3);
 
   //   Around mid event.
   TEST_COMPARE(te->indexToNextEvent(-4), ==,  2);
-  TEST_COMPARE(te->indexToNextEvent(-2), ==,  0);
+  TEST_COMPARE(te->indexToNextEvent(-2), ==,  3);
   TEST_COMPARE(te->indexToNextEvent( 0), ==,  1);
 
   //   Around last event.
   TEST_COMPARE(te->indexToNextEvent(2), ==,  2);
-  TEST_COMPARE(te->indexToNextEvent(4), ==,  0);
-  TEST_COMPARE(te->indexToNextEvent(9), ==, -5);
+  TEST_COMPARE(te->indexToNextEvent(4), ==,  te->getDefaultIndex()-4);
+  TEST_COMPARE(te->indexToNextEvent(9), ==,  te->getDefaultIndex()-9);
 }
 
 
@@ -166,18 +166,18 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, indexOfNextEvent)
   // Test indexOfNextEvent.
   //   Around first event.
   TEST_COMPARE(te->indexOfNextEvent(-12), ==, -9);
-  TEST_COMPARE(te->indexOfNextEvent( -9), ==, -9);
+  TEST_COMPARE(te->indexOfNextEvent( -9), ==, -5);
   TEST_COMPARE(te->indexOfNextEvent( -8), ==, -5);
 
   //   Around mid event.
   TEST_COMPARE(te->indexOfNextEvent(-4), ==, -2);
-  TEST_COMPARE(te->indexOfNextEvent(-2), ==, -2);
+  TEST_COMPARE(te->indexOfNextEvent(-2), ==,  1);
   TEST_COMPARE(te->indexOfNextEvent( 0), ==,  1);
 
   //   Around last event.
   TEST_COMPARE(te->indexOfNextEvent(2), ==,  4);
-  TEST_COMPARE(te->indexOfNextEvent(4), ==,  4);
-  TEST_COMPARE(te->indexOfNextEvent(9), ==,  4);
+  TEST_COMPARE(te->indexOfNextEvent(4), ==,  te->getDefaultIndex());
+  TEST_COMPARE(te->indexOfNextEvent(9), ==,  te->getDefaultIndex());
 }
 
 
@@ -211,15 +211,15 @@ TEUCHOS_UNIT_TEST(TimeEventListIndex, eventInRangeIndex)
 
   //   Left end.
   TEST_COMPARE(te->eventInRangeIndex(-12, -7), ==, true );   // Around first event.
-  TEST_COMPARE(te->eventInRangeIndex( -9, -7), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex( -9, -7), ==, false);
   TEST_COMPARE(te->eventInRangeIndex( -8, -7), ==, false);
 
   TEST_COMPARE(te->eventInRangeIndex(-3, 0), ==, true );   // Around mid event.
-  TEST_COMPARE(te->eventInRangeIndex(-2, 0), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(-2, 0), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(-1, 0), ==, false);
 
   TEST_COMPARE(te->eventInRangeIndex(3, 8), ==, true );   // Around last event.
-  TEST_COMPARE(te->eventInRangeIndex(4, 8), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(4, 8), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(5, 8), ==, false);
 }
 

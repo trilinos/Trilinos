@@ -34,7 +34,8 @@ public:
   TimeEventListIndex();
 
   /// Construct with full argument list of data members.
-  TimeEventListIndex(std::vector<int> indexList, std::string name = "TimeEventListIndex");
+  TimeEventListIndex(std::vector<int> indexList,
+                     std::string name = "TimeEventListIndex");
 
   /// Destructor
   virtual ~TimeEventListIndex() {}
@@ -72,8 +73,8 @@ public:
 
     /** \brief Test if an event occurs within the index range.
      *
-     *  Find if an event is within the input range, inclusively
-     *  ( index1 <= event <= index2 ).
+     *  Find if an event is within the input range,
+     *  ( index1 < event <= index2 ).
      *
      *  \param index1 [in] Input index of one end of the range.
      *  \param index2 [in] Input index of the other end of the range.

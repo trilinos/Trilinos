@@ -50,9 +50,12 @@ public:
 
   /// \name Basic methods
   //@{
-    /** \brief Test if time is near a TimeEvent (within tolerance).
+    /** \brief Test if time is near an event (within tolerance).
      *
      *  For TimeEventBase, always return false since it has no events.
+     *  For TimeEvents that are not time based
+     *  (e.g., index-based events - TimeEventRangeIndex), they do not
+     *  do not have a time, so return false.
      *
      *  \param time [in] The input time.
      *  \return True if time is near an event (within absolute tolerance).
@@ -60,29 +63,20 @@ public:
     virtual bool isTime(Scalar time) const
     { return false; }
 
-    /** \brief Return the absolute tolerance.
-     *
-     *  The absolute tolerance is the TimeEvent time scale multiplied by
-     *  the relative tolerance (e.g., timeScale_*relTol_).
-     *
-     *  For TimeEventBase, the absolute tolerance is the default tolerance.
-     *
-     *  \return The absolute tolerance.
-     */
-    virtual Scalar getAbsTol() const
-    { return defaultTol_; }
-
     /** \brief How much time until the next event.
      *
      *  For TimeEventBase, the time to the next event is the default time,
-     *  since TimeEventBace has no events.
+     *  since TimeEventBase has no events.
+     *  For TimeEvents that are not time based
+     *  (e.g., index-based events - TimeEventRangeIndex), they do not
+     *  do not have a time to the next event, so return the default time.
      *
      *  \return The time to the next event.
      */
     virtual Scalar timeToNextEvent(Scalar time) const
     { return defaultTime_; }
 
-    /** \brief Return the time of the next time event following the input time.
+    /** \brief Return the time of the next event following the input time.
      *
      *  Returns the time of the next event that follows the input time.
      *  If the input time is before all events, the time of the first
@@ -91,6 +85,9 @@ public:
      *  input time is an event time, the time of the next event is returned.
      *
      *  For TimeEventBase, always return the default time.
+     *  For TimeEvents that are not time based
+     *  (e.g., index-based events - TimeEventRangeIndex), they do not
+     *  do not have a time of the next event, so return the default time.
      *
      *  \param time [in] Input time.
      *  \return Time of the next event.
@@ -100,11 +97,15 @@ public:
 
     /** \brief Test if an event occurs within the time range.
      *
-     *  Find if an event is within the input range, inclusively
-     *  ( time1 <= event <= time2 ).  This may require testing
-     *  each event in the TimeEvent.
+     *  Find if an event is within the input range,
+     *  (time1 < timeEvent-absTol and timeEvent-absTol <= time2),
+     *  including the event's absolute tolerance.  Note, this
+     *  does not include time1, but does include time2.
      *
      *  For TimeEventBase, always return false since it has no events.
+     *  For TimeEvents that are not time based
+     *  (e.g., index-based events - TimeEventRangeIndex), there is not
+     *  not event in range, so return false.
      *
      *  \param time1 [in] Input time of one end of the range.
      *  \param time2 [in] Input time of the other end of the range.
@@ -114,9 +115,12 @@ public:
     virtual bool eventInRange(Scalar time1, Scalar time2) const
     { return false; }
 
-    /** \brief Test if index is a time event.
+    /** \brief Test if index is an event.
      *
      *  For TimeEventBase, always return false since it has no events.
+     *  For TimeEvents that are not index based
+     *  (e.g., time-based events - TimeEventRange), they do not
+     *  do not have an index, so return false.
      *
      *  \param index [in] The input index.
      *  \return True if index is an event.
@@ -127,6 +131,9 @@ public:
     /** \brief How many indices until the next event.
      *
      *  For TimeEventBase, the index to the next event is the default index.
+     *  For TimeEvents that are not index based
+     *  (e.g., time-based events - TimeEventRange), they do not
+     *  do not have an index to the next event, so return the default index.
      *
      *  \return The index to the next event.
      */
@@ -142,6 +149,9 @@ public:
      *  input index is an event index, the index of the next event is returned.
      *
      *  For TimeEventBase, always return the default index.
+     *  For TimeEvents that are not index based
+     *  (e.g., time-based events - TimeEventRange), they do not
+     *  do not have an index of the next event, so return default index.
      *
      *  \param index [in] Input index.
      *  \return Index of the next event.
@@ -151,11 +161,13 @@ public:
 
     /** \brief Test if an event occurs within the index range.
      *
-     *  Find if an event is within the input range, inclusively
-     *  ( index1 <= event <= index2 ).  This may require testing
-     *  each event in the TimeEvent.
+     *  Find if an event is within the input range,
+     *  ( index1 < event <= index2 ).
      *
      *  For TimeEventBase, always return false since it has no events.
+     *  For TimeEvents that are not index based
+     *  (e.g., time-based events - TimeEventRange), they do not
+     *  do not have an index in range, so return false.
      *
      *  \param index1 [in] Input index of one end of the range.
      *  \param index2 [in] Input index of the other end of the range.
@@ -175,6 +187,40 @@ public:
 
       *l_out << "TimeEventBase name = " << getName() << std::endl;
     }
+
+    /** \brief Return the absolute tolerance.
+     *
+     *  The absolute tolerance is primarily used to determine
+     *  if two times are equal (i.e., t1 is equal to t2, if
+     *  t2-absTol < t1 < t2+absTol).
+     *
+     *  For TimeEventBase and TimeEvents that are not time based
+     *  (e.g., index-based events - TimeEventRangeIndex), the absolute
+     *  tolerance is the default tolerance.
+     *
+     *  \return The absolute tolerance.
+     */
+    virtual Scalar getAbsTol() const
+    { return defaultTol_; }
+
+    /** \brief Return if the time events need to be landed on exactly.
+     *
+     *  If true, this returns whether the time events need to be landed
+     *  on exactly, e.g., the time step needs to be adjusted so the
+     *  solution is determined at the time event.
+     *
+     *  If false, this indicates that time event will still occur but
+     *  can be stepped over without changing the time step.
+     *
+     *  This is for TimeEvents that are time based, e.g., TimeEventRange
+     *  and TimeEventList.  For TimeEvents that are not time based (e.g.,
+     *  index-based events - TimeEventRangeIndex and TimeEventListIndex),
+     *  there is no need to flag this, so return false.
+     *
+     *  \return LOE Flag indicating if TimeEvent should land on the time event exactly.
+     */
+    virtual bool getLandOnExactly() const { return false; }
+
   //@}
 
   /// \name Accessor methods

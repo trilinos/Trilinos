@@ -166,7 +166,7 @@ bool TimeEventList<Scalar>::eventInRange(
   if (timeList_.size() == 0) return false;
 
   for (auto it = timeList_.begin(); it != timeList_.end(); ++it)
-    if (time1-absTol_ < *it && *it < time2+absTol_) return true;
+    if (time1+absTol_ < *it && *it < time2+absTol_) return true;
 
   return false;
 }

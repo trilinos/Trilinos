@@ -275,21 +275,21 @@ TEUCHOS_UNIT_TEST(TimeEventList, eventInRange)
 
   //   Left end.
   TEST_COMPARE(te->eventInRange(-1.0 + -10.0e-14, -0.5), ==, true );   // Around first event.
-  TEST_COMPARE(te->eventInRange(-1.0 +  -0.1e-14, -0.5), ==, true );
-  TEST_COMPARE(te->eventInRange(-1.0 +   0.0    , -0.5), ==, true );
-  TEST_COMPARE(te->eventInRange(-1.0 +   0.1e-14, -0.5), ==, true );
-  TEST_COMPARE(te->eventInRange(-1.0 +  10.0e-14, -0.5), ==, false );
+  TEST_COMPARE(te->eventInRange(-1.0 +  -0.1e-14, -0.5), ==, false);
+  TEST_COMPARE(te->eventInRange(-1.0 +   0.0    , -0.5), ==, false);
+  TEST_COMPARE(te->eventInRange(-1.0 +   0.1e-14, -0.5), ==, false);
+  TEST_COMPARE(te->eventInRange(-1.0 +  10.0e-14, -0.5), ==, false);
 
   TEST_COMPARE(te->eventInRange(PI + -10.0e-14, 3.5), ==, true );   // Around mid event.
-  TEST_COMPARE(te->eventInRange(PI +  -0.1e-14, 3.5), ==, true );
-  TEST_COMPARE(te->eventInRange(PI +   0.0    , 3.5), ==, true );
-  TEST_COMPARE(te->eventInRange(PI +   0.1e-14, 3.5), ==, true );
+  TEST_COMPARE(te->eventInRange(PI +  -0.1e-14, 3.5), ==, false);
+  TEST_COMPARE(te->eventInRange(PI +   0.0    , 3.5), ==, false);
+  TEST_COMPARE(te->eventInRange(PI +   0.1e-14, 3.5), ==, false);
   TEST_COMPARE(te->eventInRange(PI +  10.0e-14, 3.5), ==, false);
 
   TEST_COMPARE(te->eventInRange(5.0 + -10.0e-14, 6.0), ==, true );   // Around last event.
-  TEST_COMPARE(te->eventInRange(5.0 +  -0.1e-14, 6.0), ==, true );
-  TEST_COMPARE(te->eventInRange(5.0 +   0.0    , 6.0), ==, true );
-  TEST_COMPARE(te->eventInRange(5.0 +   0.1e-14, 6.0), ==, true );
+  TEST_COMPARE(te->eventInRange(5.0 +  -0.1e-14, 6.0), ==, false);
+  TEST_COMPARE(te->eventInRange(5.0 +   0.0    , 6.0), ==, false);
+  TEST_COMPARE(te->eventInRange(5.0 +   0.1e-14, 6.0), ==, false);
   TEST_COMPARE(te->eventInRange(5.0 +  10.0e-14, 6.0), ==, false);
 }
 

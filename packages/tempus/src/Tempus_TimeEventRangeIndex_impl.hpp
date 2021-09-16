@@ -115,8 +115,8 @@ int TimeEventRangeIndex<Scalar>::indexOfNextEvent(int index) const
   // Check if after or equal to last index.
   if (index >= indexOfLast) return this->getDefaultIndex();
 
-  // check if index is an event.  If so, return next event.
-  if ((index - start_) % stride_ == 0) return index+stride_;
+  // Check if index is an event.  If so, return next event.
+  if (isIndex(index)) return index+stride_;
 
   const int numStrides = (index - start_) / stride_ + 1;
   const Scalar indexOfNext = start_ + numStrides * stride_;
@@ -145,7 +145,7 @@ bool TimeEventRangeIndex<Scalar>::eventInRangeIndex(int index1, int index2) cons
 
   for ( int i = strideJustBeforeIndex1; i <= strideJustAfterIndex2; i++ ) {
     const int indexEvent = start_ + i * stride_;
-    if (index1 <= indexEvent && indexEvent <= index2) return true;
+    if (index1 < indexEvent && indexEvent <= index2) return true;
   }
 
   return false;
