@@ -528,7 +528,7 @@ void BulkData::require_entity_owner( const Entity entity ,
 
 void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const
 {
-  const size_t rank_count = m_mesh_meta_data.entity_rank_count();
+  const EntityRank rank_count = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   const bool ok_id   = EntityKey::is_valid_id(ent_id);
   const bool ok_rank = ent_rank < rank_count && !(ent_rank == stk::topology::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
 
@@ -3402,7 +3402,7 @@ void BulkData::filter_ghosting_remove_receives(const stk::mesh::Ghosting &ghosti
   unsigned len = recvGhosts.size();
   for (unsigned ii=0; ii<len; ++ii) {
     Entity e = recvGhosts[ii];
-    const unsigned erank = entity_rank(e);
+    const EntityRank erank = entity_rank(e);
 
     for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank) {
       Entity const *rels_i = begin(e, irank);
