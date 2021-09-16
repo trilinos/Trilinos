@@ -28,13 +28,12 @@ double solutionError(const int numRows,
   return normError/normRhs;
 }
 
-void testTachoSolver(int numRows,
+void testTachoSolver(int nSolvers,
+                     int numRows,
                      int* rowBegin,
                      int* columns,
                      double* values,
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
                      const int posDef = 1,
-#endif
                      const int numRuns = 1)
 {
   Kokkos::Impl::Timer timer;
@@ -48,10 +47,8 @@ void testTachoSolver(int numRows,
   tachoParams[tacho::VERBOSITY] = 0;
   tachoParams[tacho::SMALLPROBLEMTHRESHOLDSIZE] = 1024;
 
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
   tachoParams[tacho::MATRIX_SYMMETRIC] = 2;
   tachoParams[tacho::MATRIX_POSITIVE_DEFINITE] = posDef;
-#endif
 
 #if defined (KOKKOS_ENABLE_CUDA)
   tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = 32;
@@ -84,7 +81,12 @@ void testTachoSolver(int numRows,
   /// Tacho solver analyze + factorize (fence is required)
   ///
   tacho::tachoSolver<double> solver(tachoParams.data());
-  solver.Initialize(numRows, rowBegin, columns, values);
+
+
+  if (nSolvers > 0) 
+    solver.Initialize(nSolvers, numRows, rowBegin, columns, values);
+  else
+    solver.Initialize(numRows, rowBegin, columns, values);
   Kokkos::fence();
 
 
@@ -102,10 +104,19 @@ void testTachoSolver(int numRows,
   std::vector<int> perm;
   std::vector<double> valuesU;
 
-  solver.exportUpperTriangularFactorsToCrsMatrix(rowBeginU,
-                                                 columnsU,
-                                                 valuesU,
-                                                 perm);
+  if (nSolvers > 0) {
+    const int iSolver = 0;
+    solver.exportUpperTriangularFactorsToCrsMatrix(iSolver,
+                                                   rowBeginU,
+                                                   columnsU,
+                                                   valuesU,
+                                                   perm);
+  } else {
+    solver.exportUpperTriangularFactorsToCrsMatrix(rowBeginU,
+                                                   columnsU,
+                                                   valuesU,
+                                                   perm);
+  }
   ///
   /// std vector right hand side
   /// if an application uses std vector for interfacing rhs,
@@ -163,18 +174,16 @@ int main(int argc, char *argv[]) {
 
   std::string file = "test.mtx";
   int niter = 1;
+  int nsolver = 0;
   bool verbose = true;
   bool sanitize = false;
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
   bool posdef = true;
-#endif
 
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
+  opts.set_option<int>("nsolver", "# of solvers for testing array solver interface", &nsolver);
   opts.set_option<int>("niter", "# of solver iterations", &niter);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
   opts.set_option<bool>("posdef", "Flag to indicate that the matrix positive definite", &posdef);
-#endif
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -197,14 +206,21 @@ int main(int argc, char *argv[]) {
     }
     Tacho::MatrixMarket<double>::read(file, A, sanitize, verbose);
 
-    int numRows = A.NumRows(), *rowBegin = A.RowPtr().data(), *columns = A.Cols().data();
-    double *values = A.Values().data();
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
-    testTachoSolver(numRows, rowBegin, columns, values, posdef, niter);
-#else
-    testTachoSolver(numRows, rowBegin, columns, values, niter);
-#endif
-
+    {
+      int numRows = A.NumRows(), *rowBegin = A.RowPtr().data(), *columns = A.Cols().data();
+      double * values = nullptr;
+      Kokkos::View<double**,Kokkos::LayoutRight,tacho::host_device_type> 
+        As("As", nsolver, A.Values().extent(0));
+      if (nsolver) {
+        /// duplicate A
+        for (int i=0;i<nsolver;++i)
+          Kokkos::deep_copy(Kokkos::subview(As, i, Kokkos::ALL()), A.Values());        
+        values = As.data();        
+      } else {
+        values = A.Values().data();
+      }
+      testTachoSolver(nsolver, numRows, rowBegin, columns, values, posdef, niter);
+    }
   }
   Kokkos::finalize();
 }
