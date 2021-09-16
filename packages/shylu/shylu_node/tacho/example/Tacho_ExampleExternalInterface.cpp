@@ -82,7 +82,9 @@ void testTachoSolver(int nSolvers,
   ///
   tacho::tachoSolver<double> solver(tachoParams.data());
 
-
+  ///
+  /// for a testing purpose, nSolvers > 0 uses the array interface
+  ///
   if (nSolvers > 0) 
     solver.Initialize(nSolvers, numRows, rowBegin, columns, values);
   else
@@ -123,7 +125,8 @@ void testTachoSolver(int nSolvers,
   /// it requires additional copy. it is better to directly 
   /// use a kokkos device view.
   ///
-  std::vector<double> rhs(numRows), sol(numRows);
+  const int nProb = nSolvers > 0 ? nSolvers : 1;
+  std::vector<double> rhs(numRows*nProb), sol(numRows*nProb);
   { /// randomize rhs
     const unsigned int seed = 0;
     srand(seed);
@@ -134,16 +137,16 @@ void testTachoSolver(int nSolvers,
   /// this example only works for single right hand side
   const int NRHS = 1;
   typedef Kokkos::View<double**, Kokkos::LayoutLeft, tacho::device_type> ViewVectorType;
-  ViewVectorType x("x", numRows, NRHS);
+  ViewVectorType x("x", numRows*nProb, NRHS);
 
 #if defined (KOKKOS_ENABLE_CUDA)
   /// transfer b into device
-  ViewVectorType b(Kokkos::ViewAllocateWithoutInitializing("b"), numRows, NRHS);
+  ViewVectorType b(Kokkos::ViewAllocateWithoutInitializing("b"), numRows*nProb, NRHS);
   Kokkos::deep_copy(Kokkos::subview(b, Kokkos::ALL(), 0), 
-                    Kokkos::View<double*,tacho::device_type>(rhs.data(), numRows));
+                    Kokkos::View<double*,tacho::device_type>(rhs.data(), numRows*nProb));
 #else
   /// wrap rhs data with view
-  ViewVectorType b(rhs.data(), numRows, NRHS);
+  ViewVectorType b(rhs.data(), numRows*nProb, NRHS);
 #endif
 
   timer.reset();
