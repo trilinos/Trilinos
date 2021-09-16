@@ -158,8 +158,11 @@ namespace Tacho {
     Driver();
     /// delete copy constructor and assignment operator
     /// sharing numeric tools for different inputs does not make sense
-    Driver(const Driver &) = delete;
-    Driver& operator=(const Driver &) = delete;
+    Driver(const Driver &) = default;
+    Driver& operator=(const Driver &) = default;
+
+    /// duplicate the solver with sharing symbolic factorization
+    Driver duplicate();
 
     ///
     /// common options

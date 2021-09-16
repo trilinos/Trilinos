@@ -20,6 +20,7 @@ namespace Tacho {
       _m_graph(0), _nnz_graph(0),
       _h_ap_graph(), _h_aj_graph(),
       _h_perm_graph(), _h_peri_graph(),
+      _nsupernodes(0),
       _N(nullptr),
       _verbose(0),
       _small_problem_thres(1024),
@@ -34,7 +35,27 @@ namespace Tacho {
       _variant(2),
     _nstreams(16),
     _max_num_superblocks(-1) {}
-  
+
+  ///
+  /// duplicate the object
+  ///
+  template<typename VT, typename DT>
+  Driver<VT,DT>
+  Driver<VT,DT>
+  ::duplicate() {
+    /// input matrix should be given (m and nnz) and analysis is done (nsupernodes is greater than zero)
+    const bool is_analysis_done = (_m > 0) && (_nnz > 0) && (_nsupernodes > 0);
+    TACHO_TEST_FOR_EXCEPTION(!is_analysis_done, std::logic_error, "Analysis is not done yet");    
+    
+    /// copy constructor of this
+    Driver<VT,DT> r_val(*this);
+
+    /// make sure numeric tool is null pointer
+    r_val._N = nullptr;
+    
+    return r_val;
+  }
+
   ///
   /// common options
   ///
