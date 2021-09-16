@@ -190,13 +190,6 @@ correctVirtualRotationMatrices(PHX::MDField<Scalar,Cell,IP,Dim,Dim> rotation_mat
       }
     }
 
-    // Indexes for real cell
-    const int real_side = (face_connectivity.cellForSubcell(face, 0) == virtual_cell) ? 1 : 0;
-    const int real_cell = face_connectivity.cellForSubcell(face,real_side);
-
-    // Make sure it is a real cell (it should actually be an owned cell)
-    KOKKOS_ASSERT(real_cell < num_real_cells);
-
     // The normals already have the correction applied, so we just need to zero out the rotation matrices on the other faces
 
     // Clear other rotation matrices
