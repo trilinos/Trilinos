@@ -359,14 +359,14 @@ void SemiCoarsenPFactory_kokkos<
     importer = ImportFactory::Build(Amat->getDomainMap(), Amat->getColMap());
   {
     // Fill local temp with layer ids and fill ghost nodes
-    const auto localTempHost = localTemp->getHostLocalView();
+    const auto localTempHost = localTemp->getHostLocalView(Xpetra::Access::ReadWrite);
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = LayerId[row / DofsPerNode];
-    const auto localTempView = localTemp->getDeviceLocalView();
+    const auto localTempView = localTemp->getDeviceLocalView(Xpetra::Access::ReadWrite);
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2LayerVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
-  const auto FCol2LayerView = FCol2LayerVector->getDeviceLocalView();
+  const auto FCol2LayerView = FCol2LayerVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
   const auto FCol2Layer = Kokkos::subview(FCol2LayerView, Kokkos::ALL(), 0);
 
   // Construct a map from fine level column to local dof per node id (including
@@ -375,14 +375,14 @@ void SemiCoarsenPFactory_kokkos<
       Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Amat->getColMap());
   {
     // Fill local temp with local dof per node ids and fill ghost nodes
-    const auto localTempHost = localTemp->getHostLocalView();
+    const auto localTempHost = localTemp->getHostLocalView(Xpetra::Access::ReadWrite);
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = row % DofsPerNode;
-    const auto localTempView = localTemp->getDeviceLocalView();
+    const auto localTempView = localTemp->getDeviceLocalView(Xpetra::Access::ReadWrite);
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2DofVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
-  const auto FCol2DofView = FCol2DofVector->getDeviceLocalView();
+  const auto FCol2DofView = FCol2DofVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
   const auto FCol2Dof = Kokkos::subview(FCol2DofView, Kokkos::ALL(), 0);
 
   // Compute NVertLines
@@ -518,7 +518,7 @@ void SemiCoarsenPFactory_kokkos<
   { // Fill P - fill and solve each block tridiagonal system and fill P views
     SubFactoryMonitor m3(*this, "Fill P", coarseLevel);
 
-    const auto localAmat = Amat->getLocalMatrix();
+    const auto localAmat = Amat->getLocalMatrixDevice();
     const auto zero = impl_ATS::zero();
     const auto one = impl_ATS::one();
 
@@ -671,8 +671,8 @@ void SemiCoarsenPFactory_kokkos<
   coarseNullspace =
       MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
   const int numVectors = fineNullspace->getNumVectors();
-  const auto fineNullspaceView = fineNullspace->getDeviceLocalView();
-  const auto coarseNullspaceView = coarseNullspace->getDeviceLocalView();
+  const auto fineNullspaceView = fineNullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  const auto coarseNullspaceView = coarseNullspace->getDeviceLocalView(Xpetra::Access::ReadWrite);
   using range_policy = Kokkos::RangePolicy<execution_space>;
   Kokkos::parallel_for(
       "MueLu::SemiCoarsenPFactory_kokkos::BuildSemiCoarsenP Inject Nullspace",
