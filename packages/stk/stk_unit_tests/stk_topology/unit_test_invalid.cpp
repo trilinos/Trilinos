@@ -37,6 +37,8 @@
 #include "stk_ngp_test/ngp_test.hpp"  // for NGP_EXPECT_EQ, NGP_EXPECT_FALSE, NGP_TEST
 #include "stk_topology/topology.hpp"  // for topology, topology::INVALID_TOPOLOGY, topology::INV...
 
+namespace {
+
 TEST( stk_topology, invalid_topology)
 {
   stk::topology t = stk::topology::INVALID_TOPOLOGY;
@@ -100,4 +102,6 @@ void check_invalid_on_device()
 NGP_TEST(stk_topology_ngp, invalid_topology)
 {
   check_invalid_on_device();
+}
+
 }

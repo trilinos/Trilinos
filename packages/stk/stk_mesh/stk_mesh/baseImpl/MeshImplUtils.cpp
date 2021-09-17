@@ -1652,6 +1652,9 @@ bool connect_edge_or_face_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh:
   unsigned numNodes = bulk.num_nodes(entity);
   stk::mesh::EntityVector elems;
   stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK, numNodes, nodes, elems);
+  if (elems.empty()) {
+    return false;
+  }
 
   stk::mesh::EntityVector entityNodes(bulk.begin_nodes(entity), bulk.end_nodes(entity));
   stk::topology entityTopo = bulk.bucket(entity).topology();
@@ -1666,10 +1669,9 @@ bool connect_edge_or_face_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh:
   return true;
 }
 
-void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
+bool connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
 {
-  ThrowRequireMsg(connect_edge_or_face_to_elements_impl(bulk, edge),
-                  "Edge with id: " << bulk.identifier(edge) << " has no valid connectivity to elements");
+  return connect_edge_or_face_to_elements_impl(bulk, edge);
 }
 
 void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)

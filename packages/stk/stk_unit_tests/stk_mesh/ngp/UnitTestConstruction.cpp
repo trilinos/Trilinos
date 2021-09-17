@@ -5,7 +5,7 @@
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
-// met:
+// met: 
 //
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
@@ -16,7 +16,7 @@
 //       with the distribution.
 //
 //     * Neither the name of NTESS nor the names of its contributors
-//       may be used to endorse or promote products derived from this
+//       may be used to endorse or promote products derived from this 
 //       software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -25,32 +25,46 @@
 // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
 // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
 // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 
-#ifndef STK_MESH_NGPATOMICS_HPP
-#define STK_MESH_NGPATOMICS_HPP
+#include <gtest/gtest.h>
+#include <stk_mesh/base/NgpField.hpp>
+#include <stk_ngp_test/ngp_test.hpp>
 
-#include "stk_util/stk_kokkos_macros.h"
-#include "Kokkos_Core.hpp"
+namespace {
 
-namespace stk {
-namespace mesh {
-
-template <typename T> KOKKOS_FUNCTION
-void atomic_add(T *dest, const T src)
+void test_device_field_default_constructor()
 {
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_OPENMP) || defined(KOKKOS_ENABLE_HIP)
-  Kokkos::atomic_add(dest, src);
-#else
-  *dest += src;
-#endif
+  int constructionFinished = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
+    stk::mesh::DeviceField<double> deviceField;
+    NGP_EXPECT_EQ(stk::topology::INVALID_RANK, deviceField.get_rank());
+    localFinished = 1;
+  }, constructionFinished);
+
+  EXPECT_EQ(1, constructionFinished);
+}
+
+TEST(DefaultConstruct, DISABLED_deviceField)
+{
+  test_device_field_default_constructor();
+}
+
+TEST(DefaultConstruct, deviceField_onHost)
+{
+  stk::mesh::DeviceField<double> deviceField;
+  EXPECT_EQ(stk::topology::INVALID_RANK, deviceField.get_rank());
+}
+
+TEST(DefaultConstruct, hostField)
+{
+  stk::mesh::HostField<double> hostField;
+  EXPECT_EQ(stk::topology::INVALID_RANK, hostField.get_rank());
 }
 
 }
-}
-
-#endif

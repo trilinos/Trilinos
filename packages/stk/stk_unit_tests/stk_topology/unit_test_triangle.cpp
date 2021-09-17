@@ -39,6 +39,27 @@
 #include "topology_test_utils.hpp"    // for check_edge_node_ordinals, check_edge_node_ordinals_ngp
 #include <vector>                     // for vector
 
+namespace {
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_tri3() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1},
+    {1, 2},
+    {2, 0}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_tri3() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2},
+    {2, 0, 1},
+    {1, 2, 0},
+    {0, 2, 1},
+    {2, 1, 0},
+    {1, 0, 2}
+  };
+}
+
 TEST( stk_topology, tri_3)
 {
   using stk::topology;
@@ -69,29 +90,23 @@ TEST( stk_topology, tri_3)
 
   EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1},
-                                                                 {1, 2},
-                                                                 {2, 0} };
-  check_side_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_side_nodes(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_side_node_ordinals(t, get_gold_edge_node_ordinals_tri3());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_tri3());
+  check_side_nodes(t, get_gold_edge_node_ordinals_tri3());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_tri3());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2},
-                                                                        {2, 0, 1},
-                                                                        {1, 2, 0},
-                                                                        {0, 2, 1},
-                                                                        {2, 1, 0},
-                                                                        {1, 0, 2} };
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_tri3());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_tri3());
 
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_tri3());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_tri3());
 }
 
 void check_tri3_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_tri3());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_tri3());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::TRI_3;
@@ -120,31 +135,44 @@ void check_tri3_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    unsigned gold_edge_node_ordinals[3][2] = { {0, 1},
-                                               {1, 2},
-                                               {2, 0} };
-    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_side_nodes_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::TRI_3>::num_nodes;
 
-    unsigned gold_permutation_node_ordinals[6][3] = { {0, 1, 2},
-                                                      {2, 0, 1},
-                                                      {1, 2, 0},
-                                                      {0, 2, 1},
-                                                      {2, 1, 0},
-                                                      {1, 0, 2} };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
 NGP_TEST(stk_topology_ngp, tri_3)
 {
   check_tri3_on_device();
+}
+
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_tri4() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1},
+    {1, 2},
+    {2, 0}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_tri4() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2, 3},
+    {2, 0, 1, 3},
+    {1, 2, 0, 3},
+    {0, 2, 1, 3},
+    {2, 1, 0, 3},
+    {1, 0, 2, 3}
+  };
 }
 
 TEST( stk_topology, tri_4)
@@ -177,29 +205,23 @@ TEST( stk_topology, tri_4)
 
   EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1},
-                                                                 {1, 2},
-                                                                 {2, 0} };
-  check_side_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_side_nodes(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_side_node_ordinals(t, get_gold_edge_node_ordinals_tri4());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_tri4());
+  check_side_nodes(t, get_gold_edge_node_ordinals_tri4());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_tri4());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2, 3},
-                                                                        {2, 0, 1, 3},
-                                                                        {1, 2, 0, 3},
-                                                                        {0, 2, 1, 3},
-                                                                        {2, 1, 0, 3},
-                                                                        {1, 0, 2, 3} };
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_tri4());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_tri4());
 
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_tri4());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_tri4());
 }
 
 void check_tri4_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_tri4());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_tri4());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::TRI_4;
@@ -228,31 +250,44 @@ void check_tri4_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    unsigned gold_edge_node_ordinals[3][2] = { {0, 1},
-                                               {1, 2},
-                                               {2, 0} };
-    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_side_nodes_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::TRI_4>::num_nodes;
 
-    unsigned gold_permutation_node_ordinals[6][4] = { {0, 1, 2, 3},
-                                                      {2, 0, 1, 3},
-                                                      {1, 2, 0, 3},
-                                                      {0, 2, 1, 3},
-                                                      {2, 1, 0, 3},
-                                                      {1, 0, 2, 3} };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
 NGP_TEST(stk_topology_ngp, tri_4)
 {
   check_tri4_on_device();
+}
+
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_tri6() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 3},
+    {1, 2, 4},
+    {2, 0, 5}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_tri6() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2, 3, 4, 5},
+    {2, 0, 1, 5, 3, 4},
+    {1, 2, 0, 4, 5, 3},
+    {0, 2, 1, 5, 4, 3},
+    {2, 1, 0, 4, 3, 5},
+    {1, 0, 2, 3, 5, 4}
+  };
 }
 
 TEST( stk_topology, tri_6)
@@ -283,29 +318,23 @@ TEST( stk_topology, tri_6)
 
   EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1, 3},
-                                                                 {1, 2, 4},
-                                                                 {2, 0, 5} };
-  check_side_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_side_nodes(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_side_node_ordinals(t, get_gold_edge_node_ordinals_tri6());
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_tri6());
+  check_side_nodes(t, get_gold_edge_node_ordinals_tri6());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_tri6());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2, 3, 4, 5},
-                                                                        {2, 0, 1, 5, 3, 4},
-                                                                        {1, 2, 0, 4, 5, 3},
-                                                                        {0, 2, 1, 5, 4, 3},
-                                                                        {2, 1, 0, 4, 3, 5},
-                                                                        {1, 0, 2, 3, 5, 4} };
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_tri6());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_tri6());
 
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_tri6());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_tri6());
 }
 
 void check_tri6_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_tri6());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_tri6());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::TRI_6;
@@ -332,29 +361,24 @@ void check_tri6_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    unsigned gold_edge_node_ordinals[3][3] = { {0, 1, 3},
-                                               {1, 2, 4},
-                                               {2, 0, 5} };
-    check_side_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_side_nodes_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::TRI_6>::num_nodes;
 
-    unsigned gold_permutation_node_ordinals[6][6] = { {0, 1, 2, 3, 4, 5},
-                                                      {2, 0, 1, 5, 3, 4},
-                                                      {1, 2, 0, 4, 5, 3},
-                                                      {0, 2, 1, 5, 4, 3},
-                                                      {2, 1, 0, 4, 3, 5},
-                                                      {1, 0, 2, 3, 5, 4} };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
 NGP_TEST(stk_topology_ngp, tri_6)
 {
   check_tri6_on_device();
+}
+
 }
