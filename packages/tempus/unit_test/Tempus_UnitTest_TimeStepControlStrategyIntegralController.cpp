@@ -168,12 +168,17 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyIntegralController, setNextTimeStep)
   solutionHistory->getCurrentState()->setIndex(0);
   solutionHistory->getCurrentState()->setOrder(order);
 
+
   // Mock Integrator
 
   // -- First Time Step
   solutionHistory->initWorkingState();
   auto currentState = solutionHistory->getCurrentState();
   auto workingState = solutionHistory->getWorkingState();
+
+  TEST_FLOATING_EQUALITY(workingState->getErrorRel()   , 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm1(), 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm2(), 0.0, 1.0e-14);
 
   tsc->setNextTimeStep(solutionHistory, status);
 
@@ -193,6 +198,10 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyIntegralController, setNextTimeStep)
   currentState = solutionHistory->getCurrentState();
   workingState = solutionHistory->getWorkingState();
   double dt = workingState->getTimeStep();
+
+  TEST_FLOATING_EQUALITY(workingState->getErrorRel()   , 0.1, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm1(), 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm2(), 0.0, 1.0e-14);
 
   tsc->setNextTimeStep(solutionHistory, status);
 
@@ -214,6 +223,10 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyIntegralController, setNextTimeStep)
   workingState = solutionHistory->getWorkingState();
   dt = workingState->getTimeStep();
 
+  TEST_FLOATING_EQUALITY(workingState->getErrorRel()   , 0.2, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm1(), 0.1, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm2(), 0.0, 1.0e-14);
+
   tsc->setNextTimeStep(solutionHistory, status);
 
   dtNew = dt*safetyFactor*std::pow(errN,   -KI/p)
@@ -234,6 +247,10 @@ TEUCHOS_UNIT_TEST(TimeStepControlStrategyIntegralController, setNextTimeStep)
   currentState = solutionHistory->getCurrentState();
   workingState = solutionHistory->getWorkingState();
   dt = workingState->getTimeStep();
+
+  TEST_FLOATING_EQUALITY(workingState->getErrorRel()   , 0.3, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm1(), 0.2, 1.0e-14);
+  TEST_FLOATING_EQUALITY(workingState->getErrorRelNm2(), 0.1, 1.0e-14);
 
   tsc->setNextTimeStep(solutionHistory, status);
 
