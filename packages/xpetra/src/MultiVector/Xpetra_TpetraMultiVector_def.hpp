@@ -295,6 +295,18 @@ namespace Xpetra {
       vec_->randomize();
   }
 
+  //! Set multi-vector values to random numbers.
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation) {
+    XPETRA_MONITOR("TpetraMultiVector::randomize");
+
+    if(bUseXpetraImplementation)
+      MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Xpetra_randomize(minVal, maxVal);
+    else
+      vec_->randomize(minVal, maxVal);
+  }
+
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > 
   TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::    
@@ -730,6 +742,9 @@ namespace Xpetra {
     //! Set multi-vector values to random numbers.
     void randomize(bool bUseXpetraImplementation = false) { }
 
+    //! Set multi-vector values to random numbers.
+    void randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation = false) { }
+
     //{@
     // Implements DistObject interface
 
@@ -969,6 +984,9 @@ namespace Xpetra {
 
     //! Set multi-vector values to random numbers.
     void randomize(bool bUseXpetraImplementation = false) { }
+
+    //! Set multi-vector values to random numbers.
+    void randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation = false) { }
 
     //{@
     // Implements DistObject interface

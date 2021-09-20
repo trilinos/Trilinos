@@ -303,9 +303,14 @@ class MultiVector
     //! Set multi-vector values to random numbers.
     virtual void randomize(bool bUseXpetraImplementation = false) = 0;
 
+    //! Set multi-vector values to random numbers.
+    virtual void randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation = false) = 0;
 
     //! Set multi-vector values to random numbers. XPetra implementation
     virtual void Xpetra_randomize();
+
+    //! Set multi-vector values to random numbers. XPetra implementation
+    virtual void Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal);
 
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
