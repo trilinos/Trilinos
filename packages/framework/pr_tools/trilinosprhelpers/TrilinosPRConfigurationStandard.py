@@ -85,7 +85,11 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
 
         self.message( "--- ctest command:")
         self.message(f"--- pwd:\n{os.getcwd()}")
-        self.message( "--- cmd:\n{}".format(" \\\n   ".join(cmd)))
+        # self.message( "--- cmd:\n{}".format(" \\\n   ".join(cmd)))
+        self.message( "--- cmd:")
+        for i in range(len(cmd)):
+            self.message(f"  ARG {i} {cmd[i]}")
+        self.message("")
 
         if not self.args.dry_run:
             try:
