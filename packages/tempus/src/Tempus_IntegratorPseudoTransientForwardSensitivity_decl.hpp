@@ -14,6 +14,8 @@
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
+#include "Tempus_StepperStaggeredForwardSensitivity.hpp" // For SensitivityStepMode
+
 namespace Tempus {
 
 
@@ -130,11 +132,20 @@ public:
   { state_integrator_->setTempusParameterList(pl); }
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
+  Teuchos::RCP<const SolutionHistory<Scalar> > getStateSolutionHistory() const;
+  Teuchos::RCP<const SolutionHistory<Scalar> > getSensSolutionHistory() const;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
   virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
+  Teuchos::RCP<TimeStepControl<Scalar> > getStateNonConstTimeStepControl();
+  Teuchos::RCP<TimeStepControl<Scalar> > getSensNonConstTimeStepControl();
+  /// Get the Observer
+  virtual Teuchos::RCP<IntegratorObserver<Scalar> > getObserver();
+  /// Set the Observer
+  virtual void setObserver(
+    Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
   virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
   {return state_integrator_->getIntegratorTimer();}
   virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
@@ -169,6 +180,9 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
+  //! What mode the current time integration step is in
+  SensitivityStepMode getStepMode() const;
+
 protected:
 
   void buildSolutionHistory();
@@ -180,6 +194,7 @@ protected:
   Teuchos::RCP<SolutionHistory<Scalar>> solutionHistory_;
   bool reuse_solver_;
   bool force_W_update_;
+  SensitivityStepMode stepMode_;
 };
 
 /// Nonmember constructor
