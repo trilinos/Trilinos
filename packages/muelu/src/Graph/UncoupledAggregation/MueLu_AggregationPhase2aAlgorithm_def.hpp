@@ -92,13 +92,16 @@ namespace MueLu {
       if (aggStat[rootCandidate] != READY)
         continue;
 
+      LO numNeighbors = 0;
       aggSize = 0;
-      if (includeRootInAgg)
+      if (includeRootInAgg) {
         aggList[aggSize++] = rootCandidate;
+        numNeighbors++;
+      }
 
       ArrayView<const LocalOrdinal> neighOfINode = graph.getNeighborVertices(rootCandidate);
 
-      LO numNeighbors = 0;
+
       for (int j = 0; j < neighOfINode.size(); j++) {
         LO neigh = neighOfINode[j];
 
@@ -119,8 +122,7 @@ namespace MueLu {
 
       // NOTE: ML uses a hardcoded value 3 instead of MinNodesPerAggregate
       if (aggSize > as<size_t>(minNodesPerAggregate) &&
-          ((includeRootInAgg && aggSize-1 > factor*numNeighbors) ||
-           (!includeRootInAgg && aggSize > factor*numNeighbors))) {
+          (aggSize > factor*numNeighbors)) {
         // Accept new aggregate
         // rootCandidate becomes the root of the newly formed aggregate
         aggregates.SetIsRoot(rootCandidate);
