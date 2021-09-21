@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -56,21 +56,18 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
  */
 
 {
-  int   exoid;
-  int   cpu_ws = 0;
-  float vers;
-  int   max_name_length = 0;
-
   /* Open the ExodusII file */
-  cpu_ws   = io_ws;
-  int mode = EX_READ | int64api;
+  int   exoid;
+  float vers;
+  int   cpu_ws = io_ws;
+  int   mode   = EX_READ | int64api;
   if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
     fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__,
                Exo_Res_File.c_str());
     exit(1);
   }
 
-  max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(exoid, max_name_length);
 
   /*
@@ -156,7 +153,6 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
 
   /* Open the ExodusII file */
   {
-    cpu_ws   = io_ws;
     int mode = EX_READ | int64api;
     if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
       fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__,

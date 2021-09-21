@@ -47,6 +47,56 @@ import math
 import exomerge
 
 
+def _random_element(the_list):
+    """
+        Return a random element from the list or None if none exist.
+
+        """
+    if not the_list:
+        return None
+    return the_list[random.randint(0, len(the_list) - 1)]
+
+def _random_boolean():
+    """
+        Return one of True or False at random.
+
+        """
+    return [True, False][random.randint(0, 1)]
+
+def _random_subset(the_list, count=None):
+    """
+        Return a random subset of elements from the list.
+
+    """
+    if count is None:
+        if len(the_list) == 0:
+            count = 0
+        else:
+            count = random.randint(1, len(the_list))
+    return random.sample(the_list, count)
+
+def _random_scalar():
+    """
+    Return a random scalar.
+
+    """
+    return random.uniform(0.5, 2)
+
+def _random_vector():
+    """
+        Return a random vector.
+
+    """
+    vector = [_random_scalar() for _ in range(3)]
+    return vector
+
+def _new_id():
+    """
+        Return a new id.
+
+    """
+    return random.randint(0, 9999)
+
 def compares_equal_with_nan(one, two):
     """
     Return True if the two objects are equal, assuming NaN == NaN.
@@ -57,18 +107,18 @@ def compares_equal_with_nan(one, two):
     """
     if type(one) != type(two):
         return False
-    if type(one) is dict:
+    if isinstance(one, dict):
         if sorted(one.keys()) != sorted(two.keys()):
             return False
         return all(compares_equal_with_nan(one[x], two[x])
                    for x in list(one.keys()))
-    elif type(one) is list:
+    elif isinstance(one, list):
         return (len(one) == len(two) and
                 all(compares_equal_with_nan(x, y)
                     for x, y in zip(one, two)))
     else:
         # string, integer, or float
-        if type(one) is float:
+        if isinstance(one, float):
             return one == two or (math.isnan(one) and math.isnan(two))
         else:
             return one == two
@@ -134,55 +184,12 @@ class ExomergeUnitTester:
         # growing too large
         self.maximum_objects = 10
 
-    def _random_element(self, the_list):
-        """
-        Return a random element from the list or None if none exist.
-
-        """
-        if not the_list:
-            return None
-        return the_list[random.randint(0, len(the_list) - 1)]
-
-    def _random_boolean(self):
-        """
-        Return one of True or False at random.
-
-        """
-        return [True, False][random.randint(0, 1)]
-
-    def _random_subset(self, the_list, count=None):
-        """
-        Return a random subset of elements from the list.
-
-        """
-        if count is None:
-            if len(the_list) == 0:
-                count = 0
-            else:
-                count = random.randint(1, len(the_list))
-        return random.sample(the_list, count)
-
-    def _random_scalar(self):
-        """
-        Return a random scalar.
-
-        """
-        return random.uniform(0.5, 2)
-
-    def _random_vector(self):
-        """
-        Return a random vector.
-
-        """
-        vector = [self._random_scalar() for _ in range(3)]
-        return vector
-
     def _random_identifier(self):
         """
         Return a random name.
 
         """
-        return ''.join([self._random_element(self.RANDOM_IDENTIFIERS)
+        return ''.join([_random_element(self.RANDOM_IDENTIFIERS)
                         for _ in range(6)])
 
     def _random_timestep(self):
@@ -261,21 +268,14 @@ class ExomergeUnitTester:
             value = random.random()
         return value
 
-    def _new_id(self):
-        """
-        Return a new id.
-
-        """
-        return random.randint(0, 9999)
-
     def _new_element_block_id(self):
         """
         Return a new element block id.
 
         """
-        value = self._new_id()
+        value = _new_id()
         while value in self.model.get_element_block_ids():
-            value = self._new_id()
+            value = _new_id()
         return value
 
     def _new_node_set_id(self):
@@ -283,9 +283,9 @@ class ExomergeUnitTester:
         Return a new node set id.
 
         """
-        value = self._new_id()
+        value = _new_id()
         while value in self.model.get_node_set_ids():
-            value = self._new_id()
+            value = _new_id()
         return value
 
     def _new_side_set_id(self):
@@ -293,9 +293,9 @@ class ExomergeUnitTester:
         Return a new side set id.
 
         """
-        value = self._new_id()
+        value = _new_id()
         while value in self.model.get_side_set_ids():
-            value = self._new_id()
+            value = _new_id()
         return value
 
     def _random_element_field_name(self):
@@ -319,7 +319,7 @@ class ExomergeUnitTester:
         Return one node field name or None.
 
         """
-        return self._random_element(self.model.get_node_field_names())
+        return _random_element(self.model.get_node_field_names())
 
     def _random_node_set_field_name(self):
         """
@@ -356,7 +356,7 @@ class ExomergeUnitTester:
         Return one global variable name or None.
 
         """
-        return self._random_element(self.model.get_global_variable_names())
+        return _random_element(self.model.get_global_variable_names())
 
     def _random_element_block_id(self):
         """Return a random element block id or name, or None if none exist."""
@@ -364,11 +364,11 @@ class ExomergeUnitTester:
         ids.extend(self.model.get_all_element_block_names())
         if not ids:
             return None
-        return self._random_element(ids)
+        return _random_element(ids)
 
     def _random_element_block_ids(self):
         """Return a random subset of element block ids or names."""
-        ids = self._random_subset(self.model.get_element_block_ids())
+        ids = _random_subset(self.model.get_element_block_ids())
         for i, id_ in enumerate(ids):
             if random.randint(0, 1) == 0:
                 continue
@@ -382,11 +382,11 @@ class ExomergeUnitTester:
         """Return a random side set id or name, or None if none exist."""
         ids = self.model.get_side_set_ids()
         ids.extend(self.model.get_all_side_set_names())
-        return self._random_element(ids)
+        return _random_element(ids)
 
     def _random_side_set_ids(self):
         """Return a random subset of side set ids or name."""
-        ids = self._random_subset(self.model.get_side_set_ids())
+        ids = _random_subset(self.model.get_side_set_ids())
         for i, id_ in enumerate(ids):
             if random.randint(0, 1) == 0:
                 continue
@@ -400,11 +400,11 @@ class ExomergeUnitTester:
         """Return a random side set id or name, or None if none exist."""
         ids = self.model.get_node_set_ids()
         ids.extend(self.model.get_all_node_set_names())
-        return self._random_element(ids)
+        return _random_element(ids)
 
     def _random_node_set_ids(self):
         """Return a random subset of node set ids or name."""
-        ids = self._random_subset(self.model.get_node_set_ids())
+        ids = _random_subset(self.model.get_node_set_ids())
         for i, id_ in enumerate(ids):
             if random.randint(0, 1) == 0:
                 continue
@@ -425,7 +425,7 @@ class ExomergeUnitTester:
         count = len(objects)
         if count > number:
             self.model.delete_element_block(
-                self._random_subset(objects, count - number))
+                _random_subset(objects, count - number))
 
     def _truncate_timesteps(self, number=None):
         """
@@ -438,7 +438,7 @@ class ExomergeUnitTester:
         count = len(objects)
         if count > number:
             self.model.delete_timestep(
-                self._random_subset(objects, count - number))
+                _random_subset(objects, count - number))
 
     def _truncate_node_sets(self, number=None):
         """
@@ -451,7 +451,7 @@ class ExomergeUnitTester:
         count = len(objects)
         if count > number:
             self.model.delete_node_set(
-                self._random_subset(objects, count - number))
+                _random_subset(objects, count - number))
 
     def _truncate_side_sets(self, number=None):
         """
@@ -464,7 +464,7 @@ class ExomergeUnitTester:
         count = len(objects)
         if count > number:
             self.model.delete_side_set(
-                self._random_subset(objects, count - number))
+                _random_subset(objects, count - number))
 
     def _truncate_node_fields(self, number=None):
         """
@@ -477,7 +477,7 @@ class ExomergeUnitTester:
         count = len(objects)
         if count > number:
             self.model.delete_node_field(
-                self._random_subset(objects, count - number))
+                _random_subset(objects, count - number))
 
     def _truncate_global_variables(self, number=None):
         """
@@ -490,7 +490,7 @@ class ExomergeUnitTester:
         count = len(objects)
         if count > number:
             self.model.delete_global_variable(
-                self._random_subset(objects, count - number))
+                _random_subset(objects, count - number))
 
     def _truncate_element_fields(self, number=None):
         """
@@ -622,8 +622,7 @@ class ExomergeUnitTester:
         self.model.get_element_block_volume(ids)
 
     def _test_convert_element_blocks(self):
-        id_ = self._random_element(
-            self.model._get_standard_element_block_ids())
+        id_ = _random_element(self.model._get_standard_element_block_ids())
         if not id_:
             return False
         element_type = self.model._get_element_type(id_)
@@ -632,7 +631,7 @@ class ExomergeUnitTester:
         scheme = self.model.ELEMENT_CONVERSIONS[element_type]
         if not scheme:
             return False
-        new_element_type = self._random_element(list(scheme.keys()))
+        new_element_type = _random_element(list(scheme.keys()))
         self.model.convert_element_blocks(id_, new_element_type)
 
     def _test_make_elements_linear(self):
@@ -648,7 +647,7 @@ class ExomergeUnitTester:
                          for x in list(scheme.keys())]:
                 continue
             ids.append(id_)
-        ids = self._random_subset(ids)
+        ids = _random_subset(ids)
         if not ids:
             return False
         self.model.make_elements_linear(ids)
@@ -666,7 +665,7 @@ class ExomergeUnitTester:
                          for x in list(scheme.keys())]:
                 continue
             ids.append(id_)
-        ids = self._random_subset(ids)
+        ids = _random_subset(ids)
         if not ids:
             return False
         self.model.make_elements_quadratic(ids)
@@ -678,7 +677,7 @@ class ExomergeUnitTester:
         if not ids:
             return False
         self.model.convert_hex8_block_to_tet4_block(
-            self._random_element(ids))
+            _random_element(ids))
 
     def _test_duplicate_element_block(self):
         old_id = self._random_element_block_id()
@@ -778,7 +777,7 @@ class ExomergeUnitTester:
         info = self._random_element_field_name()
         if info is None:
             return False
-        (id_, name) = info
+        (id_, _) = info
         variable_names = set(['time'])
         variable_names.update(self.model.get_global_variable_names())
         variable_names.update(self.model.get_element_field_names(id_))
@@ -796,15 +795,15 @@ class ExomergeUnitTester:
         block_ids = [x
                      for x in self.model.get_element_block_ids()
                      if self.model.element_field_exists(name, x)]
-        block_ids = self._random_subset(block_ids)
+        block_ids = _random_subset(block_ids)
         if self.model.get_element_count(block_ids) == 0:
             return False
         self.model.delete_global_variables(name + '_*')
         self.model.calculate_element_field_maximum(
             name,
             element_block_ids=block_ids,
-            calculate_location=self._random_boolean(),
-            calculate_block_id=self._random_boolean())
+            calculate_location=_random_boolean(),
+            calculate_block_id=_random_boolean())
 
     def _test_calculate_element_field_minimum(self):
         info = self._random_element_field_name()
@@ -816,15 +815,15 @@ class ExomergeUnitTester:
         block_ids = [x
                      for x in self.model.get_element_block_ids()
                      if self.model.element_field_exists(name, x)]
-        block_ids = self._random_subset(block_ids)
+        block_ids = _random_subset(block_ids)
         if self.model.get_element_count(block_ids) == 0:
             return False
         self.model.delete_global_variables(name + '_*')
         self.model.calculate_element_field_minimum(
             name,
             element_block_ids=block_ids,
-            calculate_location=self._random_boolean(),
-            calculate_block_id=self._random_boolean())
+            calculate_location=_random_boolean(),
+            calculate_block_id=_random_boolean())
 
     def _test_calculate_node_field_minimum(self):
         if not self.model.nodes:
@@ -835,10 +834,10 @@ class ExomergeUnitTester:
         if name is None or len(name) + 6 > 32:
             return False
         self.model.delete_global_variables(name + '_*')
-        if self._random_boolean():
+        if _random_boolean():
             self.model.calculate_node_field_minimum(
                 name,
-                calculate_location=self._random_boolean())
+                calculate_location=_random_boolean())
         else:
             block_ids = self._random_element_block_ids()
             if not self.model.get_nodes_in_element_block(block_ids):
@@ -846,7 +845,7 @@ class ExomergeUnitTester:
             self.model.calculate_node_field_minimum(
                 name,
                 element_block_ids=block_ids,
-                calculate_location=self._random_boolean())
+                calculate_location=_random_boolean())
 
     def _test_calculate_node_field_maximum(self):
         if not self.model.nodes:
@@ -859,10 +858,10 @@ class ExomergeUnitTester:
         self.model.delete_global_variables(name + '_*')
         self.model.calculate_node_field_maximum(
             name,
-            calculate_location=self._random_boolean())
+            calculate_location=_random_boolean())
 
     def _test_output_global_variables(self):
-        filename = 'temp.csv' if self._random_boolean() else None
+        filename = 'temp.csv' if _random_boolean() else None
         if self.remaining_io_tests <= 0:
             filename = None
         if filename is not None:
@@ -905,7 +904,7 @@ class ExomergeUnitTester:
         if not self.model.nodes:
             return False
         self.model._duplicate_nodes(
-            self._random_subset(range(len(self.model.nodes)), 1),
+            _random_subset(range(len(self.model.nodes)), 1),
             [])
         x = len(self.model.nodes)
         self.model.merge_nodes(suppress_warnings=True)
@@ -914,7 +913,7 @@ class ExomergeUnitTester:
     def _test_unmerge_element_blocks(self):
         if len(self.model.element_blocks) < 2:
             return False
-        (id1, id2) = self._random_subset(self.model.get_element_block_ids(),
+        (id1, id2) = _random_subset(self.model.get_element_block_ids(),
                                          count=2)
         connectivity_1 = self.model.get_connectivity(id1)
         connectivity_2 = self.model.get_connectivity(id2)
@@ -1056,7 +1055,7 @@ class ExomergeUnitTester:
             return False
         if not self.model.timesteps:
             self.model.create_timestep(0.0)
-        field = self._random_subset(field_names)
+        field = _random_subset(field_names)
         self.model.create_averaged_element_field(
             field,
             self._new_element_field_name(),
@@ -1172,7 +1171,7 @@ class ExomergeUnitTester:
         for _ in range(random.randint(1, self.maximum_objects)):
             members = []
             for _ in range(20):
-                id_ = self._random_element(self.model.get_element_block_ids())
+                id_ = _random_element(self.model.get_element_block_ids())
                 element_count = self.model.get_element_count(id_)
                 if element_count == 0:
                     continue
@@ -1191,7 +1190,7 @@ class ExomergeUnitTester:
             return False
         members = []
         for _ in range(20):
-            id_ = self._random_element(self.model.get_element_block_ids())
+            id_ = _random_element(self.model.get_element_block_ids())
             element_count = self.model.get_element_count(id_)
             if element_count == 0:
                 continue
@@ -1238,7 +1237,7 @@ class ExomergeUnitTester:
         self.model.delete_element_block(ids)
 
     def _test_delete_element_field(self):
-        names = self._random_subset(self.model.get_element_field_names())
+        names = _random_subset(self.model.get_element_field_names())
         if not names:
             return False
         self.model.delete_element_field(names)
@@ -1252,13 +1251,13 @@ class ExomergeUnitTester:
         self.model.delete_empty_side_sets()
 
     def _test_delete_global_variable(self):
-        names = self._random_subset(self.model.get_global_variable_names())
+        names = _random_subset(self.model.get_global_variable_names())
         if not names:
             return False
         self.model.delete_global_variable(names)
 
     def _test_delete_node_field(self):
-        names = self._random_subset(self.model.get_node_field_names())
+        names = _random_subset(self.model.get_node_field_names())
         if not names:
             return False
         self.model.delete_node_field(names)
@@ -1276,7 +1275,7 @@ class ExomergeUnitTester:
         self.model.delete_side_set(ids)
 
     def _test_delete_timestep(self):
-        times = self._random_subset(self.model.get_timesteps())
+        times = _random_subset(self.model.get_timesteps())
         if not times:
             return False
         self.model.delete_timestep(times)
@@ -1294,7 +1293,7 @@ class ExomergeUnitTester:
         if not self.model.timesteps:
             return False
         self.model.unmerge_element_blocks()
-        self.model.displace_element_blocks(ids, self._random_vector())
+        self.model.displace_element_blocks(ids, _random_vector())
 
     def _test_displacement_field_exists(self):
         self.model.displacement_field_exists()
@@ -1310,7 +1309,7 @@ class ExomergeUnitTester:
         id_ = self._random_element_block_id()
         if not id_:
             return False
-        name = self._random_element(self.model.get_element_field_names(id_))
+        name = _random_element(self.model.get_element_field_names(id_))
         if name is None:
             assert not self.model.element_field_exists('temp', id_)
         else:
@@ -1386,7 +1385,7 @@ class ExomergeUnitTester:
         if self.remaining_io_tests <= 0:
             return False
         self.remaining_io_tests -= 1
-        filename = 'temp.' + self._random_element(['e', 'stl'])
+        filename = 'temp.' + _random_element(['e', 'stl'])
         self.model.export(filename)
         os.remove(filename)
 
@@ -1579,7 +1578,7 @@ class ExomergeUnitTester:
         if ids is None:
             return False
         self.model.unmerge_element_blocks()
-        self.model.scale_element_blocks(ids, self._random_scalar())
+        self.model.scale_element_blocks(ids, _random_scalar())
 
     def _test_rotate_element_blocks(self):
         ids = self._random_element_block_ids()
@@ -1592,7 +1591,7 @@ class ExomergeUnitTester:
         self.model.rotate_geometry([1, 0, 0], 90)
 
     def _test_scale_geometry(self):
-        self.model.scale_geometry(self._random_scalar())
+        self.model.scale_geometry(_random_scalar())
 
     def _test_side_set_exists(self):
         id_ = self._random_side_set_id()
@@ -1606,7 +1605,7 @@ class ExomergeUnitTester:
             self.model.summarize()
 
     def _test_timestep_exists(self):
-        timestep = self._random_element(self.model.timesteps)
+        timestep = _random_element(self.model.timesteps)
         if timestep is None:
             assert not self.model.timestep_exists(0.0)
         else:
@@ -1617,10 +1616,10 @@ class ExomergeUnitTester:
         if not ids:
             return False
         self.model.unmerge_element_blocks()
-        self.model.translate_element_blocks(ids, self._random_vector())
+        self.model.translate_element_blocks(ids, _random_vector())
 
     def _test_translate_geometry(self):
-        self.model.translate_geometry(self._random_vector())
+        self.model.translate_geometry(_random_vector())
 
     def _test_threshold_element_blocks(self):
         id_ = self._create_hex8_element_block()
@@ -1852,3 +1851,4 @@ if __name__ == '__main__':
         tester.min_tests = int(sys.argv[1])
         tester.max_tests = tester.min_tests
     tester.test()
+

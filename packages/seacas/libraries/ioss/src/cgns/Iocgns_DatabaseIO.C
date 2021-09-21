@@ -1816,8 +1816,6 @@ namespace Iocgns {
     size_t                num_to_get = field.verify(data_size);
     cgsize_t              first      = 1;
 
-    char basename[CGNS_MAX_NAME_LENGTH + 1];
-
     // Create a lambda to eliminate lots of duplicate code in coordinate outputs...
     auto coord_lambda = [this, &data, &first, base](const char *ordinate) {
       auto *rdata = static_cast<double *>(data);
@@ -1852,8 +1850,9 @@ namespace Iocgns {
       }
 
       else if (field.get_name() == "mesh_model_coordinates") {
-        int cell_dimension = 0;
-        int phys_dimension = 0;
+        int  cell_dimension = 0;
+        int  phys_dimension = 0;
+        char basename[CGNS_MAX_NAME_LENGTH + 1];
         CGCHECKM(
             cg_base_read(get_file_pointer(), base, basename, &cell_dimension, &phys_dimension));
 

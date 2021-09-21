@@ -879,7 +879,7 @@ namespace Ioex {
       util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
     }
 
-    for (const auto block : element_blocks) {
+    for (const auto &block : element_blocks) {
       size_t block_order = block->get_property("original_block_order").get_int();
       assert(block_order < block_ids.size());
       if (block_ids[block_order] == 1) {

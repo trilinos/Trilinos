@@ -117,11 +117,11 @@ static int gl_tab(char *buf, int offset, int *loc, size_t bufsize);
 
 /******************** external interface *********************************/
 
-gl_in_hook_proc        gl_in_hook                    = 0;
-gl_out_hook_proc       gl_out_hook                   = 0;
+gl_in_hook_proc        gl_in_hook                    = NULL;
+gl_out_hook_proc       gl_out_hook                   = NULL;
 gl_tab_hook_proc       gl_tab_hook                   = gl_tab;
 gl_strlen_proc         gl_strlen                     = (gl_strlen_proc)strlen;
-gl_tab_completion_proc gl_completion_proc            = 0;
+gl_tab_completion_proc gl_completion_proc            = NULL;
 int                    gl_filename_quoting_desired   = -1; /* default to unspecified */
 const char *           gl_filename_quote_characters  = " \t*?<>|;&()[]$`";
 int                    gl_ellipses_during_completion = 1;
@@ -144,7 +144,7 @@ static char        gl_quitc        = 0;          /* keyboard SIGQUIT char */
 static char        gl_suspc        = 0;          /* keyboard SIGTSTP char */
 static char        gl_dsuspc       = 0;          /* delayed SIGTSTP char */
 static int         gl_search_mode  = 0;          /* search mode flag */
-static char **     gl_matchlist    = 0;
+static char **     gl_matchlist    = NULL;
 static char *      gl_home_dir     = NULL;
 static int         gl_vi_preferred = -1;
 static int         gl_vi_mode      = 0;
@@ -398,13 +398,11 @@ static int gl_getcx(int tlen)
 
 static int gl_getcx(int tlen)
 {
-  int i, c;
-
-  c = (-2);
+  int c = (-2);
   tlen -= 2; /* Adjust for 200ms overhead */
   if (tlen < 1)
     tlen = 1;
-  for (i = 0; i < tlen; i++) {
+  for (int i = 0; i < tlen; i++) {
     if (_kbhit()) {
       c = (int)_getch();
       if ((c == 0) || (c == 0xE0)) {
@@ -963,10 +961,9 @@ static void gl_del(int loc, int killsave)
  *     0 : delete character under cursor
  */
 {
-  int i, j;
-
   if ((loc == -1 && gl_pos > 0) || (loc == 0 && gl_pos < gl_cnt)) {
-    for (j = 0, i = gl_pos + loc; i < gl_cnt; i++) {
+    int j = 0;
+    for (int i = gl_pos + loc; i < gl_cnt; i++) {
       if ((j == 0) && (killsave != 0) && (gl_vi_mode != 0)) {
         gl_killbuf[0] = gl_buf[i];
         gl_killbuf[1] = '\0';
@@ -1225,7 +1222,7 @@ static void hist_init(void)
 
 void gl_histadd(char *buf)
 {
-  static char *prev = 0;
+  static char *prev = NULL;
   char *       p    = buf;
 
   /* in case we call gl_histadd() before we call getline() */
@@ -1239,7 +1236,7 @@ void gl_histadd(char *buf)
     int len = strlen(buf);
     if (strchr(p, '\n')) /* previously line already has NL stripped */
       len--;
-    if ((prev == 0) || ((int)strlen(prev) != len) || strncmp(prev, buf, (size_t)len) != 0) {
+    if ((prev == NULL) || ((int)strlen(prev) != len) || strncmp(prev, buf, (size_t)len) != 0) {
       hist_buf[hist_last] = hist_save(buf);
       prev                = hist_buf[hist_last];
       hist_last           = (hist_last + 1) % HIST_SIZE;
@@ -1255,14 +1252,14 @@ void gl_histadd(char *buf)
 static char *hist_prev(void)
 /* loads previous hist entry into input buffer, sticks on first */
 {
-  char *p    = 0;
+  char *p    = NULL;
   int   next = (hist_pos - 1 + HIST_SIZE) % HIST_SIZE;
 
-  if (hist_buf[hist_pos] != 0 && next != hist_last) {
+  if (hist_buf[hist_pos] != NULL && next != hist_last) {
     hist_pos = next;
     p        = hist_buf[hist_pos];
   }
-  if (p == 0) {
+  if (p == NULL) {
     p = hist_empty_elem;
     gl_beep();
   }
@@ -1272,13 +1269,13 @@ static char *hist_prev(void)
 static char *hist_next(void)
 /* loads next hist entry into input buffer, clears on last */
 {
-  char *p = 0;
+  char *p = NULL;
 
   if (hist_pos != hist_last) {
     hist_pos = (hist_pos + 1) % HIST_SIZE;
     p        = hist_buf[hist_pos];
   }
-  if (p == 0) {
+  if (p == NULL) {
     p = hist_empty_elem;
     gl_beep();
   }
@@ -1289,22 +1286,22 @@ static char *hist_save(char *p)
 
 /* makes a copy of the string */
 {
-  char * s   = 0;
+  char * s   = NULL;
   size_t len = strlen(p);
   char * nl  = strpbrk(p, "\n\r");
 
   if (nl) {
-    if ((s = (char *)malloc(len)) != 0) {
+    if ((s = (char *)malloc(len)) != NULL) {
       copy_string(s, p, len);
       s[len - 1] = 0;
     }
   }
   else {
-    if ((s = (char *)malloc(len + 1)) != 0) {
+    if ((s = (char *)malloc(len + 1)) != NULL) {
       copy_string(s, p, len + 1);
     }
   }
-  if (s == 0)
+  if (s == NULL)
     gl_error("\n*** Error: hist_save() failed on malloc\n");
   return s;
 }
@@ -1405,7 +1402,7 @@ static void search_addchar(int c)
     }
     copy_string(gl_buf, hist_buf[hist_pos], GL_BUF_SIZE);
   }
-  if ((loc = strstr(gl_buf, search_string)) != 0) {
+  if ((loc = strstr(gl_buf, search_string)) != NULL) {
     gl_fixup(search_prompt, 0, loc - gl_buf);
   }
   else if (search_pos > 0) {
@@ -1452,7 +1449,7 @@ static void search_back(int new_search)
         gl_fixup(search_prompt, 0, 0);
         found = 1;
       }
-      else if ((loc = strstr(p, search_string)) != 0) {
+      else if ((loc = strstr(p, search_string)) != NULL) {
         copy_string(gl_buf, p, GL_BUF_SIZE);
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
@@ -1469,7 +1466,7 @@ static void search_back(int new_search)
 static void search_forw(int new_search)
 {
   int   found = 0;
-  char *p, *loc;
+  char *loc;
 
   search_forw_flg = 1;
   if (gl_search_mode == 0) {
@@ -1481,13 +1478,13 @@ static void search_forw(int new_search)
   }
   else if (search_pos > 0) {
     while (!found) {
-      p = hist_next();
+      char *p = hist_next();
       if (*p == 0) { /* not found, done looking */
         gl_buf[0] = 0;
         gl_fixup(search_prompt, 0, 0);
         found = 1;
       }
-      else if ((loc = strstr(p, search_string)) != 0) {
+      else if ((loc = strstr(p, search_string)) != NULL) {
         copy_string(gl_buf, p, GL_BUF_SIZE);
         gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
@@ -1512,18 +1509,8 @@ static void gl_beep(void)
 
 static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
 {
-  char * startp;
-  size_t startoff, amt;
-  int    ntoalloc, nused, nalloced, i;
-  char **newgl_matchlist;
-  char * strtoadd, *strtoadd1;
-  int    addquotes;
-  size_t mlen, glen;
-  int    allmatch;
-  char * curposp;
-  size_t lenaftercursor;
-  int    wasateol;
-  char   ellipsessave[4];
+  int i;
+  int allmatch;
 
   /* Zero out the rest of the buffer, so we can move stuff around
    * and know we'll still be NUL-terminated.
@@ -1531,10 +1518,11 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
   size_t llen = strlen(buf);
   memset(buf + llen, 0, bufsize - llen);
   bufsize -= 4; /* leave room for a NUL, space, and two quotes. */
-  curposp        = buf + *loc;
-  wasateol       = (*curposp == '\0');
-  lenaftercursor = llen - (curposp - buf);
+  char * curposp        = buf + *loc;
+  int    wasateol       = (*curposp == '\0');
+  size_t lenaftercursor = llen - (curposp - buf);
   if (gl_ellipses_during_completion != 0) {
+    char ellipsessave[4];
     memcpy(ellipsessave, curposp, (size_t)4);
     memcpy(curposp, "... ", (size_t)4);
     gl_fixup(gl_prompt, gl_pos, gl_pos + 3);
@@ -1575,6 +1563,7 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
     }
   }
 
+  char *startp;
   if (qstart != NULL)
     startp = qstart + 1;
   else if (lastspacestart != NULL)
@@ -1582,8 +1571,8 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
   else
     startp = buf;
 
-  cp   = startp;
-  mlen = (curposp - cp);
+  cp          = startp;
+  size_t mlen = (curposp - cp);
 
   matchpfx = (char *)malloc(mlen + 1);
   memcpy(matchpfx, cp, mlen);
@@ -1591,16 +1580,16 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
 
 #define GL_COMPLETE_VECTOR_BLOCK_SIZE 64
 
-  nused           = 0;
-  ntoalloc        = GL_COMPLETE_VECTOR_BLOCK_SIZE;
-  newgl_matchlist = (char **)malloc((size_t)(sizeof(char *) * (ntoalloc + 1)));
+  int    nused           = 0;
+  int    ntoalloc        = GL_COMPLETE_VECTOR_BLOCK_SIZE;
+  char **newgl_matchlist = (char **)malloc((size_t)(sizeof(char *) * (ntoalloc + 1)));
   if (newgl_matchlist == NULL) {
     free(matchpfx);
     gl_beep();
     return 0;
   }
   gl_matchlist = newgl_matchlist;
-  nalloced     = ntoalloc;
+  int nalloced = ntoalloc;
   for (i = nused; i <= nalloced; i++)
     gl_matchlist[i] = NULL;
 
@@ -1637,13 +1626,12 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
   }
 
   /* We now have an array strings, whose last element is NULL. */
-  strtoadd  = NULL;
-  strtoadd1 = NULL;
-  amt       = 0;
+  char *strtoadd  = NULL;
+  char *strtoadd1 = NULL;
 
-  addquotes = (gl_filename_quoting_desired > 0) ||
-              ((gl_filename_quoting_desired < 0) &&
-               (gl_completion_proc == gl_local_filename_completion_proc));
+  int addquotes = (gl_filename_quoting_desired > 0) ||
+                  ((gl_filename_quoting_desired < 0) &&
+                   (gl_completion_proc == gl_local_filename_completion_proc));
 
   if (nused == 1) {
     /* Exactly one match. */
@@ -1651,7 +1639,7 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
   }
   else if ((nused > 1) && (mlen > 0)) {
     /* Find the greatest amount that matches. */
-    glen = 1;
+    size_t glen = 1;
     for (glen = 1;; glen++) {
       allmatch = 1;
       for (i = 1; i < nused; i++) {
@@ -1680,8 +1668,8 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize)
         *startp++ = (char)qmode;
       }
     }
-    startoff = (size_t)(startp - buf);
-    amt      = strlen(strtoadd);
+    size_t startoff = (size_t)(startp - buf);
+    size_t amt      = strlen(strtoadd);
     if ((amt + startoff + lenaftercursor) >= bufsize)
       amt = bufsize - (amt + startoff + lenaftercursor);
     memmove(curposp + amt - mlen, curposp, lenaftercursor + 1 /* NUL */);
@@ -1735,12 +1723,9 @@ void gl_tab_completion(gl_tab_completion_proc proc)
 #ifndef _StrFindLocalPathDelim
 static char *_StrRFindLocalPathDelim(const char *src) /* TODO: optimize */
 {
-  const char *last;
-  int         c;
-
-  last = NULL;
+  const char *last = NULL;
   for (;;) {
-    c = *src++;
+    int c = *src++;
     if (c == '\0')
       break;
     if (IsLocalPathDelim(c))
@@ -1753,15 +1738,6 @@ static char *_StrRFindLocalPathDelim(const char *src) /* TODO: optimize */
 
 void gl_set_home_dir(const char *homedir)
 {
-  size_t len;
-#ifdef __windows__
-  const char *homedrive, *homepath;
-  char        wdir[64];
-#else
-  struct passwd *pw;
-  char *         cp;
-#endif
-
   if (gl_home_dir != NULL) {
     free(gl_home_dir);
     gl_home_dir = NULL;
@@ -1769,10 +1745,10 @@ void gl_set_home_dir(const char *homedir)
 
   if (homedir == NULL) {
 #ifdef __windows__
-    homedrive = getenv("HOMEDRIVE");
-    homepath  = getenv("HOMEPATH");
+    const char *homedrive = getenv("HOMEDRIVE");
+    const char *homepath  = getenv("HOMEPATH");
     if ((homedrive != NULL) && (homepath != NULL)) {
-      len         = strlen(homedrive) + strlen(homepath) + 1;
+      size_t len  = strlen(homedrive) + strlen(homepath) + 1;
       gl_home_dir = (char *)malloc(len);
       if (gl_home_dir != NULL) {
         copy_string(gl_home_dir, homedrive, len);
@@ -1781,6 +1757,7 @@ void gl_set_home_dir(const char *homedir)
       }
     }
 
+    char wdir[64];
     wdir[0] = '\0';
     if (GetWindowsDirectory(wdir, sizeof(wdir) - 1) < 1)
       (void)copy_string(wdir, ".", sizeof(wdir));
@@ -1790,13 +1767,13 @@ void gl_set_home_dir(const char *homedir)
     }
     homedir = wdir;
 #else
-    cp = (char *)getlogin();
+    char *cp = (char *)getlogin();
     if (cp == NULL) {
       cp = (char *)getenv("LOGNAME");
       if (cp == NULL)
         cp = (char *)getenv("USER");
     }
-    pw = NULL;
+    struct passwd *pw = NULL;
     if (cp != NULL)
       pw = getpwnam(cp);
     if (pw == NULL)
@@ -1807,7 +1784,7 @@ void gl_set_home_dir(const char *homedir)
 #endif
   }
 
-  len         = strlen(homedir) + /* NUL */ 1;
+  size_t len  = strlen(homedir) + /* NUL */ 1;
   gl_home_dir = (char *)malloc(len);
   if (gl_home_dir != NULL) {
     memcpy(gl_home_dir, homedir, len);
@@ -1822,14 +1799,6 @@ char *gl_local_filename_completion_proc(const char *start, int idx)
   static int    filepfxoffset;
   static size_t filepfxlen;
 
-  const char *   filepfx;
-  struct dirent *dent;
-  char *         cp;
-  const char *   dirtoopen, *name;
-  char *         dirtoopen1;
-  size_t         len, len2;
-  struct stat    st;
-
   if (idx == 0) {
     if (dir != NULL) {
       /* shouldn't get here! */
@@ -1839,8 +1808,9 @@ char *gl_local_filename_completion_proc(const char *start, int idx)
   }
 
   if (dir == NULL) {
-    dirtoopen1 = NULL;
-    cp         = _StrRFindLocalPathDelim(start);
+    const char *dirtoopen;
+    char *      dirtoopen1 = NULL;
+    char *      cp         = _StrRFindLocalPathDelim(start);
     if (cp == start) {
       dirtoopen     = LOCAL_PATH_DELIM_STR; /* root dir */
       filepfxoffset = 1;
@@ -1850,7 +1820,7 @@ char *gl_local_filename_completion_proc(const char *start, int idx)
       filepfxoffset = 0;
     }
     else {
-      len        = strlen(start) + 1;
+      size_t len = strlen(start) + 1;
       dirtoopen1 = (char *)malloc(len);
       if (dirtoopen1 == NULL)
         return NULL;
@@ -1876,16 +1846,16 @@ char *gl_local_filename_completion_proc(const char *start, int idx)
     if (dirtoopen1 != NULL)
       free(dirtoopen1);
 
-    filepfx    = start + filepfxoffset;
-    filepfxlen = strlen(filepfx);
+    const char *filepfx = start + filepfxoffset;
+    filepfxlen          = strlen(filepfx);
   }
 
   if (dir != NULL) {
     /* assumes "start" is same for each iteration. */
-    filepfx = start + filepfxoffset;
+    const char *filepfx = start + filepfxoffset;
 
     for (;;) {
-      dent = readdir(dir);
+      struct dirent *dent = readdir(dir);
       if (dent == NULL) {
         /* no more items */
         closedir(dir);
@@ -1897,10 +1867,10 @@ char *gl_local_filename_completion_proc(const char *start, int idx)
            * want to append a / instead
            * of a space.
            */
-          cp = gl_matchlist[0];
+          char *cp = gl_matchlist[0];
           if ((cp[0] == '~') && ((cp[1] == '\0') || (IsLocalPathDelim(cp[1])))) {
-            len  = strlen(cp + 1) + /* NUL */ 1;
-            len2 = strlen(gl_home_dir);
+            size_t len  = strlen(cp + 1) + /* NUL */ 1;
+            size_t len2 = strlen(gl_home_dir);
             if (IsLocalPathDelim(gl_home_dir[len2 - 1]))
               len2--;
             cp = (char *)realloc(gl_matchlist[0], len + len2);
@@ -1913,21 +1883,22 @@ char *gl_local_filename_completion_proc(const char *start, int idx)
               gl_matchlist[0] = cp;
             }
           }
+          struct stat st;
           if ((stat(cp, &st) == 0) && (S_ISDIR(st.st_mode)))
             gl_completion_exact_match_extra_char = LOCAL_PATH_DELIM;
         }
         return NULL;
       }
 
-      name = dent->d_name;
+      const char *name = dent->d_name;
       if ((name[0] == '.') && ((name[1] == '\0') || ((name[1] == '.') && (name[2] == '\0'))))
         continue; /* Skip . and .. */
 
       if ((filepfxlen == 0) || (strncmp(name, filepfx, filepfxlen) == 0)) {
         /* match */
-        len = strlen(name);
-        cp  = (char *)malloc(filepfxoffset + len + 1 /* spare */ + 1 /* NUL */);
-        *cp = '\0';
+        size_t len = strlen(name);
+        char * cp  = (char *)malloc(filepfxoffset + len + 1 /* spare */ + 1 /* NUL */);
+        *cp        = '\0';
         if (filepfxoffset > 0)
           memcpy(cp, start, (size_t)filepfxoffset);
         memcpy(cp + filepfxoffset, name, len + 1);

@@ -82,7 +82,6 @@ The files that were changed are:
 *   exgcor.c
 *   exgnv.c
 
-
 \section ex_create ex_create():
 -- Check whether the `EX_LARGE_MODEL` mode was set.  If so, then the
 mode passed to nccreate must have the `NC_64BIT_OFFSET` bit set.  For

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -64,12 +64,6 @@ template int parse_groups(Mesh_Description<int64_t> *mesh, Problem_Description *
 
 template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_Description *prob)
 {
-  char *id;
-  int   last;
-  int   found;
-
-  /*---------------------------Execution Begins--------------------------------*/
-
   /* allocate memory for the groups */
   prob->group_no = (int *)malloc(mesh->num_el_blks * sizeof(int));
   if (!(prob->group_no)) {
@@ -90,8 +84,8 @@ template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_De
       /* fill in the group identifier for each block */
     }
   }
-  id       = prob->groups;
-  size_t i = 0;
+  char * id = prob->groups;
+  size_t i  = 0;
   do {
     if (*id == '/') {
       id++;
@@ -100,10 +94,10 @@ template <typename INT> int parse_groups(Mesh_Description<INT> *mesh, Problem_De
     id = strchr(id, '/');
     i++;
   } while (id != nullptr);
-  last = i;
+  int last = i;
 
   /* set any remaining blocks to new group */
-  found = 0;
+  int found = 0;
   for (i = 0; i < mesh->num_el_blks; i++) {
     if (prob->group_no[i] < 0) {
       prob->group_no[i] = last;
@@ -290,7 +284,7 @@ namespace {
       q = sscanf(p, "%ld%n", &i, &qn);
 #endif
       if (q == 0 || i < 0) {
-        if (p[qn - 1] == '/' || *p == 0) {
+        if (p[qn - 1] == '/') {
           return;
         }
         if (i < 0) {

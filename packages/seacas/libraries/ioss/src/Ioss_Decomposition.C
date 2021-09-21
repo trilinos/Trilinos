@@ -108,7 +108,7 @@ namespace {
 
     int common_nodes = INT_MAX;
 
-    for (const auto block : el_blocks) {
+    for (const auto &block : el_blocks) {
       if (block.global_count() == 0) {
         continue;
       }

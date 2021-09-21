@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.29 (2021/07/22)";
+  const char *       version_string = "5.30 (2021/09/13)";
 
   void output_copyright();
 
@@ -421,6 +421,9 @@ namespace SEAMS {
     if (option == "--dumpvars" || option == "-D") {
       ap_options.dumpvars = true;
     }
+    else if (option == "--dumpvars_json" || option == "-J") {
+      ap_options.dumpvars_json = true;
+    }
     else if (option == "--version" || option == "-v") {
       std::cerr << "Algebraic Preprocessor (Aprepro) version " << version() << "\n";
       exit(EXIT_SUCCESS);
@@ -507,6 +510,7 @@ namespace SEAMS {
           << "\nUsage: aprepro [options] [-I path] [-c char] [var=val] [filein] [fileout]\n"
           << "          --debug or -d: Dump all variables, debug loops/if/endif\n"
           << "       --dumpvars or -D: Dump all variables at end of run        \n"
+          << "  --dumpvars_json or -J: Dump all variables at end of run in json format\n"
           << "        --version or -v: Print version number to stderr          \n"
           << "      --immutable or -X: All variables are immutable--cannot be modified\n"
           << "   --errors_fatal or -f: Exit program with nonzero status if errors are "
@@ -715,6 +719,32 @@ namespace SEAMS {
 
   void Aprepro::dumpsym(int type, bool doInternal) const { dumpsym(type, nullptr, doInternal); }
 
+  void Aprepro::dumpsym_json() const
+  {
+    (*infoStream) << "\n{\n";
+    bool first = true;
+
+    for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
+      for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
+        if (!ptr->isInternal) {
+          if (first) {
+            first = false;
+          }
+          else {
+            (*infoStream) << ",\n";
+          }
+          if (ptr->type == Parser::token::VAR || ptr->type == Parser::token::IMMVAR) {
+            (*infoStream) << "\"" << ptr->name << "\": " << std::setprecision(10) << ptr->value.var;
+          }
+          else if (ptr->type == Parser::token::SVAR || ptr->type == Parser::token::IMMSVAR) {
+            (*infoStream) << "\"" << ptr->name << "\": \"" << ptr->value.svar << "\"";
+          }
+        }
+      }
+    }
+    (*infoStream) << "\n}\n";
+  }
+
   void Aprepro::dumpsym(int type, const char *pre, bool doInternal) const
   {
     std::string comment = getsym("_C_")->value.svar;
@@ -724,10 +754,10 @@ namespace SEAMS {
       spre = pre;
     }
 
-    int width = 10; // controls spacing/padding for the variable names
     if (type == Parser::token::VAR || type == Parser::token::SVAR || type == Parser::token::AVAR) {
       (*infoStream) << "\n" << comment << "   Variable    = Value" << '\n';
 
+      int width = 10; // controls spacing/padding for the variable names
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
         for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
           if (pre == nullptr || ptr->name.find(spre) != std::string::npos) {
