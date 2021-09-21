@@ -1292,12 +1292,35 @@ typename local_matrix_type::HostMirror getLocalMatrixHost () const {
     return localMatrix_;
   }
 
-  void setAllValues (const typename local_matrix_type::row_map_type& /* ptr */,
-                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& /* ind */,
-                     const typename local_matrix_type::values_type& /* val */)
+  void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                     const typename local_matrix_type::values_type& val)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-                               "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
+
+    // Check sizes
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(ptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
+    TEUCHOS_TEST_FOR_EXCEPTION(val.size() != ind.size(), Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that you mismatched your pointers.");
+
+    // Check pointers
+    if (val.size() > 0) {
+      std::cout << ind.data() << " " << mtx_->ExpertExtractIndices().Values() << std::endl;
+      TEUCHOS_TEST_FOR_EXCEPTION(ind.data() != mtx_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(val.data() != mtx_->ExpertExtractValues(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
+    }
+
+    // We have to make a copy here, it is unavoidable
+    // See comments in allocateAllValues
+    const size_t N = getNodeNumRows();
+
+    Epetra_IntSerialDenseVector& myRowptr = mtx_->ExpertExtractIndexOffset();
+    myRowptr.Resize(N+1);
+    for (size_t i = 0; i < N+1; i++)
+      myRowptr[i] = Teuchos::as<int>(ptr(i));
+
   }
 
 
@@ -2322,12 +2345,34 @@ public:
     return localMatrix_;
   }
 
-  void setAllValues (const typename local_matrix_type::row_map_type& /* ptr */,
-                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& /* ind */,
-                     const typename local_matrix_type::values_type& /* val */)
+  void setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                     const typename local_matrix_type::StaticCrsGraphType::entries_type::non_const_type& ind,
+                     const typename local_matrix_type::values_type& val)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
-                               "Xpetra::EpetraCrsMatrix::setAllValues is not implemented");
+
+    // Check sizes
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(ptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
+    TEUCHOS_TEST_FOR_EXCEPTION(val.size() != ind.size(), Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that you mismatched your pointers.");
+
+    // Check pointers
+    if (val.size() > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(ind.data() != mtx_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(val.data() != mtx_->ExpertExtractValues(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
+    }
+
+    // We have to make a copy here, it is unavoidable
+    // See comments in allocateAllValues
+    const size_t N = getNodeNumRows();
+
+    Epetra_IntSerialDenseVector& myRowptr = mtx_->ExpertExtractIndexOffset();
+    myRowptr.Resize(N+1);
+    for (size_t i = 0; i < N+1; i++)
+      myRowptr[i] = Teuchos::as<int>(ptr(i));
+
   }
 
  

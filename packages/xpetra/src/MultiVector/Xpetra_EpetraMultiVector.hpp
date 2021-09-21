@@ -670,13 +670,7 @@ namespace Xpetra {
       return ret;
     }
 
-    typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const override {
-      throw std::runtime_error("Epetra does not support device views! in "+std::string(__FILE__)+":"+std::to_string(__LINE__));
-#ifndef __NVCC__ //prevent nvcc warning
-      typename dual_view_type::t_dev_um ret;
-#endif
-      TEUCHOS_UNREACHABLE_RETURN(ret);
-    }
+    typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const override { return getHostLocalView(Access::ReadWrite); }
 
 #endif
 
