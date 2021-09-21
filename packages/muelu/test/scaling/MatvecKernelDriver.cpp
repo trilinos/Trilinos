@@ -136,7 +136,7 @@ class MagmaSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::Ko
   typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
-  typedef typename crs_matrix_type::local_matrix_type    KCRS;
+  typedef typename crs_matrix_type::local_matrix_host_type    KCRS;
   typedef typename KCRS::StaticCrsGraphType              graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
@@ -155,7 +155,7 @@ public:
                                vector_type& Y)
   {
     // data access common to other TPLs
-    const KCRS & Amat = A.getLocalMatrix();
+    const KCRS & Amat = A.getLocalMatrixHost();
     c_lno_view_t Arowptr = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
@@ -268,7 +268,7 @@ class CuSparse_SpmV_Pack<double,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::Kokko
   typedef typename Kokkos::Compat::KokkosCudaWrapperNode Node;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vector_type;
-  typedef typename crs_matrix_type::local_matrix_type    KCRS;
+  typedef typename crs_matrix_type::local_matrix_device_type    KCRS;
   typedef typename KCRS::StaticCrsGraphType              graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
@@ -286,7 +286,7 @@ public:
                             vector_type& Y)
   {
     // data access common to other TPLs
-    const KCRS & Amat = A.getLocalMatrix();
+    const KCRS & Amat = A.getLocalMatrixDevice();
     c_lno_view_t Arowptr = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
@@ -306,8 +306,8 @@ public:
     cols   = reinterpret_cast<int*>(Acolind_cusparse.data());
     rowptr = reinterpret_cast<int*>(Arowptr_cusparse.data());
 
-    auto X_lcl = X.template getLocalView<device_type> ();
-    auto Y_lcl = Y.template getLocalView<device_type> ();
+    auto X_lcl = X.template getLocalViewDevice<device_type> ();
+    auto Y_lcl = Y.template getLocalViewDevice<device_type> ();
     x = reinterpret_cast<Scalar*>(X_lcl.data());
     y = reinterpret_cast<Scalar*>(Y_lcl.data());
 
@@ -671,7 +671,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   #endif
   #if defined(HAVE_MUELU_MKL)
     // typedefs shared among other TPLs
-    typedef typename crs_matrix_type::local_matrix_type    KCRS;
+    typedef typename crs_matrix_type::local_matrix_host_type    KCRS;
     typedef typename KCRS::StaticCrsGraphType              graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
     typedef typename graph_t::row_map_type::const_type     c_lno_view_t;
@@ -681,7 +681,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     typedef typename Node::device_type device_type;
 
     // data access common to other TPLs
-    const KCRS & Amat = At->getLocalMatrix();
+    const KCRS & Amat = At->getLocalMatrixHost();
     c_lno_view_t Arowptr = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
