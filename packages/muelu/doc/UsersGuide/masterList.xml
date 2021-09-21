@@ -1165,7 +1165,8 @@
       <default>true</default>
       <ConvectionDiffusion>true</ConvectionDiffusion>
       <description>Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
-      <comment-ML>not supported by ML</comment-ML>
+      <name-ML>aggregation aux: enable</name-ML>
+      <default-ML>false</default-ML>
     </parameter>
 
     <parameter>
