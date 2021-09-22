@@ -530,9 +530,6 @@ public:
       this->fillComplete(domainMap, rowMap, params);
     else
       this->fillComplete(rowMap, rowMap, params);
-
-    // AP (2015/10/22): Could probably be optimized using provided lclMatrix, but lets not worry about that
-    isInitializedLocalMatrix_ = false;
   }
 #endif
 #endif
@@ -1262,9 +1259,6 @@ local_matrix_type getLocalMatrixDevice () const {
 
 
 typename local_matrix_type::HostMirror getLocalMatrixHost () const {
-    if (isInitializedLocalMatrix_)
-      return localMatrix_;
-
     RCP<Epetra_CrsMatrix> matrix = getEpetra_CrsMatrixNonConst();
 
     const int numRows = matrix->NumMyRows();
@@ -1278,7 +1272,7 @@ typename local_matrix_type::HostMirror getLocalMatrixHost () const {
     TEUCHOS_TEST_FOR_EXCEPTION(rv, std::runtime_error, "Xpetra::CrsMatrix<>::getLocalMatrix: failed in ExtractCrsDataPointers");
 
     // Transform int* rowptr array to size_type* array
-    typename local_matrix_type::row_map_type::non_const_type kokkosRowPtr("local row map", numRows+1);
+    typename local_matrix_type::row_map_type::non_const_type kokkosRowPtr(Kokkos::ViewAllocateWithoutInitializing("local row map"), numRows+1);
     for (size_t i = 0; i < kokkosRowPtr.size(); i++)
       kokkosRowPtr(i) = Teuchos::asSafe<typename local_matrix_type::row_map_type::value_type>(rowptr[i]);
 
@@ -1286,10 +1280,9 @@ typename local_matrix_type::HostMirror getLocalMatrixHost () const {
     typename local_matrix_type::index_type   kokkosColind(colind,              nnz);
     typename local_matrix_type::values_type  kokkosVals  (vals,                nnz);
 
-    localMatrix_ = local_matrix_type("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowPtr, kokkosColind);
-    isInitializedLocalMatrix_ = true;
+    local_matrix_type localMatrix = local_matrix_type("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowPtr, kokkosColind);
 
-    return localMatrix_;
+    return localMatrix;
   }
 
   void setAllValues (const typename local_matrix_type::row_map_type& ptr,
@@ -1326,8 +1319,6 @@ typename local_matrix_type::HostMirror getLocalMatrixHost () const {
 
 
 private:
-  mutable local_matrix_type localMatrix_;
-  mutable bool              isInitializedLocalMatrix_ = false; // It's OK to use C++11 when Tpetra is enabled
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
@@ -1601,9 +1592,6 @@ public:
       this->fillComplete(domainMap, rowMap, params);
     else
       this->fillComplete(rowMap, rowMap, params);
-
-    // AP (2015/10/22): Could probably be optimized using provided lclMatrix, but lets not worry about that
-    isInitializedLocalMatrix_ = false;
   }
 #endif
 #endif
@@ -2315,8 +2303,6 @@ public:
 #ifdef HAVE_XPETRA_TPETRA
   /// \brief Compatibility layer for accessing the matrix data through a Kokkos interface
   local_matrix_type getLocalMatrix () const {
-    if (isInitializedLocalMatrix_)
-      return localMatrix_;
 
     RCP<Epetra_CrsMatrix> matrix = getEpetra_CrsMatrixNonConst();
 
@@ -2331,7 +2317,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(rv, std::runtime_error, "Xpetra::CrsMatrix<>::getLocalMatrix: failed in ExtractCrsDataPointers");
 
     // Transform int* rowptr array to size_type* array
-    typename local_matrix_type::row_map_type::non_const_type kokkosRowPtr("local row map", numRows+1);
+    typename local_matrix_type::row_map_type::non_const_type kokkosRowPtr(Kokkos::ViewAllocateWithoutInitializing("local row map"), numRows+1);
     for (size_t i = 0; i < kokkosRowPtr.size(); i++)
       kokkosRowPtr(i) = Teuchos::asSafe<typename local_matrix_type::row_map_type::value_type>(rowptr[i]);
 
@@ -2339,10 +2325,9 @@ public:
     typename local_matrix_type::index_type   kokkosColind(colind,              nnz);
     typename local_matrix_type::values_type  kokkosVals  (vals,                nnz);
 
-    localMatrix_ = local_matrix_type("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowPtr, kokkosColind);
-    isInitializedLocalMatrix_ = true;
+    local_matrix_type localMatrix = local_matrix_type("LocalMatrix", numRows, numCols, nnz, kokkosVals, kokkosRowPtr, kokkosColind);
 
-    return localMatrix_;
+    return localMatrix;
   }
 
   void setAllValues (const typename local_matrix_type::row_map_type& ptr,
@@ -2377,8 +2362,6 @@ public:
 
  
 private:
-  mutable local_matrix_type localMatrix_;
-  mutable bool              isInitializedLocalMatrix_ = false;
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
