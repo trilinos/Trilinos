@@ -753,8 +753,8 @@ namespace MueLu {
         (typeid(Scalar).name() == typeid(std::complex<float>).name())) {
       size_t numVecs = X->getNumVectors();
       Xscalar = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(X->getMap(),numVecs);
-      auto XVec = X->getDeviceLocalView();
-      auto XVecScalar = Xscalar->getDeviceLocalView();
+      auto XVec = X->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto XVecScalar = Xscalar->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
       Kokkos::parallel_for("MueLu:Utils::RealValuedToScalarMultiVector", range_type(0,X->getLocalLength()),
                            KOKKOS_LAMBDA(const size_t i) {
