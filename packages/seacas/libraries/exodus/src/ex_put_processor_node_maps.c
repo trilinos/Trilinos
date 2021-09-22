@@ -26,8 +26,8 @@
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NUM_BOR_NODES, etc
 
-int ex_put_processor_node_maps(int exoid, void_int *node_mapi, void_int *node_mapb,
-                               void_int *node_mape, int proc_id)
+int ex_put_processor_node_maps(int exoid, const void_int *node_mapi, const void_int *node_mapb,
+                               const void_int *node_mape, int proc_id)
 {
   int     status, varid, dimid;
   char    ftype[2];

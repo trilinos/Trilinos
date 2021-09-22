@@ -30,13 +30,50 @@ function copy_over_readonly {
   fi
   cp -u -v $from_dir/$file $to_dir/$file
   file_lc=$(echo $file | tr '[:upper:]' '[:lower:]')
+  if [ -e $to_dir/$file_lc ] ; then
+    rm -f $to_dir/$file_lc
+  fi
   cp -u -v $from_dir/$file $to_dir/$file_lc
 
 }
 
+
+function create_symlink {
+  file_from=$1
+  file_to=$2
+  if [ -e $file_to ] ; then
+    echo "rm -f $file_to"
+    rm -f $file_to
+  fi
+  echo "ln -s $file_from $file_to"
+  ln -s $file_from $file_to
+}
+
+
+function rm_if_exists {
+  file_to_rm=$1
+  if [ -e $file_to_rm ] ; then
+    echo "Removing old file $file_to_rm"
+    rm -f $file_to_rm
+  fi
+
+}
+
+
+
 _DEST_BASE_DIR=$1
+
 echo "Copy to: $_DEST_BASE_DIR" 
-copy_over_readonly  developers_guide  TribitsDevelopersGuide.html  $_DEST_BASE_DIR
-copy_over_readonly  developers_guide  TribitsDevelopersGuide.pdf  $_DEST_BASE_DIR
+copy_over_readonly  guides/users_guide  TribitsUsersGuide.html  $_DEST_BASE_DIR
+copy_over_readonly  guides/maintainers_guide  TribitsMaintainersGuide.html  $_DEST_BASE_DIR
 copy_over_readonly  build_ref  TribitsBuildReference.html  $_DEST_BASE_DIR
 copy_over_readonly  build_ref  TribitsBuildReference.pdf  $_DEST_BASE_DIR
+
+echo "Create symlinks for old TribitsDevelopersGuide.html"
+cd $_DEST_BASE_DIR
+create_symlink  TribitsUsersGuide.html  TribitsDevelopersGuide.html
+create_symlink  TribitsUsersGuide.html  tribitsdevelopersguide.html
+
+echo "Removing old copies for PDf files for now"
+rm_if_exists TribitsDevelopersGuide.pdf
+rm_if_exists tribitsdevelopersguide.pdf

@@ -111,7 +111,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
 
 /* define and output a double attribute */
 int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
-                            const char *atr_name, int num_values, double *values)
+                            const char *atr_name, int num_values, const double *values)
 {
   int  status;
   char errmsg[MAX_ERR_LENGTH];
@@ -155,7 +155,7 @@ error_ret:
 
 /* define and output an integer attribute */
 int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
-                             const char *atr_name, int num_values, void_int *values)
+                             const char *atr_name, int num_values, const void_int *values)
 {
   int  status;
   char errmsg[MAX_ERR_LENGTH];
@@ -273,7 +273,7 @@ int ex_put_attribute(int exoid, ex_attribute attribute)
 }
 
 /*! Define and output the specified attributes. */
-int ex_put_attributes(int exoid, size_t attr_count, ex_attribute *attr)
+int ex_put_attributes(int exoid, size_t attr_count, const ex_attribute *attr)
 {
   for (size_t i = 0; i < attr_count; i++) {
     int status = ex_put_attribute(exoid, attr[i]);

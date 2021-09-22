@@ -3,7 +3,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -589,7 +589,7 @@ namespace Iocgns {
           // block.  Create an empty block...
           block = new Ioss::StructuredBlock(this, block_name, phys_dimension, zeros, zeros,
                                             zone->m_adam->m_ordinal);
-          for (auto zgc : zone->m_zoneConnectivity) {
+          for (auto &zgc : zone->m_zoneConnectivity) {
             zgc.m_isActive = false;
             // Update donor_zone to point to adam zone instead of child.
             auto dz = zones[zgc.m_donorZone - 1];
@@ -684,7 +684,7 @@ namespace Iocgns {
       int64_t          top      = min + per_proc;
 
       // NOTE: nodes is sorted...
-      for (auto node : nodes) {
+      for (auto &node : nodes) {
         while (node >= top) {
           top += per_proc;
           proc++;
@@ -781,7 +781,7 @@ namespace Iocgns {
 //
 //
 #ifndef NDEBUG
-      for (auto u_node : u_nodes) {
+      for (auto &u_node : u_nodes) {
         assert(u_node > 0);
       }
 #endif
@@ -908,7 +908,7 @@ namespace Iocgns {
             point_list.reserve(common.size());
             point_list_donor.reserve(common.size());
 
-            for (auto pnt : common) {
+            for (auto &pnt : common) {
               point_list.push_back(pnt.first);
               point_list_donor.push_back(pnt.second);
             }
@@ -1268,7 +1268,6 @@ namespace Iocgns {
 
     // Get the StructuredBlock that this NodeBlock is contained in:
     const Ioss::GroupingEntity *sb         = nb->contained_in();
-    int                         base       = 1;
     int                         zone       = Iocgns::Utils::get_db_zone(sb);
     cgsize_t                    num_to_get = field.verify(data_size);
 
@@ -1278,6 +1277,7 @@ namespace Iocgns {
       // TODO: do this at read_meta_data() and store...
       int step = get_region()->get_current_state();
 
+      int base = 1;
       int solution_index =
           Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
 
@@ -2150,7 +2150,7 @@ namespace Iocgns {
             new Ioss::Map("node", get_filename() + "::" + eb->name(), myProcessor);
         m_globalToBlockLocalNodeMap[zone]->map().reserve(nodes.size() + 1);
         m_globalToBlockLocalNodeMap[zone]->map().push_back(1); // Non one-to-one map
-        for (auto i : nodes) {
+        for (auto &i : nodes) {
           m_globalToBlockLocalNodeMap[zone]->map().push_back(i);
         }
       }

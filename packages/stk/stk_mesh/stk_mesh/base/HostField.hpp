@@ -81,7 +81,7 @@ public:
   }
 
   HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f,
-            const ExecSpace& execSpace, bool isFromGetUpdatedNgpField = false)
+            const stk::ngp::ExecSpace& execSpace, bool isFromGetUpdatedNgpField = false)
     : HostField(b, f, isFromGetUpdatedNgpField)
   {
     asyncCopyState.set_state(execSpace, impl::INVALID);
@@ -98,7 +98,7 @@ public:
 
   void set_field_states(HostField<T, NgpDebugger>* fields[]) {}
 
-  void set_execution_space(const ExecSpace& execSpace) override { asyncCopyState.set_execution_space(execSpace); }
+  void set_execution_space(const stk::ngp::ExecSpace& execSpace) override { asyncCopyState.set_execution_space(execSpace); }
 
   size_t num_syncs_to_host() const override { return field->num_syncs_to_host(); }
   size_t num_syncs_to_device() const override { return field->num_syncs_to_device(); }
@@ -204,7 +204,7 @@ public:
     Kokkos::fence();
   }
 
-  void sync_to_host(const ExecSpace& execSpace) override
+  void sync_to_host(const stk::ngp::ExecSpace& execSpace) override
   {
     if (need_sync_to_host()) {
       field->increment_num_syncs_to_host();
@@ -218,7 +218,7 @@ public:
     Kokkos::fence();
   }
 
-  void sync_to_device(const ExecSpace& execSpace) override
+  void sync_to_device(const stk::ngp::ExecSpace& execSpace) override
   {
     if (need_sync_to_device()) {
       field->increment_num_syncs_to_device();
@@ -237,7 +237,7 @@ public:
     needSyncToDevice.swap(other.needSyncToDevice);
   }
 
-  stk::mesh::EntityRank get_rank() const { return field->entity_rank(); }
+  stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }
 
   unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
 

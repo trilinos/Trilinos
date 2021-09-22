@@ -1,19 +1,19 @@
 
 # Define the include dirs for the TESTONLY lib.
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 #
 # Create a test-only b_mixed_lang lib which uses the optional test dependent
 # MixedLang package
 #
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MixedLang)
-IF (${PACKAGE_NAME}_ENABLE_MixedLang)
+assert_defined(${PACKAGE_NAME}_ENABLE_MixedLang)
+if (${PACKAGE_NAME}_ENABLE_MixedLang)
 
-  INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ShowLibErrors.cmake)
+  include(${CMAKE_CURRENT_LIST_DIR}/ShowLibErrors.cmake)
   
   # Define the TESTONLY library
-  TRIBITS_ADD_LIBRARY( b_mixed_lang
+  tribits_add_library( b_mixed_lang
      TESTONLY
      HEADERS b_mixed_lang.hpp
      SOURCES b_mixed_lang.cpp
@@ -21,14 +21,14 @@ IF (${PACKAGE_NAME}_ENABLE_MixedLang)
      ${EXTRA_TAL_ARGS} # Used for testing and to demonstrate errors
      )
 
-ENDIF()
+endif()
 
 #
 # Create a test-only lib that does not depend on any of the package's main
 # libs.
 #
 
-TRIBITS_ADD_LIBRARY( b_test_utils
+tribits_add_library( b_test_utils
    TESTONLY
    HEADERS b_test_utils.hpp
    SOURCES b_test_utils.cpp

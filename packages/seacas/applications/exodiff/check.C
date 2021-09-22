@@ -22,23 +22,24 @@
 namespace {
 
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
+  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::vector<INT> &node_map,
                    const INT *id_map, bool check_only);
   template <typename INT>
-  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map,
-                        const INT *node_map);
+  bool Check_Element_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                           const std::vector<INT> &elmt_map, const std::vector<INT> &node_map);
   template <typename INT>
-  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
-                     bool check_only);
+  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                     const std::vector<INT> &node_map, bool check_only);
   template <typename INT>
-  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map,
-                     bool check_only);
+  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                     const std::vector<INT> &elmt_map, bool check_only);
 
   template <typename INT>
-  bool Check_Elmt_Block_Params(const Exo_Block<INT> *block1, const Exo_Block<INT> *block2);
+  bool Check_Element_Block_Params(const Exo_Block<INT> *block1, const Exo_Block<INT> *block2);
   template <typename INT>
-  bool Check_Elmt_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
-                                     const INT *elmt_map, const INT *node_map);
+  bool Check_Element_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
+                                        const std::vector<INT> &elmt_map,
+                                        const std::vector<INT> &node_map);
   bool close_compare(const std::string &st1, const std::string &st2);
 } // namespace
 
@@ -46,69 +47,70 @@ template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT
 {
   bool is_same = true;
   if (file1.Dimension() != file2.Dimension()) {
-    Error(".. Dimension doesn't agree.\n");
+    Warning(".. Dimension doesn't agree.\n");
     is_same = false;
   }
   if (file1.Num_Nodes() != file2.Num_Nodes()) {
     if (interFace.map_flag != MapType::PARTIAL) {
-      Error(".. Number of nodes doesn't agree.\n");
+      Warning(".. Number of nodes doesn't agree.\n");
       is_same = false;
     }
   }
-  if (file1.Num_Elmts() != file2.Num_Elmts()) {
+  if (file1.Num_Elements() != file2.Num_Elements()) {
     if (interFace.map_flag != MapType::PARTIAL) {
-      Error(".. Number of elements doesn't agree.\n");
+      Warning(".. Number of elements doesn't agree.\n");
       is_same = false;
     }
   }
-  if (file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
+  if (file1.Num_Element_Blocks() != file2.Num_Element_Blocks()) {
     if (interFace.map_flag != MapType::PARTIAL) {
-      Error(".. Number of element blocks doesn't agree.\n");
+      Warning(".. Number of element blocks doesn't agree.\n");
       is_same = false;
     }
   }
   if (file1.Num_Times() != file2.Num_Times() && !interFace.quiet_flag && !interFace.ignore_steps) {
-    Error(fmt::format(".. First file has {} result times while the second file has {}.\n",
-                      file1.Num_Times(), file2.Num_Times()));
+    Warning(fmt::format(".. First file has {} result times while the second file has {}.\n",
+                        file1.Num_Times(), file2.Num_Times()));
   }
   return is_same;
 }
 
 template <typename INT>
 void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool check_only,
-                             const INT *node_map, const INT *elmt_map, const INT *node_id_map)
+                             const std::vector<INT> &node_map, const std::vector<INT> &elmt_map,
+                             const INT *node_id_map)
 {
   bool is_diff = false;
   // NOTE: Check_Global is called earlier. Don't repeat call here.
   if (!Check_Nodal(file1, file2, node_map, node_id_map, check_only)) {
-    Error(".. Differences found in mesh nodal coordinates.\n");
+    Warning(".. Differences found in mesh nodal coordinates.\n");
     is_diff = true;
   }
 
-  if (!Check_Elmt_Block(file1, file2, elmt_map, node_map)) {
-    Error(".. Differences found in element block metadata or connectivity.\n");
+  if (!Check_Element_Block(file1, file2, elmt_map, node_map)) {
+    Warning(".. Differences found in element block metadata or connectivity.\n");
     is_diff = true;
   }
 
   if (!Check_Nodeset(file1, file2, node_map, check_only)) {
-    Error(".. Differences found in node set metadata or node lists.\n");
+    Warning(".. Differences found in node set metadata or node lists.\n");
     is_diff = true;
   }
 
   if (!Check_Sideset(file1, file2, elmt_map, check_only)) {
-    Error(".. Differences found in side set metadata or side lists.\n");
+    Warning(".. Differences found in side set metadata or side lists.\n");
     is_diff = true;
   }
 
   if (is_diff) {
-    Error(".. Differences found in mesh (non-transient) data.  Aborting...\n");
+    Warning(".. Differences found in mesh (non-transient) data.  Aborting...\n");
     exit(1);
   }
 }
 
 namespace {
   template <typename INT>
-  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
+  bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::vector<INT> &node_map,
                    const INT *id_map, bool check_only)
   {
     bool is_same = true;
@@ -144,8 +146,8 @@ namespace {
     double norm;
     for (size_t n = 0; n < file1.Num_Nodes() && (is_same || interFace.show_all_diffs); ++n) {
       // Should this node be processed...
-      if (node_map == nullptr || node_map[n] >= 0) {
-        INT    n2 = node_map != nullptr ? node_map[n] : n;
+      if (node_map.empty() || node_map[n] >= 0) {
+        INT    n2 = node_map.empty() ? n : node_map[n];
         double dx = interFace.coord_tol.Delta(x1[n], x2[n2]);
         if (dx > interFace.coord_tol.value) {
           fmt::print("   x coord {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (node {})\n",
@@ -188,36 +190,36 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map,
-                        const INT *node_map)
+  bool Check_Element_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                           const std::vector<INT> &elmt_map, const std::vector<INT> &node_map)
   {
     bool is_same = true;
     // Verify that element blocks match in the two files...
-    for (size_t b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
-      Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
+    for (size_t b = 0; b < file1.Num_Element_Blocks(); ++b) {
+      Exo_Block<INT> *block1 = file1.Get_Element_Block_by_Index(b);
       Exo_Block<INT> *block2 = nullptr;
       if (interFace.map_flag != MapType::DISTANCE && interFace.map_flag != MapType::PARTIAL) {
         if (block1 != nullptr) {
           if (interFace.by_name) {
-            block2 = file2.Get_Elmt_Block_by_Name(block1->Name());
+            block2 = file2.Get_Element_Block_by_Name(block1->Name());
           }
           else {
-            block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
+            block2 = file2.Get_Element_Block_by_Id(block1->Id());
           }
           if (block2 == nullptr) {
-            Error(fmt::format(".. Block id {} with name {} exists in first "
-                              "file but not the second.\n",
-                              block1->Id(), block1->Name()));
+            Warning(fmt::format(".. Block id {} with name {} exists in first "
+                                "file but not the second.\n",
+                                block1->Id(), block1->Name()));
             is_same = false;
           }
           else {
-            if (!Check_Elmt_Block_Params(block1, block2)) {
+            if (!Check_Element_Block_Params(block1, block2)) {
               is_same = false;
             }
             else {
-              // Only do this check if Check_Elmt_Block_Params does not fail.
+              // Only do this check if Check_Element_Block_Params does not fail.
               // TODO(gdsjaar): Pass in node_map and node_id_map...
-              if (!Check_Elmt_Block_Connectivity(block1, block2, elmt_map, node_map)) {
+              if (!Check_Element_Block_Connectivity(block1, block2, elmt_map, node_map)) {
                 is_same = false;
               }
             }
@@ -229,8 +231,9 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Elmt_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
-                                     const INT *elmt_map, const INT *node_map)
+  bool Check_Element_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
+                                        const std::vector<INT> &elmt_map,
+                                        const std::vector<INT> &node_map)
   {
 
     bool is_same = true;
@@ -238,24 +241,25 @@ namespace {
 
     block1->Load_Connectivity();
     block2->Load_Connectivity();
-    const INT *conn1 = block1->Connectivity();
-    const INT *conn2 = block2->Connectivity();
+    const auto &conn1 = block1->Connectivity();
+    const auto &conn2 = block2->Connectivity();
 
-    SMART_ASSERT(block1->Size() == 0 || block1->Num_Nodes_per_Elmt() == 0 || conn1 != nullptr);
-    SMART_ASSERT(block2->Size() == 0 || block2->Num_Nodes_per_Elmt() == 0 || conn2 != nullptr);
+    SMART_ASSERT(block1->Size() == 0 || block1->Num_Nodes_per_Element() == 0 || !conn1.empty());
+    SMART_ASSERT(block2->Size() == 0 || block2->Num_Nodes_per_Element() == 0 || !conn2.empty());
 
-    if (interFace.map_flag == MapType::FILE_ORDER || elmt_map == nullptr) {
-      size_t node_count = block1->Size() * block1->Num_Nodes_per_Elmt();
-      SMART_ASSERT(node_count == block2->Size() * block2->Num_Nodes_per_Elmt());
+    if (interFace.map_flag == MapType::FILE_ORDER || elmt_map.empty()) {
+      size_t node_count = block1->Size() * block1->Num_Nodes_per_Element();
+      SMART_ASSERT(node_count == block2->Size() * block2->Num_Nodes_per_Element());
 
-      if (interFace.map_flag != MapType::FILE_ORDER && node_map != nullptr) {
+      if (interFace.map_flag != MapType::FILE_ORDER && !node_map.empty()) {
         for (size_t e = 0; e < node_count; ++e) {
           if (node_map[conn1[e] - 1] + 1 != conn2[e]) {
-            size_t elem = e / block2->Num_Nodes_per_Elmt();
-            size_t node = e % block2->Num_Nodes_per_Elmt();
-            Error(fmt::format(".. Connectivities in block id {} are not the same.\n"
-                              "                  First difference is node {} of local element {}\n",
-                              block1->Id(), node + 1, elem + 1));
+            size_t elem = e / block2->Num_Nodes_per_Element();
+            size_t node = e % block2->Num_Nodes_per_Element();
+            Warning(
+                fmt::format(".. Connectivities in block id {} are not the same.\n"
+                            "                  First difference is node {} of local element {}\n",
+                            block1->Id(), node + 1, elem + 1));
             is_same = false;
             break;
           }
@@ -264,22 +268,23 @@ namespace {
       else {
         for (size_t e = 0; e < node_count; ++e) {
           if (conn1[e] != conn2[e]) {
-            size_t elem = e / block2->Num_Nodes_per_Elmt();
-            size_t node = e % block2->Num_Nodes_per_Elmt();
-            Error(fmt::format(".. Connectivities in block id {} are not the same.\n"
-                              "                  First difference is node {} of local element {}\n",
-                              block1->Id(), node + 1, elem + 1));
+            size_t elem = e / block2->Num_Nodes_per_Element();
+            size_t node = e % block2->Num_Nodes_per_Element();
+            Warning(
+                fmt::format(".. Connectivities in block id {} are not the same.\n"
+                            "                  First difference is node {} of local element {}\n",
+                            block1->Id(), node + 1, elem + 1));
             is_same = false;
             break;
           }
         }
       }
     }
-    else if (elmt_map != nullptr) {
+    else if (!elmt_map.empty()) {
       auto   offset1     = block1->offset();
       auto   offset2     = block2->offset();
       size_t num_element = block1->Size();
-      size_t nnpe        = block1->Num_Nodes_per_Elmt();
+      size_t nnpe        = block1->Num_Nodes_per_Element();
       for (size_t e1 = 0; is_same && e1 < num_element; e1++) {
         for (size_t n = 0; is_same && n < nnpe; ++n) {
           size_t off1 = e1 * nnpe + n;
@@ -288,12 +293,13 @@ namespace {
             e2 -= offset2;
             size_t off2   = e2 * nnpe + n;
             auto   n1     = conn1[off1];
-            auto   map_n1 = node_map != nullptr ? node_map[n1 - 1] + 1 : n1;
+            auto   map_n1 = node_map.empty() ? n1 : node_map[n1 - 1] + 1;
             if (map_n1 != conn2[off2]) {
-              Error(fmt::format(".. Connectivities in block id {} are not the same.\n"
-                                "                  First difference is node {} of local element {} "
-                                "(file1) {} (file2)\n",
-                                block1->Id(), n + 1, e1 + 1, e2 + 1));
+              Warning(
+                  fmt::format(".. Connectivities in block id {} are not the same.\n"
+                              "                  First difference is node {} of local element {} "
+                              "(file1) {} (file2)\n",
+                              block1->Id(), n + 1, e1 + 1, e2 + 1));
               is_same = false;
               break;
             }
@@ -308,41 +314,42 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Elmt_Block_Params(const Exo_Block<INT> *block1, const Exo_Block<INT> *block2)
+  bool Check_Element_Block_Params(const Exo_Block<INT> *block1, const Exo_Block<INT> *block2)
   {
     bool is_same = true;
     SMART_ASSERT(block1 && block2);
 
     if (!interFace.by_name && block1->Id() != block2->Id()) {
-      Error(fmt::format(".. Block ids don't agree ({} != {}\n", block1->Id(), block2->Id()));
+      Warning(fmt::format(".. Block ids don't agree ({} != {}\n", block1->Id(), block2->Id()));
       is_same = false;
     }
     if (interFace.by_name && block1->Name() != block2->Name()) {
-      Error(
+      Warning(
           fmt::format(".. Block names don't agree ({} != {}).\n", block1->Name(), block2->Name()));
       is_same = false;
     }
-    if (!(no_case_equals(block1->Elmt_Type(), block2->Elmt_Type()))) {
+    if (!(no_case_equals(block1->Element_Type(), block2->Element_Type()))) {
       if (!interFace.short_block_check ||
-          !close_compare(block1->Elmt_Type(), block2->Elmt_Type())) {
-        Error(fmt::format(".. Block {}: element types don't agree ({} != {}).\n", block1->Id(),
-                          block1->Elmt_Type(), block2->Elmt_Type()));
+          !close_compare(block1->Element_Type(), block2->Element_Type())) {
+        Warning(fmt::format(".. Block {}: element types don't agree ({} != {}).\n", block1->Id(),
+                            block1->Element_Type(), block2->Element_Type()));
         is_same = false;
       }
     }
     if (block1->Size() != block2->Size()) {
-      Error(fmt::format(".. Block {}: number of elements doesn't agree ({} != {}).\n", block1->Id(),
-                        block1->Size(), block2->Size()));
+      Warning(fmt::format(".. Block {}: number of elements doesn't agree ({} != {}).\n",
+                          block1->Id(), block1->Size(), block2->Size()));
       is_same = false;
     }
-    if (block1->Num_Nodes_per_Elmt() != block2->Num_Nodes_per_Elmt()) {
-      Error(fmt::format(".. Block {}: number of nodes per element doesn't agree ({} != {}).\n",
-                        block1->Id(), block1->Num_Nodes_per_Elmt(), block2->Num_Nodes_per_Elmt()));
+    if (block1->Num_Nodes_per_Element() != block2->Num_Nodes_per_Element()) {
+      Warning(fmt::format(".. Block {}: number of nodes per element doesn't agree ({} != {}).\n",
+                          block1->Id(), block1->Num_Nodes_per_Element(),
+                          block2->Num_Nodes_per_Element()));
       is_same = false;
     }
 #if 0
     if (block1->Num_Attributes() != block2->Num_Attributes()) {
-      Error(fmt::format(".. Block {}: number of attributes doesn't agree ({} != {}).\n"
+      Warning(fmt::format(".. Block {}: number of attributes doesn't agree ({} != {}).\n"
                         block1->Id(), block1->Num_Attributes(), block2->Num_Attributes());
       is_same = false;
     }
@@ -351,8 +358,8 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
-                     bool /*unused*/)
+  bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                     const std::vector<INT> &node_map, bool /*unused*/)
   {
     // Currently don't set diff flag for most of these since we
     // can continue (somewhat) with these differences...
@@ -361,7 +368,7 @@ namespace {
     bool is_same = true;
     if (file1.Num_Node_Sets() != file2.Num_Node_Sets()) {
       if (interFace.map_flag != MapType::PARTIAL) {
-        Error(".. Number of nodesets doesn't agree...\n");
+        Warning(".. Number of nodesets doesn't agree...\n");
         if (interFace.pedantic) {
           is_same = false;
         }
@@ -379,7 +386,7 @@ namespace {
       }
 
       if (set2 == nullptr) {
-        Error(
+        Warning(
             fmt::format(".. Nodeset id {} exists in first file but not the second.\n", set1->Id()));
         if (interFace.pedantic) {
           is_same = false;
@@ -387,7 +394,7 @@ namespace {
       }
       else {
         if (set1->Size() != set2->Size()) {
-          Error(fmt::format(
+          Warning(fmt::format(
               ".. The node count for nodeset id {} is not the same in the two files ({} != {}).\n",
               set1->Id(), set1->Size(), set2->Size()));
           if (interFace.pedantic) {
@@ -402,7 +409,7 @@ namespace {
     for (size_t b = 0; b < file2.Num_Node_Sets(); ++b) {
       Node_Set<INT> *set2 = file2.Get_Node_Set_by_Index(b);
       if (set2 == nullptr) {
-        Error(
+        Warning(
             fmt::format(".. Could not access the Nodeset with index {} in the second file.\n", b));
         if (interFace.pedantic) {
           is_same = false;
@@ -428,7 +435,7 @@ namespace {
           continue;
         }
 
-        if (node_map != nullptr) {
+        if (!node_map.empty()) {
           set1->apply_map(node_map);
         }
 
@@ -442,7 +449,7 @@ namespace {
             }
           }
           if (diff >= 0) {
-            Error(fmt::format(
+            Warning(fmt::format(
                 ".. The nodelists for nodeset id {} are not the same in the two files.\n"
                 "\t\tThe first difference is at position {}: Node {} vs. Node {}.\n",
                 set1->Id(), set1->Node_Index(diff) + 1, set1->Node_Id(diff), set2->Node_Id(diff)));
@@ -450,8 +457,8 @@ namespace {
               is_same = false;
             }
             else {
-              Error(".. The nodelist differences are ignored for the "
-                    "partial_map case.\n");
+              Warning(".. The nodelist differences are ignored for the "
+                      "partial_map case.\n");
             }
           }
         }
@@ -461,8 +468,8 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map,
-                     bool /*unused*/)
+  bool Check_Sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                     const std::vector<INT> &elmt_map, bool /*unused*/)
   {
     // Currently don't set diff flag for most of these since we
     // can continue (somewhat) with these differences...
@@ -471,7 +478,7 @@ namespace {
     bool is_same = true;
     if (file1.Num_Side_Sets() != file2.Num_Side_Sets()) {
       if (interFace.map_flag != MapType::PARTIAL) {
-        Error(".. Number of sidesets doesn't agree...\n");
+        Warning(".. Number of sidesets doesn't agree...\n");
         if (interFace.pedantic) {
           is_same = false;
         }
@@ -489,7 +496,7 @@ namespace {
       }
 
       if (set2 == nullptr) {
-        Error(
+        Warning(
             fmt::format(".. Sideset id {} exists in first file but not the second.\n", set1->Id()));
         if (interFace.pedantic) {
           is_same = false;
@@ -497,7 +504,7 @@ namespace {
       }
       else {
         if (set1->Size() != set2->Size()) {
-          Error(fmt::format(
+          Warning(fmt::format(
               ".. The side count for sideset id {} is not the same in the two files ({} != {}).\n",
               set1->Id(), set1->Size(), set2->Size()));
           if (interFace.pedantic) {
@@ -510,7 +517,7 @@ namespace {
     for (size_t b = 0; b < file2.Num_Side_Sets(); ++b) {
       Side_Set<INT> *set2 = file2.Get_Side_Set_by_Index(b);
       if (set2 == nullptr) {
-        Error(
+        Warning(
             fmt::format(".. Could not access the Sideset with index {} in the second file.\n", b));
         if (interFace.pedantic) {
           is_same = false;
@@ -536,7 +543,7 @@ namespace {
           continue;
         }
 
-        if (elmt_map != nullptr) {
+        if (!elmt_map.empty()) {
           set1->apply_map(elmt_map);
         }
 
@@ -556,10 +563,10 @@ namespace {
             // appears in the file.  If don't do this, error message is very confusing for the
             // user...
             auto set1_id = set1->Side_Id(diff).first;
-            if (elmt_map != nullptr) {
+            if (!elmt_map.empty()) {
               // Iterate map to find an entry equal to `set1_id`.  Its position is then the file1 id
               // of the element.
-              for (size_t i = 0; i < file1.Num_Elmts(); i++) {
+              for (size_t i = 0; i < file1.Num_Elements(); i++) {
                 if (elmt_map[i] == set1_id - 1) {
                   set1_id = i + 1;
                   break;
@@ -567,7 +574,7 @@ namespace {
               }
             }
 
-            Error(fmt::format(
+            Warning(fmt::format(
                 ".. The sidelists for sideset id {} are not the same in the two files.\n"
                 "\t\tThe first difference is at position {}: Side {}.{} .vs. Side {}.{}.\n",
                 set1->Id(), set1->Side_Index(diff) + 1, set1_id, set1->Side_Id(diff).second,
@@ -576,8 +583,8 @@ namespace {
               is_same = false;
             }
             else {
-              Error(".. The sidelist differences are ignored for the "
-                    "partial_map case.\n");
+              Warning(".. The sidelist differences are ignored for the "
+                      "partial_map case.\n");
             }
           }
         }
@@ -623,10 +630,11 @@ namespace {
 
 template bool Check_Global(ExoII_Read<int> &file1, ExoII_Read<int> &file2);
 template void Check_Compatible_Meshes(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
-                                      bool check_only, const int *node_map, const int *elmt_map,
-                                      const int *node_id_map);
+                                      bool check_only, const std::vector<int> &node_map,
+                                      const std::vector<int> &elmt_map, const int *node_id_map);
 
 template bool Check_Global(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2);
 template void Check_Compatible_Meshes(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
-                                      bool check_only, const int64_t *node_map,
-                                      const int64_t *elmt_map, const int64_t *node_id_map);
+                                      bool check_only, const std::vector<int64_t> &node_map,
+                                      const std::vector<int64_t> &elmt_map,
+                                      const int64_t *             node_id_map);

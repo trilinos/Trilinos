@@ -24,6 +24,7 @@
 #include <exodusII.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdlib>
@@ -681,7 +682,7 @@ namespace {
       }
 
       auto &side_blocks = gss->get_side_blocks();
-      for (auto gsb : side_blocks) {
+      for (auto &gsb : side_blocks) {
         std::vector<INT> ss_elems;
         gsb->get_field_data("element_side_raw", ss_elems);
 
@@ -731,7 +732,7 @@ namespace {
       }
 
       auto &side_blocks = gss->get_side_blocks();
-      for (auto gsb : side_blocks) {
+      for (auto &gsb : side_blocks) {
         auto &sb_name = gsb->name();
 
         std::vector<Ioss::SideBlock *> proc_sb(proc_count);
@@ -1573,7 +1574,7 @@ namespace {
     progress("\tNode_to_proc reserved");
     assert(sum_on_proc_count == node_to_proc_pointer_size);
 
-    for (auto pn : proc_node) {
+    for (auto &pn : proc_node) {
       size_t num_procs = pn.size();
       for (size_t p = 0; p < num_procs; p++) {
         node_to_proc.push_back(pn[p]);

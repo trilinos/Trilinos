@@ -38,9 +38,9 @@
 # @HEADER
 
 
-INCLUDE(TribitsSetupStrongCompileWarnings)
-INCLUDE(PrependCmndlineArgs)
-INCLUDE(DualScopeAppendCmndlineArgs)
+include(TribitsSetupStrongCompileWarnings)
+include(PrependCmndlineArgs)
+include(DualScopeAppendCmndlineArgs)
 
 
 #
@@ -48,66 +48,66 @@ INCLUDE(DualScopeAppendCmndlineArgs)
 #
 
 
-MACRO(TRIBITS_APPLY_WARNINGS_AS_ERROR_FLAGS_LANG LANG)
-  PREPEND_CMNDLINE_ARGS(CMAKE_${LANG}_FLAGS
+macro(tribits_apply_warnings_as_error_flags_lang LANG)
+  prepend_cmndline_args(CMAKE_${LANG}_FLAGS
     "${${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS}")
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE(STATUS "Setting up for ${LANG} warnings as errors just in this package ...")
-    PRINT_VAR(CMAKE_${LANG}_FLAGS)
-  ENDIF()
-ENDMACRO()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message(STATUS "Setting up for ${LANG} warnings as errors just in this package ...")
+    print_var(CMAKE_${LANG}_FLAGS)
+  endif()
+endmacro()
 
 
-MACRO(TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS LANG)
+macro(tribits_set_package_language_flags LANG)
 
-  #MESSAGE("Entering TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(${LANG})")
-  #PRINT_VAR(${PROJECT_NAME}_ENABLE_STRONG_${LANG}_COMPILE_WARNINGS)
+  #message("Entering tribits_set_package_language_flags(${LANG})")
+  #print_var(${PROJECT_NAME}_ENABLE_STRONG_${LANG}_COMPILE_WARNINGS)
 
-  IF (${PACKAGE_NAME}_${LANG}_FLAGS)
-    DUAL_SCOPE_APPEND_CMNDLINE_ARGS(CMAKE_${LANG}_FLAGS
+  if (${PACKAGE_NAME}_${LANG}_FLAGS)
+    dual_scope_append_cmndline_args(CMAKE_${LANG}_FLAGS
       "${${PACKAGE_NAME}_${LANG}_FLAGS}")
-  ENDIF()
+  endif()
 
-  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE(STATUS "Adding strong ${LANG} warning flags \"${${LANG}_STRONG_COMPILE_WARNING_FLAGS}\"")
-    PRINT_VAR(CMAKE_${LANG}_FLAGS)
-  ENDIF()
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message(STATUS "Adding strong ${LANG} warning flags \"${${LANG}_STRONG_COMPILE_WARNING_FLAGS}\"")
+    print_var(CMAKE_${LANG}_FLAGS)
+  endif()
 
-ENDMACRO()
+endmacro()
 
 
-FUNCTION(TRIBITS_SETUP_ADD_PACKAGE_COMPILE_FLAGS)
+function(tribits_setup_add_package_compile_flags)
 
-  #MESSAGE("Entering TRIBITS_SETUP_ADD_PACKAGE_COMPILE_FLAGS()")
+  #message("Entering tribits_setup_add_package_compile_flags()")
 
   #
   # C compiler options
   #
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C CMAKE_C_COMPILER_ID)
-  IF (${PROJECT_NAME}_ENABLE_C)
-    TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(C)
-  ENDIF()
+  assert_defined(${PROJECT_NAME}_ENABLE_C CMAKE_C_COMPILER_ID)
+  if (${PROJECT_NAME}_ENABLE_C)
+    tribits_set_package_language_flags(C)
+  endif()
 
   #
   # C++ compiler options
   #
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX CMAKE_CXX_COMPILER_ID)
-  IF (${PROJECT_NAME}_ENABLE_CXX)
-    TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(CXX)
-  ENDIF()
+  assert_defined(${PROJECT_NAME}_ENABLE_CXX CMAKE_CXX_COMPILER_ID)
+  if (${PROJECT_NAME}_ENABLE_CXX)
+    tribits_set_package_language_flags(CXX)
+  endif()
 
   #
   # Fortran compiler options
   #
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
-  IF (${PROJECT_NAME}_ENABLE_Fortran)
-    TRIBITS_SET_PACKAGE_LANGUAGE_FLAGS(Fortran)
-  ENDIF()
+  assert_defined(${PROJECT_NAME}_ENABLE_Fortran)
+  if (${PROJECT_NAME}_ENABLE_Fortran)
+    tribits_set_package_language_flags(Fortran)
+  endif()
 
-ENDFUNCTION()
+endfunction()
 
 
 
@@ -127,39 +127,39 @@ ENDFUNCTION()
 # This CMake code is broken out in order to allow it to be unit tested.
 #
 
-MACRO(TRIBITS_SETUP_COMPILER_FLAGS  PACKAGE_NAME_IN)
+macro(tribits_setup_compiler_flags  PACKAGE_NAME_IN)
 
   # Set up strong warning flags
 
-  IF (NOT PARSE_DISABLE_STRONG_WARNINGS AND NOT ${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS)
-    TRIBITS_SETUP_STRONG_COMPILE_WARNINGS(${PARSE_ENABLE_SHADOWING_WARNINGS})
-  ENDIF()
+  if (NOT PARSE_DISABLE_STRONG_WARNINGS AND NOT ${PACKAGE_NAME_IN}_DISABLE_STRONG_WARNINGS)
+    tribits_setup_strong_compile_warnings(${PARSE_ENABLE_SHADOWING_WARNINGS})
+  endif()
 
   # Set up for warnings as errors if requested
 
-  ASSERT_DEFINED(PARSE_CLEANED)
+  assert_defined(PARSE_CLEANED)
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C ${PROJECT_NAME}_ENABLE_C_DEBUG_COMPILE_FLAGS)
-  IF (PARSE_CLEANED AND ${PROJECT_NAME}_ENABLE_STRONG_C_COMPILE_WARNINGS)
-    TRIBITS_APPLY_WARNINGS_AS_ERROR_FLAGS_LANG(C)
-  ENDIF()
+  assert_defined(${PROJECT_NAME}_ENABLE_C ${PROJECT_NAME}_ENABLE_C_DEBUG_COMPILE_FLAGS)
+  if (PARSE_CLEANED AND ${PROJECT_NAME}_ENABLE_STRONG_C_COMPILE_WARNINGS)
+    tribits_apply_warnings_as_error_flags_lang(C)
+  endif()
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX ${PROJECT_NAME}_ENABLE_CXX_DEBUG_COMPILE_FLAGS)
-  IF (PARSE_CLEANED AND ${PROJECT_NAME}_ENABLE_STRONG_CXX_COMPILE_WARNINGS)
-    TRIBITS_APPLY_WARNINGS_AS_ERROR_FLAGS_LANG(CXX)
-  ENDIF()
+  assert_defined(${PROJECT_NAME}_ENABLE_CXX ${PROJECT_NAME}_ENABLE_CXX_DEBUG_COMPILE_FLAGS)
+  if (PARSE_CLEANED AND ${PROJECT_NAME}_ENABLE_STRONG_CXX_COMPILE_WARNINGS)
+    tribits_apply_warnings_as_error_flags_lang(CXX)
+  endif()
 
   # Append package specific options
-  TRIBITS_SETUP_ADD_PACKAGE_COMPILE_FLAGS()
+  tribits_setup_add_package_compile_flags()
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("Final compiler flags:")
-    PRINT_VAR(CMAKE_CXX_FLAGS)
-    PRINT_VAR(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE})
-    PRINT_VAR(CMAKE_C_FLAGS)
-    PRINT_VAR(CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
-    PRINT_VAR(CMAKE_Fortran_FLAGS)
-    PRINT_VAR(CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE})
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message("Final compiler flags:")
+    print_var(CMAKE_CXX_FLAGS)
+    print_var(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE})
+    print_var(CMAKE_C_FLAGS)
+    print_var(CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
+    print_var(CMAKE_Fortran_FLAGS)
+    print_var(CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE})
+  endif()
 
-ENDMACRO()
+endmacro()

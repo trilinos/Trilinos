@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -54,36 +54,26 @@ int obj_sizeinq[] = {EX_INQ_EDGE,
                      -1,
                      -1};
 
-#define OBJECT_IS_BLOCK(i) (((i) >= 0) && ((i) < 3))
+#define OBJECT_IS_BLOCK(i) (((i) < 3))
 #define OBJECT_IS_SET(i) (((i) > 2) && ((i) < 8))
 
 int cReadEdgeFace(int argc, char **argv)
 {
-  int            exoid;
-  int            appWordSize  = 8;
-  int            diskWordSize = 8;
-  float          exoVersion;
-  int            itmp[5];
-  int *          ids;
-  int            nids;
-  int            obj;
-  int            i, j;
-  int            num_timesteps;
-  int            ti;
-  char **        obj_names;
-  char **        var_names;
-  int            have_var_names;
-  int            num_vars;    /* number of variables per object */
-  int            num_entries; /* number of values per variable per object */
-  double *       entry_vals;  /* variable values for each entry of an object */
-  ex_init_params modelParams;
+  int    nids;
+  char **var_names;
+  int    num_vars;    /* number of variables per object */
+  int    num_entries; /* number of values per variable per object */
 
-  exoid = ex_open(EX_TEST_FILENAME, EX_READ, &appWordSize, &diskWordSize, &exoVersion);
+  int   appWordSize  = 8;
+  int   diskWordSize = 8;
+  float exoVersion;
+  int   exoid = ex_open(EX_TEST_FILENAME, EX_READ, &appWordSize, &diskWordSize, &exoVersion);
   if (exoid <= 0) {
     fprintf(stderr, "Unable to open \"%s\" for reading.\n", EX_TEST_FILENAME);
     return 1;
   }
 
+  ex_init_params modelParams;
   EXCHECK(ex_get_init_ext(exoid, &modelParams), "Unable to read database parameters.\n");
 
   fprintf(stdout,
@@ -112,12 +102,12 @@ int cReadEdgeFace(int argc, char **argv)
           modelParams.num_elem_sets, modelParams.num_node_maps, modelParams.num_edge_maps,
           modelParams.num_face_maps, modelParams.num_elem_maps);
 
-  num_timesteps = ex_inquire_int(exoid, EX_INQ_TIME);
+  int num_timesteps = ex_inquire_int(exoid, EX_INQ_TIME);
 
   /* *** NEW API *** */
-  for (i = 0; i < sizeof(obj_types) / sizeof(obj_types[0]); ++i) {
-    int *truth_tab = 0;
-    have_var_names = 0;
+  for (size_t i = 0; i < sizeof(obj_types) / sizeof(obj_types[0]); ++i) {
+    int *truth_tab      = NULL;
+    int  have_var_names = 0;
 
     EXCHECK(ex_inquire(exoid, obj_sizes[i], &nids, 0, 0),
             "Object ID list size could not be determined.\n");
@@ -129,9 +119,9 @@ int cReadEdgeFace(int argc, char **argv)
 
     fprintf(stdout, "=== %ss: %d\n", obj_typenames[i], nids);
 
-    ids       = (int *)malloc(nids * sizeof(int));
-    obj_names = (char **)malloc(nids * sizeof(char *));
-    for (obj = 0; obj < nids; ++obj) {
+    int *  ids       = (int *)malloc(nids * sizeof(int));
+    char **obj_names = (char **)malloc(nids * sizeof(char *));
+    for (int obj = 0; obj < nids; ++obj) {
       obj_names[obj] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
     }
 
@@ -139,7 +129,6 @@ int cReadEdgeFace(int argc, char **argv)
     EXCHECK(ex_get_names(exoid, obj_types[i], obj_names), "Could not read object ids.\n");
 
     if ((OBJECT_IS_BLOCK(i)) || (OBJECT_IS_SET(i))) {
-      int *tp;
       EXCHECK(ex_get_variable_param(exoid, obj_types[i], &num_vars),
               "Could not read number of variables.\n");
 
@@ -147,10 +136,10 @@ int cReadEdgeFace(int argc, char **argv)
         truth_tab = (int *)malloc(num_vars * nids * sizeof(int));
         EXCHECK(ex_get_truth_table(exoid, obj_types[i], nids, num_vars, truth_tab),
                 "Could not read truth table.\n");
-        tp = truth_tab;
+        int *tp = truth_tab;
         fprintf(stdout, "Truth:");
-        for (obj = 0; obj < nids; ++obj) {
-          for (j = 0; j < num_vars; ++j, ++tp) {
+        for (int obj = 0; obj < nids; ++obj) {
+          for (int j = 0; j < num_vars; ++j, ++tp) {
             fprintf(stdout, " %d", *tp);
           }
           fprintf(stdout, "\n      ");
@@ -158,7 +147,7 @@ int cReadEdgeFace(int argc, char **argv)
         fprintf(stdout, "\n");
 
         var_names = (char **)malloc(num_vars * sizeof(char *));
-        for (j = 0; j < num_vars; ++j) {
+        for (int j = 0; j < num_vars; ++j) {
           var_names[j] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
         }
 
@@ -169,10 +158,10 @@ int cReadEdgeFace(int argc, char **argv)
     }
 
     if (!have_var_names) {
-      var_names = 0;
+      var_names = NULL;
     }
 
-    for (obj = 0; obj < nids; ++obj) {
+    for (int obj = 0; obj < nids; ++obj) {
       if (obj_names[obj]) {
         fprintf(stdout, "%s %3d (%s): ", obj_typenames[i], ids[obj], obj_names[obj]);
       }
@@ -187,6 +176,7 @@ int cReadEdgeFace(int argc, char **argv)
         int  ele;
         int  ctr;
         int  num_attrs;
+        int  itmp[4];
         if (obj_types[i] == EX_ELEM_BLOCK) {
           EXCHECK(ex_get_block(exoid, obj_types[i], ids[obj], 0, itmp, itmp + 1, itmp + 2, itmp + 3,
                                &num_attrs),
@@ -204,9 +194,9 @@ int cReadEdgeFace(int argc, char **argv)
         }
         fprintf(stdout, "\n   ");
         num_entries = itmp[0];
-        nconn       = itmp[1] ? (int *)malloc(itmp[1] * num_entries * sizeof(int)) : 0;
-        econn       = itmp[2] ? (int *)malloc(itmp[2] * num_entries * sizeof(int)) : 0;
-        fconn       = itmp[3] ? (int *)malloc(itmp[3] * num_entries * sizeof(int)) : 0;
+        nconn       = itmp[1] ? (int *)malloc(itmp[1] * num_entries * sizeof(int)) : NULL;
+        econn       = itmp[2] ? (int *)malloc(itmp[2] * num_entries * sizeof(int)) : NULL;
+        fconn       = itmp[3] ? (int *)malloc(itmp[3] * num_entries * sizeof(int)) : NULL;
         EXCHECK(ex_get_conn(exoid, obj_types[i], ids[obj], nconn, econn, fconn),
                 "Could not read connectivity.\n");
         for (ele = 0; ele < num_entries; ++ele) {
@@ -236,7 +226,7 @@ int cReadEdgeFace(int argc, char **argv)
           double *attr;
           attr       = (double *)malloc(num_entries * num_attrs * sizeof(double));
           attr_names = (char **)malloc(num_attrs * sizeof(char *));
-          for (j = 0; j < num_attrs; ++j) {
+          for (int j = 0; j < num_attrs; ++j) {
             attr_names[j] = (char *)malloc((MAX_STR_LENGTH + 1) * sizeof(char));
           }
 
@@ -246,20 +236,19 @@ int cReadEdgeFace(int argc, char **argv)
                   "Could not read attribute values.\n");
 
           fprintf(stdout, "\n      Attributes:\n      ID ");
-          for (j = 0; j < num_attrs; ++j) {
+          for (int j = 0; j < num_attrs; ++j) {
             fprintf(stdout, " %s", attr_names[j]);
           }
           fprintf(stdout, "\n");
-          for (j = 0; j < num_entries; ++j) {
-            int k;
+          for (int j = 0; j < num_entries; ++j) {
             fprintf(stdout, "      %2d ", j + 1);
-            for (k = 0; k < num_attrs; ++k) {
+            for (int k = 0; k < num_attrs; ++k) {
               fprintf(stdout, " %4.1f", attr[j * num_attrs + k]);
             }
             fprintf(stdout, "\n");
           }
 
-          for (j = 0; j < num_attrs; ++j) {
+          for (int j = 0; j < num_attrs; ++j) {
             free(attr_names[j]);
           }
           free(attr_names);
@@ -267,46 +256,42 @@ int cReadEdgeFace(int argc, char **argv)
         }
       }
       else if (OBJECT_IS_SET(i)) {
-        int     num_df;
-        int *   set_entry;
-        int *   set_extra;
-        double *set_df;
+        int num_df;
         EXCHECK(ex_get_set_param(exoid, obj_types[i], ids[obj], &num_entries, &num_df),
                 "Could not read set parameters.\n");
 
-        set_entry = (int *)malloc(num_entries * sizeof(int));
-        set_extra = (obj_types[i] != EX_NODE_SET && obj_types[i] != EX_ELEM_SET)
-                        ? (int *)malloc(num_entries * sizeof(int))
-                        : 0;
+        int *set_entry = (int *)malloc(num_entries * sizeof(int));
+        int *set_extra = (obj_types[i] != EX_NODE_SET && obj_types[i] != EX_ELEM_SET)
+                             ? (int *)malloc(num_entries * sizeof(int))
+                             : NULL;
         EXCHECK(ex_get_set(exoid, obj_types[i], ids[obj], set_entry, set_extra),
                 "Could not read set.\n");
         fprintf(stdout, "Entries: %3d Distribution factors: %3d\n", num_entries, num_df);
         if (set_extra) {
-          for (j = 0; j < num_entries; ++j) {
+          for (int j = 0; j < num_entries; ++j) {
             fprintf(stdout, "      %2d %2d\n", set_entry[j], set_extra[j]);
           }
         }
         else {
-          for (j = 0; j < num_entries; ++j) {
+          for (int j = 0; j < num_entries; ++j) {
             fprintf(stdout, "      %2d\n", set_entry[j]);
           }
         }
         free(set_entry);
         free(set_extra);
 
-        set_df = num_df ? (double *)malloc(num_df * sizeof(double)) : 0;
+        double *set_df = num_df ? (double *)malloc(num_df * sizeof(double)) : NULL;
         if (set_df) {
           EXCHECK(ex_get_set_dist_fact(exoid, obj_types[i], ids[obj], set_df),
                   "Could not read set distribution factors.\n");
           fprintf(stdout, "\n    Distribution factors:\n");
-          for (j = 0; j < num_df; ++j) {
+          for (int j = 0; j < num_df; ++j) {
             fprintf(stdout, "      %4.1f\n", set_df[j]);
           }
           free(set_df);
         }
       }
       else { /* object is map */
-        int *map;
         switch (obj_types[i]) {
         case EX_NODE_MAP: num_entries = modelParams.num_nodes; break;
         case EX_EDGE_MAP: num_entries = modelParams.num_edge; break;
@@ -316,9 +301,9 @@ int cReadEdgeFace(int argc, char **argv)
         }
         if (num_entries) {
           fprintf(stdout, "Entries: %3d\n                :", num_entries);
-          map = (int *)malloc(num_entries * sizeof(int));
+          int *map = (int *)malloc(num_entries * sizeof(int));
           EXCHECK(ex_get_num_map(exoid, obj_types[i], ids[obj], map), "Could not read map.\n");
-          for (j = 0; j < num_entries; ++j) {
+          for (int j = 0; j < num_entries; ++j) {
             fprintf(stdout, " %d", map[j]);
           }
           free(map);
@@ -332,20 +317,19 @@ int cReadEdgeFace(int argc, char **argv)
       /* Read results variables */
       if (((OBJECT_IS_BLOCK(i)) || (OBJECT_IS_SET(i))) && num_vars && num_timesteps > 0) {
         /* Print out all the time values to exercise get_var */
-        entry_vals = (double *)malloc(num_entries * sizeof(double));
-        for (j = 0; j < num_vars; ++j) {
-          int k;
+        double *entry_vals = (double *)malloc(num_entries * sizeof(double));
+        for (int j = 0; j < num_vars; ++j) {
           if (!truth_tab[num_vars * obj + j]) {
             continue;
           }
 
           fprintf(stdout, "      Variable: %s", var_names[j]);
-          for (ti = 1; ti <= num_timesteps; ++ti) {
+          for (int ti = 1; ti <= num_timesteps; ++ti) {
             EXCHECK(ex_get_var(exoid, ti, obj_types[i], 1 + j, ids[obj], num_entries, entry_vals),
                     "Could not read variable values.\n");
 
             fprintf(stdout, "\n       @t%d ", ti);
-            for (k = 0; k < num_entries; ++k) {
+            for (int k = 0; k < num_entries; ++k) {
               fprintf(stdout, " %4.1f", entry_vals[k]);
             }
           }
@@ -358,13 +342,14 @@ int cReadEdgeFace(int argc, char **argv)
 
     if (((OBJECT_IS_BLOCK(i)) || (OBJECT_IS_SET(i))) && num_vars && num_timesteps > 0) {
       /* Print out one element's time values to exercise get_var_time */
-      entry_vals = (double *)malloc(num_timesteps * sizeof(double));
+      double *entry_vals = (double *)malloc(num_timesteps * sizeof(double));
+      int     itmp[2];
       EXCHECK(ex_inquire(exoid, obj_sizeinq[i], itmp, 0, 0), "Inquire failed.\n");
       itmp[1] = 11;
       while (itmp[1] > itmp[0]) {
         itmp[1] /= 2;
       }
-      for (j = 0; j < num_vars; ++j) {
+      for (int j = 0; j < num_vars; ++j) {
         /* FIXME: This works for the dataset created by CreateEdgeFace, but not for any dataset in
          * general since
          * NULL truth table entries may mean the referenced elements don't have variable values.
@@ -372,7 +357,7 @@ int cReadEdgeFace(int argc, char **argv)
         EXCHECK(ex_get_var_time(exoid, obj_types[i], j + 1, itmp[1], 1, num_timesteps, entry_vals),
                 "Could not read variable over time.\n");
         fprintf(stdout, "    Variable over time: %s  Entry: %3d ", var_names[j], itmp[1]);
-        for (ti = 1; ti <= num_timesteps; ++ti) {
+        for (int ti = 1; ti <= num_timesteps; ++ti) {
           fprintf(stdout, " @t%d: %4.1f", ti, entry_vals[ti - 1]);
         }
         fprintf(stdout, "\n");
@@ -381,7 +366,7 @@ int cReadEdgeFace(int argc, char **argv)
     }
 
     if (var_names) {
-      for (j = 0; j < num_vars; ++j) {
+      for (int j = 0; j < num_vars; ++j) {
         free(var_names[j]);
       }
       free(var_names);
@@ -389,7 +374,7 @@ int cReadEdgeFace(int argc, char **argv)
     free(truth_tab);
     free(ids);
 
-    for (obj = 0; obj < nids; ++obj) {
+    for (int obj = 0; obj < nids; ++obj) {
       free(obj_names[obj]);
     }
     free(obj_names);

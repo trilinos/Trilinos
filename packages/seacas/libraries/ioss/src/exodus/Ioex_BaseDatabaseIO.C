@@ -513,7 +513,7 @@ namespace Ioex {
     // See if the client added any "information_records"
     size_t info_rec_size = informationRecords.size();
     size_t in_lines      = input_lines.size();
-    size_t qa_lines      = 2; // Platform info and Version info...
+    size_t qa_lines      = 1; // Platform info
     size_t config_lines  = lines.size();
 
     size_t total_lines = in_lines + qa_lines + info_rec_size + config_lines;
@@ -523,8 +523,6 @@ namespace Ioex {
 
     int i = 0;
     Ioss::Utils::copy_string(info[i++], Ioss::Utils::platform_information(), max_line_length + 1);
-
-    Ioss::Utils::copy_string(info[i++], Ioex::Version(), max_line_length + 1);
 
     // Copy input file lines into 'info' array...
     for (size_t j = 0; j < input_lines.size(); j++, i++) {
@@ -881,7 +879,7 @@ namespace Ioex {
       util().global_array_minmax(block_ids, Ioss::ParallelUtils::DO_MAX);
     }
 
-    for (const auto block : element_blocks) {
+    for (const auto &block : element_blocks) {
       size_t block_order = block->get_property("original_block_order").get_int();
       assert(block_order < block_ids.size());
       if (block_ids[block_order] == 1) {

@@ -188,60 +188,66 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       may be more expensive!
 
    // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+   auto LIDs = globalIndexer_->getLIDs();
+   auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+   Kokkos::deep_copy(LIDs_h, LIDs);
 
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
-      // loop over each field to be scattered
-      for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
+   // loop over each field to be scattered
+   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+     int fieldNum = fieldIds_[fieldIndex];
+     auto field = PHX::as_view(scatterFields_[fieldIndex]);
+     auto field_h = Kokkos::create_mirror_view(field);
+     Kokkos::deep_copy(field_h, field);
 
-         if (!scatterIC_) {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-             = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-           const std::vector<int> & elmtOffset = indicePair.first;
-           const std::vector<int> & basisIdMap = indicePair.second;
-   
-           // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-             int basisId = basisIdMap[basis];
+       if (!scatterIC_) {
+	 // this call "should" get the right ordering according to the Intrepid2 basis
+	 const std::pair<std::vector<int>,std::vector<int> > & indicePair 
+	   = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+	 const std::vector<int> & elmtOffset = indicePair.first;
+	 const std::vector<int> & basisIdMap = indicePair.second;
+	 
+	 // loop over basis functions
+	 for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+	   int offset = elmtOffset[basis];
+	   int lid = LIDs_h(cellLocalId, offset);
+	   if(lid<0) // not on this processor!
+	     continue;
 
-             if (checkApplyBC_)
-               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
-                 continue;
+	   int basisId = basisIdMap[basis];
+	   
+	   if (checkApplyBC_)
+	     if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
+	       continue;
 
-             (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+	   (*r)[lid] = field_h(worksetCellIndex,basisId);
             
-             // record that you set a dirichlet condition
-             if(dirichletCounter_!=Teuchos::null)
-               (*dirichletCounter_)[lid] = 1.0; 
-           }
-         } else {
-           // this call "should" get the right ordering according to the Intrepid2 basis
-           const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
-   
+	   // record that you set a dirichlet condition
+	   if(dirichletCounter_!=Teuchos::null)
+	     (*dirichletCounter_)[lid] = 1.0; 
+	 }
+       } else {
+	 // this call "should" get the right ordering according to the Intrepid2 basis
+	 const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
+	 
            // loop over basis functions
-           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
-             if(lid<0) // not on this processor!
-               continue;
+	 for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+	   int offset = elmtOffset[basis];
+	   int lid = LIDs_h(cellLocalId, offset);
+	   if(lid<0) // not on this processor!
+	     continue;
 
-             (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+	   (*r)[lid] = field_h(worksetCellIndex,basis);
             
-             // record that you set a dirichlet condition
-             if(dirichletCounter_!=Teuchos::null)
-               (*dirichletCounter_)[lid] = 1.0; 
-           }
-         }
-      }
+	   // record that you set a dirichlet condition
+	   if(dirichletCounter_!=Teuchos::null)
+	     (*dirichletCounter_)[lid] = 1.0; 
+	 }
+       }
+     }
    }
 }
 
@@ -384,16 +390,18 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
 
-   // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
+   // loop over each field to be scattered
+   auto LIDs = globalIndexer_->getLIDs();
+   auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+   Kokkos::deep_copy(LIDs_h, LIDs);
+   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+     int fieldNum = fieldIds_[fieldIndex];
+     auto scatterField_h = Kokkos::create_mirror_view(scatterFields_[fieldIndex].get_static_view());
+     Kokkos::deep_copy(scatterField_h, scatterFields_[fieldIndex].get_static_view());
 
-      // globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-
-      // loop over each field to be scattered
-      for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
+     // scatter operation for each cell in workset
+     for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
          if (!scatterIC_) {
            // this call "should" get the right ordering according to the Intrepid2 basis
@@ -405,7 +413,7 @@ evaluateFields(typename TRAITS::EvalData workset)
            // loop over basis functions
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
              int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
+             int lid = LIDs_h(cellLocalId, offset);
              if(lid<0) // not on this processor!
                continue;
              
@@ -415,7 +423,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
                  continue;
 
-             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+             ScalarT value = scatterField_h(worksetCellIndex,basisId);
              // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId).val();
 
              // then scatter the sensitivity vectors
@@ -438,11 +446,11 @@ evaluateFields(typename TRAITS::EvalData workset)
            // loop over basis functions
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
              int offset = elmtOffset[basis];
-             int lid = LIDs[offset];
+             int lid = LIDs_h(cellLocalId, offset);
              if(lid<0) // not on this processor!
                continue;
              
-             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+             ScalarT value = scatterField_h(worksetCellIndex,basis);
              // (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis).val();
 
              // then scatter the sensitivity vectors
@@ -459,7 +467,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                (*dirichletCounter_)[lid] = 1.0;
            }
          }
-      }
+     }
    }
 }
 
@@ -577,6 +585,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    Kokkos::View<const int*, Kokkos::LayoutRight, PHX::Device> cLIDs, rLIDs;
    int gidCount(0);
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
+   const Teuchos::RCP<const panzer::GlobalIndexer>&
+     colGlobalIndexer = useColumnIndexer ? colGlobalIndexer_ : globalIndexer_;
  
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -592,18 +602,24 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       may be more expensive!
 
    // scatter operation for each cell in workset
+
+   auto LIDs = globalIndexer_->getLIDs();
+   auto colLIDs = colGlobalIndexer->getLIDs();
+   auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+   auto colLIDs_h = Kokkos::create_mirror_view(colLIDs);
+   Kokkos::deep_copy(LIDs_h, LIDs);
+   Kokkos::deep_copy(colLIDs_h, colLIDs);
+
+   std::vector<typename decltype(scatterFields_[0].get_static_view())::HostMirror> scatterFields_h;
+   for ( std::size_t i=0; i< scatterFields_.size(); ++i) {
+     scatterFields_h.push_back(Kokkos::create_mirror_view(scatterFields_[i].get_static_view()));
+     Kokkos::deep_copy(scatterFields_h[i], scatterFields_[i].get_static_view());
+   }
+
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      rLIDs = globalIndexer_->getElementLIDs(cellLocalId);
-      gidCount = globalIndexer_->getElementBlockGIDCount(blockId);
-      if(useColumnIndexer)
-      {
-        cLIDs = colGlobalIndexer_->getElementLIDs(cellLocalId);
-        gidCount = colGlobalIndexer_->getElementBlockGIDCount(blockId);
-      }
-      else
-        cLIDs = rLIDs;
+      gidCount = colGlobalIndexer->getElementBlockGIDCount(blockId);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -618,7 +634,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
-            int row = rLIDs[offset];
+            int row = LIDs_h(cellLocalId, offset);
             if(row<0) // not on this processor
                continue;
 
@@ -647,7 +663,7 @@ evaluateFields(typename TRAITS::EvalData workset)
             }
  
             // int gid = GIDs[offset];
-            const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
+            const ScalarT scatterField = (scatterFields_h[fieldIndex])(worksetCellIndex,basisId);
 
             if(r!=Teuchos::null) 
               (*r)[row] = scatterField.val();
@@ -661,7 +677,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     
             if(!preserveDiagonal_) {
               int err = Jac->ReplaceMyValues(row, gidCount, scatterField.dx(),
-                &cLIDs[0]);
+					     &colLIDs_h(cellLocalId,0));
               TEUCHOS_ASSERT(err==0); 
             }
          }

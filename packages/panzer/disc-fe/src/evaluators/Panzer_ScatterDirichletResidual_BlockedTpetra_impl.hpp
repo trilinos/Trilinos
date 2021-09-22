@@ -279,7 +279,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      const auto fieldOffsets = fieldOffsets_[fieldIndex];
      const auto basisIndices = basisIndexForMDFieldOffsets_[fieldIndex];
      const auto worksetLIDs = worksetLIDs_;
-     const auto fieldValues = scatterFields_[fieldIndex];
+     const auto fieldValues = scatterFields_[fieldIndex].get_static_view();
      const auto applyBC = applyBC_[fieldIndex].get_static_view();
      const bool checkApplyBC = checkApplyBC_;
 
@@ -435,7 +435,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
     hostBlockOffsets(blk) = blockOffset;
   }
-  blockOffsets_(numBlocks) = blockOffsets_(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
+  hostBlockOffsets(numBlocks) = hostBlockOffsets(numBlocks-1) + blockGlobalIndexers[blockGlobalIndexers.size()-1]->getElementBlockGIDCount(blockId);
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
   // Make sure the that hard coded derivative dimension in the
@@ -552,8 +552,10 @@ evaluateFields(typename TRAITS::EvalData workset)
   // lids for the sub-block that it is scattering to. The subviews
   // below are to offset the LID blocks correctly.
   const auto& globalIndexers = globalIndexer_->getFieldDOFManagers();
+  auto blockOffsets_h = Kokkos::create_mirror_view(blockOffsets_);
+  Kokkos::deep_copy(blockOffsets_h, blockOffsets_);
   for (size_t block=0; block < globalIndexers.size(); ++block) {
-    const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_(block),blockOffsets_(block+1)));
+    const auto subviewOfBlockLIDs = Kokkos::subview(worksetLIDs_,Kokkos::ALL(), std::make_pair(blockOffsets_h(block),blockOffsets_h(block+1)));
     globalIndexers[block]->getElementLIDs(localCellIds,subviewOfBlockLIDs);
   }
 

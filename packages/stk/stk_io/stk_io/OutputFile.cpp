@@ -385,7 +385,17 @@ void OutputFile::add_user_data(const std::vector<std::string>& partNames, const 
 
 }
 
-void OutputFile::add_global_ref(const std::string &name, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
+void OutputFile::add_global_ref(const std::string &name, const stk::util::Parameter &param)
+{
+    ThrowErrorMsgIf (m_fieldsDefined,
+                     "On region named " << m_region->name() <<
+                     " Attempting to add global variable after data has already been written to the database.");
+    std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
+    internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+    m_globalAnyFields.emplace_back(name, &param.value, param.type);
+}
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+STK_DEPRECATED void OutputFile::add_global_ref(const std::string &name, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -394,13 +404,25 @@ void OutputFile::add_global_ref(const std::string &name, const STK_ANY_NAMESPACE
     internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
     m_globalAnyFields.emplace_back(name, value, type);
 }
+#endif
 
 bool OutputFile::has_global(const std::string &globalVarName) const
 {
     return m_region->field_exists(globalVarName);
 }
 
-void OutputFile::add_global(const std::string &name, const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
+void OutputFile::add_global(const std::string &name, const stk::util::Parameter &param)
+{
+    ThrowErrorMsgIf (m_fieldsDefined,
+                     "On region named " << m_region->name() <<
+                     " Attempting to add global variable after data has already been written to the database.");
+    std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(param.type, param.value);
+    m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
+    internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+STK_DEPRECATED void OutputFile::add_global(const std::string &name, const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
 {
     ThrowErrorMsgIf (m_fieldsDefined,
                      "On region named " << m_region->name() <<
@@ -409,6 +431,7 @@ void OutputFile::add_global(const std::string &name, const STK_ANY_NAMESPACE::an
     m_anyGlobalVariablesDefined = true;  // This output file has at least 1 global variable.
     internal_add_global(m_region, name, parameter_type.first, parameter_type.second);
 }
+#endif
 
 void OutputFile::add_global(const std::string &globalVarName, Ioss::Field::BasicType dataType)
 {
@@ -437,10 +460,18 @@ void OutputFile::add_global(const std::string &globalVarName, const std::string 
     internal_add_global(m_region, globalVarName, storage, dataType);
 }
 
-void OutputFile::write_global(const std::string &globalVarName,
-                                    const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+STK_DEPRECATED void OutputFile::write_global(const std::string &globalVarName,
+                              const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
 {
     internal_write_parameter(m_region, globalVarName, value, type);
+}
+#endif
+
+void OutputFile::write_global(const std::string &globalVarName,
+                              const stk::util::Parameter &param)
+{
+    internal_write_parameter(m_region, globalVarName, param);
 }
 
 void OutputFile::write_global(const std::string &globalVarName, std::vector<double>& globalVarData)

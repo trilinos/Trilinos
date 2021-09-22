@@ -50,7 +50,7 @@ import time
 
 
 #
-# Default logic to determine if a changed file should tigger testing all of
+# Default logic to determine if a changed file should trigger testing all of
 # the packages.
 #
 # In general, any file at the top level <projectDir>/ or under the
@@ -61,23 +61,23 @@ import time
 #
 # PackagesList.cmake: This file gets modified frequently to add new packages
 # and rearrange packages.  We don't need to do a global rebuild because this
-# list of pakages is validated if we do even a single rebuild.  If a package
+# list of packages is validated if we do even a single rebuild.  If a package
 # line gets removed, the code that reads the Dependencies.cmake files will
 # fail and stop. However, this has the risk that if only the test test
 # category changes (e.g. from 'ST' to 'PT') then this would not trigger a
 # rebuild.  But if the package itself was also modified, then that would be
-# sufficent for testing.
+# sufficient for testing.
 #
 # TPLsList.cmake: This file also gets modified frequently.  We don't need to
 # enable all packages either for the same reason as for the PackagesList.cmake
 # file.
 #
 # cmake/ctest/: These drive nightly automated builds and should not require
-# testing every pakage.
+# testing every package.
 #
 # cmake/TPLs/*.cmake: Any FileTPLSOMETHING.cmake file is assumed not to be
 # needed for Primary Tested code and therefore does not need to trigger a
-# global rebulid.
+# global rebuild.
 #
 
 class DefaultProjectCiFileChangeLogic:

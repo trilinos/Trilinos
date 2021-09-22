@@ -34,21 +34,12 @@
 
 #include <cmath>
 #include <ctime>
-#include <math.h>       //Needed for erf and erfc on solaris.
 
 #include <stk_expreval/Function.hpp>
 #include <stk_expreval/Constants.hpp>
 
-#include <boost/math/distributions.hpp>
-
 namespace stk {
 namespace expreval {
-
-  namespace bmp  = boost::math::policies;
-
-  using weibull_dist = boost::math::weibull_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
-  using gamma_dist   = boost::math::gamma_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
-  using normal_dist  = boost::math::normal_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
 
 extern "C" {
   typedef double (*CExtern0)();
@@ -473,33 +464,32 @@ extern "C" {
   /// Weibull distribution probability distribution function.
   double weibull_pdf(double x, double shape, double scale)
   {
-    weibull_dist weibull1(shape, scale);
-    return boost::math::pdf(weibull1, x);
+    return (x >= 0) ? (shape/scale)*std::pow(x/scale, shape-1)*std::exp(-std::pow(x/scale, shape)) : 0;
   }
 
   /// Normal (Gaussian) distribution probability distribution function.
   double normal_pdf(double x, double mean, double standard_deviation)
   {
-    normal_dist normal1(mean, standard_deviation);
-    return boost::math::pdf(normal1, x);
+    return std::exp(-(x-mean)*(x-mean)/(2.0*standard_deviation*standard_deviation)) /
+           std::sqrt(2.0*pi()*standard_deviation*standard_deviation);
   }
 
   /// Exponential Uniform distribution probability distribution function
   double exponential_pdf(double x, double beta)
   { 
-    return std::exp(-x/beta)/beta; 
+    return (x >= 0.0) ? std::exp(-x/beta)/beta : 0.0;
   }
 
   /// Log Uniform distribution probability distribution function
   double log_uniform_pdf(double x, double lower_range, double upper_range) 
   { 
-    return 1.0/(std::log(upper_range) - std::log(lower_range))/x; 
+    return (x >= lower_range && x <= upper_range) ? 1.0/((std::log(upper_range) - std::log(lower_range))*x) : 0.0;
   }
 
   /// Gamma continuous probability distribution function.
   double gamma_pdf(double x, double shape, double scale)
   {
-    return boost::math::pdf(gamma_dist(shape,scale), x);
+    return (x >= 0) ? 1/(std::tgamma(shape)*std::pow(scale, shape))*std::pow(x, shape-1)*std::exp(-x/scale) : 0;
   }
 
   /// Returns -1 or 1 depending on whether x is negative or positive.
@@ -557,8 +547,8 @@ CFunctionMap::CFunctionMap()
   (*this).emplace("log10",           new CFunction1(std::log10));
   (*this).emplace("pow",             new CFunction2(std::pow));
   (*this).emplace("sqrt",            new CFunction1(std::sqrt));
-  (*this).emplace("erfc",            new CFunction1(erfc));
-  (*this).emplace("erf",             new CFunction1(erf));
+  (*this).emplace("erfc",            new CFunction1(std::erfc));
+  (*this).emplace("erf",             new CFunction1(std::erf));
 
   (*this).emplace("acos",            new CFunction1(std::acos));
   (*this).emplace("asin",            new CFunction1(std::asin));

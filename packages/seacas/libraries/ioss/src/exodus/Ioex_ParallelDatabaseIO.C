@@ -1496,7 +1496,7 @@ namespace Ioex {
             // topology and the side number, determine the side
             // type.
 
-            for (auto side_topo : sideTopology) {
+            for (auto &side_topo : sideTopology) {
               topo_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
               side_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
             }

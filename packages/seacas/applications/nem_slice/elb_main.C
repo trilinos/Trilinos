@@ -33,10 +33,6 @@
 #include <mpi.h> // for MPI_Finalize, etc
 #endif
 
-#ifdef SGI10K
-#include <sys/resource.h>
-#endif
-
 namespace {
   template <typename INT>
   void print_input(Machine_Description * /*machine*/, LB_Description<INT> * /*lb*/,

@@ -39,20 +39,20 @@
 
 
 
-INCLUDE(SetDefault)
-INCLUDE(PrintVar)
+include(SetDefault)
+include(PrintVar)
 
 #
-# @MACRO: SET_DEFAULT_AND_FROM_ENV()
+# @MACRO: set_default_and_from_env()
 #
 # Set a default value for a local variable and override from an environment
 # variable of the same name if it is set.
 #
 # Usage::
 #
-#   SET_DEFAULT_AND_FROM_ENV(<varName> <defaultVal>)
+#   set_default_and_from_env(<varName> <defaultVal>)
 #
-# First calls ``SET_DEFAULT(<varName> <defaultVal>)`` and then looks for an
+# First calls ``set_default(<varName> <defaultVal>)`` and then looks for an
 # environment variable named ``<varName>``, and if non-empty then overrides
 # the value of the local variable ``<varName>``.
 #
@@ -61,16 +61,16 @@ INCLUDE(PrintVar)
 # option ``-D <var>:<type>=<value>`` to allow variables to be set through the
 # command-line like ``cmake`` always allowed.
 #
-MACRO(SET_DEFAULT_AND_FROM_ENV  VAR  DEFAULT_VAL)
+macro(set_default_and_from_env  VAR  DEFAULT_VAL)
 
-  SET_DEFAULT(${VAR} "${DEFAULT_VAL}")
+  set_default(${VAR} "${DEFAULT_VAL}")
 
-  SET(ENV_${VAR} $ENV{${VAR}})
-  IF (NOT "${ENV_${VAR}}" STREQUAL "")
-    PRINT_VAR(ENV_${VAR})
-    SET(${VAR} ${ENV_${VAR}})
-  ENDIF()
+  set(ENV_${VAR} $ENV{${VAR}})
+  if (NOT "${ENV_${VAR}}" STREQUAL "")
+    print_var(ENV_${VAR})
+    set(${VAR} ${ENV_${VAR}})
+  endif()
 
-  PRINT_VAR(${VAR})
+  print_var(${VAR})
 
-ENDMACRO()
+endmacro()

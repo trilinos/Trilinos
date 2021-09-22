@@ -52,6 +52,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "Teuchos_DataAccess.hpp"
 
 #include <memory> // std::shared_ptr
 
@@ -2150,11 +2151,22 @@ namespace Tpetra {
                     const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
                     const bool sortEachRow = true);
 
+    /// \brief Replace the current domain Map with the given objects.
+    ///
+    /// The matrix's Import object will be recomputed if needed.
+    ///
+    /// \param newDomainMap [in] New domain Map.  Must be nonnull.
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// 
+    void
+    replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap);
+
     /// \brief Replace the current domain Map and Import with the given objects.
     ///
     /// \param newDomainMap [in] New domain Map.  Must be nonnull.
-    /// \param newImporter [in] Optional Import object.  If null, we
-    ///   will compute it.
+    /// \param newImporter [in] Optional Import object.  If null, the new Domain Map must equal the matrix's Column Map
     ///
     /// \pre The matrix must be fill complete:
     ///   <tt>isFillComplete() == true</tt>.
@@ -2162,9 +2174,40 @@ namespace Tpetra {
     ///   same as the column Map of the matrix.
     /// \pre If the Import is provided, its source Map must be the
     ///   same as the provided new domain Map.
+    /// \pre If the Import is not provided, the new Domain Map must be the
+    ///   same as the matrix's Column Map.
     void
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                  Teuchos::RCP<const import_type>& newImporter);
+
+    /// \brief Replace the current range Map with the given objects.
+    ///
+    /// The matrix's Export object will be recomputed if needed.
+    ///
+    /// \param newRangeMap [in] New Range Map.  Must be nonnull.
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// 
+    void
+    replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap);
+
+    /// \brief Replace the current Range Map and Export with the given objects.
+    ///
+    /// \param newRangeMap [in] New domain Map.  Must be nonnull.
+    /// \param newExporter [in] Optional Export object.  If null, the new Range Map must equal the matrix's Row Map
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// \pre If the Export is provided, its target Map must be the
+    ///   same as the new Range Map of the matrix.
+    /// \pre If the Export is provided, its source Map must be the
+    ///   same as the Row Map of the matrix
+    /// \pre If the Export is not provided, the new Range Map must be the
+    ///   same as the matrix's Row Map.
+    void
+    replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                                Teuchos::RCP<const export_type>& newExporter);
 
     /// \brief Remove processes owning zero rows from the Maps and their communicator.
     ///
@@ -3074,8 +3117,7 @@ public:
        buffer_device_type>& exportLIDs,
      Kokkos::DualView<char*, buffer_device_type>& exports,
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-     size_t& constantNumPackets,
-     Distributor& distor) override;
+     size_t& constantNumPackets) override;
 
   private:
     /// \brief Unpack the imported column indices and values, and
@@ -3087,7 +3129,6 @@ public:
       Kokkos::DualView<char*, buffer_device_type> imports,
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
       const size_t constantNumPackets,
-      Distributor& distor,
       const CombineMode combineMode,
       const bool verbose);
 
@@ -3100,7 +3141,6 @@ public:
       Kokkos::DualView<char*, buffer_device_type> imports,
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
       const size_t constantNumPackets,
-      Distributor& distor,
       const CombineMode combineMode);
 
   public:
@@ -3119,7 +3159,6 @@ public:
      Kokkos::DualView<char*, buffer_device_type> imports,
      Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
      const size_t constantNumPackets,
-     Distributor& distor,
      const CombineMode CM) override;
 
     /// \brief Pack this object's data for an Import or Export.
@@ -3138,8 +3177,6 @@ public:
     ///   output, then that number gives the constant number of
     ///   entries for all packed rows <i>on all processes in the
     ///   matrix's communicator</i>.
-    /// \param distor [in/out] The Distributor object which implements
-    ///   the Import or Export operation that is calling this method.
     ///
     /// \subsection Tpetra_CrsMatrix_packNew_summary Packing scheme
     ///
@@ -3233,8 +3270,7 @@ public:
     packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
              Kokkos::DualView<char*, buffer_device_type>& exports,
              const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-             size_t& constantNumPackets,
-             Distributor& dist) const;
+             size_t& constantNumPackets) const;
 
   private:
     /// \brief Pack this matrix (part of implementation of packAndPrepare).
@@ -3247,8 +3283,7 @@ public:
     packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                       Kokkos::DualView<char*, buffer_device_type>& exports,
                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-                      size_t& constantNumPackets,
-                      Distributor& distor) const;
+                      size_t& constantNumPackets) const;
 
     /// \brief Pack data for the current row to send.
     ///

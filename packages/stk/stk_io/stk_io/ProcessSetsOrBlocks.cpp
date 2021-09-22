@@ -393,7 +393,10 @@ void process_edges(stk::mesh::BulkData& bulk, std::vector<INT>& edge_ids, std::v
             }
             bulk.declare_relation(edge, node, j, perm, scratch1, scratch2, scratch3);
         }
-        stk::mesh::impl::connect_edge_to_elements(bulk, edge);
+        bool connectedElems = stk::mesh::impl::connect_edge_to_elements(bulk, edge);
+        if (!connectedElems) {
+          bulk.destroy_entity(edge);
+        }
     }
 }
 

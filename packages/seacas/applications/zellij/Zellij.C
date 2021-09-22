@@ -140,7 +140,7 @@ template <typename INT> double zellij(SystemInterface &interFace, INT /*dummy*/)
   double end = Ioss::Utils::timer();
   double hwm = (double)Ioss::Utils::get_hwm_memory_info() / 1024.0 / 1024.0;
   if (pu.parallel_rank() == 0) {
-    fmt::print("\n Total Execution time     = {:.5} seconds.\n", end - begin);
+    fmt::print("\n Total Execution Time     = {:.5} seconds.\n", end - begin);
     fmt::print(" High-Water Memory Use    = {:.3} MiBytes.\n", hwm);
   }
   return (end - begin);

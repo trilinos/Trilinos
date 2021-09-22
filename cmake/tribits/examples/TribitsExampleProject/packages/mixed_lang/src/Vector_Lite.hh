@@ -572,7 +572,7 @@ inline const Vector_Lite<T, N> operator+(const T                  a,
 
 //---------------------------------------------------------------------------//
 /*!
- * \brief \a b subracted from all elements of \a a.
+ * \brief \a b subtracted from all elements of \a a.
  */
 template <class T, size_t N>
 inline const Vector_Lite<T, N> operator-(const Vector_Lite<T, N> &a,
@@ -641,7 +641,7 @@ inline const Vector_Lite<T, N> operator-(const Vector_Lite<T, N> &a)
 }
 
 //---------------------------------------------------------------------------//
-// STREAM OPEATORS
+// STREAM OPERATORS
 //---------------------------------------------------------------------------//
 /*!
  * \brief Write the elements of \a a to stream \a os.

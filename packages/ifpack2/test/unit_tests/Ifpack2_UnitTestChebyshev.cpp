@@ -151,6 +151,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Chebyshev, Test0, Scalar, LocalOrdinal,
     Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
     TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), tol);
   }
+
+  crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, -one);
+  Scalar n = Teuchos::as<Scalar>(rowmap->getGlobalNumElements());
+  Scalar expectedLambdaMax = one-std::cos(Teuchos::ScalarTraits<Scalar>::pi()*n/(n+1));
+
+  prec.setMatrix(crsmatrix);
+
+  params.set("debug", true);
+  params.remove("chebyshev: max eigenvalue");
+  params.remove("chebyshev: min eigenvalue");
+
+  params.set("eigen-analysis: type", "power method");
+  params.set("chebyshev: eigenvalue max iterations",30);
+  prec.setParameters(params);
+  prec.compute();
+
+  TEST_FLOATING_EQUALITY(prec.getLambdaMaxForApply(),expectedLambdaMax,2e-2);
+
+  params.set("eigen-analysis: type", "cg");
+  params.set("chebyshev: eigenvalue max iterations",10);
+  prec.setParameters(params);
+  prec.compute();
+
+  TEST_FLOATING_EQUALITY(prec.getLambdaMaxForApply(),expectedLambdaMax,2e-2);
 }
 
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \

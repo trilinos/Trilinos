@@ -76,11 +76,6 @@
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of Distributor
-class Distributor;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 //
 // Users must never rely on anything in the Details namespace.
 //
@@ -838,8 +833,6 @@ unpackAndCombineIntoCrsArrays(
 ///   to expect a possibly /// different ("nonconstant") number of packets per local index
 ///   (i.e., a possibly different number of entries per row).
 ///
-/// \param distor [in] The distributor (not used)
-///
 /// \param combineMode [in] the mode to use for combining
 ///
 /// \param numSameIds [in]
@@ -864,7 +857,6 @@ unpackAndCombineWithOwningPIDsCount(
     const Teuchos::ArrayView<const typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packet_type> &imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     size_t /* constantNumPackets */,
-    Distributor &/* distor */,
     CombineMode /* combineMode */,
     size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -936,7 +928,6 @@ unpackAndCombineIntoCrsArrays(
     const Teuchos::ArrayView<const typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packet_type>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const size_t /* constantNumPackets */,
-    Distributor& /* distor */,
     const CombineMode /* combineMode */,
     const size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -1075,7 +1066,6 @@ unpackAndCombineIntoCrsArrays(
     const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type>&, \
     const Teuchos::ArrayView<const size_t>&, \
     const size_t, \
-    Distributor&, \
     const CombineMode, \
     const size_t, \
     const Teuchos::ArrayView<const LO>&, \
@@ -1094,7 +1084,6 @@ unpackAndCombineIntoCrsArrays(
     const Teuchos::ArrayView<const typename CrsGraph<LO,GO,NT>::packet_type> &, \
     const Teuchos::ArrayView<const size_t>&, \
     size_t, \
-    Distributor &, \
     CombineMode, \
     size_t, \
     const Teuchos::ArrayView<const LO>&, \

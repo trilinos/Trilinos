@@ -28,7 +28,7 @@ endif()
 # B) Include modules
 
 set(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
-SET(CMAKE_MODULE_PATH
+set(CMAKE_MODULE_PATH
    ${${PROJECT_NAME}_TRIBITS_DIR}/core/utils
    ${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch
    )

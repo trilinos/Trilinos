@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,12 +44,12 @@ int main(int argc, char **argv)
   int *num_elem_in_block  = NULL;
   int *num_nodes_per_elem = NULL;
   int *num_attr           = NULL;
-  int  num_nodes_in_set, num_elem_in_set;
+  int  num_nodes_in_set;
   int  num_sides_in_set, num_df_in_set;
   int  list_len, elem_list_len, df_list_len;
-  int  node_num, time_step, var_index, beg_time, end_time, elem_num;
+  int  time_step, var_index, beg_time, end_time, elem_num;
   int  CPU_word_size, IO_word_size;
-  int  num_props, prop_value, *prop_values;
+  int  num_props, prop_value;
   int  idum;
 
   float  time_value, *time_values, *var_values;
@@ -58,12 +58,11 @@ int main(int argc, char **argv)
   float  version, fdum;
 
   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char *block_names[10], *nset_names[10], *sset_names[10];
   char *attrib_names[10];
   char *elem_type[10];
   char  name[MAX_STR_LENGTH + 1];
   char  title[MAX_LINE_LENGTH + 1];
-  char *cdum = 0;
+  char *cdum = NULL;
   char *prop_names[3];
 
   CPU_word_size = 0; /* sizeof(float) */
@@ -112,7 +111,7 @@ int main(int argc, char **argv)
     z = (float *)calloc(num_nodes, sizeof(float));
   }
   else {
-    z = 0;
+    z = NULL;
   }
 
   error = ex_get_coord(exoid, x, y, z);
@@ -209,6 +208,7 @@ int main(int argc, char **argv)
     error = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
     printf("\nafter ex_get_elem_blk_ids, error = %3d\n", error);
 
+    char *block_names[10];
     for (i = 0; i < num_elem_blk; i++) {
       block_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
@@ -350,6 +350,7 @@ int main(int argc, char **argv)
     error = ex_get_ids(exoid, EX_NODE_SET, ids);
     printf("\nafter ex_get_node_set_ids, error = %3d\n", error);
 
+    char *nset_names[10];
     for (i = 0; i < num_node_sets; i++) {
       nset_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
@@ -439,7 +440,7 @@ int main(int argc, char **argv)
     for (i = 0; i < num_props; i++) {
       prop_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
-    prop_values = (int *)calloc(num_node_sets, sizeof(int));
+    int *prop_values = (int *)calloc(num_node_sets, sizeof(int));
 
     error = ex_get_prop_names(exoid, EX_NODE_SET, prop_names);
     printf("after ex_get_prop_names, error = %d\n", error);
@@ -541,6 +542,7 @@ int main(int argc, char **argv)
     error = ex_get_ids(exoid, EX_SIDE_SET, ids);
     printf("\nafter ex_get_side_set_ids, error = %3d\n", error);
 
+    char *sset_names[10];
     for (i = 0; i < num_side_sets; i++) {
       sset_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
@@ -564,12 +566,12 @@ int main(int argc, char **argv)
       free(sset_names[i]);
 
       /* Note: The # of elements is same as # of sides!  */
-      num_elem_in_set = num_sides_in_set;
-      elem_list       = (int *)calloc(num_elem_in_set, sizeof(int));
-      side_list       = (int *)calloc(num_sides_in_set, sizeof(int));
-      node_ctr_list   = (int *)calloc(num_elem_in_set, sizeof(int));
-      node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
-      dist_fact       = (float *)calloc(num_df_in_set, sizeof(float));
+      int num_elem_in_set = num_sides_in_set;
+      elem_list           = (int *)calloc(num_elem_in_set, sizeof(int));
+      side_list           = (int *)calloc(num_sides_in_set, sizeof(int));
+      node_ctr_list       = (int *)calloc(num_elem_in_set, sizeof(int));
+      node_list           = (int *)calloc(num_elem_in_set * 21, sizeof(int));
+      dist_fact           = (float *)calloc(num_df_in_set, sizeof(float));
 
       error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);
       printf("\nafter ex_get_side_set, error = %3d\n", error);
@@ -1003,7 +1005,7 @@ int main(int argc, char **argv)
 
     var_values = (float *)calloc(num_time_steps, sizeof(float));
 
-    node_num = 1;
+    int node_num = 1;
     error = ex_get_var_time(exoid, EX_NODAL, var_index, node_num, beg_time, end_time, var_values);
     printf("\nafter ex_get_nodal_var_time, error = %3d\n", error);
 

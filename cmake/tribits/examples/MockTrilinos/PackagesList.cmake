@@ -1,4 +1,4 @@
-TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+tribits_repository_define_packages(
   TrilinosFramework   cmake                           PT
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
@@ -28,6 +28,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
 # NOTE: Sacado was really PT but for testing purpose it is made ST
 # NOTE: Belos was really PT but for testing purpose it is made ST
 
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(AlwaysMissing)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(ML BadSystem1)
-TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Ifpack BadSystem1 BadSystem2)
+tribits_allow_missing_external_packages(AlwaysMissing)
+tribits_disable_package_on_platforms(ML BadSystem1)
+tribits_disable_package_on_platforms(Ifpack BadSystem1 BadSystem2)

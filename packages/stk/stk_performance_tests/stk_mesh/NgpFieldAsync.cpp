@@ -142,10 +142,10 @@ public:
     stk::performance_tests::move_elements_to_other_blocks(get_bulk(), m_numElemsPerDim);
   }
 
-  void pass_time_on_device(const stk::mesh::ExecSpace& space, unsigned iterationSpent = 100)
+  void pass_time_on_device(const stk::ngp::ExecSpace& space, unsigned iterationSpent = 100)
   {
-    typedef typename Kokkos::TeamPolicy<stk::mesh::ExecSpace>::member_type TeamHandleType;
-    const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::ExecSpace>(space, 10, Kokkos::AUTO);
+    typedef typename Kokkos::TeamPolicy<stk::ngp::ExecSpace>::member_type TeamHandleType;
+    const auto& teamPolicy = Kokkos::TeamPolicy<stk::ngp::ExecSpace>(space, 10, Kokkos::AUTO);
 
     Kokkos::parallel_for("run_with_team_policy", teamPolicy,
                         KOKKOS_LAMBDA(const TeamHandleType & team) {
@@ -350,7 +350,7 @@ TEST_F(NgpFieldAsyncTest, SyncToDeviceAsyncTiming)
       reset_fields_values_on_host(fields);
       update_fields_values_on_host(fields);
 
-      std::vector<stk::mesh::ExecSpaceWrapper<stk::mesh::ExecSpace>> spaces;
+      std::vector<stk::mesh::ExecSpaceWrapper<stk::ngp::ExecSpace>> spaces;
       for(unsigned i = 0; i < numStreams; i++) {
         auto space = stk::mesh::get_execution_space_with_stream();
         spaces.push_back(space);
@@ -431,7 +431,7 @@ TEST_F(NgpFieldAsyncTest, SyncToHostAsyncTiming)
       set_fields_values_on_device(fields, initialValue);
       set_fields_values_on_device(fields, setValue);
 
-      std::vector<stk::mesh::ExecSpaceWrapper<stk::mesh::ExecSpace>> spaces;
+      std::vector<stk::mesh::ExecSpaceWrapper<stk::ngp::ExecSpace>> spaces;
       for(unsigned i = 0; i < numStreams; i++) {
         auto space = stk::mesh::get_execution_space_with_stream();
         spaces.push_back(space);
@@ -510,7 +510,7 @@ TEST_F(NgpFieldAsyncTest, SyncAsyncTiming)
       reset_fields_values_on_host(fields);
       update_fields_values_on_host(fields);
 
-      std::vector<stk::mesh::ExecSpaceWrapper<stk::mesh::ExecSpace>> spaces;
+      std::vector<stk::mesh::ExecSpaceWrapper<stk::ngp::ExecSpace>> spaces;
       for(unsigned i = 0; i < numStreams; i++) {
         auto space = stk::mesh::get_execution_space_with_stream();
         spaces.push_back(space);
@@ -602,7 +602,7 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToDeviceAsyncTiming)
       reset_fields_values_on_host(fields);
       update_fields_values_on_host(fields);
 
-      std::vector<stk::mesh::ExecSpaceWrapper<stk::mesh::ExecSpace>> spaces;
+      std::vector<stk::mesh::ExecSpaceWrapper<stk::ngp::ExecSpace>> spaces;
       for(unsigned i = 0; i < numStreams; i++) {
         auto space = stk::mesh::get_execution_space_with_stream();
         spaces.push_back(space);
@@ -695,7 +695,7 @@ TEST_F(NgpFieldAsyncTest, PartialSyncToHostAsyncTiming)
       set_fields_values_on_device(fields, initialValue);
       set_fields_values_on_device(fields, setValue);
 
-      std::vector<stk::mesh::ExecSpaceWrapper<stk::mesh::ExecSpace>> spaces;
+      std::vector<stk::mesh::ExecSpaceWrapper<stk::ngp::ExecSpace>> spaces;
       for(unsigned i = 0; i < numStreams; i++) {
         auto space = stk::mesh::get_execution_space_with_stream();
         spaces.push_back(space);
@@ -756,7 +756,7 @@ TEST_F(NgpFieldAsyncTest, AsyncDeepCopyTiming)
     ngpFields.push_back(&ngpIntField);
   }
 
-  std::vector<stk::mesh::ExecSpaceWrapper<stk::mesh::ExecSpace>> spaces;
+  std::vector<stk::mesh::ExecSpaceWrapper<stk::ngp::ExecSpace>> spaces;
   for(unsigned i = 0; i < numStreams; i++) {
     auto space = stk::mesh::get_execution_space_with_stream();
     spaces.push_back(space);

@@ -68,14 +68,7 @@ namespace ExoModules {
     return true;
   }
 
-  void N2EExoWriter::setModelTitle(const std::string &title)
-  {
-    std::string tmp = title;
-    if (title.length() >= MAX_LINE_LENGTH - 1) {
-      tmp = title.substr(0, MAX_LINE_LENGTH - 1);
-    }
-    strncat(this->modelTitle, tmp.c_str(), MAX_LINE_LENGTH - 1);
-  }
+  void N2EExoWriter::setModelTitle(const std::string &title) { this->modelTitle = title; }
 
   bool N2EExoWriter::writeFile()
   {
@@ -138,7 +131,8 @@ namespace ExoModules {
   {
     bool result{true};
 
-    int ret = ex_put_init(this->exoFileID, this->modelTitle, 3 /* 3D models only*/,
+    auto tmp = this->modelTitle.substr(0, MAX_LINE_LENGTH - 1);
+    int  ret = ex_put_init(this->exoFileID, tmp.c_str(), 3 /* 3D models only*/,
                           this->gridList.size(), this->elementList.size(), this->sections.size(), 0,
                           0); // Make your fancy pants nodes and side sets elsewherem, laddy.
 

@@ -44,7 +44,7 @@ project in PackageList.cmake and a couple TPLs defined in
 TPLsList.cmake.  Recall that the package definitions looks like the
 following::
 
-  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+  tribits_repository_define_packages(
     NameOfPackageA     location/of/packageA        <options>
     NameOfPackageB     path/to/packageB            <options>
   )
@@ -52,12 +52,12 @@ following::
 you must specify the name of the package and where it is located.
 Each package must contain a CmakeLists.cmake file and a
 Dependencies.cmake file.  The CmakeLists file defines targets for this
-package and must begin with a call to TRIBITS_PACKAGE() and end with
-a call to TRIBITS_PACKAGE_POSTPROCESS().  
+package and must begin with a call to tribits_package() and end with
+a call to tribits_package_postprocess().  
 
 Tribits TPLs are defined similarly in TPLsList.cmake::
 
-  TRIBITS_REPOSITORY_DEFINE_TPLS(
+  tribits_repository_define_tpls(
     NameOfTPL-1     location/of/TPL-1        <options>
     NameOfTPL-2     path/to/TPL-2            <options>
   )
@@ -66,7 +66,7 @@ Tribits Packages
 -----------------
 
 A Package is software that will be built at the same time as the rest
-of your project.  It is a modular peice of your software that you may
+of your project.  It is a modular piece of your software that you may
 want to enable or disable.  A tribits package can have dependencies on
 other packages or on TPLs.
 
@@ -86,7 +86,7 @@ For <options> you will see PT, ST, or EX.
 
 - *PT (Primary Tested)* - This tpl is essential to developer
   productivity and would adversly effect customers if broken.
-- *ST (Seconday Tested)* - This tpl is important to the project but
+- *ST (Secondary Tested)* - This tpl is important to the project but
   may be difficult to install or the TPL is not available on all
   deveopment platforms.
 - *EX (Experimental)* - TPL is experimental, unstable and/or difficult to
@@ -104,7 +104,7 @@ Important things to know when listing packages
 * TriBITS packages must be listed in dependency order in
   the PackageList.cmake file.  A package must be listed after all
   packages on which it depends. 
-* Circular dependencies are not allowd in TriBITS.  If you have
+* Circular dependencies are not allowed in TriBITS.  If you have
   packages with circular dependencies then they really should be one
   package
 
@@ -116,7 +116,7 @@ TriBITS TPLs
 A TPL is software you depend on that is built and installed prior to
 building your project from source.  For example, many projects dependo
 nthe boost libraries but it is rare atha anyone wants to build them as
-part of bulding their project.  Projects assume that they areinstalled
+part of building their project.  Projects assume that they areinstalled
 already and we just need to point tribits to them.  TPLs are assumed to
 be self contained and will not trigger additional dependencies in your
 build.  TPLs are always leaf nodes in the dependency tree.

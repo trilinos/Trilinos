@@ -4392,6 +4392,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap)
+  {
+    const char tfecfFuncName[] = "replaceDomainMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceDomainMap (newDomainMap);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                Teuchos::RCP<const import_type>& newImporter)
   {
@@ -4403,6 +4418,37 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       " method necessarily must modify the graph, since the graph owns the "
       "matrix's domain Map and Import objects.");
     myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap)
+  {
+    const char tfecfFuncName[] = "replaceRangeMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceRangeMap (newRangeMap);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                              Teuchos::RCP<const export_type>& newExporter)
+  {
+    const char tfecfFuncName[] = "replaceRangeMapAndExporter: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceRangeMapAndExporter (newRangeMap, newExporter);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -6521,8 +6567,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
    Kokkos::DualView<char*, buffer_device_type>& exports,
    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets,
-   Distributor& distor)
+   size_t& constantNumPackets)
   {
     using Details::Behavior;
     using Details::dualViewStatusToString;
@@ -6599,7 +6644,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       try {
         srcCrsMat->packNew (exportLIDs, exports, numPacketsPerLID,
-                            constantNumPackets, distor);
+                            constantNumPackets);
       }
       catch (std::exception& e) {
         lclBad = 1;
@@ -6659,7 +6704,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Teuchos::Array* objects.
       try {
         srcRowMat->pack (exportLIDs_av, exports_a, numPacketsPerLID_av,
-                         constantNumPackets, distor);
+                         constantNumPackets);
       }
       catch (std::exception& e) {
         lclBad = 1;
@@ -6996,19 +7041,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   packNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
            Kokkos::DualView<char*, buffer_device_type>& exports,
            const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-           size_t& constantNumPackets,
-           Distributor& dist) const
+           size_t& constantNumPackets) const
   {
     // The call to packNew in packAndPrepare catches and handles any exceptions.
     Details::ProfilingRegion region_pack_new("Tpetra::CrsMatrix::packNew", "Import/Export");
     if (this->isStaticGraph ()) {
       using ::Tpetra::Details::packCrsMatrixNew;
       packCrsMatrixNew (*this, exports, numPacketsPerLID, exportLIDs,
-                        constantNumPackets, dist);
+                        constantNumPackets);
     }
     else {
       this->packNonStaticNew (exportLIDs, exports, numPacketsPerLID,
-                              constantNumPackets, dist);
+                              constantNumPackets);
     }
   }
 
@@ -7018,8 +7062,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                     Kokkos::DualView<char*, buffer_device_type>& exports,
                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& /* distor */) const
+                    size_t& constantNumPackets) const
   {
     using Details::Behavior;
     using Details::dualViewStatusToString;
@@ -7302,7 +7345,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
    Kokkos::DualView<char*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
    const size_t constantNumPackets,
-   Distributor& distor,
    const CombineMode combineMode)
   {
     using Details::Behavior;
@@ -7374,7 +7416,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       int lclBad = 0;
       try {
         unpackAndCombineImpl(importLIDs, imports, numPacketsPerLID,
-                             constantNumPackets, distor, combineMode,
+                             constantNumPackets, combineMode,
                              verbose);
       } catch (std::exception& e) {
         lclBad = 1;
@@ -7401,7 +7443,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
     else {
       unpackAndCombineImpl(importLIDs, imports, numPacketsPerLID,
-                           constantNumPackets, distor, combineMode,
+                           constantNumPackets, combineMode,
                            verbose);
     }
 
@@ -7430,7 +7472,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Kokkos::DualView<char*, buffer_device_type> imports,
     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
     const size_t constantNumPackets,
-    Distributor & distor,
     const CombineMode combineMode,
     const bool verbose)
   {
@@ -7460,7 +7501,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       using Details::unpackCrsMatrixAndCombineNew;
       unpackCrsMatrixAndCombineNew(*this, imports, numPacketsPerLID,
                                    importLIDs, constantNumPackets,
-                                   distor, combineMode);
+                                   combineMode);
     }
     else {
       {
@@ -7495,7 +7536,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       unpackAndCombineImplNonStatic(importLIDs, imports,
                                     numPacketsPerLID,
                                     constantNumPackets,
-                                    distor, combineMode);
+                                    combineMode);
     }
 
     if (verbose) {
@@ -7514,7 +7555,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Kokkos::DualView<char*, buffer_device_type> imports,
     Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
     const size_t constantNumPackets,
-    Distributor& distor,
     const CombineMode combineMode)
   {
     using Kokkos::View;
@@ -8348,7 +8388,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     // The basic algorithm here is:
     //
-    // 1. Call the moral equivalent of "distor.do" to handle the import.
+    // 1. Call the moral equivalent of "Distor.do" to handle the import.
     // 2. Copy all the Imported and Copy/Permuted data into the raw
     //    CrsMatrix / CrsGraphData pointers, still using GIDs.
     // 3. Call an optimized version of MakeColMap that avoids the
@@ -8603,8 +8643,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                      numExportPacketsPerLID,
                                      ExportLIDs,
                                      SourcePids,
-                                     constantNumPackets,
-                                     Distor);
+                                     constantNumPackets);
       }
       catch (std::exception& e) {
         errStrm << "Proc " << myRank << ": packCrsMatrixWithOwningPIDs threw: "
@@ -8650,8 +8689,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    numExportPacketsPerLID,
                                    ExportLIDs,
                                    SourcePids,
-                                   constantNumPackets,
-                                   Distor);
+                                   constantNumPackets);
       if (verbose) {
         std::ostringstream os;
         os << *verbosePrefix << "Done with packCrsMatrixWithOwningPIDs"
@@ -8892,7 +8930,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                            hostImports,
                                            numImportPacketsPerLID,
                                            constantNumPackets,
-                                           Distor,
                                            INSERT,
                                            NumSameIDs,
                                            PermuteToLIDs,
@@ -8938,7 +8975,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    hostImports,
                                    numImportPacketsPerLID,
                                    constantNumPackets,
-                                   Distor,
                                    INSERT,
                                    NumSameIDs,
                                    PermuteToLIDs,

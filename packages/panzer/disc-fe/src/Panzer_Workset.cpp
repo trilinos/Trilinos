@@ -83,9 +83,14 @@ applyBV2Orientations(const int num_cells,
   const auto & local_orientations = *orientations_interface->getOrientations();
   std::vector<Intrepid2::Orientation> workset_orientations(num_cells);
 
+  auto local_cell_ids_h = Kokkos::create_mirror_view(local_cell_ids);
+  Kokkos::deep_copy(local_cell_ids_h, local_cell_ids);
+
   // We can only apply orientations to owned and ghost cells - virtual cells are ignored (no orientations available)
+  auto local_cell_ids_host = Kokkos::create_mirror_view(local_cell_ids);
+  Kokkos::deep_copy(local_cell_ids_host, local_cell_ids);
   for(int i=0; i<num_cells; ++i)
-    workset_orientations[i] = local_orientations[local_cell_ids[i]];
+    workset_orientations[i] = local_orientations[local_cell_ids_host[i]];
   basis_values.applyOrientations(workset_orientations,num_cells);
 }
 
@@ -271,7 +276,7 @@ setup(const panzer::LocalMeshPartition & partition,
 
     // Copy vertices over
     const auto partition_vertices = partition.cell_vertices;
-    auto cvc = cell_vertex_coordinates;
+    auto cvc = cell_vertex_coordinates.get_view();
     Kokkos::parallel_for(num_cells, KOKKOS_LAMBDA (int i) {
       for(int j=0;j<num_vertices_per_cell;++j)
         for(int k=0;k<num_dims_per_vertex;++k)
@@ -423,14 +428,14 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
     biv = Teuchos::rcp(new BasisValues2<double>());
 
-    biv->setOrientations(options_.orientations_);
-    biv->setWeightedMeasure(iv.weighted_measure);
-    biv->setCellVertexCoordinates(cell_vertex_coordinates);
-
     if(integration_description.getType() == IntegrationDescriptor::VOLUME)
       biv->setupUniform(bir, iv.cub_points, iv.jac, iv.jac_det, iv.jac_inv);
     else
       biv->setup(bir, iv.ref_ip_coordinates, iv.jac, iv.jac_det, iv.jac_inv);
+
+    biv->setOrientations(options_.orientations_, numOwnedCells()+numGhostCells());
+    biv->setWeightedMeasure(iv.weighted_measure);
+    biv->setCellVertexCoordinates(cell_vertex_coordinates);
 
   } else {
 
@@ -552,10 +557,10 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
     bpv = Teuchos::rcp(new BasisValues2<double>());
 
-    bpv->setOrientations(options_.orientations_);
-    bpv->setCellVertexCoordinates(cell_vertex_coordinates);
-
     bpv->setupUniform(bir, pv.coords_ref, pv.jac, pv.jac_det, pv.jac_inv);
+
+    bpv->setOrientations(options_.orientations_, numOwnedCells()+numGhostCells());
+    bpv->setCellVertexCoordinates(cell_vertex_coordinates);
 
   } else {
 

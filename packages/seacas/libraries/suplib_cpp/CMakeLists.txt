@@ -12,6 +12,7 @@ INCLUDE_DIRECTORIES(
   )
 
 SET(SOURCES
+  FileInfo.C
   GetLongOpt.C
   smart_assert.C
   iqsort.C

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,95 +50,32 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
              double *          weightsum   /* sum of vweights in each set (in and out) */
 )
 {
-  struct bilist **to_buckets;           /* buckets I'm moving to */
-  struct bilist **from_buckets;         /* buckets I'm moving from */
-  struct bilist * to_listspace;         /* list structure I'm moving to */
-  struct bilist * from_listspace;       /* list structure I'm moving from */
-  struct bilist * out_list;             /* list of vtxs moved out of separator */
-  int *           to_dvals;             /* d-values I'm moving to */
-  int *           from_dvals;           /* d-values I'm moving from */
-  extern double   kl_bucket_time;       /* time spent in KL bucketsort */
-  extern int      KL_BAD_MOVES;         /* # bad moves in a row to stop KL */
-  extern int      DEBUG_KL;             /* debug flag for KL */
-  extern int      KL_NTRIES_BAD;        /* number of unhelpful passes before quitting */
-  extern int      KL_MAX_PASS;          /* maximum # outer KL loops */
-  int *           bspace;               /* list of active vertices for bucketsort */
-  int *           edges;                /* edge list for a vertex */
-  int *           edges2;               /* edge list for a vertex */
-  int *           bdy_ptr;              /* loops through bndy_list */
-  double          total_weight;         /* weight of all vertices */
-  double          partial_weight;       /* weight of vertices not in separator */
-  double          ratio;                /* fraction of weight not in separator */
-  double          time;                 /* timing parameter */
-  double          delta0;               /* largest negative deviation from goal size */
-  double          delta1;               /* largest negative deviation from goal size */
-  double          left_imbalance = 0.0; /* imbalance if I move to the left */
-  double          right_imbalance;      /* imbalance if I move to the right */
-  double          balance_val;          /* how imbalanced is it */
-  double          balance_best;         /* best balance yet if trying hard */
-  int             flag;                 /* condition indicator */
-  int             to = -1, from;        /* sets moving into / out of */
-  int             rtop, ltop;           /* top of each set of buckets */
-  int *           to_top;               /* ptr to top of set moving to */
-  ssize_t         lvtx, rvtx;           /* next vertex to move left/right */
-  int             lweight, rweight;     /* weights of moving vertices */
-  int             weightfrom = 0;       /* weight moving out of a set */
-  int             list_length;          /* how long is list of vertices to bucketsort? */
-  int             balanced;             /* is partition balanced? */
-  int             temp_balanced;        /* is intermediate partition balanced? */
-  int             ever_balanced;        /* has any partition been balanced? */
-  ssize_t         bestvtx = -1;         /* best vertex to move */
-  ssize_t         bestval = -1;         /* best change in value for a vtx move */
-  int             vweight;              /* weight of best vertex */
-  int             gtotal;               /* sum of changes from moving */
-  int             improved;             /* total improvement from KL */
-  double          bestg;                /* maximum gtotal found in KL loop */
-  double          bestg_min;            /* smaller than any possible bestg */
-  int             beststep;             /* step where maximum value occurred */
-  int             bestlength;           /* step where maximum value occurred */
-  int             neighbor;             /* neighbor of a vertex */
-  int             step_cutoff;          /* number of negative steps in a row allowed */
-  int             cost_cutoff;          /* amount of negative d-values allowed */
-  int             neg_steps;            /* number of negative steps in a row */
-  int             neg_cost;             /* decrease in sum of d-values */
-  int             vtx;                  /* vertex number */
-  int             dval;                 /* dval of a vertex */
-  int             group, group2;        /* set that a vertex is assigned to */
-  int             left_too_big;         /* is left set too large? */
-  int             right_too_big;        /* is right set too large? */
-  int             vwgt;                 /* weight of a vertex */
-  int             gain;                 /* reduction in separator due to a move */
-  int             neighbor2;            /* neighbor of a vertex */
-  int             step;                 /* loops through movements of vertices */
-  int             parity;               /* sort forwards or backwards? */
-  int             done;                 /* has termination criteria been achieved? */
-  int             nbad;                 /* number of unhelpful passes in a row */
-  int             npass;                /* total number of passes */
-  int             nbadtries;            /* number of unhelpful passes before quitting */
-  int             enforce_balance;      /* force a balanced partition? */
-  int             enforce_balance_hard; /* really force a balanced partition? */
-  int             i, j, k;              /* loop counters */
+  extern double kl_bucket_time; /* time spent in KL bucketsort */
+  extern int    KL_BAD_MOVES;   /* # bad moves in a row to stop KL */
+  extern int    DEBUG_KL;       /* debug flag for KL */
+  extern int    KL_NTRIES_BAD;  /* number of unhelpful passes before quitting */
+  extern int    KL_MAX_PASS;    /* maximum # outer KL loops */
 
   double seconds(), drandom();
   int    make_sep_list();
   void   bucketsortsv(), clear_dvals(), p1bucket();
   void   removebilist(), movebilist(), add2bilist();
 
-  nbadtries = KL_NTRIES_BAD;
+  int nbadtries = KL_NTRIES_BAD;
 
-  enforce_balance      = FALSE;
-  enforce_balance_hard = FALSE;
+  int enforce_balance      = FALSE;
+  int enforce_balance_hard = FALSE;
 
-  total_weight = goal[0] + goal[1];
+  double total_weight = goal[0] + goal[1];
 
-  bspace = smalloc_ret((nvtxs + 1) * sizeof(int));
+  int *bspace = smalloc_ret((nvtxs + 1) * sizeof(int));
 
   if (bspace == NULL) {
     return (1);
   }
 
-  bdy_ptr     = *bndy_list;
-  list_length = 0;
+  int *bdy_ptr     = *bndy_list;
+  int  list_length = 0;
   while (*bdy_ptr != 0) {
     bspace[list_length++] = *bdy_ptr++;
   }
@@ -147,43 +84,44 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
 
   clear_dvals(graph, nvtxs, ldvals, rdvals, bspace, list_length);
 
-  step_cutoff = KL_BAD_MOVES;
-  cost_cutoff = maxdval * step_cutoff / 7;
+  int step_cutoff = KL_BAD_MOVES;
+  int cost_cutoff = maxdval * step_cutoff / 7;
   if (cost_cutoff < step_cutoff) {
     cost_cutoff = step_cutoff;
   }
 
-  partial_weight = weightsum[0] + weightsum[1];
-  ratio          = partial_weight / total_weight;
-  delta0         = fabs(weightsum[0] - goal[0] * ratio);
-  delta1         = fabs(weightsum[1] - goal[1] * ratio);
-  balanced =
+  double partial_weight = weightsum[0] + weightsum[1];
+  double ratio          = partial_weight / total_weight;
+  double delta0         = fabs(weightsum[0] - goal[0] * ratio);
+  double delta1         = fabs(weightsum[1] - goal[1] * ratio);
+  int    balanced =
       (delta0 + delta1 <= max_dev) && weightsum[0] != total_weight && weightsum[1] != total_weight;
 
-  bestg_min = -2.0 * nvtxs * maxdval;
-  parity    = FALSE;
-  nbad      = 0;
-  npass     = 0;
-  improved  = 0;
-  done      = FALSE;
+  double bestg_min = -2.0 * nvtxs * maxdval;
+  int    parity    = FALSE;
+  int    nbad      = 0;
+  int    npass     = 0;
+  int    improved  = 0;
+  int    done      = FALSE;
   while (!done) {
     npass++;
-    ever_balanced = FALSE;
-    balance_best  = delta0 + delta1;
+    int    ever_balanced = FALSE;
+    double balance_best  = delta0 + delta1;
 
     /* Initialize various quantities. */
-    ltop = rtop = 2 * maxdval;
+    int ltop = 2 * maxdval;
+    int rtop = 2 * maxdval;
 
-    gtotal     = 0;
-    bestg      = bestg_min;
-    beststep   = -1;
-    bestlength = list_length;
-    out_list   = NULL;
+    int            gtotal     = 0;
+    double         bestg      = bestg_min;
+    int            beststep   = -1;
+    int            bestlength = list_length;
+    struct bilist *out_list   = NULL;
 
-    neg_steps = 0;
+    int neg_steps = 0;
 
     /* Compute the initial d-values, and bucket-sort them. */
-    time = seconds();
+    double time = seconds();
     bucketsortsv(graph, nvtxs, lbuckets, rbuckets, llistspace, rlistspace, ldvals, rdvals, sets,
                  maxdval, parity, bspace, list_length);
     parity = !parity;
@@ -198,33 +136,40 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
 
     /* Now determine the set of vertex moves. */
 
-    for (step = 1;; step++) {
+    int step = 1;
+    for (;; step++) {
 
       /* Find the highest d-value in each set. */
       /* But only consider moves from large to small sets, or moves */
       /* in which balance is preserved. */
       /* Break ties in some nonarbitrary manner. */
-      bestval = -maxdval - 1;
+      ssize_t bestval = -maxdval - 1;
 
-      partial_weight = weightsum[0] + weightsum[1];
-      ratio          = partial_weight / total_weight;
-      left_too_big   = (weightsum[0] > (goal[0] + .5 * max_dev) * ratio);
-      right_too_big  = (weightsum[1] > (goal[1] + .5 * max_dev) * ratio);
+      partial_weight    = weightsum[0] + weightsum[1];
+      ratio             = partial_weight / total_weight;
+      int left_too_big  = (weightsum[0] > (goal[0] + .5 * max_dev) * ratio);
+      int right_too_big = (weightsum[1] > (goal[1] + .5 * max_dev) * ratio);
 
       while (ltop >= 0 && lbuckets[ltop] == NULL) {
         --ltop;
       }
+
+      int     to         = -1; /* sets moving into / out of */
+      ssize_t bestvtx    = -1; /* best vertex to move */
+      int     weightfrom = 0;
+
+      double left_imbalance = 0.0; /* imbalance if I move to the left */
       if (ltop >= 0 && !left_too_big) {
-        lvtx           = ((size_t)lbuckets[ltop] - (size_t)llistspace) / sizeof(struct bilist);
-        lweight        = graph[lvtx]->vwgt;
-        rweight        = lweight - (ltop - maxdval);
-        weightfrom     = rweight;
-        to             = 0;
-        bestvtx        = lvtx;
-        bestval        = ltop - maxdval;
-        partial_weight = weightsum[0] + lweight + weightsum[1] - rweight;
-        ratio          = partial_weight / total_weight;
-        left_imbalance = max(fabs(weightsum[0] + lweight - goal[0] * ratio),
+        ssize_t lvtx    = ((size_t)lbuckets[ltop] - (size_t)llistspace) / sizeof(struct bilist);
+        int     lweight = graph[lvtx]->vwgt;
+        int     rweight = lweight - (ltop - maxdval);
+        weightfrom      = rweight;
+        to              = 0;
+        bestvtx         = lvtx;
+        bestval         = ltop - maxdval;
+        partial_weight  = weightsum[0] + lweight + weightsum[1] - rweight;
+        ratio           = partial_weight / total_weight;
+        left_imbalance  = max(fabs(weightsum[0] + lweight - goal[0] * ratio),
                              fabs(weightsum[1] - rweight - goal[1] * ratio));
       }
 
@@ -232,13 +177,13 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         --rtop;
       }
       if (rtop >= 0 && !right_too_big) {
-        rvtx            = ((size_t)rbuckets[rtop] - (size_t)rlistspace) / sizeof(struct bilist);
-        rweight         = graph[rvtx]->vwgt;
-        lweight         = rweight - (rtop - maxdval);
+        ssize_t rvtx    = ((size_t)rbuckets[rtop] - (size_t)rlistspace) / sizeof(struct bilist);
+        int     rweight = graph[rvtx]->vwgt;
+        int     lweight = rweight - (rtop - maxdval);
         partial_weight  = weightsum[0] - lweight + weightsum[1] + rweight;
         ratio           = partial_weight / total_weight;
-        right_imbalance = max(fabs(weightsum[0] - lweight - goal[0] * ratio),
-                              fabs(weightsum[1] + rweight - goal[1] * ratio));
+        double right_imbalance = max(fabs(weightsum[0] - lweight - goal[0] * ratio),
+                                     fabs(weightsum[1] + rweight - goal[1] * ratio));
         if (rtop - maxdval > bestval || (rtop - maxdval == bestval &&
                                          (right_imbalance < left_imbalance ||
                                           (right_imbalance == left_imbalance && drandom() < .5)))) {
@@ -256,6 +201,14 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         break;
       }
 
+      int *           to_dvals;       /* d-values I'm moving to */
+      int *           from_dvals;     /* d-values I'm moving from */
+      int *           to_top;         /* ptr to top of set moving to */
+      struct bilist * to_listspace;   /* list structure I'm moving to */
+      struct bilist * from_listspace; /* list structure I'm moving from */
+      struct bilist **to_buckets;     /* buckets I'm moving to */
+      struct bilist **from_buckets;   /* buckets I'm moving from */
+      int             from;
       if (to == 0) {
         from           = 1;
         to_listspace   = llistspace;
@@ -277,20 +230,20 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         to_top         = &rtop;
       }
 
-      vweight = graph[bestvtx]->vwgt;
+      int vweight = graph[bestvtx]->vwgt;
 
       weightsum[to] += vweight;
       weightsum[from] -= weightfrom;
 
       /* Check if this partition is balanced. */
-      partial_weight = weightsum[0] + weightsum[1];
-      ratio          = partial_weight / total_weight;
-      delta0         = fabs(weightsum[0] - goal[0] * ratio);
-      delta1         = fabs(weightsum[1] - goal[1] * ratio);
-      temp_balanced  = (delta0 + delta1 <= max_dev) && weightsum[0] != total_weight &&
-                      weightsum[1] != total_weight;
-      ever_balanced = (ever_balanced || temp_balanced);
-      balance_val   = delta0 + delta1;
+      partial_weight    = weightsum[0] + weightsum[1];
+      ratio             = partial_weight / total_weight;
+      delta0            = fabs(weightsum[0] - goal[0] * ratio);
+      delta1            = fabs(weightsum[1] - goal[1] * ratio);
+      int temp_balanced = (delta0 + delta1 <= max_dev) && weightsum[0] != total_weight &&
+                          weightsum[1] != total_weight;
+      ever_balanced      = (ever_balanced || temp_balanced);
+      double balance_val = delta0 + delta1;
 
       gtotal += bestval;
 
@@ -311,6 +264,7 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         if (!enforce_balance || ever_balanced) {
           neg_steps++;
         }
+        int neg_cost; /* decrease in sum of d-values */
         if (bestg != bestg_min) {
           neg_cost = bestg - gtotal;
         }
@@ -372,14 +326,14 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
             C. For any of their neighbors in separator increase left gain.
       */
 
-      edges = graph[bestvtx]->edges;
-      for (j = graph[bestvtx]->nedges - 1; j; j--) {
-        neighbor = *(++edges);
+      int *edges = graph[bestvtx]->edges;
+      for (int j = graph[bestvtx]->nedges - 1; j; j--) {
+        int neighbor = *(++edges);
 
-        group = sets[neighbor];
+        int group = sets[neighbor];
 
         if (group == 2) { /* In separator. */
-          gain = from_dvals[neighbor] + maxdval;
+          int gain = from_dvals[neighbor] + maxdval;
           /* Gain in the from direction => -infinity */
           if (gain >= 0) {
             removebilist(&from_listspace[neighbor], &from_buckets[gain]);
@@ -402,15 +356,15 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
             bspace[list_length++] = neighbor;
           }
 
-          edges2 = graph[neighbor]->edges;
-          vwgt   = graph[neighbor]->vwgt;
-          gain   = graph[neighbor]->vwgt;
-          flag   = FALSE;
-          for (k = graph[neighbor]->nedges - 1; k; k--) {
-            neighbor2 = *(++edges2);
-            group2    = sets[neighbor2];
+          int *edges2 = graph[neighbor]->edges;
+          int  vwgt   = graph[neighbor]->vwgt;
+          int  gain   = graph[neighbor]->vwgt;
+          int  flag   = FALSE;
+          for (int k = graph[neighbor]->nedges - 1; k; k--) {
+            int neighbor2 = *(++edges2);
+            int group2    = sets[neighbor2];
             if (group2 == 2) {
-              dval = to_dvals[neighbor2] + maxdval;
+              int dval = to_dvals[neighbor2] + maxdval;
               if (dval >= 0) {
                 movebilist(&to_listspace[neighbor2], &to_buckets[dval], &to_buckets[dval + vwgt]);
                 /*
@@ -488,8 +442,8 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
       if (beststep < 0) {
         beststep = 0;
       }
-      for (i = step - 1; i > beststep; i--) {
-        vtx = ((size_t)out_list - (size_t)llistspace) / sizeof(struct bilist);
+      for (int i = step - 1; i > beststep; i--) {
+        int vtx = ((size_t)out_list - (size_t)llistspace) / sizeof(struct bilist);
         if (sets[vtx] != 2) {
           weightsum[sets[vtx]] -= graph[vtx]->vwgt;
         }
@@ -498,8 +452,8 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
       }
     }
 
-    for (i = list_length - 1; i >= bestlength; i--) {
-      vtx = bspace[i];
+    for (int i = list_length - 1; i >= bestlength; i--) {
+      int vtx = bspace[i];
       if (vtx < 0) {
         if (sets[-vtx] == 2) {
           weightsum[1] += graph[-vtx]->vwgt;
@@ -539,9 +493,11 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
       *bndy_list          = bspace;
     }
 
-    gain = 0;
-    j = k = 0;
-    for (i = 1; i <= nvtxs; i++) {
+    /*
+    int gain = 0;
+    int j = 0;
+    int k = 0;
+    for (int i = 1; i <= nvtxs; i++) {
       if (sets[i] == 0) {
         j += graph[i]->vwgt;
       }
@@ -552,7 +508,6 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
         gain += graph[i]->vwgt;
       }
     }
-    /*
             printf("\nAfter pass of KLV: sets = %d/%d, sep = %d  (bestg = %g)\n\n\n",
                    j, k, gain, bestg);
     */

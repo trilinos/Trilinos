@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,9 +23,6 @@ static int el_node_count_error(int exoid, struct ex__elem_blk_parm elem_blk_parm
 int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
                         struct ex__elem_blk_parm *elem_blk_parm)
 {
-  size_t m;
-  char   errmsg[MAX_ERR_LENGTH];
-
   EX_FUNC_ENTER();
 
   ex_block block;
@@ -38,6 +35,7 @@ int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
 
   /* read in an element block parameter */
   if ((ex_get_block_param(exoid, &block)) != EX_NOERR) {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get element block %" PRId64 " parameters in file id %d", block.id,
              exoid);
@@ -50,6 +48,7 @@ int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
   elem_blk_parm->num_attr           = block.num_attribute;
   elem_blk_parm->elem_blk_id        = block.id;
 
+  size_t m;
   for (m = 0; m < strlen(block.topology); m++) {
     elem_blk_parm->elem_type[m] = toupper(block.topology[m]);
   }

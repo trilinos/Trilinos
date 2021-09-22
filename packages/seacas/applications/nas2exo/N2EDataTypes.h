@@ -37,16 +37,17 @@ namespace N2EModules {
 
       elementType = elType;
       strncpy(elemDesc, elDesc.c_str(), MAX_STR_LENGTH - 1);
-      numNodesPerElem = nodesPer;
-      numEdgesPerElem = edgesPer;
-      numFacesPerElem = facesPer;
-      numAttrPerElem  = attrPer;
+      elemDesc[MAX_STR_LENGTH - 1] = '\0';
+      numNodesPerElem              = nodesPer;
+      numEdgesPerElem              = edgesPer;
+      numFacesPerElem              = facesPer;
+      numAttrPerElem               = attrPer;
     }
   };
 
   const supportedElements ExoElTypes[] = {
-      supportedElements(ex_entity_type::EX_ELEM_BLOCK, std::string("TET"), 4, 6, 4, 1),
-      supportedElements(ex_entity_type::EX_ELEM_BLOCK, std::string("HEX"), 8, 12, 6, 1)};
+      supportedElements(ex_entity_type::EX_ELEM_BLOCK, std::string("TET4"), 4, 6, 4, 1),
+      supportedElements(ex_entity_type::EX_ELEM_BLOCK, std::string("HEX8"), 8, 12, 6, 1)};
 
   struct N2EPoint3D
   {

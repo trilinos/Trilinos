@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,7 +35,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
                            int64_t ent_start, int64_t ent_count, const void_int *map)
 {
   int         status;
-  int         dimid, varid, map_ndx, map_exists;
+  int         dimid, varid, map_exists;
   size_t      start[1];
   size_t      num_maps, num_mobj, count[1];
   int         cur_num_maps;
@@ -129,7 +129,7 @@ int ex_put_partial_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_
     cur_num_maps = ex__inc_file_item(exoid, ex__get_counter_list(map_type));
   }
   else {
-    map_ndx      = ex__id_lkup(exoid, map_type, map_id);
+    int map_ndx  = ex__id_lkup(exoid, map_type, map_id);
     cur_num_maps = map_ndx - 1;
   }
 

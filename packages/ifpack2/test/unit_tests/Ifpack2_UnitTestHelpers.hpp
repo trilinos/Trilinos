@@ -1070,9 +1070,8 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
           Teuchos::Array<char>& exports,
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Tpetra::Distributor& distor) const
-    {A_->pack(exportLIDs,exports,numPacketsPerLID,constantNumPackets,distor);}
+          size_t& constantNumPackets) const
+    {A_->pack(exportLIDs,exports,numPacketsPerLID,constantNumPackets);}
 
    private:
    Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;

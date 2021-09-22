@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -49,7 +49,7 @@ static int ex_get_dim_value(int exoid, const char *name, const char *dimension_n
   char errmsg[MAX_ERR_LENGTH];
   int  status;
 
-  if ((status = nc_inq_dimid(exoid, dimension_name, &dimension)) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, dimension_name, &dimension) != NC_NOERR) {
     /* optional and default to zero. */
     *value = 0;
   }

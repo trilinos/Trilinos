@@ -294,7 +294,6 @@ namespace Iocgns {
     }
     if (delta2 < min_delta) {
       min_ordinal = 2;
-      min_delta   = delta2;
     }
 
     unsigned int ordinal = min_ordinal;

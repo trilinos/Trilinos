@@ -253,58 +253,36 @@ evaluateFields(
   // NOTE:  A reordering of these loops will likely improve performance.  The
   //        "getGIDFieldOffsets may be expensive.  However the "getElementGIDs"
   //        can be cheaper.  However the lookup for LIDs may be more expensive!
-  if (x_.is_null())
+
+  auto LIDs = globalIndexer_->getLIDs();
+  auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+  Kokkos::deep_copy(LIDs_h, LIDs);
+  // Loop over the fields to be gathered.
+  for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
   {
+    MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
+    auto field_h = Kokkos::create_mirror_view(field.get_static_view());
+    int fieldNum(fieldIds_[fieldInd]);
+    const vector<int>& elmtOffset =
+ 	globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
+    int numBases(elmtOffset.size());
     // Gather operation for each cell in the workset.
     for (int cell(0); cell < numCells; ++cell)
     {
-      size_t cellLocalId(localCellIds[cell]);
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-      // Loop over the fields to be gathered.
-      for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
+ 	size_t cellLocalId(localCellIds[cell]);
+      // Loop over the basis functions and fill the fields.
+      for (int basis(0); basis < numBases; ++basis)
       {
-        MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
-        int fieldNum(fieldIds_[fieldInd]);
-        const vector<int>& elmtOffset =
-          globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-        int numBases(elmtOffset.size());
-
-        // Loop over the basis functions and fill the fields.
-        for (int basis(0); basis < numBases; ++basis)
-        {
-          int offset(elmtOffset[basis]), lid(LIDs[offset]);
-          field(cell, basis) = (*xEvRoGed_)[lid];
-        } // end loop over the basis functions
-      } // end loop over the fields to be gathered
+        int offset(elmtOffset[basis]), lid(LIDs_h(cellLocalId, offset));
+ 	  if (x_.is_null())
+ 	    field_h(cell, basis) = (*xEvRoGed_)[lid];
+ 	  else
+ 	    field_h(cell, basis) = (*x_)[lid];
+      } // end loop over the basis functions
     } // end loop over localCellIds
-  }
-  else // if (not x_.is_null())
-  {
-    // Gather operation for each cell in the workset.
-    for (int cell(0); cell < numCells; ++cell)
-    {
-      size_t cellLocalId(localCellIds[cell]);
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+    Kokkos::deep_copy(field.get_static_view(), field_h);
+  } // end loop over the fields to be gathered
 
-      // Loop over the fields to be gathered.
-      for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
-      {
-        MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
-        int fieldNum(fieldIds_[fieldInd]);
-        const vector<int>& elmtOffset =
-          globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-        int numBases(elmtOffset.size());
-
-        // Loop over the basis functions and fill the fields.
-        for (int basis(0); basis < numBases; ++basis)
-        {
-          int offset(elmtOffset[basis]), lid(LIDs[offset]);
-          field(cell, basis) = (*x_)[lid];
-        } // end loop over the basis functions
-      } // end loop over the fields to be gathered
-    } // end loop over localCellIds
-  } // end if (x_.is_null()) or not
 } // end of evaluateFields() (Residual Specialization)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -494,86 +472,58 @@ evaluateFields(
   // NOTE:  A reordering of these loops will likely improve performance.  The
   //        "getGIDFieldOffsets may be expensive.  However the "getElementGIDs"
   //        can be cheaper.  However the lookup for LIDs may be more expensive!
-  if (x_.is_null())
+  auto LIDs = globalIndexer_->getLIDs();
+  auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+  Kokkos::deep_copy(LIDs_h, LIDs);
+  // Loop over the fields to be gathered.
+  for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
   {
+    MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
+    auto field_h = Kokkos::create_mirror_view(field.get_static_view());
+    int fieldNum(fieldIds_[fieldInd]);
+    const vector<int>& elmtOffset =
+ 	globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
+    int numBases(elmtOffset.size());
     // Gather operation for each cell in the workset.
     for (int cell(0); cell < numCells; ++cell)
     {
-      size_t cellLocalId(localCellIds[cell]);
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-      // Loop over the fields to be gathered.
-      for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
+ 	size_t cellLocalId(localCellIds[cell]);
+      // Loop over the basis functions and fill the fields.
+      for (int basis(0); basis < numBases; ++basis)
       {
-        MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
-        int fieldNum(fieldIds_[fieldInd]);
-        const vector<int>& elmtOffset =
-          globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-        int numBases(elmtOffset.size());
-
-        // Loop over the basis functions and fill the fields.
-        for (int basis(0); basis < numBases; ++basis)
-        {
-          int offset(elmtOffset[basis]), lid(LIDs[offset]);
-          field(cell, basis) = (*xEvRoGed_)[lid];
-        } // end loop over the basis functions
-      } // end loop over the fields to be gathered
+        int offset(elmtOffset[basis]), lid(LIDs_h(cellLocalId, offset));
+ 	  if (x_.is_null())
+ 	    field_h(cell, basis) = (*xEvRoGed_)[lid];
+ 	  else
+ 	    field_h(cell, basis) = (*x_)[lid];
+      } // end loop over the basis functions
     } // end loop over localCellIds
-  }
-  else // if (not x_.is_null())
-  {
-    // Gather operation for each cell in the workset.
-    for (int cell(0); cell < numCells; ++cell)
-    {
-      size_t cellLocalId(localCellIds[cell]);
-      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
-      // Loop over the fields to be gathered.
-      for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
-      {
-        MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
-        int fieldNum(fieldIds_[fieldInd]);
-        const vector<int>& elmtOffset =
-          globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-        int numBases(elmtOffset.size());
-
-        // Loop over the basis functions and fill the fields.
-        for (int basis(0); basis < numBases; ++basis)
-        {
-          int offset(elmtOffset[basis]), lid(LIDs[offset]);
-          field(cell, basis) = (*x_)[lid];
-        } // end loop over the basis functions
-      } // end loop over the fields to be gathered
-    } // end loop over localCellIds
-  } // end if (x_.is_null()) or not
-
-  // Deal with the tangent fields.
-  if (hasTangentFields_)
-  {
-    // Loop over the cells in the workset.
-    for (int cell(0); cell < numCells; ++cell)
-    {
-      // Loop over the fields to be gathered.
-      for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
-      {
-        MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
-        int fieldNum(fieldIds_[fieldInd]);
-        const vector<int>& elmtOffset =
-          globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-        int numBases(elmtOffset.size());
-
-        // Loop over the basis functions.
-        for (int basis(0); basis < numBases; ++basis)
-        {
-          // Loop over the tangent fields and fill them in.
-          int numTangentFields(tangentFields_[fieldInd].size());
-          for (int i(0); i < numTangentFields; ++i)
-            field(cell, basis).fastAccessDx(i) =
-              tangentFields_[fieldInd][i](cell, basis).val();
-        } // end loop over the basis functions
-      } // end loop over the fields to be gathered
-    } // end loop over the cells in the workset
-  } // end if (hasTangentFields_)
+    // Deal with the tangent fields.
+    if (hasTangentFields_) {
+      // Loop over the tangent fields and fill them in.
+      int numTangentFields(tangentFields_[fieldInd].size());
+      for (int i(0); i < numTangentFields; ++i){
+	auto tf = Kokkos::create_mirror_view(tangentFields_[fieldInd][i].get_static_view());
+	Kokkos::deep_copy(tf, tangentFields_[fieldInd][i].get_static_view());
+	// Loop over the cells in the workset.
+	for (int cell(0); cell < numCells; ++cell) {
+	  // Loop over the fields to be gathered.
+	  int fieldNum(fieldIds_[fieldInd]);
+	  const vector<int>& elmtOffset =
+	    globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
+	  int numBases(elmtOffset.size());
+	  
+	  // Loop over the basis functions.
+	  for (int basis(0); basis < numBases; ++basis){
+            field_h(cell, basis).fastAccessDx(i) =
+              tf(cell, basis).val();
+	  } // end loop over the basis functions
+	} // end loop over the cells in the workset
+      } // end loop over numTangentFields
+    } // end if (hasTangentFields_)
+    Kokkos::deep_copy(field.get_static_view(), field_h);
+  } // end loop over the fields to be gathered
 } // end of evaluateFields() (Tangent Specialization)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -780,66 +730,35 @@ evaluateFields(
   // NOTE:  A reordering of these loops will likely improve performance.  The
   //        "getGIDFieldOffsets may be expensive.  However the "getElementGIDs"
   //        can be cheaper.  However the lookup for LIDs may be more expensive!
-  if (x_.is_null())
+  auto LIDs = globalIndexer_->getLIDs();
+  auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+  Kokkos::deep_copy(LIDs_h, LIDs);
+  // Loop over the fields to be gathered.
+  for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
   {
-    // Loop over the fields to be gathered.
-    for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
+    MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
+    auto field_h = Kokkos::create_mirror_view(field.get_static_view());
+    int fieldNum(fieldIds_[fieldInd]);
+    const vector<int>& elmtOffset =
+ 	globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
+    int numBases(elmtOffset.size());
+    // Gather operation for each cell in the workset.
+    for (int cell(0); cell < numCells; ++cell)
     {
-      MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
-      int fieldNum(fieldIds_[fieldInd]);
-      const vector<int>& elmtOffset =
-        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-      int numBases(elmtOffset.size());
-
-      // Gather operation for each cell in the workset.
-      for (int cell(0); cell < numCells; ++cell)
+ 	size_t cellLocalId(localCellIds[cell]);
+      // Loop over the basis functions and fill the fields.
+      for (int basis(0); basis < numBases; ++basis)
       {
-        size_t cellLocalId(localCellIds[cell]);
-	auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-        // Loop over the basis functions and fill the fields.
-        for (int basis(0); basis < numBases; ++basis)
-        {
-          int offset(elmtOffset[basis]), lid(LIDs[offset]);
-          field(cell, basis) = (*xEvRoGed_)[lid];
-        } // end loop over the basis functions
-      } // end loop over localCellIds
-    } // end loop over the fields to be gathered
-  }
-  else // if (not x_.is_null())
-  {
-    // Loop over the fields to be gathered.
-    for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
-    {
-      MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
-      int fieldNum(fieldIds_[fieldInd]);
-      const vector<int>& elmtOffset =
-        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-      int numBases(elmtOffset.size());
-
-      // Gather operation for each cell in the workset.
-      for (int cell(0); cell < numCells; ++cell)
-      {
-        size_t cellLocalId(localCellIds[cell]);
-	auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
-
-        // Loop over the basis functions and fill the fields.
-        for (int basis(0); basis < numBases; ++basis)
-        {
-          int offset(elmtOffset[basis]), lid(LIDs[offset]);
-          field(cell, basis) = (*x_)[lid];
-        } // end loop over the basis functions
-      } // end loop over localCellIds
-    } // end loop over the fields to be gathered
-  } // end if (x_.is_null()) or not
+        int offset(elmtOffset[basis]), lid(LIDs_h(cellLocalId, offset));
+ 	  if (x_.is_null())
+ 	    field_h(cell, basis) = (*xEvRoGed_)[lid];
+ 	  else
+ 	    field_h(cell, basis) = (*x_)[lid];
+      } // end loop over the basis functions
+    } // end loop over localCellIds
 
   // Deal with the sensitivities.
-  if (applySensitivities_)
-  {
-    // Loop over the fields to be gathered.
-    for (int fieldInd(0); fieldInd < numFields; ++fieldInd)
-    {
-      MDField<ScalarT, Cell, NODE>& field = gatherFields_[fieldInd];
+    if (applySensitivities_)  {
       int fieldNum(fieldIds_[fieldInd]);
       const vector<int>& elmtOffset =
         globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
@@ -854,11 +773,13 @@ evaluateFields(
           // Seed the FAD object.
           int offset(elmtOffset[basis]);
 
-          field(cell, basis).fastAccessDx(dos + offset) = seedValue;
+          field_h(cell, basis).fastAccessDx(dos + offset) = seedValue;
         } // end loop over the basis functions
       } // end loop over localCellIds
-    } // end loop over the fields to be gathered
-  } // end if (applySensitivities_)
+    } // end if (applySensitivities_)
+    Kokkos::deep_copy(field.get_static_view(), field_h);
+  } // end loop over the fields to be gathered
+
 } // end of evaluateFields() (Jacobian Specialization)
 
 #endif // __Panzer_GatherSolution_Epetra_impl_hpp__

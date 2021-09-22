@@ -1652,6 +1652,9 @@ bool connect_edge_or_face_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh:
   unsigned numNodes = bulk.num_nodes(entity);
   stk::mesh::EntityVector elems;
   stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk, stk::topology::ELEM_RANK, numNodes, nodes, elems);
+  if (elems.empty()) {
+    return false;
+  }
 
   stk::mesh::EntityVector entityNodes(bulk.begin_nodes(entity), bulk.end_nodes(entity));
   stk::topology entityTopo = bulk.bucket(entity).topology();
@@ -1666,16 +1669,66 @@ bool connect_edge_or_face_to_elements_impl(stk::mesh::BulkData& bulk, stk::mesh:
   return true;
 }
 
-void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
+bool connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge)
 {
-  ThrowRequireMsg(connect_edge_or_face_to_elements_impl(bulk, edge),
-                  "Edge with id: " << bulk.identifier(edge) << " has no valid connectivity to elements");
+  return connect_edge_or_face_to_elements_impl(bulk, edge);
 }
 
 void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)
 {
   ThrowRequireMsg(connect_edge_or_face_to_elements_impl(bulk, face),
                   "Face with id: " << bulk.identifier(face) << " has no valid connectivity to elements");
+}
+
+bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,
+                                        const stk::mesh::Ghosting& ghosting,
+                                        stk::mesh::Entity entity)
+{
+  if(!bulk.is_valid(entity))
+    return false;
+
+  const stk::mesh::EntityRank entityRank = bulk.entity_rank(entity);
+  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
+  for(stk::mesh::EntityRank conRank = static_cast<stk::mesh::EntityRank>(entityRank + 1); conRank <= endRank; ++conRank)
+  {
+    unsigned numConnected = bulk.num_connectivity(entity, conRank);
+    if(numConnected > 0) {
+      const stk::mesh::Entity* conn = bulk.begin(entity, conRank);
+      for(unsigned i=0; i<numConnected; ++i) {
+        if (bulk.in_receive_ghost(ghosting, conn[i])) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+bool has_upward_send_ghost_connectivity(const stk::mesh::BulkData &bulk,
+                                        const stk::mesh::Ghosting& ghosting,
+                                        int proc,
+                                        stk::mesh::Entity entity)
+{
+  if(!bulk.is_valid(entity))
+    return false;
+
+  const stk::mesh::EntityRank entityRank = bulk.entity_rank(entity);
+  const stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk.mesh_meta_data().entity_rank_count());
+  for(stk::mesh::EntityRank conRank = static_cast<stk::mesh::EntityRank>(entityRank + 1); conRank <= endRank; ++conRank)
+  {
+    unsigned numConnected = bulk.num_connectivity(entity, conRank);
+    if(numConnected > 0) {
+      const stk::mesh::Entity* conn = bulk.begin(entity, conRank);
+      for(unsigned i=0; i<numConnected; ++i) {
+        if (bulk.in_send_ghost(ghosting, bulk.entity_key(conn[i]), proc)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity entity)

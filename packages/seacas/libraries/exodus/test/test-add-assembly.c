@@ -38,7 +38,7 @@ int main(int argc, char **argv)
   float fdum;
 
   char  title_chk[MAX_LINE_LENGTH + 1];
-  char *cdum = 0;
+  char *cdum = NULL;
 
   CPU_word_size = 0; /* sizeof(float) */
   IO_word_size  = 0; /* use what is stored in file */

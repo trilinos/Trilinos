@@ -50,9 +50,6 @@ int ex_close(int exoid)
   int  status;
   int  status1;
   int  status2;
-#if NC_HAS_HDF5
-  int parent_id = 0;
-#endif
 
   EX_FUNC_ENTER();
 
@@ -70,6 +67,7 @@ int ex_close(int exoid)
   /* nc_inq_grp_parent() will return NC_ENOGRP error if exoid
    * refers to the root group (which is what we want)
    */
+  int parent_id = 0;
   if ((status = nc_inq_grp_parent(exoid, &parent_id)) != NC_ENOGRP) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file id %d does not refer to root group.", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_NOTROOTID);

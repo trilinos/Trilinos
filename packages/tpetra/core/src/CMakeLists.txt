@@ -38,7 +38,7 @@ FUNCTION(TPETRA_SLG_MACRO_NAME NAME_OUT NAME_IN)
       ELSE()
 	#long double is a special name; add _ to macro name
         STRING(COMPARE EQUAL "${NAME_IN}" "long double" IS_LONG_DOUBLE)
-	IF(IS_LONG_DOUBLE) 
+	IF(IS_LONG_DOUBLE)
 	  SET(${NAME_OUT} "LONG_DOUBLE" PARENT_SCOPE)
         ELSE()
           # Convert to upper case, convert double colons to underscores,
@@ -700,6 +700,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   # Generate ETI .cpp files for Tpetra::RowMatrixTransposer.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(ROWMATRIXTRANSPOSER_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "RowMatrixTransposer" "ROWMATRIXTRANSPOSER" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${ROWMATRIXTRANSPOSER_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for Tpetra::CrsGraphTransposer.
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(CRSGRAPHTRANSPOSER_OUTPUT_FILES "Tpetra_ETI_LO_GO_NT.tmpl" "CrsGraphTransposer" "CRSGRAPHTRANSPOSER" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${CRSGRAPHTRANSPOSER_OUTPUT_FILES})
 
   # Generate ETI .cpp files for Tpetra::BlockCrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(BLOCKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "BlockCrsMatrix" "BLOCKCRSMATRIX" "${TpetraCore_ETI_SCALARS_NO_ORDS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" FALSE)

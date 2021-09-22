@@ -612,6 +612,8 @@ Piro::PerformROLAnalysis(
     boundConstraint = rcp( new ROL::Bounds<double>(ROL::makePtr<ROL::ThyraVector<double> >(p_lo), ROL::makePtr<ROL::ThyraVector<double> >(p_up)));
   }
 
+    int return_status = 0;
+
     if ( useFullSpace ) {
       //ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x),ROL::makePtrFromRef(rol_p));
       ROL::Vector_SimOpt<double> sopt_vec(ROL::makePtrFromRef(rol_x_primal),ROL::makePtrFromRef(rol_p_primal));
@@ -624,23 +626,26 @@ Piro::PerformROLAnalysis(
         ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), bnd, ROL::makePtrFromRef(constr), r_ptr);
         ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
         optSolver.solve(*out);
+        return_status = optSolver.getAlgorithmState()->statusFlag;
       } else {
         ROL::OptimizationProblem<double> prob(ROL::makePtrFromRef(obj), ROL::makePtrFromRef(sopt_vec), ROL::makePtrFromRef(constr), r_ptr);
         ROL::OptimizationSolver<double> optSolver(prob, rolParams.sublist("ROL Options"));
         optSolver.solve(*out);
+        return_status = optSolver.getAlgorithmState()->statusFlag;
       }
     } else {
       if(boundConstrained)
         output = algo->run(rol_p_primal, reduced_obj, *boundConstraint, print, *out);
       else
         output = algo->run(rol_p_primal, reduced_obj, print, *out);
+      return_status = algo->getState()->statusFlag;
     }
 
   for ( unsigned i = 0; i < output.size(); i++ ) {
     *out << output[i];
   }
 
-  return 0;
+  return return_status;
 #else
   (void)piroModel;
   (void)p;
