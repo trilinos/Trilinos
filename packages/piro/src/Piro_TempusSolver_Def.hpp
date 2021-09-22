@@ -289,7 +289,9 @@ void Piro::TempusSolver<Scalar>::initialize(
       is_explicit_ = true; 
     }
     //The adjoint transient sensitivities will not work correctly if 'Mass Matrix Is Identity' is set.
-    //Detect this option, and throw if true.
+    //Detect this option, and throw if true.  To make this case work, M*DfDp and DfDx^T*M^{-T} 
+    //need to be implemented in Piro::InvertMassMatrixDecorator for the forward and adjoint ME, respectively.
+    //Please contact Eric Phipps for questions on how this is to be done.
     ParameterList& tempusSensPL = tempusPL->sublist("Sensitivities");
     if (tempusSensPL.isParameter("Mass Matrix Is Identity")) {
       const bool is_const_mass_matrix = tempusSensPL.get<bool>("Mass Matrix Is Identity");
