@@ -86,9 +86,6 @@ class Test_parse_args(unittest.TestCase):
                                          dry_run=False)
 
         self.default_stdout = dedent('''\
-                +==============================================================================+
-                | Parameters
-                +==============================================================================+
                 | - [R] source-repo-url             : /dev/null/source_repo
                 | - [R] source-branch-name          : foobar
                 | - [R] target_repo_url             : /dev/null/target_repo
@@ -111,7 +108,6 @@ class Test_parse_args(unittest.TestCase):
                 | - [O] req-mem-per-core            : 3.0
                 | - [O] test-mode                   : standard
                 | - [O] workspace-dir               : /dev/null/Trilinos_clone
-                +==============================================================================+
                 ''')
 
         self.help_output = dedent('''\

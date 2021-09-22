@@ -235,7 +235,7 @@ def parse_args():
     # Print the arguments to the console
     print("\n")
     print("+" + "="*78 + "+")
-    print("| Parameters")
+    print("| PullRequestLinuxDriverTest Parameters")
     print("+" + "="*78 + "+")
     print("| - [R] source-repo-url             : {source_repo_url}".format(**vars(arguments)))
     print("| - [R] source-branch-name          : {source_branch_name}".format(**vars(arguments)))
