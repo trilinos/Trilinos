@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3 -u
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 #
 # Change shebang line to '/usr/bin/python -3' for python 3.x porting warnings
@@ -62,6 +62,7 @@ def parse_args():
     if "WORKSPACE" in os.environ.keys():
         default_workspace = os.environ["WORKSPACE"]
 
+    # Set up path to the packageenables aand subprojects files.
     default_filename_packageenables = os.path.join("..", "packageEnables.cmake")
     default_filename_subprojects = os.path.join("..", "package_subproject_list.cmake")
 
@@ -113,6 +114,28 @@ def parse_args():
                           action='store',
                           help='The Jenkins build number',
                           required=True)
+
+    optional.add_argument('--source-dir',
+                          dest="source_dir",
+                          action='store',
+                          default="UNKNOWN",
+                          help="Directory containing the source code to compile/test.",
+                          required=False)
+
+    optional.add_argument('--build-dir',
+                          dest="build_dir",
+                          action='store',
+                          default="UNKNOWN",
+                          help="Path to the build directory.",
+                          required=False)
+
+    optional.add_argument('--ctest-driver',
+                          dest="ctest_driver",
+                          action='store',
+                          default="UNKNOWN",
+                          help="Location of the CTest driver script to load via `-S`.",
+                          required=False)
+
 
     optional.add_argument('--pullrequest-cdash-track',
                           dest='pullrequest_cdash_track',
@@ -212,7 +235,7 @@ def parse_args():
     # Print the arguments to the console
     print("\n")
     print("+" + "="*78 + "+")
-    print("| Parameters")
+    print("| PullRequestLinuxDriverTest Parameters")
     print("+" + "="*78 + "+")
     print("| - [R] source-repo-url             : {source_repo_url}".format(**vars(arguments)))
     print("| - [R] source-branch-name          : {source_branch_name}".format(**vars(arguments)))
@@ -222,6 +245,9 @@ def parse_args():
     print("| - [R] genconfig-build-name        : {genconfig_build_name}".format(**vars(arguments)))
     print("| - [R] pullrequest-number          : {pullrequest_number}".format(**vars(arguments)))
     print("| - [R] jenkins-job-number          : {jenkins_job_number}".format(**vars(arguments)))
+    print("| - [R] source-dir                  : {source_dir}".format(**vars(arguments)))
+    print("| - [R] build-dir                   : {build_dir}".format(**vars(arguments)))
+    print("| - [R] ctest-driver                : {ctest_driver}".format(**vars(arguments)))
     print("|")
     print("| - [O] dry-run                     : {dry_run}".format(**vars(arguments)))
     print("| - [O] filename-packageenables     : {filename_packageenables}".format(**vars(arguments)))
@@ -266,6 +292,8 @@ def main(args):
 
     status = pr_config.execute_test()
 
+    print("PullRequestLinuxDriverTest.py main()> Done.")
+
     return status
 
 
@@ -273,7 +301,6 @@ def main(args):
 if __name__ == "__main__":
     args = parse_args()
     status = main(args)
-    print("Done.")
     sys.exit(status)
 
 
