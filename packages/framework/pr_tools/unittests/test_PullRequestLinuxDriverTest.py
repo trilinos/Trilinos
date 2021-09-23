@@ -417,6 +417,23 @@ class Test_main(unittest.TestCase):
 
 '''),
                                 m_io.getvalue())
+        return
+
+
+    def test_always_fail(self):
+        """
+        This test exists to make an easy 'always fail' test for debugging changes
+        to our testing framework.
+        """
+        force_test_to_fail = True
+
+        # uncomment this line to make this test pass
+        # This should never be commented out in an actual commit
+        #force_test_to_fail = False
+
+        # if force_test_to_fail is not False then we should fail this test.
+        self.assertEqual(force_test_to_fail, False)
+        return
 
 
 if __name__ == '__main__':
