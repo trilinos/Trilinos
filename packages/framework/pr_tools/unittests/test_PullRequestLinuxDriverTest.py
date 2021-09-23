@@ -402,11 +402,13 @@ class Test_main(unittest.TestCase):
         m_args = Namespace()
         setattr(m_args, 'dry_run', False)
         setattr(m_args, 'test_mode', 'foobar')
+
         with self.prinstall_mock as m_pr_helper, \
              self.IOredirect as m_io, \
              self.assertRaisesRegex(KeyError,
                                     'ERROR: Unknown test mode, foobar, was provided.'):
             PullRequestLinuxDriverTest.main(m_args)
+
         m_pr_helper.assert_not_called()
         self.assertEqual(dedent('''\
                                 +==============================================================================+
@@ -423,13 +425,14 @@ class Test_main(unittest.TestCase):
     def test_always_fail(self):
         """
         This test exists to make an easy 'always fail' test for debugging changes
-        to our testing framework.
+        to our testing framework when we want to verify that the framework will catch
+        a failing python unit test.
         """
         force_test_to_fail = True
 
         # uncomment this line to make this test pass
         # This should never be commented out in an actual commit
-        #force_test_to_fail = False
+        force_test_to_fail = False
 
         # if force_test_to_fail is not False then we should fail this test.
         self.assertEqual(force_test_to_fail, False)
