@@ -104,9 +104,10 @@ def check_call_wrapper(args):
     print_wrapper("Checked Call:")
     print_wrapper(" ".join( [str(x) for x in args] ))
     subprocess.check_call(args)
-    print_wrapper("")
     sys.stdout.flush()
     sys.stderr.flush()
+    print_wrapper("OK")
+    print_wrapper("")
     return None
 
 
