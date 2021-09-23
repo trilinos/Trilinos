@@ -8,10 +8,11 @@
   </ParameterList>
 
   <ParameterList name="OED">
-    <Parameter name="Optimality Type" type="string" value="D"     />
+    <Parameter name="Optimality Type" type="string" value="A"     />
     <!--
     <Parameter name="Optimality Type" type="string" value="A"     />
     <Parameter name="Optimality Type" type="string" value="C"     />
+    <Parameter name="Optimality Type" type="string" value="D"     />
     -->
     <Parameter name="Use Storage"            type="bool"   value="true"  />
     <Parameter name="Use Budget"             type="bool"   value="false" />
@@ -24,6 +25,9 @@
     </ParameterList>
     <ParameterList name="C-Optimality">
       <Parameter name="C Value" type="double" value="1.0" />
+    </ParameterList>
+    <ParameterList name="I-Optimality">
+      <Parameter name="Use Trace Form" type="bool" value="true" />
     </ParameterList>
   </ParameterList>
 
@@ -58,11 +62,14 @@
     <!-- ===========  POLYHEDRAL PROJECTION INPUTS  =========== -->
     <ParameterList name="Polyhedral Projection">
       <Parameter name="Type"               type="string" value="Dai-Fletcher" />
-      <Parameter name="Iteration Limit"    type="int"    value="1000"         />
       <!--
-      <Parameter name="Absolute Tolerance" type="double" value="1.e-4"   />
-      <Parameter name="Relative Tolerance" type="double" value="1.e-2"   />
+      <Parameter name="Type"               type="string" value="Dykstra" />
+      <Parameter name="Type"               type="string" value="Ridders" />
+      <Parameter name="Type"               type="string" value="Semismooth Newton" />
       -->
+      <Parameter name="Iteration Limit"    type="int"    value="1000"         />
+      <Parameter name="Absolute Tolerance" type="double" value="1.e-10"   />
+      <Parameter name="Relative Tolerance" type="double" value="1.e-8"    />
     </ParameterList>
   </ParameterList>
 

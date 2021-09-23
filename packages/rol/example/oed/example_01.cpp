@@ -144,6 +144,10 @@ int main(int argc, char *argv[]) {
       bman = ROL::makePtr<ROL::BatchManager<RealT>>();
     ROL::Ptr<ROL::SampleGenerator<RealT>>
       sampler = ROL::makePtr<ROL::UserInputGenerator<RealT>>("points.txt","weights.txt",nsamp,1,bman);
+    std::vector<std::vector<RealT>> bounds(1);
+    bounds[0].resize(2); bounds[0][0] = lb; bounds[0][1] = ub;
+    ROL::Ptr<ROL::SampleGenerator<RealT>>
+      isampler = ROL::makePtr<ROL::UserInputGenerator<RealT>>("pointsGL.txt","weightsGL.txt",11,1,bman);
 
     // Setup factory
     bool        homNoise = false;
@@ -156,7 +160,7 @@ int main(int argc, char *argv[]) {
      factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
     
     // Generate optimization problem
-    ROL::Ptr<ROL::Problem<RealT>> problem = factory->get(*parlist);
+    ROL::Ptr<ROL::Problem<RealT>> problem = factory->get(*parlist,sampler);
     problem->setProjectionAlgorithm(*parlist);
     problem->finalize(false,true,*outStream);
 
