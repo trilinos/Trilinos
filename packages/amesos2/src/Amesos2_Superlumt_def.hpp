@@ -352,10 +352,8 @@ namespace Amesos2 {
               ROOTED, this->rowIndexBase_);
       }
       else {
-        Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-          slu_type>::do_get(B, bxvals_(),
-              ldbx_,
-              NON_CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "NON_CONTIGUOUS_AND_ROOTED not supported.");
       }
     }
 
@@ -433,8 +431,8 @@ namespace Amesos2 {
           MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, ROOTED);
       }
       else {
-        Util::put_1d_data_helper<
-          MultiVecAdapter<Vector>, slu_type>::do_put(X, bxvals_(), ldbx_, NON_CONTIGUOUS_AND_ROOTED);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "NON_CONTIGUOUS_AND_ROOTED not supported.");
       }
     }
 
@@ -633,10 +631,8 @@ namespace Amesos2 {
               nnz_ret, ROOTED, ARBITRARY, this->rowIndexBase_);
       }
       else {
-        Util::get_ccs_helper<
-          MatrixAdapter<Matrix>,slu_type,int,int>::do_get(this->matrixA_.ptr(),
-              nzvals_, rowind_, colptr_,
-              nnz_ret, NON_CONTIGUOUS_AND_ROOTED, ARBITRARY, this->rowIndexBase_);
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+          "NON_CONTIGUOUS_AND_ROOTED not supported.");
       }
     }
 
