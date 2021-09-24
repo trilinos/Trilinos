@@ -112,7 +112,7 @@ Examples using Epetra_SerialDenseSVD can be found in the Epetra test directories
 */
 
 //=========================================================================
-class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public Epetra_CompObject, public virtual Epetra_Object, public Epetra_BLAS, public Epetra_LAPACK{
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public Epetra_CompObject, public virtual Epetra_Object, public Epetra_BLAS, public Epetra_LAPACK{
   public:
 
     //! @name Constructor/Destructor Methods
