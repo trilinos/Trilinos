@@ -92,7 +92,7 @@ namespace panzer {
 
 
     // =====================================================================================================
-    // Classic Interface
+    // Classic Interface (DEPRECATED)
 
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::IntegrationRule>& ir);
