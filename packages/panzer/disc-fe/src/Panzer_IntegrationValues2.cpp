@@ -960,7 +960,6 @@ getJacobian(const bool cache,
 
   int num_space_dim = int_rule->topology->getDimension();
   int num_ip = int_rule->num_points;
-  int num_nodes = int_rule->topology->getNodeCount();
 
   // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
   auto const_ref_coord = getCubaturePointsRef(false,force);
@@ -1072,7 +1071,6 @@ getWeightedMeasure(const bool cache,
 
   const int num_space_dim = int_rule->topology->getDimension();
   const int num_ip = int_rule->num_points;
-  const int num_nodes = int_rule->topology->getNodeCount();
 
   auto aux = af.template buildStaticArray<Scalar,Cell,IP>("weighted_measure",num_cells_, num_ip);
 
@@ -1240,7 +1238,6 @@ getWeightedNormals(const bool cache,
 
   const int num_space_dim = int_rule->topology->getDimension();
   const int num_ip = int_rule->num_points;
-  const int num_nodes = int_rule->topology->getNodeCount();
 
   auto aux = af.template buildStaticArray<Scalar,Cell,IP,Dim>("weighted_normals",num_cells_,num_ip,num_space_dim);
 
@@ -1588,7 +1585,6 @@ getCubaturePoints(const bool cache,
 
   const int num_space_dim = int_rule->topology->getDimension();
   const int num_ip = int_rule->num_points;
-  const int num_nodes = int_rule->topology->getNodeCount();
 
   auto aux = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ip_coordinates",num_cells_, num_ip, num_space_dim);
 
@@ -1659,7 +1655,6 @@ getCubaturePointsRef(const bool cache,
 
   const int num_space_dim = int_rule->topology->getDimension();
   const int num_ip = int_rule->num_points;
-  const int num_nodes = int_rule->topology->getNodeCount();
 
   MDFieldArrayFactory af(prefix_,true);
 
