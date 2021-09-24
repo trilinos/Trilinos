@@ -1018,7 +1018,10 @@ getBasisCoordinates(const bool cache,
 
   auto tmp_basis_coordinates = af.buildStaticArray<Scalar, Cell, BASIS, IP>("basis_coordinates",  num_cells_, num_card, num_dim);
   auto s_aux = Kokkos::subview(tmp_basis_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
-  auto bcr = PHX::getNonConstDynRankViewFromConstMDField(getBasisCoordinatesRef(false));
+
+  // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
+  auto const_bcr = getBasisCoordinatesRef(false);
+  auto bcr = PHX::getNonConstDynRankViewFromConstMDField(const_bcr);
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
   cell_tools.mapToPhysicalFrame(s_aux, bcr, s_vertex_coordinates, intrepid_basis->getBaseCellTopology());

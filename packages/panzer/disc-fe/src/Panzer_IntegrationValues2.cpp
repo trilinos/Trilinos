@@ -962,7 +962,9 @@ getJacobian(const bool cache,
   int num_ip = int_rule->num_points;
   int num_nodes = int_rule->topology->getNodeCount();
 
-  auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(getCubaturePointsRef(false,force));
+  // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
+  auto const_ref_coord = getCubaturePointsRef(false,force);
+  auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(const_ref_coord);
   auto node_coord = PHX::getNonConstDynRankViewFromConstMDField(getNodeCoordinates());
   auto aux = af.template buildStaticArray<Scalar,Cell,IP,Dim,Dim>("jac",num_cells_, num_ip, num_space_dim,num_space_dim);
 
@@ -1615,7 +1617,9 @@ getCubaturePoints(const bool cache,
 
   } else {
 
-    auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(getCubaturePointsRef(false,force));
+    // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
+    auto const_ref_coord = getCubaturePointsRef(false,force);
+    auto ref_coord = PHX::getNonConstDynRankViewFromConstMDField(const_ref_coord);
 
     const auto cell_range = std::make_pair(0,num_evaluate_cells_);
     auto s_ref_coord  = Kokkos::subview(ref_coord,     cell_range,Kokkos::ALL(),Kokkos::ALL());
@@ -1624,6 +1628,7 @@ getCubaturePoints(const bool cache,
 
     Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
     cell_tools.mapToPhysicalFrame(s_coord, s_ref_coord, s_node_coord, *(int_rule->topology));
+
   }
 
   PHX::Device::execution_space().fence();
@@ -1667,7 +1672,10 @@ getCubaturePointsRef(const bool cache,
     // Control volume reference points are actually generated from the physical points (i.e. reverse to everything else)
 
     auto node_coord = PHX::getNonConstDynRankViewFromConstMDField(getNodeCoordinates());
-    auto coord = PHX::getNonConstDynRankViewFromConstMDField(getCubaturePoints(false,force));
+
+    // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
+    auto const_coord = getCubaturePoints(false,force);
+    auto coord = PHX::getNonConstDynRankViewFromConstMDField(const_coord);
 
     const auto cell_range = std::make_pair(0,num_evaluate_cells_);
     auto s_ref_coord  = Kokkos::subview(aux.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
@@ -1735,6 +1743,7 @@ getCubaturePointsRef(const bool cache,
                                  << "non-natural integration rules.");
 
     auto cub_points = getUniformCubaturePointsRef(false,force,false);
+
     Kokkos::MDRangePolicy<PHX::Device,Kokkos::Rank<3>> policy({0,0,0},{num_evaluate_cells_,num_ip,num_space_dim});
     Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int & cell, const int & ip, const int & dim){
       aux(cell,ip,dim) = cub_points(ip,dim);

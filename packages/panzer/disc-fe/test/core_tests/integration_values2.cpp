@@ -118,8 +118,8 @@ namespace panzer {
   }
 
   TEUCHOS_UNIT_TEST(integration_values, control_volume)
-  {    
-    Teuchos::RCP<shards::CellTopology> topo = 
+  {
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
@@ -128,17 +128,17 @@ namespace panzer {
     const panzer::CellData side_cell_data(num_cells,0,topo);
 
     std::string cv_type = "volume";
-    RCP<IntegrationRule> int_rule_vol = 
+    RCP<IntegrationRule> int_rule_vol =
       rcp(new IntegrationRule(cell_data, cv_type));
-    
+
     panzer::MDFieldArrayFactory af("prefix_",true);
 
     cv_type = "side";
-    RCP<IntegrationRule> int_rule_side = 
+    RCP<IntegrationRule> int_rule_side =
       rcp(new IntegrationRule(side_cell_data, cv_type));
 
     const int num_vertices = int_rule_vol->topology->getNodeCount();
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
@@ -172,7 +172,7 @@ namespace panzer {
 
     panzer::IntegrationValues2<double> int_values_side("prefix_");
     int_values_side.setup(int_rule_side, node_coordinates);
-    
+
     TEST_EQUALITY(int_values_vol.getCubaturePoints().extent(1), 4);
     TEST_EQUALITY(int_values_side.getCubaturePoints().extent(1), 4);
     TEST_EQUALITY(int_values_side.getWeightedNormals().extent(1), 4);
@@ -180,24 +180,24 @@ namespace panzer {
     double realspace_y_coord_1 = 0.25;
     auto tmp_coords = int_values_vol.getCubaturePoints();
     auto tmp_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),tmp_coords.get_view());
-    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,0), 
+    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,0),
                            realspace_x_coord_1, 1.0e-8);
-    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,1), 
+    TEST_FLOATING_EQUALITY(tmp_coords_host(0,0,1),
                            realspace_y_coord_1, 1.0e-8);
     double realspace_x_coord_2 = 0.5;
     double realspace_y_coord_2 = 0.25;
     auto tmp_side_coords = int_values_side.getCubaturePoints();
     auto tmp_side_coords_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),tmp_side_coords.get_view());
-    TEST_FLOATING_EQUALITY(tmp_side_coords_host(0,0,0), 
+    TEST_FLOATING_EQUALITY(tmp_side_coords_host(0,0,0),
                            realspace_x_coord_2, 1.0e-8);
-    TEST_FLOATING_EQUALITY(tmp_side_coords_host(0,0,1), 
+    TEST_FLOATING_EQUALITY(tmp_side_coords_host(0,0,1),
                            realspace_y_coord_2, 1.0e-8);
 
   }
 
   TEUCHOS_UNIT_TEST(integration_values, control_volume_boundary)
   {
-    Teuchos::RCP<shards::CellTopology> topo = 
+    Teuchos::RCP<shards::CellTopology> topo =
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 2;
@@ -206,13 +206,13 @@ namespace panzer {
     const panzer::CellData cell_data(num_cells,cell_side,topo);
 
     std::string cv_type = "boundary";
-    RCP<IntegrationRule> int_rule_bc = 
+    RCP<IntegrationRule> int_rule_bc =
       rcp(new IntegrationRule(cell_data, cv_type));
 
     panzer::MDFieldArrayFactory af("prefix_",true);
 
     const int num_vertices = int_rule_bc->topology->getNodeCount();
-    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates
         = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
 
     // Set up node coordinates.  Here we assume the following
@@ -255,13 +255,13 @@ namespace panzer {
         out << "\n";
       }
     }
-    
+
     TEST_EQUALITY(int_values_bc.getCubaturePoints().extent(1), 2);
     double realspace_x_coord_1 = 1.0;
     double realspace_y_coord_1 = 0.25;
-    TEST_FLOATING_EQUALITY(ip_coords_host(0,0,0), 
+    TEST_FLOATING_EQUALITY(ip_coords_host(0,0,0),
                            realspace_x_coord_1, 1.0e-8);
-    TEST_FLOATING_EQUALITY(ip_coords_host(0,0,1), 
+    TEST_FLOATING_EQUALITY(ip_coords_host(0,0,1),
                            realspace_y_coord_1, 1.0e-8);
 
   }
@@ -277,7 +277,7 @@ namespace panzer {
        \    |    /
         \   |   /
          3--4--5
- 
+
       Cell 0: 0,3,4,1
       Cell 1: 1,4,5,2
 
@@ -289,7 +289,7 @@ namespace panzer {
       3:  0, -1 (1,0)
       4:  1, -1 (4,5)
       5:  1, -1 (2,1)
-       
+
      */
 
     // First we build the mesh
@@ -355,7 +355,7 @@ namespace panzer {
       cell_to_faces_host(1,0) = 2; cell_to_faces_host(1,1) = 4; cell_to_faces_host(1,2) = 0; cell_to_faces_host(1,3) = 5;
       Kokkos::deep_copy(mesh.cell_to_faces,cell_to_faces_host);
     }
-   
+
     const auto id = panzer::IntegrationDescriptor(2, panzer::IntegrationDescriptor::SURFACE);
     auto int_rule = Teuchos::rcp(new IntegrationRule(id, mesh.cell_topology, 2, 6));
 
@@ -384,7 +384,7 @@ namespace panzer {
 
     // Now we try again
     int_values.evaluateValues(node_coordinates,-1,connectivity,0);
-    
+
     // This test will focus on normals and points
     const auto normals = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.getSurfaceNormals().get_static_view());
     const auto points = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),int_values.getCubaturePoints().get_static_view());
@@ -406,7 +406,7 @@ namespace panzer {
     // We need to make sure that face 0 and 2 have aligned quadrature points
 
     const double tolerance = 1.e-14;
-    
+
     // Face 0
     {
       const int cell_0 = connectivity->cellForSubcellHost(0,0);
@@ -427,7 +427,7 @@ namespace panzer {
 
       // Note that y will be equal, but x will be different
       out << "Comparing cell_0 "<<cell_0<<" to cell_1 "<<cell_1<<"\n";
-      
+
       for(int face_point=0; face_point<num_points_per_face; ++face_point){
         const int point_0 = lidx_0*num_points_per_face+face_point;
         const int point_1 = lidx_1*num_points_per_face+face_point;
@@ -445,7 +445,7 @@ namespace panzer {
 
       }
     }
-    
+
     // Face 2
     {
       const int cell_0 = connectivity->cellForSubcellHost(2,0);
@@ -462,7 +462,7 @@ namespace panzer {
 
       const double normal_0[2] = { 1.,0.};
       const double normal_1[2] = {-1.,0.};
-      
+
       out << "Comparing cell_0 "<<cell_0<<" to cell_1 "<<cell_1<<"\n";
 
       for(int face_point=0; face_point<num_points_per_face; ++face_point){
@@ -476,7 +476,7 @@ namespace panzer {
 
         TEST_FLOATING_EQUALITY(normals(cell_0,point_0,0), normal_0[0], tolerance);
         TEST_FLOATING_EQUALITY(normals(cell_0,point_0,1), normal_0[1], tolerance);
-        
+
         TEST_FLOATING_EQUALITY(normals(cell_1,point_1,0), normal_1[0], tolerance);
         TEST_FLOATING_EQUALITY(normals(cell_1,point_1,1), normal_1[1], tolerance);
 
