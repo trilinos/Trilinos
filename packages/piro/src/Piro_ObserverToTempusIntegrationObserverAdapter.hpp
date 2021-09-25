@@ -104,6 +104,7 @@ public:
 private:
 
   void observeTimeStep();
+  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
   Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
@@ -112,7 +113,6 @@ private:
   bool supports_x_dotdot_;
   Scalar previous_dt_; 
   bool abort_on_fail_at_min_dt_;
-  Teuchos::RCP<const Piro::TempusIntegrator<Scalar>> piroTempusIntegrator_; 
   
   SENS_METHOD sens_method_;
 };

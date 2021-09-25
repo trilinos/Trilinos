@@ -574,7 +574,8 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, TimeZero_DefaultResponseAdjointSensitivity)
   //Specifically, we have dg/dp0 = -sum(x_i) + 2*p0 + p1 + 11 and dg/dp1 = -sum(x_i) + p0 + p1 + 12
   //evaluated at the initial condition x = [3,3,3,3] and p = [1,1] 
   RCP<const Thyra::MultiVectorBase<double> > DgDp = solver->getPiroTempusIntegrator()->getDgDp();
-  TEST_EQUALITY(DgDp->range()->dim(), expected.size());
+  int expected_size = expected.size();  
+  TEST_EQUALITY(DgDp->range()->dim(), expected_size);
 
   const Array<double> actual = arrayFromVector(*DgDp->col(0));
   const Array<double> expected_array = Array<double>(expected); 
