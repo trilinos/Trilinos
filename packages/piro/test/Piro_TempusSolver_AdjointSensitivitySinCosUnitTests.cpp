@@ -55,6 +55,7 @@
 #include "SinCosModel.hpp"
 #include "Piro_Test_MockObserver.hpp"
 
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Teuchos_Ptr.hpp"
@@ -174,7 +175,7 @@ void test_sincos_asa(Teuchos::FancyOStream &out, bool &success)
     const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
     const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
     const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
-          = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(integrator, solutionHistory, timeStepControl, observer, 
+          = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer, 
 				                                                false, false, sens_method));
     integrator->setObserver(tempusObserver);
    

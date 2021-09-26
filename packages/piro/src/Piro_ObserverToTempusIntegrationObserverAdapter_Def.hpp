@@ -49,20 +49,18 @@
 // Constructor
 template <typename Scalar>
 Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::ObserverToTempusIntegrationObserverAdapter(
-    const Teuchos::RCP<const Piro::TempusIntegrator<Scalar>>& piroTempusIntegrator,
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver,
     const bool supports_x_dotdot, const bool abort_on_fail_at_min_dt, 
     const SENS_METHOD sens_method)
-    : piroTempusIntegrator_(piroTempusIntegrator),	
-      solutionHistory_(solutionHistory),
+    : solutionHistory_(solutionHistory),
       timeStepControl_(timeStepControl),
       out_(Teuchos::VerboseObjectBase::getDefaultOStream()),
       wrappedObserver_(wrappedObserver),
       supports_x_dotdot_(supports_x_dotdot),
       abort_on_fail_at_min_dt_(abort_on_fail_at_min_dt), 
-      sens_method_(sens_method)
+      sens_method_(sens_method)  
 {
   previous_dt_ = 0.0;
 }
@@ -228,16 +226,40 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
     return;
   }
 
-  //Get solution and its time derivatives from piroTempusIntegrator
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution = piroTempusIntegrator_->getX(); 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dot = piroTempusIntegrator_->getXDot(); 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dotdot = (supports_x_dotdot_ == true) ? piroTempusIntegrator_->getXDotDot() : Teuchos::null; 
+  //Get current state and its derivatives
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> x = solutionHistory_->getCurrentState()->getX(); 
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> xdot = solutionHistory_->getCurrentState()->getXDot(); 
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> xdotdot = solutionHistory_->getCurrentState()->getXDotDot(); 
   
-  //get solution derivative dx/dp (for forward sens) from piroTempusIntegrator 
-  Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > solution_dxdp_mv = (sens_method_ == FORWARD) ? piroTempusIntegrator_->getDxDp() : Teuchos::null; 
-
+  //Declare solution and its time derivatives
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> solution = Teuchos::null; 
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> solution_dot = Teuchos::null; 
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> solution_dotdot = Teuchos::null; 
+  
+  //Declare solution derivative dx/dp (for forward sens) 
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > solution_dxdp_mv = Teuchos::null; 
+  
+  if ((sens_method_ == NONE) || (sens_method_ == ADJOINT)) { //this is a hack for now for 
+	                                                     //the adjoint case
+  //if (sens_method_ == NONE) { 
+    solution = x; 
+    solution_dot = xdot; 
+    solution_dotdot = xdotdot; 
+  } 
+  else if (sens_method_ == FORWARD) {
+    //Get solution and its derivatives
+    typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+    Teuchos::RCP<DMVPV> x_fwd = Teuchos::rcp_dynamic_cast<DMVPV>(x);
+    Teuchos::RCP<DMVPV> xdot_fwd = Teuchos::rcp_dynamic_cast<DMVPV>(xdot);
+    Teuchos::RCP<DMVPV> xdotdot_fwd = Teuchos::rcp_dynamic_cast<DMVPV>(xdotdot);
+    //First vector in x_fwd is solution, 2nd vector is dx/dp
+    solution = x_fwd->getNonconstMultiVector()->col(0);
+    solution_dot = x_fwd->getNonconstMultiVector()->col(0);
+    solution_dotdot = x_fwd->getNonconstMultiVector()->col(0);
+    const int num_param = x_fwd->getMultiVector()->domain()->dim()-1;
+    const Teuchos::Range1D rng(1,num_param);
+    solution_dxdp_mv = x_fwd->getNonconstMultiVector()->subView(rng);
 #ifdef DEBUG_OUTPUT
-  if (solution_dxdp_mv != Teuchos::null) {  
     for (int np = 0; np < num_param; np++) {
       *out_ << "\n*** Piro::ObserverToTempusIntegrationObserverAdapter dxdp" << np << " ***\n";
       Teuchos::RCP<const Thyra::VectorBase<Scalar>> solution_dxdp = solution_dxdp_mv->col(np);
@@ -248,8 +270,23 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
       for (auto i = 0; i < dxdpa.size(); ++i) *out_ << dxdpa[i] << " ";
       *out_ << "\n*** Piro::ObserverToTempusIntegrationObserverAdapter dxdp" << np << " ***\n";
     }
-  }
 #endif
+  }
+  //IKT FIXME: Commenting out for now since cast doesn't work...
+ /* else if (sens_method_ == ADJOINT) {
+    //Get solution and its derivatives
+    //First vector in x_fwd is solution, 2nd vector is dg/dp
+    //TODO?  put in observation of dg/dp
+    typedef Thyra::DefaultProductVector<Scalar> DPV; 
+    std::cout << "IKT x = " << x << "\n"; 
+    Teuchos::RCP<DPV> x_adj = Teuchos::rcp_dynamic_cast<DPV>(x);
+    std::cout << "IKT x = " << x_adj << "\n"; 
+    Teuchos::RCP<DPV> xdot_adj = Teuchos::rcp_dynamic_cast<DPV>(xdot);
+    Teuchos::RCP<DPV> xdotdot_fwd = Teuchos::rcp_dynamic_cast<DPV>(xdotdot);
+    solution = x_adj->getNonconstVectorBlock(0);
+    solution_dot = x_adj->getNonconstVectorBlock(0);
+    solution_dotdot = x_adj->getNonconstVectorBlock(0);
+  }*/
 
   const Scalar scalar_time = solutionHistory_->getCurrentState()->getTime();
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType StampScalar;
@@ -278,6 +315,8 @@ Piro::ObserverToTempusIntegrationObserverAdapter<Scalar>::observeTimeStep()
   }
   else { //no solution_dot 
     if (solution_dxdp_mv != Teuchos::null) {
+      std::cout << "IKT solution = " << solution << "\n";
+      std::cout << "IKT soluttion_dxdp_mv = " << solution_dxdp_mv << "\n";
       wrappedObserver_->observeSolution(*solution, *solution_dxdp_mv, time);
     }
     else {

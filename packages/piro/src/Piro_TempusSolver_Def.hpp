@@ -682,7 +682,7 @@ setObserver() const
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory = piroTempusIntegrator_->getSolutionHistory();
     const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = piroTempusIntegrator_->getTimeStepControl();
     //Create Tempus::IntegratorObserverBasic object
-    observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(piroTempusIntegrator_, solutionHistory,
+    observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
                                 timeStepControl, piroObserver_, supports_x_dotdot_, abort_on_fail_at_min_dt_, sens_method_));
   }
   if (Teuchos::nonnull(observer)) {
