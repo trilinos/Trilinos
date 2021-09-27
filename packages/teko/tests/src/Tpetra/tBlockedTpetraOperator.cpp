@@ -236,9 +236,7 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
       << "testing tolerance over many matrix vector multiplies ( " << max << " <= "
       << tolerance_ << " )");
 
-   A->resumeFill();
    A->scale(2.0); //double everything
-   A->fillComplete();
 
    ST afterNorm = A->getFrobeniusNorm();
    TEST_ASSERT(beforeNorm!=afterNorm,

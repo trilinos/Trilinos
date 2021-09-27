@@ -2484,10 +2484,6 @@ namespace Tpetra {
     ///   \|A\|_F = \sqrt{\sum_{i,j} \|A(i,j)\|^2}.
     /// \f\].
     ///
-    /// If the matrix is fill complete, then the computed value is
-    /// cached; the cache is cleared whenever resumeFill() is called.
-    /// Otherwise, the value is computed every time the method is
-    /// called.
     mag_type getFrobeniusNorm () const override;
 
     /// \brief Return \c true if getLocalRowView() and
@@ -3865,27 +3861,14 @@ public:
     sortAndMergeIndicesAndValues (const bool sorted,
                                   const bool merged);
 
-    /// \brief Clear matrix properties that require collectives.
-    ///
-    /// This clears whatever computeGlobalConstants() (which see)
-    /// computed, in preparation for changes to the matrix.  The
-    /// current implementation of this method does nothing.
-    ///
-    /// This method is called in resumeFill().
-    void clearGlobalConstants();
-
-    /// \brief Compute matrix properties that require collectives.
-    ///
-    /// The corresponding Epetra_CrsGraph method computes things
-    /// like the global number of nonzero entries, that require
-    /// collectives over the matrix's communicator.  The current
-    /// Tpetra implementation of this method does nothing.
-    ///
   public:
-    /// This method is called in fillComplete().
-    void computeGlobalConstants();
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED void computeGlobalConstants() {};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
+
   protected:
     /// \brief Column Map MultiVector used in apply().
     ///
@@ -4115,13 +4098,6 @@ protected:
     ///   to their owning processes.
     std::map<GlobalOrdinal, std::pair<Teuchos::Array<GlobalOrdinal>,
                                       Teuchos::Array<Scalar> > > nonlocals_;
-
-    /// \brief Cached Frobenius norm of the (global) matrix.
-    ///
-    /// The value -1 means that the norm has not yet been computed, or
-    /// that the values in the matrix may have changed and the norm
-    /// must be recomputed.
-    mutable mag_type frobNorm_ = -STM::one();
 
   public:
     // FIXME (mfh 24 Feb 2014) Is it _really_ necessary to make this a
