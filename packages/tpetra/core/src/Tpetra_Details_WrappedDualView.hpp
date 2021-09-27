@@ -73,6 +73,11 @@
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
 
+  // We really need this forward declaration here for friend to work
+  template<typename SC, typename LO, typename GO, typename NO>
+  class MultiVector;
+
+
 /// \brief Namespace for Tpetra implementation details.
 /// \warning Do NOT rely on the contents of this namespace.
 namespace Details {
@@ -168,12 +173,14 @@ public:
     dualView = originalDualView;
   }
 
-  // Subview constructors
+  // 1D View constructors
   WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
     originalDualView = parent.originalDualView;
     dualView = getSubview(parent.dualView, offset, numEntries);
   }
 
+
+  // 2D View Constructors
   WrappedDualView(const WrappedDualView parent,const Kokkos::pair<size_t,size_t>& rowRng, const Kokkos::Impl::ALL_t& colRng) {
     originalDualView = parent.originalDualView;
     dualView = getSubview2D(parent.dualView,rowRng,colRng);
@@ -189,7 +196,6 @@ public:
     dualView = getSubview2D(parent.dualView,rowRng,colRng);
   }
 
-
   size_t extent(const int i) const {
     return dualView.h_view.extent(i);
   }
@@ -203,6 +209,9 @@ public:
     return originalDualView.h_view.extent(i);
   }
   
+  const char * label() const {
+    return dualView.d_view.label();
+  }
 
 
   typename HostViewType::const_type
@@ -542,13 +551,15 @@ public:
   }
 
 
+  // MultiVector really needs to get at the raw DualViews, 
+  // but we'd very much prefer that users not.
+  template<typename SC, typename LO, typename GO, typename NO>
+  friend class ::Tpetra::MultiVector;
+
+private:
   // A Kokkos implementation of WrappedDualView will have to make these
-  // functions publically accessable, but in the Tpetra version, I'm
-  // not sure we want this.  There are two options on proceeding here:
-  // 1) Mark these as "Expert" only in the comments.  This will be consistent
-  //    with a future Kokkos version.
-  // 2) Make these protected and then friend Vector/MultiVector.  This will
-  //    keep out users from shooting themselves in the feet.  
+  // functions publically accessable, but in the Tpetra version, we'd 
+  // really rather not.
   DualViewType getOriginalDualView() const {
     return originalDualView;
   }
@@ -557,11 +568,6 @@ public:
     return dualView;
   }
 
-
-
-
-
-private:
   template <typename ViewType>
   ViewType getSubview(ViewType view, int offset, int numEntries) const {
     return Kokkos::subview(view, Kokkos::pair<int, int>(offset, offset+numEntries));
