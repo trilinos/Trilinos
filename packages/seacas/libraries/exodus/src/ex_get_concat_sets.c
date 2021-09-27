@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -187,7 +187,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     }
 
     /* get distribution factors for this set */
-    if (sets_dist_fact != 0) {
+    if (sets_dist_fact != NULL) {
       size_t df_idx;
       size_t num_dist;
       if (ex_int64_status(exoid) & EX_BULK_INT64_API) {

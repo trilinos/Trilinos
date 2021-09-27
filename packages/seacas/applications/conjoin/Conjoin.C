@@ -2072,7 +2072,7 @@ namespace {
 
     {
       size_t i = 0;
-      for (auto set_id : set_ids) {
+      for (auto &set_id : set_ids) {
         glob_sets[i].id        = set_id;
         glob_sets[i].position_ = i;
         i++;

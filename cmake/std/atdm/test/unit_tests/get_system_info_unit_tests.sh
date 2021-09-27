@@ -21,7 +21,7 @@ ATDM_UNIT_TESTS_DIR=${ATDM_CONFIG_SCRIPT_DIR}/test/unit_tests
 
 #
 # Unit test helper functions
-# 
+#
 
 
 # Create an intial default test env
@@ -85,7 +85,7 @@ function known_system_by_hostname_test_helper() {
   expected_cdash_hostname=$2
   expected_system_name=$3
   # Body
-  init_system_info_test_env "${realhostname}" 
+  init_system_info_test_env "${realhostname}"
   source ${ATDM_CONFIG_SCRIPT_DIR}/utils/get_system_info.sh
   assert_system_info_output "${realhostname}" "${expected_cdash_hostname}" \
     "${expected_system_name}"
@@ -95,14 +95,6 @@ function known_system_by_hostname_test_helper() {
 #
 # Test specific some known configurations and basic use cases
 #
-
-function test_ride_default() {
-  known_system_by_hostname_test_helper ride11 ride ride
-}
-
-function test_white_default() {
-  known_system_by_hostname_test_helper white22 white ride
-}
 
 function test_vortex_default() {
   known_system_by_hostname_test_helper vortex60 vortex ats2

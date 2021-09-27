@@ -312,7 +312,7 @@ void F2C(expqa, EXPQA)(int *idexo, int *num_qa_records, char *qa_record, int *ie
   for (int i = 0; i < *num_qa_records; i++) {
     for (int ii = 0; ii < alen; ii++) {
       *(sptr + iii) = malloc((slen + 1) * sizeof(char));
-      if (*(sptr + iii) == 0) {
+      if (*(sptr + iii) == NULL) {
         free(sptr); /* free up array ptr space */
         *ierr = EX_MEMFAIL;
         snprintf(errmsg, MAX_ERR_LENGTH,
@@ -325,7 +325,7 @@ void F2C(expqa, EXPQA)(int *idexo, int *num_qa_records, char *qa_record, int *ie
       iii++; /* bump char array pointer */
     }
   }
-  *(sptr + iii) = 0; /* set last pointer to null */
+  *(sptr + iii) = NULL; /* set last pointer to null */
 
   if (ex_put_qa(*idexo, *num_qa_records, (void *)sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
@@ -382,7 +382,7 @@ void F2C(exgqa, EXGQA)(int *idexo, char *qa_record, int *ierr, int qa_recordlen)
   for (i = 0; i < num_qa_records; i++) { /* pointer allocation loop */
     for (ii = 0; ii < alen; ii++) {
       *(sptr + iii) = malloc((slen + 1) * sizeof(char));
-      if (*(sptr + iii) == 0) {
+      if (*(sptr + iii) == NULL) {
         free(sptr);
         *ierr = EX_MEMFAIL;
         return;
@@ -390,7 +390,7 @@ void F2C(exgqa, EXGQA)(int *idexo, char *qa_record, int *ierr, int qa_recordlen)
       iii++; /* bump char array pointer */
     }
   }
-  *(sptr + iii) = 0; /* null out last pointer */
+  *(sptr + iii) = NULL; /* null out last pointer */
 
   /* do Exodus C call to get qa records */
   if (ex_get_qa(*idexo, (void *)sptr) == EX_FATAL) {
@@ -451,7 +451,7 @@ void F2C(expinf, EXPINF)(int *idexo, int *num_info, char *info, int *ierr, int i
     ex_fstrncpy(*(aptr + i), info + i * infolen, slen); /* copy string into
                                                          * buffer */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
   if (ex_put_info(*idexo, *num_info, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
     free(sptr); /* Free up string staging area */
@@ -507,9 +507,9 @@ void F2C(exginf, EXGINF)(int *idexo, char *info, int *ierr, int infolen)
   for (i = 0; i < num_info; i++) { /* Put pointers to the info records in ptr
                                     * array */
     *(aptr + i) = sptr + i * (slen + 1);
-  }                /* put ptr in string ptr
-                    * array */
-  *(aptr + i) = 0; /* null out last pointer */
+  }                   /* put ptr in string ptr
+                       * array */
+  *(aptr + i) = NULL; /* null out last pointer */
 
   /* Do exodus call to get info records */
   if (ex_get_info(*idexo, aptr) == EX_FATAL) {
@@ -597,7 +597,7 @@ void F2C(expcon, EXPCON)(int *idexo, char *coord_names, int *ierr, int coord_nam
     /* copy fortran string into allocated space */
     ex_fstrncpy(*(aptr + i), coord_names + i * coord_nameslen, slen);
   }
-  *(aptr + i) = 0; /* set last pointer to null */
+  *(aptr + i) = NULL; /* set last pointer to null */
 
   if (ex_put_coord_names(*idexo, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
@@ -732,7 +732,7 @@ void F2C(expclb, EXPCLB)(int *idexo, void_int *elem_blk_id, char *elem_type,
     ex_fstrncpy(*(aptr + i), elem_type + i * elem_typelen, slen); /* copy string into
                                                                    * buffer */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
 
   if (ex_put_concat_elem_block(*idexo, elem_blk_id, aptr, num_elem_this_blk, num_nodes_per_elem,
                                num_attr, *create_maps) == EX_FATAL) {
@@ -923,7 +923,7 @@ void F2C(exgean, EXGEAN)(int *idexo, entity_id *elem_blk_id, int *num_attr, char
   for (i = 0; i < *num_attr; i++) {
     *(aptr + i) = sptr + i * (slen + 1); /* put address into ptr array */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
 
   *ierr = 0;
   if (ex_get_attr_names(*idexo, EX_ELEM_BLOCK, *elem_blk_id, aptr) == EX_FATAL) {
@@ -983,7 +983,7 @@ void F2C(expean, EXPEAN)(int *idexo, entity_id *elem_blk_id, int *num_attr, char
     ex_fstrncpy(*(aptr + i), names + i * nameslen, slen); /* copy string into
                                                            * buffer */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
 
   *ierr = 0;
   if (ex_put_attr_names(*idexo, EX_ELEM_BLOCK, *elem_blk_id, aptr) == EX_FATAL) {
@@ -1033,7 +1033,7 @@ void F2C(expnams, EXPNAMS)(int *idexo, int *type, int *num_obj, char *names, int
     ex_fstrncpy(*(aptr + i), names + i * nameslen, slen); /* copy string into
                                                            * buffer */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
   /* do Exodus C call to write results variables names */
   if (ex_put_names(*idexo, (ex_entity_type)*type, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
@@ -1115,7 +1115,7 @@ void F2C(exgnams, EXGNAMS)(int *idexo, int *type, int *num_obj, char *names, int
   for (i = 0; i < *num_obj; i++) {
     *(aptr + i) = sptr + i * (slen + 1); /* put address into ptr array */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
 
   /* do Exodus C call to read results variables names */
   if (ex_get_names(*idexo, (ex_entity_type)*type, aptr) == EX_FATAL) {
@@ -1216,7 +1216,7 @@ void F2C(exppn, EXPPN)(int *idexo, int *obj_type, int *num_props, char *prop_nam
     /* copy fortran string into allocated space */
     ex_fstrncpy(*(aptr + i), prop_names + i * prop_nameslen, slen);
   }
-  *(aptr + i) = 0; /* set last pointer to null */
+  *(aptr + i) = NULL; /* set last pointer to null */
 
   if (ex_put_prop_names(*idexo, (ex_entity_type)*obj_type, *num_props, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
@@ -1293,9 +1293,9 @@ void F2C(exgpn, EXGPN)(int *idexo, int *obj_type, char *prop_names, int *ierr, i
 
   for (i = 0; i < num_props; i++) {
     *(aptr + i) = sptr + i * (slen + 1);
-  }                /* put ptrs to staging space
-                    * into ptr array */
-  *(aptr + i) = 0; /* set last pointer to null */
+  }                   /* put ptrs to staging space
+                       * into ptr array */
+  *(aptr + i) = NULL; /* set last pointer to null */
 
   /* do Exodus C call to get property name records */
   if (ex_get_prop_names(*idexo, (ex_entity_type)*obj_type, aptr) == EX_FATAL) {
@@ -1947,7 +1947,7 @@ void F2C(expvan, EXPVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
     ex_fstrncpy(*(aptr + i), var_names + i * var_nameslen, slen); /* copy string into
                                                                    * buffer */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
   /* do Exodus C call to write results variables names */
   if (ex_put_variable_names(*idexo, obj_type, *num_vars, aptr) == EX_FATAL) {
     *ierr = EX_FATAL;
@@ -1994,7 +1994,7 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
   for (i = 0; i < *num_vars; i++) {
     *(aptr + i) = sptr + i * (slen + 1); /* put address into ptr array */
   }
-  *(aptr + i) = 0; /* null out last ptr */
+  *(aptr + i) = NULL; /* null out last ptr */
 
   /* do Exodus C call to read results variables names */
   if (ex_get_variable_names(*idexo, obj_type, *num_vars, aptr) == EX_FATAL) {
@@ -2385,9 +2385,6 @@ void F2C(exgcssc, EXGCSSC)(int *idexo, int *side_set_node_cnt_list, int *ierr)
 void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord, int *tags,
                          int *ierr)
 {
-  int   i;
-  char *ctags = NULL;
-
   /* Determine number of coordinate frames stored in file */
   int nframe = ex_inquire_int(*idexo, EX_INQ_COORD_FRAMES);
   if (nframe < 0) {
@@ -2401,6 +2398,7 @@ void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord,
   }
   /* Create array of characters to store tags... */
   if (nframe > 0) {
+    char *ctags = NULL;
     if (!(ctags = calloc(nframe, sizeof(char)))) {
       *ierr = EX_MEMFAIL;
       return;
@@ -2412,7 +2410,7 @@ void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord,
       return;
     }
     /* Convert character tags back to integer tags for fortran */
-    for (i = 0; i < nframe; i++) {
+    for (int i = 0; i < nframe; i++) {
       if (ctags[i] == 'R' || ctags[i] == 'r') {
         tags[i] = EX_CF_RECTANGULAR;
       }
@@ -2434,7 +2432,6 @@ void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord,
 void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, int *tags,
                          int *ierr)
 {
-  int   i;
   char *ctags = NULL;
 
   /* Create array of characters to store tags... */
@@ -2444,7 +2441,7 @@ void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, 
       return;
     }
     /* Convert fortran integer tags to C API character tags */
-    for (i = 0; i < *nframe; i++) {
+    for (int i = 0; i < *nframe; i++) {
       if (tags[i] == EX_CF_RECTANGULAR) {
         ctags[i] = 'R';
       }
@@ -2613,12 +2610,10 @@ void F2C(exgnnm, EXGNNM)(int *idexo, void_int *node_map, int *ierr)
 void F2C(exgvnm, EXGVNM)(int *idexo, char *var_type, int *var_index, char *var_name, int *ierr,
                          int var_typelen, int var_namelen)
 {
-  char *sptr; /* ptr to temp staging space for string */
-  int   slen;
   *ierr                   = 0; /* default no error */
   ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
-  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  int slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
   if (slen < 0) {
     *ierr = EX_FATAL;
     return;
@@ -2628,6 +2623,7 @@ void F2C(exgvnm, EXGVNM)(int *idexo, char *var_type, int *var_index, char *var_n
     slen = var_namelen;
   }
   /* Allocate staging space for the variable name */
+  char *sptr; /* ptr to temp staging space for string */
   if (!(sptr = malloc((slen + 1) * sizeof(char)))) {
     *ierr = EX_MEMFAIL;
     return;
@@ -2718,12 +2714,10 @@ void F2C(expnnm, EXPNNM)(int *idexo, void_int *node_map, int *ierr)
 void F2C(expvnm, EXPVNM)(int *idexo, char *var_type, int *var_index, char *var_name, int *ierr,
                          int var_typelen, int var_namelen)
 {
-  char *sptr; /* ptr to temp staging space for string */
-  int   slen;
   *ierr                   = 0; /* default no error */
   ex_entity_type obj_type = ex_var_type_to_ex_entity_type(*var_type);
 
-  slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
+  int slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH); /* max str size */
   if (slen < 0) {
     *ierr = EX_FATAL;
     return;
@@ -2733,6 +2727,7 @@ void F2C(expvnm, EXPVNM)(int *idexo, char *var_type, int *var_index, char *var_n
     slen = var_namelen;
   }
   /* Allocate staging space for the variable name */
+  char *sptr; /* ptr to temp staging space for string */
   if (!(sptr = (char *)malloc((slen + 1) * sizeof(char)))) {
     *ierr = EX_MEMFAIL;
     return;
@@ -2757,8 +2752,6 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
                        size_t ftypelen)
 {
   size_t slen = 1;
-  char * file_type;
-
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
@@ -2772,7 +2765,7 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
     slen = ftypelen;
   }
 
-  file_type = (char *)malloc((slen + 1) * sizeof(char));
+  char *file_type = (char *)malloc((slen + 1) * sizeof(char));
 
   if ((*ierr = ex_get_init_info(*idne, nproc, nproc_in_f, file_type)) != 0) {
     char errmsg[MAX_ERR_LENGTH];
@@ -2795,29 +2788,26 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
 void F2C(expii, EXPII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int *ierr,
                        size_t ftypelen)
 {
-
-  char errmsg[MAX_ERR_LENGTH];
-
   size_t slen = 1;
-  char * file_type;
-
   /* WARNING: ftypelen SHOULD be 1, but may not be depending on how
               the Fortran programmer passed it. It is best at
               this time to hard code it per NEPII spec. */
   if (ftypelen != 1) {
     slen = ftypelen;
 #if defined(EXODUS_STRING_LENGTH_WARNING)
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: file type string length is %lu in file id %d\n",
              ftypelen, *idne);
     ex_err_fn(*idne, __func__, errmsg, EX_MSG);
 #endif
   }
 
-  file_type = (char *)malloc((slen + 1) * sizeof(char));
+  char *file_type = (char *)malloc((slen + 1) * sizeof(char));
 
   ex_fstrncpy(file_type, ftype, slen);
 
   if ((*ierr = ex_put_init_info(*idne, *nproc, *nproc_in_f, file_type)) != 0) {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Error: failed to put initial information in file id %d",
              *idne);
     ex_err_fn(*idne, __func__, errmsg, EX_MSG);

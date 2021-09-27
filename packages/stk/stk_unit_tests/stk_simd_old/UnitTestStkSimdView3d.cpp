@@ -119,7 +119,7 @@ class StkSimdView3dTester {
   struct AddFunctor {
     AddFunctor(ConstSimdView a_, SimdView b_) : a(a_), b(b_) {}
 
-    STK_INLINE
+    KOKKOS_INLINE_FUNCTION
     void operator() (const DeviceIndex& i) const {
       for (int j=0; j < dim1; ++j) {
         for (int k=0; k < dim2; ++k) {
@@ -129,7 +129,7 @@ class StkSimdView3dTester {
       }
     }
 
-    STK_INLINE
+    KOKKOS_INLINE_FUNCTION
     void operator() (SomeTag, const DeviceIndex& i) const {
       for (int j=0; j < dim1; ++j) {
         for (int k=0; k < dim2; ++k) {
@@ -179,7 +179,7 @@ class StkSimdView3dTester {
     
   struct ReduceSumFunctor {
     ReduceSumFunctor(SimdView a_, int j_, int k_) : a(a_), j(j_), k(k_) {}
-    STK_INLINE void operator() (const DeviceIndex& i, DeviceReal& v) const {
+    KOKKOS_INLINE_FUNCTION void operator() (const DeviceIndex& i, DeviceReal& v) const {
       v += a(i,j,k);
     }
    private:
@@ -189,7 +189,7 @@ class StkSimdView3dTester {
 
   struct ReduceSumFunctorWithTag {
     ReduceSumFunctorWithTag(SimdView a_, int j_, int k_) : a(a_), j(j_), k(k_) {}
-    STK_INLINE void operator() (SomeTag, const DeviceIndex& i, DeviceReal& v) const {
+    KOKKOS_INLINE_FUNCTION void operator() (SomeTag, const DeviceIndex& i, DeviceReal& v) const {
       v += a(i,j,k);
     }
    private:

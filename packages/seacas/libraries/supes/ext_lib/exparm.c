@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -157,69 +157,6 @@ void exparm(char *hard, char *soft, FTNINT *mode, FTNINT *kcsu, FTNINT *knsu, FT
   copy_string(soft, softname, WORDLEN);
 
 #endif
-/********************************************************************/
-#if defined(sun)
-#if defined(SYSV) || defined(SVR4)
-
-  struct utsname SysInfo;
-  char           hardname[MAXCHAR];
-  char           softname[MAXCHAR];
-
-  *idau = 0;
-  *kcsu = sizeof(FTNREAL); /* See above */
-  *knsu = 1;               /* Ditto */
-
-  uname(&SysInfo);
-
-  sprintf(hardname, "%.8s", SysInfo.machine);
-  sprintf(softname, "SunOS%.3s", SysInfo.release);
-
-  copy_string(hard, hardname, WORDLEN);
-  copy_string(soft, softname, WORDLEN);
-
-#else
-
-  char  softname[MAXCHAR];
-  char *darg;
-  FILE *pipe;
-
-  *idau = 0;
-  *kcsu = 4; /* See above */
-  *knsu = 1; /* Ditto */
-
-#if defined(sparc)
-  copy_string(hard, "Sun4", strlen("Sun4"));
-#else  /* Then assume it's a SUN 3 */
-  copy_string(hard, "Sun3", strlen("Sun3"));
-#endif /* sparc */
-
-  if ((darg = (char *)fgets(
-           softname, MAXCHAR,
-           pipe = popen("/usr/ucb/strings /vmunix|/usr/bin/fgrep Release", "r"))) == (char *)NULL) {
-    perror("exparm: bad read from pipe");
-    exit(1);
-  }
-
-  fclose(pipe);
-
-  /*  pclose(pipe); */
-  /* The previous system call to pclose() */
-  /* is crapping out under SunView. */
-  /* I think that this is due to the */
-  /* event notification scheme that exists */
-  /* under that window environment. */
-  /* This occurs due to the wait() */
-  /* function call in pclose(). */
-
-  sscanf(softname, "%*s%*s%6s", soft + 2);
-
-  strncat(hard, "    ", strlen("    ")); /* Another case of hardwiring the length of hard. */
-  soft[0] = 'O';
-  soft[1] = 'S';
-
-#endif /* SYSV || SVR4 (Solaris 2.X) */
-#endif
-
   /********************************************************************/
 
 #if defined(__NO_CYGWIN_OPTION__)

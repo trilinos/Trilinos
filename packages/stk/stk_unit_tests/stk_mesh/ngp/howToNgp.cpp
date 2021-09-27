@@ -1227,32 +1227,32 @@ TEST(NgpMesh, meshIndices)
 //==============================================================================
 class FakeEntity {
 public:
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeEntity()
     : m_value(0)
   {
     printf("  FakeEntity: (%lu) Calling default constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   explicit FakeEntity(size_t value)
     : m_value(value)
   {
     printf("  FakeEntity: (%lu) Calling constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ~FakeEntity() {
     printf("  FakeEntity: (%lu) Calling destructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeEntity(const FakeEntity& rhs) {
     printf("  FakeEntity: (%lu) Calling copy constructor\n", rhs.m_value);
     m_value = rhs.m_value;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   size_t value() const { return m_value; }
 
 private:
@@ -1263,26 +1263,26 @@ using FakeEntityType = Kokkos::View<FakeEntity*, stk::ngp::MemSpace>;
 
 class FakeBucket {
 public:
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeBucket()
     : m_value(0)
   {
     printf("FakeBucket: (%lu) Calling default constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   explicit FakeBucket(size_t value)
     : m_value(value)
   {
     printf("FakeBucket: (%lu) Calling constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ~FakeBucket() {
     printf("FakeBucket: (%lu) Calling destructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeBucket(const FakeBucket& rhs) {
     printf("FakeBucket: (%lu) Calling copy constructor\n", rhs.m_value);
     m_value = rhs.m_value;
@@ -1293,7 +1293,7 @@ public:
     m_innerView = FakeEntityType("Data", numValues);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   size_t value(size_t i) const { return m_innerView[i].value(); }
 
 private:
@@ -1306,7 +1306,7 @@ using FakeBuckets = Kokkos::View<FakeBucket*, stk::ngp::UVMMemSpace>;
 class FakeMesh
 {
 public:
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeMesh()
     : m_isInitialized(false),
       m_numBuckets(1),
@@ -1316,7 +1316,7 @@ public:
     update(0);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ~FakeMesh() {
     printf("FakeMesh: Calling destructor\n");
     if (m_fakeBuckets.use_count() == 1) {
@@ -1324,7 +1324,7 @@ public:
     }
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeMesh(const FakeMesh & rhs) {
     printf("FakeMesh: Calling copy constructor\n");
     m_fakeBuckets = rhs.m_fakeBuckets;
@@ -1359,7 +1359,7 @@ public:
     m_isInitialized = true;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void do_stuff() const {
     for (size_t i = 0; i < m_numBuckets; ++i) {
       for (size_t j = 0; j < m_numEntities; ++j) {

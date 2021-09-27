@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   float  version, fdum;
 
   char  title[MAX_LINE_LENGTH + 1], elem_type[MAX_STR_LENGTH + 1];
-  char *cdum = 0;
+  char *cdum = NULL;
 
   CPU_word_size = 0; /* sizeof(float) */
   IO_word_size  = 0; /* use what is stored in file */

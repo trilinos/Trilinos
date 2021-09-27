@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST(BDF2, ParameterList)
   // Test constructor IntegratorBasic(model, stepperType)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::createIntegratorBasic<double>(model, "BDF2");
+      Tempus::createIntegratorBasic<double>(model, std::string("BDF2"));
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
     RCP<const ParameterList> defaultPL =

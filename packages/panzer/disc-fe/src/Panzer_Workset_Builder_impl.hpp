@@ -174,7 +174,7 @@ panzer::buildWorksets(const WorksetNeeds & needs,
   // Copy cell vertex coordinates into local workset arrays
   std::size_t offset = 0;
   for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
-    auto cell_vertex_coordinates = wkst->cell_vertex_coordinates;
+    auto cell_vertex_coordinates = wkst->cell_vertex_coordinates.get_static_view();
     Kokkos::parallel_for(wkst->num_cells, KOKKOS_LAMBDA (int cell) {
       for (std::size_t vertex = 0; vertex < vertex_coordinates.extent(1); ++ vertex)
 	      for (std::size_t dim = 0; dim < vertex_coordinates.extent(2); ++ dim) {
@@ -419,14 +419,22 @@ panzer::buildBCWorkset(const WorksetNeeds & needs_a,
       impl::subset(local_side_ids_b, idxs, lsi_b);
       auto vc_a = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("vc_a", idxs.size(), d1, d2);
       auto vc_b = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("vc_b", idxs.size(), d1, d2);
+      auto vc_a_h = Kokkos::create_mirror_view(vc_a.get_static_view());
+      auto vc_b_h = Kokkos::create_mirror_view(vc_b.get_static_view());
+      auto vertex_coordinates_a_h = Kokkos::create_mirror_view(PHX::as_view(vertex_coordinates_a));
+      auto vertex_coordinates_b_h = Kokkos::create_mirror_view(PHX::as_view(vertex_coordinates_b));
+      Kokkos::deep_copy(vertex_coordinates_a_h, PHX::as_view(vertex_coordinates_a));
+      Kokkos::deep_copy(vertex_coordinates_b_h, PHX::as_view(vertex_coordinates_b));
       for (std::size_t i = 0; i < idxs.size(); ++i) {
         const auto ii = idxs[i];
         for (int j = 0; j < d1; ++j)
           for (int k = 0; k < d2; ++k) {
-            vc_a(i, j, k) = vertex_coordinates_a(ii, j, k);
-            vc_b(i, j, k) = vertex_coordinates_b(ii, j, k);
+            vc_a_h(i, j, k) = vertex_coordinates_a_h(ii, j, k);
+            vc_b_h(i, j, k) = vertex_coordinates_b_h(ii, j, k);
           }
       }
+      Kokkos::deep_copy(vc_a.get_static_view(), vc_a_h);
+      Kokkos::deep_copy(vc_b.get_static_view(), vc_b_h);
       auto mwa_it = impl::buildBCWorksetForUniqueSideId(needs_a,blockid_a, lci_a, lsi_a, vc_a,
                                                         needs_b,blockid_b, lci_b, lsi_b, vc_b,
                                                         needs_b);

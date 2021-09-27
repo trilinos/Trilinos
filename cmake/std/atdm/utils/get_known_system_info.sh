@@ -53,8 +53,8 @@ fi
 #
 # The order these are listed in this array matters only if multiple known
 # system name keywords are listed in the build name string.  For example, if
-# both 'ride' and 'cts1' are listed in the build name, then 'ride' will be the
-# one recognized and 'cts1' will be ignored (because 'ride' is listed above
+# both 'shiller' and 'cts1' are listed in the build name, then 'shiller' will be the
+# one recognized and 'cts1' will be ignored (because 'shiller' is listed above
 # 'cts1').
 #
 # However, it is important that "all" of the known systems be listed in this
@@ -63,7 +63,6 @@ fi
 
 ATDM_KNOWN_SYSTEM_NAMES_LIST=(
   shiller
-  ride
   ats1
   mutrino   # Deprecated, to be repalced by 'ats1'
   ats2
@@ -104,12 +103,6 @@ if [[ $realHostname == "hansen"* ]] ; then
 elif [[ $realHostname == "shiller"* ]] ; then
   hostnameMatch=shiller
   hostnameMatchSystemName=shiller
-elif [[ $realHostname == "white"* ]] ; then
-  hostnameMatch=white
-  hostnameMatchSystemName=ride
-elif [[ $realHostname == "ride"* ]] ; then
-  hostnameMatch=ride
-  hostnameMatchSystemName=ride
 elif [[ $realHostname == "vortex"* ]] ; then
   hostnameMatch=vortex
   hostnameMatchSystemName=ats2

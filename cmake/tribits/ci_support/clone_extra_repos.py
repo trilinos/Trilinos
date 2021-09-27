@@ -324,7 +324,7 @@ def parseRawSshGitoliteRootInfoOutput(rawSshGitoliteRootInfoOutput, verbose=Fals
       continue
     # Parse the repos
     if parsingRepos:
-      # The permisions and the repo name are split by a tab such as:
+      # The permissions and the repo name are split by a tab such as:
       #  R W	ExtraRepo1
       repoSplit = line.split("\t")
       #print("repoSplit =", repoSplit)

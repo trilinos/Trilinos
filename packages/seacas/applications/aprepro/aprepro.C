@@ -93,10 +93,10 @@ int main(int argc, char *argv[])
     // Read and parse a file.  The entire file will be parsed and
     // then the output can be obtained in an std::ostringstream via
     // Aprepro::parsing_results()
-    bool writeResults = true;
     try {
       bool result = aprepro.parse_stream(infile, input_files[0]);
 
+      bool writeResults = true;
       if (aprepro.ap_options.errors_fatal && aprepro.get_error_count() > 0) {
         writeResults = false;
       }
@@ -154,6 +154,9 @@ int main(int argc, char *argv[])
   }
   if (aprepro.ap_options.debugging || aprepro.ap_options.dumpvars) {
     aprepro.dumpsym("variable", false);
+  }
+  if (aprepro.ap_options.dumpvars_json) {
+    aprepro.dumpsym_json();
   }
   return exit_status;
 }

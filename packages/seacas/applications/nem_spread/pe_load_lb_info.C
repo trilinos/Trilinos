@@ -777,9 +777,6 @@ void NemSpread<T, INT>::read_cmap_params(int lb_exoid, INT *Node_Comm_Num, INT *
     /* Increment starting pointer */
     vec_start += 2 * Node_Comm_Num[iproc] + 2 * Elem_Comm_Num[iproc];
 
-    /* Calculate the length of the broadcast information */
-    read_len = 2 * Node_Comm_Num[iproc] + 2 * Elem_Comm_Num[iproc];
-
     /* For processor and node IDs */
     INT psum = 0;
     for (int i1 = 0; i1 < Node_Comm_Num[iproc]; i1++) {

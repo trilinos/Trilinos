@@ -1123,8 +1123,8 @@ namespace {
   {
     bool overall_result = true;
 
-    auto in_blocks_1      = input_region_1.get_structured_blocks();
-    auto in_blocks_orig_2 = input_region_2.get_structured_blocks();
+    const auto &in_blocks_1      = input_region_1.get_structured_blocks();
+    const auto &in_blocks_orig_2 = input_region_2.get_structured_blocks();
 
     // COPY the const input vector so that we can remove elements as they're matched without
     // affecting the original data structure.

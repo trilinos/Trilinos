@@ -32,40 +32,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <Kokkos_Core.hpp>
+#include <gtest/gtest.h>
+#include <stk_expreval/Evaluator.hpp>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <iomanip>
 #include <cmath>
 
-#include <Kokkos_Core.hpp>
-
-#include <gtest/gtest.h>
-
-#include <stk_expreval/Evaluator.hpp>
-
 using ExecutionSpace = Kokkos::Serial;
 
-class UnitTestEvaluator
-{
-public:
-  void testEvaluator();
-};
-
-using namespace stk::expreval;
-
 namespace {
-
-TEST( UnitTestEvaluator, testEvaluator)
-{
-  UnitTestEvaluator unit;
-
-  unit.testEvaluator();
-}
-
-std::string generate_expression(std::string expression) {
-  return std::string("by=") + expression + ";";
-}
 
 double
 kernel_evaluate(stk::expreval::Eval& inputEval) 
@@ -507,502 +485,1128 @@ TEST( UnitTestEvaluator, testIndexing)
 }
 
 bool
-checkUndefinedFunction(
-    const char *	expr)
+isValidParse(const char *expr)
+{
+  stk::expreval::Eval expr_eval(expr);
+  EXPECT_NO_THROW(expr_eval.parse());
+  return expr_eval.getSyntaxStatus();
+}
+
+bool
+isInvalidParse(const char *expr)
 {
   stk::expreval::Eval expr_eval(expr);
   try {
     expr_eval.parse();
   }
-  catch (std::runtime_error &x) {
-    // parse throws on undefined function(s) and lists them
-    std::cerr << x.what();
+  catch (std::runtime_error& ) {
+    return !expr_eval.getSyntaxStatus();
   }
-  if (expr_eval.undefinedFunction()) {
-    return true;
-  } else {
-    return false;
-  }
-}
 
-bool
-notUndefinedFunction(
-    const char *	expr)
-{
-  std::cout << "Not an undefined function " << expr << " ... ";
-  return !checkUndefinedFunction(expr);
-}
-
-bool
-undefinedFunction(
-    const char *	expr)
-{
-  std::cout << "Undefined function " << expr << " ... ";
-  return checkUndefinedFunction(expr);
-}
-
-bool
-syntax(
-  const char *	expr)
-{
-  std::cout << "Syntax " << expr << " ... ";
-  try {
-    stk::expreval::Eval expr_eval(expr);
-    expr_eval.parse();
-  }
-  catch (std::runtime_error &x) {
-    std::cout << "fail, " << x.what() << std::endl;
-    return false;
-  }
-  std::cout << "pass" << std::endl;
-  return true;
-}
-
-bool
-fail_syntax(
-  const char *	expr)
-{
-  std::cout << "Invalid syntax " << expr << " ...  ";
-  try {
-    stk::expreval::Eval expr_eval(expr);
-    expr_eval.parse();
-  }
-  catch (std::runtime_error &x) {
-    std::cout << "pass" << std::endl;
-    return true;
-  }
-  std::cout << "fail, should have parse error" << std::endl;
   return false;
 }
 
-bool
-test_one_value(const char *expression, double gold_value)
+TEST(UnitTestEvaluator, testAlgebraicSyntax)
 {
-  bool failed = false;
-  std::cout << "Evaluate " << expression << " ... ";
-  stk::expreval::Eval expr_eval(generate_expression(expression));
-  expr_eval.parse();
+  EXPECT_TRUE(isValidParse(""));
+  EXPECT_TRUE(isValidParse(";"));
+  EXPECT_TRUE(isValidParse(";;"));
+  EXPECT_TRUE(isValidParse(";;;"));
+  EXPECT_TRUE(isValidParse("2*2"));
+  EXPECT_TRUE(isValidParse("3^2"));
+  EXPECT_TRUE(isValidParse("x*0.1"));
+  EXPECT_TRUE(isValidParse("x*-0.1"));
+  EXPECT_TRUE(isValidParse("x*+0.1"));
+  EXPECT_TRUE(isValidParse("x--7.0"));
+  EXPECT_TRUE(isValidParse("x*-x"));
+  EXPECT_TRUE(isValidParse("x*+x"));
+  EXPECT_TRUE(isValidParse("v[0]=v[1]*0.1"));
+  EXPECT_TRUE(isValidParse("x--x"));
+  EXPECT_TRUE(isValidParse("x---x"));
 
-  double result = kernel_evaluate(expr_eval);
+  EXPECT_FALSE(isInvalidParse("2*2"));
+  EXPECT_TRUE(isInvalidParse("0.01.02"));
+  EXPECT_TRUE(isInvalidParse("5*.e+10"));
+  EXPECT_TRUE(isInvalidParse("x y"));
+  EXPECT_TRUE(isInvalidParse("x(y"));
+  EXPECT_TRUE(isInvalidParse("x*"));
+  EXPECT_TRUE(isInvalidParse("x*(y+1"));
+  EXPECT_TRUE(isInvalidParse("x*y)"));
+  EXPECT_TRUE(isInvalidParse("cos(x"));
+  EXPECT_TRUE(isInvalidParse("(x)y"));
+  EXPECT_TRUE(isInvalidParse("()"));
+}
 
-  double absolute_error = std::fabs(result - gold_value);
-  if (absolute_error > std::fabs(1.0e-14*result)) 
-  {
-    std::cout << expression << " = " << std::setprecision(20) << result << " should be " << gold_value << " error= " << absolute_error << std::endl;
-    failed = true;
-  } else {
-    std::cout << "Expression= " << expression << " == " << result << "\n";
+bool
+isValidFunction(const char *expr)
+{
+  stk::expreval::Eval expr_eval(expr);
+  EXPECT_NO_THROW(expr_eval.parse());
+  return !expr_eval.undefinedFunction();
+}
+
+bool
+isInvalidFunction(const char *expr)
+{
+  stk::expreval::Eval expr_eval(expr);
+  try {
+    expr_eval.parse();
   }
-  std::cout << (failed ? "fail" : "pass") << std::endl;
-  return !failed;
-}
-
-bool
-test_one_value_is_equal(const char *expression, const char* gold_expression)
-{
-  stk::expreval::Eval gold_expr_eval(generate_expression(gold_expression));
-  gold_expr_eval.parse();
-
-  double gold_value = kernel_evaluate(gold_expr_eval); 
-
-  return test_one_value(expression, gold_value);
-}
-
-typedef double (TestFunc)(double);
-
-bool
-test(const char* expr, TestFunc c_expr)
-{
-  bool failed = false;
-  std::cout << "Evaluate " << expr << " ... ";
-  stk::expreval::Eval expr_eval(generate_expression(expr));
-  expr_eval.parse();
-
-  double x=0, y=0, by=0, result = 0.0;
-  double v[2];
-
-  expr_eval.bindVariable("x", x);
-  expr_eval.bindVariable("by", by);
-  expr_eval.bindVariable("v", *v);
-  for (int i = 1; i < 100; ++i) {
-    x = v[1] = i*0.01;
-    y = (*c_expr)(x);
-    try {
-      result = kernel_evaluate(expr_eval);
-    }
-    catch (std::runtime_error &exc) {
-      std::cout << expr << " at "
-		<< std::setprecision(20) << x << " is "
-		<< std::setprecision(20) << result
-		<< " should be " << y
-		<< "(" << std::setprecision(20) << by
-		<< ") threw exception " << exc.what()
-		<< std::endl;
-      failed = true;
-    }
-    double absolute_error = std::fabs(result - y);
-    if (absolute_error > std::fabs(1.0e-14*result)) {
-      std::cout << expr << " at " << std::setprecision(2) << x << " is " << std::setprecision(20) << result << " should be " << y << ", error= " << absolute_error
-		<< std::endl;
-      failed = true;
-    }
-    else if (by != result) {
-      std::cout << expr << " at " << std::setprecision(2) << x << " is " << std::setprecision(20) << result << " does not match bound value " << std::setprecision(20) << by << std::endl;
-      failed = true;
-    }
+  catch (std::runtime_error& ) {
+    return expr_eval.undefinedFunction();
   }
 
-  std::cout << (failed ? "fail" : "pass") << std::endl;
-  return !failed;
+  return false;
 }
 
+TEST(UnitTestEvaluator, testFunctionSyntax)
+{
+  EXPECT_TRUE(isValidFunction("sin(1)"));
+  EXPECT_TRUE(isValidFunction("SIN(1)"));
+  EXPECT_TRUE(isValidFunction("rand()"));
+  EXPECT_TRUE(isValidFunction("srand()"));
+  EXPECT_TRUE(isValidFunction("time()"));
+  EXPECT_TRUE(isValidFunction("random()"));
+  EXPECT_TRUE(isValidFunction("random(1)"));
+  EXPECT_TRUE(isValidFunction("random(time())"));
+  EXPECT_TRUE(isValidFunction("cosine_ramp(x,y)"));
+  EXPECT_TRUE(isValidFunction("sign(x)"));
+  EXPECT_TRUE(isValidFunction("weibull_pdf(x, alpha, beta)"));
+  EXPECT_TRUE(isValidFunction("normal_pdf(x, alpha, beta)"));
 
-#define EXPREVAL_DEFINE_TEST(name,expr1,expr2)			\
-double name(double x) {return expr2;}			        \
-const char *name##_expr = #expr1
+  EXPECT_FALSE(isInvalidFunction("sin(1)"));
+  EXPECT_TRUE(isInvalidFunction("stress(1)"));
+  EXPECT_TRUE(isInvalidFunction("gamma(1)"));
+}
 
-#define EXPREVAL_DEFINE_TEST1(name,expr) EXPREVAL_DEFINE_TEST(name,expr,expr)
+struct ScalarBinding {
+  std::string varName;
+  double varValue;
+};
 
-// Hierarchy tests
-EXPREVAL_DEFINE_TEST1(h1, x*1.0/2.0*3.0);
-EXPREVAL_DEFINE_TEST1(h2, x*1.0/2.0*3.0);
-EXPREVAL_DEFINE_TEST1(h3, x*(4.0+5.0)/6.0);
-EXPREVAL_DEFINE_TEST1(h4, x==0.5);
-EXPREVAL_DEFINE_TEST1(h5, x>=0.5);
-EXPREVAL_DEFINE_TEST1(h6, x<0.25 || x>0.75);
-EXPREVAL_DEFINE_TEST1(h7, x>0.25 && x<0.75);
-EXPREVAL_DEFINE_TEST1(h8, x*2>0.25 && x<0.75);
-EXPREVAL_DEFINE_TEST1(h9, !(x - 0.5));
-EXPREVAL_DEFINE_TEST1(h10, x > 0.5 ? 5.0 : 7.0);
-EXPREVAL_DEFINE_TEST1(h11, x*(x+1.0));
-EXPREVAL_DEFINE_TEST1(h12, x*1.0+2.0);
-EXPREVAL_DEFINE_TEST1(h13, x*x+1.0);
-EXPREVAL_DEFINE_TEST1(h14, x+x*1.0+2.0);
-EXPREVAL_DEFINE_TEST1(h15, x > 0.5 ? x/2.0 + 1.0 : x*2.0 - 1.0);
-EXPREVAL_DEFINE_TEST1(h16, x > 0.5 ? x > 0.75 ? x/2.0 + 1.0 : x*2.0 - 1.0 : x*5.0/2.0);
-EXPREVAL_DEFINE_TEST(h17, v[1]=x*0.5;y=v[1],x*0.5);
-EXPREVAL_DEFINE_TEST1(h18, x - -7);
-EXPREVAL_DEFINE_TEST1(h19, x - -x);
-EXPREVAL_DEFINE_TEST1(h20, x - - - 7);
+struct VectorBinding {
+  std::string varName;
+  std::vector<double> varValues;
+};
 
-// Function tests
-EXPREVAL_DEFINE_TEST(f1, abs(x), fabs(x));
-EXPREVAL_DEFINE_TEST(f2, mod(x,10.0), fmod(x,10.0));
-EXPREVAL_DEFINE_TEST1(f3, fabs(x));
-EXPREVAL_DEFINE_TEST1(f4, fmod(x,10.0));
-EXPREVAL_DEFINE_TEST1(f5, acos(x));
-EXPREVAL_DEFINE_TEST1(f6, asin(x));
-EXPREVAL_DEFINE_TEST1(f7, atan(x));
-EXPREVAL_DEFINE_TEST1(f8, ceil(x));
-EXPREVAL_DEFINE_TEST1(f9, cos(x));
-EXPREVAL_DEFINE_TEST1(f10, cosh(x));
-EXPREVAL_DEFINE_TEST1(f11, exp(x));
-EXPREVAL_DEFINE_TEST1(f12, floor(x));
-EXPREVAL_DEFINE_TEST1(f13, log(x));
-EXPREVAL_DEFINE_TEST1(f14, pow(x, 10.0));
-EXPREVAL_DEFINE_TEST(f15, x^2, pow(x, 2.0));
+double evaluate(const std::string & expression,
+                std::vector<ScalarBinding> boundScalars = std::vector<ScalarBinding>(),
+                std::vector<VectorBinding> boundVectors = std::vector<VectorBinding>(),
+                const stk::expreval::Variable::ArrayOffset arrayOffsetType = stk::expreval::Variable::ZERO_BASED_INDEX)
+{
+  stk::expreval::Eval eval(expression, arrayOffsetType);
+  eval.parse();
 
-EXPREVAL_DEFINE_TEST1(f16, sin(x));
-EXPREVAL_DEFINE_TEST1(f17, sinh(x));
-EXPREVAL_DEFINE_TEST1(f18, sqrt(x));
-EXPREVAL_DEFINE_TEST1(f19, tan(x));
-EXPREVAL_DEFINE_TEST1(f20, tanh(x));
-EXPREVAL_DEFINE_TEST(f21, atan2(x, PI),atan2(x, stk::expreval::pi() ));
-EXPREVAL_DEFINE_TEST(f22, ln(x),log(x));
-EXPREVAL_DEFINE_TEST(f23, deg(x),(180.0 / stk::expreval::pi() ) * x);
-EXPREVAL_DEFINE_TEST(f24, rad(x),(stk::expreval::pi()  / 180.0) * x);
-EXPREVAL_DEFINE_TEST(f25, max(x,1.0),std::max(x,1.0));
-EXPREVAL_DEFINE_TEST(f26, min(x,1.0),std::min(x,1.0));
-EXPREVAL_DEFINE_TEST(f27, recttopolr(x,1.0),sqrt(x*x+1.0*1.0));
-EXPREVAL_DEFINE_TEST(f28, recttopola(x,1.0),atan2(1.0, x));
-EXPREVAL_DEFINE_TEST(f29, poltorectx(x,PI/4.0),x*cos(stk::expreval::pi() /4.0));
-EXPREVAL_DEFINE_TEST(f30, poltorecty(x,PI/4.0),x*sin(stk::expreval::pi() /4.0));
-EXPREVAL_DEFINE_TEST1(f32, atanh(x));
-EXPREVAL_DEFINE_TEST1(f33, 0.4209+4.5e-4*x);
+  for (ScalarBinding & scalar : boundScalars) {
+    eval.bindVariable(scalar.varName, scalar.varValue, 1);
+  }
 
-// Bova tests
-EXPREVAL_DEFINE_TEST1(b1, sin(x*.5));
-EXPREVAL_DEFINE_TEST1(b2, .5*.2*sin(.5*x));
-EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
+  for (VectorBinding & vector : boundVectors) {
+    eval.bindVariable(vector.varName, *vector.varValues.data(), vector.varValues.size());
+  }
 
-// Pierson tests
-EXPREVAL_DEFINE_TEST(k1, x^2, x*x);
-EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*pi() ))/2);
-EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*pi() /1.0))/2);
-EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*pi() /1.0))/2);
+  return eval.evaluate();
+}
 
-EXPREVAL_DEFINE_TEST(k5, haversine_pulse(x, 0.0, 1.0), std::pow(std::sin(pi() *x),2)   );
-EXPREVAL_DEFINE_TEST(k6,  cycloidal_ramp(x, 0.0, 1.0), x-1/(two_pi())*sin(two_pi()*x) );
+TEST(UnitTestEvaluator, testOpcode_CONSTANT)
+{
+  EXPECT_DOUBLE_EQ(evaluate("-1000"),  -1000);
+  EXPECT_DOUBLE_EQ(evaluate("-1.333"), -1.333);
+  EXPECT_DOUBLE_EQ(evaluate("-1"),     -1);
+  EXPECT_DOUBLE_EQ(evaluate("0"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("1.01"),    1.01);
+  EXPECT_DOUBLE_EQ(evaluate("999"),     999);
+  EXPECT_DOUBLE_EQ(evaluate("3.e-2"),   0.03);
+ }
 
-#undef EXPREVAL_DEFINE_TEST1
+TEST(UnitTestEvaluator, testOpcode_ADD)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1+2"),          3);
+  EXPECT_DOUBLE_EQ(evaluate("1+4+9"),        14);
+  EXPECT_DOUBLE_EQ(evaluate("1+4+9+16"),     30);
+  EXPECT_DOUBLE_EQ(evaluate("(1+4)+(9+16)"), 30);
+  EXPECT_DOUBLE_EQ(evaluate("1.25+2.5"),     3.75);
+}
+
+TEST(UnitTestEvaluator, testOpcode_SUBTRACT)
+{
+  EXPECT_DOUBLE_EQ(evaluate("-1-2"),         -3);
+  EXPECT_DOUBLE_EQ(evaluate("-1-4-9"),       -14);
+  EXPECT_DOUBLE_EQ(evaluate("-1-4-9-16"),    -30);
+  EXPECT_DOUBLE_EQ(evaluate("(-1-4)-(9-16)"), 2);
+  EXPECT_DOUBLE_EQ(evaluate("1.25-2.5"),     -1.25);
+}
+
+TEST(UnitTestEvaluator, testOpcode_MULTIPLY)
+{
+  EXPECT_DOUBLE_EQ(evaluate("2*3"),         6);
+  EXPECT_DOUBLE_EQ(evaluate("2*3*4"),       24);
+  EXPECT_DOUBLE_EQ(evaluate("2*3*4*5"),     120);
+  EXPECT_DOUBLE_EQ(evaluate("(2*3)*(4*5)"), 120);
+  EXPECT_DOUBLE_EQ(evaluate("0.25*4"),      1);
+  EXPECT_DOUBLE_EQ(evaluate("-0.25*4"),    -1);
+  EXPECT_DOUBLE_EQ(evaluate("0.25*-4"),    -1);
+}
+
+TEST(UnitTestEvaluator, testOpcode_DIVIDE)
+{
+  EXPECT_DOUBLE_EQ(evaluate("6/3"),           2);
+  EXPECT_DOUBLE_EQ(evaluate("24/4/3"),        2);
+  EXPECT_DOUBLE_EQ(evaluate("120/5/4/3"),     2);
+  EXPECT_DOUBLE_EQ(evaluate("(120/5)/(4/3)"), 18);
+  EXPECT_DOUBLE_EQ(evaluate("1/4"),           0.25);
+  EXPECT_DOUBLE_EQ(evaluate("-1/4"),         -0.25);
+  EXPECT_DOUBLE_EQ(evaluate("1/-4"),         -0.25);
+}
+
+TEST(UnitTestEvaluator, testOpcode_UNARY_MINUS)
+{
+  EXPECT_DOUBLE_EQ(evaluate("-2"),       -2);
+  EXPECT_DOUBLE_EQ(evaluate("--2"),       2);
+  EXPECT_DOUBLE_EQ(evaluate("---2"),     -2);
+  EXPECT_DOUBLE_EQ(evaluate("-(1+2)"),   -3);
+  EXPECT_DOUBLE_EQ(evaluate("-(-(1+2))"), 3);
+}
+
+TEST(UnitTestEvaluator, testOpcode_MODULUS)
+{
+  EXPECT_DOUBLE_EQ(evaluate("-9 % 3"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("-9 % -4"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("-9 % 4"),  -1);
+  EXPECT_DOUBLE_EQ(evaluate("9 % -4"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("9 % 3"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("9 % 4"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("9.1 % 4"),  1.1);
+  EXPECT_DOUBLE_EQ(evaluate("9 % 5"),    4);
+  EXPECT_DOUBLE_EQ(evaluate("9 % 9"),    0);
+}
+
+TEST(UnitTestEvaluator, testOpcode_EXPONENTIATION)
+{
+  EXPECT_DOUBLE_EQ(evaluate("3^2"),         9);
+  EXPECT_DOUBLE_EQ(evaluate("3^2.5"),       std::pow(3, 2.5));
+  EXPECT_DOUBLE_EQ(evaluate("3^2^2"),       81);
+  EXPECT_DOUBLE_EQ(evaluate("(2^2)^(2^2)"), 256);
+  EXPECT_DOUBLE_EQ(evaluate("2^-1"),        0.5);
+}
+
+TEST(UnitTestEvaluator, testOpcode_compoundSimpleMath)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1+2*3"),           7);
+  EXPECT_DOUBLE_EQ(evaluate("1+2*-3"),         -5);
+  EXPECT_DOUBLE_EQ(evaluate("2*3+1"),           7);
+  EXPECT_DOUBLE_EQ(evaluate("12*3/3*5/5"),      12);
+  EXPECT_DOUBLE_EQ(evaluate("(4+5)/3"),         3);
+  EXPECT_DOUBLE_EQ(evaluate("(1+2+3)^2"),       36);
+  EXPECT_DOUBLE_EQ(evaluate("(1+2+3+4)^(1+1)"), 100);
+  EXPECT_DOUBLE_EQ(evaluate("15%(1+1+1)"),      0);
+  EXPECT_DOUBLE_EQ(evaluate("1-7"),            -6);
+  EXPECT_DOUBLE_EQ(evaluate("1--7"),            8);
+  EXPECT_DOUBLE_EQ(evaluate("1---7"),          -6);
+}
+
+TEST(UnitTestEvaluator, testOpcode_EQUAL)
+{
+  EXPECT_DOUBLE_EQ(evaluate("2==2"),          1);
+  EXPECT_DOUBLE_EQ(evaluate("2==(1+1)"),      1);
+  EXPECT_DOUBLE_EQ(evaluate("2==1"),          0);
+  EXPECT_DOUBLE_EQ(evaluate("0.1==0.999999"), 0);
+}
+
+TEST(UnitTestEvaluator, testOpcode_NOT_EQUAL)
+{
+  EXPECT_DOUBLE_EQ(evaluate("2!=2"),          0);
+  EXPECT_DOUBLE_EQ(evaluate("2!=(1+1)"),      0);
+  EXPECT_DOUBLE_EQ(evaluate("2!=1"),          1);
+  EXPECT_DOUBLE_EQ(evaluate("0.1!=0.999999"), 1);
+}
+
+TEST(UnitTestEvaluator, testOpcode_LESS)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1<2"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("2<1"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("-2<-1"),      1);
+  EXPECT_DOUBLE_EQ(evaluate("1<1"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("1<1.000001"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("2<(1+2)"),    1);
+}
+
+TEST(UnitTestEvaluator, testOpcode_GREATER)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1>2"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("2>1"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("-2>-1"),      0);
+  EXPECT_DOUBLE_EQ(evaluate("1>1"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("1>1.000001"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("2>(1+2)"),    0);
+}
+
+TEST(UnitTestEvaluator, testOpcode_LESS_EQUAL)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1<=2"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("2<=1"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("-2<=-1"),      1);
+  EXPECT_DOUBLE_EQ(evaluate("1<=1"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("1<=1.000001"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("2<=(1+2)"),    1);
+}
+
+TEST(UnitTestEvaluator, testOpcode_GREATER_EQUAL)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1>=2"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("2>=1"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("-2>=-1"),      0);
+  EXPECT_DOUBLE_EQ(evaluate("1>=1"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("1>=1.000001"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("2>=(1+2)"),    0);
+}
+
+TEST(UnitTestEvaluator, testOpcode_UNARY_NOT)
+{
+  EXPECT_DOUBLE_EQ(evaluate("!0"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("!0.000001"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("!1"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("!10"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("!-1"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("!-10"),      0);
+}
+
+TEST(UnitTestEvaluator, testOpcode_LOGICAL_AND)
+{
+  EXPECT_DOUBLE_EQ(evaluate("0 && 0"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("0 && 1"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("1 && 0"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("1 && 1"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("1 && -1"),       1);
+  EXPECT_DOUBLE_EQ(evaluate("1 && 0.000001"), 1);
+ }
+
+TEST(UnitTestEvaluator, testOpcode_LOGICAL_OR)
+{
+  EXPECT_DOUBLE_EQ(evaluate("0 || 0"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("0 || 1"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("1 || 0"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("1 || 1"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("0 || -1"),       1);
+  EXPECT_DOUBLE_EQ(evaluate("0 || 0.000001"), 1);
+}
+
+TEST(UnitTestEvaluator, testOpcode_TERNARY)
+{
+  EXPECT_DOUBLE_EQ(evaluate("1 ? 1 : 2"),           1);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? 1 : 2"),           2);
+  EXPECT_DOUBLE_EQ(evaluate("1 ? (1+1) : 1"),       2);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? 1 : (1+1)"),       2);
+  EXPECT_DOUBLE_EQ(evaluate("0 ? 1 : 2"),           2);
+  EXPECT_DOUBLE_EQ(evaluate("0.000001 ? 1 : 2"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("(1 ? 0 : 1) ? 2 : 3"), 3);
+}
+
+TEST(UnitTestEvaluator, testOpcode_ASSIGN)
+{
+  EXPECT_DOUBLE_EQ(evaluate("x=1"),               1);
+  EXPECT_DOUBLE_EQ(evaluate("x=1; y=2"),          2);
+  EXPECT_DOUBLE_EQ(evaluate("x=1; y=2; z=3"),     3);
+  EXPECT_DOUBLE_EQ(evaluate("x=1; y=2; z=(1+2)"), 3);
+}
+
+TEST(UnitTestEvaluator, testOpcode_RVALUE)
+{
+  EXPECT_DOUBLE_EQ(evaluate("x=1; !x"),                  0);
+  EXPECT_DOUBLE_EQ(evaluate("x=1; y=!x"),                0);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.5; !(x - 0.5)"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.6; !(x - 0.5)"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("x=2; x^2"),                 4);
+  EXPECT_DOUBLE_EQ(evaluate("x=1; y=2; x+y"),            3);
+  EXPECT_DOUBLE_EQ(evaluate("x=2; y=3; x*y"),            6);
+  EXPECT_DOUBLE_EQ(evaluate("x=3; y=2; z=x/y; w=z-1"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("x=1; y=2; z=(x != y)"),     1);
+  EXPECT_DOUBLE_EQ(evaluate("x=1; y=2; z=(x == y)"),     0);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.1; x<0.25 || x>0.75"),  1);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.3; x<0.25 || x>0.75"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.1; x>0.25 && x<0.75"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.3; x>0.25 && x<0.75"),  1);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.4; (x > 0.5) ? 2 : 3"), 3);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.6; (x > 0.5) ? 2 : 3"), 2);
+  EXPECT_DOUBLE_EQ(evaluate("x=0.5; x*(x + 1)"),         0.75);
+}
+
+TEST(UnitTestEvaluator, bindScalar)
+{
+  EXPECT_DOUBLE_EQ(evaluate("x",               {{"x", 2}}),                     2);
+  EXPECT_DOUBLE_EQ(evaluate("x*x",             {{"x", 2}}),                     4);
+  EXPECT_DOUBLE_EQ(evaluate("x*y",             {{"x", 2}, {"y", 3}}),           6);
+  EXPECT_DOUBLE_EQ(evaluate("x+y*z",           {{"x", 2}, {"y", 3}, {"z", 4}}), 14);
+  EXPECT_DOUBLE_EQ(evaluate("x=5; y=y+x; y+z", {{"x", 2}, {"y", 3}, {"z", 4}}), 12);
+}
+
+TEST(UnitTestEvaluator, bindVector)
+{
+  EXPECT_DOUBLE_EQ(evaluate("a[0]+a[1]+a[2]",           {},         {{"a", {1, 2, 3}}}), 6);
+  EXPECT_DOUBLE_EQ(evaluate("a[0]=x*a[1]+a[2]",         {{"x", 4}}, {{"a", {1, 2, 3}}}), 11);
+  EXPECT_DOUBLE_EQ(evaluate("a[1]=x*0.5+a[0]; a[1]*2",  {{"x", 2}}, {{"a", {3, 4}}}),    8);
+  EXPECT_DOUBLE_EQ(evaluate("(a[0]*b[0] + a[1]*b[1] + a[2]*b[2])^0.5",
+                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}}),                   5);
+  EXPECT_DOUBLE_EQ(evaluate("(a[1]*b[1] + a[2]*b[2] + a[3]*b[3])^0.5",
+                            {}, {{"a", {1, 2, 3}}, {"b", {5, 4, 4}}},
+                            stk::expreval::Variable::ONE_BASED_INDEX),                   5);
+}
+
+TEST(UnitTestEvaluator, testFunction_abs)
+{
+  EXPECT_DOUBLE_EQ(evaluate("abs(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("abs(1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("abs(1.5)"),  1.5);
+  EXPECT_DOUBLE_EQ(evaluate("abs(-1)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("abs(-2*3)"), 6);
+}
+
+TEST(UnitTestEvaluator, testFunction_fabs)
+{
+  EXPECT_DOUBLE_EQ(evaluate("fabs(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("fabs(1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("fabs(1.5)"),  1.5);
+  EXPECT_DOUBLE_EQ(evaluate("fabs(-1)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("fabs(-2*3)"), 6);
+}
+
+TEST(UnitTestEvaluator, testFunction_max)
+{
+  EXPECT_DOUBLE_EQ(evaluate("max(1,2)"),          2);
+  EXPECT_DOUBLE_EQ(evaluate("max(2,1)"),          2);
+  EXPECT_DOUBLE_EQ(evaluate("max(1,2,3)"),        3);
+  EXPECT_DOUBLE_EQ(evaluate("max(1,2,3,4)"),      4);
+  EXPECT_DOUBLE_EQ(evaluate("max(-1,-2)"),       -1);
+  EXPECT_DOUBLE_EQ(evaluate("max(-1,-2,-3)"),    -1);
+  EXPECT_DOUBLE_EQ(evaluate("max(-1,-2,-3,-4)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("max(3+2,2+1)"),      5);
+}
+
+TEST(UnitTestEvaluator, testFunction_min)
+{
+  EXPECT_DOUBLE_EQ(evaluate("min(4,3)"),          3);
+  EXPECT_DOUBLE_EQ(evaluate("min(3,4)"),          3);
+  EXPECT_DOUBLE_EQ(evaluate("min(4,3,2)"),        2);
+  EXPECT_DOUBLE_EQ(evaluate("min(4,3,2,1)"),      1);
+  EXPECT_DOUBLE_EQ(evaluate("min(-1,-2)"),       -2);
+  EXPECT_DOUBLE_EQ(evaluate("min(-1,-2,-3)"),    -3);
+  EXPECT_DOUBLE_EQ(evaluate("min(-1,-2,-3,-4)"), -4);
+  EXPECT_DOUBLE_EQ(evaluate("min(3+2,2+1)"),      3);
+}
+
+TEST(UnitTestEvaluator, testFunction_sign)
+{
+  EXPECT_DOUBLE_EQ(evaluate("sign(-10)"),       -1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(-1)"),        -1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(-0.5)"),      -1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(-0.000001)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(-0)"),         1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(0)"),          1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(0.000001)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(0.5)"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(1)"),          1);
+  EXPECT_DOUBLE_EQ(evaluate("sign(10)"),         1);
+}
+
+TEST(UnitTestEvaluator, testFunction_ipart)
+{
+  EXPECT_DOUBLE_EQ(evaluate("ipart(-9.25)"),     -9);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(-2.5)"),      -2);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(-1.0)"),      -1);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(-0.000001)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(0.0)"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(0.000001)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(1.0)"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(2.5)"),        2);
+  EXPECT_DOUBLE_EQ(evaluate("ipart(9.25)"),       9);
+}
+
+TEST(UnitTestEvaluator, testFunction_fpart)
+{
+  EXPECT_DOUBLE_EQ(evaluate("fpart(-9.25)"),     -0.25);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(-2.5)"),      -0.5);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(-1.0)"),       0.0);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(-0.000001)"), -0.000001);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(0.0)"),        0.0);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(0.000001)"),   0.000001);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(1.0)"),        0.0);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(2.5)"),        0.5);
+  EXPECT_DOUBLE_EQ(evaluate("fpart(9.25)"),       0.25);
+}
+
+TEST(UnitTestEvaluator, testFunction_ceil)
+{
+  EXPECT_DOUBLE_EQ(evaluate("ceil(-1.000001)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(-1)"),        -1);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(-0.999999)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(-0.5)"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(-0.000001)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(-0)"),        -0);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(0)"),          0);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(0.000001)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(0.5)"),        1);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(0.999999)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(1)"),          1);
+  EXPECT_DOUBLE_EQ(evaluate("ceil(1.000001)"),   2);
+}
+
+TEST(UnitTestEvaluator, testFunction_floor)
+{
+  EXPECT_DOUBLE_EQ(evaluate("floor(-1.000001)"), -2);
+  EXPECT_DOUBLE_EQ(evaluate("floor(-1)"),        -1);
+  EXPECT_DOUBLE_EQ(evaluate("floor(-0.999999)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("floor(-0.5)"),      -1);
+  EXPECT_DOUBLE_EQ(evaluate("floor(-0.000001)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("floor(-0)"),        -0);
+  EXPECT_DOUBLE_EQ(evaluate("floor(0)"),          0);
+  EXPECT_DOUBLE_EQ(evaluate("floor(0.000001)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("floor(0.5)"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("floor(0.999999)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("floor(1)"),          1);
+  EXPECT_DOUBLE_EQ(evaluate("floor(1.000001)"),   1);
+}
+
+TEST(UnitTestEvaluator, testFunction_mod)
+{
+  EXPECT_DOUBLE_EQ(evaluate("mod(-9, 3)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("mod(-9, -4)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("mod(-9, 4)"),  -1);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9, -4)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9, 3)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9, 4)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9.1, 4)"),  1.1);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9, 4.5)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9, 3.5)"),  2);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9, 5)"),    4);
+  EXPECT_DOUBLE_EQ(evaluate("mod(9, 9)"),    0);
+}
+
+TEST(UnitTestEvaluator, testFunction_fmod)
+{
+  EXPECT_DOUBLE_EQ(evaluate("fmod(-9, 3)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(-9, -4)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(-9, 4)"),  -1);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9, -4)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9, 3)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9, 4)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9.1, 4)"),  1.1);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9, 4.5)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9, 3.5)"),  2);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9, 5)"),    4);
+  EXPECT_DOUBLE_EQ(evaluate("fmod(9, 9)"),    0);
+}
+
+TEST(UnitTestEvaluator, testFunction_pow)
+{
+  EXPECT_DOUBLE_EQ(evaluate("pow(0, 2)"),                 0);
+  EXPECT_DOUBLE_EQ(evaluate("pow(2, 0)"),                 1);
+  EXPECT_DOUBLE_EQ(evaluate("pow(3, 2)"),                 9);
+  EXPECT_DOUBLE_EQ(evaluate("pow(3, 2.5)"),               std::pow(3, 2.5));
+  EXPECT_DOUBLE_EQ(evaluate("pow(pow(3, 2), 2)"),         81);
+  EXPECT_DOUBLE_EQ(evaluate("pow(pow(2, 2), pow(2, 2))"), 256);
+  EXPECT_DOUBLE_EQ(evaluate("pow(2^2, 2^2)"),             256);
+  EXPECT_DOUBLE_EQ(evaluate("pow(2, -1)"),                0.5);
+}
+
+TEST(UnitTestEvaluator, testFunction_sqrt)
+{
+  EXPECT_DOUBLE_EQ(evaluate("sqrt(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("sqrt(1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("sqrt(4)"),    2);
+  EXPECT_DOUBLE_EQ(evaluate("sqrt(9)"),    3);
+  EXPECT_DOUBLE_EQ(evaluate("sqrt(2)"),    std::sqrt(2));
+  EXPECT_DOUBLE_EQ(evaluate("sqrt(1.21)"), 1.1);
+}
+
+TEST(UnitTestEvaluator, testFunction_exp)
+{
+  EXPECT_DOUBLE_EQ(evaluate("exp(-2)"),  std::exp(-2));
+  EXPECT_DOUBLE_EQ(evaluate("exp(-1)"),  std::exp(-1));
+  EXPECT_DOUBLE_EQ(evaluate("exp(0)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("exp(1)"),   std::exp(1));
+  EXPECT_DOUBLE_EQ(evaluate("exp(1.5)"), std::exp(1.5));
+  EXPECT_DOUBLE_EQ(evaluate("exp(2)"),   std::exp(2));
+}
+
+TEST(UnitTestEvaluator, testFunction_ln)
+{
+  EXPECT_DOUBLE_EQ(evaluate("ln(1)"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("ln(0.5)"),      std::log(0.5));
+  EXPECT_DOUBLE_EQ(evaluate("ln(exp(1))"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("ln(exp(1.5))"), 1.5);
+  EXPECT_DOUBLE_EQ(evaluate("ln(exp(2))"),   2);
+}
+
+TEST(UnitTestEvaluator, testFunction_log)
+{
+  EXPECT_DOUBLE_EQ(evaluate("log(1)"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("log(0.5)"),      std::log(0.5));
+  EXPECT_DOUBLE_EQ(evaluate("log(exp(1))"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("log(exp(1.5))"), 1.5);
+  EXPECT_DOUBLE_EQ(evaluate("log(exp(2))"),   2);
+}
+
+TEST(UnitTestEvaluator, testFunction_log10)
+{
+  EXPECT_DOUBLE_EQ(evaluate("log10(0.001)"),   -3);
+  EXPECT_DOUBLE_EQ(evaluate("log10(1)"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("log10(10)"),       1);
+  EXPECT_DOUBLE_EQ(evaluate("log10(12)"),       std::log10(12));
+  EXPECT_DOUBLE_EQ(evaluate("log10(1000)"),     3);
+}
+
+TEST(UnitTestEvaluator, testFunction_deg)
+{
+  EXPECT_DOUBLE_EQ(evaluate("deg(-TWO_PI)"), -360);
+  EXPECT_DOUBLE_EQ(evaluate("deg(-PI)"),     -180);
+  EXPECT_DOUBLE_EQ(evaluate("deg(-PI/2)"),   -90);
+  EXPECT_DOUBLE_EQ(evaluate("deg(-PI/4)"),   -45);
+  EXPECT_DOUBLE_EQ(evaluate("deg(0)"),        0);
+  EXPECT_DOUBLE_EQ(evaluate("deg(PI/4)"),     45);
+  EXPECT_DOUBLE_EQ(evaluate("deg(PI/2)"),     90);
+  EXPECT_DOUBLE_EQ(evaluate("deg(PI)"),       180);
+  EXPECT_DOUBLE_EQ(evaluate("deg(TWO_PI)"),   360);
+}
+
+TEST(UnitTestEvaluator, testFunction_rad)
+{
+  EXPECT_DOUBLE_EQ(evaluate("rad(-360)"), -stk::expreval::two_pi());
+  EXPECT_DOUBLE_EQ(evaluate("rad(-180)"), -stk::expreval::pi());
+  EXPECT_DOUBLE_EQ(evaluate("rad(-90)"),  -stk::expreval::pi()/2);
+  EXPECT_DOUBLE_EQ(evaluate("rad(-45)"),  -stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("rad(0)"),     0);
+  EXPECT_DOUBLE_EQ(evaluate("rad(45)"),    stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("rad(90)"),    stk::expreval::pi()/2);
+  EXPECT_DOUBLE_EQ(evaluate("rad(180)"),   stk::expreval::pi());
+  EXPECT_DOUBLE_EQ(evaluate("rad(360)"),   stk::expreval::two_pi());
+}
+
+TEST(UnitTestEvaluator, testFunction_sin)
+{
+  EXPECT_DOUBLE_EQ(evaluate("sin(0)"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("sin(PI/6)"),    0.5);
+  EXPECT_DOUBLE_EQ(evaluate("sin(PI/4)"),    std::sqrt(2)/2);
+  EXPECT_DOUBLE_EQ(evaluate("sin(PI/2)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("sin(PI)"),      std::sin(stk::expreval::pi()));
+  EXPECT_DOUBLE_EQ(evaluate("sin(3*PI/2)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("sin(TWO_PI)"),  std::sin(stk::expreval::two_pi()));
+}
+
+TEST(UnitTestEvaluator, testFunction_cos)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cos(0)"),       1);
+  EXPECT_DOUBLE_EQ(evaluate("cos(PI/4)"),    std::sqrt(2)/2);
+  EXPECT_DOUBLE_EQ(evaluate("cos(PI/3)"),    0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cos(PI/2)"),    std::cos(stk::expreval::pi()/2));
+  EXPECT_DOUBLE_EQ(evaluate("cos(PI)"),     -1);
+  EXPECT_DOUBLE_EQ(evaluate("cos(3*PI/2)"),  std::cos(3*stk::expreval::pi()/2));
+  EXPECT_DOUBLE_EQ(evaluate("cos(TWO_PI)"),  1);
+}
+
+TEST(UnitTestEvaluator, testFunction_tan)
+{
+  EXPECT_DOUBLE_EQ(evaluate("tan(0)"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("tan(PI/3)"),    std::sqrt(3));
+  EXPECT_DOUBLE_EQ(evaluate("tan(PI/4)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("tan(PI)"),      std::tan(stk::expreval::pi()));
+  EXPECT_DOUBLE_EQ(evaluate("tan(3*PI/4)"), -1);
+  EXPECT_DOUBLE_EQ(evaluate("tan(TWO_PI)"),  std::tan(stk::expreval::two_pi()));
+}
+
+TEST(UnitTestEvaluator, testFunction_asin)
+{
+  EXPECT_DOUBLE_EQ(evaluate("asin(0)"),         0);
+  EXPECT_DOUBLE_EQ(evaluate("asin(0.5)"),       stk::expreval::pi()/6);
+  EXPECT_DOUBLE_EQ(evaluate("asin(sqrt(2)/2)"), stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("asin(1)"),         stk::expreval::pi()/2);
+}
+
+TEST(UnitTestEvaluator, testFunction_acos)
+{
+  EXPECT_DOUBLE_EQ(evaluate("acos(1)"),         0);
+  EXPECT_DOUBLE_EQ(evaluate("acos(sqrt(2)/2)"), stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("acos(0.5)"),       stk::expreval::pi()/3);
+  EXPECT_DOUBLE_EQ(evaluate("acos(0)"),         stk::expreval::pi()/2);
+}
+
+TEST(UnitTestEvaluator, testFunction_atan)
+{
+  EXPECT_DOUBLE_EQ(evaluate("atan(0)"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("atan(sqrt(3))"), stk::expreval::pi()/3);
+  EXPECT_DOUBLE_EQ(evaluate("atan(1)"),       stk::expreval::pi()/4);
+}
+
+TEST(UnitTestEvaluator, testFunction_atan2)
+{
+  EXPECT_DOUBLE_EQ(evaluate("atan2(0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("atan2(1, 1)"),    stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("atan2(-1, 1)"),  -stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("atan2(1, -1)"),   3*stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("atan2(-1, -1)"), -3*stk::expreval::pi()/4);
+}
+
+TEST(UnitTestEvaluator, testFunction_sinh)
+{
+  EXPECT_DOUBLE_EQ(evaluate("sinh(-0.1)"), std::sinh(-0.1));
+  EXPECT_DOUBLE_EQ(evaluate("sinh(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("sinh(0.1)"),  std::sinh(0.1));
+  EXPECT_DOUBLE_EQ(evaluate("sinh(0.5)"),  std::sinh(0.5));
+  EXPECT_DOUBLE_EQ(evaluate("sinh(1)"),    std::sinh(1));
+  EXPECT_DOUBLE_EQ(evaluate("sinh(2)"),    std::sinh(2));
+  EXPECT_DOUBLE_EQ(evaluate("sinh(10)"),   std::sinh(10));
+}
+
+TEST(UnitTestEvaluator, testFunction_cosh)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cosh(-0.1)"), std::cosh(-0.1));
+  EXPECT_DOUBLE_EQ(evaluate("cosh(0)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("cosh(0.1)"),  std::cosh(0.1));
+  EXPECT_DOUBLE_EQ(evaluate("cosh(0.5)"),  std::cosh(0.5));
+  EXPECT_DOUBLE_EQ(evaluate("cosh(1)"),    std::cosh(1));
+  EXPECT_DOUBLE_EQ(evaluate("cosh(2)"),    std::cosh(2));
+  EXPECT_DOUBLE_EQ(evaluate("cosh(10)"),   std::cosh(10));
+}
+
+TEST(UnitTestEvaluator, testFunction_tanh)
+{
+  EXPECT_DOUBLE_EQ(evaluate("tanh(-0.1)"), std::tanh(-0.1));
+  EXPECT_DOUBLE_EQ(evaluate("tanh(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("tanh(0.1)"),  std::tanh(0.1));
+  EXPECT_DOUBLE_EQ(evaluate("tanh(0.5)"),  std::tanh(0.5));
+  EXPECT_DOUBLE_EQ(evaluate("tanh(1)"),    std::tanh(1));
+  EXPECT_DOUBLE_EQ(evaluate("tanh(2)"),    std::tanh(2));
+  EXPECT_DOUBLE_EQ(evaluate("tanh(10)"),   std::tanh(10));
+}
+
+TEST(UnitTestEvaluator, testFunction_asinh)
+{
+  EXPECT_DOUBLE_EQ(evaluate("asinh(-0.1)"), std::asinh(-0.1));
+  EXPECT_DOUBLE_EQ(evaluate("asinh(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("asinh(0.1)"),  std::asinh(0.1));
+  EXPECT_DOUBLE_EQ(evaluate("asinh(0.5)"),  std::asinh(0.5));
+  EXPECT_DOUBLE_EQ(evaluate("asinh(1)"),    std::asinh(1));
+  EXPECT_DOUBLE_EQ(evaluate("asinh(2)"),    std::asinh(2));
+  EXPECT_DOUBLE_EQ(evaluate("asinh(10)"),   std::asinh(10));
+}
+
+TEST(UnitTestEvaluator, testFunction_acosh)
+{
+  EXPECT_DOUBLE_EQ(evaluate("acosh(1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("acosh(2)"),    std::acosh(2));
+  EXPECT_DOUBLE_EQ(evaluate("acosh(10)"),   std::acosh(10));
+}
+
+TEST(UnitTestEvaluator, testFunction_atanh)
+{
+  EXPECT_DOUBLE_EQ(evaluate("atanh(-0.1)"), std::atanh(-0.1));
+  EXPECT_DOUBLE_EQ(evaluate("atanh(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("atanh(0.1)"),  std::atanh(0.1));
+  EXPECT_DOUBLE_EQ(evaluate("atanh(0.5)"),  std::atanh(0.5));
+  EXPECT_DOUBLE_EQ(evaluate("atanh(1)"),    std::atanh(1));
+}
+
+TEST(UnitTestEvaluator, testFunction_erf)
+{
+  EXPECT_DOUBLE_EQ(evaluate("erf(-2)"),   std::erf(-2));
+  EXPECT_DOUBLE_EQ(evaluate("erf(-1.5)"), std::erf(-1.5));
+  EXPECT_DOUBLE_EQ(evaluate("erf(-1)"),   std::erf(-1));
+  EXPECT_DOUBLE_EQ(evaluate("erf(-0)"),  -0);
+  EXPECT_DOUBLE_EQ(evaluate("erf(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("erf(1)"),    std::erf(1));
+  EXPECT_DOUBLE_EQ(evaluate("erf(1.5)"),  std::erf(1.5));
+  EXPECT_DOUBLE_EQ(evaluate("erf(2)"),    std::erf(2));
+}
+
+TEST(UnitTestEvaluator, testFunction_erfc)
+{
+  EXPECT_DOUBLE_EQ(evaluate("erfc(-2)"),   std::erfc(-2));
+  EXPECT_DOUBLE_EQ(evaluate("erfc(-1.5)"), std::erfc(-1.5));
+  EXPECT_DOUBLE_EQ(evaluate("erfc(-1)"),   std::erfc(-1));
+  EXPECT_DOUBLE_EQ(evaluate("erfc(0)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("erfc(1)"),    std::erfc(1));
+  EXPECT_DOUBLE_EQ(evaluate("erfc(1.5)"),  std::erfc(1.5));
+  EXPECT_DOUBLE_EQ(evaluate("erfc(2)"),    std::erfc(2));
+}
+
+TEST(UnitTestEvaluator, testFunction_poltorectx)
+{
+  EXPECT_DOUBLE_EQ(evaluate("poltorectx(-5, 0)"),    -5);
+  EXPECT_DOUBLE_EQ(evaluate("poltorectx(5, 0)"),      5);
+  EXPECT_DOUBLE_EQ(evaluate("poltorectx(5, PI/2)"),   5*std::cos(stk::expreval::pi()/2));
+  EXPECT_DOUBLE_EQ(evaluate("poltorectx(5, PI)"),    -5);
+  EXPECT_DOUBLE_EQ(evaluate("poltorectx(5, 3*PI/2)"), 5*std::cos(3*stk::expreval::pi()/2));
+  EXPECT_DOUBLE_EQ(evaluate("poltorectx(0, 0)"),      0);
+  EXPECT_DOUBLE_EQ(evaluate("poltorectx(0, PI)"),     0);
+}
+
+TEST(UnitTestEvaluator, testFunction_poltorecty)
+{
+  EXPECT_DOUBLE_EQ(evaluate("poltorecty(-5, PI/2)"),  -5);
+  EXPECT_DOUBLE_EQ(evaluate("poltorecty(5, 0)"),       0);
+  EXPECT_DOUBLE_EQ(evaluate("poltorecty(5, PI/2)"),    5);
+  EXPECT_DOUBLE_EQ(evaluate("poltorecty(5, PI)"),      5*std::sin(stk::expreval::pi()));
+  EXPECT_DOUBLE_EQ(evaluate("poltorecty(5, 3*PI/2)"), -5);
+  EXPECT_DOUBLE_EQ(evaluate("poltorecty(0, PI/2)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("poltorecty(0, 3*PI/2)"),  0);
+}
+
+TEST(UnitTestEvaluator, testFunction_recttopolr)
+{
+  EXPECT_DOUBLE_EQ(evaluate("recttopolr(0, 0)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("recttopolr(1, 0)"),  1);
+  EXPECT_DOUBLE_EQ(evaluate("recttopolr(0, 1)"),  1);
+  EXPECT_DOUBLE_EQ(evaluate("recttopolr(-1, 0)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("recttopolr(0, -1)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("recttopolr(1, 1)"),  std::sqrt(2));
+}
+
+TEST(UnitTestEvaluator, testFunction_recttopola)
+{
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(0, 0)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(1, 0)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(0, 1)"),   stk::expreval::pi()/2);
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(-1, 0)"),  stk::expreval::pi());
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(0, -1)"),  3*stk::expreval::pi()/2);
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(1, 1)"),   stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(-1, 1)"),  3*stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(-1, -1)"), 5*stk::expreval::pi()/4);
+  EXPECT_DOUBLE_EQ(evaluate("recttopola(1, -1)"),  7*stk::expreval::pi()/4);
+}
+
+TEST(UnitTestEvaluator, testFunction_unit_step)
+{
+  EXPECT_DOUBLE_EQ(evaluate("unit_step(-0.5, 0, 1)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("unit_step(0, 0, 1)"),     1);
+  EXPECT_DOUBLE_EQ(evaluate("unit_step(0.5, 0, 1)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("unit_step(1, 0, 1)"),     1);
+  EXPECT_DOUBLE_EQ(evaluate("unit_step(1.5, 0, 1)"),   0);
+}
+
+TEST(UnitTestEvaluator, testFunction_cycloidal_ramp)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cycloidal_ramp(-0.5, 0, 1)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("cycloidal_ramp(0, 0, 1)"),     0);
+  EXPECT_DOUBLE_EQ(evaluate("cycloidal_ramp(0.25, 0, 1)"),  0.25-1/(2*stk::expreval::pi()));
+  EXPECT_DOUBLE_EQ(evaluate("cycloidal_ramp(0.5, 0, 1)"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cycloidal_ramp(0.75, 0, 1)"),  0.75+1/(2*stk::expreval::pi()));
+  EXPECT_DOUBLE_EQ(evaluate("cycloidal_ramp(1, 0, 1)"),     1);
+  EXPECT_DOUBLE_EQ(evaluate("cycloidal_ramp(1.5, 0, 1)"),   1);
+}
+
+TEST(UnitTestEvaluator, testFunction_cos_ramp3)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1/3, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(2/3, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1.5, 0, 1)"),  1);
+}
+
+TEST(UnitTestEvaluator, testFunction_cos_ramp2)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(-0.5, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1/3, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(0.5, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(2/3, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1, 1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1.5, 1)"),  1);
+}
+
+TEST(UnitTestEvaluator, testFunction_cos_ramp1)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(-0.5)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1/3)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(0.5)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(2/3)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("cos_ramp(1.5)"),  1);
+}
+
+TEST(UnitTestEvaluator, testFunction_cosine_ramp3)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1/3, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(0.5, 0, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(2/3, 0, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1, 0, 1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1.5, 0, 1)"),  1);
+}
+
+TEST(UnitTestEvaluator, testFunction_cosine_ramp2)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(-0.5, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1/3, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(0.5, 1)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(2/3, 1)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1, 1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1.5, 1)"),  1);
+}
+
+TEST(UnitTestEvaluator, testFunction_cosine_ramp1)
+{
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(-0.5)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(0)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1/3)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(0.5)"),  0.5);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(2/3)"),  0.75);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1)"),    1);
+  EXPECT_DOUBLE_EQ(evaluate("cosine_ramp(1.5)"),  1);
+}
+
+TEST(UnitTestEvaluator, testFunction_haversine_pulse)
+{
+  EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(-0.5, 0, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(0, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(1/6, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(0.5, 0, 1)"),  1);
+  EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(5/6, 0, 1)"),  0.25);
+  EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(1, 0, 1)"),    0);
+  EXPECT_DOUBLE_EQ(evaluate("haversine_pulse(1.5, 0, 1)"),  0);
+}
+
+TEST(UnitTestEvaluator, testFunction_point2d)
+{
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0, 0, 1, 1)"),   1);
+
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0.5, 0, 1, 1)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(5/6, 0, 1, 1)"), 0.75);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(1, 0, 1, 1)"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(7/6, 0, 1, 1)"), 0.25);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(1.5, 0, 1, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(2, 0, 1, 1)"),   0);
+
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0, -0.5, 1, 1)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0, -5/6, 1, 1)"), 0.75);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0, -1, 1, 1)"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0, -7/6, 1, 1)"), 0.25);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0, -1.5, 1, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("point2d(0, -2, 1, 1)"),   0);
+}
+
+TEST(UnitTestEvaluator, testFunction_point3d)
+{
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, 0, 0, 1, 1)"),   1);
+
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0.5, 0, 0, 1, 1)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(5/6, 0, 0, 1, 1)"), 0.75);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(1, 0, 0, 1, 1)"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(7/6, 0, 0, 1, 1)"), 0.25);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(1.5, 0, 0, 1, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(2, 0, 0, 1, 1)"),   0);
+
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, -0.5, 0, 1, 1)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, -5/6, 0, 1, 1)"), 0.75);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, -1, 0, 1, 1)"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, -7/6, 0, 1, 1)"), 0.25);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, -1.5, 0, 1, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, -2, 0, 1, 1)"),   0);
+
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, 0, -0.5, 1, 1)"), 1);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, 0, -5/6, 1, 1)"), 0.75);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, 0, -1, 1, 1)"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, 0, -7/6, 1, 1)"), 0.25);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, 0, -1.5, 1, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("point3d(0, 0, -2, 1, 1)"),   0);
+}
+
+TEST(UnitTestEvaluator, testFunction_exponential_pdf)
+{
+  EXPECT_DOUBLE_EQ(evaluate("exponential_pdf(-1, 1)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("exponential_pdf(0, 1)"),  1);
+  EXPECT_DOUBLE_EQ(evaluate("exponential_pdf(1, 1)"),  1/std::exp(1));
+}
+
+TEST(UnitTestEvaluator, testFunction_log_uniform)
+{
+  EXPECT_DOUBLE_EQ(evaluate("log_uniform_pdf(0.5, 1, E)"), 0);
+  EXPECT_DOUBLE_EQ(evaluate("log_uniform_pdf(1, 1, E)"),   1);
+  EXPECT_DOUBLE_EQ(evaluate("log_uniform_pdf(2, 1, E)"),   0.5);
+  EXPECT_DOUBLE_EQ(evaluate("log_uniform_pdf(E, 1, E)"),   1/std::exp(1));
+  EXPECT_DOUBLE_EQ(evaluate("log_uniform_pdf(3, 1, E)"),   0);
+}
+
+double reference_normal_pdf(double x, double mu, double sigma) {
+  return std::exp(-(x-mu)*(x-mu)/(2.0*sigma*sigma))/std::sqrt(2.0*stk::expreval::pi()*sigma*sigma);
+}
+
+TEST(UnitTestEvaluator, testFunction_normal_pdf)
+{
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(-0.5, 1, 0.5)"), reference_normal_pdf(-0.5, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(0, 1, 0.5)"),    reference_normal_pdf(0, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(0.5, 1, 0.5)"),  reference_normal_pdf(0.5, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(0.75, 1, 0.5)"), reference_normal_pdf(0.75, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(1, 1, 0.5)"),    reference_normal_pdf(1, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(1.25, 1, 0.5)"), reference_normal_pdf(1.25, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(1.5, 1, 0.5)"),  reference_normal_pdf(1.5, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(2, 1, 0.5)"),    reference_normal_pdf(2, 1, 0.5));
+  EXPECT_DOUBLE_EQ(evaluate("normal_pdf(2.5, 1, 0.5)"),  reference_normal_pdf(2.5, 1, 0.5));
+}
+
+double reference_weibull_pdf(double x, double k, double lambda) {
+  return (x >= 0) ? (k/lambda)*std::pow(x/lambda, k-1)*std::exp(-std::pow(x/lambda, k)) : 0;
+}
+
+TEST(UnitTestEvaluator, testFunction_weibull_pdf)
+{
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(-1, 5, 1)"),   0);
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(0, 5, 1)"),    reference_weibull_pdf(0, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(0.5, 5, 1)"),  reference_weibull_pdf(0.5, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(0.75, 5, 1)"), reference_weibull_pdf(0.75, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(1, 5, 1)"),    reference_weibull_pdf(1, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(1.25, 5, 1)"), reference_weibull_pdf(1.25, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(1.5, 5, 1)"),  reference_weibull_pdf(1.5, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("weibull_pdf(2, 5, 1)"),    reference_weibull_pdf(2, 5, 1));
+}
+
+double reference_gamma_pdf(double x, double k, double theta) {
+  return (x >= 0) ? 1/(std::tgamma(k)*std::pow(theta, k))*std::pow(x, k-1)*std::exp(-x/theta) : 0;
+}
+
+TEST(UnitTestEvaluator, testFunction_gamma_pdf)
+{
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(-1, 5, 1)"),  0);
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(0, 5, 1)"),   reference_gamma_pdf(0, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(0.5, 5, 1)"), reference_gamma_pdf(0.5, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(1, 5, 1)"),   reference_gamma_pdf(1, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(2, 5, 1)"),   reference_gamma_pdf(2, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(3, 5, 1)"),   reference_gamma_pdf(3, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(3.5, 5, 1)"), reference_gamma_pdf(3.5, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(4, 5, 1)"),   reference_gamma_pdf(4, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(4.5, 5, 1)"), reference_gamma_pdf(4.5, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(5, 5, 1)"),   reference_gamma_pdf(5, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(6, 5, 1)"),   reference_gamma_pdf(6, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(8, 5, 1)"),   reference_gamma_pdf(8, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(10, 5, 1)"),  reference_gamma_pdf(10, 5, 1));
+  EXPECT_DOUBLE_EQ(evaluate("gamma_pdf(12, 5, 1)"),  reference_gamma_pdf(12, 5, 1));
+}
+
+void testRandom(const char * expression)
+{
+  const int NUM_SAMPLES = 10000;
+  const double EXPECTED_MEAN = 0.5;
+  const double EXPECTED_SIGMA = 1./std::sqrt(12.);
+  std::vector<int> bins(10, 0);
+  double mean = 0;
+  double sigma = 0;
+
+  for (int i = 0; i < NUM_SAMPLES; ++i) {
+    const double result = evaluate(expression);
+    const int binIndex = static_cast<int>(result*10);
+    bins[binIndex] += 1;
+
+    mean += result;
+    sigma += (result-EXPECTED_MEAN)*(result-EXPECTED_MEAN);
+  }
+
+  mean /= NUM_SAMPLES;
+  sigma = std::sqrt(sigma/NUM_SAMPLES);
+
+  EXPECT_NEAR(mean, EXPECTED_MEAN, 0.01);
+  EXPECT_NEAR(sigma, EXPECTED_SIGMA, 0.005);
+
+  const int maxN = *std::max_element(bins.begin(), bins.end());
+  const int minN = *std::min_element(bins.begin(), bins.end());
+
+  EXPECT_NEAR(maxN, NUM_SAMPLES/10, 100);
+  EXPECT_NEAR(minN, NUM_SAMPLES/10, 100);
+}
+
+TEST(UnitTestEvaluator, testFunction_rand)
+{
+  testRandom("rand()");
+}
+
+TEST(UnitTestEvaluator, testFunction_srand_repeatability)
+{
+  std::vector<double> result(10);
+  evaluate("srand(123.)");
+  for (unsigned i = 0; i < result.size(); ++i) {
+    result[i] = evaluate("rand()");
+  }
+
+  evaluate("srand(123.)");
+  for (unsigned i = 0; i < result.size(); ++i) {
+    EXPECT_DOUBLE_EQ(evaluate("rand()"), result[i]);
+  }
+}
+
+TEST(UnitTestEvaluator, testFunction_random)
+{
+  testRandom("random()");
+}
+
+TEST(UnitTestEvaluator, testFunction_random1_repeatability)
+{
+  std::vector<double> result(10);
+  evaluate("random(123.)");
+  for (unsigned i = 0; i < result.size(); ++i) {
+    result[i] = evaluate("random()");
+  }
+
+  evaluate("random(123.)");
+  for (unsigned i = 0; i < result.size(); ++i) {
+    EXPECT_DOUBLE_EQ(evaluate("random()"), result[i]);
+  }
+}
+
+TEST(UnitTestEvaluator, testFunction_ts_random_repeatability)
+{
+  std::vector<double> result(10);
+  double time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    result[i] = evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}});
+    time += 0.1;
+  }
+
+  time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    EXPECT_DOUBLE_EQ(evaluate("ts_random(t, 1.0, 2.0, 3.0)", {{"t", time}}), result[i]);
+    time += 0.1;
+  }
+}
+
+TEST(UnitTestEvaluator, testFunction_ts_normal_repeatability)
+{
+  std::vector<double> result(10);
+  double time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    result[i] = evaluate("ts_normal(t, 1.0, 2.0, 3.0, 1.0, 0.5, 0, 2)", {{"t", time}});
+    time += 0.1;
+  }
+
+  time = 0;
+  for (unsigned i = 0; i < result.size(); ++i) {
+    EXPECT_DOUBLE_EQ(evaluate("ts_normal(t, 1.0, 2.0, 3.0, 1.0, 0.5, 0, 2)", {{"t", time}}), result[i]);
+    time += 0.1;
+  }
+}
+
+TEST(UnitTestEvaluator, testFunction_ts_normal_clipping)
+{
+  const size_t NUM_SAMPLES = 10000;
+  const double lowerBound = 0;
+  const double upperBound = 2;
+
+  double time = 0;
+  for (unsigned i = 0; i < NUM_SAMPLES; ++i) {
+    const double result = evaluate("ts_normal(t, 1.0, 2.0, 3.0, 1.0, 0.5, " + std::to_string(lowerBound) + ", " +
+                                   std::to_string(upperBound) + ")", {{"t", time}});
+    time += 0.1;
+    EXPECT_GE(result, lowerBound);
+    EXPECT_LE(result, upperBound);
+  }
+}
+
+TEST(UnitTestEvaluator, testFunction_time)
+{
+  EXPECT_NEAR(evaluate("time()"), std::time(nullptr), 1.1);
+}
+
 
 } // namespace <unnamed>
-
-void
-UnitTestEvaluator::testEvaluator()
-{
-  EXPECT_TRUE(syntax("3^2"));
-  EXPECT_TRUE(test_one_value("a=1;b=2;a+b",3));
-  EXPECT_TRUE(test_one_value("9%3" ,0));
-  EXPECT_TRUE(test_one_value("9 % 4" ,1));
-  EXPECT_TRUE(test_one_value("15%(1+1+1)",0));
-
-  EXPECT_TRUE(test_one_value("max(1,2)",2));
-  EXPECT_TRUE(test_one_value("max(1,2,3)",3));
-  EXPECT_TRUE(test_one_value("max(1,2,3,4)",4));
-
-  //
-  //  Test overloaded function with wrong number of arguments
-  //
-  //EXPECT_THROW(test_one_value("min(4)",4), std::exception);
-
-  EXPECT_TRUE(test_one_value("min(4,3)",3));
-  EXPECT_TRUE(test_one_value("min(4,3,2)",2));
-  EXPECT_TRUE(test_one_value("min(4,3,2,1)",1));
-
-  EXPECT_TRUE(test_one_value("a=3;a^2",9.));
-  EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
-  EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
-  EXPECT_TRUE(test_one_value("a=1;b=2;c=(a!=b);",1));
-  EXPECT_TRUE(test_one_value("a=1;b=2;c=(a==b);",0));
-  EXPECT_TRUE(test_one_value("a=1;b=!a;",0));
-  EXPECT_TRUE(test_one_value("sign(7)", 1));
-  EXPECT_TRUE(test_one_value("sign(-5)", -1));
-
-  EXPECT_TRUE(test_one_value("ipart(5.1)", 5));
-  EXPECT_TRUE(test_one_value_is_equal("ipart(5.2)", "ipart(5.1)")); 
-  EXPECT_TRUE(test_one_value_is_equal("fpart(5.1234) + ipart(5.1234)", "5.1234")); 
-
-  EXPECT_TRUE(test_one_value_is_equal("pow(5,2)", "5*5")); 
-  EXPECT_TRUE(test_one_value_is_equal("min(1,2)", "min(2,1)")); 
-  EXPECT_TRUE(test_one_value_is_equal("min(-1,0,1)", "min(0,1,-1)")); 
-
-  EXPECT_TRUE(test_one_value_is_equal("x=-1; cycloidal_ramp(x,0,1)", "0.0")); 
-  EXPECT_TRUE(test_one_value_is_equal("x= 2; cycloidal_ramp(x,0,1)", "1.0")); 
-  EXPECT_TRUE(test_one_value_is_equal("x=-1; haversine_pulse(x,0,1)", "0.0")); 
-  EXPECT_TRUE(test_one_value_is_equal("x= 2; haversine_pulse(x,0,1)", "0.0")); 
-
-  //
-  //  Test some composite functions
-  //
-  EXPECT_TRUE(test_one_value("pow(pow(2,2), pow(2,2))", 256));
-  EXPECT_TRUE(test_one_value("pow(2^2, 2^2)", 256));
-  EXPECT_TRUE(test_one_value("(2^2)^(2^2)", 256));
-  EXPECT_TRUE(test_one_value("(2^2)^pow(2,2)", 256));
-  EXPECT_TRUE(test_one_value("sin(pow(2,2))", sin(4)));
-  EXPECT_TRUE(test_one_value("sin(sin(sin(sin(100))))",sin(sin(sin(sin(100.0))))));
-  EXPECT_TRUE(test_one_value("sin(sin(sin(sin(pow(2,2)))))",sin(sin(sin(sin(4.0))))));
-
-  const double weibull_gold_value = 3.6787944117144233402;
-  EXPECT_TRUE(test_one_value("shape=10;scale=1;weibull_pdf(1.0,shape,scale)", weibull_gold_value));
-
-  // Need a better test for distributions, perhaps something that computes the
-  // mean and standard deviation of the distribution.
-  const double normal_gold_value = 0.79788456080286540573;
-  EXPECT_TRUE(test_one_value("mean=0;standard_deviation=0.5;normal_pdf(0.0,mean,standard_deviation)", normal_gold_value));
-
-  // Simple test of ts_random
-  const double tsrand_gold_value = 0.64737415343866411277;
-  EXPECT_TRUE(test_one_value("ts_random(1e-3,0,1e-6,1e-4)", tsrand_gold_value));
-
-  // Better test of ts_random
-  {
-    double t = 1e-4;
-    double x = 0;
-    double y = 0;
-    double z = 0;
-    stk::expreval::Eval expr_eval("ts_random(t,x,y,z)");
-    expr_eval.parse();
-    expr_eval.bindVariable("t",t);
-    expr_eval.bindVariable("x",x);
-    expr_eval.bindVariable("y",y);
-    expr_eval.bindVariable("z",z);
-
-    stk::expreval::Eval expr_eval_norm("ts_normal(t,x,y,z,1,1.2,-10,10)");
-    expr_eval_norm.parse();
-    expr_eval_norm.bindVariable("t",t);
-    expr_eval_norm.bindVariable("x",x);
-    expr_eval_norm.bindVariable("y",y);
-    expr_eval_norm.bindVariable("z",z);
-
-    // Ensure uniform distribution with different spatial length scales
-    for(auto&& L : {1e-6,1e3}) {
-
-      std::vector<int> bins(10,0);
-      double mean = 0.0;
-      double den = 0.0;
-      double sigma = 0.0;
-
-      for(int i = 0; i < 100; ++i) {
-        x = L*(i-50)/100.0;
-        for(int j = 0; j < 100; ++j) {
-          y = L*(j-50)/100.0;
-          double result = kernel_evaluate(expr_eval);
-          int idx = static_cast<int>(result*10);
-          bins[idx] += 1;
-
-          result = kernel_evaluate(expr_eval_norm);
-          mean += result;
-          sigma += (result-1)*(result-1);
-          den += 1;
-        }
-      }
-
-      mean /= den;
-      sigma = std::sqrt(sigma/den);
-
-      std::cout << "Mu = " << mean << ", s = " << sigma << std::endl;
-
-      EXPECT_TRUE(std::abs(mean - 1) < 0.02);
-      EXPECT_TRUE(std::abs(sigma - 1.2) < 0.02);
-
-      int maxN = *std::max_element(bins.begin(), bins.end());
-      int minN = *std::min_element(bins.begin(), bins.end());
-
-      std::cout << "Min/Max = " << minN << "/" << maxN << std::endl;
-      EXPECT_TRUE(maxN < 1100);
-      EXPECT_TRUE(minN > 900);
-    }
-
-    // test uniformity in time
-    x = 1e-4;
-    y = 2.2e-3;
-    z = 1e-5;
-
-    {
-      std::vector<int> bins(10,0);
-      for(int i = 0; i < 10000; ++i) {
-        double result = kernel_evaluate(expr_eval);
-        int idx = static_cast<int>(result*10);
-        bins[idx] += 1;
-        t += 1e-4;
-      }
-
-      int maxN = *std::max_element(bins.begin(), bins.end());
-      int minN = *std::min_element(bins.begin(), bins.end());
-      std::cout << "Min/Max = " << minN << "/" << maxN << std::endl;
-      EXPECT_TRUE(maxN < 1100);
-      EXPECT_TRUE(minN > 900);
-    }
-
-  }
-
-  // Test point mask functions
-  EXPECT_TRUE(test_one_value("point2d(0,0,1,0.1)", 1.0));
-  EXPECT_TRUE(test_one_value("point2d(0,1,1,0.1)", 0.5));
-  EXPECT_TRUE(test_one_value("point2d(0,2,1,0.1)", 0.0));
-
-  EXPECT_TRUE(test_one_value("point3d(0,0,0,1,0.1)", 1.0));
-  EXPECT_TRUE(test_one_value("point3d(0,1,0,1,0.1)", 0.5));
-  EXPECT_TRUE(test_one_value("point3d(0,2,0,1,0.1)", 0.0));
-
-  EXPECT_TRUE(syntax("2*2"));
-  EXPECT_TRUE(syntax(""));
-  EXPECT_TRUE(syntax(";"));
-  EXPECT_TRUE(syntax(";;"));
-  EXPECT_TRUE(syntax(";;;"));
-  EXPECT_TRUE(syntax("x*0.1"));
-  EXPECT_TRUE(syntax("x*-0.1"));
-  EXPECT_TRUE(syntax("x*+0.1"));
-  EXPECT_TRUE(syntax("x--7.0"));
-  EXPECT_TRUE(syntax("x*-x"));
-  EXPECT_TRUE(syntax("x*+x"));
-  EXPECT_TRUE(syntax("v[0]=v[1]*0.1"));
-  EXPECT_TRUE(syntax("x--x"));
-  EXPECT_TRUE(syntax("x---x"));
-
-  EXPECT_TRUE(fail_syntax("0.01.02"));
-  EXPECT_TRUE(fail_syntax("5*.e+10"));
-  EXPECT_TRUE(fail_syntax("x y"));
-  EXPECT_TRUE(fail_syntax("x(y"));
-  EXPECT_TRUE(fail_syntax("x*"));
-  EXPECT_TRUE(fail_syntax("x*(y+1"));
-  EXPECT_TRUE(fail_syntax("x*y)"));
-  EXPECT_TRUE(fail_syntax("cos(x"));
-  EXPECT_TRUE(fail_syntax("(x)y"));
-  EXPECT_TRUE(fail_syntax("()"));
-
-  EXPECT_TRUE(undefinedFunction("stress(1)"));
-  EXPECT_TRUE(notUndefinedFunction("sin(1)"));
-  EXPECT_TRUE(notUndefinedFunction("0.01.02"));
-  EXPECT_TRUE(syntax("rand()"));
-  EXPECT_TRUE(syntax("srand()"));
-  EXPECT_TRUE(syntax("time()"));
-  EXPECT_TRUE(syntax("random()"));
-  EXPECT_TRUE(syntax("random(1)"));
-  EXPECT_TRUE(syntax("random(time())"));
-  EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
-  EXPECT_TRUE(syntax("sign(x)"));
-
-  EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
-  EXPECT_TRUE(syntax( "normal_pdf(x, alpha, beta)"));
-
-#define EXPREVAL_TEST(name) test(name##_expr, name)
-
-  EXPECT_TRUE(EXPREVAL_TEST(h1));
-  EXPECT_TRUE(EXPREVAL_TEST(h2));
-  EXPECT_TRUE(EXPREVAL_TEST(h3));
-  EXPECT_TRUE(EXPREVAL_TEST(h4));
-  EXPECT_TRUE(EXPREVAL_TEST(h5));
-  EXPECT_TRUE(EXPREVAL_TEST(h6));
-  EXPECT_TRUE(EXPREVAL_TEST(h7));
-  EXPECT_TRUE(EXPREVAL_TEST(h8));
-  EXPECT_TRUE(EXPREVAL_TEST(h9));
-  EXPECT_TRUE(EXPREVAL_TEST(h10));
-  EXPECT_TRUE(EXPREVAL_TEST(h11));
-  EXPECT_TRUE(EXPREVAL_TEST(h12));
-  EXPECT_TRUE(EXPREVAL_TEST(h13));
-  EXPECT_TRUE(EXPREVAL_TEST(h14));
-  EXPECT_TRUE(EXPREVAL_TEST(h15));
-  EXPECT_TRUE(EXPREVAL_TEST(h16));
-  EXPECT_TRUE(EXPREVAL_TEST(h17));
-  EXPECT_TRUE(EXPREVAL_TEST(h18));
-  EXPECT_TRUE(EXPREVAL_TEST(h19));
-  EXPECT_TRUE(EXPREVAL_TEST(h20));
-
-  EXPECT_TRUE(EXPREVAL_TEST(f1));
-  EXPECT_TRUE(EXPREVAL_TEST(f2));
-  EXPECT_TRUE(EXPREVAL_TEST(f3));
-  EXPECT_TRUE(EXPREVAL_TEST(f4));
-  EXPECT_TRUE(EXPREVAL_TEST(f5));
-  EXPECT_TRUE(EXPREVAL_TEST(f6));
-  EXPECT_TRUE(EXPREVAL_TEST(f7));
-  EXPECT_TRUE(EXPREVAL_TEST(f8));
-  EXPECT_TRUE(EXPREVAL_TEST(f9));
-  EXPECT_TRUE(EXPREVAL_TEST(f10));
-  EXPECT_TRUE(EXPREVAL_TEST(f11));
-  EXPECT_TRUE(EXPREVAL_TEST(f12));
-  EXPECT_TRUE(EXPREVAL_TEST(f13));
-  EXPECT_TRUE(EXPREVAL_TEST(f14));
-  EXPECT_TRUE(EXPREVAL_TEST(f15));
-  EXPECT_TRUE(EXPREVAL_TEST(f16));
-  EXPECT_TRUE(EXPREVAL_TEST(f17));
-  EXPECT_TRUE(EXPREVAL_TEST(f18));
-  EXPECT_TRUE(EXPREVAL_TEST(f19));
-  EXPECT_TRUE(EXPREVAL_TEST(f20));
-  EXPECT_TRUE(EXPREVAL_TEST(f21));
-  EXPECT_TRUE(EXPREVAL_TEST(f22));
-  EXPECT_TRUE(EXPREVAL_TEST(f23));
-  EXPECT_TRUE(EXPREVAL_TEST(f24));
-  EXPECT_TRUE(EXPREVAL_TEST(f25));
-  EXPECT_TRUE(EXPREVAL_TEST(f26));
-  EXPECT_TRUE(EXPREVAL_TEST(f27));
-  EXPECT_TRUE(EXPREVAL_TEST(f28));
-  EXPECT_TRUE(EXPREVAL_TEST(f29));
-  EXPECT_TRUE(EXPREVAL_TEST(f30));
-  EXPECT_TRUE(EXPREVAL_TEST(f32));
-  EXPECT_TRUE(EXPREVAL_TEST(f33));
-
-  EXPECT_TRUE(EXPREVAL_TEST(b1));
-  EXPECT_TRUE(EXPREVAL_TEST(b2));
-  EXPECT_TRUE(EXPREVAL_TEST(b3));
-
-  EXPECT_TRUE(EXPREVAL_TEST(k1));
-  EXPECT_TRUE(EXPREVAL_TEST(k2));
-  EXPECT_TRUE(EXPREVAL_TEST(k3));
-  EXPECT_TRUE(EXPREVAL_TEST(k4));
-  EXPECT_TRUE(EXPREVAL_TEST(k5));
-  EXPECT_TRUE(EXPREVAL_TEST(k6));
-
-#undef EXPREVAL_TEST
-}

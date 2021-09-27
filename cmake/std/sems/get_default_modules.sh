@@ -1,7 +1,7 @@
 PLATFORM_TYPE=`uname`
 
 if [ "$PLATFORM_TYPE" = "Linux" ] ; then
-  sems_compiler_and_version_default=sems-gcc/5.3.0
+  sems_compiler_and_version_default=sems-gcc/7.2.0
 elif [ "$PLATFORM_TYPE" = "Darwin" ] ; then
   sems_compiler_and_version_default=sems-gcc/5.3.0
 else

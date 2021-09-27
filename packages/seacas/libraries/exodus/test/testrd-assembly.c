@@ -37,7 +37,7 @@
 
 #define EXCHECK(funcall)                                                                           \
   do {                                                                                             \
-    error = (funcall);                                                                             \
+    int error = (funcall);                                                                         \
     printf("after %s, error = %d\n", TOSTRING(funcall), error);                                    \
     if (error != EX_NOERR && error != EX_WARN) {                                                   \
       fprintf(stderr, "Error calling %s\n", TOSTRING(funcall));                                    \
@@ -48,38 +48,19 @@
 
 int main(int argc, char **argv)
 {
-  int  exoid, num_elem_blk, num_assembly;
-  int  num_assembly_vars;
-  int  error;
-  int  i;
-  int *ids;
-  int *num_elem_in_block  = NULL;
-  int *num_nodes_per_elem = NULL;
-  int *num_attr           = NULL;
-  int  CPU_word_size, IO_word_size;
-  int  idum;
-
-  float version;
-  float fdum;
-
-  char *var_names[10];
-  char *block_names[10];
-  char  name[MAX_STR_LENGTH + 1];
-  char  elem_type[MAX_STR_LENGTH + 1];
-  char  title_chk[MAX_LINE_LENGTH + 1];
-  char *cdum = 0;
-
-  CPU_word_size = 0; /* sizeof(float) */
-  IO_word_size  = 0; /* use what is stored in file */
+  int num_elem_blk, num_assembly;
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* open EXODUS II files */
-  exoid = ex_open("test-assembly.exo", /* filename path */
-                  EX_READ,             /* access mode = READ */
-                  &CPU_word_size,      /* CPU word size */
-                  &IO_word_size,       /* IO word size */
-                  &version);           /* ExodusII library version */
+  int   CPU_word_size = 0; /* sizeof(float) */
+  int   IO_word_size  = 0; /* use what is stored in file */
+  float version;
+  int   exoid = ex_open("test-assembly.exo", /* filename path */
+                      EX_READ,             /* access mode = READ */
+                      &CPU_word_size,      /* CPU word size */
+                      &IO_word_size,       /* IO word size */
+                      &version);           /* ExodusII library version */
 
   printf("\nafter ex_open\n");
   if (exoid < 0) {
@@ -89,6 +70,8 @@ int main(int argc, char **argv)
   printf("test-assembly.exo is an EXODUSII file; version %4.2f\n", version);
   /*   printf ("         CPU word size %1d\n",CPU_word_size);  */
   printf("         I/O word size %1d\n", IO_word_size);
+  char *cdum = NULL;
+  int   idum;
   ex_inquire(exoid, EX_INQ_API_VERS, &idum, &version, cdum);
   printf("EXODUSII API; version %4.2f\n", version);
 
@@ -113,6 +96,8 @@ int main(int argc, char **argv)
     printf("num_side_sets = %" PRId64 "\n", par.num_side_sets);
 
     /* Check that ex_inquire gives same title */
+    char  title_chk[MAX_LINE_LENGTH + 1];
+    float fdum;
     EXCHECK(ex_inquire(exoid, EX_INQ_TITLE, &idum, &fdum, title_chk));
     if (strcmp(par.title, title_chk) != 0) {
       printf("error in ex_inquire for EX_INQ_TITLE %s, vs %s\n", par.title, title_chk);
@@ -122,6 +107,10 @@ int main(int argc, char **argv)
   }
 
   /* read element block parameters */
+  int *ids                = NULL;
+  int *num_elem_in_block  = NULL;
+  int *num_nodes_per_elem = NULL;
+  int *num_attr           = NULL;
   if (num_elem_blk > 0) {
     ids                = (int *)calloc(num_elem_blk, sizeof(int));
     num_elem_in_block  = (int *)calloc(num_elem_blk, sizeof(int));
@@ -130,17 +119,20 @@ int main(int argc, char **argv)
 
     EXCHECK(ex_get_ids(exoid, EX_ELEM_BLOCK, ids));
 
-    for (i = 0; i < num_elem_blk; i++) {
+    char *block_names[10];
+    for (int i = 0; i < num_elem_blk; i++) {
       block_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
 
     EXCHECK(ex_get_names(exoid, EX_ELEM_BLOCK, block_names));
 
-    for (i = 0; i < num_elem_blk; i++) {
+    for (int i = 0; i < num_elem_blk; i++) {
+      char name[MAX_STR_LENGTH + 1];
       EXCHECK(ex_get_name(exoid, EX_ELEM_BLOCK, ids[i], name));
       if (strcmp(name, block_names[i]) != 0) {
         printf("error in ex_get_name for block id %d\n", ids[i]);
       }
+      char elem_type[MAX_STR_LENGTH + 1];
       EXCHECK(ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &(num_elem_in_block[i]),
                            &(num_nodes_per_elem[i]), 0, 0, &(num_attr[i])));
       printf("element block id = %2d\n", ids[i]);
@@ -155,7 +147,7 @@ int main(int argc, char **argv)
     free(num_elem_in_block);
     free(num_nodes_per_elem);
     free(num_attr);
-    for (i = 0; i < num_elem_blk; i++) {
+    for (int i = 0; i < num_elem_blk; i++) {
       free(block_names[i]);
     }
   }
@@ -173,7 +165,7 @@ int main(int argc, char **argv)
     ex_get_ids(exoid, EX_ASSEMBLY, assembly_ids);
 
     char *assembly_name2[10];
-    for (i = 0; i < num_assembly; i++) {
+    for (int i = 0; i < num_assembly; i++) {
       assembly_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
       assembly_name2[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
@@ -183,7 +175,7 @@ int main(int argc, char **argv)
 
     ex_assembly assemblies[10];
     int64_t     entity[10];
-    for (i = 0; i < num_assembly; i++) {
+    for (int i = 0; i < num_assembly; i++) {
       assemblies[i].id   = assembly_ids[i];
       assemblies[i].name = assembly_names[i];
       /* Clear out name to make sure still getting same name */
@@ -204,7 +196,7 @@ int main(int argc, char **argv)
     }
 
     ex_assembly assmbly[10];
-    for (i = 0; i < num_assembly; i++) {
+    for (int i = 0; i < num_assembly; i++) {
       assmbly[i].name = NULL;
       assmbly[i].name = assembly_names[i];
       /* Clear out name to make sure still getting same name */
@@ -212,7 +204,7 @@ int main(int argc, char **argv)
       assmbly[i].entity_list = NULL;
     }
     EXCHECK(ex_get_assemblies(exoid, assmbly));
-    for (i = 0; i < num_assembly; i++) {
+    for (int i = 0; i < num_assembly; i++) {
       printf("Assembly named '%s' has id %" PRId64 ". It contains %d entities of type '%s'\n",
              assmbly[i].name, assmbly[i].id, assmbly[i].entity_count,
              ex_name_of_object(assmbly[i].type));
@@ -221,14 +213,14 @@ int main(int argc, char **argv)
       }
     }
 
-    for (i = 0; i < num_assembly; i++) {
+    for (int i = 0; i < num_assembly; i++) {
       free(assembly_name2[i]);
     }
 
     /* Read attributes... */
     ex_attribute attr[10];
 
-    for (i = 0; i < num_assembly; i++) {
+    for (int i = 0; i < num_assembly; i++) {
       memset(attr, 0, sizeof(ex_attribute) * 10);
       int att_count = ex_get_attribute_count(exoid, EX_ASSEMBLY, assmbly[i].id);
       printf("Assembly named '%s' with id %" PRId64 ". It contains %d attributes:\n",
@@ -274,17 +266,19 @@ int main(int argc, char **argv)
       }
     }
 
+    int num_assembly_vars;
     EXCHECK(ex_get_reduction_variable_param(exoid, EX_ASSEMBLY, &num_assembly_vars));
 
     if (num_assembly_vars > 0) {
-      for (i = 0; i < num_assembly_vars; i++) {
+      char *var_names[10];
+      for (int i = 0; i < num_assembly_vars; i++) {
         var_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
       }
 
       EXCHECK(ex_get_reduction_variable_names(exoid, EX_ASSEMBLY, num_assembly_vars, var_names));
 
       printf("There are %2d assembly reduction variables; their names are :\n", num_assembly_vars);
-      for (i = 0; i < num_assembly_vars; i++) {
+      for (int i = 0; i < num_assembly_vars; i++) {
         printf(" '%s'\n", var_names[i]);
         free(var_names[i]);
       }
@@ -294,7 +288,7 @@ int main(int argc, char **argv)
       printf("There are %2d time steps in the database.\n", num_time_steps);
 
       float *var_values = (float *)calloc(num_assembly_vars, sizeof(float));
-      for (i = 0; i < num_time_steps; i++) {
+      for (int i = 0; i < num_time_steps; i++) {
         float time_value;
         EXCHECK(ex_get_time(exoid, i + 1, &time_value));
         printf("Time at step %d is %f.\n", i + 1, time_value);
@@ -309,7 +303,7 @@ int main(int argc, char **argv)
       free(var_values);
     }
   }
-  for (i = 0; i < num_assembly; i++) {
+  for (int i = 0; i < num_assembly; i++) {
     free(assembly_names[i]);
   }
   EXCHECK(ex_close(exoid));

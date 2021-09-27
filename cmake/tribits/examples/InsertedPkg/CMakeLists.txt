@@ -1,13 +1,13 @@
-TRIBITS_PACKAGE(InsertedPkg)
+tribits_package(InsertedPkg)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-TRIBITS_ADD_LIBRARY(
+tribits_add_library(
   externalpkg
   HEADERS InsertedPkg.hpp
   SOURCES InsertedPkg.cpp
   )
 
-TRIBITS_ADD_TEST_DIRECTORIES(test)
+tribits_add_test_directories(test)
 
-TRIBITS_PACKAGE_POSTPROCESS()
+tribits_package_postprocess()

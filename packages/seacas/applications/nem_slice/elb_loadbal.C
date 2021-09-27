@@ -1052,7 +1052,6 @@ namespace {
                           Mesh_Description<INT> *mesh, LB_Description<INT> *lb,
                           Graph_Description<INT> *graph, int check_type)
   {
-    size_t           num_found = 0;
     std::vector<int> list_ptr;
 
     /*
@@ -1128,14 +1127,13 @@ namespace {
             for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
               int proc = lb->vertex2proc[ecnt];
               assert(proc < machine->num_procs);
-              size_t end = 0;
               if (proc == pcnt) {
+                size_t end = 0;
                 if (ecnt < (mesh->num_elems - 1)) {
                   end = graph->start[ecnt + 1];
                 }
                 else {
                   end = graph->nadj;
-                  ;
                 }
                 size_t distance = 1;
                 for (size_t i = graph->start[ecnt]; i < end; i++) {
@@ -1159,10 +1157,10 @@ namespace {
               for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
                 int proc = lb->vertex2proc[ecnt];
                 assert(proc < machine->num_procs);
-                size_t end = 0;
                 if (proc == pcnt) {
                   global_index[ki++] = ecnt;
                   columns[kf++]      = local_number[ecnt];
+                  size_t end         = 0;
                   if (ecnt < (mesh->num_elems - 1)) {
                     end = graph->start[ecnt + 1];
                   }
@@ -1233,6 +1231,7 @@ namespace {
         }
       }
 
+      size_t num_found = 0;
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
         E_Type etype = mesh->elem_type[ecnt];
 
@@ -1393,22 +1392,7 @@ namespace {
   int nodal_dist(LB_Description<INT> *lb, Machine_Description *machine, Mesh_Description<INT> *mesh,
                  Graph_Description<INT> *graph)
   {
-    size_t ncnt;
-    size_t i;
-    int    proc;
-    int    proc_n;
-    int    internal;
-    int    flag;
-    int    elem;
-    int    node;
-    int    nnodes;
-    E_Type etype;
-    double time1;
-    double time2;
-
-    /*-----------------------------Execution Begins------------------------------*/
-    /* Allocate memory */
-    time1 = get_time();
+    double time1 = get_time();
     lb->int_nodes.resize(machine->num_procs);
     lb->bor_nodes.resize(machine->num_procs);
     lb->ext_nodes.resize(machine->num_procs);
@@ -1416,22 +1400,22 @@ namespace {
     lb->bor_elems.resize(machine->num_procs); // Not used in nodal dist.
     lb->ext_procs.resize(machine->num_procs);
 
-    time2 = get_time();
+    double time2 = get_time();
     fmt::print("Allocation time: {}s\n", time2 - time1);
 
     /* Find the internal, border and external nodes */
     time1 = get_time();
-    for (ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
-      proc = lb->vertex2proc[ncnt];
+    for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
+      int proc = lb->vertex2proc[ncnt];
       assert(proc < machine->num_procs);
-      internal = 1;
-      flag     = 0;
+      int internal = 1;
+      int flag     = 0;
       for (size_t ecnt = 0; ecnt < graph->sur_elem[ncnt].size(); ecnt++) {
-        elem   = graph->sur_elem[ncnt][ecnt];
-        etype  = mesh->elem_type[elem];
-        nnodes = get_elem_info(NNODES, etype);
-        for (i = 0; i < static_cast<size_t>(nnodes); i++) {
-          proc_n = lb->vertex2proc[mesh->connect[elem][i]];
+        int    elem   = graph->sur_elem[ncnt][ecnt];
+        E_Type etype  = mesh->elem_type[elem];
+        int    nnodes = get_elem_info(NNODES, etype);
+        for (size_t i = 0; i < static_cast<size_t>(nnodes); i++) {
+          int proc_n = lb->vertex2proc[mesh->connect[elem][i]];
           assert(proc_n < machine->num_procs);
           if (proc_n != proc) {
             /* "ncnt" is a border node and is an external node to proc_n */
@@ -1465,11 +1449,11 @@ namespace {
     /* Find the internal elements */
     time1 = get_time();
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-      etype  = mesh->elem_type[ecnt];
-      nnodes = get_elem_info(NNODES, etype);
-      for (ncnt = 0; ncnt < static_cast<size_t>(nnodes); ncnt++) {
-        node = mesh->connect[ecnt][ncnt];
-        proc = lb->vertex2proc[node];
+      E_Type etype  = mesh->elem_type[ecnt];
+      int    nnodes = get_elem_info(NNODES, etype);
+      for (size_t ncnt = 0; ncnt < static_cast<size_t>(nnodes); ncnt++) {
+        int node = mesh->connect[ecnt][ncnt];
+        int proc = lb->vertex2proc[node];
         assert(proc < machine->num_procs);
         /*
         ** since the outer loop is on the elements, I don't need to
@@ -1507,7 +1491,6 @@ namespace {
     INT mirror_nodes[MAX_SIDE_NODES];
     int side_cnt;
 
-    double time1;
     double time2;
 
     std::string cmesg;
@@ -1536,7 +1519,7 @@ namespace {
     std::vector<INT> hold_elem(graph->max_nsur);
 
     /* Find the internal and border elements */
-    time1 = get_time();
+    double time1 = get_time();
 
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
       int proc = lb->vertex2proc[ecnt];
@@ -1899,7 +1882,6 @@ namespace {
     time1 = get_time();
     for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
       bool internal = true;
-      int  flag     = 0;
       int  proc     = 0;
 
       /* If a node is not connected to any elements (graph->nsur_elem[ncnt] == 0),
@@ -1911,6 +1893,7 @@ namespace {
 
         proc = lb->vertex2proc[elem];
         assert(proc < machine->num_procs);
+        int flag = 0;
         for (size_t ecnt = 1; ecnt < graph->sur_elem[ncnt].size(); ecnt++) {
           int proc2 = lb->vertex2proc[graph->sur_elem[ncnt][ecnt]];
           assert(proc2 < machine->num_procs);
@@ -2296,16 +2279,7 @@ namespace {
      * March 18, 2004
      */
 
-    int    i;
-    int    nslice;         /* # of slices in the z-direction */
-    int    nwedge;         /* # of wedge-shaped slices in the x,y-plane */
-    int    slice;          /* the slice to which an element is assigned */
-    int    wedge;          /* the wedge to which an element is assigned */
-    float  zmin = FLT_MAX; /* Minimum and maximum z-coordinate values */
-    float  zmax = -FLT_MAX;
-    double dz;              /* zmax - zmin */
-    double theta;           /* angle of (x,y) (polar coordinates) */
-    double epsilon = 1e-07; /* tolerance that allows a point to be in wedge */
+    double theta; /* angle of (x,y) (polar coordinates) */
 
     if (ndot > 0 && (x == nullptr || y == nullptr || z == nullptr || part == nullptr)) {
       fmt::print(stderr, "KDD -- Bad input to ZPINCH_assign.\n");
@@ -2321,8 +2295,8 @@ namespace {
       fmt::print(stderr, "KDD -- B = # slices along z-axis.\n");
       exit(-1);
     }
-    nwedge = machine->dim[0];
-    nslice = machine->dim[1];
+    int nwedge = machine->dim[0];
+    int nslice = machine->dim[1];
     fmt::print("ZPINCH:  Computing\n"
                "   {} slices in the z-direction\n"
                "   {} wedges in the x,y-plane\n"
@@ -2330,7 +2304,9 @@ namespace {
                nslice, nwedge, nslice * nwedge);
 
     /* Compute the maximum values of z */
-    for (i = 0; i < ndot; i++) {
+    float zmin = FLT_MAX; /* Minimum and maximum z-coordinate values */
+    float zmax = -FLT_MAX;
+    for (int i = 0; i < ndot; i++) {
       if (z[i] > zmax) {
         zmax = z[i];
       }
@@ -2338,25 +2314,27 @@ namespace {
         zmin = z[i];
       }
     }
-    dz = zmax - zmin;
+    double dz = zmax - zmin;
 
     /* Compute maximum z for each slice, using uniform partition of zmin - zmax */
     std::vector<double> slice_max_z(nslice);
-    for (i = 0; i < nslice; i++) {
+    for (int i = 0; i < nslice; i++) {
       slice_max_z[i] =
           static_cast<double>(zmin) + static_cast<double>(i + 1) * dz / static_cast<double>(nslice);
     }
 
     /* Compute maximum angle for each wedge, using uniform partition of 2*M_PI */
     std::vector<double> wedge_max_theta(nwedge);
-    for (i = 0; i < nwedge; i++) {
+    for (int i = 0; i < nwedge; i++) {
       wedge_max_theta[i] = static_cast<double>(i + 1) * (2. * M_PI) / static_cast<double>(nwedge);
     }
 
     /* Compute the partition assignment for each set of coordinates */
-    for (i = 0; i < ndot; i++) {
+    double epsilon = 1e-07; /* tolerance that allows a point to be in wedge */
+    for (int i = 0; i < ndot; i++) {
 
       /* Compute the z slice that the element is in. */
+      int slice = 0;
       if (dz > 0.) {
         slice =
             static_cast<int>(nslice * (static_cast<double>(z[i]) - static_cast<double>(zmin)) / dz);
@@ -2396,7 +2374,7 @@ namespace {
       }
 
       /* Compute the wedge that the element is in. */
-      wedge = static_cast<int>(nwedge * theta / (2 * M_PI));
+      int wedge = static_cast<int>(nwedge * theta / (2 * M_PI));
       if (wedge == nwedge) {
         wedge--; /* Handles theta == 2*M_PI correctly */
       }
@@ -2669,22 +2647,6 @@ namespace {
      * Return PARTITION_ASSIGNMENTS from Zoltan_LB_Partition; they should
      * match what is needed in part array above.
      */
-    struct Zoltan_Struct *zz;
-    int                   zngid_ent;
-    int                   znlid_ent; /* Useful output from Zoltan_LB_Partition */
-    int                   znobj;
-    ZOLTAN_ID_PTR         zgids;
-    ZOLTAN_ID_PTR         zlids;           /* Useful output from Zoltan_LB_Partition */
-    int *                 zprocs, *zparts; /* Useful output from Zoltan_LB_Partition */
-    ZOLTAN_ID_PTR         dummy1;
-    ZOLTAN_ID_PTR         dummy2; /* Empty output from Zoltan_LB_Partition */
-    int                   dummy0;
-    int *                 dummy3;
-    int *                 dummy4; /* Empty output from Zoltan_LB_Partition */
-    int                   ierr = ZOLTAN_OK;
-    float                 ver;
-    std::string           str;
-    int                   changes;
 
     /* Copy mesh data and pointers into structure accessible from callback fns. */
     Zoltan_Data.ndot = ndot;
@@ -2694,12 +2656,13 @@ namespace {
     Zoltan_Data.z    = (ignore_z != 0 ? nullptr : z);
 
     /* Initialize Zoltan */
-    ierr = Zoltan_Initialize(argc, argv, &ver);
+    float ver;
+    int   ierr = Zoltan_Initialize(argc, argv, &ver);
     if (ierr == ZOLTAN_FATAL) {
       fmt::print(stderr, "Error returned from Zoltan_Initialize ({}:{})\n", __FILE__, __LINE__);
       exit(-1);
     }
-    zz = Zoltan_Create(MPI_COMM_WORLD);
+    struct Zoltan_Struct *zz = Zoltan_Create(MPI_COMM_WORLD);
 
     /* Register Callback functions */
     /* Using global Zoltan_Data; could register it here instead as data field. */
@@ -2729,8 +2692,10 @@ namespace {
     }
 
     /* Set parameters for Zoltan */
-    str  = fmt::format("{}", totalproc);
-    ierr = Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", str.c_str());
+    {
+      std::string str = fmt::format("{}", totalproc);
+      ierr            = Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTITIONS", str.c_str());
+    }
     if (ierr == ZOLTAN_FATAL) {
       fmt::print(stderr, "Error returned from Zoltan_Set_Param ({}:{})\n", __FILE__, __LINE__);
       goto End;
@@ -2772,6 +2737,18 @@ namespace {
 
     /* Call partitioner */
     fmt::print("Using Zoltan version {}, method {}\n", static_cast<double>(ver), method);
+    ZOLTAN_ID_PTR dummy1;
+    ZOLTAN_ID_PTR dummy2; /* Empty output from Zoltan_LB_Partition */
+    int           dummy0;
+    int *         dummy3;
+    int *         dummy4; /* Empty output from Zoltan_LB_Partition */
+    int           zngid_ent;
+    int           znlid_ent; /* Useful output from Zoltan_LB_Partition */
+    int           znobj;
+    ZOLTAN_ID_PTR zgids;
+    ZOLTAN_ID_PTR zlids;           /* Useful output from Zoltan_LB_Partition */
+    int *         zprocs, *zparts; /* Useful output from Zoltan_LB_Partition */
+    int           changes;
     ierr = Zoltan_LB_Partition(zz, &changes, &zngid_ent, &znlid_ent, &dummy0, &dummy1, &dummy2,
                                &dummy3, &dummy4, &znobj, &zgids, &zlids, &zprocs, &zparts);
     if (ierr != 0) {
@@ -2812,13 +2789,13 @@ namespace {
   {
     /* Routine to print some info about the ZPINCH, BRICK or ZOLTAN_RCB
        decompositions */
-    int              npart = machine->dim[0] * machine->dim[1] * machine->dim[2];
     std::vector<int> cntwgt;
 
-    int minwgt;
-    int maxwgt;
-    int sumwgt;
+    int minwgt = INT_MAX;
+    int maxwgt = 0;
+    int sumwgt = 0;
 
+    int              npart = machine->dim[0] * machine->dim[1] * machine->dim[2];
     std::vector<int> cnts(npart);
     if (wgt != nullptr) {
       cntwgt.resize(npart);
@@ -2830,15 +2807,9 @@ namespace {
       }
     }
 
+    size_t sum = 0;
     int    max = 0;
     int    min = ndot;
-    size_t sum = 0;
-    if (wgt != nullptr) {
-      maxwgt = 0;
-      minwgt = INT_MAX;
-      sumwgt = 0;
-    }
-
     for (int i = 0; i < npart; i++) {
       if (cnts[i] > max) {
         max = cnts[i];

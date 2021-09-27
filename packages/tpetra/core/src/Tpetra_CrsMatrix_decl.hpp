@@ -52,6 +52,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "Teuchos_DataAccess.hpp"
 
 #include <memory> // std::shared_ptr
 
@@ -2150,11 +2151,22 @@ namespace Tpetra {
                     const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
                     const bool sortEachRow = true);
 
+    /// \brief Replace the current domain Map with the given objects.
+    ///
+    /// The matrix's Import object will be recomputed if needed.
+    ///
+    /// \param newDomainMap [in] New domain Map.  Must be nonnull.
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// 
+    void
+    replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap);
+
     /// \brief Replace the current domain Map and Import with the given objects.
     ///
     /// \param newDomainMap [in] New domain Map.  Must be nonnull.
-    /// \param newImporter [in] Optional Import object.  If null, we
-    ///   will compute it.
+    /// \param newImporter [in] Optional Import object.  If null, the new Domain Map must equal the matrix's Column Map
     ///
     /// \pre The matrix must be fill complete:
     ///   <tt>isFillComplete() == true</tt>.
@@ -2162,9 +2174,40 @@ namespace Tpetra {
     ///   same as the column Map of the matrix.
     /// \pre If the Import is provided, its source Map must be the
     ///   same as the provided new domain Map.
+    /// \pre If the Import is not provided, the new Domain Map must be the
+    ///   same as the matrix's Column Map.
     void
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                  Teuchos::RCP<const import_type>& newImporter);
+
+    /// \brief Replace the current range Map with the given objects.
+    ///
+    /// The matrix's Export object will be recomputed if needed.
+    ///
+    /// \param newRangeMap [in] New Range Map.  Must be nonnull.
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// 
+    void
+    replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap);
+
+    /// \brief Replace the current Range Map and Export with the given objects.
+    ///
+    /// \param newRangeMap [in] New domain Map.  Must be nonnull.
+    /// \param newExporter [in] Optional Export object.  If null, the new Range Map must equal the matrix's Row Map
+    ///
+    /// \pre The matrix must be fill complete:
+    ///   <tt>isFillComplete() == true</tt>.
+    /// \pre If the Export is provided, its target Map must be the
+    ///   same as the new Range Map of the matrix.
+    /// \pre If the Export is provided, its source Map must be the
+    ///   same as the Row Map of the matrix
+    /// \pre If the Export is not provided, the new Range Map must be the
+    ///   same as the matrix's Row Map.
+    void
+    replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                                Teuchos::RCP<const export_type>& newExporter);
 
     /// \brief Remove processes owning zero rows from the Maps and their communicator.
     ///
@@ -2441,10 +2484,6 @@ namespace Tpetra {
     ///   \|A\|_F = \sqrt{\sum_{i,j} \|A(i,j)\|^2}.
     /// \f\].
     ///
-    /// If the matrix is fill complete, then the computed value is
-    /// cached; the cache is cleared whenever resumeFill() is called.
-    /// Otherwise, the value is computed every time the method is
-    /// called.
     mag_type getFrobeniusNorm () const override;
 
     /// \brief Return \c true if getLocalRowView() and
@@ -3822,27 +3861,14 @@ public:
     sortAndMergeIndicesAndValues (const bool sorted,
                                   const bool merged);
 
-    /// \brief Clear matrix properties that require collectives.
-    ///
-    /// This clears whatever computeGlobalConstants() (which see)
-    /// computed, in preparation for changes to the matrix.  The
-    /// current implementation of this method does nothing.
-    ///
-    /// This method is called in resumeFill().
-    void clearGlobalConstants();
-
-    /// \brief Compute matrix properties that require collectives.
-    ///
-    /// The corresponding Epetra_CrsGraph method computes things
-    /// like the global number of nonzero entries, that require
-    /// collectives over the matrix's communicator.  The current
-    /// Tpetra implementation of this method does nothing.
-    ///
   public:
-    /// This method is called in fillComplete().
-    void computeGlobalConstants();
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED void computeGlobalConstants() {};
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
+
   protected:
     /// \brief Column Map MultiVector used in apply().
     ///
@@ -4072,13 +4098,6 @@ protected:
     ///   to their owning processes.
     std::map<GlobalOrdinal, std::pair<Teuchos::Array<GlobalOrdinal>,
                                       Teuchos::Array<Scalar> > > nonlocals_;
-
-    /// \brief Cached Frobenius norm of the (global) matrix.
-    ///
-    /// The value -1 means that the norm has not yet been computed, or
-    /// that the values in the matrix may have changed and the norm
-    /// must be recomputed.
-    mutable mag_type frobNorm_ = -STM::one();
 
   public:
     // FIXME (mfh 24 Feb 2014) Is it _really_ necessary to make this a

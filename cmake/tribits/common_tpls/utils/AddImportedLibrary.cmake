@@ -49,7 +49,7 @@
 # Print variable
 #
 #
-# ADD_IMPORTED_LIBRARY(name [SHARED | STATIC]
+# add_imported_library(name [SHARED | STATIC]
 #                      LOCATION <path>
 #                      [ LINK_LANGUAGES <lang1> <lang2> <lang3> ... ]
 #                      [ LINK_INTERFACE_LIBRARIES <lib1> <lib2> ... ]
@@ -58,7 +58,7 @@
 #                      
 
 include(CMakeParseArguments)
-function(ADD_IMPORTED_LIBRARY target_name)
+function(add_imported_library target_name)
 
   set(_options SHARED STATIC)
   set(_oneValueArgs LOCATION)
@@ -111,5 +111,5 @@ function(ADD_IMPORTED_LIBRARY target_name)
     endif()
      
   endif()
-endfunction(ADD_IMPORTED_LIBRARY)
+endfunction()
 

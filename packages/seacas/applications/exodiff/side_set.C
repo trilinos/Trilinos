@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -75,13 +75,12 @@ template <typename INT> void Side_Set<INT>::apply_map(const std::vector<INT> &el
 
 template <typename INT> void Side_Set<INT>::load_sides(const std::vector<INT> &elmt_map) const
 {
-  int err = 0;
   if ((elmts == nullptr || sides == nullptr) && numEntity > 0) {
     elmts     = new INT[numEntity];
     sides     = new INT[numEntity];
     sideIndex = new INT[numEntity];
 
-    err = ex_get_set(fileId, EX_SIDE_SET, id_, elmts, sides);
+    int err = ex_get_set(fileId, EX_SIDE_SET, id_, elmts, sides);
 
     if (err < 0) {
       Error(fmt::format("{}: Failed to read side set {}!  Aborting...\n", __func__, id_));

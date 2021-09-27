@@ -635,6 +635,13 @@ namespace MueLu {
 
           columns.resize(realnnz);
           numTotal = A->getNodeNumEntries();
+
+          // If the only element remaining after filtering is diagonal, mark node as boundary
+          for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+            if (rows[row+1]- rows[row] <= 1)
+              boundaryNodes[row] = true;
+          }
+
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
           graph->SetBoundaryNodeMap(boundaryNodes);
           if (GetVerbLevel() & Statistics1) {

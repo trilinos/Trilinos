@@ -90,7 +90,7 @@ namespace {
     nb->get_field_data("mesh_model_coordinates", coordinates);
 
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       if (eb->topology()->name() == Ioss::Hex8::name) {
         hex_volume(eb, coordinates);
       }
@@ -201,7 +201,7 @@ namespace {
   void info_nodeblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::NodeBlockContainer &nbs = region.get_node_blocks();
-    for (auto nb : nbs) {
+    for (auto &nb : nbs) {
       info_nodeblock(region, *nb, interFace, "");
     }
   }
@@ -210,7 +210,7 @@ namespace {
   {
     bool                                  parallel = region.get_database()->is_parallel();
     const Ioss::StructuredBlockContainer &sbs      = region.get_structured_blocks();
-    for (auto sb : sbs) {
+    for (auto &sb : sbs) {
       int64_t num_cell = sb->get_property("cell_count").get_int();
       int64_t num_node = sb->get_property("node_count").get_int();
       int64_t num_dim  = sb->get_property("component_degree").get_int();
@@ -280,10 +280,10 @@ namespace {
   void info_assemblies(Ioss::Region &region)
   {
     const auto &assem = region.get_assemblies();
-    for (auto as : assem) {
+    for (auto &as : assem) {
       fmt::print("\n{} id: {:6d}, contains: {} member(s) of type {:>10s}.\n\tMembers: ", name(as),
                  id(as), as->member_count(), as->contains_string());
-      for (const auto mem : as->get_members()) {
+      for (const auto &mem : as->get_members()) {
         fmt::print("'{}', ", mem->name());
       }
 
@@ -297,7 +297,7 @@ namespace {
   void info_blobs(Ioss::Region &region)
   {
     const auto &blobs = region.get_blobs();
-    for (auto blob : blobs) {
+    for (auto &blob : blobs) {
       fmt::print("\n{} id: {:6d}, contains: {} item(s).\n", name(blob), id(blob),
                  blob->entity_count());
 
@@ -313,7 +313,7 @@ namespace {
   void info_elementblock(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       int64_t num_elem = eb->entity_count();
 
       std::string type       = eb->topology()->name();
@@ -351,7 +351,7 @@ namespace {
   void info_edgeblock(Ioss::Region &region)
   {
     const Ioss::EdgeBlockContainer &ebs = region.get_edge_blocks();
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       int64_t num_edge = eb->entity_count();
 
       std::string type       = eb->topology()->name();
@@ -366,7 +366,7 @@ namespace {
         std::vector<std::string> blocks;
         eb->get_block_adjacencies(blocks);
         fmt::print("\tAdjacent to  {} edge block(s):\t", blocks.size());
-        for (auto block : blocks) {
+        for (auto &block : blocks) {
           fmt::print("{}  ", block);
         }
 #endif
@@ -379,7 +379,7 @@ namespace {
   void info_faceblock(Ioss::Region &region)
   {
     const Ioss::FaceBlockContainer &ebs = region.get_face_blocks();
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       int64_t num_face = eb->entity_count();
 
       std::string type       = eb->topology()->name();
@@ -394,7 +394,7 @@ namespace {
         std::vector<std::string> blocks;
         eb->get_block_adjacencies(blocks);
         fmt::print("\tAdjacent to  {} face block(s):\t", blocks.size());
-        for (auto block : blocks) {
+        for (auto &block : blocks) {
           fmt::print("{}  ", block);
         }
 #endif
@@ -407,7 +407,7 @@ namespace {
   void info_sidesets(Ioss::Region &region, const Info::Interface &interFace)
   {
     const Ioss::SideSetContainer &fss = region.get_sidesets();
-    for (auto fs : fss) {
+    for (auto &fs : fss) {
       fmt::print("\n{} id: {:6d}", name(fs), id(fs));
       if (fs->property_exists("bc_type")) {
 #if defined(SEACAS_HAVE_CGNS)
@@ -430,7 +430,7 @@ namespace {
       }
       fmt::print("\n");
       const Ioss::SideBlockContainer &fbs = fs->get_side_blocks();
-      for (auto fb : fbs) {
+      for (auto &fb : fbs) {
         int64_t count      = fb->entity_count();
         int64_t num_attrib = fb->get_property("attribute_count").get_int();
         int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();
@@ -446,7 +446,7 @@ namespace {
   void info_nodesets(Ioss::Region &region)
   {
     const Ioss::NodeSetContainer &nss = region.get_nodesets();
-    for (auto ns : nss) {
+    for (auto &ns : nss) {
       int64_t count      = ns->entity_count();
       int64_t num_attrib = ns->get_property("attribute_count").get_int();
       int64_t num_dist   = ns->get_property("distribution_factor_count").get_int();
@@ -463,7 +463,7 @@ namespace {
   void info_edgesets(Ioss::Region &region)
   {
     const Ioss::EdgeSetContainer &nss = region.get_edgesets();
-    for (auto ns : nss) {
+    for (auto &ns : nss) {
       int64_t count      = ns->entity_count();
       int64_t num_attrib = ns->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, {:8L} edges, {:3d} attributes.\n", name(ns), id(ns), count,
@@ -479,7 +479,7 @@ namespace {
   void info_facesets(Ioss::Region &region)
   {
     const Ioss::FaceSetContainer &fss = region.get_facesets();
-    for (auto fs : fss) {
+    for (auto &fs : fss) {
       int64_t count      = fs->entity_count();
       int64_t num_attrib = fs->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, {:8L} faces, {:3d} attributes.\n", name(fs), id(fs), count,
@@ -495,7 +495,7 @@ namespace {
   void info_elementsets(Ioss::Region &region)
   {
     const Ioss::ElementSetContainer &ess = region.get_elementsets();
-    for (auto es : ess) {
+    for (auto &es : ess) {
       int64_t count = es->entity_count();
       fmt::print("\n{} id: {:6d}, {:8L} elements.\n", name(es), id(es), count);
       info_aliases(region, es, false, true);

@@ -69,7 +69,7 @@ public:
   KOKKOS_FUNCTION
   DeviceField()
     : NgpFieldBase(),
-      rank(stk::topology::NODE_RANK),
+      rank(stk::topology::INVALID_RANK),
       ordinal(INVALID_ORDINAL),
       hostBulk(nullptr),
       hostField(nullptr),
@@ -476,7 +476,7 @@ protected:
 
 private:
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   bool is_last_field_copy() const
   {
     return (copyCounter.use_count() == 1);

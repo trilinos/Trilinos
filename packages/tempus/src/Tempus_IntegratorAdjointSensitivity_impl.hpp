@@ -189,6 +189,9 @@ advanceTime(const Scalar timeFinal)
       else
         Thyra::initializeOp<Scalar>(*lowsfb, W_op, W.ptr());
     }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      W == Teuchos::null, std::logic_error,
+      "A null W has been encountered in Tempus::IntegratorAdjointSensitivity::advanceTime!\n");
     W->solve(Thyra::NOTRANS, *dgdx, adjoint_init_mv.ptr());
   }
 

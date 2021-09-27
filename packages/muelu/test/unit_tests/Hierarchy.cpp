@@ -73,9 +73,7 @@
 #include <MueLu_DirectSolver.hpp>
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
-#ifdef HAVE_MUELU_KOKKOSCORE
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
-#endif
 
 namespace MueLuTests {
 

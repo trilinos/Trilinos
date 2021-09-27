@@ -67,13 +67,13 @@ struct Entity
 
     entity_value_type m_value;
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     Entity() : m_value(InvalidEntity) {}
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     explicit Entity(entity_value_type value) : m_value(value) {}
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     Entity operator=(entity_value_type val) { m_value = val; return *this;}
 
     /** \brief local_offset is this entity's offset into all local entities of the same rank.
@@ -83,33 +83,33 @@ struct Entity
      * Thus, local_offset is not suitable for use as an equation index for linear-system operations.
      * See local_id() below.
      */
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     entity_value_type local_offset() const { return m_value; }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool is_local_offset_valid() const { return local_offset() > 0; }
 
     /** This setter should only be called by the BulkData class when creating entities.
      * Erroneous calls will lead to undefined (and probably disastrous) behavior.
      */
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     void set_local_offset(size_t localOffset) {
         m_value = static_cast<entity_value_type>(localOffset);
     }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator==(Entity entity) const { return m_value == entity.m_value; }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator==(entity_value_type val) const { return m_value == val; }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator!=(Entity entity) const { return m_value != entity.m_value; }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator!=(entity_value_type val) const { return m_value != val; }
 
-    STK_FUNCTION
+    KOKKOS_FUNCTION
     bool operator<(Entity entity) const { return m_value < entity.m_value; }
 
 };

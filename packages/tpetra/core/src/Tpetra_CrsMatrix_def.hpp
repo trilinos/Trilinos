@@ -635,14 +635,6 @@ namespace Tpetra {
     valuesPacked_wdv = values_wdv_type(lclMatrix.values);
     valuesUnpacked_wdv = valuesPacked_wdv;
 
-//    k_values1D_ = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
-
-    const bool callComputeGlobalConstants = params.get () == nullptr ||
-      params->get ("compute global constants", true);
-    if (callComputeGlobalConstants) {
-      this->computeGlobalConstants ();
-    }
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
        "At the end of a CrsMatrix constructor that should produce "
@@ -696,13 +688,6 @@ namespace Tpetra {
 
     valuesPacked_wdv = values_wdv_type(lclMatrix.values);
     valuesUnpacked_wdv = valuesPacked_wdv;
-//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
-
-    const bool callComputeGlobalConstants = params.get () == nullptr ||
-      params->get ("compute global constants", true);
-    if (callComputeGlobalConstants) {
-      this->computeGlobalConstants ();
-    }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
@@ -760,13 +745,6 @@ namespace Tpetra {
 
     valuesPacked_wdv = values_wdv_type(lclMatrix.values);
     valuesUnpacked_wdv = valuesPacked_wdv;
-//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
-
-    const bool callComputeGlobalConstants = params.get () == nullptr ||
-      params->get ("compute global constants", true);
-    if (callComputeGlobalConstants) {
-      this->computeGlobalConstants ();
-    }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (isFillActive (), std::logic_error,
@@ -832,7 +810,6 @@ namespace Tpetra {
     std::swap(crs_matrix.storageStatus_, this->storageStatus_);
     std::swap(crs_matrix.fillComplete_,  this->fillComplete_);
     std::swap(crs_matrix.nonlocals_,     this->nonlocals_);
-    std::swap(crs_matrix.frobNorm_,      this->frobNorm_);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1582,8 +1559,10 @@ namespace Tpetra {
       valuesPacked_wdv = values_wdv_type(k_vals);
     }
     else { // We don't have to pack, so just set the pointers.
-      myGraph_->rowPtrsPacked_dev_ = myGraph->rowPtrsUnpacked_dev_;
-      myGraph_->rowPtrsPacked_host_ = myGraph->rowPtrsUnpacked_host_;
+//KDDKDD FIX      myGraph_->rowPtrsPacked_dev_ = myGraph->rowPtrsUnpacked_dev_;
+//KDDKDD FIX      myGraph_->rowPtrsPacked_host_ = myGraph->rowPtrsUnpacked_host_;
+      // FIXME KDDKDD https://github.com/trilinos/Trilinos/issues/9657
+      myGraph_->setRowPtrsPacked(myGraph_->rowPtrsUnpacked_dev_);
       myGraph_->lclIndsPacked_wdv = myGraph_->lclIndsUnpacked_wdv;
       valuesPacked_wdv = valuesUnpacked_wdv;
 
@@ -1679,8 +1658,10 @@ namespace Tpetra {
       myGraph_->k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      myGraph_->rowPtrsUnpacked_dev_ = myGraph_->rowPtrsPacked_dev_;
-      myGraph_->rowPtrsUnpacked_host_ = myGraph_->rowPtrsPacked_host_;
+//KDDKDDFIX      myGraph_->rowPtrsUnpacked_dev_ = myGraph_->rowPtrsPacked_dev_;
+//KDDKDDFIX      myGraph_->rowPtrsUnpacked_host_ = myGraph_->rowPtrsPacked_host_;
+      // FIXME KDDKDD https://github.com/trilinos/Trilinos/issues/9657
+      myGraph_->setRowPtrsUnpacked(myGraph_->rowPtrsPacked_dev_);
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
       valuesUnpacked_wdv = valuesPacked_wdv;
 
@@ -3831,13 +3812,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Scalar& alpha)
   {
-    const char tfecfFuncName[] = "scale: ";
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillActive (), std::runtime_error,
-      "Fill must be active before you may call this method.  "
-      "Please call resumeFill() to make fill active.");
 
     const size_t nlrs = staticGraph_->getNodeNumRows ();
     const size_t numEntries = staticGraph_->getNodeNumEntries ();
@@ -3858,12 +3833,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   setAllToScalar (const Scalar& alpha)
   {
-    const char tfecfFuncName[] = "setAllToScalar: ";
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! isFillActive (), std::runtime_error,
-      "Fill must be active before you may call this method.  "
-      "Please call resumeFill() to make fill active.");
 
     // replace all values in the matrix
     // it is easiest to replace all allocated values, instead of replacing only the ones with valid entries
@@ -4289,51 +4259,41 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // this operation in the Kokkos::CrsMatrix.
 
     // check the cache first
-    mag_type frobNorm = frobNorm_;
-    if (frobNorm == -STM::one ()) {
-      mag_type mySum = STM::zero ();
-      if (getNodeNumEntries() > 0) {
-        if (isStorageOptimized ()) {
-          // "Optimized" storage is packed storage.  That means we can
-          // iterate in one pass through the 1-D values array.
-          const size_t numEntries = getNodeNumEntries ();
-          auto values = valuesPacked_wdv.getHostView(Access::ReadOnly);
+    mag_type mySum = STM::zero ();
+    if (getNodeNumEntries() > 0) {
+      if (isStorageOptimized ()) {
+        // "Optimized" storage is packed storage.  That means we can
+        // iterate in one pass through the 1-D values array.
+        const size_t numEntries = getNodeNumEntries ();
+        auto values = valuesPacked_wdv.getHostView(Access::ReadOnly);
+        for (size_t k = 0; k < numEntries; ++k) {
+          auto val = values[k];
+          // Note (etp 06 Jan 2015) We need abs() here for composite types
+          // (in general, if mag_type is on the left-hand-side, we need
+          // abs() on the right-hand-side)
+          const mag_type val_abs = STS::abs (val);
+          mySum += val_abs * val_abs;
+        }
+      }
+      else {
+        const LocalOrdinal numRows =
+          static_cast<LocalOrdinal> (this->getNodeNumRows ());
+        for (LocalOrdinal r = 0; r < numRows; ++r) {
+          const RowInfo rowInfo = myGraph_->getRowInfo (r);
+          const size_t numEntries = rowInfo.numEntries;
+          auto A_r = this->getValuesViewHost(rowInfo);
           for (size_t k = 0; k < numEntries; ++k) {
-            auto val = values[k];
-            // Note (etp 06 Jan 2015) We need abs() here for composite types
-            // (in general, if mag_type is on the left-hand-side, we need
-            // abs() on the right-hand-side)
+            const impl_scalar_type val = A_r[k];
             const mag_type val_abs = STS::abs (val);
             mySum += val_abs * val_abs;
           }
         }
-        else {
-          const LocalOrdinal numRows =
-            static_cast<LocalOrdinal> (this->getNodeNumRows ());
-          for (LocalOrdinal r = 0; r < numRows; ++r) {
-            const RowInfo rowInfo = myGraph_->getRowInfo (r);
-            const size_t numEntries = rowInfo.numEntries;
-            auto A_r = this->getValuesViewHost(rowInfo);
-            for (size_t k = 0; k < numEntries; ++k) {
-              const impl_scalar_type val = A_r[k];
-              const mag_type val_abs = STS::abs (val);
-              mySum += val_abs * val_abs;
-            }
-          }
-        }
       }
-      mag_type totalSum = STM::zero ();
-      reduceAll<int, mag_type> (* (getComm ()), REDUCE_SUM,
-                                mySum, outArg (totalSum));
-      frobNorm = STM::sqrt (totalSum);
     }
-    if (isFillComplete ()) {
-      // Only cache the result if the matrix is fill complete.
-      // Otherwise, the values might still change.  resumeFill clears
-      // the cache.
-      frobNorm_ = frobNorm;
-    }
-    return frobNorm;
+    mag_type totalSum = STM::zero ();
+    reduceAll<int, mag_type> (* (getComm ()), REDUCE_SUM,
+                              mySum, outArg (totalSum));
+    return STM::sqrt (totalSum);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4393,6 +4353,21 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap)
+  {
+    const char tfecfFuncName[] = "replaceDomainMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceDomainMap (newDomainMap);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                Teuchos::RCP<const import_type>& newImporter)
   {
@@ -4404,6 +4379,37 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       " method necessarily must modify the graph, since the graph owns the "
       "matrix's domain Map and Import objects.");
     myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap)
+  {
+    const char tfecfFuncName[] = "replaceRangeMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceRangeMap (newRangeMap);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                              Teuchos::RCP<const export_type>& newExporter)
+  {
+    const char tfecfFuncName[] = "replaceRangeMapAndExporter: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      "This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
+    myGraph_->replaceRangeMapAndExporter (newRangeMap, newExporter);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4691,22 +4697,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (! isStaticGraph ()) { // Don't resume fill of a nonowned graph.
       myGraph_->resumeFill (params);
     }
-    clearGlobalConstants ();
     fillComplete_ = false;
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  computeGlobalConstants ()
-  {
-    // This method doesn't do anything.  The analogous method in
-    // CrsGraph does actually compute something.
-    //
-    // Oddly enough, clearGlobalConstants() clears frobNorm_ (by
-    // setting it to -1), but computeGlobalConstants() does _not_
-    // compute the Frobenius norm; this is done on demand in
-    // getFrobeniusNorm(), and the result is cached there.
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4714,21 +4705,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   haveGlobalConstants() const {
     return getCrsGraphRef ().haveGlobalConstants ();
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  clearGlobalConstants () {
-    // We use -1 to indicate that the Frobenius norm needs to be
-    // recomputed, since the values might change between now and the
-    // next fillComplete call.
-    //
-    // Oddly enough, clearGlobalConstants() clears frobNorm_, but
-    // computeGlobalConstants() does _not_ compute the Frobenius norm;
-    // this is done on demand in getFrobeniusNorm(), and the result is
-    // cached there.
-    frobNorm_ = -STM::one ();
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4913,8 +4889,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const std::pair<size_t, std::string> makeIndicesLocalResult =
         this->myGraph_->makeIndicesLocal(verbose);
       // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along
-      // the error state to makeImportExport or
-      // computeGlobalConstants, which may do all-reduces and thus may
+      // the error state to makeImportExport
+      // which may do all-reduces and thus may
       // have the opportunity to communicate that error state.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (makeIndicesLocalResult.first != 0, std::runtime_error,
@@ -4943,17 +4919,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
-    }
-
-    {
-      Details::ProfilingRegion region_ccgc(
-        "Tpetra::CrsMatrix::fillCompete", "callComputeGlobalConstamnts"
-      );
-      const bool callComputeGlobalConstants = params.get () == nullptr ||
-	params->get ("compute global constants", true);
-      if (callComputeGlobalConstants) {
-	this->computeGlobalConstants ();
-      }
     }
 
     // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
@@ -4999,12 +4964,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
         // We will presume globalAssemble is not needed, so we do the ESFC on the graph
         myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
-    }
-
-    const bool callComputeGlobalConstants = params.get () == nullptr ||
-      params->get ("compute global constants", true);
-    if (callComputeGlobalConstants) {
-        this->computeGlobalConstants ();
     }
 
     {

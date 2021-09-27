@@ -62,6 +62,24 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable Thyra ModelEvalutor Polynomial InArgs and OutArgs."
   ${${PACKAGE_NAME}_ENABLE_ME_POLYNOMIAL_DEFAULT} )
 
+
+# Allow for disabling Hessian interface objects in Thyra ModelEvaluator
+# and OutArgs. Doing so can significantly reduce overhead (memory footprint
+# and computational cost) when large numbers of responses and parameters are
+# used and Hessian derivatives are not required.
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_HESSIAN_SUPPORT
+  ${PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT
+  "Enable building of Hessian interfaces for Thyra ModelEvaluator."
+  ON )
+
+IF(${PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
+  MESSAGE("-- Thyra ModelEvaluator Hessian interfaces On")
+ELSE()
+  MESSAGE("-- Thyra ModelEvaluator Hessian interfaces Off")
+ENDIF()
+
 #
 # C) Process the subpackages for Thyra
 #

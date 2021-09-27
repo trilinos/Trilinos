@@ -111,7 +111,7 @@ namespace {
   std::string format_time(double seconds);
   int         get_width(int max_value);
 
-  void LOG(const std::string message)
+  void LOG(const char *message)
   {
     if ((debug_level & 1) != 0u) {
       fmt::print("{}", time_stamp(tsFormat));
@@ -859,7 +859,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle, T
           interFace.set_use_netcdf4();
         }
 
-        for (auto block : glob_blocks) {
+        for (auto &block : glob_blocks) {
           int64_t element_count = block.entity_count();
           int64_t nnpe          = block.nodesPerElement;
           if (element_count * nnpe * 4 >= fourBill) {

@@ -1,6 +1,6 @@
 #
 # cmake -P script to get the CTest testing XML directory
-# <build>/Testing/<buildstarttime> given just the <bulid> directory path.
+# <build>/Testing/<buildstarttime> given just the <build> directory path.
 #
 # Usage:
 #
@@ -14,28 +14,28 @@
 # then prints the directory <build>/Testing/<buildstarttime> to STDOUT.
 #
 
-IF ("${PROJECT_NAME}" STREQUAL "")
-  MESSAGE(FATAL_ERROR "Error, PROJECT_NAME must be set!")
-ENDIF()
+if ("${PROJECT_NAME}" STREQUAL "")
+  message(FATAL_ERROR "Error, PROJECT_NAME must be set!")
+endif()
 
-IF ("${${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
-  MESSAGE(FATAL_ERROR "Error, ${PROJECT_NAME}_TRIBITS_DIR must be set!")
-ENDIF()
+if ("${${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
+  message(FATAL_ERROR "Error, ${PROJECT_NAME}_TRIBITS_DIR must be set!")
+endif()
 
-IF ("${CTEST_BUILD_DIR}" STREQUAL "")
-  MESSAGE(FATAL_ERROR "Error, CTEST_BUILD_DIR must be set!")
-ENDIF()
+if ("${CTEST_BUILD_DIR}" STREQUAL "")
+  message(FATAL_ERROR "Error, CTEST_BUILD_DIR must be set!")
+endif()
 
-SET( CMAKE_MODULE_PATH
+set( CMAKE_MODULE_PATH
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/utils"
   "${${PROJECT_NAME}_TRIBITS_DIR}/core/package_arch"
   "${${PROJECT_NAME}_TRIBITS_DIR}/ctest_driver"
   )
 
-INCLUDE(TribitsReadTagFile)
+include(TribitsReadTagFile)
 
-SET(TAG_FILE "${CTEST_BUILD_DIR}/Testing/TAG")
+set(TAG_FILE "${CTEST_BUILD_DIR}/Testing/TAG")
 
-TRIBITS_READ_CTEST_TAG_FILE("${TAG_FILE}" BUILD_START_TIME  CDASH_TRACK)
+tribits_read_ctest_tag_file("${TAG_FILE}" buildStartTime  cdashGroup  cdashModel)
 
-MESSAGE("${CTEST_BUILD_DIR}/Testing/${BUILD_START_TIME}")
+message("${CTEST_BUILD_DIR}/Testing/${buildStartTime}")

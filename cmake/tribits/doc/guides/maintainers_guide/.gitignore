@@ -1,0 +1,9 @@
+# Ignore generated files
+
+/TribitsMaintainersGuide.html
+/TribitsMacroFunctionDoc.rst
+/TribitsMacroFunctionDoc.rst.tmp
+/TribitsSystemMacroFunctionDoc.rst
+/TribitsSystemMacroFunctionDoc.rst.tmp
+/UtilsMacroFunctionDoc.rst
+/UtilsMacroFunctionDoc.rst.tmp

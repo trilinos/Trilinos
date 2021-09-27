@@ -150,6 +150,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   matrixParameters.set("matrixType", "Laplace1D");
   RCP<Matrix>      A           = MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(matrixParameters.get<GO>("nx"), lib);
   RCP<RealValuedMultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type,LO,GO,Map,RealValuedMultiVector>("1D", A->getRowMap(), matrixParameters);
+  RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getRowMap(), 1);
+  nullspace->putScalar(1.0);
 
   std::string prefix;
   if (useKokkos) {
@@ -270,6 +272,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         // here we have to distinguish between the general MueLu parameter list interpreter
         // and the ML parameter list interpreter. Note that the ML paramter interpreter also
         // works with Tpetra matrices.
+        bool coordsSet = false;
         if (dirList[k] == prefix+"EasyParameterListInterpreter/"         ||
             dirList[k] == prefix+"EasyParameterListInterpreter-heavy/") {
           paramList.set("use kokkos refactor", useKokkos);
@@ -281,6 +284,20 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter/") {
           paramList.set("use kokkos refactor", useKokkos);
+
+          paramList.set("x-coordinates",coordinates->getDataNonConst(0).get());
+          if (coordinates->getNumVectors() > 1)
+            paramList.set("y-coordinates",coordinates->getDataNonConst(1).get());
+          if (coordinates->getNumVectors() > 2)
+            paramList.set("z-coordinates",coordinates->getDataNonConst(2).get());
+          coordsSet = true;
+
+          // MLParameterInterpreter needs the nullspace information if rebalancing is active!
+          // add default constant null space vector
+          paramList.set("null space: type", "pre-computed");
+          paramList.set("null space: dimension", Teuchos::as<int>(nullspace->getNumVectors()));
+          paramList.set("null space: vectors", nullspace->getDataNonConst(0).get());
+
           mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
         } else if (dirList[k] == prefix+"MLParameterListInterpreter2/") {
@@ -294,15 +311,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         H->GetLevel(0)->template Set<RCP<Matrix> >("A", A);
 
-        if (dirList[k] == prefix+"MLParameterListInterpreter/") {
-          // MLParameterInterpreter needs the nullspace information if rebalancing is active!
-          // add default constant null space vector
-          RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getRowMap(), 1);
-          nullspace->putScalar(1.0);
-          H->GetLevel(0)->Set("Nullspace", nullspace);
-        }
-
-        H->GetLevel(0)->Set("Coordinates", coordinates);
+        if (!coordsSet)
+          H->GetLevel(0)->Set("Coordinates", coordinates);
 
         mueluFactory->SetupHierarchy(*H);
 
@@ -447,6 +457,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
 int main(int argc, char *argv[]) {
   Teuchos::TimeMonitor::setStackedTimer(Teuchos::null);
+#ifdef KOKKOS_ENABLE_OPENMP
+  omp_set_num_threads(1);
+#endif
   return Automatic_Test_ETI(argc,argv);
 }
 

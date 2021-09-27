@@ -706,6 +706,12 @@ namespace SEAMS {
     return (nullptr);
   }
 
+  const char *do_dumpsym_json()
+  {
+    aprepro->dumpsym_json();
+    return (nullptr);
+  }
+
   const char *do_dumpfunc()
   {
     aprepro->dumpsym(SEAMS::Parser::token::FNCT, true);

@@ -261,10 +261,10 @@ public:
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
      */
-   void getElementLIDs(PHX::View<const int*> cellIds,
-                       PHX::View<panzer::LocalOrdinal**> lids) const
+   template <typename ArrayT>
+   void getElementLIDs(PHX::View<const int*> cellIds, ArrayT lids) const
    { 
-     CopyCellLIDsFunctor functor;
+     CopyCellLIDsFunctor<ArrayT> functor;
      functor.cellIds = cellIds;
      functor.global_lids = localIDs_k_;
      functor.local_lids = lids; // we assume this array is sized correctly!
@@ -283,13 +283,14 @@ public:
      */
    virtual Teuchos::RCP<const ConnManager> getConnManager() const = 0;
 
+   template <typename ArrayT>
    class CopyCellLIDsFunctor {
    public:
      typedef typename PHX::Device execution_space;
 
      PHX::View<const int*> cellIds;
      Kokkos::View<const panzer::LocalOrdinal**,Kokkos::LayoutRight,PHX::Device> global_lids;
-     PHX::View<panzer::LocalOrdinal**> local_lids;
+     ArrayT local_lids;
 
      KOKKOS_INLINE_FUNCTION
      void operator()(const int cell) const

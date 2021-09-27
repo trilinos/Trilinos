@@ -8,12 +8,7 @@
 #include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_MatrixMarket.hpp"
 
-#define TACHO_TEST_REFACTOR_DRIVER
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
-#include "Tacho_Driver.hpp"
-#else
 #include "Tacho_Solver.hpp"
-#endif
 #include "Tacho_CommandLineParser.hpp"
 
 
@@ -24,10 +19,8 @@ namespace tacho {
     {USEDEFAULTSOLVERPARAMETERS,
      VERBOSITY,
      SMALLPROBLEMTHRESHOLDSIZE,
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
      MATRIX_SYMMETRIC,
      MATRIX_POSITIVE_DEFINITE,
-#endif
      TASKING_OPTION_BLOCKSIZE,
      TASKING_OPTION_PANELSIZE,
      TASKING_OPTION_MAXNUMSUPERBLOCKS, 
@@ -53,12 +46,7 @@ namespace tacho {
   {
   public:
 
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
-    typedef Tacho::Driver<SX,device_type> solver_type;
-#else
-    using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
-    typedef Tacho::Solver<SX,sched_type> solver_type;
-#endif
+    typedef Tacho::Solver<SX,device_type> solver_type;
 
     typedef Tacho::ordinal_type ordinal_type;
     typedef Tacho::size_type size_type;
@@ -84,6 +72,9 @@ namespace tacho {
 
     ~tachoSolver() 
     {
+      for (auto & solver : m_SolverArray) {
+        solver.release();
+      }
       m_Solver.release();
     }
 
@@ -145,18 +136,118 @@ namespace tacho {
         const double t = timer.seconds();
         std::cout << "ExternalInterface:: analyze time " << t << std::endl;
       }
+
       {
         timer.reset();
         m_Solver.initialize();
         const double t = timer.seconds();
         std::cout << "ExternalInterface:: initialize time " << t << std::endl;
       }
+      
       /// I recommend to separate factorization from the solver initialization
       {
         timer.reset();
 	m_Solver.factorize(ax);
         const double t = timer.seconds();
         std::cout << "ExternalInterface:: factorize time " << t << std::endl;
+      }
+
+      return 0;
+    }
+
+
+    int Initialize(int numSolvers,
+                   int numRows,
+                   /// with TACHO_ENABLE_INT_INT, size_type is "int"
+		   int* rowBegin,
+		   int* columns,
+		   SX* values,
+                   int numGraphRows = 0,
+                   int* graphRowBegin = nullptr,
+                   int* graphColumns = nullptr,
+                   int* graphWeights = nullptr)
+    {
+      m_numRows = numRows;
+      if (m_numRows == 0) return 0;
+      if (numSolvers > 0) {
+        /// this is okay
+      } else {
+        std::cout << "ExternalInterface::Error, nSolver is not a positive number\n";
+        std::logic_error("Error: nSolver must be a positive number");
+      }
+
+      const int numTerms = rowBegin[numRows];
+      size_type_array_host    ap_host((size_type*)   rowBegin, numRows+1);
+      ordinal_type_array_host aj_host((ordinal_type*)columns,  numTerms);
+
+      size_type_array_host graph_ap_host;
+      ordinal_type_array_host graph_aj_host;
+      ordinal_type_array_host graph_aw_host;
+
+      if (numGraphRows > 0) {
+        if (graphRowBegin == nullptr ||
+            graphColumns == nullptr ||
+            graphWeights == nullptr) {
+          std::cout << "ExternalInterface::Error, with non-zero numGraphRows, graph pointers should not be nullptr\n";
+          std::logic_error("Error: one of graph pointers is nullptr");
+        } else {
+          const size_type nnz_graph = graph_ap_host(numGraphRows);
+          graph_ap_host = size_type_array_host((size_type*)graphRowBegin, numGraphRows+1);
+          graph_aj_host = ordinal_type_array_host((ordinal_type*)graphColumns, nnz_graph);
+          graph_aw_host = ordinal_type_array_host((ordinal_type*)graphWeights, nnz_graph);
+        }
+      }
+
+#if defined (KOKKOS_ENABLE_CUDA)
+      /// transfer A into device
+      value_type_array ax(Kokkos::ViewAllocateWithoutInitializing("ax"), numSolvers*numTerms);
+      value_type_array_host ax_host(values, numSolvers*numTerms);
+      Kokkos::deep_copy(ax, ax_host);
+#else
+      /// wrap pointer on host 
+      value_type_array ax(values, numSolvers*numTerms);
+#endif
+
+      Kokkos::Impl::Timer timer; 
+      {
+        timer.reset();
+        /// m_Solver holds symbolic factorization to be shared with array solver
+        if (numGraphRows > 0) {
+          m_Solver.analyze(numRows, ap_host, aj_host,
+                           numGraphRows, graph_ap_host, graph_aj_host, graph_aw_host);
+        } else {
+          m_Solver.analyze(numRows, ap_host, aj_host);
+        }
+        /// array solver soft copy
+        m_SolverArray.resize(numSolvers);
+        for (auto & solver : m_SolverArray) {
+          /// duplicate perform soft copy of symbolic factors and 
+          /// nullify numeric tools object 
+          solver = m_Solver.duplicate();
+        }
+        const double t = timer.seconds();
+        std::cout << "ExternalInterface:: analyze time " << t << std::endl;
+      }
+
+      /// the solver objects in the array still need to be initalized 
+      /// to allocate required work space
+      {
+        timer.reset();
+        for (auto & solver : m_SolverArray) {
+          solver.initialize();
+        }
+        const double t = timer.seconds();
+        std::cout << "ExternalInterface:: initialize time (" << numSolvers << ") " << t << std::endl;
+      }
+
+      /// I recommend to separate factorization from the solver initialization
+      {
+        timer.reset();
+        for (ordinal_type i=0,iend=m_SolverArray.size();i<iend;++i) {
+          m_SolverArray[i].factorize(value_type_array(ax.data()+numTerms*i, numTerms));
+        }
+        const double t = timer.seconds();
+        std::cout << "ExternalInterface:: factorize time (" << numSolvers << ") " << t << std::endl;
       }
 
       return 0;
@@ -172,12 +263,30 @@ namespace tacho {
       }
     }
 
-    void exportUpperTriangularFactorsToCrsMatrix(std::vector<int> &rowBeginU,
+    void exportUpperTriangularFactorsToCrsMatrix(const int iSolver, 
+                                                 std::vector<int> &rowBeginU,
                                                  std::vector<int> &columnsU,
                                                  std::vector<SX> &valuesU,
                                                  std::vector<int> &perm) {
+      solver_type * solver = nullptr;
+      if (iSolver < 0) {
+        solver = &m_Solver;
+      } else {
+        const int solver_array_size(m_SolverArray.size());
+        if (iSolver < solver_array_size) {
+          solver = &m_SolverArray[iSolver];
+        } else {
+          std::cout << "ExternalInterface::Error, non-zero iSolver (" 
+                    << iSolver
+                    << ") is selected where m_SolverArray is sized by (" 
+                    << solver_array_size 
+                    << ")\n"; 
+          std::logic_error("Error: iSolver is out of range in m_SolverArray");
+        }
+      }
+
       {
-        const auto perm_device = m_Solver.getPermutationVector();
+        const auto perm_device = solver->getPermutationVector();
         auto perm_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), perm_device);
         {
           const int n = perm_host.extent(0);
@@ -188,7 +297,7 @@ namespace tacho {
       
       {
         typename solver_type::crs_matrix_type A;
-        m_Solver.exportFactorsToCrsMatrix(A);
+        solver->exportFactorsToCrsMatrix(A);
 
         typename solver_type::crs_matrix_type_host A_host;
         A_host.createMirror(A);
@@ -214,6 +323,14 @@ namespace tacho {
       }
     }
 
+
+    void exportUpperTriangularFactorsToCrsMatrix(std::vector<int> &rowBeginU,
+                                                 std::vector<int> &columnsU,
+                                                 std::vector<SX> &valuesU,
+                                                 std::vector<int> &perm) {
+      exportUpperTriangularFactorsToCrsMatrix(-1, rowBeginU, columnsU, valuesU, perm);
+    }
+
     void MySolve(int NRHS,
                  value_type_matrix &b, 
                  value_type_matrix &x)
@@ -225,12 +342,26 @@ namespace tacho {
           static_cast<int>(m_TempRhs.extent(1)) < NRHS)
         m_TempRhs = value_type_matrix("temp rhs", m, NRHS);      
       
-      m_Solver.solve(x, b, m_TempRhs);
+      if (m_SolverArray.empty()) {
+        /// solve for a single instance m_Solver 
+        m_Solver.solve(x, b, m_TempRhs);
+      } else {
+        /// solve multiple with m_SolverArray
+        using range_type = Kokkos::pair<int,int>;
+        const auto range_b = range_type(0, NRHS);
+        for (int i=0,iend=m_SolverArray.size();i<iend;++i) {
+          const auto range_a = range_type(m*i, m*i+m);
+          m_SolverArray[i].solve(Kokkos::subview(x, range_a, range_b),
+                                 Kokkos::subview(b, range_a, range_b),
+                                 m_TempRhs);
+        }
+      }
     }
 
   private:
     int m_numRows;
     solver_type m_Solver;
+    std::vector<solver_type> m_SolverArray;
     value_type_matrix m_TempRhs;
 
     void setSolverParameters(const int* solverParams)
@@ -241,9 +372,7 @@ namespace tacho {
       m_Solver.setSmallProblemThresholdsize     (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
 
       // matrix type
-#if defined(TACHO_TEST_REFACTOR_DRIVER)
       m_Solver.setMatrixType(solverParams[MATRIX_SYMMETRIC], solverParams[MATRIX_POSITIVE_DEFINITE]);
-#endif
 
       // tasking options
       m_Solver.setBlocksize                     (solverParams[TASKING_OPTION_BLOCKSIZE]);

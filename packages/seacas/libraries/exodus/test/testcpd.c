@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
   float version;
 
-  char *cdum = 0;
+  char *cdum = NULL;
 
   /* open EXODUS II files */
 
