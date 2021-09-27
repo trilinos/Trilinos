@@ -25,10 +25,12 @@ AdjointAuxSensitivityModelEvaluator<Scalar>::
 AdjointAuxSensitivityModelEvaluator(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_model,
+  const Scalar& t_init,
   const Scalar& t_final,
   const Teuchos::RCP<const Teuchos::ParameterList>& pList) :
   model_(model),
   adjoint_model_(adjoint_model),
+  t_init_(t_init),
   t_final_(t_final),
   mass_matrix_is_computed_(false),
   t_interp_(Teuchos::ScalarTraits<Scalar>::rmax())
@@ -266,7 +268,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // interpolation if possible
   TEUCHOS_ASSERT(sh_ != Teuchos::null);
   const Scalar t = inArgs.get_t();
-  const Scalar forward_t = t_final_ - t;
+  const Scalar forward_t = t_final_ + t_init_ - t;
   if (forward_state_ == Teuchos::null || t_interp_ != t) {
     if (forward_state_ == Teuchos::null)
       forward_state_ = sh_->interpolateState(forward_t);

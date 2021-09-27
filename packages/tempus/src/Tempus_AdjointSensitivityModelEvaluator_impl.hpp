@@ -26,11 +26,13 @@ AdjointSensitivityModelEvaluator<Scalar>::
 AdjointSensitivityModelEvaluator(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_model,
+  const Scalar& t_init,
   const Scalar& t_final,
   const bool is_pseudotransient,
   const Teuchos::RCP<const Teuchos::ParameterList>& pList) :
   model_(model),
   adjoint_model_(adjoint_model),
+  t_init_(t_init),
   t_final_(t_final),
   is_pseudotransient_(is_pseudotransient),
   mass_matrix_is_computed_(false),
@@ -265,7 +267,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (is_pseudotransient_)
     forward_t = forward_state_->getTime();
   else {
-    forward_t = t_final_ - t;
+    forward_t = t_final_ + t_init_ - t;
     if (forward_state_ == Teuchos::null || t_interp_ != t) {
       if (forward_state_ == Teuchos::null)
         forward_state_ = sh_->interpolateState(forward_t);

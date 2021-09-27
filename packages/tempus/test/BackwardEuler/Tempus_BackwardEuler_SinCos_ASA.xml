@@ -1,6 +1,13 @@
-<ParameterList name="BackwardEuler_SteadyQuadratic">
-  <ParameterList name="SteadyQuadraticModel">
-    <Parameter name="Coeff b" type="double" value="1.0"/>
+<ParameterList name="BackwardEuler_SinCos">
+  <ParameterList name="SinCosModel">
+    <Parameter name="Accept model parameters"    type="bool" value="true"/>
+    <Parameter name="Provide nominal values"     type="bool" value="true"/>
+    <Parameter name="Coeff a" type="double" value="0.0"/>
+    <Parameter name="Coeff f" type="double" value="1.0"/>
+    <Parameter name="Coeff L" type="double" value="1.0"/>
+    <Parameter name="IC x0"   type="double" value="0.0"/>
+    <Parameter name="IC x1"   type="double" value="1.0"/>
+    <Parameter name="IC t0"   type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
@@ -17,12 +24,12 @@
       <ParameterList name="Time Step Control">
         <!-- Test ASA works with non-zero initial time -->
         <Parameter name="Initial Time"           type="double" value="0.1"/>
-        <Parameter name="Final Time"             type="double" value="20.1"/>
+        <Parameter name="Final Time"             type="double" value="1.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
-        <Parameter name="Initial Time Step"      type="double" value="1.0"/>
-        <Parameter name="Maximum Time Step"      type="double" value="1.0"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
+        <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Output Time List"       type="string" value=""/>
@@ -40,10 +47,9 @@
       <Parameter name="Use FSAL"       type="bool" value="false"/>
       <Parameter name="Initial Condition Consistency" type="string" value="None"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
-      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
+      <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Predictor Stepper Type" type="string" value="Forward Euler"/>
-
       <ParameterList name="Default Solver">
         <ParameterList name="NOX">
           <ParameterList name="Direction">
