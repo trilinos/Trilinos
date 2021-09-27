@@ -42,7 +42,6 @@
 using idx_t = int;
 #endif
 
-#include <sys/stat.h>
 #include <sys/types.h>
 
 #ifdef SEACAS_HAVE_MPI
@@ -218,11 +217,7 @@ int main(int argc, char *argv[])
     Ioss::FileInfo output_path(path);
     if (!output_path.exists()) {
       // Try to create the directory...
-      if (mkdir(path.c_str(), 0777) == -1) {
-        fmt::print(stderr, "ERROR: Could not create path '{}' for output of decomposed files.\n",
-                   path);
-        exit(EXIT_FAILURE);
-      }
+      Ioss::FileInfo::create_path(path);
     }
     else if (!output_path.is_dir()) {
       fmt::print(stderr, "ERROR: Path '{}' is not a directory.\n", path);

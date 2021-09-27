@@ -8,7 +8,7 @@
 #define _POSIX_SOURCE
 #include <stdio.h>
 
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
 #include <io.h>
 #define NOMINMAX
 #include <windows.h>

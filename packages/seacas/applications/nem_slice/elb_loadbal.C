@@ -2443,9 +2443,7 @@ namespace {
     /* KDDKDD Note:  This routine could also be used by ZPINCH in the z-direction,
      * KDDKDD Note:  but I don't want to tamper with code that already works. */
 
-    int    d_slice;         /* Return value:  The slice to which the coordinate is assigned */
-    double epsilon = 5e-06; /* tolerance that allows a point to be in subdomain*/
-
+    int d_slice; /* Return value:  The slice to which the coordinate is assigned */
     if (delta > 0.) {
       d_slice = static_cast<int>(nslices_d * static_cast<double>((d - dmin)) / delta);
       if (d_slice == nslices_d) {
@@ -2454,6 +2452,7 @@ namespace {
 
       /* Move dots within epsilon of upper end of slice into next slice */
       /* This step reduces jagged edges due to roundoff in coordinate values */
+      double epsilon = 5e-06; /* tolerance that allows a point to be in subdomain*/
       if (d_slice != nslices_d - 1 && static_cast<double>(d) > (slices_d[d_slice] - epsilon)) {
         d_slice++;
       }

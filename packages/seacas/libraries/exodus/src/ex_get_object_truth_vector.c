@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -24,10 +24,9 @@
 int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id entity_id,
                                int num_var, int *var_vec)
 {
-  int    statust;
-  int    varid, tabid, i, status, ent_ndx;
+  int    statust, status;
+  int    varid, tabid;
   size_t num_var_db = 0;
-  size_t start[2], count[2];
   char   errmsg[MAX_ERR_LENGTH];
 
   /*
@@ -119,7 +118,7 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
   }
 
   /* Determine index of entity_id in id array */
-  ent_ndx = ex__id_lkup(exoid, obj_type, entity_id);
+  int ent_ndx = ex__id_lkup(exoid, obj_type, entity_id);
   if (ent_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
@@ -149,7 +148,7 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
   if (statust != NC_NOERR) {
     /* since truth vector isn't stored in the data file, derive it dynamically
      */
-    for (i = 0; i < num_var; i++) {
+    for (int i = 0; i < num_var; i++) {
       /* NOTE: names are 1-based */
       if (nc_inq_varid(exoid, ex__catstr2(var_name, i + 1, ent_type, ent_ndx), &tabid) !=
           NC_NOERR) {
@@ -166,6 +165,7 @@ int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type, ex_entity_id 
 
     /* read in the truth vector */
 
+    size_t start[2], count[2];
     start[0] = ent_ndx - 1;
     start[1] = 0;
 

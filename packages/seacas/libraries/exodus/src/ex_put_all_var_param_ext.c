@@ -343,10 +343,10 @@ error_ret:
 static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label,
                             int *dimid)
 {
-  char errmsg[MAX_ERR_LENGTH];
-  int  status;
+  int status;
   if ((status = nc_def_dim(exoid, DIMENSION, count, dimid)) != NC_NOERR) {
     if (status == NC_ENAMEINUSE) {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: %s variable name parameters are already defined "
                "in file id %d",
@@ -354,6 +354,7 @@ static int define_dimension(int exoid, const char *DIMENSION, int count, const c
       ex_err_fn(exoid, __func__, errmsg, status);
     }
     else {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to define number of %s variables in file id %d", label, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -365,24 +366,21 @@ static int define_dimension(int exoid, const char *DIMENSION, int count, const c
 static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,
                                          const char *label)
 {
-  char errmsg[MAX_ERR_LENGTH];
-  int  dims[2];
-  int  variable;
-  int  status;
-#if NC_HAS_HDF5
-  int fill = NC_FILL_CHAR;
-#endif
-
+  int dims[2];
   dims[0] = dimension;
   (void)nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
 
+  int variable;
+  int status;
   if ((status = nc_def_var(exoid, VARIABLE, NC_CHAR, 2, dims, &variable)) != NC_NOERR) {
     if (status == NC_ENAMEINUSE) {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s variable names are already defined in file id %d",
                label, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
     }
     else {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s variable names in file id %d",
                label, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -390,6 +388,7 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
   }
   ex__set_compact_storage(exoid, variable);
 #if NC_HAS_HDF5
+  int fill = NC_FILL_CHAR;
   nc_def_var_fill(exoid, variable, 0, &fill);
 #endif
   return (status);

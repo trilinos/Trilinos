@@ -7,7 +7,8 @@
  */
 #include "exodusII.h" // for ex_close, etc
 #include "fmt/ostream.h"
-#include "nem_spread.h"     // for NemSpread, etc
+#include "nem_spread.h" // for NemSpread, etc
+#include "open_file_limit.h"
 #include "ps_pario_const.h" // for PIO_Info, etc
 #include "rf_allo.h"        // for array_alloc, safe_free
 #include "rf_io_const.h"    // for Exo_Res_File, ExoFile, etc
@@ -17,12 +18,9 @@
 #include <cstdio>           // for stderr, nullptr, etc
 #include <cstdlib>          // for exit, free, malloc
 #include <string>
-#include <unistd.h>
 #include <vector> // for vector
 
 namespace {
-  int get_free_descriptor_count();
-
   template <typename INT>
   size_t find_gnode_inter(INT *intersect, size_t num_g_nodes, INT *glob_vec, size_t num_int_nodes,
                           size_t num_bor_nodes, size_t num_ext_nodes, INT *loc_vec);
@@ -380,7 +378,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
     cTemp += PIO_Info.Exo_Extension;
   }
 
-  int open_file_count = get_free_descriptor_count();
+  int open_file_count = open_file_limit() - 1;
   if (open_file_count > Proc_Info[5]) {
     fmt::print("All output files opened simultaneously.\n");
     for (int iproc = Proc_Info[4]; iproc < Proc_Info[4] + Proc_Info[5]; iproc++) {
@@ -1060,36 +1058,4 @@ namespace {
     return count;
   }
 
-  int get_free_descriptor_count()
-  {
-/* Returns maximum number of files that one process can have open
- * at one time. (POSIX)
- */
-#ifndef _MSC_VER
-    int fdmax = sysconf(_SC_OPEN_MAX);
-    if (fdmax == -1) {
-      /* POSIX indication that there is no limit on open files... */
-      fdmax = INT_MAX;
-    }
-#else
-    int fdmax = _getmaxstdio();
-#endif
-    /* File descriptors are assigned in order (0,1,2,3,...) on a per-process
-     * basis.
-     *
-     * Assume that we have stdin, stdout, stderr, and input exodus
-     * file (4 total).
-     */
-
-    return fdmax - 4;
-
-    /* Could iterate from 0..fdmax and check for the first EBADF (bad
-     * file descriptor) error return from fcntl, but that takes too long
-     * and may cause other problems.  There is a isastream(filedes) call
-     * on Solaris that can be used for system-dependent code.
-     *
-     * Another possibility is to do an open and see which descriptor is
-     * returned -- take that as 1 more than the current count of open files.
-     */
-  }
 } // namespace

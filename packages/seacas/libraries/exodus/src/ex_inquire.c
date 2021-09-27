@@ -45,14 +45,12 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
                                  const char *set_num_dim, const char *set_stat_var,
                                  const char *set_size_root, int missing_ok)
 {
-  int    dimid, varid;
-  size_t num_sets;
-  int *  stat_vals = NULL;
-
   *set_length = 0; /* default return value */
 
-  int status;
+  int dimid;
   if (nc_inq_dimid(exoid, set_num_dim, &dimid) == NC_NOERR) {
+    int    status;
+    size_t num_sets;
     if ((status = nc_inq_dimlen(exoid, dimid, &num_sets)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %s sets in file id %d",
@@ -62,6 +60,7 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
     }
 
     /* Allocate space for stat array */
+    int *stat_vals = NULL;
     if (!(stat_vals = malloc((int)num_sets * sizeof(int)))) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
@@ -73,6 +72,7 @@ static int ex_get_concat_set_len(int exoid, int64_t *set_length, const char *set
     }
 
     /* get variable id of status array */
+    int varid;
     if (nc_inq_varid(exoid, set_stat_var, &varid) == NC_NOERR) {
       /* if status array exists, use it, otherwise assume, object exists
          to be backward compatible */
@@ -129,7 +129,7 @@ static void flt_cvt(float *xptr, double x) { *xptr = (float)x; }
 static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float *ret_float,
                                char *ret_char)
 {
-  int    dimid, varid, rootid;
+  int    dimid, varid;
   size_t ldum = 0;
   size_t num_sets, idum;
   int *  stat_vals;
@@ -150,7 +150,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
     return (EX_FATAL);
   }
 
-  rootid = exoid & EX_FILE_ID_MASK;
+  int rootid = exoid & EX_FILE_ID_MASK;
 
   switch (req_info) {
   case EX_INQ_FILE_TYPE:

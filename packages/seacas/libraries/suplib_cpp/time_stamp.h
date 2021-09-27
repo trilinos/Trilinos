@@ -3,10 +3,11 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ED_Version_h
-#define ED_Version_h
 
-static std::string version("3.20");
-static std::string verdate("2021-09-23");
+#ifndef SUPLIB_CPP_TIME_STAMP_H
+#define SUPLIB_CPP_TIME_STAMP_H
 
-#endif // ED_Version_h
+#include <string>
+std::string time_stamp(const std::string &format);
+
+#endif

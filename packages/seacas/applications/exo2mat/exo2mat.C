@@ -38,6 +38,8 @@
 #include "fmt/ostream.h"
 #include "fmt/printf.h"
 #include "matio.h" // for Mat_VarCreate, Mat_VarFree, etc
+#include "time_stamp.h"
+
 #include <cassert> // for assert
 #include <cstddef> // for size_t
 #include <cstdio>  // for fprintf, printf, sprintf, etc
@@ -59,18 +61,6 @@ static const char *qainfo[] = {
     "2019/05/18",
     "4.07",
 };
-
-std::string time_stamp(const std::string &format)
-{
-  if (format == "") {
-    return std::string("");
-  }
-  auto  calendar_time = std::time(nullptr);
-  auto *local_time    = std::localtime(&calendar_time);
-
-  std::string time_string = fmt::format(format, *local_time);
-  return time_string;
-}
 
 void logger(const char *message)
 {

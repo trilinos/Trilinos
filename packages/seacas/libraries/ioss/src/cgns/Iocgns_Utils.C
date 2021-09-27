@@ -2693,8 +2693,7 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
 
   if (adaptive_avg) {
     for (size_t i = 0; i < zones.size(); i++) {
-      auto zone       = zones[i];
-      int  num_active = 0;
+      auto zone = zones[i];
 
       auto work_average = avg_work;
       int  split_cnt    = splits[i];
@@ -2704,6 +2703,7 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
 
       std::vector<std::pair<int, Iocgns::StructuredZoneData *>> active;
       active.emplace_back(split_cnt, zone);
+      int num_active = 0;
       do {
         assert(!active.empty());
         split_cnt = active.back().first;
@@ -2741,15 +2741,15 @@ size_t Iocgns::Utils::pre_split(std::vector<Iocgns::StructuredZoneData *> &zones
   }
   else {
     for (auto &zone : zones) {
-      int num_active = 0;
       if (zone->work() <= max_avg) {
         // This zone is already in `new_zones`; just skip doing anything else with it.
       }
       else {
         std::vector<std::pair<int, Iocgns::StructuredZoneData *>> active;
 
-        double work      = zone->work();
-        int    split_cnt = int(work / avg_work);
+        double work       = zone->work();
+        int    split_cnt  = int(work / avg_work);
+        int    num_active = 0;
 
         // Find modulus of work % avg_work and split off that amount
         // which will be < avg_work.

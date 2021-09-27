@@ -19,11 +19,6 @@
 #include <string>
 #include <vector>
 
-#include <cmath>
-#ifndef math_errhandling
-#define math_errhandling MATH_ERRNO
-#endif
-
 #if defined(_MSC_VER)
 #include <io.h>
 #define isatty _isatty

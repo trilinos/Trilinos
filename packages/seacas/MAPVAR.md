@@ -11,7 +11,6 @@ As I see it, it does the following for the interpolation:
      *   For all nodal variables
        *   Iterate all nodes in this block; map from A->B
        *   Write values for *all*  B nodes at this step for this variable
-
    *   For all time steps
      *   For all element variables
        *   Iterate all elements in this block; map from A->B

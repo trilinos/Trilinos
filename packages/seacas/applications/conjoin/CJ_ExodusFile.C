@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,6 +7,7 @@
 #include "CJ_CodeTypes.h" // for StringIdVector, etc
 #include "CJ_ExodusFile.h"
 #include "CJ_SystemInterface.h"
+#include "open_file_limit.h"
 #include "smart_assert.h"
 
 #include <climits>
@@ -27,10 +28,6 @@ std::string              Excn::ExodusFile::outputFilename_;
 bool                     Excn::ExodusFile::keepOpen_          = false;
 int                      Excn::ExodusFile::maximumNameLength_ = 32;
 int                      Excn::ExodusFile::exodusMode_        = 0;
-
-namespace {
-  int get_free_descriptor_count();
-} // namespace
 
 Excn::ExodusFile::ExodusFile(size_t which) : myLocation_(which)
 {
@@ -94,7 +91,7 @@ void Excn::ExodusFile::close_all()
 bool Excn::ExodusFile::initialize(const SystemInterface &si)
 {
   // See if we can keep files open
-  size_t max_files = get_free_descriptor_count();
+  size_t max_files = open_file_limit() - 1; // We also have an output exodus file...
   if (si.inputFiles_.size() <= max_files) {
     keepOpen_ = true;
     if ((si.debug() & 1) != 0) {
@@ -211,39 +208,3 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
   ex_set_max_name_length(outputId_, maximumNameLength_);
   return true;
 }
-
-#include <unistd.h>
-
-namespace {
-  int get_free_descriptor_count()
-  {
-// Returns maximum number of files that one process can have open
-// at one time. (POSIX)
-#ifndef _MSC_VER
-    int fdmax = sysconf(_SC_OPEN_MAX);
-    if (fdmax == -1) {
-      // POSIX indication that there is no limit on open files...
-      fdmax = INT_MAX;
-    }
-#else
-    int fdmax = _getmaxstdio();
-#endif
-
-    // File descriptors are assigned in order (0,1,2,3,...) on a per-process
-    // basis.
-
-    // Assume that we have stdin, stdout, stderr, and output exodus
-    // file (4 total).
-
-    return fdmax - 4;
-
-    // Could iterate from 0..fdmax and check for the first
-    // EBADF (bad file descriptor) error return from fcntl, but that takes
-    // too long and may cause other problems.  There is a isastream(filedes)
-    // call on Solaris that can be used for system-dependent code.
-    //
-    // Another possibility is to do an open and see which descriptor is
-    // returned -- take that as 1 more than the current count of open files.
-    //
-  }
-} // namespace

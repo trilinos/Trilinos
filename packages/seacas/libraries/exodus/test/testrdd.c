@@ -42,10 +42,8 @@ void *my_calloc(size_t length, size_t size)
 
 int main(int argc, char **argv)
 {
-  int  num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets;
-  int  num_side_sets;
   int  i, j, k;
-  int *node_list, *node_ctr_list, *elem_list, *side_list;
+  int *node_list, *elem_list, *side_list;
   int *num_nodes_per_set, *num_elem_per_set;
   int *num_df_per_set;
   int *node_ind, *elem_ind, *df_ind, num_qa_rec, num_info;
@@ -90,6 +88,8 @@ int main(int argc, char **argv)
 
   /* read database parameters */
 
+  int num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets;
+  int num_side_sets;
   int error = ex_get_init(exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk,
                           &num_node_sets, &num_side_sets);
 
@@ -428,7 +428,7 @@ int main(int argc, char **argv)
     int num_elem_in_set = num_sides_in_set;
     elem_list           = (int *)my_calloc(num_elem_in_set, sizeof(int));
     side_list           = (int *)my_calloc(num_sides_in_set, sizeof(int));
-    node_ctr_list       = (int *)my_calloc(num_elem_in_set, sizeof(int));
+    int *node_ctr_list  = (int *)my_calloc(num_elem_in_set, sizeof(int));
     node_list           = (int *)my_calloc(num_elem_in_set * 21, sizeof(int));
     dist_fact           = (double *)my_calloc(num_df_in_set, sizeof(double));
 

@@ -316,7 +316,7 @@ namespace {
                             const std::vector<std::string> &var_names2, bool *diff_found)
   {
     std::vector<std::string> x_list; // exclusion list
-    for (auto &name : names) {
+    for (auto name : names) {
       chop_whitespace(name);
       SMART_ASSERT(!name.empty());
       if (name[0] == '!') {

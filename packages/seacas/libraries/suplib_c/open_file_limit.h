@@ -3,10 +3,17 @@
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
-#ifndef ED_Version_h
-#define ED_Version_h
 
-static std::string version("3.20");
-static std::string verdate("2021-09-23");
+#ifndef SUPLIB_OPEN_FILE_LIMIT_H
+#define SUPLIB_OPEN_FILE_LIMIT_H
 
-#endif // ED_Version_h
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int open_file_limit();
+
+#ifdef __cplusplus
+} /* close brackets on extern "C" declaration */
+#endif
+#endif

@@ -29,6 +29,10 @@
 #include <vector>
 
 #include "copy_string_cpp.h"
+#include "format_time.h"
+#include "open_file_limit.h"
+#include "sys_info.h"
+#include "time_stamp.h"
 
 #define USE_STD_SORT 1
 #if !USE_STD_SORT
@@ -41,15 +45,6 @@
 #include "smart_assert.h"
 
 #include <exodusII.h>
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#undef IN
-#undef OUT
-#else
-#include <sys/utsname.h>
-#endif
 
 using StringVector = std::vector<std::string>;
 
@@ -83,6 +78,9 @@ public:
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &epu_proc_count);
+#else
+    (void)(argc);
+    (void)(argv);
 #endif
   }
 
@@ -107,9 +105,7 @@ namespace {
   int          rank        = 0;
   std::string  tsFormat    = "[{:%H:%M:%S}] ";
 
-  std::string time_stamp(const std::string &format);
-  std::string format_time(double seconds);
-  int         get_width(int max_value);
+  int get_width(int max_value);
 
   void LOG(const char *message)
   {
@@ -477,7 +473,7 @@ int main(int argc, char *argv[])
 #endif
     }
     else {
-      int max_open_file = ExodusFile::get_free_descriptor_count();
+      int max_open_file = open_file_limit() - 1; // -1 for output exodus file.
 
       // Only used to test the auto subcycle without requiring thousands of files...
       if (interFace.max_open_files() > 0) {
@@ -3399,47 +3395,8 @@ namespace {
 
   void add_info_record(char *info_record, int size)
   {
-    // Add 'uname' output to the passed in character string.
-    // Maximum size of string is 'size' (not including terminating nullptr)
-    // This is used as information data in the concatenated results file
-    // to help in tracking when/where/... the file was created
-
-#ifdef _WIN32
-    std::string info                                      = "EPU: ";
-    char        machine_name[MAX_COMPUTERNAME_LENGTH + 1] = {0};
-    DWORD       buf_len                                   = MAX_COMPUTERNAME_LENGTH + 1;
-    ::GetComputerName(machine_name, &buf_len);
-    info += machine_name;
-    info += ", OS: ";
-
-    std::string   os = "Microsoft Windows";
-    OSVERSIONINFO osvi;
-
-    ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
-    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-
-    if (GetVersionEx(&osvi)) {
-      DWORD             build = osvi.dwBuildNumber & 0xFFFF;
-      std::stringstream str;
-      fmt::print(str, " {}.{} {} (Build {})", osvi.dwMajorVersion, osvi.dwMinorVersion,
-                 osvi.szCSDVersion, build);
-      os += str.str();
-    }
-    info += os;
-    const char *sinfo = info.c_str();
-    copy_string(info_record, sinfo, size + 1);
-#else
-    struct utsname sys_info
-    {
-    };
-    uname(&sys_info);
-
-    std::string info =
-        fmt::format("EPU: {}, OS: {} {}, {}, Machine: {}", sys_info.nodename, sys_info.sysname,
-                    sys_info.release, sys_info.version, sys_info.machine);
-
+    std::string info = sys_info("EPU");
     copy_string(info_record, info, size + 1);
-#endif
   }
 
   inline bool is_whitespace(char c)
@@ -3487,43 +3444,6 @@ namespace {
     while (i > 0 && is_whitespace(obuf[i])) {
       obuf[i--] = '\0';
     }
-  }
-
-  std::string time_stamp(const std::string &format)
-  {
-    if (format == "") {
-      return std::string("");
-    }
-
-    time_t      calendar_time = std::time(nullptr);
-    struct tm * local_time    = std::localtime(&calendar_time);
-    std::string time_string   = fmt::format(format, *local_time);
-    return time_string;
-  }
-
-  std::string format_time(double seconds)
-  {
-    std::string suffix("u");
-    if (seconds > 0.0 && seconds < 1.0) {
-      seconds *= 1000.;
-      suffix = "ms";
-    }
-    else if (seconds > 86400) {
-      suffix = "d";
-      seconds /= 86400.;
-    }
-    else if (seconds > 3600) {
-      suffix = "h";
-      seconds /= 3600.;
-    }
-    else if (seconds > 60) {
-      suffix = "m";
-      seconds /= 60.;
-    }
-    else {
-      suffix = "s";
-    }
-    return fmt::format("{:.3}{}", seconds, suffix);
   }
 
   int get_width(int max_value)

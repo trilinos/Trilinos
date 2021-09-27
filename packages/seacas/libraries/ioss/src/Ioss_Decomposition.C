@@ -68,7 +68,7 @@ namespace {
     return false;
   }
 
-  std::string get_decomposition_method(const Ioss::PropertyManager &properties, int my_processor)
+  std::string get_decomposition_method(const Ioss::PropertyManager &properties)
   {
     std::string method = "LINEAR";
 
@@ -169,7 +169,7 @@ namespace Ioss {
       : m_comm(comm), m_pu(comm), m_processor(m_pu.parallel_rank()),
         m_processorCount(m_pu.parallel_size())
   {
-    m_method = get_decomposition_method(props, m_processor);
+    m_method = get_decomposition_method(props);
     if (m_method == "MAP" || m_method == "VARIABLE") {
       m_decompExtra = props.get_optional("DECOMPOSITION_EXTRA", "processor_id");
     }

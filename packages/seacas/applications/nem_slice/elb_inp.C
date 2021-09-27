@@ -19,7 +19,7 @@
 #include "elb_inp.h"
 #include "elb_util.h" // for strip_string, token_compare, etc
 #include "fmt/ostream.h"
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
 #include "XGetopt.h"
 #include <unistd.h>
 #else
@@ -174,7 +174,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'w':
       /* Weighting options */
       sub_opt = optarg;
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
@@ -369,7 +369,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
@@ -474,7 +474,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
@@ -570,7 +570,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else

@@ -34,7 +34,7 @@
 int main(int argc, char **argv)
 {
   int num_elem_in_block, num_nodes_per_elem, num_attr;
-  int num_nodes_in_set, num_elem_in_set;
+  int num_nodes_in_set;
   int num_sides_in_set, num_df_in_set;
 
   char title[MAX_LINE_LENGTH + 1], elem_type[MAX_STR_LENGTH + 1];
@@ -277,12 +277,12 @@ int main(int argc, char **argv)
     printf("after ex_put_side_set_param, error = %d\n", error);
 
     /* Note: The # of elements is same as # of sides!  */
-    num_elem_in_set      = num_sides_in_set;
-    int *  elem_list     = (int *)calloc(num_elem_in_set, sizeof(int));
-    int *  side_list     = (int *)calloc(num_sides_in_set, sizeof(int));
-    int *  node_ctr_list = (int *)calloc(num_elem_in_set, sizeof(int));
-    int *  node_list     = (int *)calloc(num_elem_in_set * 21, sizeof(int));
-    float *dist_fact     = (float *)calloc(num_df_in_set, sizeof(float));
+    int    num_elem_in_set = num_sides_in_set;
+    int *  elem_list       = (int *)calloc(num_elem_in_set, sizeof(int));
+    int *  side_list       = (int *)calloc(num_sides_in_set, sizeof(int));
+    int *  node_ctr_list   = (int *)calloc(num_elem_in_set, sizeof(int));
+    int *  node_list       = (int *)calloc(num_elem_in_set * 21, sizeof(int));
+    float *dist_fact       = (float *)calloc(num_df_in_set, sizeof(float));
 
     error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);
     printf("\nafter ex_get_side_set, error = %3d\n", error);

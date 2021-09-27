@@ -160,7 +160,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
         exit(1);
       }
 
-      for (size_t ijump = 0; ijump < PEX_MAX(1, globals.Num_N_Comm_Maps[iproc]); ijump++) {
+      for (INT ijump = 0; ijump < PEX_MAX(1, globals.Num_N_Comm_Maps[iproc]); ijump++) {
         ((globals.N_Comm_Map[iproc]) + ijump)->node_cnt = 0;
       }
 
@@ -171,7 +171,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
         exit(1);
       }
 
-      for (size_t ijump = 0; ijump < PEX_MAX(1, globals.Num_E_Comm_Maps[iproc]); ijump++) {
+      for (INT ijump = 0; ijump < PEX_MAX(1, globals.Num_E_Comm_Maps[iproc]); ijump++) {
         ((globals.E_Comm_Map[iproc]) + ijump)->elem_cnt = 0;
       }
     }
@@ -670,12 +670,12 @@ in mesh file",
                    "\t\tLoad balance parameters as read by Processor 0\n"
                    "--------------------------------------------------------\n");
       }
-      fmt::print("Read on processor 0 for processor  {:L}\n"
+      fmt::print("Read on processor 0 for processor {:L}\n"
                  "\tNumber internal nodes:         {:L}\n"
                  "\tNumber border nodes:           {:L}\n"
                  "\tNumber external nodes:         {:L}\n"
                  "\tNumber internal elements:      {:L}\n"
-                 "\tNumber border elements:       {:L}\n"
+                 "\tNumber border elements:        {:L}\n"
                  "\tNumber of nodal comm maps:     {:L}\n"
                  "\tNumber of elemental comm maps: {:L}\n"
                  "--------------------------------------------------------\n",

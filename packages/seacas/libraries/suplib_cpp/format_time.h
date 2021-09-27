@@ -5,13 +5,11 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#ifndef SEACAS_Version_h
-#define SEACAS_Version_h
 
-static char const *qainfo[] = {
-    "epu --  E Pluribus Unum",
-    "6.03",
-    "2021/08/18",
-};
+#ifndef SUPLIB_CPP_FORMAT_TIME
+#define SUPLIB_CPP_FORMAT_TIME
 
-#endif // SEACAS_Version_h
+#include <string>
+std::string format_time(double seconds);
+
+#endif

@@ -20,6 +20,17 @@ namespace {
   {
     return ((beg - offset > 0) && (end - offset > 0));
   }
+
+  char get_constant_face(const Ioss::IJK_t &beg, const Ioss::IJK_t &end)
+  {
+    std::array<char, 6> tf{{'i', 'j', 'k', 'I', 'J', 'K'}};
+    for (int i = 0; i < 3; i++) {
+      if (beg[i] == end[i]) {
+        return (beg[i] == 1) ? tf[i] : tf[i + 3];
+      }
+    }
+    return ' ';
+  }
 } // namespace
 
 namespace Ioss {
@@ -45,18 +56,22 @@ namespace Ioss {
 #endif
 
 #if 1
+    auto owner_face = get_constant_face(zgc.m_ownerRangeBeg, zgc.m_ownerRangeEnd);
+    auto donor_face = get_constant_face(zgc.m_donorRangeBeg, zgc.m_donorRangeEnd);
+
     fmt::print(os,
-               "\t\t{}[P{}]:\tDZ {}\tName '{}' shares {:L} nodes."
+               "\t\t{}[P{}]:\tDZ {}\tName '{}' shares {:L} nodes on face {}:{} Decomp: {}."
                "\n\t\t\t\t      Range: [{}..{}, {}..{}, {}..{}]\t      Donor Range: [{}..{}, "
                "{}..{}, {}..{}]"
                "\n\t\t\t\tLocal Range: [{}..{}, {}..{}, {}..{}]\tDonor Local Range: [{}..{}, "
                "{}..{}, {}..{}]",
                zgc.m_donorName, zgc.m_donorProcessor, zgc.m_donorZone, zgc.m_connectionName,
-               zgc.get_shared_node_count(), zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeEnd[0],
-               zgc.m_ownerRangeBeg[1], zgc.m_ownerRangeEnd[1], zgc.m_ownerRangeBeg[2],
-               zgc.m_ownerRangeEnd[2], zgc.m_donorRangeBeg[0], zgc.m_donorRangeEnd[0],
-               zgc.m_donorRangeBeg[1], zgc.m_donorRangeEnd[1], zgc.m_donorRangeBeg[2],
-               zgc.m_donorRangeEnd[2], zgc.m_ownerRangeBeg[0] - zgc.m_ownerOffset[0],
+               zgc.get_shared_node_count(), owner_face, donor_face, zgc.m_fromDecomp,
+               zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeEnd[0], zgc.m_ownerRangeBeg[1],
+               zgc.m_ownerRangeEnd[1], zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[2],
+               zgc.m_donorRangeBeg[0], zgc.m_donorRangeEnd[0], zgc.m_donorRangeBeg[1],
+               zgc.m_donorRangeEnd[1], zgc.m_donorRangeBeg[2], zgc.m_donorRangeEnd[2],
+               zgc.m_ownerRangeBeg[0] - zgc.m_ownerOffset[0],
                zgc.m_ownerRangeEnd[0] - zgc.m_ownerOffset[0],
                zgc.m_ownerRangeBeg[1] - zgc.m_ownerOffset[1],
                zgc.m_ownerRangeEnd[1] - zgc.m_ownerOffset[1],

@@ -54,12 +54,18 @@
 namespace {
   void reset_error()
   {
+#ifndef _WIN32
+#ifndef math_errhandling
+#define math_errhandling MATH_ERRNO
+#endif
+
     if (math_errhandling & MATH_ERREXCEPT) {
       std::feclearexcept(FE_ALL_EXCEPT);
     }
     if (math_errhandling & MATH_ERRNO) {
       errno = 0;
     }
+#endif
   }
 } // namespace
 
@@ -456,8 +462,7 @@ namespace SEAMS {
           yyla.type = yytranslate_(yylex(&yyla.value));
         }
 #if YY_EXCEPTIONS
-        catch (const syntax_error &yyexc)
-        {
+        catch (const syntax_error &yyexc) {
           YYCDEBUG << "Caught exception: " << yyexc.what() << '\n';
           error(yyexc);
           goto yyerrlab1;
@@ -1931,8 +1936,7 @@ namespace SEAMS {
           }
         }
 #if YY_EXCEPTIONS
-        catch (const syntax_error &yyexc)
-        {
+        catch (const syntax_error &yyexc) {
           YYCDEBUG << "Caught exception: " << yyexc.what() << '\n';
           error(yyexc);
           YYERROR;
@@ -2054,8 +2058,7 @@ namespace SEAMS {
       return yyresult;
     }
 #if YY_EXCEPTIONS
-    catch (...)
-    {
+    catch (...) {
       YYCDEBUG << "Exception caught: cleaning lookahead and stack\n";
       // Do not try to display the values of the reclaimed symbols,
       // as their printers might throw an exception.
