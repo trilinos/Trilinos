@@ -43,38 +43,33 @@
 #include <set>
 #include <stdexcept>
 #include <cctype>
+#include <Kokkos_Core.hpp>
 
 #include <stk_util/util/string_case_compare.hpp>
 
 namespace stk {
 namespace expreval {
 
-/**
- * @brief Typedef <b>ConstantMap</b> maps a constant name to a double constant.
- * The mapping is case insensitive.
- */
 using ConstantMap = std::map<std::string, double, LessCase>;
 
-constexpr const double s_false  = 0.0;
-constexpr const double s_true   = 1.0;
+static constexpr const double s_false  = 0.0;
+static constexpr const double s_true   = 1.0;
 
-constexpr const double s_pi = 3.14159265358979323846;
+static constexpr const double s_pi = 3.14159265358979323846;
+KOKKOS_INLINE_FUNCTION
 constexpr double pi() { return s_pi; }
 
-constexpr const double s_two_pi = 2.0 * s_pi;
+static constexpr const double s_two_pi = 2.0 * s_pi;
+KOKKOS_INLINE_FUNCTION
 constexpr double two_pi() { return s_two_pi; }
 
-constexpr const double s_deg_to_rad = s_pi / 180.0;
-constexpr const double s_rad_to_deg = 1.0 / s_deg_to_rad;
+static constexpr const double s_deg_to_rad = s_pi / 180.0;
+static constexpr const double s_rad_to_deg = 1.0 / s_deg_to_rad;
+KOKKOS_INLINE_FUNCTION
 constexpr double degree_to_radian() { return s_deg_to_rad; }
+KOKKOS_INLINE_FUNCTION
 constexpr double radian_to_degree() { return s_rad_to_deg; }
 
-/**
- * @brief Member function <b>getConstantMap</b> returns a reference to the defined
- * constants.
- *
- * @return a <b>ConstantMap</b> reference to the defined constants.
- */
 ConstantMap &getConstantMap();
 
 } // namespace expreval

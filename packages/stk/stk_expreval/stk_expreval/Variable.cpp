@@ -33,6 +33,7 @@
 // 
 
 #include <stk_expreval/Variable.hpp>
+#include <stk_expreval/Evaluator.hpp>
 
 namespace stk {
 namespace expreval {

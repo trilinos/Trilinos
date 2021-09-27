@@ -64,7 +64,7 @@ template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyn
 NgpField<T, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
 {
   auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpDebugger>(stkField, Kokkos::DefaultExecutionSpace());
-  impl::internal_fence_no_sync_to_host(ngpFieldRef);
+  ngpFieldRef.fence();
   return ngpFieldRef;
 }
 
