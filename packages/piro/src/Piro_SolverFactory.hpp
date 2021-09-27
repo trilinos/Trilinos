@@ -75,7 +75,7 @@ public:
    *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
    */
   template <typename Scalar>
-  Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
+  Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolverAdaptive(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       const Teuchos::RCP<Thyra::AdaptiveSolutionManager> &solMgr,
@@ -85,6 +85,7 @@ public:
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null);
 
 };

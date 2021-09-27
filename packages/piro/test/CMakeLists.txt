@@ -274,4 +274,15 @@ IF (Piro_ENABLE_Tempus)
     NUM_MPI_PROCS 1-4
     STANDARD_PASS_OUTPUT
   )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolver_AdjointSensitivitySinCosUnitTests
+    SOURCES
+    Piro_TempusSolver_AdjointSensitivitySinCosUnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    SinCosModel.cpp
+    SinCosModel.hpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+  )
 ENDIF (Piro_ENABLE_Tempus)
