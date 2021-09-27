@@ -131,10 +131,13 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g4_p2)
   // DgDx: Right end node is 1, the rest of the vector is zero.
   out << "Dg4Dx:\n";
   DgDx->describe(out,Teuchos::VERB_EXTREME);
-  auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
-  if (comm->getRank() == (comm->getSize()-1)) {
-    TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,0),1.0,tol);
+  {
+    auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
+    if (comm->getRank() == (comm->getSize() - 1)) {
+      TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0) - 1, 0), 1.0, tol);
+    }
   }
+
   Teuchos::Array<NOX::TMultiVector::mag_type> norms(1);
   DgDx->norm2(norms);
   TEST_FLOATING_EQUALITY(norms[0],1.0,tol);
@@ -226,13 +229,17 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses_g6_p4)
   // DgDx: Left end node is 2, right end node is -1, the rest of the vector is zero.
   out << "Dg6Dx:\n";
   DgDx->describe(out,Teuchos::VERB_EXTREME);
-  auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
-  if (comm->getRank() == 0) {
-    TEST_FLOATING_EQUALITY(DgDx_host(0,0),2.0,tol);
+
+  {
+    auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
+    if (comm->getRank() == 0) {
+      TEST_FLOATING_EQUALITY(DgDx_host(0, 0), 2.0, tol);
+    }
+    else if (comm->getRank() == (comm->getSize() - 1)) {
+      TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0) - 1, 0), -1.0, tol);
+    }
   }
-  else if (comm->getRank() == (comm->getSize()-1)) {
-    TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,0),-1.0,tol);
-  }
+
   Teuchos::Array<NOX::TMultiVector::mag_type> norms(1);
   DgDx->norm2(norms);
   TEST_FLOATING_EQUALITY(norms[0],std::sqrt(5.0),tol);
