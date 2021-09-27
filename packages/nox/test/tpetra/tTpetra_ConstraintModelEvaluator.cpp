@@ -129,9 +129,8 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses)
   constraints.addDX(Teuchos::NO_TRANS,1.0,b,0.0,*result);
   auto result_thyra = Teuchos::rcp_dynamic_cast<NOX::Thyra::MultiVector>(result)->getThyraMultiVector();
   auto DgDx = converter::getTpetraMultiVector(result_thyra);
-  DgDx->sync_host();
   DgDx->describe(out,Teuchos::VERB_EXTREME);
-  auto DgDx_host = DgDx->getLocalViewHost();
+  auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
   for (size_t i=0; i < DgDx_host.extent(0); ++i) {
     if ( (comm->getRank() == 0) && (i == 0) ) {
       TEST_FLOATING_EQUALITY(DgDx_host(0,0),0.0,tol);

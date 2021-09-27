@@ -107,7 +107,6 @@ EvaluatorTpetra1DFEM(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
   GO minGID = xOwnedMap_->getMinGlobalIndex();
   Scalar dz = (zMax_ - zMin_)/static_cast<Scalar>(numGlobalElements_);
   nodeCoordinates_ = Teuchos::rcp(new tpetra_vec(xOwnedMap_));
-  nodeCoordinates_->modify_device();
 
   MeshFillFunctor<tpetra_vec> functor(*nodeCoordinates_, zMin_, dz, minGID);
   Kokkos::parallel_for("coords fill", numLocalNodes, functor);
@@ -180,7 +179,7 @@ template<class Scalar, class LO, class GO, class Node>
 Teuchos::RCP<const Tpetra::CrsGraph<LO, GO, Node> >
 EvaluatorTpetra1DFEM<Scalar, LO, GO, Node>::createGraph()
 {
-  typedef typename tpetra_graph::local_graph_type::size_type size_type;
+  using size_type = typename tpetra_graph::local_graph_device_type::size_type;
 
   // Compute graph offset array
   int numProcs = comm_->getSize();
@@ -456,9 +455,6 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     xPtr_->doImport(*nodeCoordinates_, *importer_, Tpetra::INSERT);
   }
 
-  xPtr_->sync_device();
-  uPtr_->sync_device();
-
   // Sizes for functors
   int myRank = comm_->getRank();
   std::size_t numMyElements = xGhostedMap_->getNodeNumElements()-1;
@@ -467,16 +463,14 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   auto k_tpetra = tpetra_extract::getConstTpetraMultiVector(nominalValues_.get_p(2));
   if (nonnull(inArgs.get_p(2)))
     k_tpetra = tpetra_extract::getConstTpetraMultiVector(inArgs.get_p(2));
-  if (k_tpetra->need_sync_host())
-    Teuchos::rcp_const_cast<NOX::TMultiVector>(k_tpetra)->sync_host();
-  Scalar k_val = (k_tpetra->getLocalViewHost())(0,0);
+
+  Scalar k_val = (k_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly))(0,0);
 
   auto p4_tpetra = tpetra_extract::getConstTpetraMultiVector(nominalValues_.get_p(4));
   if (nonnull(inArgs.get_p(4)))
     p4_tpetra = tpetra_extract::getConstTpetraMultiVector(inArgs.get_p(4));
-  if (p4_tpetra->need_sync_host())
-    Teuchos::rcp_const_cast<NOX::TMultiVector>(p4_tpetra)->sync_host();
-  Scalar p4_val = (p4_tpetra->getLocalViewHost())(0,0);
+
+  Scalar p4_val = (p4_tpetra->getLocalViewHost(Tpetra::Access::ReadOnly))(0,0);
 
   if (printDebug_) {
     if (nonnull(inArgs.get_p(2)))
@@ -494,8 +488,6 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     Teuchos::TimeMonitor timer(*residTimer_);
     Teuchos::RCP<tpetra_vec> f = tpetra_extract::getTpetraVector(f_out);
     f->putScalar(0.0);
-    f->sync_device();
-    f->modify_device();
     ResidualEvaluatorFunctor<tpetra_vec> functor(*f, *xPtr_, *uPtr_, myRank, k_val, p4_val);
     Kokkos::parallel_for("residual evaluation", numMyElements, functor);
     NOX::DeviceSpace().fence();
@@ -543,18 +535,16 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Fill Responses. These are so small, we will do it on host. Don't
   // waste time with parallel dispatch.
-  auto x = tpetra_extract::getConstTpetraVector(inArgs.get_x())->getLocalViewHost();
+  auto x = tpetra_extract::getConstTpetraVector(inArgs.get_x())->getLocalViewHost(Tpetra::Access::ReadOnly);
 
   if (fill_g4) {
     // g4 is locally replicated.
     auto g4_tpetra = tpetra_extract::getTpetraMultiVector(g4_out);
-    g4_tpetra->sync_host();
-    g4_tpetra->modify_host();
 
     // g4 = T(Zmax) - 2.0
     Scalar T_right = x(x.extent(0)-1,0);
     Teuchos::broadcast(*comm_,comm_->getSize()-1,&T_right);
-    auto g4_host = g4_tpetra->getLocalViewHost();
+    auto g4_host = g4_tpetra->getLocalViewHost(Tpetra::Access::ReadWrite);
     g4_host(0,0) = T_right - 2.0;
     if (printDebug_)
       std::cout << "evalModel: g(4)= T_right - 2.0 =" << g4_host(0,0) << " T_right=" << T_right << std::endl;
@@ -570,9 +560,7 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     // g6 = 2* T(Zmin) - T(Zmax)
     // g6 is locally replicated.
     auto g6_tpetra = tpetra_extract::getTpetraMultiVector(g6_out);
-    g6_tpetra->sync_host();
-    g6_tpetra->modify_host();
-    auto g6_host = g6_tpetra->getLocalViewHost();
+    auto g6_host = g6_tpetra->getLocalViewHost(Tpetra::Access::ReadWrite);
     g6_host(0,0) = 2.0 * T_left - T_right;
     if (printDebug_)
       std::cout << "evalModel: g(6)= 2 * T_left - T_right =" << g6_host(0,0) << " T_left=" << T_left << " T_right="
@@ -582,12 +570,10 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (fill_Dg4Dx) {
     auto Dg4Dx_tpetra = tpetra_extract::getTpetraMultiVector(Dg4Dx_out);
     Dg4Dx_tpetra->putScalar(0.0);
-    Dg4Dx_tpetra->sync_host();
-    Dg4Dx_tpetra->modify_host();
 
     // Right most value
     if (comm_->getRank() == (comm_->getSize()-1)) {
-      auto Dg4Dx_host = Dg4Dx_tpetra->getLocalViewHost();
+      auto Dg4Dx_host = Dg4Dx_tpetra->getLocalViewHost(Tpetra::Access::ReadWrite);
       Dg4Dx_host(Dg4Dx_host.extent(0)-1,0) = 1.0;
     }
   }
@@ -595,17 +581,15 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (fill_Dg6Dx) {
     auto Dg6Dx_tpetra = tpetra_extract::getTpetraMultiVector(Dg6Dx_out);
     Dg6Dx_tpetra->putScalar(0.0);
-    Dg6Dx_tpetra->sync_host();
-    Dg6Dx_tpetra->modify_host();
 
     // Left most value
     if (comm_->getRank() == 0) {
-      auto Dg6Dx_host = Dg6Dx_tpetra->getLocalViewHost();
+      auto Dg6Dx_host = Dg6Dx_tpetra->getLocalViewHost(Tpetra::Access::ReadWrite);
       Dg6Dx_host(0,0) = 2.0;
     }
     // Right most value
     if (comm_->getRank() == (comm_->getSize()-1)) {
-      auto Dg6Dx_host = Dg6Dx_tpetra->getLocalViewHost();
+      auto Dg6Dx_host = Dg6Dx_tpetra->getLocalViewHost(Tpetra::Access::ReadWrite);
       Dg6Dx_host(Dg6Dx_host.extent(0)-1,0) = -1.0;
     }
   }
@@ -613,8 +597,6 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (fill_DfDp2) {
     auto DfDp2_tpetra = tpetra_extract::getTpetraMultiVector(DfDp2_out);
     DfDp2_tpetra->putScalar(0.0);
-    DfDp2_tpetra->sync_device();
-    DfDp2_tpetra->modify_device();
 
     DfDp2EvaluatorFunctor<NOX::TMultiVector> functor(*DfDp2_tpetra, *xPtr_, *uPtr_, myRank, k_val);
     Kokkos::parallel_for("DfDp2 evaluation", numMyElements, functor);
@@ -624,13 +606,11 @@ evalModel(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (fill_DfDp4) {
     auto DfDp4_tpetra = tpetra_extract::getTpetraMultiVector(DfDp4_out);
     DfDp4_tpetra->putScalar(0.0);
-    DfDp4_tpetra->sync_host();
-    DfDp4_tpetra->modify_host();
 
     // Dirichlet BC on left is the equation:
     // f(0) = T_left - p(4)
     if (comm_->getRank() == 0) {
-      auto DfDp4_host = DfDp4_tpetra->getLocalViewHost();
+      auto DfDp4_host = DfDp4_tpetra->getLocalViewHost(Tpetra::Access::ReadWrite);
       DfDp4_host(0,0) = -1.0;
     }
   }
