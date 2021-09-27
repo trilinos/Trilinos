@@ -77,9 +77,7 @@ IntegrationRule(const panzer::CellData& cell_data, const std::string & in_cv_typ
                                 "IntegrationRule::IntegrationRule : Control Volume 'volume' type requested, but CellData is setup for sides.");
     IntegrationDescriptor::setup(75, IntegrationDescriptor::CV_VOLUME);
   } else if(in_cv_type == "side"){
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(not cell_data.isSide(),
-                                "IntegrationRule::IntegrationRule : Control Volume 'side' type requested, but CellData is not setup for sides.");
-    IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE,cell_data.side());
+    IntegrationDescriptor::setup(85, IntegrationDescriptor::CV_SIDE);
   } else if(in_cv_type == "boundary"){
     TEUCHOS_TEST_FOR_EXCEPT_MSG(not cell_data.isSide(),
                                 "IntegrationRule::IntegrationRule : Control Volume 'boundary' type requested, but CellData is not setup for sides.");

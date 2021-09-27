@@ -1241,17 +1241,6 @@ getWeightedNormals(const bool cache,
 
   auto aux = af.template buildStaticArray<Scalar,Cell,IP,Dim>("weighted_normals",num_cells_,num_ip,num_space_dim);
 
-  if (int_rule->isSide() && num_space_dim==1) {
-    std::cout << "WARNING: 0-D quadrature rule infrastructure does not exist!!! Will not be able to do "
-        << "non-natural integration rules.";
-    return aux;
-  }
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(not int_rule->isSide(),
-                              "IntegrationValues2::getWeightedNormals : Weighted normals are only available for side integration rules.");
-
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(int_rule->cv_type != "side",
-                              "IntegrationValues2::getWeightedNormals : Weighted normals are only available for side control volume integration rules.");
-
   TEUCHOS_TEST_FOR_EXCEPT_MSG(int_rule->getType() == IntegrationDescriptor::SURFACE,
                               "IntegrationValues2::getWeightedNormals : Cannot build reference weighted normals for surface integration scheme.");
 

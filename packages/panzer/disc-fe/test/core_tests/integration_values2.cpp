@@ -125,7 +125,6 @@ namespace panzer {
     const int num_cells = 20;
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
-    const panzer::CellData side_cell_data(num_cells,0,topo);
 
     std::string cv_type = "volume";
     RCP<IntegrationRule> int_rule_vol =
@@ -135,7 +134,7 @@ namespace panzer {
 
     cv_type = "side";
     RCP<IntegrationRule> int_rule_side =
-      rcp(new IntegrationRule(side_cell_data, cv_type));
+      rcp(new IntegrationRule(cell_data, cv_type));
 
     const int num_vertices = int_rule_vol->topology->getNodeCount();
     PHX::MDField<double,Cell,NODE,Dim> node_coordinates
