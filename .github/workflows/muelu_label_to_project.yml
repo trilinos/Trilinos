@@ -19,7 +19,7 @@ jobs:
       with:
         project: 'https://github.com/trilinos/Trilinos/projects/5'
 
-    - name: Assign existing issues with `pkg: MueLu` label to MueLu project (number 5)
+    - name: Assign existing issues with pkg MueLu label to MueLu project (number 5)
       uses: srggrs/assign-one-project-github-action@1.2.1
       if: 
         contains(github.event.issue.labels.*.name, 'pkg: MueLu') 
