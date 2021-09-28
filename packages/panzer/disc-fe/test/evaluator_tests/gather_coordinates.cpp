@@ -53,6 +53,7 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
+#include "Kokkos_View_Fad.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_IntegrationValues2.hpp"
@@ -106,15 +107,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
-
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) { 
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+      
+      coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+      coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+      coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+      coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    });
+  Kokkos::fence();
 
   // build topology, basis, integration rule, and basis layout
   int quadOrder = 5;
@@ -210,11 +214,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   fm->getFieldData<EvalType>(fmCoords);
 
   fmCoords.print(out,true);
-
-  for(int cell=0;cell<fmCoords.extent_int(0);++cell)
+  int error = false;
+  Kokkos::parallel_reduce(fmCoords.extent_int(0), KOKKOS_LAMBDA (int cell, int &err) {
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
       for(int d=0;d<fmCoords.extent_int(2);++d)
-	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,d)),coords(cell,pt,d));
+	err |= ScalarValue::eval(fmCoords(cell,pt,d))!=coords(cell,pt,d);
+    },error);
+  TEST_EQUALITY(error, false);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
@@ -245,16 +251,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int ) { 
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
 
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
-
+      coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+      coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+      coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+      coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    });
   // build topology, basis, integration rule, and basis layout
   int quadOrder = 5;
   Teuchos::RCP<shards::CellTopology> topo
@@ -350,10 +357,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
 
   fmCoords.print(out,true);
 
-  for(int cell=0;cell<fmCoords.extent_int(0);++cell)
+  int error = false;
+  auto q_coords = quadValues->ip_coordinates;
+  Kokkos::parallel_reduce(fmCoords.extent_int(0), KOKKOS_LAMBDA (int cell, int &err) {
     for(int pt=0;pt<fmCoords.extent_int(1);++pt)
       for(int d=0;d<fmCoords.extent_int(2);++d)
-	TEST_EQUALITY(ScalarValue::eval(fmCoords(cell,pt,d)),quadValues->ip_coordinates(cell,pt,d));
+	err |= ScalarValue::eval(fmCoords(cell,pt,d)) != q_coords(cell,pt,d);
+    },error);
+  TEST_EQUALITY(error, false);
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

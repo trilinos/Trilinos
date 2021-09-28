@@ -35,6 +35,7 @@
 #define STK_UTIL_UTIL_STRIDEDARRAY_HPP
 
 #include "stk_util/stk_config.h"
+#include <Kokkos_Core.hpp>
 
 namespace stk
 {
@@ -46,24 +47,24 @@ template <typename T>
 class StridedArray
 {
 public:
-  STK_FUNCTION 
+  KOKKOS_FUNCTION 
   StridedArray() : dataPointer(nullptr), length(0), stride(defaultStride)
   {
   }
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   StridedArray(T* e, unsigned n, int stride_in=defaultStride) : dataPointer(e), length(n), stride(stride_in)
   {
   }
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   T operator[](unsigned i) const
   {
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
     return dataPointer[stride*i];
 #else
     return dataPointer[i];
 #endif
   }
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   unsigned size() const
   { 
     return length;

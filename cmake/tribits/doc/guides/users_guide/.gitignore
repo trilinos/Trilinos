@@ -1,0 +1,16 @@
+# Ignore generated files
+
+/TribitsUsersGuide.aux
+/TribitsUsersGuide.html
+/TribitsUsersGuide.log
+/TribitsUsersGuide.pdf
+/TribitsUsersGuide.tex
+/TribitsUsersGuide.tex.log
+/TribitsUsersGuide.toc
+
+/TribitsMacroFunctionDoc.rst
+/TribitsMacroFunctionDoc.rst.tmp
+/TribitsSystemMacroFunctionDoc.rst
+/TribitsSystemMacroFunctionDoc.rst.tmp
+/UtilsMacroFunctionDoc.rst
+/UtilsMacroFunctionDoc.rst.tmp

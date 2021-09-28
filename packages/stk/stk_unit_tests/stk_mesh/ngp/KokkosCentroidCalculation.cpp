@@ -2,7 +2,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <sys/time.h>
 
-STK_FUNCTION void get_value(DeviceViewVectorType data, size_t index, my_double& value)
+KOKKOS_FUNCTION void get_value(DeviceViewVectorType data, size_t index, my_double& value)
 {
   value = data(index);
 }

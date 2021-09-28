@@ -231,8 +231,14 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   // Minimize number of times that we grow the memory buffer used for transferring field data.
   auto max_field = calculate_maximum_field_size(region);
   if (options.verbose && rank == 0) {
-    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {:L} bytes for field '{}'.\n",
-               max_field.first, max_field.second);
+    std::string label = "MiB";
+    double      size  = (double)max_field.first / 1024 / 1024;
+    if (size > 1024.0) {
+      label = "GiB";
+      size /= 1024.0;
+    }
+    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {:L} bytes ({:.3} {}) for field '{}'.\n",
+               max_field.first, size, label, max_field.second);
   }
 
   DataPool data_pool;
@@ -278,6 +284,17 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   std::vector<int> selected_steps = get_selected_steps(region, options);
 
   int step_count = region.get_property("state_count").get_int();
+#ifdef SEACAS_HAVE_MPI
+  int min_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MIN);
+  int max_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MAX);
+  if (min_step_count != max_step_count) {
+    std::ostringstream errmsg;
+    fmt::print(errmsg,
+               "ERROR: Number of timesteps does not match on all ranks.  Range from {} to {}.\n",
+               min_step_count, max_step_count);
+    IOSS_ERROR(errmsg);
+  }
+#endif
   for (int istep = 1; istep <= step_count; istep++) {
     if (selected_steps[istep] == 1) {
       transfer_step(region, output_region, data_pool, istep, options, rank);
@@ -894,7 +911,7 @@ namespace {
   void transfer_structuredblocks(Ioss::Region &region, Ioss::Region &output_region,
                                  const Ioss::MeshCopyOptions &options, int rank)
   {
-    auto blocks = region.get_structured_blocks();
+    const auto &blocks = region.get_structured_blocks();
     if (!blocks.empty()) {
       size_t total_entities = 0;
       if (options.reverse) {
@@ -983,8 +1000,7 @@ namespace {
   void transfer_sidesets(Ioss::Region &region, Ioss::Region &output_region,
                          const Ioss::MeshCopyOptions &options, int rank)
   {
-    const auto &fss         = region.get_sidesets();
-    size_t      total_sides = 0;
+    const auto &fss = region.get_sidesets();
     for (const auto &ss : fss) {
       const std::string &name = ss->name();
       if (options.debug && rank == 0) {
@@ -1009,8 +1025,6 @@ namespace {
     if (options.verbose && rank == 0 && !fss.empty()) {
       fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n", (*fss.begin())->type_string() + "s",
                  fss.size());
-      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                 (*fss.begin())->contains_string() + "s", total_sides);
     }
     if (options.debug && rank == 0) {
       fmt::print(Ioss::DEBUG(), "\n");
@@ -1437,7 +1451,7 @@ namespace {
 
       // Set locally_owned_count property on all nodesets...
       const Ioss::NodeSetContainer &nss = region.get_nodesets();
-      for (auto ns : nss) {
+      for (const auto &ns : nss) {
 
         std::vector<INT> ids;
         ns->get_field_data("ids_raw", ids);

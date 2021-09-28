@@ -127,7 +127,7 @@ Examples using Ifpack_SerialTriDiSolver can be found in the Epetra test director
 */
 
 //=========================================================================
-class EPETRA_LIB_DLL_EXPORT Ifpack_SerialTriDiSolver :
+class Ifpack_SerialTriDiSolver :
   public Epetra_CompObject, public Epetra_BLAS,
   public Epetra_Object    {
   public:

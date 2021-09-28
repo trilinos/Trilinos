@@ -31,7 +31,7 @@
  * \ingroup ModelDescription
  * \undoc
  */
-int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, char *ftype)
+int ex_put_init_info(int exoid, int num_proc, int num_proc_in_f, const char *ftype)
 {
   int  dimid, varid;
   int  ltempsv;

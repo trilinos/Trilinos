@@ -70,17 +70,17 @@ ScatterCellAvgVector(
   using panzer::Dim;
 
   std::string scatterName = p.get<std::string>("Scatter Name");
- 
-  const std::vector<std::string> & names = 
+
+  const std::vector<std::string> & names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
-  Teuchos::RCP<panzer::IntegrationRule> intRule = 
+  Teuchos::RCP<panzer::IntegrationRule> intRule =
     p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
 
   // build dependent fields
   scatterFields_.resize(names.size());
   stkFields_.resize(names.size());
-  for (std::size_t fd = 0; fd < names.size(); ++fd) 
+  for (std::size_t fd = 0; fd < names.size(); ++fd)
   {
     scatterFields_[fd] = PHX::MDField<const ScalarT,Cell,Point,Dim>(names[fd],intRule->dl_vector);
     this->addDependentField(scatterFields_[fd]);
@@ -101,7 +101,7 @@ postRegistrationSetup(
   typename Traits::SetupData /* d */,
   PHX::FieldManager<Traits>& /* fm */)
 {
-  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) 
+  for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd)
   {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
 
@@ -122,36 +122,36 @@ evaluateFields(
   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
   std::string blockId = this->wda(workset).block_id;
   std::string d_mod[3] = {"X","Y","Z"};
-   
+
   // loop over the number of vector fields requested for exodus output
-  for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) 
+  for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++)
   {
     PHX::MDField<const ScalarT,panzer::Cell,panzer::Point,panzer::Dim> & field = scatterFields_[fieldIndex];
     std::string fieldName = field.fieldTag().name();
     int numCells = field.extent(0);
-    int numPoints = field.extent(1);  
+    int numPoints = field.extent(1);
     int numDims = field.extent(2);
-    
+
     for (int dim = 0; dim < numDims; dim++)
-    {  
+    {
       // std::vector<double> average(numCells,0.0);
       PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",numCells,1);
-      
+
       // write to double field
       for(int i = 0; i < numCells; i++)  // loop over cells
       {
          average(i,0) = 0.0;
-         for(int j = 0; j < numPoints; j++)  // loop over IPs 
+         for(int j = 0; j < numPoints; j++)  // loop over IPs
             average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j,dim));
-         
+
          average(i,0) /= numPoints;
       }
 
-      mesh_->setCellFieldData(fieldName+d_mod[dim],blockId,localCellIds,average);
-      
+      mesh_->setCellFieldData(fieldName+d_mod[dim],blockId,localCellIds,average.get_view());
+
     }
   }
-  
+
 }
 
 } // end panzer_stk

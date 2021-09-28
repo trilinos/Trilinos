@@ -146,7 +146,7 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ = View<View<const ScalarT**>*>(
+    kokkosFieldMults_ = View<Kokkos::View<const ScalarT**, typename PHX::DevLayout<ScalarT>::type, Kokkos::MemoryUnmanaged>*>(
       "CurlBasisDotVector::KokkosFieldMultipliers", fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -256,7 +256,7 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(multipliers.size());
-    kokkosFieldMults_ = View<View<const ScalarT**>*>(
+    kokkosFieldMults_ = View<Kokkos::View<const ScalarT**, typename PHX::DevLayout<ScalarT>::type, Kokkos::MemoryUnmanaged>*>(
       "CurlBasisDotVector::KokkosFieldMultipliers", multipliers.size());
     for (const auto& fm : multipliers)
     {
@@ -291,9 +291,10 @@ namespace panzer
     using std::vector;
 
     // Get the PHX::Views of the field multipliers.
+    auto kokkosFieldMults_h = Kokkos::create_mirror_view(kokkosFieldMults_);
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
-
+      kokkosFieldMults_h(i) = fieldMults_[i].get_static_view();
+    Kokkos::deep_copy(kokkosFieldMults_, kokkosFieldMults_h);
     // Determine the index in the Workset bases for our particular basis
     // name.
     if (not useDescriptors_)
@@ -592,7 +593,7 @@ namespace panzer
         /**
          *  \brief The vector basis information necessary for integration.
          */
-        PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
+        PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP,
           panzer::Dim> weightedCurlBasis;
 
         /**
@@ -665,7 +666,7 @@ namespace panzer
         /**
          *  \brief The vector basis information necessary for integration.
          */
-        PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP>
+        PHX::MDField<const double, panzer::Cell, panzer::BASIS, panzer::IP>
         weightedCurlBasis;
 
         /**
@@ -731,7 +732,8 @@ namespace panzer
       Integrate2D<ScalarT> integrate;
       integrate.result            = result2D_;
       integrate.field             = field_;
-      integrate.weightedCurlBasis = bv.weighted_curl_basis_scalar;
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIP;
+      integrate.weightedCurlBasis = useDescriptors_ ? bv.getCurl2DVectorBasis(true) : Array(bv.weighted_curl_basis_scalar);
       integrate.evalStyle         = evalStyle_;
       parallel_for(workset.num_cells, integrate);
     }
@@ -765,7 +767,8 @@ namespace panzer
       Integrate3D<ScalarT, 3> integrate;
       integrate.result            = result3D_;
       integrate.field             = field_;
-      integrate.weightedCurlBasis = bv.weighted_curl_basis_vector;
+      using Array=typename BasisValues2<double>::ConstArray_CellBasisIPDim;
+      integrate.weightedCurlBasis = useDescriptors_ ? bv.getCurlVectorBasis(true) : Array(bv.weighted_curl_basis_vector);
       integrate.evalStyle         = evalStyle_;
       parallel_for(workset.num_cells, integrate);
     } // end if spaceDim_ is 2 or 3

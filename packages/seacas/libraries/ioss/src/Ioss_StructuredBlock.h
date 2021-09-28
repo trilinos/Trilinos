@@ -96,7 +96,8 @@ namespace Ioss {
                     int nj, int nk, int off_i, int off_j, int off_k, int glo_ni, int glo_nj,
                     int glo_nk);
     StructuredBlock(DatabaseIO *io_database, const std::string &my_name, int index_dim,
-                    Ioss::IJK_t &ordinal, Ioss::IJK_t &offset, Ioss::IJK_t &global_ordinal);
+                    const Ioss::IJK_t &ordinal, const Ioss::IJK_t &offset,
+                    const Ioss::IJK_t &global_ordinal);
 
     // Useful for serial
     StructuredBlock(DatabaseIO *io_database, const std::string &my_name, int index_dim, int ni,
@@ -118,7 +119,7 @@ namespace Ioss {
 
     /** \brief Does block contain any cells
      */
-    bool is_active() const { return m_ni * m_nj * m_nk > 0; }
+    bool is_active() const { return m_ijk[0] * m_ijk[1] * m_ijk[2] > 0; }
 
     // Handle implicit properties -- These are calcuated from data stored
     // in the grouping entity instead of having an explicit value assigned.
@@ -160,12 +161,22 @@ namespace Ioss {
     size_t get_node_global_offset() const { return m_nodeGlobalOffset; }
     size_t get_cell_global_offset() const { return m_cellGlobalOffset; }
 
+    void set_ijk_offset(int axis, size_t offset);
+    void set_ijk_global(int axis, size_t global);
+
+    void set_ijk_offset(const IJK_t &offset);
+    void set_ijk_global(const IJK_t &global);
+
+    IJK_t get_ijk_offset() const { return m_offset; }
+    IJK_t get_ijk_local() const { return m_ijk; }
+    IJK_t get_ijk_global() const { return m_ijkGlobal; }
+
     // Get the global (over all processors) cell
     // id at the specified i,j,k location (1 <= i,j,k <= ni,nj,nk).  1-based.
     size_t get_global_cell_id(int i, int j, int k) const
     {
-      return m_cellGlobalOffset + static_cast<size_t>(k - 1) * m_niGlobal * m_njGlobal +
-             static_cast<size_t>(j - 1) * m_niGlobal + i;
+      return m_cellGlobalOffset + static_cast<size_t>(k - 1) * m_ijkGlobal[0] * m_ijkGlobal[1] +
+             static_cast<size_t>(j - 1) * m_ijkGlobal[0] + i;
     }
 
     size_t get_global_cell_id(IJK_t index) const
@@ -178,8 +189,9 @@ namespace Ioss {
     // for shared nodes.
     size_t get_global_node_offset(int i, int j, int k) const
     {
-      return m_nodeGlobalOffset + static_cast<size_t>(k - 1) * (m_niGlobal + 1) * (m_njGlobal + 1) +
-             static_cast<size_t>(j - 1) * (m_niGlobal + 1) + i - 1;
+      return m_nodeGlobalOffset +
+             static_cast<size_t>(k - 1) * (m_ijkGlobal[0] + 1) * (m_ijkGlobal[1] + 1) +
+             static_cast<size_t>(j - 1) * (m_ijkGlobal[0] + 1) + i - 1;
     }
 
     size_t get_global_node_offset(IJK_t index) const
@@ -191,12 +203,13 @@ namespace Ioss {
     // i,j,k location (1 <= i,j,k <= ni+1,nj+1,nk+1).  0-based.
     size_t get_block_local_node_offset(int ii, int jj, int kk) const
     {
-      auto i = ii - m_offsetI;
-      auto j = jj - m_offsetJ;
-      auto k = kk - m_offsetK;
-      assert(i > 0 && i <= m_ni + 1 && j > 0 && j <= m_nj + 1 && k > 0 && k <= m_nk + 1);
-      return static_cast<size_t>(k - 1) * (m_ni + 1) * (m_nj + 1) +
-             static_cast<size_t>(j - 1) * (m_ni + 1) + i - 1;
+      auto i = ii - m_offset[0];
+      auto j = jj - m_offset[1];
+      auto k = kk - m_offset[2];
+      assert(i > 0 && i <= m_ijk[0] + 1 && j > 0 && j <= m_ijk[1] + 1 && k > 0 &&
+             k <= m_ijk[2] + 1);
+      return static_cast<size_t>(k - 1) * (m_ijk[0] + 1) * (m_ijk[1] + 1) +
+             static_cast<size_t>(j - 1) * (m_ijk[0] + 1) + i - 1;
     }
 
     size_t get_block_local_node_offset(IJK_t index) const
@@ -239,18 +252,19 @@ namespace Ioss {
       size_t index  = 0;
       size_t offset = add_offset ? m_nodeGlobalOffset : 0;
 
-      if (m_nk == 0 && m_nj == 0 && m_ni == 0) {
+      if (m_ijk[2] == 0 && m_ijk[1] == 0 && m_ijk[0] == 0) {
         return index;
       }
 
-      for (int kk = 0; kk < m_nk + 1; kk++) {
-        size_t k = m_offsetK + kk;
-        for (int jj = 0; jj < m_nj + 1; jj++) {
-          size_t j = m_offsetJ + jj;
-          for (int ii = 0; ii < m_ni + 1; ii++) {
-            size_t i = m_offsetI + ii;
+      for (int kk = 0; kk < m_ijk[2] + 1; kk++) {
+        size_t k = m_offset[2] + kk;
+        for (int jj = 0; jj < m_ijk[1] + 1; jj++) {
+          size_t j = m_offset[1] + jj;
+          for (int ii = 0; ii < m_ijk[0] + 1; ii++) {
+            size_t i = m_offset[0] + ii;
 
-            size_t ind = k * (m_niGlobal + 1) * (m_njGlobal + 1) + j * (m_niGlobal + 1) + i;
+            size_t ind =
+                k * (m_ijkGlobal[0] + 1) * (m_ijkGlobal[1] + 1) + j * (m_ijkGlobal[0] + 1) + i;
 
             idata[index++] = ind + offset + 1;
           }
@@ -279,18 +293,18 @@ namespace Ioss {
       size_t index  = 0;
       size_t offset = add_offset ? m_cellGlobalOffset : 0;
 
-      if (m_nk == 0 && m_nj == 0 && m_ni == 0) {
+      if (m_ijk[2] == 0 && m_ijk[1] == 0 && m_ijk[0] == 0) {
         return index;
       }
 
-      for (int kk = 0; kk < m_nk; kk++) {
-        size_t k = m_offsetK + kk;
-        for (int jj = 0; jj < m_nj; jj++) {
-          size_t j = m_offsetJ + jj;
-          for (int ii = 0; ii < m_ni; ii++) {
-            size_t i = m_offsetI + ii;
+      for (int kk = 0; kk < m_ijk[2]; kk++) {
+        size_t k = m_offset[2] + kk;
+        for (int jj = 0; jj < m_ijk[1]; jj++) {
+          size_t j = m_offset[1] + jj;
+          for (int ii = 0; ii < m_ijk[0]; ii++) {
+            size_t i = m_offset[0] + ii;
 
-            size_t ind = k * m_niGlobal * m_njGlobal + j * m_niGlobal + i;
+            size_t ind = k * m_ijkGlobal[0] * m_ijkGlobal[1] + j * m_ijkGlobal[0] + i;
 
             idata[index++] = ind + offset + 1;
           }
@@ -318,18 +332,10 @@ namespace Ioss {
                                     size_t data_size) const override;
 
   private:
-    bool equal_(const Ioss::StructuredBlock &rhs, bool quiet) const;
-    int  m_ni{};
-    int  m_nj{};
-    int  m_nk{};
-
-    int m_offsetI{}; // Valid 'i' ordinal runs from m_offsetI+1 to m_offsetI+m_ni
-    int m_offsetJ{};
-    int m_offsetK{};
-
-    int m_niGlobal{}; // The ni,nj,nk of the master block this is a subset of.
-    int m_njGlobal{};
-    int m_nkGlobal{};
+    bool  equal_(const Ioss::StructuredBlock &rhs, bool quiet) const;
+    IJK_t m_ijk;
+    IJK_t m_offset;    // Valid 'i' ordinal runs from m_offset[i]+1 to m_offset[i]+m_ijk[i]
+    IJK_t m_ijkGlobal; // The ni,nj,nk of the master block this is a subset of.
 
     size_t m_nodeOffset{};
     size_t m_cellOffset{};

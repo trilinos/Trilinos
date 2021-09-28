@@ -122,6 +122,7 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
 
 
   face_to_elem_ = PHX::View<GlobalOrdinal*[2]>("FaceToElems::face_to_elem_",face_map->getNodeNumElements());
+  auto face_to_elem_h = Kokkos::create_mirror_view(face_to_elem_);
   num_boundary_faces_=0;
   for (int i(0); i < face_to_elem_.extent_int(0); ++i)
   {
@@ -129,15 +130,15 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
     size_t num_ent;
     graph_overlap.getGlobalRowCopy(face_map->getGlobalElement(i), indices, num_ent);
     assert(num_ent == 2 || num_ent == 1);
-    face_to_elem_(i,0) = indices(0);
+    face_to_elem_h(i,0) = indices(0);
     if ( num_ent == 2)
-      face_to_elem_(i,1) = indices(1);
+      face_to_elem_h(i,1) = indices(1);
     else {
-      face_to_elem_(i,1) = -1;
+      face_to_elem_h(i,1) = -1;
       num_boundary_faces_++;
     }
   }
-
+  Kokkos::deep_copy(face_to_elem_, face_to_elem_h);
 
   // Now we can get the nodal values
   std::vector<std::vector<int>> face_to_node;
@@ -156,7 +157,8 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
 
   }
   face_to_node_ = PHX::View<GlobalOrdinal**>("face_to_node", face_to_elem_.extent(0), face_to_node[0].size());
-  Kokkos::deep_copy(face_to_node_, -1);
+  auto face_to_node_h = Kokkos::create_mirror_view(face_to_node_);
+  Kokkos::deep_copy(face_to_node_h, -1);
   for (int ielem=0;ielem< static_cast<int>(elem_to_face_.size()); ++ielem) {
     const auto * connectivity = conn_->getConnectivity(ielem);
     for (int iface=0; iface <static_cast<int>(elem_to_face_[ielem].size()); ++iface ) {
@@ -164,13 +166,14 @@ FaceToElems::FaceToElems(Teuchos::RCP<panzer::ConnManager> conn) :
       {
         GlobalOrdinal g_face = elem_to_face_[ielem][iface];
         LocalOrdinal l_face = face_map->getLocalElement(g_face);
-        face_to_node_(l_face, inode) = connectivity[face_to_node[iface][inode]];
+        face_to_node_h(l_face, inode) = connectivity[face_to_node[iface][inode]];
       }
     }
   }
   for (int i(0); i < face_to_node_.extent_int(0); ++i)
     for (int j(0); j < face_to_node_.extent_int(1); ++j)
-      TEUCHOS_ASSERT(face_to_node_(i,j) >=0);
+      TEUCHOS_ASSERT(face_to_node_h(i,j) >=0);
+  Kokkos::deep_copy(face_to_node_, face_to_node_h);
 }
 
 void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > worksets){
@@ -193,12 +196,16 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
   }
   face_normal_ = PHX::View<double***> ("FaceToElems::face_normal_", total_elements_, face_to_node.size(), dimension_ );
   face_centroid_ = PHX::View<double***> ("FaceToElems::face_centroid_", total_elements_, face_to_node.size(), dimension_ );
+  auto face_normal_h = Kokkos::create_mirror_view(face_normal_);
+  auto face_centroid_h = Kokkos::create_mirror_view(face_centroid_);
 
   int num_worksets = worksets->size();
 
   for (int nwkst=0; nwkst<num_worksets; ++nwkst){
     panzer::Workset &workset = (*worksets)[nwkst];
     auto coords = workset.cell_vertex_coordinates;
+    auto coords_h = Kokkos::create_mirror_view(coords.get_static_view());
+    Kokkos::deep_copy(coords_h, coords.get_static_view());
     int num_cells = workset.num_cells;
     // Compute the rough cell face centroid
     for (int c=0; c<num_cells; ++c) {
@@ -206,20 +213,20 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
         std::vector<double> center(dimension_, 0.0);
         for (int nnode=0; nnode < static_cast<int>(face_to_node[nface].size()); ++nnode)
           for (int idim=0;idim<dimension_; ++idim)
-            center[idim] += coords(c,face_to_node[nface][nnode], idim);
+            center[idim] += coords_h(c,face_to_node[nface][nnode], idim);
         for (int idim=0;idim<dimension_; ++idim)
-          face_centroid_(workset.cell_local_ids[c], nface, idim) =  center[idim]/face_to_node[nface].size();
+          face_centroid_h(workset.cell_local_ids[c], nface, idim) =  center[idim]/face_to_node[nface].size();
 
       }
     }
     // Now lets compute the face normals
-    PHX::View<double**> edges("temp::Edges",40, dimension_);  // overkill on 40 size
+    typename PHX::View<double**>::HostMirror edges("temp::Edges",40, dimension_);  // overkill on 40 size
     for (int c=0; c<num_cells; ++c) {
 
       std::vector<double> center(3,0.);
       for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface)
         for (int idim=0;idim<dimension_; ++idim)
-          center[idim] += face_centroid_(workset.cell_local_ids[c], nface, idim)/face_to_node.size();
+          center[idim] += face_centroid_h(workset.cell_local_ids[c], nface, idim)/face_to_node.size();
 
       for (int nface=0;nface <static_cast<int>(face_to_node.size()); ++nface) {
         std::vector<double> normal(3,0);
@@ -227,12 +234,12 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
         // Create centroid to node edges.
         for (int nnode=0; nnode < static_cast<int>(face_to_node[nface].size()); ++nnode) {
           for (int idim=0;idim<dimension_; ++idim)
-            edges(nnode,idim) = coords(c,face_to_node[nface][nnode], idim) - face_centroid_(workset.cell_local_ids[c], nface, idim);
+            edges(nnode,idim) = coords_h(c,face_to_node[nface][nnode], idim) - face_centroid_h(workset.cell_local_ids[c], nface, idim);
         }
 
         std::vector<double> approx_normal(3);
         for (int idim=0;idim<dimension_; ++idim)
-          approx_normal[idim] = center[idim]-face_centroid_(workset.cell_local_ids[c], nface, idim);
+          approx_normal[idim] = center[idim]-face_centroid_h(workset.cell_local_ids[c], nface, idim);
 
         if ( dimension_ == 1) {
           normal[0] = 1;
@@ -254,18 +261,23 @@ void FaceToElems::setNormals(Teuchos::RCP<std::vector<panzer::Workset> > workset
         if ( sign < 0 )
           normal_norm *= -1;
         for (int idim=0;idim<dimension_; ++idim)
-          face_normal_(workset.cell_local_ids[c], nface, idim) = normal[idim]/normal_norm;
+          face_normal_h(workset.cell_local_ids[c], nface, idim) = normal[idim]/normal_norm;
 
       }
     }
   }
+  Kokkos::deep_copy(face_centroid_, face_centroid_h);
+  Kokkos::deep_copy(face_normal_, face_normal_h);
 }
 void FaceToElems::getNormal(LocalOrdinal ielem, int iface, std::vector<double> &normal){
   TEUCHOS_ASSERT(ielem < face_normal_.extent_int(0));
   TEUCHOS_ASSERT(iface < face_normal_.extent_int(1));
   normal.resize(dimension_);
+  auto face_normal_h = Kokkos::create_mirror_view(face_normal_);
+  Kokkos::deep_copy(face_normal_h, face_normal_);
+
   for (int idim=0;idim<dimension_; ++idim)
-    normal[idim] = face_normal_(ielem, iface, idim);
+    normal[idim] = face_normal_h(ielem, iface, idim);
 }
 
 

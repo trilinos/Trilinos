@@ -3,26 +3,26 @@
 #
 
 
-SET(TRIBITS_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
-SET(CTEST_SOURCE_NAME "TribitsExampleProject")
-INCLUDE("${TRIBITS_PROJECT_ROOT}/ProjectName.cmake")
-IF (NOT "$ENV{${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
-  SET(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
-ENDIF()
-IF("${${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
+set(TRIBITS_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
+set(CTEST_SOURCE_NAME "TribitsExampleProject")
+include("${TRIBITS_PROJECT_ROOT}/ProjectName.cmake")
+if (NOT "$ENV{${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
+  set(${PROJECT_NAME}_TRIBITS_DIR "$ENV{${PROJECT_NAME}_TRIBITS_DIR}")
+endif()
+if("${${PROJECT_NAME}_TRIBITS_DIR}" STREQUAL "")
   # If not set externally, then assume this is inside of tribits example
   # directory.
-  SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../..")
-ENDIF()
+  set(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../..")
+endif()
 
 #
 # Include the TriBITS file to get other modules included
 #
 
-INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/ctest_driver/TribitsCTestDriverCore.cmake")
+include("${${PROJECT_NAME}_TRIBITS_DIR}/ctest_driver/TribitsCTestDriverCore.cmake")
 
-FUNCTION(TRIBITSEXPROJ_CTEST_DRIVER)
-  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j1 -i" )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_PARALLEL_LEVEL "1" )
-  TRIBITS_CTEST_DRIVER()
-ENDFUNCTION()
+function(tribitsexproj_ctest_driver)
+  set_default_and_from_env( CTEST_BUILD_FLAGS "-j1 -i" )
+  set_default_and_from_env( CTEST_PARALLEL_LEVEL "1" )
+  tribits_ctest_driver()
+endfunction()

@@ -82,19 +82,22 @@ template <typename EvalT,typename Traits>
 void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   using panzer::index_t;
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < source.extent_int(1); ++point) {
-      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
+  auto ip_coordinates = workset.int_rules[ir_index]->ip_coordinates.get_static_view();
+  auto source_v = source.get_static_view();
+ 
+  Kokkos::parallel_for ("SimpleSource", workset.num_cells, KOKKOS_LAMBDA (const index_t cell) {
+    for (int point = 0; point < source_v.extent_int(1); ++point) {
+      const double & x = ip_coordinates(cell,point,0);
+      const double & y = ip_coordinates(cell,point,1);
 
-      if (this->wda(workset).int_rules[ir_index]->ip_coordinates.extent(2) == 2) {
-        source(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y);
+      if (ip_coordinates.extent(2) == 2) {
+        source_v(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y);
       } else {
-        const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);
-        source(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y)*cos(2*M_PI*z);
+        const double & z = ip_coordinates(cell,point,2);
+        source_v(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y)*cos(2*M_PI*z);
       }
     }
-  }
+  });
 }
 
 //**********************************************************************

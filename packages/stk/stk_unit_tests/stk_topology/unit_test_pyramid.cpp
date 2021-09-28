@@ -32,10 +32,46 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_ngp_test/ngp_test.hpp>
-#include <stk_topology/topology.hpp>
-#include "topology_test_utils.hpp"
+#include "Kokkos_Core.hpp"            // for parallel_for, KOKKOS_LAMBDA
+#include "gtest/gtest.h"              // for AssertionResult, Message, TestPartResult, EXPECT_EQ
+#include "stk_ngp_test/ngp_test.hpp"  // for NGP_EXPECT_EQ, NGP_EXPECT_FALSE, NGP_EXPECT_TRUE
+#include "stk_topology/topology.hpp"  // for topology, topology::TRI_6, topology::PYRAMID_5, top...
+#include "topology_test_utils.hpp"    // for INVALID, check_edge_node_ordinals, check_edge_node_...
+#include <vector>                     // for vector
+
+namespace {
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_pyramid5() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1},
+    {1, 2},
+    {2, 3},
+    {3, 0},
+    {0, 4},
+    {1, 4},
+    {2, 4},
+    {3, 4}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_pyramid5() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 4},
+    {1, 2, 4},
+    {2, 3, 4},
+    {0, 4, 3},
+    {0, 3, 2, 1}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_pyramid5() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2, 3, 4},
+    {1, 2, 3, 0, 4},
+    {2, 3, 0, 1, 4},
+    {3, 0, 1, 2, 4}
+  };
+}
 
 TEST(stk_topology, pyramid_5)
 {
@@ -66,40 +102,27 @@ TEST(stk_topology, pyramid_5)
   EXPECT_EQ(t.face_topology(3), stk::topology::TRI_3);
   EXPECT_EQ(t.face_topology(4), stk::topology::QUAD_4);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1},
-                                                                 {1, 2},
-                                                                 {2, 3},
-                                                                 {3, 0},
-                                                                 {0, 4},
-                                                                 {1, 4},
-                                                                 {2, 4},
-                                                                 {3, 4} };
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_pyramid5());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_pyramid5());
 
-  std::vector<std::vector<unsigned>> gold_face_node_ordinals = { {0, 1, 4},
-                                                                 {1, 2, 4},
-                                                                 {2, 3, 4},
-                                                                 {0, 4, 3},
-                                                                 {0, 3, 2, 1} };
-  check_side_node_ordinals(t, gold_face_node_ordinals);
-  check_face_node_ordinals(t, gold_face_node_ordinals);
-  check_side_nodes(t, gold_face_node_ordinals);
-  check_face_nodes(t, gold_face_node_ordinals);
+  check_side_node_ordinals(t, get_gold_face_node_ordinals_pyramid5());
+  check_face_node_ordinals(t, get_gold_face_node_ordinals_pyramid5());
+  check_side_nodes(t, get_gold_face_node_ordinals_pyramid5());
+  check_face_nodes(t, get_gold_face_node_ordinals_pyramid5());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0, 1, 2, 3, 4},
-                                                                        {1, 2, 3, 0, 4},
-                                                                        {2, 3, 0, 1, 4},
-                                                                        {3, 0, 1, 2, 4} };
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_pyramid5());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_pyramid5());
 
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_pyramid5());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_pyramid5());
 }
 
 void check_pyramid_5_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_pyramid5());
+  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_pyramid5());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_pyramid5());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::PYRAMID_5;
@@ -129,36 +152,21 @@ void check_pyramid_5_on_device()
     NGP_EXPECT_EQ(t.face_topology(3), stk::topology::TRI_3);
     NGP_EXPECT_EQ(t.face_topology(4), stk::topology::QUAD_4);
 
-    unsigned gold_edge_node_ordinals[8][2] = { {0, 1},
-                                               {1, 2},
-                                               {2, 3},
-                                               {3, 0},
-                                               {0, 4},
-                                               {1, 4},
-                                               {2, 4},
-                                               {3, 4} };
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PYRAMID_5>::num_nodes;
 
-    unsigned gold_face_node_ordinals[5][4] = { {0, 1, 4, INVALID},
-                                               {1, 2, 4, INVALID},
-                                               {2, 3, 4, INVALID},
-                                               {0, 4, 3, INVALID},
-                                               {0, 3, 2, 1} };
-    check_side_node_ordinals_ngp(t, gold_face_node_ordinals);
-    check_face_node_ordinals_ngp(t, gold_face_node_ordinals);
-    check_side_nodes_ngp(t, gold_face_node_ordinals);
-    check_face_nodes_ngp(t, gold_face_node_ordinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    unsigned gold_permutation_node_ordinals[4][5] = { {0, 1, 2, 3, 4},
-                                                      {1, 2, 3, 0, 4},
-                                                      {2, 3, 0, 1, 4},
-                                                      {3, 0, 1, 2, 4} };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_face_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
@@ -167,6 +175,38 @@ NGP_TEST(stk_topology_ngp, pyramid_5)
   check_pyramid_5_on_device();
 }
 
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_pyramid13() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 5},
+    {1, 2, 6},
+    {2, 3, 7},
+    {3, 0, 8},
+    {0, 4, 9},
+    {1, 4, 10},
+    {2, 4, 11},
+    {3, 4, 12}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_pyramid13() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 4, 5, 10,  9},
+    {1, 2, 4, 6, 11, 10},
+    {2, 3, 4, 7, 12, 11},
+    {3, 0, 4, 8,  9, 12},
+    {0, 3, 2, 1,  8,  7, 6, 5}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_pyramid13() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10, 11, 12},
+    {1, 2, 3, 0, 4, 6, 7, 8, 5, 10, 11, 12,  9},
+    {2, 3, 0, 1, 4, 7, 8, 5, 6, 11, 12,  9, 10},
+    {3, 0, 1, 2, 4, 8, 5, 6, 7, 12,  9, 10, 11}
+  };
+}
 
 TEST(stk_topology, pyramid_13)
 {
@@ -197,42 +237,27 @@ TEST(stk_topology, pyramid_13)
   EXPECT_EQ(t.face_topology(3), stk::topology::TRI_6);
   EXPECT_EQ(t.face_topology(4), stk::topology::QUAD_8);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1, 5},
-                                                                 {1, 2, 6},
-                                                                 {2, 3, 7},
-                                                                 {3, 0, 8},
-                                                                 {0, 4, 9},
-                                                                 {1, 4, 10},
-                                                                 {2, 4, 11},
-                                                                 {3, 4, 12} };
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_pyramid13());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_pyramid13());
 
-  std::vector<std::vector<unsigned>> gold_face_node_ordinals = { {0, 1, 4, 5, 10,  9},
-                                                                 {1, 2, 4, 6, 11, 10},
-                                                                 {2, 3, 4, 7, 12, 11},
-                                                                 {3, 0, 4, 8,  9, 12},
-                                                                 {0, 3, 2, 1,  8,  7, 6, 5} };
-  check_side_node_ordinals(t, gold_face_node_ordinals);
-  check_face_node_ordinals(t, gold_face_node_ordinals);
-  check_side_nodes(t, gold_face_node_ordinals);
-  check_face_nodes(t, gold_face_node_ordinals);
+  check_side_node_ordinals(t, get_gold_face_node_ordinals_pyramid13());
+  check_face_node_ordinals(t, get_gold_face_node_ordinals_pyramid13());
+  check_side_nodes(t, get_gold_face_node_ordinals_pyramid13());
+  check_face_nodes(t, get_gold_face_node_ordinals_pyramid13());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = {
-    {0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10, 11, 12},
-    {1, 2, 3, 0, 4, 6, 7, 8, 5, 10, 11, 12,  9},
-    {2, 3, 0, 1, 4, 7, 8, 5, 6, 11, 12,  9, 10},
-    {3, 0, 1, 2, 4, 8, 5, 6, 7, 12,  9, 10, 11}
-  };
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_pyramid13());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_pyramid13());
 
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_pyramid13());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_pyramid13());
 }
 
 void check_pyramid_13_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_pyramid13());
+  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_pyramid13());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_pyramid13());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::PYRAMID_13;
@@ -262,38 +287,21 @@ void check_pyramid_13_on_device()
     NGP_EXPECT_EQ(t.face_topology(3), stk::topology::TRI_6);
     NGP_EXPECT_EQ(t.face_topology(4), stk::topology::QUAD_8);
 
-    unsigned gold_edge_node_ordinals[8][3] = { {0, 1, 5},
-                                               {1, 2, 6},
-                                               {2, 3, 7},
-                                               {3, 0, 8},
-                                               {0, 4, 9},
-                                               {1, 4, 10},
-                                               {2, 4, 11},
-                                               {3, 4, 12} };
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PYRAMID_13>::num_nodes;
 
-    unsigned gold_face_node_ordinals[5][8] = { {0, 1, 4, 5, 10,  9, INVALID, INVALID},
-                                               {1, 2, 4, 6, 11, 10, INVALID, INVALID},
-                                               {2, 3, 4, 7, 12, 11, INVALID, INVALID},
-                                               {3, 0, 4, 8,  9, 12, INVALID, INVALID},
-                                               {0, 3, 2, 1,  8,  7, 6, 5} };
-    check_side_node_ordinals_ngp(t, gold_face_node_ordinals);
-    check_face_node_ordinals_ngp(t, gold_face_node_ordinals);
-    check_side_nodes_ngp(t, gold_face_node_ordinals);
-    check_face_nodes_ngp(t, gold_face_node_ordinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    unsigned gold_permutation_node_ordinals[4][13] = {
-      {0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10, 11, 12},
-      {1, 2, 3, 0, 4, 6, 7, 8, 5, 10, 11, 12,  9},
-      {2, 3, 0, 1, 4, 7, 8, 5, 6, 11, 12,  9, 10},
-      {3, 0, 1, 2, 4, 8, 5, 6, 7, 12,  9, 10, 11}
-    };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_face_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
@@ -302,6 +310,38 @@ NGP_TEST(stk_topology_ngp, pyramid_13)
   check_pyramid_13_on_device();
 }
 
+
+std::vector<std::vector<uint8_t>> get_gold_edge_node_ordinals_pyramid14() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 5},
+    {1, 2, 6},
+    {2, 3, 7},
+    {3, 0, 8},
+    {0, 4, 9},
+    {1, 4, 10},
+    {2, 4, 11},
+    {3, 4, 12}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_face_node_ordinals_pyramid14() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 4, 5, 10,  9},
+    {1, 2, 4, 6, 11, 10},
+    {2, 3, 4, 7, 12, 11},
+    {3, 0, 4, 8,  9, 12},
+    {0, 3, 2, 1,  8,  7, 6, 5, 13}
+  };
+}
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals_pyramid14() {
+  return std::vector<std::vector<uint8_t>> {
+    {0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10, 11, 12, 13},
+    {1, 2, 3, 0, 4, 6, 7, 8, 5, 10, 11, 12,  9, 13},
+    {2, 3, 0, 1, 4, 7, 8, 5, 6, 11, 12,  9, 10, 13},
+    {3, 0, 1, 2, 4, 8, 5, 6, 7, 12,  9, 10, 11, 13}
+  };
+}
 
 TEST(stk_topology, pyramid_14)
 {
@@ -332,42 +372,27 @@ TEST(stk_topology, pyramid_14)
   EXPECT_EQ(t.face_topology(3), stk::topology::TRI_6);
   EXPECT_EQ(t.face_topology(4), stk::topology::QUAD_9);
 
-  std::vector<std::vector<unsigned>> gold_edge_node_ordinals = { {0, 1, 5},
-                                                                 {1, 2, 6},
-                                                                 {2, 3, 7},
-                                                                 {3, 0, 8},
-                                                                 {0, 4, 9},
-                                                                 {1, 4, 10},
-                                                                 {2, 4, 11},
-                                                                 {3, 4, 12} };
-  check_edge_node_ordinals(t, gold_edge_node_ordinals);
-  check_edge_nodes(t, gold_edge_node_ordinals);
+  check_edge_node_ordinals(t, get_gold_edge_node_ordinals_pyramid14());
+  check_edge_nodes(t, get_gold_edge_node_ordinals_pyramid14());
 
-  std::vector<std::vector<unsigned>> gold_face_node_ordinals = { { 0, 1, 4, 5, 10,  9},
-                                                                 { 1, 2, 4, 6, 11, 10},
-                                                                 { 2, 3, 4, 7, 12, 11},
-                                                                 { 3, 0, 4, 8,  9, 12},
-                                                                 { 0, 3, 2, 1,  8,  7, 6, 5, 13} };
-  check_side_node_ordinals(t, gold_face_node_ordinals);
-  check_face_node_ordinals(t, gold_face_node_ordinals);
-  check_side_nodes(t, gold_face_node_ordinals);
-  check_face_nodes(t, gold_face_node_ordinals);
+  check_side_node_ordinals(t, get_gold_face_node_ordinals_pyramid14());
+  check_face_node_ordinals(t, get_gold_face_node_ordinals_pyramid14());
+  check_side_nodes(t, get_gold_face_node_ordinals_pyramid14());
+  check_face_nodes(t, get_gold_face_node_ordinals_pyramid14());
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = {
-    {0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10, 11, 12, 13},
-    {1, 2, 3, 0, 4, 6, 7, 8, 5, 10, 11, 12,  9, 13},
-    {2, 3, 0, 1, 4, 7, 8, 5, 6, 11, 12,  9, 10, 13},
-    {3, 0, 1, 2, 4, 8, 5, 6, 7, 12,  9, 10, 11, 13}
-  };
-  check_permutation_node_ordinals(t, gold_permutation_node_ordinals);
-  check_permutation_nodes(t, gold_permutation_node_ordinals);
+  check_permutation_node_ordinals(t, get_gold_permutation_node_ordinals_pyramid14());
+  check_permutation_nodes(t, get_gold_permutation_node_ordinals_pyramid14());
 
-  check_equivalent(t, gold_permutation_node_ordinals);
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_equivalent(t, get_gold_permutation_node_ordinals_pyramid14());
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals_pyramid14());
 }
 
 void check_pyramid_14_on_device()
 {
+  OrdinalType goldEdgeNodeOrdinals = fillGoldOrdinals(get_gold_edge_node_ordinals_pyramid14());
+  OrdinalType goldFaceNodeOrdinals = fillGoldOrdinals(get_gold_face_node_ordinals_pyramid14());
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals_pyramid14());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::PYRAMID_14;
@@ -397,42 +422,27 @@ void check_pyramid_14_on_device()
     NGP_EXPECT_EQ(t.face_topology(3), stk::topology::TRI_6);
     NGP_EXPECT_EQ(t.face_topology(4), stk::topology::QUAD_9);
 
-    unsigned gold_edge_node_ordinals[8][3] = { {0, 1, 5},
-                                               {1, 2, 6},
-                                               {2, 3, 7},
-                                               {3, 0, 8},
-                                               {0, 4, 9},
-                                               {1, 4, 10},
-                                               {2, 4, 11},
-                                               {3, 4, 12} };
-    check_edge_node_ordinals_ngp(t, gold_edge_node_ordinals);
-    check_edge_nodes_ngp(t, gold_edge_node_ordinals);
+    constexpr unsigned numNodes = stk::topology_detail::topology_data<stk::topology::PYRAMID_14>::num_nodes;
 
-    unsigned gold_face_node_ordinals[5][9] = { { 0, 1, 4, 5, 10,  9, INVALID, INVALID, INVALID},
-                                               { 1, 2, 4, 6, 11, 10, INVALID, INVALID, INVALID},
-                                               { 2, 3, 4, 7, 12, 11, INVALID, INVALID, INVALID},
-                                               { 3, 0, 4, 8,  9, 12, INVALID, INVALID, INVALID},
-                                               { 0, 3, 2, 1,  8,  7, 6, 5, 13} };
-    check_side_node_ordinals_ngp(t, gold_face_node_ordinals);
-    check_face_node_ordinals_ngp(t, gold_face_node_ordinals);
-    check_side_nodes_ngp(t, gold_face_node_ordinals);
-    check_face_nodes_ngp(t, gold_face_node_ordinals);
+    check_edge_node_ordinals_ngp<numNodes>(t, goldEdgeNodeOrdinals);
+    check_edge_nodes_ngp<numNodes>(t, goldEdgeNodeOrdinals);
 
-    unsigned gold_permutation_node_ordinals[4][14] = {
-      {0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10, 11, 12, 13},
-      {1, 2, 3, 0, 4, 6, 7, 8, 5, 10, 11, 12,  9, 13},
-      {2, 3, 0, 1, 4, 7, 8, 5, 6, 11, 12,  9, 10, 13},
-      {3, 0, 1, 2, 4, 8, 5, 6, 7, 12,  9, 10, 11, 13}
-    };
-    check_permutation_node_ordinals_ngp(t, gold_permutation_node_ordinals);
-    check_permutation_nodes_ngp(t, gold_permutation_node_ordinals);
+    check_side_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_face_node_ordinals_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_side_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
+    check_face_nodes_ngp<numNodes>(t, goldFaceNodeOrdinals);
 
-    check_equivalent_ngp(t, gold_permutation_node_ordinals);
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    check_permutation_node_ordinals_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_permutation_nodes_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+
+    check_equivalent_ngp<numNodes>(t, goldPermutationNodeOrdinals);
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
 NGP_TEST(stk_topology_ngp, pyramid_14)
 {
   check_pyramid_14_on_device();
+}
+
 }

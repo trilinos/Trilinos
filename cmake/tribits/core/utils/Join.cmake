@@ -39,13 +39,13 @@
 
 
 #
-# @FUNCTION: JOIN()
+# @FUNCTION: join()
 #
 # Join a set of strings into a single string using a join string.
 #
 # Usage::
 #
-#   JOIN(<outputStrVar> "<sepStr>" <quoteElements>
+#   join(<outputStrVar> "<sepStr>" <quoteElements>
 #     "<string0>" "<string1>" ...)
 #
 # Arguments:
@@ -78,23 +78,23 @@
 # For example, the latter can be used to set up a set of command-line
 # arguments given a CMake array like::
 #
-#   JOIN(CMND_LINE_ARGS " " TRUE ${CMND_LINE_ARRAY})
+#   join(CMND_LINE_ARGS " " TRUE ${CMND_LINE_ARRAY})
 #
 # WARNING: Be careful to quote string arguments that have spaces because CMake
 # interprets those as array boundaries.
 #
-FUNCTION(JOIN  OUTPUT_STRING_VAR  SEP_STR  QUOTE_ELEMENTS)
-  SET(QUOTE_CHAR)
-  IF (QUOTE_ELEMENTS)
-    SET(QUOTE_CHAR "\"")
-  ENDIF()
-  SET(OUTPUT_STRING "")
-  FOREACH(STRING_VAL ${ARGN})
-    IF (OUTPUT_STRING STREQUAL "")
-      SET(OUTPUT_STRING "${QUOTE_CHAR}${STRING_VAL}${QUOTE_CHAR}")
-    ELSE()
-      SET(OUTPUT_STRING "${OUTPUT_STRING}${SEP_STR}${QUOTE_CHAR}${STRING_VAL}${QUOTE_CHAR}")
-    ENDIF()
-  ENDFOREACH()
-  SET(${OUTPUT_STRING_VAR} "${OUTPUT_STRING}" PARENT_SCOPE)
-ENDFUNCTION()
+function(join  OUTPUT_STRING_VAR  SEP_STR  QUOTE_ELEMENTS)
+  set(QUOTE_CHAR)
+  if (QUOTE_ELEMENTS)
+    set(QUOTE_CHAR "\"")
+  endif()
+  set(OUTPUT_STRING "")
+  foreach(STRING_VAL ${ARGN})
+    if (OUTPUT_STRING STREQUAL "")
+      set(OUTPUT_STRING "${QUOTE_CHAR}${STRING_VAL}${QUOTE_CHAR}")
+    else()
+      set(OUTPUT_STRING "${OUTPUT_STRING}${SEP_STR}${QUOTE_CHAR}${STRING_VAL}${QUOTE_CHAR}")
+    endif()
+  endforeach()
+  set(${OUTPUT_STRING_VAR} "${OUTPUT_STRING}" PARENT_SCOPE)
+endfunction()

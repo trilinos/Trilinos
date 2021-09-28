@@ -53,6 +53,7 @@ using Teuchos::rcp;
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
+#include "Kokkos_View_Fad.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_CellData.hpp"
@@ -99,15 +100,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
   MDFieldArrayFactory af("",true);
   workset->cell_vertex_coordinates = af.buildStaticArray<double,Cell,NODE,Dim>("coords",numCells,numVerts,dim);
   Workset::CellCoordArray coords = workset->cell_vertex_coordinates;
-  coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
-  coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
-  coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
-  coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
 
-  coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
-  coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
-  coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
-  coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
+      coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;
+      coords(0,2,0) = 0.0; coords(0,2,1) = 1.0;
+      coords(0,3,0) = 0.0; coords(0,3,1) = 0.0;
+      
+      coords(1,0,0) = 1.0; coords(1,0,1) = 1.0;
+      coords(1,1,0) = 2.0; coords(1,1,1) = 2.0;
+      coords(1,2,0) = 1.0; coords(1,2,1) = 3.0;
+      coords(1,3,0) = 0.0; coords(1,3,1) = 2.0;
+    });
 
   Teuchos::RCP<shards::CellTopology> topo = 
      Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -176,17 +180,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 
   TEST_EQUALITY(normals.rank(),3);
   TEST_EQUALITY(static_cast<int>(normals.size()),numCells*quadRule->num_points*dim);
+  auto normals_v = normals.get_static_view();
+  auto normals_h = Kokkos::create_mirror_view ( normals_v);
+  Kokkos::deep_copy(normals_h, normals_v);
+
   normals.print(out,false);
   for(int i=0;i<numCells;i++) {
 
      // useful for checking if normals are consistent: transformation is
      // affine!
-     double nx0 = ScalarValue::eval(normals(i,0,0));
-     double ny0 = ScalarValue::eval(normals(i,0,1));
+     double nx0 = ScalarValue::eval(normals_h(i,0,0));
+     double ny0 = ScalarValue::eval(normals_h(i,0,1));
 
      for(int v=0;v<quadRule->num_points;v++) {
-        double nx = ScalarValue::eval(normals(i,v,0)); 
-        double ny = ScalarValue::eval(normals(i,v,1)); 
+        double nx = ScalarValue::eval(normals_h(i,v,0)); 
+        double ny = ScalarValue::eval(normals_h(i,v,1)); 
  
         TEST_FLOATING_EQUALITY(nx*nx+ny*ny,1.0,1e-15);
 
@@ -198,8 +206,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 
   // check cell 0
   {
-     double nx = ScalarValue::eval(normals(0,0,0));
-     double ny = ScalarValue::eval(normals(0,0,1));
+     double nx = ScalarValue::eval(normals_h(0,0,0));
+     double ny = ScalarValue::eval(normals_h(0,0,1));
    
      TEST_FLOATING_EQUALITY(nx,0.0,1e-15);
      TEST_FLOATING_EQUALITY(ny,1.0,1e-15);
@@ -207,8 +215,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 
   // check cell 1
   {
-     double nx = ScalarValue::eval(normals(1,0,0));
-     double ny = ScalarValue::eval(normals(1,0,1));
+     double nx = ScalarValue::eval(normals_h(1,0,0));
+     double ny = ScalarValue::eval(normals_h(1,0,1));
      double sqrt2 = std::sqrt(2.0);
    
      TEST_FLOATING_EQUALITY(nx,1.0/sqrt2,1e-15);

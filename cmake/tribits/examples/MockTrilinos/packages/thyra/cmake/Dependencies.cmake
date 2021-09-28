@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+tribits_package_define_dependencies(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     CoreLibs      src                  PT  REQUIRED
     GoodStuff     src/good_stuff       ST  OPTIONAL
@@ -53,5 +53,5 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
 # package dependencies (prefixed by 'Thyra') added to the variables below.
 # There is no need to add them again!
 
-TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(MissingPackage)
+tribits_allow_missing_external_packages(MissingPackage)
 

@@ -258,7 +258,7 @@ namespace Iocgns {
           char ordinal = sub[i];
           ord |= ordinal == 'i' ? Ordinal::I : ordinal == 'j' ? Ordinal::J : Ordinal::K;
         }
-        for (auto zone : m_structuredZones) {
+        for (auto &zone : m_structuredZones) {
           if (zone->is_active()) {
             zone->m_lineOrdinal |= ord;
           }
@@ -279,7 +279,7 @@ namespace Iocgns {
                  return a->m_zone < b->m_zone;
                });
 
-    for (auto zone : m_structuredZones) {
+    for (auto &zone : m_structuredZones) {
       if (zone->is_active()) {
         zone->resolve_zgc_split_donor(m_structuredZones);
       }
@@ -720,7 +720,7 @@ namespace Iocgns {
     // if global_block_index[B] <= I && global_block_index[B+1] < I
     // allocate and TODO: Fill
     m_decomposition.m_fileBlockIndex.reserve(block_count + 1);
-    for (auto block : m_elementBlocks) {
+    for (auto &block : m_elementBlocks) {
       m_decomposition.m_fileBlockIndex.push_back(block.file_count());
     }
     m_decomposition.m_fileBlockIndex.push_back(0);
@@ -790,8 +790,6 @@ namespace Iocgns {
 
   template <typename INT> void DecompositionData<INT>::get_sideset_data(int filePtr)
   {
-    int base = 1; // Only single base supported so far.
-
     // NOTE: Not currently used; assume can read all on single processor...
     // Calculate the max "buffer" size usable for storing sideset
     // elemlists. This is basically the space used to store the file
@@ -821,6 +819,7 @@ namespace Iocgns {
         // *  num_to_get zeros (face on other parent element)
         CGNSIntVector parent(4 * sset.file_count());
 
+        int base = 1; // Only single base supported so far.
         CGCHECK2(cg_elements_read(filePtr, base, sset.zone(), sset.section(), nodes.data(),
                                   parent.data()));
 

@@ -48,9 +48,7 @@
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
-#ifdef HAVE_MUELU_KOKKOSCORE
 #include <Kokkos_Core.hpp>
-#endif
 
 #include "MueLu_TestHelpers_kokkos.hpp"
 

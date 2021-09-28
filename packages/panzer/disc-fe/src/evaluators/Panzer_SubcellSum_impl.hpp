@@ -98,16 +98,20 @@ evaluateFields(
   else
     indices = fieldPattern_->getSubcellIndices(workset.subcell_dim,this->wda(workset).subcell_index);
 
+  auto outField_h = Kokkos::create_mirror_view(outField.get_static_view());
+  auto inField_h = Kokkos::create_mirror_view(inField.get_static_view());
+  Kokkos::deep_copy(inField_h, inField.get_static_view());
   for(index_t c=0;c<workset.num_cells;c++) {
-    outField(c) = 0.0; // initialize field 
+    outField_h(c) = 0.0; // initialize field 
 
     // sum over all relevant indices for this subcell
     for(std::size_t i=0;i<indices.size();i++)
-      outField(c) += inField(c,indices[i]);
+      outField_h(c) += inField_h(c,indices[i]);
  
     // scale by what ever the user wants
-    outField(c) *= multiplier;
+    outField_h(c) *= multiplier;
   }
+  Kokkos::deep_copy(outField.get_static_view(), outField_h);
 }
 
 //**********************************************************************

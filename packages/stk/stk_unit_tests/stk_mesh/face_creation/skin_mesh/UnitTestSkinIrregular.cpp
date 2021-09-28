@@ -43,7 +43,6 @@
 #include <stk_mesh/base/Types.hpp>                   // for EntityId, etc
 #include <stk_util/parallel/Parallel.hpp>
 #include "mpi.h"                                     // for MPI_COMM_WORLD, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_topology/topology.hpp"                 // for topology, etc
 namespace stk { namespace mesh { class Part; } }
 // clang-format on

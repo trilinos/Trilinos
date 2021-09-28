@@ -77,7 +77,7 @@ constexpr int nfloats = SIMD_NAMESPACE::native_simd<float>::size();
 #include "SimdFloatLoadStore.hpp"
 #include "SimdFloatMath.hpp"
 
-#include "AlignedAllocator.hpp"
+#include "stk_util/util/AlignedAllocator.hpp"
 #include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
 
 #include <Kokkos_Macros.hpp>

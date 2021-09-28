@@ -186,7 +186,7 @@ Ioss::Property &Ioss::Property::operator=(Ioss::Property rhs)
   return *this;
 }
 
-bool Ioss::Property::operator==(const Ioss::Property rhs) const
+bool Ioss::Property::operator==(const Ioss::Property &rhs) const
 {
   if (this->name_.compare(rhs.name_) != 0) {
     return false;
@@ -249,7 +249,7 @@ bool Ioss::Property::operator==(const Ioss::Property rhs) const
   return true;
 }
 
-bool Ioss::Property::operator!=(const Ioss::Property rhs) const { return !(*this == rhs); }
+bool Ioss::Property::operator!=(const Ioss::Property &rhs) const { return !(*this == rhs); }
 
 /** \brief Get the property value if it is of type STRING.
  *

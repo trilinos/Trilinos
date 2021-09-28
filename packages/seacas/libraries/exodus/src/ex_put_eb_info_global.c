@@ -26,7 +26,7 @@
 #include <exodusII.h>
 #include <exodusII_int.h>
 
-int ex_put_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts)
+int ex_put_eb_info_global(int exoid, const void_int *el_blk_ids, const void_int *el_blk_cnts)
 {
   int  varid, status;
   char errmsg[MAX_ERR_LENGTH];

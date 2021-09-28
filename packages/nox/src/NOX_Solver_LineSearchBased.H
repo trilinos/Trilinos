@@ -199,6 +199,9 @@ protected:
   //! Number of nonlinear iterations.
   int nIter;
 
+  //! Determine if we want to catch and ignore exceptions thrown from the linear solver stack.
+  bool catchThrowsDuringSolve;
+
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 

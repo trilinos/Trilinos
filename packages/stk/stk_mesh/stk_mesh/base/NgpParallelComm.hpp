@@ -35,18 +35,18 @@
 #define STK_MESH_NGPPARALLELCOMM_HPP
 
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace stk {
 namespace mesh {
 
-using CommProcsViewType = Kokkos::View<int*, MemSpace>;
+using CommProcsViewType = Kokkos::View<int*, stk::ngp::MemSpace>;
 
-using OffsetViewType = Kokkos::View<unsigned*, MemSpace>;
+using OffsetViewType = Kokkos::View<unsigned*, stk::ngp::MemSpace>;
 
 template <typename T>
-using BufferViewType = Kokkos::View<T*, MemSpace>;
+using BufferViewType = Kokkos::View<T*, stk::ngp::MemSpace>;
 
 template<typename T, typename ExchangeHandler>
 void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,

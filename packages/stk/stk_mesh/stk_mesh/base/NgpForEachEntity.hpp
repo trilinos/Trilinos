@@ -37,7 +37,7 @@
 #include <stk_util/stk_config.h>
 #include <Kokkos_Core.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/Types.hpp>
 
 namespace stk {
@@ -46,12 +46,12 @@ namespace mesh {
 template <typename Mesh, typename AlgorithmPerEntity>
 struct ThreadFunctor
 {
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ThreadFunctor(const typename Mesh::BucketType *b, const AlgorithmPerEntity &f) :
     bucket(b),
     functor(f)
   {}
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void operator()(const int& i) const
   {
     functor(typename stk::mesh::FastMeshIndex{bucket->bucket_id(), static_cast<unsigned>(i)});
@@ -63,15 +63,15 @@ struct ThreadFunctor
 template <typename Mesh, typename AlgorithmPerEntity>
 struct TeamFunctor
 {
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, stk::NgpVector<unsigned> b, const AlgorithmPerEntity f) :
     mesh(m),
     rank(r),
     bucketIds(b),
     functor(f)
   {}
-  typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ScheduleType>::member_type TeamHandleType;
-  STK_FUNCTION
+  typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
+  KOKKOS_FUNCTION
   void operator()(const TeamHandleType& team) const
   {
     const int bucketIndex = bucketIds.get<typename Mesh::MeshExecSpace>(team.league_rank());

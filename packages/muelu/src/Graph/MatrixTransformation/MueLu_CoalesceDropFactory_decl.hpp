@@ -179,7 +179,7 @@ namespace MueLu {
     Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > BlockDiagonalize(Level & currentLevel,const RCP<Matrix> & A, bool generate_matrix) const;
 
     // When we want to decouple a block diagonal system via a *graph*
-    void BlockDiagonalizeGraph(const RCP<GraphBase> & inputGraph, const RCP<LocalOrdinalVector> & ghostedBlockNumber, RCP<GraphBase> & outputGraph) const;
+    void BlockDiagonalizeGraph(const RCP<GraphBase> & inputGraph, const RCP<LocalOrdinalVector> & ghostedBlockNumber, RCP<GraphBase> & outputGraph, RCP<const Import> & importer) const;
 
   }; //class CoalesceDropFactory
 

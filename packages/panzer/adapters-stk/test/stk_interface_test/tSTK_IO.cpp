@@ -73,7 +73,7 @@ namespace panzer_stk {
 RCP<STK_Interface> buildMesh(int xElements,int yElements);
 RCP<STK_Interface> buildMesh_cells(int xElements,int yElements);
 void buildLocalIds(const STK_Interface & mesh,
-                   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds); 
+                   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > & localIds);
 
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double (* func)(double,double));
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double val);
@@ -87,7 +87,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
 {
    RCP<STK_Interface> mesh = buildMesh(8,8);
 
-   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds; 
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds;
    buildLocalIds(*mesh,localIds);
 
    FieldContainer vert0, vert1;
@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, cell_fields)
 {
    RCP<STK_Interface> mesh = buildMesh_cells(8,8);
 
-   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds; 
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds;
    buildLocalIds(*mesh,localIds);
 
    out << "write to exodus" << std::endl;
@@ -155,7 +155,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, exodus_factory_transient_fields)
    mesh->addSolutionField("T","block_2");
    factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
-   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds; 
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds;
    buildLocalIds(*mesh,localIds);
 
    FieldContainer vert0, vert1;
@@ -189,7 +189,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
 {
    RCP<STK_Interface> mesh = buildMesh(20,20);
 
-   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds; 
+   std::map<std::string,Teuchos::RCP<std::vector<std::size_t> > > localIds;
    buildLocalIds(*mesh,localIds);
 
    FieldContainer vert0, vert1;
@@ -217,7 +217,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
 
    out << "write to exodus: 3.0" << std::endl;
    mesh->writeToExodus(3.0);
-   TEST_EQUALITY(mesh->getCurrentStateTime(),3.0); 
+   TEST_EQUALITY(mesh->getCurrentStateTime(),3.0);
 
    out << "assigning 4.5" << std::endl;
    {
@@ -232,7 +232,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
 
    out << "write to exodus: 4.5" << std::endl;
    mesh->writeToExodus(4.5);
-   TEST_EQUALITY(mesh->getCurrentStateTime(),4.5); 
+   TEST_EQUALITY(mesh->getCurrentStateTime(),4.5);
    // Data can be buffered in writeToExodus() call. Flush to file by closing.
    mesh = Teuchos::null;
 
@@ -296,8 +296,8 @@ TEUCHOS_UNIT_TEST(tSTK_IO, addInformationRecords)
    mesh->writeToExodus("info_records.exo");
 
    {
-   Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus", 
-                                                     "info_records.exo", 
+   Ioss::DatabaseIO *db_io = Ioss::IOFactory::create("exodus",
+                                                     "info_records.exo",
                                                      Ioss::READ_MODEL);
    TEST_ASSERT(db_io);
 
@@ -337,7 +337,7 @@ RCP<STK_Interface> buildMesh(int xElements,int yElements)
     mesh->addSolutionField("u","eblock-0_0");
     mesh->addSolutionField("T","eblock-0_0");
     mesh->addSolutionField("T","eblock-1_0");
- 
+
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
     return mesh;
@@ -360,7 +360,7 @@ RCP<STK_Interface> buildMesh_cells(int xElements,int yElements)
     mesh->addCellField("T","eblock-1_0");
 
     mesh->addSolutionField("T","eblock-1_0");
- 
+
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
 
     return mesh;
@@ -397,14 +397,16 @@ void assignBlock(FieldContainer & block,FieldContainer & vertices, double val)
    TEUCHOS_ASSERT(block.extent(0)==vertices.extent(0));
    TEUCHOS_ASSERT(block.extent(1)==vertices.extent(1));
 
-   std::size_t cellCnt = block.extent(0); 
-   std::size_t nodeCnt = block.extent(1); 
+   std::size_t cellCnt = block.extent(0);
+   std::size_t nodeCnt = block.extent(1);
 
-   for(std::size_t cell=0;cell<cellCnt;cell++) {
-      for(std::size_t node=0;node<nodeCnt;node++) {
-         block(cell,node) = val;
-      }
-   }
+   Kokkos::parallel_for(
+       cellCnt, KOKKOS_LAMBDA(size_t cell) {
+          for (std::size_t node = 0; node < nodeCnt; node++) {
+             block(cell, node) = val;
+          }
+       }
+   );
 }
 
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double (* func)(double,double))
@@ -412,16 +414,25 @@ void assignBlock(FieldContainer & block,FieldContainer & vertices, double (* fun
    TEUCHOS_ASSERT(block.extent(0)==vertices.extent(0));
    TEUCHOS_ASSERT(block.extent(1)==vertices.extent(1));
 
-   std::size_t cellCnt = block.extent(0); 
-   std::size_t nodeCnt = block.extent(1); 
+   std::size_t cellCnt = block.extent(0);
+   std::size_t nodeCnt = block.extent(1);
 
-   for(std::size_t cell=0;cell<cellCnt;cell++) {
-      for(std::size_t node=0;node<nodeCnt;node++) {
-         double x = vertices(cell,node,0);
-         double y = vertices(cell,node,1);
-         block(cell,node) = func(x,y);
+   auto vertices_h = Kokkos::create_mirror_view(vertices);
+   Kokkos::deep_copy(vertices_h, vertices);
+
+   auto block_h = Kokkos::create_mirror_view(block);
+   Kokkos::deep_copy(block_h, block);
+
+   for(std::size_t cell = 0; cell < cellCnt; cell++) {
+      for(std::size_t node = 0; node < nodeCnt; node++) {
+         double x = vertices_h(cell, node, 0);
+         double y = vertices_h(cell, node, 1);
+         block_h(cell, node) = func(x, y);
       }
    }
+
+   Kokkos::deep_copy(block, block_h);
+   Kokkos::deep_copy(vertices, vertices_h);
 }
 
 }

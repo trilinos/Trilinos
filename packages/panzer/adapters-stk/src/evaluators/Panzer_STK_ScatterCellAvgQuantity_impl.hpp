@@ -69,18 +69,18 @@ ScatterCellAvgQuantity(
   using panzer::Point;
 
   std::string scatterName = p.get<std::string>("Scatter Name");
- 
-  const std::vector<std::string> & names = 
+
+  const std::vector<std::string> & names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("Field Names"));
 
-  Teuchos::RCP<panzer::IntegrationRule> intRule = 
+  Teuchos::RCP<panzer::IntegrationRule> intRule =
     p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR");
 
   // build dependent fields
   scatterFields_.resize(names.size());
   stkFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    scatterFields_[fd] = 
+    scatterFields_[fd] =
       PHX::MDField<const ScalarT,Cell,Point>(names[fd],intRule->dl_scalar);
     this->addDependentField(scatterFields_[fd]);
   }
@@ -119,16 +119,17 @@ evaluateFields(
    std::string blockId = this->wda(workset).block_id;
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
-      PHX::MDField<const ScalarT,panzer::Cell,panzer::Point> & field = scatterFields_[fieldIndex];
-      PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.extent(0),1);
-      // write to double field
-      for(unsigned i=0; i<field.extent(0);i++) {
-         for(unsigned j=0; j<field.extent(1);j++) 
-            average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
-         average(i,0) /= field.extent(1);
-      }
+     auto field = scatterFields_[fieldIndex].get_static_view();
+     auto average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.extent(0),1).get_static_view();
+     // write to double field
+     Kokkos::parallel_for("ScatterCellAvgQuantity",field.extent(0), KOKKOS_LAMBDA(int i) {
+       for(unsigned j=0; j<field.extent(1);j++)
+	 average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
+       average(i,0) /= field.extent(1);
+     });
+     Kokkos::fence();
 
-      mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,average);
+     mesh_->setCellFieldData(scatterFields_[fieldIndex].fieldTag().name(),blockId,localCellIds,average);
    }
 }
 

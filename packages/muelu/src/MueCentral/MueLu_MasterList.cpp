@@ -132,6 +132,7 @@ namespace MueLu {
     if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -224,9 +225,11 @@ namespace MueLu {
   "<Parameter name=\"aggregation: brick z Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: Dirichlet threshold\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: greedy Dirichlet\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: deterministic\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: coloring algorithm\" type=\"string\" value=\"serial\"/>"
   "<Parameter name=\"aggregation: coloring: use color graph\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: coloring: localize color graph\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 1\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2a\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
@@ -347,7 +350,10 @@ namespace MueLu {
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<ParameterList name=\"amgx:params\"/>"
-  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
+  "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-2\"/>"
+  "<Parameter name=\"maxwell1: mode\" type=\"string\" value=\"standard\"/>"
+  "<ParameterList name=\"maxwell1: 11list\"/>"
+  "<ParameterList name=\"maxwell1: 22list\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"refmaxwell: 11list\"/>"
@@ -652,11 +658,15 @@ namespace MueLu {
       
          ("aggregation: Dirichlet threshold","aggregation: Dirichlet threshold")
       
+         ("aggregation: greedy Dirichlet","aggregation: greedy Dirichlet")
+      
          ("aggregation: deterministic","aggregation: deterministic")
       
          ("aggregation: coloring algorithm","aggregation: coloring algorithm")
       
          ("aggregation: coloring: use color graph","aggregation: coloring: use color graph")
+      
+         ("aggregation: coloring: localize color graph","aggregation: coloring: localize color graph")
       
          ("aggregation: enable phase 1","aggregation: enable phase 1")
       
@@ -764,7 +774,7 @@ namespace MueLu {
       
          ("aggregation: damping factor","sa: damping factor")
       
-         ("sa: use filtered matrix","sa: use filtered matrix")
+         ("aggregation aux: enable","sa: use filtered matrix")
       
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
       
@@ -899,6 +909,12 @@ namespace MueLu {
          ("amgx:params","amgx:params")
       
          ("debug: graph level","debug: graph level")
+      
+         ("maxwell1: mode","maxwell1: mode")
+      
+         ("maxwell1: 11list","maxwell1: 11list")
+      
+         ("maxwell1: 22list","maxwell1: 22list")
       
          ("refmaxwell: mode","refmaxwell: mode")
       

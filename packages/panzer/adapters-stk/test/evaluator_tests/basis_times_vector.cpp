@@ -97,8 +97,9 @@ namespace panzer {
     {
        int num_cells = field.extent(0);
        int num_qp = points.extent(1);
-
-       for(int i=0;i<num_cells;i++) {
+       auto points_v = points.get_static_view();
+       auto field_v = field.get_static_view();
+       Kokkos::parallel_for(num_cells, KOKKOS_LAMBDA (int i) {
           for(int j=0;j<num_qp;j++) {
              double x = points(i,j,0); // just x and y
              double y = points(i,j,1);
@@ -106,7 +107,7 @@ namespace panzer {
              field(i,j,0) = (x+y)*(x+y);
              field(i,j,1) = sin(x+y);
           }
-       }
+       });
     }
   };
 

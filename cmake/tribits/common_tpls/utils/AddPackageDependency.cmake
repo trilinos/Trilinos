@@ -41,7 +41,7 @@
 # Based on version from MSTK which is from Amanzi open source code -
 # https://software.lanl.gov/ascem/trac)
 #
-#       ADD_PACKAGE_DEPENDENCY(<PACKNAME> DEPENDS_ON <req_pack>)
+#       add_package_dependency(<PACKNAME> DEPENDS_ON <req_pack>)
 #
 
 # CMake module
@@ -50,13 +50,13 @@ include(CMakeParseArguments)
 # MSTK modules
 include(ParseLibraryList)
 
-function(ADD_PACKAGE_DEPENDENCY)
+function(add_package_dependency)
 
     # Macro: _print_usage
     macro(_print_usage)
-        message("\nADD_PACKAGE_DEPENDENCY(<target_package> DEPENDS_ON <req_package>)\n"
+        message("\nadd_package_dependency(<target_package> DEPENDS_ON <req_package>)\n"
                 " Add req_package to target_package dependencies.\n")
-    endmacro(_print_usage)
+    endmacro()
 
     # Parse the arguments
     set(_options "")
@@ -113,7 +113,7 @@ function(ADD_PACKAGE_DEPENDENCY)
         set(_save_lib_list "")
         if ( ${target_libs_split} OR ${req_libs_split} )
 
-            # Define the parsed lists if the orginal list did not contain keywords
+            # Define the parsed lists if the original list did not contain keywords
             if ( NOT ${target_libs_split} )
                 set(target_debug_libs ${${target_package}_LIBRARIES})
                 set(target_opt_libs ${${target_package}_LIBRARIES})
@@ -172,4 +172,4 @@ function(ADD_PACKAGE_DEPENDENCY)
 
     endif()    
 
-endfunction(ADD_PACKAGE_DEPENDENCY)
+endfunction()

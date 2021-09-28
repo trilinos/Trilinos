@@ -280,6 +280,7 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::P
    using Teuchos::rcp_dynamic_cast;
 
    centroid = Kokkos::DynRankView<double,PHX::Device>("centroid",1,baseDimension);
+   auto l_centroid = centroid;
 
    // loop over each possible basis
    for(std::map<std::string,RCP<const panzer::PureBasis> >::const_iterator itr=bases.begin();
@@ -293,14 +294,12 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::P
       intrepidBasis->getDofCoords(coords);
       TEUCHOS_ASSERT(coords.rank()==2);
       TEUCHOS_ASSERT(coords.extent_int(1)==baseDimension);
-
-      for(int i=0;i<coords.extent_int(0);i++)
-         for(int d=0;d<coords.extent_int(1);d++)
-            centroid(0,d) += coords(i,d);
-
-      // take the average
-      for(int d=0;d<coords.extent_int(1);d++)
-         centroid(0,d) /= coords.extent(0);
+      
+      Kokkos::parallel_for(coords.extent_int(0), KOKKOS_LAMBDA (int i)  {
+	  for(int d=0;d<coords.extent_int(1);d++) 
+            l_centroid(0,d) += coords(i,d)/coords.extent(0);
+	});
+      Kokkos::fence();
 
       return;
    }

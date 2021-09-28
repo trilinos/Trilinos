@@ -134,18 +134,29 @@ DotProduct<EvalT, Traits>::
 evaluateFields(
   typename Traits::EvalData workset)
 { 
-  for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int p = 0; p < num_pts; ++p) {
-      vec_a_dot_vec_b(cell,p) = ScalarT(0.0);
-      for (int dim = 0; dim < num_dim; ++dim)
-	vec_a_dot_vec_b(cell,p) += vec_a(cell,p,dim) * vec_b(cell,p,dim); 
 
-      if(multiplier_field_on)
-        vec_a_dot_vec_b(cell,p) *= multiplier_value*multiplier_field(cell,p);
-      else
-        vec_a_dot_vec_b(cell,p) *= multiplier_value;
-    }
-  }
+  auto vec_a_v = vec_a.get_static_view();
+  auto vec_b_v = vec_b.get_static_view();
+  auto vec_a_dot_vec_b_v = vec_a_dot_vec_b.get_static_view();
+  auto multiplier_field_v = multiplier_field.get_static_view();
+
+  int l_num_pts = num_pts, l_num_dim = num_dim;
+  auto l_multiplier_field_on = multiplier_field_on;
+  auto l_multiplier_value = multiplier_value;
+  
+  Kokkos::parallel_for (workset.num_cells, KOKKOS_LAMBDA (const int cell) {
+      for (int p = 0; p < l_num_pts; ++p) {
+	vec_a_dot_vec_b_v(cell,p) = ScalarT(0.0);
+	for (int dim = 0; dim < l_num_dim; ++dim)
+	  vec_a_dot_vec_b_v(cell,p) += vec_a_v(cell,p,dim) * vec_b_v(cell,p,dim); 
+	
+	if(l_multiplier_field_on)
+	  vec_a_dot_vec_b_v(cell,p) *= l_multiplier_value*multiplier_field_v(cell,p);
+	else
+	  vec_a_dot_vec_b_v(cell,p) *= l_multiplier_value;
+      }
+    });
+  Kokkos::fence();
 }
 
 //**********************************************************************

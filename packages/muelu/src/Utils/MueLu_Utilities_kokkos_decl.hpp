@@ -160,11 +160,11 @@ namespace MueLu {
 
      /*! @brief Extract Matrix Diagonal
 
-    Returns Matrix diagonal in ArrayRCP.
+    Returns Matrix diagonal in RCP<Vector>.
 
     NOTE -- it's assumed that A has been fillComplete'd.
     */
-    static Teuchos::ArrayRCP<SC> GetMatrixDiagonal(const Matrix& A); // FIXME
+    static RCP<Vector> GetMatrixDiagonal(const Matrix& A); // FIXME
 
     /*! @brief Extract Matrix Diagonal
 
@@ -205,8 +205,6 @@ namespace MueLu {
     static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
       return Utilities::Residual(Op, X, RHS);
     }
-
-    static void PauseForDebugger();
 
     /*! @brief Simple transpose for Tpetra::CrsMatrix types
 
@@ -253,6 +251,17 @@ namespace MueLu {
     */
     static Kokkos::View<bool*, typename NO::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
 
+
+    /*! @brief Find non-zero values in an ArrayRCP
+      Compares the value to 2 * machine epsilon 
+
+      @param[in]  vals - ArrayRCP<const Scalar> of values to be tested
+      @param[out] nonzeros - ArrayRCP<bool> of true/false values for whether each entry in vals is nonzero
+    */
+    static void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
+                             Kokkos::View<bool*, typename Node::device_type> nonzeros);
+
+
     /*! @brief Detect Dirichlet columns based on Dirichlet rows
 
         The routine finds all column indices that are in Dirichlet rows, where Dirichlet rows are described by dirichletRows,
@@ -266,12 +275,25 @@ namespace MueLu {
     static Kokkos::View<bool*, typename NO::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows);
 
 
+    /*! @brief Detects Dirichlet columns & domains from a list of Dirichlet rows
+
+      @param[in] A - Matrix on which to apply Dirichlet column detection
+      @param[in] dirichletRows - View<bool> of indicators as to which rows are Dirichlet
+      @param[out] dirichletCols - View<bool> of indicators as to which cols are Dirichlet
+      @param[out] dirichletDomain - View<bool> of indicators as to which domains are Dirichlet
+    */
+    static void DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                              const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletDomain);
+
+
     static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
     static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
     static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
-    
+
     static void ApplyRowSumCriterion(const Matrix& A,
                                      const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
                                      Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
@@ -382,8 +404,13 @@ namespace MueLu {
 #endif
     static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op)                   { return Utilities::Crs2Op(Op); }
 
-    static ArrayRCP<SC> GetMatrixDiagonal(const Matrix& A) {
-      return UtilitiesBase::GetMatrixDiagonal(A);
+    static RCP<Vector> GetMatrixDiagonal(const Matrix& A) {
+      const auto rowMap = A.getRowMap();
+      auto diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+
+      A.getLocalDiagCopy(*diag);
+
+      return diag;
     }
     static RCP<Vector> GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol = Teuchos::ScalarTraits<SC>::eps()*100, const bool doLumped=false) {
       return UtilitiesBase::GetMatrixDiagonalInverse(A, tol, doLumped);
@@ -403,9 +430,6 @@ namespace MueLu {
     static RCP<MultiVector> Residual(const Operator& Op, const MultiVector& X, const MultiVector& RHS) {
       return UtilitiesBase::Residual(Op,X,RHS);
     }
-    static void PauseForDebugger() {
-      UtilitiesBase::PauseForDebugger();
-    }
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
       return UtilitiesBase::MakeFancy(os);
     }
@@ -417,6 +441,14 @@ namespace MueLu {
     static Kokkos::View<bool*, typename Node::device_type> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero(), const bool count_twos_as_dirichlet=false);
 
     static Kokkos::View<bool*, typename Node::device_type> DetectDirichletCols(const Matrix& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows);
+
+    static void FindNonZeros(const typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dual_view_type::t_dev_const_um vals,
+                             Kokkos::View<bool*, typename Node::device_type> nonzeros);
+
+    static void DetectDirichletColsAndDomains(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+                                              const Kokkos::View<bool*, typename Node::device_type> & dirichletRows,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletCols,
+                                              Kokkos::View<bool*, typename Node::device_type> dirichletDomain);
 
     static void ZeroDirichletRows(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 

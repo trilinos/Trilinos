@@ -26,7 +26,8 @@
 #include <exodusII.h>     // for ex_err, etc
 #include <exodusII_int.h> // for EX_FATAL, DIM_NUM_BOR_ELEMS, etc
 
-int ex_put_processor_elem_maps(int exoid, void_int *elem_mapi, void_int *elem_mapb, int processor)
+int ex_put_processor_elem_maps(int exoid, const void_int *elem_mapi, const void_int *elem_mapb,
+                               int processor)
 {
   char    ftype[2];
   int     status, dimid, varid;

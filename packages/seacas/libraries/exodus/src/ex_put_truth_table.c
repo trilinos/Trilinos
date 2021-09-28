@@ -64,7 +64,8 @@ error = ex_put_truth_table(exoid, EX_ELEM_BLOCK, num_elem_blk, num_ele_vars,
 ~~~
  */
 
-int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var, int *var_tab)
+int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var,
+                       const int *var_tab)
 {
   int    numelblkdim, numelvardim, timedim, dims[2], varid;
   char * sta_type   = NULL;

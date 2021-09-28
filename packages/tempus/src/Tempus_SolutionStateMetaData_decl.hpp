@@ -38,6 +38,8 @@ public:
     const Scalar dt,
     const Scalar errorAbs,
     const Scalar errorRel,
+    const Scalar errorRelNm1,
+    const Scalar errorRelNm2,
     const int    order,
     const int    nFailures,
     const int    nRunningFailures,
@@ -74,6 +76,8 @@ public:
     Scalar getDt()                   const {return dt_;}
     Scalar getErrorAbs()             const {return errorAbs_;}
     Scalar getErrorRel()             const {return errorRel_;}
+    Scalar getErrorRelNm1()          const {return errorRelNm1_;}
+    Scalar getErrorRelNm2()          const {return errorRelNm2_;}
     Scalar getOrder()                const {return order_;}
     int    getNFailures()            const {return nFailures_;}
     int    getNRunningFailures()     const {return nRunningFailures_;}
@@ -95,7 +99,11 @@ public:
     void setIStep(int iStep)                   {iStep_ = iStep;}
     void setDt(Scalar dt)                      {dt_ = dt;}
     void setErrorAbs (Scalar errorAbs)         {errorAbs_ = errorAbs;}
-    void setErrorRel (Scalar errorRel)         {errorRel_ = errorRel;}
+    void setErrorRel (Scalar errorRel)         {errorRelNm2_ = errorRelNm1_;
+                                                errorRelNm1_ = errorRel_;
+                                                errorRel_ = errorRel;}
+    void setErrorRelNm1 (Scalar errorRelNm1)   {errorRelNm1_ = errorRelNm1;}
+    void setErrorRelNm2 (Scalar errorRelNm2)   {errorRelNm2_ = errorRelNm2;}
     void setOrder(Scalar order)                {order_ = order;}
     void setNFailures(int nFailures)           {nFailures_ = nFailures;}
     void setNRunningFailures(int nFailures)    {nRunningFailures_ = nFailures;}
@@ -128,8 +136,10 @@ protected:
   Scalar time_;              ///< Time of solution
   int    iStep_;             ///< Time step index for this solution
   Scalar dt_;                ///< Time step for this solution
-  Scalar errorAbs_;          ///< Absolute local truncation error
-  Scalar errorRel_;          ///< Relative local truncation error
+  Scalar errorAbs_;          ///< Absolute local truncation error (@ t_n)
+  Scalar errorRel_;          ///< Relative local truncation error (@ t_n)
+  Scalar errorRelNm1_;       ///< Relative local truncation error (@ t_{n-1})
+  Scalar errorRelNm2_;       ///< Relative local truncation error (@ t_{n-2})
   Scalar order_;             ///< Order of this solution
   int nFailures_;            ///< Total number of stepper failures
   int nRunningFailures_;     ///< Total number of running stepper failures

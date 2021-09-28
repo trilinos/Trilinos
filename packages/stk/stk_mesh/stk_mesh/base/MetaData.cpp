@@ -51,7 +51,6 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
 #include "stk_mesh/baseImpl/PartRepository.hpp"  // for PartRepository
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include "stk_topology/topology_utils.hpp"    // for topology::num_nodes, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 
 namespace stk {
@@ -503,20 +502,7 @@ void MetaData::commit()
 #endif
 }
 
-MetaData::~MetaData()
-{
-  // Destroy the properties, used 'new' to allocate so now use 'delete'
-
-  try {
-    std::vector<shards::CellTopologyManagedData*>::iterator i = m_created_topologies.begin();
-    for ( ; i != m_created_topologies.end(); ++i) {
-      delete *i;
-    }
-  } catch(...) {}
-
-  // PartRepository is member data
-  // FieldRepository is member data
-}
+MetaData::~MetaData() {}
 
 void MetaData::internal_declare_known_cell_topology_parts()
 {

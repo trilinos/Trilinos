@@ -217,6 +217,8 @@ public:
   virtual RCP<const VectorSpaceBase<Scalar> > get_f_multiplier_space() const;
   /** \brief . */
   virtual RCP<const VectorSpaceBase<Scalar> > get_g_multiplier_space(int j) const;
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   /** \brief . */
   virtual RCP<LinearOpBase<Scalar> > create_hess_f_xx() const;
   /** \brief . */
@@ -229,6 +231,7 @@ public:
   virtual RCP<LinearOpBase<Scalar> > create_hess_g_xp( int j, int l ) const;
   /** \brief . */
   virtual RCP<LinearOpBase<Scalar> > create_hess_g_pp( int j, int l1, int l2 ) const;
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   //@}
 
@@ -980,6 +983,8 @@ ModelEvaluatorDefaultBase<Scalar>::get_g_multiplier_space(int j) const
   return this->get_g_space(j);
 }
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 template<class Scalar>
 RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDefaultBase<Scalar>::create_hess_f_xx() const
@@ -1021,6 +1026,8 @@ ModelEvaluatorDefaultBase<Scalar>::create_hess_g_pp( int j, int l1, int l2 ) con
 {
   return Teuchos::null;
 }
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 // protected
 

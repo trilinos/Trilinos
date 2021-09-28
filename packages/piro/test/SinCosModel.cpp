@@ -79,11 +79,11 @@ SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   t0_ic_ = 0.0;
 
   // Create x_space and f_space
-  x_space_ = Thyra::defaultSpmdVectorSpace<double>(dim_);
-  f_space_ = Thyra::defaultSpmdVectorSpace<double>(dim_);
+  x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
+  f_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
   // Create p_space and g_space
-  p_space_ = Thyra::defaultSpmdVectorSpace<double>(np_);
-  g_space_ = Thyra::defaultSpmdVectorSpace<double>(ng_);
+  p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(np_);
+  g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(ng_);
 
   setParameterList(pList_);
 
@@ -99,25 +99,25 @@ SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
 //
 
 
-Thyra::ModelEvaluatorBase::InArgs<double> 
+Thyra::ModelEvaluatorBase::InArgs<Scalar> 
 SinCosModel::
-getExactSolution(double t) const
+getExactSolution(Scalar t) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
-  double exact_t = t;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
+  Scalar exact_t = t;
   inArgs.set_t(exact_t);
-  Teuchos::RCP<Thyra::VectorBase<double> > exact_x = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<double> exact_x_view(*exact_x);
+    Thyra::DetachedVectorView<Scalar> exact_x_view(*exact_x);
     exact_x_view[0] = a_+b_*sin((f_/L_)*t+phi_);
     exact_x_view[1] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
   }
   inArgs.set_x(exact_x);
-  Teuchos::RCP<Thyra::VectorBase<double> > exact_x_dot = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_x_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<double> exact_x_dot_view(*exact_x_dot);
+    Thyra::DetachedVectorView<Scalar> exact_x_dot_view(*exact_x_dot);
     exact_x_dot_view[0] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
     exact_x_dot_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t+phi_);
   }
@@ -131,26 +131,26 @@ getExactSolution(double t) const
 //    s(0) = [1;0]    s(1) = [0;b/L]                 s(2) = [0;-b*f/(L*L)]
 // sdot(0) = [0;0] sdot(1) = [0;-3*f*f*b/(L*L*L)] sdot(2) = [0;3*f*f*f*b/(L*L*L*L)]
 //
-Thyra::ModelEvaluatorBase::InArgs<double>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SinCosModel::
-getExactSensSolution(int j, double t) const
+getExactSensSolution(int j, Scalar t) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = inArgs_;
   if (!acceptModelParams_) {
     return inArgs;
   }
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
-  double exact_t = t;
-  double b = b_;
-  double f = f_;
-  double L = L_;
-  double phi = phi_;
+  Scalar exact_t = t;
+  Scalar b = b_;
+  Scalar f = f_;
+  Scalar L = L_;
+  Scalar phi = phi_;
   inArgs.set_t(exact_t);
-  Teuchos::RCP<Thyra::VectorBase<double> > exact_s = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_s = createMember(x_space_);
    { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<double> exact_s_view(*exact_s);
+    Thyra::DetachedVectorView<Scalar> exact_s_view(*exact_s);
     if (j == 0) { // dx/da
       exact_s_view[0] = 1.0;
       exact_s_view[1] = 0.0;
@@ -163,9 +163,9 @@ getExactSensSolution(int j, double t) const
     }
   }
   inArgs.set_x(exact_s);
-  Teuchos::RCP<Thyra::VectorBase<double> > exact_s_dot = createMember(x_space_);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > exact_s_dot = createMember(x_space_);
   { // scope to delete DetachedVectorView
-    Thyra::DetachedVectorView<double> exact_s_dot_view(*exact_s_dot);
+    Thyra::DetachedVectorView<Scalar> exact_s_dot_view(*exact_s_dot);
     if (j == 0) { // dxdot/da
       exact_s_dot_view[0] = 0.0;
       exact_s_dot_view[1] = 0.0;
@@ -183,21 +183,21 @@ getExactSensSolution(int j, double t) const
 
 
 
-Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel::
 get_x_space() const
 {
   return x_space_;
 }
 
-Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel::
 get_f_space() const
 {
   return f_space_;
 }
 
-Thyra::ModelEvaluatorBase::InArgs<double>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SinCosModel::
 getNominalValues() const
 {
@@ -206,60 +206,60 @@ getNominalValues() const
   return nominalValues_;
 }
 
-Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> >
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 SinCosModel::
 create_W() const
 {
    using Teuchos::RCP;
-  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = this->get_W_factory();
-  RCP<Thyra::LinearOpBase<double> > matrix = this->create_W_op();
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
+  RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
   {
     // 01/20/09 tscoffe:  This is a total hack to provide a full rank matrix to
     // linearOpWithSolve because it ends up factoring the matrix during
     // initialization, which it really shouldn't do, or I'm doing something
     // wrong here.   The net effect is that I get exceptions thrown in
     // optimized mode due to the matrix being rank deficient unless I do this.
-    RCP<Thyra::MultiVectorBase<double> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(matrix,true);
+    RCP<Thyra::MultiVectorBase<Scalar> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
     {
-      RCP<Thyra::VectorBase<double> > vec = Thyra::createMember(x_space_);
+      RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(x_space_);
       {
-        Thyra::DetachedVectorView<double> vec_view( *vec );
+        Thyra::DetachedVectorView<Scalar> vec_view( *vec );
         vec_view[0] = 0.0;
         vec_view[1] = 1.0;
       }
       V_V(multivec->col(0).ptr(),*vec);
       {
-        Thyra::DetachedVectorView<double> vec_view( *vec );
+        Thyra::DetachedVectorView<Scalar> vec_view( *vec );
         vec_view[0] = 1.0;
         vec_view[1] = 0.0;
       }
       V_V(multivec->col(1).ptr(),*vec);
     }
   }
-  RCP<Thyra::LinearOpWithSolveBase<double> > W =
-    Thyra::linearOpWithSolve<double>(*W_factory, matrix);
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
+    Thyra::linearOpWithSolve<Scalar>(*W_factory, matrix);
   return W;
 }
 
-Teuchos::RCP<Thyra::LinearOpBase<double> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 SinCosModel::
 create_W_op() const
 {
-  Teuchos::RCP<Thyra::MultiVectorBase<double> > matrix = Thyra::createMembers(x_space_, dim_);
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
   return(matrix);
 }
 
-Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> >
+Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 SinCosModel::
 get_W_factory() const
 {
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory =
-    Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory =
+    Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
   return W_factory;
 }
 
 
-Thyra::ModelEvaluatorBase::InArgs<double>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 SinCosModel::
 createInArgs() const
 {
@@ -267,7 +267,7 @@ createInArgs() const
   return inArgs_;
 }
 
-Thyra::ModelEvaluatorBase::OutArgs<double>
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 SinCosModel::
 createOutArgsImpl() const
 {
@@ -277,10 +277,10 @@ createOutArgsImpl() const
 
 void
 SinCosModel::
-evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
-               const Thyra::ModelEvaluatorBase::OutArgs<double> &outArgs) const
+evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
-  typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   using Teuchos::RCP;
   using Thyra::VectorBase;
   using Thyra::MultiVectorBase;
@@ -288,22 +288,22 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
-  const RCP<const VectorBase<double> > x_in = inArgs.get_x().assert_not_null();
-  Thyra::ConstDetachedVectorView<double> x_in_view( *x_in );
+  const RCP<const VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
+  Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
 
-  //double t = inArgs.get_t();
-  double a = a_;
-  double f = f_;
-  double L = L_;
+  //Scalar t = inArgs.get_t();
+  Scalar a = a_;
+  Scalar f = f_;
+  Scalar L = L_;
   if (acceptModelParams_) {
-    const RCP<const VectorBase<double> > p_in =
+    const RCP<const VectorBase<Scalar> > p_in =
       inArgs.get_p(0).assert_not_null();
-    Thyra::ConstDetachedVectorView<double> p_in_view( *p_in );
+    Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
     a = p_in_view[0];
     f = p_in_view[1];
     L = p_in_view[2];
   }
-  RCP<const MultiVectorBase<double> > DxDp_in, DxdotDp_in;
+  RCP<const MultiVectorBase<Scalar> > DxDp_in, DxdotDp_in;
   if (acceptModelParams_) {
     if (inArgs.get_p(1) != Teuchos::null)
       DxDp_in =
@@ -313,27 +313,27 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
         rcp_dynamic_cast<const DMVPV>(inArgs.get_p(2))->getMultiVector();
   }
 
-  double beta = inArgs.get_beta();
+  Scalar beta = inArgs.get_beta();
 
-  const RCP<VectorBase<double> > f_out = outArgs.get_f();
-  const RCP<Thyra::LinearOpBase<double> > W_out = outArgs.get_W_op();
-  RCP<Thyra::MultiVectorBase<double> > DfDp_out;
+  const RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
+  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
+  RCP<Thyra::MultiVectorBase<Scalar> > DfDp_out;
   if (acceptModelParams_) {
-    Thyra::ModelEvaluatorBase::Derivative<double> DfDp = outArgs.get_DfDp(0);
+    Thyra::ModelEvaluatorBase::Derivative<Scalar> DfDp = outArgs.get_DfDp(0);
     DfDp_out = DfDp.getMultiVector();
   }
   if (inArgs.get_x_dot().is_null()) {
 
     // Evaluate the Explicit ODE f(x,t) [= 0]
     if (!is_null(f_out)) {
-      Thyra::DetachedVectorView<double> f_out_view( *f_out );
+      Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
       f_out_view[0] = x_in_view[1];
       f_out_view[1] = (f/L)*(f/L)*(a-x_in_view[0]);
     }
     if (!is_null(W_out)) {
-      RCP<Thyra::MultiVectorBase<double> > matrix =
-        Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
-      Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
+      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+        Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
+      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
       matrix_view(0,0) = 0.0;               // d(f0)/d(x0_n)
       matrix_view(0,1) = +beta;             // d(f0)/d(x1_n)
       matrix_view(1,0) = -beta*(f/L)*(f/L); // d(f1)/d(x0_n)
@@ -341,7 +341,7 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
       // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
     }
     if (!is_null(DfDp_out)) {
-      Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
+      Thyra::DetachedMultiVectorView<Scalar> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
       DfDp_out_view(0,1) = 0.0;
       DfDp_out_view(0,2) = 0.0;
@@ -350,7 +350,7 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
       DfDp_out_view(1,2) = -(2.0*f*f/(L*L*L))*(a-x_in_view[0]);
  // Compute df/dp + (df/dx) * (dx/dp)
       if (useDfDpAsTangent_ && !is_null(DxDp_in)) {
-        Thyra::ConstDetachedMultiVectorView<double> DxDp( *DxDp_in );
+        Thyra::ConstDetachedMultiVectorView<Scalar> DxDp( *DxDp_in );
         DfDp_out_view(0,0) +=  DxDp(1,0);
         DfDp_out_view(0,1) +=  DxDp(1,1);
         DfDp_out_view(0,2) +=  DxDp(1,2);
@@ -362,19 +362,19 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
   } else {
 
     // Evaluate the implicit ODE f(xdot, x, t) [= 0]
-    RCP<const VectorBase<double> > x_dot_in;
+    RCP<const VectorBase<Scalar> > x_dot_in;
     x_dot_in = inArgs.get_x_dot().assert_not_null();
-    double alpha = inArgs.get_alpha();
+    Scalar alpha = inArgs.get_alpha();
     if (!is_null(f_out)) {
-      Thyra::DetachedVectorView<double> f_out_view( *f_out );
-      Thyra::ConstDetachedVectorView<double> x_dot_in_view( *x_dot_in );
+      Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
+      Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in );
       f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
       f_out_view[1] = x_dot_in_view[1] - (f/L)*(f/L)*(a-x_in_view[0]);
     }
     if (!is_null(W_out)) {
-      RCP<Thyra::MultiVectorBase<double> > matrix =
-      Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
-      Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
+      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+      Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
+      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
       matrix_view(0,0) = alpha;             // d(f0)/d(x0_n)
       matrix_view(0,1) = -beta;             // d(f0)/d(x1_n)
       matrix_view(1,0) = +beta*(f/L)*(f/L); // d(f1)/d(x0_n)
@@ -382,7 +382,7 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
       // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
     }
     if (!is_null(DfDp_out)) {
-      Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
+      Thyra::DetachedMultiVectorView<Scalar> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
       DfDp_out_view(0,1) = 0.0;
       DfDp_out_view(0,2) = 0.0;
@@ -392,7 +392,7 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
 
       // Compute df/dp + (df/dx_dot) * (dx_dot/dp) + (df/dx) * (dx/dp)
       if (useDfDpAsTangent_ && !is_null(DxdotDp_in)) {
-        Thyra::ConstDetachedMultiVectorView<double> DxdotDp( *DxdotDp_in );
+        Thyra::ConstDetachedMultiVectorView<Scalar> DxdotDp( *DxdotDp_in );
         DfDp_out_view(0,0) += DxdotDp(0,0);
         DfDp_out_view(0,1) += DxdotDp(0,1);
         DfDp_out_view(0,2) += DxdotDp(0,2);
@@ -401,10 +401,10 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
         DfDp_out_view(1,2) += DxdotDp(1,2);
       }
       if (useDfDpAsTangent_ && !is_null(DxDp_in)) {
-        Thyra::ConstDetachedMultiVectorView<double> DxDp( *DxDp_in );
+        Thyra::ConstDetachedMultiVectorView<Scalar> DxDp( *DxDp_in );
         DfDp_out_view(0,0) += -DxDp(1,0);
         DfDp_out_view(0,1) += -DxDp(1,1);
-           DfDp_out_view(0,2) += -DxDp(1,2);
+        DfDp_out_view(0,2) += -DxDp(1,2);
         DfDp_out_view(1,0) +=  (f/L)*(f/L) * DxDp(0,0);
         DfDp_out_view(1,1) +=  (f/L)*(f/L) * DxDp(0,1);
         DfDp_out_view(1,2) +=  (f/L)*(f/L) * DxDp(0,2);
@@ -414,19 +414,19 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
 
   // Responses:  g = x
   if (acceptModelParams_) {
-    RCP<VectorBase<double> > g_out = outArgs.get_g(0);
+    RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
     if (g_out != Teuchos::null)
       Thyra::assign(g_out.ptr(), *x_in);
 
-    RCP<Thyra::MultiVectorBase<double> > DgDp_out =
+    RCP<Thyra::MultiVectorBase<Scalar> > DgDp_out =
       outArgs.get_DgDp(0,0).getMultiVector();
     if (DgDp_out != Teuchos::null)
-      Thyra::assign(DgDp_out.ptr(), double(0.0));
+      Thyra::assign(DgDp_out.ptr(), Scalar(0.0));
 
-    RCP<Thyra::MultiVectorBase<double> > DgDx_out =
+    RCP<Thyra::MultiVectorBase<Scalar> > DgDx_out =
       outArgs.get_DgDx(0).getMultiVector();
     if (DgDx_out != Teuchos::null) {
-      Thyra::DetachedMultiVectorView<double> DgDx_out_view( *DgDx_out );
+      Thyra::DetachedMultiVectorView<Scalar> DgDx_out_view( *DgDx_out );
       DgDx_out_view(0,0) = 1.0;
       DgDx_out_view(0,1) = 0.0;
       DgDx_out_view(1,0) = 0.0;
@@ -436,7 +436,7 @@ evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<double> &inArgs,
 }
 
 
-Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel::
 get_p_space(int l) const
 {
@@ -473,7 +473,7 @@ get_p_names(int l) const
   return p_strings;
 }
 
-Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 SinCosModel::
 get_g_space(int j) const
 {
@@ -493,7 +493,7 @@ setupInOutArgs_() const
   typedef Thyra::ModelEvaluatorBase MEB;
   {
     // Set up prototypical InArgs
-    MEB::InArgsSetup<double> inArgs;
+    MEB::InArgsSetup<Scalar> inArgs;
     inArgs.setModelEvalDescription(this->description());
     inArgs.setSupports( MEB::IN_ARG_t );
     inArgs.setSupports( MEB::IN_ARG_x );
@@ -508,7 +508,7 @@ setupInOutArgs_() const
 
   {
     // Set up prototypical OutArgs
-    MEB::OutArgsSetup<double> outArgs;
+    MEB::OutArgsSetup<Scalar> outArgs;
     outArgs.setModelEvalDescription(this->description());
     outArgs.setSupports( MEB::OUT_ARG_f );
     outArgs.setSupports( MEB::OUT_ARG_W_op );
@@ -528,26 +528,26 @@ setupInOutArgs_() const
   if (haveIC_)
   {
     nominalValues_.set_t(t0_ic_);
-    const RCP<Thyra::VectorBase<double> > x_ic = createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
-      Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
+      Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
       x_ic_view[0] = a_+b_*sin((f_/L_)*t0_ic_+phi_);
       x_ic_view[1] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
     }
     nominalValues_.set_x(x_ic);
     if (acceptModelParams_) {
-      const RCP<Thyra::VectorBase<double> > p_ic = createMember(p_space_);
+      const RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
       {
-        Thyra::DetachedVectorView<double> p_ic_view( *p_ic );
+        Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
         p_ic_view[0] = a_;
         p_ic_view[1] = f_;
         p_ic_view[2] = L_;
       }
       nominalValues_.set_p(0,p_ic);
     }
-    const RCP<Thyra::VectorBase<double> > x_dot_ic = createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
-      Thyra::DetachedVectorView<double> x_dot_ic_view( *x_dot_ic );
+      Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
       x_dot_ic_view[0] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
       x_dot_ic_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t0_ic_+phi_);
     }
@@ -580,12 +580,12 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   acceptModelParams_ = acceptModelParams;
   haveIC_ = haveIC;
   useDfDpAsTangent_ = useDfDpAsTangent;
-  a_ = get<double>(*pl,"Coeff a");
-  f_ = get<double>(*pl,"Coeff f");
-  L_ = get<double>(*pl,"Coeff L");
-  x0_ic_ = get<double>(*pl,"IC x0");
-  x1_ic_ = get<double>(*pl,"IC x1");
-  t0_ic_ = get<double>(*pl,"IC t0");
+  a_ = get<Scalar>(*pl,"Coeff a");
+  f_ = get<Scalar>(*pl,"Coeff f");
+  L_ = get<Scalar>(*pl,"Coeff L");
+  x0_ic_ = get<Scalar>(*pl,"IC x0");
+  x1_ic_ = get<Scalar>(*pl,"IC x1");
+  t0_ic_ = get<Scalar>(*pl,"IC t0");
   calculateCoeffFromIC_();
   setupInOutArgs_();
 }
@@ -626,5 +626,145 @@ calculateCoeffFromIC_()
 {
   phi_ = atan(((f_/L_)/x1_ic_)*(x0_ic_-a_))-(f_/L_)*t0_ic_;
   b_ = x1_ic_/((f_/L_)*cos((f_/L_)*t0_ic_+phi_));
+}
+
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+SinCosModelAdjoint::
+create_W() const
+{
+  using Teuchos::RCP;
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
+  RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
+  {
+    // 01/20/09 tscoffe:  This is a total hack to provide a full rank matrix to
+    // linearOpWithSolve because it ends up factoring the matrix during
+    // initialization, which it really shouldn't do, or I'm doing something
+    // wrong here.   The net effect is that I get exceptions thrown in
+    // optimized mode due to the matrix being rank deficient unless I do this.
+    RCP<Thyra::MultiVectorBase<Scalar> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
+    {
+      RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(this->f_space_);
+      {
+        Thyra::DetachedVectorView<Scalar> vec_view( *vec );
+        vec_view[0] = 0.0;
+        vec_view[1] = 1.0;
+      }
+      V_V(multivec->col(0).ptr(),*vec);
+      {
+        Thyra::DetachedVectorView<Scalar> vec_view( *vec );
+        vec_view[0] = 1.0;
+        vec_view[1] = 0.0;
+      }
+      V_V(multivec->col(1).ptr(),*vec);
+    }
+  }
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W =
+    Thyra::linearOpWithSolve<Scalar>(
+      *W_factory,
+      matrix
+      );
+  return W;
+}
+
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+SinCosModelAdjoint::
+create_W_op() const
+{
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(this->f_space_, this->dim_);
+  return(matrix);
+}
+
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+SinCosModelAdjoint::
+createInArgs() const
+{
+  // This ME should use the same InArgs as the base SinCosModel.  However
+  // we can't just use it's InArgs directly because the description won't
+  // match (which is checked in debug builds).  Instead create a new InArgsSetup
+  // initialized by SinCosModel::createInArgs() and set the description
+  // appropriately.
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgsSetup<Scalar> inArgs = SinCosModel::createInArgs();
+  inArgs.setModelEvalDescription(this->description());
+  return inArgs;
+}
+
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
+SinCosModelAdjoint::
+createOutArgsImpl() const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::OutArgsSetup<Scalar> outArgs;
+  outArgs.setModelEvalDescription(this->description());
+  outArgs.setSupports( MEB::OUT_ARG_f ); // Apparently all models have to support f
+  outArgs.setSupports( MEB::OUT_ARG_W_op );
+  outArgs.set_Np_Ng(this->Np_,0);
+  return outArgs;
+}
+
+void
+SinCosModelAdjoint::
+evalModelImpl(
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
+  ) const
+{
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  using Teuchos::RCP;
+  using Thyra::VectorBase;
+  using Thyra::MultiVectorBase;
+  using Teuchos::rcp_dynamic_cast;
+  TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized_, std::logic_error,
+      "Error, setupInOutArgs_ must be called first!\n");
+
+  const RCP<const VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
+  Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
+
+  //double t = inArgs.get_t();
+  //Scalar a = this->a_;
+  Scalar f = this->f_;
+  Scalar L = this->L_;
+  if (this->acceptModelParams_) {
+    const RCP<const VectorBase<Scalar> > p_in =
+      inArgs.get_p(0).assert_not_null();
+    Thyra::ConstDetachedVectorView<Scalar> p_in_view( *p_in );
+    //a = p_in_view[0];
+    f = p_in_view[1];
+    L = p_in_view[2];
+  }
+
+  Scalar beta = inArgs.get_beta();
+
+  const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
+  if (inArgs.get_x_dot().is_null()) {
+
+    // Evaluate the Explicit ODE f(x,t) [= 0]
+    if (!is_null(W_out)) {
+      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+        Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
+      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
+      matrix_view(0,0) = 0.0;               // d(f0)/d(x0_n)
+      matrix_view(1,0) = +beta;             // d(f0)/d(x1_n)
+      matrix_view(0,1) = -beta*(f/L)*(f/L); // d(f1)/d(x0_n)
+      matrix_view(1,1) = 0.0;               // d(f1)/d(x1_n)
+      // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
+    }
+  } else {
+
+    // Evaluate the implicit ODE f(xdot, x, t) [= 0]
+    RCP<const VectorBase<Scalar> > x_dot_in;
+    x_dot_in = inArgs.get_x_dot().assert_not_null();
+    Scalar alpha = inArgs.get_alpha();
+    if (!is_null(W_out)) {
+      RCP<Thyra::MultiVectorBase<Scalar> > matrix =
+        Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(W_out,true);
+      Thyra::DetachedMultiVectorView<Scalar> matrix_view( *matrix );
+      matrix_view(0,0) = alpha;             // d(f0)/d(x0_n)
+      matrix_view(1,0) = -beta;             // d(f0)/d(x1_n)
+      matrix_view(0,1) = +beta*(f/L)*(f/L); // d(f1)/d(x0_n)
+      matrix_view(1,1) = alpha;             // d(f1)/d(x1_n)
+      // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
+    }
+  }
 }
 

@@ -49,8 +49,42 @@ public:
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
     stk::balance::m2n::m2nRebalance(m_ioBroker, balanceSettings);
     stk::EnvData::instance().m_outputP0 = &std::cout;
+
+    stk::mesh::Part * block1 = m_ioBroker.meta_data().get_part("block_1");
+    ASSERT_NE(block1, nullptr);
+    ASSERT_TRUE(stk::io::has_original_topology_type(*block1));
   }
 };
+
+TEST_F(M2NRebalance, 1elem_beam2_1procTo1proc)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) return;
+
+  std::vector<OriginalTopology> originalTopologies { {"block_1", "beam2"} };
+
+  setup_initial_mesh_textmesh_override_topology("0,1,BEAM_2,1,2,block_1\n", originalTopologies);
+  rebalance_mesh_m2n(1);
+  test_decomposed_mesh_element_distribution({1});
+  test_decomposed_mesh_node_sharing({ {} });
+  test_decomposed_mesh_element_topology(originalTopologies);
+  clean_up_temporary_files();
+}
+
+TEST_F(M2NRebalance, 2elem_assemblies_1procTo2proc)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) return;
+
+  std::vector<AssemblyGrouping> assemblyDefinitions { {"assembly1", 100, {"block_1", "block_2"}} };
+
+  setup_initial_mesh_textmesh_add_assemblies("0,1,BEAM_2,1,2,block_1\n"
+                                             "0,2,BEAM_2,2,3,block_2\n", assemblyDefinitions);
+  rebalance_mesh_m2n(2);
+  test_decomposed_mesh_element_distribution({1, 1});
+  test_decomposed_mesh_node_sharing({ {{2, 1}},
+                                      {{2, 0}} });
+  test_decomposed_mesh_assemblies(assemblyDefinitions);
+  clean_up_temporary_files();
+}
 
 TEST_F(M2NRebalance, 1elem_1procTo1proc)
 {

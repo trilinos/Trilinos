@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -119,18 +119,16 @@ struct ncvar /* variable */
 int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
                     MPI_Comm comm, MPI_Info info, int run_version)
 {
-  int     exoid  = -1;
-  int     status = 0, stat_att = 0, stat_dim = 0;
-  nc_type att_type      = NC_NAT;
-  size_t  att_len       = 0;
-  int     nc_mode       = 0;
-  int     old_fill      = 0;
-  int     file_wordsize = 0;
-  int     dim_str_name  = 0;
-  int     int64_status  = 0;
-  bool    is_hdf5       = false;
-  bool    is_pnetcdf    = false;
-  bool    in_redef      = false;
+  int  exoid         = -1;
+  int  status        = 0;
+  int  nc_mode       = 0;
+  int  old_fill      = 0;
+  int  file_wordsize = 0;
+  int  dim_str_name  = 0;
+  int  int64_status  = 0;
+  bool is_hdf5       = false;
+  bool is_pnetcdf    = false;
+  bool in_redef      = false;
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -309,8 +307,10 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
-    stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
+    nc_type att_type = NC_NAT;
+    size_t  att_len  = 0;
+    int     stat_att = nc_inq_att(exoid, NC_GLOBAL, ATT_MAX_NAME_LENGTH, &att_type, &att_len);
+    int     stat_dim = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name);
     if (stat_att != NC_NOERR || stat_dim != NC_NOERR) {
       if (!in_redef) {
         if ((status = nc_redef(exoid)) != NC_NOERR) {
@@ -339,7 +339,6 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
       if ((status = ex__leavedef(exoid, __func__)) != NC_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL);
       }
-      in_redef = false;
     }
 
     /* If this is a parallel execution and we are appending, then we

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -124,7 +124,7 @@ namespace {
 
     if (interFace.list_vars()) {
       StringIdVector types_to_list = interFace.vars_to_list();
-      for (auto types : types_to_list) {
+      for (auto &types : types_to_list) {
         std::string type = types.first;
 
         if (type == "all" || type == "global") {

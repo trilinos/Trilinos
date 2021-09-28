@@ -34,20 +34,10 @@
 #ifndef STKTOPOLOGY_APPLY_FUNCTOR_TCC
 #define STKTOPOLOGY_APPLY_FUNCTOR_TCC
 
-// IWYU pragma: private, include "stk_topology/topology.hpp"
+#include "stk_topology/topology_decl.hpp"
+#include "stk_topology/types.hpp"
 
 namespace stk {
-
-// struct my_functor {
-//
-//  typedef ... result_type;
-//
-//  template <typename Topology>
-//  result_type operator()(Topoolgy)
-//  { ... }
-//
-// };
-
 
 //*****************************************************************************
 // Converts a runtime topology to a compile-time topology_type<Topology>

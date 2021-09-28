@@ -25,7 +25,7 @@
 
 namespace {
 
-using IntDualViewType = Kokkos::DualView<int*, stk::mesh::ExecSpace>;
+using IntDualViewType = Kokkos::DualView<int*, stk::ngp::ExecSpace>;
 
 void set_field_on_device_and_copy_back(stk::mesh::BulkData &bulk,
                                        stk::mesh::EntityRank rank,
@@ -116,7 +116,7 @@ void test_field_on_subset_of_mesh(const stk::mesh::BulkData& bulk, const FieldTy
                                   stk::mesh::PartOrdinal partThatDoesntHaveField)
 {
   stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
@@ -213,7 +213,7 @@ void run_connected_node_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
@@ -279,7 +279,7 @@ void run_id_test(const stk::mesh::BulkData& bulk)
 {
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
@@ -339,7 +339,7 @@ void run_connected_face_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
@@ -406,7 +406,7 @@ void run_connected_face_ordinal_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
@@ -484,7 +484,7 @@ void run_connected_face_permutation_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
@@ -554,7 +554,7 @@ void run_another_connected_face_test(const stk::mesh::BulkData& bulk)
 
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
   Kokkos::parallel_for(teamPolicy,
@@ -611,7 +611,7 @@ void test_view_of_fields(const stk::mesh::BulkData& bulk,
                          stk::mesh::Field<double>& field1,
                          stk::mesh::Field<double>& field2)
 {
-  using FieldViewType = Kokkos::View<stk::mesh::NgpField<double>*,stk::mesh::MemSpace>;
+  using FieldViewType = Kokkos::View<stk::mesh::NgpField<double>*,stk::ngp::MemSpace>;
 
   FieldViewType fields(Kokkos::ViewAllocateWithoutInitializing("fields"),2);
   FieldViewType::HostMirror hostFields = Kokkos::create_mirror_view(fields);
@@ -707,14 +707,14 @@ unsigned count_num_elems(stk::mesh::NgpMesh ngpMesh,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &part)
 {
-  Kokkos::View<unsigned *, stk::mesh::MemSpace> numElems("numElems", 1);
+  Kokkos::View<unsigned *, stk::ngp::MemSpace> numElems("numElems", 1);
   stk::mesh::for_each_entity_run(ngpMesh, rank, part,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
                                    unsigned fieldValue = static_cast<unsigned>(ngpField(entity, 0));
                                    Kokkos::atomic_add(&numElems(0), fieldValue);
                                  });
-  Kokkos::View<unsigned *, stk::mesh::MemSpace>::HostMirror numElemsHost =
+  Kokkos::View<unsigned *, stk::ngp::MemSpace>::HostMirror numElemsHost =
       Kokkos::create_mirror_view(numElems);
   Kokkos::deep_copy(numElemsHost, numElems);
   return numElemsHost(0);
@@ -1124,7 +1124,7 @@ void run_part_membership_test(const stk::mesh::BulkData& bulk, stk::mesh::PartOr
 {
   const stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
+  typedef Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace, stk::ngp::ScheduleType>::member_type TeamHandleType;
   const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::NgpMesh::MeshExecSpace>(ngpMesh.num_buckets(stk::topology::ELEM_RANK),
                                                                                  Kokkos::AUTO);
 
@@ -1227,62 +1227,62 @@ TEST(NgpMesh, meshIndices)
 //==============================================================================
 class FakeEntity {
 public:
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeEntity()
     : m_value(0)
   {
     printf("  FakeEntity: (%lu) Calling default constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   explicit FakeEntity(size_t value)
     : m_value(value)
   {
     printf("  FakeEntity: (%lu) Calling constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ~FakeEntity() {
     printf("  FakeEntity: (%lu) Calling destructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeEntity(const FakeEntity& rhs) {
     printf("  FakeEntity: (%lu) Calling copy constructor\n", rhs.m_value);
     m_value = rhs.m_value;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   size_t value() const { return m_value; }
 
 private:
   size_t m_value;
 };
 
-using FakeEntityType = Kokkos::View<FakeEntity*, stk::mesh::MemSpace>;
+using FakeEntityType = Kokkos::View<FakeEntity*, stk::ngp::MemSpace>;
 
 class FakeBucket {
 public:
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeBucket()
     : m_value(0)
   {
     printf("FakeBucket: (%lu) Calling default constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   explicit FakeBucket(size_t value)
     : m_value(value)
   {
     printf("FakeBucket: (%lu) Calling constructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ~FakeBucket() {
     printf("FakeBucket: (%lu) Calling destructor\n", m_value);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeBucket(const FakeBucket& rhs) {
     printf("FakeBucket: (%lu) Calling copy constructor\n", rhs.m_value);
     m_value = rhs.m_value;
@@ -1293,7 +1293,7 @@ public:
     m_innerView = FakeEntityType("Data", numValues);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   size_t value(size_t i) const { return m_innerView[i].value(); }
 
 private:
@@ -1301,12 +1301,12 @@ private:
   FakeEntityType m_innerView;
 };
 
-using FakeBuckets = Kokkos::View<FakeBucket*, stk::mesh::UVMMemSpace>;
+using FakeBuckets = Kokkos::View<FakeBucket*, stk::ngp::UVMMemSpace>;
 
 class FakeMesh
 {
 public:
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeMesh()
     : m_isInitialized(false),
       m_numBuckets(1),
@@ -1316,7 +1316,7 @@ public:
     update(0);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ~FakeMesh() {
     printf("FakeMesh: Calling destructor\n");
     if (m_fakeBuckets.use_count() == 1) {
@@ -1324,7 +1324,7 @@ public:
     }
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   FakeMesh(const FakeMesh & rhs) {
     printf("FakeMesh: Calling copy constructor\n");
     m_fakeBuckets = rhs.m_fakeBuckets;
@@ -1359,7 +1359,7 @@ public:
     m_isInitialized = true;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void do_stuff() const {
     for (size_t i = 0; i < m_numBuckets; ++i) {
       for (size_t j = 0; j < m_numEntities; ++j) {

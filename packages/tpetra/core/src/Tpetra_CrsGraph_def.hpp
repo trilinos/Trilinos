@@ -2920,10 +2920,6 @@ namespace Tpetra {
       allocateIndices (LocalIndices, verbose_);
     }
 
-    // FIXME (mfh 13 Aug 2014) What if they haven't been cleared on
-    // all processes?
-    clearGlobalConstants ();
-
     if (k_numRowEntries_.extent (0) != 0) {
       this->k_numRowEntries_(lrow) = 0;
     }
@@ -4326,6 +4322,26 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap)
+  {
+    const char prefix[] = "Tpetra::CrsGraph::replaceDomainMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      colMap_.is_null (), std::invalid_argument, prefix << "You may not call "
+      "this method unless the graph already has a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newDomainMap.is_null (), std::invalid_argument,
+      prefix << "The new domain Map must be nonnull.");
+
+    // Create a new importer, if needed
+    Teuchos::RCP<const import_type> newImporter = Teuchos::null;
+    if (newDomainMap != colMap_ && (! newDomainMap->isSameAs (*colMap_))) {
+      newImporter = rcp(new import_type(newDomainMap, colMap_));
+    }
+    this->replaceDomainMapAndImporter(newDomainMap, newImporter);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4349,7 +4365,7 @@ namespace Tpetra {
         // than once.  It's polite for them to do so, but not required.
         const bool colSameAsDom = colMap_->isSameAs (*newDomainMap);
         TEUCHOS_TEST_FOR_EXCEPTION
-          (colSameAsDom, std::invalid_argument, "If the new Import is null, "
+          (!colSameAsDom, std::invalid_argument, "If the new Import is null, "
            "then the new domain Map must be the same as the current column Map.");
       }
       else {
@@ -4367,6 +4383,69 @@ namespace Tpetra {
 
     domainMap_ = newDomainMap;
     importer_ = Teuchos::rcp_const_cast<import_type> (newImporter);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap)
+  {
+    const char prefix[] = "Tpetra::CrsGraph::replaceRangeMap: ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rowMap_.is_null (), std::invalid_argument, prefix << "You may not call "
+      "this method unless the graph already has a row Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newRangeMap.is_null (), std::invalid_argument,
+      prefix << "The new range Map must be nonnull.");
+
+    // Create a new exporter, if needed
+    Teuchos::RCP<const export_type> newExporter = Teuchos::null;
+    if (newRangeMap != rowMap_ && (! newRangeMap->isSameAs (*rowMap_))) {
+      newExporter = rcp(new export_type(rowMap_, newRangeMap));
+    }
+    this->replaceRangeMapAndExporter(newRangeMap, newExporter);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                              const Teuchos::RCP<const export_type>& newExporter)
+  {
+    const char prefix[] = "Tpetra::CrsGraph::replaceRangeMapAndExporter: ";
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rowMap_.is_null (), std::invalid_argument, prefix << "You may not call "
+      "this method unless the graph already has a column Map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      newRangeMap.is_null (), std::invalid_argument,
+      prefix << "The new domain Map must be nonnull.");
+
+    if (debug_) {
+      if (newExporter.is_null ()) {
+        // It's not a good idea to put expensive operations in a macro
+        // clause, even if they are side effect - free, because macros
+        // don't promise that they won't evaluate their arguments more
+        // than once.  It's polite for them to do so, but not required.
+        const bool rowSameAsRange = rowMap_->isSameAs (*newRangeMap);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (!rowSameAsRange, std::invalid_argument, "If the new Export is null, "
+           "then the new range Map must be the same as the current row Map.");
+      }
+      else {
+        const bool newRangeSameAsTgt =
+          newRangeMap->isSameAs (* (newExporter->getTargetMap ()));
+        const bool rowSameAsSrc =
+          rowMap_->isSameAs (* (newExporter->getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! rowSameAsSrc || ! newRangeSameAsTgt, std::invalid_argument, "If the "
+           "new Export is nonnull, then the current row Map must be the same "
+           "as the new Export's source Map, and the new range Map must be the "
+           "same as the new Export's target Map.");
+      }
+    }
+
+    rangeMap_ = newRangeMap;
+    exporter_ = Teuchos::rcp_const_cast<export_type> (newExporter);
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -5690,8 +5769,7 @@ namespace Tpetra {
      buffer_device_type>& exports,
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
-   size_t& constantNumPackets,
-   Distributor& distor)
+   size_t& constantNumPackets)
   {
     using Tpetra::Details::ProfilingRegion;
     using GO = global_ordinal_type;
@@ -5759,7 +5837,7 @@ namespace Tpetra {
       ArrayView<size_t> numPacketsPerLID_av (numPacketsPerLID_h.data (),
                                              numPacketsPerLID_h.extent (0));
       srcRowGraphPtr->pack (exportLIDs_av, exports_a, numPacketsPerLID_av,
-                            constantNumPackets, distor);
+                            constantNumPackets);
       const size_t newSize = static_cast<size_t> (exports_a.size ());
       if (static_cast<size_t> (exports.extent (0)) != newSize) {
         using exports_dv_type = Kokkos::DualView<packet_type*, buffer_device_type>;
@@ -5788,11 +5866,11 @@ namespace Tpetra {
       using Tpetra::Details::packCrsGraphNew;
       packCrsGraphNew<LO,GO,NT> (*srcCrsGraphPtr, exportLIDs, exportPIDs,
                                  exports, numPacketsPerLID,
-                                 constantNumPackets, false, distor);
+                                 constantNumPackets, false);
     }
     else {
       srcCrsGraphPtr->packFillActiveNew (exportLIDs, exports, numPacketsPerLID,
-                                         constantNumPackets, distor);
+                                         constantNumPackets);
     }
 
     if (verbose) {
@@ -5808,19 +5886,18 @@ namespace Tpetra {
   pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
         Teuchos::Array<GlobalOrdinal>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-        size_t& constantNumPackets,
-        Distributor& distor) const
+        size_t& constantNumPackets) const
   {
     auto col_map = this->getColMap();
     // packCrsGraph requires k_rowPtrsPacked to be set
     if( !col_map.is_null() && (rowPtrsPacked_dev_.extent(0) != 0  ||  getRowMap()->getNodeNumElements() ==0)) {
       using Tpetra::Details::packCrsGraph;
       packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
-                                                    exportLIDs, constantNumPackets, distor);
+                                                    exportLIDs, constantNumPackets);
     }
     else {
       this->packFillActive(exportLIDs, exports, numPacketsPerLID,
-                           constantNumPackets, distor);
+                           constantNumPackets);
     }
   }
 
@@ -5830,8 +5907,7 @@ namespace Tpetra {
   packFillActive (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
                   Teuchos::Array<GlobalOrdinal>& exports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  Distributor& /* distor */) const
+                  size_t& constantNumPackets) const
   {
     using std::endl;
     using LO = LocalOrdinal;
@@ -6021,8 +6097,7 @@ namespace Tpetra {
                        buffer_device_type>& exports,
                      Kokkos::DualView<size_t*,
                        buffer_device_type> numPacketsPerLID,
-                     size_t& constantNumPackets,
-                     Distributor& distor) const
+                     size_t& constantNumPackets) const
   {
     using std::endl;
     using LO = local_ordinal_type;
@@ -6251,7 +6326,6 @@ namespace Tpetra {
    Kokkos::DualView<size_t*,
      buffer_device_type> numPacketsPerLID,
    const size_t /* constantNumPackets */,
-   Distributor& /* distor */,
    const CombineMode /* combineMode */ )
   {
     using Details::ProfilingRegion;
@@ -7067,7 +7141,7 @@ namespace Tpetra {
 
     // The basic algorithm here is:
     //
-    // 1. Call the moral equivalent of "distor.do" to handle the import.
+    // 1. Call the moral equivalent of "Distor.do" to handle the import.
     // 2. Copy all the Imported and Copy/Permuted data into the raw
     //    CrsGraph pointers, still using GIDs.
     // 3. Call an optimized version of MakeColMap that avoids the
@@ -7274,7 +7348,7 @@ namespace Tpetra {
       // Pack & Prepare w/ owning PIDs
       packCrsGraphWithOwningPIDs(*this, destGraph->exports_,
                                  numExportPacketsPerLID, ExportLIDs,
-                                 SourcePids, constantNumPackets, Distor);
+                                 SourcePids, constantNumPackets);
     }
 
     // Do the exchange of remote data.
@@ -7401,7 +7475,7 @@ namespace Tpetra {
     size_t mynnz =
       unpackAndCombineWithOwningPIDsCount(*this, RemoteLIDs, hostImports,
                                            numImportPacketsPerLID,
-                                           constantNumPackets, Distor, INSERT,
+                                           constantNumPackets, INSERT,
                                            NumSameIDs, PermuteToLIDs, PermuteFromLIDs);
     size_t N = BaseRowMap->getNodeNumElements();
 
@@ -7427,7 +7501,7 @@ namespace Tpetra {
     // takes five methods.
     unpackAndCombineIntoCrsArrays(*this, RemoteLIDs, hostImports,
                                   numImportPacketsPerLID, constantNumPackets,
-                                  Distor, INSERT, NumSameIDs, PermuteToLIDs,
+                                  INSERT, NumSameIDs, PermuteToLIDs,
                                   PermuteFromLIDs, N, mynnz, MyPID,
                                   CSR_rowptr(), CSR_colind_GID(),
                                   SourcePids(), TargetPids);

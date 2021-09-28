@@ -268,6 +268,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_DgDx_get_DgDx, Scalar )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_DgDx_get_DgDx )
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_hess_vec_prod_f_get_hess_vec_prod_f, Scalar )
 {
@@ -556,6 +557,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, set_H_get_H, Scalar )
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, set_H_get_H )
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 //
 // MEB::InArgs

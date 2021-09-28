@@ -42,7 +42,6 @@
 #include <string>                                    // for string, etc
 #include <vector>                                    // for vector
 #include "mpi.h"                                     // for MPI_COMM_WORLD, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity, etc
 #include "stk_mesh/base/EntityKey.hpp"               // for operator<<, etc
 #include "stk_mesh/base/GetEntities.hpp"             // for count_entities

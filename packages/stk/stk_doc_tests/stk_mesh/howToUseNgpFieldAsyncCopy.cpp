@@ -38,7 +38,7 @@
 #include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_mesh/base/GetNgpExecutionSpace.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>

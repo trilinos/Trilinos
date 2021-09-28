@@ -43,7 +43,6 @@
 #include <stk_util/environment/Env.hpp>
 #include <vector>                       // for allocator, vector
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector

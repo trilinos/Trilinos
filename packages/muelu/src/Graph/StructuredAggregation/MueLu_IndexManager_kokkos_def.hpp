@@ -107,9 +107,9 @@ namespace MueLu {
                                Exceptions::RuntimeError,
                                "LFineNodesPerDir has to be of size 3 or of size numDimensions!");
 
-    typename Kokkos::View<LO[3], memory_space>::HostMirror lFineNodesPerDir_h = Kokkos::create_mirror_view(lFineNodesPerDir);
+    typename Kokkos::View<LO[3], device_type>::HostMirror lFineNodesPerDir_h = Kokkos::create_mirror_view(lFineNodesPerDir);
     Kokkos::deep_copy(lFineNodesPerDir_h, lFineNodesPerDir);
-    typename Kokkos::View<LO[3], memory_space>::HostMirror coarseRate_h = Kokkos::create_mirror_view(coarseRate);
+    typename Kokkos::View<LO[3], device_type>::HostMirror coarseRate_h = Kokkos::create_mirror_view(coarseRate);
     Kokkos::deep_copy(coarseRate_h, coarseRate);
 
     // Load coarse rate, being careful about formating
@@ -144,12 +144,12 @@ namespace MueLu {
       out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
     }
 
-    typename Kokkos::View<int[3], memory_space>::HostMirror coarseRate_h = Kokkos::create_mirror_view(coarseRate);
-    typename Kokkos::View<int[3], memory_space>::HostMirror endRate_h = Kokkos::create_mirror_view(endRate);
+    typename Kokkos::View<int[3], device_type>::HostMirror coarseRate_h = Kokkos::create_mirror_view(coarseRate);
+    typename Kokkos::View<int[3], device_type>::HostMirror endRate_h = Kokkos::create_mirror_view(endRate);
 
 
-    typename Kokkos::View<LO[3], memory_space>::HostMirror lFineNodesPerDir_h = Kokkos::create_mirror_view(lFineNodesPerDir);
-    typename Kokkos::View<LO[3], memory_space>::HostMirror coarseNodesPerDir_h = Kokkos::create_mirror_view(coarseNodesPerDir);
+    typename Kokkos::View<LO[3], device_type>::HostMirror lFineNodesPerDir_h = Kokkos::create_mirror_view(lFineNodesPerDir);
+    typename Kokkos::View<LO[3], device_type>::HostMirror coarseNodesPerDir_h = Kokkos::create_mirror_view(coarseNodesPerDir);
     Kokkos::deep_copy(lFineNodesPerDir_h, lFineNodesPerDir);
     Kokkos::deep_copy(coarseRate_h, coarseRate);
 

@@ -163,18 +163,18 @@ lib stk_search
 if ! $(releasable-arg) {
 exe stk_search_integration_tester
   :
-    [ glob $(stk_search-root)/integrationtest/*.cpp
-      glob $(stk_search-root)/integrationtest/*.[cC] ]
+    [ glob $(stk_search-root)/../stk_integration_tests/stk_search/*.cpp ]
     /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_math//stk_math
+    /sierra/stk_mesh//stk_mesh_base
   : <tag>@sierra-exec-tag
   ;
 }
 
 exe stk_search_utest
   :
-    [ glob $(stk_search-root)/unit_tests/*.cpp ]
+    [ glob $(stk_search-root)/../stk_unit_tests/stk_search/*.cpp ]
     [ glob $(stk_search-root)/testsForDocumentation/*.cpp ]
     /sierra/stk_search//stk_search
     /sierra/stk_unit_test_utils//stk_unit_main

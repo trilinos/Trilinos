@@ -40,6 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Kokkos_View_Fad.hpp"
+
 #include "PanzerDiscFE_config.hpp"
 
 #ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION

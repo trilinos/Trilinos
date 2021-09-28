@@ -65,23 +65,23 @@ public:
   virtual ~FunctionalScatterBase() {}
 
   virtual void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
-                                 panzer::Traits::EvalData workset, 
+                                 panzer::Traits::EvalData workset,
                                  WorksetDetailsAccessor& wda,
                                  const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const = 0;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
   virtual void scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
-                              panzer::Traits::EvalData workset, 
+                              panzer::Traits::EvalData workset,
                               WorksetDetailsAccessor& wda,
                               const std::vector<Teuchos::ArrayRCP<double> > & d2gdx2) const = 0;
 #endif
 };
- 
+
 template <typename LO,typename GO>
 class FunctionalScatter : public FunctionalScatterBase {
 public:
    FunctionalScatter(const Teuchos::RCP<const panzer::GlobalIndexer> & globalIndexer)
-   { 
+   {
      if(globalIndexer!=Teuchos::null)
        ugis_.push_back(globalIndexer);
    }
@@ -90,19 +90,19 @@ public:
      : ugis_(ugis) {}
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
-                         panzer::Traits::EvalData workset, 
+                         panzer::Traits::EvalData workset,
                          WorksetDetailsAccessor& wda,
                          const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
    void scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
-                       panzer::Traits::EvalData workset, 
+                       panzer::Traits::EvalData workset,
                        WorksetDetailsAccessor& wda,
                        const std::vector<Teuchos::ArrayRCP<double> > & d2gdx2) const;
 #endif
 
 private:
- 
+
    std::vector<Teuchos::RCP<const panzer::GlobalIndexer> > ugis_;
 };
 
@@ -111,7 +111,7 @@ private:
   */
 template<typename EvalT, typename Traits>
 class ResponseScatterEvaluator_Functional : public panzer::EvaluatorWithBaseImpl<Traits>,
-                                            public PHX::EvaluatorDerived<EvalT, Traits>  { 
+                                            public PHX::EvaluatorDerived<EvalT, Traits>  {
 public:
 
   //! A constructor with concrete arguments instead of a parameter list.
@@ -137,12 +137,10 @@ private:
 
 template <typename LO,typename GO>
 void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellIntegral,
-                                                panzer::Traits::EvalData workset, 
+                                                panzer::Traits::EvalData workset,
                                                 WorksetDetailsAccessor& wda,
-                                                const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const 
+                                                const std::vector<Teuchos::ArrayRCP<double> > & dgdx) const
 {
-  PHX::View<const LO*> LIDs;
- 
   // for convenience pull out some objects from workset
   std::string blockId = wda(workset).block_id;
 
@@ -151,21 +149,27 @@ void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer
 
   TEUCHOS_ASSERT(dgdx.size()==ugis_.size());
 
-  // scatter operation for each cell in workset
+  auto cellIntegral_h = Kokkos::create_mirror_view(cellIntegral.get_view());
+  Kokkos::deep_copy(cellIntegral_h, cellIntegral.get_view());
+
   const std::vector<std::size_t> & localCellIds = wda(workset).cell_local_ids;
-  for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-    std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-    for(std::size_t b=0;b<ugis_.size();b++) {
-      int start = blockOffsets[b];
+  for(std::size_t b=0;b<ugis_.size();b++) {
+    int start = blockOffsets[b];
 
-      LIDs = ugis_[b]->getElementLIDs(cellLocalId); 
+    auto LIDs = ugis_[b]->getLIDs();
+    auto LIDs_h = Kokkos::create_mirror_view(LIDs);
+    Kokkos::deep_copy(LIDs_h, LIDs);
 
-      Teuchos::ArrayRCP<double> dgdx_b = dgdx[b];
+    Teuchos::ArrayRCP<double> dgdx_b = dgdx[b];
+
+    // scatter operation for each cell in workset
+    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+      std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       // loop over basis functions
-      for(std::size_t i=0;i<LIDs.size();i++) {
-        dgdx_b[LIDs[i]] += cellIntegral(worksetCellIndex).dx(start+i); // its possible functional is independent of solution value!
+      for(std::size_t i=0;i<LIDs_h.extent(1);i++) {
+        dgdx_b[LIDs_h(cellLocalId, i)] += cellIntegral_h(worksetCellIndex).dx(start+i); // its possible functional is independent of solution value!
       }
     }
   }
@@ -174,12 +178,12 @@ void FunctionalScatter<LO,GO>::scatterDerivative(const PHX::MDField<const panzer
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
 template <typename LO,typename GO>
 void FunctionalScatter<LO,GO>::scatterHessian(const PHX::MDField<const panzer::Traits::Hessian::ScalarT,panzer::Cell> & cellIntegral,
-                                                panzer::Traits::EvalData workset, 
+                                                panzer::Traits::EvalData workset,
                                                 WorksetDetailsAccessor& wda,
-                                                const std::vector<Teuchos::ArrayRCP<double> > & d2gdx2) const 
+                                                const std::vector<Teuchos::ArrayRCP<double> > & d2gdx2) const
 {
   PHX::View<const LO*> LIDs;
- 
+
   // for convenience pull out some objects from workset
   std::string blockId = wda(workset).block_id;
 
@@ -196,7 +200,7 @@ void FunctionalScatter<LO,GO>::scatterHessian(const PHX::MDField<const panzer::T
     for(std::size_t b=0;b<ugis_.size();b++) {
       int start = blockOffsets[b];
 
-      LIDs = ugis_[b]->getElementLIDs(cellLocalId); 
+      LIDs = ugis_[b]->getElementLIDs(cellLocalId);
 
       Teuchos::ArrayRCP<double> d2gdx2_b = d2gdx2[b];
 

@@ -143,6 +143,12 @@ template RCP<MultiVector<double, int, int, Kokkos::Compat::KokkosCudaWrapperNode
 template Epetra_MultiVector & toEpetra<int,Kokkos::Compat::KokkosCudaWrapperNode >(MultiVector<double, int, int,Kokkos::Compat::KokkosCudaWrapperNode> &);
 template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosCudaWrapperNode >(const MultiVector<double, int, int, Kokkos::Compat::KokkosCudaWrapperNode > &);
 #endif
+#ifdef HAVE_TPETRA_INST_HIP
+template class EpetraMultiVectorT<int, Kokkos::Compat::KokkosHIPWrapperNode >;
+template RCP<MultiVector<double, int, int, Kokkos::Compat::KokkosHIPWrapperNode > > toXpetra<int, Kokkos::Compat::KokkosHIPWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<int,Kokkos::Compat::KokkosHIPWrapperNode >(MultiVector<double, int, int,Kokkos::Compat::KokkosHIPWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<int, Kokkos::Compat::KokkosHIPWrapperNode >(const MultiVector<double, int, int, Kokkos::Compat::KokkosHIPWrapperNode > &);
+#endif
 #else // Tpetra is disabled
 typedef Xpetra::EpetraNode default_node_type;
 template class EpetraMultiVectorT<int, default_node_type >;
@@ -186,6 +192,12 @@ template class EpetraMultiVectorT<long long, Kokkos::Compat::KokkosCudaWrapperNo
 template RCP<MultiVector<double, int, long long, Kokkos::Compat::KokkosCudaWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosCudaWrapperNode>(RCP<Epetra_MultiVector>);
 template Epetra_MultiVector & toEpetra<long long,Kokkos::Compat::KokkosCudaWrapperNode >(MultiVector<double, int, long long, Kokkos::Compat::KokkosCudaWrapperNode> &);
 template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosCudaWrapperNode >(const MultiVector<double, int, long long, Kokkos::Compat::KokkosCudaWrapperNode > &);
+#endif
+#ifdef HAVE_TPETRA_INST_HIP
+template class EpetraMultiVectorT<long long, Kokkos::Compat::KokkosHIPWrapperNode >;
+template RCP<MultiVector<double, int, long long, Kokkos::Compat::KokkosHIPWrapperNode > > toXpetra<long long, Kokkos::Compat::KokkosHIPWrapperNode>(RCP<Epetra_MultiVector>);
+template Epetra_MultiVector & toEpetra<long long,Kokkos::Compat::KokkosHIPWrapperNode >(MultiVector<double, int, long long, Kokkos::Compat::KokkosHIPWrapperNode> &);
+template const Epetra_MultiVector & toEpetra<long long, Kokkos::Compat::KokkosHIPWrapperNode >(const MultiVector<double, int, long long, Kokkos::Compat::KokkosHIPWrapperNode > &);
 #endif
 #else // Tpetra is disabled
 typedef Xpetra::EpetraNode default_node_type;

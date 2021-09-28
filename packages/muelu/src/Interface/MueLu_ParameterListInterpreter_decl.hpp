@@ -82,6 +82,7 @@
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
+#include "MueLu_ReitzingerPFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_SemiCoarsenPFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
@@ -105,6 +106,7 @@
 #include "MueLu_CoordinatesTransferFactory_kokkos_fwd.hpp"
 #include "MueLu_NullspaceFactory_kokkos_fwd.hpp"
 #include "MueLu_SaPFactory_kokkos_fwd.hpp"
+#include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos_fwd.hpp"
 #endif
@@ -243,6 +245,8 @@ namespace MueLu {
                                        int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_SA(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                  int levelID, std::vector<keep_pair>& keeps) const;
+    void UpdateFactoryManager_Reitzinger(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                         int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_Emin(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                    int levelID, std::vector<keep_pair>& keeps) const;
     void UpdateFactoryManager_PG(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,

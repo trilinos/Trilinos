@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,82 +23,40 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
                   int               using_ewgts /* are edge weights being used? */
 )
 {
-  double *hopsize;            /* number of hops for each set */
-  double *cutsize;            /* number of cuts for each set */
-  int *   setsize;            /* number of vtxs in each set */
-  int *   setseen;            /* flags for sets adjacent to a particular set */
-  int *   inorder;            /* list of vtxs in each set */
-  int *   startptr;           /* indices into inorder array */
-  double  ncuts;              /* total number of edges connecting sets */
-  double  nhops;              /* total cuts weighted by hypercube hops */
-  double  ewgt;               /* edge weight */
-  int     nsets;              /* number of sets after a level */
-  int     vtx;                /* vertex in graph */
-  int     set, set2, set3;    /* sets neighboring vtxs are assigned to */
-  int     onbdy;              /* counts number of neighboring set for a vtx */
-  int     bdyvtxs;            /* sum of onbdy values for a set */
-  int     internal;           /* number of internal nodes in a set */
-  int     min_internal;       /* smallest number of internal vertices */
-  int     max_internal;       /* largest number of internal vertices */
-  int     total_internal;     /* total number of internal vertices */
-  int     min_size, max_size; /* smallest and largest set sizes */
-  int     tot_size;           /* total of all set sizes */
-  double  bdyvtx_hops;        /* bdyvtxs weighted by wire lengths */
-  double  bdyvtx_hops_tot;    /* total bdyvtx_hops */
-  double  bdyvtx_hops_max;    /* largest value of bdyvtx_hops among all sets */
-  double  bdyvtx_hops_min;    /* smallest value of bdyvtx_hops among all sets */
-  int     neighbor_sets;      /* number of neighboring sets for a set */
-  double  total_bdyvtxs;      /* sum of all onbdy values in whole graph  */
-  int     total_neighbors;    /* number of neighboring sets in graph */
-  double  maxcuts;            /* largest cuts among all processors */
-  double  mincuts;            /* smallest cuts among all processors */
-  double  maxhops;            /* largest hops among all processors */
-  double  minhops;            /* smallest hops among all processors */
-  double  maxbdy;             /* largest bdy_vtxs among all processors */
-  double  minbdy;             /* smallest bdy_vtxs among all processors */
-  int     maxneighbors;       /* largest neighbor_sets among all processors */
-  int     minneighbors;       /* smallest neighbor_sets among all processors */
-  int     neighbor;           /* neighbor of a vertex */
-  int     mask;               /* mask for active bits */
-  int     bits;               /* bit pattern for counting hops */
-  int     start_dims;         /* starting dimension for output loop */
-  int     level;              /* recursion level of partition */
-  int     print2file;         /* should I print to a file? */
-  int     i, j, k, l, ll;     /* loop counters */
+  int print2file = (outfile != NULL);
 
-  print2file = (outfile != NULL);
-  ewgt       = 1;
+  int     nsets   = (1 << ndims_tot);
+  double *cutsize = smalloc(nsets * sizeof(double));
+  double *hopsize = smalloc(nsets * sizeof(double));
+  int *   setsize = smalloc(nsets * sizeof(int));
 
-  nsets   = (1 << ndims_tot);
-  cutsize = smalloc(nsets * sizeof(double));
-  hopsize = smalloc(nsets * sizeof(double));
-  setsize = smalloc(nsets * sizeof(int));
-
-  setseen  = smalloc(nsets * sizeof(int));
-  startptr = smalloc((nsets + 1) * sizeof(int));
-  inorder  = smalloc(nvtxs * sizeof(int));
-  for (j = 0; j < nsets; j++) {
+  int *setseen  = smalloc(nsets * sizeof(int));
+  int *startptr = smalloc((nsets + 1) * sizeof(int));
+  int *inorder  = smalloc(nvtxs * sizeof(int));
+  for (int j = 0; j < nsets; j++) {
     setsize[j] = 0;
   }
-  for (i = 1; i <= nvtxs; i++) {
+  for (int i = 1; i <= nvtxs; i++) {
     ++setsize[assignment[i]];
   }
 
   /* Modify setsize to become index into vertex list. */
-  for (j = 1; j < nsets; j++) {
+  for (int j = 1; j < nsets; j++) {
     setsize[j] += setsize[j - 1];
   }
-  for (j = nsets - 1; j > 0; j--) {
+  for (int j = nsets - 1; j > 0; j--) {
     startptr[j] = setsize[j] = setsize[j - 1];
   }
   startptr[0] = setsize[0] = 0;
   startptr[nsets]          = nvtxs;
-  for (i = 1; i <= nvtxs; i++) {
-    set                   = assignment[i];
+  for (int i = 1; i <= nvtxs; i++) {
+    int set               = assignment[i];
     inorder[setsize[set]] = i;
     setsize[set]++;
   }
 
+  int start_dims;
+  int level;
   if (abs(print_lev) > 1) { /* Print data from all levels of recursion. */
     start_dims = ndims;
     level      = 0;
@@ -107,33 +65,34 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
     start_dims = ndims_tot;
     level      = (ndims_tot + ndims - 1) / ndims - 1;
   }
-  k = start_dims;
+  int k = start_dims;
   while (k <= ndims_tot) {
     level++;
     nsets = (1 << k);
-    for (j = 0; j < nsets; j++) {
+    for (int j = 0; j < nsets; j++) {
       cutsize[j] = 0;
       hopsize[j] = 0;
       setsize[j] = 0;
     }
-    mask = 0;
-    for (j = 0; j < k; j++) {
+    int mask = 0;
+    for (int j = 0; j < k; j++) {
       mask = (mask << 1) + 1;
     }
 
-    for (i = 1; i <= nvtxs; i++) {
-      set = assignment[i] & mask;
+    for (int i = 1; i <= nvtxs; i++) {
+      int set = assignment[i] & mask;
       setsize[set] += graph[i]->vwgt;
-      for (j = 1; j < graph[i]->nedges; j++) {
-        neighbor = graph[i]->edges[j];
-        set2     = assignment[neighbor] & mask;
+      for (int j = 1; j < graph[i]->nedges; j++) {
+        int neighbor = graph[i]->edges[j];
+        int set2     = assignment[neighbor] & mask;
         if (set != set2) {
+          double ewgt = 1;
           if (using_ewgts) {
             ewgt = graph[i]->ewgts[j];
           }
           cutsize[set] += ewgt;
-          bits = set ^ set2;
-          for (l = bits; l; l >>= 1) {
+          int bits = set ^ set2;
+          for (int l = bits; l; l >>= 1) {
             if (l & 1) {
               hopsize[set] += ewgt;
             }
@@ -142,32 +101,40 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
       }
     }
 
-    tot_size = 0;
-    max_size = 0;
-    for (set = 0; set < nsets; set++) {
+    int tot_size = 0;
+    int max_size = 0;
+    for (int set = 0; set < nsets; set++) {
       tot_size += setsize[set];
       if (setsize[set] > max_size) {
         max_size = setsize[set];
       }
     }
 
-    min_size = max_size;
-    for (set = 0; set < nsets; set++) {
+    int min_size = max_size;
+    for (int set = 0; set < nsets; set++) {
       if (setsize[set] < min_size) {
         min_size = setsize[set];
       }
     }
 
-    ncuts = nhops = 0;
-    total_bdyvtxs = total_neighbors = 0;
-    bdyvtx_hops_tot = bdyvtx_hops_max = bdyvtx_hops_min = 0;
-    maxcuts = mincuts = 0;
-    maxhops = minhops = 0;
-    total_internal    = 0;
-    min_internal      = max_size;
-    max_internal      = 0;
-    maxbdy = minbdy = 0;
-    maxneighbors = minneighbors = 0;
+    double ncuts           = 0;
+    double nhops           = 0;
+    double total_bdyvtxs   = 0;
+    int    total_neighbors = 0;
+    double bdyvtx_hops_tot = 0;
+    double bdyvtx_hops_max = 0;
+    double bdyvtx_hops_min = 0;
+    double maxcuts         = 0;
+    double mincuts         = 0;
+    double maxhops         = 0;
+    double minhops         = 0;
+    int    total_internal  = 0;
+    int    min_internal    = max_size;
+    int    max_internal    = 0;
+    double maxbdy          = 0;
+    double minbdy          = 0;
+    int    maxneighbors    = 0;
+    int    minneighbors    = 0;
 
     printf("\nAfter level %d  (nsets = %d):\n", level, nsets);
     if (print2file) {
@@ -179,28 +146,28 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
         fprintf(outfile, "    set    size      cuts       hops   bndy_vtxs    adj_sets\n");
       }
     }
-    for (set = 0; set < nsets; set++) {
-      internal = setsize[set];
-      for (i = 0; i < nsets; i++) {
+    for (int set = 0; set < nsets; set++) {
+      int internal = setsize[set];
+      for (int i = 0; i < nsets; i++) {
         setseen[i] = 0;
       }
       /* Compute number of set neighbors, and number of vtxs on boundary. */
       /* Loop through multiple assignments defining current set. */
-      bdyvtxs     = 0;
-      bdyvtx_hops = 0;
-      for (l = 0; l < (1 << (ndims_tot - k)); l++) {
-        set2 = (l << k) + set;
-        for (i = startptr[set2]; i < startptr[set2 + 1]; i++) {
-          onbdy = 0;
-          vtx   = inorder[i];
-          for (j = 1; j < graph[vtx]->nedges; j++) {
-            neighbor = graph[vtx]->edges[j];
-            set3     = assignment[neighbor] & mask;
+      int bdyvtxs     = 0;
+      int bdyvtx_hops = 0;
+      for (int l = 0; l < (1 << (ndims_tot - k)); l++) {
+        int set2 = (l << k) + set;
+        for (int i = startptr[set2]; i < startptr[set2 + 1]; i++) {
+          int onbdy = 0;
+          int vtx   = inorder[i];
+          for (int j = 1; j < graph[vtx]->nedges; j++) {
+            int neighbor = graph[vtx]->edges[j];
+            int set3     = assignment[neighbor] & mask;
             if (set3 != set) { /* Is vtx on boundary? */
               /* Has this neighboring set been seen already? */
               if (setseen[set3] >= 0) {
-                bits = set ^ set3;
-                for (ll = bits; ll; ll >>= 1) {
+                int bits = set ^ set3;
+                for (int ll = bits; ll; ll >>= 1) {
                   if (ll & 1) {
                     ++bdyvtx_hops;
                   }
@@ -212,9 +179,9 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
           }
           /* Now reset all the setseen values to be positive. */
           if (onbdy != 0) {
-            for (j = 1; j < graph[vtx]->nedges; j++) {
-              neighbor = graph[vtx]->edges[j];
-              set3     = assignment[neighbor] & mask;
+            for (int j = 1; j < graph[vtx]->nedges; j++) {
+              int neighbor = graph[vtx]->edges[j];
+              int set3     = assignment[neighbor] & mask;
               if (setseen[set3] < 0) {
                 setseen[set3] = -setseen[set3];
               }
@@ -241,8 +208,8 @@ void countup_cube(struct vtx_data **graph,      /* graph data structure */
       }
 
       /* Now count up the number of neighboring sets. */
-      neighbor_sets = 0;
-      for (i = 0; i < nsets; i++) {
+      int neighbor_sets = 0;
+      for (int i = 0; i < nsets; i++) {
         if (setseen[i] != 0) {
           ++neighbor_sets;
         }

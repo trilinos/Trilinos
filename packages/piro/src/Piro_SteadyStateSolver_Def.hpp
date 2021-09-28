@@ -288,6 +288,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::SteadyStateSolver<Scalar>::crea
     }
   }
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   for (int i=0; i<num_g_; i++) {
     for (int j1=0; j1<num_p_; j1++) {
       for (int j2=0; j2<num_p_; j2++) {
@@ -299,6 +300,7 @@ Thyra::ModelEvaluatorBase::OutArgs<Scalar> Piro::SteadyStateSolver<Scalar>::crea
       }
     }
   }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   return result;
 }

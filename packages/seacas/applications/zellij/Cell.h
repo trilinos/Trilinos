@@ -20,6 +20,7 @@
 //     -- rank (for parallel -- which rank does this entry exist on)
 //
 
+#include <array>
 #include <memory>
 #include <utility>
 
@@ -34,8 +35,8 @@ enum class Loc { C = 0, BL, B, BR, L, R, TL, T, TR };
 class Cell
 {
 public:
-  Cell() = default;
-  Cell(const Cell&) = default;
+  Cell()             = default;
+  Cell(const Cell &) = default;
 
   std::pair<double, double> get_coordinate_range(enum Axis) const;
   void                      initialize(size_t i, size_t j, std::shared_ptr<UnitCell> unit_cell);

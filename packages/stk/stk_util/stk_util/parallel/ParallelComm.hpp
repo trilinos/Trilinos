@@ -180,11 +180,6 @@ private:
   friend class CommNeighbors ;
   friend class CommBroadcast ;
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2021
-  STK_DEPRECATED static CommBuffer * allocate( const unsigned, const unsigned * const );
-  STK_DEPRECATED static void deallocate( const unsigned , CommBuffer * );
-#endif
-
   void pack_overflow() const ;
   void unpack_overflow() const ;
 

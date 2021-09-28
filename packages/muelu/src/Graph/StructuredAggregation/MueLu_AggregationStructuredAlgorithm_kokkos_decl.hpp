@@ -84,12 +84,13 @@ namespace MueLu {
     using non_const_row_map_type = typename local_graph_type::row_map_type::non_const_type;
     using size_type              = typename local_graph_type::size_type;
     using entries_type           = typename local_graph_type::entries_type;
+    using device_type            = typename local_graph_type::device_type;
     using execution_space        = typename local_graph_type::device_type::execution_space;
     using memory_space           = typename local_graph_type::device_type::memory_space;
 
     using LOVectorView = decltype(std::declval<LOVector>().getDeviceLocalView(Xpetra::Access::ReadWrite));
-    using constIntTupleView = typename Kokkos::View<const int[3], memory_space>;
-    using constLOTupleView  = typename Kokkos::View<const LO[3],  memory_space>;
+    using constIntTupleView = typename Kokkos::View<const int[3], device_type>;
+    using constLOTupleView  = typename Kokkos::View<const LO[3],  device_type>;
 
     //! @name Constructors/Destructors.
     //@{
@@ -111,7 +112,7 @@ namespace MueLu {
     void BuildAggregates(const Teuchos::ParameterList& params,
                          const LWGraph_kokkos& graph,
                          Aggregates_kokkos& aggregates,
-                         Kokkos::View<unsigned*, memory_space>& aggStat,
+                         Kokkos::View<unsigned*, device_type>& aggStat,
                          LO& numNonAggregatedNodes) const;
 
     /*! @brief Build a CrsGraph instead of aggregates. */
@@ -128,13 +129,13 @@ namespace MueLu {
 
       IndexManager_kokkos geoData_;
       const int myRank_;
-      Kokkos::View<unsigned*, memory_space> aggStat_;
+      Kokkos::View<unsigned*, device_type> aggStat_;
       LOVectorView vertex2AggID_;
       LOVectorView procWinner_;
 
       fillAggregatesFunctor(RCP<IndexManager_kokkos> geoData,
                             const int myRank,
-                            Kokkos::View<unsigned*, memory_space> aggStat,
+                            Kokkos::View<unsigned*, device_type> aggStat,
                             LOVectorView vertex2AggID,
                             LOVectorView procWinner);
 

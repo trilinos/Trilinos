@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -49,7 +49,7 @@ namespace {
     // Get maximum name and face_count length...
     size_t max_name = std::string("Block Name").length();
     size_t max_face = std::string("Face Count").length();
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       const std::string &name = eb->name();
       if (name.length() > max_name) {
         max_name = name.length();
@@ -63,7 +63,7 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
     fmt::print("\t|{2:^{0}}|{3:^{1}}|\n", max_name, max_face, "Block Name", "Face Count");
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       const std::string &name = eb->name();
       fmt::print("\t|{2:^{0}}|{3:{1}L}  |\n", max_name, max_face - 2, name,
                  boundary_faces[name].size());
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   double end = Ioss::Utils::timer();
 
   if (my_rank == 0) {
-    fmt::print("\n\tTotal Execution time = {:.4} seconds\n", end - begin);
+    fmt::print("\n\tTotal Execution Time = {:.4} seconds\n", end - begin);
     fmt::print("\n{} execution successful.\n\n", codename);
   }
   return EXIT_SUCCESS;
@@ -165,7 +165,7 @@ namespace {
 
     std::map<std::string, std::vector<Ioss::Face>> boundary_faces;
     const Ioss::ElementBlockContainer &            ebs = region.get_element_blocks();
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       const std::string &name     = eb->name();
       auto &             boundary = boundary_faces[name];
       auto &             faces    = face_generator.faces(name);
@@ -260,7 +260,7 @@ namespace {
     // block (wedge -> tri and quad).
 
     // Count faces per element block and create output element block...
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       const std::string &name      = eb->name();
       auto &             boundary  = boundary_faces[name];
       auto               face_topo = eb->topology()->face_type(0);
@@ -292,7 +292,7 @@ namespace {
 
     bool use_face_hash_ids = interFace.useFaceHashIds_;
     INT  fid               = 0;
-    for (auto eb : ebs) {
+    for (auto &eb : ebs) {
       const std::string &name       = eb->name();
       auto &             boundary   = boundary_faces[name];
       auto *             block      = output_region.get_element_block(name);

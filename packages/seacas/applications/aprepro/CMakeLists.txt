@@ -30,19 +30,11 @@ TRIBITS_ADD_ADVANCED_TEST(
  aprepro_unit_test
  TEST_0 EXEC aprepro
         ARGS -q ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app test_unit.output
-  OUTPUT_FILE test-1.stderr
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
- TEST_1 CMND sed ARGS s+${CMAKE_CURRENT_SOURCE_DIR}++
-		       ${CMAKE_CURRENT_BINARY_DIR}/test-1.stderr
-  OUTPUT_FILE filtered.output
-  PASS_ANY
- TEST_2 CMND diff ARGS -w
+ TEST_1 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test_standard.out
 		       ${CMAKE_CURRENT_BINARY_DIR}/test_unit.output
- TEST_3 CMND diff ARGS -w
-		       ${CMAKE_CURRENT_SOURCE_DIR}/test.stderr.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/filtered.output
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION
@@ -87,13 +79,13 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_command_line_include_test
  TEST_0 EXEC aprepro
-	ARGS -q --info=test-vars.dump --include ${CMAKE_CURRENT_SOURCE_DIR}/test-include.i ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
+	ARGS -q --info=test-include.dump --include ${CMAKE_CURRENT_SOURCE_DIR}/test-include.i ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.i
 	test-include.out
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w
 		       ${CMAKE_CURRENT_SOURCE_DIR}/test-dump.gold
-		       ${CMAKE_CURRENT_BINARY_DIR}/test-vars.dump
+		       ${CMAKE_CURRENT_BINARY_DIR}/test-include.dump
  COMM mpi serial
  OVERALL_NUM_MPI_PROCS 1
  FINAL_PASS_REGULAR_EXPRESSION

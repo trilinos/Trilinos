@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -235,14 +235,10 @@ namespace {
 
   template <typename INT> void gds_qsort(INT v[], size_t left, size_t right)
   {
-    size_t pivot;
-    size_t i;
-    size_t j;
-
     if (left + GDS_QSORT_CUTOFF <= right) {
-      pivot = gds_median3(v, left, right);
-      i     = left;
-      j     = right - 1;
+      size_t pivot = gds_median3(v, left, right);
+      size_t i     = left;
+      size_t j     = right - 1;
 
       for (;;) {
         while (v[++i] < v[pivot]) {
@@ -267,17 +263,13 @@ namespace {
 
   template <typename INT> void gds_isort(INT v[], size_t N)
   {
-    size_t i;
-    size_t j;
-    size_t ndx = 0;
-    INT    small_val;
-    INT    tmp;
-
     if (N <= 1) {
       return;
     }
-    small_val = v[0];
-    for (i = 1; i < N; i++) {
+
+    size_t ndx       = 0;
+    INT    small_val = v[0];
+    for (size_t i = 1; i < N; i++) {
       if (v[i] < small_val) {
         small_val = v[i];
         ndx       = i;
@@ -286,8 +278,9 @@ namespace {
     /* Put smallest value in slot 0 */
     ISWAP(v, 0, ndx);
 
-    for (i = 1; i < N; i++) {
-      tmp = v[i];
+    size_t j;
+    for (size_t i = 1; i < N; i++) {
+      INT tmp = v[i];
       for (j = i; tmp < v[j - 1]; j--) {
         v[j] = v[j - 1];
       }
@@ -298,7 +291,6 @@ namespace {
   template <typename INT> void siftDowniii(INT *a, INT *b, INT *c, size_t start, size_t end)
   {
     size_t root = start;
-
     while (root * 2 + 1 < end) {
       size_t child = 2 * root + 1;
       if ((child + 1 < end) &&
@@ -432,13 +424,10 @@ template <typename INT> ssize_t in_list(INT value, const std::vector<INT> &vecto
  *****************************************************************************/
 int roundfloat(float value)
 {
-  float high;
-  float low;
-  int   ans;
+  float high = std::ceil(value);
+  float low  = std::floor(value);
 
-  high = std::ceil(value);
-  low  = std::floor(value);
-
+  int ans;
   if ((value - low) < (high - value)) {
     ans = static_cast<int>(low);
   }

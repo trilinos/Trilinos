@@ -207,8 +207,8 @@ public:
       mesh_data.add_global(results_index, input_field.get_name(),
 			   input_field.raw_storage()->name(), input_field.get_type());
       if (hb_type != stk::io::NONE) {
-	stk::util::Parameter &param = parameters.get_param(input_field.get_name());
-	mesh_data.add_heartbeat_global(heart, input_field.get_name(), &param.value, param.type);
+          stk::util::Parameter &param = parameters.get_param(input_field.get_name());
+          mesh_data.add_heartbeat_global(heart, input_field.get_name(), param);
       }
     }
 
@@ -254,7 +254,7 @@ public:
 	  for (; i != iend; ++i) {
 	    const std::string parameterName = (*i).first;
 	    stk::util::Parameter &parameter = parameters.get_param(parameterName);
-	    mesh_data.get_global(parameterName, parameter.value, parameter.type);
+	    mesh_data.get_global(parameterName, parameter);
 	  }
 
 	  for (i=parameters.begin(); i != iend; ++i) {

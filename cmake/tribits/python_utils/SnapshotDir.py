@@ -171,7 +171,7 @@ NOTES:
   .git/ directory when syncing.
 
 * The cleaning of the orig-dir/ using 'git clean -xdf' may be somewhat
-  dangerous but it is recommended that it be preformed by passing in
+  dangerous but it is recommended that it be performed by passing in
   --clean-ignored-files-orig-dir to avoid copying locally-ignored files in
   orig-dir/ (e.g. ignored in .git/info/excludes but not in a committed
   .gitignore file) that get copied to and then committed in the dest-dir/

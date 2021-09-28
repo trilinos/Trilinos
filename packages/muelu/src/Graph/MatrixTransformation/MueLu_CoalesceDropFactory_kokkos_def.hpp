@@ -589,10 +589,10 @@ namespace MueLu {
           // Construct overlapped matrix diagonal
           RCP<Vector> ghostedDiag;
           {
-	    kokkosMatrix = local_matrix_type();
+            kokkosMatrix = local_matrix_type();
             SubFactoryMonitor m2(*this, "Ghosted diag construction", currentLevel);
             ghostedDiag     = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
-	    kokkosMatrix=A->getLocalMatrixDevice();
+            kokkosMatrix=A->getLocalMatrixDevice();
           }
 
           // Filter out entries
@@ -603,7 +603,7 @@ namespace MueLu {
 
             CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-	      scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
             Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
                                     scalarFunctor, nnzFA);
@@ -706,6 +706,7 @@ namespace MueLu {
       cols_type cols(Kokkos::ViewAllocateWithoutInitializing("FA_cols"), nnzFA);
       vals_type vals;
       if (reuseGraph) {
+        GetOStream(Runtime1) << "reuse matrix graph for filtering (compress matrix columns only)" << std::endl;
         // Only compress cols
         SubFactoryMonitor m2(*this, "CompressColsAndVals", currentLevel);
 
@@ -720,6 +721,7 @@ namespace MueLu {
           });
       } else {
         // Compress cols and vals
+        GetOStream(Runtime1) << "new matrix graph for filtering (compress matrix columns and values)" << std::endl;
         SubFactoryMonitor m2(*this, "CompressColsAndVals", currentLevel);
 
         vals = vals_type(Kokkos::ViewAllocateWithoutInitializing("FA_vals"), nnzFA);
@@ -731,7 +733,7 @@ namespace MueLu {
             size_t rownnz = rows(i+1) - rows(i);
             for (size_t j = 0; j < rownnz; j++) {
               cols(rowStart+j) = colsAux(rowAStart+j);
-              vals(rowStart+j) = colsAux(rowAStart+j);
+              vals(rowStart+j) = valsAux(rowAStart+j);
             }
           });
       }
@@ -753,13 +755,8 @@ namespace MueLu {
         SubFactoryMonitor m2(*this, "LocalMatrix+FillComplete", currentLevel);
 
         local_matrix_type localFA = local_matrix_type("A", numRows, A->getLocalMatrixDevice().numCols(), nnzFA, vals, rows, cols);
-#if 1
-        // FIXME: this should be gone once Xpetra propagate "local matrix + 4 maps" constructor
-        // FIXME: we don't need to rebuild importers/exporters. We should reuse A's
-        auto filteredACrs = CrsMatrixFactory::Build(A->getRowMap(), A->getColMap(), localFA);
-        filteredACrs->resumeFill();  // we need that for rectangular matrices
-        filteredACrs->expertStaticFillComplete(A->getDomainMap(), A->getRangeMap());
-#endif
+        auto filteredACrs = CrsMatrixFactory::Build(localFA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap(),
+                                                    A->getCrsGraph()->getImporter(), A->getCrsGraph()->getExporter());
         filteredA = rcp(new CrsMatrixWrap(filteredACrs));
       }
 
@@ -797,10 +794,10 @@ namespace MueLu {
       Array<LO> rowTranslationArray = *(amalInfo->getRowTranslation()); // TAW should be transform that into a View?
       Array<LO> colTranslationArray = *(amalInfo->getColTranslation());
 
-      Kokkos::View<LO*, Kokkos::MemoryUnmanaged> 
-	rowTranslationView(rowTranslationArray.getRawPtr(),rowTranslationArray.size() ); 
-      Kokkos::View<LO*, Kokkos::MemoryUnmanaged> 
-	colTranslationView(colTranslationArray.getRawPtr(),colTranslationArray.size() ); 
+      Kokkos::View<LO*, Kokkos::MemoryUnmanaged>
+        rowTranslationView(rowTranslationArray.getRawPtr(),rowTranslationArray.size() );
+      Kokkos::View<LO*, Kokkos::MemoryUnmanaged>
+        colTranslationView(colTranslationArray.getRawPtr(),colTranslationArray.size() );
 
       // get number of local nodes
       LO numNodes = Teuchos::as<LocalOrdinal>(uniqueMap->getNodeNumElements());
@@ -809,7 +806,7 @@ namespace MueLu {
       id_translation_type colTranslation("ov_dofId2nodeId",colTranslationArray.size());
       Kokkos::deep_copy(rowTranslation, rowTranslationView);
       Kokkos::deep_copy(colTranslation, colTranslationView);
-								     
+
       // extract striding information
       blkSize = A->GetFixedBlockSize();  //< the full block size (number of dofs per node in strided map)
       LocalOrdinal blkId   = -1;         //< the block id within a strided map or -1 if it is a full block map

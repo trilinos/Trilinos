@@ -169,7 +169,7 @@ namespace MueLu {
 
   private:
     int  LastLevelID()      const { return Levels_.size() - 1; }
-    void DumpCurrentGraph() const;
+    void DumpCurrentGraph(int level) const;
 
   public:
 
@@ -404,6 +404,7 @@ namespace MueLu {
     If enabled, we dump the graph on a specified level into a specified file
     */
     bool isDumpingEnabled_;
+    // -1 = dump all levels, -2 = dump nothing
     int  dumpLevel_;
     std::string dumpFile_;
 

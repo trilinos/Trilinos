@@ -54,7 +54,6 @@
 #include "Teuchos_RCPDecl.hpp"                       // for RCP
 #include "mpi.h"
 #include "stk_io/IossBridge.hpp"                     // for include_entity
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_unit_test_utils/FaceTestingUtils.hpp"

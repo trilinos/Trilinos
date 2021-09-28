@@ -60,7 +60,7 @@ template<typename T, template <typename> class NgpDebugger>
 class DeviceField : public NgpFieldBase
 {
 private:
-  using FieldDataDeviceUnmanagedViewType = Kokkos::View<T***, Kokkos::LayoutRight, MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using FieldDataDeviceUnmanagedViewType = Kokkos::View<T***, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using StkDebugger = typename NgpDebugger<T>::StkFieldSyncDebuggerType;
 
 public:
@@ -69,7 +69,7 @@ public:
   KOKKOS_FUNCTION
   DeviceField()
     : NgpFieldBase(),
-      rank(stk::topology::NODE_RANK),
+      rank(stk::topology::INVALID_RANK),
       ordinal(INVALID_ORDINAL),
       hostBulk(nullptr),
       hostField(nullptr),
@@ -112,7 +112,7 @@ public:
   }
 
   DeviceField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &stkField,
-              const ExecSpace& execSpace, bool isFromGetUpdatedNgpField = false)
+              const stk::ngp::ExecSpace& execSpace, bool isFromGetUpdatedNgpField = false)
     : NgpFieldBase(),
       rank(stkField.entity_rank()),
       ordinal(stkField.mesh_meta_data_ordinal()),
@@ -141,8 +141,8 @@ public:
     hostField->template make_field_sync_debugger<StkDebugger>();
     fieldSyncDebugger = NgpDebugger<T>(&hostField->get_field_sync_debugger<StkDebugger>());
 
-    needSyncToHost = Kokkos::View<bool, HostExecSpace>("needSyncToHost");
-    needSyncToDevice = Kokkos::View<bool, HostExecSpace>("needSyncToDevice");
+    needSyncToHost = Kokkos::View<bool, stk::ngp::HostExecSpace>("needSyncToHost");
+    needSyncToDevice = Kokkos::View<bool, stk::ngp::HostExecSpace>("needSyncToDevice");
 
     const int maxStates = static_cast<int>(stk::mesh::MaximumFieldStates);
     for (int s=0; s<maxStates; ++s) {
@@ -158,7 +158,7 @@ public:
     }
   }
 
-  void set_execution_space(const ExecSpace& execSpace) override
+  void set_execution_space(const stk::ngp::ExecSpace& execSpace) override
   {
     asyncCopyState.set_execution_space(execSpace);
   }
@@ -289,7 +289,7 @@ public:
     asyncCopyState.reset_state();
   }
 
-  void sync_to_host(const ExecSpace& newExecSpace) override
+  void sync_to_host(const stk::ngp::ExecSpace& newExecSpace) override
   {
     asyncCopyState.set_state(newExecSpace, impl::DEVICE_TO_HOST_ASYNC);
     internal_sync_to_host();
@@ -303,7 +303,7 @@ public:
     asyncCopyState.reset_state();
   }
 
-  void sync_to_device(const ExecSpace& newExecSpace) override
+  void sync_to_device(const stk::ngp::ExecSpace& newExecSpace) override
   {
     asyncCopyState.set_state(newExecSpace, impl::HOST_TO_DEVICE_ASYNC);
     internal_sync_to_device();
@@ -324,10 +324,11 @@ public:
 #endif
   }
 
+  KOKKOS_FUNCTION
   unsigned get_component_stride() const
   {
     unsigned stride = 1;
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     stride = bucketCapacity;
 #endif
     return stride;
@@ -475,7 +476,7 @@ protected:
 
 private:
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   bool is_last_field_copy() const
   {
     return (copyCounter.use_count() == 1);

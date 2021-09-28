@@ -269,7 +269,7 @@ public:
                                            stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField,
                                            Func&& checkFunc)
   {
-    using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace>;
+    using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::ngp::MemSpace>;
 
     unsigned numElems = elements.size();
     unsigned numPerEntity = stkField.max_size(rank);

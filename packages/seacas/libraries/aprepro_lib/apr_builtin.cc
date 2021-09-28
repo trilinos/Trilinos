@@ -60,12 +60,17 @@ namespace {
 
   void reset_error()
   {
+#ifndef _WIN32
+#ifndef math_errhandling
+#define math_errhandling MATH_ERRNO
+#endif
     if (math_errhandling & MATH_ERREXCEPT) {
       std::feclearexcept(FE_ALL_EXCEPT);
     }
     if (math_errhandling & MATH_ERRNO) {
       errno = 0;
     }
+#endif
   }
 } // namespace
 
@@ -453,9 +458,11 @@ namespace SEAMS {
 
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se)
   {
-    long   m = static_cast<long>(mon), d = static_cast<long>(day), y = static_cast<long>(year);
-    long   c, ya, j;
     double seconds = h * 3600.0 + mi * 60 + se;
+
+    long m = static_cast<long>(mon);
+    long d = static_cast<long>(day);
+    long y = static_cast<long>(year);
 
     if (m > 2) {
       m -= 3;
@@ -464,9 +471,9 @@ namespace SEAMS {
       m += 9;
       --y;
     }
-    c  = y / 100L;
-    ya = y - (100L * c);
-    j  = (146097L * c) / 4L + (1461L * ya) / 4L + (153L * m + 2L) / 5L + d + 1721119L;
+    long c  = y / 100L;
+    long ya = y - (100L * c);
+    long j  = (146097L * c) / 4L + (1461L * ya) / 4L + (153L * m + 2L) / 5L + d + 1721119L;
     if (seconds < 12 * 3600.0) {
       j--;
       seconds += 12.0 * 3600.0;
@@ -703,6 +710,12 @@ namespace SEAMS {
   const char *do_dumpsym()
   {
     aprepro->dumpsym(SEAMS::Parser::token::VAR, false);
+    return (nullptr);
+  }
+
+  const char *do_dumpsym_json()
+  {
+    aprepro->dumpsym_json();
     return (nullptr);
   }
 
@@ -963,11 +976,10 @@ namespace SEAMS {
 
   array *do_identity(double size)
   {
-    int  i;
-    int  isize      = size;
     auto array_data = aprepro->make_array(size, size);
 
-    for (i = 0; i < isize; i++) {
+    int isize = size;
+    for (int i = 0; i < isize; i++) {
       array_data->data[i * isize + i] = 1.0;
     }
     return array_data;
@@ -989,11 +1001,10 @@ namespace SEAMS {
 
   array *do_transpose(const array *a)
   {
-    int  i, j;
     auto array_data = aprepro->make_array(a->cols, a->rows);
 
-    for (i = 0; i < a->rows; i++) {
-      for (j = 0; j < a->cols; j++) {
+    for (int i = 0; i < a->rows; i++) {
+      for (int j = 0; j < a->cols; j++) {
         array_data->data[j * a->rows + i] = a->data[i * a->cols + j];
       }
     }
@@ -1006,13 +1017,13 @@ namespace SEAMS {
   {
     size_t rows_to_skip = static_cast<size_t>(skip);
 
-    const char *  delim = ",\t ";
-    std::fstream *file  = aprepro->open_file(filename, "r");
+    std::fstream *file = aprepro->open_file(filename, "r");
     if (file != nullptr) {
 
       size_t rows = 0;
       size_t cols = 0;
 
+      const char *delim = ",\t ";
       std::string line;
       while (std::getline(*file, line)) {
         rows++;

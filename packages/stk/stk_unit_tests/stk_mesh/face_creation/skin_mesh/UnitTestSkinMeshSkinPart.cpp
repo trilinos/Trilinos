@@ -12,7 +12,6 @@
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector, etc
 #include "stk_unit_test_utils/ElemGraphTestUtils.hpp"  // for skin_part, etc

@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( Pnetcdf
+tribits_tpl_find_include_dirs_and_libraries( Pnetcdf
   REQUIRED_HEADERS pnetcdf.h
   REQUIRED_LIBS_NAMES pnetcdf
   )

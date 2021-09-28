@@ -2866,6 +2866,24 @@ Print(int level)
       sprintf(name,"Rmat_%d", LevelID_[i]);
       ML_Operator_Print_UsingGlobalOrdering(mlptr->Rmat+LevelID_[i], name, NULL,NULL);
     }
+   
+    if(ml_nodes_) {
+      for( int i=0 ; i<NumLevels_ ; ++i ) {
+        sprintf(name,"Amat_nodes_%d", LevelID_[i]);
+        ML_Operator_Print_UsingGlobalOrdering(ml_nodes_->Amat+LevelID_[i], name, NULL,NULL);
+        sprintf(name,"Tmat_nodes_%d", LevelID_[i]);
+        ML_Operator_Print_UsingGlobalOrdering(Tmat_array[LevelID_[i]], name, NULL,NULL);
+      }
+      for( int i=1 ; i<NumLevels_ ; ++i ) {
+        sprintf(name,"Pmat_nodes_%d", LevelID_[i]);
+        ML_Operator_Print_UsingGlobalOrdering(ml_nodes_->Pmat+LevelID_[i], name, NULL,NULL);
+      }
+      for( int i=0 ; i<NumLevels_-1 ; ++i ) {
+        sprintf(name,"Rmat_nodes_%d", LevelID_[i]);
+        ML_Operator_Print_UsingGlobalOrdering(ml_nodes_->Rmat+LevelID_[i], name, NULL,NULL);
+
+      }
+    }
 
   } //if-then-else
 

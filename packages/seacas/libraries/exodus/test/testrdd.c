@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -42,50 +42,40 @@ void *my_calloc(size_t length, size_t size)
 
 int main(int argc, char **argv)
 {
-  int  exoid, num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets;
-  int  num_side_sets, error;
-  int  i, j, k, node_ctr;
-  int *elem_map, *connect, *node_list, *node_ctr_list, *elem_list, *side_list;
-  int *ids;
+  int  i, j, k;
+  int *node_list, *elem_list, *side_list;
   int *num_nodes_per_set, *num_elem_per_set;
   int *num_df_per_set;
   int *node_ind, *elem_ind, *df_ind, num_qa_rec, num_info;
   int  num_glo_vars, num_nod_vars, num_ele_vars;
-  int *truth_tab;
-  int  num_time_steps;
-  int *num_elem_in_block, *num_nodes_per_elem, *num_attr;
-  int  num_nodes_in_set, num_elem_in_set;
   int  num_sides_in_set, num_df_in_set;
   int  list_len      = 0;
   int  elem_list_len = 0;
   int  node_list_len = 0;
   int  df_list_len   = 0;
   int  node_num, time_step, var_index, beg_time, end_time, elem_num;
-  int  CPU_word_size, IO_word_size;
   int  num_props, prop_value, *prop_values;
 
-  double  time_value, *time_values, *var_values;
-  double *x, *y, *z;
-  double  attrib[1], *dist_fact;
-  float   version, fdum;
+  double time_value, *time_values, *var_values;
+  double attrib[1], *dist_fact;
+  float  version, fdum;
 
   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
   char  title[MAX_LINE_LENGTH + 1], elem_type[MAX_STR_LENGTH + 1];
-  char *cdum = 0;
+  char *cdum = NULL;
   char *prop_names[3];
 
-  CPU_word_size = 8; /* sizeof(double) */
-  IO_word_size  = 0; /* use what is stored in file */
+  int CPU_word_size = 8; /* sizeof(double) */
+  int IO_word_size  = 0; /* use what is stored in file */
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* open EXODUS II files */
-
-  exoid = ex_open("test.exo",     /* filename path */
-                  EX_READ,        /* access mode = READ */
-                  &CPU_word_size, /* CPU word size */
-                  &IO_word_size,  /* IO word size */
-                  &version);      /* ExodusII library version */
+  int exoid = ex_open("test.exo",     /* filename path */
+                      EX_READ,        /* access mode = READ */
+                      &CPU_word_size, /* CPU word size */
+                      &IO_word_size,  /* IO word size */
+                      &version);      /* ExodusII library version */
 
   printf("\nafter ex_open\n");
   if (exoid < 0) {
@@ -98,8 +88,10 @@ int main(int argc, char **argv)
 
   /* read database parameters */
 
-  error = ex_get_init(exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk, &num_node_sets,
-                      &num_side_sets);
+  int num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets;
+  int num_side_sets;
+  int error = ex_get_init(exoid, title, &num_dim, &num_nodes, &num_elem, &num_elem_blk,
+                          &num_node_sets, &num_side_sets);
 
   printf("after ex_get_init, error = %3d\n", error);
 
@@ -114,13 +106,11 @@ int main(int argc, char **argv)
 
   /* read nodal coordinates values and names from database */
 
-  x = (double *)my_calloc(num_nodes, sizeof(double));
-  y = (double *)my_calloc(num_nodes, sizeof(double));
+  double *x = (double *)my_calloc(num_nodes, sizeof(double));
+  double *y = (double *)my_calloc(num_nodes, sizeof(double));
+  double *z = NULL;
   if (num_dim >= 3) {
     z = (double *)my_calloc(num_nodes, sizeof(double));
-  }
-  else {
-    z = 0;
   }
 
   error = ex_get_coord(exoid, x, y, z);
@@ -175,7 +165,7 @@ int main(int argc, char **argv)
 
   /* read element order map */
 
-  elem_map = (int *)my_calloc(num_elem, sizeof(int));
+  int *elem_map = (int *)my_calloc(num_elem, sizeof(int));
 
   error = ex_get_map(exoid, elem_map);
   printf("\nafter ex_get_map, error = %3d\n", error);
@@ -188,10 +178,10 @@ int main(int argc, char **argv)
 
   /* read element block parameters */
 
-  ids                = (int *)my_calloc(num_elem_blk, sizeof(int));
-  num_elem_in_block  = (int *)my_calloc(num_elem_blk, sizeof(int));
-  num_nodes_per_elem = (int *)my_calloc(num_elem_blk, sizeof(int));
-  num_attr           = (int *)my_calloc(num_elem_blk, sizeof(int));
+  int *ids                = (int *)my_calloc(num_elem_blk, sizeof(int));
+  int *num_elem_in_block  = (int *)my_calloc(num_elem_blk, sizeof(int));
+  int *num_nodes_per_elem = (int *)my_calloc(num_elem_blk, sizeof(int));
+  int *num_attr           = (int *)my_calloc(num_elem_blk, sizeof(int));
 
   error = ex_get_ids(exoid, EX_ELEM_BLOCK, ids);
   printf("\nafter ex_get_elem_blk_ids, error = %3d\n", error);
@@ -240,7 +230,7 @@ int main(int argc, char **argv)
   /* read element connectivity */
 
   for (i = 0; i < num_elem_blk; i++) {
-    connect = (int *)my_calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), sizeof(int));
+    int *connect = (int *)my_calloc((num_nodes_per_elem[i] * num_elem_in_block[i]), sizeof(int));
 
     error = ex_get_conn(exoid, EX_ELEM_BLOCK, ids[i], connect, NULL, NULL);
     printf("\nafter ex_get_elem_conn, error = %d\n", error);
@@ -276,6 +266,7 @@ int main(int argc, char **argv)
   printf("\nafter ex_get_node_set_ids, error = %3d\n", error);
 
   for (i = 0; i < num_node_sets; i++) {
+    int num_nodes_in_set;
     error = ex_get_set_param(exoid, EX_NODE_SET, ids[i], &num_nodes_in_set, &num_df_in_set);
     printf("\nafter ex_get_node_set_param, error = %3d\n", error);
 
@@ -434,12 +425,12 @@ int main(int argc, char **argv)
     printf("num_dist_factors = %3d\n", num_df_in_set);
 
     /* Note: The # of elements is same as # of sides!  */
-    num_elem_in_set = num_sides_in_set;
-    elem_list       = (int *)my_calloc(num_elem_in_set, sizeof(int));
-    side_list       = (int *)my_calloc(num_sides_in_set, sizeof(int));
-    node_ctr_list   = (int *)my_calloc(num_elem_in_set, sizeof(int));
-    node_list       = (int *)my_calloc(num_elem_in_set * 21, sizeof(int));
-    dist_fact       = (double *)my_calloc(num_df_in_set, sizeof(double));
+    int num_elem_in_set = num_sides_in_set;
+    elem_list           = (int *)my_calloc(num_elem_in_set, sizeof(int));
+    side_list           = (int *)my_calloc(num_sides_in_set, sizeof(int));
+    int *node_ctr_list  = (int *)my_calloc(num_elem_in_set, sizeof(int));
+    node_list           = (int *)my_calloc(num_elem_in_set * 21, sizeof(int));
+    dist_fact           = (double *)my_calloc(num_df_in_set, sizeof(double));
 
     error = ex_get_set(exoid, EX_SIDE_SET, ids[i], elem_list, side_list);
     printf("\nafter ex_get_side_set, error = %3d\n", error);
@@ -463,7 +454,7 @@ int main(int argc, char **argv)
       printf("%3d\n", side_list[j]);
     }
 
-    node_ctr = 0;
+    int node_ctr = 0;
     printf("node list for side set %2d\n", ids[i]);
     for (k = 0; k < num_elem_in_set; k++) {
       for (j = 0; j < node_ctr_list[k]; j++) {
@@ -711,7 +702,7 @@ int main(int argc, char **argv)
 
   /* read element variable truth table */
 
-  truth_tab = (int *)my_calloc((num_elem_blk * num_ele_vars), sizeof(int));
+  int *truth_tab = (int *)my_calloc((num_elem_blk * num_ele_vars), sizeof(int));
 
   error = ex_get_truth_table(exoid, EX_ELEM_BLOCK, num_elem_blk, num_ele_vars, truth_tab);
   printf("\nafter ex_get_elem_var_tab, error = %3d\n", error);
@@ -726,6 +717,7 @@ int main(int argc, char **argv)
 
   /* determine how many time steps are stored */
 
+  int num_time_steps;
   error = ex_inquire(exoid, EX_INQ_TIME, &num_time_steps, &fdum, cdum);
   printf("\nafter ex_inquire, error = %3d\n", error);
   printf("There are %2d time steps in the database.\n", num_time_steps);

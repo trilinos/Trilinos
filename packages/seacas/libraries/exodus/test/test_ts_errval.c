@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,22 +60,19 @@ void *error_test(void *varg)
 int main(int argc, char *argv[])
 {
   pthread_t threads[NUM_THREADS];
-  int       rc;
-  long      t;
-
-  param arg[NUM_THREADS];
+  param     arg[NUM_THREADS];
 
   printf("Running on %d threads\n", NUM_THREADS);
-  for (t = 0; t < NUM_THREADS; t++) {
+  for (long t = 0; t < NUM_THREADS; t++) {
     arg[t].threadid = t;
-    rc              = pthread_create(&threads[t], NULL, error_test, (void *)(arg + t));
+    int rc          = pthread_create(&threads[t], NULL, error_test, (void *)(arg + t));
     if (rc) {
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(-1);
     }
   }
 
-  for (t = 0; t < NUM_THREADS; t++) {
+  for (long t = 0; t < NUM_THREADS; t++) {
     pthread_join(threads[t], NULL);
   }
 }

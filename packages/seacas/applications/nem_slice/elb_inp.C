@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,7 +19,7 @@
 #include "elb_inp.h"
 #include "elb_util.h" // for strip_string, token_compare, etc
 #include "fmt/ostream.h"
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
 #include "XGetopt.h"
 #include <unistd.h>
 #else
@@ -174,7 +174,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
     case 'w':
       /* Weighting options */
       sub_opt = optarg;
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
@@ -369,7 +369,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
@@ -474,7 +474,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
@@ -570,7 +570,7 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
       if (sub_opt != nullptr) {
         string_to_lower(sub_opt, '\0');
       }
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
       fprintf(stderr, "Windows build does not use getsubopt yet...\n");
       exit(1);
 #else
@@ -698,7 +698,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
   char tmpstr[2048];
   /*-----------------------------Execution Begins------------------------------*/
   if (!(inp_fd = fopen(ascii_inp_file.c_str(), "r"))) {
-    ctemp = fmt::format("FATAL: unable to open ASCII input file {}", ascii_inp_file.c_str());
+    ctemp = fmt::format("FATAL: unable to open ASCII input file {}", ascii_inp_file);
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -1352,21 +1352,6 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
                     Problem_Description *prob, Solver_Description *solver,
                     Weight_Description<INT> *weight)
 {
-  std::string    ctemp;
-  ex_entity_type type;
-  char **        var_names;
-  int            cnt;
-  int            exoid;
-  int            cpu_ws = 0;
-  int            io_ws  = 0;
-  int            nvars;
-  int            tmp_vindx = 0;
-  float          version;
-  int            exid_inp;
-  int            icpu_ws = 0;
-  int            iio_ws  = 0;
-  float          vers;
-
   /* Check that an input ExodusII file name was specified */
   if (exoII_inp_file.empty()) {
     Gen_Error(0, "FATAL: no input ExodusII file specified");
@@ -1374,8 +1359,12 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   }
 
   /* Check for the existence and readability of the input file */
+  int   icpu_ws = 0;
+  int   iio_ws  = 0;
+  float vers;
+  int   exid_inp;
   if ((exid_inp = ex_open(exoII_inp_file.c_str(), EX_READ, &icpu_ws, &iio_ws, &vers)) < 0) {
-    ctemp = fmt::format("FATAL: unable to open input ExodusII file {}", exoII_inp_file.c_str());
+    std::string ctemp = fmt::format("FATAL: unable to open input ExodusII file {}", exoII_inp_file);
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -1412,7 +1401,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   }
   else {
     machine->procs_per_box = machine->dim[0];
-    for (cnt = 1; cnt < machine->num_dims; cnt++) {
+    for (int cnt = 1; cnt < machine->num_dims; cnt++) {
       machine->procs_per_box *= machine->dim[cnt];
     }
   }
@@ -1617,9 +1606,13 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * If a variable name and or index was specified then open the ExodusII
      * file and compare the specified name against what exists in the file.
      */
+    int   exoid;
+    float version;
+    int   cpu_ws = 0;
+    int   io_ws  = 0;
     if ((exoid = ex_open(weight->exo_filename.c_str(), EX_READ, &cpu_ws, &io_ws, &version)) < 0) {
-      ctemp = fmt::format("FATAL: failed to open ExodusII weighting file {}",
-                          weight->exo_filename.c_str());
+      std::string ctemp =
+          fmt::format("FATAL: failed to open ExodusII weighting file {}", weight->exo_filename);
       Gen_Error(0, ctemp);
       return 0;
     }
@@ -1632,12 +1625,13 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     if (weight->exo_tindx > ntimes) {
-      ctemp = fmt::format("FATAL: requested time index %d not available in weighting file",
-                          weight->exo_tindx);
+      std::string ctemp = fmt::format(
+          "FATAL: requested time index %d not available in weighting file", weight->exo_tindx);
       Gen_Error(0, ctemp);
       return 0;
     }
 
+    ex_entity_type type;
     if (prob->type == NODAL) {
       type = EX_NODAL;
     }
@@ -1649,6 +1643,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * First check that there are variables of the requested type in the
      * specified ExodusII file.
      */
+    int nvars;
     if (ex_get_variable_param(exoid, type, &nvars) < 0) {
       Gen_Error(0, "FATAL: unable to get variable params from ExodusII"
                    " weighting file");
@@ -1660,7 +1655,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     /* Read the variable names from the requested file */
-    var_names = reinterpret_cast<char **>(malloc(nvars * sizeof(char *)));
+    char **var_names = reinterpret_cast<char **>(malloc(nvars * sizeof(char *)));
     if (!var_names) {
       Gen_Error(0, "FATAL: insufficient memory");
       return 0;
@@ -1670,7 +1665,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       int max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
       ex_set_max_name_length(exoid, max_name_length);
 
-      for (cnt = 0; cnt < nvars; cnt++) {
+      for (int cnt = 0; cnt < nvars; cnt++) {
         var_names[cnt] = reinterpret_cast<char *>(malloc((max_name_length + 1) * sizeof(char)));
         if (!var_names[cnt]) {
           Gen_Error(0, "FATAL: insufficient memory");
@@ -1690,7 +1685,8 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * sure they match.
      */
     if (!weight->exo_varname.empty()) {
-      for (cnt = 0; cnt < nvars; cnt++) {
+      int tmp_vindx = 0;
+      for (int cnt = 0; cnt < nvars; cnt++) {
         if (strcmp(var_names[cnt], weight->exo_varname.c_str()) == 0) {
           tmp_vindx = cnt + 1;
 
@@ -1709,7 +1705,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     }
 
     /* Free up memory */
-    for (cnt = 0; cnt < nvars; cnt++) {
+    for (int cnt = 0; cnt < nvars; cnt++) {
       free(var_names[cnt]);
     }
     free(var_names);
@@ -1719,8 +1715,8 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * not exist in the specified file.
      */
     if (weight->exo_vindx <= 0) {
-      ctemp = fmt::format("FATAL: requested weighting variable {} not found in ExodusII file",
-                          weight->exo_varname.c_str());
+      std::string ctemp = fmt::format(
+          "FATAL: requested weighting variable {} not found in ExodusII file", weight->exo_varname);
       Gen_Error(0, ctemp);
       return 0;
     }
@@ -1741,9 +1737,9 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
       sort2(weight->elemblk.size(), weight->elemblk.data(), weight->elemblk_wgt.data());
 
       /* now loop through, and make sure that we don't have multiple values */
-      for (cnt = 1; cnt < (int)weight->elemblk.size(); cnt++) {
+      for (int cnt = 1; cnt < (int)weight->elemblk.size(); cnt++) {
         if (weight->elemblk[cnt] == weight->elemblk[cnt - 1]) {
-          ctemp =
+          std::string ctemp =
               fmt::format("WARNING: multiple weight specified for block {}", weight->elemblk[cnt]);
           Gen_Error(1, ctemp);
         }

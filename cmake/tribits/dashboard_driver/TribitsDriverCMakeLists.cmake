@@ -56,9 +56,9 @@ if( NOT DEFINED CMAKE_CURRENT_LIST_DIR )
 endif()
 
 # Locate the TriBITS dependencies.
-IF (NOT TRIBITS_ROOT)
+if (NOT TRIBITS_ROOT)
   get_filename_component(TRIBITS_ROOT "${CMAKE_CURRENT_LIST_DIR}/..")
-ENDIF()
+endif()
 get_filename_component(TRIBITS_ROOT "${TRIBITS_ROOT}" ABSOLUTE)
 
 set(CMAKE_MODULE_PATH
@@ -70,12 +70,12 @@ set(CMAKE_MODULE_PATH
 
 set(TRIBITS_PYTHON_UTILS_DIR "${TRIBITS_ROOT}/python_utils")
 
-INCLUDE(SetDefaultAndFromEnv)
+include(SetDefaultAndFromEnv)
 include(CTest)
 include(TribitsDriverSupport)
 include(TribitsConfigureCTestCustom)
 
-TRIBITS_CONFIGURE_CTEST_CUSTOM(${PROJECT_HOME_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+tribits_configure_ctest_custom(${PROJECT_HOME_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 
 # Function to make exactly one add_subdirectory call based on the site
@@ -83,7 +83,7 @@ TRIBITS_CONFIGURE_CTEST_CUSTOM(${PROJECT_HOME_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 # is taken to be the site name. The environment variable
 # TDD_DRIVER_SUBDIRECTORY can be used to override the default value.
 #
-FUNCTION(TDD_PROJECT)
+function(tdd_project)
 
   site_name(site)
   set(subdir "${site}")
@@ -126,4 +126,4 @@ FUNCTION(TDD_PROJECT)
 
   add_subdirectory("${TDD_DRIVER_SUBDIRECTORY}")
 
-ENDFUNCTION()
+endfunction()

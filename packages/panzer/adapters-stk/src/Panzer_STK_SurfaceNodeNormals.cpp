@@ -131,7 +131,8 @@ namespace panzer_stk {
       elementEntities.push_back(*parentElement); // notice this is size 1!
       PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices 
           = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getVertexCount(), mesh->getDimension());
-      mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vertices);
+      auto vert_view = vertices.get_view();
+      mesh->getElementVerticesNoResize(elementEntities,elementBlockName,vert_view);
       
       panzer::CellData sideCellData(1,*sideID,parentTopology); // this is size 1 because elementEntties is size 1!
       RCP<panzer::IntegrationRule> ir = Teuchos::rcp(new panzer::IntegrationRule(cubDegree,sideCellData));
@@ -143,8 +144,10 @@ namespace panzer_stk {
       // KK: use serial interface; jac_at_point (D,D) from (C,P,D,D)
       {
         auto jac_at_point = Kokkos::subview(iv.jac.get_view(), 0, 0, Kokkos::ALL(), Kokkos::ALL());
+	auto jac_at_point_h = Kokkos::create_mirror_view(jac_at_point);
+	Kokkos::deep_copy(jac_at_point_h, jac_at_point);
         Intrepid2::Impl::
-          CellTools::Serial::getPhysicalSideNormal(normal_at_point, side_parametrization, jac_at_point, *sideID);
+          CellTools::Serial::getPhysicalSideNormal(normal_at_point, side_parametrization, jac_at_point_h, *sideID);
       }
 
       if (pout != NULL) {
@@ -269,23 +272,23 @@ namespace panzer_stk {
       stk::mesh::Entity const* nodeRelations = bulkData->begin_nodes(*parentElement);
 
       normals[mesh->elementLocalId(*parentElement)] = Kokkos::DynRankView<double,PHX::Device>("normals",numNodes,parentTopology->getDimension());
-
+      auto normals_h = Kokkos::create_mirror_view(normals[mesh->elementLocalId(*parentElement)]);
       for (size_t nodeIndex=0; nodeIndex<numNodes; ++nodeIndex) {
         stk::mesh::Entity node = nodeRelations[nodeIndex];
 	// if the node is on the sideset, insert, otherwise set normal
 	// to zero (it is an interior node of the parent element).
 	if (nodeEntityIdToNormals.find(bulkData->identifier(node)) != nodeEntityIdToNormals.end()) { 
 	  for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim) {
-	    (normals[mesh->elementLocalId(*parentElement)])(nodeIndex,dim) = (nodeEntityIdToNormals[bulkData->identifier(node)])[dim];
+	    normals_h(nodeIndex,dim) = (nodeEntityIdToNormals[bulkData->identifier(node)])[dim];
 	  }
 	}
 	else {
 	  for (unsigned dim = 0; dim < parentTopology->getDimension(); ++dim) {
-	    (normals[mesh->elementLocalId(*parentElement)])(nodeIndex,dim) = 0.0;
+	    normals_h(nodeIndex,dim) = 0.0;
 	  }
 	}
       }
- 
+      Kokkos::deep_copy(normals[mesh->elementLocalId(*parentElement)], normals_h);
     }
 
   }

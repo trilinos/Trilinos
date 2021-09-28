@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+tribits_package_define_dependencies(
   LIB_REQUIRED_PACKAGES Teuchos Shards Sacado
   TEST_OPTIONAL_PACKAGES Belos Epetra Ifpack Intrepid
   LIB_REQUIRED_TPLS Boost
