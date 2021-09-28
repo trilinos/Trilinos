@@ -60,8 +60,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_params(
   int   cpu_ws = io_ws;
   int   mode   = EX_READ | int64api;
   if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
-    fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__,
-               Exo_Res_File.c_str());
+    fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__, Exo_Res_File);
     exit(1);
   }
 
@@ -153,8 +152,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
   {
     int mode = EX_READ | int64api;
     if ((exoid = ex_open(Exo_Res_File.c_str(), mode, &cpu_ws, &io_ws, &vers)) < 0) {
-      fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__,
-                 Exo_Res_File.c_str());
+      fmt::print(stderr, "{}: Could not open file {} for restart info\n", __func__, Exo_Res_File);
       exit(1);
     }
   }
@@ -390,7 +388,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
       if ((par_exoid[iproc] = ex_open(Parallel_File_Name.c_str(), mode, &cpu_ws, &io_ws, &vers)) <
           0) {
         fmt::print(stderr, "[{}] {} Could not open parallel Exodus II file: {}\n", iproc, __func__,
-                   Parallel_File_Name.c_str());
+                   Parallel_File_Name);
         exit(1);
       }
     }
@@ -426,7 +424,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_restart_data()
         if ((par_exoid[iproc] = ex_open(Parallel_File_Name.c_str(), mode, &cpu_ws, &io_ws, &vers)) <
             0) {
           fmt::print(stderr, "[{}] {} Could not open parallel Exodus II file: {}\n", iproc,
-                     __func__, Parallel_File_Name.c_str());
+                     __func__, Parallel_File_Name);
           exit(1);
         }
       }
@@ -515,7 +513,7 @@ int NemSpread<T, INT>::read_var_param(int exoid, int max_name_length)
         fmt::print(stderr, "{}: Requested time index, {}, out of range.\n", __func__,
                    Restart_Info.Time_Idx[cnt]);
         fmt::print(stderr, "{}: Valid time indices in {} are from 1 to {}.\n", __func__,
-                   Exo_Res_File.c_str(), ret_int);
+                   Exo_Res_File, ret_int);
         return -1;
       }
     }

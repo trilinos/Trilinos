@@ -59,6 +59,16 @@ namespace {
     }
   }
 
+  template <typename T> void print_bbox(const T &entity)
+  {
+    Ioss::AxisAlignedBoundingBox bbox = entity.get_bounding_box();
+    fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
+               "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
+               "\t                Range X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
+               bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax,
+               bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin, bbox.zmax - bbox.zmin);
+  }
+
   std::string name(const Ioss::GroupingEntity *entity)
   {
     return entity->type_string() + " '" + entity->name() + "'";
@@ -189,12 +199,7 @@ namespace {
     Ioss::Utils::info_fields(&nb, Ioss::Field::TRANSIENT, prefix + "\tTransient:  ");
 
     if (interFace.compute_bbox()) {
-      Ioss::AxisAlignedBoundingBox bbox = nb.get_bounding_box();
-      fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                 "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                 "\t                Range X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
-                 bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax,
-                 bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin, bbox.zmax - bbox.zmin);
+      print_bbox(nb);
     }
   }
 
@@ -213,21 +218,12 @@ namespace {
     for (auto &sb : sbs) {
       int64_t num_cell = sb->get_property("cell_count").get_int();
       int64_t num_node = sb->get_property("node_count").get_int();
-      int64_t num_dim  = sb->get_property("component_degree").get_int();
 
-      fmt::print("\n{} {}", name(sb), sb->get_property("ni_global").get_int());
-      if (num_dim > 1) {
-        fmt::print("x{}", sb->get_property("nj_global").get_int());
-      }
-      if (num_dim > 2) {
-        fmt::print("x{}", sb->get_property("nk_global").get_int());
-      }
+      fmt::print("\n{} {}", name(sb), fmt::join(sb->get_ijk_global(), "x"));
 
       if (parallel) {
-        fmt::print(" [{}x{}x{}, Offset = {}, {}, {}] ", sb->get_property("ni").get_int(),
-                   sb->get_property("nj").get_int(), sb->get_property("nk").get_int(),
-                   sb->get_property("offset_i").get_int(), sb->get_property("offset_j").get_int(),
-                   sb->get_property("offset_k").get_int());
+        fmt::print(" [{}, Offset = {}] ", fmt::join(sb->get_ijk_local(), "x"),
+                   fmt::join(sb->get_ijk_offset(), ", "));
       }
 
       fmt::print("  {:14L} cells, {:14L} nodes ", num_cell, num_node);
@@ -259,12 +255,7 @@ namespace {
         }
       }
       if (interFace.compute_bbox()) {
-        Ioss::AxisAlignedBoundingBox bbox = sb->get_bounding_box();
-        fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                   "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                   "\t                Range X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
-                   bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax,
-                   bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin, bbox.zmax - bbox.zmin);
+        print_bbox(*sb);
       }
     }
   }
@@ -338,12 +329,7 @@ namespace {
       Ioss::Utils::info_fields(eb, Ioss::Field::REDUCTION, "\n\tTransient  (Reduction):  ");
 
       if (interFace.compute_bbox()) {
-        Ioss::AxisAlignedBoundingBox bbox = eb->get_bounding_box();
-        fmt::print("\tBounding Box: Minimum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                   "\t              Maximum X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n"
-                   "\t                Range X,Y,Z = {:12.4e}\t{:12.4e}\t{:12.4e}\n",
-                   bbox.xmin, bbox.ymin, bbox.zmin, bbox.xmax, bbox.ymax, bbox.zmax,
-                   bbox.xmax - bbox.xmin, bbox.ymax - bbox.ymin, bbox.zmax - bbox.zmin);
+        print_bbox(*eb);
       }
     }
   }

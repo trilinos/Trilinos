@@ -49,8 +49,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
   int   io_ws  = 0;
   float version;
   if ((exoid = ex_open(weight->exo_filename.c_str(), mode, &cpu_ws, &io_ws, &version)) < 0) {
-    std::string ctemp =
-        fmt::format("fatal: could not open ExodusII file {}", weight->exo_filename.c_str());
+    std::string ctemp = fmt::format("fatal: could not open ExodusII file {}", weight->exo_filename);
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -123,7 +122,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
   /* Close the ExodusII weighting file */
   if (ex_close(exoid) < 0) {
     std::string ctemp =
-        fmt::format("warning: failed to close ExodusII file {}", weight->exo_filename.c_str());
+        fmt::format("warning: failed to close ExodusII file {}", weight->exo_filename);
     Gen_Error(0, ctemp);
   }
 
