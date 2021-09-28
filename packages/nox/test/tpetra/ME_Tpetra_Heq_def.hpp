@@ -276,8 +276,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       if (comm_->getSize() > 1) {
         localSum->reduce();
         if (myRank == proc) {
-          auto source = localSum->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
-          auto target = integralOp_->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
+          auto source = localSum->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto target = integralOp_->getLocalViewDevice(Tpetra::Access::ReadWrite);
           Kokkos::deep_copy(target, source);
         }
       }
@@ -420,8 +420,8 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
       if (comm->getSize() > 1) {
         localResult->reduce();
         if (myRank == proc) {
-          auto source = localResult->template getLocalView<execution_space>(Tpetra::Access::ReadOnly);
-          auto target = integralOpX_->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
+          auto source = localResult->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto target = integralOpX_->getLocalViewDevice(Tpetra::Access::ReadWrite);
           Kokkos::deep_copy(target, source);
         }
       }
