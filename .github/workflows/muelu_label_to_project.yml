@@ -1,5 +1,4 @@
 name: Auto-assign MueLu labelled issues to MueLu Project
-uses: srggrs/assign-one-project-github-action@1.3.0
 
 on:
   issues:
