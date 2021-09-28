@@ -15,14 +15,14 @@ jobs:
     steps:
     - name: Assign NEW issues to MueLu Project (number 5)
       uses: srggrs/assign-one-project-github-action@1.2.1
-      if: github.event.action == 'opened'
+      if: github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'MueLu')
       with:
         project: 'https://github.com/trilinos/Trilinos/projects/5'
+        column_name: 'Feature request'
 
     - name: Assign existing issues with pkg MueLu label to MueLu project (number 5)
       uses: srggrs/assign-one-project-github-action@1.2.1
       if: 
-        contains(github.event.issue.labels.*.name, 'pkg: MueLu') 
       with:
         project: 'https://github.com/trilinos/Trilinos/projects/5'
-        column_name: 'Labeled'
+        column_name: 'Feature request'
