@@ -698,7 +698,7 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
   char tmpstr[2048];
   /*-----------------------------Execution Begins------------------------------*/
   if (!(inp_fd = fopen(ascii_inp_file.c_str(), "r"))) {
-    ctemp = fmt::format("FATAL: unable to open ASCII input file {}", ascii_inp_file.c_str());
+    ctemp = fmt::format("FATAL: unable to open ASCII input file {}", ascii_inp_file);
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -1364,8 +1364,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   float vers;
   int   exid_inp;
   if ((exid_inp = ex_open(exoII_inp_file.c_str(), EX_READ, &icpu_ws, &iio_ws, &vers)) < 0) {
-    std::string ctemp =
-        fmt::format("FATAL: unable to open input ExodusII file {}", exoII_inp_file.c_str());
+    std::string ctemp = fmt::format("FATAL: unable to open input ExodusII file {}", exoII_inp_file);
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -1612,8 +1611,8 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     int   cpu_ws = 0;
     int   io_ws  = 0;
     if ((exoid = ex_open(weight->exo_filename.c_str(), EX_READ, &cpu_ws, &io_ws, &version)) < 0) {
-      std::string ctemp = fmt::format("FATAL: failed to open ExodusII weighting file {}",
-                                      weight->exo_filename.c_str());
+      std::string ctemp =
+          fmt::format("FATAL: failed to open ExodusII weighting file {}", weight->exo_filename);
       Gen_Error(0, ctemp);
       return 0;
     }
@@ -1716,9 +1715,8 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
      * not exist in the specified file.
      */
     if (weight->exo_vindx <= 0) {
-      std::string ctemp =
-          fmt::format("FATAL: requested weighting variable {} not found in ExodusII file",
-                      weight->exo_varname.c_str());
+      std::string ctemp = fmt::format(
+          "FATAL: requested weighting variable {} not found in ExodusII file", weight->exo_varname);
       Gen_Error(0, ctemp);
       return 0;
     }

@@ -109,10 +109,6 @@ namespace {
     return num_time_steps;
   }
 
-  std::string name(const Ioss::GroupingEntity *entity)
-  {
-    return entity->type_string() + " '" + entity->name() + "'";
-  }
 } // namespace
 
 template <typename INT> void cpup(Cpup::SystemInterface &interFace, INT dummy);
@@ -636,9 +632,7 @@ namespace {
       for (const auto &block : blocks) {
         auto  name_proc  = Iocgns::Utils::decompose_name(block->name(), true);
         auto &cur_global = global_block[name_proc.first];
-        block->set_ijk_global(0, cur_global[0]);
-        block->set_ijk_global(1, cur_global[1]);
-        block->set_ijk_global(2, cur_global[2]);
+        block->set_ijk_global(cur_global);
       }
       if (debug_level & 4) {
         info_structuredblock(*part);
@@ -652,12 +646,12 @@ namespace {
     for (const auto &sb : sbs) {
 
       auto ijk_global = sb->get_ijk_global();
-      fmt::print(stderr, "\n{} {}x{}x{}", name(sb), ijk_global[0], ijk_global[1], ijk_global[2]);
+      fmt::print(stderr, "\n{} '{}' {}", sb->type_string(), sb->name(), fmt::join(ijk_global, "x"));
 
       auto ijk_offset = sb->get_ijk_offset();
       auto ijk_local  = sb->get_ijk_local();
-      fmt::print(stderr, " [{}x{}x{}, Offset = {}, {}, {}] ", ijk_local[0], ijk_local[1],
-                 ijk_local[2], ijk_offset[0], ijk_offset[1], ijk_offset[2]);
+      fmt::print(stderr, " [{}, Offset = {}] ", fmt::join(ijk_local, "x"),
+                 fmt::join(ijk_offset, ", "));
 
       int64_t num_cell = sb->get_property("cell_count").get_int();
       int64_t num_node = sb->get_property("node_count").get_int();

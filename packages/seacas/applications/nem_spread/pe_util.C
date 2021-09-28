@@ -169,7 +169,7 @@ std::string gen_par_filename(const std::string &scalar_fname, int proc_for, int 
     }
   }
   if (Debug_Flag >= 4) {
-    fmt::print("Parallel file name: {}\n", par_filename.c_str());
+    fmt::print("Parallel file name: {}\n", par_filename);
   }
 
   return par_filename;

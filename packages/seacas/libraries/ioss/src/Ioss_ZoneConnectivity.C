@@ -100,13 +100,12 @@ namespace Ioss {
     return os;
   }
 
-#define IJK_list(v) v[0], v[1], v[2]
   bool ZoneConnectivity::equal_(const Ioss::ZoneConnectivity &rhs, bool quiet) const
   {
     if (this->m_connectionName != rhs.m_connectionName) {
       if (!quiet) {
         fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_connectionName MISMATCH ({} vs {})\n",
-                   this->m_connectionName.c_str(), rhs.m_connectionName.c_str());
+                   this->m_connectionName, rhs.m_connectionName);
       }
       return false;
     }
@@ -114,70 +113,63 @@ namespace Ioss {
     if (this->m_donorName != rhs.m_donorName) {
       if (!quiet) {
         fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_donorName MISMATCH ({} vs {})\n",
-                   this->m_donorName.c_str(), rhs.m_donorName.c_str());
+                   this->m_donorName, rhs.m_donorName);
       }
       return false;
     }
 
     if (this->m_transform != rhs.m_transform) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(),
-                   "ZoneConnectivity : m_transform MISMATCH!  ({}:{}:{} vs {}:{}:{})\n",
-                   IJK_list(this->m_transform), IJK_list(rhs.m_transform));
+        fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_transform MISMATCH!  ({} vs {})\n",
+                   fmt::join(this->m_transform, ":"), fmt::join(rhs.m_transform, ":"));
       }
       return false;
     }
 
     if (this->m_ownerRangeBeg != rhs.m_ownerRangeBeg) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(),
-                   "ZoneConnectivity : m_ownerRangeBeg MISMATCH ({}:{}:{} vs {}:{}:{})\n",
-                   IJK_list(this->m_ownerRangeBeg), IJK_list(rhs.m_ownerRangeBeg));
+        fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_ownerRangeBeg MISMATCH ({} vs {})\n",
+                   fmt::join(this->m_ownerRangeBeg, ":"), fmt::join(rhs.m_ownerRangeBeg, ":"));
       }
       return false;
     }
 
     if (this->m_ownerRangeEnd != rhs.m_ownerRangeEnd) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(),
-                   "ZoneConnectivity : m_ownerRangeEnd MISMATCH ({}:{}:{} vs {}:{}:{})\n",
-                   IJK_list(this->m_ownerRangeEnd), IJK_list(rhs.m_ownerRangeEnd));
+        fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_ownerRangeEnd MISMATCH ({} vs {})\n",
+                   fmt::join(this->m_ownerRangeEnd, ":"), fmt::join(rhs.m_ownerRangeEnd, ":"));
       }
       return false;
     }
 
     if (this->m_ownerOffset != rhs.m_ownerOffset) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(),
-                   "ZoneConnectivity : m_ownerOffset MISMATCH ({}:{}:{} vs {}:{}:{})\n",
-                   IJK_list(this->m_ownerOffset), IJK_list(rhs.m_ownerOffset));
+        fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_ownerOffset MISMATCH ({} vs {})\n",
+                   fmt::join(this->m_ownerOffset, ":"), fmt::join(rhs.m_ownerOffset, ":"));
       }
       return false;
     }
 
     if (this->m_donorRangeBeg != rhs.m_donorRangeBeg) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(),
-                   "ZoneConnectivity : m_donorRangeBeg MISMATCH ({}:{}:{} vs {}:{}:{})\n",
-                   IJK_list(this->m_donorRangeBeg), IJK_list(rhs.m_donorRangeBeg));
+        fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_donorRangeBeg MISMATCH ({} vs {})\n",
+                   fmt::join(this->m_donorRangeBeg, ":"), fmt::join(rhs.m_donorRangeBeg, ":"));
       }
       return false;
     }
 
     if (this->m_donorRangeEnd != rhs.m_donorRangeEnd) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(),
-                   "ZoneConnectivity : m_donorRangeEnd MISMATCH ({}:{}:{} vs {}:{}:{})\n",
-                   IJK_list(this->m_donorRangeEnd), IJK_list(rhs.m_donorRangeEnd));
+        fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_donorRangeEnd MISMATCH ({} vs {})\n",
+                   fmt::join(this->m_donorRangeEnd, ":"), fmt::join(rhs.m_donorRangeEnd, ":"));
       }
       return false;
     }
 
     if (this->m_donorOffset != rhs.m_donorOffset) {
       if (!quiet) {
-        fmt::print(Ioss::OUTPUT(),
-                   "ZoneConnectivity : m_donorOffset MISMATCH ({}:{}:{} vs {}:{}:{})\n",
-                   IJK_list(this->m_donorOffset), IJK_list(rhs.m_donorOffset));
+        fmt::print(Ioss::OUTPUT(), "ZoneConnectivity : m_donorOffset MISMATCH ({} vs {})\n",
+                   fmt::join(this->m_donorOffset, ":"), fmt::join(rhs.m_donorOffset, ":"));
       }
       return false;
     }

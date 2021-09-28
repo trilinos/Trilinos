@@ -12,7 +12,7 @@
 #include <climits>  // for INT_MAX
 #include <cstddef>  // for size_t
 #include <cstdlib>  // for exit, EXIT_SUCCESS, etc
-#include <cstring>  // for memset, strcmp
+#include <cstring>  // for strcmp
 #include <fstream>  // for operator<<, basic_ostream, etc
 #include <iomanip>  // for operator<<, setw, etc
 #include <iostream> // for left, cerr, cout, streampos
@@ -696,8 +696,7 @@ namespace SEAMS {
 
   symrec *Aprepro::getsym(const char *sym_name) const
   {
-    symrec *ptr = nullptr;
-    for (ptr = sym_table[hash_symbol(sym_name)]; ptr != nullptr; ptr = ptr->next) {
+    for (symrec *ptr = sym_table[hash_symbol(sym_name)]; ptr != nullptr; ptr = ptr->next) {
       if (strcmp(ptr->name.c_str(), sym_name) == 0) {
         return ptr;
       }
@@ -857,20 +856,17 @@ namespace SEAMS {
       output = &std::cout;
     }
 
-    symrec * ptr;
     unsigned entries = 0;
     int      maxlen  = 0;
     int      minlen  = INT_MAX;
-    int      lengths[MAXLEN];
-    int      longer = 0;
+    int      longer  = 0;
+    Stats    stats;
 
-    Stats stats;
-
-    memset((void *)lengths, 0, sizeof(lengths));
+    std::vector<int> lengths(MAXLEN);
 
     for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
       int chain_len = 0;
-      for (ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
+      for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
         chain_len++;
       }
 
