@@ -1,0 +1,28 @@
+- name: Auto-assign MueLu labelled issues to MueLu Project
+  uses: srggrs/assign-one-project-github-action@1.3.0
+
+on:
+  issues:
+    types: [opened, labeled]
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  assign_one_project:
+    runs-on: ubuntu-latest
+    name: Assign to MueLu Project
+    steps:
+    - name: Assign NEW issues to MueLu Project (number 5)
+      uses: srggrs/assign-one-project-github-action@1.2.1
+      if: github.event.action == 'opened'
+      with:
+        project: 'https://github.com/trilinos/Trilinos/projects/5'
+
+    - name: Assign existing issues with `pkg: MueLu` label to MueLu project (number 5)
+      uses: srggrs/assign-one-project-github-action@1.2.1
+      if: 
+        contains(github.event.issue.labels.*.name, 'pkg: MueLu') 
+      with:
+        project: 'https://github.com/trilinos/Trilinos/projects/5'
+        column_name: 'Labeled'
