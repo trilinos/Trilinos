@@ -4014,8 +4014,9 @@ namespace Tpetra {
       lclIndsPacked_wdv = local_inds_wdv_type(ind_d);
     }
     else { // We don't have to pack, so just set the pointers.
-      rowPtrsPacked_dev_ = rowPtrsUnpacked_dev_;
-      rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
+      setRowPtrsPacked(rowPtrsUnpacked_dev_);
+//KDDKDDFIX      rowPtrsPacked_dev_ = rowPtrsUnpacked_dev_;
+//KDDKDDFIX      rowPtrsPacked_host_ = rowPtrsUnpacked_host_;
       lclIndsPacked_wdv = lclIndsUnpacked_wdv; 
 
       if (debug_) {
@@ -4067,8 +4068,9 @@ namespace Tpetra {
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      rowPtrsUnpacked_dev_ = rowPtrsPacked_dev_;
-      rowPtrsUnpacked_host_ = rowPtrsPacked_host_;
+      setRowPtrsUnpacked(rowPtrsPacked_dev_);
+//KDDKDDFIX      rowPtrsUnpacked_dev_ = rowPtrsPacked_dev_;
+//KDDKDDFIX      rowPtrsUnpacked_host_ = rowPtrsPacked_host_;
       lclIndsUnpacked_wdv = lclIndsPacked_wdv;
 
       storageStatus_ = Details::STORAGE_1D_PACKED;
