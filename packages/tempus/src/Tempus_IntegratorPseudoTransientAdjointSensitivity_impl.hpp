@@ -380,9 +380,10 @@ createSensitivityModel(
   if (inputPL != Teuchos::null) {
     *pl = inputPL->sublist("Sensitivities");
   }
+  const Scalar tinit = state_integrator_->getTimeStepControl()->getInitTime();
   const Scalar tfinal = state_integrator_->getTimeStepControl()->getFinalTime();
   return rcp(new AdjointSensitivityModelEvaluator<Scalar>(
-               model, adjoint_model, tfinal, true, pl));
+               model, adjoint_model, tinit, tfinal, true, pl));
 }
 
 template<class Scalar>

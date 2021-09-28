@@ -61,7 +61,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
 
     // Read params from .xml file
     RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_BackwardEuler_SinCos.xml");
+      getParametersFromXmlFile("Tempus_BackwardEuler_SinCos_ASA.xml");
 
     // Setup the SinCosModel
     // Here we test using an explicit adjoint model for adjoint sensitivities
@@ -208,7 +208,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.151746, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.142525, 1.0e-4 );
 
   if (comm->getRank() == 0) {
     std::ofstream ftmp("Tempus_BackwardEuler_SinCos_AdjSens-Error.dat");
