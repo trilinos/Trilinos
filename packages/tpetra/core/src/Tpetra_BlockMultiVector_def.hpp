@@ -571,8 +571,7 @@ packAndPrepare
  buffer_device_type>& exports,
  Kokkos::DualView<size_t*,
  buffer_device_type> numPacketsPerLID,
- size_t& constantNumPackets,
- Distributor& distor)
+ size_t& constantNumPackets)
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (true, std::logic_error,
@@ -590,7 +589,6 @@ unpackAndCombine
  Kokkos::DualView<size_t*,
  buffer_device_type> numPacketsPerLID,
  const size_t constantNumPackets,
- Distributor& distor,
  const CombineMode combineMode)
 {
   TEUCHOS_TEST_FOR_EXCEPTION

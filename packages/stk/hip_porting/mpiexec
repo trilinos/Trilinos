@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ARGS=$(echo $@ | sed s/-np/-n/)
+srun $ARGS

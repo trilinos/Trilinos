@@ -1,6 +1,6 @@
 
 /*
- * Copyright (C) 1991, 1992, 1993, 2020 by Chris Thewalt (thewalt@ce.berkeley.edu)
+ * Copyright (C) 1991, 1992, 1993, 2020, 2021 by Chris Thewalt (thewalt@ce.berkeley.edu)
  *
  * Permission to use, copy, modify, and distribute this software
  * for any purpose and without fee is hereby granted, provided
@@ -19,7 +19,7 @@
  * Note:  This version has been updated by Mike Gleason <mgleason@ncftp.com>
  */
 
-#if defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
 
 #define __windows__ 1
 #include <conio.h>
@@ -117,11 +117,11 @@ static int ap_gl_tab(char *buf, int offset, int *loc, size_t bufsize);
 
 /******************** external interface *********************************/
 
-ap_gl_in_hook_proc        ap_gl_in_hook                    = 0;
-ap_gl_out_hook_proc       ap_gl_out_hook                   = 0;
+ap_gl_in_hook_proc        ap_gl_in_hook                    = NULL;
+ap_gl_out_hook_proc       ap_gl_out_hook                   = NULL;
 ap_gl_tab_hook_proc       ap_gl_tab_hook                   = ap_gl_tab;
 ap_gl_strlen_proc         ap_gl_strlen                     = (ap_gl_strlen_proc)strlen;
-ap_gl_tab_completion_proc ap_gl_completion_proc            = 0;
+ap_gl_tab_completion_proc ap_gl_completion_proc            = NULL;
 int                       ap_gl_filename_quoting_desired   = -1; /* default to unspecified */
 const char *              ap_gl_filename_quote_characters  = " \t*?<>|;&()[]$`";
 int                       ap_gl_ellipses_during_completion = 1;
@@ -144,7 +144,7 @@ static char        ap_gl_quitc        = 0;             /* keyboard SIGQUIT char 
 static char        ap_gl_suspc        = 0;             /* keyboard SIGTSTP char */
 static char        ap_gl_dsuspc       = 0;             /* delayed SIGTSTP char */
 static int         ap_gl_search_mode  = 0;             /* search mode flag */
-static char **     ap_gl_matchlist    = 0;
+static char **     ap_gl_matchlist    = NULL;
 static char *      ap_gl_home_dir     = NULL;
 static int         ap_gl_vi_preferred = -1;
 static int         ap_gl_vi_mode      = 0;
@@ -355,17 +355,16 @@ static int ap_gl_getcx(int tlen)
  * after tlen tenths of a second.
  */
 {
-  int            c, result;
-  char           ch;
-  fd_set         ss;
-  struct timeval tv;
-
   for (errno = 0;;) {
+    fd_set ss;
     FD_ZERO(&ss);
     FD_SET(0, &ss); /* set STDIN_FILENO */
+
+    struct timeval tv;
     tv.tv_sec  = tlen / 10;
     tv.tv_usec = (tlen % 10) * 100000L;
-    result     = select(1, &ss, NULL, NULL, &tv);
+
+    int result = select(1, &ss, NULL, NULL, &tv);
     if (result == 1) {
       /* ready */
       break;
@@ -380,7 +379,8 @@ static int ap_gl_getcx(int tlen)
   }
 
   for (errno = 0;;) {
-    c = read(0, &ch, 1);
+    char ch;
+    int  c = read(0, &ch, 1);
     if (c == 1) {
       return ((int)ch);
     }
@@ -435,19 +435,16 @@ static void ap_gl_putc(int c)
 
 static void ap_gl_puts(const char *const buf)
 {
-  int len;
-
   if (buf) {
-    len = strlen(buf);
+    int len = strlen(buf);
     write(1, buf, len);
   }
 }
 
 static void ap_gl_error(const char *const buf)
 {
-  int len = strlen(buf);
-
   ap_gl_cleanup();
+  int len = strlen(buf);
   write(2, buf, len);
   exit(1);
 }
@@ -524,7 +521,7 @@ char *ap_getline_int(char *prompt)
 
   ap_gl_init();
   ap_gl_prompt = (prompt) ? prompt : "";
-  ap_gl_buf[0] = 0;
+  ap_gl_buf[0] = '\0';
   if (ap_gl_in_hook)
     ap_gl_in_hook(ap_gl_buf);
   ap_gl_fixup(ap_gl_prompt, -2, AP_GL_BUF_SIZE);
@@ -706,7 +703,7 @@ char *ap_getline_int(char *prompt)
         break;
       case '\004': /* ^D */
         if (ap_gl_cnt == 0) {
-          ap_gl_buf[0] = 0;
+          ap_gl_buf[0] = '\0';
           ap_gl_cleanup();
           ap_gl_putc('\n');
           return ap_gl_buf;
@@ -869,7 +866,7 @@ char *ap_getline_int(char *prompt)
       lastch = c;
   }
   ap_gl_cleanup();
-  ap_gl_buf[0] = 0;
+  ap_gl_buf[0] = '\0';
   return ap_gl_buf;
 }
 
@@ -896,16 +893,14 @@ static void ap_gl_addchar(int c)
 static void ap_gl_yank(void)
 /* adds the kill buffer to the input buffer at current location */
 {
-  int i, len;
-
-  len = strlen(ap_gl_killbuf);
+  int len = strlen(ap_gl_killbuf);
   if (len > 0) {
     if (ap_gl_overwrite == 0) {
       if (ap_gl_cnt + len >= AP_GL_BUF_SIZE - 1)
         ap_gl_error("\n*** Error: getline(): input buffer overflow\n");
-      for (i = ap_gl_cnt; i >= ap_gl_pos; i--)
+      for (int i = ap_gl_cnt; i >= ap_gl_pos; i--)
         ap_gl_buf[i + len] = ap_gl_buf[i];
-      for (i = 0; i < len; i++)
+      for (int i = 0; i < len; i++)
         ap_gl_buf[ap_gl_pos + i] = ap_gl_killbuf[i];
       ap_gl_fixup(ap_gl_prompt, ap_gl_pos, ap_gl_pos + len);
     }
@@ -915,7 +910,7 @@ static void ap_gl_yank(void)
           ap_gl_error("\n*** Error: getline(): input buffer overflow\n");
         ap_gl_buf[ap_gl_pos + len] = 0;
       }
-      for (i = 0; i < len; i++)
+      for (int i = 0; i < len; i++)
         ap_gl_buf[ap_gl_pos + i] = ap_gl_killbuf[i];
       ap_gl_extent = len;
       ap_gl_fixup(ap_gl_prompt, ap_gl_pos, ap_gl_pos + len);
@@ -928,10 +923,8 @@ static void ap_gl_yank(void)
 static void ap_gl_transpose(void)
 /* switch character under cursor and to left of cursor */
 {
-  int c;
-
   if (ap_gl_pos > 0 && ap_gl_cnt > ap_gl_pos) {
-    c                        = ap_gl_buf[ap_gl_pos - 1];
+    int c                    = ap_gl_buf[ap_gl_pos - 1];
     ap_gl_buf[ap_gl_pos - 1] = ap_gl_buf[ap_gl_pos];
     ap_gl_buf[ap_gl_pos]     = (char)c;
     ap_gl_extent             = 2;
@@ -973,10 +966,8 @@ static void ap_gl_del(int loc, int killsave)
  *     0 : delete character under cursor
  */
 {
-  int i, j;
-
   if ((loc == -1 && ap_gl_pos > 0) || (loc == 0 && ap_gl_pos < ap_gl_cnt)) {
-    for (j = 0, i = ap_gl_pos + loc; i < ap_gl_cnt; i++) {
+    for (int j = 0, i = ap_gl_pos + loc; i < ap_gl_cnt; i++) {
       if ((j == 0) && (killsave != 0) && (ap_gl_vi_mode != 0)) {
         ap_gl_killbuf[0] = ap_gl_buf[i];
         ap_gl_killbuf[1] = '\0';
@@ -1005,11 +996,7 @@ static void ap_gl_kill(int pos)
 
 static void ap_gl_killword(int direction)
 {
-  int pos      = ap_gl_pos;
-  int startpos = ap_gl_pos;
-  int tmp;
-  int i;
-
+  int pos = ap_gl_pos;
   if (direction > 0) { /* forward */
     while (pos < ap_gl_cnt && !isspace(ap_gl_buf[pos]))
       pos++;
@@ -1026,8 +1013,10 @@ static void ap_gl_killword(int direction)
     if (pos < ap_gl_cnt && isspace(ap_gl_buf[pos])) /* move onto word */
       pos++;
   }
+
+  int startpos = ap_gl_pos;
   if (pos < startpos) {
-    tmp      = pos;
+    int tmp  = pos;
     pos      = startpos;
     startpos = tmp;
   }
@@ -1036,7 +1025,7 @@ static void ap_gl_killword(int direction)
   if (isspace(ap_gl_killbuf[pos - startpos - 1]))
     ap_gl_killbuf[pos - startpos - 1] = '\0';
   ap_gl_fixup(ap_gl_prompt, -1, startpos);
-  for (i = 0, tmp = pos - startpos; i < tmp; i++)
+  for (int i = 0, tmp = pos - startpos; i < tmp; i++)
     ap_gl_del(0, 0);
 } /* ap_gl_killword */
 
@@ -1206,10 +1195,9 @@ static void ap_gl_fixup(const char *prompt, int change, int cursor)
 static int ap_gl_tab(char *buf, int offset, int *loc, size_t bufsize)
 /* default tab handler, acts like tabstops every 8 cols */
 {
-  int i, count, len;
-
-  len   = strlen(buf);
-  count = 8 - (offset + *loc) % 8;
+  int len   = strlen(buf);
+  int count = 8 - (offset + *loc) % 8;
+  int i;
   for (i = len; i >= *loc; i--)
     if (i + count < (int)bufsize)
       buf[i + count] = buf[i];
@@ -1233,31 +1221,28 @@ static char  hist_empty_elem[2] = "";
 
 static void hist_init(void)
 {
-  int i;
-
   hist_buf[0] = hist_empty_elem;
-  for (i = 1; i < HIST_SIZE; i++)
+  for (int i = 1; i < HIST_SIZE; i++)
     hist_buf[i] = (char *)0;
 }
 
 void ap_gl_histadd(char *buf)
 {
-  static char *prev = 0;
-  char *       p    = buf;
-  int          len;
+  static char *prev = NULL;
 
   /* in case we call ap_gl_histadd() before we call getline() */
   if (ap_gl_init_done < 0) { /* -1 only on startup */
     hist_init();
     ap_gl_init_done = 0;
   }
+  char *p = buf;
   while (*p == ' ' || *p == '\t' || *p == '\n')
     p++;
   if (*p) {
-    len = strlen(buf);
+    int len = strlen(buf);
     if (strchr(p, '\n')) /* previously line already has NL stripped */
       len--;
-    if ((prev == 0) || ((int)strlen(prev) != len) || strncmp(prev, buf, (size_t)len) != 0) {
+    if ((prev == NULL) || ((int)strlen(prev) != len) || strncmp(prev, buf, (size_t)len) != 0) {
       hist_buf[hist_last] = hist_save(buf);
       prev                = hist_buf[hist_last];
       hist_last           = (hist_last + 1) % HIST_SIZE;
@@ -1273,14 +1258,14 @@ void ap_gl_histadd(char *buf)
 static char *hist_prev(void)
 /* loads previous hist entry into input buffer, sticks on first */
 {
-  char *p    = 0;
+  char *p    = NULL;
   int   next = (hist_pos - 1 + HIST_SIZE) % HIST_SIZE;
 
-  if (hist_buf[hist_pos] != 0 && next != hist_last) {
+  if (hist_buf[hist_pos] != NULL && next != hist_last) {
     hist_pos = next;
     p        = hist_buf[hist_pos];
   }
-  if (p == 0) {
+  if (p == NULL) {
     p = hist_empty_elem;
     ap_gl_beep();
   }
@@ -1290,13 +1275,13 @@ static char *hist_prev(void)
 static char *hist_next(void)
 /* loads next hist entry into input buffer, clears on last */
 {
-  char *p = 0;
+  char *p = NULL;
 
   if (hist_pos != hist_last) {
     hist_pos = (hist_pos + 1) % HIST_SIZE;
     p        = hist_buf[hist_pos];
   }
-  if (p == 0) {
+  if (p == NULL) {
     p = hist_empty_elem;
     ap_gl_beep();
   }
@@ -1307,43 +1292,39 @@ static char *hist_save(char *p)
 
 /* makes a copy of the string */
 {
-  char * s   = 0;
+  char * s   = NULL;
   size_t len = strlen(p);
   char * nl  = strpbrk(p, "\n\r");
 
   if (nl) {
-    if ((s = (char *)malloc(len)) != 0) {
+    if ((s = (char *)malloc(len)) != NULL) {
       copy_string(s, p, len);
-      s[len - 1] = 0;
+      s[len - 1] = '\0';
     }
   }
   else {
-    if ((s = (char *)malloc(len + 1)) != 0) {
+    if ((s = (char *)malloc(len + 1)) != NULL) {
       copy_string(s, p, len + 1);
     }
   }
-  if (s == 0)
+  if (s == NULL)
     ap_gl_error("\n*** Error: hist_save() failed on malloc\n");
   return s;
 }
 
 void ap_gl_histsavefile(const char *const path)
 {
-  FILE *      fp;
-  const char *p;
-  int         i, j;
-
-  fp = fopen(path,
+  FILE *fp = fopen(path,
 #if defined(__windows__) || defined(MSDOS)
-             "wt"
+                   "wt"
 #else
-             "w"
+                   "w"
 #endif
   );
   if (fp != NULL) {
-    for (i = 2; i < HIST_SIZE; i++) {
-      j = (hist_pos + i) % HIST_SIZE;
-      p = hist_buf[j];
+    for (int i = 2; i < HIST_SIZE; i++) {
+      int         j = (hist_pos + i) % HIST_SIZE;
+      const char *p = hist_buf[j];
       if ((p == NULL) || (*p == '\0'))
         continue;
       fprintf(fp, "%s\n", p);
@@ -1354,17 +1335,15 @@ void ap_gl_histsavefile(const char *const path)
 
 void ap_gl_histloadfile(const char *const path)
 {
-  FILE *fp;
-  char  line[256];
-
-  fp = fopen(path,
+  FILE *fp = fopen(path,
 #if defined(__windows__) || defined(MSDOS)
-             "rt"
+                   "rt"
 #else
-             "r"
+                   "r"
 #endif
   );
   if (fp != NULL) {
+    char line[256];
     memset(line, 0, sizeof(line));
     while (fgets(line, sizeof(line) - 2, fp) != NULL) {
       ap_gl_histadd(line);
@@ -1416,20 +1395,19 @@ static void search_update(int c)
 
 static void search_addchar(int c)
 {
-  char *loc;
-
   search_update(c);
   if (c < 0) {
     if (search_pos > 0) {
       hist_pos = search_last;
     }
     else {
-      ap_gl_buf[0] = 0;
+      ap_gl_buf[0] = '\0';
       hist_pos     = hist_last;
     }
     copy_string(ap_gl_buf, hist_buf[hist_pos], AP_GL_BUF_SIZE);
   }
-  if ((loc = strstr(ap_gl_buf, search_string)) != 0) {
+  char *loc;
+  if ((loc = strstr(ap_gl_buf, search_string)) != NULL) {
     ap_gl_fixup(search_prompt, 0, loc - ap_gl_buf);
   }
   else if (search_pos > 0) {
@@ -1448,7 +1426,7 @@ static void search_addchar(int c)
 static void search_term(void)
 {
   ap_gl_search_mode = 0;
-  if (ap_gl_buf[0] == 0) /* not found, reset hist list */
+  if (ap_gl_buf[0] == '\0') /* not found, reset hist list */
     hist_pos = hist_last;
   if (ap_gl_in_hook)
     ap_gl_in_hook(ap_gl_buf);
@@ -1458,25 +1436,25 @@ static void search_term(void)
 static void search_back(int new_search)
 {
   int   found = 0;
-  char *p, *loc;
+  char *loc;
 
   search_forw_flg = 0;
   if (ap_gl_search_mode == 0) {
     search_last = hist_pos = hist_last;
     search_update(0);
     ap_gl_search_mode = 1;
-    ap_gl_buf[0]      = 0;
+    ap_gl_buf[0]      = '\0';
     ap_gl_fixup(search_prompt, 0, 0);
   }
   else if (search_pos > 0) {
     while (!found) {
-      p = hist_prev();
+      char *p = hist_prev();
       if (*p == 0) { /* not found, done looking */
-        ap_gl_buf[0] = 0;
+        ap_gl_buf[0] = '\0';
         ap_gl_fixup(search_prompt, 0, 0);
         found = 1;
       }
-      else if ((loc = strstr(p, search_string)) != 0) {
+      else if ((loc = strstr(p, search_string)) != NULL) {
         copy_string(ap_gl_buf, p, AP_GL_BUF_SIZE);
         ap_gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
@@ -1493,25 +1471,25 @@ static void search_back(int new_search)
 static void search_forw(int new_search)
 {
   int   found = 0;
-  char *p, *loc;
+  char *loc;
 
   search_forw_flg = 1;
   if (ap_gl_search_mode == 0) {
     search_last = hist_pos = hist_last;
     search_update(0);
     ap_gl_search_mode = 1;
-    ap_gl_buf[0]      = 0;
+    ap_gl_buf[0]      = '\0';
     ap_gl_fixup(search_prompt, 0, 0);
   }
   else if (search_pos > 0) {
     while (!found) {
-      p = hist_next();
+      char *p = hist_next();
       if (*p == 0) { /* not found, done looking */
-        ap_gl_buf[0] = 0;
+        ap_gl_buf[0] = '\0';
         ap_gl_fixup(search_prompt, 0, 0);
         found = 1;
       }
-      else if ((loc = strstr(p, search_string)) != 0) {
+      else if ((loc = strstr(p, search_string)) != NULL) {
         copy_string(ap_gl_buf, p, AP_GL_BUF_SIZE);
         ap_gl_fixup(search_prompt, 0, loc - p);
         if (new_search)
@@ -1536,49 +1514,31 @@ static void ap_gl_beep(void)
 
 static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
 {
-  char * startp;
-  size_t startoff, amt;
-  int    c;
-  int    qmode;
-  char * qstart;
-  char * lastspacestart;
-  char * cp;
-  int    ntoalloc, nused, nalloced, i;
-  char **newap_gl_matchlist;
-  char * strtoadd, *strtoadd1;
-  int    addquotes;
-  size_t llen, mlen, glen;
-  int    allmatch;
-  char * curposp;
-  size_t lenaftercursor;
-  char * matchpfx;
-  int    wasateol;
-  char   ellipsessave[4];
-
   /* Zero out the rest of the buffer, so we can move stuff around
    * and know we'll still be NUL-terminated.
    */
-  llen = strlen(buf);
+  size_t llen = strlen(buf);
   memset(buf + llen, 0, bufsize - llen);
   bufsize -= 4; /* leave room for a NUL, space, and two quotes. */
-  curposp        = buf + *loc;
-  wasateol       = (*curposp == '\0');
-  lenaftercursor = llen - (curposp - buf);
+  char * curposp        = buf + *loc;
+  int    wasateol       = (*curposp == '\0');
+  size_t lenaftercursor = llen - (curposp - buf);
   if (ap_gl_ellipses_during_completion != 0) {
+    char ellipsessave[4];
     memcpy(ellipsessave, curposp, (size_t)4);
     memcpy(curposp, "... ", (size_t)4);
     ap_gl_fixup(ap_gl_prompt, ap_gl_pos, ap_gl_pos + 3);
     memcpy(curposp, ellipsessave, (size_t)4);
   }
 
-  qmode          = 0;
-  qstart         = NULL;
-  lastspacestart = NULL;
-  matchpfx       = NULL;
+  int   qmode          = 0;
+  char *qstart         = NULL;
+  char *lastspacestart = NULL;
+  char *matchpfx       = NULL;
 
-  cp = buf;
+  char *cp = buf;
   while (cp < curposp) {
-    c = (int)*cp++;
+    int c = (int)*cp++;
     if (c == '\0')
       break;
     if ((c == '"') || (c == '\'')) {
@@ -1605,6 +1565,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
     }
   }
 
+  char *startp;
   if (qstart != NULL)
     startp = qstart + 1;
   else if (lastspacestart != NULL)
@@ -1612,8 +1573,8 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   else
     startp = buf;
 
-  cp   = startp;
-  mlen = (curposp - cp);
+  cp          = startp;
+  size_t mlen = (curposp - cp);
 
   matchpfx = (char *)malloc(mlen + 1);
   memcpy(matchpfx, cp, mlen);
@@ -1621,17 +1582,17 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
 
 #define AP_GL_COMPLETE_VECTOR_BLOCK_SIZE 64
 
-  nused              = 0;
-  ntoalloc           = AP_GL_COMPLETE_VECTOR_BLOCK_SIZE;
-  newap_gl_matchlist = (char **)malloc((size_t)(sizeof(char *) * (ntoalloc + 1)));
+  int    nused              = 0;
+  int    ntoalloc           = AP_GL_COMPLETE_VECTOR_BLOCK_SIZE;
+  char **newap_gl_matchlist = (char **)malloc((size_t)(sizeof(char *) * (ntoalloc + 1)));
   if (newap_gl_matchlist == NULL) {
     free(matchpfx);
     ap_gl_beep();
     return 0;
   }
   ap_gl_matchlist = newap_gl_matchlist;
-  nalloced        = ntoalloc;
-  for (i = nused; i <= nalloced; i++)
+  int nalloced    = ntoalloc;
+  for (int i = nused; i <= nalloced; i++)
     ap_gl_matchlist[i] = NULL;
 
   ap_gl_completion_exact_match_extra_char = ' ';
@@ -1642,7 +1603,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
           (char **)realloc((char *)ap_gl_matchlist, (size_t)(sizeof(char *) * (ntoalloc + 1)));
       if (newap_gl_matchlist == NULL) {
         /* not enough memory to expand list -- abort */
-        for (i = 0; i < nused; i++)
+        for (int i = 0; i < nused; i++)
           free(ap_gl_matchlist[i]);
         free(ap_gl_matchlist);
         ap_gl_matchlist = NULL;
@@ -1652,7 +1613,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
       }
       ap_gl_matchlist = newap_gl_matchlist;
       nalloced        = ntoalloc;
-      for (i = nused; i <= nalloced; i++)
+      for (int i = nused; i <= nalloced; i++)
         ap_gl_matchlist[i] = NULL;
     }
     cp                     = ap_gl_completion_proc(matchpfx, nused);
@@ -1667,13 +1628,12 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   }
 
   /* We now have an array strings, whose last element is NULL. */
-  strtoadd  = NULL;
-  strtoadd1 = NULL;
-  amt       = 0;
+  char *strtoadd  = NULL;
+  char *strtoadd1 = NULL;
 
-  addquotes = (ap_gl_filename_quoting_desired > 0) ||
-              ((ap_gl_filename_quoting_desired < 0) &&
-               (ap_gl_completion_proc == ap_gl_local_filename_completion_proc));
+  int addquotes = (ap_gl_filename_quoting_desired > 0) ||
+                  ((ap_gl_filename_quoting_desired < 0) &&
+                   (ap_gl_completion_proc == ap_gl_local_filename_completion_proc));
 
   if (nused == 1) {
     /* Exactly one match. */
@@ -1681,10 +1641,10 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   }
   else if ((nused > 1) && (mlen > 0)) {
     /* Find the greatest amount that matches. */
-    glen = 1;
-    for (glen = 1;; glen++) {
-      allmatch = 1;
-      for (i = 1; i < nused; i++) {
+    size_t glen = 1;
+    for (;; glen++) {
+      int allmatch = 1;
+      for (int i = 1; i < nused; i++) {
         if (ap_gl_matchlist[0][glen] != ap_gl_matchlist[i][glen]) {
           allmatch = 0;
           break;
@@ -1710,8 +1670,8 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
         *startp++ = (char)qmode;
       }
     }
-    startoff = (size_t)(startp - buf);
-    amt      = strlen(strtoadd);
+    size_t startoff = (size_t)(startp - buf);
+    size_t amt      = strlen(strtoadd);
     if ((amt + startoff + lenaftercursor) >= bufsize)
       amt = bufsize - (amt + startoff + lenaftercursor);
     memmove(curposp + amt - mlen, curposp, lenaftercursor + 1 /* NUL */);
@@ -1746,7 +1706,7 @@ static int ap_gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabt
   }
 
   /* Don't need this any more. */
-  for (i = 0; i < nused; i++)
+  for (int i = 0; i < nused; i++)
     free(ap_gl_matchlist[i]);
   free(ap_gl_matchlist);
   ap_gl_matchlist = NULL;
@@ -1765,12 +1725,9 @@ void ap_gl_tab_completion(ap_gl_tab_completion_proc proc)
 #ifndef _StrFindLocalPathDelim
 static char *_StrRFindLocalPathDelim(const char *src) /* TODO: optimize */
 {
-  const char *last;
-  int         c;
-
-  last = NULL;
+  const char *last = NULL;
   for (;;) {
-    c = *src++;
+    int c = *src++;
     if (c == '\0')
       break;
     if (IsLocalPathDelim(c))
@@ -1783,15 +1740,6 @@ static char *_StrRFindLocalPathDelim(const char *src) /* TODO: optimize */
 
 void ap_gl_set_home_dir(const char *homedir)
 {
-  size_t len;
-#ifdef __windows__
-  const char *homedrive, *homepath;
-  char        wdir[64];
-#else
-  struct passwd *pw;
-  char *         cp;
-#endif
-
   if (ap_gl_home_dir != NULL) {
     free(ap_gl_home_dir);
     ap_gl_home_dir = NULL;
@@ -1799,10 +1747,10 @@ void ap_gl_set_home_dir(const char *homedir)
 
   if (homedir == NULL) {
 #ifdef __windows__
-    homedrive = getenv("HOMEDRIVE");
-    homepath  = getenv("HOMEPATH");
+    const char *homedrive = getenv("HOMEDRIVE");
+    const char *homepath  = getenv("HOMEPATH");
     if ((homedrive != NULL) && (homepath != NULL)) {
-      len            = strlen(homedrive) + strlen(homepath) + 1;
+      size_t len     = strlen(homedrive) + strlen(homepath) + 1;
       ap_gl_home_dir = (char *)malloc(len);
       if (ap_gl_home_dir != NULL) {
         copy_string(ap_gl_home_dir, homedrive, len);
@@ -1811,6 +1759,7 @@ void ap_gl_set_home_dir(const char *homedir)
       }
     }
 
+    char wdir[64];
     wdir[0] = '\0';
     if (GetWindowsDirectory(wdir, sizeof(wdir) - 1) < 1)
       (void)copy_string(wdir, ".", sizeof(wdir));
@@ -1820,13 +1769,13 @@ void ap_gl_set_home_dir(const char *homedir)
     }
     homedir = wdir;
 #else
-    cp = (char *)getlogin();
+    char *cp = (char *)getlogin();
     if (cp == NULL) {
       cp = (char *)getenv("LOGNAME");
       if (cp == NULL)
         cp = (char *)getenv("USER");
     }
-    pw = NULL;
+    struct passwd *pw = NULL;
     if (cp != NULL)
       pw = getpwnam(cp);
     if (pw == NULL)
@@ -1837,7 +1786,7 @@ void ap_gl_set_home_dir(const char *homedir)
 #endif
   }
 
-  len            = strlen(homedir) + /* NUL */ 1;
+  size_t len     = strlen(homedir) + /* NUL */ 1;
   ap_gl_home_dir = (char *)malloc(len);
   if (ap_gl_home_dir != NULL) {
     memcpy(ap_gl_home_dir, homedir, len);
@@ -1852,13 +1801,7 @@ char *ap_gl_local_filename_completion_proc(const char *start, int idx)
   static int    filepfxoffset;
   static size_t filepfxlen;
 
-  const char *   filepfx;
-  struct dirent *dent;
-  char *         cp;
-  const char *   dirtoopen, *name;
-  char *         dirtoopen1;
-  size_t         len, len2;
-  struct stat    st;
+  const char *filepfx;
 
   if (idx == 0) {
     if (dir != NULL) {
@@ -1869,8 +1812,9 @@ char *ap_gl_local_filename_completion_proc(const char *start, int idx)
   }
 
   if (dir == NULL) {
-    dirtoopen1 = NULL;
-    cp         = _StrRFindLocalPathDelim(start);
+    char *      dirtoopen1 = NULL;
+    char *      cp         = _StrRFindLocalPathDelim(start);
+    const char *dirtoopen;
     if (cp == start) {
       dirtoopen     = LOCAL_PATH_DELIM_STR; /* root dir */
       filepfxoffset = 1;
@@ -1880,7 +1824,7 @@ char *ap_gl_local_filename_completion_proc(const char *start, int idx)
       filepfxoffset = 0;
     }
     else {
-      len        = strlen(start) + 1;
+      size_t len = strlen(start) + 1;
       dirtoopen1 = (char *)malloc(len);
       if (dirtoopen1 == NULL)
         return NULL;
@@ -1915,7 +1859,7 @@ char *ap_gl_local_filename_completion_proc(const char *start, int idx)
     filepfx = start + filepfxoffset;
 
     for (;;) {
-      dent = readdir(dir);
+      struct dirent *dent = readdir(dir);
       if (dent == NULL) {
         /* no more items */
         closedir(dir);
@@ -1927,10 +1871,10 @@ char *ap_gl_local_filename_completion_proc(const char *start, int idx)
            * want to append a / instead
            * of a space.
            */
-          cp = ap_gl_matchlist[0];
+          char *cp = ap_gl_matchlist[0];
           if ((cp[0] == '~') && ((cp[1] == '\0') || (IsLocalPathDelim(cp[1])))) {
-            len  = strlen(cp + 1) + /* NUL */ 1;
-            len2 = strlen(ap_gl_home_dir);
+            size_t len  = strlen(cp + 1) + /* NUL */ 1;
+            size_t len2 = strlen(ap_gl_home_dir);
             if (IsLocalPathDelim(ap_gl_home_dir[len2 - 1]))
               len2--;
             cp = (char *)realloc(ap_gl_matchlist[0], len + len2);
@@ -1943,21 +1887,22 @@ char *ap_gl_local_filename_completion_proc(const char *start, int idx)
               ap_gl_matchlist[0] = cp;
             }
           }
+          struct stat st;
           if ((stat(cp, &st) == 0) && (S_ISDIR(st.st_mode)))
             ap_gl_completion_exact_match_extra_char = LOCAL_PATH_DELIM;
         }
         return NULL;
       }
 
-      name = dent->d_name;
+      const char *name = dent->d_name;
       if ((name[0] == '.') && ((name[1] == '\0') || ((name[1] == '.') && (name[2] == '\0'))))
         continue; /* Skip . and .. */
 
       if ((filepfxlen == 0) || (strncmp(name, filepfx, filepfxlen) == 0)) {
         /* match */
-        len = strlen(name);
-        cp  = (char *)malloc(filepfxoffset + len + 1 /* spare */ + 1 /* NUL */);
-        *cp = '\0';
+        size_t len = strlen(name);
+        char * cp  = (char *)malloc(filepfxoffset + len + 1 /* spare */ + 1 /* NUL */);
+        *cp        = '\0';
         if (filepfxoffset > 0)
           memcpy(cp, start, (size_t)filepfxoffset);
         memcpy(cp + filepfxoffset, name, len + 1);

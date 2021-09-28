@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -23,17 +23,7 @@ int sturmcnt(double *alpha, /* vector of Lanczos scalars */
 )
 {
   extern double DOUBLE_MAX; /* maximum double precision number to be used */
-  int           i;          /* loop index */
   int           cnt;        /* number of sign changes in the sequence */
-  int           sign;       /* algebraic sign of current sequence value */
-  int           last_sign;  /* algebraic sign of previous sequence value */
-  double *      pntr_p;     /* for stepping through sequence array */
-  double *      pntr_p1;    /* for stepping through sequence array one behind */
-  double *      pntr_p2;    /* for stepping through sequence array two behind */
-  double *      pntr_alpha; /* for stepping through alpha array */
-  double *      pntr_beta;  /* for stepping through beta array */
-  double        limit;      /* the cut-off for re-scaling the recurrence */
-  double        scale;      /* magnitude of entry in p recursion */
 
   if (j == 1) {
     /* have to special case this one */
@@ -46,21 +36,21 @@ int sturmcnt(double *alpha, /* vector of Lanczos scalars */
   }
   else {
     /* compute the Sturm sequence */
-    limit      = sqrt(DOUBLE_MAX);
-    p[0]       = 1;
-    p[1]       = alpha[1] - mu;
-    pntr_p     = &p[2];
-    pntr_p1    = &p[1];
-    pntr_p2    = &p[0];
-    pntr_alpha = &alpha[2];
-    pntr_beta  = &beta[1];
-    for (i = 2; i <= j; i++) {
+    double limit       = sqrt(DOUBLE_MAX);
+    p[0]               = 1;
+    p[1]               = alpha[1] - mu;
+    double *pntr_p     = &p[2];
+    double *pntr_p1    = &p[1];
+    double *pntr_p2    = &p[0];
+    double *pntr_alpha = &alpha[2];
+    double *pntr_beta  = &beta[1];
+    for (int i = 2; i <= j; i++) {
       *pntr_p++ = (*pntr_alpha - mu) * (*pntr_p1) - (*pntr_beta) * (*pntr_beta) * (*pntr_p2);
       pntr_alpha++;
       pntr_beta++;
       pntr_p1++;
       pntr_p2++;
-      scale = fabs(*pntr_p1);
+      double scale = fabs(*pntr_p1);
       if (scale > limit) {
         *pntr_p1 /= scale;
         *pntr_p2 /= scale;
@@ -69,16 +59,17 @@ int sturmcnt(double *alpha, /* vector of Lanczos scalars */
     }
 
     /* count sign changes */
-    cnt       = 0;
-    last_sign = 1;
-    pntr_p    = &p[1];
-    for (i = j; i; i--) {
+    cnt           = 0;
+    int last_sign = 1;
+    pntr_p        = &p[1];
+    for (int i = j; i; i--) {
       if (*pntr_p != *pntr_p || fabs(*pntr_p) > limit) {
         return (-1);
         /* ... re-scaling failed; bail out and return error code.
                Note (x != x) is TRUE iff x is NaN, so this check
                should be ok on non-IEEE floating point systems too. */
       }
+      int sign;
       if (*pntr_p > 0) {
         sign = 1;
       }

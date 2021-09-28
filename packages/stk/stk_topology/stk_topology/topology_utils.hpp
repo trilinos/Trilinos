@@ -35,6 +35,7 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_TCC
 #define STKTOPOLOGY_TOPOLOGY_TCC
 
+// IWYU pragma: private, include "stk_topology/topology.hpp"
 #include "stk_topology/topology_decl.hpp"
 #include "stk_util/stk_config.h"
 

@@ -116,9 +116,13 @@ void addDiscreteGradientToRequestHandler(
         eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
         std::vector<GlobalOrdinal> nGIDs;
         nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
-        auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
-        auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);
- 
+        auto eLIDs_k = eUgi->getElementLIDs(elementIds[elemIter]);
+        auto nLIDs_k = nUgi->getElementLIDs(elementIds[elemIter]);
+	auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
+	auto nLIDs = Kokkos::create_mirror_view(nLIDs_k);
+	Kokkos::deep_copy(eLIDs, eLIDs_k);
+	Kokkos::deep_copy(nLIDs, nLIDs_k);
+
         std::vector<bool> isOwned;
         eUgi->ownedIndices(eGIDs,isOwned);
 
@@ -208,8 +212,12 @@ void addDiscreteGradientToRequestHandler(
         eUgi->getElementGIDs(elementIds[elemIter],eGIDs);
         std::vector<panzer::GlobalOrdinal> nGIDs;
         nUgi->getElementGIDs(elementIds[elemIter],nGIDs);
-        auto eLIDs = eUgi->getElementLIDs(elementIds[elemIter]);
-        auto nLIDs = nUgi->getElementLIDs(elementIds[elemIter]);
+        auto eLIDs_k = eUgi->getElementLIDs(elementIds[elemIter]);
+        auto nLIDs_k = nUgi->getElementLIDs(elementIds[elemIter]);
+	auto eLIDs = Kokkos::create_mirror_view(eLIDs_k);
+	auto nLIDs = Kokkos::create_mirror_view(nLIDs_k);
+	Kokkos::deep_copy(eLIDs, eLIDs_k);
+	Kokkos::deep_copy(nLIDs, nLIDs_k);
 
         std::vector<bool> isOwned;
         eUgi->ownedIndices(eGIDs,isOwned);

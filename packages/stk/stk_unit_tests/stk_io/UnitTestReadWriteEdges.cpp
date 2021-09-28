@@ -258,3 +258,58 @@ TEST_F(StkEdgeIoTest, ParallelWriteMeshWithFace)
 
   test_output_mesh();
 }
+
+class StkEdgeKeyholeIoTest : public StkEdgeIoTest
+{
+public:
+  StkEdgeKeyholeIoTest() : StkEdgeIoTest(3)
+  {
+  }
+
+  void setup_edge_mesh(unsigned numBlocks) override
+  {
+/*              *1 
+               / \                  P0
+              / 1 \
+      *2----*3-----*4----*5    <--proc-boundary-->
+       \ 2 /         \ 3 /  
+        \ /           \ /           P1
+         *6            *7    
+*/
+    std::string meshDesc = "0,1,SHELL_TRI_3,1,4,3\n"
+                           "1,2,SHELL_TRI_3,2,3,6\n"
+                           "1,3,SHELL_TRI_3,4,5,7";
+    std::vector<double> coords = {
+               3,2,0,
+        0,1,0, 2,1,0, 4,1,0, 6,1,0, 
+           1,0,0,      5,0,0
+    };
+
+    stk::mesh::Part* edgePart = &get_meta().declare_part_with_topology(edgePartName, stk::topology::LINE_2);
+    stk::io::put_edge_block_io_part_attribute(*edgePart);
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coords);
+  
+    stk::mesh::create_edges(get_bulk(), get_meta().universal_part(), edgePart);
+  }
+};
+
+TEST_F(StkEdgeKeyholeIoTest, ParallelWriteAndReadMesh)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
+  io_test_utils::ExpectedValues expectedValues;
+  expectedValues.numEdgesPerProc = std::vector<unsigned>{3, 6};
+  expectedValues.numLocalEdgesPerProc = std::vector<unsigned>{3, 6};
+  expectedValues.numFacesPerProc = std::vector<unsigned>{0, 0};
+  expectedValues.numLocalFacesPerProc = std::vector<unsigned>{0, 0};
+  expectedValues.numConnectedEdges = 0;
+  expectedValues.globalEdgeCount = 9;
+  expectedValues.globalElemCount = 3;
+
+  setup_mesh_with_edges(1);
+  set_expected_values(expectedValues);
+  test_edges(get_bulk());
+  output_mesh();
+
+  test_output_mesh();
+}
+

@@ -134,6 +134,8 @@ public:
     virtual Scalar getTimeStep()         const {return metaData_->getDt();}
     virtual Scalar getErrorAbs()         const {return metaData_->getErrorAbs();}
     virtual Scalar getErrorRel()         const {return metaData_->getErrorRel();}
+    virtual Scalar getErrorRelNm1()      const {return metaData_->getErrorRelNm1();}
+    virtual Scalar getErrorRelNm2()      const {return metaData_->getErrorRelNm2();}
     virtual int    getOrder()            const {return metaData_->getOrder();}
     virtual int    getNFailures()        const {return metaData_->getNFailures();}
     virtual int    getNRunningFailures() const {return metaData_->getNRunningFailures();}

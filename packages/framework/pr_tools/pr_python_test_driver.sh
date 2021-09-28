@@ -31,7 +31,7 @@ message_std "--- " "pip   : ${pip_exe:?}"
 # Remove get_pip usage -- we only really needed this for python2 since
 # the SEMS python3 distros come with pip3 installed.
 # get_pip ${python_exe:?}
-get_python_packages ${pip_exe:?}
+get_python_packages "${python_exe} -m pip"
 
 message_std "" ""
 print_banner "E X E C U T E   T E S T S"
@@ -49,5 +49,3 @@ rm get-pip.py >& /dev/null
 
 # Exit with the status from the python testing step
 exit ${err:?}
-
-

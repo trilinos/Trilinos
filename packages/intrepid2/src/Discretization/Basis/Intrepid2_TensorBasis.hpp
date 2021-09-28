@@ -896,7 +896,6 @@ struct OperatorTensorDecomposition
       
       using ValueType    = typename BasisBase::ScalarViewType::value_type;
       using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
-      using DeviceType   = typename BasisBase::ScalarViewType::device_type;
       using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
       
       const ordinal_type basisCardinality1 = basis1_->getCardinality();
@@ -938,7 +937,6 @@ struct OperatorTensorDecomposition
     {
       using ValueType    = typename BasisBase::ScalarViewType::value_type;
       using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
-      using DeviceType   = typename BasisBase::ScalarViewType::device_type;
       using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
 
       ViewType dofCoeffs1("dofCoeffs1",basis1_->getCardinality());

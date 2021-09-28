@@ -12,6 +12,7 @@
 #include "EP_SystemInterface.h"
 #include "fmt/color.h"
 #include "fmt/ostream.h"
+#include "open_file_limit.h"
 #include "smart_assert.h"
 #include <climits>
 #include <cstddef>
@@ -20,11 +21,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <vector>
-
-#if !defined(_WIN32)
 #include <unistd.h>
-#endif
+#include <vector>
 
 #include <exodusII.h>
 
@@ -166,7 +164,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   verifyValidFile_ = si.verify_valid_file();
 
   // See if we can keep files open
-  int max_files = get_free_descriptor_count();
+  int max_files = open_file_limit() - 1; // We also have an output exodus file.
   if (partCount_ <= max_files) {
     keepOpen_ = true;
     if (cycle == 0) {
@@ -369,35 +367,4 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
                int_size);
   }
   return true;
-}
-
-size_t Excn::ExodusFile::get_free_descriptor_count()
-{
-// Returns maximum number of files that one process can have open
-// at one time. (POSIX)
-#if defined(_WIN32)
-  int fdmax = _getmaxstdio();
-#else
-  int fdmax = sysconf(_SC_OPEN_MAX);
-  if (fdmax == -1) {
-    // POSIX indication that there is no limit on open files...
-    fdmax = INT_MAX;
-  }
-#endif
-  // File descriptors are assigned in order (0,1,2,3,...) on a per-process
-  // basis.
-
-  // Assume that we have stdin, stdout, stderr, and output exodus
-  // file (4 total).
-
-  return fdmax - 4;
-
-  // Could iterate from 0..fdmax and check for the first
-  // EBADF (bad file descriptor) error return from fcntl, but that takes
-  // too long and may cause other problems.  There is a isastream(filedes)
-  // call on Solaris that can be used for system-dependent code.
-  //
-  // Another possibility is to do an open and see which descriptor is
-  // returned -- take that as 1 more than the current count of open files.
-  //
 }

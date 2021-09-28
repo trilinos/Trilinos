@@ -4,7 +4,7 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -222,10 +222,7 @@ namespace {
       Ioss::IJK_t donor_beg{{(int)donor_range[0], (int)donor_range[1], (int)donor_range[2]}};
       Ioss::IJK_t donor_end{{(int)donor_range[3], (int)donor_range[4], (int)donor_range[5]}};
 
-      Ioss::IJK_t offset;
-      offset[0] = block->get_property("offset_i").get_int();
-      offset[1] = block->get_property("offset_j").get_int();
-      offset[2] = block->get_property("offset_k").get_int();
+      Ioss::IJK_t offset = block->get_ijk_offset();
       range_beg[0] += offset[0];
       range_beg[1] += offset[1];
       range_beg[2] += offset[2];
@@ -1312,7 +1309,6 @@ namespace Iocgns {
     if (zone > 1) { // Donor zone is always lower numbered, so zone 1 has no donor zone.
       int nconn = 0;
       CGCHECKM(cg_nconns(get_file_pointer(), base, zone, &nconn));
-      cgsize_t num_shared = 0;
       for (int i = 0; i < nconn; i++) {
         char                      connectname[CGNS_MAX_NAME_LENGTH + 1];
         CG_GridLocation_t         location;
@@ -1353,7 +1349,6 @@ namespace Iocgns {
         // A "previous" zone will have a lower zone number this this zone...
         auto donor_iter = m_zoneNameMap.find(donorname);
         if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
-          num_shared += npnts;
 #if IOSS_DEBUG_OUTPUT
           fmt::print("Zone {} shares {} nodes with {}\n", zone, npnts, donorname);
 #endif
@@ -1818,8 +1813,6 @@ namespace Iocgns {
     size_t                num_to_get = field.verify(data_size);
     cgsize_t              first      = 1;
 
-    char basename[CGNS_MAX_NAME_LENGTH + 1];
-
     // Create a lambda to eliminate lots of duplicate code in coordinate outputs...
     auto coord_lambda = [this, &data, &first, base](const char *ordinate) {
       auto *rdata = static_cast<double *>(data);
@@ -1854,8 +1847,9 @@ namespace Iocgns {
       }
 
       else if (field.get_name() == "mesh_model_coordinates") {
-        int cell_dimension = 0;
-        int phys_dimension = 0;
+        int  cell_dimension = 0;
+        int  phys_dimension = 0;
+        char basename[CGNS_MAX_NAME_LENGTH + 1];
         CGCHECKM(
             cg_base_read(get_file_pointer(), base, basename, &cell_dimension, &phys_dimension));
 
@@ -1971,25 +1965,24 @@ namespace Iocgns {
     // Currently only TRANSIENT fields are input this way.  No valid reason, but that is the current
     // use case.
 
-    // Get the StructuredBlock that this NodeBlock is contained in:
-    const Ioss::GroupingEntity *sb         = nb->contained_in();
-    int                         base       = 1;
-    int                         zone       = Iocgns::Utils::get_db_zone(sb);
-    cgsize_t                    num_to_get = field.verify(data_size);
-
     // In this routine, if isParallel, then reading
     // file-per-processor; not parallel io from single file.
+    cgsize_t num_to_get = field.verify(data_size);
     if (isParallel && num_to_get == 0) {
       return 0;
     }
 
     Ioss::Field::RoleType role = field.get_role();
     if (role == Ioss::Field::TRANSIENT) {
+      // Get the StructuredBlock that this NodeBlock is contained in:
+
       // Locate the FlowSolution node corresponding to the correct state/step/time
       // TODO: do this at read_meta_data() and store...
-      int step = get_region()->get_current_state();
-
-      int solution_index =
+      int                         step = get_region()->get_current_state();
+      int                         base = 1;
+      const Ioss::GroupingEntity *sb   = nb->contained_in();
+      int                         zone = Iocgns::Utils::get_db_zone(sb);
+      int                         solution_index =
           Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
 
       auto *rdata = static_cast<double *>(data);
@@ -2122,24 +2115,24 @@ namespace Iocgns {
           size_t eb_offset_plus_one = eb->get_offset() + 1;
           if (field.get_type() == Ioss::Field::INT64) {
             auto *idata = static_cast<int64_t *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int64_t>(eb_offset_plus_one));
           }
           else {
             SMART_ASSERT(field.get_type() == Ioss::Field::INT32);
             int *idata = static_cast<int *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int>(eb_offset_plus_one));
           }
         }
         else if (field.get_name() == "implicit_ids") {
           size_t eb_offset_plus_one = eb->get_offset() + 1;
           if (field.get_type() == Ioss::Field::INT64) {
             auto *idata = static_cast<int64_t *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int64_t>(eb_offset_plus_one));
           }
           else {
             SMART_ASSERT(field.get_type() == Ioss::Field::INT32);
             int *idata = static_cast<int *>(data);
-            std::iota(idata, idata + my_element_count, eb_offset_plus_one);
+            std::iota(idata, idata + my_element_count, static_cast<int>(eb_offset_plus_one));
           }
         }
         else {
@@ -2274,7 +2267,7 @@ namespace Iocgns {
 
         // ========================================================================
         // Repetitive code for each coordinate direction; use a lambda to consolidate...
-        auto coord_lambda = [this, base, zone, &coord, rmin, rmax, phys_dimension, num_to_get,
+        auto coord_lambda = [this, base, zone, &coord, &rmin, &rmax, phys_dimension, num_to_get,
                              &rdata](const char *ord_name, int ordinate) {
           CGCHECKM(cg_coord_read(get_file_pointer(), base, zone, ord_name, CG_RealDouble, rmin,
                                  rmax, coord.data()));

@@ -88,10 +88,10 @@ inline stk::NgpVector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
 }
 
 template <typename ViewType>
-void transpose_contiguous_device_data_into_buffer(stk::mesh::ExecSpace & execSpace, unsigned numEntitiesInBlock, unsigned numPerEntity,
+void transpose_contiguous_device_data_into_buffer(stk::ngp::ExecSpace & execSpace, unsigned numEntitiesInBlock, unsigned numPerEntity,
                                                   ViewType & deviceView, ViewType & bufferView)
 {
-  const auto& rangePolicy = Kokkos::RangePolicy<stk::mesh::ExecSpace>(execSpace, 0, numEntitiesInBlock);
+  const auto& rangePolicy = Kokkos::RangePolicy<stk::ngp::ExecSpace>(execSpace, 0, numEntitiesInBlock);
 
   Kokkos::parallel_for("transpose_contiguous_device_data_into_buffer", rangePolicy,
     KOKKOS_LAMBDA(const int& entityIdx) {
@@ -103,10 +103,10 @@ void transpose_contiguous_device_data_into_buffer(stk::mesh::ExecSpace & execSpa
 }
 
 template <typename ViewType>
-void transpose_buffer_into_contiguous_device_data(stk::mesh::ExecSpace & execSpace, unsigned numEntitiesInBlock, unsigned numPerEntity,
+void transpose_buffer_into_contiguous_device_data(stk::ngp::ExecSpace & execSpace, unsigned numEntitiesInBlock, unsigned numPerEntity,
                                                   ViewType & bufferView, ViewType & deviceView)
 {
-  const auto& rangePolicy = Kokkos::RangePolicy<stk::mesh::ExecSpace>(execSpace, 0, numEntitiesInBlock);
+  const auto& rangePolicy = Kokkos::RangePolicy<stk::ngp::ExecSpace>(execSpace, 0, numEntitiesInBlock);
 
   Kokkos::parallel_for("transpose_buffer_into_contiguous_device_data", rangePolicy,
     KOKKOS_LAMBDA(const int& entityIdx) {
@@ -128,7 +128,7 @@ void transpose_all_device_data_into_buffer(ExecSpaceType & execSpace,
     stk::mesh::Selector selector = stk::mesh::selectField(stkField);
     size_t numBuckets = bucketSizes.extent(0);
 
-    typedef typename Kokkos::TeamPolicy<ExecSpaceType, stk::mesh::ScheduleType>::member_type TeamHandleType;
+    typedef typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type TeamHandleType;
     const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
     Kokkos::parallel_for("transpose_all_device_data_into_buffer", teamPolicy,
                          KOKKOS_LAMBDA(const TeamHandleType & team) {
@@ -156,7 +156,7 @@ void transpose_buffer_into_all_device_data(ExecSpaceType & execSpace,
     stk::mesh::Selector selector = stk::mesh::selectField(stkField);
     size_t numBuckets = bucketSizes.extent(0);
 
-    typedef typename Kokkos::TeamPolicy<ExecSpaceType, stk::mesh::ScheduleType>::member_type TeamHandleType;
+    typedef typename Kokkos::TeamPolicy<ExecSpaceType, stk::ngp::ScheduleType>::member_type TeamHandleType;
     const auto& teamPolicy = Kokkos::TeamPolicy<ExecSpaceType>(execSpace, numBuckets, Kokkos::AUTO);
     Kokkos::parallel_for("transpose_buffer_into_all_device_data", teamPolicy,
                          KOKKOS_LAMBDA(const TeamHandleType & team) {

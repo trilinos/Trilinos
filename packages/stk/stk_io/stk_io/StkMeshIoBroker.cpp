@@ -913,6 +913,16 @@ void StkMeshIoBroker::get_global_variable_names(std::vector<std::string> &names)
 }
 
 bool StkMeshIoBroker::get_global(const std::string &globalVarName,
+                                 stk::util::Parameter &param,
+                                 bool abort_if_not_found) const
+{
+    validate_input_file_index(m_activeMeshIndex);
+    auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
+    return internal_read_parameter(region, globalVarName, param.value, param.type, abort_if_not_found);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+STK_DEPRECATED bool StkMeshIoBroker::get_global(const std::string &globalVarName,
                                  STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type,
                                  bool abort_if_not_found) const
 {
@@ -920,6 +930,7 @@ bool StkMeshIoBroker::get_global(const std::string &globalVarName,
     auto region = m_inputFiles[m_activeMeshIndex]->get_input_io_region();
     return internal_read_parameter(region, globalVarName, value, type, abort_if_not_found);
 }
+#endif
 
 size_t StkMeshIoBroker::get_global_variable_length(const std::string& globalVarName) const
 {
@@ -977,18 +988,36 @@ bool StkMeshIoBroker::has_global(size_t output_file_index, const std::string &gl
 }
 
 void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
+                                 const stk::util::Parameter &param)
+{
+    validate_output_file_index(output_file_index);
+    m_outputFiles[output_file_index]->add_global(name, param);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+STK_DEPRECATED void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &name,
                                  const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type)
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->add_global(name, value, type);
 }
+#endif
 
 void StkMeshIoBroker::add_global_ref(size_t output_file_index, const std::string &name,
+                                     const stk::util::Parameter &param)
+{
+    validate_output_file_index(output_file_index);
+    m_outputFiles[output_file_index]->add_global_ref(name, param);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+STK_DEPRECATED void StkMeshIoBroker::add_global_ref(size_t output_file_index, const std::string &name,
                                      const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type)
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->add_global_ref(name, value, type);
 }
+#endif
 
 void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &globalVarName, Ioss::Field::BasicType dataType)
 {
@@ -1008,12 +1037,22 @@ void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &gl
     m_outputFiles[output_file_index]->add_global(globalVarName, storage, dataType);
 }
 
-void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
+void StkMeshIoBroker::write_global(size_t output_file_index,
+                                   const std::string& variableName,
+                                   const stk::util::Parameter& param) const
+{
+    validate_output_file_index(output_file_index);
+    m_outputFiles[output_file_index]->write_global(variableName, param);
+}
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+STK_DEPRECATED void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
                                    const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type) const
 {
     validate_output_file_index(output_file_index);
     m_outputFiles[output_file_index]->write_global(globalVarName, value, type);
 }
+#endif
 
 void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName, double globalVarData) const
 {

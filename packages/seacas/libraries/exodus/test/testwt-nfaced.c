@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -19,32 +19,17 @@
 
 int main(int argc, char **argv)
 {
-  int exoid, num_dim, num_nodes, num_elem, num_elem_blk;
-  int num_elem_in_block[10], num_total_nodes_per_blk[10];
-  int num_face_in_block[10], num_total_faces_per_blk[10];
-  int num_node_sets, error;
-  int i, j, *connect;
-  int bids, nnpe[20];
-  int num_qa_rec, num_info;
-  int CPU_word_size, IO_word_size;
-
-  float x[100], y[100], z[100];
-  char *coord_names[3], *qa_record[2][4], *info[3];
-  char *block_names[10];
-  char *title = "This is a test";
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* Specify compute and i/o word size */
-
-  CPU_word_size = 0; /* sizeof(float) */
-  IO_word_size  = 4; /* (4 bytes) */
+  int CPU_word_size = 0; /* sizeof(float) */
+  int IO_word_size  = 4; /* (4 bytes) */
 
   /* create EXODUS II file */
-
-  exoid = ex_create("test-nfaced.exo", /* filename path */
-                    EX_CLOBBER,        /* create mode */
-                    &CPU_word_size,    /* CPU float word size in bytes */
-                    &IO_word_size);    /* I/O float word size in bytes */
+  int exoid = ex_create("test-nfaced.exo", /* filename path */
+                        EX_CLOBBER,        /* create mode */
+                        &CPU_word_size,    /* CPU float word size in bytes */
+                        &IO_word_size);    /* I/O float word size in bytes */
   printf("after ex_create for test.exo, exoid = %d\n", exoid);
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
@@ -52,12 +37,13 @@ int main(int argc, char **argv)
   {
     ex_init_params par;
 
-    num_dim       = 3;
-    num_nodes     = 14;
-    num_elem      = 3;
-    num_elem_blk  = 1;
-    num_node_sets = 0;
+    int num_dim       = 3;
+    int num_nodes     = 14;
+    int num_elem      = 3;
+    int num_elem_blk  = 1;
+    int num_node_sets = 0;
 
+    char *title = "This is a test";
     ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
     par.num_dim       = num_dim;
     par.num_nodes     = num_nodes;
@@ -77,7 +63,7 @@ int main(int argc, char **argv)
     par.num_face_maps = 0;
     par.num_elem_maps = 0;
 
-    error = ex_put_init_ext(exoid, &par);
+    int error = ex_put_init_ext(exoid, &par);
 
     printf("after ex_put_init_ext, error = %d\n", error);
 
@@ -88,6 +74,7 @@ int main(int argc, char **argv)
   }
 
   /* write nodal coordinates values and names to database */
+  float x[100], y[100], z[100];
   x[0]  = 0.00000e+00;
   y[0]  = 0.00000e+00;
   z[0]  = 0.00000e+00;
@@ -131,7 +118,7 @@ int main(int argc, char **argv)
   y[13] = 3.00000e+00;
   z[13] = 0.50000e+00;
 
-  error = ex_put_coord(exoid, x, y, z);
+  int error = ex_put_coord(exoid, x, y, z);
   printf("after ex_put_coord, error = %d\n", error);
 
   if (error) {
@@ -139,6 +126,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  char *coord_names[3];
   coord_names[0] = "x";
   coord_names[1] = "y";
   coord_names[2] = "z";
@@ -152,10 +140,15 @@ int main(int argc, char **argv)
   }
 
   /* Write the face block parameters */
-  block_names[0]             = "face_block_1";
-  num_face_in_block[0]       = 15;
+  char *block_names[10];
+  block_names[0] = "face_block_1";
+
+  int num_face_in_block[10];
+  num_face_in_block[0] = 15;
+
+  int num_total_nodes_per_blk[10];
   num_total_nodes_per_blk[0] = 58;
-  bids                       = 10;
+  int bids                   = 10;
 
   error = ex_put_block(exoid, EX_FACE_BLOCK, bids, "nsided", num_face_in_block[0],
                        num_total_nodes_per_blk[0], 0, 0, 0);
@@ -177,11 +170,12 @@ int main(int argc, char **argv)
 
   /* write face connectivity */
 
-  connect = (int *)calloc(num_total_nodes_per_blk[0], sizeof(int));
+  int *connect = (int *)calloc(num_total_nodes_per_blk[0], sizeof(int));
 
-  i = 0;
-  j = 0;
+  int i = 0;
+  int j = 0;
 
+  int nnpe[20];
   connect[i++] = 5;
   connect[i++] = 6;
   connect[i++] = 8; /* connectivity of face 1 of element 1 */
@@ -295,7 +289,9 @@ int main(int argc, char **argv)
   /* write element block parameters */
   block_names[0] = "nfaced_1";
 
-  num_elem_in_block[0]       = 3;
+  int num_elem_in_block[10];
+  num_elem_in_block[0] = 3;
+  int num_total_faces_per_blk[10];
   num_total_faces_per_blk[0] = 5 + 5 + 7;
 
   bids = 10;
@@ -368,8 +364,9 @@ int main(int argc, char **argv)
   }
 
   /* write QA records; test empty and just blank-filled records */
-  num_qa_rec = 2;
+  int num_qa_rec = 2;
 
+  char *qa_record[2][4];
   qa_record[0][0] = "TESTWT-NFACED";
   qa_record[0][1] = "testwt-nfaced";
   qa_record[0][2] = "2010/02/15";
@@ -388,8 +385,9 @@ int main(int argc, char **argv)
   }
 
   /* write information records; test empty and just blank-filled records */
-  num_info = 3;
+  int num_info = 3;
 
+  char *info[3];
   info[0] = "This is the first information record.";
   info[1] = "";
   info[2] = "                                     ";

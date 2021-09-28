@@ -1,12 +1,12 @@
 # No defines, just default
-TRIBITS_ADD_EXECUTABLE_AND_TEST( testcasedefault1
+tribits_add_executable_and_test( testcasedefault1
   SOURCES TargetDefinesPkg_test.cpp
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION
     "TargetDefinesPkg_test returns DEFAULT"
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST( testcase1
+tribits_add_executable_and_test( testcase1
   SOURCES TargetDefinesPkg_test.cpp
   TARGET_DEFINES -DTARGETDEFINESPKG_RETURN=\"TEST_CASE_1\"
   NUM_MPI_PROCS 1
@@ -14,7 +14,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( testcase1
     "TargetDefinesPkg_test returns TEST_CASE_1"
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST( testcase2
+tribits_add_executable_and_test( testcase2
   SOURCES TargetDefinesPkg_test.cpp
   TARGET_DEFINES -DTARGETDEFINESPKG_RETURN=\"TEST_CASE_2\"
   NUM_MPI_PROCS 1
@@ -23,11 +23,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST( testcase2
   )
 
 # No defines, just default
-TRIBITS_ADD_EXECUTABLE_AND_TEST( testcasedefault2
+tribits_add_executable_and_test( testcasedefault2
   SOURCES TargetDefinesPkg_test.cpp
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION
     "TargetDefinesPkg_test returns DEFAULT"
   )
 
-ADD_SUBDIRECTORY(deprecated_defines)
+add_subdirectory(deprecated_defines)

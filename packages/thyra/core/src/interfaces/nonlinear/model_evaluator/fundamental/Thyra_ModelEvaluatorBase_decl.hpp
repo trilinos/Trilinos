@@ -734,6 +734,7 @@ public:
     OUT_ARG_DgDp   ///< .
   };
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   /** \brief . */
   enum EOutArgs_hess_vec_prod_f_xx {
     OUT_ARG_hess_vec_prod_f_xx   ///< .
@@ -818,6 +819,7 @@ public:
   enum EOutArgs_H_pp {
     OUT_ARG_H_pp   ///< .
   };
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   /** \brief . */
   enum EOutArgsDfDp_mp {
@@ -921,6 +923,8 @@ public:
     /** \brief Determine if <tt>DgDp(j,l)</tt> is supported or not, <tt>0 <= j
      * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
     /** \brief Determine if <tt>hess_vec_prod_f_xx</tt> is supported or not.  */
     bool supports(EOutArgs_hess_vec_prod_f_xx arg) const;
     /** \brief Determine if <tt>hess_vec_prod_f_xp(l)</tt> is supported or not, <tt>0 <= l 
@@ -969,6 +973,8 @@ public:
     /** \brief Determine if <tt>H_pp(l1,l2)</tt> is supported or not, <tt>0 <= l1
      * && l1 < Np()</tt> and <tt>0 <= l2 && l2 < Np()</tt>.  */
     bool supports(EOutArgs_H_pp arg, int l1, int l2) const;
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
     void set_f( const Evaluation<VectorBase<Scalar> > &f );
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
@@ -1050,6 +1056,8 @@ public:
      * <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>). */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
     /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_xx)==true</tt>.  */
     void set_hess_vec_prod_f_xx(const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_xx);
     /** \brief Precondition: <tt>supports(OUT_ARG_hess_vec_prod_f_xp,l)==true</tt>.  */
@@ -1123,6 +1131,8 @@ public:
     RCP<LinearOpBase<Scalar> > get_H_xp(int l) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_H_pp,l1,l2)==true</tt>.  */
     RCP<LinearOpBase<Scalar> > get_H_pp(int l1, int l2) const;
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     void set_DfDp_mp(int l,  const MPDerivative &DfDp_mp_l);
     MPDerivative get_DfDp_mp(int l) const;
@@ -1199,6 +1209,8 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
     /** \brief . */
     void _setSupports( EOutArgs_hess_vec_prod_f_xx arg, bool supports );
     /** \brief . */
@@ -1235,6 +1247,8 @@ public:
     /** \brief . */
     void _setSupports( EOutArgs_H_pp arg, int l1, int l2, bool supports );
 
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
     void _setSupports( EOutArgs_g_mp arg, int j, bool supports );
     void _setSupports( EOutArgsDfDp_mp arg, int l, const DerivativeSupport& );
     void _setSupports( EOutArgsDgDx_dot_mp arg, int j, const DerivativeSupport& );
@@ -1263,17 +1277,23 @@ public:
     void _setUnsupportsAndRelated( EInArgsMembers arg );
     /** \brief . */
     void _setUnsupportsAndRelated( EOutArgsMembers arg );
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
     /** \brief . */
     void _setHessianSupports( const bool supports );
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
   private:
     // types
     typedef Teuchos::Array<Evaluation<VectorBase<Scalar> > > g_t;
     typedef Teuchos::Array<Derivative<Scalar> > deriv_t;
-    typedef Teuchos::Array<RCP<LinearOpBase<Scalar> > > hess_t;
-    typedef Teuchos::Array<RCP<MultiVectorBase<Scalar> > > hess_vec_t;
     typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
     typedef Teuchos::Array<DerivativeSupport> supports_t;
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+    typedef Teuchos::Array<RCP<LinearOpBase<Scalar> > > hess_t;
+    typedef Teuchos::Array<RCP<MultiVectorBase<Scalar> > > hess_vec_t;
     typedef Teuchos::Array<bool> hess_supports_t;
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
     // data
     std::string modelEvalDescription_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
@@ -1281,6 +1301,8 @@ public:
     supports_t supports_DgDx_dot_; // Ng
     supports_t supports_DgDx_; // Ng
     supports_t supports_DgDp_; // Ng x Np
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     bool supports_hess_f_xx_;
     hess_supports_t supports_hess_f_xp_;
@@ -1300,6 +1322,9 @@ public:
     hess_supports_t supports_hess_vec_prod_g_xp_;
     hess_supports_t supports_hess_vec_prod_g_px_;
     hess_supports_t supports_hess_vec_prod_g_pp_;
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
     Evaluation<VectorBase<Scalar> > f_;
     g_t g_; // Ng
     RCP<LinearOpWithSolveBase<Scalar> > W_;
@@ -1314,6 +1339,8 @@ public:
     deriv_properties_t DgDx_properties_; // Ng
     deriv_t DgDp_; // Ng x Np
     deriv_properties_t DgDp_properties_; // Ng x Np
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     RCP<LinearOpBase<Scalar> > hess_f_xx_;
     hess_t hess_f_xp_;
@@ -1334,6 +1361,8 @@ public:
     hess_vec_t hess_vec_prod_g_xp_; // Ng x Np
     hess_vec_t hess_vec_prod_g_px_; // Ng x Np
     hess_vec_t hess_vec_prod_g_pp_; // Ng x Np x Np
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     Teuchos::Array<bool> supports_g_mp_; //Ng
     supports_t supports_DfDp_mp_; // Np_mp
@@ -1377,6 +1406,8 @@ public:
       EOutArgsDgDp arg, int j, int l,
       const Derivative<Scalar> &deriv = Derivative<Scalar>()
       ) const;
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     void assert_supports(
       EOutArgs_hess_vec_prod_f_xx arg
@@ -1430,6 +1461,8 @@ public:
     void assert_supports(
       EOutArgs_H_pp arg, int l1, int l2
       ) const;
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     void assert_supports(EOutArgs_g_mp arg, int j) const;
     void assert_supports(
@@ -1524,6 +1557,8 @@ protected:
     void setSupports(EOutArgsDgDx arg, int j, const DerivativeSupport& );
     /** \brief . */
     void setSupports(EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
     /** \brief . */
     void setSupports(EOutArgs_hess_vec_prod_f_xx arg, bool supports = true );
     /** \brief . */
@@ -1558,6 +1593,8 @@ protected:
     void setSupports(EOutArgs_H_xp arg, int l, bool supports = true );
     /** \brief . */
     void setSupports(EOutArgs_H_pp arg, int l1, int l2, bool supports = true );
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
     /** \brief Set support for specific extended data types. */
     template<typename ObjectType>
     void setSupports(const bool supports = true);
@@ -1590,8 +1627,11 @@ protected:
     void setUnsupportsAndRelated( EInArgsMembers arg );
     /** \brief Must be called after the above function. */
     void setUnsupportsAndRelated( EOutArgsMembers arg );
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
     /** \brief . */
     void setHessianSupports( const bool supports = true );
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
    };
 
   //@}

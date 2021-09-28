@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -36,8 +36,7 @@
 
 int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var, int *var_tab)
 {
-  int    dimid, varid, tabid, i, j, status, status1;
-  size_t num_entity = 0;
+  int    dimid, varid, tabid, status, status1;
   size_t num_var_db = 0;
   char   errmsg[MAX_ERR_LENGTH];
 
@@ -129,6 +128,7 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
     EX_FUNC_LEAVE(EX_WARN);
   }
 
+  size_t num_entity = 0;
   if (obj_type == EX_BLOB) {
     num_entity = ex_inquire_int(exoid, EX_INQ_BLOB);
   }
@@ -157,9 +157,9 @@ int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_
 
   if (status1 != NC_NOERR) {
     /* since truth table isn't stored in the data file, derive it dynamically */
-    for (j = 0; j < num_blk; j++) {
+    for (int j = 0; j < num_blk; j++) {
 
-      for (i = 0; i < num_var; i++) {
+      for (int i = 0; i < num_var; i++) {
         /* NOTE: names are 1-based */
         if (nc_inq_varid(exoid, ex__catstr2(var_name, i + 1, ent_type, j + 1), &tabid) ==
             NC_NOERR) {

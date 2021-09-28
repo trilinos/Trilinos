@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,20 +40,16 @@ template int read_exo_weights(Problem_Description *prob, Weight_Description<int6
 template <typename INT>
 int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 {
-  int         exoid;
-  int         cpu_ws = 0;
-  int         io_ws  = 0;
-  int         neblks;
-  float       version;
-  float       minval = 1.0f;
-  char        elem_type[MAX_STR_LENGTH + 1];
-  std::string ctemp;
+  int exoid;
   /*---------------------------Execution Begins--------------------------------*/
 
   /* Open the ExodusII file containing the weights */
-  int mode = EX_READ | prob->int64api;
+  int   mode   = EX_READ | prob->int64api;
+  int   cpu_ws = 0;
+  int   io_ws  = 0;
+  float version;
   if ((exoid = ex_open(weight->exo_filename.c_str(), mode, &cpu_ws, &io_ws, &version)) < 0) {
-    ctemp = fmt::format("fatal: could not open ExodusII file {}", weight->exo_filename.c_str());
+    std::string ctemp = fmt::format("fatal: could not open ExodusII file {}", weight->exo_filename);
     Gen_Error(0, ctemp);
     return 0;
   }
@@ -87,7 +83,7 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
     }
 
     /* Get the number of element blocks */
-    neblks = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
+    int              neblks = ex_inquire_int(exoid, EX_INQ_ELEM_BLK);
     std::vector<INT> eblk_ids(neblks);
     std::vector<INT> eblk_ecnts(neblks);
 
@@ -99,8 +95,9 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 
     /* Get the count of elements in each element block */
     for (int cnt = 0; cnt < neblks; cnt++) {
-      INT dum1;
-      INT dum2;
+      INT  dum1;
+      INT  dum2;
+      char elem_type[MAX_STR_LENGTH + 1];
       if (ex_get_block(exoid, EX_ELEM_BLOCK, eblk_ids[cnt], elem_type, &(eblk_ecnts[cnt]), &dum1,
                        nullptr, nullptr, &dum2) < 0) {
         Gen_Error(0, "fatal: unable to get element block");
@@ -124,14 +121,15 @@ int read_exo_weights(Problem_Description *prob, Weight_Description<INT> *weight)
 
   /* Close the ExodusII weighting file */
   if (ex_close(exoid) < 0) {
-    ctemp = fmt::format("warning: failed to close ExodusII file {}", weight->exo_filename.c_str());
+    std::string ctemp =
+        fmt::format("warning: failed to close ExodusII file {}", weight->exo_filename);
     Gen_Error(0, ctemp);
   }
 
   /* now I need to translate the values to positive integers */
 
   /* first find the minimum value */
-  minval = *std::min_element(values.begin(), values.end());
+  float minval = *std::min_element(values.begin(), values.end());
 
   /* now translate the values to be greater than 1 and convert to ints */
   for (int cnt = 0; cnt < weight->nvals; cnt++) {

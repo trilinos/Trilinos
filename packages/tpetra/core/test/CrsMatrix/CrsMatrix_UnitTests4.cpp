@@ -391,8 +391,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       numValid = matrix.sumIntoLocalValues (0, tuple<LO> (0), tuple<Scalar> (0));
       TEST_EQUALITY( numValid, Teuchos::OrdinalTraits<LO>::invalid () );
 
-      TEST_THROW( matrix.setAllToScalar(SZERO), std::runtime_error );
-      TEST_THROW( matrix.scale(SZERO),          std::runtime_error );
       TEST_THROW( matrix.globalAssemble(),      std::runtime_error );
       TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }

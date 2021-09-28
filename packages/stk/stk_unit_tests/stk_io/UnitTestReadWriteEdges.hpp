@@ -57,11 +57,11 @@
 class StkEdgeIoTest : public stk::unit_test_util::MeshFixture
 {
 public:
-  StkEdgeIoTest() : stk::unit_test_util::MeshFixture()
+  StkEdgeIoTest(unsigned spatialDim=3) : stk::unit_test_util::MeshFixture(spatialDim)
   {
   }
 
-  void setup_edge_mesh(unsigned numBlocks);
+  virtual void setup_edge_mesh(unsigned numBlocks);
 
   void setup_mesh_with_edges(unsigned numBlocks);
 

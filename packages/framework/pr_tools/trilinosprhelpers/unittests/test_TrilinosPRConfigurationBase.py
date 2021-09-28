@@ -179,7 +179,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self._env_config_file = self.find_config_ini(env_config_file)
         gen_config_file = 'gen-config.ini'
         self._gen_config_file = self.find_config_ini(gen_config_file)
-        
+
         print("")
         print("--- LoadEnv Config file found: {}".format(self._env_config_file))
         print("--- GenConfig Config file found: {}".format(self._gen_config_file))
@@ -220,6 +220,9 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             pullrequest_env_config_file=self._env_config_file,
             pullrequest_gen_config_file=self._gen_config_file,
             workspace_dir=".",
+            source_dir="source",
+            build_dir="build",
+            ctest_driver="ctest_driver.cmake",
             filename_packageenables="../packageEnables.cmake",
             filename_subprojects="../package_subproject_list.cmake",
             mode="standard",
@@ -618,18 +621,20 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertEqual(package_enables_file, "../packageEnables.cmake")
 
 
-    def test_TrilinosPRConfigurationBaseProperty_working_directory_ctest(self):
-        """
-        Check property: working_directory_ctest
-        """
-        print("")
-        args = self.dummy_args()
-        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
-
-        working_directory_ctest = pr_config.working_directory_ctest
-        print("--- working_directory:       {}".format(pr_config.arg_workspace_dir))
-        print("--- working_directory_ctest: {}".format(working_directory_ctest))
-        self.assertIn("TFW_testing_single_configure_prototype", working_directory_ctest)
+    # wcmclen - does not appear useful, the current `arg_workspace_dir` is `.`
+    #def test_TrilinosPRConfigurationBaseProperty_working_directory_ctest(self):
+    #    """
+    #    Check property: working_directory_ctest
+    #
+    #    Validates the current working directory for the ctest call.
+    #    """
+    #    print("")
+    #    args = self.dummy_args()
+    #    pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+    #    working_directory_ctest = pr_config.working_directory_ctest
+    #    print("--- actual   working_directory: {}".format(pr_config.arg_workspace_dir))
+    #    print("--- expected working_directory: {}".format(working_directory_ctest))
+    #    self.assertIn("pr-ctest-framework/cmake", working_directory_ctest)
 
 
     def test_TrilinosPRConfigurationBase_prepare_test(self):

@@ -339,21 +339,26 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         sourceGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
+        auto cellLocalIdsNoGhost_h = Kokkos::create_mirror_view(cellLocalIdsNoGhost);
+        Kokkos::deep_copy(cellLocalIdsNoGhost_h, cellLocalIdsNoGhost);
+
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
         PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        auto isOwned_h = Kokkos::create_mirror_view(isOwned);
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
-            sourceGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            sourceGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             sourceGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
-              isOwned(cell,i) = cellOwnedIds[i];
+              isOwned_h(cell,i) = cellOwnedIds[i];
           }
         }
         timer->stop("Create isOwned view");
+
+        Kokkos::deep_copy(isOwned, isOwned_h);
 
         const auto offsetsPHI = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,PHI_Index);
         const auto offsetsE = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,E_Index);
@@ -608,18 +613,24 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
+        auto localIds_h = Kokkos::create_mirror_view(localIds);
+        Kokkos::deep_copy(localIds_h, localIds);
+
+        auto cellLocalIdsNoGhost_h = Kokkos::create_mirror_view(cellLocalIdsNoGhost);
+        Kokkos::deep_copy(cellLocalIdsNoGhost_h, cellLocalIdsNoGhost);
+
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
         PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        auto isOwned_h = Kokkos::create_mirror_view(isOwned);
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
-            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
-              isOwned(cell,i) = cellOwnedIds[i];
+              isOwned_h(cell,i) = cellOwnedIds[i];
           }
         }
         timer->stop("Create isOwned view");
@@ -627,14 +638,16 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.getBasisCoordinates();
+        auto coords_h = Kokkos::create_mirror_view(PHX::as_view(coords));
+        Kokkos::deep_copy(coords_h, PHX::as_view(coords));
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
           for (int basis=0; basis < numBasis; ++basis) {
-            if (isOwned(cell,offsets[basis])) {
-              const int lid = localIds(cell,offsets[basis]);
-              const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1)
-                + 3.0 * coords(cell,basis,2);
+            if (isOwned_h(cell,offsets[basis])) {
+              const int lid = localIds_h(cell,offsets[basis]);
+              const double phiGold = 1.0 + coords_h(cell,basis,0) + 2.0 * coords_h(cell,basis,1)
+                + 3.0 * coords_h(cell,basis,2);
 
               //Note: here we are relying on the fact that, for low order HGRAD basis,
               //the basis coefficients are the values of the function at the nodes
@@ -715,18 +728,24 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
+        auto localIds_h = Kokkos::create_mirror_view(localIds);
+        Kokkos::deep_copy(localIds_h, localIds);
+
+        auto cellLocalIdsNoGhost_h = Kokkos::create_mirror_view(cellLocalIdsNoGhost);
+        Kokkos::deep_copy(cellLocalIdsNoGhost_h, cellLocalIdsNoGhost);
+
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
         PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        auto isOwned_h = Kokkos::create_mirror_view(isOwned);
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
-            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
-              isOwned(cell,i) = cellOwnedIds[i];
+              isOwned_h(cell,i) = cellOwnedIds[i];
           }
         }
         timer->stop("Create isOwned view");
@@ -734,14 +753,16 @@ TEUCHOS_UNIT_TEST(L2Projection, ToNodal)
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.getBasisCoordinates();
+        auto coords_h = Kokkos::create_mirror_view(PHX::as_view(coords));
+        Kokkos::deep_copy(coords_h, PHX::as_view(coords));
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
           for (int basis=0; basis < numBasis; ++basis) {
-            if (isOwned(cell,offsets[basis])) {
-              const int lid = localIds(cell,offsets[basis]);
-              const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1)
-                + 3.0 * coords(cell,basis,2);
+            if (isOwned_h(cell,offsets[basis])) {
+              const int lid = localIds_h(cell,offsets[basis]);
+              const double phiGold = 1.0 + coords_h(cell,basis,0) + 2.0 * coords_h(cell,basis,1)
+                + 3.0 * coords_h(cell,basis,2);
 
               //Note: here we are relying on the fact that, for low order HGRAD basis,
               //the basis coefficients are the values of the function at the nodes
@@ -892,18 +913,21 @@ TEUCHOS_UNIT_TEST(L2Projection, CurlMassMatrix)
   // fill in the mass matrix
   // the integral of the edge basis squared over one cell is 4/3
   // the integral of the edge basis times the basis function across from it in the element is 2/3
-  const auto localMass = ghostedMatrix->getLocalMatrixDevice();
-  const int numElems = lids.extent(0);
-  Kokkos::parallel_for(numElems, KOKKOS_LAMBDA (const int& i) {
-    double row_values[2]={4.0/3.0,2.0/3.0};
-    LO cols[2];
-    for(int r = 0; r < 4; r++){
-      cols[0] = lids(i,r);
-      cols[1] = lids(i,(r+2)%4);
-      localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
-    }
-  });
-  typename PHX::Device().fence();
+  {
+    const auto localMass = ghostedMatrix->getLocalMatrixDevice();
+    const int numElems = lids.extent(0);
+    Kokkos::parallel_for(numElems, KOKKOS_LAMBDA (const int& i) {
+      double row_values[2]={4.0/3.0,2.0/3.0};
+      LO cols[2];
+      for(int r = 0; r < 4; r++){
+        cols[0] = lids(i,r);
+        cols[1] = lids(i,(r+2)%4);
+        localMass.sumIntoValues(lids(i,r),cols,2,row_values,false,true);
+      }
+    });
+    typename PHX::Device().fence();
+  }
+
   ghostedMatrix->fillComplete();
   const auto exporter = factory.getGhostedExport(0);
   connMassMatrix->doExport(*ghostedMatrix, *exporter, Tpetra::ADD);
@@ -1073,25 +1097,30 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         sourceGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
+        auto cellLocalIdsNoGhost_h = Kokkos::create_mirror_view(cellLocalIdsNoGhost);
+        Kokkos::deep_copy(cellLocalIdsNoGhost_h, cellLocalIdsNoGhost);
+
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
         PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        auto isOwned_h = Kokkos::create_mirror_view(isOwned);
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
-            sourceGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            sourceGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             sourceGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
-              isOwned(cell,i) = cellOwnedIds[i];
+              isOwned_h(cell,i) = cellOwnedIds[i];
           }
         }
         timer->stop("Create isOwned view");
 
+        Kokkos::deep_copy(isOwned, isOwned_h);
+
         const auto offsetsPHI = sourceGlobalIndexer->getGIDFieldOffsetsKokkos(block,PHI_Index);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
-        const auto& coords = basisValues.getBasisCoordinates();
+        const auto& coords = basisValues.getBasisCoordinates().get_view();
         const auto& x = sourceValues->getLocalViewDevice(Tpetra::Access::OverwriteAll);
         const int numBasisPHI = static_cast<int>(offsetsPHI.extent(0));
 
@@ -1195,18 +1224,24 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
+        auto localIds_h = Kokkos::create_mirror_view(localIds);
+        Kokkos::deep_copy(localIds_h, localIds);
+
+        auto cellLocalIdsNoGhost_h = Kokkos::create_mirror_view(cellLocalIdsNoGhost);
+        Kokkos::deep_copy(cellLocalIdsNoGhost_h, cellLocalIdsNoGhost);
+
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
         PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        auto isOwned_h = Kokkos::create_mirror_view(isOwned);
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
-            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
-              isOwned(cell,i) = cellOwnedIds[i];
+              isOwned_h(cell,i) = cellOwnedIds[i];
           }
         }
         timer->stop("Create isOwned view");
@@ -1214,13 +1249,15 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.getBasisCoordinates();
+        auto coords_h = Kokkos::create_mirror_view(PHX::as_view(coords));
+        Kokkos::deep_copy(coords_h, PHX::as_view(coords));
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
           for (int basis=0; basis < numBasis; ++basis) {
-            if (isOwned(cell,offsets[basis])) {
-              const int lid = localIds(cell,offsets[basis]);
-              const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1);
+            if (isOwned_h(cell,offsets[basis])) {
+              const int lid = localIds_h(cell,offsets[basis]);
+              const double phiGold = 1.0 + coords_h(cell,basis,0) + 2.0 * coords_h(cell,basis,1);
               TEST_FLOATING_EQUALITY(hostValues(lid,phiIndex), phiGold, tol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDxIndex), 1.0, tol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDyIndex), 2.0, tol);
@@ -1285,18 +1322,24 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         const auto cellLocalIdsNoGhost = Kokkos::subview(workset.cell_local_ids_k,std::make_pair(0,workset.numOwnedCells()));
         targetGlobalIndexer->getElementLIDs(cellLocalIdsNoGhost,localIds);
 
+        auto localIds_h = Kokkos::create_mirror_view(localIds);
+        Kokkos::deep_copy(localIds_h, localIds);
+
+        auto cellLocalIdsNoGhost_h = Kokkos::create_mirror_view(cellLocalIdsNoGhost);
+        Kokkos::deep_copy(cellLocalIdsNoGhost_h, cellLocalIdsNoGhost);
+
         // Create vector to store if LID is owned
         timer->start("Create isOwned view");
         PHX::View<bool**> isOwned("projection unit test: isOwned", workset.numOwnedCells(),localIds.extent(1));
+        auto isOwned_h = Kokkos::create_mirror_view(isOwned);
         {
           std::vector<GO> cellGIDs(localIds.extent(1));
           std::vector<bool> cellOwnedIds(localIds.extent(1));
           for (std::size_t cell=0; cell < cellLocalIdsNoGhost.extent(0); ++cell) {
-            // Assumes UVM
-            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost(cell),cellGIDs);
+            targetGlobalIndexer->getElementGIDs(cellLocalIdsNoGhost_h(cell),cellGIDs);
             targetGlobalIndexer->ownedIndices(cellGIDs,cellOwnedIds);
             for (std::size_t i=0; i < cellOwnedIds.size(); ++i)
-              isOwned(cell,i) = cellOwnedIds[i];
+              isOwned_h(cell,i) = cellOwnedIds[i];
           }
         }
         timer->stop("Create isOwned view");
@@ -1304,13 +1347,15 @@ TEUCHOS_UNIT_TEST(L2Projection, HighOrderTri)
         const auto offsets = targetGlobalIndexer->getGIDFieldOffsets(block,0);
         const auto& basisValues = workset.getBasisValues(hgradBD,integrationDescriptor);
         const auto& coords = basisValues.getBasisCoordinates();
+        auto coords_h = Kokkos::create_mirror_view(PHX::as_view(coords));
+        Kokkos::deep_copy(coords_h, PHX::as_view(coords));
         const int numBasis = static_cast<int>(offsets.size());
 
         for (int cell=0; cell < workset.numOwnedCells(); ++cell) {
           for (int basis=0; basis < numBasis; ++basis) {
-            if (isOwned(cell,offsets[basis])) {
-              const int lid = localIds(cell,offsets[basis]);
-              const double phiGold = 1.0 + coords(cell,basis,0) + 2.0 * coords(cell,basis,1);
+            if (isOwned_h(cell,offsets[basis])) {
+              const int lid = localIds_h(cell,offsets[basis]);
+              const double phiGold = 1.0 + coords_h(cell,basis,0) + 2.0 * coords_h(cell,basis,1);
               TEST_FLOATING_EQUALITY(hostValues(lid,phiIndex), phiGold, looseTol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDxIndex), 1.0, superconvergedTol);
               TEST_FLOATING_EQUALITY(hostValues(lid,dphiDyIndex), 2.0, superconvergedTol);

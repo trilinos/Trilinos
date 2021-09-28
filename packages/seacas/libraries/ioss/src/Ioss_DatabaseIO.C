@@ -377,7 +377,7 @@ namespace Ioss {
   void DatabaseIO::closeDW() const
   {
     if (using_dw()) {
-      if (!using_parallel_io() || (using_parallel_io() && myProcessor == 0)) {
+      if (!using_parallel_io() || myProcessor == 0) {
 #if defined SEACAS_HAVE_DATAWARP
         int complete = 0, pending = 0, deferred = 0, failed = 0;
         dw_query_file_stage(get_dwname().c_str(), &complete, &pending, &deferred, &failed);
@@ -717,7 +717,6 @@ namespace Ioss {
     // This is used in other code speed up some tests.
 
     // Spheres and Circle have no faces/edges, so handle them special...
-    bool all_sphere = true;
 
     if (sideTopology.empty()) {
       // Set contains (parent_element, boundary_topology) pairs...
@@ -725,6 +724,7 @@ namespace Ioss {
 
       const ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
 
+      bool all_sphere = true;
       for (auto &block : element_blocks) {
         const ElementTopology *elem_type = block->topology();
         const ElementTopology *side_type = elem_type->boundary_type();
@@ -844,7 +844,7 @@ namespace Ioss {
         if (int_byte_size_api() == 8) {
           std::vector<int64_t> conn;
           eb->get_field_data("connectivity_raw", conn);
-          for (auto node : conn) {
+          for (auto &node : conn) {
             assert(node > 0 && node - 1 < nodeCount);
             node_used[node - 1] = blk_position + 1;
           }
@@ -852,7 +852,7 @@ namespace Ioss {
         else {
           std::vector<int> conn;
           eb->get_field_data("connectivity_raw", conn);
-          for (auto node : conn) {
+          for (auto &node : conn) {
             assert(node > 0 && node - 1 < nodeCount);
             node_used[node - 1] = blk_position + 1;
           }

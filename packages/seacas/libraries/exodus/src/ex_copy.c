@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -31,12 +31,6 @@
   }
 
 /*! \cond INTERNAL */
-struct ncdim
-{ /* dimension */
-  char   name[MAX_VAR_NAME_LENGTH];
-  size_t size;
-};
-
 struct ncvar
 { /* variable */
   char    name[MAX_VAR_NAME_LENGTH];
@@ -48,11 +42,9 @@ struct ncvar
 
 struct ncatt
 { /* attribute */
-  int     var;
   char    name[MAX_VAR_NAME_LENGTH];
   nc_type type;
   size_t  len;
-  void *  val;
 };
 
 static size_t type_size(nc_type type);
@@ -89,10 +81,6 @@ static int is_non_mesh_variable(const char *var_name)
 /*! \cond INTERNAL */
 static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
 {
-  int  status;
-  int  in_large;
-  char errmsg[MAX_ERR_LENGTH];
-
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(in_exoid, __func__) != EX_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
@@ -105,13 +93,14 @@ static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
    * Get exodus_large_model setting on both input and output
    * databases so know how to handle coordinates.
    */
-  in_large = ex_large_model(in_exoid);
+  int in_large = ex_large_model(in_exoid);
 
   /*
    * Get integer sizes for both input and output databases.
    * Currently they should both match or there will be an error.
    */
   if (ex_int64_status(in_exoid) != ex_int64_status(out_exoid)) {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf_nowarn(errmsg, MAX_ERR_LENGTH,
                     "ERROR: integer sizes do not match for input and output databases.");
     ex_err_fn(in_exoid, __func__, errmsg, EX_WRONGFILETYPE);
@@ -131,7 +120,7 @@ static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
   EXCHECK(cpy_variables(in_exoid, out_exoid, in_large, mesh_only));
 
   /* take the output file out of define mode */
-  if ((status = ex__leavedef(out_exoid, __func__)) != NC_NOERR) {
+  if (ex__leavedef(out_exoid, __func__) != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -185,30 +174,28 @@ int ex_copy_transient(int in_exoid, int out_exoid)
 /*! \cond INTERNAL */
 int cpy_variable_data(int in_exoid, int out_exoid, int in_large, int mesh_only)
 {
-  int          nvars; /* number of variables */
-  int          varid; /* variable id */
-  int          is_filtered = 0;
-  struct ncvar var; /* variable */
-
+  int nvars; /* number of variables */
   EXCHECKI(nc_inq(in_exoid, NULL, &nvars, NULL, NULL));
-  for (varid = 0; varid < nvars; varid++) {
+  for (int varid = 0; varid < nvars; varid++) {
+    bool         is_filtered;
+    struct ncvar var; /* variable */
     EXCHECKI(nc_inq_var(in_exoid, varid, var.name, &var.type, &var.ndims, var.dims, &var.natts));
     if ((strcmp(var.name, VAR_QA_TITLE) == 0) || (strcmp(var.name, VAR_INFO) == 0)) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else if (is_truth_table_variable(var.name)) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else if (mesh_only == 1 &&
              (is_non_mesh_variable(var.name) || (strcmp(var.name, VAR_WHOLE_TIME) == 0))) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else if (mesh_only == 0 &&
              (!is_non_mesh_variable(var.name) && strcmp(var.name, VAR_WHOLE_TIME) != 0)) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else {
-      is_filtered = 0;
+      is_filtered = false;
     }
 
     if (!is_filtered) {
@@ -226,32 +213,29 @@ int cpy_variable_data(int in_exoid, int out_exoid, int in_large, int mesh_only)
 /*! \cond INTERNAL */
 int cpy_variables(int in_exoid, int out_exoid, int in_large, int mesh_only)
 {
-  int          nvars;      /* number of variables */
-  int          recdimid;   /* id of unlimited dimension */
-  int          varid;      /* variable id */
-  int          var_out_id; /* variable id */
-  int          is_filtered = 0;
-  struct ncvar var; /* variable */
-
+  int recdimid; /* id of unlimited dimension */
+  int nvars;    /* number of variables */
   EXCHECKI(nc_inq(in_exoid, NULL, &nvars, NULL, &recdimid));
-  for (varid = 0; varid < nvars; varid++) {
-
+  for (int varid = 0; varid < nvars; varid++) {
+    struct ncvar var; /* variable */
     EXCHECKI(nc_inq_var(in_exoid, varid, var.name, &var.type, &var.ndims, var.dims, &var.natts));
 
+    bool is_filtered;
     if ((strcmp(var.name, VAR_QA_TITLE) == 0) || (strcmp(var.name, VAR_INFO) == 0)) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else if (is_truth_table_variable(var.name)) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else if (mesh_only == 1 && is_non_mesh_variable(var.name)) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else {
-      is_filtered = 0;
+      is_filtered = false;
     }
 
     if (!is_filtered) {
+      int var_out_id; /* variable id */
       if (strncmp(var.name, VAR_COORD, 5) == 0) {
         var_out_id = cpy_coord_def(in_exoid, out_exoid, recdimid, var.name, in_large);
       }
@@ -269,28 +253,25 @@ int cpy_variables(int in_exoid, int out_exoid, int in_large, int mesh_only)
 /*! \cond INTERNAL */
 int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
 {
-  int    status;
-  int    ndims;      /* number of dimensions */
-  int    recdimid;   /* id of unlimited dimension */
-  int    dimid;      /* dimension id */
-  int    dim_out_id; /* dimension id */
-  int    is_filtered = 0;
-  char   dim_nm[NC_MAX_NAME];
-  size_t dim_sz;
-  char   errmsg[MAX_ERR_LENGTH];
+  int dim_out_id; /* dimension id */
 
+  int ndims;    /* number of dimensions */
+  int recdimid; /* id of unlimited dimension */
   EXCHECKI(nc_inq(in_exoid, &ndims, NULL, NULL, &recdimid));
-  for (dimid = 0; dimid < ndims; dimid++) {
+  for (int dimid = 0; dimid < ndims; dimid++) {
 
+    char   dim_nm[NC_MAX_NAME];
+    size_t dim_sz;
     EXCHECK(nc_inq_dim(in_exoid, dimid, dim_nm, &dim_sz));
 
     /* If the dimension isn't one we specifically don't want
      * to copy (ie, number of QA or INFO records) and it
      * hasn't been defined, copy it */
+    bool is_filtered;
     if (strcmp(dim_nm, DIM_NUM_QA) == 0 || strcmp(dim_nm, DIM_NUM_INFO) == 0 ||
         strcmp(dim_nm, DIM_N4) == 0 || strcmp(dim_nm, DIM_STR) == 0 ||
         strcmp(dim_nm, DIM_LIN) == 0) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else if (mesh_only == 1 &&
              ((strcmp(dim_nm, DIM_NUM_NOD_VAR) == 0) || (strcmp(dim_nm, DIM_NUM_EDG_VAR) == 0) ||
@@ -300,15 +281,15 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
               (strcmp(dim_nm, DIM_NUM_ELSET_VAR) == 0) || (strcmp(dim_nm, DIM_NUM_GLO_VAR) == 0) ||
               (strcmp(dim_nm, DIM_NUM_ASSEMBLY_VAR) == 0) ||
               (strcmp(dim_nm, DIM_NUM_BLOB_VAR) == 0) || (strstr(dim_nm, "_red_var") != NULL))) {
-      is_filtered = 1;
+      is_filtered = true;
     }
     else {
-      is_filtered = 0;
+      is_filtered = false;
     }
 
     if (!is_filtered) {
       /* See if the dimension has already been defined */
-      status = nc_inq_dimid(out_exoid, dim_nm, &dim_out_id);
+      int status = nc_inq_dimid(out_exoid, dim_nm, &dim_out_id);
 
       if (status != NC_NOERR) {
         if (dimid != recdimid) {
@@ -318,6 +299,7 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
           status = nc_def_dim(out_exoid, dim_nm, NC_UNLIMITED, &dim_out_id);
         }
         if (status != NC_NOERR) {
+          char errmsg[MAX_ERR_LENGTH];
           snprintf_nowarn(errmsg, MAX_ERR_LENGTH,
                           "ERROR: failed to define %s dimension in file id %d", dim_nm, out_exoid);
           ex_err_fn(out_exoid, __func__, errmsg, status);
@@ -331,7 +313,7 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
    * If it doesn't exist on the source database, we need to add it to
    * the target...
    */
-  status = nc_inq_dimid(in_exoid, DIM_STR_NAME, &dim_out_id);
+  int status = nc_inq_dimid(in_exoid, DIM_STR_NAME, &dim_out_id);
   if (status != NC_NOERR) {
     /*
      * See if it already exists in the output file
@@ -343,6 +325,7 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
       /* Not found; set to default value of 32+1. */
 
       if ((status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id)) != NC_NOERR) {
+        char errmsg[MAX_ERR_LENGTH];
         snprintf_nowarn(errmsg, MAX_ERR_LENGTH,
                         "ERROR: failed to define string name dimension in file id %d", out_exoid);
         ex_err_fn(out_exoid, __func__, errmsg, status);
@@ -357,14 +340,13 @@ int cpy_dimension(int in_exoid, int out_exoid, int mesh_only)
 int cpy_global_att(int in_exoid, int out_exoid)
 {
   int          status;
-  int          ngatts;
-  size_t       i;
   struct ncatt att; /* attribute */
 
+  int ngatts;
   EXCHECKI(nc_inq(in_exoid, NULL, NULL, &ngatts, NULL));
 
   /* copy global attributes */
-  for (i = 0; i < (size_t)ngatts; i++) {
+  for (size_t i = 0; i < (size_t)ngatts; i++) {
 
     EXCHECKI(nc_inq_attname(in_exoid, NC_GLOBAL, i, att.name));
 
@@ -412,7 +394,6 @@ int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
      then the global attributes are copied. Otherwise the variable's
      attributes are copied. */
 
-  int idx;
   int nbr_att;
 
   if (var_in_id == NC_GLOBAL) {
@@ -423,7 +404,7 @@ int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
   }
 
   /* Get the attributes names, types, lengths, and values */
-  for (idx = 0; idx < nbr_att; idx++) {
+  for (int idx = 0; idx < nbr_att; idx++) {
     char att_nm[MAX_VAR_NAME_LENGTH];
 
     EXCHECKI(nc_inq_attname(in_id, var_in_id, idx, att_nm));
@@ -436,14 +417,6 @@ int cpy_att(int in_id, int out_id, int var_in_id, int var_out_id)
 /*! \internal */
 int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, int in_large)
 {
-  const char *routine = NULL;
-  size_t      spatial_dim;
-  int         nbr_dim;
-  int         temp;
-
-  int dim_out_id[2];
-  int var_out_id = -1;
-
   /* Handle easiest situation first: in_large matches out_large (1) */
   if (in_large == 1) {
     return cpy_var_def(in_id, out_id, rec_dim_id, var_nm); /* OK */
@@ -453,6 +426,9 @@ int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, int in_la
      option is that in_large == 0 and out_large == 1.  Also will need
      the spatial dimension, so get that now.
    */
+  int         temp;
+  size_t      spatial_dim;
+  const char *routine = NULL;
   ex__get_dimension(in_id, DIM_NUM_DIM, "dimension", &spatial_dim, &temp, routine);
 
   /* output file will have coordx, coordy, coordz (if 3d).  See if
@@ -471,12 +447,14 @@ int cpy_coord_def(int in_id, int out_id, int rec_dim_id, char *var_nm, int in_la
   }
 
   /* Get dimid of the num_nodes dimension in output file... */
+  int dim_out_id[2];
   EXCHECKI(nc_inq_dimid(out_id, DIM_NUM_NODES, &dim_out_id[0]));
 
   /* Define the variables in the output file */
 
   /* Define according to the EXODUS file's IO_word_size */
-  nbr_dim = 1;
+  int nbr_dim    = 1;
+  int var_out_id = -1;
   EXCHECKI(nc_def_var(out_id, VAR_COORD_X, nc_flt_code(out_id), nbr_dim, dim_out_id, &var_out_id));
   ex__compress_variable(out_id, var_out_id, 2);
   if (spatial_dim > 1) {
@@ -500,27 +478,21 @@ int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
    * to an output netCDF file.
    */
 
-  int status;
-  int dim_in_id[NC_MAX_VAR_DIMS];
-  int dim_out_id[NC_MAX_VAR_DIMS];
-  int idx;
-  int nbr_dim;
-  int var_in_id;
-  int var_out_id;
-
-  nc_type var_type;
-
   /* See if the requested variable is already in the output file. */
-  status = nc_inq_varid(out_id, var_nm, &var_out_id);
+  int var_out_id;
+  int status = nc_inq_varid(out_id, var_nm, &var_out_id);
   if (status == NC_NOERR) {
     return var_out_id; /* OK */
   }
 
   /* See if the requested variable is in the input file. */
+  int var_in_id;
   EXCHECKI(nc_inq_varid(in_id, var_nm, &var_in_id));
 
   /* Get the type of the variable and the number of dimensions. */
+  nc_type var_type;
   EXCHECKI(nc_inq_vartype(in_id, var_in_id, &var_type));
+  int nbr_dim;
   EXCHECKI(nc_inq_varndims(in_id, var_in_id, &nbr_dim));
 
   /* Recall:
@@ -528,10 +500,12 @@ int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
      2. The variable must be defined before the attributes. */
 
   /* Get the dimension IDs */
+  int dim_in_id[NC_MAX_VAR_DIMS];
   EXCHECKI(nc_inq_vardimid(in_id, var_in_id, dim_in_id));
 
   /* Get the dimension sizes and names */
-  for (idx = 0; idx < nbr_dim; idx++) {
+  int dim_out_id[NC_MAX_VAR_DIMS];
+  for (int idx = 0; idx < nbr_dim; idx++) {
     char   dim_nm[NC_MAX_NAME];
     size_t dim_sz;
 
@@ -571,40 +545,37 @@ int cpy_var_def(int in_id, int out_id, int rec_dim_id, char *var_nm)
 /*! \internal */
 int cpy_var_val(int in_id, int out_id, char *var_nm)
 {
+  void *void_ptr = NULL;
   /* Routine to copy the variable data from an input netCDF file
    * to an output netCDF file.
    */
 
-  int     dim_id_in[NC_MAX_VAR_DIMS];
-  int     dim_id_out[NC_MAX_VAR_DIMS];
-  int     idx;
-  int     nbr_dim;
-  int     var_in_id;
-  int     var_out_id;
-  size_t  dim_max;
-  size_t  dim_str[NC_MAX_VAR_DIMS];
-  size_t  dim_cnt[NC_MAX_VAR_DIMS];
-  size_t  var_sz = 1L;
-  nc_type var_type_in, var_type_out;
-
-  void *void_ptr = NULL;
-
   /* Get the var_id for the requested variable from both files. */
+  int var_in_id;
   EXCHECKI(nc_inq_varid(in_id, var_nm, &var_in_id));
+  int var_out_id;
   EXCHECKI(nc_inq_varid(out_id, var_nm, &var_out_id));
 
   /* Get the number of dimensions for the variable. */
+  nc_type var_type_out;
   EXCHECKI(nc_inq_vartype(out_id, var_out_id, &var_type_out));
 
+  nc_type var_type_in;
   EXCHECKI(nc_inq_vartype(in_id, var_in_id, &var_type_in));
+  int nbr_dim;
   EXCHECKI(nc_inq_varndims(in_id, var_in_id, &nbr_dim));
 
   /* Get the dimension IDs from the input file */
+  int dim_id_in[NC_MAX_VAR_DIMS];
   EXCHECKF(nc_inq_vardimid(in_id, var_in_id, dim_id_in));
+  int dim_id_out[NC_MAX_VAR_DIMS];
   EXCHECKF(nc_inq_vardimid(out_id, var_out_id, dim_id_out));
 
   /* Get the dimension sizes and names from the input file */
-  for (idx = 0; idx < nbr_dim; idx++) {
+  size_t dim_str[NC_MAX_VAR_DIMS];
+  size_t dim_cnt[NC_MAX_VAR_DIMS];
+  size_t var_sz = 1L;
+  for (int idx = 0; idx < nbr_dim; idx++) {
     /* NB: For the unlimited dimension, ncdiminq() returns the maximum
        value used so far in writing data for that dimension.
        Thus if you read the dimension sizes from the output file, then
@@ -621,7 +592,7 @@ int cpy_var_val(int in_id, int out_id, char *var_nm)
     EXCHECKF(nc_inq_dimlen(out_id, dim_id_out[idx], &dim_out));
 
     /* Initialize the indicial offset and stride arrays */
-    dim_max = dim_in > dim_out ? dim_in : dim_out;
+    size_t dim_max = dim_in > dim_out ? dim_in : dim_out;
     var_sz *= dim_max;
 
     /* Handle case where output variable is smaller than input (rare, but happens) */
@@ -720,15 +691,6 @@ int cpy_coord_val(int in_id, int out_id, char *var_nm, int in_large)
    * to an output netCDF file.
    */
 
-  const char *routine = NULL;
-  int         temp;
-  size_t      i;
-  size_t      spatial_dim, num_nodes;
-  size_t      start[2], count[2];
-  nc_type     var_type_in, var_type_out;
-
-  void *void_ptr = NULL;
-
   /* Handle easiest situation first: in_large matches out_large (1) */
   if (in_large == 1) {
     return cpy_var_val(in_id, out_id, var_nm); /* OK */
@@ -737,6 +699,9 @@ int cpy_coord_val(int in_id, int out_id, char *var_nm, int in_large)
   /* At this point, know that in_large == 0, so will need to
      copy a vector to multiple scalars.  Also
      will need a couple dimensions, so get them now.*/
+  const char *routine = NULL;
+  int         temp;
+  size_t      spatial_dim, num_nodes;
   ex__get_dimension(in_id, DIM_NUM_DIM, "dimension", &spatial_dim, &temp, routine);
   ex__get_dimension(in_id, DIM_NUM_NODES, "nodes", &num_nodes, &temp, routine);
 
@@ -753,15 +718,18 @@ int cpy_coord_val(int in_id, int out_id, char *var_nm, int in_large)
     EXCHECKI(nc_inq_varid(out_id, VAR_COORD_Z, &var_out_id[2]));
   }
 
+  nc_type var_type_in, var_type_out;
   EXCHECKI(nc_inq_vartype(in_id, var_in_id, &var_type_in));
   EXCHECKI(nc_inq_vartype(out_id, var_out_id[0], &var_type_out));
 
+  void *void_ptr = NULL;
   if (num_nodes > 0) {
     void_ptr = malloc(num_nodes * type_size(var_type_in));
   }
 
   /* Copy each component of the variable... */
-  for (i = 0; i < spatial_dim; i++) {
+  size_t start[2], count[2];
+  for (size_t i = 0; i < spatial_dim; i++) {
     start[0] = i;
     start[1] = 0;
     count[0] = 1;
@@ -807,10 +775,9 @@ void update_structs(int out_exoid)
 /*! \internal */
 void update_internal_structs(int out_exoid, ex_inquiry inqcode, struct ex__list_item **ctr_list)
 {
-  int64_t i;
   int64_t number = ex_inquire_int(out_exoid, inqcode);
   if (number > 0) {
-    for (i = 0; i < number; i++) {
+    for (int64_t i = 0; i < number; i++) {
       ex__inc_file_item(out_exoid, ctr_list);
     }
   }

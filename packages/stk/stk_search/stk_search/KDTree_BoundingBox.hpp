@@ -54,13 +54,13 @@ namespace stk {
       typedef typename BoxType::value_type coordinate_t;
 
 
-      KOKKOS_FORCEINLINE_FUNCTION ObjectBoundingBox_T() = default;                ///< Default empty box and invalid object id
+      KOKKOS_DEFAULTED_FUNCTION ObjectBoundingBox_T() = default;                ///< Default empty box and invalid object id
       KOKKOS_FORCEINLINE_FUNCTION ObjectBoundingBox_T(const BoxType& box,         ///< Explicitly defined constructor
                                                       const int obj_num_) :
       m_box(box), obj_num(obj_num_) {}             
       KOKKOS_FORCEINLINE_FUNCTION ObjectBoundingBox_T(const ObjectBoundingBox_T &box);       ///< Explicit copy constructor
       KOKKOS_DEFAULTED_FUNCTION ObjectBoundingBox_T(ObjectBoundingBox_T&&) = default;        ///< Default Move constructor
-      KOKKOS_FORCEINLINE_FUNCTION ~ObjectBoundingBox_T() = default;                          ///< Destructor
+      KOKKOS_DEFAULTED_FUNCTION ~ObjectBoundingBox_T() = default;                          ///< Destructor
 
       KOKKOS_FORCEINLINE_FUNCTION ObjectBoundingBox_T& operator = (const ObjectBoundingBox_T&);    ///< Standard assignment (allows a = b = c)
       KOKKOS_DEFAULTED_FUNCTION ObjectBoundingBox_T& operator = (ObjectBoundingBox_T&&) = default; ///< Default move assignment

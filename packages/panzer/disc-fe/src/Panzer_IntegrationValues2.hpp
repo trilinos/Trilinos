@@ -57,31 +57,6 @@ namespace panzer {
 
   class SubcellConnectivity;
 
-  /**
-   * \brief Swap the ordering of quadrature points in a specified cell.
-   *
-   * \param[in] cell   Cell index
-   * \param[in] a      Quadrature point a
-   * \param[in] b      Quadrature point b
-   *
-   * NOTE: this should be a member function of IntegrationValues but
-   * lambda capture generates a ton of cuda compiler warnings. Making
-   * it a stand alone function fixes this.
-   */
-  template<typename Scalar,
-           typename T0,typename T1,typename T2,typename T3,
-           typename T4,typename T5,typename T6,typename T7>
-  KOKKOS_INLINE_FUNCTION
-  void swapQuadraturePoints(int cell,int a,int b,
-                            T0& ref_ip_coordinates,
-                            T1& ip_coordinates,
-                            T2& weighted_measure,
-                            T3& jac,
-                            T4& jac_det,
-                            T5& jac_inv,
-                            T6& surface_normals,
-                            T7& surface_rotation_matrices);
-
   template <typename Scalar>
   class IntegrationValues2 {
   public:
@@ -90,23 +65,37 @@ namespace panzer {
     typedef PHX::MDField<Scalar> ArrayDynamic;
     typedef PHX::MDField<double> DblArrayDynamic;
 
-    typedef PHX::MDField<Scalar,IP> Array_IP;
-    typedef PHX::MDField<Scalar,IP,Dim> Array_IPDim;
+    typedef PHX::MDField<Scalar,IP>               Array_IP;
+    typedef PHX::MDField<Scalar,IP,Dim>           Array_IPDim;
+    typedef PHX::MDField<Scalar,Point>            Array_Point;
+    typedef PHX::MDField<Scalar,Cell,IP>          Array_CellIP;
+    typedef PHX::MDField<Scalar,Cell,IP,Dim>      Array_CellIPDim;
+    typedef PHX::MDField<Scalar,Cell,IP,Dim,Dim>  Array_CellIPDimDim;
+    typedef PHX::MDField<Scalar,Cell,BASIS,Dim>   Array_CellBASISDim;
 
-    typedef PHX::MDField<Scalar,Point> Array_Point;
-    typedef PHX::MDField<Scalar,Cell,IP> Array_CellIP;
-    typedef PHX::MDField<Scalar,Cell,IP,Dim> Array_CellIPDim;
-    typedef PHX::MDField<Scalar,Cell,IP,Dim,Dim> Array_CellIPDimDim;
+    typedef PHX::MDField<const Scalar,IP>               ConstArray_IP;
+    typedef PHX::MDField<const Scalar,IP,Dim>           ConstArray_IPDim;
+    typedef PHX::MDField<const Scalar,Point>            ConstArray_Point;
+    typedef PHX::MDField<const Scalar,Cell,IP>          ConstArray_CellIP;
+    typedef PHX::MDField<const Scalar,Cell,IP,Dim>      ConstArray_CellIPDim;
+    typedef PHX::MDField<const Scalar,Cell,IP,Dim,Dim>  ConstArray_CellIPDimDim;
+    typedef PHX::MDField<const Scalar,Cell,BASIS,Dim>   ConstArray_CellBASISDim;
 
-    typedef PHX::MDField<Scalar,Cell,BASIS,Dim> Array_CellBASISDim;
+    /**
+     * \brief Base constructor
+     *
+     * \param[in] pre Prefix to apply to all internal field names
+     * \param[in] allocArrays (Classic Interface Only) Allocate array data in 'setupArrays' call
+     */
+    IntegrationValues2(const std::string & pre="",
+                       const bool allocArrays=false);
 
-    IntegrationValues2(const std::string & pre="",bool allocArrays=false)
-        : alloc_arrays(allocArrays), prefix(pre), ddims_(1,0) {}
+
+    // =====================================================================================================
+    // Classic Interface (DEPRECATED)
 
     //! Sizes/allocates memory for arrays
     void setupArrays(const Teuchos::RCP<const panzer::IntegrationRule>& ir);
-
-    void setupArraysForNodeRule(const Teuchos::RCP<const panzer::IntegrationRule>& ir);
 
     /** \brief Evaluate basis values.
 
@@ -121,7 +110,8 @@ namespace panzer {
      */
     void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
                         const int num_cells = -1,
-                        const Teuchos::RCP<const SubcellConnectivity> & face_connectivity = Teuchos::null);
+                        const Teuchos::RCP<const SubcellConnectivity> & face_connectivity = Teuchos::null,
+                        const int num_virtual_cells = -1);
 
     /** \brief Match IP.
 
@@ -141,60 +131,382 @@ namespace panzer {
                         const PHX::MDField<Scalar,Cell,IP,Dim> & other_ip_coordinates,
                         const int num_cells = -1);
 
-    Array_IPDim cub_points;              // <IP,Dim>
-    Array_IPDim side_cub_points;         // <IP,Dim> points on face topology (dim-1)
-    Array_IP cub_weights;                // <IP>
-    Array_CellBASISDim node_coordinates; // <Cell,BASIS,Dim>
-    Array_CellIPDimDim jac;              // <Cell,IP,Dim,Dim>
-    Array_CellIPDimDim jac_inv;          // <Cell,IP,Dim,Dim>
-    Array_CellIP jac_det;                // <Cell,IP>
-    Array_CellIP weighted_measure;       // <Cell,IP>
-    Array_CellIPDim weighted_normals;    // <Cell,IP,Dim>
+    // Reference space quantities
+    mutable Array_IPDim cub_points;              // <IP,Dim>
+    mutable Array_IPDim side_cub_points;         // <IP,Dim> points on face topology (dim-1)
+    mutable Array_IP cub_weights;                // <IP>
 
-    Array_CellIPDim surface_normals;    // <Cell,IP,Dim>
-    Array_CellIPDimDim surface_rotation_matrices;    // <Cell,IP,Dim,Dim>
+    // Physical space quantities
+    mutable Array_CellBASISDim node_coordinates; // <Cell,BASIS,Dim>
+    mutable Array_CellIPDimDim jac;              // <Cell,IP,Dim,Dim>
+    mutable Array_CellIPDimDim jac_inv;          // <Cell,IP,Dim,Dim>
+    mutable Array_CellIP jac_det;                // <Cell,IP>
+    mutable Array_CellIP weighted_measure;       // <Cell,IP>
+    mutable Array_CellIPDim weighted_normals;    // <Cell,IP,Dim>
+    mutable Array_CellIPDim surface_normals;    // <Cell,IP,Dim>
+    mutable Array_CellIPDimDim surface_rotation_matrices;    // <Cell,IP,Dim,Dim>
       // this (appears) is a matrix where the first row is the "normal" direction
       // and the remaining two rows lie in the hyperplane
+
+    // for Shakib stabilization <Cell,IP,Dim,Dim>
+    mutable Array_CellIPDimDim covarient;
+    mutable Array_CellIPDimDim contravarient;
+    mutable Array_CellIP norm_contravarient;
+
+    // integration points
+    mutable Array_CellIPDim ip_coordinates;      // <Cell,IP,Dim>
+    mutable Array_CellIPDim ref_ip_coordinates;  // <Cell,IP,Dim> for Control Volumes or Surface integrals
+
 
     Teuchos::RCP<const panzer::IntegrationRule> int_rule;
 
     Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> intrepid_cubature;
 
-    // for Shakib stabilization <Cell,IP,Dim,Dim>
-    Array_CellIPDimDim covarient;
-    Array_CellIPDimDim contravarient;
-    Array_CellIP norm_contravarient;
+    // =====================================================================================================
+    // Lazy evaluation interface
 
-    // integration points
-    Array_CellIPDim ip_coordinates;      // <Cell,IP,Dim>
-    Array_CellIPDim ref_ip_coordinates;  // <Cell,IP,Dim> for Control Volumes or Surface integrals
+    /**
+     * The lazy evaluation construction path is designed such that you only allocate and fill arrays on demand,
+     * with an option of caching those generated fields. This is useful for when we are worried about a
+     * code's memory footprint.
+     *
+     * The process for setting up one of these objects is to initialize the IntegrationValues2 class as follows:
+     *
+     * IntegrationValues2<double> values;   // Constructor
+     * values.setup(ir, node_coordinates);  // Required - must come before all other calls
+     * values.setupPermutations(...);       // Optional - only needed for surface integration and some side integration rules - must come before get*() calls
+     * auto array = values.get*();          // Lazy evaluate whatever field you need
+     */
 
-    DblArrayDynamic dyn_cub_points, dyn_side_cub_points, dyn_cub_weights;
-    DblArrayDynamic dyn_phys_cub_points, dyn_phys_cub_weights, dyn_phys_cub_norms, dyn_node_coordinates;
+    /**
+     * \brief Main setup call for the lazy evaluation interface
+     *
+     * \todo Instead of IntegrationRule, we just need to load the integration descriptor and the cell topology
+     *
+     * \param[in] ir Integration rule descripting integration scheme
+     * \param[in] node_coordinates Node/Vertex <cell, node, dim> coordinates describing cell geometry
+     * \param[in] num_cells In case you need to only generate integration values for the first 'num_cells' of the node_coordinates - defaults to all cells
+     */
+    void
+    setup(const Teuchos::RCP<const panzer::IntegrationRule>& ir,
+          const PHX::MDField<Scalar,Cell,NODE,Dim> & node_coordinates,
+          const int num_cells = -1);
 
-    Array_Point scratch_for_compute_side_measure; // <Point> size: span() == jac.span()
+    /**
+     * \brief Initialize the permutation arrays given a face connectivity
+     *
+     * \note REQUIRED FOR SURFACE INTEGRATION
+     * \note Must be called AFTER setup
+     * \note Virtual cells have a unique way to generate surface normals and rotation matrices, hence we need to know how many are included
+     *
+     * \param[in] face_connectivity Connectivity describing how sides are connected to cells
+     * \param[in] num_virtual_cells Number of virtual cells included in the node coordinates (found at end of node coordinate array)
+     */
+    void
+    setupPermutations(const Teuchos::RCP<const SubcellConnectivity> & face_connectivity,
+                      const int num_virtual_cells);
 
-    /// This should be a private method, but using lambdas on cuda forces this to be public.
-    void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
+    /**
+     * \brief Initialize the permutation arrays given another IntegrationValues2<Scalar>::getCubaturePoints() array
+     *
+     * \note Required if you want points to line up between two integration values (e.g. for side integration)
+     * \note Must be called AFTER setup
+     *
+     * \param[in] other_ip_coordinates Cubature points to align with
+     */
+    void
+    setupPermutations(const PHX::MDField<Scalar,Cell,IP,Dim> & other_ip_coordinates);
 
-    /// This should be a private method, but using lambdas on cuda forces this to be public.
-    void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
+    /**
+     * \brief Get the uniform cubature points
+     *
+     * \note DEPRECATED Please use getCubaturePointsRef call instead
+     * \note Option is only supported for volume integration, and even then, may not align with the getCubaturePointsRef call
+     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     * \param[in] apply_permutation ADVANCED Do not change this unless you know what it does (it can break things)
+     *
+     * \return Array <point, dim>
+     */
+    ConstArray_IPDim
+    getUniformCubaturePointsRef(const bool cache = true,
+                                const bool force = false,
+                                const bool apply_permutation = true) const;
 
-    /// This should be a private method, but using lambdas on cuda forces this to be public.
-    void generateSurfaceCubatureValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells,const SubcellConnectivity & face_connectivity);
+    /**
+     * \brief Get the uniform cubature points for a side
+     *
+     * \note DEPRECATED Please use getCubaturePointsRef call instead
+     * \note Option is only supported for side integration, and even then, may not align with the getCubaturePointsRef call
+     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     * \param[in] apply_permutation ADVANCED Do not change this unless you know what it does (it can break things)
+     *
+     * \return Array <point, dim>
+     */
+    ConstArray_IPDim
+    getUniformSideCubaturePointsRef(const bool cache = true,
+                                    const bool force = false,
+                                    const bool apply_permutation = true) const;
+
+    /**
+     * \brief Get the uniform cubature weights
+     *
+     * \note DEPRECATED Please do not use
+     * \note Option is only supported for some integration types
+     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     * \param[in] apply_permutation ADVANCED Do not change this unless you know what it does (it can break things)
+     *
+     * \return Array <point>
+     */
+    ConstArray_IP
+    getUniformCubatureWeightsRef(const bool cache = true,
+                                 const bool force = false,
+                                 const bool apply_permutation = true) const;
+
+
+    /**
+     * \brief Get the node coordinates describing the geometry of the mesh
+     *
+     * \return Array <cell, node, dim>
+     */
+    ConstArray_CellBASISDim
+    getNodeCoordinates() const;
+
+    /**
+     * \brief Get the Jacobian matrix evaluated at the cubature points
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim, dim>
+     */
+    ConstArray_CellIPDimDim
+    getJacobian(const bool cache = true,
+                const bool force = false) const;
+
+
+    /**
+     * \brief Get the inverse of the Jacobian matrix evaluated at the cubature points
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim, dim>
+     */
+    ConstArray_CellIPDimDim
+    getJacobianInverse(const bool cache = true,
+                       const bool force = false) const;
+
+    /**
+     * \brief Get the determinant of the Jacobian matrix evaluated at the cubature points
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point>
+     */
+    ConstArray_CellIP
+    getJacobianDeterminant(const bool cache = true,
+                           const bool force = false) const;
+
+    /**
+     * \brief Get the weighted measure (integration weights)
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point>
+     */
+    ConstArray_CellIP
+    getWeightedMeasure(const bool cache = true,
+                       const bool force = false) const;
+
+    /**
+     * \brief Get the weighted normals
+     *
+     * \note Support: CV_SIDE
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim>
+     */
+    ConstArray_CellIPDim
+    getWeightedNormals(const bool cache = true,
+                       const bool force = false) const;
+
+    /**
+     * \brief Get the surface normals
+     *
+     * \note Support: SURFACE
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim>
+     */
+    ConstArray_CellIPDim
+    getSurfaceNormals(const bool cache = true,
+                      const bool force = false) const;
+
+    /**
+     * \brief Get the surface rotation matrices
+     *
+     * \note Support: SURFACE
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, 3, 3>
+     */
+    ConstArray_CellIPDimDim
+    getSurfaceRotationMatrices(const bool cache = true,
+                               const bool force = false) const;
+
+    /**
+     * \brief Get the covarient matrix
+     *
+     * cov(i,j) = jacobian(i,k) * jacobian(j,k)
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim, dim>
+     */
+    ConstArray_CellIPDimDim
+    getCovarientMatrix(const bool cache = true,
+                       const bool force = false) const;
+
+    /**
+     * \brief Get the contravarient matrix
+     *
+     * contra = (getCovarientMatrix())^{-1}
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim, dim>
+     */
+    ConstArray_CellIPDimDim
+    getContravarientMatrix(const bool cache = true,
+                           const bool force = false) const;
+
+    /**
+     * \brief Get the contravarient matrix
+     *
+     * norm = sqrt(\sum_{ij} cov(i,j) * cov(i,j))
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point>
+     */
+    ConstArray_CellIP
+    getNormContravarientMatrix(const bool cache = true,
+                               const bool force = false) const;
+
+    /**
+     * \brief Get the cubature points in physical space
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim>
+     */
+    ConstArray_CellIPDim
+    getCubaturePoints(const bool cache = true,
+                      const bool force = false) const;
+
+    /**
+     * \brief Get the cubature points in the reference space
+     *
+     * \note Support: VOLUME, SURFACE, SIDE, CV_VOLUME, CV_SIDE, CV_BOUNDARY
+     *     *
+     * \param[in] cache If true, the result will be stored in the IntegrationValues2 class
+     * \param[in] force Force the re-evaluation of the array
+     *
+     * \return Array <cell, point, dim>
+     */
+    ConstArray_CellIPDim
+    getCubaturePointsRef(const bool cache = true,
+                         const bool force = false) const;
+
+    // =====================================================================================================
 
   protected:
 
-    // TODO: Make this a utility function that only exists in source file
-    Teuchos::RCP<Intrepid2::Cubature<PHX::Device::execution_space,double,double>> getIntrepidCubature(const panzer::IntegrationRule & ir) const;
+    // Reset all the lazy evaluation arrays
+    void
+    resetArrays();
+
+    // Number of cells in mesh
+    int num_cells_;
+
+    // Number of cells in mesh to evaluate
+    int num_evaluate_cells_;
+
+    // Number of virtual cells in the mesh - used for surface evaluations
+    int num_virtual_cells_;
+
+    // Permutations (used to re-orient arrays similar to orientations in BasisValues2)
+    bool requires_permutation_;
+
+    // Array contains the mapping from uniform reference space to permuted space
+    PHX::MDField<const int,Cell,IP> permutations_;
+
+    // TODO: There is a way around this, but it will require some work
+    // Subcell connectivity is required for surface evaluations (normals and rotation matrices)
+    Teuchos::RCP<const SubcellConnectivity> side_connectivity_;
+
+    // Lazy evaluation checks
+    mutable bool cub_points_evaluated_;
+    mutable bool side_cub_points_evaluated_;
+    mutable bool cub_weights_evaluated_;
+    mutable bool node_coordinates_evaluated_;
+    mutable bool jac_evaluated_;
+    mutable bool jac_inv_evaluated_;
+    mutable bool jac_det_evaluated_;
+    mutable bool weighted_measure_evaluated_;
+    mutable bool weighted_normals_evaluated_;
+    mutable bool surface_normals_evaluated_;
+    mutable bool surface_rotation_matrices_evaluated_;
+    mutable bool covarient_evaluated_;
+    mutable bool contravarient_evaluated_;
+    mutable bool norm_contravarient_evaluated_;
+    mutable bool ip_coordinates_evaluated_;
+    mutable bool ref_ip_coordinates_evaluated_;
+
+    // Backward compatibility call that evaluates all internal values for CV, surface, side, or volume integration schemes
+    void
+    evaluateEverything();
 
   private:
-    bool alloc_arrays;
-    std::string prefix;
+
+    bool alloc_arrays_;
+    std::string prefix_;
     std::vector<PHX::index_size_type> ddims_;
 
-    void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates, const int in_num_cells);
-    void evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,const int in_num_cells);
   };
 
 } // namespace panzer

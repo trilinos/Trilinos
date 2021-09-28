@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -128,7 +128,10 @@ namespace SEAMS {
                                       {nullptr, nullptr, nullptr, nullptr}};
 
   str_init string_fncts[] = {
-      {"DUMP", do_dumpsym, "DUMP()", "Output a list of all defined variables and their value."},
+      {"DUMP", do_dumpsym, "DUMP()",
+       "Output a list of all user-defined variables and their value."},
+      {"DUMP_JSON", do_dumpsym_json, "DUMP()",
+       "Output a list of all user-defined variables and their value in JSON format."},
       {"DUMP_FUNC", do_dumpfunc, "DUMP_FUNC()",
        "Output a list of all double and string functions recognized by aprepro."},
       {"DUMP_PREVAR", do_dumpvar, "DUMP_PREVAR()",

@@ -37,13 +37,13 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(FindListElement)
-INCLUDE(MessageWrapper)
-INCLUDE(Join)
+include(FindListElement)
+include(MessageWrapper)
+include(Join)
 
 
 # Define the valid categories that will be recognized in the CATEGORIES keyword
-SET(${PROJECT_NAME}_VALID_CATEGORIES  BASIC  CONTINUOUS  NIGHTLY  HEAVY  WEEKLY  PERFORMANCE)
+set(${PROJECT_NAME}_VALID_CATEGORIES  BASIC  CONTINUOUS  NIGHTLY  HEAVY  WEEKLY  PERFORMANCE)
 
 # TODO: ABove, We may want only the final project to define these categories
 # and not just be general categories for all projects based on ProjectArch.
@@ -51,58 +51,58 @@ SET(${PROJECT_NAME}_VALID_CATEGORIES  BASIC  CONTINUOUS  NIGHTLY  HEAVY  WEEKLY 
 # recognized.
 
 # This is a string used in help and error messages
-JOIN(${PROJECT_NAME}_VALID_CATEGORIES_STR ", "  FALSE ${${PROJECT_NAME}_VALID_CATEGORIES})
+join(${PROJECT_NAME}_VALID_CATEGORIES_STR ", "  FALSE ${${PROJECT_NAME}_VALID_CATEGORIES})
 
 #
 # Check for invalid categories called as:
 #
-#  TRIBITS_GET_INVALID_CATEGORIES(INVLAID_CATEGORIES CATEGORIES_LIST)
+#  tribits_get_invalid_categories(INVLAID_CATEGORIES CATEGORIES_LIST)
 #
 #  The list of categories to check comes in through the ARGN list.
 #
-FUNCTION(TRIBITS_GET_INVALID_CATEGORIES  INVALID_CATEGORIES_OUT)
-  #MESSAGE("TRIBITS_GET_INVALID_CATEGORIES: ${INVALID_CATEGORIES_OUT} ${ARGN}")
-  SET(INVALID_CATEGORIES "")
-  FOREACH(CATEGORY_IN ${ARGN})
-    #PRINT_VAR(CATEGORY_IN)
-    SET(FOUND_CATEGORY FALSE)
-    FIND_LIST_ELEMENT(${PROJECT_NAME}_VALID_CATEGORIES ${CATEGORY_IN} FOUND_CATEGORY)
-    IF (NOT FOUND_CATEGORY)
-      #MESSAGE(STATUS "Not found in list of valid categories!")
-      SET(INVALID_CATEGORIES ${INVALID_CATEGORIES} ${CATEGORY_IN})
-    ENDIF()
-    #PRINT_VAR(INVALID_CATEGORIES)
-  ENDFOREACH()
-  SET(${INVALID_CATEGORIES_OUT} ${INVALID_CATEGORIES} PARENT_SCOPE)
-  #PRINT_VAR(${INVALID_CATEGORIES_OUT})
-ENDFUNCTION()
+function(tribits_get_invalid_categories  INVALID_CATEGORIES_OUT)
+  #message("TRIBITS_GET_INVALID_CATEGORIES: ${INVALID_CATEGORIES_OUT} ${ARGN}")
+  set(INVALID_CATEGORIES "")
+  foreach(CATEGORY_IN ${ARGN})
+    #print_var(CATEGORY_IN)
+    set(FOUND_CATEGORY FALSE)
+    find_list_element(${PROJECT_NAME}_VALID_CATEGORIES ${CATEGORY_IN} FOUND_CATEGORY)
+    if (NOT FOUND_CATEGORY)
+      #message(STATUS "Not found in list of valid categories!")
+      set(INVALID_CATEGORIES ${INVALID_CATEGORIES} ${CATEGORY_IN})
+    endif()
+    #print_var(INVALID_CATEGORIES)
+  endforeach()
+  set(${INVALID_CATEGORIES_OUT} ${INVALID_CATEGORIES} PARENT_SCOPE)
+  #print_var(${INVALID_CATEGORIES_OUT})
+endfunction()
 
 
 #
 # Assert there are no invalid categories called as:
 #
-#  TRIBITS_ASSERT_VALID_CATEGORIES(CATEGORIES_LIST)
+#  tribits_assert_valid_categories(CATEGORIES_LIST)
 #
 #  The list of categories to check comes in through the ARGN list.
 #
-FUNCTION(TRIBITS_FILTER_AND_ASSERT_CATEGORIES  CATEGORIES_VAR_INOUT)
-  #MESSAGE("TRIBITS_ASSERT_VALID_CATEGORIES: ${ARGN}")
-  SET(INVALID_CATEGORIES "DUMMYCAT")
-  TRIBITS_GET_INVALID_CATEGORIES(INVALID_CATEGORIES ${${CATEGORIES_VAR_INOUT}})
-  #PRINT_VAR(INVALID_CATEGORIES)
-  IF (INVALID_CATEGORIES)
-    MESSAGE_WRAPPER(SEND_ERROR "Error: The categories '${INVALID_CATEGORIES}' are not"
+function(tribits_filter_and_assert_categories  CATEGORIES_VAR_INOUT)
+  #message("TRIBITS_ASSERT_VALID_CATEGORIES: ${ARGN}")
+  set(INVALID_CATEGORIES "DUMMYCAT")
+  tribits_get_invalid_categories(INVALID_CATEGORIES ${${CATEGORIES_VAR_INOUT}})
+  #print_var(INVALID_CATEGORIES)
+  if (INVALID_CATEGORIES)
+    message_wrapper(SEND_ERROR "Error: The categories '${INVALID_CATEGORIES}' are not"
       " in the list of valid categories '${${PROJECT_NAME}_VALID_CATEGORIES_STR}'!")
-  ENDIF()
-  SET(CATEGORIES_OUT)
-  FOREACH(CATEGORY  ${${CATEGORIES_VAR_INOUT}})
-    IF (CATEGORY STREQUAL "WEEKLY")
-      MESSAGE_WRAPPER(WARNING "Warning: The test category 'WEEKLY' is deprecated"
+  endif()
+  set(CATEGORIES_OUT)
+  foreach(CATEGORY  ${${CATEGORIES_VAR_INOUT}})
+    if (CATEGORY STREQUAL "WEEKLY")
+      message_wrapper(WARNING "Warning: The test category 'WEEKLY' is deprecated"
         " and is replaced with 'HEAVY'.  Please change to use 'HEAVY' instead.")
-      LIST(APPEND  CATEGORIES_OUT  "HEAVY")
-    ELSE()
-      LIST(APPEND  CATEGORIES_OUT  ${CATEGORY})
-    ENDIF()
-  ENDFOREACH()
-  SET(${CATEGORIES_VAR_INOUT} ${CATEGORIES_OUT} PARENT_SCOPE)
-ENDFUNCTION()
+      list(APPEND  CATEGORIES_OUT  "HEAVY")
+    else()
+      list(APPEND  CATEGORIES_OUT  ${CATEGORY})
+    endif()
+  endforeach()
+  set(${CATEGORIES_VAR_INOUT} ${CATEGORIES_OUT} PARENT_SCOPE)
+endfunction()

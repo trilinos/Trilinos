@@ -47,29 +47,30 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
   using panzer::index_t;
 
   // double time = workset.time;
-
+  auto current_h = Kokkos::create_mirror_view(current.get_static_view());
 
   if (ir_dim == 3) {
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      for (int point = 0; point < current.extent_int(1); ++point) {
+      for (int point = 0; point < current_h.extent_int(1); ++point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
         // const ScalarT& z = coords(cell,point,2);
-        current(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-        current(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-        current(cell,point,2) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current_h(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current_h(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current_h(cell,point,2) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
       }
     }
   } else {
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
-      for (int point = 0; point < current.extent_int(1); ++point) {
+      for (int point = 0; point < current_h.extent_int(1); ++point) {
         // const ScalarT& x = coords(cell,point,0);
         // const ScalarT& y = coords(cell,point,1);
-        current(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
-        current(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current_h(cell,point,0) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
+        current_h(cell,point,1) = rangeMult_ * double(std::rand())/double(RAND_MAX) + rangeShift_;
       }
     }
   }
+  Kokkos::deep_copy(current.get_static_view(), current_h);
 }
 
 //**********************************************************************

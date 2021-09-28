@@ -2452,8 +2452,7 @@ namespace Tpetra {
      Kokkos::DualView<
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
-     size_t& constantNumPackets,
-     Distributor& /* distor */);
+     size_t& constantNumPackets);
 
     virtual void
     unpackAndCombine
@@ -2467,7 +2466,6 @@ namespace Tpetra {
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
      const size_t constantNumPackets,
-     Distributor& /* distor */,
      const CombineMode CM);
 
   private:

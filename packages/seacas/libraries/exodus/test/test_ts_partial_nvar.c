@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,7 +33,6 @@ typedef struct
 
 void *output_nodal_var(void *varg)
 {
-  char   name[33];
   param *arg      = (param *)varg;
   int    num_node = ex_inquire_int(arg->exoid, EX_INQ_NODES);
   int    segment  = num_node / NUM_THREADS;
@@ -50,6 +49,7 @@ void *output_nodal_var(void *varg)
   }
 
   if (arg->threadid < NUM_NODAL_VAR) {
+    char name[33];
     sprintf(name, "NodalVar%ld", arg->threadid + 1);
     ex_put_variable_name(arg->exoid, EX_NODAL, arg->threadid + 1, name);
   }
@@ -115,28 +115,26 @@ int init_file(int num_nodal_vars)
 
 int main(int argc, char *argv[])
 {
-  pthread_t threads[NUM_THREADS];
-  int       rc;
-  long      t;
 
   int exoid = init_file(NUM_NODAL_VAR);
 
-  param arg[NUM_THREADS];
+  param     arg[NUM_THREADS];
+  pthread_t threads[NUM_THREADS];
 
   printf("Running on %d threads\n", NUM_THREADS);
-  for (t = 0; t < NUM_THREADS; t++) {
+  for (long t = 0; t < NUM_THREADS; t++) {
     arg[t].exoid    = exoid;
     arg[t].threadid = t;
     arg[t].timestep = 1;
 
-    rc = pthread_create(&threads[t], NULL, output_nodal_var, (void *)(arg + t));
+    int rc = pthread_create(&threads[t], NULL, output_nodal_var, (void *)(arg + t));
     if (rc) {
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(-1);
     }
   }
 
-  for (t = 0; t < NUM_THREADS; t++) {
+  for (long t = 0; t < NUM_THREADS; t++) {
     pthread_join(threads[t], NULL);
   }
 

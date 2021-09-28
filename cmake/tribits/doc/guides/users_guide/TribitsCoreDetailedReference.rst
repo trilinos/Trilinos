@@ -1,0 +1,1 @@
+../TribitsCoreDetailedReference.rst

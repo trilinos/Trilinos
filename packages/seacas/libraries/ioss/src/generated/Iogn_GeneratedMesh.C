@@ -7,6 +7,7 @@
 #include <generated/Iogn_GeneratedMesh.h>
 
 #include <Ioss_Hex8.h>
+#include <Ioss_Pyramid5.h>
 #include <Ioss_Shell4.h>
 #include <Ioss_Tet4.h>
 #include <Ioss_TriShell3.h>
@@ -121,6 +122,7 @@ namespace Iogn {
   }
 
   void GeneratedMesh::create_tets(bool yesno) { createTets = yesno; }
+  void GeneratedMesh::create_pyramids(bool yesno) { createPyramids = yesno; }
 
   int64_t GeneratedMesh::add_shell_block(ShellLocation loc)
   {
@@ -209,7 +211,7 @@ namespace Iogn {
           }
         }
       }
-      else if (option[0] == "nodeset") {
+      else if (option[0] == "nodeset" || option[0] == "nset") {
         // Option of the form  "nodeset:xXyYzZ"
         // The argument specifies whether there is a nodeset
         // at the location. 'x' is minX, 'X' is maxX, etc.
@@ -228,7 +230,7 @@ namespace Iogn {
           }
         }
       }
-      else if (option[0] == "sideset") {
+      else if (option[0] == "sideset" || option[0] == "sset") {
         // Option of the form  "sideset:xXyYzZ"
         // The argument specifies whether there is a sideset
         // at the location. 'x' is minX, 'X' is maxX, etc.
@@ -311,12 +313,22 @@ namespace Iogn {
         }
       }
 
-      else if (option[0] == "times") {
+      else if (option[0] == "times" || option[0] == "steps") {
         timestepCount = std::stoull(option[1]);
       }
 
       else if (option[0] == "tets") {
         createTets = true;
+      }
+
+      else if (option[0] == "pyramids") {
+        createPyramids = true;
+        if (processorCount > 1) {
+          std::ostringstream errmsg;
+          fmt::print(errmsg, "ERROR: Pyramid option can currently only be used in a serial run. "
+                             "Parallel not supported yet.\n");
+          IOSS_ERROR(errmsg);
+        }
       }
 
       else if (option[0] == "variables") {
@@ -346,6 +358,7 @@ namespace Iogn {
                    "\tnodeset:xXyYzZ (specifies which plane to apply nodeset)\n"
                    "\tsideset:xXyYzZ (specifies which plane to apply sideset)\n"
                    "\ttets (split each hex into 6 tets)\n"
+                   "\tpyramids (split each hex into 6 pyramids)\n"
                    "\tvariables:type,count,...  "
                    "type=global|element|node|nodal|nodeset|sideset|surface\n"
                    "\ttimes:count (number of timesteps to generate)\n"
@@ -398,9 +411,25 @@ namespace Iogn {
     }
   }
 
-  int64_t GeneratedMesh::node_count() const { return (numX + 1) * (numY + 1) * (numZ + 1); }
+  int64_t GeneratedMesh::node_count() const
+  {
+    auto count = (numX + 1) * (numY + 1) * (numZ + 1);
+    if (createPyramids) {
+      // Handle node at center of hex which is used as vertex of each pyramid
+      count += numX * numY * numZ;
+    }
+    return count;
+  }
 
-  int64_t GeneratedMesh::node_count_proc() const { return (numX + 1) * (numY + 1) * (myNumZ + 1); }
+  int64_t GeneratedMesh::node_count_proc() const
+  {
+    auto count = (numX + 1) * (numY + 1) * (myNumZ + 1);
+    if (createPyramids) {
+      // Handle node at center of hex which is used as vertex of each pyramid
+      count += numX * numY * myNumZ;
+    }
+    return count;
+  }
 
   int64_t GeneratedMesh::block_count() const { return shellBlocks.size() + 1; }
 
@@ -431,7 +460,7 @@ namespace Iogn {
     assert(block_number <= block_count());
 
     if (block_number == 1) {
-      int64_t mult = createTets ? 6 : 1;
+      int64_t mult = (createTets || createPyramids) ? 6 : 1;
       return mult * numX * numY * numZ;
     }
     ShellLocation loc = shellBlocks[block_number - 2];
@@ -457,7 +486,7 @@ namespace Iogn {
     assert(block_number <= block_count());
 
     if (block_number == 1) {
-      int64_t mult = createTets ? 6 : 1;
+      int64_t mult = (createTets || createPyramids) ? 6 : 1;
       return mult * numX * numY * myNumZ;
     }
     ShellLocation loc = shellBlocks[block_number - 2];
@@ -591,6 +620,13 @@ namespace Iogn {
       return std::make_pair(std::string(Ioss::TriShell3::name), 3);
     }
 
+    if (createPyramids) {
+      if (block_number == 1) {
+        return std::make_pair(std::string(Ioss::Pyramid5::name), 5);
+      }
+      return std::make_pair(std::string(Ioss::Shell4::name), 4);
+    }
+
     if (block_number == 1) {
       return std::make_pair(std::string(Ioss::Hex8::name), 8);
     }
@@ -687,8 +723,8 @@ namespace Iogn {
     map.reserve(count);
 
     if (block_number == 1) {
-      // Hex/Tet block...
-      INT mult   = createTets ? 6 : 1;
+      // Hex/Tet/Pyramid block...
+      INT mult   = (createTets || createPyramids) ? 6 : 1;
       count      = element_count_proc(1);
       INT offset = mult * myStartZ * numX * numY;
       for (INT i = 0; i < count; i++) {
@@ -733,7 +769,7 @@ namespace Iogn {
 
   template <typename INT> void GeneratedMesh::raw_element_map(std::vector<INT> &map) const
   {
-    INT mult  = createTets ? 6 : 1;
+    INT mult  = (createTets || createPyramids) ? 6 : 1;
     INT count = element_count_proc();
     map.reserve(count);
 
@@ -779,6 +815,92 @@ namespace Iogn {
 
     if (createTets) {
       // For tet elements
+      switch (loc) {
+      case MX:
+        offset = myStartZ * numX * numY + 1;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t j = 0; j < numY; ++j) {
+            map[index++] = 6 * offset - 4; // 1-based elem id
+            map[index++] = 3;              // 0-based local face id
+            map[index++] = 6 * offset - 3;
+            map[index++] = 3; // 0-based local face id
+            offset += numX;
+          }
+        }
+        break;
+
+      case PX:
+        offset = myStartZ * numX * numY + numX;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t j = 0; j < numY; ++j) {
+            map[index++] = 6 * offset - 1; // 1-based elem id
+            map[index++] = 3;              // 0-based local face id
+            map[index++] = 6 * offset;     // 1-based elem id
+            map[index++] = 3;              // 0-based local face id
+            offset += numX;
+          }
+        }
+        break;
+
+      case MY:
+        offset = myStartZ * numX * numY + 1;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t i = 0; i < numX; ++i) {
+            map[index++] = 6 * offset - 2;   // 1-based elem id
+            map[index++] = 0;                // 0-based local face id
+            map[index++] = 6 * offset++ - 1; // 1-based elem id
+            map[index++] = 0;                // 0-based local face id
+          }
+          offset += numX * (numY - 1);
+        }
+        break;
+
+      case PY:
+        offset = myStartZ * numX * numY + numX * (numY - 1) + 1;
+        for (size_t k = 0; k < myNumZ; ++k) {
+          for (size_t i = 0; i < numX; ++i) {
+            map[index++] = 6 * offset - 5;
+            map[index++] = 1; // 0-based local face id
+            map[index++] = 6 * offset++ - 4;
+            map[index++] = 1; // 0-based local face id
+          }
+          offset += numX * (numY - 1);
+        }
+        break;
+
+      case MZ:
+        if (myProcessor == 0) {
+          offset = 1;
+          for (size_t i = 0; i < numY; i++) {
+            for (size_t j = 0; j < numX; j++) {
+              map[index++] = 6 * offset - 5;
+              map[index++] = 3;
+              map[index++] = 6 * offset++;
+              map[index++] = 2;
+            }
+          }
+        }
+        break;
+
+      case PZ:
+        if (myProcessor == processorCount - 1) {
+          offset = (numZ - 1) * numX * numY + 1;
+          for (size_t i = 0, k = 0; i < numY; i++) {
+            for (size_t j = 0; j < numX; j++, k++) {
+              map[index++] = 6 * offset - 3;
+              map[index++] = 1;
+              map[index++] = 6 * offset++ - 2;
+              map[index++] = 1;
+            }
+          }
+        }
+        break;
+      }
+    }
+    else if (createPyramids) {
+      // For pyramid elements
+      // NOT IMPLEMENTED AT ALL YET
+      assert(1 == 0);
       switch (loc) {
       case MX:
         offset = myStartZ * numX * numY + 1;
@@ -959,6 +1081,20 @@ namespace Iogn {
       }
     }
 
+    if (createPyramids) {
+      for (size_t m = myStartZ; m < myStartZ + myNumZ; m++) {
+        for (size_t i = 0; i < numY; i++) {
+          for (size_t j = 0; j < numX; j++) {
+            coord[k++] = sclX * static_cast<double>(j) + 0.5 + offX;
+            coord[k++] = sclY * static_cast<double>(i) + 0.5 + offY;
+            coord[k++] = sclZ * static_cast<double>(m) + 0.5 + offZ;
+          }
+        }
+      }
+    }
+
+    assert(k == 3 * node_count_proc());
+
     if (doRotation) {
       for (int64_t i = 0; i < count * 3; i += 3) {
         double xn    = coord[i + 0];
@@ -1073,8 +1209,8 @@ namespace Iogn {
 
   void GeneratedMesh::connectivity(int64_t block_number, Ioss::Int64Vector &connect) const
   {
-    if (block_number == 1) { // HEX Element Block
-      int64_t npe = createTets ? 4 : 8;
+    if (block_number == 1) { // HEX/TET/PYR Element Block
+      int64_t npe = createTets ? 4 : createPyramids ? 5 : 8;
       connect.resize(element_count_proc(block_number) * npe);
     }
     else {
@@ -1087,7 +1223,7 @@ namespace Iogn {
   void GeneratedMesh::connectivity(int64_t block_number, Ioss::IntVector &connect) const
   {
     if (block_number == 1) { // HEX Element Block
-      int64_t npe = createTets ? 4 : 8;
+      int64_t npe = createTets ? 4 : createPyramids ? 5 : 8;
       connect.resize(element_count_proc(block_number) * npe);
     }
     else {
@@ -1144,6 +1280,41 @@ namespace Iogn {
                 connect[cnt++] = hex_vert[elem[1]];
                 connect[cnt++] = hex_vert[elem[2]];
                 connect[cnt++] = hex_vert[elem[3]];
+              }
+            }
+          }
+        }
+      }
+      else if (createPyramids) {
+        INT    pyr_vert[][5] = {{0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6},
+                             {0, 4, 7, 3}, {0, 3, 2, 1}, {4, 5, 6, 7}};
+        INT    hex_vert[8];
+        size_t cnt    = 0;
+        INT    offset = (numX + 1) * (numY + 1) * (myNumZ + 1);
+
+        for (size_t m = myStartZ; m < myNumZ + myStartZ; m++) {
+          for (size_t i = 0, k = 0; i < numY; i++) {
+            for (size_t j = 0; j < numX; j++, k++) {
+              size_t base = (m * xp1yp1) + k + i + 1;
+              ++offset;
+
+              hex_vert[0] = base;
+              hex_vert[1] = base + 1;
+              hex_vert[2] = base + numX + 2;
+              hex_vert[3] = base + numX + 1;
+
+              hex_vert[4] = xp1yp1 + base;
+              hex_vert[5] = xp1yp1 + base + 1;
+              hex_vert[6] = xp1yp1 + base + numX + 2;
+              hex_vert[7] = xp1yp1 + base + numX + 1;
+
+              for (auto &elem : pyr_vert) {
+                connect[cnt++] = hex_vert[elem[0]];
+                connect[cnt++] = hex_vert[elem[1]];
+                connect[cnt++] = hex_vert[elem[2]];
+                connect[cnt++] = hex_vert[elem[3]];
+
+                connect[cnt++] = offset;
               }
             }
           }

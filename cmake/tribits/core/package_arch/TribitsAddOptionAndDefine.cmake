@@ -37,17 +37,17 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(GlobalSet)
+include(GlobalSet)
 
 
 #
-# @MACRO: TRIBITS_ADD_OPTION_AND_DEFINE()
+# @MACRO: tribits_add_option_and_define()
 #
 # Add an option and a define variable in one shot.
 #
 # Usage::
 #
-#  TRIBITS_ADD_OPTION_AND_DEFINE( <userOptionName>  <macroDefineName>
+#  tribits_add_option_and_define( <userOptionName>  <macroDefineName>
 #    "<docStr>"  <defaultValue> )
 #
 # This macro sets the user cache ``BOOL`` variable ``<userOptionName>`` and if
@@ -55,25 +55,25 @@ INCLUDE(GlobalSet)
 # ``<macroDefineName>`` to ``ON``, and otherwise sets it to ``OFF``.  This is
 # designed to make it easy to add a user-enabled option to a configured header
 # file and have the define set in one shot.  This would require that the
-# package's configure file (see `TRIBITS_CONFIGURE_FILE()`_) have the line::
+# package's configure file (see `tribits_configure_file()`_) have the line::
 #
 #   #cmakedefine <macroDefineName>
 #
-MACRO(TRIBITS_ADD_OPTION_AND_DEFINE  USER_OPTION_NAME  MACRO_DEFINE_NAME
+macro(tribits_add_option_and_define  USER_OPTION_NAME  MACRO_DEFINE_NAME
   DOCSTRING  DEFAULT_VALUE
   )
-  #MESSAGE("TRIBITS_ADD_OPTION_AND_DEFINE: '${USER_OPTION_NAME}' '${MACRO_DEFINE_NAME}' '${DEFAULT_VALUE}'")
-  SET( ${USER_OPTION_NAME} "${DEFAULT_VALUE}" CACHE BOOL "${DOCSTRING}" )
-  IF(NOT ${MACRO_DEFINE_NAME} STREQUAL "")
-    IF(${USER_OPTION_NAME})
-      GLOBAL_SET(${MACRO_DEFINE_NAME} ON)
-    ELSE()
-      GLOBAL_SET(${MACRO_DEFINE_NAME} OFF)
-    ENDIF()
-  ENDIF()
-ENDMACRO()
+  #message("TRIBITS_ADD_OPTION_AND_DEFINE: '${USER_OPTION_NAME}' '${MACRO_DEFINE_NAME}' '${DEFAULT_VALUE}'")
+  set( ${USER_OPTION_NAME} "${DEFAULT_VALUE}" CACHE BOOL "${DOCSTRING}" )
+  if(NOT ${MACRO_DEFINE_NAME} STREQUAL "")
+    if(${USER_OPTION_NAME})
+      global_set(${MACRO_DEFINE_NAME} ON)
+    else()
+      global_set(${MACRO_DEFINE_NAME} OFF)
+    endif()
+  endif()
+endmacro()
 
 # 2008/10/05: rabartl: ToDo: Add an option to automatically add the macro
 # define to any XXX_config.h file that gets configured by
-# TRIBITS_CONFIGURE_FILE(...).  This will help to eliminate
+# tribits_configure_file(...).  This will help to eliminate
 # duplication.

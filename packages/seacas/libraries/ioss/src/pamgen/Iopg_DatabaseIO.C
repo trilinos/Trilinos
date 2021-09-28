@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -207,7 +207,7 @@ namespace Iopg {
       retval = Create_Pamgen_Mesh(mesh_description.c_str(), dimension, util().parallel_rank(),
                                   util().parallel_size(), INT_MAX);
     }
-    catch (const std::exception &x) {
+    catch (...) {
       error_detected = true;
     }
 
@@ -1071,7 +1071,6 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
   size_t num_to_get = field.verify(data_size);
   if (num_to_get > 0) {
 
-    int                   ierr             = 0;
     int                   id               = eb->get_property("id").get_int();
     int                   my_element_count = eb->entity_count();
     Ioss::Field::RoleType role             = field.get_role();
@@ -1087,7 +1086,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
         // The connectivity is stored in a 1D array.
         // The element_node index varies fastet
         if (my_element_count > 0) {
-          ierr = im_ex_get_elem_conn(get_file_pointer(), id, static_cast<int *>(data));
+          int ierr = im_ex_get_elem_conn(get_file_pointer(), id, static_cast<int *>(data));
           if (ierr < 0)
             pamgen_error(get_file_pointer(), __LINE__, myProcessor);
 
@@ -1578,10 +1577,9 @@ int DatabaseIO::get_side_connectivity(const Ioss::SideBlock *fb, int id, int, in
                                       size_t /* data_size */) const
 {
   // Get size of data stored on the file...
-  int ierr;
   int number_sides;
   int number_distribution_factors;
-  ierr =
+  int ierr =
       im_ex_get_side_set_param(get_file_pointer(), id, &number_sides, &number_distribution_factors);
   if (ierr < 0)
     pamgen_error(get_file_pointer(), __LINE__, myProcessor);

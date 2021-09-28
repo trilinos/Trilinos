@@ -35,6 +35,7 @@
 #define STK_MESH_NGPSPACES_HPP
 
 #include <Kokkos_Core.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 
 #ifdef KOKKOS_ENABLE_OPENMP
 #include <Kokkos_OpenMP.hpp>
@@ -43,45 +44,12 @@
 namespace stk {
 namespace mesh {
 
-#ifdef KOKKOS_ENABLE_CUDA
-using ExecSpace = Kokkos::Cuda;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using ExecSpace = Kokkos::OpenMP;
-#else
-using ExecSpace = Kokkos::Serial;
-#endif
-
-#ifdef KOKKOS_ENABLE_CUDA
-using HostExecSpace = Kokkos::Serial;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using HostExecSpace = Kokkos::OpenMP;
-#else
-using HostExecSpace = Kokkos::Serial;
-#endif
-
-#ifdef KOKKOS_ENABLE_CUDA
-using MemSpace = Kokkos::CudaSpace;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using MemSpace = Kokkos::OpenMP;
-#else
-using MemSpace = Kokkos::HostSpace;
-#endif
-
-#ifdef KOKKOS_ENABLE_CUDA
-using UVMMemSpace = Kokkos::CudaUVMSpace;
-#elif defined(KOKKOS_ENABLE_OPENMP)
-using UVMMemSpace = Kokkos::OpenMP;
-#else
-using UVMMemSpace = Kokkos::HostSpace;
-#endif
-
-#ifdef KOKKOS_ENABLE_CUDA
-using HostPinnedSpace = Kokkos::CudaHostPinnedSpace;
-#else
-using HostPinnedSpace = MemSpace;
-#endif
-
-using ScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;
+using ExecSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::ExecSpace;    
+using HostExecSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::HostExecSpace;    
+using MemSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::MemSpace;    
+using UVMMemSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::UVMMemSpace;    
+using HostPinnedSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::HostPinnedSpace;    
+using ScheduleType [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::ScheduleType;    
 
 }
 }

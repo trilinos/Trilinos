@@ -288,7 +288,7 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
     # Need to find the NetCDF config script to check for HDF5
     if ( NetCDF_ROOT OR NetCDF_BIN_DIR )
-        MESSAGE(STATUS "\tNetCDF_ROOT is ${NetCDF_ROOT}")
+        message(STATUS "\tNetCDF_ROOT is ${NetCDF_ROOT}")
         find_program(netcdf_config nc-config 
                        PATHS ${NetCDF_ROOT}/bin ${NetCDF_BIN_DIR}
 		       NO_DEFAULT_PATH

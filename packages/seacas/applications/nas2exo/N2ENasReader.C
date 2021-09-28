@@ -41,16 +41,9 @@ namespace NasModules {
 
   void N2ENasReader::setModelTitle(const std::string &title)
   {
-
-    std::string stmp = title;
-
-    if (title.length() >= 72) {
-      stmp = title.substr(0, 71);
-    }
-
     // This gymnastics with std::string is b/c
     // a Nastran title is limited to 72 chars.
-    strncat(this->modelTitle, stmp.c_str(), 71);
+    this->modelTitle = title.substr(0, 71);
   }
 
   unsigned N2ENasReader::lineCounter()

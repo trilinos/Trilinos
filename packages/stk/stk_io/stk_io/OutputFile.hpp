@@ -45,6 +45,7 @@
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/Heartbeat.hpp>
 #include <stk_io/MeshField.hpp>                    // for MeshField, etc
+#include <stk_io/IOHelpers.hpp>
 #include <stk_mesh/base/BulkData.hpp>              // for BulkData
 #include <stk_mesh/base/Selector.hpp>              // for Selector
 #include <stk_util/parallel/Parallel.hpp>          // for ParallelMachine
@@ -149,14 +150,34 @@ public:
     void add_attribute_field(stk::mesh::FieldBase &field, const OutputVariableParams &var);
     void add_user_data(const std::vector<std::string>& userData, const std::string &alternate_name, stk::io::DataLocation loc);
     bool has_global(const std::string &globalVarName) const;
-    void add_global(const std::string &variableName, const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type);
-    void add_global_ref(const std::string &variableName, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type);
+    void add_global(const std::string &variableName, const stk::util::Parameter &value);
+
+    template<typename T>
+    void add_global(const std::string &variableName, const T& value, stk::util::ParameterType::Type type)
+    {
+      STK_ANY_NAMESPACE::any anyValue(value);
+      std::pair<size_t, Ioss::Field::BasicType> parameter_type = get_io_parameter_size_and_type(type, anyValue);
+      m_anyGlobalVariablesDefined = true;
+      internal_add_global(m_region, variableName, parameter_type.first, parameter_type.second);
+    }
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+    STK_DEPRECATED void add_global(const std::string &variableName, const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type);
+#endif
+    void add_global_ref(const std::string &variableName, const stk::util::Parameter &value);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+    STK_DEPRECATED void add_global_ref(const std::string &variableName, const STK_ANY_NAMESPACE::any *value, stk::util::ParameterType::Type type);
+#endif
     void add_global(const std::string &variableName, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, const std::string &type, Ioss::Field::BasicType dataType);
     void add_global(const std::string &variableName, int component_count,     Ioss::Field::BasicType dataType);
 
     void write_global(const std::string &variableName,
+                      const stk::util::Parameter &param);
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+    STK_DEPRECATED void write_global(const std::string &variableName,
                       const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type);
+#endif
     void write_global(const std::string &variableName, double globalVarData);
     void write_global(const std::string &variableName, int globalVarData);
     void write_global(const std::string &variableName, std::vector<double>& globalVarData);

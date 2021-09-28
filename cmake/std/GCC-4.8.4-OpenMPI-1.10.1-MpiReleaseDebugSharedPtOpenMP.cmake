@@ -19,7 +19,7 @@ INCLUDE("${CMAKE_CURRENT_LIST_DIR}/SetUtils.cmake")
 TRIL_SET_BOOL_CACHE_VAR(${PROJECT_NAME}_ENABLE_OpenMP ON)
 
 TRIL_SET_CACHE_VAR(MPI_EXEC_PRE_NUMPROCS_FLAGS "--bind-to;none"
-  CACHE STSRING)
+  CACHE STRING)
 # NOTE: The above is a workaround for the problem of having threads on MPI
 # ranks bind to the same cores (see #2422).
 

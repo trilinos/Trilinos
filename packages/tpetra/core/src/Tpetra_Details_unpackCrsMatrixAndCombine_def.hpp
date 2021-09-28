@@ -78,11 +78,6 @@
 
 namespace Tpetra {
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-// Forward declaration of Distributor
-class Distributor;
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 //
 // Users must never rely on anything in the Details namespace.
 //
@@ -1203,7 +1198,6 @@ unpackCrsMatrixAndCombine(
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const Teuchos::ArrayView<const LO>& importLIDs,
     size_t /* constantNumPackets */,
-    Distributor & /* distor */,
     CombineMode combineMode)
 {
   using Kokkos::View;
@@ -1259,7 +1253,6 @@ unpackCrsMatrixAndCombineNew(
   const Kokkos::DualView<const LO*,
     typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
   const size_t /* constantNumPackets */,
-  Distributor& /* distor */,
   const CombineMode combineMode)
 {
   using Kokkos::View;
@@ -1362,7 +1355,6 @@ unpackAndCombineWithOwningPIDsCount (
     const Teuchos::ArrayView<const char> &imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     size_t /* constantNumPackets */,
-    Distributor &/* distor */,
     CombineMode /* combineMode */,
     size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -1433,7 +1425,6 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     const size_t /* constantNumPackets */,
-    Distributor& /* distor */,
     const CombineMode /* combineMode */,
     const size_t numSameIDs,
     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
@@ -1628,7 +1619,6 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const size_t>&, \
     const Teuchos::ArrayView<const LO>&, \
     size_t, \
-    Distributor&, \
     CombineMode); \
   template void \
   Details::unpackCrsMatrixAndCombineNew<ST, LO, GO, NT> ( \
@@ -1637,7 +1627,6 @@ unpackAndCombineIntoCrsArrays (
     Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT>::buffer_device_type>, \
     const Kokkos::DualView<const LO*, typename DistObject<char, LO, GO, NT>::buffer_device_type>&, \
     const size_t, \
-    Distributor&, \
     const CombineMode); \
   template void \
   Details::unpackAndCombineIntoCrsArrays<ST, LO, GO, NT> ( \
@@ -1646,7 +1635,6 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const char>&, \
     const Teuchos::ArrayView<const size_t>&, \
     const size_t, \
-    Distributor&, \
     const CombineMode, \
     const size_t, \
     const Teuchos::ArrayView<const LO>&, \
@@ -1666,7 +1654,6 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const char> &, \
     const Teuchos::ArrayView<const size_t>&, \
     size_t, \
-    Distributor &, \
     CombineMode, \
     size_t, \
     const Teuchos::ArrayView<const LO>&, \

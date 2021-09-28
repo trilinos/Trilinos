@@ -113,6 +113,7 @@
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
+#include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
 #include "MueLu_UncoupledAggregationFactory_kokkos.hpp"
 #endif
@@ -675,10 +676,7 @@ namespace MueLu {
     UpdateFactoryManager_RAP(paramList, defaultList, manager, levelID, keeps);
 
     // == BlockNumber Transfer ==
-    // NOTE: You would think this would be levelID > 0, but you'd be wrong, since the FactoryManager is basically
-    // offset by a level from the things which actually do the work.
-    if(useBlockNumber_ && levelID > 0)
-      UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber",multigridAlgo,paramList,defaultList,manager,levelID,keeps);
+    UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber",multigridAlgo,paramList,defaultList,manager,levelID,keeps);
 
 
     // === Coordinates ===
@@ -1080,6 +1078,7 @@ namespace MueLu {
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian algo", std::string, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical algo", std::string, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: distance laplacian directional weights",Teuchos::Array<double>,dropParams);
+       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring: localize color graph", bool, dropParams);
        if (useKokkos_) {
          MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, dropParams);
          MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, dropParams);
@@ -1292,7 +1291,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_RAP(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
-                           int /* levelID */, std::vector<keep_pair>& keeps) const
+                           int levelID, std::vector<keep_pair>& keeps) const
   {
     if (paramList.isParameter("A") && !paramList.get<RCP<Matrix> >("A").is_null()) {
       // We have user matrix A
@@ -1447,29 +1446,29 @@ namespace MueLu {
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_LocalOrdinalTransfer(const std::string & VarName, const std::string &multigridAlgo,ParameterList& paramList, const ParameterList& /* defaultList */,
                                             FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const
-  {    
-    if(levelID > 0){
-      RCP<Factory> fact = rcp(new LocalOrdinalTransferFactory(VarName,multigridAlgo));
-      if(multigridAlgo == "classical") 
-        fact->SetFactory("P Graph", manager.GetFactory("P Graph"));
-      else 
-        fact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
-      fact->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
-
-      fact->SetFactory(VarName, this->GetFactoryManager(levelID-1)->GetFactory(VarName));
-
-      manager.SetFactory(VarName, fact);
-
+  {
+    // NOTE: You would think this would be levelID > 0, but you'd be wrong, since the FactoryManager is basically
+    // offset by a level from the things which actually do the work.
+    if (useBlockNumber_ && (levelID > 0)) {
       auto RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
-      if (!RAP.is_null()) {
-        RAP->AddTransferFactory(manager.GetFactory(VarName));
-      } else {
-        auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
-        RAPs->AddTransferFactory(manager.GetFactory(VarName));
+      auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
+      if (!RAP.is_null() || !RAPs.is_null()) {
+        RCP<Factory> fact = rcp(new LocalOrdinalTransferFactory(VarName,multigridAlgo));
+        if(multigridAlgo == "classical")
+          fact->SetFactory("P Graph", manager.GetFactory("P Graph"));
+        else
+          fact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+        fact->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+
+        fact->SetFactory(VarName, this->GetFactoryManager(levelID-1)->GetFactory(VarName));
+
+        manager.SetFactory(VarName, fact);
+
+        if (!RAP.is_null())
+          RAP->AddTransferFactory(manager.GetFactory(VarName));
+        else
+          RAPs->AddTransferFactory(manager.GetFactory(VarName));
       }
-    }
-    else {
-      throw std::runtime_error(std::string("UpdateFactoryManager_LocalOrdinalTransfer should not be run on level ") + std::to_string(levelID));
     }
   }
 
@@ -1734,6 +1733,10 @@ namespace MueLu {
       manager.SetFactory("P",           newP);
       if (useCoordinates_)
         manager.SetFactory("Coordinates", newP);
+      if (useBlockNumber_ && (levelID > 0)) {
+        newP->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
+        manager.SetFactory("BlockNumber", newP);
+      }
 
       // Rebalanced R
       auto newR = rcp(new RebalanceTransferFactory());
@@ -1804,7 +1807,7 @@ namespace MueLu {
                                    int /* levelID */, std::vector<keep_pair>& /* keeps */) const
   {
     // === Semi-coarsening ===
-    RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
+    RCP<Factory>  semicoarsenFactory = Teuchos::null;
     if (paramList.isParameter("semicoarsen: number of levels") &&
         paramList.get<int>("semicoarsen: number of levels") > 0) {
 
@@ -1817,7 +1820,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
 
-      semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
+      MUELU_KOKKOS_FACTORY_NO_DECL(semicoarsenFactory, SemiCoarsenPFactory, SemiCoarsenPFactory_kokkos);
       RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
       RCP<TogglePFactory>       togglePFactory       = rcp(new TogglePFactory());
 
@@ -1840,7 +1843,6 @@ namespace MueLu {
       manager.SetFactory("Ptent",     togglePFactory);
       manager.SetFactory("Nullspace", togglePFactory);
     }
-
 
     if (paramList.isParameter("semicoarsen: number of levels")) {
       auto tf = rcp(new ToggleCoordinatesTransferFactory());
@@ -2577,7 +2579,7 @@ namespace MueLu {
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupOperator(Operator& Op) const {
     try {
       Matrix& A = dynamic_cast<Matrix&>(Op);
-      if (A.GetFixedBlockSize() != blockSize_)
+      if (A.IsFixedBlockSizeSet() && (A.GetFixedBlockSize() != blockSize_))
         this->GetOStream(Warnings0) << "Setting matrix block size to " << blockSize_ << " (value of the parameter in the list) "
             << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl
             << "You may want to check \"number of equations\" (or \"PDE equations\" for factory style list) parameter." << std::endl;

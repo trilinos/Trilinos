@@ -66,7 +66,7 @@ namespace panzer {
 
 class GlobalIndexer;
 
-/** \brief Pushes residual values into the residual vector for a 
+/** \brief Pushes residual values into the residual vector for a
            Newton-based solve
 
     Currently makes an assumption that the stride is constant for dofs
@@ -86,9 +86,9 @@ public:
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,TRAITS,LO,GO>(pl)); }
 
-  void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm) 
+  void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm)
    { }
-  void evaluateFields(typename TRAITS::EvalData d) 
+  void evaluateFields(typename TRAITS::EvalData d)
    { std::cout << "unspecialized version of \"ScatterDirichletResidual_BlockedEpetra::evaluateFields\" on \""+PHX::print<EvalT>()+"\" should not be used!" << std::endl;
     TEUCHOS_ASSERT(false); }
 };
@@ -101,37 +101,38 @@ public:
 
 
 // **************************************************************
-// Residual 
+// Residual
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
 
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
                                          const std::vector<Teuchos::RCP<const GlobalIndexer> > & /* cIndexers */)
      : rowIndexers_(rIndexers) {}
-  
+
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
                                          const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                          const Teuchos::ParameterList& p,
                                          bool useDiscreteAdjoint=false);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(rowIndexers_,colIndexers_,pl)); }
 
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
+  using BCFieldType = PHX::MDField<const bool,Cell,NODE>;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -167,43 +168,44 @@ private:
   bool scatterIC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+  std::vector< BCFieldType > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra() {}
 };
 
 // **************************************************************
-// Tangent 
+// Tangent
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
 
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
                                          const std::vector<Teuchos::RCP<const GlobalIndexer> > & /* cIndexers */)
      : rowIndexers_(rIndexers) {}
-  
+
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
                                          const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                          const Teuchos::ParameterList& p,
                                          bool useDiscreteAdjoint=false);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
-  
+
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(rowIndexers_,colIndexers_,pl)); }
 
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
+  using BCFieldType = PHX::MDField<const bool,Cell,NODE>;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -239,7 +241,7 @@ private:
   bool scatterIC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+  std::vector< BCFieldType > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra() {}
 };
@@ -252,31 +254,32 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,
   : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
-  
+
 public:
 
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
                                          const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers)
      : rowIndexers_(rIndexers), colIndexers_(cIndexers) {}
-  
+
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const GlobalIndexer> > & rIndexers,
                                          const std::vector<Teuchos::RCP<const GlobalIndexer> > & cIndexers,
                                          const Teuchos::ParameterList& p,
                                          bool useDiscreteAdjoint=false);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
-  
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
-  
+
   void evaluateFields(typename TRAITS::EvalData workset);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(rowIndexers_,colIndexers_,pl)); }
-  
+
 private:
 
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
+  using BCFieldType = PHX::MDField<const bool,Cell,NODE>;
 
   // dummy field so that the evaluator will have something to do
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
@@ -312,7 +315,7 @@ private:
   bool checkApplyBC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+  std::vector< BCFieldType > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra();
 };

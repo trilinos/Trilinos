@@ -122,9 +122,7 @@ namespace MueLu {
 
       rho = sqrt(Utilities::Frobenius(*V[0], *V[0]));
 
-      V[0]->resumeFill();
       V[0]->scale(-one/rho);
-      V[0]->fillComplete(V[0]->getDomainMap(), V[0]->getRangeMap());
     }
 
     std::vector<SC> h((nIts_+1) * (nIts_+1));
@@ -182,9 +180,7 @@ namespace MueLu {
       // Check for nonsymmetric case
       if (h[I(i+1,i)] != zero) {
         // Normalize V_i
-        V[i+1]->resumeFill();
         V[i+1]->scale(one/h[I(i+1,i)]);
-        V[i+1]->fillComplete(V[i+1]->getDomainMap(), V[i+1]->getRangeMap());
       }
 
       if (i > 0)

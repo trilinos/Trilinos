@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,7 @@
 #include "elb_util.h" // for in_list, find_inter
 #include <cassert>    // for assert
 #include <cstddef>    // for size_t
-#include <cstdlib>    // for free, malloc
+#include <cstdlib>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <sstream>
@@ -129,18 +129,6 @@ namespace {
 
     // Attempt to reserve an array with this size...
     double time1 = get_time();
-    {
-      char *block = reinterpret_cast<char *>(malloc(total));
-      if (block == nullptr) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "fatal: Could not allocate memory for reverse-connectivity array "
-                   "(find_surnd_elems) of size {} bytes.\n",
-                   total);
-        Gen_Error(0, errmsg.str());
-      }
-      free(block);
-    }
 
     graph->sur_elem.resize(mesh->num_nodes);
     for (size_t ncnt = 0; ncnt < mesh->num_nodes; ncnt++) {
@@ -199,16 +187,10 @@ namespace {
                      Graph_Description<INT> *graph, Weight_Description<INT> *weight,
                      Sphere_Info *sphere)
   {
-    int iret;
-
-    size_t nelem = 0;
-    size_t nhold = 0;
-    int    sid   = 0;
-
-    INT *pt_list   = nullptr;
-    INT *hold_elem = nullptr;
-    INT  side_nodes[MAX_SIDE_NODES + 2];
-    INT  mirror_nodes[MAX_SIDE_NODES + 2];
+    std::vector<INT> pt_list;
+    std::vector<INT> hold_elem;
+    INT              side_nodes[MAX_SIDE_NODES + 2];
+    INT              mirror_nodes[MAX_SIDE_NODES + 2];
 
     static int count = 0;
 
@@ -253,45 +235,24 @@ namespace {
       /* for face adjacencies, need to allocate some memory */
       if (problem->face_adj) {
         /* allocate space to hold info about surrounding elements */
-        pt_list = (INT *)malloc(sizeof(INT) * graph->max_nsur);
-        if (!(pt_list)) {
-          Gen_Error(0, "fatal: insufficient memory");
-          return 0;
-        }
-        hold_elem = (INT *)malloc(sizeof(INT) * graph->max_nsur);
-        if (!(hold_elem)) {
-          free(pt_list);
-          Gen_Error(0, "fatal: insufficient memory");
-          return 0;
-        }
+        pt_list.resize(graph->max_nsur);
+        hold_elem.resize(graph->max_nsur);
       }
       graph->nadj = 0;
       size_t cnt  = 0;
 
       /* tmp_element used to speed up the in_list calc */
-      int *tmp_element = (int *)malloc(sizeof(int) * mesh->num_elems);
-      if (!tmp_element) {
-        if (problem->face_adj) {
-          free(hold_elem);
-          free(pt_list);
-        }
-        Gen_Error(0, "fatal: insufficient memory");
-        return 0;
-      }
-      for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-        tmp_element[ecnt] = -1;
-      }
+      std::vector<int> tmp_element(mesh->num_elems, -1);
 
       /* Cycle through the elements */
-      E_Type etype_last = NULL_EL;
-      E_Type etype      = NULL_EL;
 
       int element_3d = 0;
       int nnodes     = mesh->num_dims;
       int nsides     = 0;
 
       for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
-        etype = mesh->elem_type[ecnt];
+        E_Type etype      = mesh->elem_type[ecnt];
+        E_Type etype_last = NULL_EL;
         if (etype != etype_last) {
           etype_last = etype;
           element_3d = is_3d_element(mesh->elem_type[ecnt]);
@@ -347,8 +308,8 @@ namespace {
                     }
                   }
                   else if (weight->type & EDGE_WGT) {
-                    iret = in_list(entry, (graph->nadj) - (graph->start[cnt]),
-                                   &graph->adj[graph->start[cnt]]);
+                    int iret = in_list(entry, (graph->nadj) - (graph->start[cnt]),
+                                       &graph->adj[graph->start[cnt]]);
                     assert(iret >= 0);
                     weight->edges[iret + (graph->start[cnt])] += 1.0F;
                   }
@@ -407,7 +368,7 @@ namespace {
 
                 nnodes--; /* decrement to find the number of intersections  */
 
-                nelem = 0; /* reset this in case no intersections are needed */
+                size_t nelem = 0; /* reset this in case no intersections are needed */
 
                 /* copy the first array into temp storage */
 
@@ -433,15 +394,15 @@ namespace {
                      the number of elements touching both nodes and their
                      indices in pt_list.  When ncnt != 0, hold_elem and nhold
                      change */
-                  nhold = graph->sur_elem[side_nodes[0]].size();
+                  size_t nhold = graph->sur_elem[side_nodes[0]].size();
                   for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
                     hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
                   }
 
                   for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-                    nelem =
-                        find_inter(hold_elem, &graph->sur_elem[side_nodes[(ncnt + 1)]][0], nhold,
-                                   graph->sur_elem[side_nodes[(ncnt + 1)]].size(), pt_list);
+                    nelem = find_inter(
+                        hold_elem.data(), &graph->sur_elem[side_nodes[(ncnt + 1)]][0], nhold,
+                        graph->sur_elem[side_nodes[(ncnt + 1)]].size(), pt_list.data());
 
                     /*  If less than 2 ( 0 or 1 ) elements only
                         touch nodes 0 and ncnt+1 then try next side node, i.e.,
@@ -472,10 +433,11 @@ namespace {
                   /* See if hexes share nodes 0 and nodes (ncnt+2) */
                   int inode = 0;
                   for (int ncnt = 0; ncnt < nnodes; ncnt++) {
-                    nelem = find_inter(&graph->sur_elem[side_nodes[inode]][0],
-                                       &graph->sur_elem[side_nodes[(ncnt + 2)]][0],
-                                       graph->sur_elem[side_nodes[inode]].size(),
-                                       graph->sur_elem[side_nodes[(ncnt + 2)]].size(), pt_list);
+                    nelem =
+                        find_inter(&graph->sur_elem[side_nodes[inode]][0],
+                                   &graph->sur_elem[side_nodes[(ncnt + 2)]][0],
+                                   graph->sur_elem[side_nodes[inode]].size(),
+                                   graph->sur_elem[side_nodes[(ncnt + 2)]].size(), pt_list.data());
 
                     /*
                      * If there are multiple elements in the intersection, then
@@ -537,6 +499,7 @@ namespace {
                         tflag2 = is_tet(etype2);
 
                         /* check here for tet/hex combinations */
+                        int sid;
                         if ((tflag1 && hflag2) || (hflag1 && tflag2)) {
                           /*
                            * have to call a special function to get the side id
@@ -651,17 +614,12 @@ namespace {
                           count++;
                           fmt::print("Now we have {} bad element connections.\n", count);
                         } /* End "if (sid > 0)" */
-
-                      } /* End: "if(ecnt != entry)" */
+                      }   /* End: "if(ecnt != entry)" */
                     }
-
                   } /* End: "for(i=0; i < nelem; i++)" */
-
-                } /* End: "if (nelem > 1)" */
-
-              } /* End: "for (nscnt = 0; nscnt < nsides; nscnt++)" */
-
-            } /* End: "if(element_3d)" */
+                }   /* End: "if (nelem > 1)" */
+              }     /* End: "for (nscnt = 0; nscnt < nsides; nscnt++)" */
+            }       /* End: "if(element_3d)" */
 
             else {
 
@@ -688,6 +646,7 @@ namespace {
                     /* now make sure that the entry is not a 3d element */
                     if (!is_3d_element(mesh->elem_type[entry])) {
 
+                      int iret;
                       if ((iret = in_list(entry, graph->adj.size() - graph->start[cnt],
                                           &graph->adj[graph->start[cnt]])) < 0) {
 
@@ -711,12 +670,6 @@ namespace {
 
         } /* End "if(etype != SPHERE)" */
       }   /* End "for(ecnt=0; ecnt < mesh->num_elems; ecnt++)" */
-
-      if (problem->face_adj) {
-        free(hold_elem);
-        free(pt_list);
-      }
-      free(tmp_element);
     }
 
     graph->start[problem->num_vertices] = graph->adj.size();

@@ -379,20 +379,8 @@ int main(int argc, char *argv[])
 namespace {
   void info_entity(const Ioss::StructuredBlock *sb, bool show_property)
   {
-    fmt::print("\n{} {}", name(sb), sb->get_property("ni_global").get_int());
-
-    int64_t num_dim = sb->get_property("component_degree").get_int();
-    if (num_dim > 1) {
-      fmt::print("x{}", sb->get_property("nj_global").get_int());
-    }
-    if (num_dim > 2) {
-      fmt::print("x{}", sb->get_property("nk_global").get_int());
-    }
-
-    fmt::print(" [{}x{}x{}, Offset = {}, {}, {}] ", sb->get_property("ni").get_int(),
-               sb->get_property("nj").get_int(), sb->get_property("nk").get_int(),
-               sb->get_property("offset_i").get_int(), sb->get_property("offset_j").get_int(),
-               sb->get_property("offset_k").get_int());
+    fmt::print("\n{} {} [{}, Offset = {}] ", name(sb), fmt::join(sb->get_ijk_global(), "x"),
+               fmt::join(sb->get_ijk_local(), "x"), fmt::join(sb->get_ijk_offset(), ", "));
 
     int64_t num_cell = sb->get_property("cell_count").get_int();
     int64_t num_node = sb->get_property("node_count").get_int();
@@ -423,7 +411,7 @@ namespace {
 
     fmt::print("\n{} id: {:6d}, contains: {} member(s) of type {:>10s}.{}\n\tMembers: ", name(as),
                id(as), as->member_count(), as->contains_string(), modifier);
-    for (const auto mem : as->get_members()) {
+    for (const auto &mem : as->get_members()) {
       fmt::print("'{}' ", mem->name());
     }
     fmt::print("\n");
@@ -467,7 +455,7 @@ namespace {
 #endif
     }
     const Ioss::SideBlockContainer &fbs = ss->get_side_blocks();
-    for (auto fb : fbs) {
+    for (auto &fb : fbs) {
       int64_t count      = fb->entity_count();
       int64_t num_attrib = fb->get_property("attribute_count").get_int();
       int64_t num_dist   = fb->get_property("distribution_factor_count").get_int();
@@ -501,10 +489,8 @@ namespace {
     }
   }
 
-  void set_db_properties(const Modify::Interface &interFace, Ioss::DatabaseIO *dbi)
+  void set_db_properties(const Modify::Interface & /* interFace */, Ioss::DatabaseIO *dbi)
   {
-    std::string inpfile = interFace.filename();
-
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -996,11 +982,8 @@ namespace {
       handle_list(tokens, region, true);
       return false;
     }
-    else {
-      fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized attribute command.\n");
-      handle_help("attribute");
-      return false;
-    }
+    fmt::print(stderr, fg(fmt::color::red), "ERROR: Unrecognized attribute command.\n");
+    handle_help("attribute");
     return false;
   }
 

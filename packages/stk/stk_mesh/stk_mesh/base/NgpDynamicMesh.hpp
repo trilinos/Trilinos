@@ -49,13 +49,15 @@
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Field.hpp"
 
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/NgpUtils.hpp"
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_util/util/StkNgpVector.hpp"
 
 #ifdef KOKKOS_ENABLE_CUDA
 typedef Kokkos::Cuda Device;
+#elif defined(KOKKOS_ENABLE_HIP)
+typedef Kokkos::Experimental::HIP Device;
 #else
 typedef Kokkos::Serial Device;
 #endif
@@ -64,16 +66,16 @@ namespace stk {
 namespace mesh {
 
 
-typedef Kokkos::View<unsigned*,MemSpace> UnsignedViewType;
-typedef Kokkos::View<stk::mesh::EntityRank*,MemSpace> RankViewType;
-typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, MemSpace> PartOrdViewType;
-typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, MemSpace, Kokkos::MemoryUnmanaged> UnmanagedPartOrdViewType;
-typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
-typedef Kokkos::View<stk::mesh::Entity*, MemSpace, Kokkos::MemoryUnmanaged> UnmanagedEntityViewType;
-typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, MemSpace> BktConnectivityType;
-typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, MemSpace, Kokkos::MemoryUnmanaged> UnmanagedBktConnectivityType;
+typedef Kokkos::View<unsigned*, stk::ngp::MemSpace> UnsignedViewType;
+typedef Kokkos::View<stk::mesh::EntityRank*, stk::ngp::MemSpace> RankViewType;
+typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, stk::ngp::MemSpace> PartOrdViewType;
+typedef Kokkos::View<unsigned*,Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryUnmanaged> UnmanagedPartOrdViewType;
+typedef Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace> EntityViewType;
+typedef Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace, Kokkos::MemoryUnmanaged> UnmanagedEntityViewType;
+typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, stk::ngp::MemSpace> BktConnectivityType;
+typedef Kokkos::View<stk::mesh::Entity**, Kokkos::LayoutRight, stk::ngp::MemSpace, Kokkos::MemoryUnmanaged> UnmanagedBktConnectivityType;
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 inline
 bool all_parts_match(const UnmanagedPartOrdViewType& lhsParts, const UnmanagedPartOrdViewType& rhsParts)
 {
@@ -98,7 +100,7 @@ bool all_parts_match(const UnmanagedPartOrdViewType& lhsParts, const UnmanagedPa
 struct DynamicBucket {
   typedef util::StridedArray<const stk::mesh::Entity> ConnectedNodes;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   DynamicBucket()
     : bucketId(0), entityRank(stk::topology::NODE_RANK), topo(stk::topology::INVALID_TOPOLOGY),
       partOrds(), entities(), connectivity()
@@ -108,7 +110,7 @@ struct DynamicBucket {
   bool is_empty_on_host() const
   { return hostPartOrds.size() == 0 || hostPartOrds(0) == 0; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   bool is_empty() const { return partOrds.size() == 0 || partOrds(0) == 0; }
 
   void initialize(unsigned bucket_id_in, stk::mesh::EntityRank rank,
@@ -137,27 +139,27 @@ struct DynamicBucket {
     Kokkos::deep_copy(connectivity, hostConnectivity);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   unsigned bucket_id() const { return bucketId; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   size_t size() const { return numEntities; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::mesh::EntityRank entity_rank() const { return entityRank; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::topology topology() const { return topo; }
 
   unsigned host_get_num_parts() const { return hostPartOrds(0); }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   unsigned get_num_parts() const { return partOrds(0); }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   UnmanagedPartOrdViewType get_parts() const { return partOrds; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   bool is_member(unsigned partOrd) const
   {
     for(unsigned i=1; i<=partOrds(0); ++i)
@@ -170,15 +172,15 @@ struct DynamicBucket {
     return false;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   unsigned get_num_nodes_per_entity() const { return topo.num_nodes(); }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ConnectedNodes get_nodes(unsigned offsetIntoBucket) const {
     return ConnectedNodes(&connectivity(offsetIntoBucket,0), connectivity.extent(1));
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::mesh::Entity operator[](unsigned offsetIntoBucket) const {
     return entities(offsetIntoBucket);
   }
@@ -207,7 +209,7 @@ struct DynamicBucket {
 class DynamicMesh
 {
 public:
-  typedef stk::mesh::ExecSpace MeshExecSpace;
+  typedef stk::ngp::ExecSpace MeshExecSpace;
   typedef DynamicBucket::ConnectedNodes ConnectedNodes;
   typedef DynamicBucket BucketType;
 
@@ -234,7 +236,7 @@ public:
   {
     indexOfFirstEmptyBucket = UnsignedViewType("indexOfFirstEmptyBucket",stk::topology::NUM_RANKS);
     hostIndexOfFirstEmptyBucket = Kokkos::create_mirror_view(indexOfFirstEmptyBucket);
-    hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*,MemSpace>::HostMirror("host_mesh_indices", bulk->get_size_of_entity_index_space());
+    hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace>::HostMirror("host_mesh_indices", bulk->get_size_of_entity_index_space());
     hostEntityRanks = RankViewType::HostMirror("host_entity_ranks", bulk->get_size_of_entity_index_space());
 
     stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
@@ -251,31 +253,31 @@ public:
   {
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ConnectedNodes get_nodes(const DeviceMeshIndex &elem) const
   {
     return buckets[elem.bucket->entity_rank()](elem.bucket->bucket_id()).get_nodes(elem.bucketOrd);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &elem) const
   {
     return buckets[rank](elem.bucket_id).get_nodes(elem.bucket_ord);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::mesh::EntityRank entity_rank(stk::mesh::Entity entity) const
   {
     return deviceEntityRanks(entity.local_offset());
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::mesh::FastMeshIndex fast_mesh_index(stk::mesh::Entity entity) const
   {
     return device_mesh_index(entity);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::mesh::FastMeshIndex device_mesh_index(stk::mesh::Entity entity) const
   {
     return deviceMeshIndices(entity.local_offset());
@@ -291,19 +293,19 @@ public:
     return stk::mesh::get_bucket_ids(get_bulk_on_host(), rank, selector);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   unsigned num_buckets(stk::mesh::EntityRank rank) const
   {
     return indexOfFirstEmptyBucket(rank);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   const DynamicBucket &get_bucket(stk::mesh::EntityRank rank, unsigned index) const
   {
     return buckets[rank](index);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   int find_bucket_with_parts(stk::mesh::EntityRank rank, const UnmanagedPartOrdViewType& partOrds) const
   {
     unsigned numBuckets = num_buckets(rank);
@@ -316,7 +318,7 @@ public:
     return -1;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   int add_bucket(stk::mesh::EntityRank rank, stk::topology topo, const UnmanagedPartOrdViewType& partOrds) const
   {
     int newBucketIndex = num_buckets(rank);
@@ -330,7 +332,7 @@ public:
     return newBucketIndex;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   UnmanagedPartOrdViewType get_new_part_ords(unsigned partOrdToAdd, const UnmanagedPartOrdViewType& oldPartOrds) const
   {
     UnmanagedPartOrdViewType newParts = UnmanagedPartOrdViewType(static_cast<unsigned*>(partOrdPool.allocate(bytesPerPartOrdAlloc)), maxNumParts);
@@ -350,7 +352,7 @@ public:
     return newParts;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void change_entity_parts(stk::mesh::Entity entity, unsigned partOrdToAdd) const
   {
     stk::mesh::FastMeshIndex meshIndex = device_mesh_index(entity);
@@ -378,17 +380,17 @@ public:
   struct alloc_entities_tag {};
   struct alloc_connectivity_tag {};
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void operator()(alloc_part_ords_tag, const int& bucketIndex) const {
     bucketsOfRank(bucketIndex).partOrds = UnmanagedPartOrdViewType(static_cast<unsigned*>(partOrdPool.allocate(bytesPerPartOrdAlloc)), maxNumParts);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void operator()(alloc_entities_tag, const int& bucketIndex) const {
     bucketsOfRank(bucketIndex).entities = UnmanagedEntityViewType(static_cast<stk::mesh::Entity*>(entityViewPool.allocate(bytesPerEntityViewAlloc)), maxNumEntities);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void operator()(alloc_connectivity_tag, const int& bucketIndex) const {
     unsigned nodesPerEntity = bucketsOfRank(bucketIndex).topology().num_nodes();
     unsigned numEntities = maxNumEntities;
@@ -398,7 +400,7 @@ public:
 
 private:
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   stk::mesh::FastMeshIndex move_entity_to_bucket(stk::mesh::EntityRank rank,
                                                  stk::mesh::Entity entity,
                                                  unsigned newBucketIndex) const
@@ -470,9 +472,9 @@ private:
 
     Kokkos::deep_copy(buckets[rank], hostBuckets[rank]);
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace,alloc_part_ords_tag>(0,numStkBuckets), *this);
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace,alloc_entities_tag>(0,numStkBuckets), *this);
-    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace,alloc_connectivity_tag>(0,numStkBuckets), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<stk::ngp::ExecSpace,alloc_part_ords_tag>(0,numStkBuckets), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<stk::ngp::ExecSpace,alloc_entities_tag>(0,numStkBuckets), *this);
+    Kokkos::parallel_for(Kokkos::RangePolicy<stk::ngp::ExecSpace,alloc_connectivity_tag>(0,numStkBuckets), *this);
 
     Kokkos::deep_copy(indexOfFirstEmptyBucket, hostIndexOfFirstEmptyBucket);
     Kokkos::deep_copy(hostBuckets[rank], buckets[rank]);
@@ -538,7 +540,7 @@ private:
   void copy_mesh_indices_and_ranks_to_device()
   {
     unsigned length = hostMeshIndices.size();
-    Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace> tmp_device_mesh_indices("tmp_dev_mesh_indices", length);
+    Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace> tmp_device_mesh_indices("tmp_dev_mesh_indices", length);
     Kokkos::deep_copy(tmp_device_mesh_indices, hostMeshIndices);
     deviceMeshIndices = tmp_device_mesh_indices;
     RankViewType tmp_device_entity_ranks("tmp_dev_ent_ranks", length);
@@ -552,7 +554,7 @@ private:
   }
 
 
-  typedef Kokkos::View<DynamicBucket*, Kokkos::LayoutRight, MemSpace> BucketView;
+  typedef Kokkos::View<DynamicBucket*, Kokkos::LayoutRight, stk::ngp::MemSpace> BucketView;
   const stk::mesh::BulkData *bulk;
 
   unsigned maxNumParts;
@@ -577,8 +579,8 @@ private:
   UnsignedViewType indexOfFirstEmptyBucket;
   UnsignedViewType::HostMirror hostIndexOfFirstEmptyBucket;
   BucketView::HostMirror hostBuckets[stk::topology::NUM_RANKS];
-  Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace>::HostMirror hostMeshIndices;
-  Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace> deviceMeshIndices;
+  Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace>::HostMirror hostMeshIndices;
+  Kokkos::View<stk::mesh::FastMeshIndex*, stk::ngp::MemSpace> deviceMeshIndices;
   RankViewType deviceEntityRanks;
   RankViewType::HostMirror hostEntityRanks;
 };

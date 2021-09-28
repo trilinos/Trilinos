@@ -48,7 +48,7 @@
  *
  * In this way, client code can just examine the version number in this file
  * and know exactly what version of @REPOSITORY_NAME@ they are working with with no
- * ambiguity no mater what.
+ * ambiguity no matter what.
  */
 
 

@@ -38,15 +38,15 @@
 # @HEADER
 
 #
-# @FUNCTION: SPLIT()
+# @FUNCTION: split()
 #
 # Split a string variable into a string array/list variable.
 #
 # Usage::
 #
-#   SPLIT("<inputStr>" "<sepStr>" <outputStrListVar>)
+#   split("<inputStr>" "<sepStr>" <outputStrListVar>)
 #
-# The ``<sepStr>`` string is used with ``STRING(REGEX ...)`` to replace all
+# The ``<sepStr>`` string is used with ``string(REGEX ...)`` to replace all
 # occurrences of ``<sepStr>`` in ``<inputStr>`` with ``";"`` and writing into
 # ``<outputStrListVar>``.
 #
@@ -54,7 +54,7 @@
 # that in mind when considering special regex chars like ``'*'``, ``'.'``,
 # etc!
 #
-FUNCTION(SPLIT  INPUT_STRING  SEP_STR  OUTPUT_STRING_VAR)
-  STRING(REGEX REPLACE "${SEP_STR}" ";" OUTPUT_STRING "${INPUT_STRING}")
-  SET(${OUTPUT_STRING_VAR} "${OUTPUT_STRING}" PARENT_SCOPE)
-ENDFUNCTION()
+function(split  INPUT_STRING  SEP_STR  OUTPUT_STRING_VAR)
+  string(REGEX REPLACE "${SEP_STR}" ";" OUTPUT_STRING "${INPUT_STRING}")
+  set(${OUTPUT_STRING_VAR} "${OUTPUT_STRING}" PARENT_SCOPE)
+endfunction()

@@ -51,7 +51,7 @@ namespace NasModules {
     std::vector<gridType>    gridList;
     std::vector<elementType> elementList;
 
-    char modelTitle[72]{'\0'};
+    std::string modelTitle;
 
     bool doesFileExist(const std::string &fname);
     // Local buffer for reading faster

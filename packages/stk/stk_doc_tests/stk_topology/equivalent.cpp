@@ -32,9 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_topology/topology.hpp>
-#include <vector>
+#include "gtest/gtest.h"              // for AssertionResult, Test, Message, TestPartResult, EXP...
+#include "stk_topology/topology.hpp"  // for topology, EquivalentPermutation, topology::HEX_8
 
 namespace {
 

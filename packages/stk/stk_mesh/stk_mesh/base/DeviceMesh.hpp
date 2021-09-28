@@ -48,7 +48,7 @@
 #include <string>
 #include <memory>
 
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/NgpUtils.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 
@@ -90,10 +90,10 @@ struct DeviceBucket {
   KOKKOS_FUNCTION
   unsigned get_num_nodes_per_entity() const { return bucketTopology.num_nodes(); }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ConnectedEntities get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   ConnectedOrdinals get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const;
 
   KOKKOS_FUNCTION
@@ -166,7 +166,7 @@ struct DeviceMeshIndex
 class DeviceMesh : public NgpMeshBase
 {
 public:
-  using MeshExecSpace     = stk::mesh::ExecSpace;
+  using MeshExecSpace     = stk::ngp::ExecSpace;
   using ConnectedNodes    = DeviceBucket::ConnectedNodes;
   using ConnectedEntities = DeviceBucket::ConnectedEntities;
   using ConnectedOrdinals = DeviceBucket::ConnectedOrdinals;
@@ -490,7 +490,7 @@ private:
   void copy_volatile_fast_shared_comm_map_to_device();
 
 
-  using BucketView = Kokkos::View<DeviceBucket*, UVMMemSpace>;
+  using BucketView = Kokkos::View<DeviceBucket*, stk::ngp::UVMMemSpace>;
   const stk::mesh::BulkData *bulk;
   unsigned spatial_dimension;
   unsigned synchronizedCount;
@@ -504,8 +504,8 @@ private:
   HostMeshIndexType hostMeshIndices;
   MeshIndexType deviceMeshIndices;
 
-  Kokkos::View<int*,MemSpace> bucketEntityOffsets[stk::topology::NUM_RANKS];
-  Kokkos::View<int*,MemSpace>::HostMirror hostBucketEntityOffsets[stk::topology::NUM_RANKS];
+  Kokkos::View<int*,stk::ngp::MemSpace> bucketEntityOffsets[stk::topology::NUM_RANKS];
+  Kokkos::View<int*,stk::ngp::MemSpace>::HostMirror hostBucketEntityOffsets[stk::topology::NUM_RANKS];
 
   UnsignedViewType entityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
   UnsignedViewType::HostMirror hostEntityConnectivityOffset[stk::topology::NUM_RANKS][stk::topology::NUM_RANKS];
@@ -526,7 +526,7 @@ private:
   FastSharedCommMapViewType::HostMirror hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];
 };
 
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceBucket::ConnectedEntities
 DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);
@@ -538,7 +538,7 @@ DeviceBucket::get_connected_entities(unsigned offsetIntoBucket, stk::mesh::Entit
   return owningMesh->get_connected_entities(entity_rank(), meshIndex, connectedRank);
 }
 
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 DeviceBucket::ConnectedOrdinals
 DeviceBucket::get_connected_ordinals(unsigned offsetIntoBucket, stk::mesh::EntityRank connectedRank) const {
   NGP_ThrowAssert(connectedRank < stk::topology::NUM_RANKS);

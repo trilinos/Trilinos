@@ -9,6 +9,7 @@
 
 #include <Ionit_Initializer.h>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
@@ -288,7 +289,7 @@ namespace {
   {
 
     // Each active zone must be on a processor
-    for (const auto zone : zones) {
+    for (const auto &zone : zones) {
       if (zone->is_active()) {
         SMART_ASSERT(zone->m_proc >= 0)(zone->m_proc);
       }
@@ -296,7 +297,7 @@ namespace {
 
     // A processor cannot have more than one zone with the same adam zone
     std::set<std::pair<int, int>> proc_adam_map;
-    for (const auto zone : zones) {
+    for (const auto &zone : zones) {
       if (zone->is_active()) {
         auto success = proc_adam_map.insert(std::make_pair(zone->m_adam->m_zone, zone->m_proc));
         SMART_ASSERT(success.second);
@@ -361,7 +362,7 @@ namespace {
     for (const auto &adam_zone : zones) {
       if (adam_zone->m_parent == nullptr) {
         // Iterate children (or self) of the adam_zone.
-        for (const auto zone : zones) {
+        for (const auto &zone : zones) {
           if (zone->is_active() && zone->m_adam == adam_zone) {
             for (auto &zgc : zone->m_zoneConnectivity) {
               if (zgc.is_active()) {
@@ -401,7 +402,7 @@ namespace {
         std::vector<std::pair<int, int>> comms;
 
         // Iterate children (or self) of the adam_zone.
-        for (const auto zone : zones) {
+        for (const auto &zone : zones) {
           if (zone->is_active() && zone->m_adam == adam_zone) {
             for (auto &zgc : zone->m_zoneConnectivity) {
               if (zgc.is_active()) {
@@ -530,7 +531,7 @@ namespace {
 
     // Find maximum ordinal to get width... (makes output look better)
     int max_ordinal = 0;
-    for (const auto zone : zones) {
+    for (const auto &zone : zones) {
       if (zone->is_active()) {
         max_ordinal =
             std::max({max_ordinal, zone->m_ordinal[0], zone->m_ordinal[1], zone->m_ordinal[2]});
@@ -546,7 +547,7 @@ namespace {
 
     // Get max name length for all zones...
     size_t name_len = 0;
-    for (const auto zone : zones) {
+    for (const auto &zone : zones) {
       if (zone->is_active()) {
         auto len = zone->m_name.length();
         if (len > name_len) {
@@ -558,7 +559,7 @@ namespace {
     if (interFace.zone_proc_assignment) {
       // Output Zone->Processor assignment info
       fmt::print("\n");
-      for (const auto adam_zone : zones) {
+      for (const auto &adam_zone : zones) {
         if (adam_zone->m_parent == nullptr) {
           if (adam_zone->m_child1 == nullptr) {
             // Unsplit...
@@ -576,7 +577,7 @@ namespace {
                                    adam_zone->m_ordinal[0], adam_zone->m_ordinal[1],
                                    adam_zone->m_ordinal[2]),
                        adam_zone->work(), work_width);
-            for (const auto zone : zones) {
+            for (const auto &zone : zones) {
               if (zone->is_active() && zone->m_adam == adam_zone) {
                 fmt::print("\t      {:{}}\t  Proc: {:{}}\tOrd: {:^12}    Work: {:{}L}    SurfExp: "
                            "{:0.3}\n",
@@ -593,7 +594,7 @@ namespace {
 
     // Output Processor Work information
     std::vector<size_t> proc_work(proc_count);
-    for (const auto zone : zones) {
+    for (const auto &zone : zones) {
       if (zone->is_active()) {
         proc_work[zone->m_proc] += zone->work();
       }
@@ -637,7 +638,7 @@ namespace {
                        stars);
           }
           if (verbose) {
-            for (const auto zone : zones) {
+            for (const auto &zone : zones) {
               if ((size_t)zone->m_proc == i) {
                 auto pct = int(100.0 * (double)zone->work() / proc_work[i] + 0.5);
                 fmt::print("\t      {:{}} {:{}L}\t{:3}%\t{:^12}\n", zone->m_name, name_len,
@@ -735,7 +736,7 @@ int main(int argc, char *argv[])
 
   unsigned int                              line_ordinal = interFace.ordinal;
   std::vector<Iocgns::StructuredZoneData *> zones;
-  for (auto iblock : blocks) {
+  for (auto &iblock : blocks) {
     size_t ni   = iblock->get_property("ni").get_int();
     size_t nj   = iblock->get_property("nj").get_int();
     size_t nk   = iblock->get_property("nk").get_int();
@@ -778,7 +779,7 @@ int main(int argc, char *argv[])
 
   cleanup(zones);
   fmt::print(stderr,
-             "\nTotal Execution time = {:.5} seconds to decompose for {:L} processors. (decomp: "
+             "\nTotal Execution Time = {:.5} seconds to decompose for {:L} processors. (decomp: "
              "{:.5}, resolve_zgc: {:.5})\n",
              end2 - begin, interFace.proc_count, end1 - begin, end2 - end1);
   if (valid) {

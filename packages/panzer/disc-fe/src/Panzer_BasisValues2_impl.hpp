@@ -52,6 +52,9 @@
 #include "Intrepid2_Orientation.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
+// FIXME: There are some calls in Intrepid2 that require non-const arrays when they should be const - search for PHX::getNonConstDynRankViewFromConstMDField
+#include "Phalanx_GetNonConstDynRankViewFromConstMDField.hpp"
+
 namespace panzer {
 namespace {
 
@@ -94,6 +97,7 @@ applyOrientationsImpl(const int num_cells,
                       const std::vector<Intrepid2::Orientation> & orientations,
                       const typename BasisValues2<Scalar>::IntrepidBasis & basis)
 {
+
   // Move orientations vector to device
   Kokkos::DynRankView<Intrepid2::Orientation,PHX::Device> device_orientations("drv_orts", num_cells);
   auto host_orientations = Kokkos::create_mirror_view(device_orientations);
@@ -598,10 +602,10 @@ template <typename Scalar>
 void
 BasisValues2<Scalar>::
 setup(const Teuchos::RCP<const panzer::BasisIRLayout> & basis,
-      PHX::MDField<Scalar, Cell, IP, Dim>               reference_points,
-      PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian,
-      PHX::MDField<Scalar, Cell, IP>                    point_jacobian_determinant,
-      PHX::MDField<Scalar, Cell, IP, Dim, Dim>          point_jacobian_inverse,
+      PHX::MDField<const Scalar, Cell, IP, Dim>         reference_points,
+      PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian,
+      PHX::MDField<const Scalar, Cell, IP>              point_jacobian_determinant,
+      PHX::MDField<const Scalar, Cell, IP, Dim, Dim>    point_jacobian_inverse,
       const int                                         num_evaluated_cells)
 {
   basis_layout = basis;
@@ -625,10 +629,10 @@ template <typename Scalar>
 void
 BasisValues2<Scalar>::
 setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> &  basis,
-             PHX::MDField<Scalar, IP, Dim>                      reference_points,
-             PHX::MDField<Scalar, Cell, IP, Dim, Dim>           point_jacobian,
-             PHX::MDField<Scalar, Cell, IP>                     point_jacobian_determinant,
-             PHX::MDField<Scalar, Cell, IP, Dim, Dim>           point_jacobian_inverse,
+             PHX::MDField<const Scalar, IP, Dim>                reference_points,
+             PHX::MDField<const Scalar, Cell, IP, Dim, Dim>     point_jacobian,
+             PHX::MDField<const Scalar, Cell, IP>               point_jacobian_determinant,
+             PHX::MDField<const Scalar, Cell, IP, Dim, Dim>     point_jacobian_inverse,
              const int                                          num_evaluated_cells)
 {
   basis_layout = basis;
@@ -651,8 +655,13 @@ setupUniform(const Teuchos::RCP<const panzer::BasisIRLayout> &  basis,
 template <typename Scalar>
 void
 BasisValues2<Scalar>::
-setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations)
+setOrientations(const Teuchos::RCP<const OrientationsInterface> & orientations,
+                const int num_orientations_cells)
 {
+  if(num_orientations_cells < 0)
+    num_orientations_cells_ = num_evaluate_cells_;
+  else
+    num_orientations_cells_ = num_orientations_cells;
   if(orientations == Teuchos::null){
     orientations_applied_ = false;
     orientations_ = Teuchos::null;
@@ -729,7 +738,7 @@ resetArrays()
 template <typename Scalar>
 void
 BasisValues2<Scalar>::
-setWeightedMeasure(PHX::MDField<Scalar, Cell, IP> weighted_measure)
+setWeightedMeasure(PHX::MDField<const Scalar, Cell, IP> weighted_measure)
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(build_weighted,
                               "BasisValues2::setWeightedMeasure : Weighted measure already set. Can only set weighted measure once after setup or setupUniform have beens called.");
@@ -801,7 +810,9 @@ getBasisValuesRef(const bool cache,
   const int num_card  = basis_layout->cardinality();
 
   auto tmp_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("dyn_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(tmp_basis_ref_scalar.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_VALUE);
+  auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+  intrepid_basis->getValues(tmp_basis_ref_scalar.get_view(), cubature_points_uniform_ref, Intrepid2::OPERATOR_VALUE);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -834,7 +845,9 @@ getVectorBasisValuesRef(const bool cache,
   const int num_dim   = basis_layout->dimension();
 
   auto tmp_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(tmp_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
+  auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+  intrepid_basis->getValues(tmp_basis_ref_vector.get_view(),cubature_points_uniform_ref,Intrepid2::OPERATOR_VALUE);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -867,7 +880,9 @@ getGradBasisValuesRef(const bool cache,
   const int num_dim   = basis_layout->dimension();
 
   auto tmp_grad_basis_ref = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(tmp_grad_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_GRAD);
+  auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+  intrepid_basis->getValues(tmp_grad_basis_ref.get_view(), cubature_points_uniform_ref, Intrepid2::OPERATOR_GRAD);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -900,7 +915,9 @@ getCurl2DVectorBasisRef(const bool cache,
   const int num_card  = basis_layout->cardinality();
 
   auto tmp_curl_basis_ref_scalar = af.buildStaticArray<Scalar,BASIS,IP>("dyn_curl_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(tmp_curl_basis_ref_scalar.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
+  auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+  intrepid_basis->getValues(tmp_curl_basis_ref_scalar.get_view(), cubature_points_uniform_ref, Intrepid2::OPERATOR_CURL);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -934,7 +951,9 @@ getCurlVectorBasisRef(const bool cache,
   const int num_dim   = basis_layout->dimension();
 
   auto tmp_curl_basis_ref_vector = af.buildStaticArray<Scalar,BASIS,IP,Dim>("dyn_curl_basis_ref_vector",num_card,num_quad,num_dim);
-  intrepid_basis->getValues(tmp_curl_basis_ref_vector.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_CURL);
+  auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+  intrepid_basis->getValues(tmp_curl_basis_ref_vector.get_view(), cubature_points_uniform_ref, Intrepid2::OPERATOR_CURL);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -966,7 +985,9 @@ getDivVectorBasisRef(const bool cache,
   const int num_card  = basis_layout->cardinality();
 
   auto tmp_div_basis_ref = af.buildStaticArray<Scalar,BASIS,IP>("dyn_div_basis_ref_scalar",num_card,num_quad);
-  intrepid_basis->getValues(tmp_div_basis_ref.get_view(), cubature_points_uniform_ref_.get_view(), Intrepid2::OPERATOR_DIV);
+  auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+  intrepid_basis->getValues(tmp_div_basis_ref.get_view(), cubature_points_uniform_ref, Intrepid2::OPERATOR_DIV);
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -998,13 +1019,12 @@ getBasisCoordinates(const bool cache,
   auto tmp_basis_coordinates = af.buildStaticArray<Scalar, Cell, BASIS, IP>("basis_coordinates",  num_cells_, num_card, num_dim);
   auto s_aux = Kokkos::subview(tmp_basis_coordinates.get_view(),cell_range,Kokkos::ALL(),Kokkos::ALL());
 
-  // Some kind of type bug in Intrepid's mapToPhysicalFrame call? Can't let bcr be const
-  auto bcr = getBasisCoordinatesRef(false);
-  Kokkos::DynRankView<double> bcr_copy("nonconst_bcr",bcr.extent(0),bcr.extent(1));
-  Kokkos::deep_copy(bcr_copy,bcr.get_view());
+  // Don't forget that since we are not caching this, we have to make sure the managed view remains alive while we use the non-const wrapper
+  auto const_bcr = getBasisCoordinatesRef(false);
+  auto bcr = PHX::getNonConstDynRankViewFromConstMDField(const_bcr);
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;
-  cell_tools.mapToPhysicalFrame(s_aux, bcr_copy, s_vertex_coordinates, intrepid_basis->getBaseCellTopology());
+  cell_tools.mapToPhysicalFrame(s_aux, bcr, s_vertex_coordinates, intrepid_basis->getBaseCellTopology());
   PHX::Device().fence();
 
   // Store for later if cache is enabled
@@ -1075,8 +1095,10 @@ getBasisValues(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
+      auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
       // Apply a single reference representation to all cells
-      intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
+      intrepid_basis->getValues(cell_basis_ref_scalar.get_view(),cubature_points_uniform_ref,Intrepid2::OPERATOR_VALUE);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
@@ -1160,7 +1182,7 @@ getBasisValues(const bool weighted,
     // fix the logic.
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(basis_scalar);
@@ -1233,8 +1255,10 @@ getVectorBasisValues(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
+      auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
       // Apply a single reference representation to all cells
-      intrepid_basis->getValues(cell_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_VALUE);
+      intrepid_basis->getValues(cell_basis_ref_vector.get_view(),cubature_points_uniform_ref,Intrepid2::OPERATOR_VALUE);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1341,7 +1365,7 @@ getVectorBasisValues(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(basis_vector);
@@ -1408,8 +1432,10 @@ getGradBasisValues(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
+      auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
       // Apply a single reference representation to all cells
-      intrepid_basis->getValues(cell_grad_basis_ref.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_GRAD);
+      intrepid_basis->getValues(cell_grad_basis_ref.get_view(),cubature_points_uniform_ref,Intrepid2::OPERATOR_GRAD);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_grad_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1486,7 +1512,7 @@ getGradBasisValues(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_grad_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_grad_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(grad_basis);
@@ -1554,7 +1580,9 @@ getCurl2DVectorBasis(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
-      intrepid_basis->getValues(cell_curl_basis_ref_scalar.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_CURL);
+      auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+      intrepid_basis->getValues(cell_curl_basis_ref_scalar.get_view(),cubature_points_uniform_ref,Intrepid2::OPERATOR_CURL);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_curl_basis_scalar.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
@@ -1629,7 +1657,7 @@ getCurl2DVectorBasis(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_curl_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_curl_basis_scalar.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(curl_basis_scalar);
@@ -1697,7 +1725,9 @@ getCurlVectorBasis(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
-      intrepid_basis->getValues(cell_curl_basis_ref_vector.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_CURL);
+      auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+      intrepid_basis->getValues(cell_curl_basis_ref_vector.get_view(),cubature_points_uniform_ref,Intrepid2::OPERATOR_CURL);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_curl_basis_vector.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -1775,7 +1805,7 @@ getCurlVectorBasis(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_curl_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_curl_basis_vector.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(curl_basis_vector);
@@ -1842,7 +1872,9 @@ getDivVectorBasis(const bool weighted,
 
     if(hasUniformReferenceSpace()){
 
-      intrepid_basis->getValues(cell_div_basis_ref.get_view(),cubature_points_uniform_ref_.get_view(),Intrepid2::OPERATOR_DIV);
+      auto cubature_points_uniform_ref = PHX::getNonConstDynRankViewFromConstMDField(cubature_points_uniform_ref_);
+
+      intrepid_basis->getValues(cell_div_basis_ref.get_view(),cubature_points_uniform_ref,Intrepid2::OPERATOR_DIV);
 
       const std::pair<int,int> cell_range(0,num_evaluate_cells_);
       auto s_aux = Kokkos::subview(tmp_div_basis.get_view(), cell_range, Kokkos::ALL(), Kokkos::ALL());
@@ -1898,8 +1930,9 @@ getDivVectorBasis(const bool weighted,
         Kokkos::deep_copy(cell_div_basis_ref_host,cell_div_basis_ref.get_view());
 
         using fst=Intrepid2::FunctionSpaceTools<PHX::Device::execution_space>;
-        fst::HDIVtransformDIV(cell_div_basis_host,cell_jac_det_host,cell_div_basis_ref_host);
-        // PHX::Device().fence();
+        fst::HDIVtransformDIV(cell_div_basis.get_view(),cell_jac_det.get_view(),cell_div_basis_ref.get_view());
+	Kokkos::deep_copy(cell_div_basis_host, cell_div_basis.get_static_view());
+
 
         // Copy cell quantity back into main array
         for(int b=0; b<num_card; ++b)
@@ -1910,7 +1943,7 @@ getDivVectorBasis(const bool weighted,
     }
 
     if(orientations_ != Teuchos::null)
-      applyOrientationsImpl<Scalar>(num_evaluate_cells_, tmp_div_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
+      applyOrientationsImpl<Scalar>(num_orientations_cells_, tmp_div_basis.get_view(), *orientations_->getOrientations(), *intrepid_basis);
 
     // Store for later if cache is enabled
     PANZER_CACHE_DATA(div_basis);

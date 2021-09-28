@@ -60,23 +60,23 @@ struct DataTypeKey
     INVALID_TYPE
   };
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static bool is_valid_data_type(data_t dataFieldType)
   {
     return dataFieldType >= UNSIGNED_INTEGER && dataFieldType <= DOUBLE;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   DataTypeKey()
     : m_value(INVALID)
   {}
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   DataTypeKey(uint32_t argKey)
     : m_value(static_cast<key_t>(argKey))
   {}
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   DataTypeKey(data_t argType, unsigned argLength)
     : m_value(static_cast<key_t>(static_cast<uint32_t>(argType) << RANK_SHIFT | argLength) )
   {
@@ -84,16 +84,16 @@ struct DataTypeKey
     NGP_ThrowRequireMsg(argLength <= MAX_LENGTH, "Error: given an out of range length value");
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   unsigned get_data_length() const { return m_value & TYPE_MASK; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   data_t get_data_type() const { return static_cast<data_t>(m_value >> RANK_SHIFT); }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   bool is_valid() const { return m_value != INVALID; }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   operator key_t() const { return m_value; }
 
   key_t m_value;

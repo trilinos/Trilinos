@@ -143,8 +143,8 @@ EvaluatorTpetraHeq<Scalar, LO, GO, Node>::create_W_prec() const
 {
   // Create the CrsMatrix
   typedef Tpetra::CrsGraph<LO, GO, Node> tpetra_graph;
-  typedef typename tpetra_graph::local_graph_type::row_map_type::non_const_type row_map_type;
-  typedef typename tpetra_graph::local_graph_type::entries_type::non_const_type view_type;
+  typedef typename tpetra_graph::local_graph_device_type::row_map_type::non_const_type row_map_type;
+  typedef typename tpetra_graph::local_graph_device_type::entries_type::non_const_type view_type;
   const std::size_t numMyElements = xMap_->getNodeNumElements();
   row_map_type offsets("row offsets", numMyElements+1);
   view_type indices("column indices", numMyElements);
@@ -251,6 +251,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     typedef typename tpetra_vec::dual_view_type::t_dev view_type;
     typedef typename tpetra_vec::execution_space execution_space;
     typedef Kokkos::TeamPolicy<execution_space> team_policy;
+
     const int myRank = comm_->getRank();
     const GO myMinGID = xMap_->getMinGlobalIndex();
     {
@@ -275,8 +276,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       if (comm_->getSize() > 1) {
         localSum->reduce();
         if (myRank == proc) {
-          view_type source = localSum->template getLocalView<execution_space>();
-          view_type target = integralOp_->template getLocalView<execution_space>();
+          auto source = localSum->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto target = integralOp_->getLocalViewDevice(Tpetra::Access::ReadWrite);
           Kokkos::deep_copy(target, source);
         }
       }
@@ -289,6 +290,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     const std::size_t numMyElements = xMap_->getNodeNumElements();
     if (fill_f) {
       Teuchos::TimeMonitor timer(*residTimer_);
+
       ResidualEvaluatorFunctor<tpetra_vec> functor(*f, *u, *integralOp_);
       Kokkos::parallel_for("residual evaluation", numMyElements, functor);
       Kokkos::fence();
@@ -389,6 +391,7 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
   typedef typename tpetra_vec::dual_view_type::t_dev view_type;
   typedef typename tpetra_vec::execution_space execution_space;
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
+
   Teuchos::RCP<const Teuchos::Comm<int> > comm = map_->getComm();
   const int myRank = comm->getRank();
   const GO myMinGID = map_->getMinGlobalIndex();
@@ -417,8 +420,8 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
       if (comm->getSize() > 1) {
         localResult->reduce();
         if (myRank == proc) {
-          view_type source = localResult->template getLocalView<execution_space>();
-          view_type target = integralOpX_->template getLocalView<execution_space>();
+          auto source = localResult->getLocalViewDevice(Tpetra::Access::ReadOnly);
+          auto target = integralOpX_->getLocalViewDevice(Tpetra::Access::ReadWrite);
           Kokkos::deep_copy(target, source);
         }
       }
@@ -426,7 +429,7 @@ apply(const Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
 
     // Compute the Jacobian-vector product
     JacobianEvaluatorFunctor<tpetra_vec>
-      functor(*Y.getVector(col), *X.getVector(col), *integralOp_, *integralOpX_, alpha, beta, omega_);
+      functor(*Y.getVectorNonConst(col), *X.getVector(col), *integralOp_, *integralOpX_, alpha, beta, omega_);
     Kokkos::parallel_for("jacobian evaluation", numMyElements, functor);
 
   }
