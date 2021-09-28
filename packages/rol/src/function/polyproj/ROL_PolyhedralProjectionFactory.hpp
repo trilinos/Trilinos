@@ -49,6 +49,7 @@
 #include "ROL_DykstraProjection.hpp"
 #include "ROL_SemismoothNewtonProjection.hpp"
 #include "ROL_RiddersProjection.hpp"
+#include "ROL_BrentsProjection.hpp"
 
 namespace ROL {
 
@@ -65,6 +66,7 @@ enum EPolyProjAlgo{
   PPA_DYKSTRA,
   PPA_NEWTON,
   PPA_RIDDERS,
+  PPA_BRENTS,
   PPA_LAST
 };
 
@@ -75,6 +77,7 @@ inline std::string EPolyProjAlgoToString(EPolyProjAlgo alg) {
     case PPA_DYKSTRA:     retString = "Dysktra";           break;
     case PPA_NEWTON:      retString = "Semismooth Newton"; break;
     case PPA_RIDDERS:     retString = "Ridders";           break;
+    case PPA_BRENTS:      retString = "Brents";            break;
     case PPA_LAST:        retString = "Last Type (Dummy)"; break;
     default:              retString = "INVALID EPolyProjAlgo";
   }
@@ -91,6 +94,7 @@ inline int isValidPolyProjAlgo(EPolyProjAlgo alg){
           (alg == PPA_DYKSTRA)     ||
           (alg == PPA_NEWTON)      ||
           (alg == PPA_RIDDERS)     ||
+          (alg == PPA_BRENTS)      ||
           (alg == PPA_LAST)
         );
 }
@@ -139,6 +143,7 @@ inline Ptr<PolyhedralProjection<Real>> PolyhedralProjectionFactory(const Vector<
     case PPA_DYKSTRA:     return makePtr<DykstraProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);          break;
     case PPA_NEWTON:      return makePtr<SemismoothNewtonProjection<Real>>(xprim,xdual,bnd,con,mul,res,list); break;
     case PPA_RIDDERS:     return makePtr<RiddersProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);          break;
+    case PPA_BRENTS:      return makePtr<BrentsProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);          break;
     default:              return nullPtr;
   }
 }
