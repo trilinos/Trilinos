@@ -274,14 +274,13 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_Householder, BasicSolve)
           file.open("householder_solution.txt",std::ios::trunc);
         else
           file.open("householder_solution.txt",std::ios::app);
-        
+
         const auto& final_x = solver->getSolutionGroup().getX();
         const auto& final_x_nox = *(dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(final_x).getXVec());
         const auto& final_x_thyra = dynamic_cast<const NOX::Thyra::Vector&>(final_x_nox).getThyraVector();
         const auto& final_x_tpetra_const = *(dynamic_cast<const ::Thyra::TpetraVector<NOX::Scalar,NOX::LocalOrdinal,NOX::GlobalOrdinal,NOX::NodeType>&>(final_x_thyra).getConstTpetraVector());
         auto& final_x_tpetra = const_cast<::Tpetra::Vector<NOX::Scalar,NOX::LocalOrdinal,NOX::GlobalOrdinal,NOX::NodeType>&>(final_x_tpetra_const);
-        final_x_tpetra.sync_host();
-        const auto& final_x_view = final_x_tpetra.getLocalViewHost();
+        const auto& final_x_view = final_x_tpetra.getLocalViewHost(Tpetra::Access::ReadOnly);
         for (size_t j=0; j < final_x_view.extent(0); ++j)
           file << final_x_view(j,0) << std::endl;
       }

@@ -2,25 +2,25 @@
 # A) Package-specific configuration options
 #
 
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+tribits_configure_file(${PACKAGE_NAME}_config.h)
 
 #
 # B) Define the header and source files (and include directories)
 #
 
-SET(HEADERS "")
-SET(SOURCES "")
+set(HEADERS "")
+set(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-APPEND_SET(HEADERS
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+append_set(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-APPEND_SET(HEADERS
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+append_set(HEADERS
   SimpleCxx_HelloWorld.hpp
   )
-APPEND_SET(SOURCES
+append_set(SOURCES
   SimpleCxx_HelloWorld.cpp
   )
 
@@ -28,7 +28,7 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-TRIBITS_ADD_LIBRARY(
+tribits_add_library(
   simplecxx
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
@@ -38,7 +38,7 @@ TRIBITS_ADD_LIBRARY(
 # D) Define an executable that gets installed
 #
 
-TRIBITS_ADD_EXECUTABLE(simplecxx-helloworld  NOEXEPREFIX  NOEXESUFFIX
+tribits_add_executable(simplecxx-helloworld  NOEXEPREFIX  NOEXESUFFIX
   SOURCES  SimpleCxx_HelloWorld_Prog.cpp
   INSTALLABLE
   )

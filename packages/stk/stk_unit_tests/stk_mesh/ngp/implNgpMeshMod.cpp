@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <stk_mesh/base/NgpSpaces.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/NgpDynamicMesh.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
@@ -14,7 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include "NgpUnitTestUtils.hpp"
 
-typedef Kokkos::DualView<int*, Kokkos::LayoutRight, stk::mesh::ExecSpace> IntViewType;
+typedef Kokkos::DualView<int*, Kokkos::LayoutRight, stk::ngp::ExecSpace> IntViewType;
 
 class NgpMeshModImpl : public stk::unit_test_util::MeshFixture
 {

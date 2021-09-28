@@ -78,6 +78,31 @@ Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
 {}
 
 
+
+
+template <class MatrixType>
+Hiptmair<MatrixType>::
+Hiptmair (const Teuchos::RCP<const row_matrix_type>& A):
+  A_ (A),
+  PtAP_ (),
+  P_ (),
+  // Default values
+  precType1_ ("CHEBYSHEV"),
+  precType2_ ("CHEBYSHEV"),
+  preOrPost_ ("both"),
+  ZeroStartingSolution_ (true),
+  // General
+  IsInitialized_ (false),
+  IsComputed_ (false),
+  NumInitialize_ (0),
+  NumCompute_ (0),
+  NumApply_ (0),
+  InitializeTime_ (0.0),
+  ComputeTime_ (0.0),
+  ApplyTime_ (0.0)
+{}
+
+
 template <class MatrixType>
 Hiptmair<MatrixType>::~Hiptmair() {}
 
@@ -85,6 +110,7 @@ template <class MatrixType>
 void Hiptmair<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
 {
   using Teuchos::as;
+  using Teuchos::RCP;
   using Teuchos::ParameterList;
   using Teuchos::Exceptions::InvalidParameterName;
   using Teuchos::Exceptions::InvalidParameterType;
@@ -110,6 +136,14 @@ void Hiptmair<MatrixType>::setParameters (const Teuchos::ParameterList& plist)
   preOrPost = params.get("hiptmair: pre or post",     preOrPost);
   zeroStartingSolution = params.get("hiptmair: zero starting solution",
                                     zeroStartingSolution);
+
+  // Grab the matrices off of the parameter list if we need them
+  // This will intentionally throw if they're not there and we need them
+  if(PtAP_.is_null()) 
+    PtAP_ = params.get<RCP<row_matrix_type> >("PtAP");
+  if(P_.is_null()) 
+    P_ = params.get<RCP<row_matrix_type> >("P");
+
 
   // "Commit" the new values to the instance data.
   precType1_ = precType1;

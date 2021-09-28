@@ -1,16 +1,16 @@
 #
-# @FUNCTION: TRIBITS_STRIP_QUOTES_FROM_STR()
+# @FUNCTION: tribits_strip_quotes_from_str()
 #
 # Remove one set of quotes from the outside of a string if they exist.
 #
 # Usage::
 #
-#   TRIBITS_STRIP_QUOTES_FROM_STR(<str_in> <str_var_out>)
+#   tribits_strip_quotes_from_str(<str_in> <str_var_out>)
 #
 # If ``<str_in>`` does not contain a quote char ``'"'`` as the first and last
 # char, then the original ``<str_in>`` is returned in ``<str_var_out>``.
 #
-FUNCTION(TRIBITS_STRIP_QUOTES_FROM_STR str_in str_var_out)
+function(tribits_strip_quotes_from_str str_in str_var_out)
   #print_var(str_in)
   string(LENGTH "${str_in}" str_len)
   #print_var(str_len)

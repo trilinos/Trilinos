@@ -264,11 +264,10 @@ public:
   pack (const Teuchos::ArrayView<const LO>& exportLIDs,
         Teuchos::Array<GO>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-        size_t& constantNumPackets,
-        Tpetra::Distributor& distor) const override
+        size_t& constantNumPackets) const override
   {
     return G_->pack (exportLIDs, exports, numPacketsPerLID,
-                     constantNumPackets, distor);
+                     constantNumPackets);
   }
 
 private:
@@ -502,11 +501,10 @@ public:
   pack (const Teuchos::ArrayView<const LO>& exportLIDs,
         Teuchos::Array<char>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-        size_t& constantNumPackets,
-        Tpetra::Distributor& distor) const override
+        size_t& constantNumPackets) const override
   {
     return A_->pack (exportLIDs, exports, numPacketsPerLID,
-                     constantNumPackets, distor);
+                     constantNumPackets);
   }
 
   void

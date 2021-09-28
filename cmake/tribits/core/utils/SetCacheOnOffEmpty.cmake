@@ -39,26 +39,26 @@
 
 
 #
-# @FUNCTION: SET_CACHE_ON_OFF_EMPTY()
+# @FUNCTION: set_cache_on_off_empty()
 #
 # Usage::
 #
-#   SET_CACHE_ON_OFF_EMPTY(<varName> <initialVal> "<docString>" [FORCE])
+#   set_cache_on_off_empty(<varName> <initialVal> "<docString>" [FORCE])
 #
 # Sets a special string cache variable with possible values "", "ON", or
 # "OFF".  This results in a nice drop-down box in the CMake cache manipulation
 # GUIs.
 #
-FUNCTION(SET_CACHE_ON_OFF_EMPTY VAR INITIAL_VALUE DOCSTR)
-  SET(FORCE_ARG)
-  FOREACH(ARG ${ARGN})
-    IF (ARG STREQUAL FORCE)
-      SET(FORCE_ARG FORCE)
-    ELSE()
-      MESSAGE(FATAL_ERROR "SET_CACHE_ON_OFF_EMPTY(...): Error, last arg '${ARG}' is"
+function(set_cache_on_off_empty VAR INITIAL_VALUE DOCSTR)
+  set(FORCE_ARG)
+  foreach(ARG ${ARGN})
+    if (ARG STREQUAL FORCE)
+      set(FORCE_ARG FORCE)
+    else()
+      message(FATAL_ERROR "set_cache_on_off_empty(...): Error, last arg '${ARG}' is"
         "invalid!  Must be 'FORCE' or nothing." )
-    ENDIF()
-  ENDFOREACH()
-  SET( ${VAR} "${INITIAL_VALUE}" CACHE STRING "${DOCSTR}" ${FORCE_ARG})
-  SET_PROPERTY(CACHE ${VAR} PROPERTY STRINGS "" "ON" "OFF")
-ENDFUNCTION()
+    endif()
+  endforeach()
+  set( ${VAR} "${INITIAL_VALUE}" CACHE STRING "${DOCSTR}" ${FORCE_ARG})
+  set_property(CACHE ${VAR} PROPERTY STRINGS "" "ON" "OFF")
+endfunction()

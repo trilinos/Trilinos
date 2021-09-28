@@ -315,12 +315,6 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute(bool reuse=false);
 
-    //! Detect Dirichlet boundary conditions
-    void detectBoundaryConditionsSM();
-
-    //! Remove explicit zeros
-    void removeExplicitZeros();
-
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 
@@ -408,15 +402,6 @@ namespace MueLu {
     //! get a (synced) timer
     Teuchos::RCP<Teuchos::TimeMonitor> getTimer(std::string name, RCP<const Teuchos::Comm<int> > comm=Teuchos::null) const;
 
-    //! set parameters
-    void setMatvecParams(Matrix& A, RCP<ParameterList> matvecParams) {
-      RCP<const Import> xpImporter = A.getCrsGraph()->getImporter();
-      if (!xpImporter.is_null())
-        xpImporter->setDistributorParameters(matvecParams);
-      RCP<const Export> xpExporter = A.getCrsGraph()->getExporter();
-      if (!xpExporter.is_null())
-        xpExporter->setDistributorParameters(matvecParams);
-    }
 
     //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
@@ -462,21 +447,6 @@ namespace MueLu {
     //! Temporary memory
     mutable Teuchos::RCP<MultiVector> P11res_, P11x_, P11resSubComm_, P11xSubComm_, D0res_, D0x_, D0resSubComm_, D0xSubComm_, residual_, P11resTmp_, D0resTmp_, D0TR11Tmp_;
   };
-
-
-#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
-  template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-  struct StratimikosWrapper {
-    static RCP<Thyra::PreconditionerBase<Scalar> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
-                                                                                     RCP<ParameterList> params);
-  };
-
-  template<class LocalOrdinal,class GlobalOrdinal,class Node>
-  struct StratimikosWrapper<double,LocalOrdinal,GlobalOrdinal,Node> {
-    static RCP<Thyra::PreconditionerBase<double> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<double,LocalOrdinal,GlobalOrdinal,Node> > A,
-                                                                                     RCP<ParameterList> params);
-  };
-#endif
 
 
 } // namespace

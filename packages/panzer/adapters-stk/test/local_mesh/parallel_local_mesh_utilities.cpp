@@ -104,6 +104,8 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
 
     {
       const auto & block = mesh_info->element_blocks.at("eblock-0");
+      auto global_cells_h = Kokkos::create_mirror_view(block.global_cells);
+      Kokkos::deep_copy(global_cells_h, block.global_cells);
 
       out << "Element Block eblock-0" << std::endl;
 
@@ -111,15 +113,17 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
       TEST_EQUALITY(block.num_owned_cells, 2);
       TEST_EQUALITY(block.num_ghstd_cells, 1);
       TEST_EQUALITY(block.num_virtual_cells, 1);
-      TEST_EQUALITY((int) block.global_cells(0), 0);
-      TEST_EQUALITY((int) block.global_cells(1), 1);
-      TEST_EQUALITY((int) block.global_cells(2), 2);
-      TEST_EQUALITY((int) block.global_cells(3), 6);
+      TEST_EQUALITY((int) global_cells_h(0), 0);
+      TEST_EQUALITY((int) global_cells_h(1), 1);
+      TEST_EQUALITY((int) global_cells_h(2), 2);
+      TEST_EQUALITY((int) global_cells_h(3), 6);
       TEST_ASSERT(block.has_connectivity);
     }
 
     {
       const auto & block = mesh_info->element_blocks.at("eblock-1");
+      auto global_cells_h = Kokkos::create_mirror_view(block.global_cells);
+      Kokkos::deep_copy(global_cells_h, block.global_cells);
 
       out << "Element Block eblock-1" << std::endl;
 
@@ -127,15 +131,17 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
       TEST_EQUALITY(block.num_owned_cells, 2);
       TEST_EQUALITY(block.num_ghstd_cells, 2);
       TEST_EQUALITY(block.num_virtual_cells, 0);
-      TEST_EQUALITY((int) block.global_cells(0), 3);
-      TEST_EQUALITY((int) block.global_cells(1), 4);
-      TEST_EQUALITY((int) block.global_cells(2), 5);
-      TEST_EQUALITY((int) block.global_cells(3), 2);
+      TEST_EQUALITY((int) global_cells_h(0), 3);
+      TEST_EQUALITY((int) global_cells_h(1), 4);
+      TEST_EQUALITY((int) global_cells_h(2), 5);
+      TEST_EQUALITY((int) global_cells_h(3), 2);
       TEST_ASSERT(block.has_connectivity);
     }
 
     {
       const auto & block = mesh_info->sidesets.at("eblock-0").at("left");
+      auto global_cells_h = Kokkos::create_mirror_view(block.global_cells);
+      Kokkos::deep_copy(global_cells_h, block.global_cells);
 
       out << "Sideset eblock-0 left" << std::endl;
 
@@ -143,8 +149,8 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
       TEST_EQUALITY(block.num_owned_cells, 1);
       TEST_EQUALITY(block.num_ghstd_cells, 0);
       TEST_EQUALITY(block.num_virtual_cells, 1);
-      TEST_EQUALITY((int) block.global_cells(0), 0);
-      TEST_EQUALITY((int) block.global_cells(1), 6);
+      TEST_EQUALITY((int) global_cells_h(0), 0);
+      TEST_EQUALITY((int) global_cells_h(1), 6);
       TEST_ASSERT(block.has_connectivity);
     }
 
@@ -153,6 +159,8 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
   } else {
     {
       const auto & block = mesh_info->element_blocks.at("eblock-0");
+      auto global_cells_h = Kokkos::create_mirror_view(block.global_cells);
+      Kokkos::deep_copy(global_cells_h, block.global_cells);
 
       out << "Element Block eblock-0" << std::endl;
 
@@ -160,14 +168,16 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
       TEST_EQUALITY(block.num_owned_cells, 1);
       TEST_EQUALITY(block.num_ghstd_cells, 2);
       TEST_EQUALITY(block.num_virtual_cells, 0);
-      TEST_EQUALITY((int) block.global_cells(0), 2);
-      TEST_EQUALITY((int) block.global_cells(1), 3);
-      TEST_EQUALITY((int) block.global_cells(2), 1);
+      TEST_EQUALITY((int) global_cells_h(0), 2);
+      TEST_EQUALITY((int) global_cells_h(1), 3);
+      TEST_EQUALITY((int) global_cells_h(2), 1);
       TEST_ASSERT(block.has_connectivity);
     }
 
     {
       const auto & block = mesh_info->element_blocks.at("eblock-1");
+      auto global_cells_h = Kokkos::create_mirror_view(block.global_cells);
+      Kokkos::deep_copy(global_cells_h, block.global_cells);
 
       out << "Element Block eblock-1" << std::endl;
 
@@ -175,9 +185,9 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
       TEST_EQUALITY(block.num_owned_cells, 1);
       TEST_EQUALITY(block.num_ghstd_cells, 1);
       TEST_EQUALITY(block.num_virtual_cells, 1);
-      TEST_EQUALITY((int) block.global_cells(0), 5);
-      TEST_EQUALITY((int) block.global_cells(1), 4);
-      TEST_EQUALITY((int) block.global_cells(2), 7);
+      TEST_EQUALITY((int) global_cells_h(0), 5);
+      TEST_EQUALITY((int) global_cells_h(1), 4);
+      TEST_EQUALITY((int) global_cells_h(2), 7);
       TEST_ASSERT(block.has_connectivity);
     }
 
@@ -185,6 +195,8 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
 
     {
       const auto & block = mesh_info->sidesets.at("eblock-1").at("right");
+      auto global_cells_h = Kokkos::create_mirror_view(block.global_cells);
+      Kokkos::deep_copy(global_cells_h, block.global_cells);
 
       out << "Sideset eblock-1 right" << std::endl;
 
@@ -192,8 +204,8 @@ TEUCHOS_UNIT_TEST(parallelLocalMeshUtilities, 1D_mesh)
       TEST_EQUALITY(block.num_owned_cells, 1);
       TEST_EQUALITY(block.num_ghstd_cells, 0);
       TEST_EQUALITY(block.num_virtual_cells, 1);
-      TEST_EQUALITY((int) block.global_cells(0), 5);
-      TEST_EQUALITY((int) block.global_cells(1), 7);
+      TEST_EQUALITY((int) global_cells_h(0), 5);
+      TEST_EQUALITY((int) global_cells_h(1), 7);
       TEST_ASSERT(block.has_connectivity);
     }
   }

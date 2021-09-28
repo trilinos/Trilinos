@@ -33,7 +33,7 @@
  * \param    num_attr_this_blk       number of attributes
  * \param    define_maps             if != 0, write maps, else don't
  */
-int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *elem_type[],
+int ex_put_concat_elem_block(int exoid, const void_int *elem_blk_id, char *const elem_type[],
                              const void_int *num_elem_this_blk, const void_int *num_nodes_per_elem,
                              const void_int *num_attr_this_blk, int define_maps)
 {

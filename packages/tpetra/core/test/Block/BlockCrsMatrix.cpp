@@ -2033,6 +2033,269 @@ namespace {
   }
 
 
+
+
+  //
+  // Test conversion from BlockCrsMatrix to CrsMatrix.  This test is valid only on
+  // 1, 2, or 4 processes.  (See note below.)
+  //
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockCrsMatrix, block2point, ST, LO, GO, Node )
+  {
+    typedef Tpetra::BlockCrsMatrix<ST, LO, GO, Node> block_matrix_type;
+    typedef Tpetra::CrsMatrix<ST, LO, GO, Node>                    crs_matrix_type;
+    typedef Tpetra::Import<LO, GO, Node>                           import_type;
+    typedef Tpetra::MultiVector<ST, LO, GO, Node>                  mv_type;
+    typedef Tpetra::Map<LO, GO, Node>                              map_type;
+    typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>          reader_type;
+    typedef Teuchos::ScalarTraits<ST>                              STS;
+    typedef typename STS::magnitudeType                            magnitude_type;
+    ST zero = STS::zero(), one = STS::one();
+
+    constexpr bool printToCerr = true;
+
+    Teuchos::OSTab tab0 (out);
+    if (printToCerr) {
+      std::cerr << "Test conversion from (point) CrsMatrix to BlockCrsMatrix" << endl;
+    }
+    else {
+      out << "Test conversion from (point) CrsMatrix to BlockCrsMatrix" << endl;
+    }
+    Teuchos::OSTab tab1 (out);
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    std::ostringstream errStrm;
+
+    RCP<const Comm<int> > comm = getDefaultComm();
+    std::string matrixFile;
+    if (STS::isComplex) {
+      matrixFile = "blockA-complex.mm";
+    }
+    else {
+      matrixFile = "blockA.mm";
+    }
+    if (printToCerr) {
+      std::cerr << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    }
+    else {
+      out << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    }
+    RCP<crs_matrix_type> pointMatrix;
+    try {
+      pointMatrix = reader_type::readSparseFile(matrixFile, comm);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": readSparseFile threw an "
+        "std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": readSparseFile threw an "
+        "exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
+      success = false;
+      return;
+    }
+
+    if (printToCerr) {
+      std::cerr << "Migrate input CrsMatrix to final parallel distribution" << endl;
+    }
+    else {
+      out << "Migrate input CrsMatrix to final parallel distribution" << endl;
+    }
+
+    // Migrate pointMatrix to final parallel distribution.
+    // Note that the input matrix has 12 point rows, with block size 3.  Point rows associated with a mesh node
+    // must stay together.  This means the serial matrix can only be migrated to 1,2 or 4 processes.  3 processes
+    // would split up dofs associate with a mesh node.
+    Tpetra::global_size_t numGlobElts = pointMatrix->getRowMap()->getGlobalNumElements();
+    const GO indexBase = 0;
+    RCP<const map_type> parPointMap =
+      rcp (new map_type (numGlobElts, indexBase, comm));
+    RCP<crs_matrix_type> parPointMatrix =
+      rcp (new crs_matrix_type (parPointMap, pointMatrix->getGlobalMaxNumRowEntries ()));
+    RCP<const import_type> importer =
+      rcp (new import_type (pointMatrix->getRowMap(), parPointMap));
+
+    try {
+      parPointMatrix->doImport(*pointMatrix, *importer, Tpetra::INSERT);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": doImport (point matrix to "
+        "point matrix) threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": doImport (point matrix to "
+        "point matrix) threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
+      success = false;
+      return;
+    }
+
+    parPointMatrix->fillComplete();
+    pointMatrix.swap(parPointMatrix);
+
+    if (printToCerr) {
+      std::cerr << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+    }
+    else {
+      out << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+    }
+
+    int blockSize = 3;
+    RCP<block_matrix_type> blockMatrix;
+    try {
+      blockMatrix = Tpetra::convertToBlockCrsMatrix(*pointMatrix,blockSize);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": convertToBlockCrsMatrix "
+        "threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": convertToBlockCrsMatrix "
+        "threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      gathervPrint (out, errStrm.str (), *comm);
+      success = false;
+      return;
+    }
+
+
+    // Now convert back
+
+    RCP<crs_matrix_type> newPointMatrix;
+    newPointMatrix = Tpetra::convertToCrsMatrix(*blockMatrix);
+
+
+    //normalized pseudo-random vector
+    RCP<mv_type> randVec = rcp(new mv_type(pointMatrix->getDomainMap(),1));
+    randVec->randomize();
+    Teuchos::Array<magnitude_type> normVec1(1);
+    randVec->norm2(normVec1);
+    randVec->scale(1.0/normVec1[0]);
+
+    RCP<mv_type> resultVec1 = rcp(new mv_type(pointMatrix->getRangeMap(),1));
+    if (printToCerr) {
+      std::cerr << "CrsMatrix::apply" << endl;
+    }
+    else {
+      out << "CrsMatrix::apply" << endl;
+    }
+    try {
+      pointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": CrsMatrix::apply "
+        "threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": CrsMatrix::apply "
+        "threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
+      success = false;
+      return;
+    }
+    if (printToCerr) {
+      std::cerr << "Compute norm of result" << endl;
+    }
+    else {
+      out << "Compute norm of result" << endl;
+    }
+    resultVec1->norm2(normVec1);
+
+    RCP<mv_type> resultVec2 = rcp(new mv_type(blockMatrix->getRangeMap(),1));
+    if (printToCerr) {
+      std::cerr << "NewPointMatrix::apply" << endl;
+    }
+    else {
+      out << "NewPointMatrix::apply" << endl;
+    }
+    try {
+      newPointMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix::apply "
+        "threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix::apply "
+        "threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      if (printToCerr) {
+        gathervPrint (std::cerr, errStrm.str (), *comm);
+      }
+      else {
+        gathervPrint (out, errStrm.str (), *comm);
+      }
+      success = false;
+      return;
+    }
+    Teuchos::Array<magnitude_type> normVec2(1);
+    resultVec2->norm2(normVec2);
+
+    resultVec2->update(-1.0,*resultVec1,1.0);
+    Teuchos::Array<magnitude_type> normDelta(1);
+    resultVec2->norm2(normDelta);
+    Teuchos::Array<magnitude_type> relativeError(1);
+    relativeError[0] = STS::magnitude(normDelta[0] / normVec1[0]);
+
+    std::ostringstream normStr;
+    normStr << "||CSR*xrand|| = " << normVec1[0] << ", ||CSR*xrand - BCSR*xrand|| / ||CSR*xrand|| = " << relativeError[0];
+    if (printToCerr) {
+      std::cerr << normStr.str() << std::endl;
+    }
+    else {
+      out << normStr.str() << std::endl;
+    }
+
+
+
+  }
+
+
+
 //
 // INSTANTIATIONS
 //
@@ -2045,7 +2308,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, SetAllToScalar, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, ImportCopy, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, ExportDiffRowMaps, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, point2block, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, point2block, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockCrsMatrix, block2point, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

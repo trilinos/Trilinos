@@ -38,22 +38,22 @@
 # @HEADER
 
 #
-# @FUNCTION: ASSERT_DEFINED()
+# @FUNCTION: assert_defined()
 #
-# Assert that a variable is defined and if not call ``MESSAGE(SEND_ERROR
+# Assert that a variable is defined and if not call ``message(SEND_ERROR
 # ...)``.
 #
 # Usage::
 #
-#   ASSERT_DEFINED(<varName>)
+#   assert_defined(<varName>)
 #
 # This is used to get around the problem of CMake not asserting the
 # dereferencing of undefined variables.  For example, how does one know if one
 # did not misspell the name of a variable in an if statement like::
 #
-#   IF (SOME_VARBLE)
+#   if (SOME_VARBLE)
 #     ...
-#   ENDIF()
+#   endif()
 #
 # ?
 #
@@ -61,10 +61,10 @@
 #  case), then the if statement will always be false!  To avoid this problem
 #  when one always expects that a variable is explicitly set, instead do::
 #
-#   ASSERT_DEFINED(SOME_VARBLE)
-#   IF (SOME_VARBLE)
+#   assert_defined(SOME_VARBLE)
+#   if (SOME_VARBLE)
 #     ...
-#   ENDIF()
+#   endif()
 #
 # Now if one misspells this variable, then CMake will asset and stop
 # processing.  This is not a perfect solution since one can misspell the
@@ -73,13 +73,13 @@
 # same.  This is the best that can be done in CMake unfortunately to catch
 # usage of misspelled undefined variables.
 #
-FUNCTION(ASSERT_DEFINED VARS)
-  FOREACH(VAR ${VARS})
-    IF(NOT DEFINED ${VAR})
-      MESSAGE(SEND_ERROR "Error, the variable ${VAR} is not defined!")
-    ENDIF()
-  ENDFOREACH()
-ENDFUNCTION()
+function(assert_defined VARS)
+  foreach(VAR ${VARS})
+    if(NOT DEFINED ${VAR})
+      message(SEND_ERROR "Error, the variable ${VAR} is not defined!")
+    endif()
+  endforeach()
+endfunction()
 
 # ToDo: The VARS arg This really needs to be repalced with ${ARGV}.  I fear
 # that only the first arg passed in is asserted.  However, to change this now

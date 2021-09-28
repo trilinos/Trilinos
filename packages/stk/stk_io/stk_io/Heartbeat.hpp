@@ -56,7 +56,6 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
-namespace boost { class any; }
 namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -90,30 +89,56 @@ public:
     ~Heartbeat() {};
 
     void define_global_ref(const std::string &variableName,
-                           const boost::any *value,
-                           stk::util::ParameterType::Type type,
+                           const stk::util::Parameter &param,
                            int copies = 1,
                            Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void define_global_ref(const std::string &name,
-                           const boost::any *value,
+                           const stk::util::Parameter &param,
                            const std::string &storage,
                            Ioss::Field::BasicType dataType,
                            int copies = 1,
                            Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void add_global_ref(const std::string &variableName,
-                        const boost::any *value,
-                        stk::util::ParameterType::Type type,
+                        const stk::util::Parameter &param,
                         int copies = 1,
                         Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
 
     void add_global_ref(const std::string &name,
-                        const boost::any *value,
+                        const stk::util::Parameter &param,
                         const std::string &storage,
                         Ioss::Field::BasicType dataType,
                         int copies = 1,
                         Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+    STK_DEPRECATED void define_global_ref(const std::string &variableName,
+                           const STK_ANY_NAMESPACE::any *value,
+                           stk::util::ParameterType::Type type,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+    STK_DEPRECATED void define_global_ref(const std::string &name,
+                           const STK_ANY_NAMESPACE::any *value,
+                           const std::string &storage,
+                           Ioss::Field::BasicType dataType,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+    STK_DEPRECATED void add_global_ref(const std::string &variableName,
+                        const STK_ANY_NAMESPACE::any *value,
+                        stk::util::ParameterType::Type type,
+                        int copies = 1,
+                        Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+    STK_DEPRECATED void add_global_ref(const std::string &name,
+                        const STK_ANY_NAMESPACE::any *value,
+                        const std::string &storage,
+                        Ioss::Field::BasicType dataType,
+                        int copies = 1,
+                        Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+#endif
 
     void process_output(int step, double time);
     void process_output_pre_write(int step, double time);
@@ -131,6 +156,19 @@ public:
     bool has_global(const std::string &name);
 
 private:
+    void internal_define_global_ref(const std::string &variableName,
+                           const STK_ANY_NAMESPACE::any *value,
+                           stk::util::ParameterType::Type type,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
+    void internal_define_global_ref(const std::string &name,
+                           const STK_ANY_NAMESPACE::any *value,
+                           const std::string &storage,
+                           Ioss::Field::BasicType dataType,
+                           int copies = 1,
+                           Ioss::Field::RoleType role = Ioss::Field::TRANSIENT);
+
     std::vector<GlobalAnyVariable> m_fields;
     Teuchos::RCP<Ioss::Region> m_region;
 

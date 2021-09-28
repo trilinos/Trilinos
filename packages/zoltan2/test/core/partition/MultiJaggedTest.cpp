@@ -1412,15 +1412,19 @@ int main(int narg, char *arg[])
     bool test_boxes = false;
     bool rectilinear = false;
 
-#ifdef KOKKOS_ENABLE_CUDA
     // make a new node type so we can run BasicVectorAdapter with UVM off
     // The Tpetra MV will still run with UVM on and we'll compare the results.
     // For Serial/OpenMP the 2nd test will be turned off at the CMake level.
     // For CUDA we control uvm on/off with parameter uvm set to 0 or 1.
+    // For HIP uvm is simply always off.
     // TODO: Probably this should all change eventually so we don't have a node
     // declared like this.
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<
-      Kokkos::Cuda, Kokkos::CudaSpace>  uvm_off_node_t;
+#if defined(KOKKOS_ENABLE_CUDA)
+    using uvm_off_node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
+      Kokkos::Cuda, Kokkos::CudaSpace>;
+#elif defined(KOKKOS_ENABLE_HIP)
+    using uvm_off_node_t = Kokkos::Compat::KokkosDeviceWrapperNode<
+      Kokkos::Experimental::HIP, Kokkos::Experimental::HIPSpace>;
 #endif
 
     try{
@@ -1471,7 +1475,7 @@ int main(int narg, char *arg[])
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
           }
           else {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
             ierr = testFromDataFile<uvm_off_node_t>(tcomm, numTeams, numParts,
                     imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,
@@ -1482,7 +1486,7 @@ int main(int narg, char *arg[])
                     rectilinear,
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
 #else
-            throw std::logic_error("uvm set off but this is not a cuda test.");
+            throw std::logic_error("uvm set off but this is not a cuda/hip test.");
 #endif
           }
           break;
@@ -1515,7 +1519,7 @@ int main(int narg, char *arg[])
                     mj_premigration_option, mj_premigration_coordinate_cutoff);
           }
           else {
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
             ierr = GeometricGenInterface<uvm_off_node_t>(tcomm, numTeams,
                     numParts, imbalance, fname, pqParts, paramFile, k,
                     migration_check_option,

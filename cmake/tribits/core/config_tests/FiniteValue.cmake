@@ -46,8 +46,8 @@
 # fall back on checks that may or may not work depending on the
 # platforms's compliance with IEEE standards.
 
-INCLUDE(CheckCXXSourceRuns)
-INCLUDE(CheckCXXSourceCompiles)
+include(CheckCXXSourceRuns)
+include(CheckCXXSourceCompiles)
 
 #############################################################
 # isnan
@@ -56,7 +56,7 @@ INCLUDE(CheckCXXSourceCompiles)
 # Some machines have isnan() in the global namespace and some put it
 # in the std:: namespace.  We will check for both.
 
-SET(SOURCE_GLOBAL_ISNAN
+set(SOURCE_GLOBAL_ISNAN
   "
 #include <cmath>
 int main()
@@ -68,10 +68,10 @@ int main()
   "
   )
 
-CHECK_CXX_SOURCE_COMPILES("${SOURCE_GLOBAL_ISNAN}"
+check_cxx_source_compiles("${SOURCE_GLOBAL_ISNAN}"
   FINITE_VALUE_HAVE_GLOBAL_ISNAN)
 
-SET(SOURCE_STD_ISNAN
+set(SOURCE_STD_ISNAN
   "
 #include <cmath>
 int main()
@@ -83,11 +83,11 @@ int main()
   "
   )
 
-CHECK_CXX_SOURCE_COMPILES("${SOURCE_STD_ISNAN}"
+check_cxx_source_compiles("${SOURCE_STD_ISNAN}"
   FINITE_VALUE_HAVE_STD_ISNAN)
 
-IF (CMAKE_VERBOSE_MAKEFILE)
-  IF (NOT FINITE_VALUE_HAVE_GLOBAL_ISNAN AND
+if (CMAKE_VERBOSE_MAKEFILE)
+  if (NOT FINITE_VALUE_HAVE_GLOBAL_ISNAN AND
       NOT FINITE_VALUE_HAVE_STD_ISNAN )
     message("****************************************************")
     message("** NOTE: Your compiler doesn't support isnan() or")
@@ -96,14 +96,14 @@ IF (CMAKE_VERBOSE_MAKEFILE)
     message("** *NOT* guaranteed to work on your platform")
     message("** unless your machine is IEEE 748/754 compliant.")
     message("****************************************************")
-  ENDIF()
-ENDIF()
+  endif()
+endif()
 
 #############################################################
 # isinf
 #############################################################
 
-SET(SOURCE_GLOBAL_ISINF
+set(SOURCE_GLOBAL_ISINF
   "
 #include <cmath>
 int main()
@@ -115,10 +115,10 @@ int main()
   "
   )
 
-CHECK_CXX_SOURCE_COMPILES("${SOURCE_GLOBAL_ISINF}"
+check_cxx_source_compiles("${SOURCE_GLOBAL_ISINF}"
   FINITE_VALUE_HAVE_GLOBAL_ISINF)
 
-SET(SOURCE_STD_ISINF
+set(SOURCE_STD_ISINF
   "
 #include <cmath>
 int main()
@@ -130,11 +130,11 @@ int main()
   "
   )
 
-CHECK_CXX_SOURCE_COMPILES("${SOURCE_STD_ISINF}"
+check_cxx_source_compiles("${SOURCE_STD_ISINF}"
   FINITE_VALUE_HAVE_STD_ISINF)
 
-IF (CMAKE_VERBOSE_MAKEFILE)
-  IF (NOT FINITE_VALUE_HAVE_GLOBAL_ISINF AND
+if (CMAKE_VERBOSE_MAKEFILE)
+  if (NOT FINITE_VALUE_HAVE_GLOBAL_ISINF AND
       NOT FINITE_VALUE_HAVE_STD_ISINF )
     message("****************************************************")
     message("** NOTE: Your compiler doesn't support isinf() or")
@@ -143,8 +143,8 @@ IF (CMAKE_VERBOSE_MAKEFILE)
     message("** *NOT* guaranteed to work on your platform")
     message("** unless your machine is IEEE 748/754 compliant.")
     message("****************************************************")
-  ENDIF()
-ENDIF()
+  endif()
+endif()
 
 #############################################################
 #############################################################

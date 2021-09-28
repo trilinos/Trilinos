@@ -862,7 +862,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::OutArgs()
    isFailed_(false)
 {
   std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   this->_setHessianSupports(false);
+#endif
 }
 
 
@@ -934,6 +936,8 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(
   return supports_DgDp_[ j*Np() + l ];
 }
 
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 template<class Scalar>
 bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
@@ -1094,6 +1098,8 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::supports(
   assert_l(l2);
   return supports_hess_g_pp_[ j*Np()*Np() + l1*Np() + l2 ];
 }
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 
 template<class Scalar>
@@ -1537,6 +1543,8 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_mp_properties(int j, int l) const
 }
 
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_hess_vec_prod_f_xx(
   const RCP<MultiVectorBase<Scalar> > &hess_vec_prod_f_xx
@@ -1827,6 +1835,8 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_H_pp(int l1, int l2) const
   return H_pp_[ l1*Np() + l2 ];
 }
 
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
 
@@ -1983,6 +1993,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
     }
   }
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
   // hess_vec_prod_f
   if( inputOutArgs.supports(OUT_ARG_hess_vec_prod_f_xx) && nonnull(inputOutArgs.get_hess_vec_prod_f_xx()) ) {
     if ( supports(OUT_ARG_hess_vec_prod_f_xx) || !ignoreUnsupported )
@@ -2084,6 +2096,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
       }
     }
   }
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   // Extended outArgs
   this->extended_outargs_ = inputOutArgs.extended_outargs_;
@@ -2381,11 +2395,13 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
     DgDx_.resize(Ng_in); std::fill_n(DgDx_.begin(),Ng_in,Derivative<Scalar>());
     DgDx_properties_.resize(Ng_in); std::fill_n(DgDx_properties_.begin(),Ng_in,DerivativeProperties());
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
     supports_hess_vec_prod_g_xx_.resize(Ng_in);
     hess_vec_prod_g_xx_.resize(Ng_in); std::fill_n(hess_vec_prod_g_xx_.begin(),Ng_in,RCP<MultiVectorBase<Scalar> >());
 
     supports_hess_g_xx_.resize(Ng_in);
     hess_g_xx_.resize(Ng_in); std::fill_n(hess_g_xx_.begin(),Ng_in,RCP<LinearOpBase<Scalar> >());
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     g_mp_.resize(Ng_in); std::fill_n(g_mp_.begin(),Ng_in,Teuchos::null);
     supports_g_mp_.resize(Ng_in);
@@ -2396,6 +2412,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
     DgDx_mp_.resize(Ng_in); std::fill_n(DgDx_mp_.begin(),Ng_in,MPDerivative());
     DgDx_mp_properties_.resize(Ng_in); std::fill_n(DgDx_mp_properties_.begin(),Ng_in,DerivativeProperties());
   }
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   if(Np_in) {
     const int Np = Np_in;
     const int NpNp = Np_in*Np_in;
@@ -2421,6 +2438,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
     supports_H_pp_.resize(NpNp);
     H_pp_.resize(NpNp); std::fill_n(H_pp_.begin(),NpNp,RCP<LinearOpBase<Scalar> >());
   }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
   if(Np_in && Ng_in) {
     const int NpNg = Np_in*Ng_in;
     const int NpNpNg = Np_in*Np_in*Ng_in;
@@ -2428,6 +2446,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
     DgDp_.resize(NpNg); std::fill_n(DgDp_.begin(),NpNg,Derivative<Scalar>());
     DgDp_properties_.resize(NpNg); std::fill_n(DgDp_properties_.begin(),NpNg,DerivativeProperties());
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
     supports_hess_vec_prod_g_xp_.resize(NpNg);
     hess_vec_prod_g_xp_.resize(NpNg); std::fill_n(hess_vec_prod_g_xp_.begin(),NpNg,RCP<MultiVectorBase<Scalar> >());
 
@@ -2442,6 +2461,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_Np_Ng(int Np_in, int Ng_in)
 
     supports_hess_g_pp_.resize(NpNpNg);
     hess_g_pp_.resize(NpNpNg); std::fill_n(hess_g_pp_.begin(),NpNpNg,RCP<LinearOpBase<Scalar> >());
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
     supports_DgDp_mp_.resize(NpNg);
     DgDp_mp_.resize(NpNg); std::fill_n(DgDp_mp_.begin(),NpNg,MPDerivative());
@@ -2494,6 +2514,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
 }
 
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   EOutArgs_hess_vec_prod_f_xx /* arg */, bool supports_in
@@ -2530,6 +2552,9 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   supports_hess_vec_prod_f_pp_[ l1*Np()+ l2 ] = supports_in;
 }
 
+#endif // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
+
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   EOutArgsDgDp /* arg */, int j, int l, const DerivativeSupport& supports_in
@@ -2540,6 +2565,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   supports_DgDp_[ j*Np()+ l ] = supports_in;
 }
 
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
@@ -2665,6 +2692,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   assert_l(l2);
   supports_H_pp_[ l1*Np()+ l2 ] = supports_in;
 }
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 
 template<class Scalar>
@@ -2869,6 +2898,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
   if(this->supports(OUT_ARG_W_mp))
     this->_set_W_properties(inputOutArgs.get_W_properties());  //JF should this be W_mp_properties?
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
   this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_xx,inputOutArgs.supports(OUT_ARG_hess_vec_prod_f_xx));
   for( int l1 = 0; l1 < l_Np; ++l1 ) {
     this->_setSupports(MEB::OUT_ARG_hess_vec_prod_f_xp,l1,inputOutArgs.supports(MEB::OUT_ARG_hess_vec_prod_f_xp,l1));
@@ -2910,6 +2940,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports(
       this->_setSupports(MEB::OUT_ARG_H_pp,l1,l2,inputOutArgs.supports(MEB::OUT_ARG_H_pp,l1,l2));
     }
   }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
   extended_outargs_ = inputOutArgs.extended_outargs_;
 }
@@ -2979,6 +3010,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
   this->_setSupports(arg,false);
 }
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setHessianSupports(
   const bool supports
@@ -3019,6 +3051,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setHessianSupports(
     }
   }
 }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 // private
 
@@ -3102,6 +3135,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
     );
 }
 
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
@@ -3341,6 +3376,8 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
     );
 }
 
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(
@@ -3570,6 +3607,8 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
 { this->_setSupports(arg,j,supports_in); }
 
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
   EOutArgs_hess_vec_prod_f_xx arg, bool supports_in
@@ -3594,6 +3633,8 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
   )
 { this->_setSupports(arg,l1,l2,supports_in); }
 
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
@@ -3601,6 +3642,8 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
   )
 { this->_setSupports(arg,j,l,supports_in); }
 
+
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
@@ -3679,6 +3722,9 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
   EOutArgs_H_pp arg, int l1, int l2, bool supports_in
   )
 { this->_setSupports(arg,l1,l2,supports_in); }
+
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
+
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports(
@@ -3799,11 +3845,13 @@ void ModelEvaluatorBase::OutArgsSetup<Scalar>::setUnsupportsAndRelated(
 { this->_setUnsupportsAndRelated(arg); }
 
 
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
 template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::setHessianSupports(
   const bool supports
   )
 { this->_setHessianSupports(supports); }
+#endif  // ifdef Thyra_BUILD_HESSIAN_SUPPORT
 
 } // namespace Thyra
 

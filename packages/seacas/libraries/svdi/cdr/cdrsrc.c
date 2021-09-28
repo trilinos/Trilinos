@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -606,16 +606,14 @@ int *length;
 
 void cdrcfs_(ifilcd, eof) int *ifilcd, *eof;
 {
-  int  fd, istat;
-  char buf[4];
-
   /* translate fortran unit number to file descriptor */
-  fd = cdrunx_.KUNTFD[*ifilcd];
+  int fd = cdrunx_.KUNTFD[*ifilcd];
 
   /* if eof = 1 then write eof on file */
   if (*eof == 1) {
+    char buf[4];
     *buf = EOF;
-    if ((istat = write(fd, buf, 4)) == -1) {
+    if (write(fd, buf, 4) == -1) {
       perror("CDRCFS error:");
     }
   }
@@ -670,21 +668,19 @@ void cdrela_(icode) int *icode;
 void cdrgnm_(gname, glen) char gname[];
 int *glen;
 {
-  int  i;
-  char blank  = ' ';
-  char bslash = '\\';
-
   /* make sure name hasn't already been set */
+  char blank = ' ';
   if (cdrcm2_.KGNAME[0] != blank) {
     return;
   }
 
   /* store it in the external (and common) variables */
-  for (i = 0; i < *glen; i++) {
+  for (int i = 0; i < *glen; i++) {
     cdrcm2_.KGNAME[i] = gname[i];
   }
 
   /* append a backslash and an endofstring character */
+  char bslash               = '\\';
   cdrcm2_.KGNAME[*glen]     = bslash;
   cdrcm2_.KGNAME[*glen + 1] = '\0';
 }
@@ -704,11 +700,9 @@ int *glen;
 void cdri2c_(intp, ndigit, string) int *intp, *ndigit;
 char string[];
 {
-  int i, inbr;
+  int inbr = *intp;
 
-  inbr = *intp;
-
-  for (i = (*ndigit - 1); i >= 0; i--) {
+  for (int i = (*ndigit - 1); i >= 0; i--) {
     string[i] = inbr % 10 + '0';
     inbr      = inbr / 10;
   }
@@ -731,18 +725,19 @@ char string[];
 void cdrinp_(icount, ibuffer, iprompt) int *icount;
 int *ibuffer, *iprompt;
 {
-  char prompt[CDR_MAXLEN], buffer[CDR_MAXLEN];
-  int  i, icnt, istat, actcnt = 0;
+  char buffer[CDR_MAXLEN];
+  int  istat, actcnt = 0;
 
   /* check the input */
-  icnt = *icount;
+  int icnt = *icount;
   if (*icount > CDR_MAXLEN) {
     icnt = CDR_MAXLEN;
   }
 
   /* if prompt count is greater than 0, output the prompt */
   if (iprompt[0] > 0) {
-    for (i = 1; i <= iprompt[0]; i++) {
+    char prompt[CDR_MAXLEN];
+    for (int i = 1; i <= iprompt[0]; i++) {
       prompt[i - 1] = (char)iprompt[i];
     }
 
@@ -766,13 +761,13 @@ int *ibuffer, *iprompt;
   }
 
   /* load user's buffer  */
-  for (i = 0; i < actcnt; i++) {
+  for (int i = 0; i < actcnt; i++) {
     ibuffer[i] = (int)buffer[i];
   }
 
   /* zero fill left over buffer space */
   if (actcnt < icnt) {
-    for (i = actcnt; i < icnt; i++) {
+    for (int i = actcnt; i < icnt; i++) {
       ibuffer[i] = 0;
     }
 
@@ -818,9 +813,7 @@ inlen - IN - length of character string in
 void cdrlwr_(in, iout, inlen) char in[], iout[];
 int *inlen;
 {
-  int i;
-
-  for (i = 0; i <= *inlen - 1; i++) {
+  for (int i = 0; i <= *inlen - 1; i++) {
     if (isupper(in[i])) {
       iout[i] = tolower(in[i]);
     }
@@ -861,22 +854,16 @@ ifilcd - IN - the FORTRAN unit number of the file to open
 
 void cdrofs_(ifilcd) int *ifilcd;
 {
-  int   fd;
-  int   errnum, errsev;
-  char  symbol[1024];
-  char  err[50];
-  char *env;
-
-  int  i      = 0;
-  int  j      = 0;
-  char blank  = ' ';
-  char bslash = '\\';
-
   /* check for graphics output file. file name is stored in KGNAME
      from external (common) cdrcm2. if file hasn't been named, or
      unit isn't KOUTFL, default to file{unit}          */
 
+  char symbol[1024];
+  char blank = ' ';
   if (*ifilcd == cdrcom_.KOUTFL && cdrcm2_.KGNAME[0] != blank) {
+    int  i      = 0;
+    int  j      = 0;
+    char bslash = '\\';
     while (cdrcm2_.KGNAME[i] != bslash) {
       symbol[i++] = cdrcm2_.KGNAME[j++];
     }
@@ -887,15 +874,17 @@ void cdrofs_(ifilcd) int *ifilcd;
   }
 
   /* check the environment to see if a file name has been assigned */
-  env = getenv(symbol);
-  if (env != 0 && strlen(env) < 1024) {
+  char *env = getenv(symbol);
+  if (env != NULL && strlen(env) < 1024) {
     sprintf(symbol, "%s", env);
   }
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
+  int fd;
   if ((fd = open(symbol, (O_CREAT | O_RDWR), 0664)) == -1) {
-    errnum = 722;
-    errsev = 10;
+    int  errnum = 722;
+    int  errsev = 10;
+    char err[50];
     sprintf(err, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
     perror(err);
   }
@@ -993,23 +982,19 @@ BUFFER - IN - integer array containing the characters
 void cdrout_(icount, buffer) int *icount;
 int *buffer;
 {
-  int  i, istat;
-  int  j = 0;
-  int  c_count, count;
-  char c_buffer[MAXBUFFER];
-
-  count = *icount;
-
+  int count = *icount;
+  int j     = 0;
   while (count > 0) {
-    c_count = (count > MAXBUFFER) ? MAXBUFFER : count;
-    count   = count - c_count;
+    int c_count = (count > MAXBUFFER) ? MAXBUFFER : count;
+    count       = count - c_count;
 
-    for (i = 0; i < c_count; i++) {
+    char c_buffer[MAXBUFFER];
+    for (int i = 0; i < c_count; i++) {
       c_buffer[i] = (char)buffer[j++];
     }
 
     /* write to standard output */
-    if ((istat = write(1, c_buffer, c_count)) == -1) {
+    if (write(1, c_buffer, c_count) == -1) {
       perror("CDROUT error");
     }
   }
@@ -1040,10 +1025,8 @@ istat - OUT - status indicator: 0 = end of file;
 void  cdrrfs_(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
 char *buffer;
 {
-  int fd;
-
   /* translate fortran unit number to file descriptor */
-  fd = cdrunx_.KUNTFD[*ifilcd];
+  int fd = cdrunx_.KUNTFD[*ifilcd];
 
   /* if the file hasn't been opened, open it */
   if (fd == 0) {
@@ -1127,9 +1110,7 @@ inlen - IN - length of character string in
 void cdrupr_(in, iout, inlen) char in[], iout[];
 int *inlen;
 {
-  int i;
-
-  for (i = 0; i <= *inlen; i++) {
+  for (int i = 0; i <= *inlen; i++) {
     if (islower(in[i])) {
       iout[i] = toupper(in[i]);
     }
@@ -1151,10 +1132,8 @@ istat - OUT - status indicator. 0 = no error; 1 = error
 void  cdrwfs_(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
 char *buffer;
 {
-  int fd;
-
   /* translate fortran unit number to file descriptor */
-  fd = cdrunx_.KUNTFD[*ifilcd];
+  int fd = cdrunx_.KUNTFD[*ifilcd];
 
   /* if the file hasn't been opened, open it */
   if (fd == 0) {

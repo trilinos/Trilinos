@@ -647,6 +647,7 @@ public:
     ///   parameters from \c params sublist "CrsGraph". The domain map
     ///   and range maps passed to fillComplete() are those of the map
     ///   being cloned, if they exist. Otherwise, the row map is used.
+
     /// \brief True if and only if \c CrsGraph is identical to this CrsGraph
     ///
     /// \warning THIS METHOD IS FOR TPETRA DEVELOPERS ONLY.  DO NOT
@@ -1302,22 +1303,19 @@ public:
       const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
       Kokkos::DualView<packet_type*, buffer_device_type>& exports,
       Kokkos::DualView<size_t*, buffer_device_type> numPacketsPerLID,
-      size_t& constantNumPackets,
-      Distributor& distor) override;
+      size_t& constantNumPackets) override;
 
     virtual void
     pack (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
           Teuchos::Array<global_ordinal_type>& exports,
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Distributor& distor) const override;
+          size_t& constantNumPackets) const override;
 
     void
     packFillActive (const Teuchos::ArrayView<const local_ordinal_type>& exportLIDs,
                     Teuchos::Array<global_ordinal_type>& exports,
                     const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor) const;
+                    size_t& constantNumPackets) const;
 
     void
     packFillActiveNew (const Kokkos::DualView<const local_ordinal_type*,
@@ -1326,8 +1324,7 @@ public:
                          buffer_device_type>& exports,
                        Kokkos::DualView<size_t*,
                          buffer_device_type> numPacketsPerLID,
-                       size_t& constantNumPackets,
-                       Distributor& distor) const;
+                       size_t& constantNumPackets) const;
 
     virtual void
     unpackAndCombine
@@ -1338,7 +1335,6 @@ public:
      Kokkos::DualView<size_t*,
        buffer_device_type> numPacketsPerLID,
      const size_t constantNumPackets,
-     Distributor& distor,
      const CombineMode combineMode) override;
 
     //@}
@@ -1518,6 +1514,15 @@ public:
                     const Teuchos::RCP<const import_type>& newImport = Teuchos::null,
                     const bool sortIndicesInEachRow = true);
 
+    /// \brief Replace the current domain Map with the given objects.
+    ///
+    /// The Graph's Import object will be recomputed if needed.
+    ///
+    /// \pre <tt>isFillComplete() == true<tt>
+    /// \pre <tt>isFillActive() == false<tt>
+    void
+    replaceDomainMap (const Teuchos::RCP<const map_type>& newDomainMap);
+
     /// \brief Replace the current domain Map and Import with the
     ///   given parameters.
     ///
@@ -1534,6 +1539,32 @@ public:
     void
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                  const Teuchos::RCP<const import_type>& newImporter);
+
+    /// \brief Replace the current Range Map with the given objects.
+    ///
+    /// The Graph's Export object will be recomputed if needed.
+    ///
+    /// \pre <tt>isFillComplete() == true<tt>
+    /// \pre <tt>isFillActive() == false<tt>
+    void
+    replaceRangeMap (const Teuchos::RCP<const map_type>& newRangeMap);
+
+    /// \brief Replace the current Range Map and Export with the
+    ///   given parameters.
+    ///
+    /// \warning This method is ONLY for use by experts.
+    /// \warning We make NO promises of backwards compatibility.
+    ///   This method may change or disappear at any time.
+    ///
+    /// \pre <tt>isFillComplete() == true<tt>
+    /// \pre <tt>isFillActive() == false<tt>
+    /// \pre Either the given Export object is null, or the target Map
+    ///   of the given Export is the same as this graph's Range Map.
+    /// \pre Either the given Export object is null, or the source Map
+    ///    of the given Export is the same as this graph's Row Map.
+    void
+    replaceRangeMapAndExporter (const Teuchos::RCP<const map_type>& newRangeMap,
+                                const Teuchos::RCP<const export_type>& newExporter);
 
     /// \brief Remove processes owning zero rows from the Maps and
     ///   their communicator.

@@ -2509,6 +2509,14 @@ namespace {
       TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
     }
 #endif
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
+    {
+      typedef Xpetra::EpetraMapT<GlobalOrdinal, Kokkos::Compat::KokkosHIPWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraMultiVectorT<GlobalOrdinal, Kokkos::Compat::KokkosHIPWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 3), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
 
 #endif
   }

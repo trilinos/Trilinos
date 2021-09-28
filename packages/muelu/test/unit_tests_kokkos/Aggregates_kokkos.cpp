@@ -95,6 +95,7 @@ namespace MueLuTests {
     aggregates->setObjectLabel("UC");
 
     using graph_t = typename LWGraph_kokkos::local_graph_type;
+    using device_type = typename graph_t::device_type;
     using KernelHandle = KokkosKernels::Experimental::
       KokkosKernelsHandle<typename graph_t::row_map_type::value_type,
                           typename graph_t::entries_type::value_type,
@@ -123,7 +124,7 @@ namespace MueLuTests {
     aggregates->SetGraphNumColors(static_cast<LO>(coloringHandle->get_num_colors()));
 
     LO numNonAggregatedNodes = 0;
-    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat("aggStat", numNodes);
+    Kokkos::View<unsigned*, device_type> aggStat("aggStat", numNodes);
     Kokkos::deep_copy(aggStat, MueLu::READY);
     Teuchos::ParameterList params;
     params.set<int> ("aggregation: min agg size", 1);
@@ -182,13 +183,14 @@ namespace MueLuTests {
     using LWGraph_kokkos    = MueLu::LWGraph_kokkos<LO, GO, Node>;
     using execution_space   = typename LWGraph_kokkos::execution_space;
     using memory_space      = typename LWGraph_kokkos::memory_space;
+    using device_type       = typename LWGraph_kokkos::device_type;
 
     const LO numNodes = graph.GetNodeNumVertices();
     auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto aggSizes     = aggregates.ComputeAggregateSizes(true);
 
-    Kokkos::View<LO*, memory_space> discontiguousAggs("discontiguous aggregates",
-                                                      aggregates.GetNumAggregates());
+    Kokkos::View<LO*, device_type> discontiguousAggs("discontiguous aggregates",
+						     aggregates.GetNumAggregates());
     Kokkos::parallel_for("Mark discontiguous aggregates",
                          Kokkos::RangePolicy<LO, execution_space>(0, numNodes),
                          KOKKOS_LAMBDA(const LO nodeIdx) {
@@ -337,7 +339,8 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
     out << "version: " << MueLu::Version() << std::endl;
 
-    using memory_space = typename Aggregates_kokkos::device_type::memory_space;
+    using device_type  = typename Aggregates_kokkos::device_type;
+    using memory_space = typename device_type::memory_space;
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
     RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(3*comm->getSize());
@@ -361,14 +364,14 @@ namespace MueLuTests {
     aggregates = rcp(new Aggregates_kokkos(*graph));
     aggregates->setObjectLabel("UC");
 
-    Kokkos::View<unsigned*, typename LWGraph_kokkos::memory_space> aggStat("aggStat", numNodes);
+    Kokkos::View<unsigned*, device_type> aggStat("aggStat", numNodes);
     Kokkos::deep_copy(aggStat, MueLu::READY);
 
     // Performing fake aggregates to generate a discontiguous aggregate
-    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> vertex2AggId = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> procWinner   = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    Kokkos::View<LO**, Kokkos::LayoutLeft, device_type> vertex2AggId = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    Kokkos::View<LO**, Kokkos::LayoutLeft, device_type> procWinner   = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
-    typename Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space>::HostMirror vertex2AggId_h
+    typename Kokkos::View<LO**, Kokkos::LayoutLeft, device_type>::HostMirror vertex2AggId_h
       = Kokkos::create_mirror_view(vertex2AggId);
     Kokkos::deep_copy(vertex2AggId_h, vertex2AggId);
     vertex2AggId_h(0, 0) = 0;
@@ -376,7 +379,7 @@ namespace MueLuTests {
     vertex2AggId_h(2, 0) = 0;
     Kokkos::deep_copy(vertex2AggId, vertex2AggId_h);
 
-    typename Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space>::HostMirror procWinner_h
+    typename Kokkos::View<LO**, Kokkos::LayoutLeft, device_type>::HostMirror procWinner_h
       = Kokkos::create_mirror_view(procWinner);
     Kokkos::deep_copy(procWinner_h, procWinner);
     procWinner_h(0, 0) = comm->getRank();

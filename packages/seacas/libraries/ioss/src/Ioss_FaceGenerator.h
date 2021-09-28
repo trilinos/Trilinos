@@ -32,7 +32,7 @@ namespace Ioss {
   public:
     Face() = default;
     Face(size_t id, std::array<size_t, 4> conn) : hashId_(id), connectivity_(conn) {}
-    Face(std::array<size_t, 4> conn);
+    explicit Face(std::array<size_t, 4> conn);
 
     void add_element(size_t element_id) const
     {

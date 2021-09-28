@@ -141,7 +141,16 @@ class StatusTestOutputFactory {
           outputTest = Teuchos::rcp( new StatusTestUserOutput<ScalarType,MV,OP>( printer, test, taggedTests_, 1 ) );
         }
         break;
+      default: //Default to General if invalid outputStyle_ given.
+        if (mod > 0) {
+          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer, test, mod, printStates ) );
+        }
+        else {
+          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer, test, 1 ) );
+        }
+        break;
       }
+
 
       return outputTest;
     }

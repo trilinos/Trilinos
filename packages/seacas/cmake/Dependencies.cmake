@@ -19,6 +19,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Conjoin     applications/conjoin    PT  OPTIONAL
   Ejoin       applications/ejoin      PT  OPTIONAL
   Epu         applications/epu        PT  OPTIONAL
+  Cpup        applications/cpup       PT  OPTIONAL
   Exo2mat     applications/exo2mat    ST  OPTIONAL
   Exodiff     applications/exodiff    PT  OPTIONAL
   Exomatlab   applications/exomatlab  ST  OPTIONAL

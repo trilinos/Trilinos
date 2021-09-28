@@ -1,3 +1,3 @@
-TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+tribits_package_define_dependencies(
   REGRESSION_EMAIL_LIST mixedlang-regressions@someurl.none
   )

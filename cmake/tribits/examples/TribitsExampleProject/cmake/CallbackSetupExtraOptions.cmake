@@ -1,39 +1,39 @@
-MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
+macro(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+  assert_defined(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+  assert_defined(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
 
-  IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
-    MESSAGE(
+  if (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    message(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_WrapExternal=OFF"
       " because ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES or"
       " ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES is ON!"
       "\n***\n"
       )
-    SET(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
-  ENDIF()
+    set(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
+  endif()
 
-  IF ("${PYTHON_EXECUTABLE}" STREQUAL "")
-    MESSAGE(
+  if ("${PYTHON_EXECUTABLE}" STREQUAL "")
+    message(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_WrapExternal=OFF"
       " because PYTHON_EXECUTABLE=''!"
       "\n***\n"
       )
-    SET(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
-  ENDIF()
+    set(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
+  endif()
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
+  assert_defined(${PROJECT_NAME}_ENABLE_Fortran)
 
-  IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
-    MESSAGE(
+  if (NOT ${PROJECT_NAME}_ENABLE_Fortran)
+    message(
       "\n***"
       "\n*** NOTE: Setting ${PROJECT_NAME}_ENABLE_MixedLang=OFF"
       " because ${PROJECT_NAME}_ENABLE_Fortran='${${PROJECT_NAME}_ENABLE_Fortran}'!"
       "\n***\n"
       )
-    SET(${PROJECT_NAME}_ENABLE_MixedLang OFF)
-  ENDIF()
+    set(${PROJECT_NAME}_ENABLE_MixedLang OFF)
+  endif()
 
-ENDMACRO()
+endmacro()

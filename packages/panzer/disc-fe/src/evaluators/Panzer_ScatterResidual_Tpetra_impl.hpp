@@ -126,8 +126,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldIds_[fd]);
     scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
-    for(std::size_t i=0;i<offsets.size();i++)
-      scratch_offsets_[fd](i) = offsets[i];
+    Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
   }
   scratch_lids_ = PHX::View<LO**>("lids",scatterFields_[0].extent(0),
                                                  globalIndexer_->getElementBlockGIDCount(blockId));
@@ -336,8 +335,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     int fieldNum = fieldIds_[fd];
     const std::vector<int> & offsets = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
     scratch_offsets_[fd] = PHX::View<int*>("offsets",offsets.size());
-    for(std::size_t i=0;i<offsets.size();i++)
-      scratch_offsets_[fd](i) = offsets[i];
+    Kokkos::deep_copy(scratch_offsets_[fd], Kokkos::View<const int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(offsets.data(), offsets.size()));
   }
 
   my_derivative_size_ = globalIndexer_->getElementBlockGIDCount(blockId);
@@ -345,8 +343,10 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     auto otherBlockId = workset_0.other->block_id;
     other_derivative_size_ = globalIndexer_->getElementBlockGIDCount(otherBlockId);
   }
-  scratch_lids_ = PHX::View<LO**>("lids",scatterFields_[0].extent(0),
-                                                 my_derivative_size_ + other_derivative_size_);
+  scratch_lids_ = Kokkos::View<LO**, Kokkos::LayoutRight, PHX::Device>(
+    "lids", scatterFields_[0].extent(0), my_derivative_size_ + other_derivative_size_ );
+  scratch_vals_ = Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device>(
+    "vals", scatterFields_[0].extent(0), my_derivative_size_ + other_derivative_size_ );
 }
 
 // **********************************************************************
@@ -381,7 +381,8 @@ public:
   Kokkos::View<double**, Kokkos::LayoutLeft,PHX::Device> r_data;
   LocalMatrixT jac; // Kokkos jacobian type
 
-  PHX::View<const LO**> lids;    // local indices for unknowns
+  Kokkos::View<const LO**, Kokkos::LayoutRight, PHX::Device> lids; // local indices for unknowns.
+  Kokkos::View<typename Sacado::ScalarType<ScalarT>::type**, Kokkos::LayoutRight, PHX::Device> vals;
   PHX::View<const int*> offsets; // how to get a particular field
   FieldType field;
 
@@ -389,12 +390,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()(const unsigned int cell) const
   {
-    LO cLIDs[256];
-    typename Sacado::ScalarType<ScalarT>::type vals[256];
     int numIds = lids.extent(1);
-
-    for(int i=0;i<numIds;i++)
-      cLIDs[i] = lids(cell,i);
 
     // loop over the basis functions (currently they are nodes)
     for(std::size_t basis=0; basis < offsets.extent(0); basis++) {
@@ -408,10 +404,10 @@ public:
 
        // loop over the sensitivity indices: all DOFs on a cell
        for(int sensIndex=0;sensIndex<numIds;++sensIndex)
-          vals[sensIndex] = scatterField.fastAccessDx(sensIndex);
+          vals(cell,sensIndex) = scatterField.fastAccessDx(sensIndex);
 
        // Sum Jacobian
-       jac.sumIntoValues(lid, cLIDs,numIds, vals, true, true);
+       jac.sumIntoValues(lid, &lids(cell,0), numIds, &vals(cell,0), true, true);
     } // end basis
   }
 };
@@ -504,9 +500,10 @@ evaluateFields(typename TRAITS::EvalData workset)
    ScatterResidual_Jacobian_Functor<ScalarT,LO,GO,NodeT,LocalMatrixT> functor;
    functor.fillResidual = (r!=Teuchos::null);
    if(functor.fillResidual)
-     functor.r_data = r->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+     functor.r_data = r->getLocalViewDevice(Tpetra::Access::ReadWrite);
    functor.jac = Jac->getLocalMatrixDevice();
    functor.lids = scratch_lids_;
+   functor.vals = scratch_vals_;
 
    // for each field, do a parallel for loop
    for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {

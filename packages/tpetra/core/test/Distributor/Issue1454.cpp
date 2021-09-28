@@ -98,9 +98,14 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
   std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
     Kokkos::CudaSpace,
     typename device_type::memory_space>::type;
+#elif defined(KOKKOS_ENABLE_SYCL)
+  using buffer_memory_space = typename std::conditional<
+  std::is_same<typename device_type::execution_space, Kokkos::Experimental::SYCL>::value,
+    Kokkos::Experimental::SYCLDeviceUSMSpace,
+    typename device_type::memory_space>::type;
 #else
   using buffer_memory_space = typename device_type::memory_space;
-#endif // KOKKOS_ENABLE_CUDA
+#endif
   using buffer_execution_space = typename device_type::execution_space;
   using buffer_device_type = Kokkos::Device<buffer_execution_space, buffer_memory_space>;
 

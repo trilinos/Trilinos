@@ -33,7 +33,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "6.0";
+  std::string version = "6.1 (2021/09/09)";
 
   bool mem_stats = false;
 
@@ -141,11 +141,11 @@ int main(int argc, char *argv[])
 
   if (rank == 0 && !interFace.quiet) {
     if (num_proc > 1) {
-      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds on {} processors.\n",
+      fmt::print(stderr, "\n\n\tTotal Execution Time = {:.5} seconds on {} processors.\n",
                  end - begin, num_proc);
     }
     else {
-      fmt::print(stderr, "\n\n\tTotal Execution time = {:.5} seconds.\n", end - begin);
+      fmt::print(stderr, "\n\n\tTotal Execution Time = {:.5} seconds.\n", end - begin);
     }
   }
   if (mem_stats) {
@@ -407,7 +407,6 @@ namespace {
   void file_compare(IOShell::Interface &interFace, int rank)
   {
     Ioss::PropertyManager properties = set_properties(interFace);
-    int                   int_byte_size_api;
     for (const auto &inpfile : interFace.inputFile) {
 
       //========================================================================
@@ -466,7 +465,7 @@ namespace {
 
       // Get integer size being used on input file #1 and set it in
       // the interFace.
-      int_byte_size_api = dbi1->int_byte_size_api();
+      int int_byte_size_api = dbi1->int_byte_size_api();
       if (int_byte_size_api == 8) {
         interFace.ints_64_bit = true;
       }
@@ -540,10 +539,10 @@ namespace {
 
       bool result = Ioss::Compare::compare_database(input_region1, input_region2, options);
       if (result) {
-        fmt::print(stderr, "\nDATABASES are EQUAL\n");
+        fmt::print(stderr, "\n\nDATABASES are EQUAL");
       }
       else {
-        fmt::print(stderr, "\nDATABASES are NOT equal\n");
+        fmt::print(stderr, "\n\nDATABASES are NOT equal");
       }
     } // loop over input files
   }

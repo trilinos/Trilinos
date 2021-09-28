@@ -38,7 +38,7 @@
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/Entity.hpp"
-#include "stk_mesh/base/NgpSpaces.hpp"
+#include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 #include "stk_mesh/base/DeviceMesh.hpp"
 #include "stk_mesh/base/NgpFieldBase.hpp"
@@ -364,7 +364,7 @@ public:
     isFieldLayoutConsistent = false;
   }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   unsigned get_bucket_offset(unsigned bucketOrdinal) const {
     return debugHostSelectedBucketOffset(bucketOrdinal);
   }
@@ -455,22 +455,22 @@ private:
     }
   }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool field_not_updated_after_mesh_mod(size_t synchronizedCount) const {
     return hostSynchronizedCount() != synchronizedCount;
   }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool data_is_stale_on_device(const stk::mesh::FastMeshIndex & index, int component) const {
     return data_is_stale_on_device(index.bucket_id, index.bucket_ord, component);
   }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool data_is_stale_on_device(const stk::mesh::DeviceMesh::MeshIndex & index, int component) const {
     return data_is_stale_on_device(index.bucket->bucket_id(), index.bucketOrd, component);
   }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool data_is_stale_on_device(int bucketId, int bucketOrdinal, int component) const {
     return !(lastFieldModLocation(debugDeviceSelectedBucketOffset(bucketId),
                                   ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
@@ -482,7 +482,7 @@ private:
       << " that includes buckets outside the subset of the mesh that the field is defined on." << std::endl;
   }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void print_unupdated_field_warning(const char * fileName, int lineNumber) const
   {
     if (lineNumber == -1) {
@@ -495,7 +495,7 @@ private:
   }
 
   template <typename NgpField>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void print_stale_data_warning(NgpField* ngpField, unsigned bucketId, unsigned bucketOrdinal, int component,
                                 const char * fileName, int lineNumber) const
   {
@@ -511,7 +511,7 @@ private:
     }
   }
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void print_stale_data_warning_without_field_values(unsigned bucketId, unsigned bucketOrdinal, int component,
                                                      const char * fileName, int lineNumber) const
   {
@@ -535,7 +535,7 @@ private:
   }
 
 
-  using FieldNameType = Kokkos::View<char*, UVMMemSpace>;
+  using FieldNameType = Kokkos::View<char*, stk::ngp::UVMMemSpace>;
   template <typename U> using HostArrayType = Kokkos::View<U*, Kokkos::HostSpace>;
 
   StkFieldSyncDebuggerType* m_stkFieldSyncDebugger;

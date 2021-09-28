@@ -160,7 +160,7 @@ belos_solve(
     //Teuchos::RCP<VectorType> coords =
     Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> > coords =
       Teuchos::rcp(new Tpetra::MultiVector<double,LO,GO,N>(x.getMap(), node_coords.extent(1)));
-    fill_coords(node_coords, coords->getLocalViewDevice());
+    fill_coords(node_coords, coords->getLocalViewDevice(Tpetra::Access::ReadWrite));
 
     RCP<ParameterList> mueluParams = Teuchos::sublist(fenlParams, "MueLu");
     if (use_mean_based) {

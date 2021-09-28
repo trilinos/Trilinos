@@ -210,7 +210,7 @@ def sorted_dict_str(d):
 
 
 ##############################################
-# System command unit testing utiltities
+# System command unit testing utilities
 ##############################################
 
 
@@ -353,7 +353,7 @@ g_dumpAllSysCmnds = "GENERAL_SCRIPT_SUPPORT_DUMD_COMMANDS" in os.environ
 
 # Run a command (or the mock of that command) and optionally return the stdout
 #
-# Returns the comamndline exit code or, if 'rtnOutput=True' returns the tuple
+# Returns the commandline exit code or, if 'rtnOutput=True' returns the tuple
 # (rtnCode, cmndOutput).
 #
 # For Python 2, this returns stdout as a standard ASCII byte array for the
@@ -417,7 +417,7 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False, extraEnv=None, \
 
 
 ######################################
-# System interaction utilties
+# System interaction utilities
 ######################################
 
 

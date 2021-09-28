@@ -78,7 +78,7 @@ private:
   stk::mesh::NgpField<double> m_ngpField;
 };
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
 #define MY_LAMBDA KOKKOS_LAMBDA
 #else
 #define MY_LAMBDA [&]
@@ -87,7 +87,7 @@ private:
 ClassWithNgpField* create_class_on_device(const stk::mesh::NgpField<double>& ngpField)
 {
   ClassWithNgpField* devicePtr = static_cast<ClassWithNgpField*>(
-        Kokkos::kokkos_malloc<stk::mesh::MemSpace>("device class memory", sizeof(ClassWithNgpField)));
+        Kokkos::kokkos_malloc<stk::ngp::MemSpace>("device class memory", sizeof(ClassWithNgpField)));
   Kokkos::parallel_for("construct class on device", 1,
       MY_LAMBDA(const int i) { new (devicePtr) ClassWithNgpField(ngpField); }
   );
@@ -101,7 +101,7 @@ void delete_class_on_device(ClassWithNgpField* devicePtr)
       KOKKOS_LAMBDA(const int i) { devicePtr->~ClassWithNgpField(); }
   );
   Kokkos::fence();
-  Kokkos::kokkos_free<stk::mesh::MemSpace>(static_cast<void*>(devicePtr));
+  Kokkos::kokkos_free<stk::ngp::MemSpace>(static_cast<void*>(devicePtr));
 }
 
 class NgpMultiStateFieldTest : public stk::mesh::fixtures::TestHexFixture

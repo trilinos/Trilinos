@@ -115,7 +115,7 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      View<Kokkos::View<const ScalarT**, typename PHX::DevLayout<ScalarT>::type, Kokkos::MemoryUnmanaged>*>("BasisTimesScalar::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -178,9 +178,13 @@ namespace panzer
     using panzer::getBasisIndex;
     using std::size_t;
 
+    auto kokkosFieldMults_h = Kokkos::create_mirror_view(kokkosFieldMults_);
+
     // Get the PHX::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
-      kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
+      kokkosFieldMults_h(i) = fieldMults_[i].get_static_view();
+
+    Kokkos::deep_copy(kokkosFieldMults_, kokkosFieldMults_h);
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);

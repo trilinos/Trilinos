@@ -83,7 +83,7 @@ public:
      *                  (integration rules and basis values for each element block)
      */ 
    WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                    const std::map<std::string,WorksetNeeds> & needs);
+                    const std::map<std::string,WorksetNeeds> & needs = {});
 
    /** Copies the workset factory, the PhysicsBlock vector, and the workset size,
      * but not constructed worksets.

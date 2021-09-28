@@ -31,17 +31,14 @@
 
 int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
 {
-  int    status;
-  int    varid, temp;
-  size_t num_entity, i;
-  char   errmsg[MAX_ERR_LENGTH];
-
   EX_FUNC_ENTER();
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  /* inquire previously defined dimensions and variables  */
+  int    status;
+  int    varid, temp;
+  size_t num_entity;
 
   switch (obj_type) {
     /* ======== ASSEMBLY ========= */
@@ -131,10 +128,12 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
     break;
 
   /* invalid variable type */
-  default:
+  default: {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Invalid type specified in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
+  }
   }
 
   if (status == NC_NOERR) {
@@ -147,7 +146,7 @@ int ex_get_names(int exoid, ex_entity_type obj_type, char **names)
     /* Names variable does not exist on the database; probably since this is an
      * older version of the database.  Return an empty array...
      */
-    for (i = 0; i < num_entity; i++) {
+    for (size_t i = 0; i < num_entity; i++) {
       names[i][0] = '\0';
     }
   }

@@ -37,24 +37,24 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(GlobalSet)
-INCLUDE(AssertDefined)
+include(GlobalSet)
+include(AssertDefined)
 
 #
-# @FUNCTION: APPEND_GLOBAL_SET()
+# @FUNCTION: append_global_set()
 #
 # Utility macro that appends arguments to a global variable (reduces
 # boiler-plate code and mistakes).
 #
 # Usage::
 #
-#   APPEND_GLOBAL_SET(<varName> <arg0> <arg1> ...)
+#   append_global_set(<varName> <arg0> <arg1> ...)
 #
 # NOTE: The variable ``<varName>`` must exist before calling this function.
-# To set it empty initially use `GLOBAL_NULL_SET()`_.
+# To set it empty initially use `global_null_set()`_.
 #
-FUNCTION(APPEND_GLOBAL_SET  VARNAME)
-  ASSERT_DEFINED(${VARNAME})
-  LIST(APPEND ${VARNAME} ${ARGN})
-  GLOBAL_SET(${VARNAME} ${${VARNAME}})
-ENDFUNCTION()
+function(append_global_set  VARNAME)
+  assert_defined(${VARNAME})
+  list(APPEND ${VARNAME} ${ARGN})
+  global_set(${VARNAME} ${${VARNAME}})
+endfunction()

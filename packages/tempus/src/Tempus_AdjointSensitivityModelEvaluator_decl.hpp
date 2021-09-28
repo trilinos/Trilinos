@@ -78,6 +78,8 @@ public:
    */
   AdjointSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & adjoint_model,
+    const Scalar& t_init,
     const Scalar& t_final,
     const bool is_pseudotransient,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
@@ -85,6 +87,10 @@ public:
   //! Get the underlying model 'f'
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
   { return model_; }
+
+  //! Get the underlying adjoint model
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getAdjointModel() const
+  { return adjoint_model_; }
 
   //! Set solution history from forward evaluation
   void setForwardSolutionHistory(
@@ -132,11 +138,13 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > adjoint_model_;
 
   Teuchos::RCP<const DMVPVS> adjoint_space_;
   Teuchos::RCP<const DMVPVS> residual_space_;
   Teuchos::RCP<const DMVPVS> response_space_;
   Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > sh_;
+  Scalar t_init_;
   Scalar t_final_;
   bool is_pseudotransient_;
   bool mass_matrix_is_constant_;

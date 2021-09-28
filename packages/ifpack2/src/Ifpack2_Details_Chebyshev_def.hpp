@@ -58,6 +58,8 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Tpetra_Details_residual.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Ifpack2_Details_LapackSupportsScalar.hpp"
 #include <cmath>
 #include <iostream>
 
@@ -218,6 +220,51 @@ private:
 
 } // namespace (anonymous)
 
+
+template<class ScalarType, const bool lapackSupportsScalarType = LapackSupportsScalar<ScalarType>::value>
+struct LapackHelper{
+  static
+  ScalarType
+  tri_diag_spectral_radius(Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> diag,
+                           Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> offdiag) {
+    throw std::runtime_error("LAPACK does not support the scalar type.");
+  }
+};
+
+
+template<class ScalarType>
+struct LapackHelper<ScalarType,true> {
+  static
+  ScalarType
+  tri_diag_spectral_radius(Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> diag,
+                           Teuchos::ArrayRCP<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> offdiag) {
+    using STS = Teuchos::ScalarTraits<ScalarType>;
+    using MagnitudeType = typename STS::magnitudeType;
+    int info = 0;
+    const int N = diag.size ();
+    ScalarType scalar_dummy;
+    std::vector<MagnitudeType> mag_dummy(4*N);
+    char char_N = 'N';
+
+    // lambdaMin = one;
+    ScalarType lambdaMax = STS::one();
+    if( N > 2 ) {
+      Teuchos::LAPACK<int,ScalarType> lapack;
+      lapack.PTEQR (char_N, N, diag.getRawPtr (), offdiag.getRawPtr (),
+                    &scalar_dummy, 1, &mag_dummy[0], &info);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (info < 0, std::logic_error, "Ifpack2::Details::LapackHelper::tri_diag_spectral_radius:"
+         "LAPACK's _PTEQR failed with info = "
+         << info << " < 0.  This suggests there might be a bug in the way Ifpack2 "
+         "is calling LAPACK.  Please report this to the Ifpack2 developers.");
+      // lambdaMin = Teuchos::as<ScalarType> (diag[N-1]);
+      lambdaMax = Teuchos::as<ScalarType> (diag[0]);
+    }
+    return lambdaMax;
+  }
+};
+
+
 template<class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::checkInputMatrix () const
 {
@@ -288,6 +335,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   eigMaxIters_ (10),
   eigRelTolerance_(Teuchos::ScalarTraits<MT>::zero ()),
   eigKeepVectors_(false),
+  eigenAnalysisType_("power method"),
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
@@ -318,6 +366,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   eigMaxIters_ (10),
   eigRelTolerance_(Teuchos::ScalarTraits<MT>::zero ()),
   eigKeepVectors_(false),
+  eigenAnalysisType_("power method"),
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
@@ -649,13 +698,10 @@ setParameters (Teuchos::ParameterList& plist)
     eigenAnalysisType = plist.get<std::string> ("eigen-analysis: type");
     TEUCHOS_TEST_FOR_EXCEPTION(
       eigenAnalysisType != "power-method" &&
-      eigenAnalysisType != "power method",
+      eigenAnalysisType != "power method" &&
+      eigenAnalysisType != "cg",
       std::invalid_argument,
-      "Ifpack2::Chebyshev: This class supports the ML parameter \"eigen-"
-      "analysis: type\" for backwards compatibility.  However, Ifpack2 "
-      "currently only supports the \"power-method\" option for this "
-      "parameter.  This imitates Ifpack, which only implements the power "
-      "method for eigenanalysis.");
+      "Ifpack2::Chebyshev: Ifpack2 only supports \"power method\" and \"cg\" for \"eigen-analysis: type\".");
   }
 
   // We've validated all the parameters, so it's safe now to "commit" them.
@@ -670,6 +716,7 @@ setParameters (Teuchos::ParameterList& plist)
   eigRelTolerance_ = eigRelTolerance;
   eigKeepVectors_ = eigKeepVectors;
   eigNormalizationFreq_ = eigNormalizationFreq;
+  eigenAnalysisType_ = eigenAnalysisType;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
@@ -852,7 +899,11 @@ Chebyshev<ScalarType, MV>::compute ()
   // most important one if using Chebyshev as a smoother.
   if (! assumeMatrixUnchanged_ ||
       (! computedEigenvalueEstimates && STS::isnaninf (userLambdaMax_))) {
-    const ST computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
+    ST computedLambdaMax;
+    if ((eigenAnalysisType_ == "power method") || (eigenAnalysisType_ == "power-method"))
+      computedLambdaMax = powerMethod (*A_, *D_, eigMaxIters_);
+    else
+      computedLambdaMax = cgMethod (*A_, *D_, eigMaxIters_);
     TEUCHOS_TEST_FOR_EXCEPTION(
       STS::isnaninf (computedLambdaMax),
       std::runtime_error,
@@ -1545,6 +1596,102 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
     computeInitialGuessForPowerMethod (*x, true);
     lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, *x);
   }
+  return lambdaMax;
+}
+
+
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::ST
+Chebyshev<ScalarType, MV>::
+cgMethodWithInitGuess (const op_type& A,
+                          const V& D_inv,
+                          const int numIters,
+                          V& r)
+{
+  using std::endl;
+  using STS = Teuchos::ScalarTraits<ST>;
+  using MagnitudeType = typename STS::magnitudeType;
+  if (debug_) {
+    *out_ << " cgMethodWithInitGuess:" << endl;
+  }
+
+  const ST one = STS::one();
+  ST beta, betaOld = one, pAp, pApOld = one, alpha, rHz, rHzOld, rHzOld2 = one, lambdaMax;
+  // ST lambdaMin;
+  Teuchos::ArrayRCP<MagnitudeType> diag, offdiag;
+  Teuchos::RCP<V> p, z, Ap;
+  diag.resize(numIters);
+  offdiag.resize(numIters-1);
+
+  p = rcp(new V(A.getRangeMap ()));
+  z = rcp(new V(A.getRangeMap ()));
+  Ap = rcp(new V(A.getRangeMap ()));
+
+  // Tpetra::Details::residual (A, x, *b, *r);
+  solve (*p, D_inv, r);
+  rHz = r.dot (*p);
+
+  for (int iter = 0; iter < numIters; ++iter) {
+    if (debug_) {
+      *out_ << "  Iteration " << iter << endl;
+    }
+    A.apply (*p, *Ap);
+    pAp = p->dot (*Ap);
+    alpha = rHz/pAp;
+    r.update (-alpha, *Ap, one);
+    rHzOld = rHz;
+    solve (*z, D_inv, r);
+    rHz = r.dot (*z);
+    beta = rHz / rHzOld;
+    p->update (one, *z, beta);
+    if (iter>0) {
+      diag[iter] = STS::real((betaOld*betaOld * pApOld + pAp) / rHzOld);
+      offdiag[iter-1] = -STS::real((betaOld * pApOld / (sqrt(rHzOld * rHzOld2))));
+      if (debug_) {
+        *out_ << " diag[" << iter << "]     = " << diag[iter] << endl;
+        *out_ << " offdiag["<< iter-1 << "] = " << offdiag[iter-1] << endl;
+        }
+    } else {
+      diag[iter] = STS::real(pAp/rHzOld);
+      if (debug_) {
+        *out_ << " diag[" << iter << "]     = " << diag[iter] << endl;
+      }
+    }
+    rHzOld2 = rHzOld;
+    betaOld = beta;
+    pApOld = pAp;
+  }
+
+  lambdaMax = LapackHelper<ST>::tri_diag_spectral_radius(diag, offdiag);
+
+  return lambdaMax;
+}
+
+
+template<class ScalarType, class MV>
+typename Chebyshev<ScalarType, MV>::ST
+Chebyshev<ScalarType, MV>::
+cgMethod (const op_type& A, const V& D_inv, const int numIters)
+{
+  using std::endl;
+  if (debug_) {
+    *out_ << "cgMethod:" << endl;
+  }
+
+  Teuchos::RCP<V> r;
+  if (eigVector_.is_null()) {
+    r = rcp(new V(A.getDomainMap ()));
+    if (eigKeepVectors_)
+      eigVector_ = r;
+    // For the first pass, just let the pseudorandom number generator
+    // fill x with whatever values it wants; don't try to make its
+    // entries nonnegative.
+    computeInitialGuessForPowerMethod (*r, false);
+  } else
+    r = eigVector_;
+
+  ST lambdaMax = cgMethodWithInitGuess (A, D_inv, numIters, *r);
+
   return lambdaMax;
 }
 

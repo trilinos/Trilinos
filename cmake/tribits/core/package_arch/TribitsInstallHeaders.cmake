@@ -38,18 +38,18 @@
 # @HEADER
 
 
-INCLUDE(CMakeParseArguments)
+include(CMakeParseArguments)
 
 
 #
-# @FUNCTION: TRIBITS_INSTALL_HEADERS()
+# @FUNCTION: tribits_install_headers()
 #
-# Function used to (optionally) install header files using ``INSTALL()``
+# Function used to (optionally) install header files using ``install()``
 # command.
 #
 # Usage::
 #
-#   TRIBITS_INSTALL_HEADERS(
+#   tribits_install_headers(
 #     HEADERS <h0> <h1> ...
 #     [INSTALL_SUBDIR <subdir>]
 #     [COMPONENT <component>]
@@ -75,22 +75,22 @@ INCLUDE(CMakeParseArguments)
 #   ``COMPONENT <component>``
 #
 #     If specified, then ``COMPONENT <component>`` will be passed into
-#     ``INSTALL()``.  Otherwise, ``COMPONENT ${PROJECT_NAME}`` will get used.
+#     ``install()``.  Otherwise, ``COMPONENT ${PROJECT_NAME}`` will get used.
 #
 # If `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_ is ``FASLE``, then the
 # headers will not get installed.
 #
-FUNCTION(TRIBITS_INSTALL_HEADERS)
+function(tribits_install_headers)
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    SET(TRIBITS_INSTALL_HEADERS_DEBUG_DUMP  TRUE)
-  ENDIF()
+  if (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    set(TRIBITS_INSTALL_HEADERS_DEBUG_DUMP  TRUE)
+  endif()
 
-  IF (TRIBITS_INSTALL_HEADERS_DEBUG_DUMP)
-    MESSAGE("\nTRIBITS_INSTALL_HEADERS: ${ARGN}")
-  ENDIF()
+  if (TRIBITS_INSTALL_HEADERS_DEBUG_DUMP)
+    message("\nTRIBITS_INSTALL_HEADERS: ${ARGN}")
+  endif()
 
-  CMAKE_PARSE_ARGUMENTS(
+  cmake_parse_arguments(
     #prefix
     PARSE
     #Options
@@ -102,33 +102,33 @@ FUNCTION(TRIBITS_INSTALL_HEADERS)
     ${ARGN}
     )
 
-  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+  tribits_check_for_unparsed_arguments()
 
   # ToDo: Assert PARSE_HEADERS has at least one argument!
-  # ToDo: Assert PARSE_INSTALL_DIR has 0 or 1 argumnets!
-  # ToDo: Assert PARSE_COMONENT has 0 or 1 argumnets!
+  # ToDo: Assert PARSE_INSTALL_DIR has 0 or 1 arguments!
+  # ToDo: Assert PARSE_COMONENT has 0 or 1 arguments!
   
-  IF (PARSE_INSTALL_SUBDIR)
-    SET(INSTALL_DIR "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/${PARSE_INSTALL_SUBDIR}")
-  ELSE()
-    SET(INSTALL_DIR "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
-  ENDIF()
+  if (PARSE_INSTALL_SUBDIR)
+    set(INSTALL_DIR "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/${PARSE_INSTALL_SUBDIR}")
+  else()
+    set(INSTALL_DIR "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}")
+  endif()
 
-  IF (PARSE_COMPONENT)
-    SET(COMPONENT ${PARSE_COMPONENT})
-  ELSE()
-    SET(COMPONENT ${PROJECT_NAME})
-  ENDIF()
+  if (PARSE_COMPONENT)
+    set(COMPONENT ${PARSE_COMPONENT})
+  else()
+    set(COMPONENT ${PROJECT_NAME})
+  endif()
 
-  IF (${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS)
-    IF (TRIBITS_INSTALL_HEADERS_DEBUG_DUMP)
-      MESSAGE("\nTRIBITS_INSTALL_HEADERS: Installing headers into '${INSTALL_DIR}'")
-    ENDIF()
-    INSTALL(
+  if (${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS)
+    if (TRIBITS_INSTALL_HEADERS_DEBUG_DUMP)
+      message("\nTRIBITS_INSTALL_HEADERS: Installing headers into '${INSTALL_DIR}'")
+    endif()
+    install(
       FILES ${PARSE_HEADERS}
       DESTINATION "${INSTALL_DIR}"
       COMPONENT ${COMPONENT}
       )
-  ENDIF()  
+  endif()  
 
-ENDFUNCTION()
+endfunction()

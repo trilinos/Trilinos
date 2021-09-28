@@ -37,9 +37,9 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
-PROJECT(${PROJECT_NAME} NONE)
-SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." CACHE PATH "")
-INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
-CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
-TRIBITS_PROJECT()
+include(${CMAKE_SOURCE_DIR}/ProjectName.cmake)
+project(${PROJECT_NAME} NONE)
+set(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." CACHE PATH "")
+include("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
+cmake_minimum_required(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
+tribits_project()

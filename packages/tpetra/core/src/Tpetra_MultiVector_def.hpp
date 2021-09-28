@@ -1365,8 +1365,7 @@ namespace Tpetra {
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
    Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numExportPacketsPerLID */,
-   size_t& constantNumPackets,
-   Distributor & /* distor */ )
+   size_t& constantNumPackets)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
@@ -1742,7 +1741,6 @@ namespace Tpetra {
    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports,
    Kokkos::DualView<size_t*, buffer_device_type> /* numPacketsPerLID */,
    const size_t constantNumPackets,
-   Distributor& /* distor */,
    const CombineMode CM)
   {
     using ::Tpetra::Details::Behavior;
@@ -4162,6 +4160,7 @@ namespace Tpetra {
 
       const LO C_lclNumRows = C_tmp->getLocalLength ();
       const LO C_numVecs = C_tmp->getNumVectors ();
+
       auto C_lcl = C_tmp->getLocalViewDevice(Access::ReadWrite);
       auto C_sub = Kokkos::subview (C_lcl,
                                     std::make_pair (LO (0), C_lclNumRows),
@@ -4173,8 +4172,6 @@ namespace Tpetra {
       const impl_scalar_type alpha_IST (alpha);
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
-
-      //this->modify_device ();
 
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
@@ -4784,6 +4781,21 @@ namespace Tpetra {
     }
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  template<class T>
+  Teuchos::RCP<MultiVector<T, LocalOrdinal, GlobalOrdinal, Node> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  convert () const
+  {
+    using Teuchos::RCP;
+
+    auto newMV = Teuchos::rcp(new MultiVector<T,LocalOrdinal,GlobalOrdinal,Node>(this->getMap(),
+                                                                                 this->getNumVectors(),
+                                                                                 /*zeroOut=*/false));
+    Tpetra::deep_copy(*newMV, *this);
+    return newMV;
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4933,5 +4945,12 @@ namespace Tpetra {
   template MultiVector< SCALAR , LO , GO , NODE > createCopy( const MultiVector< SCALAR , LO , GO , NODE >& src);
 
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
+
+
+#define TPETRA_MULTIVECTOR_CONVERT_INSTANT(SO,SI,LO,GO,NODE) \
+  \
+  template Teuchos::RCP< MultiVector< SO , LO , GO , NODE > >   \
+                MultiVector< SI , LO , GO , NODE >::convert< SO > () const;
+
 
 #endif // TPETRA_MULTIVECTOR_DEF_HPP

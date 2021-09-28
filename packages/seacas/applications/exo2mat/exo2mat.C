@@ -38,6 +38,8 @@
 #include "fmt/ostream.h"
 #include "fmt/printf.h"
 #include "matio.h" // for Mat_VarCreate, Mat_VarFree, etc
+#include "time_stamp.h"
+
 #include <cassert> // for assert
 #include <cstddef> // for size_t
 #include <cstdio>  // for fprintf, printf, sprintf, etc
@@ -56,21 +58,9 @@ static bool   debug    = false;
 
 static const char *qainfo[] = {
     "exo2mat",
-    "2019/05/18",
-    "4.07",
+    "2021/09/27",
+    "4.08",
 };
-
-std::string time_stamp(const std::string &format)
-{
-  if (format == "") {
-    return std::string("");
-  }
-  auto  calendar_time = std::time(nullptr);
-  auto *local_time    = std::localtime(&calendar_time);
-
-  std::string time_string = fmt::format(format, *local_time);
-  return time_string;
-}
 
 void logger(const char *message)
 {
@@ -221,13 +211,13 @@ int matPutInt(const std::string &name, int n1, int n2, int *pd)
 }
 
 /* wrappers for the output routine types */
-void PutStr(const std::string &name, const char *str)
+void PutStr(const std::string &name, const std::string &str)
 {
   if (textfile != 0) {
-    mPutStr(name, str);
+    mPutStr(name, str.c_str());
   }
   else {
-    matPutStr(name, const_cast<char *>(str));
+    matPutStr(name, const_cast<char *>(str.c_str()));
   }
 }
 
@@ -285,7 +275,7 @@ void delete_exodus_names(char **names, int count)
   delete[] names;
 }
 
-void get_put_user_names(int exo_file, ex_entity_type type, int num_blocks, const char *mname)
+void get_put_user_names(int exo_file, ex_entity_type type, int num_blocks, const std::string &mname)
 {
   int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   max_name_length     = max_name_length < 32 ? 32 : max_name_length;
@@ -298,11 +288,11 @@ void get_put_user_names(int exo_file, ex_entity_type type, int num_blocks, const
     user_names += names[j];
     user_names += "\n";
   }
-  PutStr(mname, user_names.c_str());
+  PutStr(mname, user_names);
   delete_exodus_names(names, num_blocks);
 }
 
-void get_put_names(int exo_file, ex_entity_type type, int num_vars, const char *mname)
+void get_put_names(int exo_file, ex_entity_type type, int num_vars, const std::string &mname)
 {
   int max_name_length = ex_inquire_int(exo_file, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   max_name_length     = max_name_length < 32 ? 32 : max_name_length;
@@ -321,7 +311,7 @@ void get_put_names(int exo_file, ex_entity_type type, int num_vars, const char *
   if (debug) {
     logger("\tWriting variable names");
   }
-  PutStr(mname, mat.c_str());
+  PutStr(mname, mat);
 
   delete_exodus_names(names, num_vars);
 }
@@ -413,7 +403,7 @@ void get_put_vars(int exo_file, ex_entity_type type, int num_blocks, int num_var
   }
   else {
     std::string var_name = prefix + "names";
-    get_put_names(exo_file, type, num_vars, var_name.c_str());
+    get_put_names(exo_file, type, num_vars, var_name);
 
     std::vector<double> scr(num_entity * num_time_steps);
 
@@ -558,7 +548,7 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
           attr_names += "\n";
         }
         str = fmt::sprintf("blk%02d_attrnames", i + 1);
-        PutStr(str, attr_names.c_str());
+        PutStr(str, attr_names);
         delete_exodus_names(names, num_attr);
 
         for (int j = 0; j < num_attr; j++) {
@@ -570,7 +560,7 @@ std::vector<int> handle_element_blocks(int exo_file, int num_blocks, bool use_ce
     }
 
     get_put_user_names(exo_file, EX_ELEM_BLOCK, num_blocks, "blkusernames");
-    PutStr("blknames", types.c_str());
+    PutStr("blknames", types);
   }
   return num_elem_in_block;
 }
@@ -1117,7 +1107,7 @@ int main(int argc, char *argv[])
         ostr += "\n";
       }
     }
-    PutStr("info", ostr.c_str());
+    PutStr("info", ostr);
     ostr = "";
     for (int i = 0; i < num_info_lines; i++) {
       if (std::strlen(str2[i]) > 0 && strncmp(str2[i], "cavi", 4) == 0) {
@@ -1125,7 +1115,7 @@ int main(int argc, char *argv[])
         ostr += "\n";
       }
     }
-    PutStr("cvxp", ostr.c_str());
+    PutStr("cvxp", ostr);
   }
 
   /* nodal coordinates */

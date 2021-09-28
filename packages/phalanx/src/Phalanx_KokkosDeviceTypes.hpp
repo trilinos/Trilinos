@@ -2,8 +2,9 @@
 #define PHALANX_KOKKOS_DEVICE_TYPES_HPP
 
 //Kokkos includes
-#include "Kokkos_Core.hpp"
 #include "Kokkos_View_Fad.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
+#include "Kokkos_Core.hpp"
 #include "Phalanx_config.hpp"
 #include "Sacado_Fad_ExpressionTraits.hpp"
 #include <type_traits>
@@ -96,6 +97,9 @@ namespace PHX {
 
   template<typename DataType>
   using AtomicView = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>>;
+
+  template<typename DataType>
+  using UnmanagedView = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 }
 
 #endif

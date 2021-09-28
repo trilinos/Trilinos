@@ -85,6 +85,11 @@ typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
 template class EpetraImportT<int, default_node_type >;
 template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
 #endif
+#ifdef HAVE_TPETRA_INST_HIP
+typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
+template class EpetraImportT<int, default_node_type >;
+template RCP<const Import<int, int, default_node_type> > toXpetra<int,default_node_type>(const Epetra_Import *);
+#endif
 #else
 // Tpetra is disabled and Kokkos not available: use dummy node type
 typedef Xpetra::EpetraNode default_node_type;
@@ -116,6 +121,11 @@ template RCP<const Import<int, long long, Kokkos::Compat::KokkosOpenMPWrapperNod
 #endif
 #ifdef HAVE_TPETRA_INST_CUDA
 typedef Kokkos::Compat::KokkosCudaWrapperNode default_node_type;
+template class EpetraImportT<long long, default_node_type >;
+template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
+#endif
+#ifdef HAVE_TPETRA_INST_HIP
+typedef Kokkos::Compat::KokkosHIPWrapperNode default_node_type;
 template class EpetraImportT<long long, default_node_type >;
 template RCP<const Import<int, long long, default_node_type> > toXpetra<long long,default_node_type>(const Epetra_Import *);
 #endif

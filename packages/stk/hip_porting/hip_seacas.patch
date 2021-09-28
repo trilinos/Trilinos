@@ -1,0 +1,12 @@
+diff --git a/packages/seacas/libraries/ioss/src/CMakeLists.txt b/packages/seacas/libraries/ioss/src/CMakeLists.txt
+index dbef2ebb4d7..33dd362505d 100644
+--- a/packages/seacas/libraries/ioss/src/CMakeLists.txt
++++ b/packages/seacas/libraries/ioss/src/CMakeLists.txt
+@@ -1,6 +1,7 @@
+ IF (${PROJECT_NAME}_ENABLE_Kokkos)
+   SET(SEACAS_HAVE_KOKKOS ON)
+ ENDIF()
++SET(SEACAS_HAVE_KOKKOS OFF)
+ 
+ IF (${PROJECT_NAME}_ENABLE_Pamgen)
+   SET(SEACAS_HAVE_PAMGEN ON)

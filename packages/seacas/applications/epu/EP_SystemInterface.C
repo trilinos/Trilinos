@@ -247,9 +247,9 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     if (myRank_ == 0) {
       options_.usage();
       fmt::print("\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
-                 "\tWrites: current_directory/basename.suf\n"
-                 "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
-                 "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n"
+                 "\tWrites: current_directory/basename.output_suf\n"
+                 "\tReads:  root/sub/basename.suf.#p.0 to\n"
+                 "\t\troot/sub/basename.suf.#p.#p-1\n"
                  "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n");
     }
     return false;

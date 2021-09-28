@@ -202,7 +202,7 @@ void test_vdp_fsa(const std::string& method_name,
       pl->sublist("Default Integrator")
          .sublist("Time Step Control").remove("Time Step Control Strategy");
       RCP<Tempus::IntegratorForwardSensitivity<double> > integrator =
-        Tempus::integratorForwardSensitivity<double>(pl, model);
+        Tempus::createIntegratorForwardSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();
 
       // Integrate to timeMax

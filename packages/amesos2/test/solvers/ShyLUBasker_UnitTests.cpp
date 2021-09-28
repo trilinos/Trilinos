@@ -308,16 +308,8 @@ namespace {
         "Information about factoring");
       shylubasker_paramlist.set("verbose_matrix", false,
         "Give Permuted Matrices");
-      shylubasker_paramlist.set("matching", true,
-        "Use WC matching (Not Supported)");
-      shylubasker_paramlist.set("matching_type", 0,
-        "Type of WC matching (Not Supported)");
       shylubasker_paramlist.set("btf", true,
         "Use BTF ordering");
-      shylubasker_paramlist.set("amd_btf", true,
-        "Use AMD on BTF blocks (Not Supported)");
-      shylubasker_paramlist.set("amd_dom", true,
-        "Use CAMD on ND blocks (Not Supported)");
       shylubasker_paramlist.set("transpose", false,
         "Solve the transpose A");
 

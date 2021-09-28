@@ -144,26 +144,26 @@ struct NgpFieldInfo
   NgpFieldInfo(stk::mesh::NgpField<T>& fld)
     : m_field(fld) {}
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   NgpFieldInfo() = default;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   NgpFieldInfo(const NgpFieldInfo&) = default;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   ~NgpFieldInfo() = default;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   operator const stk::mesh::NgpField<T>&() const { return m_field; }
 
   stk::mesh::NgpField<T> m_field;
 };
 
 template <typename T>
-using FieldDataViewType = Kokkos::View<T*, MemSpace>;
+using FieldDataViewType = Kokkos::View<T*, stk::ngp::MemSpace>;
 
 template <typename T>
-using FieldView = Kokkos::View<NgpFieldInfo<T>*, MemSpace>;
+using FieldView = Kokkos::View<NgpFieldInfo<T>*, stk::ngp::MemSpace>;
 
 template <typename T>
 class ParallelSumDataExchangeSymPackUnpackHandler
@@ -200,7 +200,7 @@ public:
     }
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void devicePackMessage(int /*myProc*/, int proc, FieldDataViewType<T> & sendData) const
   {
     size_t fieldCount = 0;
@@ -217,7 +217,7 @@ public:
     }
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   void deviceUnpackMessage(int /*myProc*/, int proc, FieldDataViewType<T> & recvData) const
   {
     size_t fieldCount = 0;

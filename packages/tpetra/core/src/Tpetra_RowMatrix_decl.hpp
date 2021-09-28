@@ -565,8 +565,7 @@ namespace Tpetra {
     packImpl (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
               Teuchos::Array<char>& exports,
               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-              size_t& constantNumPackets,
-              Distributor& distor) const;
+              size_t& constantNumPackets) const;
 
 
   public:
@@ -582,8 +581,7 @@ namespace Tpetra {
     pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
           Teuchos::Array<char>& exports,
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Distributor& distor) const;
+          size_t& constantNumPackets) const;
     //@}
   }; // class RowMatrix
 } // namespace Tpetra

@@ -38,25 +38,25 @@
 # @HEADER
 
 #
-# @FUNCTION: TRIBITS_STANDARDIZE_ABS_PATHS()
+# @FUNCTION: tribits_standardize_abs_paths()
 #
-# Function uses GET_FILENAME_COMPONENT() to standardize a list of paths to be
+# Function uses get_filename_component() to standardize a list of paths to be
 # absolute paths.
 #
 # Usage::
 #
-#   TRIBITS_STANDARDIZE_ABS_PATHS(<pathsListvar> <path0> <path1> ...)
+#   tribits_standardize_abs_paths(<pathsListvar> <path0> <path1> ...)
 #
 # On output, ``<pathsListLvar>`` will be set to the list of paths
 #
-FUNCTION(TRIBITS_STANDARDIZE_ABS_PATHS  PATHS_LIST_VAR_OUT)
-  SET(PATHS_LIST)
-  FOREACH(PATH_I ${ARGN})
-    #PRINT_VAR(PATH_I)
-    GET_FILENAME_COMPONENT(STD_ABS_PATH_I "${PATH_I}" ABSOLUTE)
-    #PRINT_VAR(STD_ABS_PATH_I)
-    LIST(APPEND PATHS_LIST "${STD_ABS_PATH_I}")
-  ENDFOREACH()
-  SET(${PATHS_LIST_VAR_OUT} ${PATHS_LIST} PARENT_SCOPE)
-ENDFUNCTION()
+function(tribits_standardize_abs_paths  PATHS_LIST_VAR_OUT)
+  set(PATHS_LIST)
+  foreach(PATH_I ${ARGN})
+    #print_var(PATH_I)
+    get_filename_component(STD_ABS_PATH_I "${PATH_I}" ABSOLUTE)
+    #print_var(STD_ABS_PATH_I)
+    list(APPEND PATHS_LIST "${STD_ABS_PATH_I}")
+  endforeach()
+  set(${PATHS_LIST_VAR_OUT} ${PATHS_LIST} PARENT_SCOPE)
+endfunction()
 

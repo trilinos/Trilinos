@@ -214,14 +214,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   "Enable Boost"
   OFF)
 
-# Define option to enable code that is refactored to use Kokkos
-# This is ON by default when Kokkos is enabled.
-IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
-  SET(Kokkos_Refactor_On_By_Default ON)
-  MESSAGE(STATUS "MueLu: Kokkos_Refactor ON by default")
-ELSE()
-  SET(Kokkos_Refactor_On_By_Default OFF)
-ENDIF()
+SET(Kokkos_Refactor_On_By_Default ON)
+MESSAGE(STATUS "MueLu: Kokkos_Refactor ON by default")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
@@ -341,6 +335,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_OPENMP  ${Tpetra_INST_OPENMP})
     GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_CUDA    ${Tpetra_INST_CUDA})
+    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_HIP     ${Tpetra_INST_HIP})
   ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_Epetra)
     # If Epetra is active, always activate SerialNode
@@ -349,6 +344,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
+  MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_HIP          : ${HAVE_${PACKAGE_NAME_UC}_HIP}")
 ELSE()
   # ETI is turned off
 

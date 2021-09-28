@@ -1,14 +1,7 @@
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
-# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
-# NTESS, the U.S. Government retains certain rights in this software.
-#
-# See packages/seacas/LICENSE for details
-# SEACAS  [[Documentation](http://gsjaardema.github.io/seacas/)]
-
-* [Build instructions](#build-instructions)
-* [Configure, Build, and Install SEACAS](#configure-build-and-install-seacas)
-* [Testing](#testing)
-* [Contact information](#contact-information)
+*  [Build instructions](#build-instructions)
+*  [Configure, Build, and Install SEACAS](#configure-build-and-install-seacas)
+*  [Testing](#testing)
+*  [Contact information](#contact-information)
 
 ## Build instructions
 
@@ -17,12 +10,12 @@
 There are a few externally developed third-party libraries (TPL) that are required to
 build SEACAS
 
- * [Zoltan](#zoltan) -- required, part of Trilinos
- * [HDF5](#hdf5) -- optional, but highly recommended
- * [Parallel-NetCDF](#parallel-netcdf) -- optional for parallel
- * [NetCDF](#netcdf) -- required with modifications
- * [MatIO](#matio) -- optional
- * [Faodel](#faodel) -- optional
+*  [Zoltan](#zoltan) -- required, part of Trilinos
+*  [HDF5](#hdf5) -- optional, but highly recommended
+*  [Parallel-NetCDF](#parallel-netcdf) -- optional for parallel
+*  [NetCDF](#netcdf) -- required with modifications
+*  [MatIO](#matio) -- optional
+*  [Faodel](#faodel) -- optional
 
 #### Zoltan
 Zoltan is a package in Trilinos and it must be enabled for a SEACAS build.
@@ -39,77 +32,78 @@ large models (>150 million elements); if you are not planning to
 create or read models of this size and do not want compression
 support, you do not have to build hdf5.
 
-   * Download HDF5 from <http://www.hdfgroup.org/HDF5/release/obtain5.html>
+*  Download HDF5 from <http://www.hdfgroup.org/HDF5/release/obtain5.html>
 
-   * untar it, creating a directory will will refer to as `hdf5-X.X.X`
+*  untar it, creating a directory will will refer to as `hdf5-X.X.X`
 
-   * `cd` to that directory and enter the command:
-     * Serial:
-       ```bash
-       ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec
-       ```
+*  `cd` to that directory and enter the command:
 
-     * Parallel:
-       ```bash
-       CC=mpicc ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec --enable-parallel
-       ```
+  *  Serial:
+     ```bash
+     ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec
+     ```
 
-   * `make && make install`
+  *  Parallel:
+     ```bash
+     CC=mpicc ./configure --prefix=${WHERE_TO_INSTALL} --enable-shared --enable-production --enable-debug=no --enable-static-exec --enable-parallel
+     ```
+
+  *  `make && make install`
 
 #### Parallel-NetCDF
   For a parallel build of Trilinos, especially to use the
   auto-decomposition support of the Ioss library, you will need the
   parallel-netcdf library, also known as pnetcdf.
 
-  * Download <http://cucis.ece.northwestern.edu/projects/PnetCDF/Release/parallel-netcdf-1.6.1.tar.gz>
+*  Download <http://cucis.ece.northwestern.edu/projects/PnetCDF/Release/parallel-netcdf-1.6.1.tar.gz>
 
-  * `tar zxvf parallel-netcdf-1.6.1.tar.gz`
+*  `tar zxvf parallel-netcdf-1.6.1.tar.gz`
 
-  * `cd` to the `parallel-netcdf-1.6.1` directory and enter the command:
-    ```bash
-    CC=mpicc ./configure --disable-fortran --prefix ${WHERE_TO_INSTALL}
-    ```
+*  `cd` to the `parallel-netcdf-1.6.1` directory and enter the command:
+   ```bash
+   CC=mpicc ./configure --disable-fortran --prefix ${WHERE_TO_INSTALL}
+   ```
 
-  * `make && make install`
+*  `make && make install`
 
 #### NetCDF
 The most recent released version is recommended. For use with Exodus, some local modifications to the netcdf.h include file are required.  See [NetCDF-Mapping.md](NetCDF-Mapping.md) for an explanation of why these modifications are required (or highly recommended)
 
- * Download the latest netcdf-c release from <http://www.unidata.ucar.edu/downloads/netcdf/index.jsp>
+*  Download the latest netcdf-c release from <http://www.unidata.ucar.edu/downloads/netcdf/index.jsp>
 
- * `tar zxvf netcdf-4.6.3.tar.gz`  (or whatever the latest version is)
+*  `tar zxvf netcdf-4.6.3.tar.gz`  (or whatever the latest version is)
 
- * If the version is *prior* to 4.5.1, then you need to modify the
+*  If the version is *prior* to 4.5.1, then you need to modify the
    following defines in
    seacas/TPL/netcdf/netcdf-4.6.3/include/netcdf.h.  Versions *4.5.1 or
    later* do not check these limits and can be run unmodified.
 
-    ```c
-    #define NC_MAX_DIMS     65536    /* max dimensions per file */
-    #define NC_MAX_VARS     524288   /* max variables per file */
-    ```
+   ```c
+   #define NC_MAX_DIMS     65536    /* max dimensions per file */
+   #define NC_MAX_VARS     524288   /* max variables per file */
+   ```
 
- * `cd netcdf-4.6.3` and enter the command:
+*  `cd netcdf-4.6.3` and enter the command:
 
-    * serial
-      ```bash
-      CFLAGS="-I${WHERE_TO_INSTALL}/include" \
-      CPPFLAGS="-DNDEBUG" LDFLAGS="-L${WHERE_TO_INSTALL}/lib" \
-      ./configure --enable-netcdf-4  \
-        --disable-fsync --prefix ${WHERE_TO_INSTALL} \
-        --disable-dap --disable-v2
-      ```
+  *  serial
+     ```bash
+     CFLAGS="-I${WHERE_TO_INSTALL}/include" \
+     CPPFLAGS="-DNDEBUG" LDFLAGS="-L${WHERE_TO_INSTALL}/lib" \
+     ./configure --enable-netcdf-4  \
+       --disable-fsync --prefix ${WHERE_TO_INSTALL} \
+       --disable-dap --disable-v2
+     ```
 
-    * parallel
-      ```bash
-      CC='mpicc' CFLAGS="-I${WHERE_TO_INSTALL}/include" \
-      CPPFLAGS="-DNDEBUG" LDFLAGS="-L${WHERE_TO_INSTALL}/lib" \
-      ./configure --enable-netcdf-4  --enable-pnetcdf \
-        --disable-fsync --prefix ${WHERE_TO_INSTALL} \
-        --disable-dap --disable-v2
-      ```
+  *  parallel
+     ```bash
+     CC='mpicc' CFLAGS="-I${WHERE_TO_INSTALL}/include" \
+     CPPFLAGS="-DNDEBUG" LDFLAGS="-L${WHERE_TO_INSTALL}/lib" \
+     ./configure --enable-netcdf-4  --enable-pnetcdf \
+       --disable-fsync --prefix ${WHERE_TO_INSTALL} \
+       --disable-dap --disable-v2
+     ```
 
- * Check the results of the configure and make sure that the listings
+*  Check the results of the configure and make sure that the listings
    under features are similar to:
 
    ```bash
@@ -126,16 +120,16 @@ The most recent released version is recommended. For use with Exodus, some local
    for seacas. For a serial build, `PNetCDF` and `NC-4 Parallel Support`
    should be `no`
 
- * `make && make install`
+*  `make && make install`
 
 #### MatIO
 The MatIO library is used in the `exo2mat` and `mat2exo` programs which convert an exodus file to and from a MATLAB binary file.  To use this do:
 
- * Download matio via git:
+*  Download matio via git:
 
- * `git clone https://github.com/tbeu/matio.git`
+*  `git clone https://github.com/tbeu/matio.git`
 
- * `cd matio` and enter the command:
+*  `cd matio` and enter the command:
    ```bash
    ./autogen.sh
    # The -L is to find the hdf5 library...
@@ -143,7 +137,7 @@ The MatIO library is used in the `exo2mat` and `mat2exo` programs which convert 
    ./configure --with-hdf5=${WHERE_TO_INSTALL} --enable-mat73 --enable-shared --prefix=${WHERE_TO_INSTALL}
    ```
 
- * `make && make install`
+*  `make && make install`
 
 #### Faodel
 Faodel is a collection of data management tools that Sandia is developing to improve how datasets migrate between memory and storage resources in a distributed system. For SEACAS Faodel support means adding a new backend to IOSS. This enables additional data storage capabilities and the chance to communicate data between execution spaces.

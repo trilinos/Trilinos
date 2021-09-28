@@ -163,7 +163,7 @@ TEST(EdgeConnectorTest, CheckConnectElemToInvalidEdge)
   stk::mesh::Entity edge = bulk.declare_edge(1u, edgeParts);
   bulk.declare_relation(edge, node1, 0u);
   bulk.declare_relation(edge, node7, 1u);
-  EXPECT_THROW(stk::mesh::impl::connect_edge_to_elements(bulk, edge), std::logic_error);
+  EXPECT_FALSE(stk::mesh::impl::connect_edge_to_elements(bulk, edge));
   bulk.modification_end();
 
   EXPECT_EQ(0u, bulk.num_elements(edge));

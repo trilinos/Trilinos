@@ -250,6 +250,16 @@ void PHX::Field<DataT,Rank,Layout>::setFieldData(const PHX::any& a)
 
 // **********************************************************************
 template<typename DataT,int Rank,typename Layout>
+void PHX::Field<DataT,Rank,Layout>::releaseFieldData()
+{
+#if defined( PHX_DEBUG)
+  m_data_set = false;
+#endif
+  m_field_data = array_type();
+}
+
+// **********************************************************************
+template<typename DataT,int Rank,typename Layout>
 void PHX::Field<DataT,Rank,Layout>::print(std::ostream& os, bool printValues) const
 {
   os << "Field<" << Rank << ">(";

@@ -6,6 +6,7 @@
 #ifndef ZE_UnitCell_H
 #define ZE_UnitCell_H
 
+#include <array>
 #include <map>
 #include <string>
 #include <vector>
@@ -24,8 +25,8 @@ struct GeneratedSideBlock
   //!
   //! Note that the `element_offset` is the 1-based index of the
   //! element within the element block that it is a member of
-  GeneratedSideBlock() = default;
-  GeneratedSideBlock(const GeneratedSideBlock&) = delete;
+  GeneratedSideBlock()                           = default;
+  GeneratedSideBlock(const GeneratedSideBlock &) = delete;
 
   std::map<std::string, std::vector<int64_t>> m_faces;
 
@@ -42,7 +43,7 @@ struct GeneratedSideBlock
 class UnitCell
 {
 public:
-  UnitCell(std::shared_ptr<Ioss::Region> region);
+  explicit UnitCell(std::shared_ptr<Ioss::Region> region);
   UnitCell(const UnitCell &) = delete;
 
   //! Create a vector of `node_count` length which has the following values:

@@ -537,6 +537,14 @@ namespace {
       TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
     }
 #endif
+#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_HIP)
+    {
+      typedef Xpetra::EpetraMapT<GO, Kokkos::Compat::KokkosHIPWrapperNode> mm;
+      TEST_THROW(mm(10, 0, comm), Xpetra::Exceptions::RuntimeError);
+      typedef Xpetra::EpetraCrsMatrixT<GO, Kokkos::Compat::KokkosHIPWrapperNode> mx;
+      TEST_THROW(mx(Teuchos::null, 0), Xpetra::Exceptions::RuntimeError);
+    }
+#endif
 
 #endif
   }
@@ -1323,9 +1331,7 @@ namespace {
       TEST_EQUALITY(values[0], FORTY_TWO);  // changes in the view also changes matrix values
     }
 
-    A->resumeFill();
     A->setAllToScalar(-123.4);
-    A->fillComplete();
 
     {
       auto view2 = A->getLocalMatrixHost();

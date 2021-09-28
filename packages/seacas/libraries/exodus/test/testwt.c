@@ -38,28 +38,16 @@
 
 int main(int argc, char **argv)
 {
-  int  exoid, num_dim, num_nodes, num_elem, num_elem_blk;
-  int  num_face_in_sset[10], num_nodes_in_nset[10];
-  int  num_node_sets, num_side_sets, error;
-  int  i, j, k, m, *elem_map, *connect;
-  int  node_list[100], elem_list[100], side_list[100];
-  int  ssids[10], nsids[10];
-  int  num_qa_rec, num_info;
-  int  num_glo_vars, num_nod_vars, num_ele_vars, num_sset_vars, num_nset_vars;
-  int *truth_tab;
-  int  whole_time_step, num_time_steps;
-  int  CPU_word_size, IO_word_size;
-  int  prop_array[2];
+  int num_face_in_sset[10], num_nodes_in_nset[10];
+  int node_list[100], elem_list[100], side_list[100];
+  int ssids[10], nsids[10];
 
-  float *glob_var_vals, *nodal_var_vals, *elem_var_vals;
-  float *sset_var_vals, *nset_var_vals;
-  float  time_value;
-  float  x[100], y[100], z[100];
-  float  attrib[1], dist_fact[100];
-  char * coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
-  char * block_names[10], *nset_names[10], *sset_names[10];
-  char * prop_names[2], *attrib_names[2];
-  char * title = "This is a test";
+  float x[100], y[100], z[100];
+  float attrib[1], dist_fact[100];
+  char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
+  char *block_names[10], *nset_names[10], *sset_names[10];
+  char *prop_names[2], *attrib_names[2];
+  char *title = "This is a test";
 
   struct ex_block blocks[10];
 
@@ -67,29 +55,28 @@ int main(int argc, char **argv)
 
   /* Specify compute and i/o word size */
 
-  CPU_word_size = 0; /* sizeof(float) */
-  IO_word_size  = 4; /* (4 bytes) */
+  int CPU_word_size = 0; /* sizeof(float) */
+  int IO_word_size  = 4; /* (4 bytes) */
 
   /* create EXODUS II file */
-
-  exoid = ex_create("test.exo",     /* filename path */
-                    EX_CLOBBER,     /* create mode */
-                    &CPU_word_size, /* CPU float word size in bytes */
-                    &IO_word_size); /* I/O float word size in bytes */
+  int exoid = ex_create("test.exo",     /* filename path */
+                        EX_CLOBBER,     /* create mode */
+                        &CPU_word_size, /* CPU float word size in bytes */
+                        &IO_word_size); /* I/O float word size in bytes */
   printf("after ex_create for test.exo, exoid = %d\n", exoid);
   printf(" cpu word size: %d io word size: %d\n", CPU_word_size, IO_word_size);
 
   /* initialize file with parameters */
 
-  num_dim       = 3;
-  num_nodes     = 33;
-  num_elem      = 7;
-  num_elem_blk  = 7;
-  num_node_sets = 2;
-  num_side_sets = 5;
+  int num_dim       = 3;
+  int num_nodes     = 33;
+  int num_elem      = 7;
+  int num_elem_blk  = 7;
+  int num_node_sets = 2;
+  int num_side_sets = 5;
 
-  error = ex_put_init(exoid, title, num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets,
-                      num_side_sets);
+  int error = ex_put_init(exoid, title, num_dim, num_nodes, num_elem, num_elem_blk, num_node_sets,
+                          num_side_sets);
 
   printf("after ex_put_init, error = %d\n", error);
 
@@ -266,9 +253,8 @@ int main(int argc, char **argv)
 
   /* write element order map */
 
-  elem_map = (int *)calloc(num_elem, sizeof(int));
-
-  for (i = 1; i <= num_elem; i++) {
+  int *elem_map = (int *)calloc(num_elem, sizeof(int));
+  for (int i = 1; i <= num_elem; i++) {
     elem_map[i - 1] = i;
   }
 
@@ -283,7 +269,7 @@ int main(int argc, char **argv)
   free(elem_map);
 
   /* write element block parameters */
-  for (i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) {
     blocks[i].type                = EX_ELEM_BLOCK;
     blocks[i].id                  = 0;
     blocks[i].num_entry           = 0;
@@ -356,7 +342,7 @@ int main(int argc, char **argv)
   }
 
   /* Write element block names */
-  for (i = 0; i < num_elem_blk; i++) {
+  for (int i = 0; i < num_elem_blk; i++) {
     error = ex_put_name(exoid, EX_ELEM_BLOCK, blocks[i].id, block_names[i]);
     printf("after ex_put_names, error = %d\n", error);
   }
@@ -430,11 +416,11 @@ int main(int argc, char **argv)
 
   /* write element connectivity */
 
-  connect    = (int *)calloc(8, sizeof(int));
-  connect[0] = 1;
-  connect[1] = 2;
-  connect[2] = 3;
-  connect[3] = 4;
+  int *connect = (int *)calloc(8, sizeof(int));
+  connect[0]   = 1;
+  connect[1]   = 2;
+  connect[2]   = 3;
+  connect[3]   = 4;
 
   error = ex_put_conn(exoid, EX_ELEM_BLOCK, blocks[0].id, connect, NULL, NULL);
   printf("after ex_put_elem_conn, error = %d\n", error);
@@ -598,7 +584,7 @@ int main(int argc, char **argv)
   }
 
   attrib_names[0] = "THICKNESS";
-  for (i = 0; i < num_elem_blk; i++) {
+  for (int i = 0; i < num_elem_blk; i++) {
     error = ex_put_attr_names(exoid, EX_ELEM_BLOCK, blocks[i].id, attrib_names);
     printf("after ex_put_elem_attr_names, error = %d\n", error);
     if (error) {
@@ -706,6 +692,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  int prop_array[2];
   prop_array[0] = 1000;
   prop_array[1] = 2000;
 
@@ -970,7 +957,7 @@ int main(int argc, char **argv)
 
   /* write QA records; test empty and just blank-filled records */
 
-  num_qa_rec = 2;
+  int num_qa_rec = 2;
 
   qa_record[0][0] = "TESTWT";
   qa_record[0][1] = "testwt";
@@ -991,7 +978,7 @@ int main(int argc, char **argv)
 
   /* write information records; test empty and just blank-filled records */
 
-  num_info = 3;
+  int num_info = 3;
 
   info[0] = "This is the first information record.";
   info[1] = "";
@@ -1007,7 +994,7 @@ int main(int argc, char **argv)
 
   /* write results variables parameters and names */
 
-  num_glo_vars = 1;
+  int num_glo_vars = 1;
 
   var_names[0] = "glo_vars";
 
@@ -1025,7 +1012,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  num_nod_vars = 2;
+  int num_nod_vars = 2;
   /*              12345678901234567890123456789012 */
   var_names[0] = "node_variable_a_very_long_name_0";
   var_names[1] = "nod_var1";
@@ -1044,7 +1031,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  num_ele_vars = 3;
+  int num_ele_vars = 3;
   /*              0        1         2         3   */
   /*              12345678901234567890123456789012 */
   var_names[0] = "this_variable_name_is_short";
@@ -1065,9 +1052,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  int num_nset_vars = 3;
   {
-    num_nset_vars = 3;
-
     var_names[0] = "ns_var0";
     var_names[1] = "ns_var1";
     var_names[2] = "ns_var2";
@@ -1087,9 +1073,8 @@ int main(int argc, char **argv)
     }
   }
 
+  int num_sset_vars = 3;
   {
-    num_sset_vars = 3;
-
     var_names[0] = "ss_var0";
     var_names[1] = "ss_var1";
     var_names[2] = "ss_var2";
@@ -1110,12 +1095,11 @@ int main(int argc, char **argv)
   }
 
   /* write element variable truth table */
+  int *truth_tab = (int *)calloc((num_elem_blk * num_ele_vars), sizeof(int));
 
-  truth_tab = (int *)calloc((num_elem_blk * num_ele_vars), sizeof(int));
-
-  k = 0;
-  for (i = 0; i < num_elem_blk; i++) {
-    for (j = 0; j < num_ele_vars; j++) {
+  int k = 0;
+  for (int i = 0; i < num_elem_blk; i++) {
+    for (int j = 0; j < num_ele_vars; j++) {
       truth_tab[k++] = 1;
     }
   }
@@ -1136,17 +1120,17 @@ int main(int argc, char **argv)
    * obviously the analysis code will populate these arrays
    */
 
-  whole_time_step = 1;
-  num_time_steps  = 10;
+  int whole_time_step = 1;
+  int num_time_steps  = 10;
 
-  glob_var_vals  = (float *)calloc(num_glo_vars, CPU_word_size);
-  nodal_var_vals = (float *)calloc(num_nodes, CPU_word_size);
-  elem_var_vals  = (float *)calloc(4, CPU_word_size);
-  sset_var_vals  = (float *)calloc(10, CPU_word_size);
-  nset_var_vals  = (float *)calloc(10, CPU_word_size);
+  float *glob_var_vals  = (float *)calloc(num_glo_vars, CPU_word_size);
+  float *nodal_var_vals = (float *)calloc(num_nodes, CPU_word_size);
+  float *elem_var_vals  = (float *)calloc(4, CPU_word_size);
+  float *sset_var_vals  = (float *)calloc(10, CPU_word_size);
+  float *nset_var_vals  = (float *)calloc(10, CPU_word_size);
 
-  for (i = 0; i < num_time_steps; i++) {
-    time_value = (float)(i + 1) / 100.;
+  for (int i = 0; i < num_time_steps; i++) {
+    float time_value = (float)(i + 1) / 100.;
 
     /* write time value */
 
@@ -1160,7 +1144,7 @@ int main(int argc, char **argv)
 
     /* write global variables */
 
-    for (j = 0; j < num_glo_vars; j++) {
+    for (int j = 0; j < num_glo_vars; j++) {
       glob_var_vals[j] = (float)(j + 2) * time_value;
     }
 
@@ -1174,8 +1158,8 @@ int main(int argc, char **argv)
 
     /* write nodal variables */
 
-    for (k = 1; k <= num_nod_vars; k++) {
-      for (j = 0; j < num_nodes; j++) {
+    for (int k = 1; k <= num_nod_vars; k++) {
+      for (int j = 0; j < num_nodes; j++) {
         nodal_var_vals[j] = (float)k + ((float)(j + 1) * time_value);
       }
 
@@ -1189,9 +1173,9 @@ int main(int argc, char **argv)
 
     /* write element variables */
 
-    for (k = 1; k <= num_ele_vars; k++) {
-      for (j = 0; j < num_elem_blk; j++) {
-        for (m = 0; m < blocks[j].num_entry; m++) {
+    for (int k = 1; k <= num_ele_vars; k++) {
+      for (int j = 0; j < num_elem_blk; j++) {
+        for (int m = 0; m < blocks[j].num_entry; m++) {
           elem_var_vals[m] = (float)(k + 1) + (float)(j + 2) + ((float)(m + 1) * time_value);
           /* printf("elem_var_vals[%d]: %f\n",m,elem_var_vals[m]); */
         }
@@ -1207,9 +1191,9 @@ int main(int argc, char **argv)
 
     /* write sideset variables */
 
-    for (k = 1; k <= num_sset_vars; k++) {
-      for (j = 0; j < num_side_sets; j++) {
-        for (m = 0; m < num_face_in_sset[j]; m++) {
+    for (int k = 1; k <= num_sset_vars; k++) {
+      for (int j = 0; j < num_side_sets; j++) {
+        for (int m = 0; m < num_face_in_sset[j]; m++) {
           sset_var_vals[m] = (float)(k + 2) + (float)(j + 3) + ((float)(m + 1) * time_value);
           /* printf("sset_var_vals[%d]: %f\n",m,sset_var_vals[m]); */
         }
@@ -1225,9 +1209,9 @@ int main(int argc, char **argv)
 
     /* write nodeset variables */
 
-    for (k = 1; k <= num_nset_vars; k++) {
-      for (j = 0; j < num_node_sets; j++) {
-        for (m = 0; m < num_nodes_in_nset[j]; m++) {
+    for (int k = 1; k <= num_nset_vars; k++) {
+      for (int j = 0; j < num_node_sets; j++) {
+        for (int m = 0; m < num_nodes_in_nset[j]; m++) {
           nset_var_vals[m] = (float)(k + 3) + (float)(j + 4) + ((float)(m + 1) * time_value);
           /* printf("nset_var_vals[%d]: %f\n",m,nset_var_vals[m]); */
         }

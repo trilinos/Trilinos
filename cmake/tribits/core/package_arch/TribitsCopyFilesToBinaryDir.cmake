@@ -38,12 +38,12 @@
 # @HEADER
 
 
-INCLUDE(TribitsAddTestHelpers)
-INCLUDE(CMakeParseArguments)
+include(TribitsAddTestHelpers)
+include(CMakeParseArguments)
 
 
 #
-# @FUNCTION: TRIBITS_COPY_FILES_TO_BINARY_DIR()
+# @FUNCTION: tribits_copy_files_to_binary_dir()
 #
 # Function that copies a list of files from a source directory to a
 # destination directory at configure time, typically so that it can be used in
@@ -51,7 +51,7 @@ INCLUDE(CMakeParseArguments)
 #
 # Usage::
 #
-#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#   tribits_copy_files_to_binary_dir(
 #     <targetName>
 #     [SOURCE_FILES <file1> <file2> ...]
 #     [SOURCE_DIR <sourceDir>]
@@ -76,7 +76,7 @@ INCLUDE(CMakeParseArguments)
 #
 # **1) Source files and destination files have the same name**::
 #
-#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#   tribits_copy_files_to_binary_dir(
 #     <targetName>
 #     SOURCE_FILES <file1> <file2> ...
 #     [SOURCE_DIR <sourceDir>]
@@ -92,7 +92,7 @@ INCLUDE(CMakeParseArguments)
 #
 # **2) Source files have a prefix different from the destination files**::
 #
-#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#   tribits_copy_files_to_binary_dir(
 #     <targetName>
 #     DEST_FILES <file1> <file2> ...
 #     SOURCE_PREFIX <srcPrefix>
@@ -108,7 +108,7 @@ INCLUDE(CMakeParseArguments)
 #
 # **3) Source files and destination files have completely different names**::
 #
-#   TRIBITS_COPY_FILES_TO_BINARY_DIR(
+#   tribits_copy_files_to_binary_dir(
 #     <targetName>
 #     SOURCE_FILES <sfile1> <sfile2> ...
 #     [SOURCE_DIR <sourceDir>]
@@ -167,12 +167,12 @@ INCLUDE(CMakeParseArguments)
 #     Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
 #     appended to the arguments in the ``EXEDEPS`` list.
 #
-FUNCTION(TRIBITS_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
+function(tribits_copy_files_to_binary_dir TARGET_NAME)
 
   #
   # A) Parse input arguments
   #
-  CMAKE_PARSE_ARGUMENTS(
+  cmake_parse_arguments(
     #prefix
     PARSE
     #options
@@ -184,138 +184,138 @@ FUNCTION(TRIBITS_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
     ${ARGN}
   )
 
-  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+  tribits_check_for_unparsed_arguments()
 
-  SET(ADD_THE_TEST FALSE)
-  TRIBITS_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
-  IF (NOT ADD_THE_TEST)
-    RETURN()
-  ENDIF()
+  set(ADD_THE_TEST FALSE)
+  tribits_add_test_process_categories(ADD_THE_TEST)
+  if (NOT ADD_THE_TEST)
+    return()
+  endif()
 
-  IF (NOT PARSE_SOURCE_DIR)
-    SET(PARSE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-  ENDIF()
+  if (NOT PARSE_SOURCE_DIR)
+    set(PARSE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  endif()
 
-  IF (NOT PARSE_DEST_DIR)
-    SET(PARSE_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
-  ENDIF()
+  if (NOT PARSE_DEST_DIR)
+    set(PARSE_DEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
 
-  SET(RENAME 1)
+  set(RENAME 1)
 
-  IF (PARSE_SOURCE_FILES AND NOT PARSE_DEST_FILES)
-    SET(PARSE_DEST_FILES ${PARSE_SOURCE_FILES})
-    SET(RENAME 0)
-  ENDIF()
+  if (PARSE_SOURCE_FILES AND NOT PARSE_DEST_FILES)
+    set(PARSE_DEST_FILES ${PARSE_SOURCE_FILES})
+    set(RENAME 0)
+  endif()
 
-  IF (PARSE_DEST_FILES AND NOT PARSE_SOURCE_FILES)
-    SET(PARSE_SOURCE_FILES ${PARSE_DEST_FILES})
-    SET(RENAME 0)
-  ENDIF()
+  if (PARSE_DEST_FILES AND NOT PARSE_SOURCE_FILES)
+    set(PARSE_SOURCE_FILES ${PARSE_DEST_FILES})
+    set(RENAME 0)
+  endif()
 
   #
   # B) Validate arguments
   #
 
-  LIST(LENGTH PARSE_SOURCE_DIR PARSE_SOURCE_DIR_LEN)
-  LIST(LENGTH PARSE_SOURCE_FILES PARSE_SOURCE_FILES_LEN)
-  LIST(LENGTH PARSE_SOURCE_PREFIX PARSE_SOURCE_PREFIX_LEN)
-  LIST(LENGTH PARSE_DEST_DIR PARSE_DEST_DIR_LEN)
-  LIST(LENGTH PARSE_DEST_FILES PARSE_DEST_FILES_LEN)
+  list(LENGTH PARSE_SOURCE_DIR PARSE_SOURCE_DIR_LEN)
+  list(LENGTH PARSE_SOURCE_FILES PARSE_SOURCE_FILES_LEN)
+  list(LENGTH PARSE_SOURCE_PREFIX PARSE_SOURCE_PREFIX_LEN)
+  list(LENGTH PARSE_DEST_DIR PARSE_DEST_DIR_LEN)
+  list(LENGTH PARSE_DEST_FILES PARSE_DEST_FILES_LEN)
 
-  IF (PARSE_SOURCE_DIR_LEN GREATER 1)
-    MESSAGE(SEND_ERROR "Error, there can only be 0 or one SOURCE_DIR arguments!")
-  ENDIF()
+  if (PARSE_SOURCE_DIR_LEN GREATER 1)
+    message(SEND_ERROR "Error, there can only be 0 or one SOURCE_DIR arguments!")
+  endif()
 
-  IF (PARSE_DEST_DIR_LEN GREATER 1)
-    MESSAGE(SEND_ERROR "Error, there can only be 0 or one DEST_DIR arguments!")
-  ENDIF()
+  if (PARSE_DEST_DIR_LEN GREATER 1)
+    message(SEND_ERROR "Error, there can only be 0 or one DEST_DIR arguments!")
+  endif()
 
-  IF (PARSE_SOURCE_PREFIX_LEN GREATER 1)
-    MESSAGE(SEND_ERROR "Error, If SOURCE_PREFIX can only take one argument!")
-  ENDIF()
+  if (PARSE_SOURCE_PREFIX_LEN GREATER 1)
+    message(SEND_ERROR "Error, If SOURCE_PREFIX can only take one argument!")
+  endif()
 
-  IF (PARSE_SOURCE_FILES_LEN EQUAL 0)
-    MESSAGE(SEND_ERROR "Error, there are no source files listed!")
-  ENDIF()
+  if (PARSE_SOURCE_FILES_LEN EQUAL 0)
+    message(SEND_ERROR "Error, there are no source files listed!")
+  endif()
 
-  IF (PARSE_DEST_FILES_LEN EQUAL 0)
-    MESSAGE(SEND_ERROR "Error, there are no destination files listed!")
-  ENDIF()
+  if (PARSE_DEST_FILES_LEN EQUAL 0)
+    message(SEND_ERROR "Error, there are no destination files listed!")
+  endif()
 
-  IF (NOT PARSE_SOURCE_FILES_LEN EQUAL ${PARSE_DEST_FILES_LEN})
-    MESSAGE(SEND_ERROR "Error, there are not the same number of source files ${PARSE_SOURCE_FILES_LEN} and dest files ${PARSE_DEST_FILES_LEN}!")
-  ENDIF()
+  if (NOT PARSE_SOURCE_FILES_LEN EQUAL ${PARSE_DEST_FILES_LEN})
+    message(SEND_ERROR "Error, there are not the same number of source files ${PARSE_SOURCE_FILES_LEN} and dest files ${PARSE_DEST_FILES_LEN}!")
+  endif()
 
   #
   # C) Build the list of command and dependencies
   #
 
-  SET(DEST_FILES_LIST)
-  IF(RENAME)
-    MATH(EXPR FILES_IDX_END "${PARSE_DEST_FILES_LEN}-1")
+  set(DEST_FILES_LIST)
+  if(RENAME)
+    math(EXPR FILES_IDX_END "${PARSE_DEST_FILES_LEN}-1")
 
-    FOREACH(FILE_IDX RANGE ${FILES_IDX_END})
+    foreach(FILE_IDX RANGE ${FILES_IDX_END})
 
-      LIST(GET PARSE_SOURCE_FILES ${FILE_IDX} SOURCE_FILE)
-      SET(SOURCE_FILE_FULL "${PARSE_SOURCE_DIR}/${PARSE_SOURCE_PREFIX}${SOURCE_FILE}")
+      list(GET PARSE_SOURCE_FILES ${FILE_IDX} SOURCE_FILE)
+      set(SOURCE_FILE_FULL "${PARSE_SOURCE_DIR}/${PARSE_SOURCE_PREFIX}${SOURCE_FILE}")
 
-      LIST(GET PARSE_DEST_FILES ${FILE_IDX} DEST_FILE)
-      SET(DEST_FILE_FULL "${PARSE_DEST_DIR}/${DEST_FILE}")
+      list(GET PARSE_DEST_FILES ${FILE_IDX} DEST_FILE)
+      set(DEST_FILE_FULL "${PARSE_DEST_DIR}/${DEST_FILE}")
 
-      #PRINT_VAR(SOURCE_FILE_FULL)
-      #PRINT_VAR(DEST_FILE_FULL)
+      #print_var(SOURCE_FILE_FULL)
+      #print_var(DEST_FILE_FULL)
 
-      ADD_CUSTOM_COMMAND(
+      add_custom_command(
         OUTPUT ${DEST_FILE_FULL}
         DEPENDS ${SOURCE_FILE_FULL}
         COMMAND ${CMAKE_COMMAND} ARGS -E copy ${SOURCE_FILE_FULL} ${DEST_FILE_FULL}
         )
 
-      LIST(APPEND DEST_FILES_LIST "${DEST_FILE_FULL}")
+      list(APPEND DEST_FILES_LIST "${DEST_FILE_FULL}")
 
-    ENDFOREACH()
-  ELSE()
-    FOREACH(SOURCE_FILE ${PARSE_SOURCE_FILES})
-      SET(DEST_FILE "${SOURCE_FILE}")
+    endforeach()
+  else()
+    foreach(SOURCE_FILE ${PARSE_SOURCE_FILES})
+      set(DEST_FILE "${SOURCE_FILE}")
 
-      SET(SOURCE_FILE_FULL "${PARSE_SOURCE_DIR}/${PARSE_SOURCE_PREFIX}${SOURCE_FILE}")
-      SET(DEST_FILE_FULL "${PARSE_DEST_DIR}/${DEST_FILE}")
+      set(SOURCE_FILE_FULL "${PARSE_SOURCE_DIR}/${PARSE_SOURCE_PREFIX}${SOURCE_FILE}")
+      set(DEST_FILE_FULL "${PARSE_DEST_DIR}/${DEST_FILE}")
 
-      #PRINT_VAR(SOURCE_FILE_FULL)
-      #PRINT_VAR(DEST_FILE_FULL)
+      #print_var(SOURCE_FILE_FULL)
+      #print_var(DEST_FILE_FULL)
 
-      ADD_CUSTOM_COMMAND(
+      add_custom_command(
         OUTPUT ${DEST_FILE_FULL}
         DEPENDS ${SOURCE_FILE_FULL}
         COMMAND ${CMAKE_COMMAND} ARGS -E copy ${SOURCE_FILE_FULL} ${DEST_FILE_FULL}
         )
 
-      LIST(APPEND DEST_FILES_LIST "${DEST_FILE_FULL}")
+      list(APPEND DEST_FILES_LIST "${DEST_FILE_FULL}")
 
-    ENDFOREACH()
-  ENDIF()
+    endforeach()
+  endif()
 
-  #PRINT_VAR(DEST_FILES_LIST)
+  #print_var(DEST_FILES_LIST)
 
-  IF (PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
-    SET(PACKAGE_PREFIX "${PACKAGE_NAME}_")
-    SET(TARGET_NAME "${PACKAGE_PREFIX}${TARGET_NAME}")
-  ENDIF()
+  if (PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
+    set(PACKAGE_PREFIX "${PACKAGE_NAME}_")
+    set(TARGET_NAME "${PACKAGE_PREFIX}${TARGET_NAME}")
+  endif()
 
-  ADD_CUSTOM_TARGET( ${TARGET_NAME} ALL
+  add_custom_target( ${TARGET_NAME} ALL
     DEPENDS ${DEST_FILES_LIST}
     )
 
-  IF (PARSE_EXEDEPS)
-    FOREACH(EXEDEP ${PARSE_EXEDEPS})
-      ADD_DEPENDENCIES(${PACKAGE_PREFIX}${EXEDEP} ${TARGET_NAME})
-    ENDFOREACH()
-  ENDIF()
+  if (PARSE_EXEDEPS)
+    foreach(EXEDEP ${PARSE_EXEDEPS})
+      add_dependencies(${PACKAGE_PREFIX}${EXEDEP} ${TARGET_NAME})
+    endforeach()
+  endif()
 
-  IF (PARSE_TARGETDEPS)
-    FOREACH(TARGETDEP ${PARSE_TARGETDEPS})
-      ADD_DEPENDENCIES(${TARGETDEP} ${TARGET_NAME})
-    ENDFOREACH()
-  ENDIF()
+  if (PARSE_TARGETDEPS)
+    foreach(TARGETDEP ${PARSE_TARGETDEPS})
+      add_dependencies(${TARGETDEP} ${TARGET_NAME})
+    endforeach()
+  endif()
 
-ENDFUNCTION()
+endfunction()

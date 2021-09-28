@@ -244,7 +244,7 @@ void Multiply(
 
   // Import any needed remote rows and populate the Bview struct.
   if (!use_optimized_ATB)
-    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label, params);
+    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), Aprime->getGraph()->getImporter().is_null(), label, params);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   } //stop MM_importExtract here
@@ -418,7 +418,7 @@ void Jacobi(Scalar omega,
       ip2slist.set("MM_TAFC_OverrideAllreduceCheck",overrideAllreduce);
   }
 
-  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), false, label,importParams2);
+  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter(), Aprime->getGraph()->getImporter().is_null(), label,importParams2);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   }
@@ -3221,7 +3221,7 @@ addUnsorted(
   handle.create_spadd_handle(false);
   auto addHandle = handle.get_spadd_handle();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted symbolic")));
+  auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted symbolic")));
 #endif
   KokkosSparse::Experimental::spadd_symbolic
     <KKH,
@@ -3234,7 +3234,7 @@ addUnsorted(
   Ccolinds = col_inds_array(Kokkos::ViewAllocateWithoutInitializing("C colinds"), addHandle->get_c_nnz());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::null;
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted kernel: sorted numeric")));
+  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: unsorted numeric")));
 #endif
   KokkosSparse::Experimental::spadd_numeric(&handle,
     Arowptrs, Acolinds, Avals, scalarA,

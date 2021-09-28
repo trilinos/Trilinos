@@ -74,6 +74,7 @@
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
+#include <Xpetra_TpetraCrsGraph.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #endif
@@ -84,6 +85,7 @@
 
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
+#include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
@@ -934,6 +936,45 @@ namespace Xpetra {
     } //Write
 
 
+    /*! @brief Save CrsGraph to file in Matrix Market format. */
+    static void Write(const std::string& fileName, const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> & graph, const bool &writeAllMaps = false) {
+
+      Write("rowmap_"    + fileName, *(graph.getRowMap()));
+      if ( !graph.getDomainMap()->isSameAs(*(graph.getRowMap())) || writeAllMaps )
+        Write("domainmap_" + fileName, *(graph.getDomainMap()));
+      if ( !graph.getRangeMap()->isSameAs(*(graph.getRowMap())) || writeAllMaps )
+        Write("rangemap_"  + fileName, *(graph.getRangeMap()));
+      if ( !graph.getColMap()->isSameAs(*(graph.getDomainMap())) || writeAllMaps )
+        Write("colmap_"    + fileName, *(graph.getColMap()));
+
+      RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > tmp_Graph = rcpFromRef(graph);
+
+#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
+      const RCP<const Xpetra::EpetraCrsGraphT<GlobalOrdinal,Node> >& tmp_ECrsGraph = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsGraphT<GlobalOrdinal,Node> >(tmp_Graph);
+      if (tmp_ECrsGraph != Teuchos::null) {
+        throw Exceptions::BadCast("Writing not implemented for EpetraCrsGraphT");
+      }
+#endif // endif HAVE_XPETRA_EPETRA
+
+#ifdef HAVE_XPETRA_TPETRA
+# if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
+     (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
+      // do nothin
+# else
+      RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > tmp_TCrsGraph =
+        Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(tmp_Graph);
+      if (tmp_TCrsGraph != Teuchos::null) {
+        RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > G = tmp_TCrsGraph->getTpetra_CrsGraph();
+        Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::writeSparseGraphFile(fileName, G);
+        return;
+      }
+# endif
+#endif // HAVE_XPETRA_TPETRA
+
+      throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
+    } //Write
+
+
     /*! @brief Save local parts of matrix to files in Matrix Market format. */
     static void WriteLocal(const std::string& fileName, const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Op) {
       const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
@@ -952,7 +993,7 @@ namespace Xpetra {
 
       rowptr2_RCP.resize(rowptr.size());
       ArrayView<LocalOrdinal> rowptr2 = rowptr2_RCP();
-      for (size_t j = 0; j<rowptr.size(); j++)
+      for (size_t j = 0; j<Teuchos::as<size_t>(rowptr.size()); j++)
         rowptr2[j] = rowptr[j];
 
       Teuchos::MatrixMarket::Raw::Writer<Scalar,LocalOrdinal> writer;

@@ -88,16 +88,15 @@ namespace
       stk::util::ParameterMapType::const_iterator i = params.begin();
       stk::util::ParameterMapType::const_iterator iend = params.end();
       for (; i != iend; ++i) {
-	const std::string paramName = (*i).first;
-	//+ NOTE: Need a reference to the parameter.
-	stk::util::Parameter &param = params.get_param(paramName);
-	//+ NOTE: Calling add_global_ref, passing address of value
-	stkIo.add_global_ref(idx, paramName, &param.value, param.type);/*@\label{io:global:autoparam}*/
+          const std::string paramName = (*i).first;
+          //+ NOTE: Need a reference to the parameter.
+          stk::util::Parameter &param = params.get_param(paramName);
+          stkIo.add_global_ref(idx, paramName, param);
       }
 
       //+ All writing of the values is handled automatically,
       //+ do not need to call write_global
-      stkIo.process_output_request(idx, 0.0);/*@\label{io:global:autowrite}*/
+      stkIo.process_output_request(idx, 0.0);
     }
     // ... Reading is the same as in previous example
     //-END
@@ -126,7 +125,7 @@ namespace
 	stk::util::Parameter &param = params.get_param(paramName);
 	stk::util::Parameter &gold_param
 	  = gold_params.get_param(paramName);
-	stkIo.get_global(paramName, param.value, param.type);
+	stkIo.get_global(paramName, param);
 	validate_parameters_equal_value(param, gold_param);
       }
 

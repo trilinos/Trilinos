@@ -2372,6 +2372,12 @@ namespace Tpetra {
     void
     assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& src);
 
+    /// \brief Return another MultiVector with the same entries, but
+    ///   converted to a different Scalar type \c T.
+    template <class T>
+    Teuchos::RCP<MultiVector<T, LocalOrdinal, GlobalOrdinal, Node> >
+    convert () const;
+
 
     // \brief Checks to see if the local length, number of vectors and size of Scalar type match
     /// \param src [in] MultiVector
@@ -2557,8 +2563,7 @@ namespace Tpetra {
      Kokkos::DualView<
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
-     size_t& constantNumPackets,
-     Distributor& /* distor */);
+     size_t& constantNumPackets);
 
     virtual void
     unpackAndCombine
@@ -2572,7 +2577,6 @@ namespace Tpetra {
        size_t*,
        buffer_device_type> /* numPacketsPerLID */,
      const size_t constantNumPackets,
-     Distributor& /* distor */,
      const CombineMode CM);
 
   private:

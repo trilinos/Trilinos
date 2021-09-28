@@ -24,8 +24,9 @@ APPEND_SET(SOURCES
   MueLu_TestHelpers_kokkos.cpp
   MueLu_UnitTests_kokkos.cpp
   NotayAggregationFactory.cpp
-  StructuredAggregation_kokkos.cpp
   SaPFactory_kokkos.cpp
+  SemiCoarsenPFactory_kokkos.cpp
+  StructuredAggregation_kokkos.cpp
   TentativePFactory_kokkos.cpp
   UseKokkos_kokkos.cpp
   Utilities_kokkos.cpp

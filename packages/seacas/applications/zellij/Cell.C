@@ -348,13 +348,13 @@ std::vector<int> Cell::categorize_nodes(enum Mode mode) const
     // all nodes on the left to '0'
     if (processor_boundary(Loc::L)) {
       const auto &min_I_face = m_unitCell->min_I_face;
-      for (auto node : min_I_face) {
+      for (auto &node : min_I_face) {
         nodes[node] -= 1;
       }
     }
     if (processor_boundary(Loc::B)) {
       const auto &min_J_face = m_unitCell->min_J_face;
-      for (auto node : min_J_face) {
+      for (auto &node : min_J_face) {
         nodes[node] -= 2;
       }
     }

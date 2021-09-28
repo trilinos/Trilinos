@@ -85,7 +85,7 @@ TEUCHOS_UNIT_TEST(Subcycling, ParameterList)
   // Test constructor IntegratorBasic(model, stepperType)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::createIntegratorBasic<double>(model, "Forward Euler");
+      Tempus::createIntegratorBasic<double>(model, std::string("Forward Euler"));
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
     RCP<const ParameterList> defaultPL =

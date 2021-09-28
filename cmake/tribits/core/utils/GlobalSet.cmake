@@ -39,21 +39,21 @@
 
 
 #
-# @MACRO: GLOBAL_SET()
+# @MACRO: global_set()
 #
 # Set a variable as an internal global (cache) variable (removes boiler-plate
 # code).
 #
 # Usage::
 #
-#   GLOBAL_SET(<varName> [other args])
+#   global_set(<varName> [other args])
 #
 # This just calls::
 #
-#   SET(<varName> [other args] CACHE INTERNAL "")
+#   set(<varName> [other args] CACHE INTERNAL "")
 #
 # This avoid misspelling ``CACHE``.
 #
-MACRO(GLOBAL_SET VARNAME)
-  SET(${VARNAME} ${ARGN} CACHE INTERNAL "")
-ENDMACRO()
+macro(global_set VARNAME)
+  set(${VARNAME} ${ARGN} CACHE INTERNAL "")
+endmacro()

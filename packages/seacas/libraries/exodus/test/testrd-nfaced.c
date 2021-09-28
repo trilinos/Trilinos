@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -20,7 +20,7 @@
 
 int main(int argc, char **argv)
 {
-  int  exoid, num_dim, num_nodes, num_elem_blk;
+  int  num_dim, num_nodes, num_elem_blk;
   int *num_elem_in_block, *num_face_in_block, *num_nodes_per_elem, *num_edges_per_elem,
       *num_faces_per_elem, *num_attr;
   int  error, nnodes;
@@ -37,8 +37,7 @@ int main(int argc, char **argv)
   char *coord_names[3], *qa_record[2][4], *info[3];
   char *block_names[10];
   char *elem_type[10];
-  char  name[MAX_STR_LENGTH + 1];
-  char *cdum = 0;
+  char *cdum = NULL;
 
   CPU_word_size = 0; /* sizeof(float) */
   IO_word_size  = 0; /* use what is stored in file */
@@ -46,11 +45,11 @@ int main(int argc, char **argv)
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* open EXODUS II files */
-  exoid = ex_open("test-nfaced.exo", /* filename path */
-                  EX_READ,           /* access mode = READ */
-                  &CPU_word_size,    /* CPU word size */
-                  &IO_word_size,     /* IO word size */
-                  &version);         /* ExodusII library version */
+  int exoid = ex_open("test-nfaced.exo", /* filename path */
+                      EX_READ,           /* access mode = READ */
+                      &CPU_word_size,    /* CPU word size */
+                      &IO_word_size,     /* IO word size */
+                      &version);         /* ExodusII library version */
 
   printf("\nafter ex_open\n");
   if (exoid < 0) {
@@ -143,6 +142,7 @@ int main(int argc, char **argv)
     printf("\nafter ex_get_names, error = %3d\n", error);
 
     for (i = 0; i < num_elem_blk; i++) {
+      char name[MAX_STR_LENGTH + 1];
       ex_get_name(exoid, EX_ELEM_BLOCK, ids[i], name);
       if (strcmp(name, block_names[i]) != 0) {
         printf("error in ex_get_name for block id %d\n", ids[i]);

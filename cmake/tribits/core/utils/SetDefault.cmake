@@ -38,21 +38,21 @@
 # @HEADER
 
 #
-# @MACRO: SET_DEFAULT()
+# @MACRO: set_default()
 #
 # Give a local variable a default value if a non-empty value is not already
 # set.
 #
 # Usage::
 #
-#   SET_DEFAULT(<varName> <arg0> <arg1> ...)
+#   set_default(<varName> <arg0> <arg1> ...)
 #
 # If on input ``"${<varName>}"==""``, then ``<varName>`` is set to the given
 # default ``<arg0> <arg1> ...``.  Otherwise, the existing non-empty value is
 # preserved.
 #
-MACRO(SET_DEFAULT VAR)
-  IF ("${${VAR}}" STREQUAL "")
-    SET(${VAR} ${ARGN})
-  ENDIF()
-ENDMACRO()
+macro(set_default VAR)
+  if ("${${VAR}}" STREQUAL "")
+    set(${VAR} ${ARGN})
+  endif()
+endmacro()

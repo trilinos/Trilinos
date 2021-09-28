@@ -275,25 +275,32 @@ initialize(panzer::ConnManager & conn)
   lidx_by_face_ = PHX::View<int *[2]>("FaceToElement::elems_by_face_", nfaces);
   blocks_by_face_ = PHX::View<int *[2]> ("FaceToElement::blocks_by_face_", nfaces);
   procs_by_face_ = PHX::View<int *[2]> ("FaceToElement::procs_by_face_", nfaces);
+  auto elems_by_face_h = Kokkos::create_mirror_view(elems_by_face_);
+  auto blocks_by_face_h = Kokkos::create_mirror_view(blocks_by_face_);
+  auto procs_by_face_h = Kokkos::create_mirror_view(procs_by_face_);
+  auto lidx_by_face_h = Kokkos::create_mirror_view(lidx_by_face_);
 
-  // We have to subtract 'shift' because we added 'shift' earlier to shift things away from 0
   for (LocalOrdinal i=0; i< nfaces; ++i) {
-    elems_by_face_ (i,0) = e1[i]-shift;
-    elems_by_face_ (i,1) = e2[i]-shift;
-    blocks_by_face_(i,0) = b1[i]-shift;
-    blocks_by_face_(i,1) = b2[i]-shift;
-    procs_by_face_ (i,0) = p1[i]-shift;
-    procs_by_face_ (i,1) = p2[i]-shift;
-    lidx_by_face_  (i,0) = l1[i]-shift;
-    lidx_by_face_  (i,1) = l2[i]-shift;
+    elems_by_face_h (i,0) = e1[i]-shift;
+    elems_by_face_h (i,1) = e2[i]-shift;
+    blocks_by_face_h(i,0) = b1[i]-shift;
+    blocks_by_face_h(i,1) = b2[i]-shift;
+    procs_by_face_h (i,0) = p1[i]-shift;
+    procs_by_face_h (i,1) = p2[i]-shift;
+    lidx_by_face_h  (i,0) = l1[i]-shift;
+    lidx_by_face_h  (i,1) = l2[i]-shift;
 
-    if(elems_by_face_ (i,0) < 0){
-      elems_by_face_ (i,0) = -1;
+    if(elems_by_face_h (i,0) < 0){
+      elems_by_face_h (i,0) = -1;
     }
-    if(elems_by_face_ (i,1) < 0){
-      elems_by_face_ (i,1) = -1;
+    if(elems_by_face_h (i,1) < 0){
+      elems_by_face_h (i,1) = -1;
     }
   }
+  Kokkos::deep_copy(elems_by_face_, elems_by_face_h);
+  Kokkos::deep_copy(blocks_by_face_, blocks_by_face_h);
+  Kokkos::deep_copy(procs_by_face_, procs_by_face_h);
+  Kokkos::deep_copy(lidx_by_face_, lidx_by_face_h);
 }
 
 }

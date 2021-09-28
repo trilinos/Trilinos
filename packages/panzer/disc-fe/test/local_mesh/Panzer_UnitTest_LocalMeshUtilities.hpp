@@ -107,46 +107,56 @@ generateLocalMeshInfo()
 
     // Set local cells
     mesh.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",6);
-    mesh.local_cells(0) = 0;
-    mesh.local_cells(1) = 1;
-    mesh.local_cells(2) = 2;
-    mesh.local_cells(3) = 3;
-    mesh.local_cells(4) = 4;
-    mesh.local_cells(5) = 5;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	mesh.local_cells(0) = 0;
+	mesh.local_cells(1) = 1;
+	mesh.local_cells(2) = 2;
+	mesh.local_cells(3) = 3;
+	mesh.local_cells(4) = 4;
+	mesh.local_cells(5) = 5;
+      });
 
     // Set global cells
     mesh.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",6);
-    mesh.global_cells(0) = 0;
-    mesh.global_cells(1) = 1;
-    mesh.global_cells(2) = 2;
-    mesh.global_cells(3) = 3;
-    mesh.global_cells(4) = 4;
-    mesh.global_cells(5) = 5;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	mesh.global_cells(0) = 0;
+	mesh.global_cells(1) = 1;
+	mesh.global_cells(2) = 2;
+	mesh.global_cells(3) = 3;
+	mesh.global_cells(4) = 4;
+	mesh.global_cells(5) = 5;
+      });
 
     // Set face to cells
     mesh.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",5);
-    mesh.face_to_cells(0,0) = 0; mesh.face_to_cells(0,1) = 4;
-    mesh.face_to_cells(1,0) = 0; mesh.face_to_cells(1,1) = 1;
-    mesh.face_to_cells(2,0) = 1; mesh.face_to_cells(2,1) = 2;
-    mesh.face_to_cells(3,0) = 2; mesh.face_to_cells(3,1) = 3;
-    mesh.face_to_cells(4,0) = 3; mesh.face_to_cells(4,1) = 5;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	mesh.face_to_cells(0,0) = 0; mesh.face_to_cells(0,1) = 4;
+	mesh.face_to_cells(1,0) = 0; mesh.face_to_cells(1,1) = 1;
+	mesh.face_to_cells(2,0) = 1; mesh.face_to_cells(2,1) = 2;
+	mesh.face_to_cells(3,0) = 2; mesh.face_to_cells(3,1) = 3;
+	mesh.face_to_cells(4,0) = 3; mesh.face_to_cells(4,1) = 5;
+      });
 
     // Set face to local face indexes
     mesh.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",5);
-    mesh.face_to_lidx(0,0) = 0; mesh.face_to_lidx(0,1) = 0;
-    mesh.face_to_lidx(1,0) = 1; mesh.face_to_lidx(1,1) = 0;
-    mesh.face_to_lidx(2,0) = 1; mesh.face_to_lidx(2,1) = 0;
-    mesh.face_to_lidx(3,0) = 1; mesh.face_to_lidx(3,1) = 0;
-    mesh.face_to_lidx(4,0) = 1; mesh.face_to_lidx(4,1) = 0;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	mesh.face_to_lidx(0,0) = 0; mesh.face_to_lidx(0,1) = 0;
+	mesh.face_to_lidx(1,0) = 1; mesh.face_to_lidx(1,1) = 0;
+	mesh.face_to_lidx(2,0) = 1; mesh.face_to_lidx(2,1) = 0;
+	mesh.face_to_lidx(3,0) = 1; mesh.face_to_lidx(3,1) = 0;
+	mesh.face_to_lidx(4,0) = 1; mesh.face_to_lidx(4,1) = 0;
+      });
 
     // Set cell to faces
     mesh.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",6,2);
-    mesh.cell_to_faces(0,0) = 0; mesh.cell_to_faces(0,1) = 1;
-    mesh.cell_to_faces(1,0) = 1; mesh.cell_to_faces(1,1) = 2;
-    mesh.cell_to_faces(2,0) = 2; mesh.cell_to_faces(2,1) = 3;
-    mesh.cell_to_faces(3,0) = 3; mesh.cell_to_faces(3,1) = 4;
-    mesh.cell_to_faces(4,0) = 0; mesh.cell_to_faces(4,1) =-1;
-    mesh.cell_to_faces(5,0) = 4; mesh.cell_to_faces(5,1) =-1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	mesh.cell_to_faces(0,0) = 0; mesh.cell_to_faces(0,1) = 1;
+	mesh.cell_to_faces(1,0) = 1; mesh.cell_to_faces(1,1) = 2;
+	mesh.cell_to_faces(2,0) = 2; mesh.cell_to_faces(2,1) = 3;
+	mesh.cell_to_faces(3,0) = 3; mesh.cell_to_faces(3,1) = 4;
+	mesh.cell_to_faces(4,0) = 0; mesh.cell_to_faces(4,1) =-1;
+	mesh.cell_to_faces(5,0) = 4; mesh.cell_to_faces(5,1) =-1;
+      });
 
   }
 
@@ -174,36 +184,46 @@ generateLocalMeshInfo()
 
     // Set local cells
     block.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",4);
-    block.local_cells(0) = 0;
-    block.local_cells(1) = 1;
-    block.local_cells(2) = 2;
-    block.local_cells(3) = 3;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.local_cells(0) = 0;
+	block.local_cells(1) = 1;
+	block.local_cells(2) = 2;
+	block.local_cells(3) = 3;
+      });
 
     // Set global cells
     block.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",4);
-    block.global_cells(0) = 0;
-    block.global_cells(1) = 1;
-    block.global_cells(2) = 2;
-    block.global_cells(3) = 4;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.global_cells(0) = 0;
+	block.global_cells(1) = 1;
+	block.global_cells(2) = 2;
+	block.global_cells(3) = 4;
+      });
 
     // Set face to cells
     block.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",3);
-    block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 3;
-    block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
-    block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 2;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 3;
+	block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
+	block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 2;
+      });
 
     // Set face to local face indexes
     block.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",3);
-    block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
-    block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
-    block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
+	block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
+	block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
+      });
 
     // Set cell to faces
     block.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",4,2);
-    block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
-    block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
-    block.cell_to_faces(2,0) = 2; block.cell_to_faces(2,1) =-1;
-    block.cell_to_faces(3,0) = 0; block.cell_to_faces(3,1) =-1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
+	block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
+	block.cell_to_faces(2,0) = 2; block.cell_to_faces(2,1) =-1;
+	block.cell_to_faces(3,0) = 0; block.cell_to_faces(3,1) =-1;
+      });
 
   }
 
@@ -232,36 +252,46 @@ generateLocalMeshInfo()
 
     // Set local cells
     block.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",4);
-    block.local_cells(0) = 0;
-    block.local_cells(1) = 1;
-    block.local_cells(2) = 2;
-    block.local_cells(3) = 3;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.local_cells(0) = 0;
+	block.local_cells(1) = 1;
+	block.local_cells(2) = 2;
+	block.local_cells(3) = 3;
+      });
 
     // Set global cells
     block.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",4);
-    block.global_cells(0) = 2;
-    block.global_cells(1) = 3;
-    block.global_cells(2) = 1;
-    block.global_cells(3) = 5;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.global_cells(0) = 2;
+	block.global_cells(1) = 3;
+	block.global_cells(2) = 1;
+	block.global_cells(3) = 5;
+      });
 
     // Set face to cells
     block.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",3);
-    block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 2;
-    block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
-    block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 3;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 2;
+	block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
+	block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 3;
+      });
 
     // Set face to local face indexes
     block.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",3);
-    block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
-    block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
-    block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
+	block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
+	block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
+      });
 
     // Set cell to faces
     block.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",4,2);
-    block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
-    block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
-    block.cell_to_faces(2,0) = 0; block.cell_to_faces(2,1) =-1;
-    block.cell_to_faces(3,0) = 2; block.cell_to_faces(3,1) =-1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
+	block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
+	block.cell_to_faces(2,0) = 0; block.cell_to_faces(2,1) =-1;
+	block.cell_to_faces(3,0) = 2; block.cell_to_faces(3,1) =-1;
+      });
   }
 
   // Create sideset 0
@@ -289,26 +319,36 @@ generateLocalMeshInfo()
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
-    sideset.local_cells(0) = 0;
-    sideset.local_cells(1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.local_cells(0) = 0;
+	sideset.local_cells(1) = 1;
+      });
 
     // Set global cells
     sideset.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",2);
-    sideset.global_cells(0) = 0;
-    sideset.global_cells(1) = 4;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.global_cells(0) = 0;
+	sideset.global_cells(1) = 4;
+      });
 
     // Set face to cells
     sideset.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
-    sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+      });
 
     // Set face to local face indexes
     sideset.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
-    sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 0;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 0;
+      });
 
     // Set cell to faces
     sideset.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
-    sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
-    sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
+	sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
+      });
   }
 
   // Create sideset 1
@@ -336,26 +376,36 @@ generateLocalMeshInfo()
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
-    sideset.local_cells(0) = 0;
-    sideset.local_cells(1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.local_cells(0) = 0;
+	sideset.local_cells(1) = 1;
+      });
 
     // Set global cells
     sideset.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",2);
-    sideset.global_cells(0) = 3;
-    sideset.global_cells(1) = 5;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.global_cells(0) = 3;
+	sideset.global_cells(1) = 5;
+      });
 
     // Set face to cells
     sideset.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
-    sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+      });
 
     // Set face to local face indexes
     sideset.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
-    sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 0;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 0;
+      });
 
     // Set cell to faces
     sideset.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
-    sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
-    sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
+	sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
+      });
   }
 
   // Create sideset 2
@@ -383,26 +433,36 @@ generateLocalMeshInfo()
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
-    sideset.local_cells(0) = 0;
-    sideset.local_cells(1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.local_cells(0) = 0;
+	sideset.local_cells(1) = 1;
+      });
 
     // Set global cells
     sideset.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",2);
-    sideset.global_cells(0) = 1;
-    sideset.global_cells(1) = 2;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.global_cells(0) = 1;
+	sideset.global_cells(1) = 2;
+      });
 
     // Set face to cells
     sideset.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
-    sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+      });
 
     // Set face to local face indexes
     sideset.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
-    sideset.face_to_lidx(0,0) = 1; sideset.face_to_lidx(0,1) = 0;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_lidx(0,0) = 1; sideset.face_to_lidx(0,1) = 0;
+      });
 
     // Set cell to faces
     sideset.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
-    sideset.cell_to_faces(0,0) =-1; sideset.cell_to_faces(0,1) = 0;
-    sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.cell_to_faces(0,0) =-1; sideset.cell_to_faces(0,1) = 0;
+	sideset.cell_to_faces(1,0) = 0; sideset.cell_to_faces(1,1) =-1;
+      });
   }
   {
 
@@ -428,27 +488,38 @@ generateLocalMeshInfo()
 
     // Set local cells
     sideset.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",2);
-    sideset.local_cells(0) = 0;
-    sideset.local_cells(1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.local_cells(0) = 0;
+	sideset.local_cells(1) = 1;
+      });
 
     // Set global cells
     sideset.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",2);
-    sideset.global_cells(0) = 2;
-    sideset.global_cells(1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.global_cells(0) = 2;
+	sideset.global_cells(1) = 1;
+      });
 
     // Set face to cells
     sideset.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",1);
-    sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_cells(0,0) = 0; sideset.face_to_cells(0,1) = 1;
+      });
 
     // Set face to local face indexes
     sideset.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",1);
-    sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 1;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.face_to_lidx(0,0) = 0; sideset.face_to_lidx(0,1) = 1;
+      });
 
     // Set cell to faces
     sideset.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",2,2);
-    sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
-    sideset.cell_to_faces(1,0) =-1; sideset.cell_to_faces(1,1) = 0;
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+	sideset.cell_to_faces(0,0) = 0; sideset.cell_to_faces(0,1) =-1;
+	sideset.cell_to_faces(1,0) =-1; sideset.cell_to_faces(1,1) = 0;
+      });
   }
+  Kokkos::fence();
 
   return mesh_info;
 }
@@ -479,42 +550,53 @@ generateLocalMeshInfoBase()
 
   // Set local cells
   block.local_cells = PHX::View<panzer::LocalOrdinal*>("local_cells",5);
-  block.local_cells(0) = 0;
-  block.local_cells(1) = 1;
-  block.local_cells(2) = 2;
-  block.local_cells(3) = 3;
-  block.local_cells(4) = 4;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      block.local_cells(0) = 0;
+      block.local_cells(1) = 1;
+      block.local_cells(2) = 2;
+      block.local_cells(3) = 3;
+      block.local_cells(4) = 4;
+    });
 
   // Set global cells - arbitrary
   block.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cells",5);
-  block.global_cells(0) = 8;
-  block.global_cells(1) = 6;
-  block.global_cells(2) = 2;
-  block.global_cells(3) = 1;
-  block.global_cells(4) = 9;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      block.global_cells(0) = 8;
+      block.global_cells(1) = 6;
+      block.global_cells(2) = 2;
+      block.global_cells(3) = 1;
+      block.global_cells(4) = 9;
+    });
 
   // Set face to cells
   block.face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",4);
-  block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 3;
-  block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
-  block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 2;
-  block.face_to_cells(3,0) = 2; block.face_to_cells(3,1) = 4;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      block.face_to_cells(0,0) = 0; block.face_to_cells(0,1) = 3;
+      block.face_to_cells(1,0) = 0; block.face_to_cells(1,1) = 1;
+      block.face_to_cells(2,0) = 1; block.face_to_cells(2,1) = 2;
+      block.face_to_cells(3,0) = 2; block.face_to_cells(3,1) = 4;
+    });
 
   // Set face to local face indexes
   block.face_to_lidx = PHX::View<panzer::LocalOrdinal*[2]>("face_to_lidx",4);
-  block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
-  block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
-  block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
-  block.face_to_lidx(3,0) = 1; block.face_to_lidx(3,1) = 0;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      block.face_to_lidx(0,0) = 0; block.face_to_lidx(0,1) = 0;
+      block.face_to_lidx(1,0) = 1; block.face_to_lidx(1,1) = 0;
+      block.face_to_lidx(2,0) = 1; block.face_to_lidx(2,1) = 0;
+      block.face_to_lidx(3,0) = 1; block.face_to_lidx(3,1) = 0;
+    });
 
   // Set cell to faces
   block.cell_to_faces = PHX::View<panzer::LocalOrdinal**>("cell_to_faces",5,2);
-  block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
-  block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
-  block.cell_to_faces(2,0) = 2; block.cell_to_faces(2,1) = 3;
-  block.cell_to_faces(3,0) = 0; block.cell_to_faces(3,1) =-1;
-  block.cell_to_faces(4,0) = 3; block.cell_to_faces(4,1) =-1;
+  Kokkos::parallel_for(1, KOKKOS_LAMBDA (int) {
+      block.cell_to_faces(0,0) = 0; block.cell_to_faces(0,1) = 1;
+      block.cell_to_faces(1,0) = 1; block.cell_to_faces(1,1) = 2;
+      block.cell_to_faces(2,0) = 2; block.cell_to_faces(2,1) = 3;
+      block.cell_to_faces(3,0) = 0; block.cell_to_faces(3,1) =-1;
+      block.cell_to_faces(4,0) = 3; block.cell_to_faces(4,1) =-1;
+    });
 
+  Kokkos::fence();
   return block_rcp;
 }
 

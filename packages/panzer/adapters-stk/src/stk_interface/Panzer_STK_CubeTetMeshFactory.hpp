@@ -112,6 +112,9 @@ protected:
    mutable unsigned int machRank_, machSize_;
 
    mutable Teuchos::Tuple<std::size_t,3> procTuple_;
+
+   bool createEdgeBlocks_;
+   bool createFaceBlocks_;
 };
 
 }

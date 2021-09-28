@@ -61,12 +61,15 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
 
     // Read params from .xml file
     RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_BackwardEuler_SinCos.xml");
+      getParametersFromXmlFile("Tempus_BackwardEuler_SinCos_ASA.xml");
 
     // Setup the SinCosModel
+    // Here we test using an explicit adjoint model for adjoint sensitivities
     RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
     RCP<SinCosModel<double> > model =
       Teuchos::rcp(new SinCosModel<double>(scm_pl));
+    RCP<SinCosModelAdjoint<double> > adjoint_model =
+      Teuchos::rcp(new SinCosModelAdjoint<double>(scm_pl));
 
     dt /= 2;
 
@@ -91,7 +94,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorAdjointSensitivity<double> > integrator =
-      Tempus::integratorAdjointSensitivity<double>(pl, model);
+      Tempus::createIntegratorAdjointSensitivity<double>(pl, model, adjoint_model);
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions
@@ -205,7 +208,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_ASA)
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.151746, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.142525, 1.0e-4 );
 
   if (comm->getRank() == 0) {
     std::ofstream ftmp("Tempus_BackwardEuler_SinCos_AdjSens-Error.dat");

@@ -19,11 +19,6 @@
 #include <string>
 #include <vector>
 
-#include <cmath>
-#ifndef math_errhandling
-#define math_errhandling MATH_ERRNO
-#endif
-
 #if defined(_MSC_VER)
 #include <io.h>
 #define isatty _isatty
@@ -121,6 +116,7 @@ namespace SEAMS {
     bool        info_msg{false};
     bool        debugging{false};
     bool        dumpvars{false};
+    bool        dumpvars_json{false};
     bool        interactive{false};
     bool        immutable{false};
     bool        trace_parsing{false}; // enable debug output in the bison parser
@@ -278,6 +274,7 @@ namespace SEAMS {
 
     void dumpsym(const char *type, bool doInternal) const;
     void dumpsym(int type, bool doInternal) const;
+    void dumpsym_json() const;
     void dumpsym(int type, const char *pre, bool doInternal) const;
 
     array *make_array(int r, int c);

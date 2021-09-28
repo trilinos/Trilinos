@@ -22,22 +22,22 @@
 #
 # To be used in a parent project, this module must be included after
 #
-#   PROJECT(${PROJECT_NAME}  NONE)
+#   project(${PROJECT_NAME}  NONE)
 #
 # is called but before the compilers are defined and processed using:
 #
-#   ENABLE_LANGUAGE(<LANG>)
+#   enable_language(<LANG>)
 #
 # For example, one would do:
 #
-#   PROJECT(${PROJECT_NAME}  NONE)
+#   project(${PROJECT_NAME}  NONE)
 #   ...
-#   SET(USE_XSDK_DEFAULTS_DEFAULT TRUE) # Set to false if desired
-#   INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/stdk/XSDKDefaults.cmake")
+#   set(USE_XSDK_DEFAULTS_DEFAULT TRUE) # Set to false if desired
+#   include("${CMAKE_CURRENT_SOURCE_DIR}/stdk/XSDKDefaults.cmake")
 #   ...
-#   ENABLE_LANGUAGE(C)
-#   ENABLE_LANGUAGE(C++)
-#   ENABLE_LANGUAGE(Fortran)
+#   enable_language(C)
+#   enable_language(C++)
+#   enable_language(Fortran)
 #
 # The variable `USE_XSDK_DEFAULTS_DEFAULT` is used as the default for the
 # cache var `USE_XSDK_DEFAULTS`.  That way, a project can decide if it wants
@@ -56,14 +56,14 @@
 #
 # For example, if the parent CMake project only needs C, then it would do:
 #
-#   PROJECT(${PROJECT_NAME}  NONE)'
+#   project(${PROJECT_NAME}  NONE)'
 #   ...
-#   SET(USE_XSDK_DEFAULTS_DEFAULT TRUE)
-#   SET(XSDK_ENABLE_CXX OFF)
-#   SET(XSDK_ENABLE_Fortran OFF)
-#   INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/stdk/XSDKDefaults.cmake")
+#   set(USE_XSDK_DEFAULTS_DEFAULT TRUE)
+#   set(XSDK_ENABLE_CXX OFF)
+#   set(XSDK_ENABLE_Fortran OFF)
+#   include("${CMAKE_CURRENT_SOURCE_DIR}/stdk/XSDKDefaults.cmake")
 #   ...
-#   ENABLE_LANGAUGE(C)
+#   enable_langauge(C)
 #
 # This module code will announce when it sets any variables.
 #
@@ -72,66 +72,66 @@
 # Helper functions
 #
 
-IF (NOT COMMAND PRINT_VAR)
-  FUNCTION(PRINT_VAR  VAR_NAME)
-    MESSAGE("${VAR_NAME} = '${${VAR_NAME}}'")
-  ENDFUNCTION()
-ENDIF()
+if (NOT COMMAND PRINT_VAR)
+  function(print_var  VAR_NAME)
+    message("${VAR_NAME} = '${${VAR_NAME}}'")
+  endfunction()
+endif()
 
-IF (NOT COMMAND SET_DEFAULT)
-  MACRO(SET_DEFAULT VAR)
-    IF ("${${VAR}}" STREQUAL "")
-      SET(${VAR} ${ARGN})
-    ENDIF()
-  ENDMACRO()
-ENDIF()
+if (NOT COMMAND SET_DEFAULT)
+  macro(set_default VAR)
+    if ("${${VAR}}" STREQUAL "")
+      set(${VAR} ${ARGN})
+    endif()
+  endmacro()
+endif()
 
 #
 # XSDKDefaults.cmake control variables
 #
 
 # USE_XSDK_DEFAULTS
-IF ("${USE_XSDK_DEFAULTS_DEFAULT}" STREQUAL "")
-  SET(USE_XSDK_DEFAULTS_DEFAULT  FALSE)
-ENDIF()
-SET(USE_XSDK_DEFAULTS  ${USE_XSDK_DEFAULTS_DEFAULT}  CACHE  BOOL
+if ("${USE_XSDK_DEFAULTS_DEFAULT}" STREQUAL "")
+  set(USE_XSDK_DEFAULTS_DEFAULT  FALSE)
+endif()
+set(USE_XSDK_DEFAULTS  ${USE_XSDK_DEFAULTS_DEFAULT}  CACHE  BOOL
   "Use XSDK defaults and behavior.")
-PRINT_VAR(USE_XSDK_DEFAULTS)
+print_var(USE_XSDK_DEFAULTS)
 
-SET_DEFAULT(XSDK_ENABLE_C  TRUE)
-SET_DEFAULT(XSDK_ENABLE_CXX  TRUE)
-SET_DEFAULT(XSDK_ENABLE_Fortran  TRUE)
+set_default(XSDK_ENABLE_C  TRUE)
+set_default(XSDK_ENABLE_CXX  TRUE)
+set_default(XSDK_ENABLE_Fortran  TRUE)
 
 # Handle the compiler and flags for a language
-MACRO(XSDK_HANDLE_LANG_DEFAULTS  CMAKE_LANG_NAME  ENV_LANG_NAME
+macro(xsdk_handle_lang_defaults  CMAKE_LANG_NAME  ENV_LANG_NAME
   ENV_LANG_FLAGS_NAMES
   )
 
   # Announce using env var ${ENV_LANG_NAME}
-  IF (NOT "$ENV{${ENV_LANG_NAME}}" STREQUAL "" AND
+  if (NOT "$ENV{${ENV_LANG_NAME}}" STREQUAL "" AND
     "${CMAKE_${CMAKE_LANG_NAME}_COMPILER}" STREQUAL ""
     )
-    MESSAGE("-- " "XSDK: Setting CMAKE_${CMAKE_LANG_NAME}_COMPILER from env var"
+    message("-- " "XSDK: Setting CMAKE_${CMAKE_LANG_NAME}_COMPILER from env var"
       " ${ENV_LANG_NAME}='$ENV{${ENV_LANG_NAME}}'!")
-    SET(CMAKE_${CMAKE_LANG_NAME}_COMPILER "$ENV{${ENV_LANG_NAME}}" CACHE FILEPATH
+    set(CMAKE_${CMAKE_LANG_NAME}_COMPILER "$ENV{${ENV_LANG_NAME}}" CACHE FILEPATH
       "XSDK: Set by default from env var ${ENV_LANG_NAME}")
-  ENDIF()
+  endif()
 
   # Announce using env var ${ENV_LANG_FLAGS_NAME}
-  FOREACH(ENV_LANG_FLAGS_NAME  ${ENV_LANG_FLAGS_NAMES})
-    IF (NOT "$ENV{${ENV_LANG_FLAGS_NAME}}" STREQUAL "" AND
+  foreach(ENV_LANG_FLAGS_NAME  ${ENV_LANG_FLAGS_NAMES})
+    if (NOT "$ENV{${ENV_LANG_FLAGS_NAME}}" STREQUAL "" AND
       "${CMAKE_${CMAKE_LANG_NAME}_FLAGS}" STREQUAL ""
       )
-      MESSAGE("-- " "XSDK: Setting CMAKE_${CMAKE_LANG_NAME}_FLAGS from env var"
+      message("-- " "XSDK: Setting CMAKE_${CMAKE_LANG_NAME}_FLAGS from env var"
         " ${ENV_LANG_FLAGS_NAME}='$ENV{${ENV_LANG_FLAGS_NAME}}'!")
-      SET(CMAKE_${CMAKE_LANG_NAME}_FLAGS "$ENV{${ENV_LANG_FLAGS_NAME}} " CACHE  STRING
+      set(CMAKE_${CMAKE_LANG_NAME}_FLAGS "$ENV{${ENV_LANG_FLAGS_NAME}} " CACHE  STRING
         "XSDK: Set by default from env var ${ENV_LANG_FLAGS_NAME}")
       # NOTE: CMake adds the space after $ENV{${ENV_LANG_FLAGS_NAME}} so we
       # duplicate that here!
-    ENDIF()
-  ENDFOREACH()
+    endif()
+  endforeach()
 
-ENDMACRO()
+endmacro()
 
 
 #
@@ -139,44 +139,44 @@ ENDMACRO()
 #
 
 # Set default compilers and flags
-IF (USE_XSDK_DEFAULTS)
+if (USE_XSDK_DEFAULTS)
 
   # Handle env vars for languages C, C++, and Fortran
 
-  IF (XSDK_ENABLE_C)
-    XSDK_HANDLE_LANG_DEFAULTS(C  CC  CFLAGS)
-  ENDIF()
+  if (XSDK_ENABLE_C)
+    xsdk_handle_lang_defaults(C  CC  CFLAGS)
+  endif()
 
-  IF (XSDK_ENABLE_CXX)
-    XSDK_HANDLE_LANG_DEFAULTS(CXX  CXX  CXXFLAGS)
-  ENDIF()
+  if (XSDK_ENABLE_CXX)
+    xsdk_handle_lang_defaults(CXX  CXX  CXXFLAGS)
+  endif()
 
-  IF (XSDK_ENABLE_Fortran)
-    SET(ENV_FFLAGS "$ENV{FFLAGS}")
-    SET(ENV_FCFLAGS "$ENV{FCFLAGS}")
-    IF (
+  if (XSDK_ENABLE_Fortran)
+    set(ENV_FFLAGS "$ENV{FFLAGS}")
+    set(ENV_FCFLAGS "$ENV{FCFLAGS}")
+    if (
       (NOT "${ENV_FFLAGS}" STREQUAL "") AND (NOT "${ENV_FCFLAGS}" STREQUAL "")
       AND
       ("${CMAKE_Fortran_FLAGS}" STREQUAL "")
       )
-      IF (NOT "${ENV_FFLAGS}" STREQUAL "${ENV_FCFLAGS}")
-        MESSAGE(FATAL_ERROR "Error, env vars FFLAGS='${ENV_FFLAGS}' and"
+      if (NOT "${ENV_FFLAGS}" STREQUAL "${ENV_FCFLAGS}")
+        message(FATAL_ERROR "Error, env vars FFLAGS='${ENV_FFLAGS}' and"
           " FCFLAGS='${ENV_FCFLAGS}' are both set in the env but are not equal!")
-      ENDIF()
-    ENDIF()
-    XSDK_HANDLE_LANG_DEFAULTS(Fortran  FC  "FFLAGS;FCFLAGS")
-  ENDIF()
+      endif()
+    endif()
+    xsdk_handle_lang_defaults(Fortran  FC  "FFLAGS;FCFLAGS")
+  endif()
   
   # Set XSDK defaults for other CMake variables
   
-  IF ("${BUILD_SHARED_LIBS}"  STREQUAL  "")
-    MESSAGE("-- " "XSDK: Setting default BUILD_SHARED_LIBS=TRUE")
-    SET(BUILD_SHARED_LIBS  TRUE  CACHE  BOOL  "Set by default in XSDK mode")
-  ENDIF()
+  if ("${BUILD_SHARED_LIBS}"  STREQUAL  "")
+    message("-- " "XSDK: Setting default BUILD_SHARED_LIBS=TRUE")
+    set(BUILD_SHARED_LIBS  TRUE  CACHE  BOOL  "Set by default in XSDK mode")
+  endif()
   
-  IF ("${CMAKE_BUILD_TYPE}"  STREQUAL  "")
-    MESSAGE("-- " "XSDK: Setting default CMAKE_BUILD_TYPE=DEBUG")
-    SET(CMAKE_BUILD_TYPE  DEBUG  CACHE  STRING  "Set by default in XSDK mode")
-  ENDIF()
+  if ("${CMAKE_BUILD_TYPE}"  STREQUAL  "")
+    message("-- " "XSDK: Setting default CMAKE_BUILD_TYPE=DEBUG")
+    set(CMAKE_BUILD_TYPE  DEBUG  CACHE  STRING  "Set by default in XSDK mode")
+  endif()
 
-ENDIF()
+endif()
