@@ -158,6 +158,10 @@ int main(int argc, char *argv[]) {
       M = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise,noise);
     ROL::Ptr<ROL::OED::Factory<RealT>>
      factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
+    if (ocType == "A" || ocType == "I")
+      parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Brents");
+    else
+      parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
     
     // Generate optimization problem
     ROL::Ptr<ROL::Problem<RealT>> problem = factory->get(*parlist,sampler);

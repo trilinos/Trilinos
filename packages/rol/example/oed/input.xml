@@ -8,7 +8,7 @@
   </ParameterList>
 
   <ParameterList name="OED">
-    <Parameter name="Optimality Type" type="string" value="A"     />
+    <Parameter name="Optimality Type" type="string" value="I"     />
     <!--
     <Parameter name="Optimality Type" type="string" value="A"     />
     <Parameter name="Optimality Type" type="string" value="C"     />
@@ -63,6 +63,7 @@
     <ParameterList name="Polyhedral Projection">
       <Parameter name="Type"               type="string" value="Dai-Fletcher" />
       <!--
+      <Parameter name="Type"               type="string" value="Brents" />
       <Parameter name="Type"               type="string" value="Dykstra" />
       <Parameter name="Type"               type="string" value="Ridders" />
       <Parameter name="Type"               type="string" value="Semismooth Newton" />
