@@ -287,7 +287,8 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
   int *    ic = NULL;
   double * xx[3];
   double **qq    = NULL;
-  int *    isort = NULL, inode;
+  int *    isort = NULL;
+  int      inode;
 
   void internal_heapsort(int *, int);
   int  hunt(int, int, int *, int *);
@@ -335,7 +336,7 @@ void teczone(int nblk, int nnode, int elem_id, char *elem_type, int node_per_ele
      *  Compress node list
      */
 
-    int inode = 0;
+    inode = 0;
     for (int j = 0; j < node_per_elem * elem_per_blk - 1; j++)
       if (isort[j] != isort[j + 1])
         isort[++inode] = isort[j + 1];

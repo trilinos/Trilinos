@@ -160,6 +160,13 @@ namespace Ioss {
     size_t get_node_global_offset() const { return m_nodeGlobalOffset; }
     size_t get_cell_global_offset() const { return m_cellGlobalOffset; }
 
+    void set_ijk_offset(int axis, size_t offset);
+    void set_ijk_global(int axis, size_t global);
+
+    IJK_t get_ijk_offset() const { return {m_offsetI, m_offsetJ, m_offsetK}; }
+    IJK_t get_ijk_local() const { return {m_ni, m_nj, m_nk}; }
+    IJK_t get_ijk_global() const { return {m_niGlobal, m_njGlobal, m_nkGlobal}; }
+
     // Get the global (over all processors) cell
     // id at the specified i,j,k location (1 <= i,j,k <= ni,nj,nk).  1-based.
     size_t get_global_cell_id(int i, int j, int k) const

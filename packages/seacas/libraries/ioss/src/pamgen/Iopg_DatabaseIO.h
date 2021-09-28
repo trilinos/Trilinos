@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -109,13 +109,13 @@ namespace Iopg {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t get_field_internal(const Ioss::EdgeBlock * /* nb */, const Ioss::Field & /* field */,
+                               void * /* data */, size_t /* data_size */) const override
     {
       return 0;
     }
-    int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t get_field_internal(const Ioss::FaceBlock * /* nb */, const Ioss::Field & /* field */,
+                               void * /* data */, size_t /* data_size */) const override
     {
       return 0;
     }
@@ -125,18 +125,18 @@ namespace Iopg {
                                size_t data_size) const override;
     int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t get_field_internal(const Ioss::EdgeSet *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
-    int64_t get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t get_field_internal(const Ioss::FaceSet *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
-    int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t get_field_internal(const Ioss::ElementSet *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
@@ -145,8 +145,8 @@ namespace Iopg {
     int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
 
-    int64_t get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const override
+    int64_t get_field_internal(const Ioss::StructuredBlock *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
@@ -166,13 +166,13 @@ namespace Iopg {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t put_field_internal(const Ioss::EdgeBlock *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
-    int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t put_field_internal(const Ioss::FaceBlock *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
@@ -182,18 +182,18 @@ namespace Iopg {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t put_field_internal(const Ioss::EdgeSet *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
-    int64_t put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t put_field_internal(const Ioss::FaceSet *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
-    int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
-                               size_t data_size) const override
+    int64_t put_field_internal(const Ioss::ElementSet *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }
@@ -201,8 +201,8 @@ namespace Iopg {
                                size_t data_size) const override;
     int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
                                size_t data_size) const override;
-    int64_t put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
-                               void *data, size_t data_size) const override
+    int64_t put_field_internal(const Ioss::StructuredBlock *, const Ioss::Field &, void *,
+                               size_t) const override
     {
       return 0;
     }

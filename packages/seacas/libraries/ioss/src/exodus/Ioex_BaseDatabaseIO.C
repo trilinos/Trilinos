@@ -2157,20 +2157,19 @@ namespace Ioex {
       else {
         // Attributes are not named....
         // Try to assign some meaningful names based on conventions...
-        std::string att_name           = "attribute"; // Default
-        int         unknown_attributes = 0;
+        int unknown_attributes = 0;
 
         if (type_match(type, "shell") || type_match(type, "trishell")) {
           if (attribute_count == block->get_property("topology_node_count").get_int()) {
 
-            att_name = "nodal_thickness";
+            std::string att_name = "nodal_thickness";
 
             std::string storage = fmt::format("Real[{}]", attribute_count);
             block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
                                          Ioss::Field::ATTRIBUTE, my_element_count, 1));
           }
           else {
-            att_name = "thickness";
+            std::string att_name = "thickness";
             block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, 1));
             unknown_attributes = attribute_count - 1;
@@ -2210,8 +2209,8 @@ namespace Ioex {
         }
 
         else if (type_match(type, "circle") || type_match(type, "sphere")) {
-          att_name      = "radius";
-          size_t offset = 1;
+          std::string att_name = "radius";
+          size_t      offset   = 1;
           block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
                                        Ioss::Field::ATTRIBUTE, my_element_count, offset++));
           if (attribute_count > 1) {
@@ -2230,8 +2229,8 @@ namespace Ioex {
           // Technically, truss, bar, rod should all only have 1 attribute; however,
           // there are some mesh generation codes that treat all of these types the
           // same and put "beam-type" attributes on bars...
-          int index = 1;
-          att_name  = "area";
+          int         index    = 1;
+          std::string att_name = "area";
           block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
                                        Ioss::Field::ATTRIBUTE, my_element_count, index++));
 
@@ -2267,7 +2266,7 @@ namespace Ioex {
         }
 
         if (unknown_attributes > 0) {
-          att_name = "extra_attribute_";
+          std::string att_name = "extra_attribute_";
           att_name += std::to_string(unknown_attributes);
           std::string storage = fmt::format("Real[{}]", unknown_attributes);
           size_t      index   = attribute_count - unknown_attributes + 1;

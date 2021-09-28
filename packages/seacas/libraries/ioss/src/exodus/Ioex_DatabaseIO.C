@@ -3150,7 +3150,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
           }
         }
       }
-      else if (field.get_name() == "element_side") {
+      else if (field.get_name() == "element_side" || field.get_name() == "element_side_raw") {
         // In exodus, the 'side set' is stored as a sideset.  A sideset
         // has a list of elements and a corresponding local element side
         // (1-based)
@@ -3161,7 +3161,13 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
         // map from local_to_global prior to generating the side  id...
 
         // Get the element number map (1-based)...
+	// Not used for "element_side_raw", but reduces code duplication...
+	// Although combining code for raw and regular introduces an if in the 
+	// middle of a loop, we rely on the branch predictor to learn that 
+	// `do_map` does not change during the iteration...
         const Ioss::MapContainer &map = get_map(EX_ELEM_BLOCK).map();
+
+	bool do_map = field.get_name() == "element_side";
 
         // Allocate space for local side number and element numbers
         // numbers.
@@ -3184,7 +3190,12 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
             auto *element32    = reinterpret_cast<int *>(element.data());
             auto *sides32      = reinterpret_cast<int *>(sides.data());
             for (ssize_t iel = 0; iel < entity_count; iel++) {
-              element_side[index++] = map[element32[iel]];
+	      if (do_map) {
+		element_side[index++] = map[element32[iel]];
+	      }
+	      else {
+		element_side[index++] = element32[iel];
+	      }
               element_side[index++] = sides32[iel] - side_offset;
             }
           }
@@ -3193,7 +3204,12 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
             auto *element64    = reinterpret_cast<int64_t *>(element.data());
             auto *sides64      = reinterpret_cast<int64_t *>(sides.data());
             for (ssize_t iel = 0; iel < entity_count; iel++) {
-              element_side[index++] = map[element64[iel]];
+	      if (do_map) {
+		element_side[index++] = map[element64[iel]];
+	      }
+	      else {
+		element_side[index++] = element64[iel];
+	      }
               element_side[index++] = sides64[iel] - side_offset;
             }
           }
@@ -3213,7 +3229,12 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
             for (int64_t iel = 0; iel < number_sides; iel++) {
               if (is_valid_side[iel] == 1) {
                 // This side  belongs in the side block
-                element_side[index++] = map[element32[iel]];
+		if (do_map) {
+		  element_side[index++] = map[element32[iel]];
+		}
+		else {
+		  element_side[index++] = element32[iel];
+		}
                 element_side[index++] = sides32[iel] - side_offset;
               }
             }
@@ -3225,84 +3246,12 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
             for (int64_t iel = 0; iel < number_sides; iel++) {
               if (is_valid_side[iel] == 1) {
                 // This side  belongs in the side block
-                element_side[index++] = map[element64[iel]];
-                element_side[index++] = sides64[iel] - side_offset;
-              }
-            }
-          }
-          assert(index / 2 == entity_count);
-        }
-      }
-      else if (field.get_name() == "element_side_raw") {
-        // In exodus, the 'side set' is stored as a sideset.  A sideset
-        // has a list of elements and a corresponding local element side
-        // (1-based)
-
-        // Since we only have a single array, we need to allocate an extra
-        // array to store all of the data.  Note also that the
-        // element_id for the "raw" field is the local id, not the
-        // global id.
-
-        // See if edges or faces...
-        int64_t side_offset = Ioss::Utils::get_side_offset(fb);
-
-        std::vector<char> element(number_sides * int_byte_size_api());
-        std::vector<char> sides(number_sides * int_byte_size_api());
-
-        ierr = ex_get_set(get_file_pointer(), EX_SIDE_SET, id, element.data(), sides.data());
-        if (ierr < 0) {
-          Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
-        }
-
-        if (number_sides == entity_count) {
-          ssize_t index = 0;
-          if (int_byte_size_api() == 4) {
-            auto *element_side = static_cast<int *>(data);
-            auto *element32    = reinterpret_cast<int *>(element.data());
-            auto *sides32      = reinterpret_cast<int *>(sides.data());
-            for (ssize_t iel = 0; iel < entity_count; iel++) {
-              element_side[index++] = element32[iel];
-              element_side[index++] = sides32[iel] - side_offset;
-            }
-          }
-          else {
-            auto *element_side = static_cast<int64_t *>(data);
-            auto *element64    = reinterpret_cast<int64_t *>(element.data());
-            auto *sides64      = reinterpret_cast<int64_t *>(sides.data());
-            for (ssize_t iel = 0; iel < entity_count; iel++) {
-              element_side[index++] = element64[iel];
-              element_side[index++] = sides64[iel] - side_offset;
-            }
-          }
-          assert(index / 2 == entity_count);
-        }
-        else {
-          Ioss::IntVector is_valid_side;
-          Ioss::Utils::calculate_sideblock_membership(is_valid_side, fb, int_byte_size_api(),
-                                                      element.data(), sides.data(), number_sides,
-                                                      get_region());
-
-          ssize_t index = 0;
-          if (int_byte_size_api() == 4) {
-            int *element_side = static_cast<int *>(data);
-            int *element32    = reinterpret_cast<int *>(element.data());
-            int *sides32      = reinterpret_cast<int *>(sides.data());
-            for (int64_t iel = 0; iel < number_sides; iel++) {
-              if (is_valid_side[iel] == 1) {
-                // This side  belongs in the side block
-                element_side[index++] = element32[iel];
-                element_side[index++] = sides32[iel] - side_offset;
-              }
-            }
-          }
-          else {
-            auto *element_side = static_cast<int64_t *>(data);
-            auto *element64    = reinterpret_cast<int64_t *>(element.data());
-            auto *sides64      = reinterpret_cast<int64_t *>(sides.data());
-            for (int64_t iel = 0; iel < number_sides; iel++) {
-              if (is_valid_side[iel] == 1) {
-                // This side  belongs in the side block
-                element_side[index++] = element64[iel];
+		if (do_map) {
+		  element_side[index++] = map[element64[iel]];
+		}
+		else {
+		  element_side[index++] = element64[iel];
+		}
                 element_side[index++] = sides64[iel] - side_offset;
               }
             }

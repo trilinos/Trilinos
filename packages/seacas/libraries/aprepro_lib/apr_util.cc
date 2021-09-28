@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -22,7 +22,9 @@
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #else
 #include <unistd.h> // for close
@@ -171,6 +173,11 @@ namespace SEAMS {
 
   void math_error(const SEAMS::Aprepro &apr, const char *function)
   {
+#ifndef _WIN32
+#ifndef math_errhandling
+#define math_errhandling MATH_ERRNO
+#endif
+
     if (math_errhandling & MATH_ERRNO) {
       if (errno != 0) {
         yyerror(apr, function);
@@ -201,6 +208,7 @@ namespace SEAMS {
         std::cerr << "  RANGE error -- divide by zero\n";
       }
     }
+#endif
   }
 
   void math_error(const char *function) { math_error(*SEAMS::aprepro, function); }

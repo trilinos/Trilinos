@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  for (t = 0; t < NUM_THREADS; t++) {
+  for (long t = 0; t < NUM_THREADS; t++) {
     pthread_join(threads[t], NULL);
   }
 

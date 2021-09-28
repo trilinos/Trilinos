@@ -132,13 +132,13 @@ namespace Ioss {
     properties.add(Property("nj", m_nj));
     properties.add(Property("nk", m_nk));
 
-    properties.add(Property("ni_global", m_niGlobal));
-    properties.add(Property("nj_global", m_njGlobal));
-    properties.add(Property("nk_global", m_nkGlobal));
+    properties.add(Property(this, "ni_global", Ioss::Property::INTEGER));
+    properties.add(Property(this, "nj_global", Ioss::Property::INTEGER));
+    properties.add(Property(this, "nk_global", Ioss::Property::INTEGER));
 
-    properties.add(Property("offset_i", m_offsetI));
-    properties.add(Property("offset_j", m_offsetJ));
-    properties.add(Property("offset_k", m_offsetK));
+    properties.add(Property(this, "offset_i", Ioss::Property::INTEGER));
+    properties.add(Property(this, "offset_j", Ioss::Property::INTEGER));
+    properties.add(Property(this, "offset_k", Ioss::Property::INTEGER));
 
     std::string vector_name;
     if (index_dim == 1) {
@@ -192,8 +192,57 @@ namespace Ioss {
     return block;
   }
 
+  void StructuredBlock::set_ijk_offset(int axis, size_t offset)
+  {
+    SMART_ASSERT(axis == 0 || axis == 1 || axis == 2)(axis);
+    if (axis == 0) {
+      m_offsetI = offset;
+    }
+    else if (axis == 1) {
+      m_offsetJ = offset;
+    }
+    else if (axis == 2) {
+      m_offsetK = offset;
+    }
+  }
+
+  void StructuredBlock::set_ijk_global(int axis, size_t global)
+  {
+    SMART_ASSERT(axis == 0 || axis == 1 || axis == 2)(axis);
+    if (axis == 0) {
+      m_niGlobal = global;
+      SMART_ASSERT(m_niGlobal >= m_ni + m_offsetI)(m_niGlobal)(m_ni)(m_offsetI);
+    }
+    else if (axis == 1) {
+      m_njGlobal = global;
+      SMART_ASSERT(m_njGlobal >= m_nj + m_offsetJ)(m_njGlobal)(m_nj)(m_offsetJ);
+    }
+    else if (axis == 2) {
+      m_nkGlobal = global;
+      SMART_ASSERT(m_nkGlobal >= m_nk + m_offsetK)(m_nkGlobal)(m_nk)(m_offsetK);
+    }
+  }
+
   Property StructuredBlock::get_implicit_property(const std::string &my_name) const
   {
+    if (my_name == "ni_global") {
+      return Ioss::Property(my_name, m_niGlobal);
+    }
+    if (my_name == "nj_global") {
+      return Ioss::Property(my_name, m_njGlobal);
+    }
+    if (my_name == "nk_global") {
+      return Ioss::Property(my_name, m_nkGlobal);
+    }
+    if (my_name == "offset_i") {
+      return Ioss::Property(my_name, m_offsetI);
+    }
+    if (my_name == "offset_j") {
+      return Ioss::Property(my_name, m_offsetJ);
+    }
+    if (my_name == "offset_k") {
+      return Ioss::Property(my_name, m_offsetK);
+    }
     return EntityBlock::get_implicit_property(my_name);
   }
 

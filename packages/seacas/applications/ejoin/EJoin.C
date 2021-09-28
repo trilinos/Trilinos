@@ -17,15 +17,12 @@
 #include <numeric>
 #include <set>
 #include <string>
-#ifndef _MSC_VER
-#include <sys/times.h>
-#include <sys/utsname.h>
-#endif
 #include <unistd.h>
 #include <vector>
 
 #include "add_to_log.h"
 #include "fmt/ostream.h"
+#include "time_stamp.h"
 
 #include <exodusII.h>
 
@@ -137,8 +134,6 @@ namespace {
 
   void transfer_field_data_internal(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                                     const std::string &field_name);
-
-  std::string time_stamp(const std::string &format);
 } // namespace
 
 std::string tsFormat = "[%H:%M:%S] ";
@@ -749,27 +744,6 @@ namespace {
     }
   }
 
-  std::string time_stamp(const std::string &format)
-  {
-    if (format == "") {
-      return std::string("");
-    }
-
-    const int   length = 256;
-    static char time_string[length];
-
-    time_t     calendar_time = time(nullptr);
-    struct tm *local_time    = localtime(&calendar_time);
-
-    int error = strftime(time_string, length, format.c_str(), local_time);
-    if (error != 0) {
-      time_string[length - 1] = '\0';
-      return std::string(time_string);
-    }
-
-    return std::string("[ERROR]");
-  }
-
   template <typename T, typename INT>
   void map_element_vars(size_t loffset, size_t goffset, size_t entity_count, std::vector<T> &values,
                         std::vector<T> &global_values, INT *part_loc_elem_to_global)
@@ -853,7 +827,7 @@ namespace {
     }
     size_t element_offset = 0;
     for (auto &eb : ebs) {
-      eb->put_field_data("ids", &ids[element_offset], ids.size() * sizeof(int));
+      eb->put_field_data("ids", &ids[element_offset], ids.size() * sizeof(INT));
       element_offset += eb->entity_count();
     }
 

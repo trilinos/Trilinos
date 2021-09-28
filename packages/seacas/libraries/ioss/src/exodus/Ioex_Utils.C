@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -96,8 +96,6 @@ namespace Ioex {
 
   void update_last_time_attribute(int exodusFilePtr, double value)
   {
-    char errmsg[MAX_ERR_LENGTH];
-
     double tmp    = 0.0;
     int    rootid = static_cast<unsigned>(exodusFilePtr) & EX_FILE_ID_MASK;
     int    status = nc_get_att_double(rootid, NC_GLOBAL, "last_written_time", &tmp);
@@ -106,6 +104,7 @@ namespace Ioex {
       status = nc_put_att_double(rootid, NC_GLOBAL, "last_written_time", NC_DOUBLE, 1, &value);
       if (status != NC_NOERR) {
         ex_opts(EX_VERBOSE);
+        char errmsg[MAX_ERR_LENGTH];
         fmt::print(errmsg, "Error: failed to define 'last_written_time' attribute to file id {}",
                    exodusFilePtr);
         ex_err_fn(exodusFilePtr, __func__, errmsg, status);

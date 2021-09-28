@@ -197,7 +197,7 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
 #endif
 #endif
 
-#ifndef _MSC_VER
+#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
 struct sigaction sigact; // the signal handler & blocked signals
 #endif
 bool checking_invalid = false;
@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
   checking_invalid = false;
   invalid_data     = false;
 
-#ifndef _MSC_VER
+#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
   sigfillset(&(sigact.sa_mask));
   sigact.sa_handler = floating_point_exception_handler;
   if (sigaction(SIGFPE, &sigact, nullptr) == -1) {
@@ -2229,7 +2229,7 @@ bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *
 
 template <typename INT>
 bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
-                    int out_file_id, const INT *id_map, std::vector<double> &vals)
+                    int out_file_id, const INT * /* id_map */, std::vector<double> &vals)
 {
   bool diff_flag = false;
 
@@ -2338,7 +2338,7 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
 
 template <typename INT>
 bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, const TimeInterp &t2,
-                    int out_file_id, const INT *id_map, std::vector<double> &vals)
+                    int out_file_id, const INT * /* id_map */, std::vector<double> &vals)
 {
   bool diff_flag = false;
 

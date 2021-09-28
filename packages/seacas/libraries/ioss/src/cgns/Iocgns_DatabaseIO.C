@@ -222,10 +222,7 @@ namespace {
       Ioss::IJK_t donor_beg{{(int)donor_range[0], (int)donor_range[1], (int)donor_range[2]}};
       Ioss::IJK_t donor_end{{(int)donor_range[3], (int)donor_range[4], (int)donor_range[5]}};
 
-      Ioss::IJK_t offset;
-      offset[0] = block->get_property("offset_i").get_int();
-      offset[1] = block->get_property("offset_j").get_int();
-      offset[2] = block->get_property("offset_k").get_int();
+      Ioss::IJK_t offset = block->get_ijk_offset();
       range_beg[0] += offset[0];
       range_beg[1] += offset[1];
       range_beg[2] += offset[2];
@@ -1968,25 +1965,24 @@ namespace Iocgns {
     // Currently only TRANSIENT fields are input this way.  No valid reason, but that is the current
     // use case.
 
-    // Get the StructuredBlock that this NodeBlock is contained in:
-    const Ioss::GroupingEntity *sb         = nb->contained_in();
-    int                         base       = 1;
-    int                         zone       = Iocgns::Utils::get_db_zone(sb);
-    cgsize_t                    num_to_get = field.verify(data_size);
-
     // In this routine, if isParallel, then reading
     // file-per-processor; not parallel io from single file.
+    cgsize_t num_to_get = field.verify(data_size);
     if (isParallel && num_to_get == 0) {
       return 0;
     }
 
     Ioss::Field::RoleType role = field.get_role();
     if (role == Ioss::Field::TRANSIENT) {
+      // Get the StructuredBlock that this NodeBlock is contained in:
+
       // Locate the FlowSolution node corresponding to the correct state/step/time
       // TODO: do this at read_meta_data() and store...
-      int step = get_region()->get_current_state();
-
-      int solution_index =
+      int                         step = get_region()->get_current_state();
+      int                         base = 1;
+      const Ioss::GroupingEntity *sb   = nb->contained_in();
+      int                         zone = Iocgns::Utils::get_db_zone(sb);
+      int                         solution_index =
           Utils::find_solution_index(get_file_pointer(), base, zone, step, CG_Vertex);
 
       auto *rdata = static_cast<double *>(data);

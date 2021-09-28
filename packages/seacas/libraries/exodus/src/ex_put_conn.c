@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -108,7 +108,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
     int    nedpereldim, nfapereldim;
     size_t num_ed_per_elem, num_fa_per_elem;
 
-    if (elem_edge_conn != 0) {
+    if (elem_edge_conn != NULL) {
       status = nc_inq_dimid(exoid, DIM_NUM_EDG_PER_EL(blk_id_ndx), &nedpereldim);
       if (status != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
@@ -120,7 +120,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
       }
     }
 
-    if (elem_face_conn != 0) {
+    if (elem_face_conn != NULL) {
       status = nc_inq_dimid(exoid, DIM_NUM_FAC_PER_EL(blk_id_ndx), &nfapereldim);
       if (status != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
@@ -133,7 +133,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
     }
 
     num_ed_per_elem = 0;
-    if ((elem_edge_conn != 0) &&
+    if ((elem_edge_conn != NULL) &&
         ((status = nc_inq_dimlen(exoid, nedpereldim, &num_ed_per_elem)) != NC_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of edges/elem in block %" PRId64 " in file id %d",
@@ -143,7 +143,7 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
     }
 
     num_fa_per_elem = 0;
-    if ((elem_face_conn != 0) &&
+    if ((elem_face_conn != NULL) &&
         ((status = nc_inq_dimlen(exoid, nfapereldim, &num_fa_per_elem)) != NC_NOERR)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get number of faces/elem in block %" PRId64 " in file id %d",
@@ -152,8 +152,8 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((num_ed_per_elem == 0 && elem_edge_conn != 0) ||
-        (num_ed_per_elem != 0 && elem_edge_conn == 0)) {
+    if ((num_ed_per_elem == 0 && elem_edge_conn != NULL) ||
+        (num_ed_per_elem != 0 && elem_edge_conn == NULL)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: number of edges per element (%ld) doesn't "
                "agree with elem_edge_conn (0x%p)",
@@ -162,8 +162,8 @@ int ex_put_conn(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((num_fa_per_elem == 0 && elem_face_conn != 0) ||
-        (num_fa_per_elem != 0 && elem_face_conn == 0)) {
+    if ((num_fa_per_elem == 0 && elem_face_conn != NULL) ||
+        (num_fa_per_elem != 0 && elem_face_conn == NULL)) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: number of faces per element (%ld) doesn't "
                "agree with elem_face_conn (0x%p)",

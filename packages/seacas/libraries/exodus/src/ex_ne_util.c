@@ -235,7 +235,6 @@ int ne__check_file_version(int exoid)
 /*****************************************************************************/
 int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
 {
-  int    status;
   int    varid;
   size_t start[1], count[1];
 #if NC_HAS_HDF5
@@ -256,7 +255,7 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
    * means that this is a parallel file, and the index does
    * not exists. This is not an error
    */
-  if ((status = nc_inq_varid(exoid, ne_var_name, &varid)) == NC_NOERR) {
+  if (nc_inq_varid(exoid, ne_var_name, &varid) == NC_NOERR) {
     /* check if we are at the beginning of the index vector */
     if (pos == 0) {
       start[0] = pos;
@@ -268,9 +267,9 @@ int ex_get_idx(int exoid, const char *ne_var_name, int64_t *my_index, int pos)
     }
 
 #if NC_HAS_HDF5
-    status = nc_get_vara_longlong(exoid, varid, start, count, varidx);
+    int status = nc_get_vara_longlong(exoid, varid, start, count, varidx);
 #else
-    status = nc_get_vara_int(exoid, varid, start, count, varidx);
+    int status = nc_get_vara_int(exoid, varid, start, count, varidx);
 #endif
     if (status != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable \"%s\" in file ID %d",

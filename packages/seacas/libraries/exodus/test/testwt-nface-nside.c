@@ -29,7 +29,6 @@ int main(int argc, char **argv)
   char *coord_names[3], *qa_record[2][4], *info[3], *var_names[3];
   char *block_names[10], *nset_names[10], *sset_names[10];
   char *prop_names[2], *attrib_names[2];
-  char *title = "This is a test";
   ex_opts(EX_VERBOSE | EX_ABORT);
 
   /* Specify compute and i/o word size */
@@ -56,6 +55,7 @@ int main(int argc, char **argv)
     int num_elem_blk  = 1;
     int num_node_sets = 0;
 
+    char *title = "This is a test";
     ex_copy_string(par.title, title, MAX_LINE_LENGTH + 1);
     par.num_dim       = num_dim;
     par.num_nodes     = num_nodes;
