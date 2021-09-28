@@ -420,18 +420,7 @@ private:
 
       {
         ttm t(*ttm::getNewTimer("CRS Init Tpetra set all to scalar "));
-//{
-//        ttm tmp(*ttm::getNewTimer("CRS Init Tpetra KDD resumeFill "));
-//        Amat->resumeFill();
-//}
-//{
-//        ttm tmp(*ttm::getNewTimer("CRS Init Tpetra KDD only setall "));
         Amat->setAllToScalar(1.0);
-//}
-//{
-//        ttm tmp(*ttm::getNewTimer("CRS Init Tpetra KDD reFillComplete "));
-//        Amat->fillComplete();
-//}
       }
 
       //////////////////////////////////////////////////////////////
@@ -480,10 +469,6 @@ int main(int narg, char *arg[])
   }
 
   auto comm = Tpetra::getDefaultComm();
-//KDD9640  if (comm->getSize() > 1) {
-//KDD9640    std::cout << "Usage:  run on one processor only" << std::endl;
-//KDD9640    return 0;
-//KDD9640  }
 
   int niter = 10;
   if (narg == 3) niter = std::atoi(arg[2]);
