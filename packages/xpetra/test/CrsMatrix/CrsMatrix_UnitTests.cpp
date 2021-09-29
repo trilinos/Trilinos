@@ -1294,7 +1294,13 @@ namespace {
       
       // check that the local_matrix_type taken the second time is the same
       auto view3 = A->getLocalMatrixHost();
-      TEST_EQUALITY(view2.graph.row_map.data(), view3.graph.row_map.data());
+      // The row pointer is only identical for Tpetra. For Epetra, the
+      // rowptr has a different type than what the local matrix wants,
+      // so we are copying to a new Kokkos view..
+      if (map->lib() == Xpetra::UseTpetra)
+        TEST_EQUALITY(view2.graph.row_map.data(), view3.graph.row_map.data());
+      TEST_EQUALITY(view2.graph.entries.data(), view3.graph.entries.data());
+      TEST_EQUALITY(view2.values.data(), view3.values.data());
 
       for (LO r = 0; r < view2.numRows(); ++r) {
 	// extract data from current row r
