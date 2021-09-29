@@ -54,6 +54,9 @@
 #include "Tpetra_MultiVector.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+#include "KokkosBlas.hpp"
+#include "KokkosSparse.hpp"
+
 class Test {
 
 public:
@@ -74,7 +77,8 @@ private:
     using crsmatrix_t = Epetra_CrsMatrix;
     using multivector_t = Epetra_MultiVector;
 
-    std::cout << "testEpetra:  begin file " << filename << std::endl;
+    std::cout << "testEpetra:  begin file " << filename 
+              << "; " << nIter << " iterations" << std::endl;
 
     // Read in the matrix
     crsmatrix_t *Amat;
@@ -106,35 +110,23 @@ private:
 
     // For several iterations, measure time for replacing values
     using ttm = Teuchos::TimeMonitor;
-    auto tm01 = ttm::getNewTimer("CRS Setup Epetra Xyce Held pointers");
-    auto tm02 = ttm::getNewTimer("CRS Replace Epetra Xyce Held pointers");
-    auto tm03 = ttm::getNewTimer("CRS Replace Epetra using views");
-    auto tm04 = ttm::getNewTimer("CRS Replace Epetra ReplaceLocalValues");
-    auto tm05 = ttm::getNewTimer("CRS Apply Epetra");
-    auto tm06 = ttm::getNewTimer("CRS LinearCombo Epetra "
-                                 "using bracket operator as in Xyce");
-    auto tm07 = ttm::getNewTimer("CRS LinearCombo Epetra using views");
-    auto tm08 = ttm::getNewTimer("CRS Init Epetra set all to scalar ");
-    auto tm09 = ttm::getNewTimer("MV Replace Epetra using views");
-    auto tm10 = ttm::getNewTimer("MV Replace Epetra BracketOperator");
-    auto tm11 = ttm::getNewTimer("MV Update Epetra a*A+b*this");
-    auto tm12 = ttm::getNewTimer("MV Update Epetra a*A+b*B+c*this");
 
-    for (int it = 0; it < nIter; it++) {
-
-      //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+    {
       // Grab and hold pointers into matrix values (ick!)
       // Replace matrix values 
+      int nrows;
+      double **matValues;
+      int *nEntries;
       {
-        int nrows;
-        double **matValues;
-        int *nEntries;
-        {
-          tm01->start();
-          nrows = Amat->RowMap().NumMyElements();
-          matValues = new double*[nrows];
-          nEntries = new int[nrows];
+        nrows = Amat->RowMap().NumMyElements();
+        matValues = new double*[nrows];
+        nEntries = new int[nrows];
 
+        auto tm = ttm::getNewTimer("CRS Setup Epetra Xyce Held pointers");
+        tm->start();
+
+        for (int it = 0; it < nIter; it++) {
           for (int i = 0; i < nrows; i++) {
             int nEnt;
             double *mVals;
@@ -143,25 +135,35 @@ private:
             matValues[i] = mVals;
             nEntries[i] = nEnt;
           }
-          tm01->stop();
         }
 
-        {
-          tm02->start();
+        tm->stop();
+      }
+
+      {
+        auto tm = ttm::getNewTimer("CRS Replace Epetra Xyce Held pointers");
+        tm->start();
+
+        for (int it = 0; it < nIter; it++) {
           for (int i = 0; i < nrows; i++) {
             for (int j = 0; j < nEntries[i]; j++)
               matValues[i][j] = newMatValues[j];
           }
-          tm02->stop();
         }
 
-        delete [] nEntries;
-        delete [] matValues;
+        tm->stop();
       }
 
-      // Replace matrix values using view of values
-      {
-        tm03->start();
+      delete [] nEntries;
+      delete [] matValues;
+    }
+
+    // Replace matrix values using view of values
+    {
+      auto tm = ttm::getNewTimer("CRS Replace Epetra using views");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         int nEntries;
         double *matValues;
         int *indices;
@@ -171,12 +173,17 @@ private:
           for (int j = 0; j < nEntries; j++)
             matValues[j] = newMatValues[j];
         }
-        tm03->stop();
       }
 
-      // Replace matrix values using ReplaceMyValues (as in Xyce)
-      {
-        tm04->start();
+      tm->stop();
+    }
+
+    // Replace matrix values using ReplaceMyValues (as in Xyce)
+    {
+      auto tm = ttm::getNewTimer("CRS Replace Epetra ReplaceLocalValues");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         int nEntries;
         double *matValues;
         int *indices;
@@ -185,22 +192,33 @@ private:
           Amat->ExtractMyRowView(i, nEntries, matValues, indices);
           Amat->ReplaceMyValues(i, nEntries, newMatValues, indices);
         }
-        tm04->stop();
       }
 
-      // SpMV
-      {
-        tm05->start();
+      tm->stop();
+    }
+
+    // SpMV
+    {
+      auto tm = ttm::getNewTimer("CRS Apply Epetra");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         Amat->Multiply(false, x, y);
-        tm05->stop();
       }
-  
-      // LinearCombination
-      {
-        tm06->start();
 
-        double a = 10.;
-        double b = -10;
+      tm->stop();
+    }
+  
+    // LinearCombination
+    {
+      double a = 10.;
+      double b = -10;
+
+      auto tm = ttm::getNewTimer("CRS LinearCombo Epetra "
+                                 "using bracket operator");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         double *avalues, *bvalues;
         int *aind, *bind;
         int anEntries, bnEntries;
@@ -212,14 +230,19 @@ private:
           for (int j = 0; j < anEntries; j++) 
             Cmat[i][j] = a * avalues[j] + b * bvalues[j];
         }
-        tm06->stop();
       }
 
-      {
-        tm07->start();
+      tm->stop();
+    }
 
-        double a = 10.;
-        double b = -10;
+    {
+      double a = 10.;
+      double b = -10;
+
+      auto tm = ttm::getNewTimer("CRS LinearCombo Epetra using views");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         double *avalues, *bvalues, *cvalues;
         int *aind, *bind, *cind;
         int anEntries, bnEntries, cnEntries;
@@ -232,20 +255,30 @@ private:
           for (int j = 0; j < anEntries; j++) 
             cvalues[j] = a * avalues[j] + b * bvalues[j];
         }
-        tm07->stop();
       }
 
-      // Set all matrix values to a single value
-      {
-        tm08->start();
+      tm->stop();
+    }
+
+    // Set all matrix values to a single value
+    {
+      auto tm = ttm::getNewTimer("CRS Init Epetra set all to scalar ");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         Amat->PutScalar(1.0);
-        tm08->stop();
       }
 
-      //////////////////////////////////////////////////////////////
-      // Replace vector values using view (not sure how Xyce does it)
-      {
-        tm09->start();
+      tm->stop();
+    }
+
+    //////////////////////////////////////////////////////////////
+    // Replace vector values using view (not sure how Xyce does it)
+    {
+      auto tm = ttm::getNewTimer("MV Replace Epetra using views");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         double **xvalues;
         int len = x.MyLength();
         x.ExtractView(&xvalues);
@@ -254,39 +287,58 @@ private:
             xvalues[k][i] *= 3.;
           }
         }
-        tm09->stop();
       }
 
-      // Replace vector values using bracket operator 
-      {
-        tm10->start();
+      tm->stop();
+    }
+
+    // Replace vector values using bracket operator 
+    {
+      auto tm = ttm::getNewTimer("MV Replace Epetra BracketOperator");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
         int len = x.MyLength();
         for (int k = 0; k < x.NumVectors(); k++) {
           for (int i = 0; i < len; i++) {
             x[k][i] *= 3.;
           }
         }
-        tm10->stop();
       }
 
-      // Vector linear combination
-      {
-        tm11->start();
-        double a = 1.2;
-        double b = 2.1;
-        w.Update(a, x, b);
-        tm11->stop();
-      }
-
-      {
-        tm12->start();
-        double a = 1.2;
-        double b = 2.1;
-        double c = 3.2;
-        w.Update(a, x, b, z, c);
-        tm12->stop();
-      }
+      tm->stop();
     }
+
+    // Vector linear combination
+    {
+      double a = 1.2;
+      double b = 2.1;
+
+      auto tm = ttm::getNewTimer("MV Update Epetra a*A+b*this");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
+        w.Update(a, x, b);
+      }
+
+      tm->stop();
+    }
+
+    {
+      double a = 1.2;
+      double b = 2.1;
+      double c = 3.2;
+
+      auto tm = ttm::getNewTimer("MV Update Epetra a*A+b*B+c*this");
+      tm->start();
+
+      for (int it = 0; it < nIter; it++) {
+        w.Update(a, x, b, z, c);
+      }
+
+      tm->stop();
+    }
+
     delete [] newMatValues;
     std::cout << "testEpetra:  done " << std::endl;
   }
@@ -294,7 +346,8 @@ private:
   ////////////////////////////////////////////////////////////////////////
   void testTpetra(const char* filename, int nIter)
   {
-    std::cout << "testTpetra:  begin file " << filename << std::endl;
+    std::cout << "testTpetra:  begin file " << filename
+              << "; " << nIter << " iterations" << std::endl;
 
     auto comm = Tpetra::getDefaultComm();
 
@@ -340,32 +393,23 @@ private:
 
     // For several iterations, measure time for replacing values
     using ttm = Teuchos::TimeMonitor;
-    auto tm01 = ttm::getNewTimer("CRS Setup Tpetra Xyce Held pointers");
-    auto tm02 = ttm::getNewTimer("CRS Replace Tpetra Xyce Held pointers");
-    auto tm03 = ttm::getNewTimer("CRS Replace Tpetra using views");
-    auto tm04 = ttm::getNewTimer("CRS Replace Tpetra ReplaceLocalValues");
-    auto tm05 = ttm::getNewTimer("CRS Apply Tpetra");
-    auto tm06 = ttm::getNewTimer("CRS LinearCombo Tpetra using views");
-    auto tm07 = ttm::getNewTimer("CRS Init Tpetra set all to scalar ");
-    auto tm08 = ttm::getNewTimer("MV Replace Tpetra using views");
-    auto tm09 = ttm::getNewTimer("MV Update Tpetra a*A+b*this");
-    auto tm10 = ttm::getNewTimer("MV Update Tpetra a*A+b*B+c*this");
 
-    for (int it = 0; it < nIter; it++) {
-
-      //////////////////////////////////////////////////////////////
-      // Grab and hold pointers into matrix values (ick!)
-      // Replace matrix values 
+    //////////////////////////////////////////////////////////////
+    // Grab and hold pointers into matrix values (ick!)
+    // Replace matrix values 
+    {
+      lno_t nrows;
+      scalar_t **matValues;
+      lno_t *nEntries;
       {
-        lno_t nrows;
-        scalar_t **matValues;
-        lno_t *nEntries;
-        {
-          tm01->start();
-          nrows = Amat->getRowMap()->getNodeNumElements();
-          matValues = new scalar_t*[nrows];
-          nEntries = new lno_t[nrows];
+        nrows = Amat->getRowMap()->getNodeNumElements();
+        matValues = new scalar_t*[nrows];
+        nEntries = new lno_t[nrows];
 
+        auto tm = ttm::getNewTimer("CRS Setup Tpetra Xyce Held pointers");
+        tm->start();
+
+        for (int it = 0; it < nIter; it++) {
           auto lclMat = Amat->getLocalMatrixHost();
           for (lno_t i = 0; i < nrows; i++) {
             nc_kval_t mVals;
@@ -384,26 +428,31 @@ private:
 
             nEntries[i] = lclMat.graph.row_map[i+1] - lclMat.graph.row_map[i];
           }
-          tm01->stop();
         }
+        tm->stop();
+      }
 
-        {
-          tm02->start();
+      {
+        auto tm = ttm::getNewTimer("CRS Replace Tpetra Xyce Held pointers");
+        tm->start();
+        for (int it = 0; it < nIter; it++) {
           for (lno_t i = 0; i < nrows; i++) {
             for (lno_t j = 0; j < nEntries[i]; j++)
               matValues[i][j] = newMatValues[j];
           }
-          tm02->stop();
         }
-
-        delete [] nEntries;
-        delete [] matValues;
+        tm->stop();
       }
 
+      delete [] nEntries;
+      delete [] matValues;
+    }
 
-      // Replace matrix values using local matrix
-      {
-        tm03->start();
+    // Replace matrix values using local matrix
+    {
+      auto tm = ttm::getNewTimer("CRS Replace Tpetra using views");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
         lno_t nrows = Amat->getRowMap()->getNodeNumElements();
         auto lclMat = Amat->getLocalMatrixHost();
         auto offsets = lclMat.graph.row_map;
@@ -414,12 +463,15 @@ private:
             matValues[j] = newMatValues[k];
           }
         }
-        tm03->stop();
       }
+      tm->stop();
+    }
 
-      // Replace matrix values using ReplaceMyValues (as in Xyce)
-      {
-        tm04->start();
+    // Replace matrix values using ReplaceMyValues (as in Xyce)
+    {
+      auto tm = ttm::getNewTimer("CRS Replace Tpetra ReplaceLocalValues");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
         kval_t matValues;
         kind_t indices;
         lno_t nrows = Amat->getRowMap()->getNodeNumElements();
@@ -427,21 +479,42 @@ private:
           Amat->getLocalRowView(i, indices, matValues);
           Amat->replaceLocalValues(i, indices, newMatValues);
         }
-        tm04->stop();
       }
+      tm->stop();
+    }
 
-      // SpMV
-      {
-        tm05->start();
+    // SpMV
+    {
+      auto tm = ttm::getNewTimer("CRS Apply Tpetra");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
         Amat->apply(x, y);
-        tm05->stop();
       }
+      tm->stop();
+    }
   
-      {
-        tm06->start();
+    {
+      auto lclmat = Amat->getLocalMatrixHost();
+      auto xvec = x.getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto yvec = y.getLocalViewHost(Tpetra::Access::ReadWrite);
 
-        scalar_t a(10.);
-        scalar_t b(-10);
+      auto tm = ttm::getNewTimer("CRS Apply Kokkos "
+                                 "-- local only, KokkosSparse::spmv");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        KokkosSparse::spmv(KokkosSparse::NoTranspose, 1., lclmat, xvec,
+                                                      0., yvec);
+      }
+      tm->stop();
+    }
+  
+    {
+      scalar_t a(10.);
+      scalar_t b(-10);
+
+      auto tm = ttm::getNewTimer("CRS LinearCombo Tpetra using views");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
 
         auto avalues = Amat->getLocalMatrixHost().values;
         auto bvalues = Bmat.getLocalMatrixHost().values;
@@ -452,20 +525,38 @@ private:
         for (int i = 0; i < nEntries; i++) {
           cvalues[i] = a * avalues[i] + b * bvalues[i];
         }
-        tm06->stop();
       }
+      tm->stop();
+    }
 
-      // Set all matrix values to a single value
-      {
-        tm07->start();
+    // Set all matrix values to a single value
+    {
+      auto tm = ttm::getNewTimer("CRS Init Tpetra set all to scalar ");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
         Amat->setAllToScalar(1.0);
-        tm07->stop();
       }
+      tm->stop();
+    }
 
-      //////////////////////////////////////////////////////////////
-      // Replace vector values using view (not sure how Xyce does it)
-      {
-        tm08->start();
+    {
+      auto vals = Amat->getLocalMatrixHost().values;
+
+      auto tm = ttm::getNewTimer("CRS Init Kokkos set all to scalar "
+                                 " -- Kokkos::deep_copy");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        Kokkos::deep_copy(vals, 1.0);
+      }
+      tm->stop();
+    }
+
+    //////////////////////////////////////////////////////////////
+    // Replace vector values using view (not sure how Xyce does it)
+    {
+      auto tm = ttm::getNewTimer("MV Replace Tpetra using views");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
         auto xvalues = x.getLocalViewHost(Tpetra::Access::ReadWrite);
         lno_t len = x.getLocalLength();
         int nVec = x.getNumVectors();
@@ -474,26 +565,68 @@ private:
             xvalues(i,k) *= 3.;
           }
         }
-        tm08->stop();
       }
+      tm->stop();
+    }
 
-      // Vector linear combination
-      {
-        tm09->start();
-        double a = 1.2;
-        double b = 2.1;
+    // Vector linear combination
+    {
+      double a = 1.2;
+      double b = 2.1;
+
+      auto tm = ttm::getNewTimer("MV Update Tpetra a*A+b*this");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
         w.update(a, x, b);
-        tm09->stop();
       }
+      tm->stop();
+    }
 
-      {
-        tm10->start();
-        double a = 1.2;
-        double b = 2.1;
-        double c = 3.2;
-        w.update(a, x, b, z, c);
-        tm10->stop();
+    {
+      double a = 1.2;
+      double b = 2.1;
+
+      auto xview = x.getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto wview = w.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+      auto tm = ttm::getNewTimer("MV Update Kokkos a*A+b*this"
+                                 " -- KokkosBlas:axpby");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        KokkosBlas::axpby (a, xview, b, wview);
       }
+      tm->stop();
+    }
+
+    {
+      double a = 1.2;
+      double b = 2.1;
+      double c = 3.2;
+
+      auto tm = ttm::getNewTimer("MV Update Tpetra a*A+b*B+c*this");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        w.update(a, x, b, z, c);
+      }
+      tm->stop();
+    }
+
+    {
+      double a = 1.2;
+      double b = 2.1;
+      double c = 3.2;
+
+      auto xview = x.getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto yview = y.getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto wview = w.getLocalViewHost(Tpetra::Access::ReadWrite);
+
+      auto tm = ttm::getNewTimer("MV Update Kokkos a*A+b*B+c*this"
+                                 " -- KokkosBlas:update");
+      tm->start();
+      for (int it = 0; it < nIter; it++) {
+        KokkosBlas::update(a, xview, b, yview, c, wview);
+      }
+      tm->stop();
     }
     std::cout << "testTpetra:  done " << std::endl;
   }
