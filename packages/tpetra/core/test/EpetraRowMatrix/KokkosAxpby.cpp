@@ -4,6 +4,40 @@
 #include "KokkosBlas.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+using kv_t = Kokkos::View<double **, Kokkos::LayoutLeft, Kokkos::Serial>;
+
+void update_epetra(
+  double alpha, kv_t &A, 
+  double beta, kv_t &B, 
+  double gamma, kv_t &C
+)
+{
+  int nvec = A.extent(1);
+  int len = A.extent(0);
+  for (int k = 0; k < nvec; k++) {
+    const double *avec = Kokkos::subview(A, Kokkos::ALL(), k).data();
+    const double *bvec = Kokkos::subview(B, Kokkos::ALL(), k).data();
+    double *cvec = Kokkos::subview(C, Kokkos::ALL(), k).data();
+    for (int j = 0; j < len; j++) {
+      cvec[j] = gamma * cvec[j] + beta * bvec[j] + alpha * avec[j];
+    }
+  }
+}
+
+void update_handrolled(
+  double alpha, kv_t &A, 
+  double beta, kv_t &B, 
+  double gamma, kv_t &C
+)
+{
+  int nvec = A.extent(1);
+  int len = A.extent(0);
+  for (int k = 0; k < nvec; k++) {
+    for (int j = 0; j < len; j++) {
+      C(j,k) = gamma * C(j,k) + beta * B(j,k) + alpha * A(j,k);
+    }
+  }
+}
 
 int main(int narg, char **arg) 
 {
@@ -13,11 +47,10 @@ int main(int narg, char **arg)
   if (narg < 4) {
     std::cout << "Usage: a.out nVectors vectorLen nIterations" << std::endl;
   }
+
   int nvec = std::atoi(arg[1]);
   int len = std::atoi(arg[2]);
   int niter = std::atoi(arg[3]);
-
-  using kv_t = Kokkos::View<double **, Kokkos::LayoutLeft, Kokkos::Serial>;
 
   kv_t A("A", len, nvec);
   kv_t B("B", len, nvec);
@@ -61,7 +94,7 @@ int main(int narg, char **arg)
     }
 
     {
-      time t(*time::getNewTimer("Update -- Epetra-like"));
+      time t(*time::getNewTimer("Update -- Epetra-like inline"));
       for (int k = 0; k < nvec; k++) {
         const double *avec = Kokkos::subview(A, Kokkos::ALL(), k).data();
         const double *bvec = Kokkos::subview(B, Kokkos::ALL(), k).data();
@@ -73,13 +106,24 @@ int main(int narg, char **arg)
     }
 
     {
-      time t(*time::getNewTimer("Update -- hand-rolled"));
+      time t(*time::getNewTimer("Update -- Epetra-like function"));
+      update_epetra(alpha, A, beta, B, gamma, C);
+    }
+
+    {
+      time t(*time::getNewTimer("Update -- hand-rolled inline"));
       for (int k = 0; k < nvec; k++) {
         for (int j = 0; j < len; j++) {
           C(j,k) = gamma * C(j,k) + beta * B(j,k) + alpha * A(j,k);
         }
       }
     }
+
+    {
+      time t(*time::getNewTimer("Update -- hand-rolled function"));
+      update_handrolled(alpha, A, beta, B, gamma, C);
+    }
+
   }
 
   Teuchos::TimeMonitor::summarize();
