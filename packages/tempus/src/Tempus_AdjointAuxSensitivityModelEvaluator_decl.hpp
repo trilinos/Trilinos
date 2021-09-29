@@ -94,6 +94,9 @@ public:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getAdjointModel() const
   { return adjoint_model_; }
 
+  //! Set the final time from the forward evaluation
+  void setFinalTime(const Scalar t_final);
+
   //! Set solution history from forward evaluation
   void setForwardSolutionHistory(
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);

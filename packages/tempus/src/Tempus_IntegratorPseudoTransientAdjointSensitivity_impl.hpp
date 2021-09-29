@@ -95,6 +95,12 @@ advanceTime(const Scalar timeFinal)
   // Run state integrator and get solution
   bool state_status = state_integrator_->advanceTime(timeFinal);
 
+  // For at least some time-stepping methods, the time of the last time step
+  // may not be timeFinal (e.g., it may be greater by at most delta_t).
+  // But since the adjoint model requires timeFinal in its formulation, reset
+  // it to the achieved final time.
+  sens_model_->setFinalTime(state_integrator_->getTime());
+
   // Set solution in sensitivity ME
   sens_model_->setForwardSolutionHistory(
     state_integrator_->getSolutionHistory());

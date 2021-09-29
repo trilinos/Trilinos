@@ -113,6 +113,14 @@ AdjointAuxSensitivityModelEvaluator(
 template <typename Scalar>
 void
 AdjointAuxSensitivityModelEvaluator<Scalar>::
+setFinalTime(const Scalar t_final)
+{
+  t_final_ = t_final;
+}
+
+template <typename Scalar>
+void
+AdjointAuxSensitivityModelEvaluator<Scalar>::
 setForwardSolutionHistory(
   const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh)
 {
