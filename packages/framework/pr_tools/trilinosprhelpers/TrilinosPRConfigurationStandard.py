@@ -70,7 +70,8 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-DTEST_PARALLEL_LEVEL:STRING={self.concurrency_test}",
                 "-Dconfigure_script:FILEPATH=" + os.path.join(self.arg_workspace_dir, self.config_script),
                f"-Dpackage_enables:FILEPATH={self.arg_filename_packageenables}",
-               f"-Dsubprojects_file:FILEPATH={self.arg_filename_subprojects}"
+               f"-Dsubprojects_file:FILEPATH={self.arg_filename_subprojects}",
+               f"-DCTEST_DROP_SITE:STRING={self.arg_ctest_drop_site}",
              ]
 
         self.message( "--- ctest version:")
@@ -106,7 +107,3 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         self.message("")
 
         return 0
-
-
-
-

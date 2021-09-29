@@ -223,6 +223,7 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
             source_dir="source",
             build_dir="build",
             ctest_driver="ctest_driver.cmake",
+            ctest_drop_site="testing.sandia.gov",
             filename_packageenables="../packageEnables.cmake",
             filename_subprojects="../package_subproject_list.cmake",
             mode="standard",
