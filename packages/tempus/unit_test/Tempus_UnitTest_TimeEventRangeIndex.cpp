@@ -30,7 +30,7 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, Default_Construction)
 {
   auto te = rcp(new Tempus::TimeEventRangeIndex<double>());
 
-  TEST_COMPARE(te->getName(), ==, "TimeEventRangeIndex");
+  TEST_COMPARE(te->getName(), ==, "TimeEventRangeIndex (0; 0; 1)");
 
   // Test when everything is zero.
   TEST_COMPARE(te->getIndexStart (), ==, 0);
@@ -51,7 +51,7 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, Default_Construction)
 TEUCHOS_UNIT_TEST(TimeEventRangeIndex, Construction)
 {
   auto te = rcp(new Tempus::TimeEventRangeIndex<double>(
-                "TestName", -1, 10, 2));
+                -1, 10, 2, "TestName"));
 
   TEST_COMPARE(te->getName(), ==, "TestName");
 
@@ -155,16 +155,16 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, indexToNextEvent)
 
   // Test indexToNextEvent.
   TEST_COMPARE(te->indexToNextEvent(-9), ==, 4); //   Around first event.
-  TEST_COMPARE(te->indexToNextEvent(-5), ==, 0);
+  TEST_COMPARE(te->indexToNextEvent(-5), ==, 3);
   TEST_COMPARE(te->indexToNextEvent(-4), ==, 2);
 
   TEST_COMPARE(te->indexToNextEvent(-1), ==, 2); //   Around mid event.
-  TEST_COMPARE(te->indexToNextEvent( 1), ==, 0);
+  TEST_COMPARE(te->indexToNextEvent( 1), ==, 3);
   TEST_COMPARE(te->indexToNextEvent( 3), ==, 1);
 
   TEST_COMPARE(te->indexToNextEvent( 2), ==, 2); //   Around last event.
-  TEST_COMPARE(te->indexToNextEvent( 4), ==, 0);
-  TEST_COMPARE(te->indexToNextEvent( 8), ==,-4);
+  TEST_COMPARE(te->indexToNextEvent( 4), ==, te->getDefaultIndex()-4);
+  TEST_COMPARE(te->indexToNextEvent( 8), ==, te->getDefaultIndex()-8);
 }
 
 
@@ -177,16 +177,16 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, indexOfNextEvent)
 
   // Test indexOfNextEvent.
   TEST_COMPARE(te->indexOfNextEvent(-9), ==, -5); //   Around first event.
-  TEST_COMPARE(te->indexOfNextEvent(-5), ==, -5);
+  TEST_COMPARE(te->indexOfNextEvent(-5), ==, -2);
   TEST_COMPARE(te->indexOfNextEvent(-4), ==, -2);
 
   TEST_COMPARE(te->indexOfNextEvent(-1), ==, 1); //   Around mid event.
-  TEST_COMPARE(te->indexOfNextEvent( 1), ==, 1);
+  TEST_COMPARE(te->indexOfNextEvent( 1), ==, 4);
   TEST_COMPARE(te->indexOfNextEvent( 3), ==, 4);
 
   TEST_COMPARE(te->indexOfNextEvent( 2), ==, 4); //   Around last event.
-  TEST_COMPARE(te->indexOfNextEvent( 4), ==, 4);
-  TEST_COMPARE(te->indexOfNextEvent( 8), ==, 4);
+  TEST_COMPARE(te->indexOfNextEvent( 4), ==, te->getDefaultIndex());
+  TEST_COMPARE(te->indexOfNextEvent( 8), ==, te->getDefaultIndex());
 }
 
 
@@ -213,16 +213,68 @@ TEUCHOS_UNIT_TEST(TimeEventRangeIndex, eventInRangeIndex)
 
   //   Left end.
   TEST_COMPARE(te->eventInRangeIndex(-6.0, -3), ==, true );   // Around first event.
-  TEST_COMPARE(te->eventInRangeIndex(-5.0, -3), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(-5.0, -3), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(-4.0, -3), ==, false);
 
   TEST_COMPARE(te->eventInRangeIndex(-3, 0), ==, true );   // Around mid event.
-  TEST_COMPARE(te->eventInRangeIndex(-2, 0), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(-2, 0), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(-1, 0), ==, false);
 
   TEST_COMPARE(te->eventInRangeIndex(3, 8), ==, true );   // Around last event.
-  TEST_COMPARE(te->eventInRangeIndex(4, 8), ==, true );
+  TEST_COMPARE(te->eventInRangeIndex(4, 8), ==, false);
   TEST_COMPARE(te->eventInRangeIndex(5, 8), ==, false);
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeEventRangeIndex, getValidParameters)
+{
+  auto teri = rcp(new Tempus::TimeEventRangeIndex<double>());
+
+  auto pl = teri->getValidParameters();
+
+  TEST_COMPARE( pl->get<std::string>("Type"), ==, "Range Index");
+  TEST_COMPARE( pl->get<std::string>("Name"), ==, "TimeEventRangeIndex (0; 0; 1)");
+  TEST_COMPARE( pl->get<int>("Start Index") , ==, 0);
+  TEST_COMPARE( pl->get<int>("Stop Index")  , ==, 0);
+  TEST_COMPARE( pl->get<int>("Stride Index"), ==, 1);
+
+  { // Ensure that parameters are "used", excluding sublists.
+    std::ostringstream unusedParameters;
+    pl->unused(unusedParameters);
+    TEST_COMPARE ( unusedParameters.str(), ==, "");
+  }
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeEventRangeIndex, createTimeEventRange)
+{
+  // Construct parameterList similar to getValidParameters().
+  Teuchos::RCP<Teuchos::ParameterList> pl =
+    Teuchos::parameterList("Time Event Range Index");
+
+  pl->set("Name",         "Unit Test Time Event Range Index");
+  pl->set("Type",         "Range Index");
+  pl->set("Start Index",  -1);
+  pl->set("Stop Index",   11);
+  pl->set("Stride Index",  2);
+
+  // Construct TimeEventRangeIndex from ParameterList.
+  auto teri = Tempus::createTimeEventRangeIndex<double>(pl);
+
+  //Teuchos::RCP<Teuchos::FancyOStream> my_out =
+  //  Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  //teri->describe(*my_out, Teuchos::VERB_EXTREME);
+
+  TEST_COMPARE( teri->getName()       , ==, "Unit Test Time Event Range Index");
+  TEST_COMPARE( teri->getType()       , ==, "Range Index");
+  TEST_COMPARE( teri->getIndexStart() , ==, -1           );
+  TEST_COMPARE( teri->getIndexStop()  , ==, 11           );
+  TEST_COMPARE( teri->getIndexStride(), ==,  2           );
+  TEST_COMPARE( teri->getNumEvents()  , ==,  7           );
 }
 
 

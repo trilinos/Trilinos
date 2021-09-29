@@ -129,7 +129,7 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Describe)
   auto npos = std::string::npos;
   TEST_ASSERT(npos != testS.find("--- Tempus::IntegratorBasic ---"));
   TEST_ASSERT(npos != testS.find("--- Tempus::SolutionHistory"));
-  TEST_ASSERT(npos != testS.find("--- SolutionState (index =     0; time =         0; dt =         1) ---"));
+  TEST_ASSERT(npos != testS.find("--- SolutionState (index =     0; time =         0; dt =     1e+99) ---"));
   TEST_ASSERT(npos != testS.find("--- Tempus::SolutionStateMetaData ---"));
   TEST_ASSERT(npos != testS.find("--- Tempus::StepperState"));
   TEST_ASSERT(npos != testS.find("--- Tempus::PhysicsState"));

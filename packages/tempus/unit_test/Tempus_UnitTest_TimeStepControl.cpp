@@ -48,7 +48,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Default_Construction)
   TEST_FLOATING_EQUALITY( tsc->getInitTime()               , 0.0    , 1.0e-14);
   TEST_FLOATING_EQUALITY( tsc->getFinalTime()              , 1.0e+99, 1.0e-14);
   TEST_FLOATING_EQUALITY( tsc->getMinTimeStep()            , 0.0    , 1.0e-14);
-  TEST_FLOATING_EQUALITY( tsc->getInitTimeStep()           , 1.0    , 1.0e-14);
+  TEST_FLOATING_EQUALITY( tsc->getInitTimeStep()           , 1.0e+99, 1.0e-14);
   TEST_FLOATING_EQUALITY( tsc->getMaxTimeStep()            , 1.0e+99, 1.0e-14);
   TEST_COMPARE          ( tsc->getInitIndex()          , ==, 0               );
   TEST_COMPARE          ( tsc->getFinalIndex()         , ==, 1000000         );
@@ -61,6 +61,9 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Default_Construction)
   TEST_COMPARE          ( tsc->getOutputExactly()      , ==, true            );
   TEST_COMPARE          ( tsc->getOutputIndexInterval(), ==, 1000000         );
   TEST_FLOATING_EQUALITY( tsc->getOutputTimeInterval()     , 1.0e+99, 1.0e-14);
+  auto tec = tsc->getTimeEvents();
+  TEST_COMPARE          ( tec->getSize()               , ==, 2               );
+  TEST_COMPARE          ( tec->getTimeEventNames()     , ==, "Output Index Interval, Output Time Interval");
 
   // Test the set functions.
   tsc->setInitTime(1.0);          tsc->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!tsc->isInitialized());
@@ -97,6 +100,18 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Default_Construction)
   TEST_COMPARE          ( tsc->getOutputExactly()      , ==, false           );
   TEST_COMPARE          ( tsc->getOutputIndexInterval(), ==, 9               );
   TEST_FLOATING_EQUALITY( tsc->getOutputTimeInterval()     , 0.1    , 1.0e-14);
+
+  auto tecTmp  = rcp(new Tempus::TimeEventComposite<double>());
+  auto ter  = rcp(new Tempus::TimeEventRange<double>());
+  auto tel  = rcp(new Tempus::TimeEventList<double>());
+  ter->setName("Test Range");
+  tel->setName("Test List");
+  tecTmp->add(ter );
+  tecTmp->add(tel );
+  tsc->setTimeEvents(tecTmp);
+  tec = tsc->getTimeEvents();
+  TEST_COMPARE          ( tec->getSize()               , ==, 2               );
+  TEST_COMPARE          ( tec->getTimeEventNames()     , ==, "Test Range, Test List");
 }
 
 
@@ -115,13 +130,45 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Full_Construction)
   outputTimes.push_back(1.3);
   outputTimes.push_back(1.7);
 
+  auto tecTmp  = rcp(new Tempus::TimeEventComposite<double>());
+  auto ter  = rcp(new Tempus::TimeEventRange<double>());
+  auto teri = rcp(new Tempus::TimeEventRangeIndex<double>());
+  auto tel  = rcp(new Tempus::TimeEventList<double>());
+  auto teli = rcp(new Tempus::TimeEventListIndex<double>());
+  ter-> setName("Test Range");
+  teri->setName("Test Range Index");
+  tel-> setName("Test List");
+  teli->setName("Test List Index");
+  tecTmp->add(ter );
+  tecTmp->add(teri);
+  tecTmp->add(tel );
+  tecTmp->add(teli);
+
   auto tscsc =
     rcp(new Tempus::TimeStepControlStrategyConstant<double>());
 
   auto tsc = rcp(new Tempus::TimeStepControl<double>(
-    1.0, 100.0, 0.01, 0.02, 0.05, -100,
-    100, 1.0e-06, 1.0e-06, 8, 4, -1, false, false,
-    outputIndices, outputTimes, 9, 0.011, tscsc));
+    1.0,           /* initTime_ */
+    100.0,         /* finalTime_ */
+    0.01,          /* minTimeStep_ */
+    0.02,          /* initTimeStep_ */
+    0.05,          /* maxTimeStep_ */
+    -100,          /* initIndex_ */
+    100,           /* finalIndex_ */
+    1.0e-06,       /* maxAbsError_ */
+    1.0e-06,       /* maxRelError_ */
+    8,             /* maxFailures_ */
+    4,             /* maxConsecFailures_ */
+    -1,            /* numTimeSteps_ */
+    false,         /* printDtChanges_ */
+    false,         /* outputExactly_ */
+    outputIndices, /* outputIndices_ */
+    outputTimes,   /* outputTimes_ */
+    9,             /* outputIndexInterval_ */
+    0.011,         /* outputTimeInterval_ */
+    tecTmp,        /* timeEvent_ */
+    tscsc          /* stepControlStrategy_ */
+    ));
 
   TEUCHOS_TEST_FOR_EXCEPT(!tsc->isInitialized());
 
@@ -142,13 +189,15 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Full_Construction)
   TEST_COMPARE          ( tsc->getOutputExactly()      , ==, false           );
   TEST_COMPARE          ( tsc->getOutputIndexInterval(), ==, 9               );
   TEST_FLOATING_EQUALITY( tsc->getOutputTimeInterval()     , 0.011  , 1.0e-14);
-
+  auto tec = tsc->getTimeEvents();
+  TEST_COMPARE          ( tec->getSize()               , ==, 8               );
+  TEST_COMPARE          ( tec->getTimeEventNames()     , ==, "Test Range, Test Range Index, Test List, Test List Index, Output Time Interval, Output Time List, Output Index Interval, Output Index List");
 }
 
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(TimeStepControl, Create_Construction)
+TEUCHOS_UNIT_TEST(TimeStepControl, createTimeStepControl)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl =
     Tempus::getTimeStepControlPL<double>();
@@ -175,7 +224,22 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Create_Construction)
   auto tscs = rcp(new Tempus::TimeStepControlStrategyConstant<double>());
   auto tscsPL = tscs->getValidParameters();
   pl->set("Time Step Control Strategy", *tscsPL);
-  //std::cout << "  pl = " << *pl << std::endl;
+
+  auto tec = rcp(new Tempus::TimeEventComposite<double>());
+  auto ter  = rcp(new Tempus::TimeEventRange<double>());
+  auto teri = rcp(new Tempus::TimeEventRangeIndex<double>());
+  auto tel  = rcp(new Tempus::TimeEventList<double>());
+  auto teli = rcp(new Tempus::TimeEventListIndex<double>());
+  ter-> setName("Test Range");
+  teri->setName("Test Range Index");
+  tel-> setName("Test List");
+  teli->setName("Test List Index");
+  tec->add(ter );
+  tec->add(teri);
+  tec->add(tel );
+  tec->add(teli);
+  auto tecPL = rcp_const_cast<ParameterList>(tec->getValidParameters());
+  pl->set("Time Step Control Events", *tecPL);
 
   auto tsc = Tempus::createTimeStepControl<double>(pl);
   TEUCHOS_TEST_FOR_EXCEPT(!tsc->isInitialized());
@@ -209,6 +273,9 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Create_Construction)
   TEST_COMPARE          ( tsc->getOutputIndexInterval(), ==, 9               );
   TEST_FLOATING_EQUALITY( tsc->getOutputTimeInterval()     , 0.011  , 1.0e-14);
 
+  tec = tsc->getTimeEvents();
+  TEST_COMPARE          ( tec->getSize()               , ==, 8               );
+  TEST_COMPARE          ( tec->getTimeEventNames()     , ==, "Output Index List, Output Index Interval, Output Time List, Output Time Interval, Test Range, Test Range Index, Test List, Test List Index");
 }
 
 
@@ -217,27 +284,30 @@ TEUCHOS_UNIT_TEST(TimeStepControl, Create_Construction)
 TEUCHOS_UNIT_TEST(TimeStepControl, Accessors)
 {
   auto tsc = rcp(new Tempus::TimeStepControl<double>());
-  int    iSet = 17;
-  double dSet = 0.989;
+  int    iFirst = 0;
+  int    iLast  = 101;
+  int    iStep  = 17;
+  double dFirst = 0.0;
+  double dLast  = 0.989;
+  double dStep  = 0.01;
 
-  tsc->setInitTime(dSet); TEST_COMPARE( tsc->getInitTime(), ==, dSet);
-  tsc->setFinalTime(dSet); TEST_COMPARE( tsc->getFinalTime(), ==, dSet);
-  tsc->setMinTimeStep(dSet); TEST_COMPARE( tsc->getMinTimeStep(), ==, dSet);
-  tsc->setInitTimeStep(dSet); TEST_COMPARE( tsc->getInitTimeStep(), ==, dSet);
-  tsc->setMaxTimeStep(dSet); TEST_COMPARE( tsc->getMaxTimeStep(), ==, dSet);
-  tsc->setInitIndex(iSet); TEST_COMPARE( tsc->getInitIndex(), ==, iSet);
-  tsc->setFinalIndex(iSet); TEST_COMPARE( tsc->getFinalIndex(), ==, iSet);
-  tsc->setMaxAbsError(dSet); TEST_COMPARE( tsc->getMaxAbsError(), ==, dSet);
-  tsc->setMaxRelError(dSet); TEST_COMPARE( tsc->getMaxRelError(), ==, dSet);
+  tsc->setInitTime(dFirst); TEST_COMPARE( tsc->getInitTime(), ==, dFirst);
+  tsc->setFinalTime(dLast); TEST_COMPARE( tsc->getFinalTime(), ==, dLast);
+  tsc->setMinTimeStep(dStep); TEST_COMPARE( tsc->getMinTimeStep(), ==, dStep);
+  tsc->setInitTimeStep(dStep); TEST_COMPARE( tsc->getInitTimeStep(), ==, dStep);
+  tsc->setMaxTimeStep(dLast); TEST_COMPARE( tsc->getMaxTimeStep(), ==, dLast);
+  tsc->setInitIndex(iFirst); TEST_COMPARE( tsc->getInitIndex(), ==, iFirst);
+  tsc->setFinalIndex(iLast); TEST_COMPARE( tsc->getFinalIndex(), ==, iLast);
+  tsc->setMaxAbsError(dStep); TEST_COMPARE( tsc->getMaxAbsError(), ==, dStep);
+  tsc->setMaxRelError(dStep); TEST_COMPARE( tsc->getMaxRelError(), ==, dStep);
   tsc->setOutputExactly(false); TEST_COMPARE( tsc->getOutputExactly(), ==, false);
   tsc->setOutputExactly(true); TEST_COMPARE( tsc->getOutputExactly(), ==, true);
 
-  std::vector<int> iVSet{ 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 };
+  std::vector<int> iVSet{ 0, 1, 2, 3, 5, 8, 13, 21, 34 };
   tsc->setOutputIndices(iVSet); TEUCHOS_TEST_FOR_EXCEPT(tsc->getOutputIndices() != iVSet);
 
-
-  tsc->setOutputIndexInterval(iSet); TEST_COMPARE( tsc->getOutputIndexInterval(), ==, iSet);
-  tsc->setOutputTimeInterval(dSet); TEST_COMPARE( tsc->getOutputTimeInterval(), ==, dSet);
+  tsc->setOutputIndexInterval(iStep); TEST_COMPARE( tsc->getOutputIndexInterval(), ==, iStep);
+  tsc->setOutputTimeInterval(dStep); TEST_COMPARE( tsc->getOutputTimeInterval(), ==, dStep);
 }
 
 
@@ -316,6 +386,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, getOutputIndicesandIntervals)
   int setOutputTimeIndex = 17;
   double setOutputTimeInterval = 1.101001000100001e-7;
 
+  tsc->setFinalTime(1.0);
   tsc->setOutputIndexInterval(setOutputTimeIndex);
   tsc->setOutputTimeInterval(setOutputTimeInterval);
 
@@ -439,13 +510,15 @@ TEUCHOS_UNIT_TEST(TimeStepControl, getValidParameters)
   outputTimes.push_back(1.3);
   outputTimes.push_back(1.7);
 
+  auto tec  = rcp(new Tempus::TimeEventComposite<double>());
+
   auto tscsc =
     rcp(new Tempus::TimeStepControlStrategyConstant<double>());
 
   auto tsc = rcp(new Tempus::TimeStepControl<double>(
     1.0, 100.0, 0.01, 0.02, 0.05, -100,
     100, 1.0e-06, 1.0e-06, 8, 4, -1, false, false,
-    outputIndices, outputTimes, 9, 0.011, tscsc));
+    outputIndices, outputTimes, 9, 0.011, tec, tscsc));
   TEUCHOS_TEST_FOR_EXCEPT(!tsc->isInitialized());
 
   auto pl = tsc->getValidParameters();
@@ -473,6 +546,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, getValidParameters)
     std::ostringstream unusedParameters;
     pl->unused(unusedParameters);
     TEST_COMPARE ( unusedParameters.str(), ==,
+      "WARNING: Parameter \"Time Step Control Events\"    [unused] is unused\n"
       "WARNING: Parameter \"Time Step Control Strategy\"    [unused] is unused\n");
   }
 
@@ -610,7 +684,6 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Constant)
   double outputTime = 0.8;
   outputTimes.push_back(outputTime);
   tsc->setOutputTimes(outputTimes);
-  tsc->setOutputExactly(true);
   tsc->setMinTimeStep (dt/2.0);
   tsc->setInitTimeStep(dt);
   tsc->setMaxTimeStep (2.0*dt);

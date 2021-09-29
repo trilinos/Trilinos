@@ -46,10 +46,6 @@ TEUCHOS_UNIT_TEST(ForwardEuler, ParameterList)
   RCP<ParameterList> pList =
     getParametersFromXmlFile("Tempus_ForwardEuler_SinCos.xml");
 
-  //std::ofstream ftmp("PL.txt");
-  //pList->print(ftmp);
-  //ftmp.close();
-
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   auto model = rcp(new SinCosModel<double> (scm_pl));
