@@ -1640,7 +1640,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
           }
         }      
         
-        if(comm->getRank() == 0) printf("did %d rounds of distributed coloring\n", distributedRounds);
         uint64_t totalVertsPerRound[numStatisticRecordingRounds];
         uint64_t totalBoundarySize = 0;
         uint64_t totalIncorrectGhostsPerRound[numStatisticRecordingRounds];
@@ -1675,24 +1674,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 			               Teuchos::REDUCE_MAX,numStatisticRecordingRounds,conflictDetectionPerRound,finalConflictDetectionPerRound);
         Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,recvPerRound,finalRecvPerRound);
         Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,sentPerRound,finalSentPerRound);
-        printf("Rank %d: boundary size: %ld\n",comm->getRank(),localBoundaryVertices);
-        if(comm->getRank() == 0) printf("Total boundary size: %ld\n",totalBoundarySize);
-        for(int i = 0; i < std::min((int)distributedRounds,numStatisticRecordingRounds); i++){
-          printf("Rank %d: recolor %ld vertices in round %d\n",comm->getRank(), vertsPerRound[i],i);
-          printf("Rank %d: sentbuf had %lld entries in round %d\n", comm->getRank(), sentPerRound[i],i);
-          if(comm->getRank()==0){
-            printf("recolored %ld vertices in round %d\n",totalVertsPerRound[i], i);
-            printf("%ld inconsistent ghosts in round %d\n",totalIncorrectGhostsPerRound[i],i);
-            printf("total time in round %d: %f\n",i,finalTotalPerRound[i]);
-            printf("recoloring time in round %d: %f\n",i,maxRecoloringPerRound[i]);
-            printf("min recoloring time in round %d: %f\n",i,minRecoloringPerRound[i]);
-            printf("conflict detection time in round %d: %f\n",i,finalConflictDetectionPerRound[i]);
-            printf("comm time in round %d: %f\n",i,finalCommPerRound[i]);
-            printf("recvbuf size in round %d: %lld\n",i,finalRecvPerRound[i]);
-            printf("sendbuf size in round %d: %lld\n",i,finalSentPerRound[i]);
-            printf("comp time in round %d: %f\n",i,finalCompPerRound[i]);
-          }
-        }
       } else if (timing){
         double global_total_time = 0.0;
         double global_recoloring_time = 0.0;
@@ -1710,15 +1691,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,1,&interior_time,&global_interior_time);
         comm->barrier();
         fflush(stdout);
-        if(comm->getRank()==0){
-          printf("Total Time: %f\n",global_total_time);
-          printf("Interior Time: %f\n",global_interior_time);
-          printf("Recoloring Time: %f\n",global_recoloring_time);
-          printf("Min Recoloring Time: %f\n",global_min_recoloring_time);
-          printf("Conflict Detection Time: %f\n",global_conflict_detection);
-          printf("Comm Time: %f\n",global_comm_time);
-          printf("Comp Time: %f\n",global_comp_time);
-        }
       }
     }
 }; //end class
