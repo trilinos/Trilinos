@@ -57,6 +57,8 @@
 #include "KokkosBlas.hpp"
 #include "KokkosSparse.hpp"
 
+#include <vector>
+
 class Test {
 
 public:
@@ -101,12 +103,23 @@ private:
     for (int i = 0; i < maxValuesPerRow; i++) newMatValues[i] = i;
 
     // Create multivectors for SpMV and LinearCombination
-    multivector_t y(Amat->RangeMap(), 2);
-    multivector_t x(Amat->DomainMap(), 2);
-    x.Random();
+    std::vector<multivector_t> Y;
+    std::vector<multivector_t> X;
+    std::vector<multivector_t> W;
+    std::vector<multivector_t> Z;
+    for (int it = 0; it < nIter; it++) {
+      multivector_t y(Amat->RangeMap(), 2);
+      multivector_t x(Amat->DomainMap(), 2);
+      x.Random();
 
-    multivector_t w(x);
-    multivector_t z(x);
+      multivector_t w(x);
+      multivector_t z(x);
+
+      Y.push_back(y);
+      X.push_back(x);
+      W.push_back(w);
+      Z.push_back(z);
+    }
 
     // For several iterations, measure time for replacing values
     using ttm = Teuchos::TimeMonitor;
@@ -203,7 +216,7 @@ private:
       tm->start();
 
       for (int it = 0; it < nIter; it++) {
-        Amat->Multiply(false, x, y);
+        Amat->Multiply(false, X[it], Y[it]);
       }
 
       tm->stop();
@@ -280,9 +293,9 @@ private:
 
       for (int it = 0; it < nIter; it++) {
         double **xvalues;
-        int len = x.MyLength();
-        x.ExtractView(&xvalues);
-        for (int k = 0; k < x.NumVectors(); k++) {
+        int len = X[it].MyLength();
+        X[it].ExtractView(&xvalues);
+        for (int k = 0; k < X[it].NumVectors(); k++) {
           for (int i = 0; i < len; i++) {
             xvalues[k][i] *= 3.;
           }
@@ -298,10 +311,10 @@ private:
       tm->start();
 
       for (int it = 0; it < nIter; it++) {
-        int len = x.MyLength();
-        for (int k = 0; k < x.NumVectors(); k++) {
+        int len = X[it].MyLength();
+        for (int k = 0; k < X[it].NumVectors(); k++) {
           for (int i = 0; i < len; i++) {
-            x[k][i] *= 3.;
+            X[it][k][i] *= 3.;
           }
         }
       }
@@ -318,7 +331,7 @@ private:
       tm->start();
 
       for (int it = 0; it < nIter; it++) {
-        w.Update(a, x, b);
+        W[it].Update(a, X[it], b);
       }
 
       tm->stop();
@@ -333,7 +346,7 @@ private:
       tm->start();
 
       for (int it = 0; it < nIter; it++) {
-        w.Update(a, x, b, z, c);
+        W[it].Update(a, X[it], b, Z[it], c);
       }
 
       tm->stop();
@@ -385,11 +398,23 @@ private:
     for (lno_t i = 0; i < maxValuesPerRow; i++) newMatValues[i] = scalar_t(i);
 
     // Create multivectors for SpMV
-    multivector_t y(Amat->getRangeMap(), 2);
-    multivector_t x(Amat->getDomainMap(), 2);
-    x.randomize();
-    multivector_t w(x);
-    multivector_t z(x);
+    std::vector<multivector_t> Y;
+    std::vector<multivector_t> X;
+    std::vector<multivector_t> W;
+    std::vector<multivector_t> Z;
+    for (int it = 0; it < nIter; it++) {
+      multivector_t y(Amat->getRangeMap(), 2);
+      multivector_t x(Amat->getDomainMap(), 2);
+      x.randomize();
+
+      multivector_t w(x);
+      multivector_t z(x);
+
+      Y.push_back(y);
+      X.push_back(x);
+      W.push_back(w);
+      Z.push_back(z);
+    }
 
     // For several iterations, measure time for replacing values
     using ttm = Teuchos::TimeMonitor;
@@ -488,22 +513,27 @@ private:
       auto tm = ttm::getNewTimer("CRS Apply Tpetra");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        Amat->apply(x, y);
+        Amat->apply(X[it], Y[it]);
       }
       tm->stop();
     }
   
     {
       auto lclmat = Amat->getLocalMatrixHost();
-      auto xvec = x.getLocalViewHost(Tpetra::Access::ReadOnly);
-      auto yvec = y.getLocalViewHost(Tpetra::Access::ReadWrite);
+      using mvdata_t = typename multivector_t::dual_view_type::t_host;
+      std::vector<typename mvdata_t::const_type> xvec;
+      std::vector<mvdata_t> yvec;
+      for (int it = 0; it < nIter; it++) {
+        xvec.push_back(X[it].getLocalViewHost(Tpetra::Access::ReadOnly));
+        yvec.push_back(Y[it].getLocalViewHost(Tpetra::Access::ReadWrite));
+      }
 
       auto tm = ttm::getNewTimer("CRS Apply Kokkos "
                                  "-- local only, KokkosSparse::spmv");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        KokkosSparse::spmv(KokkosSparse::NoTranspose, 1., lclmat, xvec,
-                                                      0., yvec);
+        KokkosSparse::spmv(KokkosSparse::NoTranspose, 1., lclmat, xvec[it],
+                                                      0., yvec[it]);
       }
       tm->stop();
     }
@@ -557,9 +587,9 @@ private:
       auto tm = ttm::getNewTimer("MV Replace Tpetra using views");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        auto xvalues = x.getLocalViewHost(Tpetra::Access::ReadWrite);
-        lno_t len = x.getLocalLength();
-        int nVec = x.getNumVectors();
+        auto xvalues = X[it].getLocalViewHost(Tpetra::Access::ReadWrite);
+        lno_t len = X[it].getLocalLength();
+        int nVec = X[it].getNumVectors();
         for (int k = 0; k < nVec; k++) {
           for (int i = 0; i < len; i++) {
             xvalues(i,k) *= 3.;
@@ -577,7 +607,7 @@ private:
       auto tm = ttm::getNewTimer("MV Update Tpetra a*A+b*this");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        w.update(a, x, b);
+        W[it].update(a, X[it], b);
       }
       tm->stop();
     }
@@ -586,14 +616,19 @@ private:
       double a = 1.2;
       double b = 2.1;
 
-      auto xview = x.getLocalViewHost(Tpetra::Access::ReadOnly);
-      auto wview = w.getLocalViewHost(Tpetra::Access::ReadWrite);
+      using mvdata_t = typename multivector_t::dual_view_type::t_host;
+      std::vector<typename mvdata_t::const_type> xvec;
+      std::vector<mvdata_t> wvec;
+      for (int it = 0; it < nIter; it++) {
+        xvec.push_back(X[it].getLocalViewHost(Tpetra::Access::ReadOnly));
+        wvec.push_back(W[it].getLocalViewHost(Tpetra::Access::ReadWrite));
+      }
 
       auto tm = ttm::getNewTimer("MV Update Kokkos a*A+b*this"
                                  " -- KokkosBlas:axpby");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        KokkosBlas::axpby (a, xview, b, wview);
+        KokkosBlas::axpby (a, xvec[it], b, wvec[it]);
       }
       tm->stop();
     }
@@ -606,7 +641,7 @@ private:
       auto tm = ttm::getNewTimer("MV Update Tpetra a*A+b*B+c*this");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        w.update(a, x, b, z, c);
+        W[it].update(a, X[it], b, Z[it], c);
       }
       tm->stop();
     }
@@ -616,15 +651,22 @@ private:
       double b = 2.1;
       double c = 3.2;
 
-      auto xview = x.getLocalViewHost(Tpetra::Access::ReadOnly);
-      auto yview = y.getLocalViewHost(Tpetra::Access::ReadOnly);
-      auto wview = w.getLocalViewHost(Tpetra::Access::ReadWrite);
+      using mvdata_t = typename multivector_t::dual_view_type::t_host;
+      std::vector<typename mvdata_t::const_type> xvec;
+      std::vector<typename mvdata_t::const_type> zvec;
+      std::vector<mvdata_t> wvec;
+
+      for (int it = 0; it < nIter; it++) {
+        xvec.push_back(X[it].getLocalViewHost(Tpetra::Access::ReadOnly));
+        zvec.push_back(Z[it].getLocalViewHost(Tpetra::Access::ReadOnly));
+        wvec.push_back(W[it].getLocalViewHost(Tpetra::Access::ReadWrite));
+      }
 
       auto tm = ttm::getNewTimer("MV Update Kokkos a*A+b*B+c*this"
                                  " -- KokkosBlas:update");
       tm->start();
       for (int it = 0; it < nIter; it++) {
-        KokkosBlas::update(a, xview, b, yview, c, wview);
+        KokkosBlas::update(a, xvec[it], b, zvec[it], c, wvec[it]);
       }
       tm->stop();
     }
