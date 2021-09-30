@@ -1088,8 +1088,7 @@ namespace Tpetra {
 #endif
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
     return std::make_shared<local_multiply_op_type>(
-                           std::make_shared<local_matrix_device_type>(
-                                           getLocalMatrixDevice()));
+                           std::make_shared<local_matrix_device_type>(localMatrix));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

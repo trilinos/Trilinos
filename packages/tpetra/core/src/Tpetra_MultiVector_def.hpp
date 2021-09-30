@@ -2953,14 +2953,16 @@ namespace Tpetra {
     const size_t lclNumRows = getLocalLength ();
     const size_t numVecs = getNumVectors ();
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclNumRows != A.getLocalLength (), std::invalid_argument,
-      "this->getLocalLength() = " << lclNumRows << " != A.getLocalLength() = "
-      << A.getLocalLength () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      numVecs != A.getNumVectors (), std::invalid_argument,
-      "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
-      << A.getNumVectors () << ".");
+    if (::Tpetra::Details::Behavior::debug ()) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        lclNumRows != A.getLocalLength (), std::invalid_argument,
+        "this->getLocalLength() = " << lclNumRows << " != A.getLocalLength() = "
+        << A.getLocalLength () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        numVecs != A.getNumVectors (), std::invalid_argument,
+        "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
+        << A.getNumVectors () << ".");
+    }
 
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
@@ -3006,26 +3008,29 @@ namespace Tpetra {
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta,B,gamma)");
 
     const size_t lclNumRows = this->getLocalLength ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclNumRows != A.getLocalLength (), std::invalid_argument,
-      "The input MultiVector A has " << A.getLocalLength () << " local "
-      "row(s), but this MultiVector has " << lclNumRows << " local "
-      "row(s).");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclNumRows != B.getLocalLength (), std::invalid_argument,
-      "The input MultiVector B has " << B.getLocalLength () << " local "
-      "row(s), but this MultiVector has " << lclNumRows << " local "
-      "row(s).");
     const size_t numVecs = getNumVectors ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      A.getNumVectors () != numVecs, std::invalid_argument,
-      "The input MultiVector A has " << A.getNumVectors () << " column(s), "
-      "but this MultiVector has " << numVecs << " column(s).");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      B.getNumVectors () != numVecs, std::invalid_argument,
-      "The input MultiVector B has " << B.getNumVectors () << " column(s), "
-      "but this MultiVector has " << numVecs << " column(s).");
 
+    if (::Tpetra::Details::Behavior::debug ()) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        lclNumRows != A.getLocalLength (), std::invalid_argument,
+        "The input MultiVector A has " << A.getLocalLength () << " local "
+        "row(s), but this MultiVector has " << lclNumRows << " local "
+        "row(s).");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        lclNumRows != B.getLocalLength (), std::invalid_argument,
+        "The input MultiVector B has " << B.getLocalLength () << " local "
+        "row(s), but this MultiVector has " << lclNumRows << " local "
+        "row(s).");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        A.getNumVectors () != numVecs, std::invalid_argument,
+        "The input MultiVector A has " << A.getNumVectors () << " column(s), "
+        "but this MultiVector has " << numVecs << " column(s).");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        B.getNumVectors () != numVecs, std::invalid_argument,
+        "The input MultiVector B has " << B.getNumVectors () << " column(s), "
+        "but this MultiVector has " << numVecs << " column(s).");
+    }
+  
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
