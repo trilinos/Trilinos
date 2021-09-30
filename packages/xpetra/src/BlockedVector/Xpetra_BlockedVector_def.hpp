@@ -591,10 +591,33 @@ randomize(bool bUseXpetraImplementation)
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+randomize(const Scalar& minVal, const Scalar& maxVal, bool bUseXpetraImplementation)
+{
+    for(size_t r = 0; r < this->getBlockedMap()->getNumMaps(); ++r)
+    {
+        getMultiVector(r)->randomize(minVal, maxVal, bUseXpetraImplementation);
+    }
+}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Xpetra_randomize()
 {
     {
         Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Xpetra_randomize();
+    }
+}
+
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal)
+{
+    {
+        Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Xpetra_randomize(minVal, maxVal);
     }
 }
 
