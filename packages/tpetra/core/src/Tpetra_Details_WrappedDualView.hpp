@@ -123,20 +123,18 @@ sync_device(DualViewType dualView) { }
 template <typename DualViewType>
 class WrappedDualView {
 public:
-  using HostViewType = typename DualViewType::t_host;
-  using DeviceViewType = typename DualViewType::t_dev;
-
-  using HostType   = typename HostViewType::device_type;
-  using DeviceType = typename DeviceViewType::device_type;
 
   using DVT = DualViewType;
   using t_host = typename DualViewType::t_host;
   using t_dev  = typename DualViewType::t_dev;
 
+  using HostType   = typename t_host::device_type;
+  using DeviceType = typename t_dev::device_type;
+
 private:
   static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
   static constexpr bool deviceMemoryIsHostAccessible =
-    Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename DeviceViewType::memory_space>::accessible;
+    Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename t_dev::memory_space>::accessible;
 
 public:
   WrappedDualView() {}
@@ -146,14 +144,18 @@ public:
       dualView(originalDualView)
   { }
 
-  // Should this be expert only?
+  // This is an expert-only constructor
+  // For WrappedDualView to manage synchronizations correctly,
+  // it must have an DualView which is not a subview to due the 
+  // sync's on.  This is what origDualV is for.  In this case, 
+  // dualV is a subview of origDualV.
   WrappedDualView(DualViewType dualV,DualViewType origDualV)
     : originalDualView(origDualV),
       dualView(dualV)
   { }
 
 
-  WrappedDualView(const DeviceViewType deviceView) {
+  WrappedDualView(const t_dev deviceView) {
     TEUCHOS_TEST_FOR_EXCEPTION(
         deviceView.data() != nullptr && deviceView.use_count() == 0,
         std::invalid_argument,
@@ -162,11 +164,11 @@ public:
         "because the WrappedDualView needs to assume ownership of the memory.");
     //If the provided view is default-constructed (null, 0 extent, 0 use count),
     //leave the host mirror default-constructed as well in order to have a matching use count of 0.
-    HostViewType hostView;
+    t_host hostView;
     if(deviceView.use_count() != 0)
     {
       hostView = Kokkos::create_mirror_view_and_copy(
-          typename HostViewType::memory_space(),
+          typename t_host::memory_space(),
           deviceView);
     }
     originalDualView = DualViewType(deviceView, hostView);
@@ -214,7 +216,7 @@ public:
   }
 
 
-  typename HostViewType::const_type
+  typename t_host::const_type
   getHostView(Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) const 
@@ -227,7 +229,7 @@ public:
     return dualView.view_host();
   }
 
-  HostViewType
+  t_host
   getHostView(Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -244,7 +246,7 @@ public:
     return dualView.view_host();
   }
 
-  HostViewType
+  t_host
   getHostView(Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -256,15 +258,15 @@ public:
       return getHostView(Access::ReadWrite);
     }
     if(needsSyncPath()) {
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();      
       throwIfDeviceViewAlive();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence();      
       dualView.clear_sync_state();
       dualView.modify_host();
     }
     return dualView.view_host();
   }
 
-  typename DeviceViewType::const_type
+  typename t_dev::const_type
   getDeviceView(Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) const 
@@ -277,7 +279,7 @@ public:
     return dualView.view_device();
   }
 
-  DeviceViewType
+  t_dev
   getDeviceView(Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -293,7 +295,7 @@ public:
     return dualView.view_device();
   }
 
-  DeviceViewType
+  t_dev
   getDeviceView(Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -305,8 +307,8 @@ public:
       return getDeviceView(Access::ReadWrite);
     }
     if(needsSyncPath()) {
-      if (deviceMemoryIsHostAccessible) Kokkos::fence();
       throwIfHostViewAlive();
+      if (deviceMemoryIsHostAccessible) Kokkos::fence();
       dualView.clear_sync_state();
       dualView.modify_device();
     }
@@ -412,7 +414,7 @@ public:
   } 
 
 
-  typename HostViewType::const_type
+  typename t_host::const_type
   getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) const 
@@ -425,7 +427,7 @@ public:
     return getSubview(dualView.view_host(), offset, numEntries);
   }
 
-  HostViewType
+  t_host
   getHostSubview(int offset, int numEntries, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -441,7 +443,7 @@ public:
     return getSubview(dualView.view_host(), offset, numEntries);
   }
 
-  HostViewType
+  t_host
   getHostSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -452,7 +454,7 @@ public:
     return getHostSubview(offset, numEntries, Access::ReadWrite);
   }
 
-  typename DeviceViewType::const_type
+  typename t_dev::const_type
   getDeviceSubview(int offset, int numEntries, Access::ReadOnlyStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) const
@@ -465,7 +467,7 @@ public:
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
-  DeviceViewType
+  t_dev
   getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -481,7 +483,7 @@ public:
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
-  DeviceViewType
+  t_dev
   getDeviceSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
@@ -494,7 +496,7 @@ public:
 
 
   // Debugging functions to get copies of the view state
-  typename HostViewType::HostMirror getHostCopy() const {
+  typename t_host::HostMirror getHostCopy() const {
     auto X_dev = dualView.view_host();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);
@@ -509,7 +511,7 @@ public:
     }
   }
 
-  typename DeviceViewType::HostMirror getDeviceCopy() const {
+  typename t_dev::HostMirror getDeviceCopy() const {
     auto X_dev = dualView.view_device();
     if(X_dev.span_is_contiguous()) {
       auto mirror = Kokkos::create_mirror_view(X_dev);
@@ -594,6 +596,22 @@ private:
   }
 
   bool needsSyncPath() const {
+    // needsSyncPath tells us whether we need the "sync path" where we (potentially) fence, 
+    // check use counts and take care of sync/modify for the underlying DualView
+    //
+    // The logic is this:  
+    // 1) For non-CUDA archtectures where there the host/device pointers are aliased
+    // we don't need the "sync path."
+    // 2) For CUDA, we always need the "sync path" if we're using the CudaUVMSpace (we need to make sure 
+    // to fence before reading memory on host) OR if the host/device pointers are aliased.
+    //
+    // Avoiding the "sync path" speeds up calculations on architectures where we can 
+    // avoid it (e.g. SerialNode) by not not touching the modify flags.
+    //
+    // Note for the future: Memory spaces that can be addressed on both host and device 
+    // that don't otherwise have an intrinsic fencing mechanism will need to trigger the 
+    // "sync path"
+    
 #ifdef KOKKOS_ENABLE_CUDA
     return std::is_same<typename t_dev::memory_space,Kokkos::CudaUVMSpace>::value || !memoryIsAliased();
 #else
