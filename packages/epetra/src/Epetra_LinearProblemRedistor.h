@@ -63,7 +63,7 @@ class Epetra_RowMatrixTransposer;
 
 */
 
-class Epetra_LinearProblemRedistor {
+class EPETRA_LIB_DLL_EXPORT Epetra_LinearProblemRedistor {
 
   public:
 

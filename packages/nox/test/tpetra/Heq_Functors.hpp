@@ -41,22 +41,23 @@ struct IntegralOperatorFunctor
   typedef typename TpetraVectorType::local_ordinal_type LO;
   typedef typename TpetraVectorType::global_ordinal_type GO;
   typedef typename TpetraVectorType::dual_view_type::t_dev ViewType;
+  typedef typename TpetraVectorType::dual_view_type::t_dev::const_type ConstViewType;
   typedef typename TpetraVectorType::execution_space ExecSpace;
   typedef Kokkos::TeamPolicy<ExecSpace> TeamPolicy;
   typedef typename TeamPolicy::member_type MemberType;
 
-  ViewType uView_;
+  ConstViewType uView_;
   ViewType resultView_;
   const GO myMinGID_;
   const GO procMinGID_;
   const std::size_t myLength_;
 
   IntegralOperatorFunctor(const TpetraVectorType& u,
-                          const TpetraVectorType& result,
+                          TpetraVectorType& result,
                           const GO& myMinGID,
                           const GO& procMinGID) :
-    uView_(u.template getLocalView<ExecSpace>()),
-    resultView_(result.template getLocalView<ExecSpace>()),
+    uView_(u.template getLocalView<ExecSpace>(Tpetra::Access::ReadOnly)),
+    resultView_(result.template getLocalView<ExecSpace>(Tpetra::Access::ReadWrite)),
     myMinGID_(myMinGID),
     procMinGID_(procMinGID),
     myLength_(u.getLocalLength())
@@ -69,9 +70,9 @@ struct IntegralOperatorFunctor
     const GO globalRow = procMinGID_ + localRow;
 
     Scalar localSum = 0;
-    IntegralOperatorReductionFunctor<ViewType, GO> functor(uView_, myMinGID_, globalRow);
+    IntegralOperatorReductionFunctor<ConstViewType, GO> functor(uView_, myMinGID_, globalRow);
     Kokkos::parallel_reduce(Kokkos::TeamThreadRange(member, myLength_), functor, localSum);
-    
+
     if (member.team_rank() == 0)
       resultView_(localRow, 0) = localSum;
   }
@@ -86,17 +87,18 @@ struct ResidualEvaluatorFunctor
   typedef typename TpetraVectorType::impl_scalar_type Scalar;
   typedef typename TpetraVectorType::execution_space ExecSpace;
   typedef typename TpetraVectorType::dual_view_type::t_dev ViewType;
+  typedef typename TpetraVectorType::dual_view_type::t_dev::const_type ConstViewType;
 
-  const ViewType fView_;
-  const ViewType uView_;
-  const ViewType integralOpView_;
+  ViewType fView_;
+  ConstViewType uView_;
+  ConstViewType integralOpView_;
 
-  ResidualEvaluatorFunctor(const TpetraVectorType& f,
+  ResidualEvaluatorFunctor(TpetraVectorType& f,
                            const TpetraVectorType& u,
                            const TpetraVectorType& integralOp) :
-    fView_(f.template getLocalView<ExecSpace>()),
-    uView_(u.template getLocalView<ExecSpace>()),
-    integralOpView_(integralOp.template getLocalView<ExecSpace>())
+    fView_(f.template getLocalView<ExecSpace>(Tpetra::Access::ReadWrite)),
+    uView_(u.template getLocalView<ExecSpace>(Tpetra::Access::ReadOnly)),
+    integralOpView_(integralOp.template getLocalView<ExecSpace>(Tpetra::Access::ReadOnly))
   {}
 
   KOKKOS_INLINE_FUNCTION
@@ -115,28 +117,29 @@ struct JacobianEvaluatorFunctor
 {
   typedef typename TpetraVectorType::impl_scalar_type Scalar;
   typedef typename TpetraVectorType::dual_view_type::t_dev ViewType;
+  typedef typename TpetraVectorType::dual_view_type::t_dev::const_type ConstViewType;
   typedef typename TpetraVectorType::execution_space ExecSpace;
 
   ViewType yView_;
-  ViewType xView_;
-  ViewType integralOpView_;
-  ViewType integralOpXView_;
+  ConstViewType xView_;
+  ConstViewType integralOpView_;
+  ConstViewType integralOpXView_;
   const Scalar alpha_;
   const Scalar beta_;
   const Scalar omega_;
   const Tpetra::global_size_t globalLength_;
 
-  JacobianEvaluatorFunctor(const TpetraVectorType& y,
+  JacobianEvaluatorFunctor(TpetraVectorType& y,
                            const TpetraVectorType& x,
                            const TpetraVectorType& integralOp,
                            const TpetraVectorType& integralOpX,
                            const Scalar& alpha,
                            const Scalar& beta,
                            const Scalar& omega) :
-    yView_(y.template getLocalView<ExecSpace>()),
-    xView_(x.template getLocalView<ExecSpace>()),
-    integralOpView_(integralOp.template getLocalView<ExecSpace>()),
-    integralOpXView_(integralOpX.template getLocalView<ExecSpace>()),
+    yView_(y.template getLocalView<ExecSpace>(Tpetra::Access::ReadWrite)),
+    xView_(x.template getLocalView<ExecSpace>(Tpetra::Access::ReadOnly)),
+    integralOpView_(integralOp.template getLocalView<ExecSpace>(Tpetra::Access::ReadOnly)),
+    integralOpXView_(integralOpX.template getLocalView<ExecSpace>(Tpetra::Access::ReadOnly)),
     alpha_(alpha),
     beta_(beta),
     omega_(omega),
@@ -167,11 +170,11 @@ struct PreconditionerEvaluatorFunctor
   typedef typename TpetraVectorType::local_ordinal_type LO;
   typedef typename TpetraVectorType::global_ordinal_type GO;
   typedef typename TpetraVectorType::execution_space ExecSpace;
-  typedef typename TpetraVectorType::dual_view_type::t_dev ViewType;
-  typedef typename TpetraMatrixType::local_matrix_type LocalMatrixType;
+  typedef typename TpetraVectorType::dual_view_type::t_dev::const_type ConstViewType;
+  typedef typename TpetraMatrixType::local_matrix_device_type LocalMatrixType;
 
   const LocalMatrixType precLocal_;
-  const ViewType integralOpView_;
+  const ConstViewType integralOpView_;
   const Scalar omega_;
   const GO numGlobalElements_;
 
@@ -179,8 +182,8 @@ struct PreconditionerEvaluatorFunctor
                                  const TpetraVectorType& integralOp,
                                  const Scalar& omega,
                                  const GO& numGlobalElements) :
-    precLocal_(prec.getLocalMatrix()),
-    integralOpView_(integralOp.template getLocalView<ExecSpace>()),
+    precLocal_(prec.getLocalMatrixDevice()),
+    integralOpView_(integralOp.template getLocalView<ExecSpace>(Tpetra::Access::ReadOnly)),
     omega_(omega),
     numGlobalElements_(numGlobalElements)
   {}
@@ -202,8 +205,8 @@ struct PreconditionerEvaluatorFunctor
 template <class TpetraGraphType>
 struct GraphSetupFunctor
 {
-  typedef typename TpetraGraphType::local_graph_type::row_map_type::non_const_type OffsetsViewType;
-  typedef typename TpetraGraphType::local_graph_type::entries_type::non_const_type IndicesViewType;
+  typedef typename TpetraGraphType::local_graph_device_type::row_map_type::non_const_type OffsetsViewType;
+  typedef typename TpetraGraphType::local_graph_device_type::entries_type::non_const_type IndicesViewType;
 
   const OffsetsViewType offsetsView_;
   const IndicesViewType indicesView_;

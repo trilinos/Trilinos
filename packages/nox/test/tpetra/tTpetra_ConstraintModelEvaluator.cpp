@@ -129,23 +129,26 @@ TEUCHOS_UNIT_TEST(NOX_Tpetra_1DFEM, Responses)
   constraints.addDX(Teuchos::NO_TRANS,1.0,b,0.0,*result);
   auto result_thyra = Teuchos::rcp_dynamic_cast<NOX::Thyra::MultiVector>(result)->getThyraMultiVector();
   auto DgDx = converter::getTpetraMultiVector(result_thyra);
-  DgDx->sync_host();
   DgDx->describe(out,Teuchos::VERB_EXTREME);
-  auto DgDx_host = DgDx->getLocalViewHost();
-  for (size_t i=0; i < DgDx_host.extent(0); ++i) {
-    if ( (comm->getRank() == 0) && (i == 0) ) {
-      TEST_FLOATING_EQUALITY(DgDx_host(0,0),0.0,tol);
-      TEST_FLOATING_EQUALITY(DgDx_host(0,1),2.0,tol);
-    }
-    else if ( (comm->getRank() == (comm->getSize()-1)) && (i == DgDx_host.extent(0)-1) ) {
-      TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,0),1.0,tol);
-      TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,1),-1.0,tol);
-    }
-    else {
-      TEST_FLOATING_EQUALITY(DgDx_host(i,0),0.0,tol);
-      TEST_FLOATING_EQUALITY(DgDx_host(i,1),0.0,tol);
+
+  {
+    auto DgDx_host = DgDx->getLocalViewHost(Tpetra::Access::ReadOnly);
+    for (size_t i=0; i < DgDx_host.extent(0); ++i) {
+      if ( (comm->getRank() == 0) && (i == 0) ) {
+        TEST_FLOATING_EQUALITY(DgDx_host(0,0),0.0,tol);
+        TEST_FLOATING_EQUALITY(DgDx_host(0,1),2.0,tol);
+      }
+      else if ( (comm->getRank() == (comm->getSize()-1)) && (i == DgDx_host.extent(0)-1) ) {
+        TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,0),1.0,tol);
+        TEST_FLOATING_EQUALITY(DgDx_host(DgDx_host.extent(0)-1,1),-1.0,tol);
+      }
+      else {
+        TEST_FLOATING_EQUALITY(DgDx_host(i,0),0.0,tol);
+        TEST_FLOATING_EQUALITY(DgDx_host(i,1),0.0,tol);
+      }
     }
   }
+
   Teuchos::Array<NOX::TMultiVector::mag_type> norms(1);
   DgDx->norm2(norms);
   TEST_FLOATING_EQUALITY(norms[0],1.0,tol);

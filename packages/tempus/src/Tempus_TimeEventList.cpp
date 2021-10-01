@@ -16,6 +16,10 @@ namespace Tempus {
 
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(TimeEventList)
 
+  // Nonmember constructor
+  template Teuchos::RCP<TimeEventList<double> >
+  createTimeEventList(Teuchos::RCP<Teuchos::ParameterList> pl);
+
 } // namespace Tempus
 
 #endif

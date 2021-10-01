@@ -20,7 +20,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v3
+    - uses: actions/stale@v4
       with:
         debug-only: false
         ascending: true

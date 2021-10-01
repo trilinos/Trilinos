@@ -261,6 +261,24 @@ namespace MueLu {
       } // if(validate)
     } // scope
 
+
+    {
+      // Special handling of ML's aux aggregation
+      //
+      // In ML, when "aggregation: aux: enable" == true, the threshold
+      // is set via "aggregation: aux: threshold" instead of
+      // "aggregation: threshold". In MueLu, we use "aggregation: drop
+      // tol" regardless of "sa: use filtering". So depending on
+      // "aggregation: aux: enable" we use either one or the other
+      // threshold to set "aggregation: drop tol".
+      if (paramListWithSubList.isParameter("aggregation: aux: enable") && paramListWithSubList.get<bool>("aggregation: aux: enable")) {
+        if (paramListWithSubList.isParameter("aggregation: aux: threshold")) {
+          paramListWithSubList.set("aggregation: threshold", paramListWithSubList.get<double>("aggregation: aux: threshold"));
+          paramListWithSubList.remove("aggregation: aux: threshold");
+          }
+      }
+    }
+
     // stringstream for concatenating xml parameter strings.
     std::stringstream mueluss;
 

@@ -4,6 +4,7 @@
 This file contains the base class for the Pull Request test driver.
 """
 import configparserenhanced
+import inspect
 import multiprocessing
 import os
 from pathlib import Path
@@ -68,11 +69,54 @@ class TrilinosPRConfigurationBase(object):
         self._max_test_parallelism = None
         self._concurrency_build    = None
         self._concurrency_test     = None
+        self._debug_level          = 1
 
 
     # --------------------
     # A R G U M E N T S
     # --------------------
+
+    @property
+    def arg_ctest_driver(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores the location of the CTest driver script that gets
+        loaded by the -S argument.
+
+        Returns:
+            self.args.ctest_driver
+        """
+        return self.args.ctest_driver
+
+
+    @property
+    def arg_build_dir(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        Returns:
+            self.args.build_dir
+        """
+        return self.args.build_dir
+
+
+    @property
+    def arg_source_dir(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        Returns:
+            self.args.source_dir
+        """
+        return self.args.source_dir
+
 
     @property
     def arg_pullrequest_number(self):
@@ -227,8 +271,16 @@ class TrilinosPRConfigurationBase(object):
         """
         Generate the working directory for where we should launch the CTest command from.
         For PR testing this should be in $WORKSPACE/TFW_testing_single_configure_prototype
+
+        This is hard-coded to the location where the ctest driver is and will be set to the
+        working dir when CTest is called.
+
+        DEPRECATION:
+            - This may be deprecated with the parameter --ctest-driver
         """
-        return os.path.join(self.arg_workspace_dir, 'TFW_testing_single_configure_prototype')
+        #return os.path.join(self.arg_workspace_dir, 'TFW_testing_single_configure_prototype')
+        # Set to the location where ctest-driver.cmake lives.
+        return os.path.join(self.arg_workspace_dir, "pr-ctest-framework", "cmake")
 
 
     @property
@@ -273,6 +325,7 @@ class TrilinosPRConfigurationBase(object):
                 self._config_data_path).configparserenhanceddata
 
         return self._config_data
+
 
     @property
     def config_script(self):
@@ -377,6 +430,31 @@ class TrilinosPRConfigurationBase(object):
     # M E T H O D S
     # --------------------
 
+    def message(self, text, debug_level_override=None):
+        """
+        A simple wrapper to print out a message to the console output that
+        can also provide (if debugging) a prefix that indicates what file,
+        line, and function the call is coming from.
+
+        Args:
+            text (str): The text that will be printed.
+        """
+        rval = None
+        debug_level = self._debug_level if debug_level_override is None else debug_level_override
+
+        if debug_level == 0:
+            rval = print(text)
+        else:
+            sframe   = inspect.stack()[1]
+            filename = os.path.basename(sframe.filename)
+            lineno   = sframe.lineno
+            function = sframe.function
+            rval = print(f"{filename}:{lineno} {function}()> {text}")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        return rval
+
+
     def get_property_from_config(self, section, option, default=None):
         """
         Helper to load a property from the ConfigParser configuration data
@@ -399,8 +477,8 @@ class TrilinosPRConfigurationBase(object):
         try:
             output = self.config_data.get(section, option)
         except KeyError:
-            print("WARNING: Configuration section '{}' does not exist.".format(section))
-            print("       : Returning default value: '{}'".format(output))
+            self.message("WARNING: Configuration section '{}' does not exist.".format(section))
+            self.message("       : Returning default value: '{}'".format(output))
         return output
 
 
@@ -433,8 +511,8 @@ class TrilinosPRConfigurationBase(object):
                             [output, self.config_data.get(section, option_full)]
                         )
         except KeyError:
-            print("WARNING: Configuration section '{}' does not exist.".format(section))
-            print("       : Returning default value: {}".format(output))
+            self.message("WARNING: Configuration section '{}' does not exist.".format(section))
+            self.message("       : Returning default value: {}".format(output))
         return output
 
 
@@ -462,10 +540,13 @@ class TrilinosPRConfigurationBase(object):
                    os.path.join('origin', self.args.target_branch_name),
                    'HEAD',
                    'packageEnables.cmake',
-                   'package_subproject_list.cmake']
+                   'package_subproject_list.cmake',
+                   '2>&1']
 
-            print("")
-            print("packageEnables Command: \n$ {}\n".format(" \\\n    ".join(cmd)))
+            self.message("")
+            self.message(f"packageEnables Command:")
+            self.message("{}".format(" \\\n    ".join(cmd)), debug_level_override=1)
+            #print("packageEnables Command: \n$ {}\n".format(" \\\n    ".join(cmd)))
 
             if not dryrun:
                 try:
@@ -474,16 +555,16 @@ class TrilinosPRConfigurationBase(object):
                     subprocess.check_call(cmd)
 
                 except subprocess.CalledProcessError as cpe:
-                    print("--- There was an issue generating `packageEnables.cmake`.")
-                    print("--- The error code was: {}".format(cpe.returncode))
-                    print("--- Console Output:\n{}".format(cpe.output))
+                    self.message("--- There was an issue generating `packageEnables.cmake`.")
+                    self.message("--- The error code was: {}".format(cpe.returncode))
+                    self.message("--- Console Output:\n{}".format(cpe.output))
                     sys.stdout.flush()
                     sys.stderr.flush()
                     raise cpe
             else:
-                print("")
-                print("--- SKIPPED DUE TO DRYRUN")
-                print("")
+                self.message("")
+                self.message("--- SKIPPED DUE TO DRYRUN")
+                self.message("")
         else:
             # Use the values in the PACKAGE_ENABLES section of the .ini file
             with open('packageEnables.cmake',  'w') as f_out:
@@ -504,27 +585,27 @@ class TrilinosPRConfigurationBase(object):
                     set(CTEST_LABELS_FOR_SUBPROJECTS ''' + enable_map_entry + ''')
                     '''))
 
-        print("")
-        print("Enabled Packages:")
-        cmd = ['cmake', '-P', 'packageEnables.cmake']
+        self.message("")
+        self.message("Enabled Packages:")
+        cmd = ['cmake', '-P', 'packageEnables.cmake', '2>&1']
         cmake_rstring=None
 
         if not dryrun:
             try:
                 cmake_rstring = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as cpe:
-                print("--- There was an issue generating `packageEnables.cmake`.")
-                print("--- The error code was: {}\n".format(cpe.returncode))
-                print("--- Console Output:\n{}".format(cpe.output))
+                self.message("--- There was an issue generating `packageEnables.cmake`.")
+                self.message("--- The error code was: {}\n".format(cpe.returncode))
+                self.message("--- Console Output:\n{}".format(cpe.output))
                 raise cpe
         else:
-            print("")
-            print("--- SKIPPED DUE TO DRYRUN")
-            print("")
+            self.message("")
+            self.message("--- SKIPPED DUE TO DRYRUN")
+            self.message("")
             cmake_rstring = str.encode("")
 
         cmake_rstring = cmake_rstring.decode('utf-8')
-        print(cmake_rstring)
+        self.message(cmake_rstring)
 
         return 0
 
@@ -570,37 +651,40 @@ class TrilinosPRConfigurationBase(object):
         # source_branch_name must be master_merge_YYYYMMDD_HHMMSS)
         self.validate_branch_constraints()
 
-        print("+" + "-"*78 + "+")
-        print("Configuration Parameters")
-        print("+" + "-"*78 + "+")
-        print("--- arg_filename_packageenables = {}".format(self.arg_filename_packageenables))
-        print("--- arg_filename_subprojects    = {}".format(self.arg_filename_subprojects))
-        print("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
-        print("--- arg_max_cores_allowed       = {}".format(self.arg_max_cores_allowed))
-        print("--- arg_num_concurrent_tests    = {}".format(self.arg_num_concurrent_tests))
-        print("--- arg_pr_env_config_file      = {}".format(self.arg_pr_env_config_file))
-        print("--- arg_pr_gen_config_file      = {}".format(self.arg_pr_gen_config_file))
-        print("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
-        print("--- arg_pr_genconfig_job_name   = {}".format(self.arg_pr_genconfig_job_name))
-        print("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
-        print("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
-        print("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
-        print("--- arg_workspace_dir           = {}".format(self.arg_workspace_dir))
-        print("")
-        print("--- concurrency_build           = {}".format(self.concurrency_build))
-        print("--- concurrency_test            = {}".format(self.concurrency_test))
-        print("--- config_script               = {}".format(self.config_script))
-        print("--- max_cores_allowed           = {}".format(self.max_cores_allowed))
-        print("--- max_test_parallelism        = {}".format(self.max_test_parallelism))
-        print("--- pullrequest_build_name      = {}".format(self.pullrequest_build_name))
-        print("--- working_directory_ctest     = {}".format(self.working_directory_ctest))
+        self.message("+" + "-"*78 + "+")
+        self.message("Configuration Parameters")
+        self.message("+" + "-"*78 + "+")
+        self.message("--- arg_filename_packageenables = {}".format(self.arg_filename_packageenables))
+        self.message("--- arg_filename_subprojects    = {}".format(self.arg_filename_subprojects))
+        self.message("--- arg_jenkins_job_number      = {}".format(self.arg_jenkins_job_number))
+        self.message("--- arg_max_cores_allowed       = {}".format(self.arg_max_cores_allowed))
+        self.message("--- arg_num_concurrent_tests    = {}".format(self.arg_num_concurrent_tests))
+        self.message("--- arg_pr_env_config_file      = {}".format(self.arg_pr_env_config_file))
+        self.message("--- arg_pr_gen_config_file      = {}".format(self.arg_pr_gen_config_file))
+        self.message("--- arg_pr_jenkins_job_name     = {}".format(self.arg_pr_jenkins_job_name))
+        self.message("--- arg_pr_genconfig_job_name   = {}".format(self.arg_pr_genconfig_job_name))
+        self.message("--- arg_pullrequest_number      = {}".format(self.arg_pullrequest_number))
+        self.message("--- arg_pullrequest_cdash_track = {}".format(self.arg_pullrequest_cdash_track))
+        self.message("--- arg_req_mem_per_core        = {}".format(self.arg_req_mem_per_core))
+        self.message("--- arg_workspace_dir           = {}".format(self.arg_workspace_dir))
+        self.message("--- arg_source_dir              = {}".format(self.arg_source_dir))
+        self.message("--- arg_build_dir               = {}".format(self.arg_build_dir))
+        self.message("--- arg_ctest_driver            = {}".format(self.arg_ctest_driver))
+        self.message("")
+        self.message("--- concurrency_build           = {}".format(self.concurrency_build))
+        self.message("--- concurrency_test            = {}".format(self.concurrency_test))
+        self.message("--- config_script               = {}".format(self.config_script))
+        self.message("--- max_cores_allowed           = {}".format(self.max_cores_allowed))
+        self.message("--- max_test_parallelism        = {}".format(self.max_test_parallelism))
+        self.message("--- pullrequest_build_name      = {}".format(self.pullrequest_build_name))
+        self.message("--- working_directory_ctest     = {}".format(self.working_directory_ctest))
         #print("---         = {}".format(self.))
-        print("")
+        self.message("")
 
 
-        print("+" + "-"*68 + "+")
-        print("|   E N V I R O N M E N T   S E T   U P   S T A R T")
-        print("+" + "-"*68 + "+")
+        self.message("+" + "-"*68 + "+")
+        self.message("|   E N V I R O N M E N T   S E T   U P   S T A R T")
+        self.message("+" + "-"*68 + "+")
         tr_env = LoadEnv([self.arg_pr_genconfig_job_name],
                          load_env_ini_file=Path(self.arg_pr_env_config_file))
         tr_env.load_set_environment()
@@ -608,18 +692,18 @@ class TrilinosPRConfigurationBase(object):
         rval = 0
         if not self.args.dry_run:
             rval = tr_env.apply_env()
-            print("--- Environment setup completed ({})".format(rval))
+            self.message("--- Environment setup completed ({})".format(rval))
         else:
             if tr_env.set_environment is None:
                 tr_env.load_set_environment()
             tr_env.set_environment.pretty_print_actions(tr_env.parsed_env_name)
-            print("")
-            print("--- NOTICE: ENVVARS not set due to dry-run flag.")
-            print("")
+            self.message("")
+            self.message("--- NOTICE: ENVVARS not set due to dry-run flag.")
+            self.message("")
 
         if rval:
             msg = "ERROR: There was a problem configuring the environment."
-            print(msg)
+            self.message(msg)
             raise Exception(msg)
 
         # Environment variables that we wish to print out.
@@ -644,24 +728,23 @@ class TrilinosPRConfigurationBase(object):
             "FC",
             "MODULESHOME"
             ]
-        print("")
+        self.message("")
         tr_env.set_environment.pretty_print_envvars(envvar_filter=envvars_to_print)
 
-        print("+" + "-"*68 + "+")
-        print("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
-        print("+" + "-"*68 + "+")
+        self.message("+" + "-"*68 + "+")
+        self.message("|   E N V I R O N M E N T   S E T   U P   C O M P L E T E")
+        self.message("+" + "-"*68 + "+")
 
-
-        print("+" + "-"*68 + "+")
-        print("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
-        print("+" + "-"*68 + "+")
+        self.message("+" + "-"*68 + "+")
+        self.message("|   G e n e r a t e   `packageEnables.cmake`   S T A R T I N G")
+        self.message("+" + "-"*68 + "+")
 
         self.create_package_enables_file(dryrun=self.args.dry_run)
 
-        print("+" + "-"*68 + "+")
-        print("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
-        print("+" + "-"*68 + "+")
-        print("")
+        self.message("+" + "-"*68 + "+")
+        self.message("|   G e n e r a t e   `packageEnables.cmake`   C O M P L E T E D")
+        self.message("+" + "-"*68 + "+")
+        self.message("")
 
         return 0
 
@@ -673,5 +756,30 @@ class TrilinosPRConfigurationBase(object):
         raise NotImplementedError("This method must be overridden.")
 
 
+    def chdir_logged(self, dest_dir, create_if_missing=False):
+        """
+        An extra verbose wrapper for chdir. This is helpful because it can provide
+        a decent audit log of what paths have been changed. Optionally, you can also
+        tell it to create a directory if the destination is missing.
+
+        Args:
+            dest_dir (str,path): The destination directory.
+            create_if_missing (bool): If ``True`` then we attempt to recursively make
+                the directory plus intermediate paths and then change to the dir.
+        """
+        self.message("--- CHDIR ---")
+        self.message(f"current path: {os.getcwd()}")
+        self.message(f"new path    : {dest_dir}")
+        if not self.args.dry_run:
+            try:
+                os.chdir(self.arg_build_dir)
+            except FileNotFoundError:
+                self.message("WARNING: Path is missing!")
+                self.message("         Will attempt to create the missing directory.")
+                os.makedirs(dest_dir, exist_ok=True)
+                os.chdir(dest_dir)
+        else:
+            self.message("Skipped (Dry-Run)")
+        self.message("--- OK")
 
 

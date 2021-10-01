@@ -186,8 +186,6 @@ node set  2, property( 2): 'FACE'=     5
 node set  1, property( 3): 'VELOCITY'=  1000
 node set  2, property( 3): 'VELOCITY'=  2000
 
-after ex_inquire, error =   0
-
 after ex_inquire: EX_INQ_NS_NODE_LEN = 8, error =   0
 
 after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0

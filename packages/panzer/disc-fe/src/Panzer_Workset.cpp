@@ -52,6 +52,7 @@
 #include "Panzer_LocalMeshInfo.hpp"
 #include "Panzer_PointGenerator.hpp"
 #include "Panzer_PointValues2.hpp"
+#include "Panzer_HashUtils.hpp"
 #include "Panzer_ConvertNormalToRotationMatrix.hpp"
 
 #include "Panzer_SubcellConnectivity.hpp"
@@ -92,111 +93,6 @@ applyBV2Orientations(const int num_cells,
   for(int i=0; i<num_cells; ++i)
     workset_orientations[i] = local_orientations[local_cell_ids_host[i]];
   basis_values.applyOrientations(workset_orientations,num_cells);
-}
-
-void
-correctVirtualNormals(const Teuchos::RCP<panzer::IntegrationValues2<double> > iv,
-                      const int num_real_cells,
-                      const int num_virtual_cells,
-                      const Teuchos::RCP<const shards::CellTopology> cell_topology,
-                      const SubcellConnectivity & face_connectivity)
-{
-
-  if (iv->int_rule->getType() != panzer::IntegrationDescriptor::SURFACE)
-    return;
-
-  // IntegrationValues2 doesn't know anything about virtual cells, so it sets up incorrect normals for those.
-  // What we want is for the adjoining face of the virtual cell to have normals that are the negated real cell's normals.
-  // we correct the normals here:
-  const int space_dim      = cell_topology->getDimension();
-  const int faces_per_cell = cell_topology->getSubcellCount(space_dim-1);
-  const int points          = iv->surface_normals.extent_int(1);
-  const int points_per_face = points / faces_per_cell;
-
-  auto surface_normals_view = PHX::as_view(iv->surface_normals);
-  auto surface_normals_h = Kokkos::create_mirror_view(surface_normals_view);
-  Kokkos::deep_copy(surface_normals_h, surface_normals_view);
-
-  auto surface_rotation_matrices_view = PHX::as_view(iv->surface_rotation_matrices);
-  auto surface_rotation_matrices_h = Kokkos::create_mirror_view(surface_rotation_matrices_view);
-  Kokkos::deep_copy(surface_rotation_matrices_h, surface_rotation_matrices_view);
-
-
-  for (int virtual_cell_ordinal=0; virtual_cell_ordinal<num_virtual_cells; virtual_cell_ordinal++)
-  {
-    const panzer::LocalOrdinal virtual_cell = virtual_cell_ordinal+num_real_cells;
-    int virtual_local_face_id = -1; // the virtual cell face that adjoins the real cell
-    int face_ordinal = -1;
-    for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
-    {
-      face_ordinal = face_connectivity.subcellForCellHost(virtual_cell, local_face_id);
-      if (face_ordinal >= 0)
-      {
-        virtual_local_face_id = local_face_id;
-        break;
-      }
-    }
-    if (face_ordinal >= 0)
-    {
-      const int first_cell_for_face = face_connectivity.cellForSubcellHost(face_ordinal, 0);
-      const panzer::LocalOrdinal other_side = (first_cell_for_face == virtual_cell) ? 1 : 0;
-      const panzer::LocalOrdinal real_cell = face_connectivity.cellForSubcellHost(face_ordinal,other_side);
-      const panzer::LocalOrdinal face_in_real_cell = face_connectivity.localSubcellForSubcellHost(face_ordinal,other_side);
-      TEUCHOS_ASSERT(real_cell < num_real_cells);
-      for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
-      {
-        int virtual_cell_point = points_per_face * virtual_local_face_id + point_ordinal;
-        int real_cell_point = points_per_face * face_in_real_cell + point_ordinal;
-        // the following arrays will be used to produce/store the rotation matrix below
-        double normal[3], transverse[3], binormal[3];
-        for(int i=0;i<3;i++)
-        {
-          normal[i]=0.;
-          transverse[i]=0.;
-          binormal[i]=0.;
-        }
-
-        for (int d=0; d<space_dim; d++)
-        {
-          const auto n_d = surface_normals_h(real_cell,real_cell_point,d);
-          surface_normals_h(virtual_cell,virtual_cell_point,d) = -n_d;
-          normal[d] = -n_d;
-        }
-
-        panzer::convertNormalToRotationMatrix(normal,transverse,binormal);
-
-        for(int dim=0; dim<3; ++dim){
-          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,0,dim) = normal[dim];
-          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,1,dim) = transverse[dim];
-          surface_rotation_matrices_h(virtual_cell,virtual_cell_point,2,dim) = binormal[dim];
-        }
-      }
-      // clear the other normals and rotation matrices for the virtual cell:
-      for (int local_face_id=0; local_face_id<faces_per_cell; local_face_id++)
-      {
-        if (local_face_id == virtual_local_face_id) continue;
-        for (int point_ordinal=0; point_ordinal<points_per_face; point_ordinal++)
-        {
-          int point = local_face_id * points_per_face + point_ordinal;
-          for (int dim=0; dim<space_dim; dim++)
-          {
-            surface_normals_h(virtual_cell,point,dim) = 0.0;
-          }
-
-          for(int dim1=0; dim1<3; ++dim1)
-          {
-            for(int dim2=0; dim2<3; ++dim2)
-            {
-              surface_rotation_matrices_h(virtual_cell,point,dim1,dim2) = 0;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  Kokkos::deep_copy(surface_normals_view, surface_normals_h);
-  Kokkos::deep_copy(surface_rotation_matrices_view, surface_rotation_matrices_h);
 }
 
 }
@@ -325,12 +221,18 @@ WorksetDetails::getFaceConnectivity() const
 
 const panzer::IntegrationValues2<double> &
 WorksetDetails::
-getIntegrationValues(const panzer::IntegrationDescriptor & description) const
+getIntegrationValues(const panzer::IntegrationDescriptor & description,
+                     const bool lazy_version) const
 {
   TEUCHOS_ASSERT(setup_);
 
+  // We need unique keys for the lazy copy or else we get some weird behavior
+  size_t key = description.getKey();
+  if(lazy_version)
+    panzer::hash_combine<int>(key, 123);
+
   // Check if exists
-  const auto itr = integration_values_map_.find(description.getKey());
+  const auto itr = integration_values_map_.find(key);
   if(itr != integration_values_map_.end())
     return *(itr->second);
 
@@ -345,21 +247,33 @@ getIntegrationValues(const panzer::IntegrationDescriptor & description) const
     TEUCHOS_TEST_FOR_EXCEPT_MSG(description.getSide() != getSubcellIndex(),
                                 "Workset::getIntegrationValues : Attempted to build integration values for side '"<<description.getSide()<<"', but workset is constructed for side '"<<getSubcellIndex()<<"'");
   }
-
   auto ir = Teuchos::rcp(new IntegrationRule(description, cell_topology_, numCells(), num_faces));
 
-  auto iv = Teuchos::rcp(new IntegrationValues2<double>("",true));
-  iv->setupArrays(ir);
-  iv->evaluateValues(getCellVertices(), numCells(), face_connectivity_);
+  // Create the integration values object
+  Teuchos::RCP<IntegrationValues2<double>> iv;
+  if(lazy_version){
+    iv = Teuchos::rcp(new IntegrationValues2<double>());
 
-  correctVirtualNormals(iv, num_owned_cells_ + num_ghost_cells_, num_virtual_cells_, cell_topology_, *face_connectivity_);
+    iv->setup(ir,getCellVertices(),numCells());
 
-  // This is an advanced feature that requires changes to the workset construction
-  // Basically there needs to be a way to grab the side assembly for both "details" belonging to the same workset, which requires a refactor
-  // Alternatively, we can do this using a face connectivity object, but the refactor is more important atm.
-  TEUCHOS_ASSERT(not (options_.side_assembly_ and options_.align_side_points_));
+    // Surface integration schemes need to properly "permute" their entries to line up the surface points between cells
+    if(description.getType() == panzer::IntegrationDescriptor::SURFACE)
+      iv->setupPermutations(face_connectivity_, numVirtualCells());
 
-  integration_values_map_[description.getKey()] = iv;
+  } else {
+
+    iv = Teuchos::rcp(new IntegrationValues2<double>("",true));
+    iv->setupArrays(ir);
+    iv->evaluateValues(getCellVertices(), numCells(), face_connectivity_, numVirtualCells());
+
+    // This is an advanced feature that requires changes to the workset construction
+    // Basically there needs to be a way to grab the side assembly for both "details" belonging to the same workset, which requires a refactor
+    // Alternatively, we can do this using a face connectivity object, but the refactor is more important atm.
+    TEUCHOS_ASSERT(not (options_.side_assembly_ and options_.align_side_points_));
+
+  }
+
+  integration_values_map_[key] = iv;
   ir_degrees->push_back(iv->int_rule->cubature_degree);
   int_rules.push_back(iv);
 
@@ -406,18 +320,28 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 {
   TEUCHOS_ASSERT(setup_);
 
+  // We need unique keys for the lazy copy or else we get some weird behavior
+  size_t basis_key = basis_description.getKey();
+  if(lazy_version)
+    panzer::hash_combine<int>(basis_key, 123);
+
+  // We need unique keys for the lazy copy or else we get some weird behavior
+  size_t integration_key = integration_description.getKey();
+  if(lazy_version)
+    panzer::hash_combine<int>(integration_key, 123);
+
   // Check if exists
-  const auto itr = basis_integration_values_map_.find(basis_description.getKey());
+  const auto itr = basis_integration_values_map_.find(basis_key);
   if(itr != basis_integration_values_map_.end()){
     const auto & submap = itr->second;
-    const auto itr2 = submap.find(integration_description.getKey());
+    const auto itr2 = submap.find(integration_key);
     if(itr2 != submap.end())
       return *(itr2->second);
 
   }
 
   // Get the integration values for this description
-  const auto & iv = getIntegrationValues(integration_description);
+  const auto & iv = getIntegrationValues(integration_description,lazy_version);
   auto bir = Teuchos::rcp(new BasisIRLayout(basis_description.getType(), basis_description.getOrder(), *iv.int_rule));
 
   Teuchos::RCP<BasisValues2<double>> biv;
@@ -429,12 +353,12 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
     biv = Teuchos::rcp(new BasisValues2<double>());
 
     if(integration_description.getType() == IntegrationDescriptor::VOLUME)
-      biv->setupUniform(bir, iv.cub_points, iv.jac, iv.jac_det, iv.jac_inv);
+      biv->setupUniform(bir, iv.getUniformCubaturePointsRef(false), iv.getJacobian(false), iv.getJacobianDeterminant(false), iv.getJacobianInverse(false));
     else
-      biv->setup(bir, iv.ref_ip_coordinates, iv.jac, iv.jac_det, iv.jac_inv);
+      biv->setup(bir, iv.getCubaturePointsRef(false), iv.getJacobian(false), iv.getJacobianDeterminant(false), iv.getJacobianInverse(false));
 
     biv->setOrientations(options_.orientations_, numOwnedCells()+numGhostCells());
-    biv->setWeightedMeasure(iv.weighted_measure);
+    biv->setWeightedMeasure(iv.getWeightedMeasure(false));
     biv->setCellVertexCoordinates(cell_vertex_coordinates);
 
   } else {
@@ -486,7 +410,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
   }
 
-  basis_integration_values_map_[basis_description.getKey()][integration_description.getKey()] = biv;
+  basis_integration_values_map_[basis_key][integration_key] = biv;
   bases.push_back(biv);
   basis_names->push_back(biv->basis_layout->name());
 
@@ -500,6 +424,7 @@ WorksetDetails::
 getPointValues(const panzer::PointDescriptor & description) const
 {
   TEUCHOS_ASSERT(setup_);
+
 
   // Check if exists
   const auto itr = point_values_map_.find(description.getKey());
@@ -534,8 +459,13 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 {
   TEUCHOS_ASSERT(setup_);
 
+  // We need unique keys for the lazy copy or else we get some weird behavior
+  size_t basis_key = basis_description.getKey();
+  if(lazy_version)
+    panzer::hash_combine<int>(basis_key, 123);
+
   // Check if exists
-  const auto itr = basis_point_values_map_.find(basis_description.getKey());
+  const auto itr = basis_point_values_map_.find(basis_key);
   if(itr != basis_point_values_map_.end()){
     const auto & submap = itr->second;
     const auto itr2 = submap.find(point_description.getKey());
@@ -581,7 +511,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
 
   }
 
-  basis_point_values_map_[basis_description.getKey()][point_description.getKey()] = bpv;
+  basis_point_values_map_[basis_key][point_description.getKey()] = bpv;
 
   return *bpv;
 

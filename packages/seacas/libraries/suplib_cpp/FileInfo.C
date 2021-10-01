@@ -108,7 +108,7 @@ bool FileInfo::is_dir() const
 //: Returns TRUE if we are pointing to a symbolic link
 bool FileInfo::is_symlink() const
 {
-#ifndef _MSC_VER
+#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
   struct stat s
   {
   };
@@ -241,7 +241,7 @@ std::string FileInfo::basename() const
 
 std::string FileInfo::realpath() const
 {
-#ifdef _MSC_VER
+#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
   char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);
 #else
   char *path = ::realpath(filename_.c_str(), nullptr);

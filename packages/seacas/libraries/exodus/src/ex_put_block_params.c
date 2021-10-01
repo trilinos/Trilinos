@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -274,27 +274,27 @@ int ex_put_block_params(int exoid, size_t block_count, const struct ex_block *bl
     case EX_EDGE_BLOCK:
       dneblk  = DIM_NUM_ED_IN_EBLK(blk_id_ndx);
       dnnpe   = DIM_NUM_NOD_PER_ED(blk_id_ndx);
-      dnepe   = 0;
-      dnfpe   = 0;
+      dnepe   = NULL;
+      dnfpe   = NULL;
       dnape   = DIM_NUM_ATT_IN_EBLK(blk_id_ndx);
       vblkatt = VAR_EATTRIB(blk_id_ndx);
       vattnam = VAR_NAME_EATTRIB(blk_id_ndx);
       vnodcon = VAR_EBCONN(blk_id_ndx);
-      vedgcon = 0;
-      vfaccon = 0;
+      vedgcon = NULL;
+      vfaccon = NULL;
       break;
     case EX_FACE_BLOCK:
       dneblk  = DIM_NUM_FA_IN_FBLK(blk_id_ndx);
       dnnpe   = DIM_NUM_NOD_PER_FA(blk_id_ndx);
-      dnepe   = 0;
-      dnfpe   = 0;
+      dnepe   = NULL;
+      dnfpe   = NULL;
       dnape   = DIM_NUM_ATT_IN_FBLK(blk_id_ndx);
       vblkatt = VAR_FATTRIB(blk_id_ndx);
       vattnam = VAR_NAME_FATTRIB(blk_id_ndx);
       vnodcon = VAR_FBCONN(blk_id_ndx);
       vnpecnt = VAR_FBEPEC(blk_id_ndx);
-      vedgcon = 0;
-      vfaccon = 0;
+      vedgcon = NULL;
+      vfaccon = NULL;
       break;
     case EX_ELEM_BLOCK:
       dneblk  = DIM_NUM_EL_IN_BLK(blk_id_ndx);

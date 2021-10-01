@@ -15,8 +15,9 @@
         <Parameter name="Storage Limit" type="int"    value="20"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
-        <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="20.0"/>
+        <!-- Test ASA works with non-zero initial time -->
+        <Parameter name="Initial Time"           type="double" value="0.1"/>
+        <Parameter name="Final Time"             type="double" value="20.1"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>

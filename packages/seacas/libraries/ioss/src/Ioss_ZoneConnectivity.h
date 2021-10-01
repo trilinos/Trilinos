@@ -135,7 +135,7 @@ namespace Ioss {
     bool m_ownsSharedNodes{false}; // Deprecate soon
 
     // True if this zc is created due to processor decompositions in a parallel run
-    bool m_fromDecomp{false};
+    mutable bool m_fromDecomp{false};
 
     bool m_isActive{true}; // True if non-zero range. That is, it has at least one face
 

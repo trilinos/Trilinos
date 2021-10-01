@@ -731,7 +731,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   if (xml == ""){
     if (precType == "MueLu-RefMaxwell")
       xml = "Maxwell.xml";
-    else if (precType == "MueLu-Reitzinger" || precType == "MueLu=Maxwell1")
+    else if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1")
       xml = "Maxwell_Reitzinger.xml";
     else if (precType == "ML-RefMaxwell")
       xml = "Maxwell_ML.xml";

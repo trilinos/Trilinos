@@ -19,6 +19,7 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
+#include "Tempus_TimeEventComposite.hpp"
 
 
 namespace Tempus {
@@ -75,6 +76,7 @@ public:
     std::vector<Scalar> outputTimes,
     int                 outputIndexInterval,
     Scalar              outputTimeInterval,
+    Teuchos::RCP<TimeEventComposite<Scalar> > timeEvent,
     Teuchos::RCP<TimeStepControlStrategy<Scalar>> stepControlStrategy);
 
   /// Destructor
@@ -113,7 +115,7 @@ public:
 
   /// \name Get accessors
   //@{
-    virtual std::string getStepType() const { return stepControlStrategy_->getStepType(); }
+    virtual std::string getStepType() const;
     virtual Scalar getInitTime() const { return initTime_; }
     virtual Scalar getFinalTime() const { return finalTime_; }
     virtual Scalar getMinTimeStep() const { return minTimeStep_; }
@@ -123,18 +125,29 @@ public:
     virtual int getFinalIndex() const { return finalIndex_; }
     virtual Scalar getMaxAbsError() const { return maxAbsError_; }
     virtual Scalar getMaxRelError() const { return maxRelError_; }
-    virtual bool getOutputExactly() const { return outputExactly_; }
-    virtual std::vector<int> getOutputIndices() const { return outputIndices_; }
-    virtual std::vector<Scalar> getOutputTimes() const { return outputTimes_; }
+
+    /** \brief Return if the output needs to exactly happen on output time.
+     *
+     *  Output TimeEvents, "Output Time Interval" and "Output Time List",
+     *  will always have the same OutputExactly value, so just
+     *  find one or the other.  Otherwise return the default of true.
+     *
+     *  \return True if output needs to happen exactly on output times.
+     */
+    virtual bool getOutputExactly() const;
+
+    virtual std::vector<int> getOutputIndices() const;
+    virtual std::vector<Scalar> getOutputTimes() const;
+    virtual int getOutputIndexInterval() const;
+    virtual Scalar getOutputTimeInterval() const;
     virtual int getMaxFailures() const { return maxFailures_; }
     virtual int getMaxConsecFailures() const { return maxConsecFailures_; }
     virtual bool getPrintDtChanges() const { return printDtChanges_; }
     virtual int getNumTimeSteps() const { return numTimeSteps_; }
-
+    virtual Teuchos::RCP<TimeEventComposite<Scalar> >
+       getTimeEvents() const { return timeEvent_; }
     virtual Teuchos::RCP<TimeStepControlStrategy<Scalar>>
        getTimeStepControlStrategy() const { return stepControlStrategy_;}
-    virtual int getOutputIndexInterval() const { return outputIndexInterval_;}
-    virtual Scalar getOutputTimeInterval() const { return outputTimeInterval_;}
   //@}
 
   /// \name Set accessors
@@ -152,13 +165,13 @@ public:
     virtual void setMaxConsecFailures(int i) { maxConsecFailures_ = i; isInitialized_ = false; }
     virtual void setPrintDtChanges(bool b) { printDtChanges_ = b; isInitialized_ = false; }
     virtual void setNumTimeSteps(int numTimeSteps);
-
-    virtual void setOutputExactly(bool b) { outputExactly_ = b; isInitialized_ = false; }
-    virtual void setOutputIndices(std::vector<int> v) { outputIndices_ = v; isInitialized_ = false; }
-    virtual void setOutputTimes(std::vector<Scalar> v) { outputTimes_ = v; isInitialized_ = false; }
-    virtual void setOutputIndexInterval(int i) { outputIndexInterval_ = i; isInitialized_ = false; }
-    virtual void setOutputTimeInterval(Scalar t) { outputTimeInterval_ = t; isInitialized_ = false; }
-
+    virtual void setOutputExactly(bool b);
+    virtual void setOutputIndices(std::vector<int> v);
+    virtual void setOutputTimes(std::vector<Scalar> outputTimes);
+    virtual void setOutputIndexInterval(int i);
+    virtual void setOutputTimeInterval(Scalar t);
+    virtual void setTimeEvents(
+      Teuchos::RCP<TimeEventComposite<Scalar> > teb = Teuchos::null);
     virtual void setTimeStepControlStrategy(
       Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs = Teuchos::null);
   //@}
@@ -187,14 +200,10 @@ protected:
   int          numTimeSteps_;      ///< Number of time steps for Constant time step
   bool         printDtChanges_;    ///< Print timestep size when it changes
 
-  bool                outputExactly_;  ///< Output Exactly On Output Times
-  std::vector<int>    outputIndices_;  ///< Vector of output indices
-  std::vector<Scalar> outputTimes_;    ///< Vector of output times
-  int outputIndexInterval_;
-  Scalar outputTimeInterval_;
+  Teuchos::RCP<TimeEventComposite<Scalar> > timeEvent_;
 
-  bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
-  Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
+  bool teAdjustedDt_;   ///< Flag indicating that dt was adjusted for time event.
+  Scalar dtAfterTimeEvent_;  ///< dt to reinstate after TimeEvent step.
 
   Teuchos::RCP<TimeStepControlStrategy<Scalar>> stepControlStrategy_;
 

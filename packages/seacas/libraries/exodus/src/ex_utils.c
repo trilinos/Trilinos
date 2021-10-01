@@ -20,19 +20,19 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 
-struct ex__obj_stats *exoII_eb  = 0;
-struct ex__obj_stats *exoII_ed  = 0;
-struct ex__obj_stats *exoII_fa  = 0;
-struct ex__obj_stats *exoII_ns  = 0;
-struct ex__obj_stats *exoII_es  = 0;
-struct ex__obj_stats *exoII_fs  = 0;
-struct ex__obj_stats *exoII_ss  = 0;
-struct ex__obj_stats *exoII_els = 0;
-struct ex__obj_stats *exoII_em  = 0;
-struct ex__obj_stats *exoII_edm = 0;
-struct ex__obj_stats *exoII_fam = 0;
-struct ex__obj_stats *exoII_nm  = 0;
-struct ex__obj_stats *exoII_ass = 0;
+struct ex__obj_stats *exoII_eb  = NULL;
+struct ex__obj_stats *exoII_ed  = NULL;
+struct ex__obj_stats *exoII_fa  = NULL;
+struct ex__obj_stats *exoII_ns  = NULL;
+struct ex__obj_stats *exoII_es  = NULL;
+struct ex__obj_stats *exoII_fs  = NULL;
+struct ex__obj_stats *exoII_ss  = NULL;
+struct ex__obj_stats *exoII_els = NULL;
+struct ex__obj_stats *exoII_em  = NULL;
+struct ex__obj_stats *exoII_edm = NULL;
+struct ex__obj_stats *exoII_fam = NULL;
+struct ex__obj_stats *exoII_nm  = NULL;
+struct ex__obj_stats *exoII_ass = NULL;
 
 /*****************************************************************************
  *
@@ -1109,26 +1109,26 @@ void ex__rm_stat_ptr(int exoid, struct ex__obj_stats **obj_ptr)
 }
 
 /* structures to hold number of blocks of that type for each file id */
-static struct ex__list_item *ed_ctr_list = 0; /* edge blocks */
-static struct ex__list_item *fa_ctr_list = 0; /* face blocks */
-static struct ex__list_item *eb_ctr_list = 0; /* element blocks */
+static struct ex__list_item *ed_ctr_list = NULL; /* edge blocks */
+static struct ex__list_item *fa_ctr_list = NULL; /* face blocks */
+static struct ex__list_item *eb_ctr_list = NULL; /* element blocks */
 
 /* structures to hold number of sets of that type for each file id */
-static struct ex__list_item *ns_ctr_list  = 0; /* node sets */
-static struct ex__list_item *es_ctr_list  = 0; /* edge sets */
-static struct ex__list_item *fs_ctr_list  = 0; /* face sets */
-static struct ex__list_item *ss_ctr_list  = 0; /* side sets */
-static struct ex__list_item *els_ctr_list = 0; /* element sets */
+static struct ex__list_item *ns_ctr_list  = NULL; /* node sets */
+static struct ex__list_item *es_ctr_list  = NULL; /* edge sets */
+static struct ex__list_item *fs_ctr_list  = NULL; /* face sets */
+static struct ex__list_item *ss_ctr_list  = NULL; /* side sets */
+static struct ex__list_item *els_ctr_list = NULL; /* element sets */
 
 /* structures to hold number of blobs/assemblies for each file id */
-static struct ex__list_item *assm_ctr_list = 0; /* assemblies */
-static struct ex__list_item *blob_ctr_list = 0; /* blobs */
+static struct ex__list_item *assm_ctr_list = NULL; /* assemblies */
+static struct ex__list_item *blob_ctr_list = NULL; /* blobs */
 
 /* structures to hold number of maps of that type for each file id */
-static struct ex__list_item *nm_ctr_list  = 0; /* node maps */
-static struct ex__list_item *edm_ctr_list = 0; /* edge maps */
-static struct ex__list_item *fam_ctr_list = 0; /* face maps */
-static struct ex__list_item *em_ctr_list  = 0; /* element maps */
+static struct ex__list_item *nm_ctr_list  = NULL; /* node maps */
+static struct ex__list_item *edm_ctr_list = NULL; /* edge maps */
+static struct ex__list_item *fam_ctr_list = NULL; /* face maps */
+static struct ex__list_item *em_ctr_list  = NULL; /* element maps */
 
 /*!
   \internal
@@ -1722,9 +1722,9 @@ void ex__compress_variable(int exoid, int varid, int type)
     if ((type == 1 || type == 2) && file->is_hdf5) {
       if (file->compression_algorithm == EX_COMPRESS_GZIP) {
         int deflate_level = file->compression_level;
-        int compress      = 1;
-        int shuffle       = file->shuffle;
         if (deflate_level > 0) {
+          int compress = 1;
+          int shuffle  = file->shuffle;
           nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
         }
       }

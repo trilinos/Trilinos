@@ -274,14 +274,10 @@ bool tExplicitOps_tpetra::test_mult_modScaleMatProd(int verbosity,std::ostream &
 
    RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tF = Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(F_);
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > crsF = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tF->getTpetraOperator(),true);
-   crsF->resumeFill();
    crsF->scale(5.0);
-   crsF->fillComplete();
    RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tG = Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(G_);
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > crsG = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tG->getTpetraOperator(),true);
-   crsG->resumeFill();
    crsG->scale(2.0);
-   crsG->fillComplete();
 
    // do some random violence (oh my brothers) to one row
    size_t numEntries = crsF->getNumEntriesInLocalRow (3);
@@ -380,14 +376,10 @@ bool tExplicitOps_tpetra::test_add_mod(int verbosity,std::ostream & os)
 
    RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tF = Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(F_);
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > crsF = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tF->getTpetraOperator(),true);
-   crsF->resumeFill();
    crsF->scale(5.0);
-   crsF->fillComplete();
    RCP<Thyra::TpetraLinearOp<ST,LO,GO,NT> > tG = Teuchos::rcp_dynamic_cast<Thyra::TpetraLinearOp<ST,LO,GO,NT> >(G_);
    RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > crsG = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<ST,LO,GO,NT> >(tG->getTpetraOperator(),true);
-   crsG->resumeFill();
    crsG->scale(2.0);
-   crsG->fillComplete();
 
    // do some random violence (oh my brothers) to one row
    size_t numEntries = crsF->getNumEntriesInLocalRow (3);

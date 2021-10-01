@@ -18,12 +18,14 @@ namespace Tempus {
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorBasic<double> > createIntegratorBasic(
-    Teuchos::RCP<Teuchos::ParameterList>        parameterList);
+    Teuchos::RCP<Teuchos::ParameterList>        parameterList,
+    bool runInitialize);
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorBasic<double> > createIntegratorBasic(
     Teuchos::RCP<Teuchos::ParameterList>        parameterList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model);
+    const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
+    bool runInitialize);
 
   // Nonmember ctor
   template Teuchos::RCP<IntegratorBasic<double> > createIntegratorBasic(
@@ -36,7 +38,8 @@ namespace Tempus {
   // Nonmember ctor
   template Teuchos::RCP<IntegratorBasic<double> > createIntegratorBasic(
     Teuchos::RCP<Teuchos::ParameterList>                     pList,
-    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<double> > > models);
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<double> > > models,
+    bool runInitialize);
 
 } // namespace Tempus
 

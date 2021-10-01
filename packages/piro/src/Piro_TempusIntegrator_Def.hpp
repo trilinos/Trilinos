@@ -67,6 +67,14 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
   else if (sens_method == FORWARD) {
     //forward sensitivities
     basicIntegrator_ = Teuchos::null;
+    //Remove 'Tempus->Sensitivities->Response Function Index' parameter, if it appears
+    //in the input file, as this does not make sense for forward sensitivities
+    if (pList->isSublist("Sensitivities")){
+      Teuchos::ParameterList& tempusSensPL = pList->sublist("Sensitivities", true);
+      if (tempusSensPL.isParameter("Response Function Index")) {
+        tempusSensPL.remove("Response Function Index");
+      }
+    }
     fwdSensIntegrator_ = Tempus::createIntegratorForwardSensitivity<Scalar>(pList, model);
     adjSensIntegrator_ = Teuchos::null; 
   }
@@ -75,6 +83,26 @@ Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::Paramete
     basicIntegrator_ = Teuchos::null;
     fwdSensIntegrator_ = Teuchos::null; 
     adjSensIntegrator_ = Tempus::createIntegratorAdjointSensitivity<Scalar>(pList, model);
+  }
+}
+
+template <typename Scalar>
+Piro::TempusIntegrator<Scalar>::TempusIntegrator(Teuchos::RCP< Teuchos::ParameterList > pList, 
+   const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &model,
+   const Teuchos::RCP< Thyra::ModelEvaluator< Scalar > > &adjoint_model,
+   const SENS_METHOD sens_method) : 
+   out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+{
+  if (sens_method == ADJOINT) {
+    //adjoint sensitivities
+    basicIntegrator_ = Teuchos::null;
+    fwdSensIntegrator_ = Teuchos::null; 
+    adjSensIntegrator_ = Tempus::createIntegratorAdjointSensitivity<Scalar>(pList, model, adjoint_model);
+  }
+  else { //throw
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: constructor taking adjoint model evaluator " <<
+		 "is only valid for Adjoint sensitivities\n");
   }
 }
 
@@ -147,6 +175,40 @@ Piro::TempusIntegrator<Scalar>::getX() const
 }
  
 template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getXDot() const
+{
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdot; 
+  if (basicIntegrator_ != Teuchos::null) {
+    xdot = basicIntegrator_->getXDot(); 
+  }
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    xdot = fwdSensIntegrator_->getXDot(); 
+  }
+  if (adjSensIntegrator_ != Teuchos::null) {
+    xdot = adjSensIntegrator_->getXDot(); 
+  }
+  return xdot; 
+}
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar>> 
+Piro::TempusIntegrator<Scalar>::getXDotDot() const
+{
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> xdotdot; 
+  if (basicIntegrator_ != Teuchos::null) {
+    xdotdot = basicIntegrator_->getXDotDot(); 
+  }
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    xdotdot = fwdSensIntegrator_->getXDotDot(); 
+  }
+  if (adjSensIntegrator_ != Teuchos::null) {
+    xdotdot = adjSensIntegrator_->getXDotDot(); 
+  }
+  return xdotdot; 
+}
+
+template <typename Scalar>
 Teuchos::RCP<const Tempus::SolutionHistory<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getSolutionHistory() const
 {
@@ -209,11 +271,9 @@ Piro::TempusIntegrator<Scalar>::setObserver(Teuchos::RCP<Tempus::IntegratorObser
   if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->setObserver(obs); 
   }
-  //IKT, FIXME: adjSensIntegrator_ has no routine setObsever(obs)
-  //Look into.
-  /*if (adjSensIntegrator_ != Teuchos::null) {
+  if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->setObserver(obs); 
-  }*/
+  }
 }
 
 template <typename Scalar>
@@ -226,11 +286,9 @@ Piro::TempusIntegrator<Scalar>::initialize()
   if (fwdSensIntegrator_ != Teuchos::null) {
     fwdSensIntegrator_->initialize(); 
   }
-  //IKT FIXME: adjSensIntegrator_ has no initialize() routine.
-  //Look into.
-  /*if (adjSensIntegrator_ != Teuchos::null) {
+  if (adjSensIntegrator_ != Teuchos::null) {
     adjSensIntegrator_->initialize(); 
-  }*/
+  }
 }
 
 template <typename Scalar>
@@ -278,32 +336,38 @@ Piro::TempusIntegrator<Scalar>::getDxDp() const
   if (fwdSensIntegrator_ != Teuchos::null) {
     return fwdSensIntegrator_->getDxDp(); 
   }
-  else {
-    return Teuchos::null; 
+  else { 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDxDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
-Piro::TempusIntegrator<Scalar>::getDxdotDp() const
+Piro::TempusIntegrator<Scalar>::getDxDotDp() const
 {
   if (fwdSensIntegrator_ != Teuchos::null) {
-    return fwdSensIntegrator_->getDxdotDp(); 
+    return fwdSensIntegrator_->getDxDotDp(); 
   }
   else {
-    return Teuchos::null; 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDxDotDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }
 
 template <typename Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar>> 
-Piro::TempusIntegrator<Scalar>::getDxdotdotDp() const
+Piro::TempusIntegrator<Scalar>::getDxDotDotDp() const
 {
   if (fwdSensIntegrator_ != Teuchos::null) {
-    return fwdSensIntegrator_->getDxdotdotDp(); 
+    return fwdSensIntegrator_->getDxDotDotDp(); 
   }
   else {
-    return Teuchos::null; 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDxDotDotDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorForwardSensitivity!\n");
   }
 }
   
@@ -316,6 +380,8 @@ Piro::TempusIntegrator<Scalar>::getDgDp() const
     return adjSensIntegrator_->getDgDp(); 
   }
   else {
-    return Teuchos::null; 
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+                 "Error in Piro::TempusIntegrator: getDgDp() is not valid for the requested integrator type, " <<
+		 "which is not of type Tempus::IntegratorAdjointSensitivity!\n");
   }
 }

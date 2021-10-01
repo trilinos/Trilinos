@@ -15,8 +15,9 @@ namespace Tempus {
 template<class Scalar>
 TimeEventList<Scalar>::TimeEventList()
 {
+  this->setType("List");
   this->setName("TimeEventList");
-  setRelTol(1.0e-14);
+  setRelTol(this->getDefaultTol());
   setTimeScale();
   setLandOnExactly(true);
 }
@@ -24,9 +25,10 @@ TimeEventList<Scalar>::TimeEventList()
 
 template<class Scalar>
 TimeEventList<Scalar>::TimeEventList(
-  std::string name, std::vector<Scalar> timeList,
-  Scalar relTol, bool landOnExactly)
+  std::vector<Scalar> timeList, std::string name,
+  bool landOnExactly, Scalar relTol)
 {
+  this->setType("List");
   this->setName(name);
   setRelTol(relTol);
   setTimeScale();
@@ -39,7 +41,7 @@ template<class Scalar>
 void TimeEventList<Scalar>::setTimeScale()
 {
   if (timeList_.size() == 0) {
-    timeScale_ = std::abs(this->getDefaultTime());
+    timeScale_ = 1.0;
     absTol_ = relTol_*timeScale_;
     return;
   }
@@ -57,10 +59,15 @@ void TimeEventList<Scalar>::setTimeScale()
 
 
 template<class Scalar>
-void TimeEventList<Scalar>::setTimeList(std::vector<Scalar> timeList)
+void TimeEventList<Scalar>::setTimeList(std::vector<Scalar> timeList, bool sort)
 {
-  for(auto it = std::begin(timeList); it != std::end(timeList); ++it)
-    addTime(*it);
+  timeList_ = timeList;
+  if (sort) {
+    std::sort(timeList_.begin(),timeList_.end());
+    timeList_.erase(std::unique(timeList_.begin(),
+                                  timeList_.end()   ),
+                                  timeList_.end()     );
+  }
 }
 
 
@@ -108,7 +115,10 @@ void TimeEventList<Scalar>::setRelTol(Scalar relTol)
 template<class Scalar>
 bool TimeEventList<Scalar>::isTime(Scalar time) const
 {
-  return (std::abs(timeToNextEvent(time)) <= absTol_);
+  for (auto it = timeList_.begin(); it != timeList_.end(); ++it)
+    if (*it-absTol_ < time && time < *it+absTol_) return true;
+
+  return false;
 }
 
 
@@ -124,22 +134,22 @@ Scalar TimeEventList<Scalar>::timeOfNextEvent(Scalar time) const
 {
   if (timeList_.size() == 0) return this->getDefaultTime();
 
-  // Check if before or close to first event.
-  if (timeList_.front() >= time-absTol_) return timeList_.front();
+  // Check if before first event.
+  if (time < timeList_.front()-absTol_) return timeList_.front();
 
   // Check if after or close to last event.
-  if (timeList_.back() <= time+absTol_) return timeList_.back();
+  if (time > timeList_.back()-absTol_)
+    return std::numeric_limits<Scalar>::max();
 
   typename std::vector<Scalar>::const_iterator it =
     std::upper_bound(timeList_.begin(), timeList_.end(), time);
+  const Scalar timeEvent = *it;
 
-  // Check if close to left-side time event
-  const Scalar timeOfLeftEvent = *(it-1);
-  if (timeOfLeftEvent > time-absTol_ &&
-      timeOfLeftEvent < time+absTol_) return timeOfLeftEvent;
+  // Check timeEvent is near time.  If so, return the next event.
+  if ( timeEvent-absTol_ < time && time < timeEvent+absTol_)
+    return *(it+1);
 
-  // Otherwise it is the next event.
-  return *it;
+  return timeEvent;
 }
 
 
@@ -155,38 +165,110 @@ bool TimeEventList<Scalar>::eventInRange(
 
   if (timeList_.size() == 0) return false;
 
-  // Check if range is completely outside time events.
-  if (time2+absTol_ < timeList_.front() ||
-       timeList_.back() < time1-absTol_) return false;
-
-  Scalar timeEvent1 = timeOfNextEvent(time1);
-  Scalar timeEvent2 = timeOfNextEvent(time2);
-  // Check if the next time event is different for the two times.
-  if (timeEvent1 != timeEvent2) return true;
-
-  // Check if times bracket time event.
-  if (time1-absTol_ <= timeEvent1 && timeEvent1 <= time2+absTol_) return true;
+  for (auto it = timeList_.begin(); it != timeList_.end(); ++it)
+    if (time1+absTol_ < *it && *it < time2+absTol_) return true;
 
   return false;
 }
 
 
 template<class Scalar>
-void TimeEventList<Scalar>::describe() const
+void TimeEventList<Scalar>::describe(Teuchos::FancyOStream          &out,
+                               const Teuchos::EVerbosityLevel verbLevel) const
 {
-  Teuchos::RCP<Teuchos::FancyOStream> out =
-    Teuchos::VerboseObjectBase::getDefaultOStream();
-  out->setOutputToRootOnly(0);
-  *out << "TimeEventList:" << "\n"
-       << "name           = " << this->getName() << "\n"
-       << "timeScale_     = " << timeScale_     << "\n"
-       << "relTol_        = " << relTol_        << "\n"
-       << "absTol_        = " << absTol_        << "\n"
-       << "landOnExactly_ = " << landOnExactly_ << "\n"
-       << "timeList_      = " << std::endl;
-  for (auto it = timeList_.begin(); it != timeList_.end()-1; ++it)
-    *out << *it << ", ";
-  *out << *(timeList_.end()-1) << "\n";
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, "TimeEventList");
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "TimeEventList:" << "\n"
+         << "  name            = " << this->getName() << "\n"
+         << "  Type            = " << this->getType() << "\n"
+         << "  timeScale_      = " << timeScale_      << "\n"
+         << "  relTol_         = " << relTol_         << "\n"
+         << "  absTol_         = " << absTol_         << "\n"
+         << "  landOnExactly_  = " << landOnExactly_  << "\n"
+         << "  timeList_       = ";
+  if (!timeList_.empty()) {
+    for (auto it = timeList_.begin(); it != timeList_.end()-1; ++it)
+      *l_out << *it << ", ";
+    *l_out << *(timeList_.end()-1) << std::endl;
+  } else {
+    *l_out << "<empty>" << std::endl;
+  }
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const Teuchos::ParameterList>
+TimeEventList<Scalar>::getValidParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> pl =
+    Teuchos::parameterList("Time Event List");
+
+  pl->setName(this->getName());
+  pl->set("Name", this->getName());
+  pl->set("Type", this->getType());
+
+  pl->set("Relative Tolerance", this->getRelTol(),
+          "Relative time tolerance for matching time events.");
+
+  pl->set("Land On Exactly",    this->getLandOnExactly(),
+          "Should these time events be landed on exactly, i.e, adjust the timestep to hit time event, versus stepping over and keeping the time step unchanged.");
+
+  std::vector<Scalar> times = this->getTimeList();
+  std::ostringstream list;
+  if (!times.empty()) {
+    for(std::size_t i = 0; i < times.size()-1; ++i) list << times[i] << ", ";
+    list << times[times.size()-1];
+  }
+  pl->set<std::string>("Time List", list.str(),
+    "Comma deliminated list of times");
+
+  return pl;
+}
+
+
+// Nonmember constructors.
+// ------------------------------------------------------------------------
+
+template<class Scalar>
+Teuchos::RCP<TimeEventList<Scalar> > createTimeEventList(
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto tel = Teuchos::rcp(new TimeEventList<Scalar>());
+  if (pl == Teuchos::null) return tel;  // Return default TimeEventList.
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    pl->get<std::string>("Type", "List") != "List",
+    std::logic_error,
+    "Error - Time Event Type != 'List'.  (='"
+    + pl->get<std::string>("Type")+"')\n");
+
+  pl->validateParametersAndSetDefaults(*tel->getValidParameters());
+
+  tel->setName          (pl->get("Name",    "From createTimeEventList"));
+  tel->setRelTol        (pl->get("Relative Tolerance", tel->getRelTol()));
+  tel->setLandOnExactly (pl->get("Land On Exactly", tel->getLandOnExactly()));
+
+  std::vector<Scalar> timeList;
+  std::string str = pl->get<std::string>("Time List");
+  std::string delimiters(",");
+  // Skip delimiters at the beginning
+  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+  // Find the first delimiter
+  std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+  while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+    // Found a token, add it to the vector
+    std::string token = str.substr(lastPos,pos-lastPos);
+    timeList.push_back(Scalar(std::stod(token)));
+    if(pos==std::string::npos) break;
+
+    lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
+    pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
+  }
+  tel->setTimeList(timeList);
+
+  return tel;
 }
 
 

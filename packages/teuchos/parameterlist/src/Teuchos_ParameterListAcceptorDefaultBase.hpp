@@ -58,7 +58,7 @@ namespace Teuchos {
  * using the non-virtual protected members <tt>setMyParamList()</tt> and
  * <tt>getMyParamList()</tt>.
  */
-class ParameterListAcceptorDefaultBase : virtual public ParameterListAcceptor {
+class TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT ParameterListAcceptorDefaultBase : virtual public ParameterListAcceptor {
 public:
 
   /** \name Overridden from ParameterListAcceptor */

@@ -1119,12 +1119,12 @@ namespace {
   bool compare_structuredblocks(const Ioss::Region &input_region_1,
                                 const Ioss::Region &input_region_2,
                                 const Ioss::MeshCopyOptions & /* options */,
-                                std::ostringstream &buf)
+                                std::ostringstream & /* buf */)
   {
     bool overall_result = true;
 
-    auto in_blocks_1      = input_region_1.get_structured_blocks();
-    auto in_blocks_orig_2 = input_region_2.get_structured_blocks();
+    const auto &in_blocks_1      = input_region_1.get_structured_blocks();
+    const auto &in_blocks_orig_2 = input_region_2.get_structured_blocks();
 
     // COPY the const input vector so that we can remove elements as they're matched without
     // affecting the original data structure.
@@ -1158,7 +1158,7 @@ namespace {
 
   template <typename T>
   bool compare_sets(const std::vector<T *> &in_sets_1, const std::vector<T *> &in_sets_const_2,
-                    const Ioss::MeshCopyOptions & /* options */, std::ostringstream &buf)
+                    const Ioss::MeshCopyOptions & /* options */, std::ostringstream & /* buf */)
   {
     bool overall_result = true;
 
@@ -1277,7 +1277,7 @@ namespace {
   bool compare_coordinate_frames(const Ioss::Region &input_region_1,
                                  const Ioss::Region &input_region_2,
                                  const Ioss::MeshCopyOptions & /* options */,
-                                 std::ostringstream &buf)
+                                 std::ostringstream & /* buf */)
   {
     bool overall_result = true;
 
@@ -1545,8 +1545,6 @@ namespace {
         in_pool_2.data.resize(isize);
       }
     }
-    else {
-    }
 
     assert(in_pool.data.size() >= isize);
     assert(in_pool_2.data.size() >= isize);
@@ -1577,8 +1575,7 @@ namespace {
       if (field_name == "mesh_model_coordinates") {
         fmt::print(Ioss::WARNING(), "data_storage option not recognized.");
       }
-      return false;
     }
-    return true;
+    return false;
   }
 } // namespace
