@@ -1640,7 +1640,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
           }
         }      
         
-        if(comm->getRank() == 0) printf("did %d rounds of distributed coloring\n", distributedRounds);
+        //if(comm->getRank() == 0) printf("did %d rounds of distributed coloring\n", distributedRounds);
         uint64_t totalVertsPerRound[numStatisticRecordingRounds];
         uint64_t totalBoundarySize = 0;
         uint64_t totalIncorrectGhostsPerRound[numStatisticRecordingRounds];
@@ -1675,22 +1675,38 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 			               Teuchos::REDUCE_MAX,numStatisticRecordingRounds,conflictDetectionPerRound,finalConflictDetectionPerRound);
         Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,recvPerRound,finalRecvPerRound);
         Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,sentPerRound,finalSentPerRound);
-        printf("Rank %d: boundary size: %ld\n",comm->getRank(),localBoundaryVertices);
-        if(comm->getRank() == 0) printf("Total boundary size: %ld\n",totalBoundarySize);
+        std::cout << "Rank " << comm->getRank() 
+                  << ": boundary size: " << localBoundaryVertices << std::endl;
+        if(comm->getRank() == 0) 
+          std::cout << "Total boundary size: " << totalBoundarySize << std::endl;
         for(int i = 0; i < std::min((int)distributedRounds,numStatisticRecordingRounds); i++){
-          printf("Rank %d: recolor %ld vertices in round %d\n",comm->getRank(), vertsPerRound[i],i);
-          printf("Rank %d: sentbuf had %lld entries in round %d\n", comm->getRank(), sentPerRound[i],i);
+          std::cout << "Rank " << comm->getRank() 
+                    << ": recolor " << vertsPerRound[i] 
+                    << " vertices in round " << i << std::endl;
+          std::cout << "Rank " << comm->getRank() 
+                    << " sentbuf had " << sentPerRound[i] 
+                    << " entries in round " << i << std::endl;
           if(comm->getRank()==0){
-            printf("recolored %ld vertices in round %d\n",totalVertsPerRound[i], i);
-            printf("%ld inconsistent ghosts in round %d\n",totalIncorrectGhostsPerRound[i],i);
-            printf("total time in round %d: %f\n",i,finalTotalPerRound[i]);
-            printf("recoloring time in round %d: %f\n",i,maxRecoloringPerRound[i]);
-            printf("min recoloring time in round %d: %f\n",i,minRecoloringPerRound[i]);
-            printf("conflict detection time in round %d: %f\n",i,finalConflictDetectionPerRound[i]);
-            printf("comm time in round %d: %f\n",i,finalCommPerRound[i]);
-            printf("recvbuf size in round %d: %lld\n",i,finalRecvPerRound[i]);
-            printf("sendbuf size in round %d: %lld\n",i,finalSentPerRound[i]);
-            printf("comp time in round %d: %f\n",i,finalCompPerRound[i]);
+            std::cout << "recolored " << totalVertsPerRound[i] 
+                      << " vertices in round " << i << std::endl;
+            std::cout << totalIncorrectGhostsPerRound[i] 
+                      << " inconsistent ghosts in round " << i << std::endl;
+            std::cout << "total time in round " << i 
+                      << ": " << finalTotalPerRound[i] << std::endl;
+            std::cout << "recoloring time in round " << i 
+                      << ": " << maxRecoloringPerRound[i] << std::endl;
+            std::cout << "min recoloring time in round " << i 
+                      << ": " << minRecoloringPerRound[i] << std::endl;
+            std::cout << "conflict detection time in round " << i
+                      << ": " << finalConflictDetectionPerRound[i] << std::endl;
+            std::cout << "comm time in round " << i
+                      << ": " << finalCommPerRound[i] << std::endl;
+            std::cout << "recvbuf size in round " << i 
+                      << ": " << finalRecvPerRound[i] << std::endl;
+            std::cout << "sendbuf size in round " << i 
+                      << ": " << finalSentPerRound[i] << std::endl;
+            std::cout << "comp time in round " << i
+                      << ": " << finalCompPerRound[i] << std::endl;
           }
         }
       } else if (timing){
@@ -1711,13 +1727,13 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         comm->barrier();
         fflush(stdout);
         if(comm->getRank()==0){
-          printf("Total Time: %f\n",global_total_time);
-          printf("Interior Time: %f\n",global_interior_time);
-          printf("Recoloring Time: %f\n",global_recoloring_time);
-          printf("Min Recoloring Time: %f\n",global_min_recoloring_time);
-          printf("Conflict Detection Time: %f\n",global_conflict_detection);
-          printf("Comm Time: %f\n",global_comm_time);
-          printf("Comp Time: %f\n",global_comp_time);
+          std::cout << "Total Time: " << global_total_time << std::endl;
+          std::cout << "Interior Time: " << global_interior_time << std::endl;
+          std::cout << "Recoloring Time: " << global_recoloring_time << std::endl;
+          std::cout << "Min Recoloring Time: " << global_min_recoloring_time << std::endl;
+          std::cout << "Conflict Detection Time: " << global_conflict_detection << std::endl;
+          std::cout << "Comm Time: " << global_comm_time << std::endl;
+          std::cout << "Comp Time: " << global_comp_time << std::endl;
         }
       }
     }
