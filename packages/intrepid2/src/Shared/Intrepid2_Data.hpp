@@ -1655,6 +1655,21 @@ public:
     //! Copies 0.0 to the underlying View.
     void clear() const
     {
+#ifdef KOKKOS_COMPILER_INTEL
+// Workaround intel internal compiler errors
+      DataScalar zero = DataScalar(0);
+      switch (dataRank_)
+      {
+        case 1: {Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, data1_.extent(0)), KOKKOS_LAMBDA(int i) {data1_(i) = zero;}); break; }
+        case 2: {Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<2>, execution_space>({0,0},{data2_.extent(0),data2_.extent(1)}), KOKKOS_LAMBDA(int i0, int i1) {data2_(i0, i1) =  zero;}); break; }
+        case 3: {Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<3>, execution_space>({0,0,0},{data3_.extent(0),data3_.extent(1),data3_.extent(2)}), KOKKOS_LAMBDA(int i0, int i1, int i2) {data3_(i0, i1, i2) =  zero;}); break; }
+        case 4: {Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<4>, execution_space>({0,0,0,0},{data4_.extent(0),data4_.extent(1),data4_.extent(2),data4_.extent(3)}), KOKKOS_LAMBDA(int i0, int i1, int i2, int i3) {data4_(i0, i1, i2, i3) =  zero;}); break; }
+        case 5: {Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<5>, execution_space>({0,0,0,0,0},{data5_.extent(0),data5_.extent(1),data5_.extent(2),data5_.extent(3),data5_.extent(4)}), KOKKOS_LAMBDA(int i0, int i1, int i2, int i3, int i4) {data5_(i0, i1, i2, i3, i4) =  zero;}); break; }
+        case 6: {Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<6>, execution_space>({0,0,0,0,0,0},{data6_.extent(0),data6_.extent(1),data6_.extent(2),data6_.extent(3),data6_.extent(4),data6_.extent(5)}), KOKKOS_LAMBDA(int i0, int i1, int i2, int i3, int i4, int i5) {data6_(i0, i1, i2, i3, i4, i5) =  zero;}); break; }
+        case 7: {Kokkos::parallel_for(Kokkos::MDRangePolicy<Kokkos::Rank<6>, execution_space>({0,0,0,0,0,0},{data7_.extent(0),data7_.extent(1),data7_.extent(2),data7_.extent(3),data7_.extent(4),data7_.extent(5)}), KOKKOS_LAMBDA(int i0, int i1, int i2, int i3, int i4, int i5 ) {for (int i6 = 0; i6 < data7_.extent(6); ++i6) data7_(i0, i1, i2, i3, i4, i5, i6) =  zero;}); break; }
+        default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
+      }
+#else
       switch (dataRank_)
       {
         case 1: Kokkos::deep_copy(data1_, 0.0); break;
@@ -1666,6 +1681,7 @@ public:
         case 7: Kokkos::deep_copy(data7_, 0.0); break;
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
+#endif
     }
     
     //! Copies from the provided DynRankView into the underlying Kokkos::View container storing the unique data.
