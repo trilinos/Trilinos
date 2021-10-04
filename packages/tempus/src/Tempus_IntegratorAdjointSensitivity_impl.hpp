@@ -198,6 +198,9 @@ advanceTime(const Scalar timeFinal)
     TEUCHOS_TEST_FOR_EXCEPTION(
       W == Teuchos::null, std::logic_error,
       "A null W has been encountered in Tempus::IntegratorAdjointSensitivity::advanceTime!\n");
+    // Initialize adjoint_init_mv to zero before solve for linear solvers that
+    // use what is passed in as the initial guess
+    assign(adjoint_init_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
     W->solve(Thyra::NOTRANS, *dgdx, adjoint_init_mv.ptr());
   }
 
