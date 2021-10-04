@@ -44,10 +44,6 @@ namespace expreval {
 template <class T>
 T convert_cast(const std::string &s);
 
-/**
- * Enumeration <b>Tokens</b> defines the tokens returned by the lexer.
- *
- */
 enum Token {
   TOKEN_PLUS,
   TOKEN_MINUS,
@@ -83,80 +79,35 @@ enum Token {
 };
 
 
-/**
- * Class <b>Lexem</b> associates a token with a simple expression of the type
- * described by the token.
- *
- */
 class Lexem
 {
 public:
-  /**
-   * Creates a new <b>Lexem</b> instance.
-   *
-   * @param token		an <b>int</b> value of the token which describes the
-   *				value.
-   *
-   * @param from		a <b>char</b> const pointer to the beginning of the
-   *				value.
-   *
-   * @param to			a <b>char</b> const pointer to the end of the
-   *				value.
-   */
   Lexem(Token token, const char *from, const char *to)
     : m_token(token),
       m_value(from, to)
   {}
 
-  /**
-   * Creates a new <b>Lexem</b> instance.
-   *
-   * @param token		an <b>int</b> value of the token which describes the
-   *				value.
-   *
-   * @param value		a <b>char</b> const pointer to a c-style string of
-   *				the value.
-   */
   Lexem(Token token, const char *value)
     : m_token(token),
       m_value(value)
   {}
 
-  /**
-   * Member function <b>getToken</b> returns the token.
-   *
-   * @return			a <b>Token</b>.
-   */
   Token getToken() const {
     return m_token;
   }
 
-  /**
-   * Member function <b>getValue</b> returns const reference to the value associated
-   * with the token.
-   *
-   * @return			a <b>std::string</b> const reference to the value
-   *				associated with the token.
-   */
   const std::string &getString() const {
     return m_value;
   }
 
-  /**
-   * Member function <b>getValue</b> returns const reference to the value associated
-   * with the token.
-   *
-   * @return			a <b>std::string</b> const reference to the value
-   *				associated with the token.
-   */
   template<class T>
   T getValue() const {
     return convert_cast<T>(m_value);
   }
 
 private:
-  Token			m_token;		///< Token which describes the value
-  std::string		m_value;		///< Value
+  Token			m_token;	
+  std::string		m_value;
 };
 
 typedef std::vector<Lexem> LexemVector;

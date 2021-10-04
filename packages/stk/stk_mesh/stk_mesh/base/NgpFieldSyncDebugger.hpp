@@ -68,7 +68,7 @@ public:
   inline void initialize_debug_views(NgpField*) {}
 
   template <typename NgpField>
-  inline void update_field(NgpField*, bool) {}
+  inline void update_field(NgpField*) {}
 
   template <typename NgpField>
   inline void clear_sync_state(NgpField*) {}
@@ -155,7 +155,7 @@ public:
   }
 
   template <typename NgpField>
-  void update_field(NgpField* ngpField, bool needToSyncAllDataToDevice)
+  void update_field(NgpField* ngpField)
   {
     if (lastFieldValue.extent(0) != 0) {
       lostDeviceFieldData() = false;
@@ -163,10 +163,7 @@ public:
 
       Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
 
-      if (needToSyncAllDataToDevice) {
-        reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
-      }
-
+      reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
       hostSynchronizedCount() = ngpField->hostBulk->synchronized_count();
     }
 
@@ -190,7 +187,7 @@ public:
   void clear_device_sync_state(NgpField* ngpField)
   {
     if (ngpField->hostBulk->synchronized_count() != ngpField->synchronizedCount) {
-      ngpField->update_field(ngpField->need_sync_to_device());
+      ngpField->update_field();
     }
     Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
     lostDeviceFieldData() = false;
@@ -204,9 +201,7 @@ public:
     set_last_device_field_value(ngpField, get_modified_selector(ngpField));
     reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
     lostDeviceFieldData() = false;
-    if (!ngpField->userSpecifiedSelector) {
-      anyPotentialDeviceFieldModification() = false;
-    }
+    anyPotentialDeviceFieldModification() = false;
   }
 
   template <typename NgpField>
@@ -421,28 +416,7 @@ private:
 
   template <typename NgpField>
   void reset_last_modification_state(NgpField* ngpField, LastModLocation value) {
-    const stk::mesh::FieldBase & stkField = *ngpField->hostField;
-    const stk::mesh::BulkData & bulk = *ngpField->hostBulk;
-
-    if (ngpField->userSpecifiedSelector) {
-      const stk::mesh::BucketVector & buckets = bulk.get_buckets(stkField.entity_rank(), *ngpField->syncSelector);
-
-      for (auto bucket : buckets) {
-        unsigned offsetBucketId = debugHostSelectedBucketOffset(bucket->bucket_id());
-        if (offsetBucketId == INVALID_BUCKET_ID) {
-          print_outside_selector_warning(*ngpField->syncSelector);
-          continue;
-        }
-        for (size_t j = 0; j < lastFieldModLocation.extent(1); ++j) {
-          for (size_t k = 0; k < lastFieldModLocation.extent(2); ++k) {
-            lastFieldModLocation(offsetBucketId, j, k) = value;
-          }
-        }
-      }
-    }
-    else {
-      Kokkos::deep_copy(lastFieldModLocation, value);
-    }
+    Kokkos::deep_copy(lastFieldModLocation, value);
   }
 
   void set_last_modification_state_bit(LastModLocation value) {
@@ -528,9 +502,6 @@ private:
   stk::mesh::Selector get_modified_selector(NgpField* ngpField)
   {
     stk::mesh::Selector modifiedSelector(*(ngpField->hostField));
-    if (ngpField->userSpecifiedSelector) {
-      modifiedSelector &= *(ngpField->syncSelector);
-    }
     return modifiedSelector;
   }
 
