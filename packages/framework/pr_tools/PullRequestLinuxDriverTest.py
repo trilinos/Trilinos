@@ -136,6 +136,12 @@ def parse_args():
                           help="Location of the CTest driver script to load via `-S`.",
                           required=False)
 
+    optional.add_argument('--ctest-drop-site',
+                          dest="ctest_drop_site",
+                          action='store',
+                          default="testing.sandia.gov",
+                          help="URL of the cdash server to post to.",
+                          required=False)
 
     optional.add_argument('--pullrequest-cdash-track',
                           dest='pullrequest_cdash_track',
@@ -248,6 +254,7 @@ def parse_args():
     print("| - [R] source-dir                  : {source_dir}".format(**vars(arguments)))
     print("| - [R] build-dir                   : {build_dir}".format(**vars(arguments)))
     print("| - [R] ctest-driver                : {ctest_driver}".format(**vars(arguments)))
+    print("| - [R] ctest-drop-site             : {ctest_drop_site}".format(**vars(arguments)))
     print("|")
     print("| - [O] dry-run                     : {dry_run}".format(**vars(arguments)))
     print("| - [O] filename-packageenables     : {filename_packageenables}".format(**vars(arguments)))

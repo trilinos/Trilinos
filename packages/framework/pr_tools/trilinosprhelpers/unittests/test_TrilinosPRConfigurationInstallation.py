@@ -165,6 +165,7 @@ class TrilinosPRConfigurationInstallationTest(TestCase):
             build_dir="build",
             source_dir="source",
             ctest_driver="ctest_driver.cmake",
+            ctest_drop_site="testint.sandia.gov",
             filename_packageenables="../packageEnables.cmake",
             filename_subprojects="../package_subproject_list.cmake",
             mode="standard",

@@ -73,6 +73,7 @@ class Test_parse_args(unittest.TestCase):
                                          source_dir='UNKNOWN',
                                          build_dir='UNKNOWN',
                                          ctest_driver='UNKNOWN',
+                                         ctest_drop_site='testing.sandia.gov',
                                          pullrequest_cdash_track='Pull Request',
                                          pullrequest_env_config_file='/dev/null/Trilinos_clone/pr_config/pullrequest.ini',
                                          pullrequest_gen_config_file='/dev/null/Trilinos_clone/pr_config/gen-config.ini',
@@ -97,6 +98,7 @@ class Test_parse_args(unittest.TestCase):
                 | - [R] source-dir                  : UNKNOWN
                 | - [R] build-dir                   : UNKNOWN
                 | - [R] ctest-driver                : UNKNOWN
+                | - [R] ctest-drop-site             : testing.sandia.gov
                 |
                 | - [O] dry-run                     : False
                 | - [O] filename-packageenables     : ../packageEnables.cmake
@@ -120,6 +122,7 @@ class Test_parse_args(unittest.TestCase):
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--ctest-driver CTEST_DRIVER]
+                                   [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
                                    [--pullrequest-gen-config-file PULLREQUEST_GEN_CONFIG_FILE]
@@ -161,6 +164,8 @@ class Test_parse_args(unittest.TestCase):
                                         Path to the build directory.
                   --ctest-driver CTEST_DRIVER
                                         Location of the CTest driver script to load via `-S`.
+                  --ctest-drop-site CTEST_DROP_SITE
+                                        URL of the cdash server to post to.
                   --pullrequest-cdash-track PULLREQUEST_CDASH_TRACK
                                         The CDash Track to add results to. Default=Pull
                                         Request
@@ -217,6 +222,7 @@ class Test_parse_args(unittest.TestCase):
                                    --jenkins-job-number JENKINS_JOB_NUMBER
                                    [--source-dir SOURCE_DIR] [--build-dir BUILD_DIR]
                                    [--ctest-driver CTEST_DRIVER]
+                                   [--ctest-drop-site CTEST_DROP_SITE]
                                    [--pullrequest-cdash-track PULLREQUEST_CDASH_TRACK]
                                    [--pullrequest-env-config-file PULLREQUEST_ENV_CONFIG_FILE]
                                    [--pullrequest-gen-config-file PULLREQUEST_GEN_CONFIG_FILE]
