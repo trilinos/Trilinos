@@ -236,6 +236,9 @@ namespace { // (anonymous)
     // been most recently modified on device.  get2dView and
     // get2dViewNonConst both must sync to host.
 
+    // The sync state of a MultiVector is only updated if the memory spaces 
+    // are not the same between host and device
+
     out << "Make sure X_noncontig->get2dView() syncs to host" << endl;
     {
       Teuchos::OSTab tab2 (out);
@@ -260,6 +263,9 @@ namespace { // (anonymous)
       // get2dViewNonConst is supposed to mark the host data as
       // modified.  Thus, the device data need a sync, if host and
       // device are actually different data.
+      //
+      // The sync state of a MultiVector is only updated if the memory spaces 
+      // are not the same between host and device
       if (! std::is_same<typename MV::dual_view_type::t_dev::memory_space,
                          typename MV::dual_view_type::t_host::memory_space>::value) {
         TEST_ASSERT( X_noncontig->need_sync_device () );
