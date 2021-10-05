@@ -5451,8 +5451,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
          std::runtime_error, "X and Y must be constant stride.");
       // If the two pointers are null, then they don't alias one
       // another, even though they are equal.
+      // Kokkos does not guarantee that zero row-extent vectors 
+      // point to different places, so we have to check that too.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr,
+        (X_lcl.data () == Y_lcl.data () && X_lcl.data () != nullptr
+         && X_lcl.extent(0) != 0,
          std::runtime_error, "X and Y may not alias one another.");
     }
 

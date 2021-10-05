@@ -5255,6 +5255,35 @@ namespace {
     }
   }
 
+
+#ifdef KOKKOS_ENABLE_OPENMP
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, OpenMP_ThreadedSum, LO , GO , Scalar , Node ) {
+    // Restrict to OpenMPNode and disable in debug mode (weird things happen w/ GCC 8.3.0 since RCP's
+    // are not necessarily thread-safe
+    if(typeid(Node)!=typeid(Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP, Kokkos::HostSpace>) ||
+       ::Tpetra::Details::Behavior::debug())
+       return;
+
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::MultiVector<Scalar,LO, GO, Node> MV;
+    RCP<const Comm<int> > comm = Tpetra::getDefaultComm ();
+    RCP<const map_type> map = rcp (new map_type (1000, 0, comm));
+    MV x(map, 1);
+    x.putScalar(0.0);
+    LO N= (LO) map->getNodeNumElements();
+
+    // Vector parallel fill
+    // If we
+#pragma omp parallel for
+    for(LO i=0; i<N; i++) {
+      GO global_idx = map->getGlobalElement(i);
+      double val = 1.0/global_idx;
+      x.sumIntoGlobalValue(global_idx, 0, val, true);
+    }
+  }
+#endif
+
+
 //
 // INSTANTIATIONS
 //
@@ -5300,8 +5329,19 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, Swap, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DualViewRefcountCheck, LO, GO, SCALAR, NODE )
 
+#ifdef KOKKOS_ENABLE_OPENMP
+  // Add special test for OpenMP
+  #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+    UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, OpenMP_ThreadedSum, LO, GO, SCALAR, NODE )
+#else
   #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
     UNIT_TEST_GROUP_BASE( SCALAR, LO, GO, NODE )
+#endif
+
+
+
+
 
 
   typedef Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;
@@ -5320,6 +5360,8 @@ namespace {
 #else
 #  define TPETRA_MULTIVECTOR_COMPLEX_DOUBLE_DOT_TEST( NODE )
 #endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+
+
 
 #define VIEWMODETEST(NODE) \
 
