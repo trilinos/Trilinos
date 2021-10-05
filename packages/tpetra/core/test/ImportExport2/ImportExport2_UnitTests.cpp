@@ -871,6 +871,111 @@ namespace {
   }
 
 
+  template <typename Scalar, typename LO, typename GO>
+  class MultiVectorTransferFixture {
+  private:
+    using map_type = Map<LO, GO>;
+    using mv_type = MultiVector<Scalar, LO, GO>;
+
+  public:
+    MultiVectorTransferFixture(Teuchos::FancyOStream& o, bool& s)
+      : out(o),
+        success(s),
+        comm(getDefaultComm()),
+        numProcs(comm->getSize()),
+        myRank(comm->getRank())
+    { }
+
+    ~MultiVectorTransferFixture() { }
+
+    bool shouldSkipTest() {
+      return isSerial();
+    }
+
+    void setupMultiVectors(int collectRank) {
+      const GO indexBase = 0;
+      const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+      const size_t sourceNumLocalElements = 3;
+      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
+      sourceMV = rcp(new mv_type(sourceMap, 1));
+      sourceMV->randomize();
+
+      const size_t totalElements = numProcs*sourceNumLocalElements;
+      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+      targetMV = rcp(new mv_type(targetMap, 1));
+      targetMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    }
+
+    void performTransfer() {
+      Import<LO, GO> importer(sourceMap, targetMap, getImportParameterList());
+      targetMV->doImport(*sourceMV, importer, INSERT);
+    }
+
+    void checkResults() {
+      RCP<mv_type> referenceMV = generateReferenceWithClassicalCodePath();
+      compareMultiVectors(targetMV, referenceMV);
+    }
+
+  private:
+    void compareMultiVectors(RCP<mv_type> resultMV, RCP<mv_type> referenceMV) {
+      auto data = resultMV->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto referenceData = referenceMV->getLocalViewHost(Tpetra::Access::ReadOnly);
+
+      for (GO globalRow = targetMap->getMinGlobalIndex(); globalRow <= targetMap->getMaxGlobalIndex(); ++globalRow) {
+        const LO localRow = targetMap->getLocalElement(globalRow);
+        TEST_EQUALITY(data(localRow, 0), referenceData(localRow, 0));
+      }
+    }
+
+    RCP<mv_type> generateReferenceWithClassicalCodePath() {
+      Import<LO, GO> importer(sourceMap, targetMap, getImportParameterList());
+      expertSetRemoteLIDsContiguous(importer, false);
+      TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
+
+      RCP<mv_type> referenceMV = rcp(new mv_type(targetMap, 1));
+      referenceMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+      referenceMV->doImport(*sourceMV, importer, INSERT);
+      TEUCHOS_ASSERT(!referenceMV->importsAreAliased());
+
+      return referenceMV;
+    }
+
+    bool isSerial() {
+      if (numProcs < 2) {
+        out << "This test is only meaningful if running with multiple MPI "
+               "processes, but you ran it with only 1 process." << endl;
+        return true;
+      }
+      else return false;
+    }
+
+    Teuchos::FancyOStream& out;
+    bool& success;
+
+    RCP<const Comm<int>> comm;
+    const int numProcs;
+    const int myRank;
+
+    RCP<const map_type> sourceMap;
+    RCP<const map_type> targetMap;
+
+    RCP<mv_type> sourceMV;
+    RCP<mv_type> targetMV;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVectorTransfer, asyncImport, LO, GO, Scalar )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) return;
+
+    fixture.setupMultiVectors(0);
+    fixture.performTransfer();
+    fixture.checkResults();
+  }
+
+
 template<class Graph>
 bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
 {
@@ -3038,6 +3143,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util,GetTwoTransferOwnershipVector, LO
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorImport, doImport, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorTransfer, asyncImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, doImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Import_Util, UnpackAndCombineWithOwningPIDs, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( FusedImportExport, MueLuStyle, LO, GO, SC )
