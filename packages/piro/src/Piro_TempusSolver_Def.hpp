@@ -437,7 +437,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
   // Set initial time and initial condition 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> state_ic = model_->getNominalValues();
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> xinit, xdotinit, xdotdotinit; 
-  if(t_initial_ > 0.0 && state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t)) {
+  if(state_ic.supports(Thyra::ModelEvaluatorBase::IN_ARG_t)) {
     state_ic.set_t(t_initial_);
     //If initial state has not been reset, get the initial state from ME in args
     if (!initial_state_reset_) { 
