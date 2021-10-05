@@ -295,7 +295,6 @@ void ReorderFilter<MatrixType>::
   using Teuchos::ArrayView;
   using Teuchos::av_reinterpret_cast;
   typedef local_ordinal_type LO;
-  typedef global_ordinal_type GO;
   typedef Teuchos::OrdinalTraits<LO> OTLO;
 
   const map_type& rowMap = * (A_->getRowMap ());
