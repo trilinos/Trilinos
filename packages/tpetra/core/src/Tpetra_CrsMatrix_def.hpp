@@ -7174,76 +7174,53 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   {
     const char tfecfFuncName[] = "combineGlobalValues: ";
 
-    if (isStaticGraph ()) {
-      // INSERT doesn't make sense for a static graph, since you
-      // aren't allowed to change the structure of the graph.
-      // However, all the other combine modes work.
-      if (combineMode == ADD) {
-        sumIntoGlobalValues (globalRowIndex, columnIndices, values);
-      }
-      else if (combineMode == REPLACE) {
-        replaceGlobalValues (globalRowIndex, columnIndices, values);
-      }
-      else if (combineMode == ABSMAX) {
-        using ::Tpetra::Details::AbsMax;
-        AbsMax<Scalar> f;
-        this->template transformGlobalValues<AbsMax<Scalar> > (globalRowIndex,
-                                                               columnIndices,
-                                                               values, f);
-      }
-      else if (combineMode == INSERT) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (isStaticGraph() && combineMode == INSERT,
-           std::invalid_argument, "INSERT combine mode is forbidden "
-           "if the matrix has a static (const) graph (i.e., was "
-           "constructed with the CrsMatrix constructor that takes a "
-           "const CrsGraph pointer).");
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::logic_error, "Invalid combine mode; should "
-           "never get here!  "
-           "Please report this bug to the Tpetra developers.");
-      }
-    }
-    else { // The matrix has a dynamic graph.
-      if (combineMode == ADD || combineMode == INSERT) {
-        // For a dynamic graph, all incoming column indices are
+//#define TPETRA_NEW_COMBINE_GLOBAL_VALUES_LOGIC
+    LocalOrdinal flag;
+    switch (combineMode) {
+
+      case INSERT:
+      case ADD:
+        // comment copied from previous staticGraph/dynamicGraph check:
+        // "For a dynamic graph, all incoming column indices are
         // inserted into the target graph.  Duplicate indices will
         // have their values summed.  In this context, ADD and INSERT
         // are equivalent.  We need to call insertGlobalValues()
         // anyway if the column indices don't yet exist in this row,
-        // so we just call insertGlobalValues() for both cases.
+        // so we just call insertGlobalValues() for both cases."
+
+        //insertGlobalValuesFilteredChecked() has an internal try-throw check
         insertGlobalValuesFilteredChecked(globalRowIndex,
           columnIndices, values, prefix, debug, verbose);
-      }
-      // FIXME (mfh 14 Mar 2012):
-      //
-      // Implementing ABSMAX or REPLACE for a dynamic graph would
-      // require modifying assembly to attach a possibly different
-      // combine mode to each inserted (i, j, A_ij) entry.  For
-      // example, consider two different Export operations to the same
-      // target CrsMatrix, the first with ABSMAX combine mode and the
-      // second with REPLACE.  This isn't a common use case, so we
-      // won't mess with it for now.
-      else if (combineMode == ABSMAX) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          ! isStaticGraph () && combineMode == ABSMAX, std::logic_error,
-          "ABSMAX combine mode when the matrix has a dynamic graph is not yet "
-          "implemented.");
-      }
-      else if (combineMode == REPLACE) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          ! isStaticGraph () && combineMode == REPLACE, std::logic_error,
-          "REPLACE combine mode when the matrix has a dynamic graph is not yet "
-          "implemented.");
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          true, std::logic_error, "Should never get here!  Please report this "
-          "bug to the Tpetra developers.");
-      }
-    }
+        break;
+
+      case REPLACE:
+        flag = replaceGlobalValues(globalRowIndex, columnIndices, values);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (flag == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+          std::runtime_error, "Error returned by replaceGlobalValues() for global row "
+          << globalRowIndex << ".");
+        break;
+
+      case ABSMAX:
+        {
+        using ::Tpetra::Details::AbsMax;
+        AbsMax<Scalar> f;
+        flag = this->template transformGlobalValues<AbsMax<Scalar> >(globalRowIndex,
+                                                               columnIndices,
+                                                               values, f);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (flag == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+          std::runtime_error, "Error returned by transformGlobalValues() for global row "
+          << globalRowIndex << ".");
+        }
+        break;
+
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::logic_error, "Invalid combine mode; should "
+           "never get here!  "
+           "Please report this bug to the Tpetra developers.");
+    } // switch()
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
