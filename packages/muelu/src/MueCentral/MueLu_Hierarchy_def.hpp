@@ -920,8 +920,7 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
     MagnitudeType prevNorm = STM::one(), curNorm = STM::one();
     rate_ = 1.0;
-    if (startLevel == 0 && !isPreconditioner_ &&
-        (IsPrint(Statistics1) || tol > 0)) {
+    if (IsResidualHistoryNecessary(startLevel, conv)) {
       // We calculate the residual only if we want to print it out, or if we
       // want to stop once we achive the tolerance
       Teuchos::Array<MagnitudeType> rn;
@@ -1136,8 +1135,7 @@ namespace MueLu {
       }
       zeroGuess = false;
 
-      if (startLevel == 0 && !isPreconditioner_ &&
-          (IsPrint(Statistics1) || tol > 0)) {
+      if (IsResidualHistoryNecessary(startLevel, conv)) {
         // We calculate the residual only if we want to print it out, or if we
         // want to stop once we achive the tolerance
         Teuchos::Array<MagnitudeType> rn;
@@ -1608,6 +1606,13 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeleteLevelMultiVecto
   sizeOfAllocatedLevelMultiVectors_ = 0;
 }
 
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsResidualHistoryNecessary(
+    const LO startLevel, const ConvData& conv) const
+{
+  return (startLevel == 0 && !isPreconditioner_ && (IsPrint(Statistics1) || conv.tol_ > 0));
+}
 
 } //namespace MueLu
 

@@ -355,6 +355,9 @@ namespace MueLu {
     //! Copy constructor is not implemented.
     Hierarchy(const Hierarchy &h);
 
+    //! Decide if the residual needs to be computed and printed to screen
+    bool IsResidualHistoryNecessary(const LO startLevel, const ConvData& conv) const;
+
     //! Container for Level objects
     Array<RCP<Level> > Levels_;
 
