@@ -963,7 +963,7 @@ namespace stk {
     }
 
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
-    inline STK_DEPRECATED void StkMeshIoBroker::define_heartbeat_global(size_t index,
+    STK_DEPRECATED inline void StkMeshIoBroker::define_heartbeat_global(size_t index,
                                                          const std::string &name,
                                                          const STK_ANY_NAMESPACE::any *value,
                                                          stk::util::ParameterType::Type type,
@@ -986,7 +986,7 @@ namespace stk {
       m_heartbeat[index]->define_global_ref(globalVarName, value, storage, dataType, copies, role);
     }
 
-    inline STK_DEPRECATED void StkMeshIoBroker::add_heartbeat_global(size_t index,
+    STK_DEPRECATED inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
 						      const std::string &name,
 						      const STK_ANY_NAMESPACE::any *value,
 						      stk::util::ParameterType::Type type,
@@ -997,7 +997,7 @@ namespace stk {
       m_heartbeat[index]->add_global_ref(name, value, type, copies, role);
     }
   
-    inline STK_DEPRECATED void StkMeshIoBroker::add_heartbeat_global(size_t index,
+    STK_DEPRECATED inline void StkMeshIoBroker::add_heartbeat_global(size_t index,
                                                       const std::string &globalVarName,
                                                       const STK_ANY_NAMESPACE::any *value,
                                                       const std::string &storage,

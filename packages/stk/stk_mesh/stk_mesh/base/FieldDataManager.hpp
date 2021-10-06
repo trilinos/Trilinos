@@ -37,7 +37,7 @@
 
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
-#include <stk_util/util/PageAlignedAllocator.hpp>
+#include <stk_util/util/FieldDataAllocator.hpp>
 #include <vector>                       // for vector
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 namespace stk { namespace mesh { class FieldBase; } }
@@ -164,7 +164,8 @@ private:
                                              unsigned char* newAllocationAllFields);
     void initialize_new_field_values(FieldBase& currentField, const EntityRank rank, const unsigned bucketId, const size_t capacity);
 
-    AllocatorAdaptor<page_aligned_allocator<unsigned char> > m_default_allocator;
+    AllocatorAdaptor<::stk::impl::FieldDataAllocator<unsigned char>> m_default_allocator;
+
     size_t m_default_alignment_increment_bytes;
     std::vector<std::vector<unsigned char*> > m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;
@@ -221,7 +222,7 @@ private:
                                       const std::vector<size_t> & newOffsetForBucket,
                                       FieldBase& currentField);
 
-    AllocatorAdaptor<page_aligned_allocator<unsigned char> > m_default_allocator;
+    AllocatorAdaptor<::stk::impl::FieldDataAllocator<unsigned char>> m_default_allocator;
     size_t m_default_alignment_increment_bytes;
     std::vector<unsigned char*> m_field_raw_data;
     std::vector<size_t> m_num_bytes_allocated_per_field;

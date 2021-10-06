@@ -91,6 +91,21 @@ class TrilinosPRConfigurationBase(object):
         """
         return self.args.ctest_driver
 
+    @property
+    def arg_ctest_drop_site(self):
+        """
+        Argument Wrapper: This property wraps the value provided in self.args
+        to provide a convenient way to override this value if needed for some
+        specialty reason or for a customized test.
+
+        This parameter stores the location of the CTest driver script that gets
+        loaded by the -S argument.
+
+        Returns:
+            self.args.ctest_drop_site
+        """
+        return self.args.ctest_drop_site
+
 
     @property
     def arg_build_dir(self):
@@ -670,6 +685,7 @@ class TrilinosPRConfigurationBase(object):
         self.message("--- arg_source_dir              = {}".format(self.arg_source_dir))
         self.message("--- arg_build_dir               = {}".format(self.arg_build_dir))
         self.message("--- arg_ctest_driver            = {}".format(self.arg_ctest_driver))
+        self.message("--- arg_ctest_drop_site         = {}".format(self.arg_ctest_drop_site))
         self.message("")
         self.message("--- concurrency_build           = {}".format(self.concurrency_build))
         self.message("--- concurrency_test            = {}".format(self.concurrency_test))
@@ -781,5 +797,3 @@ class TrilinosPRConfigurationBase(object):
         else:
             self.message("Skipped (Dry-Run)")
         self.message("--- OK")
-
-

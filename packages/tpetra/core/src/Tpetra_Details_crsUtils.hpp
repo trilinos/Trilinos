@@ -271,22 +271,22 @@ pad_crs_arrays(
   }
 
   using inds_value_type = 
-        typename Indices::DeviceViewType::non_const_value_type;
-  using vals_value_type = typename Values::DeviceViewType::non_const_value_type;
+        typename Indices::t_dev::non_const_value_type;
+  using vals_value_type = typename Values::t_dev::non_const_value_type;
 
   auto indices_old = indices_wdv.getDeviceView(Access::ReadOnly);
   const size_t newIndsSize = size_t(indices_old.size()) + increase;
-  auto indices_new = make_uninitialized_view<typename Indices::DeviceViewType>(
+  auto indices_new = make_uninitialized_view<typename Indices::t_dev>(
     "Tpetra::CrsGraph column indices", newIndsSize, verbose,
     prefix.get());
 
-  typename Values::DeviceViewType values_new;
+  typename Values::t_dev values_new;
   auto values_old = values_wdv.getDeviceView(Access::ReadOnly);
   if (action == PadCrsAction::INDICES_AND_VALUES) {
     const size_t newValsSize = newIndsSize;
     // NOTE (mfh 10 Feb 2020) If we don't initialize values_new here,
     // then the CrsMatrix tests fail.
-    values_new = make_initialized_view<typename Values::DeviceViewType>(
+    values_new = make_initialized_view<typename Values::t_dev>(
       "Tpetra::CrsMatrix values", newValsSize, verbose, prefix.get());
   }
 
@@ -295,7 +295,7 @@ pad_crs_arrays(
     os << *prefix << "Repack" << endl;
     std::cerr << os.str();
   }
-  using execution_space = typename Indices::DeviceViewType::execution_space;
+  using execution_space = typename Indices::t_dev::execution_space;
   using range_type = Kokkos::RangePolicy<execution_space, size_t>;
   Kokkos::parallel_scan(
     "Tpetra::CrsGraph or CrsMatrix repack",

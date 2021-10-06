@@ -93,11 +93,13 @@ class StkSimdView3dTester {
 
     set_b_to_2a_plus_b_functor_with_tag(a, b);
     test_view_equal_to_index_multiple(stk::simd::copy_from_device(b), 5);
-    
+ 
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     auto aHost = stk::simd::copy_from_device(a);
     auto bHost = stk::simd::copy_from_device(b);
     set_b_to_3a_plus_b_for_each_lambda(aHost, bHost);
     test_view_equal_to_index_multiple(bHost, 8);
+#endif
   }
   
   void parallel_reduce_test(int loopSize, int j, int k) const {

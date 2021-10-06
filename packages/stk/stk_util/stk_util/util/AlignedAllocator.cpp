@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stk_util/util/AlignedAllocator.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 #include "Kokkos_Core.hpp"
 
@@ -44,21 +45,17 @@ void* CUDAPinnedAndMappedAlignedAllocate(size_t size)
   void* ret;
   cudaError_t status = cudaHostAlloc(&ret, size, cudaHostAllocMapped);
 
-  if(status != cudaSuccess)
-    std::cerr << "Error during CUDAPinnedAndMappedAlignedAllocate::cudaHostAlloc: " << cudaGetErrorString(status) << std::endl;
-
+  ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAlignedAllocate: " + std::string(cudaGetErrorString(status)));
   return ret;
 }
 
 void CUDAPinnedAndMappedAlignedDeallocate(void* p)
 {
-  cudaError_t status = cudaFreeHost(p);
-
   if (!Kokkos::is_initialized())
     std::cerr << "Error during CUDAPinnedAndMappedAlignedDeallocate::cudaFreeHost: Kokkos not initialized"<< std::endl;
 
-  if(status != cudaSuccess)
-    std::cerr << "Error during CUDAPinnedAndMappedAlignedDeallocate::cudaFreeHost: " << cudaGetErrorString(status) << std::endl;
+  cudaError_t status = cudaFreeHost(p);
+  ThrowRequireMsg(status == cudaSuccess, "Error during CUDAPinnedAndMappedAlignedDellocate: " + std::string(cudaGetErrorString(status)));
 }
 #endif
 

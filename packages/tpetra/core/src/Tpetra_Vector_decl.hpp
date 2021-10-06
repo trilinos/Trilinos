@@ -123,6 +123,9 @@ public:
   //! Kokkos::DualView specialization used by this class.
   typedef typename base_type::dual_view_type dual_view_type;
 
+  //! WrappedDualView specialization used by this class.
+  typedef typename base_type::wrapped_dual_view_type wrapped_dual_view_type;
+
   //! The type of the Map specialization used by this class.
   typedef typename base_type::map_type map_type;
 
@@ -206,6 +209,17 @@ public:
           const dual_view_type& view,
           const dual_view_type& origView);
 
+  /// \brief Expert mode constructor, that takes a WrappedDualView
+  ///   of the MultiVector's data.
+  ///
+  /// \warning This constructor is only for expert users.  We make
+  ///   no promises about backwards compatibility for this
+  ///   interface.  It may change or go away at any time.  It is
+  ///   mainly useful for Tpetra developers and we do not expect it
+  ///   to be useful for anyone else.
+  Vector (const Teuchos::RCP<const map_type>& map,
+	  const wrapped_dual_view_type& d_view);
+  
   /// \brief Create a Vector that views a single column of the input
   ///   MultiVector.
   ///

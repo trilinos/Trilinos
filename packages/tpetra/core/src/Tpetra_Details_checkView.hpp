@@ -48,6 +48,7 @@
 ///   details of Tpetra.
 
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_WrappedDualView.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_Comm.hpp"
@@ -211,6 +212,104 @@ checkGlobalDualViewValidity
   }
   return gblSuccess == 1;
 }
+
+
+/// \brief Is the given Tpetra::WrappedDualView valid?
+///
+/// A WrappedDualView is valid if both of its constituent Views are valid.
+template<class DataType ,
+         class Arg1Type = void ,
+         class Arg2Type = void ,
+         class Arg3Type = void>
+bool
+checkLocalWrappedDualViewValidity
+  (std::ostream* const lclErrStrm,
+   const int myMpiProcessRank,
+   const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type> >& dv)
+{
+  const bool dev_good  = dv.is_valid_device();
+  const bool host_good = dv. is_valid_host();
+  const bool good = dev_good && host_good;
+  if (! good && lclErrStrm != nullptr) {
+    using Teuchos::TypeNameTraits;
+    using std::endl;
+    using dv_type =
+      Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type> >;
+
+    const std::string dvName = TypeNameTraits<dv_type>::name ();
+    *lclErrStrm << "Proc " << myMpiProcessRank << ": Tpetra::WrappedDualView "
+      "of type " << dvName << " has one or more invalid Views.  See "
+      "above error messages from this MPI process for details." << endl;
+  }
+  return good;
+}
+
+template<class DataType ,
+         class Arg1Type = void ,
+         class Arg2Type = void ,
+         class Arg3Type = void>
+bool
+checkGlobalWrappedDualViewValidity
+(std::ostream* const gblErrStrm,
+ const Tpetra::Details::WrappedDualView<Kokkos::DualView<DataType, Arg1Type, Arg2Type, Arg3Type> >& dv,
+ const bool verbose,
+ const Teuchos::Comm<int>* const comm)
+{
+  using std::endl;
+  const int myRank = comm == nullptr ? 0 : comm->getRank ();
+  std::ostringstream lclErrStrm;
+  int lclSuccess = 1;
+
+  try {
+    const bool lclValid =
+      checkLocalWrappedDualViewValidity (&lclErrStrm, myRank, dv);
+    lclSuccess = lclValid ? 1 : 0;
+  }
+  catch (std::exception& e) {
+    lclErrStrm << "Proc " << myRank << ": checkLocalDualViewValidity "
+      "threw an exception: " << e.what () << endl;
+    lclSuccess = 0;
+  }
+  catch (...) {
+    lclErrStrm << "Proc " << myRank << ": checkLocalDualViewValidity "
+      "threw an exception not a subclass of std::exception." << endl;
+    lclSuccess = 0;
+  }
+
+  int gblSuccess = 0; // output argument
+  if (comm == nullptr) {
+    gblSuccess = lclSuccess;
+  }
+  else {
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  }
+
+  if (gblSuccess != 1 && gblErrStrm != nullptr) {
+    *gblErrStrm << "On at least one (MPI) process, the "
+      "Kokkos::DualView has "
+      "either the device or host pointer in the "
+      "DualView equal to null, but the DualView has a nonzero number of "
+      "rows.  For more detailed information, please rerun with the "
+      "TPETRA_VERBOSE environment variable set to 1. ";
+    if (verbose) {
+      *gblErrStrm << "  Here are error messages from all "
+        "processes:" << endl;
+      if (comm == nullptr) {
+        *gblErrStrm << lclErrStrm.str ();
+      }
+      else {
+        using Tpetra::Details::gathervPrint;
+        gathervPrint (*gblErrStrm, lclErrStrm.str (), *comm);
+      }
+    }
+   *gblErrStrm << endl;
+  }
+  return gblSuccess == 1;
+}
+
 
 } // namespace Details
 } // namespace Tpetra

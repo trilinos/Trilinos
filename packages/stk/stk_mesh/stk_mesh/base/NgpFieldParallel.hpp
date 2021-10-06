@@ -144,13 +144,13 @@ struct NgpFieldInfo
   NgpFieldInfo(stk::mesh::NgpField<T>& fld)
     : m_field(fld) {}
 
-  KOKKOS_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   NgpFieldInfo() = default;
 
-  KOKKOS_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   NgpFieldInfo(const NgpFieldInfo&) = default;
 
-  KOKKOS_FUNCTION
+  KOKKOS_DEFAULTED_FUNCTION
   ~NgpFieldInfo() = default;
 
   KOKKOS_FUNCTION

@@ -184,16 +184,24 @@ Marshal &operator>>(Marshal &min, DeferredMessage &s)  {
 
 } // namespace <empty>
 
+bool should_increment_message_count(unsigned messageType)
+{
+  return !(messageType & MSG_SYMMETRIC) || (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0);
+}
 
 CutoffStatus
-count_message(const MessageCode &   message_code)
+count_message(unsigned messageType, const MessageCode &   message_code)
 {
 
     MessageId message_id     = message_code.m_id;
     const Throttle &throttle = message_code.m_throttle;
 
   std::pair<MessageIdMap::iterator, bool> res = s_messageIdMap.insert(MessageIdMap::value_type(MessageIdMap::key_type(message_id, std::string("")), throttle));
-  size_t count = ++(*res.first).second.m_count;
+  if (should_increment_message_count(messageType)) {
+    ++(*res.first).second.m_count;
+  }
+
+  size_t count = (*res.first).second.m_count;
 
   if (count < (*res.first).second.m_cutoff) {
       return CutoffStatus::MSG_DISPLAY;
@@ -224,23 +232,41 @@ get_message_count(
   return get_message_type_info(message_type).m_count;
 }
 
-
-unsigned
-increment_message_count(
-  unsigned              message_type)
+unsigned get_message_printed_count(unsigned messageType)
 {
-  if ( (message_type & MSG_SYMMETRIC) && stk::parallel_machine_rank(MPI_COMM_WORLD) != 0 ) {
-    return get_message_type_info(message_type).m_count;
+  ThrowRequireMsg(messageType==MSG_WARNING,"Only count printed warning messages.");
+  unsigned totalPrinted = 0;
+  for(auto& iter : s_messageIdMap) {
+    totalPrinted += std::min(iter.second.m_count, iter.second.m_cutoff);
   }
-  return ++get_message_type_info(message_type).m_count;
+  return totalPrinted;
 }
 
+unsigned get_message_printed_count(const MessageCode& messageCode)
+{
+  MessageIdMap::iterator iter = s_messageIdMap.find(MessageIdMap::key_type(messageCode.m_id, std::string("")));
+  if (iter != s_messageIdMap.end()) {
+    return std::min(iter->second.m_count, iter->second.m_cutoff);
+  }
+  return 0;
+}
+
+
+void increment_message_count(unsigned message_type)
+{
+  if (should_increment_message_count(message_type)) {
+    ++get_message_type_info(message_type).m_count;
+  }
+}
 
 void
 reset_message_count(
   unsigned              message_type)
 {
   get_message_type_info(message_type).m_count = 0;
+  for(auto& iter : s_messageIdMap) {
+    iter.second.m_count = 0;
+  }
 }
 
 
@@ -278,8 +304,9 @@ report_message(
   if (message_type & MSG_DEFERRED) {
     report(message, message_type);
   } else { 
-    unsigned count = increment_message_count(message_type);
-    unsigned max_count = get_max_message_count(message_type); 
+    increment_message_count(message_type);
+    const unsigned count = get_message_count(message_type);
+    const unsigned max_count = get_max_message_count(message_type); 
   
     if (count == max_count) {
       report(message, message_type);
@@ -290,7 +317,7 @@ report_message(
     }
 
     else if (count < max_count) {
-      CutoffStatus cutoff = count_message(message_code);
+      CutoffStatus cutoff = count_message(message_type, message_code);
     
       if (cutoff == CutoffStatus::MSG_CUTOFF) {
         report(message, message_type);

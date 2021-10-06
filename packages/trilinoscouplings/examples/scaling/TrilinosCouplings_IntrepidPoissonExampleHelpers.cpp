@@ -37,16 +37,113 @@ namespace TrilinosCouplings {
 namespace IntrepidPoissonExample {
 
 
-namespace { // anonymous
-  double materialTensorOffDiagonalValue_;
-} // namespace (anonymous)
+// Row-major matrix
+class Matrix3{
+public:
+  Matrix3():v_(9,0){}
+
+  Matrix3(const std::vector<double> & vals):v_(vals){};
+
+  // Computes C = this * B
+  Matrix3 operator*(const Matrix3& B) const {
+    Matrix3 C;
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        for(int k=0; k<3; k++)
+          C(i,j) += (*this)(i,k)* B(k,j);      
+    return C;
+  }
+
+  double & operator()(int i, int j) { 
+    return v_[i*3+j];
+  }
+
+  const double & operator()(int i, int j) const{ 
+    return v_[i*3+j];
+  }
+
+
+  void print(std::ostream & os) {
+    os<<"[ "<<v_[0]<<" "<<v_[1]<<" "<<v_[2]<<" ]\n"
+      <<"[ "<<v_[3]<<" "<<v_[4]<<" "<<v_[5]<<" ]\n"
+      <<"[ "<<v_[6]<<" "<<v_[7]<<" "<<v_[8]<<" ]"<<std::endl;
+  }
+
+  const std::vector<double> & get() { return v_;};
+
+private:
+  std::vector<double> v_;
+};
+
+
+Matrix3 DiagonalMatrix(const std::vector<double> &d) {
+  Matrix3 rv;
+  for(int i=0; i<3; i++)
+    rv(i,i) = d[i];
+  return rv;
+}
+
+Matrix3 X_Rotation(double theta) {
+  std::vector<double> v {1.0, 0.0, 0.0, /**/ 0.0, cos(theta), -sin(theta), /**/ 0.0, sin(theta), cos(theta)};
+  return Matrix3(v);
+}
+
+Matrix3 Y_Rotation(double theta) {
+  std::vector<double> v {cos(theta), 0.0, sin(theta), /**/ 0.0, 1.0, 0.0, /**/-sin(theta), 0.0, cos(theta)};
+  return Matrix3(v);
+}
+
+Matrix3 Z_Rotation(double theta) {
+  std::vector<double> v {cos(theta), -sin(theta), 0.0, /**/ sin(theta), cos(theta), 0.0,/**/ 0.0, 0.0, 1.0};
+  return Matrix3(v);
+}
+
+Matrix3 Transpose(const Matrix3 & A) {
+  Matrix3 B;
+  for(int i=0; i<3; i++)
+    for(int j=0; j<3; j++)
+      B(j,i) = A(i,j);
+  return B;
+}
+
+
+
+bool use_diffusion_ = false;
+double materialTensorOffDiagonalValue_;
+  
+Matrix3 rotation_, strength_,diff_total_;
+
+bool useDiffusionMatrix() { 
+  return use_diffusion_;
+}
+
 
 double getMaterialTensorOffDiagonalValue () {
+  if(use_diffusion_)
+    throw std::runtime_error("setMaterialTensorOffDiagonalValue has not been called");
   return materialTensorOffDiagonalValue_;
 }
 void setMaterialTensorOffDiagonalValue (const double newVal) {
-  materialTensorOffDiagonalValue_ = newVal;
+  materialTensorOffDiagonalValue_ = newVal;  
 }
+
+
+const std::vector<double>& getDiffusionMatrix() {
+  if(!use_diffusion_)
+    throw std::runtime_error("setDiffusionRotationStrength has not been called");
+  return diff_total_.get();
+}
+
+
+
+void setDiffusionRotationAndStrength(const std::vector<double>& theta,  const std::vector<double>& diagonal) {
+
+  rotation_ = Z_Rotation(theta[2]*M_PI/180.0) * Y_Rotation(theta[1]*M_PI/180.0) * X_Rotation(theta[0]*M_PI/180.0);
+  strength_ = DiagonalMatrix(diagonal);    
+  diff_total_ = rotation_ * strength_ * Transpose(rotation_);
+  use_diffusion_ = true;
+}
+
 
 
 std::string

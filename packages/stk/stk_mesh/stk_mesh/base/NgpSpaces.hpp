@@ -44,13 +44,20 @@
 namespace stk {
 namespace mesh {
 
-using ExecSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::ExecSpace;    
-using HostExecSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::HostExecSpace;    
-using MemSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::MemSpace;    
-using UVMMemSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::UVMMemSpace;    
-using HostPinnedSpace [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::HostPinnedSpace;    
-using ScheduleType [[deprecated("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")]] = stk::ngp::ScheduleType;    
-
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
+using ExecSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
+                          = stk::ngp::ExecSpace;    
+using HostExecSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
+                          = stk::ngp::HostExecSpace;    
+using MemSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
+                          = stk::ngp::MemSpace;    
+using UVMMemSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
+                          = stk::ngp::UVMMemSpace;    
+using HostPinnedSpace STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp") 
+                          = stk::ngp::HostPinnedSpace;    
+using ScheduleType STK_DEPRECATED_MSG("Please use stk_util/ngp/NgpSpaces.hpp instead of stk_mesh/base/NgpSpaces.hpp")
+                          = stk::ngp::ScheduleType;    
+#endif // STK_HIDE_DEPRECATED_CODE
 }
 }
 
