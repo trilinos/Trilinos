@@ -135,6 +135,8 @@ int main(int argc, char *argv[]) {
     ptfile.open("points.txt");
     wtfile.open("weights.txt");
     for (int i = 0; i < nsamp; ++i) {
+      //ptfile << std::scientific << std::setprecision(16);
+      //wtfile << std::scientific << std::setprecision(16);
       ptfile << (ub - lb) * static_cast<RealT>(i) / static_cast<RealT>(nsamp - 1) + lb << std::endl;
       wtfile << static_cast<RealT>(1) / static_cast<RealT>(nsamp)                      << std::endl;
     }
@@ -158,10 +160,10 @@ int main(int argc, char *argv[]) {
       M = ROL::makePtr<ROL::OED::StdMomentOperator<RealT>>(type,homNoise,noise);
     ROL::Ptr<ROL::OED::Factory<RealT>>
      factory = ROL::makePtr<ROL::OED::Factory<RealT>>(model,sampler,theta,M,*parlist);
-    if (ocType == "A" || ocType == "I")
-      parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Brents");
-    else
-      parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
+    //if (ocType == "A" || ocType == "I")
+    //  parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Brents");
+    //else
+    //  parlist->sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
     
     // Generate optimization problem
     ROL::Ptr<ROL::Problem<RealT>> problem = factory->get(*parlist,sampler);
