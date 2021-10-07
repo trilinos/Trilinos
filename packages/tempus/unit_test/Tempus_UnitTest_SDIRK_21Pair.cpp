@@ -6,22 +6,12 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-
-#include "Thyra_VectorStdOps.hpp"
-
-#include "Tempus_UnitTest_Utils.hpp"
-
-#include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/DahlquistTestModel.hpp"
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
+#include "Tempus_UnitTest_RK_Utils.hpp"
 
 #include "Tempus_StepperRKModifierBase.hpp"
-#include <fstream>
-#include <vector>
+
+#include "../TestModels/DahlquistTestModel.hpp"
+
 
 namespace Tempus_Unit_Test {
 
@@ -31,7 +21,6 @@ using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
-using Teuchos::getParametersFromXmlFile;
 
 
 // ************************************************************
@@ -122,16 +111,16 @@ public:
       case StepperRKAppAction<double>::BEGIN_STAGE:
       case StepperRKAppAction<double>::BEFORE_SOLVE:
         {
-          const double X_i = get_ele(*(x), 0); 
-          const double f_i = get_ele(*(xDot), 0); 
+          const double X_i = get_ele(*(x), 0);
+          const double f_i = get_ele(*(xDot), 0);
 
           if (stageNumber == 0) {
-            TEST_FLOATING_EQUALITY(X_i,      1.0, relTol); 
-            TEST_FLOATING_EQUALITY(time,     1.0, relTol);   
+            TEST_FLOATING_EQUALITY(X_i,      1.0, relTol);
+            TEST_FLOATING_EQUALITY(time,     1.0, relTol);
             TEST_ASSERT(std::abs(f_i) < relTol);
           } else if (stageNumber == 1) {
-            TEST_FLOATING_EQUALITY(X_i,      0.5, relTol); 
-            TEST_FLOATING_EQUALITY(f_i,     -1.0, relTol);   
+            TEST_FLOATING_EQUALITY(X_i,      0.5, relTol);
+            TEST_FLOATING_EQUALITY(f_i,     -1.0, relTol);
             TEST_ASSERT(std::abs(time) < relTol);
           } else {
             TEUCHOS_TEST_FOR_EXCEPT( !(-1 < stageNumber && stageNumber < 2));
@@ -148,13 +137,13 @@ public:
 
           if (stageNumber == 0) {
             // X_i = 1, f_1 = 0
-            TEST_FLOATING_EQUALITY(X_i,      0.5, relTol); 
-            TEST_FLOATING_EQUALITY(time,     1.0, relTol);   
-            TEST_FLOATING_EQUALITY(f_i,     -0.5, relTol);   
+            TEST_FLOATING_EQUALITY(X_i,      0.5, relTol);
+            TEST_FLOATING_EQUALITY(time,     1.0, relTol);
+            TEST_FLOATING_EQUALITY(f_i,     -0.5, relTol);
           } else if (stageNumber == 1) {
-            // X_i = , f_i = 
+            // X_i = , f_i =
             TEST_FLOATING_EQUALITY(X_i,     0.75, relTol);
-            TEST_FLOATING_EQUALITY(f_i,    -0.75, relTol);   
+            TEST_FLOATING_EQUALITY(f_i,    -0.75, relTol);
             TEST_ASSERT(std::abs(time) < relTol);
           } else {
             TEUCHOS_TEST_FOR_EXCEPT( !(-1 < stageNumber && stageNumber < 2));
@@ -178,7 +167,7 @@ public:
             TEST_ASSERT(std::abs(workingState->getErrorRel()) < relTol);
           }
 
-        } 
+        }
 
     }
 

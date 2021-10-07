@@ -6,16 +6,10 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-
+#include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_TimeEventRange.hpp"
 
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#include <cmath>
 static double PI = M_PI;
 
 namespace Tempus_Unit_Test {
@@ -83,7 +77,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, Full_Construction_NumEvents)
   TEST_COMPARE(te->getName(), ==, "TestName");
 
   // Test when everything is zero.
-  TEST_FLOATING_EQUALITY(te->getTimeStart (), 0.0,      1.0e-14);
+  TEST_FLOATING_EQUALITY(te->getTimeStart (), 0.0,    1.0e-14);
   TEST_FLOATING_EQUALITY(te->getTimeStop  (), PI,     1.0e-14);
   TEST_FLOATING_EQUALITY(te->getTimeStride(), PI/4.0, 1.0e-14);
   TEST_COMPARE(te->getNumEvents (), ==, 5);
@@ -139,8 +133,8 @@ TEUCHOS_UNIT_TEST(TimeEventRange, Stride)
   te->setTimeStride(-0.5);
   TEST_FLOATING_EQUALITY(te->getTimeStart (), 1.0, 1.0e-14);
   TEST_FLOATING_EQUALITY(te->getTimeStop  (), 4.0, 1.0e-14);
-  TEST_FLOATING_EQUALITY(te->getTimeStride(), 3.0, 1.0e-14);
-  TEST_COMPARE(te->getNumEvents (), ==, 2);
+  TEST_FLOATING_EQUALITY(te->getTimeStride(), 0.5, 1.0e-14);
+  TEST_COMPARE(te->getNumEvents (), ==, 7);
 
   // Large stride should be reset to stop_-start_.
   te->setTimeStride(5.0);
@@ -382,9 +376,7 @@ TEUCHOS_UNIT_TEST(TimeEventRange, createTimeEventRange)
   // Construct TimeEventRange from ParameterList.
   auto ter = Tempus::createTimeEventRange<double>(pl);
 
-  //Teuchos::RCP<Teuchos::FancyOStream> my_out =
-  //  Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //ter->describe(*my_out, Teuchos::VERB_EXTREME);
+  //ter->describe(out, Teuchos::VERB_EXTREME);
 
   TEST_COMPARE          ( ter->getName()         , ==, "Unit Test Time Event Range");
   TEST_COMPARE          ( ter->getType()         , ==, "Range"     );
@@ -394,6 +386,27 @@ TEUCHOS_UNIT_TEST(TimeEventRange, createTimeEventRange)
   TEST_COMPARE          ( ter->getNumEvents()    , ==, 13          );
   TEST_FLOATING_EQUALITY( ter->getRelTol()       , 1.0e-10, 1.0e-14);
   TEST_COMPARE          ( ter->getLandOnExactly(), ==, false       );
+}
+
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(TimeEventRange, SingleEventAtZero)
+{
+  auto ter = rcp(new Tempus::TimeEventRange<double>(
+                 0.0, 0.0, 0.0, "SingleEventAtZero", true));
+  ter->describe(out, Teuchos::VERB_EXTREME);
+
+  TEST_COMPARE(ter->getNumEvents (), ==, 1);
+
+  TEST_COMPARE(ter->isTime(0.0), ==, true);
+  TEST_FLOATING_EQUALITY(ter->timeToNextEvent(-1.0), 1.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(ter->timeOfNextEvent(-1.0), 0.0, 1.0e-14);
+  TEST_FLOATING_EQUALITY(ter->timeToNextEvent( 0.0), ter->getDefaultTime(), 1.0e-14);
+  TEST_FLOATING_EQUALITY(ter->timeOfNextEvent( 0.0), ter->getDefaultTime(), 1.0e-14);
+  TEST_COMPARE(ter->eventInRange(-1.0, 1.0), ==,  true);
+  TEST_COMPARE(ter->eventInRange( 0.0, 1.0), ==, false);
+  TEST_COMPARE(ter->eventInRange( 0.0, 0.0), ==, false);
 }
 
 

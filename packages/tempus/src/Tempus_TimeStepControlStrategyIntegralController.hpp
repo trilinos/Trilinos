@@ -10,6 +10,7 @@
 #define Tempus_TimeStepControlStrategy_IntegralController_hpp
 
 #include "Tempus_config.hpp"
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -123,10 +124,9 @@ public:
     Scalar errNm1 = workingState->getErrorRelNm1();
     Scalar errNm2 = workingState->getErrorRelNm2();
 
-    const Scalar numericalTol = 1.0e-14;
-    if ( errN   < numericalTol) errN   = 1.0;
-    if ( errNm1 < numericalTol) errNm1 = 1.0;
-    if ( errNm2 < numericalTol) errNm2 = 1.0;
+    if ( errN   < numericalTol<Scalar>()) errN   = 1.0;
+    if ( errNm1 < numericalTol<Scalar>()) errNm1 = 1.0;
+    if ( errNm2 < numericalTol<Scalar>()) errNm2 = 1.0;
 
     Scalar k1 = Teuchos::as<Scalar>(-KI_ / order);
     Scalar k2 = Teuchos::as<Scalar>( KP_ / order);

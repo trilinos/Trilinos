@@ -6,22 +6,10 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
+#include "Tempus_UnitTest_RK_Utils.hpp"
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
 
-#include "Thyra_VectorStdOps.hpp"
-#include "Tempus_IntegratorBasic.hpp"
-
-#include "Tempus_UnitTest_Utils.hpp"
-
-#include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/VanDerPolModel.hpp"
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
-
-#include <fstream>
-#include <vector>
 
 namespace Tempus_Unit_Test {
 
@@ -31,7 +19,6 @@ using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
-using Teuchos::getParametersFromXmlFile;
 
 
 // ************************************************************
@@ -66,7 +53,7 @@ TEUCHOS_UNIT_TEST(DIRK_BackwardEuler, App_PL)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
   // read the params from xml file
-  auto pList = getParametersFromXmlFile("Tempus_DIRK_VanDerPol.xml");
+  auto pList = Teuchos::getParametersFromXmlFile("Tempus_DIRK_VanDerPol.xml");
   auto pl = sublist(pList, "Tempus", true);
   auto appSolverPL = pl->sublist("App Stepper").sublist("App Solver");
 
