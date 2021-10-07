@@ -798,7 +798,9 @@ int Ifpack_Hypre::Compute(){
     hypre_ParAMGData   *amg_data = (hypre_ParAMGData*) Preconditioner_;
     hypre_ParCSRMatrix    **A_array = hypre_ParAMGDataAArray(amg_data);
     hypre_ParCSRMatrix    **P_array = hypre_ParAMGDataPArray(amg_data);
+#if 0
     HYPRE_Int     **CF_marker_array = hypre_ParAMGDataCFMarkerArray(amg_data);
+#endif
     HYPRE_Int num_levels = hypre_ParAMGDataNumLevels(amg_data);
 
     char ofs[80];
@@ -811,6 +813,7 @@ int Ifpack_Hypre::Compute(){
         sprintf(ofs,"P_matrix.bmg.%d.dat",k);
         HYPRE_ParCSRMatrixPrint(P_array[k], ofs);
 
+#if 0
         // CF
         // Note: Hypre outputs "-1" for F Points and "1" for C Points
         HYPRE_Int local_size = hypre_CSRMatrixNumRows(hypre_ParCSRMatrixDiag(A_array[k]));
@@ -821,6 +824,7 @@ int Ifpack_Hypre::Compute(){
         for(int i=0; i<local_size; i++)
           fprintf(f,"%d\n",(int)CF_marker_array[k][i]);
         fclose(f);
+#endif
       }
 
     }
