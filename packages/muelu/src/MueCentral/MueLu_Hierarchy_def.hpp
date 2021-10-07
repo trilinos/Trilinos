@@ -920,29 +920,16 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
     MagnitudeType prevNorm = STM::one(), curNorm = STM::one();
     rate_ = 1.0;
-    if (IsResidualHistoryNecessary(startLevel, conv)) {
-      // We calculate the residual only if we want to print it out, or if we
-      // want to stop once we achive the tolerance
-      Teuchos::Array<MagnitudeType> rn;
-      rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
-
-      if (tol > 0) {
-        bool passed = true;
-        for (LO k = 0; k < rn.size(); k++)
-          if (rn[k] >= tol)
-            passed = false;
-
-        if (passed)
-          return Converged;
-      }
+    if (IsCalculationOfResidualRequired(startLevel, conv))
+    {
+      Teuchos::Array<MagnitudeType> residualNorm;
+      residualNorm = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
 
       if (IsPrint(Statistics1))
-        GetOStream(Statistics1) << "iter:    "
-            << std::setiosflags(std::ios::left)
-            << std::setprecision(3) << 0 // iter 0
-            << "           residual = "
-            << std::setprecision(10) << rn
-            << std::endl;
+        PrintResidualHistory(0, residualNorm); // Pass 0, since this is before first iteration
+
+      ReturnType convergenceStatus = IsConverged(residualNorm, conv.tol_);
+      if (convergenceStatus == Converged) return convergenceStatus;
     }
 
     SC one = STS::one(), zero = STS::zero();
@@ -1135,33 +1122,21 @@ namespace MueLu {
       }
       zeroGuess = false;
 
-      if (IsResidualHistoryNecessary(startLevel, conv)) {
-        // We calculate the residual only if we want to print it out, or if we
-        // want to stop once we achive the tolerance
-        Teuchos::Array<MagnitudeType> rn;
-        rn = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
+
+      if (IsCalculationOfResidualRequired(startLevel, conv))
+      {
+        Teuchos::Array<MagnitudeType> residualNorm;
+        residualNorm = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
 
         prevNorm = curNorm;
-        curNorm  = rn[0];
+        curNorm  = residualNorm[0];
         rate_ = as<MagnitudeType>(curNorm / prevNorm);
 
         if (IsPrint(Statistics1))
-          GetOStream(Statistics1) << "iter:    "
-                                     << std::setiosflags(std::ios::left)
-                                     << std::setprecision(3) << i
-                                     << "           residual = "
-                                     << std::setprecision(10) << rn
-                                     << std::endl;
+          PrintResidualHistory(i, residualNorm);
 
-        if (tol > 0) {
-          bool passed = true;
-          for (LO k = 0; k < rn.size(); k++)
-            if (rn[k] >= tol)
-              passed = false;
-
-          if (passed)
-            return Converged;
-        }
+        ReturnType convergenceStatus = IsConverged(residualNorm, conv.tol_);
+        if (convergenceStatus == Converged) return convergenceStatus;
       }
     }
     return (tol > 0 ? Unconverged : Undefined);
@@ -1608,11 +1583,48 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeleteLevelMultiVecto
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsResidualHistoryNecessary(
+bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsCalculationOfResidualRequired(
     const LO startLevel, const ConvData& conv) const
 {
   return (startLevel == 0 && !isPreconditioner_ && (IsPrint(Statistics1) || conv.tol_ > 0));
 }
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsConverged(
+    const Teuchos::Array<MagnitudeType>& residualNorm, const Scalar convergenceTolerance) const
+{
+  ReturnType convergenceStatus = Undefined;
+
+  if (convergenceTolerance > 0)
+  {
+    bool passed = true;
+    for (LO k = 0; k < residualNorm.size(); k++)
+      if (residualNorm[k] >= convergenceTolerance)
+        passed = false;
+
+    if (passed)
+      convergenceStatus = Converged;
+    else
+      convergenceStatus = Unconverged;
+  }
+
+  return convergenceStatus;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintResidualHistory(
+    const LO iteration, const Teuchos::Array<MagnitudeType>& residualNorm) const
+{
+  GetOStream(Statistics1) << "iter:    "
+      << std::setiosflags(std::ios::left)
+      << std::setprecision(3) << iteration
+      << "           residual = "
+      << std::setprecision(10) << residualNorm
+      << std::endl;
+}
+
 
 } //namespace MueLu
 

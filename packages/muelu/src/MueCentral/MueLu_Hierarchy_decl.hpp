@@ -355,8 +355,22 @@ namespace MueLu {
     //! Copy constructor is not implemented.
     Hierarchy(const Hierarchy &h);
 
-    //! Decide if the residual needs to be computed and printed to screen
-    bool IsResidualHistoryNecessary(const LO startLevel, const ConvData& conv) const;
+    //! Decide if the residual needs to be computed
+    bool IsCalculationOfResidualRequired(const LO startLevel, const ConvData& conv) const;
+
+    /*!
+    \brief Decide if the mulitgrid iteration is converged
+
+    We judge convergence by comparing the current \c residualNorm
+    to the user given \c convergenceTolerance and then return the
+    appropriate \c ReturnType
+    */
+    ReturnType IsConverged(const Teuchos::Array<MagnitudeType>& residualNorm,
+        const Scalar convergenceTolerance) const;
+
+    //! Print \c residualNorm for this \c iteration to the screen
+    void PrintResidualHistory(const LO iteration,
+        const Teuchos::Array<MagnitudeType>& residualNorm) const;
 
     //! Container for Level objects
     Array<RCP<Level> > Levels_;
