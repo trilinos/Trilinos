@@ -1619,7 +1619,7 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintResidualHistory(
 {
   GetOStream(Statistics1) << "iter:    "
       << std::setiosflags(std::ios::left)
-      << std::setprecision(3) << iteration
+      << std::setprecision(3) << std::setw(4) << iteration
       << "           residual = "
       << std::setprecision(10) << residualNorm
       << std::endl;
