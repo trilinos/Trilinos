@@ -120,9 +120,13 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys,
 
   int n = NumKeys;
   T * const list = Keys;
-  int m = n/2;
+  static int ciura[] = {1, 4, 10, 23, 57, 152, 301, 701, 1577, 3548, 7983,
+                        17961, 40412, 90927, 204585, 460316, 1035711, 2330349,
+                        5243285, 11797391, 26544129, 59724290, 134379652};
+  int c = sizeof(ciura) / sizeof(int);
 
-  while (m > 0) {
+  while (c-- > 0) {
+    int m = ciura[c];
     int max = n - m;
     for (int j=0; j<max; j++)
       {
@@ -151,7 +155,6 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, T * Keys,
       }
     }
       }
-    m = m/2;
   }
 }
 
@@ -197,9 +200,13 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
 
   int n = NumKeys;
   int * const list = Keys;
-  int m = n/2;
+  static int ciura[] = {1, 4, 10, 23, 57, 152, 301, 701, 1577, 3548, 7983,
+                        17961, 40412, 90927, 204585, 460316, 1035711, 2330349,
+                        5243285, 11797391, 26544129, 59724290, 134379652};
+  int c = sizeof(ciura) / sizeof(int);
 
-  while (m > 0) {
+  while (c-- > 0) {
+    int m = ciura[c];
     int max = n - m;
     for (int j=0; j<max; j++)
       {
@@ -223,7 +230,6 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys,
       }
     }
       }
-    m = m/2;
   }
 }
 
