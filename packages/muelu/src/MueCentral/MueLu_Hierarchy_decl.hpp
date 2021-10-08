@@ -372,6 +372,11 @@ namespace MueLu {
     void PrintResidualHistory(const LO iteration,
         const Teuchos::Array<MagnitudeType>& residualNorm) const;
 
+    //! Compute the residual norm and print it depending on the verbosity level
+    ReturnType ComputeResidualAndPrintHistory(const Operator& A, const MultiVector& X,
+        const MultiVector& B, const LO iteration,
+        const LO startLevel, const ConvData& conv, MagnitudeType& previousResidualNorm);
+
     //! Container for Level objects
     Array<RCP<Level> > Levels_;
 

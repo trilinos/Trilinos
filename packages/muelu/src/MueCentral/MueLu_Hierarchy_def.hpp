@@ -921,16 +921,7 @@ namespace MueLu {
     MagnitudeType prevNorm = STM::one(), curNorm = STM::one();
     rate_ = 1.0;
     if (IsCalculationOfResidualRequired(startLevel, conv))
-    {
-      Teuchos::Array<MagnitudeType> residualNorm;
-      residualNorm = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
-
-      if (IsPrint(Statistics1))
-        PrintResidualHistory(0, residualNorm); // Pass 0, since this is before first iteration
-
-      ReturnType convergenceStatus = IsConverged(residualNorm, conv.tol_);
-      if (convergenceStatus == Converged) return convergenceStatus;
-    }
+      ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
 
     SC one = STS::one(), zero = STS::zero();
     for (LO i = 1; i <= nIts; i++) {
@@ -1124,20 +1115,7 @@ namespace MueLu {
 
 
       if (IsCalculationOfResidualRequired(startLevel, conv))
-      {
-        Teuchos::Array<MagnitudeType> residualNorm;
-        residualNorm = Utilities::ResidualNorm(*A, X, B,*residual_[startLevel]);
-
-        prevNorm = curNorm;
-        curNorm  = residualNorm[0];
-        rate_ = as<MagnitudeType>(curNorm / prevNorm);
-
-        if (IsPrint(Statistics1))
-          PrintResidualHistory(i, residualNorm);
-
-        ReturnType convergenceStatus = IsConverged(residualNorm, conv.tol_);
-        if (convergenceStatus == Converged) return convergenceStatus;
-      }
+        ComputeResidualAndPrintHistory(*A, X, B, i, startLevel, conv, prevNorm);
     }
     return (tol > 0 ? Unconverged : Undefined);
   }
@@ -1623,6 +1601,24 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintResidualHistory(
       << "           residual = "
       << std::setprecision(10) << residualNorm
       << std::endl;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeResidualAndPrintHistory(
+    const Operator& A, const MultiVector& X, const MultiVector& B, const LO iteration,
+    const LO startLevel, const ConvData& conv, MagnitudeType& previousResidualNorm)
+{
+  Teuchos::Array<MagnitudeType> residualNorm;
+  residualNorm = Utilities::ResidualNorm(A, X, B, *residual_[startLevel]);
+
+  const MagnitudeType currentResidualNorm = residualNorm[0];
+  rate_ = currentResidualNorm / previousResidualNorm;
+  previousResidualNorm = currentResidualNorm;
+
+  if (IsPrint(Statistics1))
+    PrintResidualHistory(iteration, residualNorm);
+
+  return IsConverged(residualNorm, conv.tol_);
 }
 
 
