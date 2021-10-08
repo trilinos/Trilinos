@@ -909,12 +909,13 @@ namespace {
     }
 
     template <typename TransferMethod>
-    void performTransfer(const TransferMethod& transferMethod) {
-      transferMethod(sourceMV, targetMV);
+    void performTransfer(const TransferMethod& transfer) {
+      transfer(sourceMV, targetMV);
     }
 
-    void checkResults() {
-      RCP<const mv_type> referenceMV = generateReferenceWithClassicalCodePath();
+    template <typename ReferenceSolution>
+    void checkResults(const ReferenceSolution& referenceSolution) {
+      RCP<const mv_type> referenceMV = referenceSolution.generateWithClassicalCodePath(sourceMV, targetMap);
       compareMultiVectors(targetMV, referenceMV);
     }
 
@@ -927,19 +928,6 @@ namespace {
         const LO localRow = targetMap->getLocalElement(globalRow);
         TEST_EQUALITY(data(localRow, 0), referenceData(localRow, 0));
       }
-    }
-
-    RCP<mv_type> generateReferenceWithClassicalCodePath() {
-      Import<LO, GO> importer(sourceMap, targetMap, getImportParameterList());
-      expertSetRemoteLIDsContiguous(importer, false);
-      TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
-
-      RCP<mv_type> referenceMV = rcp(new mv_type(targetMap, 1));
-      referenceMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-      referenceMV->doImport(*sourceMV, importer, INSERT);
-      TEUCHOS_ASSERT(!referenceMV->importsAreAliased());
-
-      return referenceMV;
     }
 
     bool isSerial() {
@@ -966,6 +954,28 @@ namespace {
   };
 
   template <typename Scalar, typename LO, typename GO>
+  class ReferenceImport {
+  private:
+    using map_type = Map<LO, GO>;
+    using mv_type = MultiVector<Scalar, LO, GO>;
+
+  public:
+    RCP<mv_type> generateWithClassicalCodePath(RCP<mv_type> sourceMV, RCP<const map_type> targetMap) const {
+      RCP<const map_type> sourceMap = sourceMV->getMap();
+      Import<LO, GO> importer(sourceMap, targetMap, getImportParameterList());
+      expertSetRemoteLIDsContiguous(importer, false);
+      TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
+
+      RCP<mv_type> referenceMV = rcp(new mv_type(targetMap, 1));
+      referenceMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+      referenceMV->doImport(*sourceMV, importer, INSERT);
+      TEUCHOS_ASSERT(!referenceMV->importsAreAliased());
+
+      return referenceMV;
+    }
+  };
+
+  template <typename Scalar, typename LO, typename GO>
   class ForwardImport {
   private:
     using mv_type = MultiVector<Scalar, LO, GO>;
@@ -984,7 +994,7 @@ namespace {
 
     fixture.setupMultiVectors(0);
     fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
-    fixture.checkResults();
+    fixture.checkResults(ReferenceImport<Scalar, LO, GO>());
   }
 
 
