@@ -924,7 +924,7 @@ namespace MueLu {
       ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
 
     SC one = STS::one(), zero = STS::zero();
-    for (LO i = 1; i <= nIts; i++) {
+    for (LO iteration = 1; iteration <= nIts; iteration++) {
 #ifdef HAVE_MUELU_DEBUG
 #if 0 // TODO fix me
       if (A->getDomainMap()->isCompatible(*(X.getMap())) == false) {
@@ -1115,7 +1115,7 @@ namespace MueLu {
 
 
       if (IsCalculationOfResidualRequired(startLevel, conv))
-        ComputeResidualAndPrintHistory(*A, X, B, i, startLevel, conv, prevNorm);
+        ComputeResidualAndPrintHistory(*A, X, B, iteration, startLevel, conv, prevNorm);
     }
     return (tol > 0 ? Unconverged : Undefined);
   }
