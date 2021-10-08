@@ -164,7 +164,7 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
     }
     else{
       /* This could be a performance bottleneck depending on num_entries.  */
-      hash_range_max = 1000;
+      hash_range_max = 5000;
     }
   }
 
