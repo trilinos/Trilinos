@@ -359,7 +359,7 @@ namespace MueLu {
     bool IsCalculationOfResidualRequired(const LO startLevel, const ConvData& conv) const;
 
     /*!
-    \brief Decide if the mulitgrid iteration is converged
+    \brief Decide if the multigrid iteration is converged
 
     We judge convergence by comparing the current \c residualNorm
     to the user given \c convergenceTolerance and then return the
