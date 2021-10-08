@@ -454,10 +454,14 @@ namespace Tpetra {
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
-        DT m = n / 2;
+        static DT ciura[] = {1, 4, 10, 23, 57, 152, 301, 701, 1577, 3548, 7983,
+                             17961, 40412, 90927, 204585, 460316, 1035711, 2330349,
+                             5243285, 11797391, 26544129, 59724290, 134379652};
+        DT c = sizeof(ciura) / sizeof(DT);
         DT z = Teuchos::OrdinalTraits<DT>::zero();
-        while (m > z)
+        while (c-- > z)
         {
+            DT m = ciura[c];
             DT max = n - m;
             for (DT j = 0; j < max; j++)
             {
@@ -470,7 +474,6 @@ namespace Tpetra {
                     std::swap(first3[k+m], first3[k]);
                 }
             }
-            m = m/2;
         }
    }
 
@@ -489,10 +492,14 @@ namespace Tpetra {
    {
         typedef typename std::iterator_traits<IT1>::difference_type DT;
         DT n = last1 - first1;
-        DT m = n / 2;
+        static DT ciura[] = {1, 4, 10, 23, 57, 152, 301, 701, 1577, 3548, 7983,
+                             17961, 40412, 90927, 204585, 460316, 1035711, 2330349,
+                             5243285, 11797391, 26544129, 59724290, 134379652};
+        DT c = sizeof(ciura) / sizeof(DT);
         DT z = Teuchos::OrdinalTraits<DT>::zero();
-        while (m > z)
+        while (c-- > z)
         {
+            DT m = ciura[c];
             DT max = n - m;
             for (DT j = 0; j < max; j++)
             {
@@ -504,7 +511,6 @@ namespace Tpetra {
                     std::swap(first2[k+m], first2[k]);
                 }
             }
-            m = m/2;
         }
    }
 
