@@ -652,7 +652,7 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_ADDITIVE_VARIANT)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
+  ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
                                                                            bool InitialGuessIsZero, LO startLevel) {
     LO            nIts = conv.maxIts_;
     MagnitudeType tol  = conv.tol_;
@@ -851,12 +851,12 @@ namespace MueLu {
 
    //communicator->barrier();
 
-   return (tol > 0 ? Unconverged : Undefined);
+   return (tol > 0 ? ConvergenceStatus::Unconverged : ConvergenceStatus::Undefined);
 }
 #else
   // ---------------------------------------- Iterate -------------------------------------------------------
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
+  ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(const MultiVector& B, MultiVector& X, ConvData conv,
                                                                            bool InitialGuessIsZero, LO startLevel) {
     LO            nIts = conv.maxIts_;
     MagnitudeType tol  = conv.tol_;
@@ -902,7 +902,7 @@ namespace MueLu {
       // This processor does not have any data for this process on coarser
       // levels. This can only happen when there are multiple processors and
       // we use repartitioning.
-      return Undefined;
+      return ConvergenceStatus::Undefined;
     }
 
     // If we switched the number of vectors, we'd need to reallocate here.
@@ -1117,7 +1117,7 @@ namespace MueLu {
       if (IsCalculationOfResidualRequired(startLevel, conv))
         ComputeResidualAndPrintHistory(*A, X, B, iteration, startLevel, conv, prevNorm);
     }
-    return (tol > 0 ? Unconverged : Undefined);
+    return (tol > 0 ? ConvergenceStatus::Unconverged : ConvergenceStatus::Undefined);
   }
 #endif
 
@@ -1569,10 +1569,10 @@ bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsCalculationOfResidu
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsConverged(
+ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsConverged(
     const Teuchos::Array<MagnitudeType>& residualNorm, const Scalar convergenceTolerance) const
 {
-  ReturnType convergenceStatus = Undefined;
+  ConvergenceStatus convergenceStatus = ConvergenceStatus::Undefined;
 
   if (convergenceTolerance > 0)
   {
@@ -1582,9 +1582,9 @@ ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsConverged(
         passed = false;
 
     if (passed)
-      convergenceStatus = Converged;
+      convergenceStatus = ConvergenceStatus::Converged;
     else
-      convergenceStatus = Unconverged;
+      convergenceStatus = ConvergenceStatus::Unconverged;
   }
 
   return convergenceStatus;
@@ -1604,7 +1604,7 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrintResidualHistory(
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-ReturnType Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeResidualAndPrintHistory(
+ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeResidualAndPrintHistory(
     const Operator& A, const MultiVector& X, const MultiVector& B, const LO iteration,
     const LO startLevel, const ConvData& conv, MagnitudeType& previousResidualNorm)
 {

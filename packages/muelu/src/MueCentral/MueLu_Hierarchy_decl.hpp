@@ -80,7 +80,7 @@
 
 namespace MueLu {
 
-  enum ReturnType {
+  enum class ConvergenceStatus {
     Converged,
     Unconverged,
     Undefined
@@ -271,7 +271,7 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param startLevel index of starting level to build multigrid hierarchy (default = 0)
     */
-    ReturnType Iterate(const MultiVector& B, MultiVector& X, ConvData conv = ConvData(),
+    ConvergenceStatus Iterate(const MultiVector& B, MultiVector& X, ConvData conv = ConvData(),
                        bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!
@@ -363,9 +363,9 @@ namespace MueLu {
 
     We judge convergence by comparing the current \c residualNorm
     to the user given \c convergenceTolerance and then return the
-    appropriate \c ReturnType
+    appropriate \c ConvergenceStatus
     */
-    ReturnType IsConverged(const Teuchos::Array<MagnitudeType>& residualNorm,
+    ConvergenceStatus IsConverged(const Teuchos::Array<MagnitudeType>& residualNorm,
         const Scalar convergenceTolerance) const;
 
     //! Print \c residualNorm for this \c iteration to the screen
@@ -373,7 +373,7 @@ namespace MueLu {
         const Teuchos::Array<MagnitudeType>& residualNorm) const;
 
     //! Compute the residual norm and print it depending on the verbosity level
-    ReturnType ComputeResidualAndPrintHistory(const Operator& A, const MultiVector& X,
+    ConvergenceStatus ComputeResidualAndPrintHistory(const Operator& A, const MultiVector& X,
         const MultiVector& B, const LO iteration,
         const LO startLevel, const ConvData& conv, MagnitudeType& previousResidualNorm);
 
