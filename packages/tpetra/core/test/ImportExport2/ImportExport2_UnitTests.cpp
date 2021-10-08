@@ -908,18 +908,18 @@ namespace {
       targetMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
     }
 
-    void performTransfer() {
-      Import<LO, GO> importer(sourceMap, targetMap, getImportParameterList());
-      targetMV->doImport(*sourceMV, importer, INSERT);
+    template <typename TransferMethod>
+    void performTransfer(const TransferMethod& transferMethod) {
+      transferMethod(sourceMV, targetMV);
     }
 
     void checkResults() {
-      RCP<mv_type> referenceMV = generateReferenceWithClassicalCodePath();
+      RCP<const mv_type> referenceMV = generateReferenceWithClassicalCodePath();
       compareMultiVectors(targetMV, referenceMV);
     }
 
   private:
-    void compareMultiVectors(RCP<mv_type> resultMV, RCP<mv_type> referenceMV) {
+    void compareMultiVectors(RCP<const mv_type> resultMV, RCP<const mv_type> referenceMV) {
       auto data = resultMV->getLocalViewHost(Tpetra::Access::ReadOnly);
       auto referenceData = referenceMV->getLocalViewHost(Tpetra::Access::ReadOnly);
 
@@ -965,13 +965,25 @@ namespace {
     RCP<mv_type> targetMV;
   };
 
+  template <typename Scalar, typename LO, typename GO>
+  class ForwardImport {
+  private:
+    using mv_type = MultiVector<Scalar, LO, GO>;
+
+  public:
+    void operator()(RCP<mv_type> sourceMV, RCP<mv_type> targetMV) const {
+      Import<LO, GO> importer(sourceMV->getMap(), targetMV->getMap(), getImportParameterList());
+      targetMV->doImport(*sourceMV, importer, INSERT);
+    }
+  };
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVectorTransfer, asyncImport, LO, GO, Scalar )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) return;
 
     fixture.setupMultiVectors(0);
-    fixture.performTransfer();
+    fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
     fixture.checkResults();
   }
 
