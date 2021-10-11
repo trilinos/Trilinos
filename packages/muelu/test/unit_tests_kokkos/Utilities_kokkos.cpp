@@ -457,6 +457,12 @@ namespace MueLuTests
       }
     }
 
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+    TEST_THROW(Utils_Kokkos::MyOldScaleMatrix_Epetra(*A, arr, false, false), MueLu::Exceptions::RuntimeError);
+#else
+    TEST_THROW(Utils_Kokkos::MyOldScaleMatrix_Tpetra(*A, arr, false, false), MueLu::Exceptions::RuntimeError);
+#endif
+
   } //MyOldScaleMatrix
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ApplyOAZToMatrixRows, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -486,6 +492,71 @@ namespace MueLuTests
     }
   } //MyOldScaleMatrix
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+
+    using TST = Teuchos::ScalarTraits<Scalar>;
+    using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
+    auto map = A->getMap();
+    auto vector = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+    vector->randomize();
+
+#ifdef HAVE_MUELU_TPETRA
+    using MV = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using TpetraMV = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    auto compareMV = [&](const MV& mv, const TpetraMV& tpetraMV){
+      const auto origMV = mv.getVector(0);
+      const auto newMV = tpetraMV.getVector(0);
+
+      TEST_EQUALITY(origMV->meanValue(), newMV->meanValue());
+      TEST_EQUALITY(mv.getData(0).size(), tpetraMV.getData(0).size());
+    };
+
+    auto tpetraMV = Utils_Kokkos::MV2TpetraMV(vector);
+    compareMV(*vector, *tpetraMV);
+
+    auto tpetraMV2 = Utils_Kokkos::MV2TpetraMV(*vector);
+    compareMV(*vector, tpetraMV2);
+
+    auto nonConstTpetraMV = Utils_Kokkos::MV2NonConstTpetraMV(vector);
+    compareMV(*vector, *nonConstTpetraMV);
+
+    auto nonConstTpetraMV2 = Utils_Kokkos::MV2NonConstTpetraMV2(*vector);
+    compareMV(*vector, *nonConstTpetraMV2);
+
+    auto nonConstTpetraMV3 = Utils_Kokkos::MV2NonConstTpetraMV(*vector);
+    compareMV(*vector, nonConstTpetraMV3);
+
+    // auto mat = Utils_Kokkos::Op2TpetraCrs(A);
+    // auto mat2 = Utils_Kokkos::Op2NonConstTpetraCrs(A);
+
+    // auto mat3 = Utils_Kokkos::Op2TpetraCrs(*A);
+    // auto mat4 = Utils_Kokkos::Op2NonConstTpetraCrs(*A);
+
+    // auto mat5 = Utils_Kokkos::Op2TpetraRow(A);
+    // auto mat6 = Utils_Kokkos::Op2NonConstTpetraRow(A);
+
+    // auto tpetraMap = Utils_Kokkos::Map2TpetraMap(*map);
+#endif
+    // ParameterList params;
+    // int nx, ny;
+    // params.set("nx", nx);
+    // params.set("ny", ny);
+    // const auto coords = Utils_Kokkos::ExtractCoordinatesFromParameterList(params);
+
+    // const auto comm = Parameters::getDefaultComm();
+    // Utils_Kokkos::SetRandomSeed(*comm);
+
+    // Utils_Kokkos::MakeFancy(*(out.getOStream()));
+  } //MyOldScaleMatrix
+
 #define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, CuthillMcKee, SC, LO, GO, NO)                  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, DetectDirichletRows, SC, LO, GO, NO)           \
@@ -499,7 +570,8 @@ namespace MueLuTests
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ZeroDirichletCols, SC, LO, GO, NO)             \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyRowSumCriterion, SC, LO, GO, NO)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, MyOldScaleMatrix, SC, LO, GO, NO)              \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyOAZToMatrixRows, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyOAZToMatrixRows, SC, LO, GO, NO)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, TransformFunctions, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
