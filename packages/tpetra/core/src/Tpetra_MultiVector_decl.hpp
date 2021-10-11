@@ -157,6 +157,14 @@ namespace Tpetra {
   Teuchos::ArrayView<const size_t>
   getMultiVectorWhichVectors (const MultiVector<SC, LO, GO, NT>& X);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  // Forward definition needed for friending BlockMultiVector
+  // Need to friend it to prevent BlockMultiVector from issuing
+  // deprecation warnings.
+  template<class Scalar, class LO, class GO, class Node>
+  class BlockMultiVector;
+#endif
+
   /// \brief One or more distributed dense vectors.
   ///
   /// A "multivector" contains one or more dense vectors.  All the
@@ -1505,6 +1513,13 @@ namespace Tpetra {
     //! Synchronize to Device
     TPETRA_DEPRECATED
     void sync_device ();
+
+    // Friend needed to prevent deprecation warnings from BlockMultiVector's 
+    // calls to MV's sync* and modify* methods.  The friendship is temporary 
+    // to allow BlockMultiVector to access MultiVector's view_ directly,
+    // rather than call MV's deprecated functions.
+    friend BlockMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Whether this MultiVector needs synchronization to the given space.

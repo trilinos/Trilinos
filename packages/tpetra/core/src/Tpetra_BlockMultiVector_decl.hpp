@@ -459,19 +459,19 @@ public:
   template<class TargetMemorySpace>
   TPETRA_DEPRECATED
   void sync () {
-    mv_.template sync<typename TargetMemorySpace::memory_space> ();
+    mv_.view_.getOridinalDualView().template sync<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Update data to the host
   TPETRA_DEPRECATED
   void sync_host() {
-    mv_.sync_host();
+    mv_.view_.getOriginalDualView().sync_host ();
   }
 
   /// \brief Update data to the device
   TPETRA_DEPRECATED
   void sync_device() {
-    mv_.sync_device();
+    mv_.view_.getOriginalDualView().sync_device ();
   }
 
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -502,19 +502,19 @@ public:
   template<class TargetMemorySpace>
   TPETRA_DEPRECATED
   void modify () {
-    mv_.template modify<typename TargetMemorySpace::memory_space> ();
+    mv_.view_.getOriginalDualView().template modify<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Mark data as modified on the host
   TPETRA_DEPRECATED
   void modify_host() {
-    mv_.modify_host();
+    mv_.view_.getOriginalDualView().modify_host ();
   }
 
   /// \brief Mark data as modified on the device
   TPETRA_DEPRECATED
   void modify_device() {
-    mv_.modify_device();
+    mv_.view_.getOriginalDualView().modify_device ();
   }
 
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -702,7 +702,12 @@ protected:
   ///   index in the mesh Map.
   bool isValidLocalMeshIndex (const LO meshLocalIndex) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+// Allow BlockVector to access meshMap_
+protected:
+#else
 private:
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Mesh Map given to constructor.
   ///
   /// This is stored by value, not as a Teuchos::RCP, because the
@@ -710,6 +715,7 @@ private:
   /// thread-safe.
   map_type meshMap_;
 
+private:
   //! The point Map (describing the distribution of degrees of freedom).
   map_type pointMap_;
 

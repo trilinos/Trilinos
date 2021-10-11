@@ -3660,11 +3660,11 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       else {
         numEnt = static_cast<LO> (rowInfo.numEntries);
         auto lclColInds = staticGraph_->getLocalIndsViewHost (rowInfo);
-        // KDDKDD UVM Breaks reference counting; unsafe
+        // UVM Note:  Breaks reference counting; unsafe
         ind = lclColInds.data (); 
 
         auto values = getValuesViewHost (rowInfo);
-        // KDDKDD UVM Breaks reference counting; unsafe
+        // UVM Note:  Breaks reference counting; unsafe
         val = values.data();
         return values.extent(0);
       }
@@ -3679,14 +3679,34 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowViewRaw (const LocalOrdinal lclRow,
                       LocalOrdinal& numEnt,
-                      const LocalOrdinal*& lclColInds,
-                      const Scalar*& vals) const
+                      const LocalOrdinal*& ind,
+                      const Scalar*& val) const
   {
-    const impl_scalar_type* vals_ist = nullptr;
-    const LocalOrdinal errCode =
-      this->getLocalRowView (lclRow, numEnt, vals_ist, lclColInds);
-    vals = reinterpret_cast<const Scalar*> (vals_ist);
-    return errCode;
+    typedef LocalOrdinal LO;
+    if (staticGraph_.is_null () || staticGraph_->isGloballyIndexed ()) {
+      return Tpetra::Details::OrdinalTraits<LO>::invalid ();
+    }
+    else {
+      const RowInfo rowInfo = staticGraph_->getRowInfo (lclRow);
+      if (rowInfo.localRow == Tpetra::Details::OrdinalTraits<size_t>::invalid ()) {
+        numEnt = 0; // no valid entries in this row on the calling process
+        val = nullptr;
+        ind = nullptr;
+        // First argument (lclRow) invalid, so make 1 the error code.
+        return static_cast<LO> (1);
+      }
+      else {
+        numEnt = static_cast<LO> (rowInfo.numEntries);
+        auto lclColInds = staticGraph_->getLocalIndsViewHost (rowInfo);
+        // UVM Note:  Breaks reference counting; unsafe
+        ind = lclColInds.data (); 
+
+        auto values = getValuesViewHost (rowInfo);
+        // UVM Note:  Breaks reference counting; unsafe
+        val = reinterpret_cast<const Scalar*> (values.data());
+        return values.extent(0);
+      }
+    }
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 

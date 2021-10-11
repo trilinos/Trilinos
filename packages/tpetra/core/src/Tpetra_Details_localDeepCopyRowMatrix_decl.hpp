@@ -54,8 +54,12 @@ namespace Tpetra {
 namespace Details {
 
 //! Deep copy of A's local sparse matrix.
+// This function is deprecated, but users don't call it directly; it is a 
+// helper from createDeepCopy.  createDeepCopy is also deprecated.
+// We silence TPETRA_DEPRECATED warnings here to prevent noise from
+// compilation of createDeepCopy.
+// TPETRA_DEPRECATED
 template <class SC, class LO, class GO, class NT>
-TPETRA_DEPRECATED
 KokkosSparse::CrsMatrix<
   typename Kokkos::ArithTraits<SC>::val_type,
     LO,
