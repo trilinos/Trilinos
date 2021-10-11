@@ -788,9 +788,9 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
   use_metis_ = parameterList->get<bool>("UseMetis", false);
   symmetrize_metis_ = parameterList->get<bool>("SymmetrizeMetis", true);
 
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
   use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
   if(use_triangular_solves_) {
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     // specify whether to invert diagonal blocks
     sptrsv_invert_diag_ = parameterList->get<bool>("SpTRSV_Invert_Diag", true);
     // specify whether to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
@@ -801,11 +801,11 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
     sptrsv_merge_supernodes_ = parameterList->get<bool>("SpTRSV_Merge_Supernodes", false);
     // specify whether to use spmv for sptrsv
     sptrsv_use_spmv_ = parameterList->get<bool>("SpTRSV_Use_SpMV", false);
-  }
 #else
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-    "Calling for triangular solves but KokkosKernels_ENABLE_SUPERNODAL_SPTRSV and KokkosKernels_ENABLE_TPL_SUPERLU were not configured." );
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+      "Calling for triangular solves but KokkosKernels_ENABLE_SUPERNODAL_SPTRSV and KokkosKernels_ENABLE_TPL_SUPERLU were not configured." );
 #endif
+  }
 }
 
 
