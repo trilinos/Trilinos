@@ -9,6 +9,7 @@
 #include <Ioss_Assembly.h>
 #include <Ioss_Beam2.h>
 #include <Ioss_Beam3.h>
+#include <Ioss_CodeTypes.h>
 #include <Ioss_FaceGenerator.h>
 #include <Ioss_Hex20.h>
 #include <Ioss_Hex27.h>
@@ -57,7 +58,7 @@
     Iocgns::Utils::cgns_error(file_ptr, __FILE__, __func__, __LINE__, -1);                         \
   }
 
-#ifdef _WIN32
+#if defined(__IOSS_WINDOWS__)
 #ifdef _MSC_VER
 #define strncasecmp strnicmp
 #endif

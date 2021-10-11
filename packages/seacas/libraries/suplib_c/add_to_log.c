@@ -6,12 +6,15 @@
  * See packages/seacas/LICENSE for details
  */
 
+#if !defined(WIN32) && !defined(__WIN32__) && !defined(_WIN32) && !defined(_MSC_VER) &&            \
+    !defined(__MINGW32__) && !defined(_WIN64) && !defined(__MINGW64__)
+/* Currently we just disable this functionality for windows-based systems... */
 #include <stdlib.h>
 #include <string.h>
-#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
+
 #include <sys/times.h>
 #include <sys/utsname.h>
-#endif
+
 #include <time.h>
 #include <unistd.h>
 
@@ -19,10 +22,12 @@
 #define __USE_XOPEN
 #endif
 #include <stdio.h>
+#endif
 
 void add_to_log(const char *my_name, double elapsed)
 {
-#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
+#if !defined(WIN32) && !defined(__WIN32__) && !defined(_WIN32) && !defined(_MSC_VER) &&            \
+    !defined(__MINGW32__) && !defined(_WIN64) && !defined(__MINGW64__)
 #define LEN 512
   /* Don't log information if this environment variable is set */
   if (getenv("SEACAS_NO_LOGGING") != NULL) {
@@ -86,5 +91,9 @@ void add_to_log(const char *my_name, double elapsed)
       }
     }
   }
+#else
+  /* Try to avoid unused variable warning/error on windows-based system */
+  (void)my_name;
+  (void)elapsed;
 #endif
 }

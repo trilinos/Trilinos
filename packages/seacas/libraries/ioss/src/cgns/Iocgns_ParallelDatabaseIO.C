@@ -378,7 +378,7 @@ namespace Iocgns {
     if (n_bases != 1) {
       std::ostringstream errmsg;
       fmt::print(errmsg,
-                 "CGNS: Too many bases ({}); only support files with a single bases at this time",
+                 "CGNS: Too many bases ({}); only support files with a single base at this time",
                  n_bases);
       IOSS_ERROR(errmsg);
     }

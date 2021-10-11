@@ -114,8 +114,9 @@ namespace Iofaodel {
   std::string to_string(const Ioss::Field::RoleType &t);
   std::string to_string(const Ioss::EntityType &t);
 
-  std::string           get_entity_name(const kelpie::Key &k, std::string target);
-  std::set<std::string> get_entity_names(const std::vector<kelpie::Key> &keys, std::string target);
+  std::string           get_entity_name(const kelpie::Key &k, const std::string &target);
+  std::set<std::string> get_entity_names(const std::vector<kelpie::Key> &keys, 
+                                         const std::string              &target);
 
 } // namespace Iofaodel
 

@@ -8,6 +8,21 @@
 #undef NDEBUG
 
 #include <Ionit_Initializer.h>
+
+#include <Ioss_CodeTypes.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_GetLongOpt.h>
+#include <Ioss_IOFactory.h>
+#include <Ioss_Property.h>
+#include <Ioss_Region.h>
+#include <Ioss_ScopeGuard.h>
+#include <Ioss_SmartAssert.h>
+#include <Ioss_Utils.h>
+#include <Ioss_ZoneConnectivity.h>
+
+#include <cgns/Iocgns_StructuredZoneData.h>
+#include <cgns/Iocgns_Utils.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -23,26 +38,12 @@
 #include <set>
 #include <stdexcept>
 #include <string>
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
 #include <sys/ioctl.h>
 #endif
 #include <unistd.h>
 #include <utility>
 #include <vector>
-
-#include <Ioss_CodeTypes.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_GetLongOpt.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_Property.h>
-#include <Ioss_Region.h>
-#include <Ioss_ScopeGuard.h>
-#include <Ioss_SmartAssert.h>
-#include <Ioss_Utils.h>
-#include <Ioss_ZoneConnectivity.h>
-
-#include <cgns/Iocgns_StructuredZoneData.h>
-#include <cgns/Iocgns_Utils.h>
 
 #include <fmt/color.h>
 #include <fmt/format.h>

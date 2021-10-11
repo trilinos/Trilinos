@@ -6,13 +6,13 @@
  * See packages/seacas/LICENSE for details
  */
 #include "CP_SystemInterface.h"
-#include "CP_Version.h"  // for qainfo
-#include "GetLongOpt.h"  // for GetLongOption, etc
+#include "CP_Version.h" // for qainfo
+#include "GetLongOpt.h" // for GetLongOption, etc
+#include "Ioss_CodeTypes.h"
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
 #include <cctype>        // for tolower
 #include <copyright.h>
-#include <cstddef> // for size_t
 #include <cstdlib> // for strtol, abs, exit, strtoul, etc
 #include <cstring> // for strchr, strlen
 #include <fmt/ostream.h>
@@ -26,7 +26,7 @@
 namespace {
   bool is_path_absolute(const std::string &path)
   {
-#ifdef _WIN32
+#ifdef __IOSS_WINDOWS__
     return path[0] == '\\' || path[1] == ':';
 #else
     return path[0] == '/';

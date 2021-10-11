@@ -56,8 +56,10 @@ extern int H5get_libversion(unsigned *, unsigned *, unsigned *);
 #endif
 #endif
 
+#if 0
 #if NC_HAS_PNETCDF
 extern char *ncmpi_inq_libvers();
+#endif
 #endif
 
 /*!
@@ -124,8 +126,12 @@ const char *ex_config(void)
 #endif
 #if NC_HAS_PNETCDF
   {
+#if 0
     char *libver = ncmpi_inq_libvers();
     j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF (%s)\n", libver);
+#else
+    j += sprintf(buffer + j, "\t\tParallel IO enabled via PnetCDF.\n");
+#endif
   }
 #else
   j += sprintf(buffer + j, "\t\tParallel IO *NOT* enabled via PnetCDF\n");
