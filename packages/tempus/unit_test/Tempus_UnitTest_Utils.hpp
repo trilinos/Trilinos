@@ -14,6 +14,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
 #include "NOX_Thyra.H"
 
 #include "Tempus_StepperFactory.hpp"
@@ -30,6 +31,8 @@ using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
+
+using Thyra::get_ele;
 
 using Tempus::StepperFactory;
 

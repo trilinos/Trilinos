@@ -184,8 +184,9 @@ Teuchos::RCP<SolutionState<Scalar> >
 SolutionHistory<Scalar>::findState(const Scalar time) const
 {
   // Use last step in solution history as the scale for comparing times
-  const Scalar scale =
-    history_->size() > 0 ? (*history_)[history_->size()-1]->getTime() : Scalar(1.0);
+  Scalar scale = 1.0;
+  if (history_->size() > 0) scale = (*history_)[history_->size()-1]->getTime();
+  if (approxZero(scale)) scale = Scalar(1.0);
 
   const Scalar absTol = scale*numericalTol<Scalar>();
   TEUCHOS_TEST_FOR_EXCEPTION(
