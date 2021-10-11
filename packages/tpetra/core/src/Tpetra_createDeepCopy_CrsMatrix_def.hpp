@@ -17,8 +17,8 @@ namespace Tpetra {
 namespace { // (anonymous)
 
 template<class SC, class LO, class GO, class NT>
-typename CrsMatrix<SC, LO, GO, NT>::local_matrix_type
 TPETRA_DEPRECATED
+typename CrsMatrix<SC, LO, GO, NT>::local_matrix_type
 localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
 {
   using Kokkos::view_alloc;
@@ -53,8 +53,8 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
 } // namespace // (anonymous)
 
 template<class SC, class LO, class GO, class NT>
-CrsMatrix<SC, LO, GO, NT>
 TPETRA_DEPRECATED
+CrsMatrix<SC, LO, GO, NT>
 createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
 {
   using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;

@@ -2270,6 +2270,7 @@ namespace Tpetra {
     ///   are responsible for knowing when it is safe to call this
     ///   method.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     local_matrix_type getLocalMatrix () const;
 #endif
     local_matrix_device_type getLocalMatrixDevice () const;
@@ -2537,27 +2538,6 @@ public:
     using nonconst_values_host_view_type = 
           typename row_matrix_type::nonconst_values_host_view_type;
 
-//KDDKDD INROW    using values_host_view_type = 
-//KDDKDD INROW          typename values_dualv_type::t_host::const_type;
-//KDDKDD INROW    using values_device_view_type = 
-//KDDKDD INROW          typename values_dualv_type::t_dev::const_type;
-
-//KDDKDD INROW    using local_inds_host_view_type =
-//KDDKDD INROW          typename crs_graph_type::local_inds_host_view_type;
-//KDDKDD INROW    using local_inds_device_view_type =
-//KDDKDD INROW          typename crs_graph_type::local_inds_device_view_type;
-
-//KDDKDD INROW    using global_inds_host_view_type =
-//KDDKDD INROW          typename crs_graph_type::global_inds_host_view_type;
-//KDDKDD INROW    using global_inds_device_view_type =
-//KDDKDD INROW          typename crs_graph_type::global_inds_device_view_type;
-
-//KDDKDD INROW    using row_ptrs_host_view_type =
-//KDDKDD INROW          typename crs_graph_type::row_ptrs_host_view_type;
-//KDDKDD INROW    using row_ptrs_device_view_type =
-//KDDKDD INROW          typename crs_graph_type::row_ptrs_device_view_type;
-
-
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using global column
     ///   indices.
@@ -2639,6 +2619,7 @@ public:
                      nonconst_values_host_view_type &Values,
                      size_t& NumEntries) const override;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getLocalRowCopy (LocalOrdinal localRow,
                      const Teuchos::ArrayView<LocalOrdinal>& colInds,
@@ -2681,6 +2662,7 @@ public:
     /// If \c LocalRow is not a valid local row index on the calling
     /// process, then \c indices is set to null.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    TPETRA_DEPRECATED
     void
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
@@ -2717,6 +2699,7 @@ public:
     /// \param vals       [out] Matrix values.
     ///
     /// \return Error code; zero on no error.
+    TPETRA_DEPRECATED
     LocalOrdinal
     getLocalRowViewRaw (const LocalOrdinal lclRow,
                         LocalOrdinal& numEnt,
@@ -2748,6 +2731,7 @@ public:
     /// contain too many duplicate entries, the number of column
     /// indices can always fit in \c LocalOrdinal.  Otherwise, the
     /// column Map would be incorrect.
+    TPETRA_DEPRECATED
     LocalOrdinal
     getLocalRowView (const LocalOrdinal lclRow,
                      LocalOrdinal& numEnt,
@@ -2764,6 +2748,7 @@ public:
     /// pointer.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class OutputScalarType>
+    TPETRA_DEPRECATED
     typename std::enable_if<! std::is_same<OutputScalarType, impl_scalar_type>::value &&
                             std::is_convertible<impl_scalar_type, OutputScalarType>::value,
                             LocalOrdinal>::type
@@ -3400,7 +3385,7 @@ public:
   public:
     //! Get the Kokkos local values
     typename local_matrix_device_type::values_type getLocalValuesView () const {
-// KDDKDD UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
+      // TODO:  UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
       return valuesPacked_wdv.getDeviceView(Access::ReadWrite);
     }
 
@@ -3991,7 +3976,12 @@ public:
     /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
     /// this method is <i>not</i> part of the public interface of
     /// CrsMatrix.
-    Teuchos::ArrayView<const impl_scalar_type> getView (RowInfo rowinfo) const;
+    ///
+    /// Deprecated but protected; 
+    /// not emitting warnings prevents Tpetra from emitting deprecation warnings
+    /// TPETRA_DEPRECATED
+    Teuchos::ArrayView<const impl_scalar_type> 
+    getView (RowInfo rowinfo) const;
 #endif
 
   protected:
@@ -4039,19 +4029,6 @@ public:
     Teuchos::RCP<const Graph> staticGraph_;
     Teuchos::RCP<      Graph>     myGraph_;
     //@}
-
-    //! The local sparse matrix, wrapped in a multiply operator.
-// KDDKDD DELETE
-//    std::shared_ptr<local_multiply_op_type> lclMatrix_;
-// KDDKDD DELETE
-
-    /// \brief Sparse matrix values, as part of compressed sparse row
-    ///   ("1-D") storage.
-    ///
-    /// Before allocation, this array is empty.
-// KDDKDD DELETE
-    typename local_matrix_device_type::values_type k_values1D_;
-// KDDKDD DELETE
 
 protected:
     /// \brief Status of the matrix's storage, when not in a

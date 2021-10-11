@@ -1022,6 +1022,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrix () const
@@ -1274,7 +1275,6 @@ namespace Tpetra {
         << e.what ());
     }
     Teuchos::ArrayRCP<const impl_scalar_type> vals =
-//      Kokkos::Compat::persistingView (k_values1D_);
       Kokkos::Compat::persistingView (valuesUnpacked_wdv.getHostView(Access::ReadOnly));
     values = Teuchos::arcp_reinterpret_cast<const Scalar> (vals);
   }
@@ -1290,7 +1290,7 @@ namespace Tpetra {
       relevantGraph.is_null (), std::runtime_error,
       "Requires that getCrsGraph() is not null.");
     Teuchos::ArrayRCP<impl_scalar_type> vals =
-      Kokkos::Compat::persistingView (k_values1D_);
+      Kokkos::Compat::persistingView (valuesUnpacked_wdv.getHostView(Access::ReadWrite));
     values = Teuchos::arcp_reinterpret_cast<Scalar> (vals);
   }
 
@@ -3263,6 +3263,9 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  // Deprecated but protected; 
+  // not emitting warnings prevents Tpetra from emitting deprecation warnings
+  // TPETRA_DEPRECATED
   Teuchos::ArrayView<const typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getView (RowInfo rowinfo) const
@@ -3361,6 +3364,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowCopy (LocalOrdinal localRow,
@@ -3462,6 +3466,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowCopy (GlobalOrdinal globalRow,
@@ -3568,6 +3573,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (LocalOrdinal localRow,
@@ -3624,6 +3630,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (const LocalOrdinal lclRow,
@@ -3667,6 +3674,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   LocalOrdinal
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowViewRaw (const LocalOrdinal lclRow,
@@ -3740,6 +3748,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowView (GlobalOrdinal globalRow,
@@ -3881,11 +3890,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     valuesPacked_wdv = values_wdv_type(values);
     valuesUnpacked_wdv = valuesPacked_wdv;
-
-    // FIXME (22 Jun 2016) I would very much like to get rid of
-    // k_values1D_ at some point.  I find it confusing to have all
-    // these extra references lying around.
-//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.

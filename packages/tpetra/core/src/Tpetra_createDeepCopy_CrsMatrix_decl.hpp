@@ -10,8 +10,8 @@
 namespace Tpetra {
 
 template<class SC, class LO, class GO, class NT>
-CrsMatrix<SC, LO, GO, NT>
 TPETRA_DEPRECATED
+CrsMatrix<SC, LO, GO, NT>
 createDeepCopy (const RowMatrix<SC, LO, GO, NT>& in);
 
 } // namespace Tpetra

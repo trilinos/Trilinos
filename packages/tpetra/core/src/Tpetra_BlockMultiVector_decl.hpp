@@ -457,19 +457,19 @@ public:
   ///   it, by calling the modify() method with the appropriate
   ///   template parameter.
   template<class TargetMemorySpace>
-  //TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   void sync () {
     mv_.template sync<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Update data to the host
-  //TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   void sync_host() {
     mv_.sync_host();
   }
 
   /// \brief Update data to the device
-  //TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   void sync_device() {
     mv_.sync_device();
   }
@@ -500,19 +500,19 @@ public:
   /// object's memory space, then mark the device's data as modified.
   /// Otherwise, mark the host's data as modified.
   template<class TargetMemorySpace>
-  //TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   void modify () {
     mv_.template modify<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Mark data as modified on the host
-  //TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   void modify_host() {
     mv_.modify_host();
   }
 
   /// \brief Mark data as modified on the device
-  //TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   void modify_device() {
     mv_.modify_device();
   }
@@ -588,7 +588,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given local index of the mesh point
   ///   is invalid on the calling process.
-  // TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   bool getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals);
 
   /// \brief Get a writeable view of the entries at the given mesh
@@ -601,7 +601,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point
   ///   is invalid on the calling process.
-  // TPETRA_DEPRECATED
+  TPETRA_DEPRECATED
   bool getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals);
 
   /// \brief Get a host view of the degrees of freedom at the given
@@ -612,7 +612,7 @@ public:
   /// future.  If you insist not to use \c auto, then please use the
   /// \c little_vec_type typedef to deduce the correct return type;
   /// don't try to hard-code the return type yourself.
-  //TPETRA_DEPRECATED 
+  TPETRA_DEPRECATED 
   little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex);
 
 #endif // TPETRA_ENABLE_DEPRECATED_CODE

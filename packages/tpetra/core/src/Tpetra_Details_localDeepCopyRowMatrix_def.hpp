@@ -58,13 +58,13 @@ namespace Tpetra {
 namespace Details {
 
 template <class SC, class LO, class GO, class NT>
+TPETRA_DEPRECATED
 KokkosSparse::CrsMatrix<
   typename Kokkos::ArithTraits<SC>::val_type,
     LO,
     typename NT::device_type,
     void,
     size_t>
-TPETRA_DEPRECATED
 localDeepCopyLocallyIndexedRowMatrix
 (const RowMatrix<SC, LO, GO, NT>& A,
  const char label[])
