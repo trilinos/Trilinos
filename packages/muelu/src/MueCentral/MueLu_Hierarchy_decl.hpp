@@ -366,7 +366,7 @@ namespace MueLu {
     appropriate \c ConvergenceStatus
     */
     ConvergenceStatus IsConverged(const Teuchos::Array<MagnitudeType>& residualNorm,
-        const Scalar convergenceTolerance) const;
+        const MagnitudeType convergenceTolerance) const;
 
     //! Print \c residualNorm for this \c iteration to the screen
     void PrintResidualHistory(const LO iteration,

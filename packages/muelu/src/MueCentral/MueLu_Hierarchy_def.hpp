@@ -918,7 +918,7 @@ namespace MueLu {
 
     // Print residual information before iterating
     typedef Teuchos::ScalarTraits<typename STS::magnitudeType> STM;
-    MagnitudeType prevNorm = STM::one(), curNorm = STM::one();
+    MagnitudeType prevNorm = STM::one();
     rate_ = 1.0;
     if (IsCalculationOfResidualRequired(startLevel, conv))
       ComputeResidualAndPrintHistory(*A, X, B, Teuchos::ScalarTraits<LO>::zero(), startLevel, conv, prevNorm);
@@ -1570,11 +1570,11 @@ bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsCalculationOfResidu
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::IsConverged(
-    const Teuchos::Array<MagnitudeType>& residualNorm, const Scalar convergenceTolerance) const
+    const Teuchos::Array<MagnitudeType>& residualNorm, const MagnitudeType convergenceTolerance) const
 {
   ConvergenceStatus convergenceStatus = ConvergenceStatus::Undefined;
 
-  if (convergenceTolerance > 0)
+  if (convergenceTolerance > Teuchos::ScalarTraits<MagnitudeType>::zero())
   {
     bool passed = true;
     for (LO k = 0; k < residualNorm.size(); k++)
