@@ -8,8 +8,6 @@
 #define EXOII_READ_H
 
 #include "exo_entity.h"
-#include "exodusII.h"
-#include "netcdf.h"
 
 #include <iostream>
 #include <string>

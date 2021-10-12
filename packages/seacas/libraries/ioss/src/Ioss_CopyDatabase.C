@@ -16,7 +16,7 @@
 #include <fmt/ostream.h>
 
 // For Sleep...
-#if defined(_WIN32)
+#if defined(__IOSS_WINDOWS__)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>

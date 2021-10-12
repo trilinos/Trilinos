@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2021 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -8,8 +8,8 @@
 ########################################################################
 function usage {
 cat <<CONJOIN_USAGE_EOF
-Usage:  conjoinp --proc_count <proc_count> --basename <file.ext> -- ...normal conjoin options...
-	conjoinp --auto <file.ext.{nproc}.000> -- ...normal conjoin options...
+Usage:  pconjoin --proc_count <proc_count> --basename <file.ext> -- ...normal conjoin options...
+	pconjoin --auto <file.ext.{nproc}.000> -- ...normal conjoin options...
 
    Given a set of decomposed files with multiple topology changes
    (e.g., there are 'results.e-s????.42.{0..41}' variants of the files)
@@ -20,10 +20,10 @@ Usage:  conjoinp --proc_count <proc_count> --basename <file.ext> -- ...normal co
    without the '-s000?' portion (file.e.42.21)
 
    NOTE: Any "normal conjoin options" must be separated by a '--'
-         or they will be treated as options to conjoinp and probably
+         or they will be treated as options to pconjoin and probably
 	 ignored.
 
-   ->->-> Send email to gdsjaar@sandia.gov for conjoinp support.<-<-<-
+   ->->-> Send email to gdsjaar@sandia.gov for pconjoin support.<-<-<-
 
    Uses: GNU Parallel,
    	 O. Tange (2018): GNU Parallel 2018, Mar 2018, ISBN 9781387509881,
@@ -86,7 +86,7 @@ GETOPT=${ACCESS_BIN}/getopt.seacas
 
 TEMP=`${GETOPT}  -o hp:n:f:a: -a \
     --long help,proc_count:,basename:,auto: \
-    -n 'conjoinp' -- "$@"`
+    -n 'pconjoin' -- "$@"`
 
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
@@ -118,5 +118,5 @@ then
     echo "${txtred}ERROR     During conjoin execution. Check error output above and rerun${txtrst}"
     exit 1
 else
-    echo "${txtgrn}...conjoinp successful execution${txtrst}"
+    echo "${txtgrn}...pconjoin successful execution${txtrst}"
 fi

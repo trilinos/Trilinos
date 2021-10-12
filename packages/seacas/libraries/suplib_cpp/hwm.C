@@ -1,5 +1,10 @@
 // For memory utilities...
-#if defined(_WIN32)
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+#define __SUP_WINDOWS__ 1
+#endif
+
+#if defined(__SUP_WINDOWS__)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #if 0
@@ -34,7 +39,7 @@ size_t get_hwm_memory_info()
 {
   // Code from http://nadeausoftware.com/sites/NadeauSoftware.com/files/getRSS.c
   size_t memory_usage = 0;
-#if defined(_WIN32)
+#if defined(__SUP_WINDOWS__)
 #if 0
   /* Windows -------------------------------------------------- */
   PROCESS_MEMORY_COUNTERS info;

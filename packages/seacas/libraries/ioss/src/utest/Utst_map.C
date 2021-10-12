@@ -1,10 +1,11 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #define CATCH_CONFIG_MAIN
+#include <Ioss_CodeTypes.h>
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Field.h>
 #include <Ioss_Map.h>
@@ -93,8 +94,12 @@ TEST_CASE("test sequential map with offset", "[sequential offset]")
   Ioss::Map my_map;
   my_map.set_size(count);
 
-  std::vector<int64_t>     init(count);
-  std::vector<size_t>      offsets{0, 123, 8589934592};
+  std::vector<int64_t> init(count);
+#if defined(__IOSS_WINDOWS__)
+  std::vector<size_t> offsets{0, 123, 858993459};
+#else
+  std::vector<size_t> offsets{0, 123, 8589934592};
+#endif
   std::vector<std::string> sections{"offset0", "offset123", "offsetBIG"};
 
   for (size_t i = 0; i < offsets.size(); i++) {

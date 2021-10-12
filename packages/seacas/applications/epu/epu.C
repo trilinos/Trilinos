@@ -60,9 +60,7 @@ using StringVector = std::vector<std::string>;
 #error "Requires exodusII version 4.68 or later"
 #endif
 
-#ifndef _WIN32
 #include "add_to_log.h"
-#endif
 
 // The main program templated to permit float/double transfer.
 template <typename T, typename INT>
@@ -609,12 +607,10 @@ int main(int argc, char *argv[])
       }
     }
 
-#ifndef _WIN32
     time_t end_time = std::time(nullptr);
     if (rank == 0) {
       add_to_log(argv[0], static_cast<int>(end_time - begin_time));
     }
-#endif
     return (error);
   }
   catch (std::exception &e) {

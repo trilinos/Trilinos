@@ -12,7 +12,6 @@
 #include <climits>      // for INT_MAX
 #include <iosfwd>       // for ostream
 #include <string>       // for string
-#include <utility>      // for pair
 #include <vector>       // for vector
 
 namespace Cpup {

@@ -30,7 +30,7 @@
 #include <iostream>
 #include <numeric>
 #include <string>
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
 #include <sys/select.h>
 #endif
 #include <tokenize.h>
