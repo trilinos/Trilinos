@@ -94,6 +94,11 @@ at_plus_a(
 
     namespace S {               // single-precision real definitions
 
+      extern float slangs (char *, SLU::SuperMatrix *);
+
+      extern void sgscon (char *, SuperMatrix *, SuperMatrix *,
+                          float, float *, SuperLUStat_t*, int *);
+
 #ifdef HAVE_AMESOS2_SUPERLU5_API
 		typedef struct {
 			int     *xsup;    /* supernode and column mapping */
@@ -175,6 +180,11 @@ at_plus_a(
     }
 
     namespace D {               // double-precision real definitions
+
+      extern double dlangs (char *, SLU::SuperMatrix *);
+
+      extern void dgscon (char *, SuperMatrix *, SuperMatrix *,
+                          double, double *, SuperLUStat_t*, int *);
 
 #ifdef HAVE_AMESOS2_SUPERLU5_API
 		typedef struct {
@@ -259,6 +269,11 @@ at_plus_a(
 #ifdef HAVE_TEUCHOS_COMPLEX
     namespace C {              // single-precision complex definitions
 
+      extern float clangs (char *, SLU::SuperMatrix *);
+
+      extern void cgscon (char *, SuperMatrix *, SuperMatrix *,
+                          float, float *, SuperLUStat_t*, int *);
+
 #ifdef HAVE_AMESOS2_SUPERLU5_API
 		typedef struct {
 			int     *xsup;    /* supernode and column mapping */
@@ -340,6 +355,11 @@ at_plus_a(
     }
 
     namespace Z {              // double-precision complex definitions
+
+      extern double zlangs (char *, SLU::SuperMatrix *);
+
+      extern void zgscon (char *, SuperMatrix *, SuperMatrix *,
+                          double, double *, SuperLUStat_t*, int *);
 
 #ifdef HAVE_AMESOS2_SUPERLU5_API
 		typedef struct {
@@ -465,6 +485,17 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_SUPERLU5_API
     typedef typename SLU::S::GlobalLU_t GlobalLU_type;
 #endif
+
+    static float langs(char *norm, SLU::SuperMatrix *A)
+    {
+      return SLU::S::slangs(norm, A);
+    }
+
+    static void gscon (char *norm, SLU::SuperMatrix *L, SLU::SuperMatrix *U,
+                       float anorm, float *rcond, SLU::SuperLUStat_t *stat, int *info)
+    {
+      SLU::S::sgscon (norm, L, U, anorm, rcond, stat, info);
+    }
 
     /**
      * \brief Binds to the appropriate Superlu solver driver based on data type
@@ -651,6 +682,17 @@ namespace Amesos2 {
     typedef typename SLU::D::GlobalLU_t GlobalLU_type;
 #endif
 
+    static double langs(char *norm, SLU::SuperMatrix *A)
+    {
+      return SLU::D::dlangs(norm, A);
+    }
+
+    static void gscon (char *norm, SLU::SuperMatrix *L, SLU::SuperMatrix *U,
+                       double anorm, double *rcond, SLU::SuperLUStat_t *stat, int *info)
+    {
+      SLU::D::dgscon (norm, L, U, anorm, rcond, stat, info);
+    }
+
     static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
 		      SLU::SuperMatrix* L, SLU::SuperMatrix* U, void* work, int lwork,
@@ -780,6 +822,17 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_SUPERLU5_API
     typedef typename SLU::C::GlobalLU_t GlobalLU_type;
 #endif
+
+    static float langs(char *norm, SLU::SuperMatrix *A)
+    {
+      return SLU::C::clangs(norm, A);
+    }
+
+    static void gscon (char *norm, SLU::SuperMatrix *L, SLU::SuperMatrix *U,
+                       float anorm, float *rcond, SLU::SuperLUStat_t *stat, int *info)
+    {
+      SLU::C::cgscon (norm, L, U, anorm, rcond, stat, info);
+    }
 
     static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, float* R, float* C,
@@ -921,6 +974,17 @@ namespace Amesos2 {
 #ifdef HAVE_AMESOS2_SUPERLU5_API
     typedef typename SLU::Z::GlobalLU_t GlobalLU_type;
 #endif
+
+    static double langs(char *norm, SLU::SuperMatrix *A)
+    {
+      return SLU::Z::zlangs(norm, A);
+    }
+
+    static void gscon (char *norm, SLU::SuperMatrix *L, SLU::SuperMatrix *U,
+                       double anorm, double *rcond, SLU::SuperLUStat_t *stat, int *info)
+    {
+      SLU::Z::zgscon (norm, L, U, anorm, rcond, stat, info);
+    }
 
     static void gssvx(SLU::superlu_options_t* options, SLU::SuperMatrix* A,
 		      int* perm_c, int* perm_r, int* etree, char* equed, double* R, double* C,
