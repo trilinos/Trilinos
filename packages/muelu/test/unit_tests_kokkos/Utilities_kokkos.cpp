@@ -511,7 +511,8 @@ namespace MueLuTests
     using MV = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using TpetraMV = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-    auto compareMV = [&](const MV& mv, const TpetraMV& tpetraMV){
+    auto compareMV = [&](const MV &mv, const TpetraMV &tpetraMV)
+    {
       const auto origMV = mv.getVector(0);
       const auto newMV = tpetraMV.getVector(0);
 
@@ -534,17 +535,51 @@ namespace MueLuTests
     auto nonConstTpetraMV3 = Utils_Kokkos::MV2NonConstTpetraMV(*vector);
     compareMV(*vector, nonConstTpetraMV3);
 
-    // auto mat = Utils_Kokkos::Op2TpetraCrs(A);
-    // auto mat2 = Utils_Kokkos::Op2NonConstTpetraCrs(A);
+    using TpetraMat = Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-    // auto mat3 = Utils_Kokkos::Op2TpetraCrs(*A);
-    // auto mat4 = Utils_Kokkos::Op2NonConstTpetraCrs(*A);
+    auto compareMat = [&](const Matrix &xpetraMat, const TpetraMat &tpetraMat)
+    {
+      TEST_EQUALITY(xpetraMat.getGlobalNumRows(), tpetraMat.getGlobalNumRows());
+      TEST_EQUALITY(xpetraMat.getGlobalNumCols(), tpetraMat.getGlobalNumCols());
+      TEST_EQUALITY(xpetraMat.getNodeNumRows(), tpetraMat.getNodeNumRows());
+      TEST_EQUALITY(xpetraMat.getGlobalNumEntries(), tpetraMat.getGlobalNumEntries());
+    };
 
-    // auto mat5 = Utils_Kokkos::Op2TpetraRow(A);
-    // auto mat6 = Utils_Kokkos::Op2NonConstTpetraRow(A);
+    auto tpetraCrsMat = Utils_Kokkos::Op2TpetraCrs(A);
+    compareMat(*A, *tpetraCrsMat);
 
-    // auto tpetraMap = Utils_Kokkos::Map2TpetraMap(*map);
+    auto nonConstTpetraCrs = Utils_Kokkos::Op2NonConstTpetraCrs(A);
+    compareMat(*A, *nonConstTpetraCrs);
+
+    auto tpetraCrs = Utils_Kokkos::Op2TpetraCrs(*A);
+    compareMat(*A, tpetraCrs);
+
+    auto nonConstTpetraCrs2 = Utils_Kokkos::Op2NonConstTpetraCrs(*A);
+    compareMat(*A, nonConstTpetraCrs2);
+
+    auto tpetraRow = Utils_Kokkos::Op2TpetraRow(A);
+    compareMat(*A, *tpetraRow);
+
+    auto nonConstTpetraRow = Utils_Kokkos::Op2NonConstTpetraRow(A);
+    compareMat(*A, *nonConstTpetraRow);
+
+    auto tpetraMap = Utils_Kokkos::Map2TpetraMap(*map);
+    TEST_INEQUALITY(tpetraMap, Teuchos::null);
+    TEST_EQUALITY_CONST(tpetraMap->getGlobalNumElements(), map->getGlobalNumElements());
+
 #endif
+  } //TransformFunctions
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, UtilsFunctions, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+
+    using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
     // ParameterList params;
     // int nx, ny;
     // params.set("nx", nx);
@@ -555,7 +590,7 @@ namespace MueLuTests
     // Utils_Kokkos::SetRandomSeed(*comm);
 
     // Utils_Kokkos::MakeFancy(*(out.getOStream()));
-  } //MyOldScaleMatrix
+  }
 
 #define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, CuthillMcKee, SC, LO, GO, NO)                  \
