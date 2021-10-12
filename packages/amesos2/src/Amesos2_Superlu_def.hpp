@@ -937,9 +937,8 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
     pl->set("UseMetis", false, "Whether to call METIS before SuperLU");
     pl->set("SymmetrizeMetis", true, "Whether to symmetrize matrix before METIS");
 
-#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     pl->set("Enable_KokkosKernels_TriangularSolves", false, "Whether to use triangular solves.");
-
+#if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     pl->set("SpTRSV_Invert_Diag", true, "specify whether to invert diagonal blocks for supernodal sparse-trianguular solve");
     pl->set("SpTRSV_Invert_OffDiag", false, "specify whether to apply diagonal-inversion to off-diagonal blocks for supernodal sparse-trianguular solve");
     pl->set("SpTRSV_U_CSR", true, "specify whether to store U in CSR forma for supernodal sparse-trianguular solve");
