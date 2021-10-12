@@ -141,26 +141,17 @@ tau();
 /// Random number generation. Uniform distribution U(-1,1)
 /// which is the Teuchos default (!).
 ///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-typename Sacado::ScalarType<T>::type
-random();
+template <typename T> typename Sacado::ScalarType<T>::type random();
 
 ///
 /// Random number generation. Uniform distribution U(0,1).
 ///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-typename Sacado::ScalarType<T>::type
-random_uniform();
+template <typename T> typename Sacado::ScalarType<T>::type random_uniform();
 
 ///
 /// Random number generation. Normal distribution N(0,1).
 ///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-typename Sacado::ScalarType<T>::type
-random_normal();
+template <typename T> typename Sacado::ScalarType<T>::type random_normal();
 
 ///
 /// Fill all levels of AD to specified constant.

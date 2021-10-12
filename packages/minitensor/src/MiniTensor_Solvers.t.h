@@ -564,7 +564,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
     bool
     is_posdef{false};
 
-    boost::tie(L, is_posdef) = cholesky(K);
+    std::tie(L, is_posdef) = cholesky(K);
 
     if (is_posdef == false) {
       MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
@@ -635,7 +635,7 @@ step(Tensor<T, N> const & Hessian, Vector<T, N> const & gradient)
     bool
     is_posdef{false};
 
-    boost::tie(L, is_posdef) = cholesky(K);
+    std::tie(L, is_posdef) = cholesky(K);
 
     if (is_posdef == false) {
       MT_ERROR_EXIT("Trust region subproblem encountered singular Hessian.");
