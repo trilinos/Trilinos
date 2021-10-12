@@ -9,6 +9,7 @@
 #ifndef Tempus_TimeEventRange_impl_hpp
 #define Tempus_TimeEventRange_impl_hpp
 
+#include "Tempus_NumericalUtils.hpp"
 
 namespace Tempus {
 
@@ -131,7 +132,7 @@ void TimeEventRange<Scalar>::setTimeScale()
   absTol_ = relTol_*timeScale_;
 
   // Check if timeScale is near zero.
-  if ((-absTol_ <= timeScale_ ) && (timeScale_ <= absTol_)) {
+  if ( approxZero(timeScale_, absTol_) ) {
     timeScale_ = 1.0;
     absTol_ = relTol_*timeScale_;
   }
@@ -141,8 +142,8 @@ void TimeEventRange<Scalar>::setTimeScale()
 template<class Scalar>
 void TimeEventRange<Scalar>::setTimeStride(Scalar stride)
 {
-  stride_ = stride;
-  if ((start_ >= stop_-absTol_) && (start_ <= stop_+absTol_)) {
+  stride_ = Teuchos::ScalarTraits<Scalar>::magnitude(stride);
+  if ( approxEqualAbsTol(start_, stop_, absTol_) ) {
     stride_ = 0.0;
     numEvents_ = 1;
     return;
@@ -164,7 +165,7 @@ void TimeEventRange<Scalar>::setNumEvents(int numEvents)
     if (stride_ < 2 * absTol_) stride_ = 2*absTol_;
     numEvents_ = int((stop_+absTol_ - start_) / stride_) + 1;
     return;
-  } else if ((start_ >= stop_-absTol_) && (start_ <= stop_+absTol_)) {
+  } else if ( approxEqualAbsTol(start_, stop_, absTol_) ) {
     numEvents_ = 1;
     stride_ = 0.0;
     stride_ = stop_ - start_;
@@ -197,18 +198,20 @@ bool TimeEventRange<Scalar>::isTime(Scalar time) const
   const Scalar timeOfLast = start_ + (numEvents_-1) * stride_;
   if (time > timeOfLast+absTol_) return false;
 
-  int numStrides = (time - start_) / stride_;
-  numStrides = std::max(0, numStrides);
-  numStrides = std::min(numStrides, int(numEvents_-1));
+  int numStrides = 0;
+  if ( !approxZero(stride_, 2*absTol_) )
+    numStrides = (time - start_) / stride_;
+
+  numStrides = std::min(std::max(0, numStrides), int(numEvents_-1));
   const Scalar leftBracket = start_ + numStrides * stride_;
 
   // Check if close to left bracket.
-  if ( leftBracket-absTol_ < time && time < leftBracket+absTol_ )
+  if ( approxEqualAbsTol(time, leftBracket, absTol_) )
     return true;
 
   // Check if close to right bracket.
   const Scalar rightBracket = leftBracket + stride_;
-  if ( rightBracket-absTol_ < time && time < rightBracket+absTol_ )
+  if ( approxEqualAbsTol(time, rightBracket, absTol_) )
     return true;
 
   return false;
@@ -232,10 +235,13 @@ Scalar TimeEventRange<Scalar>::timeOfNextEvent(Scalar time) const
   // Check if after or close to last event.
   if (time > timeOfLast-absTol_) return std::numeric_limits<Scalar>::max();
 
-  const Scalar timeEvent = start_ + ceil((time - start_)/stride_)*stride_;
+  int numStrides = 0;
+  if ( !approxZero(stride_, 2*absTol_) )
+    numStrides = int((time - start_) / stride_) + 1;
+  const Scalar timeEvent = start_ + numStrides*stride_;
 
   // Check timeEvent is near time.  If so, return the next event.
-  if ( timeEvent-absTol_ < time && time < timeEvent+absTol_ )
+  if ( approxEqualAbsTol(time, timeEvent, absTol_) )
     return timeEvent + stride_;
 
   return timeEvent;
@@ -254,6 +260,9 @@ bool TimeEventRange<Scalar>::eventInRange(Scalar time1, Scalar time2) const
   // Check if range is completely outside time events.
   const Scalar timeOfLast = start_ + (numEvents_-1) * stride_;
   if (time2 < start_-absTol_ || timeOfLast+absTol_ < time1) return false;
+
+  if ( approxZero(stride_) )
+    return (time1 < start_-absTol_ && start_-absTol_ <= time2);
 
   const int strideJustBeforeTime1 = std::min(int(numEvents_-1),
     std::max(int(0), int((time1 - start_ + absTol_) / stride_ - 0.5)));

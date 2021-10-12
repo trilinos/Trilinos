@@ -6,14 +6,9 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
+#include "Tempus_UnitTest_Utils.hpp"
 
 #include "Tempus_TimeEventListIndex.hpp"
-
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 
 namespace Tempus_Unit_Test {

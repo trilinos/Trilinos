@@ -9,13 +9,11 @@
 #ifndef TEMPUS_CONVERGENCE_TEST_UTILS_HPP
 #define TEMPUS_CONVERGENCE_TEST_UTILS_HPP
 
-#include <vector>
 #include <fstream>
 
 #include "Teuchos_as.hpp"
 
-#include "Thyra_VectorStdOps.hpp"
-
+#include "Tempus_NumericalUtils.hpp"
 #include "Tempus_String_Utilities.hpp"
 #include "Tempus_Stepper.hpp"
 
@@ -168,8 +166,10 @@ Scalar computeLinearRegressionLogLog(
   std::vector<Scalar> ylog;
 
   for (int i=0 ; i<N ; ++i) {
-    xlog.push_back(log(x[i]));
-    ylog.push_back(log(y[i]));
+    if ( !(Tempus::approxZero(x[i]) || Tempus::approxZero(y[i])) ) {
+      xlog.push_back(log(x[i]));
+      ylog.push_back(log(y[i]));
+    }
   }
 
   LinearRegression<Scalar> lr;
