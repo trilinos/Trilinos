@@ -341,21 +341,21 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
         H->IsPreconditioner(isPrec);
         if (isPrec == false) {
-          MueLu::ReturnType ret = H->Iterate(*B, *X, std::pair<LO,MagnitudeType>(maxIts, tol));
+          MueLu::ConvergenceStatus ret = H->Iterate(*B, *X, std::pair<LO,MagnitudeType>(maxIts, tol));
 
           double rate = H->GetRate();
 
           if (std::abs(rate-goldRate) < 0.02) {
             out << xmlFile << ": passed (" <<
-                (ret == MueLu::Converged ? "converged, " : "unconverged, ") <<
+                (ret == MueLu::ConvergenceStatus::Converged ? "converged, " : "unconverged, ") <<
                 "expected rate = " << goldRate << ", real rate = " << rate <<
-                (ret == MueLu::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
+                (ret == MueLu::ConvergenceStatus::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
                 << ")" << std::endl;
           } else {
             out << xmlFile << ": failed (" <<
-                (ret == MueLu::Converged ? "converged, " : "unconverged, ") <<
+                (ret == MueLu::ConvergenceStatus::Converged ? "converged, " : "unconverged, ") <<
                 "expected rate = " << goldRate << ", real rate = " << rate <<
-                (ret == MueLu::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
+                (ret == MueLu::ConvergenceStatus::Converged ? "" : " (after " + Teuchos::toString(maxIts) + " iterations)")
                 << ")" << std::endl;
             // ap: we need to understand what's going on with the convergence rate
             // At the moment, disable failure state, so that the test passes as long

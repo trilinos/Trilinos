@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,11 +6,16 @@
 
 #include <FileInfo.h>
 #include <cstddef>
+#include <cstring>
 #include <string>
 
-#ifndef _MSC_VER
-#include <sys/unistd.h>
-#else
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+#define __SUP_WINDOWS__ 1
+#endif
+
+#if defined(__SUP_WINDOWS__)
+#include <direct.h>
 #include <io.h>
 #define access _access
 #define R_OK 4 /* Test for read permission.  */
@@ -21,6 +26,8 @@
 #define S_ISREG(m) (((m)&_S_IFMT) == _S_IFREG)
 #define S_ISDIR(m) (((m)&_S_IFMT) == _S_IFDIR)
 #endif
+#else
+#include <sys/unistd.h>
 #endif
 
 #include <cstdio>
@@ -108,7 +115,7 @@ bool FileInfo::is_dir() const
 //: Returns TRUE if we are pointing to a symbolic link
 bool FileInfo::is_symlink() const
 {
-#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
+#if !defined(__SUP_WINDOWS__)
   struct stat s
   {
   };
@@ -241,7 +248,7 @@ std::string FileInfo::basename() const
 
 std::string FileInfo::realpath() const
 {
-#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
+#if defined(__SUP_WINDOWS__)
   char *path = _fullpath(nullptr, filename_.c_str(), _MAX_PATH);
 #else
   char *path = ::realpath(filename_.c_str(), nullptr);

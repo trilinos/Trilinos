@@ -79,10 +79,6 @@ Superlu<Matrix,Vector>::Superlu(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::Superlu,Matrix,Vector>(A, X, B)
-  , is_contiguous_(true) // default is set by params
-  , use_triangular_solves_(false) // default is set by params
-  , use_metis_(false)
-  , symmetrize_metis_(true)
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
   , sptrsv_invert_diag_(true)
   , sptrsv_invert_offdiag_ (false)
@@ -90,6 +86,10 @@ Superlu<Matrix,Vector>::Superlu(
   , sptrsv_merge_supernodes_ (false)
   , sptrsv_use_spmv_ (false)
 #endif
+  , is_contiguous_(true) // default is set by params
+  , use_triangular_solves_(false) // default is set by params
+  , use_metis_(false)
+  , symmetrize_metis_(true)
 {
   // ilu_set_default_options is called later in set parameter list if required.
   // This is not the ideal way, but the other option to always call
@@ -422,6 +422,19 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
             &(data_.stat), &info);
       }
 
+      if (data_.options.ConditionNumber == SLU::YES) {
+        char norm[1];
+        if (data_.options.Trans == SLU::NOTRANS) {
+            *(unsigned char *)norm = '1';
+        } else {
+            *(unsigned char *)norm = 'I';
+        }
+
+        data_.anorm = function_map::langs(norm, &(data_.A));
+        function_map::gscon(norm, &(data_.L), &(data_.U),
+                            data_.anorm, &(data_.rcond),
+                            &(data_.stat), &info);
+      }
     }
     // Cleanup. AC data will be alloc'd again for next factorization (if at all)
     SLU::Destroy_CompCol_Permuted( &(data_.AC) );
@@ -446,6 +459,24 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
   same_symbolic_ = true;
 
   if(use_triangular_solves_) {
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+    #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
+    if (this->getComm()->getRank()) {
+      std::cout << " > Metis           : " << (use_metis_ ? "YES" : "NO") << std::endl;
+      std::cout << " > Equil           : " << (data_.options.Equil == SLU::YES ? "YES" : "NO") << std::endl;
+      std::cout << " > Cond Number     : " << (data_.options.ConditionNumber == SLU::YES ? "YES" : "NO") << std::endl;
+      std::cout << " > Invert diag     : " << sptrsv_invert_diag_ << std::endl;
+      std::cout << " > Invert off-diag : " << sptrsv_invert_offdiag_ << std::endl;
+      std::cout << " > U in CSR        : " << sptrsv_u_in_csr_ << std::endl;
+      std::cout << " > Merge           : " << sptrsv_merge_supernodes_ << std::endl;
+      std::cout << " > Use SpMV        : " << sptrsv_use_spmv_ << std::endl;
+    }
+    //std::cout << myRank << " : siize(A) " << (data_.A.nrow) << " x " << (data_.A.ncol) << std::endl;
+    //std::cout << myRank << " : nnz(A)   " << ((SLU::NCformat*)data_.A.Store)->nnz << std::endl;
+    //std::cout << myRank << " : nnz(L)   " << ((SLU::SCformat*)data_.L.Store)->nnz << std::endl;
+    //std::cout << myRank << " : nnz(U)   " << ((SLU::SCformat*)data_.U.Store)->nnz << std::endl;
+    #endif
+#endif
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::RCP< Teuchos::Time > SpTrsvTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for SpTrsv setup");
     Teuchos::TimeMonitor numFactTimer(*SpTrsvTimer_);
@@ -715,6 +746,9 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
   bool equil = parameterList->get<bool>("Equil", true);
   data_.options.Equil = equil ? SLU::YES : SLU::NO;
 
+  bool condNum = parameterList->get<bool>("ConditionNumber", false);
+  data_.options.ConditionNumber = condNum ? SLU::YES : SLU::NO;
+
   bool symmetric_mode = parameterList->get<bool>("SymmetricMode", false);
   data_.options.SymmetricMode = symmetric_mode ? SLU::YES : SLU::NO;
 
@@ -751,10 +785,10 @@ Superlu<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Parameter
 
   is_contiguous_ = parameterList->get<bool>("IsContiguous", true);
 
-  use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
-
   use_metis_ = parameterList->get<bool>("UseMetis", false);
   symmetrize_metis_ = parameterList->get<bool>("SymmetrizeMetis", true);
+
+  use_triangular_solves_ = parameterList->get<bool>("Enable_KokkosKernels_TriangularSolves", false);
   if(use_triangular_solves_) {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     // specify whether to invert diagonal blocks
@@ -836,6 +870,7 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
             diag_pivot_thresh_validator); // partial pivoting
 
     pl->set("Equil", true, "Whether to equilibrate the system before solve");
+    pl->set("ConditionNumber", false, "Whether to approximate condition number");
 
     pl->set("SymmetricMode", false,
             "Specifies whether to use the symmetric mode. "
@@ -896,14 +931,13 @@ Superlu<Matrix,Vector>::getValidParameters_impl() const
 
     pl->set("ILU_Flag", false, "ILU flag: if true, run ILU routines");
 
-    pl->set("Enable_KokkosKernels_TriangularSolves", false, "Whether to use triangular solves.");
-
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
 
     // call METIS before SuperLU
     pl->set("UseMetis", false, "Whether to call METIS before SuperLU");
     pl->set("SymmetrizeMetis", true, "Whether to symmetrize matrix before METIS");
 
+    pl->set("Enable_KokkosKernels_TriangularSolves", false, "Whether to use triangular solves.");
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)
     pl->set("SpTRSV_Invert_Diag", true, "specify whether to invert diagonal blocks for supernodal sparse-trianguular solve");
     pl->set("SpTRSV_Invert_OffDiag", false, "specify whether to apply diagonal-inversion to off-diagonal blocks for supernodal sparse-trianguular solve");
@@ -1022,8 +1056,37 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
     deep_copy_or_assign_view(device_trsv_C_, data_.C); // will use device to scale
   }
 
+  bool condition_flag = false;
+  if (data_.options.ConditionNumber == SLU::YES) {
+    using STM = Teuchos::ScalarTraits<magnitude_type>;
+    const magnitude_type eps = STM::eps ();
+    int n = data_.perm_r.extent(0);
+
+    SCformat *Lstore = (SCformat*)(data_.L.Store);
+    int nsuper = 1 + Lstore->nsuper;
+    int *nb = Lstore->sup_to_col;
+    int max_cols = 0;
+    for (int i = 0; i < nsuper; i++) {
+      if (nb[i+1] - nb[i] > max_cols) {
+        max_cols = nb[i+1] - nb[i];
+      }
+    }
+
+    // when rcond is small, it is ill-conditioned and flag is true
+    const magnitude_type multiply_fact (10.0); // larger the value, more likely flag is true, and no invert
+    condition_flag = (((double)max_cols * nsuper) * eps * multiply_fact >= data_.rcond);
+
+#ifdef HAVE_AMESOS2_VERBOSE_DEBUG
+    std::cout << this->getComm()->getRank()
+              << " : anorm = " << data_.anorm << ", rcond = " << data_.rcond << ", n = " << n
+              << ", num super cols = " << nsuper << ", max super cols = " << max_cols
+              << " -> " << ((double)max_cols * nsuper) * eps / data_.rcond
+              << (((double)max_cols * nsuper) * eps * multiply_fact < data_.rcond ? " (okay)" : " (warn)") << std::endl;
+#endif
+  }
+
   // Create handles for U and U^T solves
-  if (sptrsv_use_spmv_) {
+  if (sptrsv_use_spmv_ && !condition_flag) {
     device_khL_.create_sptrsv_handle(
       KokkosSparse::Experimental::SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG, ld_rhs, true);
     device_khU_.create_sptrsv_handle(
@@ -1042,13 +1105,17 @@ Superlu<Matrix,Vector>::triangular_solve_factor()
   device_khL_.set_sptrsv_merge_supernodes (sptrsv_merge_supernodes_);
   device_khU_.set_sptrsv_merge_supernodes (sptrsv_merge_supernodes_);
 
+  // invert only if flag is not on
+  bool sptrsv_invert_diag    = (!condition_flag && sptrsv_invert_diag_);
+  bool sptrsv_invert_offdiag = (!condition_flag && sptrsv_invert_offdiag_);
+
   // specify whether to invert diagonal blocks
-  device_khL_.set_sptrsv_invert_diagonal (sptrsv_invert_diag_);
-  device_khU_.set_sptrsv_invert_diagonal (sptrsv_invert_diag_);
+  device_khL_.set_sptrsv_invert_diagonal (sptrsv_invert_diag);
+  device_khU_.set_sptrsv_invert_diagonal (sptrsv_invert_diag);
 
   // specify wheather to apply diagonal-inversion to off-diagonal blocks (optional, default is false)
-  device_khL_.set_sptrsv_invert_offdiagonal (sptrsv_invert_offdiag_);
-  device_khU_.set_sptrsv_invert_offdiagonal (sptrsv_invert_offdiag_);
+  device_khL_.set_sptrsv_invert_offdiagonal (sptrsv_invert_offdiag);
+  device_khU_.set_sptrsv_invert_offdiagonal (sptrsv_invert_offdiag);
 
   // set etree
   device_khL_.set_sptrsv_etree(data_.parents.data());

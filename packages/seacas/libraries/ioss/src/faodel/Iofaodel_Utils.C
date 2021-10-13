@@ -441,7 +441,7 @@ namespace Iofaodel {
   }
 
   std::set<std::string> get_entity_names(const std::vector<kelpie::Key> &keys,
-                                         const std::string &             target)
+                                         const std::string              &target)
   {
     std::set<std::string> names;
     for (auto k : keys) {

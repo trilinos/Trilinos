@@ -4,7 +4,6 @@
 //
 // See packages/seacas/LICENSE for details
 #include <cstdlib>
-#include <ctime>
 #include <exception>
 #include <map>
 #include <memory>

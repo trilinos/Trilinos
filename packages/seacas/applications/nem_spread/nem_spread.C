@@ -25,7 +25,8 @@
 #include <cstring>
 #include <unistd.h> // for getopt, optarg, optind
 
-#if defined(_WIN64) || defined(WIN32) || defined(_WINDOWS) || defined(_MSC_VER)
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include "XGetopt.h"
 #else
 #include "getopt.h" // for getopt

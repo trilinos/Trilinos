@@ -185,6 +185,12 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
                     std::vector<MinMaxData> &mm_eb, std::vector<MinMaxData> &mm_fb,
                     const INT *node_id_map, const INT *elem_id_map);
 
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
+#define __ED_WINDOWS__ 1
+#endif
+
+#if !defined(__ED_WINDOWS__)
 #include <csignal>
 // bit of a hack to get GNU's functions to enable floating point error trapping
 #ifdef LINUX
@@ -197,9 +203,10 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
 #endif
 #endif
 
-#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
 struct sigaction sigact; // the signal handler & blocked signals
+
 #endif
+
 bool checking_invalid = false;
 bool invalid_data     = false;
 extern "C" {
@@ -320,7 +327,7 @@ int main(int argc, char *argv[])
   checking_invalid = false;
   invalid_data     = false;
 
-#if !defined(_WIN64) && !defined(WIN32) && !defined(_WINDOWS) && !defined(_MSC_VER)
+#if !defined(__ED_WINDOWS__)
   sigfillset(&(sigact.sa_mask));
   sigact.sa_handler = floating_point_exception_handler;
   if (sigaction(SIGFPE, &sigact, nullptr) == -1) {
@@ -328,7 +335,7 @@ int main(int argc, char *argv[])
   }
 #endif
 
-#if defined(LINUX) && defined(GNU)
+#if defined(LINUX) && defined(GNU) && !defined(__ED_WINDOWS__)
   // for GNU, this seems to be needed to turn on trapping
   feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
 #endif
@@ -1221,7 +1228,7 @@ bool summarize_element(ExoII_Read<INT> &file, int step, const std::vector<INT> &
     size_t global_elmt_index = 0;
     for (size_t b = 0; b < file.Num_Element_Blocks(); ++b) {
       Exo_Block<INT> *eblock = file.Get_Element_Block_by_Index(b);
-      const double *  vals   = get_validated_variable(eblock, step, vidx, name, &diff_flag);
+      const double   *vals   = get_validated_variable(eblock, step, vidx, name, &diff_flag);
       if (vals == nullptr) {
         global_elmt_index += eblock->Size();
         continue;
@@ -1888,7 +1895,7 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
 
     for (size_t b = 0; b < file1.Num_Node_Sets(); ++b) {
       Node_Set<INT> *nset1 = file1.Get_Node_Set_by_Index(b);
-      const double * vals1 = get_validated_variable(nset1, step1, vidx1, name, &diff_flag);
+      const double  *vals1 = get_validated_variable(nset1, step1, vidx1, name, &diff_flag);
       if (vals1 == nullptr) {
         continue;
       }
@@ -1958,9 +1965,9 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       if (!interFace.quiet_flag) {
         Node_Set<INT> *nset = file1.Get_Node_Set_by_Id(max_diff.blk);
         std::string    buf  = fmt::format(
-            "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, node {})", name,
-            name_length(), interFace.ns_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
-            max_diff.diff, max_diff.blk, id_map[nset->Node_Id(max_diff.id) - 1]);
+                "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, node {})", name,
+                name_length(), interFace.ns_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+                max_diff.diff, max_diff.blk, id_map[nset->Node_Id(max_diff.id) - 1]);
         DIFF_OUT(buf);
       }
       else {
@@ -2068,10 +2075,10 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, con
       if (!interFace.quiet_flag) {
         Side_Set<INT> *sset = file1.Get_Side_Set_by_Id(max_diff.blk);
         std::string    buf  = fmt::format(
-            "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})", name,
-            name_length(), interFace.ss_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
-            max_diff.diff, max_diff.blk, id_map[sset->Side_Id(max_diff.id).first - 1],
-            (int)sset->Side_Id(max_diff.id).second);
+                "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (set {}, side {}.{})", name,
+                name_length(), interFace.ss_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+                max_diff.diff, max_diff.blk, id_map[sset->Side_Id(max_diff.id).first - 1],
+                (int)sset->Side_Id(max_diff.id).second);
         DIFF_OUT(buf);
       }
       else {
@@ -2254,7 +2261,7 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
 
     for (size_t b = 0; b < file1.Num_Edge_Blocks(); ++b) {
       Edge_Block<INT> *eblock1 = file1.Get_Edge_Block_by_Index(b);
-      const double *   vals1   = get_validated_variable(eblock1, step1, vidx1, name, &diff_flag);
+      const double    *vals1   = get_validated_variable(eblock1, step1, vidx1, name, &diff_flag);
       if (vals1 == nullptr) {
         continue;
       }
@@ -2322,9 +2329,9 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       if (!interFace.quiet_flag) {
         Edge_Block<INT> *eblock = file1.Get_Edge_Block_by_Id(max_diff.blk);
         std::string      buf    = fmt::format(
-            "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (edge block {}, edge {})", name,
-            name_length(), interFace.eb_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
-            max_diff.diff, max_diff.blk, eblock->Edge_Index(max_diff.id) + 1);
+                    "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (edge block {}, edge {})", name,
+                    name_length(), interFace.eb_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+                    max_diff.diff, max_diff.blk, eblock->Edge_Index(max_diff.id) + 1);
         DIFF_OUT(buf);
       }
       else {
@@ -2363,7 +2370,7 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
 
     for (size_t b = 0; b < file1.Num_Face_Blocks(); ++b) {
       Face_Block<INT> *fblock1 = file1.Get_Face_Block_by_Index(b);
-      const double *   vals1   = get_validated_variable(fblock1, step1, vidx1, name, &diff_flag);
+      const double    *vals1   = get_validated_variable(fblock1, step1, vidx1, name, &diff_flag);
       if (vals1 == nullptr) {
         continue;
       }
@@ -2445,7 +2452,7 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
 }
 
 template <typename INT>
-bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &         file2,
+bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT>          &file2,
                              const std::vector<INT> & /*elmt_map*/, const INT *id_map,
                              Exo_Block<INT> ** /*blocks2*/)
 {
@@ -2686,8 +2693,8 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
   if (n > 0) {
     fmt::print("\nSIDESET VARIABLES relative 1.e-6 floor 0.0\n");
     for (i = 0; i < n; ++i) {
-      Side_Set<INT> *     ssmin    = file1.Get_Side_Set_by_Id(mm_ss[i].min_blk);
-      Side_Set<INT> *     ssmax    = file1.Get_Side_Set_by_Id(mm_ss[i].max_blk);
+      Side_Set<INT>      *ssmin    = file1.Get_Side_Set_by_Id(mm_ss[i].min_blk);
+      Side_Set<INT>      *ssmax    = file1.Get_Side_Set_by_Id(mm_ss[i].max_blk);
       std::pair<INT, INT> min_side = ssmin->Side_Id(mm_ss[i].min_id);
       std::pair<INT, INT> max_side = ssmax->Side_Id(mm_ss[i].max_id);
       fmt::print("\t{:<{}}  # min: {:15.8g} @ t{},s{},f{}.{}\tmax: {:15.8g} @ t{},s{}"

@@ -41,7 +41,6 @@
  */
 
 #include "fortranc.h"
-#include <string.h>
 #if defined(__NO_CYGWIN_OPTION__)
 #define NOMINMAX
 #include <windows.h>
