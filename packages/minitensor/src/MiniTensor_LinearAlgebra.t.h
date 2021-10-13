@@ -39,6 +39,7 @@
 // ************************************************************************
 // @HEADER
 
+#include "Kokkos_ArithTraits.hpp"
 #if !defined(MiniTensor_LinearAlgebra_t_h)
 #define MiniTensor_LinearAlgebra_t_h
 
@@ -289,11 +290,7 @@ subtensor(Tensor<T, N> const & A, Index const i, Index const j)
 //
 // Exponential map
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-Tensor<T, N>
-exp(Tensor<T, N> const & A)
-{
+template <typename T, Index N> Tensor<T, N> exp(Tensor<T, N> const &A) {
   return exp_pade(A);
 }
 
@@ -438,11 +435,9 @@ polynomial_coefficient(Index const order, Index const index)
 //
 // Padé approximant polynomial odd and even terms.
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
+template <typename T, Index N>
 std::pair<Tensor<T, N>, Tensor<T, N>>
-pade_polynomial_terms(Tensor<T, N> const & A, Index const order)
-{
+pade_polynomial_terms(Tensor<T, N> const &A, Index const order) {
   Index const
   dimension = A.get_dimension();
 
@@ -549,11 +544,7 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-Tensor<T, N>
-exp_pade(Tensor<T, N> const & A)
-{
+template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A) {
   Index const
   dimension = A.get_dimension();
 
@@ -588,7 +579,7 @@ exp_pade(Tensor<T, N> const & A)
       Tensor<T, N>
       V;
 
-      boost::tie(U, V) = pade_polynomial_terms(A, order);
+      std::tie(U, V) = pade_polynomial_terms(A, order);
 
       B = inverse(V - U) * (U + V);
 
@@ -810,7 +801,7 @@ log_eig_sym(Tensor<T, N> const & A)
   Tensor<T, N>
   D(dimension);
 
-  boost::tie(V, D) = eig_sym(A);
+  std::tie(V, D) = eig_sym(A);
 
   for (Index i = 0; i < dimension; ++i) {
     D(i, i) = std::log(D(i, i));
@@ -1159,11 +1150,8 @@ norm_off_diagonal(Tensor<T, N> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i,j} |a_{ij}| \f$
 //
-template<typename T, Index N>
-//KOKKOS_INLINE_FUNCTION
-std::pair<Index, Index>
-arg_max_abs(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Index, Index> arg_max_abs(Tensor<T, N> const &A) {
 
   Index p = 0;
   Index q = 0;
@@ -1193,11 +1181,8 @@ arg_max_abs(Tensor<T, N> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i \neq j} |a_{ij}| \f$
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Index, Index>
-arg_max_off_diagonal(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Index, Index> arg_max_off_diagonal(Tensor<T, N> const &A) {
   Index p = 0;
   Index q = 1;
 
@@ -1229,10 +1214,9 @@ namespace {
 // \param f, g, h where A = [f, g; 0, h]
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-svd_bidiagonal(T f, T g, T h)
-{
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>> svd_bidiagonal(T f, T g,
+                                                                    T h) {
   T fa = std::abs(f);
   T ga = std::abs(g);
   T ha = std::abs(h);
@@ -1312,7 +1296,7 @@ svd_bidiagonal(T f, T g, T h)
   Tensor<T, N> S(s0, 0.0, 0.0, s1);
   Tensor<T, N> V(cv, -sv, sv, cv);
 
-  return boost::make_tuple(U, S, V);
+  return std::make_tuple(U, S, V);
 }
 
 //
@@ -1320,16 +1304,15 @@ svd_bidiagonal(T f, T g, T h)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-svd_2x2(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+svd_2x2(Tensor<T, N> const &A) {
   assert(A.get_dimension() == 2);
 
   // First compute a givens rotation to eliminate 1,0 entry in tensor
   T c = 1.0;
   T s = 0.0;
-  boost::tie(c, s) = givens(A(0,0), A(1,0));
+  std::tie(c, s) = givens(A(0, 0), A(1, 0));
 
   Tensor<T, N>
   R(c, -s, s, c);
@@ -1341,13 +1324,13 @@ svd_2x2(Tensor<T, N> const & A)
   Tensor<T, N>
   X(2), S(2), V(2);
 
-  boost::tie(X, S, V) = svd_bidiagonal<T, N>(B(0,0), B(0,1), B(1,1));
+  std::tie(X, S, V) = svd_bidiagonal<T, N>(B(0, 0), B(0, 1), B(1, 1));
 
   // Complete general 2x2 SVD with givens rotation calculated above
   Tensor<T, N>
   U = transpose(R) * X;
 
-  return boost::make_tuple(U, S, V);
+  return std::make_tuple(U, S, V);
 }
 
 //
@@ -1355,10 +1338,9 @@ svd_2x2(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-svd_NxN(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+svd_NxN(Tensor<T, N> const &A) {
   // Scale first
   T const
   norm_a = norm(A);
@@ -1399,7 +1381,7 @@ svd_NxN(Tensor<T, N> const & A)
     Index
     q = 0;
 
-    boost::tie(p,q) = arg_max_off_diagonal(S);
+    std::tie(p, q) = arg_max_off_diagonal(S);
 
     if (p > q) {
       std::swap(p, q);
@@ -1412,7 +1394,7 @@ svd_NxN(Tensor<T, N> const & A)
     Tensor <T, 2>
     L(2), D(2), R(2);
 
-    boost::tie(L, D, R) = svd_2x2(Spq);
+    std::tie(L, D, R) = svd_2x2(Spq);
 
     T const &
     cl = L(0,0);
@@ -1456,12 +1438,12 @@ svd_NxN(Tensor<T, N> const & A)
   Vector<T, N> s(dimension);
   Tensor<T, N> P(dimension);
 
-  boost::tie(s, P) = sort_permutation(diag(S));
+  std::tie(s, P) = sort_permutation(diag(S));
   S = scale * diag(s);
   U = U * P;
   V = V * P;
 
-  return boost::make_tuple(U, diag(diag(S)), transpose(V));
+  return std::make_tuple(U, diag(diag(S)), transpose(V));
 }
 
 } // anonymous namespace
@@ -1471,10 +1453,9 @@ svd_NxN(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-svd(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+svd(Tensor<T, N> const &A) {
   Index const
   dimension = A.get_dimension();
 
@@ -1484,16 +1465,16 @@ svd(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-      boost::tie(U, S, V) = svd_NxN(A);
+      std::tie(U, S, V) = svd_NxN(A);
       break;
 
     case 2:
-      boost::tie(U, S, V) = svd_2x2(A);
+      std::tie(U, S, V) = svd_2x2(A);
       break;
 
   }
 
-  return boost::make_tuple(U, S, V);
+  return std::make_tuple(U, S, V);
 }
 
 //
@@ -1519,8 +1500,8 @@ polar_rotation(Tensor<T, N> const & A)
   T const
   tol_scale = 0.01;
 
-  T const
-  tol_conv = std::sqrt(dimension) * machine_epsilon<T>();
+  T const tol_conv =
+      Kokkos::ArithTraits<Index>::sqrt(dimension) * machine_epsilon<T>();
 
   Tensor<T, N>
   X = A;
@@ -1588,11 +1569,8 @@ polar_rotation(Tensor<T, N> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_left(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_left(Tensor<T, N> const &A) {
   Tensor<T, N>
   R = polar_rotation(A);
 
@@ -1607,11 +1585,8 @@ polar_left(Tensor<T, N> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_right(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_right(Tensor<T, N> const &A) {
   Tensor<T, N>
   R = polar_rotation(A);
 
@@ -1626,11 +1601,8 @@ polar_right(Tensor<T, N> const & A)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(3) \f$ and V SPD(3)
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_left_eig(Tensor<T, N> const & F)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_left_eig(Tensor<T, N> const &F) {
   assert(F.get_dimension() == 3);
 
   // set up return tensors
@@ -1654,7 +1626,7 @@ polar_left_eig(Tensor<T, N> const & F)
 
   Tensor<T, N>
   eVec(3);
-  boost::tie(eVec, eVal) = eig_spd(b);
+  std::tie(eVec, eVal) = eig_spd(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
   Tensor<T, N>
@@ -1683,11 +1655,8 @@ polar_left_eig(Tensor<T, N> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = F \f$ with \f$ R \in SO(3) \f$ and U SPD(3)
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_right_eig(Tensor<T, N> const & F)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_right_eig(Tensor<T, N> const &F) {
   Index const
   dimension = F.get_dimension();
 
@@ -1714,7 +1683,7 @@ polar_right_eig(Tensor<T, N> const & F)
   Tensor<T, N>
   eVec(dimension);
 
-  boost::tie(eVec, eVal) = eig_spd(C);
+  std::tie(eVec, eVal) = eig_spd(C);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
   Tensor<T, N>
@@ -1744,17 +1713,16 @@ polar_right_eig(Tensor<T, N> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-polar_left_logV(Tensor<T, N> const & F)
-{
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+polar_left_logV(Tensor<T, N> const &F) {
   Index const
   dimension = F.get_dimension();
 
   Tensor<T, N>
   X(dimension), S(dimension), Y(dimension);
 
-  boost::tie(X, S, Y) = svd(F);
+  std::tie(X, S, Y) = svd(F);
 
   Tensor<T, N>
   R = X * transpose(Y);
@@ -1772,13 +1740,12 @@ polar_left_logV(Tensor<T, N> const & F)
   Tensor<T, N>
   v = X * s * transpose(X);
 
-  return boost::make_tuple(V, R, v);
+  return std::make_tuple(V, R, v);
 }
 
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-polar_left_logV_eig(Tensor<T, N> const & F)
-{
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+polar_left_logV_eig(Tensor<T, N> const &F) {
   Index const
   dimension = F.get_dimension();
 
@@ -1788,7 +1755,7 @@ polar_left_logV_eig(Tensor<T, N> const & F)
   Tensor<T, N>
   V(dimension), D(dimension);
 
-  boost::tie(V, D) = eig_sym(b);
+  std::tie(V, D) = eig_sym(b);
 
   Tensor<T, N>
   DQ(dimension, Filler::ZEROS), DI(dimension, Filler::ZEROS), DL(dimension, Filler::ZEROS);
@@ -1808,7 +1775,7 @@ polar_left_logV_eig(Tensor<T, N> const & F)
   Tensor<T, N> const
   x = V * dot_t(DL, V);
 
-  return boost::make_tuple(X, R, x);
+  return std::make_tuple(X, R, x);
 }
 
 //
@@ -1816,10 +1783,9 @@ polar_left_logV_eig(Tensor<T, N> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-polar_left_logV_lame(Tensor<T, N> const & F)
-{
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+polar_left_logV_lame(Tensor<T, N> const &F) {
   Index const
   dimension = F.get_dimension();
 
@@ -1832,7 +1798,7 @@ polar_left_logV_lame(Tensor<T, N> const & F)
   // get eigenvalues/eigenvectors
   Tensor<T, N> eVal(dimension);
   Tensor<T, N> eVec(dimension);
-  boost::tie(eVec,eVal) = eig_spd_cos(b);
+  std::tie(eVec, eVal) = eig_spd_cos(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
   Tensor<T, N> x = zero<T, N>(3);
@@ -1853,7 +1819,7 @@ polar_left_logV_lame(Tensor<T, N> const & F)
   v    = eVec*lnx*transpose(eVec);
   R    = Vinv*F;
 
-  return boost::make_tuple(V,R,v);
+  return std::make_tuple(V, R, v);
 }
 
 //
@@ -1888,11 +1854,8 @@ bch(Tensor<T, N> const & x, Tensor<T, N> const & y)
 // \param \f$ A = [f, g; g, h] \in S(2) \f$
 // \return \f$ c, s \rightarrow [c, -s; s, c]\f diagonalizes A$
 //
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-std::pair<T, T>
-schur_sym(T const f, T const g, T const h)
-{
+template <typename T>
+std::pair<T, T> schur_sym(T const f, T const g, T const h) {
   T c = 1.0;
   T s = 0.0;
 
@@ -1916,11 +1879,7 @@ schur_sym(T const f, T const g, T const h)
 // \param a, b
 // \return c, s
 //
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-std::pair<T, T>
-givens(T const & a, T const & b)
-{
+template <typename T> std::pair<T, T> givens(T const &a, T const &b) {
   T c = 1.0;
   T s = 0.0;
 
@@ -1947,11 +1906,8 @@ namespace {
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 // See algorithm 8.4.2 in Matrix Computations, Golub & Van Loan 1996
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_sym_NxN(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym_NxN(Tensor<T, N> const &A) {
   Tensor<T, N>
   D = sym(A);
 
@@ -1984,7 +1940,7 @@ eig_sym_NxN(Tensor<T, N> const & A)
     Index
     q = 0;
 
-    boost::tie(p,q) = arg_max_off_diagonal(D);
+    std::tie(p, q) = arg_max_off_diagonal(D);
     if (p > q) {
       std::swap(p,q);
     }
@@ -2002,7 +1958,7 @@ eig_sym_NxN(Tensor<T, N> const & A)
     T
     c, s;
 
-    boost::tie(c, s) = schur_sym(f, g, h);
+    std::tie(c, s) = schur_sym(f, g, h);
 
     // Apply Givens rotation to matrices
     // that are converging to eigenvalues and eigenvectors
@@ -2018,7 +1974,7 @@ eig_sym_NxN(Tensor<T, N> const & A)
   Vector<T, N> d(dimension);
   Tensor<T, N> P(dimension);
 
-  boost::tie(d, P) = sort_permutation(diag(D));
+  std::tie(d, P) = sort_permutation(diag(D));
   D = diag(d);
   V = V * P;
 
@@ -2030,11 +1986,8 @@ eig_sym_NxN(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_sym_2x2(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym_2x2(Tensor<T, N> const &A) {
   assert(A.get_dimension() == 2);
 
   T const f = A(0,0);
@@ -2093,15 +2046,15 @@ eig_sym_2x2(Tensor<T, N> const & A)
   T
   c, s;
 
-  boost::tie(c, s) = schur_sym(f, g, h);
+  std::tie(c, s) = schur_sym(f, g, h);
 
   Tensor<T, N>
   V(c, -s, s, c);
 
   if (swap_diag == true) {
     // swap eigenvectors if eigenvalues were swapped
-    std::swap(V(0,0), V(0,1));
-    std::swap(V(1,0), V(1,1));
+    std::swap(V(0, 0), V(0, 1));
+    std::swap(V(1, 0), V(1, 1));
   }
 
   return std::make_pair(V, D);
@@ -2114,11 +2067,8 @@ eig_sym_2x2(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_sym(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym(Tensor<T, N> const &A) {
   Index const
   dimension = A.get_dimension();
 
@@ -2128,11 +2078,11 @@ eig_sym(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-      boost::tie(V, D) = eig_sym_NxN(A);
+      std::tie(V, D) = eig_sym_NxN(A);
       break;
 
     case 2:
-      boost::tie(V, D) = eig_sym_2x2(A);
+      std::tie(V, D) = eig_sym_2x2(A);
       break;
 
   }
@@ -2145,11 +2095,8 @@ eig_sym(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_spd(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_spd(Tensor<T, N> const &A) {
   return eig_sym(A);
 }
 
@@ -2158,11 +2105,8 @@ eig_spd(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_spd_cos(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_spd_cos(Tensor<T, N> const &A) {
   Index const
   dimension = A.get_dimension();
 
@@ -2415,11 +2359,8 @@ eig_spd_cos(Tensor<T, N> const & A)
 // \return G Cholesky factor A = GG^T
 // \return completed (bool) algorithm ran to completion
 //
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, bool >
-cholesky(Tensor<T, N> const & A)
-{
+template <typename T, Index N>
+std::pair<Tensor<T, N>, bool> cholesky(Tensor<T, N> const &A) {
   Tensor<T, N>
   G = sym(A);
 
@@ -2465,22 +2406,18 @@ namespace {
 //
 //
 //
-template<typename T, Index N, typename RHS>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, RHS>
-identity_precon(Tensor<T, N> const & A, RHS const & B)
-{
+template <typename T, Index N, typename RHS>
+std::pair<Tensor<T, N>, RHS> identity_precon(Tensor<T, N> const &A,
+                                             RHS const &B) {
   return std::make_pair(A, B);
 }
 
 //
 //
 //
-template<typename T, Index N, typename RHS>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, RHS>
-diagonal_precon(Tensor<T, N> const & A, RHS const & B)
-{
+template <typename T, Index N, typename RHS>
+std::pair<Tensor<T, N>, RHS> diagonal_precon(Tensor<T, N> const &A,
+                                             RHS const &B) {
   Vector<T, N> const
   d = diag(A);
 
@@ -2496,11 +2433,8 @@ diagonal_precon(Tensor<T, N> const & A, RHS const & B)
 //
 //
 //
-template<typename T, Index N, typename RHS>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, RHS>
-maxabsrow_precon(Tensor<T, N> const & A, RHS & B)
-{
+template <typename T, Index N, typename RHS>
+std::pair<Tensor<T, N>, RHS> maxabsrow_precon(Tensor<T, N> const &A, RHS &B) {
   Index const
   dimension = A.get_dimension();
 
@@ -2519,11 +2453,9 @@ maxabsrow_precon(Tensor<T, N> const & A, RHS & B)
 //
 //
 //
-template<typename T, Index N, typename RHS>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, RHS>
-precon(PreconditionerType const pt, Tensor<T, N> const & A, RHS const & B)
-{
+template <typename T, Index N, typename RHS>
+std::pair<Tensor<T, N>, RHS> precon(PreconditionerType const pt,
+                                    Tensor<T, N> const &A, RHS const &B) {
   switch (pt) {
   default:
     MT_ERROR_EXIT("Unknown preconditioner type.");
@@ -2550,18 +2482,15 @@ precon(PreconditionerType const pt, Tensor<T, N> const & A, RHS const & B)
 // as it just Gauss-Jordan elimination. It is intended to be used in
 // conjunction with Kokkos to take advantage of thread parallelism.
 //
-template<typename T, Index N, typename RHS>
-KOKKOS_INLINE_FUNCTION
-RHS
-solve(Tensor<T, N> const & A, RHS const & b, PreconditionerType const pt)
-{
+template <typename T, Index N, typename RHS>
+RHS solve(Tensor<T, N> const &A, RHS const &b, PreconditionerType const pt) {
   Tensor<T, N>
   PA;
 
   RHS
   Pb;
 
-  boost::tie(PA, Pb) = precon(pt, A, b);
+  std::tie(PA, Pb) = precon(pt, A, b);
 
   return solve_full_pivot(PA, Pb);
 }

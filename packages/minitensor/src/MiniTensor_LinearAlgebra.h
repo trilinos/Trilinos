@@ -183,10 +183,7 @@ I3(Tensor<T, N> const & A);
 /// Exponential map.
 /// \return \f$ \exp A \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-Tensor<T, N>
-exp(Tensor<T, N> const & A);
+template <typename T, Index N> Tensor<T, N> exp(Tensor<T, N> const &A);
 
 ///
 /// Exponential map by Taylor series, radius of convergence is infinity
@@ -202,10 +199,7 @@ exp_taylor(Tensor<T, N> const & A);
 /// See algorithm 10.20 in Functions of Matrices, N.J. Higham, SIAM, 2008.
 /// \return \f$ \exp A \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-Tensor<T, N>
-exp_pade(Tensor<T, N> const & A);
+template <typename T, Index N> Tensor<T, N> exp_pade(Tensor<T, N> const &A);
 
 ///
 /// Logarithmic map.
@@ -338,20 +332,16 @@ norm_off_diagonal(Tensor<T, N> const & A);
 /// that rely on Jacobi-type procedures.
 /// \return \f$ (p,q) = arg max_{i,j} |a_{ij}| \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Index, Index>
-arg_max_abs(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Index, Index> arg_max_abs(Tensor<T, N> const &A);
 
 ///
 /// Arg max off-diagonal. Useful for SVD and other algorithms
 /// that rely on Jacobi-type procedures.
 /// \return \f$ (p,q) = arg max_{i \neq j} |a_{ij}| \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Index, Index>
-arg_max_off_diagonal(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Index, Index> arg_max_off_diagonal(Tensor<T, N> const &A);
 
 ///
 /// Sort and index. Useful for ordering singular values
@@ -360,18 +350,15 @@ arg_max_off_diagonal(Tensor<T, N> const & A);
 /// \param u vector to sort
 /// \return v P sorted vector, permutation matrix such that v = P^T u
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Vector<T, N>, Tensor<T, N>>
-sort_permutation(Vector<T, N> const & u);
+template <typename T, Index N>
+std::pair<Vector<T, N>, Tensor<T, N>> sort_permutation(Vector<T, N> const &u);
 
 ///
 /// Singular value decomposition (SVD)
 /// \return \f$ A = USV^T\f$
 ///
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-svd(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>> svd(Tensor<T, N> const &A);
 
 ///
 /// Project to O(N) (Orthogonal Group) using a Newton-type algorithm.
@@ -392,62 +379,54 @@ polar_rotation(Tensor<T, N> const & A);
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_left(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_left(Tensor<T, N> const &A);
 
 ///
 /// Right polar decomposition
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_right(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_right(Tensor<T, N> const &A);
 
 ///
 /// Left polar decomposition computed with eigenvalue decomposition
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_left_eig(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_left_eig(Tensor<T, N> const &A);
 
 ///
 /// R^3 right polar decomposition
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ RU = F \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-polar_right_eig(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> polar_right_eig(Tensor<T, N> const &A);
 
 ///
 /// Left polar decomposition with matrix logarithm for V
 /// \param F tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-polar_left_logV(Tensor<T, N> const & F);
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+polar_left_logV(Tensor<T, N> const &F);
 
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-polar_left_logV_eig(Tensor<T, N> const & F);
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+polar_left_logV_eig(Tensor<T, N> const &F);
 
 ///
 /// Left polar decomposition with matrix logarithm for V using eig_spd_cos
 /// \param F tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-polar_left_logV_lame(Tensor<T, N> const & F);
+template <typename T, Index N>
+std::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+polar_left_logV_lame(Tensor<T, N> const &F);
 
 ///
 /// Logarithmic map using BCH expansion (4 terms)
@@ -465,37 +444,28 @@ bch(Tensor<T, N> const & v, Tensor<T, N> const & r);
 /// \param \f$ A = [f, g; g, h] \in S(2) \f$
 /// \return \f$ c, s \rightarrow [c, -s; s, c]\f$ diagonalizes A$
 ///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-std::pair<T, T>
-schur_sym(const T f, const T g, const T h);
+template <typename T>
+std::pair<T, T> schur_sym(const T f, const T g, const T h);
 
 ///
 /// Givens rotation. [c, -s; s, c] [a; b] = [r; 0]
 /// \return c and s
 ///
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-std::pair<T, T>
-givens(T const & a, T const & b);
+template <typename T> std::pair<T, T> givens(T const &a, T const &b);
 
 ///
 /// Eigenvalue decomposition for symmetric 2nd-order tensor
 /// \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_sym(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_sym(Tensor<T, N> const &A);
 
 ///
 /// Eigenvalue decomposition for SPD 2nd-order tensor
 /// \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_spd(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_spd(Tensor<T, N> const &A);
 
 ///
 /// Eigenvalue decomposition for SPD 2nd-order tensor
@@ -503,10 +473,8 @@ eig_spd(Tensor<T, N> const & A);
 /// This algorithm comes from the journal article
 /// Scherzinger and Dohrmann, CMAME 197 (2008) 4007-4015
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, Tensor<T, N>>
-eig_spd_cos(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, Tensor<T, N>> eig_spd_cos(Tensor<T, N> const &A);
 
 ///
 /// Cholesky decomposition, rank-1 update algorithm
@@ -515,10 +483,8 @@ eig_spd_cos(Tensor<T, N> const & A);
 /// \return G Cholesky factor A = GG^T and completed (bool)
 /// algorithm ran to completion
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, bool >
-cholesky(Tensor<T, N> const & A);
+template <typename T, Index N>
+std::pair<Tensor<T, N>, bool> cholesky(Tensor<T, N> const &A);
 
 ///
 /// Preconditioner types
@@ -535,10 +501,9 @@ enum class PreconditionerType
 /// Compute a preconditioner for improving the conditioning of a
 /// linear system.
 ///
-template<typename T, Index N, typename RHS>
-KOKKOS_INLINE_FUNCTION
-std::pair<Tensor<T, N>, RHS>
-precon(PreconditionerType const pt, Tensor<T, N> const & A, RHS const & B);
+template <typename T, Index N, typename RHS>
+std::pair<Tensor<T, N>, RHS> precon(PreconditionerType const pt,
+                                    Tensor<T, N> const &A, RHS const &B);
 
 ///
 /// Solve linear system of equations.
@@ -551,11 +516,9 @@ precon(PreconditionerType const pt, Tensor<T, N> const & A, RHS const & B);
 /// \param b rhs of the system Ax=b
 /// \return x solution(s) to the system Ax=b
 ///
-template<typename T, Index N, typename RHS>
-KOKKOS_INLINE_FUNCTION
-RHS
-solve(Tensor<T, N> const & A, RHS const & b,
-    PreconditionerType const pt = PreconditionerType::IDENTITY);
+template <typename T, Index N, typename RHS>
+RHS solve(Tensor<T, N> const &A, RHS const &b,
+          PreconditionerType const pt = PreconditionerType::IDENTITY);
 
 template<typename T, Index N, typename RHS>
 KOKKOS_INLINE_FUNCTION
@@ -565,18 +528,12 @@ solve_full_pivot(Tensor<T, N> const & A, RHS const & b);
 ///
 /// Condition number: ratio of largest to smalest singular values.
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-T
-cond(Tensor<T, N> const & A);
+template <typename T, Index N> T cond(Tensor<T, N> const &A);
 
 ///
 /// Reciprocal condition number: ratio of smallest to largest singular values.
 ///
-template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
-T
-inv_cond(Tensor<T, N> const & A);
+template <typename T, Index N> T inv_cond(Tensor<T, N> const &A);
 
 } // namespace minitensor
 
