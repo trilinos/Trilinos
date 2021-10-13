@@ -1,0 +1,52 @@
+#!/bin/bash
+
+trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
+build_dir=${BUILD_DIR:-${PWD}}
+build_type=${CMAKE_BUILD_TYPE:-release}
+trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
+
+yaml_install_dir=${YAML_INSTALL_DIR:-${build_dir}/../../yaml/yaml_install}
+
+printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
+printf "BUILD_DIR=${build_dir}\n";
+printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
+printf "YAML_INSTALL_DIR=${yaml_install_dir}\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
+
+if [ ! -d ${trilinos_src_dir}/packages/seacas ] && [ ! -L ${trilinos_src_dir}/packages/seacas ] ; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/seacas directory. If using a Sierra project, make a soft-link to Sierra's seacas directory.";
+  exit 1;
+fi
+if [ ! -d ${trilinos_src_dir}/packages/stk ] && [ ! -L ${trilinos_src_dir}/packages/stk ]; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/stk directory. If using a Sierra project, make a soft-link to Sierra's stk directory.";
+  exit 1;
+fi
+if [ ! -d ${trilinos_src_dir}/packages/krino ] && [ ! -L ${trilinos_src_dir}/packages/krino ]; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/krino directory. If using a Sierra project, make a soft-link to Sierra's krino directory.";
+  exit 1;
+fi
+
+mkdir -p $trilinos_install_dir
+mkdir -p $build_dir
+
+cd ${build_dir}
+
+# Cleanup old cache before we configure
+rm -rf CMakeFiles CMakeCache.txt
+
+cmake \
+-DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
+-DCMAKE_BUILD_TYPE=${build_type^^} \
+-DKrino_ENABLE_TESTS:BOOL=ON \
+-DTrilinos_ENABLE_Krino:BOOL=ON \
+-DTrilinos_ENABLE_Fortran:BOOL=ON \
+-DTPL_ENABLE_yaml-cpp=ON \
+-Dyaml-cpp_INCLUDE_DIRS=${yaml_install_dir}/include \
+-Dyaml-cpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
+-DTPL_ENABLE_Boost:BOOL=ON \
+-DTPL_ENABLE_MPI=ON \
+-DTPL_ENABLE_Pnetcdf:BOOL=ON \
+-DTPL_ENABLE_HDF5:BOOL=ON \
+${trilinos_src_dir}/
+
