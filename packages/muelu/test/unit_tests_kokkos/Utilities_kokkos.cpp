@@ -580,17 +580,24 @@ namespace MueLuTests
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-    // ParameterList params;
-    // int nx, ny;
-    // params.set("nx", nx);
-    // params.set("ny", ny);
-    // const auto coords = Utils_Kokkos::ExtractCoordinatesFromParameterList(params);
+    auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
+    auto map = A->getMap();
 
-    // const auto comm = Parameters::getDefaultComm();
-    // Utils_Kokkos::SetRandomSeed(*comm);
+    ParameterList params;
 
-    // Utils_Kokkos::MakeFancy(*(out.getOStream()));
-  }
+    auto coords = Utils_Kokkos::ExtractCoordinatesFromParameterList(params);
+    TEST_EQUALITY(coords, Teuchos::null);
+
+    auto mvCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+    params.set("Coordinates", mvCoords);
+    coords = Utils_Kokkos::ExtractCoordinatesFromParameterList(params);
+    TEST_INEQUALITY(coords, Teuchos::null);
+
+    auto comm = Parameters::getDefaultComm();
+    TEST_NOTHROW(Utils_Kokkos::SetRandomSeed(*comm));
+
+    TEST_NOTHROW(Utils_Kokkos::MakeFancy(*(out.getOStream())));
+  } //UtilsFunctions
 
 #define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                 \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, CuthillMcKee, SC, LO, GO, NO)                  \
@@ -606,7 +613,8 @@ namespace MueLuTests
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyRowSumCriterion, SC, LO, GO, NO)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, MyOldScaleMatrix, SC, LO, GO, NO)              \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyOAZToMatrixRows, SC, LO, GO, NO)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, TransformFunctions, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, TransformFunctions, SC, LO, GO, NO)            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, UtilsFunctions, SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
