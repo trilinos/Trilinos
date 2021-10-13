@@ -105,9 +105,14 @@ namespace MueLuTests {
 
     const int numRanks = graph->GetComm()->getSize();
 
+    graph->print(out, MueLu::MsgType::Extreme);
+    TEST_EQUALITY( graph->description() == "LWGraph (graph of A)" ,  true);
+
     TEST_EQUALITY(graph != Teuchos::null,                true);
     if(numRanks == 1) {
+      TEST_EQUALITY(graph->getNodeMaxNumRowEntries() == 3,   true);
       TEST_EQUALITY(graph->GetNodeNumVertices() == 16,   true);
+      TEST_EQUALITY(graph->GetNodeNumEdges() == 46,   true);
     } else if(numRanks == 4) {
       TEST_EQUALITY(graph->GetNodeNumVertices() == 4,    true);
     }

@@ -86,6 +86,9 @@ namespace MueLuTests {
 
     RCP<Hierarchy> H = rcp(new Hierarchy);
 
+//    ParameterList printList = paramList.sublist("export data");
+    Teuchos::Array<int> array = Teuchos::Array<int>({2, 2, 2, 1, 1, 1});
+
     TEST_INEQUALITY(H, Teuchos::null);
 
   } //Constructor

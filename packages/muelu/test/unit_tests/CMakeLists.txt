@@ -26,6 +26,7 @@ APPEND_SET(SOURCES
   Aggregates.cpp
   AggregateQualityEstimateFactory.cpp
   AmalgamationFactory.cpp
+  AmalgamationInfo.cpp
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
@@ -37,6 +38,7 @@ APPEND_SET(SOURCES
   Hierarchy.cpp
   IndexManager.cpp
   Level.cpp
+  LWGraph.cpp
   MapTransferFactory.cpp
   Memory.cpp
   MueLu_UnitTests.cpp
@@ -49,6 +51,7 @@ APPEND_SET(SOURCES
   PgPFactory.cpp
   RAPFactory.cpp
   RAPShiftFactory.cpp
+  RebalanceAcFactory.cpp
   ReitzingerPFactory.cpp
   SaPFactory.cpp
   ScaledNullspaceFactory.cpp

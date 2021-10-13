@@ -229,8 +229,39 @@ namespace MueLuTests {
     return numDiscontiguousAggregates;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustUncoupledAggregationFactory, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    // Setup aggregation factory (use default factory for graph)
+    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetOrdering("graph");
+    TEST_EQUALITY(aggFact->GetOrdering()== "graph",             true);
+    aggFact->SetOrdering("natural");
+    TEST_EQUALITY(aggFact->GetOrdering()== "natural",           true);
+    aggFact->SetOrdering("random");
+    TEST_EQUALITY(aggFact->GetOrdering()== "random",            true);
+
+    aggFact->SetMaxNeighAlreadySelected(12);
+    TEST_EQUALITY(aggFact->GetMaxNeighAlreadySelected() == 12,   true);
+
+    aggFact->SetMaxNeighAlreadySelected(0);
+    TEST_EQUALITY(aggFact->GetMaxNeighAlreadySelected() == 0,   true);
+
+    aggFact->SetMinNodesPerAggregate(0);
+    TEST_EQUALITY(aggFact->GetMinNodesPerAggregate() == 0,      true);
+
+    aggFact->SetMinNodesPerAggregate(3);
+    TEST_EQUALITY(aggFact->GetMinNodesPerAggregate() == 3,      true);
+}
+
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustUncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,NO);
@@ -242,9 +273,53 @@ namespace MueLuTests {
 
     TEST_EQUALITY(aggregates != Teuchos::null,              true);
     TEST_EQUALITY(aggregates->AggregatesCrossProcessors(),  false);
+
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustDist2UncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    //TODO bmk: A lot of test code duplicated here from gimmeUncoupledAggregates
+    //because it can't take a custom parameter list, add that as parameter?
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
+    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    Level level;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetParameter("aggregation: max agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: min agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: max selected neighbors", Teuchos::ParameterEntry(0));
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 1",         Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 2a",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 2b",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 3",         Teuchos::ParameterEntry(true));
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
+    TEST_INEQUALITY(aggregates, Teuchos::null);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
+    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    level.Release("UnAmalgamationInfo", amalgFact.get());
+    level.Release("Aggregates", aggFact.get());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustDist2PreserveUncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     //TODO bmk: A lot of test code duplicated here from gimmeUncoupledAggregates
     //because it can't take a custom parameter list, add that as parameter?
@@ -285,6 +360,50 @@ namespace MueLuTests {
     level.Release("UnAmalgamationInfo", amalgFact.get());
     level.Release("Aggregates", aggFact.get());
   }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustOnePt2UncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    //TODO bmk: A lot of test code duplicated here from gimmeUncoupledAggregates
+    //because it can't take a custom parameter list, add that as parameter?
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
+    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    Level level;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetParameter("aggregation: max agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: min agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: max selected neighbors", Teuchos::ParameterEntry(0));
+    aggFact->SetParameter("aggregation: allow user-specified singletons", Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 1",         Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 2a",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 2b",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 3",         Teuchos::ParameterEntry(true));
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
+    TEST_INEQUALITY(aggregates, Teuchos::null);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
+    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    level.Release("UnAmalgamationInfo", amalgFact.get());
+    level.Release("Aggregates", aggFact.get());
+  }
+
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, JustDist2DeterUncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -320,6 +439,11 @@ namespace MueLuTests {
     level.Request("UnAmalgamationInfo", amalgFact.get());
 
     level.Request(*aggFact);
+
+    // Set some node to ONEPT state
+
+
+
     aggFact->Build(level);
     RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
     TEST_INEQUALITY(aggregates, Teuchos::null);
@@ -329,6 +453,116 @@ namespace MueLuTests {
     level.Release("Aggregates", aggFact.get());
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates_kokkos, GreedyDirichletUncoupledAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    //TODO bmk: A lot of test code duplicated here from gimmeUncoupledAggregates
+    //because it can't take a custom parameter list, add that as parameter?
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(15);
+
+    // Create a dirichlet boundary row.
+    LocalOrdinal localRowToZero = 5; // Corresponds to a Dof on local graph node 2
+
+    Teuchos::ArrayView<const LocalOrdinal> indices;
+    Teuchos::ArrayView<const Scalar>  values;
+
+    A->resumeFill();
+    A->getLocalRowView(localRowToZero, indices, values);
+    Array<Scalar> newvalues(values.size(),Teuchos::ScalarTraits<Scalar>::zero());
+    for (int j = 0; j < indices.size(); j++)
+      //keep diagonal
+      if (indices[j] == localRowToZero) newvalues[j] = values[j];
+    A->replaceLocalValues(localRowToZero,indices,newvalues);
+
+    A->fillComplete();
+
+    ArrayRCP<const bool> drows = Utilities::DetectDirichletRows(*A);
+    TEST_EQUALITY(drows[localRowToZero], true);
+    TEST_EQUALITY(drows[localRowToZero-1], false);
+
+    RCP<AmalgamationInfo_kokkos> amalgInfo;
+    Level level;
+    TestHelpers_kokkos::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    RCP<AmalgamationFactory_kokkos> amalgFact = rcp(new AmalgamationFactory_kokkos());
+    RCP<CoalesceDropFactory_kokkos> dropFact  = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetParameter("aggregation: max agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: min agg size",           Teuchos::ParameterEntry(3));
+    aggFact->SetParameter("aggregation: max selected neighbors", Teuchos::ParameterEntry(0));
+    aggFact->SetParameter("aggregation: enable phase 1",         Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 2a",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 2b",        Teuchos::ParameterEntry(true));
+    aggFact->SetParameter("aggregation: enable phase 3",         Teuchos::ParameterEntry(true));
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    RCP<Aggregates_kokkos> aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get()); // fix me
+
+
+
+    LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    auto vertexData = aggregates->GetVertex2AggIdNonConst();
+    LO numNodes = vertexData->getLocalLength();
+    Teuchos::ArrayRCP<const LO> vertex2AggId = vertexData->getData(0);
+    bool isUnaggregatedDetected = false;
+    for(LO i=0; i<numNodes; i++) {
+      LO aggregate = vertex2AggId[i];
+      if(aggregate == INVALID) {
+          isUnaggregatedDetected = true;
+      }
+    }
+    // check that the node with the Dof flagged as dirichlet is unaggregated
+    TEST_EQUALITY(isUnaggregatedDetected, true);
+
+    TEST_INEQUALITY(aggregates, Teuchos::null);
+    TEST_EQUALITY(aggregates->AggregatesCrossProcessors(), false);
+
+    // Repeat with greedy Dirichlet and preserve Dirichlet points
+    amalgFact = rcp(new AmalgamationFactory_kokkos());
+    dropFact = rcp(new CoalesceDropFactory_kokkos());
+    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+
+    // Setup aggregation factory (use default factory for graph)
+    aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    aggFact->SetFactory("Graph", dropFact);
+    aggFact->SetParameter("aggregation: preserve Dirichlet points",Teuchos::ParameterEntry(true));
+
+    level.Request("Aggregates", aggFact.get());
+    level.Request("UnAmalgamationInfo", amalgFact.get());
+
+    level.Request(*aggFact);
+    aggFact->Build(level);
+    aggregates = level.Get<RCP<Aggregates_kokkos> >("Aggregates",aggFact.get());
+    vertexData = aggregates->GetVertex2AggIdNonConst();
+    numNodes = vertexData->getLocalLength();
+    vertex2AggId = vertexData->getData(0);
+    isUnaggregatedDetected = false;
+    for(LO i=0; i<numNodes; i++) {
+      LO aggregate = vertex2AggId[i];
+      if(aggregate == INVALID) {
+          isUnaggregatedDetected = true;
+      }
+    }
+    TEST_EQUALITY(isUnaggregatedDetected,false);// check that no node is unaggregated
+
+
+    // Clean
+    amalgInfo = level.Get<RCP<AmalgamationInfo_kokkos> >("UnAmalgamationInfo",amalgFact.get()); // fix me
+    level.Release("UnAmalgamationInfo", amalgFact.get());
+    level.Release("Aggregates", aggFact.get());
+  }
 
 // A test that creates discontiguous aggregates to make sure the detection algorithm works well
 /// pretty much testing the test...
@@ -484,9 +718,13 @@ namespace MueLuTests {
   } //UncoupledPhase3
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregationFactory, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustUncoupledAggregation, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustDist2UncoupledAggregation, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustDist2PreserveUncoupledAggregation, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustDist2DeterUncoupledAggregation, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, GreedyDirichletUncoupledAggregation, SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, JustOnePt2UncoupledAggregation, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, DiscontiguousAggregates, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase1, SC, LO, GO, NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates_kokkos, UncoupledPhase2, SC, LO, GO, NO) \
