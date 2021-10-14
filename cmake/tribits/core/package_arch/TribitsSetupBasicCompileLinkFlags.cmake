@@ -37,95 +37,95 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(TribitsDefineStandardCompileVars)
-INCLUDE(DualScopePrependCmndlineArgs)
-INCLUDE(PrintVar)
+include(TribitsDefineStandardCompileVars)
+include(DualScopePrependCmndlineArgs)
+include(PrintVar)
 
 #
 # Helper macros
 #
 
-MACRO(TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS LANG BUILDTYPE)
+macro(tribits_set_language_buildtype_flags LANG BUILDTYPE)
 
-  #PRINT_VAR(CMAKE_${LANG}_FLAGS_${BUILDTYPE})
-  #PRINT_VAR(GENERAL_${BUILDTYPE}_FLAGS)
+  #print_var(CMAKE_${LANG}_FLAGS_${BUILDTYPE})
+  #print_var(GENERAL_${BUILDTYPE}_FLAGS)
 
   # Set the default CMAKE_${LANG}_FLAGS_${BUILDTYPE} to empty to override the
   # default that CMake gives!  We want to define these for ourselves.
-  SET(CMAKE_${LANG}_FLAGS_${BUILDTYPE} "")
+  set(CMAKE_${LANG}_FLAGS_${BUILDTYPE} "")
 
-  IF (${LANG}_${BUILDTYPE}_FLAGS)
-    DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(CMAKE_${LANG}_FLAGS_${BUILDTYPE}
+  if (${LANG}_${BUILDTYPE}_FLAGS)
+    dual_scope_prepend_cmndline_args(CMAKE_${LANG}_FLAGS_${BUILDTYPE}
       "${${LANG}_${BUILDTYPE}_FLAGS}")
-  ENDIF()
-  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE(STATUS "Adding ${LANG} ${BUILDTYPE} flags"
+  endif()
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message(STATUS "Adding ${LANG} ${BUILDTYPE} flags"
       " \"${${LANG}_${BUILDTYPE}_FLAGS}\"")
-    PRINT_VAR(CMAKE_${LANG}_FLAGS_${BUILDTYPE})
-  ENDIF()
+    print_var(CMAKE_${LANG}_FLAGS_${BUILDTYPE})
+  endif()
 
-ENDMACRO()
+endmacro()
 
 
-MACRO(TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS_OVERRIDE LANG BUILDTYPE)
+macro(tribits_set_language_buildtype_flags_override LANG BUILDTYPE)
 
-  SET(CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE  ""
+  set(CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE  ""
     CACHE  STRING
     "If set to non-empty, will override CMAKE_${LANG}_FLAGS_${BUILDTYPE}")
 
-  IF (CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE)
-    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(
+  if (CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE)
+    if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message(
         "-- Overriding CMAKE_${LANG}_FLAGS_${BUILDTYPE}:\n"
         "--  from\n"
         "--    ${CMAKE_${LANG}_FLAGS_${BUILDTYPE}}")
-    ENDIF()
-    DUAL_SCOPE_SET(CMAKE_${LANG}_FLAGS_${BUILDTYPE}
+    endif()
+    dual_scope_set(CMAKE_${LANG}_FLAGS_${BUILDTYPE}
       ${CMAKE_${LANG}_FLAGS_${BUILDTYPE}_OVERRIDE})
-    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(
+    if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message(
         "--  to\n"
         "--    ${CMAKE_${LANG}_FLAGS_${BUILDTYPE}}")
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
   # NOTE: Above, we can't just let users set CMAKE_${LANG}_FLAGS_${BUILDTYPE}
-  # in the cache because CMake overrides it.  We have ot add this override
+  # in the cache because CMake overrides it.  We have to add this override
   # option to allow them to override it.
 
-ENDMACRO()
+endmacro()
 
 
-MACRO(TRIBITS_SET_LANGUAGE_ALL_BUILDTYPES_FLAGS_OVERRIDE LANG)
+macro(tribits_set_language_all_buildtypes_flags_override LANG)
 
-  FOREACH(BUILDTYPE ${CMAKE_BUILD_TYPES_LIST})
-    TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS_OVERRIDE(${LANG} ${BUILDTYPE})
-  ENDFOREACH()
+  foreach(BUILDTYPE ${CMAKE_BUILD_TYPES_LIST})
+    tribits_set_language_buildtype_flags_override(${LANG} ${BUILDTYPE})
+  endforeach()
 
-ENDMACRO()
-
-
-MACRO(TRIBITS_SET_LANGUAGE_GENERAL_FLAGS LANG)
-
-  DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(CMAKE_${LANG}_FLAGS "${GENERAL_BUILD_FLAGS}")
-  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE(STATUS "Adding general ${LANG} flags \"${${GENERAL_BUILD_FLAGS}}\"")
-    PRINT_VAR(CMAKE_${LANG}_FLAGS)
-  ENDIF()
-
-ENDMACRO()
+endmacro()
 
 
-MACRO(TRIBITS_SET_LANGUAGE_COVERAGE_FLAGS LANG)
+macro(tribits_set_language_general_flags LANG)
 
-  DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(CMAKE_${LANG}_FLAGS
+  dual_scope_prepend_cmndline_args(CMAKE_${LANG}_FLAGS "${GENERAL_BUILD_FLAGS}")
+  if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message(STATUS "Adding general ${LANG} flags \"${${GENERAL_BUILD_FLAGS}}\"")
+    print_var(CMAKE_${LANG}_FLAGS)
+  endif()
+
+endmacro()
+
+
+macro(tribits_set_language_coverage_flags LANG)
+
+  dual_scope_prepend_cmndline_args(CMAKE_${LANG}_FLAGS
    "${COVERAGE_OPTIONS}")
-  IF(COVERAGE_OPTIONS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE(STATUS "Adding coverage ${LANG} flags \"${COVERAGE_OPTIONS}\"")
-    PRINT_VAR(CMAKE_${LANG}_FLAGS)
-  ENDIF()
+  if(COVERAGE_OPTIONS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    message(STATUS "Adding coverage ${LANG} flags \"${COVERAGE_OPTIONS}\"")
+    print_var(CMAKE_${LANG}_FLAGS)
+  endif()
 
-ENDMACRO()
+endmacro()
 
 
 #
@@ -140,75 +140,75 @@ ENDMACRO()
 # executables, etc.
 #
 
-FUNCTION(TRIBITS_SETUP_BASIC_COMPILE_LINK_FLAGS)
+function(tribits_setup_basic_compile_link_flags)
 
   #
   # Setup and general flags
   #
 
-  TRIBITS_DEFINE_STANDARD_COMPILE_FLAGS_VARS(FALSE)
+  tribits_define_standard_compile_flags_vars(FALSE)
 
   #
-  # Set up coverge testing options
+  # Set up coverage testing options
   #
 
-  IF (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING)
-    SET(COVERAGE_OPTIONS "-fprofile-arcs -ftest-coverage")
-  ELSE()
-    SET(COVERAGE_OPTIONS "")
-  ENDIF()
+  if (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING)
+    set(COVERAGE_OPTIONS "-fprofile-arcs -ftest-coverage")
+  else()
+    set(COVERAGE_OPTIONS "")
+  endif()
 
   #
   # C compiler options
   #
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C CMAKE_C_COMPILER_ID)
-  IF (${PROJECT_NAME}_ENABLE_C AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS(C DEBUG)
-    TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS(C RELEASE)
-    TRIBITS_SET_LANGUAGE_GENERAL_FLAGS(C)
-    TRIBITS_SET_LANGUAGE_COVERAGE_FLAGS(C)
-  ENDIF()
-  TRIBITS_SET_LANGUAGE_ALL_BUILDTYPES_FLAGS_OVERRIDE(C)
+  assert_defined(${PROJECT_NAME}_ENABLE_C CMAKE_C_COMPILER_ID)
+  if (${PROJECT_NAME}_ENABLE_C AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+    tribits_set_language_buildtype_flags(C DEBUG)
+    tribits_set_language_buildtype_flags(C RELEASE)
+    tribits_set_language_general_flags(C)
+    tribits_set_language_coverage_flags(C)
+  endif()
+  tribits_set_language_all_buildtypes_flags_override(C)
 
   #
   # C++ compiler options
   #
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX CMAKE_CXX_COMPILER_ID)
-  IF (${PROJECT_NAME}_ENABLE_CXX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS(CXX DEBUG)
-    TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS(CXX RELEASE)
-    TRIBITS_SET_LANGUAGE_GENERAL_FLAGS(CXX)
-    TRIBITS_SET_LANGUAGE_COVERAGE_FLAGS(CXX)
-  ENDIF()
-  TRIBITS_SET_LANGUAGE_ALL_BUILDTYPES_FLAGS_OVERRIDE(CXX)
+  assert_defined(${PROJECT_NAME}_ENABLE_CXX CMAKE_CXX_COMPILER_ID)
+  if (${PROJECT_NAME}_ENABLE_CXX AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    tribits_set_language_buildtype_flags(CXX DEBUG)
+    tribits_set_language_buildtype_flags(CXX RELEASE)
+    tribits_set_language_general_flags(CXX)
+    tribits_set_language_coverage_flags(CXX)
+  endif()
+  tribits_set_language_all_buildtypes_flags_override(CXX)
 
   #
   # Fortran compiler options
   #
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
-  IF (${PROJECT_NAME}_ENABLE_Fortran AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-    TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS(Fortran DEBUG)
-    TRIBITS_SET_LANGUAGE_BUILDTYPE_FLAGS(Fortran RELEASE)
-    TRIBITS_SET_LANGUAGE_GENERAL_FLAGS(Fortran)
-    TRIBITS_SET_LANGUAGE_COVERAGE_FLAGS(Fortran)
-  ENDIF()
-  TRIBITS_SET_LANGUAGE_ALL_BUILDTYPES_FLAGS_OVERRIDE(Fortran)
+  assert_defined(${PROJECT_NAME}_ENABLE_Fortran)
+  if (${PROJECT_NAME}_ENABLE_Fortran AND CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+    tribits_set_language_buildtype_flags(Fortran DEBUG)
+    tribits_set_language_buildtype_flags(Fortran RELEASE)
+    tribits_set_language_general_flags(Fortran)
+    tribits_set_language_coverage_flags(Fortran)
+  endif()
+  tribits_set_language_all_buildtypes_flags_override(Fortran)
 
   #
   # Linker options
   #
 
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_COVERAGE_TESTING COVERAGE_OPTIONS)
-  IF (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING AND COVERAGE_OPTIONS)
-    DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(CMAKE_EXE_LINKER_FLAGS
+  assert_defined(${PROJECT_NAME}_ENABLE_COVERAGE_TESTING COVERAGE_OPTIONS)
+  if (${PROJECT_NAME}_ENABLE_COVERAGE_TESTING AND COVERAGE_OPTIONS)
+    dual_scope_prepend_cmndline_args(CMAKE_EXE_LINKER_FLAGS
      "${COVERAGE_OPTIONS} ${CMAKE_EXE_LINKER_FLAGS}")
-    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "Adding coverage linker flags flags \"${COVERAGE_OPTIONS}\"")
-      PRINT_VAR(CMAKE_EXE_LINKER_FLAGS)
-    ENDIF()
-  ENDIF()
+    if(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      message(STATUS "Adding coverage linker flags flags \"${COVERAGE_OPTIONS}\"")
+      print_var(CMAKE_EXE_LINKER_FLAGS)
+    endif()
+  endif()
 
-ENDFUNCTION()
+endfunction()

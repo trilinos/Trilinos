@@ -132,6 +132,7 @@ namespace MueLu {
     if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "sa: use filtered matrix") { ss << "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: eigenvalue estimate num iterations") { ss << "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: use rowsumabs diagonal scaling") { ss << "<Parameter name=\"sa: use rowsumabs diagonal scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: enforce constraints") { ss << "<Parameter name=\"sa: enforce constraints\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -773,7 +774,7 @@ namespace MueLu {
       
          ("aggregation: damping factor","sa: damping factor")
       
-         ("sa: use filtered matrix","sa: use filtered matrix")
+         ("aggregation aux: enable","sa: use filtered matrix")
       
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
       

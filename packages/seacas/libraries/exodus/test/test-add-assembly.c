@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -37,8 +37,7 @@ int main(int argc, char **argv)
   float version;
   float fdum;
 
-  char  title_chk[MAX_LINE_LENGTH + 1];
-  char *cdum = 0;
+  char *cdum = NULL;
 
   CPU_word_size = 0; /* sizeof(float) */
   IO_word_size  = 0; /* use what is stored in file */
@@ -84,6 +83,7 @@ int main(int argc, char **argv)
     printf("num_side_sets = %" PRId64 "\n", par.num_side_sets);
 
     /* Check that ex_inquire gives same title */
+    char title_chk[MAX_LINE_LENGTH + 1];
     EXCHECK(ex_inquire(exoid, EX_INQ_TITLE, &idum, &fdum, title_chk));
     if (strcmp(par.title, title_chk) != 0) {
       printf("error in ex_inquire for EX_INQ_TITLE %s, vs %s\n", par.title, title_chk);

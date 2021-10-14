@@ -144,7 +144,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
 	
   */
   template<typename T>
-  static void Sort(bool SortAscending, int NumKeys, T * Keys,
+  static void EPETRA_LIB_DLL_EXPORT Sort(bool SortAscending, int NumKeys, T * Keys,
 		   int NumDoubleCompanions,double ** DoubleCompanions,
 		   int NumIntCompanions, int ** IntCompanions,
 		   int NumLongLongCompanions, long long ** LongLongCompanions);
@@ -467,7 +467,8 @@ const T* Epetra_Util_data_ptr(const std::vector<T> &vec)
     \param lhs (Out) Fortran-style 2D array of LHS values.
     \param ldrhs (Out) Stride between columns of lhs.
 */
-int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
+int EPETRA_LIB_DLL_EXPORT Epetra_Util_ExtractHbData(
+			      Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
 			      Epetra_MultiVector * RHS,
 			      int & M, int & N, int & nz, int * & ptr,
 			      int * & ind, double * & val, int & Nrhs,

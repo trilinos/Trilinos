@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3 -u
 # -*- mode: python; py-indent-offset: 4; py-continuation-offset: 4 -*-
 # Change above to '/usr/bin/python -3' for python 3.x porting warnings
 """
@@ -26,41 +26,47 @@ sys.dont_write_bytecode = True
 import argparse
 import os
 import subprocess
+import sys
 from textwrap import dedent
 
 
+def print_wrapper(text: str, prefix="PRLinuxDriverMerge> ", end="\n"):
+    """
+    """
+    rval = print(f"{prefix}{text}", end=end)
+    #sys.stdout.flush()
+    return rval
+
 
 def write_header():
-    print(dedent('''\
-          --------------------------------------------------------------------------------
-          -
-          - Begin: PullRequestLinuxDriver-Merge.py
-          -
-          --------------------------------------------------------------------------------'''))
+    """
+    """
+    print_wrapper("-"*80)
+    print_wrapper("-")
+    print_wrapper("- Begin: PullRequestLinuxDriverMerge.py")
+    print("-")
+    print_wrapper("-"*80)
 
 
 def echoJenkinsVars(workspace):
-    print(dedent('''\
-
-            ================================================================================
-            Jenkins Environment Variables:
-            - WORKSPACE    : {workspace}
-
-            ================================================================================
-            Environment:
-
-              pwd = {cwd}
-            ''').format(workspace=workspace, cwd=os.getcwd()))
-
+    """
+    """
+    print_wrapper(80*"-")
+    print_wrapper(f"Jenkins Environment Variables:")
+    print_wrapper(f"WORKSPACE: {workspace}")
+    print_wrapper(f"Environment:")
+    print_wrapper(f"-- pwd = {os.getcwd()}")
+    print_wrapper(f"Environment Variables:")
     for key in os.environ:
-        print(key +' = ' + os.environ[key])
-
-    print('\n' + 80*"=")
-
+        print_wrapper(f"-- {key} = {os.environ[key]}")
+    print_wrapper("")
+    print_wrapper(80*"-")
 
 
 def parseArgs():
-    '''Parse the arguments - no  options are available at this time'''
+    """
+    Parse the arguments - no  options are available at this time
+    """
     parser = argparse.ArgumentParser(description='Parse the repo and merge information')
     parser.add_argument('sourceRepo',
                         help='Repo with the new changes',
@@ -83,42 +89,87 @@ def parseArgs():
     return parser.parse_args()
 
 
-def merge_branch(source_url, source_branch, target_branch, sourceSHA):
+def check_call_wrapper(args):
+    """
+    A simple wrapper for subprocess.check_call() that prints out
+    a more verbose bit of output to stdout for console logging, etc.
 
+    Args:
+        args (list): A list of arguments to be executed.
+
+    Returns:
+        int: Returns a 0.
+    """
+    # print("PRLinuxDriverMerge> {}".format(" ".join(args)))
+    print_wrapper("Checked Call:")
+    print_wrapper(" ".join( [str(x) for x in args] ))
+    subprocess.check_call(args)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    print_wrapper("OK")
+    print_wrapper("")
+    return None
+
+
+def check_output_wrapper(args):
+    """
+    A simple wrapper for ``subprocess.check_output()`` that prints out
+    a more verbose bit of output to stdout for console logging, etc.
+
+    Args:
+        args (list): A list of arguments to be executed.
+
+    Returns:
+        int: Passes along the value returned by ``subprocess.check_output()``
+    """
+    print_wrapper(" ".join(args))
+    output = subprocess.check_output(args)
+    print_wrapper("")
+    sys.stdout.flush()
+    sys.stderr.flush()
+    return output
+
+
+def merge_branch(source_url, source_branch, target_branch, sourceSHA):
+    """
+    TODO: add docstring.
+    """
     source_url    = source_url.strip()
     source_branch = source_branch.strip()
     target_branch = target_branch.strip()
     sourceSHA     = sourceSHA.strip()
 
-    remote_list = subprocess.check_output(['git', 'remote', '-v'])
+    remote_list = check_output_wrapper(['git', 'remote', '-v'])
 
     if isinstance(remote_list, bytes):
         remote_list = remote_list.decode('utf-8')
 
     if 'source_remote' in remote_list:
-        print('git remote exists, removing it', file=sys.stdout)
-        subprocess.check_call(['git', 'remote', 'rm', 'source_remote'])
+        print_wrapper("git remote exists, removing it")
+        check_call_wrapper(['git', 'remote', 'rm', 'source_remote'])
 
-    subprocess.check_call(['git', 'remote', 'add', 'source_remote', source_url])
+    check_call_wrapper(['git', 'remote', 'add', 'source_remote', source_url])
 
     fetch_succeeded = False
     for i in range(3):
         try:
-            subprocess.check_call(['git', 'fetch', 'source_remote', source_branch])
+            check_call_wrapper(['git', 'fetch', 'source_remote', source_branch])
             fetch_succeeded = True
             break
         except subprocess.CalledProcessError:
             pass
 
     if not fetch_succeeded:
+        print_wrapper("ERROR: Fetch did not succeed.")
         raise SystemExit(12)
 
-    subprocess.check_call(['git', 'fetch', 'origin', target_branch])
-    subprocess.check_call(['git', 'reset', '--hard', 'HEAD'])
-    subprocess.check_call(['git', 'checkout', '-B', target_branch, 'origin/' + target_branch])
-    subprocess.check_call(['git', 'merge', '--no-edit', 'source_remote/' + source_branch]),
+    check_call_wrapper(['git', 'fetch', 'origin', target_branch])
+    check_call_wrapper(['git', 'reset', '--hard', 'HEAD'])
+    check_call_wrapper(['git', 'checkout', '-B', target_branch, 'origin/' + target_branch])
+    check_call_wrapper(['git', 'merge', '--no-edit', 'source_remote/' + source_branch]),
 
-    actual_source_SHA = subprocess.check_output(['git', 'rev-parse', 'source_remote/' + source_branch])
+    actual_source_SHA = check_output_wrapper(['git', 'rev-parse', 'source_remote/' + source_branch])
+
     if isinstance(actual_source_SHA, bytes):
         actual_source_SHA = actual_source_SHA.decode('utf-8')
 
@@ -128,11 +179,13 @@ def merge_branch(source_url, source_branch, target_branch, sourceSHA):
     actual_source_SHA = actual_source_SHA.strip()
 
     if actual_source_SHA != sourceSHA:
-        print('The SHA ({source_sha}) for the last commit on branch {source_branch}'.format(source_sha=actual_source_SHA,
-                                                                                            source_branch=source_branch), file=sys.stdout)
-        print('  in repo {source_repo} is different than the expected SHA,'.format(source_repo=source_url), file=sys.stdout)
-        print('  which is: {source_sha}.'.format(source_sha=sourceSHA), file=sys.stdout)
+        print_wrapper(f"The SHA ({actual_source_SHA}) for the last commit on branch {source_branch}")
+        print_wrapper(f"in repo {source_url} is different from the expected SHA,")
+        print_wrapper(f"which is: {sourceSHA}.")
         raise SystemExit(-1)
+
+    return 0
+
 
 
 def run():
@@ -143,9 +196,7 @@ def run():
         return_value = False
     if return_value:
         os.chdir(os.path.join(arguments.workspaceDir, 'Trilinos'))
-        print("Set CWD = {dirName}".format(dirName=os.path.join(
-                                                 arguments.workspaceDir,
-                                                 'Trilinos')))
+        print_wrapper(f"Set CWD = {os.path.join(arguments.workspaceDir, 'Trilinos')}")
         write_header()
         echoJenkinsVars(arguments.workspaceDir)
         try:
@@ -157,15 +208,17 @@ def run():
             return_value = False
         except subprocess.CalledProcessError as cpe:
             return_value = False
-            print('Recieved subprocess.CalledProcessError - returned {error_num}'.format(error_num=cpe.returncode), file=sys.stdout)
-            print('  from command {cmd}'.format(cmd=cpe.cmd), file=sys.stdout)
-            print('  output {out}'.format(out=cpe.output), file=sys.stdout)
+
+            print_wrapper(f"Received subprocess.CalledProcessError - returned {cpe.returncode}")
+            print_wrapper(f"from command {cpe.cmd}")
+            print_wrapper(f"output {cpe.output}")
+
             try:
-                print('  stdout {out}'.format(out=cpe.stdout), file=sys.stdout)
+                print_wrapper(f"  stdout {cpe.stdout}")
             except AttributeError:
                 pass
             try:
-                print('  stderr {eout}'.format(eout=cpe.stderr), file=sys.stdout)
+                print_wrapper(f"  stderr {cpe.stderr}")
             except AttributeError:
                 pass
 
@@ -175,8 +228,10 @@ def run():
 if __name__ == '__main__':  # pragma nocover
     returnValue = run()
     if returnValue:
+        print_wrapper(f" Finished Normally")
         exit(0)
     else:
+        print_wrapper(f" Finished with error(s)")
         exit(1)
 
 

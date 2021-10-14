@@ -27,12 +27,11 @@ namespace Excn {
     static bool create_output(const SystemInterface &si, int cycle);
     static void close_all();
 
-    static int    output();
-    static int    io_word_size() { return ioWordSize_; }
-                  operator int() const;
-    static int    max_name_length() { return maximumNameLength_; }
-    static size_t get_free_descriptor_count();
-    static void   unlink_temporary_files();
+    static int  output();
+    static int  io_word_size() { return ioWordSize_; }
+                operator int() const;
+    static int  max_name_length() { return maximumNameLength_; }
+    static void unlink_temporary_files();
 
   private:
     int                             myProcessor_;

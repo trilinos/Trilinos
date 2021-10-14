@@ -48,61 +48,37 @@
 #include <memory>
 
 #include <stk_util/util/string_case_compare.hpp>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace stk {
 namespace expreval {
 
-/**
- * @brief Class <b>Variable</b> defines a variable for the expression evaluation
- * virtual machine.  Typing is limited to int and double.  While all operations are
- * performed as doubles, the value and results may be retrieved and stored as integer
- * values.
- *
- * Array indexing is also supported, but no bounds checkin is available and only double
- * type array may be addressed.
- *
- * Variable are implemented as a pointer, "typed" by the <b>Type</b> enumeration
- * to the actual value.  At construction, this may point to a "local" double value or
- * integer value, or the address may be specified.  In either case, a type and address
- * for the variable may be provided via variable "binding".
- *
- */
+class NgpNode;
+
 class Variable
 {
 public:
-  /**
-   * @brief Enumeration <b>Type</b> lists the variable data types.  <b>double</b> and
-   * <b>int</b> are currently supported.
-   */
   enum Type        {DOUBLE, INTEGER};
   enum Use         {DEPENDENT, INDEPENDENT};
   enum ArrayOffset {ZERO_BASED_INDEX, ONE_BASED_INDEX};
   
-  /**
-   * Creates a new <b>Variable</b> instance.
-   */
   Variable(const std::string& name)
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(1),
       m_doublePtr(&m_doubleValue),
       m_doubleValue(0.0),
-      m_name(name)
+      m_name(name),
+      m_index(0)
   {
   }
 
-  /**
-   * Creates a new <b>Variable</b> instance.  The new variable will be local and
-   * have the type specified by <b>type</b>.
-   *
-   * @param type		an <b>Type</b> value of the type of the new
-   *				variable.
-   */
   explicit Variable(Type type, const std::string& name)
     : m_type(type),
       m_use(INDEPENDENT),
       m_size(1),
-      m_name(name)
+      m_name(name),
+      m_index(0)
   {
     switch (type) {
     case DOUBLE:
@@ -116,56 +92,28 @@ public:
     }
   }
 
-  /**
-   * Creates a new <b>Variable</b> instance.  The new variable will use the
-   * address specified by <b>address</b> and be of type double.  This address must
-   * remain in scope during the lifetime of the variable are until rebound to a new
-   * address.
-   *
-   * @param address		an <b>double</b> reference to the value for this
-   *				variable.
-   *
-   */
   explicit Variable(double &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(DOUBLE),
       m_use(INDEPENDENT),
       m_size(definedLength),
       m_doublePtr(&address),
       m_doubleValue(0.0),
-      m_name(name)
+      m_name(name),
+      m_index(0)
   {
   }
 
-  /**
-   * Creates a new <b>Variable</b> instance.  The new variable will use the
-   * address specified by <b>address</b> and be of type int.  This address must
-   * remain in scope during the lifetime of the variable are until rebound to a new
-   * address.
-   *
-   * @param address		an <b>int</b> reference to the value for this
-   *				variable.
-   *
-   */
   explicit Variable(int &address, const std::string& name, unsigned definedLength=std::numeric_limits<int>::max())
     : m_type(INTEGER),
       m_use(INDEPENDENT),
       m_size(definedLength),
       m_intPtr(&address),
       m_intValue(0),
-      m_name(name)
+      m_name(name),
+      m_index(0)
   {
   }
 
-  /**
-   * @brief Member function <b>operator=</b> assigns a new value to the variable.
-   * If the variable type is integer, the value is converted to integer before
-   * assignment.
-   *
-   * @param value		a <b>double</b> value that is to be assigned to the
-   *				variable.
-   *
-   * @return			a <b>Variable</b> reference to the variable.
-   */
   Variable &operator=(const double &value) {
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
       std::stringstream error;
@@ -179,15 +127,6 @@ public:
     return *this;
   }
 
-  /**
-   * @brief Member function <b>operator=</b> assigns a new value to the variable.
-   * If the variable type is double, the value is converted to double before assignment.
-   *
-   * @param value		an <b>int</b> value that is to be assigned to the
-   *				variable.
-   *
-   * @return			a <b>Variable</b> reference to the variable.
-   */
   Variable &operator=(const int &value) {
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
       std::stringstream error;
@@ -215,15 +154,6 @@ public:
     return m_use == DEPENDENT;
   }
 
-  /**
-   * @brief Member function <b>operator[]</b> returns a value from an array of
-   * double values.  
-   *
-   * @param index		a <b>int</b> value of the zero based index into the
-   *				array to retrieve the value.
-   *
-   * @return			a <b>double</b> reference to the value.
-   */
   inline double& getArrayValue(int index, ArrayOffset offsetType) const {
     if (m_type != DOUBLE) {
       std::stringstream error;
@@ -261,15 +191,6 @@ public:
     }
   } 
 
-  /**
-   * @brief Member function <b>bind</b> binds variable to the address of the
-   * specified value.  The type is converted to double.  This address must remain in
-   * scope during the lifetime of the variable are until rebound to a new address.
-   *
-   * @param value_ref	a <b>double</b> reference to be used for this variable.
-   *
-   * @return			a <b>Variable</b> reference to the variable.
-   */
   inline Variable &bind(double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = DOUBLE;
     m_doublePtr = &value_ref;
@@ -277,15 +198,6 @@ public:
     return *this;
   }
 
-  /**
-   * @brief Member function <b>bind</b> binds variable to the address of the
-   * specified value.  The type is converted to int.  This address must remain in scope
-   * during the lifetime of the variable are until rebound to a new address.
-   *
-   * @param value_ref	a <b>int</b> reference to be used for this variable.
-   *
-   * @return			a <b>Variable</b> reference to the variable.
-   */
   inline Variable &bind(int &value_ref, int definedLength=std::numeric_limits<int>::max()) {
     m_type = INTEGER;
     m_intPtr = &value_ref;
@@ -293,12 +205,6 @@ public:
     return *this;
   }
 
-  /**
-   * @brief Member function <b>unbind</b> binds the variable to the local value
-   * and reinitializes that value to zero.  The type is left unchanged.
-   *
-   * @return			a <b>Variable</b> reference to the variable.
-   */
   inline Variable &unbind() {
     switch (m_type) {
     case DOUBLE:
@@ -315,9 +221,6 @@ public:
     return *this;
   }
 
-  //
-  //  Get the variable pointer and its defined length
-  //
   double* getAddress() const {
     return m_doublePtr;
   }
@@ -325,11 +228,6 @@ public:
     return m_size;
   }
 
-  /**
-   * @brief Member function <b>getValue</b> returns the variable value as a double.
-   *
-   * @return			a <b>double</b> value of the value of the variable.
-   */
   inline double getValue() const {
 
     if(m_size != 1 && m_size != std::numeric_limits<int>::max()) {
@@ -352,120 +250,224 @@ public:
     throw std::runtime_error(error.str());
   }
 
+  int get_index() { return m_index; }
+
+  void set_index(int index) { m_index = index; }
+
+  Type get_type() { return m_type; }
+
 private:
-  Type	        m_type;                 ///< Variable data type
-  Use           m_use;                  ///< Variable is dependent or independent
-  int           m_size;                 ///< Size of defined values in the double or int pointer  
+  Type	        m_type;
+  Use           m_use;
+  int           m_size;  
   union {
-    double *	m_doublePtr;		///< Pointer to value as double
-    int *	m_intPtr;		///< Pointer to value as integer
+    double *	m_doublePtr;
+    int *	m_intPtr;
   };
   union {
-    double	m_doubleValue;		///< Local variable value as double
-    int	        m_intValue;             ///< Local variable value as integer
+    double	m_doubleValue;
+    int	        m_intValue;
   };
-  const std::string  m_name;            ///< Name given to the variable, used for error messaging
+  const std::string  m_name;
+  int m_index;
 };
 
+class DeviceVariable
+{
+  
+public:
 
-/**
- * @brief Class <b>VariableMap</b> implements a mapping from name to a pointer to
- * a <b>Variable</b> object.  The mapping is case insensitive.
- */
+  KOKKOS_INLINE_FUNCTION
+  DeviceVariable()
+    : m_type(Variable::Type::DOUBLE),
+      m_size(1),
+      m_stride(1),
+      m_doublePtr(&m_doubleValue),
+      m_doubleValue(0.0)
+  { 
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  DeviceVariable(const Variable::Type variableType, int variableSize, int variableStride=1) 
+    : m_type(variableType),
+      m_size(variableSize),
+      m_stride(variableStride)
+  {
+    switch (variableType) {
+    case Variable::Type::DOUBLE:
+      m_doublePtr = &m_doubleValue;
+      m_doubleValue = 0.0;
+      break;
+    case Variable::Type::INTEGER:
+      m_intPtr = &m_intValue;
+      m_intValue = 0;
+      break;
+    }
+  }
+
+  KOKKOS_DEFAULTED_FUNCTION
+  DeviceVariable(const DeviceVariable& deviceVariable) = default;
+
+  KOKKOS_DEFAULTED_FUNCTION
+  ~DeviceVariable() = default;
+
+  KOKKOS_INLINE_FUNCTION
+  DeviceVariable& operator=(const DeviceVariable& deviceVariable)
+  {
+    m_type = deviceVariable.m_type;
+    m_size = deviceVariable.m_size;
+    m_stride = deviceVariable.m_stride;
+
+    switch (m_type) {
+    case Variable::Type::DOUBLE:
+      m_doublePtr = &m_doubleValue;
+      m_doubleValue = deviceVariable.m_doubleValue;
+      break;
+    case Variable::Type::INTEGER:
+      m_intPtr = &m_intValue;
+      m_intValue = deviceVariable.m_intValue;
+      break;
+    }
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  double& getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const {
+
+    NGP_ThrowRequireMsg(m_type == Variable::DOUBLE, "Only double arrays are allowed.");
+
+    NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound array variable.");
+
+    if (arrayOffsetType == Variable::ArrayOffset::ZERO_BASED_INDEX) {
+
+      NGP_ThrowRequireMsg(index >= 0, "Provided variable array index is less than 0.");
+      NGP_ThrowRequireMsg(index < m_size, "Provided variable array index exceeds array upper bound.");
+
+      return m_doublePtr[index*m_stride];
+    } 
+    else if (arrayOffsetType == Variable::ArrayOffset::ONE_BASED_INDEX) {
+
+      NGP_ThrowRequireMsg(index >= 1, "Provided variable array index is less than 1.");
+      NGP_ThrowRequireMsg(index <= m_size, "Provided variable array index exceeds array upper bound.");
+
+      return m_doublePtr[(index-1)*m_stride];
+    } 
+    else {
+      NGP_ThrowErrorMsg("Invalid ArrayOffsetType.")
+      return m_doublePtr[0];
+    }
+  } 
+
+  KOKKOS_INLINE_FUNCTION
+  double getValue() const {
+    NGP_ThrowRequireMsg(m_size == 1, "getValue Cannot access vector variable as a scalar.");
+
+    switch (m_type) {
+    case Variable::DOUBLE:
+      NGP_ThrowRequireMsg(m_doublePtr != nullptr, "Unbound double variable.");
+      return *m_doublePtr;
+    case Variable::INTEGER:
+      NGP_ThrowRequireMsg(m_intPtr != nullptr, "Unbound integer variable.");
+      return *m_intPtr;
+    }
+
+    NGP_ThrowErrorMsg("Invalid variable type.");
+    return *m_doublePtr;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void bind(double& value_ref, int definedLength, int strideLength) {
+    m_type = Variable::DOUBLE;
+    m_doublePtr = &value_ref;
+    m_size = definedLength;
+    m_stride = strideLength;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void bind(int& value_ref, int definedLength, int strideLength) {
+    m_type = Variable::INTEGER;
+    m_intPtr = &value_ref;
+    m_size = definedLength;
+    m_stride = strideLength;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  DeviceVariable& operator=(const double& value) {
+    NGP_ThrowRequireMsg(m_size == 1, "double = Cannot access vector variable as a scalar.");
+
+    if (m_type == Variable::INTEGER)
+      *m_intPtr = static_cast<int>(value);
+    else if (m_type == Variable::DOUBLE)
+      *m_doublePtr = value;
+    return *this;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  DeviceVariable& operator=(const int& value) {
+    NGP_ThrowRequireMsg(m_size == 1, "int = Cannot access vector variable as a scalar.");
+
+    if (m_type == Variable::INTEGER)
+      *m_intPtr = value;
+    else if (m_type == Variable::DOUBLE)
+      *m_doublePtr = static_cast<double>(value);
+    return *this;
+  }
+
+private:
+  Variable::Type m_type;                 
+  int            m_size;
+  int            m_stride;                 
+  union {
+    double *	m_doublePtr;		
+    int *	m_intPtr;		
+  };
+  union {
+    double	m_doubleValue;
+    int	        m_intValue;
+  };
+};
+
 class VariableMap : public std::map<std::string, std::shared_ptr<Variable>, LessCase>
 {
 public:
-  /**
-   * @brief Typedef <b>value_type</b> is the value_type of the
-   * <b>std::map</b> subclass.  The mapping is case insensitive.
-   */
   typedef std::map<std::string, std::shared_ptr<Variable>, LessCase >::value_type value_type;
 
-  /**
-   * @brief Class <b>Resolver</b> is a base class for a variable name to value
-   * resolver.  After parsing of an expression, a list of variable names is collected.
-   * The <b>resolve</b> member function will be called for each of these during
-   * the expression resolve stage.  This function may bind a new value to the variable,
-   * ignore the variable by leaving the initialized local binding, or throw an exception
-   * stating the variable cannot be resolved.
-   *
-   */
   class Resolver
   {
   public:
-    /**
-     * Creates a new <b>Resolver</b> instance.
-     */
     Resolver()
     {}
 
-    /**
-     * Destroys a <b>Resolver</b> instance.
-     */
     virtual ~Resolver()
     {}
 
-    /**
-     * @brief Member function <b>resolve</b> is the virtual member function for
-     * the variable resolver.
-     *
-     * @param it		a <b>VariableMap::iterator</b> reference to the
-     *			variable whose name is to be resolved.
-     */
     virtual void resolve(VariableMap::iterator &)
     {
     }
   };
 
 private:
-  /**
-   * @brief Class <b>DefaultResolver</b> implement a default resolver.
-   */
   class DefaultResolver : public Resolver
   {
   public:
     DefaultResolver()
     {}
 
-    /**
-     * Destroys a <b>DefaultResolver</b> instance.
-     */
     virtual ~DefaultResolver()
     {}
   };
 
 public:
-  /**
-   * @brief Member function <b>getDefaultResolver</b> returns a reference to the default resolver.
-   */
   static Resolver &getDefaultResolver();
 
-  /**
-   * Creates a new <b>VariableMap</b> instance with the specified variable name
-   * resolver.
-   *
-   * @param resolver		a <b>Resolver</b> reference to the variable name
-   *				resolver for this variable map.
-   */
   VariableMap(Resolver &resolver = getDefaultResolver())
     : std::map<std::string, std::shared_ptr<Variable>, LessCase>(),
       m_resolver(resolver)
   {}
 
-  /**
-   * Destroys a <b>VariableMap</b> instance. 
-   */
   virtual ~VariableMap() {
   }
 
-  /**
-   * @brief Member function <b>operator[]</b> ...
-   *
-   * @param s			a <b>std::string</b> const reference to the variable's
-   *				name.
-   *
-   * @return			a <b>Variable</b> pointer to the new variable.
-   */
   Variable* operator[](const std::string &s) {
     std::pair<iterator,bool> i = insert(std::pair<const std::string, std::shared_ptr<Variable>>(s, std::shared_ptr<Variable>(nullptr)));
     if (i.second) {
@@ -474,19 +476,12 @@ public:
     return (*i.first).second.get();
   }
 
-  /**
-   * @brief Member function <b>getResolver</b> returns a reference to the name
-   * resolver.
-   *
-   * @return			a <b>Resolver</b> reference to the variable name
-   *				resolver.
-   */
   Resolver &getResolver() {
     return m_resolver;
   }
 
 private:
-  Resolver &		m_resolver;		///< Reference to this variable map name resolver
+  Resolver &		m_resolver;
 };
 
 } // namespace expreval

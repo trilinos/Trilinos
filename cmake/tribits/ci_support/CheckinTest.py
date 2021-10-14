@@ -297,7 +297,7 @@ def getReposStats(inOptions, tribitsGitRepos):
   print(gitdist.createTable(repoStatTable.getTableData()))
   return hasChangesToPush
   # NOTE: Above, we could just call 'gitdist dist-repo-status' but by
-  # printing the table here with the actualy gitRepoStat data, we ensure
+  # printing the table here with the actually gitRepoStat data, we ensure
   # that it gets collected correctly and that the selection of repos is
   # exactly the same.
 
@@ -753,7 +753,7 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
 
   else:
 
-   # ToDo: Get rid fo these!  These are too specific!
+   # ToDo: Get rid of these!  These are too specific!
 
     print("\nCreating a default skeleton file " + buildSpecificConfigFileName +
           " ...")
@@ -864,7 +864,7 @@ def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_in
       :
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
-          print("\nModifed file: '" + modifiedFileFullPath + "'\n" +
+          print("\nModified file: '" + modifiedFileFullPath + "'\n" +
                 "  => Enabling all " + inOptions_inout.projectName +
                 " packages!")
         inOptions_inout.enableAllPackages = 'on'
@@ -1163,7 +1163,7 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
   emailBody += "Hostname: " + getHostname() + "\n"
   emailBody += "Source Dir: " + inOptions.srcDir + "\n"
   emailBody += "Build Dir: " + os.getcwd() + "\n"
-  emailBody += "\nCMake Cache Varibles: " + ' '.join(cmakeOptions) + "\n"
+  emailBody += "\nCMake Cache Variables: " + ' '.join(cmakeOptions) + "\n"
   if inOptions.extraCmakeOptions:
     emailBody += "Extra CMake Options: " + inOptions.extraCmakeOptions + "\n"
   if inOptions.makeOptions:
@@ -1488,7 +1488,7 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
       True)
     if not result: preConfigurePassed = False
 
-    reuslt = readAndAppendCMakeOptions(
+    result = readAndAppendCMakeOptions(
       inOptions.projectName,
       os.path.join("..", getBuildSpecificConfigFileName(buildTestCaseName)),
       cmakeBaseOptions,
@@ -1865,7 +1865,7 @@ def getEnableStatusList(inOptions, enabledPackagesList):
 # trailing build/test summary data.
 #
 # NOTE: This function assumes that there will be at least one blank line
-# between the buid/test summay data block and the original text message.  If
+# between the build/test summary data block and the original text message.  If
 # there is not, this function will throw!
 #
 def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
@@ -2257,7 +2257,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
     if doingAtLeastOnePull and pullPassed:
 
       #
-      print("\n3.a) Check that there are no uncommited and no new unknown "
+      print("\n3.a) Check that there are no uncommitted and no new unknown "
             "files before doing the pull(s) ...\n")
       #
 
@@ -2451,7 +2451,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
       elif reposAreClean and not hasChangesToPush and \
         inOptions.abortGracefullyIfNoChangesToPush \
         :
-        print("\nNot perfoming any build cases because there are no local "
+        print("\nNot performing any build cases because there are no local "
               "changes to push and --abort-gracefully-if-no-changes-to-push!\n")
         abortGracefullyDueToNoChangesToPush = True
         runBuildCases = False
@@ -2566,7 +2566,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
            atLeastOneConfigureBuildAttemptPassed = True
 
       if not atLeastOneConfigureBuildAttemptPassed:
-        print("\nThere were no successfuly attempts to configure/build/test!")
+        print("\nThere were no successful attempts to configure/build/test!")
         okayToCommit = False
 
       if not okayToCommit:
@@ -2712,7 +2712,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
 
       else:  # inOptions.appendTestResults and okayToPush
   
-        print("\nAttempting to amend the final commmit message ...\n")
+        print("\nAttempting to amend the final commit message ...\n")
 
         repoIdx = 0
         for gitRepo in tribitsGitRepos.gitRepoList():

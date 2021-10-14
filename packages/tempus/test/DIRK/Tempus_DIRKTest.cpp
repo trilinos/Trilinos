@@ -647,6 +647,10 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
   double xDotSlope = 0.0;
   RCP<Tempus::Stepper<double> > stepper = integrator->getStepper();
   double order = stepper->getOrder();
+
+  // xDot not yet available for DIRK methods, e.g., are not calc. and zero.
+  solutionsDot.clear();
+
   writeOrderError("Tempus_"+RKMethod+"_VanDerPol-Error.dat",
                   stepper, StepSize,
                   solutions,    xErrorNorm,    xSlope,
@@ -654,7 +658,6 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 
   TEST_FLOATING_EQUALITY( xSlope,            order, 0.06   );
   TEST_FLOATING_EQUALITY( xErrorNorm[0], 1.07525e-05, 1.0e-4 );
-  // xDot not yet available for DIRK methods.
   //TEST_FLOATING_EQUALITY( xDotSlope,        1.74898, 0.10 );
   //TEST_FLOATING_EQUALITY( xDotErrorNorm[0],  1.0038, 1.0e-4 );
 

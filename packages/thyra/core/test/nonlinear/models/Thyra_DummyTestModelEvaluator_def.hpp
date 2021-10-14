@@ -142,7 +142,9 @@ DummyTestModelEvaluator<Scalar>::DummyTestModelEvaluator(
     outArgs.template setSupports<Thyra::MockExtendedOutArgs<Scalar> >(false);
   if (supports_derivatives)
   {
+#ifdef Thyra_BUILD_HESSIAN_SUPPORT
     outArgs.setHessianSupports(true);
+#endif
 
     MEB::DerivativeSupport derivativeSupport(MEB::DERIV_MV_BY_COL);
 

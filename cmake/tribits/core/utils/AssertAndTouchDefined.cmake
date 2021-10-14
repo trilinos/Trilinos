@@ -37,13 +37,13 @@
 # ************************************************************************
 # @HEADER
 
-FUNCTION(ASSERT_AND_TOUCH_DEFINED VARS)
-  FOREACH(VAR ${VARS})
-    IF(NOT DEFINED ${VAR})
-      MESSAGE(SEND_ERROR "Error, the variable ${VAR} is not defined!")
-    ELSE()
-      # Read the varaible so that it will register as being read!
-      SET(DUMMY_VAR ${${VAR}})
-    ENDIF()
-  ENDFOREACH()
-ENDFUNCTION()
+function(assert_and_touch_defined VARS)
+  foreach(VAR ${VARS})
+    if(NOT DEFINED ${VAR})
+      message(SEND_ERROR "Error, the variable ${VAR} is not defined!")
+    else()
+      # Read the variable so that it will register as being read!
+      set(DUMMY_VAR ${${VAR}})
+    endif()
+  endforeach()
+endfunction()

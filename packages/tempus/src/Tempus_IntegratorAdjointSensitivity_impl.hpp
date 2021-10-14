@@ -108,6 +108,12 @@ advanceTime(const Scalar timeFinal)
   // Run state integrator and get solution
   bool state_status = state_integrator_->advanceTime(timeFinal);
 
+  // For at least some time-stepping methods, the time of the last time step
+  // may not be timeFinal (e.g., it may be greater by at most delta_t).
+  // But since the adjoint model requires timeFinal in its formulation, reset
+  // it to the achieved final time.
+  adjoint_aux_model_->setFinalTime(state_integrator_->getTime());
+
   // Set solution history in adjoint stepper
   adjoint_aux_model_->setForwardSolutionHistory(state_solution_history);
 
@@ -189,11 +195,18 @@ advanceTime(const Scalar timeFinal)
       else
         Thyra::initializeOp<Scalar>(*lowsfb, W_op, W.ptr());
     }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      W == Teuchos::null, std::logic_error,
+      "A null W has been encountered in Tempus::IntegratorAdjointSensitivity::advanceTime!\n");
+    // Initialize adjoint_init_mv to zero before solve for linear solvers that
+    // use what is passed in as the initial guess
+    assign(adjoint_init_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
     W->solve(Thyra::NOTRANS, *dgdx, adjoint_init_mv.ptr());
   }
 
   // Run sensitivity integrator and get solution
-  adjoint_integrator_->initializeSolutionHistory(Scalar(0.0), adjoint_init);
+  const Scalar tinit = adjoint_integrator_->getTimeStepControl()->getInitTime();
+  adjoint_integrator_->initializeSolutionHistory(tinit, adjoint_init);
   bool sens_status = adjoint_integrator_->advanceTime(timeFinal);
   RCP<const SolutionHistory<Scalar> > adjoint_solution_history =
     adjoint_integrator_->getSolutionHistory();
@@ -487,9 +500,10 @@ createAdjointModel(
   if (spl->isParameter("IC Depends on Parameters"))
     spl->remove("IC Depends on Parameters");
 
+  const Scalar tinit = state_integrator_->getTimeStepControl()->getInitTime();
   const Scalar tfinal = state_integrator_->getTimeStepControl()->getFinalTime();
   return rcp(new AdjointAuxSensitivityModelEvaluator<Scalar>(
-               model, adjoint_model, tfinal, spl));
+               model, adjoint_model, tinit, tfinal, spl));
 }
 
 template<class Scalar>
@@ -521,12 +535,13 @@ buildSolutionHistory(
   RCP<const DPVS > prod_space = Thyra::productVectorSpace(spaces());
 
   int num_states = state_solution_history->getNumStates();
+  const Scalar t_init = state_integrator_->getTimeStepControl()->getInitTime();
   const Scalar t_final = state_integrator_->getTime();
   for (int i=0; i<num_states; ++i) {
     RCP<const SolutionState<Scalar> > forward_state =
       (*state_solution_history)[i];
     RCP<const SolutionState<Scalar> > adjoint_state =
-      adjoint_solution_history->findState(t_final-forward_state->getTime());
+      adjoint_solution_history->findState(t_final+t_init-forward_state->getTime());
 
     // X
     RCP<DPV> x = Thyra::defaultProductVector(prod_space);
@@ -597,6 +612,7 @@ createIntegratorAdjointSensitivity(
   if (spl->isParameter("IC Depends on Parameters"))
     spl->remove("IC Depends on Parameters");
 
+  const Scalar tinit = state_integrator->getTimeStepControl()->getInitTime();
   const Scalar tfinal = state_integrator->getTimeStepControl()->getFinalTime();
   //auto adjoint_model  = Teuchos::rcp(new AdjointAuxSensitivityModelEvaluator<Scalar>(model, tfinal, spl));
   //TODO: where is the adjoint ME coming from?
@@ -605,7 +621,7 @@ createIntegratorAdjointSensitivity(
   if (adjoint_model == Teuchos::null)
     adjt_model = Thyra::implicitAdjointModelEvaluator(model);
 
-  auto adjoint_aux_model  = Teuchos::rcp(new AdjointAuxSensitivityModelEvaluator<Scalar>(model, adjt_model, tfinal, spl));
+  auto adjoint_aux_model  = Teuchos::rcp(new AdjointAuxSensitivityModelEvaluator<Scalar>(model, adjt_model, tinit, tfinal, spl));
 
   // Create combined solution histories combining the forward and adjoint
   // solutions.  We do not include the auxiliary part from the adjoint solution.

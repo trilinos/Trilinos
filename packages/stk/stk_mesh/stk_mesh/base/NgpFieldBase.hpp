@@ -19,8 +19,9 @@ public:
   KOKKOS_FUNCTION NgpFieldBase& operator=(const NgpFieldBase&) { return *this; }
   KOKKOS_FUNCTION NgpFieldBase& operator=(NgpFieldBase&&) { return *this; }
   KOKKOS_FUNCTION virtual ~NgpFieldBase() {}
-  virtual void update_field(bool needToSyncAllDataToDevice = false) = 0;
+  virtual void update_field() = 0;
   virtual void rotate_multistate_data() = 0;
+  virtual void update_bucket_pointer_view() = 0;
   virtual void modify_on_host() = 0;
   virtual void modify_on_host(const Selector& selector) = 0;
   virtual void modify_on_device() = 0;

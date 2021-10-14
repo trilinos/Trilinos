@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-, 20212021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -21,7 +21,8 @@
 #include <string> // for string, basic_string
 #include <vector> // for vector
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
 #include <Shlwapi.h>
 #endif
 
@@ -83,7 +84,8 @@ namespace {
 
 bool Excn::is_path_absolute(const std::string &path)
 {
-#ifdef _WIN32
+#if defined(WIN32) || defined(__WIN32__) || defined(_WIN32) || defined(_MSC_VER) ||                \
+    defined(__MINGW32__) || defined(_WIN64) || defined(__MINGW64__)
   return path[0] == '\\' || path[1] == ':';
 #else
   return path[0] == '/';

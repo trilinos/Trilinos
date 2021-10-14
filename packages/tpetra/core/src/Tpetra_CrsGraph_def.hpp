@@ -2920,10 +2920,6 @@ namespace Tpetra {
       allocateIndices (LocalIndices, verbose_);
     }
 
-    // FIXME (mfh 13 Aug 2014) What if they haven't been cleared on
-    // all processes?
-    clearGlobalConstants ();
-
     if (k_numRowEntries_.extent (0) != 0) {
       this->k_numRowEntries_(lrow) = 0;
     }

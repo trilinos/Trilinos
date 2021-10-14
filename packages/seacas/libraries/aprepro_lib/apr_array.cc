@@ -4,8 +4,10 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include "apr_symrec.h"
 #include "aprepro.h" // for array, Aprepro, etc
-#include <vector>    // for vector
+
+#include <vector> // for vector
 
 namespace SEAMS {
   extern SEAMS::Aprepro *aprepro;

@@ -6,18 +6,9 @@
 // ****************************************************************************
 // @HEADER
 
-#include <fstream>
-#include <vector>
-
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-
-#include "Thyra_VectorStdOps.hpp"
-
-#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
+
+#include "Tempus_StepperRKButcherTableau.hpp"
 
 #include "Tempus_StepperBDF2.hpp"
 #include "Tempus_StepperBDF2ModifierBase.hpp"
@@ -25,81 +16,73 @@
 #include "Tempus_StepperBDF2ModifierXBase.hpp"
 #include "Tempus_StepperBDF2ModifierDefault.hpp"
 
-#include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/VanDerPolModel.hpp"
-#include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
-
 
 namespace Tempus_Unit_Test {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::ParameterList;
-  using Teuchos::sublist;
-  using Teuchos::getParametersFromXmlFile;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_const_cast;
+using Teuchos::rcp_dynamic_cast;
+using Teuchos::ParameterList;
+using Teuchos::sublist;
 
 
-  // Comment out any of the following tests to exclude from build/run.
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(BDF2, Default_Construction)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+
+  // Default construction.
+  auto stepper = rcp(new Tempus::StepperBDF2<double>());
+  stepper->setModel(model);
+  stepper->initialize();
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
 
-  // ************************************************************
-  // ************************************************************
-  TEUCHOS_UNIT_TEST(BDF2, Default_Construction)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  // Default values for construction.
+  auto modifier = rcp(new Tempus::StepperBDF2ModifierDefault<double>());
+  auto solver = rcp(new Thyra::NOXNonlinearSolver());
+  solver->setParameterList(Tempus::defaultSolverParameters());
 
-    // Default construction.
-    auto stepper = rcp(new Tempus::StepperBDF2<double>());
-    stepper->setModel(model);
-    stepper->initialize();
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  auto startUpStepper = rcp(new Tempus::StepperDIRK_1StageTheta<double>());
+  startUpStepper->setModel(model);  // Can use the same model since both steppers are implicit ODEs.
+  startUpStepper->initialize();
 
+  auto defaultStepper = rcp(new Tempus::StepperBDF2<double>());
+  bool useFSAL              = defaultStepper->getUseFSAL();
+  std::string ICConsistency = defaultStepper->getICConsistency();
+  bool ICConsistencyCheck   = defaultStepper->getICConsistencyCheck();
+  bool zeroInitialGuess     = defaultStepper->getZeroInitialGuess();
 
-    // Default values for construction.
-    auto modifier = rcp(new Tempus::StepperBDF2ModifierDefault<double>());
-    auto solver = rcp(new Thyra::NOXNonlinearSolver());
-    solver->setParameterList(Tempus::defaultSolverParameters());
+  // Test the set functions.
+  stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setStartUpStepper(startUpStepper);          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
-    auto startUpStepper = rcp(new Tempus::StepperDIRK_1StageTheta<double>());
-    startUpStepper->setModel(model);  // Can use the same model since both steppers are implicit ODEs.
-    startUpStepper->initialize();
-
-    auto defaultStepper = rcp(new Tempus::StepperBDF2<double>());
-    bool useFSAL              = defaultStepper->getUseFSAL();
-    std::string ICConsistency = defaultStepper->getICConsistency();
-    bool ICConsistencyCheck   = defaultStepper->getICConsistencyCheck();
-    bool zeroInitialGuess     = defaultStepper->getZeroInitialGuess();
-
-    // Test the set functions.
-    stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    stepper->setStartUpStepper(startUpStepper);          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    stepper->setUseFSAL(useFSAL);                        stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    stepper->setICConsistency(ICConsistency);            stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    stepper->setICConsistencyCheck(ICConsistencyCheck);  stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    stepper->setZeroInitialGuess(zeroInitialGuess);      stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-
-    stepper = rcp(new Tempus::StepperBDF2<double>(model, solver, startUpStepper, useFSAL,
-              ICConsistency, ICConsistencyCheck, zeroInitialGuess,modifier));
-    TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    // Test stepper properties.
-    TEUCHOS_ASSERT(stepper->getOrder() == 2);
-  }
+  stepper = rcp(new Tempus::StepperBDF2<double>(model, solver, startUpStepper, useFSAL,
+            ICConsistency, ICConsistencyCheck, zeroInitialGuess,modifier));
+  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
+  // Test stepper properties.
+  TEUCHOS_ASSERT(stepper->getOrder() == 2);
+}
 
 
-  // ************************************************************
-  // ************************************************************
-  TEUCHOS_UNIT_TEST(BDF2, StepperFactory_Construction)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
-    testFactoryConstruction("BDF2", model);
-  }
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(BDF2, StepperFactory_Construction)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  testFactoryConstruction("BDF2", model);
+}
 
 
-  // ************************************************************
-  // ************************************************************
+// ************************************************************
+// ************************************************************
 class StepperBDF2ModifierTest
   : virtual public Tempus::StepperBDF2ModifierBase<double>
 {
@@ -223,10 +206,11 @@ TEUCHOS_UNIT_TEST(BDF2, AppAction_Modifier)
   x = solutionHistory->getWorkingState()->getX();
   TEST_FLOATING_EQUALITY(modifier->testWorkingValue,  get_ele(*(x), 0), 1.0e-15);
   TEST_COMPARE(modifier->testType, ==, "BDF2 - Modifier");
-  }
+}
 
-  // ************************************************************
-  // ************************************************************
+
+// ************************************************************
+// ************************************************************
 class StepperBDF2ObserverTest
   : virtual public Tempus::StepperBDF2ObserverBase<double>
 {
@@ -291,6 +275,9 @@ public:
   std::string testType;
 };
 
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, AppAction_Observer)
 {
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
@@ -354,6 +341,8 @@ TEUCHOS_UNIT_TEST(BDF2, AppAction_Observer)
 }
 
 
+// ************************************************************
+// ************************************************************
 class StepperBDF2ModifierXTest
   : virtual public Tempus::StepperBDF2ModifierXBase<double>
 {
@@ -415,6 +404,9 @@ public:
   double testDt;
 };
 
+
+// ************************************************************
+// ************************************************************
 TEUCHOS_UNIT_TEST(BDF2, AppAction_ModifierX)
 {
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
@@ -476,6 +468,7 @@ TEUCHOS_UNIT_TEST(BDF2, AppAction_ModifierX)
   TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
   auto time = solutionHistory->getWorkingState()->getTime();
   TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
-  }
+}
+
 
 } // namespace Tempus_Test

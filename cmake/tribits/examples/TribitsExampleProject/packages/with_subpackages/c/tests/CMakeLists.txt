@@ -1,8 +1,8 @@
-IF(WithSubpackagesB_ENABLE_InsertedPkg)
-  SET(EXPECTED_EXTERNALPKG_DEPS "InsertedPkg no_deps ")
-ENDIF()
+if(WithSubpackagesB_ENABLE_InsertedPkg)
+  set(EXPECTED_EXTERNALPKG_DEPS "InsertedPkg no_deps ")
+endif()
 
-TRIBITS_ADD_TEST( c_util
+tribits_add_test( c_util
   NOEXEPREFIX  NOEXESUFFIX
   DIRECTORY ../
   NAME test_of_c_util
@@ -12,18 +12,18 @@ TRIBITS_ADD_TEST( c_util
   ADDED_TESTS_NAMES_OUT  c_util_TEST_NAME
   )
 
-TRIBITS_VERBOSE_PRINT_VAR(c_util_TEST_NAME)
+tribits_verbose_print_var(c_util_TEST_NAME)
 
 # Example of how to set properties on added test
-IF (c_util_TEST_NAME)
-  SET_TESTS_PROPERTIES( ${c_util_TEST_NAME}  PROPERTIES  TIMEOUT  15.0 )
+if (c_util_TEST_NAME)
+  set_tests_properties( ${c_util_TEST_NAME}  PROPERTIES  TIMEOUT  15.0 )
   # NOTE: You don't have to set the TIMEOUT separately.  You can pass it into
-  # TRIBITS_ADD_TET().
-ENDIF()
+  # tribits_add_tet().
+endif()
   
-TRIBITS_ADD_EXECUTABLE( c_test SOURCES c_test.cpp )
+tribits_add_executable( c_test SOURCES c_test.cpp )
 
-TRIBITS_ADD_ADVANCED_TEST( test_of_c
+tribits_add_advanced_test( test_of_c
   OVERALL_NUM_MPI_PROCS 1
   TEST_0 EXEC c_test
     PASS_REGULAR_EXPRESSION_ALL 
@@ -38,8 +38,8 @@ TRIBITS_ADD_ADVANCED_TEST( test_of_c
 # Define a test-only lib and two tests that use it.
 #
 
-ASSERT_DEFINED(WithSubpackagesB_ENABLE_MixedLang)
-IF (WithSubpackagesB_ENABLE_MixedLang AND
+assert_defined(WithSubpackagesB_ENABLE_MixedLang)
+if (WithSubpackagesB_ENABLE_MixedLang AND
    (WithSubpackagesB_ENABLE_TESTS OR WithSubpackages_ENABLE_TESTS)
   )
 
@@ -47,14 +47,14 @@ IF (WithSubpackagesB_ENABLE_MixedLang AND
   # here!  It is not recommended to share test libraries between package but
   # this example shows it can be done.
 
-  TRIBITS_ADD_LIBRARY( c_b_mixed_lang
+  tribits_add_library( c_b_mixed_lang
     TESTONLY
     SOURCES  c_b_mixed_lang.cpp  
     HEADERS  c_b_mixed_lang.hpp
     DEPLIBS  pws_c  b_mixed_lang
     )
   
-  TRIBITS_ADD_EXECUTABLE_AND_TEST( test_of_c_b_mixed_lang
+  tribits_add_executable_and_test( test_of_c_b_mixed_lang
     SOURCES  test_of_c_b_mixed_lang.cpp
     TESTONLYLIBS  c_b_mixed_lang
     NUM_MPI_PROCS  1
@@ -64,18 +64,18 @@ IF (WithSubpackagesB_ENABLE_MixedLang AND
     ADDED_TESTS_NAMES_OUT  test_of_c_b_mixed_lang_TEST_NAME
     )
 
-  TRIBITS_VERBOSE_PRINT_VAR(test_of_c_b_mixed_lang_TARGET_NAME)
-  TRIBITS_VERBOSE_PRINT_VAR(test_of_c_b_mixed_lang_TEST_NAME)
+  tribits_verbose_print_var(test_of_c_b_mixed_lang_TARGET_NAME)
+  tribits_verbose_print_var(test_of_c_b_mixed_lang_TEST_NAME)
 
   # Example on how to set exe target properties.
-  SET_TARGET_PROPERTIES( ${test_of_c_b_mixed_lang_TARGET_NAME}
+  set_target_properties( ${test_of_c_b_mixed_lang_TARGET_NAME}
     PROPERTIES  LINKER_LANGUAGE  CXX )
   # NOTE: You don't have to set the LINKER_LANGUAGE
 
-  IF (test_of_c_b_mixed_lang_TEST_NAME)
-    SET_TESTS_PROPERTIES( ${test_of_c_b_mixed_lang_TEST_NAME}
+  if (test_of_c_b_mixed_lang_TEST_NAME)
+    set_tests_properties( ${test_of_c_b_mixed_lang_TEST_NAME}
       PROPERTIES  TIMEOUT  3.0 )
     # NOTE: You don't have to set the TIMEOUT.
-  ENDIF()
+  endif()
 
-ENDIF()
+endif()

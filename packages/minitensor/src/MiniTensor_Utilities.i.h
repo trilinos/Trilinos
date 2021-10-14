@@ -187,11 +187,7 @@ tau()
 //
 // Random number generation. Teuchos [-1,1]
 //
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-typename Sacado::ScalarType<T>::type
-random()
-{
+template <typename T> typename Sacado::ScalarType<T>::type random() {
   using S = typename Sacado::ScalarType<T>::type;
   return Teuchos::ScalarTraits<S>().random();
 }
@@ -199,11 +195,7 @@ random()
 //
 // Uniform [0,1] random number generation.
 //
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-typename Sacado::ScalarType<T>::type
-random_uniform()
-{
+template <typename T> typename Sacado::ScalarType<T>::type random_uniform() {
   using S = typename Sacado::ScalarType<T>::type;
   return static_cast<S>(0.5 * random<S>() + 0.5);
 }
@@ -211,11 +203,7 @@ random_uniform()
 //
 // Normal N(0,1) random number generation.
 //
-template<typename T>
-KOKKOS_INLINE_FUNCTION
-typename Sacado::ScalarType<T>::type
-random_normal()
-{
+template <typename T> typename Sacado::ScalarType<T>::type random_normal() {
   using S = typename Sacado::ScalarType<T>::type;
 
   S const

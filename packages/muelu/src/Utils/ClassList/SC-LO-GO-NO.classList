@@ -123,6 +123,7 @@ UtilitiesBase
 Utilities_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 VariableDofLaplacianFactory
 SemiCoarsenPFactory
+SemiCoarsenPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 UzawaSmoother
 VisualizationHelpers
 ZeroSubBlockAFactory

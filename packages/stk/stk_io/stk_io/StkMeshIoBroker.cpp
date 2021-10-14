@@ -1037,6 +1037,14 @@ void StkMeshIoBroker::add_global(size_t output_file_index, const std::string &gl
     m_outputFiles[output_file_index]->add_global(globalVarName, storage, dataType);
 }
 
+void StkMeshIoBroker::write_global(size_t output_file_index,
+                                   const std::string& variableName,
+                                   const stk::util::Parameter& param) const
+{
+    validate_output_file_index(output_file_index);
+    m_outputFiles[output_file_index]->write_global(variableName, param);
+}
+
 #ifndef STK_HIDE_DEPRECATED_CODE // Delete after September 2021
 STK_DEPRECATED void StkMeshIoBroker::write_global(size_t output_file_index, const std::string &globalVarName,
                                    const STK_ANY_NAMESPACE::any &value, stk::util::ParameterType::Type type) const

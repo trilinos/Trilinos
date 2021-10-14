@@ -38,7 +38,6 @@ import sys
 import os
 import stat
 import subprocess
-import commands
 
 from optparse import OptionParser
 
@@ -159,7 +158,7 @@ projectBuildReferenceStr = \
   + substitutedTribitsBuildReferenceBodyStr
 
 outputRstFile = options.fileBase+".rst"
-print "Writing rst file ..."
+print("Writing rst file ...")
 GenerateDocUtilsOutput.openWriteFilePermissions(outputRstFile)
 writeStrToFile(outputRstFile, projectBuildReferenceStr)
 GenerateDocUtilsOutput.setGeneratedFilePermissions(outputRstFile)

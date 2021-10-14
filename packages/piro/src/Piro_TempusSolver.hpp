@@ -76,6 +76,7 @@ public:
   TempusSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
 
   /** \brief Initialize using prebuilt objects. */
@@ -86,6 +87,8 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar finalTime,
       const std::string sens_method_string = "None", 
+      const int sens_param_index = -1,
+      const int response_fn_index = -1,
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
  
  //@}
@@ -98,13 +101,16 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       Scalar initialTime,
       Scalar finalTime,
-      const std::string sens_method_string = "None", 
+      const std::string sens_method_string = "None",
+      const int sens_param_index = -1,
+      const int response_fn_index = -1, 
       Teuchos::EVerbosityLevel verbosityLevel = Teuchos::VERB_DEFAULT);
   //@}
 
   void initialize(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel);
 
   void addStepperFactory(const std::string & stepperName,
                          const Teuchos::RCP<Piro::TempusStepperFactory<Scalar> > & stepperFactories);
@@ -177,6 +183,7 @@ private:
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver_;
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > adjointModel_;
   Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel_;
 
   Scalar t_initial_;
@@ -213,7 +220,10 @@ private:
   SENS_METHOD sens_method_;
 
   //Boolean to mark whether initial state was reset using setInitialState routine
-  bool initial_state_reset_; 
+  bool initial_state_reset_;
+
+  //Boolean marking whether stepper is explicit
+  bool is_explicit_ = false;  
 };
 
 /** \brief Non-member constructor function */
@@ -222,7 +232,8 @@ Teuchos::RCP<TempusSolver<Scalar> >
 tempusSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-    const Teuchos::RCP<ObserverBase<Scalar> > &piroObserver);
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &adjointModel = Teuchos::null,
+    const Teuchos::RCP<ObserverBase<Scalar> > &piroObserver =  Teuchos::null);
 
 }
 

@@ -449,7 +449,7 @@ namespace Ioex {
     // buggy mpiio code.  Therefore, we always do chdir call.  Maybe in several
     // years, we can remove this code and everything will work...
 
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
     filename            = file.tailname();
@@ -497,7 +497,7 @@ namespace Ioex {
       }
     }
 
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
     if (!path.empty()) {
       chdir(current_cwd);
     }
@@ -570,7 +570,7 @@ namespace Ioex {
 
     std::string filename = get_dwname();
 
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
     filename            = file.tailname();
@@ -614,7 +614,7 @@ namespace Ioex {
       }
     }
 
-#ifndef _WIN32
+#if !defined(__IOSS_WINDOWS__)
     chdir(current_cwd);
     std::free(current_cwd);
 #endif
@@ -1496,7 +1496,7 @@ namespace Ioex {
             // topology and the side number, determine the side
             // type.
 
-            for (auto side_topo : sideTopology) {
+            for (auto &side_topo : sideTopology) {
               topo_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
               side_map[std::make_pair(side_topo.first->name(), side_topo.second)] = 0;
             }

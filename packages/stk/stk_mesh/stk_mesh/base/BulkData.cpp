@@ -528,7 +528,7 @@ void BulkData::require_entity_owner( const Entity entity ,
 
 void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const
 {
-  const size_t rank_count = m_mesh_meta_data.entity_rank_count();
+  const EntityRank rank_count = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   const bool ok_id   = EntityKey::is_valid_id(ent_id);
   const bool ok_rank = ent_rank < rank_count && !(ent_rank == stk::topology::FACE_RANK && mesh_meta_data().spatial_dimension() == 2);
 
@@ -1082,13 +1082,6 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
 template Entity BulkData::internal_declare_entity(EntityRank ent_rank, EntityId ent_id, const PartVector& parts);
 template Entity BulkData::internal_declare_entity(EntityRank ent_rank, EntityId ent_id, const ConstPartVector& parts);
-
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after August 2021
-STK_DEPRECATED void BulkData::clone_solo_side_id_generator(const stk::mesh::BulkData &oldBulk)
-{
-    m_soloSideIdGenerator = oldBulk.m_soloSideIdGenerator;
-}
-#endif
 
 bool entity_is_purely_local(const BulkData& mesh, Entity entity)
 {
@@ -1963,6 +1956,16 @@ void BulkData::update_field_data_states(FieldBase* field)
     unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
     for (int s = 1; s < numStates; ++s) {
       m_field_data_manager->swap_fields(fieldOrdinal+s, fieldOrdinal);
+    }
+
+    for (int state = 0; state < numStates; ++state) {
+      FieldBase* currentStateField = field->field_state(static_cast<FieldState>(state));
+
+      NgpFieldBase* ngpField = currentStateField->get_ngp_field();
+      if (ngpField != nullptr) {
+        ngpField->update_bucket_pointer_view();
+        ngpField->fence();
+      }
     }
   }
 }
@@ -3402,7 +3405,7 @@ void BulkData::filter_ghosting_remove_receives(const stk::mesh::Ghosting &ghosti
   unsigned len = recvGhosts.size();
   for (unsigned ii=0; ii<len; ++ii) {
     Entity e = recvGhosts[ii];
-    const unsigned erank = entity_rank(e);
+    const EntityRank erank = entity_rank(e);
 
     for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank) {
       Entity const *rels_i = begin(e, irank);

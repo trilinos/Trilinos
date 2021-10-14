@@ -671,6 +671,7 @@ namespace MueLuTests {
     TEST_EQUALITY(Teuchos::as<bool>(myDomainMap->getNodeNumElements()==3), true);
   } // AmalgamationLightweightDrop
 
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AmalgamationStridedLW, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
     // unit test for block size 3 using a strided map
@@ -1523,6 +1524,101 @@ namespace MueLuTests {
   }
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, AggresiveDroppingIsMarkedAsBoundary, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+    // Test that when everything but the diagonal is dropped, the node is marked as boundary
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 12*comm->getSize(), 0, comm);
+    Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
+
+    {
+      Level fineLevel;
+      TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+      mtx->SetFixedBlockSize(1);
+      fineLevel.Set("A", mtx);
+
+      CoalesceDropFactory dropFact = CoalesceDropFactory();
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
+      dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+      dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
+      fineLevel.Request("Graph", &dropFact);
+      fineLevel.Request("DofsPerNode", &dropFact);
+
+      dropFact.Build(fineLevel);
+
+      RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+
+      auto boundaryNodes = graph->GetBoundaryNodeMap();
+      bool allNodesAreOnBoundary = true;
+      for (LO i = 0; i < Teuchos::as<LO>(boundaryNodes.size()); i++)
+        allNodesAreOnBoundary &= boundaryNodes[i];
+      TEST_EQUALITY(allNodesAreOnBoundary, true);
+    }
+
+    {
+      Level fineLevel;
+      TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+      mtx->SetFixedBlockSize(2);
+      fineLevel.Set("A", mtx);
+
+      CoalesceDropFactory dropFact = CoalesceDropFactory();
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
+      dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+      dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
+      fineLevel.Request("Graph", &dropFact);
+      fineLevel.Request("DofsPerNode", &dropFact);
+
+      dropFact.Build(fineLevel);
+
+      RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+
+      auto boundaryNodes = graph->GetBoundaryNodeMap();
+      bool allNodesAreOnBoundary = true;
+      for (LO i = 0; i < Teuchos::as<LO>(boundaryNodes.size()); i++)
+        allNodesAreOnBoundary &= boundaryNodes[i];
+      TEST_EQUALITY(allNodesAreOnBoundary, true);
+    }
+
+    {
+      Level fineLevel;
+      TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
+
+      mtx->SetFixedBlockSize(3);
+      fineLevel.Set("A", mtx);
+
+      CoalesceDropFactory dropFact = CoalesceDropFactory();
+      RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      dropFact.SetFactory("UnAmalgamationInfo",amalgFact);
+      dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(true));
+      dropFact.SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(4.1));
+      fineLevel.Request("Graph", &dropFact);
+      fineLevel.Request("DofsPerNode", &dropFact);
+
+      dropFact.Build(fineLevel);
+
+      RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
+
+      auto boundaryNodes = graph->GetBoundaryNodeMap();
+      bool allNodesAreOnBoundary = true;
+      for (LO i = 0; i < Teuchos::as<LO>(boundaryNodes.size()); i++)
+        allNodesAreOnBoundary &= boundaryNodes[i];
+      TEST_EQUALITY(allNodesAreOnBoundary, true);
+    }
+
+  } // AggresiveDroppingIsMarkedAsBoundary
+
+
 
 #define MUELU_ETI_GROUP(SC,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,Constructor,SC,LO,GO,Node) \
@@ -1545,7 +1641,8 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,BlockDiagonal,SC,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,BlockDiagonalDistanceLaplacian,SC,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,BlockDiagonalDistanceLaplacianWeighted,SC,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,DistanceLaplacianWeighted,SC,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,DistanceLaplacianWeighted,SC,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CoalesceDropFactory,AggresiveDroppingIsMarkedAsBoundary,SC,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

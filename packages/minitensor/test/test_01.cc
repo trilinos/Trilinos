@@ -901,7 +901,7 @@ TEST(MiniTensor, SymmetricEigen)
   Tensor<Real> V(3);
   Tensor<Real> D(3);
 
-  boost::tie(V, D) = eig_sym(A);
+  std::tie(V, D) = eig_sym(A);
 
   ASSERT_LE(std::abs(D(0, 0) - 1.1), machine_epsilon<Real>());
   ASSERT_LE(std::abs(D(1, 1) - 1.0), machine_epsilon<Real>());
@@ -921,7 +921,7 @@ TEST(MiniTensor, LeftPolarDecomposition)
   Tensor<Real> V(3);
   Tensor<Real> R(3);
 
-  boost::tie(V, R) = polar_left(F);
+  std::tie(V, R) = polar_left(F);
 
   Real const
   error_x = norm(V - X) / norm(X);
@@ -1031,7 +1031,7 @@ TEST(MiniTensor, PolarLeftLog)
 
   Tensor<Real> V(3), R(3), v(3);
 
-  boost::tie(V, R, v) = polar_left_logV(F);
+  std::tie(V, R, v) = polar_left_logV(F);
 
   Real const error = norm(v - x) / norm(x);
 
@@ -1084,7 +1084,7 @@ TEST(MiniTensor, SVD2x2)
 
   Tensor<Real> U(2), S(2), V(2);
 
-  boost::tie(U, S, V) = svd(A);
+  std::tie(U, S, V) = svd(A);
 
   Tensor<Real> B = U * S * transpose(V);
 
@@ -1099,7 +1099,7 @@ TEST(MiniTensor, SVD3x3)
 
   Tensor<Real> U(3), S(3), V(3);
 
-  boost::tie(U, S, V) = svd(A);
+  std::tie(U, S, V) = svd(A);
 
   Tensor<Real> const B = U * S * transpose(V);
 
@@ -1115,7 +1115,7 @@ TEST(MiniTensor, SVD3x3Fad)
 
   Tensor<Sacado::Fad::DFad<Real>> U(3), S(3), V(3);
 
-  boost::tie(U, S, V) = svd(A);
+  std::tie(U, S, V) = svd(A);
 
   Tensor<Sacado::Fad::DFad<Real>> const
   B = U * S * transpose(V);
@@ -1183,7 +1183,7 @@ TEST(MiniTensor, SymmetricEigen2x2)
 
   Tensor<Real> V(2), D(2);
 
-  boost::tie(V, D) = eig_sym(A);
+  std::tie(V, D) = eig_sym(A);
 
   Tensor<Real> const B = V * D * transpose(V);
 
@@ -1198,7 +1198,7 @@ TEST(MiniTensor, SymmetricEigen3x3)
 
   Tensor<Real> V(3), D(3);
 
-  boost::tie(V, D) = eig_sym(A);
+  std::tie(V, D) = eig_sym(A);
 
   Tensor<Real> const B = V * D * transpose(V);
 
@@ -1213,11 +1213,11 @@ TEST(MiniTensor, Polar3x3)
 
   Tensor<Real> R(3), U(3);
 
-  boost::tie(R, U) = polar_right(A);
+  std::tie(R, U) = polar_right(A);
 
   Tensor<Real> X(3), D(3), Y(3);
 
-  boost::tie(X, D, Y) = svd(A);
+  std::tie(X, D, Y) = svd(A);
 
   Tensor<Real> const B = R - X * transpose(Y) + U - Y * D * transpose(Y);
 
@@ -1234,7 +1234,7 @@ TEST(MiniTensor, Cholesky)
 
   bool is_spd;
 
-  boost::tie(G, is_spd) = cholesky(A);
+  std::tie(G, is_spd) = cholesky(A);
 
   Tensor<Real> const B(1.0, 0.0, 0.0, 1.0, 2.0, 0.0, 1.0, 1.0, 1.0);
 

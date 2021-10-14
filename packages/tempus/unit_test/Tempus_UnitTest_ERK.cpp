@@ -6,15 +6,14 @@
 // ****************************************************************************
 // @HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
+#include "Tempus_UnitTest_RK_Utils.hpp"
 
-#include "../TestModels/DahlquistTestModel.hpp"
-
-#include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperRKButcherTableau.hpp"
 #include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperRKModifierBase.hpp"
 #include "Tempus_StepperRKModifierXBase.hpp"
+
+#include "../TestModels/DahlquistTestModel.hpp"
 
 
 namespace Tempus_Unit_Test {
@@ -104,16 +103,16 @@ using Teuchos::rcp_dynamic_cast;
  *    \tilde{u} & = & A_{tol} + max(|u^n|, |u^{n+1}| ) * R_{tol}
  *  \f}
  *  with \f$A_{tol} = 0 \f$ and \f$R_{tol} = 1\f$, we have
-    \f$\tilde{u} = x_0 = 1\f$ and
+ *  \f$\tilde{u} = x_0 = 1\f$ and
  *  \f{eqnarray*}{
-              e & = & \sum_{i=1}^{s} \left[
-                        \left( b_i - b^\ast_i \right) \Delta t
-                        \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t \right] \\
-                & = & (2/9 - 7/24)*(-1)
-                    + (1/3 - 1/4 )*(-1/2)
-                    + (4/9 - 1/3 )*(-5/8)
-                    + ( 0  - 1/8 )*(-1/3) = 0
-   \f}
+ *            e & = & \sum_{i=1}^{s} \left[
+ *                      \left( b_i - b^\ast_i \right) \Delta t
+ *                      \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t \right] \\
+ *              & = & (2/9 - 7/24)*(-1)
+ *                  + (1/3 - 1/4 )*(-1/2)
+ *                  + (4/9 - 1/3 )*(-5/8)
+ *                  + ( 0  - 1/8 )*(-1/3) = 0
+ * \f}
  */
 class StepperRKModifierBogackiShampineTest
   : virtual public Tempus::StepperRKModifierBase<double>

@@ -127,9 +127,7 @@ void fillComplete(CrsMatrixType & A)
 
 void putScalar(ScalarT s,CrsMatrixType & A)
 {
-  resumeFill(A);
   A.setAllToScalar(s);
-  fillComplete(A);
 }
 
 template <typename Intrepid2Type>
@@ -470,9 +468,7 @@ TEUCHOS_UNIT_TEST(tBlockedTpetraLinearObjFactory, adjustDirichlet)
    for(int i=0;i<numBlocks;i++) {
       for(int j=0;j<numBlocks;j++) {
          RCP<CrsMatrixType> M = getSubBlock_tp(i,j,*b_sys->get_A());
-         M->resumeFill();
          M->setAllToScalar(-3.0);
-         M->fillComplete(M->getDomainMap(),M->getRangeMap());
       }
    }
 

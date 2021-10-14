@@ -399,6 +399,8 @@ TensorBase<T, ST>::fill(Filler const value)
     }
     break;
 
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+
   case Filler::RANDOM:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
@@ -423,6 +425,8 @@ TensorBase<T, ST>::fill(Filler const value)
     }
     break;
 
+#endif
+
   case Filler::NANS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
@@ -432,7 +436,8 @@ TensorBase<T, ST>::fill(Filler const value)
     break;
 
   default:
-    MT_ERROR_EXIT("Unknown specification of value for filling components.");
+    MT_ERROR_EXIT("Unknown or undefined (in execution space) specification of "
+                  "value for filling components.");
     break;
   }
 

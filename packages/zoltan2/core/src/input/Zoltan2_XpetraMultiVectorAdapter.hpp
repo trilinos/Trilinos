@@ -339,8 +339,11 @@ template <typename User>
         dynamic_cast<const xt_mvector_t *>(vector_.get());
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> view2d =
-      tvector->getTpetra_MultiVector()->template getLocalView<node_t>(Tpetra::Access::ReadWrite);
+      tvector->getTpetra_MultiVector()->template getLocalView<typename node_t::device_type>(Tpetra::Access::ReadWrite);
     elements = view2d;
+    // CMS/KDD: Look at this stuff right here.  Compare against a non-cuda build OR, look at core/driver/driverinputs/kuberry/kuberry.coords
+    // Ca try changing the kuberry.xml to use "input adapter" "BasicVector" rather than "XpetraMultiVector"
+
   }
   else if (map_->lib() == Xpetra::UseEpetra){
 #if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)

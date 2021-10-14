@@ -195,6 +195,15 @@ Piro::InvertMassMatrixDecorator<Scalar>::create_W_op () const
 }
 
 template<typename Scalar>
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > 
+Piro::InvertMassMatrixDecorator<Scalar>::create_W () const
+{
+  Teuchos::RCP<const Thyra::LinearOpBase<double> > A = massMatrix; 
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > W = Thyra::linearOpWithSolve(*lowsFactory, A);
+  return W; 
+}
+
+template<typename Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_W_factory() const
 {
@@ -267,9 +276,14 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  //IKT 9/22/2021: to circumvent the following, need to implement M*DfDp in the code.
+  //Talk to Eric Phipps if you have questions about this.
   if (outArgs.Np()>0) {
-   if (outArgs.get_DfDp(0).getMultiVector() != Teuchos::null)
-     std::cout << "InvertMassMatrixDecorator:: NOT IMPLEMENTED FOR dfdp!! " << std::endl;
+    if (outArgs.get_DfDp(0).getMultiVector() != Teuchos::null)
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error! Piro::InvertMassMatrixDecorator, needed for explicit time-stepping, does not have DfDp implemented!\n" <<
+          "Forward sensitivities will not work; please re-run without them or run with an implicit time-stepper.\n";)
   }
 
   if (outArgs.get_f() == Teuchos::null) {
@@ -305,8 +319,7 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
     if (calcMassMatrix) {
       if (!lumpMassMatrix) {
         // Create a linear solver based on the forward operator massMatrix
-        A = massMatrix; //Teuchos::rcp(new Thyra::LinearOpWithSolveBase<double>(*massMatrix ));
-        lows = Thyra::linearOpWithSolve(*lowsFactory, A);
+	lows = this->create_W(); 
       }
       else { // Lump matrix into inverse of diagonal
         Thyra::put_scalar<Scalar>(1.0, invDiag.ptr());
@@ -327,11 +340,9 @@ Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
       }
     }
 
-    //set f and unset W_op in modelOutArgs
-    //This is to avoid calling getting Jacobian and residual at the same time, 
-    //which we need to do for Aeras problems calling this function from Albany. 
+    //set f and W_op in modelOutArgs
     modelOutArgs.set_f(outArgs.get_f()); 
-    modelOutArgs.set_W_op(Teuchos::null); 
+    modelOutArgs.set_W_op(outArgs.get_W());
     
     //Evaluate the underlying model
     model->evalModel(modelInArgs, modelOutArgs);

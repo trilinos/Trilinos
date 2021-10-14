@@ -39,6 +39,14 @@
 #include "topology_test_utils.hpp"    // for check_lexicographical_smallest_permutation, check_l...
 #include <vector>                     // for vector
 
+namespace {
+
+std::vector<std::vector<uint8_t>> get_gold_permutation_node_ordinals() {
+  return std::vector<std::vector<uint8_t>> {
+    {0}
+  };
+}
+
 TEST(stk_topology, node)
 {
   stk::topology t = stk::topology::NODE;
@@ -68,12 +76,13 @@ TEST(stk_topology, node)
 
   EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-  std::vector<std::vector<unsigned>> gold_permutation_node_ordinals = { {0} };
-  check_lexicographical_smallest_permutation(t, gold_permutation_node_ordinals);
+  check_lexicographical_smallest_permutation(t, get_gold_permutation_node_ordinals());
 }
 
 void check_node_on_device()
 {
+  OrdinalType goldPermutationNodeOrdinals = fillGoldOrdinals(get_gold_permutation_node_ordinals());
+
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i)
   {
     stk::topology t = stk::topology::NODE;
@@ -102,12 +111,15 @@ void check_node_on_device()
 
     NGP_EXPECT_EQ(t.face_topology(0), stk::topology::INVALID_TOPOLOGY);
 
-    unsigned gold_permutation_node_ordinals[1][1] = { {0} };
-    check_lexicographical_smallest_permutation_ngp(t, gold_permutation_node_ordinals);
+    constexpr unsigned numNodes = 1;  // Node actually has 0 nodes, but zero-length arrays are not allowed
+
+    check_lexicographical_smallest_permutation_ngp<numNodes>(t, goldPermutationNodeOrdinals);
   });
 }
 
 NGP_TEST(stk_topology_ngp, node)
 {
   check_node_on_device();
+}
+
 }

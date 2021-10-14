@@ -48,7 +48,7 @@ namespace ExoModules {
     std::vector<gridType>    gridList;
     std::vector<elementType> elementList;
 
-    char modelTitle[MAX_LINE_LENGTH]{'\0'};
+    std::string modelTitle;
 
     int exoFileID{0};
 

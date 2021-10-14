@@ -120,13 +120,11 @@ namespace panzer {
     //////////////////////////////////////////////////////////////
 
     panzer::IntegrationDescriptor sid(2*2, panzer::IntegrationDescriptor::SURFACE);
-    std::map<std::string, panzer::WorksetNeeds> wkstRequirements;
-    wkstRequirements[element_block].addIntegrator(sid);
 
     RCP<panzer_stk::WorksetFactory> wkstFactory
        = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = rcp(new panzer::WorksetContainer(wkstFactory,wkstRequirements));
+       = rcp(new panzer::WorksetContainer(wkstFactory));
 
     wkstContainer->setGlobalIndexer(dof_manager);
 
@@ -138,8 +136,8 @@ namespace panzer {
 
     auto & workset = (*worksets)[0];
 
-    auto rot_matrices = workset.getIntegrationValues(sid).surface_rotation_matrices;
-    auto normals = workset.getIntegrationValues(sid).surface_normals;
+    auto rot_matrices = workset.getIntegrationValues(sid).getSurfaceRotationMatrices();
+    auto normals = workset.getIntegrationValues(sid).getSurfaceNormals();
 
     const int num_owned_cells   = workset.numOwnedCells();
     const int num_ghost_cells   = workset.numGhostCells();

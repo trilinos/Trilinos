@@ -59,6 +59,7 @@
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include "Tpetra_Access.hpp"
+#include "Tpetra_Details_WrappedDualView.hpp"
 #include <type_traits>
 
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -464,6 +465,7 @@ namespace Tpetra {
     using dual_view_type = Kokkos::DualView<impl_scalar_type**,
                                             Kokkos::LayoutLeft,
                                             device_type>;
+    using wrapped_dual_view_type = Details::WrappedDualView<dual_view_type>;
 
     //@}
     //! @name Constructors and destructor
@@ -587,7 +589,7 @@ namespace Tpetra {
     /// around with multiple memory spaces.
     MultiVector (const Teuchos::RCP<const map_type>& map,
                  const typename dual_view_type::t_dev& d_view);
-
+   
     /// \brief Expert mode constructor, that takes a Kokkos::DualView
     ///   of the MultiVector's data and the "original"
     ///   Kokkos::DualView of the data, and returns a MultiVector that
@@ -613,6 +615,18 @@ namespace Tpetra {
     MultiVector (const Teuchos::RCP<const map_type>& map,
                  const dual_view_type& view,
                  const dual_view_type& origView);
+
+    /// \brief Expert mode constructor, that takes a WrappedDualView
+    ///   of the MultiVector's data.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this
+    ///   interface.  It may change or go away at any time.  It is
+    ///   mainly useful for Tpetra developers and we do not expect it
+    ///   to be useful for anyone else.
+    MultiVector (const Teuchos::RCP<const map_type>& map,
+                 const wrapped_dual_view_type& d_view);
+
 
   protected:
 
@@ -645,6 +659,28 @@ namespace Tpetra {
     MultiVector (const Teuchos::RCP<const map_type>& map,
                  const dual_view_type& view,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
+
+    /// \brief Expert mode constructor for noncontiguous views.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this
+    ///   interface.  It may change or go away at any time.  It is
+    ///   mainly useful for Tpetra developers and we do not expect it
+    ///   to be useful for anyone else.
+    ///
+    /// This constructor takes a Kokkos::DualView for the MultiVector
+    /// to view, and a list of the columns to view, and returns a
+    /// MultiVector that views those data.  The resulting MultiVector
+    /// does <i>not</i> have constant stride, that is,
+    /// isConstantStride() returns false.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] WrappedDualView to the data (shallow copy).
+    /// \param whichVectors [in] Which columns (vectors) to view.
+    MultiVector (const Teuchos::RCP<const map_type>& map,
+                 const wrapped_dual_view_type& view,
+                 const Teuchos::ArrayView<const size_t>& whichVectors);
+
 
     /// \brief Expert mode constructor for noncontiguous views, with
     ///   original view.
@@ -1459,7 +1495,7 @@ namespace Tpetra {
     template<class TargetDeviceType>
     //TPETRA_DEPRECATED
     void sync () {
-      view_.template sync<TargetDeviceType> ();
+      view_.getDualView().template sync<TargetDeviceType> ();
     }
 
     //! Synchronize to Host
@@ -1474,7 +1510,7 @@ namespace Tpetra {
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
     bool need_sync () const {
-      return view_.template need_sync<TargetDeviceType> ();
+      return view_.getDualView().template need_sync<TargetDeviceType> ();
     }
 
     //! Whether this MultiVector needs synchronization to the host.
@@ -1493,7 +1529,7 @@ namespace Tpetra {
     template<class TargetDeviceType>
     //TPETRA_DEPRECATED
     void modify () {
-      view_.template modify<TargetDeviceType> ();
+      view_.getDualView().template modify<TargetDeviceType> ();
     }
 
     //! Mark data as modified on the device side.
@@ -1535,136 +1571,24 @@ namespace Tpetra {
     /// \endcode
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
-    getLocalView (Access::ReadOnlyStruct) const
+    getLocalView (Access::ReadOnlyStruct s) const
     {
-      bool returnDevice = true;
-      {
-        auto tmp = view_.template view<TargetDeviceType>();
-        if (tmp == this->view_.view_host()) returnDevice = false;
-      }
-      if (returnDevice)
-      {
-        //returning dual_view_type::t_dev::const_type
-        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
-          const bool debug = Details::Behavior::debug();
-          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
-                             " device while a host view is alive";
-          if (debug) {
-            std::cout << "Rank " << this->getMap()->getComm()->getRank()
-                      << ":  " << msg << std::endl;
-          }
-          throw std::runtime_error(msg);
-        }
-        owningView_.sync_device();
-      }
-      else
-      {
-        //returning dual_view_type::t_host::const_type
-        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
-          const bool debug = Details::Behavior::debug();
-          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
-                             " host while a device view is alive";
-          if (debug) {
-            std::cout << "Rank " << this->getMap()->getComm()->getRank()
-                      << ":  " << msg << std::endl;
-          }
-          throw std::runtime_error(msg);
-        }
-        owningView_.sync_host();
-      }
-      return view_.template view<TargetDeviceType>();
+      return view_.template getView<TargetDeviceType>(s);
+    }
+
+
+    template<class TargetDeviceType>
+    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
+    getLocalView (Access::ReadWriteStruct s)
+    {
+      return view_.template getView<TargetDeviceType>(s);
     }
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView (Access::ReadWriteStruct)
+    getLocalView (Access::OverwriteAllStruct s)
     {
-      bool returnDevice = true;
-      {
-        auto tmp = view_.template view<TargetDeviceType>();
-        if (tmp == this->view_.view_host()) returnDevice = false;
-      }
-      if (returnDevice) 
-      {
-        //returning dual_view_type::t_dev::type
-        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
-          const bool debug = Details::Behavior::debug();
-          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
-                             " device while a host view is alive";
-          if (debug) {
-            std::cout << "Rank " << this->getMap()->getComm()->getRank()
-                      << ":  " << msg << std::endl;
-          }
-          throw std::runtime_error(msg);
-        }
-        owningView_.sync_device();
-        owningView_.modify_device();
-      }
-      else
-      {
-        //returning dual_view_type::t_host::type
-        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
-          const bool debug = Details::Behavior::debug();
-          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
-                             " host while a device view is alive";
-          if (debug) {
-            std::cout << "Rank " << this->getMap()->getComm()->getRank()
-                      << ":  " << msg << std::endl;
-          }
-          throw std::runtime_error(msg);
-        }
-        owningView_.sync_host();
-        owningView_.modify_host();
-      }
-      return view_.template view<TargetDeviceType>();
-    }
-
-    template<class TargetDeviceType>
-    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView (Access::OverwriteAllStruct)
-    {
-      if (owningView_.h_view != view_.h_view) {
-        // view_ is a subview of owningView_; for safety, need to use ReadWrite
-        return getLocalView<TargetDeviceType>(Access::ReadWrite);
-      }
-      bool returnDevice = true;
-      {
-        auto tmp = view_.template view<TargetDeviceType>();
-        if (tmp == this->view_.view_host()) returnDevice = false;
-      }
-      if (returnDevice)
-      {
-        //returning dual_view_type::t_dev::type
-        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
-          const bool debug = Details::Behavior::debug();
-          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
-                             " device while a host view is alive";
-          if (debug) {
-            std::cout << "Rank " << this->getMap()->getComm()->getRank()
-                      << ":  " << msg << std::endl;
-          }
-          throw std::runtime_error(msg);
-        }
-        owningView_.clear_sync_state();
-        owningView_.modify_device();
-      }
-      else
-      {
-        //returning dual_view_type::t_host::type
-        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
-          const bool debug = Details::Behavior::debug();
-          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
-                             " host while a device view is alive";
-          if (debug) {
-            std::cout << "Rank " << this->getMap()->getComm()->getRank()
-                      << ":  " << msg << std::endl;
-          }
-          throw std::runtime_error(msg);
-        }
-        owningView_.clear_sync_state();
-        owningView_.modify_host();
-      }
-      return view_.template view<TargetDeviceType>();
+      return view_.template getView<TargetDeviceType>(s);
     }
 
 
@@ -1704,7 +1628,7 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView () const
     {
-      return view_.template view<TargetDeviceType>();
+      return view_.getDualView().template view<TargetDeviceType>();
     }
 
     //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
@@ -2407,42 +2331,7 @@ namespace Tpetra {
     /// retain its current \c const marking, even though it has always
     /// implied a device->host synchronization.  Lesson to the reader:
     /// Use \c const sparingly!
-    mutable dual_view_type view_;
-
-    /// \brief The "original view" of the MultiVector's data.
-    ///
-    /// Methods like offsetView() return a view of a contiguous subset
-    /// of rows.  At some point, we might like to get all of the rows
-    /// back, by taking another view of a <i>super</i>set of rows.
-    /// For example, we might like to get a column Map view of a
-    /// (domain Map view of a (column Map MultiVector)).  Ifpack2's
-    /// implementation of Gauss-Seidel and SOR in CrsMatrix relies on
-    /// this functionality.  However, Kokkos (rightfully) forbids us
-    /// from taking a superset of rows of the current view.
-    ///
-    /// We deal with this at the Tpetra level by keeping around the
-    /// original view of <i>all</i> the rows (and columns), which is
-    /// \c origView_.  Methods like offsetView() then use origView_,
-    /// not view_, to make the subview for the returned MultiVector.
-    /// Furthermore, offsetView() can do error checking by getting the
-    /// original number of rows from origView_.
-    ///
-    /// This may pose some problems for offsetView if it is given an
-    /// offset other than zero, but that case is hardly exercised, so
-    /// I am not going to worry about it for now.
-    ///
-    /// Note that the "original" view isn't always original.  It
-    /// always has the original number of rows.  However, some special
-    /// cases of constructors that take a whichVectors argument, when
-    /// whichVectors.size() is 1, may point origView_ to the column to
-    /// view.  Those constructors do this so that the resulting
-    /// MultiVector has constant stride.  This special case does not
-    /// affect correctness of offsetView and related methods.
-    mutable dual_view_type origView_;
-
-    /// \brief The true original DualView - it owns the memory of this
-    ///  MultiVector, and was not constructed as a subview of any other DualView.
-    mutable dual_view_type owningView_;
+    mutable wrapped_dual_view_type view_;
 
     /// \brief Indices of columns this multivector is viewing.
     ///

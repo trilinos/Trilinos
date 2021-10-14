@@ -113,11 +113,11 @@ namespace Teuchos {
 //resolving them when linking dlls.
 #ifdef _MSC_VER
 #  ifdef HAVE_TEUCHOS_COMPLEX
-     template BLAS<long int, std::complex<float> >;
-     template BLAS<long int, std::complex<double> >;
+     template class BLAS<long int, std::complex<float> >;
+     template class BLAS<long int, std::complex<double> >;
 #  endif
-     template BLAS<long int, float>;
-     template BLAS<long int, double>;
+     template class BLAS<long int, float>;
+     template class BLAS<long int, double>;
 #endif
 
   // *************************** BLAS<int,float> DEFINITIONS ******************************

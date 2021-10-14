@@ -298,7 +298,7 @@ void check_declare_element_side_inputs(const BulkData & mesh,
                                        const Entity elem,
                                        const unsigned localSideId);
 
-void connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
+bool connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
 void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
 
 bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,

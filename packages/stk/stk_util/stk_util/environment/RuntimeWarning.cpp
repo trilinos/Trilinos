@@ -45,6 +45,18 @@ get_warning_count()
   return get_message_count(MSG_WARNING);
 }
 
+unsigned 
+get_warning_printed_count()
+{
+  return get_message_printed_count(MSG_WARNING);
+}
+
+unsigned 
+get_warning_printed_count(const MessageCode &messageCode)
+{
+  return get_message_printed_count(messageCode);
+}
+
 
 void
 reset_warning_count()

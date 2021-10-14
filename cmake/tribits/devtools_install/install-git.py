@@ -99,7 +99,7 @@ This script builds """+self.getProductName(version)+""" from source compiled wit
 configured C compiler in your path.   This also installs the git-subtree provided in the
 contributed folder on install.
 
-To also build and install the documentaion, additionally, pass in:
+To also build and install the documentation, additionally, pass in:
 
   --with-doc --with-info
 

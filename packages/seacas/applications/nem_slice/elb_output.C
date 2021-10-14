@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -61,7 +61,7 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
   int cpu_ws = sizeof(float);
   int io_ws  = sizeof(float);
 
-  fmt::print("Outputting load balance to file {}\n", nemI_out_file.c_str());
+  fmt::print("Outputting load balance to file {}\n", nemI_out_file);
 
   /* Create the load balance file */
   /* Attempt to create a netcdf4-format file; if it fails, then assume
@@ -109,7 +109,7 @@ int write_nemesis(std::string &nemI_out_file, Machine_Description *machine,
     method1 = "elemental";
   }
 
-  title = fmt::format("nem_slice {} load balance file", method1.c_str());
+  title = fmt::format("nem_slice {} load balance file", method1);
 
   method1 = "method1: ";
   method2 = "method2: ";
@@ -446,20 +446,12 @@ template <typename INT>
 int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_Description *machine,
               Problem_Description *prob, Mesh_Description<INT> *mesh, LB_Description<INT> *lb)
 {
-  int exid_vis;
-  int exid_inp;
-
-  std::string title;
-  const char *coord_names[] = {"X", "Y", "Z"};
-
-  /*-----------------------------Execution Begins------------------------------*/
-
   /* Generate the file name for the visualization file */
   std::string vis_file_name = remove_extension(nemI_out_file);
   vis_file_name += "-vis.exoII";
 
   /* Generate the title for the file */
-  title = fmt::format("{} {}  load balance visualization file", UTIL_NAME, ELB_VERSION);
+  std::string title = fmt::format("{} {}  load balance visualization file", UTIL_NAME, ELB_VERSION);
 
   /*
    * If the vis technique is to be by element block then calculate the
@@ -474,13 +466,14 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   }
 
   /* Create the ExodusII file */
-  fmt::print("Outputting load balance visualization file {}\n", vis_file_name.c_str());
+  fmt::print("Outputting load balance visualization file {}\n", vis_file_name);
   int cpu_ws = 0;
   int io_ws  = 0;
   int mode   = EX_CLOBBER;
   if (prob->int64db | prob->int64api) {
     mode |= EX_NETCDF4 | EX_NOCLASSIC | prob->int64db | prob->int64api;
   }
+  int exid_vis;
   if ((exid_vis = ex_create(vis_file_name.c_str(), mode, &cpu_ws, &io_ws)) < 0) {
     Gen_Error(0, "fatal: unable to create visualization output file");
     return 0;
@@ -495,6 +488,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
   int   iio_ws  = 0;
   float vers    = 0.0;
   mode          = EX_READ | prob->int64api;
+  int exid_inp;
   if ((exid_inp = ex_open(exoII_inp_file.c_str(), mode, &icpu_ws, &iio_ws, &vers)) < 0) {
     Gen_Error(0, "fatal: unable to open input ExodusII file");
     return 0;
@@ -566,6 +560,7 @@ int write_vis(std::string &nemI_out_file, std::string &exoII_inp_file, Machine_D
       return 0;
     }
 
+    const char *coord_names[] = {"X", "Y", "Z"};
     if (ex_put_coord_names(exid_vis, (char **)coord_names) < 0) {
       Gen_Error(0, "fatal: unable to output coordinate names");
       return 0;

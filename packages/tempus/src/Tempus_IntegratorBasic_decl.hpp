@@ -216,14 +216,16 @@ protected:
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                pList);
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  bool runInitialize=true);
 
 
 /// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  bool runInitialize=true);
 
 
 /// Nonmember constructor
@@ -242,7 +244,8 @@ Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic();
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+  bool runInitialize=true);
 
 
 } // namespace Tempus

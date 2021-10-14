@@ -5,7 +5,7 @@ TRIBITS_SUBPACKAGE(ExoIIv2for32)
 add_definitions(-DDEFAULT_REAL_INT)
 
 INCLUDE_DIRECTORIES(
-   "${CMAKE_CURRENT_SOURCE_DIR}/include"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../exodus_for/include"
    "${CMAKE_CURRENT_SOURCE_DIR}/test"
    )
 

@@ -377,6 +377,9 @@ typedef MueLu::VariableDofLaplacianFactory<Scalar,LocalOrdinal,GlobalOrdinal,Nod
 #ifdef MUELU_SEMICOARSENPFACTORY_SHORT
 typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiCoarsenPFactory;
 #endif
+#ifdef MUELU_SEMICOARSENPFACTORY_KOKKOS_SHORT
+typedef MueLu::SemiCoarsenPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiCoarsenPFactory_kokkos;
+#endif
 #ifdef MUELU_UZAWASMOOTHER_SHORT
 typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> UzawaSmoother;
 #endif

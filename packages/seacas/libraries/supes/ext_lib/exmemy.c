@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -120,16 +120,13 @@ void exmemy(FTNINT *memreq, FTNINT *locblk, FTNINT *memrtn)
   size_t numbytes;
   size_t NumSize; /* Get multiplier which allows us to */
   /* convert everything in terms of Numeric Storage Units. */
-  size_t *block_location;
-  size_t *new_location;
-
   NumSize = sizeof(FTNREAL) / sizeof(char);
 
   /* Normal allocation call */
   if (*memreq > 0) { /* Then we need more memory. */
     numbytes = (*memreq) * NumSize;
 
-    block_location = (size_t *)malloc(numbytes);
+    size_t *block_location = (size_t *)malloc(numbytes);
 
     /* printf("%11x %11d\n", block_location, numbytes); */
     /* convert back to numerical storage units */
@@ -142,7 +139,7 @@ void exmemy(FTNINT *memreq, FTNINT *locblk, FTNINT *memrtn)
      */
     assert(block_location == (size_t *)((size_t)(*locblk) * NumSize));
 
-    if (block_location == 0) {
+    if (block_location == NULL) {
       /*
        * Then the call to 'malloc' has failed, most likely due to
        * asking for more memory than what's available.
@@ -168,7 +165,7 @@ void exmemy(FTNINT *memreq, FTNINT *locblk, FTNINT *memrtn)
     /* Adjust '*locblk' to be the raw address.  It is passed
      * in in terms of Numeric Storage Units.
      */
-    block_location = (size_t *)((size_t)(*locblk) * NumSize);
+    size_t *block_location = (size_t *)((size_t)(*locblk) * NumSize);
 
     if (*memrtn == -999 || *memreq == 0) {
       /* Handle normal 'free' */
@@ -180,10 +177,10 @@ void exmemy(FTNINT *memreq, FTNINT *locblk, FTNINT *memrtn)
       /* realloc call to shrink/grow memory */
       numbytes = -(*memreq) * NumSize;
       /* printf("PRE:  %11x %11d (realloc)\n", block_location, numbytes); */
-      new_location = realloc(block_location, numbytes);
+      size_t *new_location = realloc(block_location, numbytes);
       /* printf("POST: %11x %11d\n", new_location, numbytes); */
 
-      if (new_location == 0 && *memreq > 0) {
+      if (new_location == NULL && *memreq > 0) {
         /*
          * Then the call to 'realloc' has failed, most likely due to
          * asking for more memory than what's available.
@@ -207,19 +204,17 @@ void exmemy(FTNINT *memreq, FTNINT *locblk, FTNINT *memrtn)
 
 int main(int argc, char **argv)
 {
-  int    i;
-  FTNINT memreq;
   FTNINT locblk;
   FTNINT memrtn;
-  size_t first;
-  size_t last;
+  size_t first = 0;
+  size_t last  = 0;
 
   assert(sizeof(FTNREAL) == sizeof(FTNINT));
 
   printf("Size of FORTRAN int/real  = %lu bytes\n", sizeof(FTNINT));
 
-  memreq = 10000000; /* 10 Million words */
-  for (i = 0; i < 1000; i++) {
+  FTNINT memreq = 10000000; /* 10 Million words */
+  for (int i = 0; i < 1000; i++) {
 #if defined(ADDC_)
     exmemy_(&memreq, &locblk, &memrtn);
 #else

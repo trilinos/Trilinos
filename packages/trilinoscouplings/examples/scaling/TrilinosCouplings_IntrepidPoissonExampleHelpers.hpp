@@ -94,6 +94,26 @@ double getMaterialTensorOffDiagonalValue ();
 /// newVal = 2: 939 iterations (CG breaks!)
 void setMaterialTensorOffDiagonalValue (const double newVal);
 
+
+/// \brief Set parameters for anisotropic diffusion
+/// 
+/// Q = Rz(theta_z) Ry(theta_y) Rx(theta_x)
+///   Rotate in x, then y , then z
+///
+/// D = diag(str_x,str_y, str_z)
+///   Diagonal diffusion strength pre-rotation
+///
+/// Diffusion Tensor = Q D Q^T
+void setDiffusionRotationAndStrength(const std::vector<double>& diff_rotation_angle,  const std::vector<double>& diff_strength);
+
+
+/// \brief Gets the diffusion Tensor
+const std::vector<double> & getDiffusionMatrix();
+
+/// \brief Use the diffusion tensor rather than the off-diagonal values
+bool useDiffusionMatrix();
+
+
 /// \brief Make a Pamgen mesh specification for the Poisson test problem.
 ///
 /// Pamgen accepts mesh descriptions as human-readable strings in a

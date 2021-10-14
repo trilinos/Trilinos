@@ -55,34 +55,34 @@ ${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
 ## Compilers used by ${PROJECT_NAME} build
 ## ---------------------------------------------------------------------------
 
-SET(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER_FOR_CONFIG_FILE}")
+set(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER_FOR_CONFIG_FILE}")
 
-SET(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER_FOR_CONFIG_FILE}")
+set(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER_FOR_CONFIG_FILE}")
 
-SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE}")
+set(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE}")
 
 ## ---------------------------------------------------------------------------
 ## Compiler flags used by ${PROJECT_NAME} build
 ## ---------------------------------------------------------------------------
 
-SET(${PROJECT_NAME}_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+set(${PROJECT_NAME}_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}")
 
-SET(${PROJECT_NAME}_CXX_COMPILER_FLAGS [[${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}]])
+set(${PROJECT_NAME}_CXX_COMPILER_FLAGS [[${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}]])
 
-SET(${PROJECT_NAME}_C_COMPILER_FLAGS [[${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}]])
+set(${PROJECT_NAME}_C_COMPILER_FLAGS [[${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}]])
 
-SET(${PROJECT_NAME}_Fortran_COMPILER_FLAGS [[${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}]])
+set(${PROJECT_NAME}_Fortran_COMPILER_FLAGS [[${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}]])
 
 ## Extra link flags (e.g., specification of fortran libraries)
-SET(${PROJECT_NAME}_EXTRA_LD_FLAGS [[${${PROJECT_NAME}_EXTRA_LINK_FLAGS}]])
+set(${PROJECT_NAME}_EXTRA_LD_FLAGS [[${${PROJECT_NAME}_EXTRA_LINK_FLAGS}]])
 
 ## This is the command-line entry used for setting rpaths. In a build
 ## with static libraries it will be empty. 
-SET(${PROJECT_NAME}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
-SET(${PROJECT_NAME}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
+set(${PROJECT_NAME}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
+set(${PROJECT_NAME}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
 
-SET(${PROJECT_NAME}_LINKER ${CMAKE_LINKER})
-SET(${PROJECT_NAME}_AR ${CMAKE_AR})
+set(${PROJECT_NAME}_LINKER ${CMAKE_LINKER})
+set(${PROJECT_NAME}_AR ${CMAKE_AR})
 
 
 ## ---------------------------------------------------------------------------
@@ -90,81 +90,81 @@ SET(${PROJECT_NAME}_AR ${CMAKE_AR})
 ## ---------------------------------------------------------------------------
 
 ## The project version number
-SET(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
+set(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
 
 # For best practices in handling of components, see
 # <http://www.cmake.org/cmake/help/v3.2/manual/cmake-developer.7.html#find-modules>.
 #
 # If components were requested, include only those. If not, include all of
 # Trilinos.
-IF (${PROJECT_NAME}_FIND_COMPONENTS)
-  SET(COMPONENTS_LIST ${PDOLLAR}{${PROJECT_NAME}_FIND_COMPONENTS})
-ELSE()
-  SET(COMPONENTS_LIST ${FULL_PACKAGE_SET})
-ENDIF()
+if (${PROJECT_NAME}_FIND_COMPONENTS)
+  set(COMPONENTS_LIST ${PDOLLAR}{${PROJECT_NAME}_FIND_COMPONENTS})
+else()
+  set(COMPONENTS_LIST ${FULL_PACKAGE_SET})
+endif()
 
 # Initialize ${PROJECT_NAME}_FOUND with true, and set it to FALSE if any of
 # the required components wasn't found.
-SET(${PROJECT_NAME}_FOUND TRUE)
-FOREACH(comp ${PDOLLAR}{COMPONENTS_LIST})
-  SET(
+set(${PROJECT_NAME}_FOUND TRUE)
+foreach(comp ${PDOLLAR}{COMPONENTS_LIST})
+  set(
     INCLUDE_FILE
     ${PDOLLAR}{CMAKE_CURRENT_LIST_DIR}/../${PDOLLAR}{comp}/${PDOLLAR}{comp}Config.cmake
     )
- IF (EXISTS ${PDOLLAR}{INCLUDE_FILE})
+ if (EXISTS ${PDOLLAR}{INCLUDE_FILE})
    # Set ${PROJECT_NAME}_<component>_FOUND.
-   SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
+   set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND TRUE)
    # Include the package file.
-   INCLUDE(${PDOLLAR}{INCLUDE_FILE})
+   include(${PDOLLAR}{INCLUDE_FILE})
    # Add variables to lists.
-   LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_INCLUDE_DIRS})
-   LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARY_DIRS})
-   LIST(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
-   LIST(APPEND ${PROJECT_NAME}_TPL_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_INCLUDE_DIRS})
-   LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
-   LIST(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
- ELSE()
+   list(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_INCLUDE_DIRS})
+   list(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARY_DIRS})
+   list(APPEND ${PROJECT_NAME}_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_LIBRARIES})
+   list(APPEND ${PROJECT_NAME}_TPL_INCLUDE_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_INCLUDE_DIRS})
+   list(APPEND ${PROJECT_NAME}_TPL_LIBRARY_DIRS ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARY_DIRS})
+   list(APPEND ${PROJECT_NAME}_TPL_LIBRARIES ${PDOLLAR}{${PDOLLAR}{comp}_TPL_LIBRARIES})
+ else()
    # Set ${PROJECT_NAME}_<component>_FOUND to FALSE.
-   SET(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
+   set(${PROJECT_NAME}_${PDOLLAR}{comp}_FOUND FALSE)
    # Set ${PROJECT_NAME}_FOUND to FALSE if component is not optional.
-   IF(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
-     SET(${PROJECT_NAME}_FOUND FALSE)
-   ENDIF()
- ENDIF()
-ENDFOREACH()
+   if(${PROJECT_NAME}_FIND_REQUIRED_${PDOLLAR}{comp})
+     set(${PROJECT_NAME}_FOUND FALSE)
+   endif()
+ endif()
+endforeach()
 
 # Resolve absolute paths and remove duplicate paths
 # for LIBRARY_DIRS and INCLUDE_DIRS
 # This reduces stress on regular expressions later
-SET(short_dirs)
-FOREACH(dir ${PDOLLAR}{${PROJECT_NAME}_INCLUDE_DIRS})
-  GET_FILENAME_COMPONENT(dir_abs ${PDOLLAR}{dir} ABSOLUTE)
-  LIST(APPEND short_dirs ${PDOLLAR}{dir_abs})
-ENDFOREACH()
-LIST(REMOVE_DUPLICATES short_dirs)
-SET(${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{short_dirs})
+set(short_dirs)
+foreach(dir ${PDOLLAR}{${PROJECT_NAME}_INCLUDE_DIRS})
+  get_filename_component(dir_abs ${PDOLLAR}{dir} ABSOLUTE)
+  list(APPEND short_dirs ${PDOLLAR}{dir_abs})
+endforeach()
+list(REMOVE_DUPLICATES short_dirs)
+set(${PROJECT_NAME}_INCLUDE_DIRS ${PDOLLAR}{short_dirs})
 
-SET(short_dirs)
-FOREACH(dir ${PDOLLAR}{${PROJECT_NAME}_LIBRARY_DIRS})
-  GET_FILENAME_COMPONENT(dir_abs ${PDOLLAR}{dir} ABSOLUTE)
-  LIST(APPEND short_dirs ${PDOLLAR}{dir_abs})
-ENDFOREACH()
-LIST(REMOVE_DUPLICATES short_dirs)
-SET(${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{short_dirs})
+set(short_dirs)
+foreach(dir ${PDOLLAR}{${PROJECT_NAME}_LIBRARY_DIRS})
+  get_filename_component(dir_abs ${PDOLLAR}{dir} ABSOLUTE)
+  list(APPEND short_dirs ${PDOLLAR}{dir_abs})
+endforeach()
+list(REMOVE_DUPLICATES short_dirs)
+set(${PROJECT_NAME}_LIBRARY_DIRS ${PDOLLAR}{short_dirs})
 
 # Remove duplicates in ${PROJECT_NAME}_LIBRARIES
-LIST(REVERSE ${PROJECT_NAME}_LIBRARIES)
-LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
-LIST(REVERSE ${PROJECT_NAME}_LIBRARIES)
+list(REVERSE ${PROJECT_NAME}_LIBRARIES)
+list(REMOVE_DUPLICATES ${PROJECT_NAME}_LIBRARIES)
+list(REVERSE ${PROJECT_NAME}_LIBRARIES)
 
 # Remove duplicates in ${PROJECT_NAME}_TPL_INCLUDE_DIRS
-IF (${PROJECT_NAME}_TPL_INCLUDE_DIRS)
-  LIST(REMOVE_DUPLICATES ${PROJECT_NAME}_TPL_INCLUDE_DIRS)
-ENDIF()
+if (${PROJECT_NAME}_TPL_INCLUDE_DIRS)
+  list(REMOVE_DUPLICATES ${PROJECT_NAME}_TPL_INCLUDE_DIRS)
+endif()
 
 # NOTE: It is *NOT* safe to try to remove duplicate in
 # ${PROJECT_NAME}_TPL_LIBRARIES because these can be specified as -L, -l, etc.
-# Actaully, we should think about that.
+# Actually, we should think about that.
 
 ## ---------------------------------------------------------------------------
 ## MPI specific variables
@@ -172,31 +172,31 @@ ENDIF()
 ##   and includes on systems that do not use the mpi wrappers for compiling
 ## ---------------------------------------------------------------------------
 
-SET(${PROJECT_NAME}_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}")
-SET(${PROJECT_NAME}_MPI_LIBRARIES "${TPL_MPI_LIBRARIES}")
-SET(${PROJECT_NAME}_MPI_LIBRARY_DIRS "${TPL_MPI_LIBRARY_DIRS}")
-SET(${PROJECT_NAME}_MPI_INCLUDE_DIRS "${TPL_MPI_INCLUDE_DIRS}")
-SET(${PROJECT_NAME}_MPI_EXEC "${MPI_EXEC}")
-SET(${PROJECT_NAME}_MPI_EXEC_PRE_NUMPROCS_FLAGS "${MPI_EXEC_PRE_NUMPROCS_FLAGS}")
-SET(${PROJECT_NAME}_MPI_EXEC_MAX_NUMPROCS "${MPI_EXEC_MAX_NUMPROCS}")
-SET(${PROJECT_NAME}_MPI_EXEC_POST_NUMPROCS_FLAGS "${MPI_EXEC_POST_NUMPROCS_FLAGS}")
-SET(${PROJECT_NAME}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}")
+set(${PROJECT_NAME}_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}")
+set(${PROJECT_NAME}_MPI_LIBRARIES "${TPL_MPI_LIBRARIES}")
+set(${PROJECT_NAME}_MPI_LIBRARY_DIRS "${TPL_MPI_LIBRARY_DIRS}")
+set(${PROJECT_NAME}_MPI_INCLUDE_DIRS "${TPL_MPI_INCLUDE_DIRS}")
+set(${PROJECT_NAME}_MPI_EXEC "${MPI_EXEC}")
+set(${PROJECT_NAME}_MPI_EXEC_PRE_NUMPROCS_FLAGS "${MPI_EXEC_PRE_NUMPROCS_FLAGS}")
+set(${PROJECT_NAME}_MPI_EXEC_MAX_NUMPROCS "${MPI_EXEC_MAX_NUMPROCS}")
+set(${PROJECT_NAME}_MPI_EXEC_POST_NUMPROCS_FLAGS "${MPI_EXEC_POST_NUMPROCS_FLAGS}")
+set(${PROJECT_NAME}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}")
 
 ## ---------------------------------------------------------------------------
 ## Compiler vendor identifications
 ## ---------------------------------------------------------------------------
-SET(${PROJECT_NAME}_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}")
-SET(${PROJECT_NAME}_CXX_COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
-SET(${PROJECT_NAME}_C_COMPILER_ID "${CMAKE_C_COMPILER_ID}")
-SET(${PROJECT_NAME}_Fortran_COMPILER_ID "${CMAKE_Fortran_COMPILER_ID}")
-SET(${PROJECT_NAME}_Fortran_IMPLICIT_LINK_LIBRARIES "${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}")
+set(${PROJECT_NAME}_SYSTEM_NAME "${CMAKE_SYSTEM_NAME}")
+set(${PROJECT_NAME}_CXX_COMPILER_ID "${CMAKE_CXX_COMPILER_ID}")
+set(${PROJECT_NAME}_C_COMPILER_ID "${CMAKE_C_COMPILER_ID}")
+set(${PROJECT_NAME}_Fortran_COMPILER_ID "${CMAKE_Fortran_COMPILER_ID}")
+set(${PROJECT_NAME}_Fortran_IMPLICIT_LINK_LIBRARIES "${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}")
 
 ## ---------------------------------------------------------------------------
 ## Set useful general variables 
 ## ---------------------------------------------------------------------------
 
 ## The packages enabled for this project
-SET(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
+set(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
 
 ## The TPLs enabled for this project
-SET(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
+set(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")

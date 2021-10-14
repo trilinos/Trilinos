@@ -234,14 +234,14 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
     "--write-unexpected-builds-to-file",
     dest="writeUnexpectedBuildsToFile", type="string", default="",
     help="Write a CSV file with a list of unexpected builds 'bu'." \
-    +"  This is to make it easy to add new entires to the file read by" \
+    +"  This is to make it easy to add new entries to the file read by" \
     +" the option --expected-builds-file=<csv-file>. [default = '']" )
 
   clp.add_option(
     "--write-failing-tests-without-issue-trackers-to-file",
     dest="writeFailingTestsWithoutIssueTrackersToFile", type="string", default="",
     help="Write a CSV file with a list of tests with issue trackers failed 'twif'." \
-    +"  This is to make it easy to add new entires to the file read by" \
+    +"  This is to make it easy to add new entries to the file read by" \
     +" the option --tests-with-issue-trackers-file=<csv-file>. [default = '']" )
 
   clp.add_option(
@@ -455,7 +455,7 @@ if __name__ == '__main__':
 
   try:
 
-    # Beginning of top full bulid and tests CDash links paragraph
+    # Beginning of top full build and tests CDash links paragraph
     cdashReportData.htmlEmailBodyTop += "<p>\n"
 
     #

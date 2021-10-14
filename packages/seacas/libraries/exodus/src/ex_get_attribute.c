@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -52,19 +52,15 @@ static bool ex__is_internal_attribute(const char *name, ex_entity_type obj_type)
 
 static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
 {
-  const char *entryptr = NULL;
-  char        errmsg[MAX_ERR_LENGTH];
-
-  int id_ndx = 0;
-  int status = 0;
-  int varid  = 0;
+  char errmsg[MAX_ERR_LENGTH];
+  int  status = 0;
 
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
     return (EX_FATAL);
   }
 
   /* First, locate index of this objects id `obj_type` id array */
-  id_ndx = ex__id_lkup(exoid, obj_type, id);
+  int id_ndx = ex__id_lkup(exoid, obj_type, id);
   if (id_ndx <= 0) {
     ex_get_err(NULL, NULL, &status);
     if (status != 0) {
@@ -79,6 +75,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
     }
   }
 
+  const char *entryptr = NULL;
   switch (obj_type) {
   case EX_ASSEMBLY: entryptr = VAR_ENTITY_ASSEMBLY(id_ndx); break;
   case EX_BLOB: entryptr = VAR_ENTITY_BLOB(id_ndx); break;
@@ -97,6 +94,7 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
     return EX_FATAL;
   }
 
+  int varid = 0;
   if ((status = nc_inq_varid(exoid, entryptr, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entity list array for %s %" PRId64 " in file id %d",
@@ -109,14 +107,14 @@ static int ex__get_varid(int exoid, ex_entity_type obj_type, ex_entity_id id)
 
 static int ex__get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id, int *varid)
 {
-  int  att_count = 0;
-  int  status;
-  char errmsg[MAX_ERR_LENGTH];
+  int att_count = 0;
+  int status;
 
   if (obj_type == EX_GLOBAL) {
     *varid = NC_GLOBAL;
 
     if ((status = nc_inq(exoid, NULL, NULL, &att_count, NULL)) != NC_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get GLOBAL attribute count in file id %d",
                exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -131,6 +129,7 @@ static int ex__get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity
     }
 
     if ((status = nc_inq_var(exoid, *varid, NULL, NULL, NULL, NULL, &att_count)) != NC_NOERR) {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute count on %s with id %" PRId64 " in file id %d",
                ex_name_of_object(obj_type), id, exoid);
@@ -149,13 +148,10 @@ static int ex__get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity
 */
 int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id)
 {
-  int status;
-  int varid;
-  int att_count, count;
-
   EX_FUNC_ENTER();
 
-  att_count = ex__get_attribute_count(exoid, obj_type, id, &varid);
+  int varid;
+  int att_count = ex__get_attribute_count(exoid, obj_type, id, &varid);
   if (att_count < 0) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
@@ -166,9 +162,10 @@ int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id)
   }
 
   /* Get names of each attribute and see if it is an 'internal' name */
-  count = att_count;
+  int count = att_count;
   for (int i = 0; i < count; i++) {
     char name[NC_MAX_NAME];
+    int  status;
     if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH,
@@ -200,7 +197,6 @@ int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id)
 */
 int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id, ex_attribute *attr)
 {
-  int  status;
   char errmsg[MAX_ERR_LENGTH];
   int  varid;
   int  att_count, count;
@@ -218,6 +214,7 @@ int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id, 
   count = 0;
   for (int i = 0; i < att_count; i++) {
     char name[NC_MAX_NAME];
+    int  status;
     if ((status = nc_inq_attname(exoid, varid, i, name)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get attribute named %s on %s with id %" PRId64 " in file id %d",
@@ -251,11 +248,8 @@ int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id, 
 /*! Get the values for the specified attribute. */
 int ex_get_attribute(int exoid, ex_attribute *attr)
 {
-  int  status;
-  char errmsg[MAX_ERR_LENGTH];
-  int  varid;
-
   EX_FUNC_ENTER();
+  int varid;
   if (attr->entity_type == EX_GLOBAL) {
     varid = NC_GLOBAL;
   }
@@ -281,6 +275,7 @@ int ex_get_attribute(int exoid, ex_attribute *attr)
       attr->values = calloc(attr->value_count + 1, sizeof(char));
     }
     if (attr->values == NULL) {
+      char errmsg[MAX_ERR_LENGTH];
       snprintf(
           errmsg, MAX_ERR_LENGTH,
           "ERROR: failed allocate memory to store values for attribute %s on %s with id %" PRId64
@@ -291,7 +286,9 @@ int ex_get_attribute(int exoid, ex_attribute *attr)
     }
   }
 
+  int status;
   if ((status = nc_get_att(exoid, varid, attr->name, attr->values)) != NC_NOERR) {
+    char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to read attribute %s on %s with id %" PRId64 " in file id %d",
              attr->name, ex_name_of_object(attr->entity_type), attr->entity_id, exoid);
