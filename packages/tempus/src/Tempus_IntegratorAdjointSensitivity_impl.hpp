@@ -47,6 +47,7 @@ IntegratorAdjointSensitivity<Scalar>::IntegratorAdjointSensitivity(
     , f_depends_on_p_(f_depends_on_p)
     , ic_depends_on_p_(ic_depends_on_p)
     , mass_matrix_is_identity_(mass_matrix_is_identity)
+    , stepMode_(SensitivityStepMode::Forward)
 {
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -65,6 +66,7 @@ IntegratorAdjointSensitivity()
 {
   state_integrator_   = createIntegratorBasic<Scalar>();
   adjoint_integrator_ = createIntegratorBasic<Scalar>();
+  stepMode_ = SensitivityStepMode::Forward;
 }
 
 template<class Scalar>
@@ -106,6 +108,7 @@ advanceTime(const Scalar timeFinal)
     (*state_solution_history)[0];
 
   // Run state integrator and get solution
+  stepMode_ = SensitivityStepMode::Forward;
   bool state_status = state_integrator_->advanceTime(timeFinal);
 
   // Set solution history in adjoint stepper
@@ -193,6 +196,7 @@ advanceTime(const Scalar timeFinal)
   }
 
   // Run sensitivity integrator and get solution
+  stepMode_ = SensitivityStepMode::Adjoint;
   adjoint_integrator_->initializeSolutionHistory(Scalar(0.0), adjoint_init);
   bool sens_status = adjoint_integrator_->advanceTime(timeFinal);
   RCP<const SolutionHistory<Scalar> > adjoint_solution_history =
@@ -350,6 +354,22 @@ getSolutionHistory() const
 }
 
 template<class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getStateSolutionHistory() const
+{
+  return state_integrator_->getSolutionHistory();
+}
+
+template<class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getSensSolutionHistory() const
+{
+  return adjoint_integrator_->getSolutionHistory();
+}
+
+template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
 getNonConstSolutionHistory()
@@ -371,6 +391,22 @@ IntegratorAdjointSensitivity<Scalar>::
 getNonConstTimeStepControl()
 {
   return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getStateNonConstTimeStepControl()
+{
+  return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getSensNonConstTimeStepControl()
+{
+  return adjoint_integrator_->getNonConstTimeStepControl();
 }
 
 template<class Scalar>
@@ -462,6 +498,13 @@ describe(
   adjoint_integrator_->describe(*l_out, verbLevel);
 }
 
+template<class Scalar>
+SensitivityStepMode
+IntegratorAdjointSensitivity<Scalar>::
+getStepMode() const
+{
+  return stepMode_;
+}
 
 template <class Scalar>
 Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> >

@@ -29,6 +29,7 @@ IntegratorPseudoTransientAdjointSensitivity(
   state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
   sens_model_ = createSensitivityModel(model_, adjoint_model_, inputPL);
   sens_integrator_ = integratorBasic<Scalar>(inputPL, sens_model_);
+  stepMode_ = SensitivityStepMode::Forward;
 }
 
 template<class Scalar>
@@ -43,6 +44,7 @@ IntegratorPseudoTransientAdjointSensitivity(
   state_integrator_ = integratorBasic<Scalar>(model_, stepperType);
   sens_model_ = createSensitivityModel(model_, adjoint_model_, Teuchos::null);
   sens_integrator_ = integratorBasic<Scalar>(sens_model_, stepperType);
+  stepMode_ = SensitivityStepMode::Forward;
 }
 
 template<class Scalar>
@@ -71,6 +73,7 @@ IntegratorPseudoTransientAdjointSensitivity()
 {
   state_integrator_ = integratorBasic<Scalar>();
   sens_integrator_ = integratorBasic<Scalar>();
+  stepMode_ = SensitivityStepMode::Forward;
 }
 
 template<class Scalar>
@@ -93,6 +96,7 @@ advanceTime(const Scalar timeFinal)
   typedef Thyra::ModelEvaluatorBase MEB;
 
   // Run state integrator and get solution
+  stepMode_ = SensitivityStepMode::Forward;
   bool state_status = state_integrator_->advanceTime(timeFinal);
 
   // Set solution in sensitivity ME
@@ -100,6 +104,7 @@ advanceTime(const Scalar timeFinal)
     state_integrator_->getSolutionHistory());
 
   // Run sensitivity integrator
+  stepMode_ = SensitivityStepMode::Adjoint;
   bool sens_status = sens_integrator_->advanceTime(timeFinal);
 
   // Compute final dg/dp which is computed by response 0 of the adjoint
@@ -196,6 +201,22 @@ getSolutionHistory() const
 }
 
 template<class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStateSolutionHistory() const
+{
+  return state_integrator_->getSolutionHistory();
+}
+
+template<class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getSensSolutionHistory() const
+{
+  return sens_integrator_->getSolutionHistory();
+}
+
+template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getNonConstSolutionHistory()
@@ -217,6 +238,22 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getNonConstTimeStepControl()
 {
   return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStateNonConstTimeStepControl()
+{
+  return state_integrator_->getNonConstTimeStepControl();
+}
+
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getSensNonConstTimeStepControl()
+{
+  return sens_integrator_->getNonConstTimeStepControl();
 }
 
 template<class Scalar>
@@ -364,6 +401,14 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getNonconstParameterList()
 {
   return state_integrator_->getNonconstParameterList();
+}
+
+template<class Scalar>
+SensitivityStepMode
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getStepMode() const
+{
+  return stepMode_;
 }
 
 template <class Scalar>

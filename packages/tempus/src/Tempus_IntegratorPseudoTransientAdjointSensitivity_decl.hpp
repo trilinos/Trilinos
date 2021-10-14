@@ -13,6 +13,8 @@
 #include "Tempus_IntegratorBasicOld.hpp"
 #include "Tempus_AdjointSensitivityModelEvaluator.hpp"
 
+#include "Tempus_StepperStaggeredForwardSensitivity.hpp" // For SensitivityStepMode
+
 
 namespace Tempus {
 
@@ -146,11 +148,15 @@ public:
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
+  Teuchos::RCP<const SolutionHistory<Scalar> > getStateSolutionHistory() const;
+  Teuchos::RCP<const SolutionHistory<Scalar> > getSensSolutionHistory() const;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override;
    /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
   virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
+  Teuchos::RCP<TimeStepControl<Scalar> > getStateNonConstTimeStepControl();
+  Teuchos::RCP<TimeStepControl<Scalar> > getSensNonConstTimeStepControl();
   /// Returns the IntegratorTimer_ for this Integrator
   virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
   {return state_integrator_->getIntegratorTimer();}
@@ -197,6 +203,9 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
+  //! What mode the current time integration step is in
+  SensitivityStepMode getStepMode() const;
+
 protected:
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
@@ -216,6 +225,7 @@ protected:
   Teuchos::RCP<IntegratorBasicOld<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<DMVPV> dgdp_;
+  SensitivityStepMode stepMode_;
 };
 
 /// Nonmember constructor
