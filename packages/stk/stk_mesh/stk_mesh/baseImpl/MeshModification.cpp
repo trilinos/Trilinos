@@ -21,6 +21,7 @@ bool MeshModification::modification_begin(const std::string description)
         if (numRanks > m_bulkData.m_selector_to_buckets_maps.size()) {
           m_bulkData.m_selector_to_buckets_maps.resize(numRanks);
         }
+        m_bulkData.m_sparse_connectivity.update_num_ranks(m_bulkData.mesh_meta_data().entity_rank_count());
     }
 
     if ( this->in_modifiable_state() ) return false ;

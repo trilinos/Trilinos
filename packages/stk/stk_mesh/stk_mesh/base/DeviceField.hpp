@@ -132,9 +132,6 @@ public:
     hostField->template make_field_sync_debugger<StkDebugger>();
     fieldSyncDebugger = NgpDebugger<T>(&hostField->get_field_sync_debugger<StkDebugger>());
 
-    needSyncToHost = Kokkos::View<bool, stk::ngp::HostExecSpace>("needSyncToHost");
-    needSyncToDevice = Kokkos::View<bool, stk::ngp::HostExecSpace>("needSyncToDevice");
-
     const int maxStates = static_cast<int>(MaximumFieldStates);
     for (int s=0; s<maxStates; ++s) {
       stateFields[s] = nullptr;
@@ -228,26 +225,34 @@ public:
     modify_on_device();
   }
 
-  void clear_sync_state() override
+  void notify_sync_debugger_clear_sync_state() override
   {
     fieldSyncDebugger.clear_sync_state(this);
-    clear_sync_state_flags();
+  }
+
+  void notify_sync_debugger_clear_host_sync_state() override
+  {
+    fieldSyncDebugger.clear_host_sync_state(this);
+  }
+
+  void notify_sync_debugger_clear_device_sync_state() override
+  {
+    fieldSyncDebugger.clear_device_sync_state(this);
+  }
+
+  void clear_sync_state() override
+  {
+    hostField->clear_sync_state();
   }
 
   void clear_host_sync_state() override
   {
-    fieldSyncDebugger.clear_host_sync_state(this);
-    if (need_sync_to_device()) {
-      clear_sync_state_flags();
-    }
+    hostField->clear_host_sync_state();
   }
 
   void clear_device_sync_state() override
   {
-    fieldSyncDebugger.clear_device_sync_state(this);
-    if (need_sync_to_host()) {
-      clear_sync_state_flags();
-    }
+    hostField->clear_device_sync_state();
   }
 
   void sync_to_host() override
@@ -390,20 +395,19 @@ public:
   void swap(DeviceField<T, NgpDebugger> &other)
   {
     swap_views(deviceData, other.deviceData);
-    swap_views(needSyncToHost, other.needSyncToHost);
-    swap_views(needSyncToDevice, other.needSyncToDevice);
+  }
+
+  bool need_sync_to_host() const override
+  {
+    return hostField->need_sync_to_host();
+  }
+
+  bool need_sync_to_device() const override
+  {
+    return hostField->need_sync_to_device();
   }
 
 protected:
-  bool need_sync_to_host() const
-  {
-    return needSyncToHost();
-  }
-
-  bool need_sync_to_device() const
-  {
-    return needSyncToDevice();
-  }
 
   void debug_modification_begin() override
   {
@@ -427,24 +431,17 @@ private:
 
   void set_modify_on_host()
   {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequireMsg(needSyncToHost() == false, "field " << hostField->name());
-#endif
-    needSyncToDevice() = true;
+    hostField->modify_on_host();
   }
 
   void set_modify_on_device()
   {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequireMsg(needSyncToDevice() == false, "field " << hostField->name());
-#endif
-    needSyncToHost() = true;
+    hostField->modify_on_device();
   }
 
   void clear_sync_state_flags()
   {
-    needSyncToHost() = false;
-    needSyncToDevice() = false;
+    hostField->clear_sync_state();
   }
 
   void construct_view(const BucketVector& buckets, const std::string& name, unsigned numPerEntity)
@@ -661,7 +658,7 @@ private:
   {
     if (hostField) {
       impl::transpose_to_pinned_and_mapped_memory(asyncCopyState.execSpace, *hostField, deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
-      clear_sync_state_flags();
+      clear_device_sync_state();
       hostField->increment_num_syncs_to_host();
     }
   }
@@ -679,16 +676,14 @@ private:
   {
     if (hostField) {
       impl::transpose_from_pinned_and_mapped_memory(asyncCopyState.execSpace, *hostField, deviceBucketPtrData, deviceData, deviceBucketSizes, deviceFieldBucketsNumComponentsPerEntity);
-      clear_sync_state_flags();
+      clear_host_sync_state();
       hostField->increment_num_syncs_to_device();
     }
   }
 
   void internal_sync_to_device()
   {
-    bool needToSyncToDevice = need_sync_to_device();
-
-    if (needToSyncToDevice) {
+    if (need_sync_to_device()) {
       ProfilingBlock prof("copy_to_device for " + hostField->name());
       if(hostBulk->synchronized_count() != synchronizedCount) {
         update_field();
@@ -720,9 +715,6 @@ private:
 
   FieldDataPointerHostViewType hostBucketPtrData;
   FieldDataPointerDeviceViewType deviceBucketPtrData;
-
-  Kokkos::View<bool, Kokkos::HostSpace> needSyncToHost;
-  Kokkos::View<bool, Kokkos::HostSpace> needSyncToDevice;
 
   typename UnsignedViewType::HostMirror hostSelectedBucketOffset;
   UnsignedViewType deviceSelectedBucketOffset;

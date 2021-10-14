@@ -35,7 +35,7 @@ namespace stk
 namespace unit_test_util
 {
 
-typedef std::set<stk::mesh::EntityId> EntityIdSet;
+using EntityIdSet = std::set<stk::mesh::EntityId>;
 
 class TopologyMapping
 {
@@ -95,16 +95,6 @@ private:
     {  "HEX_20"        , stk::topology::HEX_20       },
     {  "HEX_27"        , stk::topology::HEX_27       },
   };
-};
-
-struct ElementData
-{
-  int proc;
-  stk::topology topology;
-  stk::mesh::EntityId identifier;
-  stk::mesh::EntityIdVector nodeIds;
-  std::string partName = "";
-  unsigned partId;
 };
 
 class PartIdMapping
@@ -206,6 +196,16 @@ private:
   bool m_idsAssigned;
 };
 
+struct ElementData
+{
+  int proc;
+  stk::mesh::EntityId identifier;
+  stk::topology topology;
+  stk::mesh::EntityIdVector nodeIds;
+  std::string partName = "";
+  unsigned partId;
+};
+
 struct TextMeshData
 {
   unsigned spatialDim;
@@ -244,91 +244,96 @@ private:
   std::unordered_map<int, EntityIdSet> m_nodesOnProc;
 };
 
-class TextMeshParser
+class Lexer
 {
 public:
-  TextMeshParser(unsigned dim)
-    : m_spatialDim(dim)
+  Lexer()
+    : m_token(""),
+      m_isNumber(false)
+  { }
+
+  void set_input_string(const std::string& input)
   {
-    validate_spatial_dim();
+    m_input = input;
+    m_currentIndex = 0;
+    read_next_token();
   }
 
-  TextMeshData parse(const std::string& meshDescription)
+  int get_int()
   {
-    TextMeshData data;
-    data.spatialDim = m_spatialDim;
-
-    const std::vector<std::string> lines = split(meshDescription, '\n');
-
-    m_lineNumber = 1;
-    for (const std::string& line : lines) {
-      ElementData elem = parse_element(line);
-      data.add_element(elem);
-      m_lineNumber++;
-    }
-
-    for (ElementData& elem : data.elementDataVec) {
-      set_part_id(elem);
-    }
-
-    return data;
+    read_next_token();
+    return std::stoi(m_oldToken);
   }
+
+  unsigned get_unsigned()
+  {
+    read_next_token();
+    return std::stoul(m_oldToken);
+  }
+
+  std::string get_string()
+  {
+    read_next_token();
+    return make_upper_case(m_oldToken);
+  }
+
+  void get_newline()
+  {
+    read_next_token();
+  }
+
+  bool has_token() const { return m_token != ""; }
+  bool has_newline() const { return m_token == "\n"; }
+  bool has_number() const { return has_token() && m_isNumber; }
+  bool has_string() const { return has_token() && !has_number() && !has_newline(); }
 
 private:
-  void validate_spatial_dim()
+  void read_next_token()
   {
-    ThrowRequireMsg(m_spatialDim == 2 || m_spatialDim == 3, "Error!  Spatial dimension not defined to be 2 or 3!");
+    m_oldToken = m_token;
+
+    if (char_is_newline()) {
+      m_isNumber = false;
+      m_token = "\n";
+      m_currentIndex++;
+      return;
+    }
+
+    m_token = "";
+    m_isNumber = true;
+
+    while (has_more_input()) {
+      if (char_is_whitespace()) {
+        m_currentIndex++;
+        continue;
+      }
+
+      if (char_is_comma()) {
+        m_currentIndex++;
+        break;
+      }
+
+      if (char_is_newline()) {
+        break;
+      }
+
+      m_isNumber &= char_is_digit();
+      m_token += current_char();
+      m_currentIndex++;
+    }
   }
 
-  std::vector<std::string> split(const std::string &s, char delim)
+  bool has_more_input()
   {
-    std::vector<std::string> tokens;
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-      tokens.push_back(item);
-    }
-    return tokens;
+    return m_currentIndex < m_input.size();
   }
 
-  ElementData parse_element(const std::string& rawLine)
-  {
-    std::string line = make_upper_case(remove_spaces(rawLine));
+  bool char_is_whitespace() { return current_char() == ' '; }
+  bool char_is_comma() { return current_char() == ','; }
+  bool char_is_newline() { return current_char() == '\n'; }
+  bool char_is_digit() { return std::isdigit(static_cast<unsigned char>(current_char())); }
 
-    const std::vector<std::string> tokens = split(line, ',');
-    validate_min_token_count(tokens.size());
-
-    ElementData elementData;
-    elementData.proc = parse_proc(tokens[0]);
-    elementData.identifier = parse_identifier(tokens[1]);
-    elementData.topology = parse_topology(tokens[2]);
-
-    unsigned numNodes = elementData.topology.num_nodes();
-
-    validate_token_count(tokens.size(), numNodes, elementData.topology.name());
-
-    for (unsigned i=0; i<numNodes; ++i) {
-      stk::mesh::EntityId nodeId = parse_identifier(tokens[3+i]);
-      elementData.nodeIds.push_back(nodeId);
-    }
-
-    if (tokens.size() >= numNodes+4) {
-      elementData.partName = tokens[3+numNodes];
-    }
-    else {
-      elementData.partName = "block_" + elementData.topology.name();
-    }
-    validate_part_name(elementData.partName);
-
-    if (tokens.size() >= numNodes+5) {
-      m_partIds.register_part_name_with_id(elementData.partName, parse_part_id(tokens[4+numNodes]));
-    }
-    else {
-      m_partIds.register_part_name(elementData.partName);
-    }
-
-    return elementData;
-  }
+  char current_char() { return m_input[m_currentIndex]; }
 
   std::string make_upper_case(std::string str)
   {
@@ -336,81 +341,170 @@ private:
     return str;
   }
 
-  std::string remove_spaces(std::string str)
+  std::string m_input;
+  unsigned m_currentIndex;
+
+  std::string m_oldToken;
+  std::string m_token;
+
+  bool m_isNumber;
+};
+
+class TextMeshParser
+{
+public:
+  TextMeshParser(unsigned dim)
   {
-    std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
-    str.erase(end_pos, str.end());
-    return str;
+    m_data.spatialDim = dim;
   }
 
-  void validate_min_token_count(size_t numTokens)
+  TextMeshData parse(const std::string& meshDescription)
   {
-    ThrowRequireMsg(numTokens >= 4,
+    initialize_parse(meshDescription);
+    parse_description();
+    set_part_ids();
+    return m_data;
+  }
+
+private:
+  void initialize_parse(const std::string& meshDescription)
+  {
+    m_lexer.set_input_string(meshDescription);
+    m_lineNumber = 1;
+    validate_required_field(m_lexer.has_token());
+  }
+
+  void parse_description()
+  {
+    while (m_lexer.has_token()) {
+      ElementData elemData = parse_element();
+      m_data.add_element(elemData);
+
+      validate_no_extra_fields();
+      parse_newline();
+    }
+  }
+
+  ElementData parse_element()
+  {
+    ElementData elem;
+    elem.proc = parse_proc_id();
+    elem.identifier = parse_elem_id();
+    elem.topology = parse_topology();
+    elem.nodeIds = parse_node_ids(elem.topology);
+    elem.partName = parse_part(elem.topology);
+    return elem;
+  }
+
+  int parse_proc_id()
+  {
+    validate_required_field(m_lexer.has_number());
+    return parse_int();
+  }
+
+  stk::mesh::EntityId parse_elem_id()
+  {
+    validate_required_field(m_lexer.has_number());
+    return parse_unsigned();
+  }
+
+  stk::topology parse_topology()
+  {
+    validate_required_field(m_lexer.has_string());
+    std::string topologyName = parse_string();
+
+    stk::topology topology = m_topologyMapping.topology(topologyName);
+    validate_topology(topology, topologyName);
+
+    return topology;
+  }
+
+  stk::mesh::EntityIdVector parse_node_ids(const stk::topology& topology)
+  {
+    stk::mesh::EntityIdVector nodeIds;
+    while (m_lexer.has_number()) {
+      nodeIds.push_back(parse_unsigned());
+    }
+    validate_node_count(topology, nodeIds.size());
+    return nodeIds;
+  }
+
+  std::string parse_part(const stk::topology& topology)
+  {
+    std::string partName;
+
+    if (m_lexer.has_string()) {
+      partName = parse_string();
+    }
+    else {
+      partName = "block_" + topology.name();
+    }
+
+    if (m_lexer.has_number()) {
+      unsigned partId = parse_unsigned();
+      m_partIds.register_part_name_with_id(partName, partId);
+    }
+    else {
+      m_partIds.register_part_name(partName);
+    }
+
+    return partName;
+  }
+
+  int parse_int() { return m_lexer.get_int(); }
+  unsigned parse_unsigned() { return m_lexer.get_unsigned(); }
+  std::string parse_string() { return m_lexer.get_string(); }
+
+  void parse_newline()
+  {
+    m_lexer.get_newline();
+    m_lineNumber++;
+  }
+
+  void validate_required_field(bool hasNextRequiredField)
+  {
+    ThrowRequireMsg(hasNextRequiredField,
                     "Error!  Each line must contain the following fields (with at least one node):  "
                     "Processor, GlobalId, Element Topology, NodeIds.  Error on line " << m_lineNumber << ".");
   }
 
-  int parse_proc(const std::string& token)
+  void validate_no_extra_fields()
   {
-    return std::stoi(token);
+    ThrowRequireMsg(!m_lexer.has_token() || m_lexer.has_newline(),
+                    "Error!  Each line should not contain more than the following fields (with at least one node):  "
+                    "Processor, GlobalId, Element Topology, NodeIds, Part Name, PartId.  "
+                    "Error on line " << m_lineNumber << ".");
   }
 
-  stk::mesh::EntityId parse_identifier(const std::string& token)
-  {
-    return static_cast<stk::mesh::EntityId>(std::stoul(token));
-  }
-
-  stk::topology parse_topology(const std::string& token)
-  {
-    stk::topology topology = m_topologyMapping.topology(token);
-    validate_topology(topology, token);
-    return topology;
-  }
-
-  unsigned parse_part_id(const std::string& token)
-  {
-    return std::stoul(token);
-  }
-
-  void validate_topology(const stk::topology& topology, const std::string& token)
+  void validate_topology(const stk::topology& topology, const std::string& providedName)
   {
     ThrowRequireMsg(topology != stk::topology::INVALID_TOPOLOGY,
-                    "Error!  Topology = >>" << token << "<< is invalid from line " << m_lineNumber << ".");
-    ThrowRequireMsg(topology.defined_on_spatial_dimension(m_spatialDim),
+                    "Error!  Topology = >>" << providedName << "<< is invalid from line " << m_lineNumber << ".");
+    ThrowRequireMsg(topology.defined_on_spatial_dimension(m_data.spatialDim),
                     "Error on input line " << m_lineNumber << ".  Topology = " << topology
-                    << " is not defined on spatial dimension = " << m_spatialDim
+                    << " is not defined on spatial dimension = " << m_data.spatialDim
                     << " set in MetaData.");
   }
 
-  void validate_token_count(size_t numTokens, unsigned numNodes, const std::string& topologyName)
+  void validate_node_count(const stk::topology& topology, size_t numNodes)
   {
-    ThrowRequireMsg(numTokens >= numNodes+3 && numTokens <= numNodes+5,
-                    "Error!  The input line appears to contain " << numTokens-3 << " nodes, but the topology "
-                    << topologyName << " needs " << numNodes << " nodes on line " << m_lineNumber << ".");
+    size_t numTopologyNodes = topology.num_nodes();
+    ThrowRequireMsg(numNodes == numTopologyNodes,
+                    "Error!  The input line appears to contain " << numNodes << " nodes, but the topology "
+                    << topology << " needs " << numTopologyNodes << " nodes on line " << m_lineNumber << ".");
   }
 
-  void validate_part_name(const std::string& name)
+  void set_part_ids()
   {
-    ThrowRequireMsg(!is_number(name),
-                    "The input line " << m_lineNumber << " specifies the numeric part name " << name);
+    for (ElementData& elem : m_data.elementDataVec) {
+      elem.partId = m_partIds.get(elem.partName);
+    }
   }
 
-  bool is_number(const std::string& name)
-  {
-    unsigned num;
-    std::istringstream nameStream(name);
-    nameStream >> num;
-    return !nameStream.fail();
-  }
-
-  void set_part_id(ElementData& elem)
-  {
-    elem.partId = m_partIds.get(elem.partName);
-  }
-
-  unsigned m_spatialDim;
+  unsigned m_lineNumber;
+  TextMeshData m_data;
+  Lexer m_lexer;
   TopologyMapping m_topologyMapping;
-  size_t m_lineNumber;
   PartIdMapping m_partIds;
 };
 
@@ -612,9 +706,11 @@ public:
   TextMesh(stk::mesh::BulkData& b, const std::string& meshDesc)
     : m_bulk(b),
       m_meta(m_bulk.mesh_meta_data()),
-      m_parser(m_meta.spatial_dimension()),
-      m_data(m_parser.parse(meshDesc))
-  { }
+      m_parser(m_meta.spatial_dimension())
+  {
+    validate_spatial_dim(m_meta.spatial_dimension());
+    m_data = m_parser.parse(meshDesc);
+  }
 
   void setup_mesh()
   {
@@ -632,6 +728,11 @@ public:
   }
 
 private:
+  void validate_spatial_dim(unsigned spatialDim)
+  {
+    ThrowRequireMsg(spatialDim == 2 || spatialDim == 3, "Error!  Spatial dimension not defined to be 2 or 3!");
+  }
+
   stk::mesh::BulkData& m_bulk;
   stk::mesh::MetaData& m_meta;
 

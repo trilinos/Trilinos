@@ -315,7 +315,6 @@ public:
   KOKKOS_FUNCTION
   NgpNode();
 
-  KOKKOS_FUNCTION
   explicit NgpNode(const Node& node);
 
   KOKKOS_DEFAULTED_FUNCTION
@@ -505,7 +504,11 @@ public:
   double
   evaluate(DeviceVariableMap<NUMVARS>& deviceVariableMap) const
   {
+    #ifndef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     return m_deviceNodes[m_headNodeIndex].eval(deviceVariableMap);
+    #else
+    return m_hostNodes[m_headNodeIndex].eval(deviceVariableMap);
+    #endif
   }
 
 private:
@@ -535,7 +538,11 @@ public:
   {
     NGP_ThrowRequireMsg(parsedEval.get_num_variables() <= NUMVARS, "Size of DeviceVariableMap is too small");
 
+#ifndef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     const ParsedEval::NodeView& deviceNodes = parsedEval.m_deviceNodes;
+#else
+    const auto & deviceNodes = parsedEval.m_hostNodes;
+#endif
     for (unsigned nodeIndex = 0u; nodeIndex < deviceNodes.extent(0); ++nodeIndex)
     {
       if (deviceNodes(nodeIndex).m_opcode == OPCODE_ASSIGN) {

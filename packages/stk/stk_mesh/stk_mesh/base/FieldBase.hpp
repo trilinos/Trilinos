@@ -231,6 +231,8 @@ public:
   void modify_on_device() const;
   void modify_on_host(const Selector& s) const;
   void modify_on_device(const Selector& s) const;
+  bool need_sync_to_host() const;
+  bool need_sync_to_device() const;
   void sync_to_host() const;
   void sync_to_device() const;
   void clear_sync_state() const;
@@ -344,7 +346,9 @@ protected:
       m_this_state(arg_this_state),
       m_ngpField(nullptr),
       m_numSyncsToHost(0),
-      m_numSyncsToDevice(0)
+      m_numSyncsToDevice(0),
+      m_modifiedOnHost(false),
+      m_modifiedOnDevice(false)
   {
     FieldBase * const pzero = nullptr ;
     const shards::ArrayDimTag * const dzero = nullptr ;
@@ -377,6 +381,8 @@ private:
   mutable NgpFieldBase       * m_ngpField;
   mutable size_t               m_numSyncsToHost;
   mutable size_t               m_numSyncsToDevice;
+  mutable bool                 m_modifiedOnHost;
+  mutable bool                 m_modifiedOnDevice;
   mutable Teuchos::any m_stkFieldSyncDebugger;
 };
 

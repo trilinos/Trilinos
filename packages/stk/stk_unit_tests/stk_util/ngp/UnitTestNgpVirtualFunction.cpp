@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,45 +30,56 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#ifndef GETNGPFIELD_HPP
-#define GETNGPFIELD_HPP
+#include "gtest/gtest.h"
+#include <stk_util/stk_config.h>
+#include <Kokkos_Core.hpp>
 
-#include "stk_mesh/base/NgpField.hpp"
-#include "stk_mesh/base/NgpFieldSyncDebugger.hpp"
-#include "stk_mesh/base/FieldBase.hpp"
+namespace ngp {
 
-namespace stk {
-namespace mesh {
+class NgpBase {
+public:
+  KOKKOS_DEFAULTED_FUNCTION NgpBase() = default;
+  KOKKOS_FUNCTION virtual ~NgpBase() {}
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
+  virtual void host_function() = 0;
+};
+
+template<typename T>
+class NgpDerived : public NgpBase
 {
-  NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
+public:
+  KOKKOS_FUNCTION
+  NgpDerived()
+  : NgpBase()
+  {}
 
-  if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, execSpace, true);
-    impl::set_ngp_field(stkField, ngpField);
-    ngpField->clear_host_sync_state();
-  }
-  else {
-    if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField->set_execution_space(execSpace);
-      ngpField->update_field();
-    }
-  }
+  KOKKOS_FUNCTION
+  ~NgpDerived() {}
 
-  return dynamic_cast< NgpField<T, NgpDebugger>& >(*ngpField);
+  virtual void host_function() { }
+};
+
 }
 
-template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
+namespace {
+
+void test_device_class()
 {
-  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpDebugger>(stkField, Kokkos::DefaultExecutionSpace());
-  ngpFieldRef.fence();
-  return ngpFieldRef;
+  int constructionFinished = 0;
+  Kokkos::parallel_reduce(1, KOKKOS_LAMBDA(const unsigned& i, int& localFinished) {
+    ngp::NgpDerived<int> derivedClass;
+    localFinished = 1;
+  }, constructionFinished);
+
+  EXPECT_EQ(1, constructionFinished);
 }
 
-}}
+TEST(NgpDevice, virtualFunction)
+{
+  test_device_class();
+}
 
-#endif // GETNGPFIELD_HPP
+}
+
