@@ -157,6 +157,11 @@ public:
   virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
   Teuchos::RCP<TimeStepControl<Scalar> > getStateNonConstTimeStepControl();
   Teuchos::RCP<TimeStepControl<Scalar> > getSensNonConstTimeStepControl();
+  /// Get the Observer
+  virtual Teuchos::RCP<IntegratorObserver<Scalar> > getObserver();
+  /// Set the Observer
+  virtual void setObserver(
+    Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
   /// Returns the IntegratorTimer_ for this Integrator
   virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
   {return state_integrator_->getIntegratorTimer();}
@@ -175,12 +180,19 @@ public:
     Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > ydot0 = Teuchos::null,
     Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > ydotdot0 = Teuchos::null);
 
-  /// Get current the solution, x
+  /// Get the current solution, x
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
-  /// Get current the time derivative of the solution, xdot
+  /// Get the current time derivative of the solution, xdot
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const;
-  /// Get current the second time derivative of the solution, xdotdot
+  /// Get the current second time derivative of the solution, xdotdot
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const;
+
+  /// Get the current adjoint solution, y
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getY() const;
+  /// Get the current time derivative of the adjoint solution, ydot
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getYDot() const;
+  /// Get the current second time derivative of the adjoint solution, ydotdot
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getYDotDot() const;
 
   /// Return adjoint sensitivity stored in gradient format
   virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;

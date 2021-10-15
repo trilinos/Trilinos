@@ -424,13 +424,19 @@ initializeSolutionHistory(Scalar t0,
 }
 
 template<class Scalar>
+Teuchos::RCP<IntegratorObserver<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getObserver()
+{
+  return state_integrator_->getObserver();
+}
+
+template<class Scalar>
 void IntegratorAdjointSensitivity<Scalar>::
 setObserver(Teuchos::RCP<IntegratorObserver<Scalar> > obs)
 {
   state_integrator_->setObserver(obs);
-  // Currently not setting observer on adjoint integrator because it isn't
-  // clear what we want to do with it
-  //adjoint_integrator_->setObserver(obs);
+  adjoint_integrator_->setObserver(obs);
 }
 
 template<class Scalar>
@@ -463,6 +469,54 @@ IntegratorAdjointSensitivity<Scalar>::
 getXDotDot() const
 {
   return state_integrator_->getXDotDot();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getY() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultProductVector<Scalar> DPV;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DPV> pv =
+    rcp_dynamic_cast<const DPV>(adjoint_integrator_->getX());
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(pv->getVectorBlock(0));
+  return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getYDot() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultProductVector<Scalar> DPV;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DPV> pv =
+    rcp_dynamic_cast<const DPV>(adjoint_integrator_->getXDot());
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(pv->getVectorBlock(0));
+  return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getYDotDot() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultProductVector<Scalar> DPV;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DPV> pv =
+    rcp_dynamic_cast<const DPV>(adjoint_integrator_->getXDotDot());
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(pv->getVectorBlock(0));
+  return mvpv->getMultiVector();
 }
 
 template<class Scalar>

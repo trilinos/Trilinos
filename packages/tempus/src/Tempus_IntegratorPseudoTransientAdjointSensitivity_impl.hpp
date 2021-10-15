@@ -257,6 +257,23 @@ getSensNonConstTimeStepControl()
 }
 
 template<class Scalar>
+Teuchos::RCP<IntegratorObserver<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getObserver()
+{
+  return state_integrator_->getObserver();
+}
+
+template<class Scalar>
+void
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+setObserver(Teuchos::RCP<IntegratorObserver<Scalar> > obs)
+{
+  state_integrator_->setObserver(obs);
+  sens_integrator_->setObserver(obs);
+}
+
+template<class Scalar>
 void IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 initializeSolutionHistory(Scalar t0,
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
@@ -325,6 +342,45 @@ IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 getXDotDot() const
 {
   return state_integrator_->getXDotDot();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getY() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(sens_integrator_->getX());
+  return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getYDot() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(sens_integrator_->getXDot());
+  return mvpv->getMultiVector();
+}
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
+IntegratorPseudoTransientAdjointSensitivity<Scalar>::
+getYDotDot() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+  RCP<const DMVPV> mvpv =
+    rcp_dynamic_cast<const DMVPV>(sens_integrator_->getXDotDot());
+  return mvpv->getMultiVector();
 }
 
 template<class Scalar>
