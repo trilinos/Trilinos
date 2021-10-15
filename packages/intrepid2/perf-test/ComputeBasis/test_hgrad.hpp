@@ -100,7 +100,7 @@ namespace Intrepid2 {
       constexpr size_t LLC_CAPACITY = 32*1024*1024;
       Intrepid2::Test::Flush<LLC_CAPACITY,DeviceSpaceType> flush;
       
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       double t_horizontal = 0, t_vertical = 0;
       int errorFlag = 0;
 

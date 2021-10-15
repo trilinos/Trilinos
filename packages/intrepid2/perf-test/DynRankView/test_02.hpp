@@ -159,7 +159,7 @@ namespace Intrepid2 {
         << " Test Array Structure (C,P,D) = " << C << ", " << P << ", " << D << "\n"
         << "===============================================================================\n";
 
-      Kokkos::Impl::Timer timer;
+      Kokkos::Timer timer;
       double t_without_subview[20] = {}, t_with_subview[20] = {};
       int errorFlag = 0, itest = 0;
 

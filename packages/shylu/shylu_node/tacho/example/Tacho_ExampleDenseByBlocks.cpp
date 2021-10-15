@@ -1,6 +1,6 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp" 
@@ -66,7 +66,7 @@ int main (int argc, char *argv[]) {
     typedef DenseMatrixView<value_type,host_scheduler_type>          DenseMatrixViewHostType;
     typedef DenseMatrixView<DenseMatrixViewType,host_scheduler_type> DenseMatrixOfBlocksHostType;
 
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
     scheduler_type sched;
 

@@ -10,7 +10,7 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
 #include <Kokkos_DualView.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "Tacho_Util.hpp"
 #include "Tacho_Partition.hpp"

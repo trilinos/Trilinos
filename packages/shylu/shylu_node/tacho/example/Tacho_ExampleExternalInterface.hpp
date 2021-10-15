@@ -124,7 +124,7 @@ namespace tacho {
       value_type_array ax(values, numTerms);
 #endif
 
-      Kokkos::Impl::Timer timer; 
+      Kokkos::Timer timer; 
       {
         timer.reset();
         if (numGraphRows > 0) {
@@ -208,7 +208,7 @@ namespace tacho {
       value_type_array ax(values, numSolvers*numTerms);
 #endif
 
-      Kokkos::Impl::Timer timer; 
+      Kokkos::Timer timer; 
       {
         timer.reset();
         /// m_Solver holds symbolic factorization to be shared with array solver
