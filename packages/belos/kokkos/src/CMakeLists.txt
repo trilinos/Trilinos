@@ -30,10 +30,10 @@ APPEND_SET(HEADERS
 #
 # C) Define the targets for package's library(s)
 #
-TRIBITS_ADD_LIBRARY(
-  beloskokkos
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS belos
-  )
+#TRIBITS_ADD_LIBRARY(
+#  beloskokkos
+#  HEADERS ${HEADERS}
+#  SOURCES ${SOURCES}
+#  DEPLIBS belos
+#  )
 
