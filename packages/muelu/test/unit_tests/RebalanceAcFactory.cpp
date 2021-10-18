@@ -191,7 +191,7 @@ namespace MueLuTests {
       oldView = A->SwitchToView(oldView);
     }
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(), numPDEs);
-
+    nullspace->putScalar( (SC) 1.0);
     Level *level = H->GetLevel().get();
     level->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     level->Set("A", A);
@@ -271,7 +271,7 @@ namespace MueLuTests {
     M.SetFactory("Importer",    RepartitionFact);
 
     int startLevel = 0;
-    H->Setup(M, startLevel, 5);
+    H->Setup(M, startLevel, optMaxLevels);
 
     RebalancedAFact->Build(*level, *level);
 
