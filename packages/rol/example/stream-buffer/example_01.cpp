@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 
   try {
-    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
+    //RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
 
     ROL::ParameterList list;
     list.sublist("Status Test").set("Gradient Tolerance",1e-8);

@@ -62,11 +62,11 @@ Bounds<Real>::Bounds(const Vector<Real> &x, bool isLower, Real scale, Real feasT
   upper_ = x.clone();
   if (isLower) {
     lower_->set(x);
-    upper_->applyUnary(Elementwise::Fill<Real>(ROL_INF<Real>()));
+    upper_->applyUnary(Elementwise::Fill<Real>( BoundConstraint<Real>::computeInf(x)));
     BoundConstraint<Real>::activateLower();
   }
   else {
-    lower_->applyUnary(Elementwise::Fill<Real>(ROL_NINF<Real>()));
+    lower_->applyUnary(Elementwise::Fill<Real>(-BoundConstraint<Real>::computeInf(x)));
     upper_->set(x);
     BoundConstraint<Real>::activateUpper();
   }

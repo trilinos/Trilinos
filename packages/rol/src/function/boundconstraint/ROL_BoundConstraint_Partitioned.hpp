@@ -99,13 +99,13 @@ public:
           lp[k]->set(*bnd_[k]->getLowerBound());
         }
         else {
-          lp[k]->setScalar(ROL_NINF<Real>());
+          lp[k]->setScalar(-BoundConstraint<Real>::computeInf(*x[k]));
         }
       }
       catch (std::exception &e1) {
         try {
           lp[k] = x[k]->clone();
-          lp[k]->setScalar(ROL_NINF<Real>());
+          lp[k]->setScalar(-BoundConstraint<Real>::computeInf(*x[k]));
         }
         catch (std::exception &e2) {
           lp[k] = nullPtr;
@@ -118,13 +118,13 @@ public:
           up[k]->set(*bnd_[k]->getUpperBound());
         }
         else {
-          up[k]->setScalar(ROL_INF<Real>());
+          up[k]->setScalar( BoundConstraint<Real>::computeInf(*x[k]));
         }
       }
       catch (std::exception &e1) {
         try {
           up[k] = x[k]->clone();
-          up[k]->setScalar(ROL_INF<Real>());
+          up[k]->setScalar( BoundConstraint<Real>::computeInf(*x[k]));
         }
         catch (std::exception &e2) {
           up[k] = nullPtr;

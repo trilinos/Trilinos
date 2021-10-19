@@ -79,6 +79,8 @@ protected:
   Ptr<Vector<Real>> lower_;
   Ptr<Vector<Real>> upper_;
 
+  Real computeInf(const Vector<Real> &x) const;
+
 public:
 
   virtual ~BoundConstraint() {}
