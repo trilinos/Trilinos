@@ -164,7 +164,9 @@ namespace MueLu {
       if (algo == "distance laplacian" || algo == "block diagonal distance laplacian") {
         Input(currentLevel, "Coordinates");    
       }
-      if (algo.find("block diagonal") != std::string::npos || algo.find("signed classical") != std::string::npos)  {
+      if(algo == "signed classical sa") 
+	;
+      else if (algo.find("block diagonal") != std::string::npos || algo.find("signed classical") != std::string::npos)  {
         Input(currentLevel, "BlockNumber");
       }
     }     
