@@ -39,10 +39,8 @@
 // ************************************************************************
 //@HEADER
 //
-// This driver reads a problem from a file, which can be in Harwell-Boeing (*.hb),
-// Matrix Market (*.mtx), or triplet format (*.triU, *.triS).  The right-hand side
-// from the problem, if it exists, will be used instead of multiple
-// random right-hand-sides.  The initial guesses are all set to zero.
+// This driver reads a problem from a file, which must be in Matrix Market (*.mtx).  
+// The problem right-hand side will be generated randomly.
 //
 // NOTE: No preconditioner is used in this example.
 //
@@ -65,7 +63,6 @@ bool success = true;
   {
 
   typedef double                            ST;
-  typedef float                           ST2;
   typedef int                               OT;
   typedef Kokkos::DefaultExecutionSpace     EXSP;
   typedef Teuchos::ScalarTraits<ST>        SCT;
@@ -73,30 +70,26 @@ bool success = true;
   typedef Belos::KokkosMultiVec<ST, EXSP>         MV;
   typedef Belos::KokkosCrsOperator<ST, OT, EXSP>       OP;
   typedef Belos::MultiVec<ST> KMV;
-  typedef Belos::MultiVec<ST2> KMV2;
   typedef Belos::Operator<ST> KOP; 
-  typedef Belos::Operator<ST2> KOP2; 
   typedef Belos::MultiVecTraits<ST,KMV>     MVT;
   typedef Belos::OperatorTraits<ST,KMV,KOP>  OPT;
 
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using std::cout;
-  using std::endl;
+  using Teuchos::rcpFromRef;
 
 bool verbose = true;
-//try {
-bool proc_verbose = false;
+try {
   int frequency = 25;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
   int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
-  int maxrestarts = 25;      // number of restarts allowed
+  int maxrestarts = 35;      // number of restarts allowed
   bool expresidual = false; // use explicit residual
-  std::string filename("bcsstk13.mtx"); // example matrix
+  std::string filename("bcsstk12.mtx"); // example matrix
   std::string rhsfile("");
-  MT tol = 1.0e-6;           // relative residual tolerance
+  MT tol = 1.0e-5;           // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -124,11 +117,10 @@ bool proc_verbose = false;
   OT numRows = crsMat.numRows();
 
   Teuchos::RCP<MV> X = Teuchos::rcp( new MV(numRows, numrhs) );
-  X->MvInit(0.0);
+  X->MvRandom();
   Teuchos::RCP<MV> B = Teuchos::rcp( new MV(numRows, numrhs) );
-  B->MvRandom();
-
-  proc_verbose = verbose;  /* Only print on the zero processor */
+  OPT::Apply(*A,*X,*B);
+  X->MvInit(0.0);
 
   //
   // ********Other information used by block solver***********
@@ -160,8 +152,7 @@ bool proc_verbose = false;
   Belos::LinearProblem<ST,KMV,KOP> problem( A, X, B );
   bool set = problem.setProblem();
   if (set == false) {
-    if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+    std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
   //
@@ -171,19 +162,17 @@ bool proc_verbose = false;
   //
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<ST,KMV,KOP> > newSolver
-    = rcp( new Belos::BlockGmresSolMgr<ST,KMV,KOP>(rcp(&problem,false), rcp(&belosList,false)) );
+    = rcp( new Belos::BlockGmresSolMgr<ST,KMV,KOP>(rcpFromRef(problem), rcpFromRef(belosList)) );
 
   //
   // **********Print out information about problem*******************
   //
-  if (proc_verbose) {
-    std::cout << std::endl << std::endl;
-    std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
-    std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Max number of Gmres iterations: " << maxiters << std::endl;
-    std::cout << "Relative residual tolerance: " << tol << std::endl;
-    std::cout << std::endl;
-  }
+  std::cout << std::endl << std::endl;
+  std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
+  std::cout << "Number of right-hand sides: " << numrhs << std::endl;
+  std::cout << "Max number of Gmres iterations: " << maxiters << std::endl;
+  std::cout << "Relative residual tolerance: " << tol << std::endl;
+  std::cout << std::endl;
   //
   // Perform solve
   //
@@ -201,27 +190,23 @@ bool proc_verbose = false;
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
   MVT::MvNorm( resid, actual_resids );
   MVT::MvNorm( *B, rhs_norm );
-  if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-    for ( int i=0; i<numrhs; i++) {
-      ST actRes = actual_resids[i]/rhs_norm[i];
-      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-      if (actRes > tol) badRes = true;
-    }
+  std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+  for ( int i=0; i<numrhs; i++) {
+    ST actRes = actual_resids[i]/rhs_norm[i];
+    std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+    if (actRes > tol) badRes = true;
   }
 
   if (ret!=Belos::Converged || badRes) {
     success = false;
-    if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
+    std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
   } else {
     success = true;
-    if (proc_verbose)
-      std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
   }
 
-  //}
-  //TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
   }
   Kokkos::finalize();
   return success ? EXIT_SUCCESS : EXIT_FAILURE;

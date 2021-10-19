@@ -39,10 +39,8 @@
 // ************************************************************************
 //@HEADER
 //
-// This driver reads a problem from a file, which can be in Harwell-Boeing (*.hb),
-// Matrix Market (*.mtx), or triplet format (*.triU, *.triS).  The right-hand side
-// from the problem, if it exists, will be used instead of multiple
-// random right-hand-sides.  The initial guesses are all set to zero.
+// This driver reads a problem from a file, which must be in Matrix Market (*.mtx).  
+// The problem right-hand side will be generated randomly.
 //
 // NOTE: No preconditioner is used in this example.
 //
@@ -79,19 +77,16 @@ bool success = true;
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using std::cout;
-  using std::endl;
+  using Teuchos::rcpFromRef;
 
 bool verbose = true;
 try {
   int frequency = 25;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
-  int maxrestarts = 25;      // number of restarts allowed
   bool expresidual = false; // use explicit residual
-  std::string filename("bcsstk13.mtx"); // example matrix
-  MT tol = 1.0e-6;           // relative residual tolerance
+  std::string filename("bcsstk12.mtx"); // example matrix
+  MT tol = 1.0e-5;           // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -101,8 +96,6 @@ try {
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by Gmres solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
-  cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
-  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
 
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
@@ -118,9 +111,10 @@ try {
   OT numRows = crsMat.numRows();
 
   Teuchos::RCP<MV> X = Teuchos::rcp( new MV(numRows, numrhs) );
-  X->MvInit(0.0);
+  X->MvRandom();
   Teuchos::RCP<MV> B = Teuchos::rcp( new MV(numRows, numrhs) );
-  B->MvRandom();
+  OPT::Apply(*A,*X,*B);
+  X->MvInit(0.0);
 
   //
   // ********Other information used by block solver***********
@@ -133,8 +127,6 @@ try {
   ParameterList belosList;
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-  belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
-  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Explicit Residual Test", expresidual);      // use explicit residual
 
   if (verbose) {
@@ -157,12 +149,12 @@ try {
   }
   //
   // *******************************************************************
-  // **************Start the block Gmres iteration*************************
+  // **************Start the block CG iteration*************************
   // *******************************************************************
   //
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<ST,KMV,KOP> > newSolver
-    = rcp( new Belos::BlockCGSolMgr<ST,KMV,KOP>(rcp(&problem,false), rcp(&belosList,false)) );
+    = rcp( new Belos::BlockCGSolMgr<ST,KMV,KOP>(rcpFromRef(problem), rcpFromRef(belosList)) );
 
   //
   // **********Print out information about problem*******************
