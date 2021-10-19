@@ -87,6 +87,8 @@
 // TrilinosCouplings includes
 #include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_Pamgen_Utils.hpp"
+#include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
+
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -469,6 +471,25 @@ int main(int argc, char *argv[]) {
   clp.setOption ("seed", &randomSeed, "Random Seed.");
   
   
+  // Material diffusion strength and rotation (in 3D)
+  // We'll get the 2D version of this later
+  std::vector<double> diff_rotation_angle {0.0, 0.0, 0.0};
+  std::vector<double> diff_strength {1.0, 1.0, 1.0};
+  for(int i=0; i<3; i++) {
+    char letter[4] = "xyz";
+    char str1[80], str2[80];
+    // Rotation
+    sprintf(str1,"rot_%c_angle",letter[i]);
+    sprintf(str2,"Rotation around %c axis, in degrees",letter[i]);
+    clp.setOption(str1,&diff_rotation_angle[i],str2);
+      
+    // Strength
+    sprintf(str1,"strength_%c",letter[i]);
+    sprintf(str2,"Strength of pre-rotation %c-diffusion",letter[i]);
+    clp.setOption(str1,&diff_strength[i],str2);
+  }
+  
+
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -496,6 +517,15 @@ int main(int argc, char *argv[]) {
       << "|  Trilinos website:     http://trilinos.sandia.gov                           |\n" \
       << "|                                                                             |\n" \
       << "===============================================================================\n";
+  }
+
+
+  // Diffusion Tensor
+  ::TrilinosCouplings::IntrepidPoissonExample::setDiffusionRotationAndStrength(diff_rotation_angle, diff_strength);
+  if(MyPID == 0) {
+    const std::vector<double> & A = ::TrilinosCouplings::IntrepidPoissonExample::getDiffusionMatrix2D();
+    std::cout<<"[ "<<A[0]<<" "<<A[1]<<" ]\n"
+	     <<"[ "<<A[2]<<" "<<A[3]<<" ]"<<std::endl;
   }
 
 
@@ -1848,14 +1878,18 @@ const Scalar exactSolution(const Scalar& x, const Scalar& y) {
 }
 
 
+// Stored diffusion tensor
+std::vector<double> diffusion_tensor;
+
 template<typename Scalar>
 void materialTensor(Scalar material[][2], const Scalar& x, const Scalar& y) {
-
-  material[0][0] = 1.;
-  material[0][1] = 0.;
+  if(diffusion_tensor.size() == 0) 
+    diffusion_tensor = ::TrilinosCouplings::IntrepidPoissonExample::getDiffusionMatrix2D();
+  material[0][0] = (Scalar)diffusion_tensor[0];
+  material[0][1] = (Scalar)diffusion_tensor[1];
   //
-  material[1][0] = 0.;
-  material[1][1] = 1.;
+  material[1][0] = (Scalar)diffusion_tensor[2];
+  material[1][1] = (Scalar)diffusion_tensor[3];
 }
 
 /**********************************************************************************/
@@ -2072,9 +2106,10 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+    //    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency",      1);
-    belosList.set("Output Style",          Belos::Brief);
+    belosList.set("Output Style",          1);
+    belosList.set ("Verbosity", 33);
     bool scaleResidualHist = true;
     if (!scaleResidualHist)
       belosList.set("Implicit Residual Scaling", "None");

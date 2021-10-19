@@ -113,6 +113,8 @@ double materialTensorOffDiagonalValue_;
   
 Matrix3 rotation_, strength_,diff_total_;
 
+std::vector<double> matrix2D_;
+
 bool useDiffusionMatrix() { 
   return use_diffusion_;
 }
@@ -134,6 +136,20 @@ const std::vector<double>& getDiffusionMatrix() {
   return diff_total_.get();
 }
 
+
+
+const std::vector<double>& getDiffusionMatrix2D() {
+  // Gets the x/y sub-matrix
+  if(!use_diffusion_)
+    throw std::runtime_error("setDiffusionRotationStrength has not been called");
+  matrix2D_.resize(4);
+  matrix2D_[0] = diff_total_(0,0);
+  matrix2D_[1] = diff_total_(0,1);
+  matrix2D_[2] = diff_total_(1,0);
+  matrix2D_[3] = diff_total_(1,1);
+
+  return matrix2D_;
+}
 
 
 void setDiffusionRotationAndStrength(const std::vector<double>& theta,  const std::vector<double>& diagonal) {
