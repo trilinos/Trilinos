@@ -317,45 +317,14 @@ namespace {
   };
 
 
-  //
-  // UNIT TESTS
-  //
-
-
-  template <typename Packet, typename LO, typename GO>
-  class ForwardImport {
-  private:
-    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
-
-  public:
-    void operator()(DistObjectRCP source, DistObjectRCP target) const {
-      Import<LO, GO> importer(source->getMap(), target->getMap(), getImportParameterList());
-      target->doImport(*source, importer, INSERT);
-    }
-  };
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVectorTransfer, asyncImport, LO, GO, Scalar )
-  {
-    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
-
-    fixture.setup(0);
-    fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
-    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
-  }
-
-
   template <typename Scalar, typename LO, typename GO>
-  class CrsMatrixDiagonalTransferFixture {
+  class DiagonalCrsMatrixTransferFixture {
   private:
     using map_type = Map<LO, GO>;
     using crs_type = CrsMatrix<Scalar, LO, GO>;
 
   public:
-    CrsMatrixDiagonalTransferFixture(Teuchos::FancyOStream& o, bool& s)
+    DiagonalCrsMatrixTransferFixture(Teuchos::FancyOStream& o, bool& s)
       : out(o),
         success(s),
         comm(getDefaultComm()),
@@ -363,7 +332,7 @@ namespace {
         myRank(comm->getRank())
     { }
 
-    ~CrsMatrixDiagonalTransferFixture() { }
+    ~DiagonalCrsMatrixTransferFixture() { }
 
     bool shouldSkipTest() {
       return numProcs < 2;
@@ -374,27 +343,9 @@ namespace {
              "processes, but you ran it with only 1 process." << endl;
     }
 
-
-    void setupMatrices(int collectRank) {
-      const GO indexBase = 0;
-      const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-
-      const size_t targetNumLocalElements = 3;
-      const size_t totalElements = numProcs*targetNumLocalElements;
-      const size_t sourceNumLocalElements = (myRank == collectRank) ? totalElements : 0;
-
-      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
-      sourceMat = rcp(new crs_type(sourceMap, 1, StaticProfile, getCrsMatrixParameterList()));
-
-      if (sourceNumLocalElements != 0) {
-        for (GO row = sourceMap->getMinGlobalIndex(); row <= sourceMap->getMaxGlobalIndex(); row++) {
-          sourceMat->insertGlobalValues(row, tuple<GO>(row), tuple<Scalar>(row));
-        }
-      }
-      sourceMat->fillComplete();
-
-      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
-      targetMat = rcp(new crs_type(targetMap, 1, StaticProfile, getCrsMatrixParameterList()));
+    void setup() {
+      setupMaps();
+      setupMatrices();
     }
 
     template <typename TransferMethod>
@@ -412,23 +363,44 @@ namespace {
     }
 
   private:
+    void setupMaps() {
+      const GO indexBase = 0;
+      const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+      const size_t targetNumLocalElements = 3;
+      const size_t totalElements = numProcs*targetNumLocalElements;
+      const size_t sourceNumLocalElements = (myRank == 0) ? totalElements : 0;
+
+      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+    }
+
+    void setupMatrices() {
+      sourceMat = rcp(new crs_type(sourceMap, 1, StaticProfile, getCrsMatrixParameterList()));
+      targetMat = rcp(new crs_type(targetMap, 1, StaticProfile, getCrsMatrixParameterList()));
+
+      for (GO row = sourceMap->getMinGlobalIndex(); row <= sourceMap->getMaxGlobalIndex(); row++) {
+        sourceMat->insertGlobalValues(row, tuple<GO>(row), tuple<Scalar>(row));
+      }
+      sourceMat->fillComplete();
+    }
+
     void checkMatrixIsDiagonal(RCP<const crs_type> matrix) {
-      for (GO gblRow = targetMap->getMinGlobalIndex ();
-          gblRow <= targetMap->getMaxGlobalIndex ();
-          ++gblRow) {
-        const LO lclRow = targetMap->getLocalElement (gblRow);
+      for (GO globalRow = targetMap->getMinGlobalIndex(); globalRow <= targetMap->getMaxGlobalIndex(); ++globalRow) {
+        const LO localRow = targetMap->getLocalElement(globalRow);
 
-        typename crs_type::local_inds_host_view_type lclInds;
-        typename crs_type::values_host_view_type lclVals;
-        matrix->getLocalRowView (lclRow, lclInds, lclVals);
-        TEST_EQUALITY_CONST(lclInds.size(), 1);
-        TEST_EQUALITY_CONST(lclVals.size(), 1);
+        typename crs_type::local_inds_host_view_type localInds;
+        typename crs_type::values_host_view_type localVals;
+        matrix->getLocalRowView(localRow, localInds, localVals);
 
-        if (lclInds.size () != 0) { // don't segfault in error case
-          TEST_EQUALITY(matrix->getColMap ()->getGlobalElement (lclInds[0]), gblRow);
+        TEST_EQUALITY_CONST(localInds.size(), 1);
+        if (localInds.size() == 1) {
+          TEST_EQUALITY(matrix->getColMap()->getGlobalElement(localInds[0]), globalRow);
         }
-        if (lclVals.size () != 0) { // don't segfault in error case
-          TEST_EQUALITY(lclVals[0], as<Scalar> (gblRow));
+
+        TEST_EQUALITY_CONST(localVals.size(), 1);
+        if (localVals.size() == 1) {
+          TEST_EQUALITY(localVals[0], as<Scalar>(globalRow));
         }
       }
     }
@@ -446,8 +418,8 @@ namespace {
       vals_type resultRowValues;
       lids_type referenceRowIndices;
       vals_type referenceRowValues;
-      for (LO localRow = targetMap->getMinLocalIndex(); localRow <= targetMap->getMaxLocalIndex(); ++localRow)
-      {
+
+      for (LO localRow = targetMap->getMinLocalIndex(); localRow <= targetMap->getMaxLocalIndex(); ++localRow) {
         size_t resultNumEntries = resultMat->getNumEntriesInLocalRow(localRow);
         size_t referenceNumEntries = referenceMat->getNumEntriesInLocalRow(localRow);
         TEST_EQUALITY(resultNumEntries, referenceNumEntries);
@@ -506,15 +478,46 @@ namespace {
     }
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixTransfer, asyncImport_diagonal, LO, GO, Scalar )
+
+  //
+  // UNIT TESTS
+  //
+
+
+  template <typename Packet, typename LO, typename GO>
+  class ForwardImport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Import<LO, GO> importer(source->getMap(), target->getMap(), getImportParameterList());
+      target->doImport(*source, importer, INSERT);
+    }
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVectorTransfer, asyncImport, LO, GO, Scalar )
   {
-    CrsMatrixDiagonalTransferFixture<Scalar, LO, GO> fixture(out, success);
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
       fixture.printSkippedTestMessage();
       return;
     }
 
-    fixture.setupMatrices(0);
+    fixture.setup(0);
+    fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DiagonalCrsMatrixTransfer, asyncImport, LO, GO, Scalar )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup();
     fixture.performTransfer(ForwardImport<char, LO, GO>());
     fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
   }
@@ -646,7 +649,7 @@ namespace {
 
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorTransfer, asyncImport, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixTransfer, asyncImport_diagonal, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DiagonalCrsMatrixTransfer, asyncImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixTransfer, asyncImport_lowerTriangular, LO, GO, SC ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
