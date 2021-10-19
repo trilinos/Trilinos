@@ -230,6 +230,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   std::string rangeMapFile;                           clp.setOption("rangemap",              &rangeMapFile,      "rangemap data file");
   std::string matrixFile;                             clp.setOption("matrix",                &matrixFile,        "matrix data file");
   std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
+  std::string solFile;                                clp.setOption("sol",                   &solFile,           "write the solution to this file");
   std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
   std::string coordMapFile;                           clp.setOption("coordsmap",             &coordMapFile,      "coordinates map data file");
   std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
@@ -562,6 +563,10 @@ MueLu::MueLu_AMGX_initialize_plugins();
 
 
   }//end reruns
+
+  if (solFile != "")
+    Xpetra::IO<SC,LO,GO,Node>::Write(solFile, *X);
+
 
 #ifdef HAVE_MUELU_AMGX
 // Finalize AMGX
