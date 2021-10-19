@@ -11,6 +11,7 @@
 
 #include <percept/PerceptMesh.hpp>
 #include <percept/PerceptBoostArray.hpp>
+#include <adapt/CompareCoordinates.hpp>
 
 namespace percept {
 
@@ -59,6 +60,13 @@ namespace percept {
         shards::CellTopology cell_topo(cell_topo_data);
         //const percept::MyPairIterRelation elem_nodes (m_eMesh, element,stk::topology::NODE_RANK); /NLM
         CoordinatesFieldType* coordField = eMesh.get_coordinates_field();
+
+        std::array<double *,3> node_coords;
+        for (int i=0; i<3; ++i)
+          {
+             node_coords[i] = stk::mesh::field_data( *coordField , elem_nodes[i] );
+          }
+        const std::array<int, 3> node_rank = get_rank_of_nodes_based_on_coordinates( node_coords );
 
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 3; iedge++)
@@ -137,15 +145,20 @@ namespace percept {
                   {
                     stk::mesh::Entity node_0 = elem_nodes[cell_topo_data->edge[iedge].node[0]];
                     stk::mesh::Entity node_1 = elem_nodes[cell_topo_data->edge[iedge].node[1]];
+                    int rank_node_0 = node_rank[cell_topo_data->edge[iedge].node[0]];
+                    int rank_node_1 = node_rank[cell_topo_data->edge[iedge].node[1]];
 
                     //bool reverse = false;
                     // ensure edge_len is computed identically, independent of edge orientation
-                    if (eMesh.identifier(node_0) > eMesh.identifier(node_1))
+                    if (node_rank[cell_topo_data->edge[iedge].node[0]] > node_rank[cell_topo_data->edge[iedge].node[1]])
                       {
                         //reverse = true;
                         stk::mesh::Entity node_temp = node_0;
                         node_0 = node_1;
                         node_1 = node_temp;
+                        const int rank_temp = rank_node_0;
+                        rank_node_0 = rank_node_1;
+                        rank_node_1 = rank_temp;
                       }
 
                     double * const coord_0 = stk::mesh::field_data( *coordField , node_0 );
@@ -160,16 +173,16 @@ namespace percept {
 
                     if (edge_len_squared > max_edge_length)
                       {
-                        id_diff_0 = eMesh.identifier(node_0);
-                        id_diff_1 = eMesh.identifier(node_1);
+                        id_diff_0 = rank_node_0;
+                        id_diff_1 = rank_node_1;
                         max_edge_length = edge_len_squared;
                         jedge_max_edge = iedge;
                       }
                     // intentional floating-point comparison (tie-break)
                     else if (edge_len_squared == max_edge_length)
                       {
-                        unsigned loc_id_diff_0 = eMesh.identifier(node_0);
-                        unsigned loc_id_diff_1 = eMesh.identifier(node_1);
+                        unsigned loc_id_diff_0 = rank_node_0;
+                        unsigned loc_id_diff_1 = rank_node_1;
                         bool lexical_less = false;
                         if (loc_id_diff_0 < id_diff_0)
                           {

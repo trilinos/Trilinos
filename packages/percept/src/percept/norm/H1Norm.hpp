@@ -151,7 +151,9 @@
 
         //std::cout << "type= " << typeid(integrand).name() << " " << typeid(FieldFunction).name() << std::endl;
         if (typeid(integrand) == typeid(FieldFunction))
+        {
           VERIFY_OP_ON(m_turboOpt, !=, TURBO_NONE, "Can't use TURBO_NONE with Norm of FieldFunction");
+        }
 
           {
             // FIXME - make all percept code const-correct

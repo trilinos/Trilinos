@@ -144,14 +144,14 @@
             create_side_element(eMesh, use_declare_element_side, nodes, 2, newElement);
 
             stk::mesh::FieldBase * proc_rank_field_edge = m_eMesh.get_field(stk::topology::EDGE_RANK, "proc_rank_edge");
-            if (proc_rank_field_edge && proc_rank_field_edge->field_array_rank() != m_eMesh.edge_rank())
+            if (proc_rank_field_edge && proc_rank_field_edge->field_array_rank() != static_cast<unsigned>(m_eMesh.edge_rank()))
               {
                 if (0)
                   std::cout << "P[" << m_eMesh.get_rank() << "] tmp newElement.entity_rank = " << m_eMesh.entity_rank(newElement)
                             << " proc_rank_field_edge->rank() = " << proc_rank_field_edge->field_array_rank()
                             << " m_eMesh.edge_rank() = " << m_eMesh.edge_rank() << std::endl;
               }
-            else if (proc_rank_field_edge && proc_rank_field_edge->field_array_rank() == m_eMesh.edge_rank())
+            else if (proc_rank_field_edge && proc_rank_field_edge->field_array_rank() == static_cast<unsigned>(m_eMesh.edge_rank()))
               {
                 double *fdata =stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
                 fdata[0] = double(eMesh.owner_rank(newElement));
