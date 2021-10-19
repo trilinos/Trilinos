@@ -528,10 +528,10 @@ namespace MueLu {
 		  bool is_nonpositive =  STS::real(vals[colID]) <= 0;
                   MT  aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
                   MT aij     = is_nonpositive ? STS::magnitude(vals[colID]*vals[colID]) : (-STS::magnitude(vals[colID]*vals[colID])); // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
-                  
+                  /*
 		  if(row==1326) printf("A(%d,%d) = %6.4e, raw_aij = %6.4e aij = %6.4e aiiajj = %6.4e\n",row,col,vals[colID],
                                        vals[colID],aij, aiiajj);
-
+		  */
 
                   if ((!rowIsDirichlet && aij > aiiajj) || row == col) {
 		    columns[realnnz++] = col;
