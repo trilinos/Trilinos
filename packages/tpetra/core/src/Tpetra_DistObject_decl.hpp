@@ -564,6 +564,9 @@ namespace Tpetra {
               const CombineMode CM,
               const bool restrictedMode = false);
 
+    bool
+    transferArrived() const;
+
     //@}
     //! @name Attribute accessor methods
     //@{

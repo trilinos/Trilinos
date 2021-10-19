@@ -649,6 +649,13 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  transferArrived() const {
+    return true;
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   isDistributed () const {
     return map_->isDistributed ();
   }
