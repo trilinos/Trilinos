@@ -123,8 +123,9 @@ void DaiFletcherProjection<Real>::initialize(const Vector<Real>               &x
   //xnew_->zero();
   //bnd_->project(*xnew_);
   //Real res0 = std::abs(residual(*xnew_));
-  Real resl = std::abs(residual(*bnd_->getLowerBound()));
-  Real resu = std::abs(residual(*bnd_->getUpperBound()));
+  Real resl = ROL_INF<Real>(), resu = ROL_INF<Real>();
+  if (bnd_->isLowerActivated()) resl = residual(*res_,*bnd_->getLowerBound());
+  if (bnd_->isUpperActivated()) resu = residual(*res_,*bnd_->getUpperBound());
   Real res0 = std::max(resl,resu);
   if (res0 < atol_) res0 = static_cast<Real>(1);
   ctol_ = std::min(atol_,rtol_*res0);
