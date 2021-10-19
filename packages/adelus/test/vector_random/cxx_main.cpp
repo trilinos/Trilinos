@@ -217,6 +217,7 @@ int main(int argc, char *argv[])
                 << " vs. available: " << gpu_count 
                 << "). Exit without test." << std::endl;
     }
+    MPI_Finalize() ;
     return 0;
   }
 
