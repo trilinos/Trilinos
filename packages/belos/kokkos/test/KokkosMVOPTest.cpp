@@ -50,6 +50,9 @@
 #include "BelosKokkosAdapter.hpp"
 
 #include "Teuchos_StandardCatchMacros.hpp"
+#ifdef HAVE_MPI
+  #include <mpi.h>
+#endif
 
 using std::cout;
 using std::endl;
@@ -65,6 +68,9 @@ bool TestKokkosMultiVecTwoScalar(const Teuchos::RCP<OutputManager<ScalarType1> >
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
   bool isPassed;
   bool success = true;
   Kokkos::initialize();
@@ -204,6 +210,9 @@ try {
     TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   }
   Kokkos::finalize();
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
@@ -394,7 +403,6 @@ bool TestKokkosMultiVecOneScalar(const Teuchos::RCP<OutputManager<ScalarType> > 
     }
   }
 
-
   return true;
 }
 
@@ -540,7 +548,6 @@ bool TestKokkosMultiVecTwoScalar(const Teuchos::RCP<OutputManager<ScalarType1> >
       << "*** ERROR *** KokkosMultivec templated assign op did not make a deep copy!" << endl;
     return false;
   }
-
 
   return true;
 }

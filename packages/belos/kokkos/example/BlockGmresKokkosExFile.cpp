@@ -55,8 +55,15 @@
 
 #include "BelosKokkosAdapter.hpp"
 #include "KokkosKernels_IOUtils.hpp"
+#ifdef HAVE_MPI
+  #include <mpi.h>
+#endif
 
 int main(int argc, char *argv[]) {
+
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
 
 bool success = true;
   Kokkos::initialize();
@@ -209,5 +216,8 @@ try {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
   }
   Kokkos::finalize();
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
