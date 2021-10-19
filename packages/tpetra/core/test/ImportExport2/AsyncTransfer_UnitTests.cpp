@@ -92,6 +92,7 @@ namespace {
   using Teuchos::tuple;
 
   using Tpetra::ADD;
+  using Tpetra::DistObject;
   using Tpetra::createContigMap;
   using Tpetra::CrsGraph;
   using Tpetra::CrsMatrix;
@@ -307,15 +308,15 @@ namespace {
     }
   };
 
-  template <typename Scalar, typename LO, typename GO>
+  template <typename Packet, typename LO, typename GO>
   class ForwardImport {
   private:
-    using mv_type = MultiVector<Scalar, LO, GO>;
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
 
   public:
-    void operator()(RCP<mv_type> sourceMV, RCP<mv_type> targetMV) const {
-      Import<LO, GO> importer(sourceMV->getMap(), targetMV->getMap(), getImportParameterList());
-      targetMV->doImport(*sourceMV, importer, INSERT);
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Import<LO, GO> importer(source->getMap(), target->getMap(), getImportParameterList());
+      target->doImport(*source, importer, INSERT);
     }
   };
 
@@ -385,6 +386,7 @@ namespace {
     template <typename TransferMethod>
     void performTransfer(const TransferMethod& transfer) {
       transfer(sourceMat, targetMat);
+      targetMat->fillComplete();
     }
 
     template <typename ReferenceSolution>
@@ -490,19 +492,6 @@ namespace {
     }
   };
 
-  template <typename Scalar, typename LO, typename GO>
-  class ForwardImportMatrix {
-  private:
-    using crs_type = CrsMatrix<Scalar, LO, GO>;
-
-  public:
-    void operator()(RCP<crs_type> sourceMat, RCP<crs_type> targetMat) const {
-      Import<LO, GO> importer(sourceMat->getMap(), targetMat->getMap(), getImportParameterList());
-      targetMat->doImport(*sourceMat, importer, INSERT);
-      targetMat->fillComplete();
-    }
-  };
-
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixTransfer, asyncImport_diagonal, LO, GO, Scalar )
   {
     CrsMatrixDiagonalTransferFixture<Scalar, LO, GO> fixture(out, success);
@@ -512,7 +501,7 @@ namespace {
     }
 
     fixture.setupMatrices(0);
-    fixture.performTransfer(ForwardImportMatrix<Scalar, LO, GO>());
+    fixture.performTransfer(ForwardImport<char, LO, GO>());
     fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
   }
 
@@ -574,6 +563,7 @@ namespace {
     template <typename TransferMethod>
     void performTransfer(const TransferMethod& transfer) {
       transfer(sourceMat, targetMat);
+      targetMat->fillComplete();
     }
 
     void checkResults() {
@@ -631,7 +621,7 @@ namespace {
     }
 
     fixture.setupMatrices();
-    fixture.performTransfer(ForwardImportMatrix<Scalar, LO, GO>());
+    fixture.performTransfer(ForwardImport<char, LO, GO>());
     fixture.checkResults();
   }
 
