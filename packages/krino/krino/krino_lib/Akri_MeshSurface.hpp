@@ -71,7 +71,7 @@ public:
   Faceted_Surface_From_File(const std::string & surface_name, const stk::diag::Timer &parent_timer);
   virtual ~Faceted_Surface_From_File() {}
   virtual void build_local_facets(const BoundingBox & proc_bbox) override;
-  virtual BoundingBox get_bounding_box() = 0;
+  virtual BoundingBox get_bounding_box() override = 0;
 
 protected:
   virtual void read_file(const std::vector<BoundingBox> & proc_bboxes) = 0;

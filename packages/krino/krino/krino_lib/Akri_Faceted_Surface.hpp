@@ -20,13 +20,11 @@ class Faceted_Surface : public SurfaceThatTakesAdvantageOfNarrowBandAndTherefore
 public:
   Faceted_Surface(const std::string & sn);
 
-  virtual Surface_Type type() const { return FACETED_SURFACE; }
-  virtual size_t storage_size() const;
+  virtual Surface_Type type() const override { return FACETED_SURFACE; }
+  virtual size_t storage_size() const override;
   virtual void pack_into_buffer(stk::CommBuffer & b) const; // pack into buffer for off-processor communication
-  using Surface::prepare_to_compute;
   virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) override;
-  using SurfaceThatTakesAdvantageOfNarrowBandAndThereforeMightHaveWrongSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x, const double narrow_band_size, const double far_field_value) const
+  virtual double truncated_point_signed_distance(const Vector3d &x, const double narrow_band_size, const double far_field_value) const override
   {
     return point_distance(x, narrow_band_size, far_field_value, true);
   }

@@ -66,7 +66,7 @@ void IC_Alg::execute(const double time, const bool requires_additional_initializ
 
       const Vector3d x(&coord[spatial_dim*n], spatial_dim);
 
-      dist[n] = surface_list.point_signed_distance(x, levelSet.narrow_band_size());
+      dist[n] = surface_list.point_signed_distance_with_narrow_band(x, levelSet.narrow_band_size());
     }
   }
 
@@ -160,7 +160,7 @@ void IC_Alg::compute_IC_error_indicator()
         const double edge_length_sqr = (x1-x0).length_squared();
 
         double midpoint_signed_distance =
-            surface_list.point_signed_distance(edge_midpoints[e], levelSet.narrow_band_size());
+            surface_list.point_signed_distance_with_narrow_band(edge_midpoints[e], levelSet.narrow_band_size());
         midpoint_signed_distances[e] = midpoint_signed_distance;
 
         const double ls0 = nodal_signed_distances[edge_nodes[0]];

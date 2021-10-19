@@ -36,11 +36,10 @@ public:
   virtual ~Cylinder() {}
  
   virtual Surface_Type type() const override { return CYLINDER; }
-  virtual size_t storage_size() const { return sizeof(Cylinder); }
+  virtual size_t storage_size() const override { return sizeof(Cylinder); }
   
-  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length);
-  using SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x) const;
+  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) override;
+  virtual double point_signed_distance(const Vector3d &x) const override;
   virtual BoundingBox get_bounding_box() override;
 
 private:
@@ -65,11 +64,10 @@ public:
   virtual ~Sphere() {}
 
   virtual Surface_Type type() const override { return SPHERE; }
-  virtual size_t storage_size() const { return sizeof(Sphere); }
+  virtual size_t storage_size() const override { return sizeof(Sphere); }
   
-  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length);
-  using SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x) const;
+  virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) override;
+  virtual double point_signed_distance(const Vector3d &x) const override;
   virtual BoundingBox get_bounding_box() override;
 
 private:
@@ -90,10 +88,9 @@ public:
   virtual ~Ellipsoid() {}
 
   virtual Surface_Type type() const override { return ELLIPSOID; }
-  virtual size_t storage_size() const { return sizeof(Ellipsoid); }
+  virtual size_t storage_size() const override { return sizeof(Ellipsoid); }
 
-  using SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x) const;
+  virtual double point_signed_distance(const Vector3d &x) const override;
   virtual BoundingBox get_bounding_box() override;
 
 private:
@@ -117,10 +114,9 @@ public:
   virtual ~Plane() {}
 
   virtual Surface_Type type() const override { return PLANE; }
-  virtual size_t storage_size() const { return sizeof(Plane); }
+  virtual size_t storage_size() const override { return sizeof(Plane); }
 
-  using SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x) const;
+  virtual double point_signed_distance(const Vector3d &x) const override;
   virtual BoundingBox get_bounding_box() override;
 
 private:
@@ -138,10 +134,9 @@ public:
   virtual ~Point() {}
 
   virtual Surface_Type type() const override { return POINT; }
-  virtual size_t storage_size() const { return sizeof(Point); }
+  virtual size_t storage_size() const override { return sizeof(Point); }
   
-  using SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x) const;
+  virtual double point_signed_distance(const Vector3d &x) const override;
   virtual BoundingBox get_bounding_box() override;
 
 private:
@@ -155,14 +150,13 @@ public:
   virtual ~Random() {}
 
   virtual Surface_Type type() const override { return RANDOM; }
-  virtual size_t storage_size() const { return sizeof(Random); }
+  virtual size_t storage_size() const override { return sizeof(Random); }
   virtual void prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length) override
   {
     if (truncation_length > 0.0) my_amplitude = truncation_length;
   }
 
-  using SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x) const;
+  virtual double point_signed_distance(const Vector3d &x) const override;
   virtual BoundingBox get_bounding_box() override;
 
 private:
@@ -181,10 +175,9 @@ public:
   virtual ~Analytic_Isosurface() {}
 
   virtual Surface_Type type() const override { return SPHERE; }
-  virtual size_t storage_size() const { return sizeof(Analytic_Isosurface); }
+  virtual size_t storage_size() const override { return sizeof(Analytic_Isosurface); }
 
-  using SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign::point_signed_distance;
-  virtual double point_signed_distance(const Vector3d &x) const;
+  virtual double point_signed_distance(const Vector3d &x) const override;
   virtual BoundingBox get_bounding_box() override;
 };
 

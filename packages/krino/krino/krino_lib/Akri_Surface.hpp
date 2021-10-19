@@ -55,7 +55,7 @@ public:
   // compute signed distance from specific point to surface
   // For distances larger than truncation_length (if truncation_length > 0.), the surface is allowed to return
   // far_field_value instead of the actual signed distance.
-  virtual double point_signed_distance(const Vector3d &x, const double truncation_length, const double far_field_value) const = 0;
+  virtual double truncated_point_signed_distance(const Vector3d &x, const double truncation_length, const double far_field_value) const = 0;
   // If surface does return far_field_value instead of actual signed distance, the sign may be wrong.
   virtual bool truncated_distance_may_have_wrong_sign() const = 0;
 
@@ -76,19 +76,19 @@ protected:
 
 class SurfaceThatTakesAdvantageOfNarrowBandAndThereforeMightHaveWrongSign : public Surface {
 public:
-  virtual bool truncated_distance_may_have_wrong_sign() const { return true; }
-  virtual double point_signed_distance(const Vector3d &x) const
+  virtual bool truncated_distance_may_have_wrong_sign() const override { return true; }
+  virtual double point_signed_distance(const Vector3d &x) const override
   {
-    return point_signed_distance(x, 0., 0.);
+    return truncated_point_signed_distance(x, 0., 0.);
   }
-  virtual double point_signed_distance(const Vector3d &x, const double truncation_length, const double far_field_value) const = 0;
+  virtual double truncated_point_signed_distance(const Vector3d &x, const double truncation_length, const double far_field_value) const override = 0;
 };
 
 class SurfaceThatDoesntTakeAdvantageOfNarrowBandAndThereforeHasCorrectSign : public Surface {
 public:
-  virtual bool truncated_distance_may_have_wrong_sign() const { return false; }
-  virtual double point_signed_distance(const Vector3d &x) const = 0;
-  virtual double point_signed_distance(const Vector3d &x, const double truncation_length, const double far_field_value) const
+  virtual bool truncated_distance_may_have_wrong_sign() const override { return false; }
+  virtual double point_signed_distance(const Vector3d &x) const override = 0;
+  virtual double truncated_point_signed_distance(const Vector3d &x, const double truncation_length, const double far_field_value) const override
   {
     return point_signed_distance(x);
   }

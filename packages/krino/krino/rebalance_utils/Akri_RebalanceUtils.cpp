@@ -37,21 +37,21 @@ public:
   virtual ~MultipleCriteriaSettings() = default;
 
   virtual double
-  getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const
+  getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const override
   {
     return 1.0;
   }
-  virtual bool areVertexWeightsProvidedViaFields() const { return true; }
-  virtual bool includeSearchResultsInGraph() const { return false; }
-  virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-  virtual double getImbalanceTolerance() const { return 1.05; }
-  virtual void setDecompMethod(const std::string & input_method) { method = input_method; }
-  virtual std::string getDecompMethod() const { return method; }
-  virtual int getNumCriteria() const { return m_critFields.size(); }
-  virtual bool isMultiCriteriaRebalance() const { return true; }
+  virtual bool areVertexWeightsProvidedViaFields() const override { return true; }
+  virtual bool includeSearchResultsInGraph() const override { return false; }
+  virtual int getGraphVertexWeight(stk::topology type) const override { return 1; }
+  virtual double getImbalanceTolerance() const override { return 1.05; }
+  virtual void setDecompMethod(const std::string & input_method) override { method = input_method; }
+  virtual std::string getDecompMethod() const override { return method; }
+  virtual int getNumCriteria() const override { return m_critFields.size(); }
+  virtual bool isMultiCriteriaRebalance() const override { return true; }
   virtual bool shouldFixMechanisms() const override { return false; }
 
-  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const
+  virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const override
   {
     ThrowRequireWithSierraHelpMsg(
         criteria_index >= 0 && static_cast<size_t>(criteria_index) < m_critFields.size());
@@ -102,7 +102,6 @@ public:
   bool shouldPrintMetrics() const override { return true; }
   bool isIncrementalRebalance() const override { return true; }
 
-  using stk::balance::BalanceSettings::getGraphVertexWeight;
   virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const override
   {
     double scaleVertexWeightForTestingDueToSmallMesh = 12;

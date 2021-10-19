@@ -1129,7 +1129,7 @@ LevelSet::distance( const Vector3d & x,
   {
     return previous_sign * facets_old->point_unsigned_distance(x, my_narrow_band_size, my_narrow_band_size);
   }
-  return facets_old->point_signed_distance(x, my_narrow_band_size, previous_sign*my_narrow_band_size);
+  return facets_old->truncated_point_signed_distance(x, my_narrow_band_size, previous_sign*my_narrow_band_size);
 }
 
 //-----------------------------------------------------------------------------------

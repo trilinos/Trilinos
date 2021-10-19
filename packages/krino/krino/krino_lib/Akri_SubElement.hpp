@@ -64,8 +64,7 @@ public:
   const Mesh_Element & get_owner() const { return *my_owner; }
 
   int parent_side_id(const int iside) const;
-  using ElementObj::determine_decomposed_elem_phase; //supress clang warning on hidden virtual functions
-  void determine_decomposed_elem_phase(const CDMesh & mesh);
+  virtual void determine_decomposed_elem_phase(const CDMesh & mesh) override final;
   std::vector<int> subelement_interface_signs(const InterfaceID interface, const int sign) const;
   const std::vector<int> & get_interface_signs() const { return myInterfaceSigns; }
   void initialize_interface_signs();
@@ -102,13 +101,11 @@ public:
                      const Mesh_Element * owner);
   virtual ~SubElement_Tri_3() {}
 
-  virtual void decompose_edges(CDMesh & mesh, const InterfaceID interface_key);
-  virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children);
+  virtual void decompose_edges(CDMesh & mesh, const InterfaceID interface_key) override;
+  virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children) override;
   virtual void build_quadratic_subelements(CDMesh & mesh) override;
 
-  using SubElement::determine_node_signs;
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
-  using SubElement::determine_node_scores;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void cut_interior_intersection_point(CDMesh & mesh, const Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
 
@@ -155,16 +152,13 @@ public:
                      const Mesh_Element * owner);
   virtual ~SubElement_Tet_4() {}
 
-  virtual void decompose_edges(CDMesh & mesh, const InterfaceID interface_key);
+  virtual void decompose_edges(CDMesh & mesh, const InterfaceID interface_key) override;
   virtual void fix_hanging_children(CDMesh & mesh, const InterfaceID & interface, const std::vector<int> & edges_with_children) override;
   virtual void build_quadratic_subelements(CDMesh & mesh) override;
   virtual void cut_face_interior_intersection_points(CDMesh & mesh, const InterfaceID & interface1, const InterfaceID & interface2, int level = 0) override;
 
-  using SubElement::determine_node_signs;
   virtual void determine_node_signs(const CDMesh & mesh, const InterfaceID interface_key) override;
-  using SubElement::determine_node_scores;
   virtual void determine_node_scores(const CDMesh & mesh, const InterfaceID interface_key) override;
-  using SubElement::cut_face_intersection_point;
   virtual void cut_interior_intersection_point(CDMesh & mesh, const Vector3d & pCoords, const std::vector<int> & sortedDomains) override;
 
 protected:
@@ -195,7 +189,7 @@ private:
   SubElement_Tet_4();
 
   bool determine_diagonal_for_cut_triangular_face(const Simplex_Generation_Method & simplexMethod, const bool globalIDsAreParallelConsistent, const NodeVec & lnodes, const int i0, const int i1, const int i2, const int i3, const int i5);
-  void cut_face_intersection_point(CDMesh & mesh, const std::array<int,4> & permuteNodes, const std::array<int,4> & permuteSides, const std::vector<double> & faceNodeWeights, const std::vector<int> & sortedDomains);
+  void cut_face_intersection_point_with_permutation(CDMesh & mesh, const std::array<int,4> & permuteNodes, const std::array<int,4> & permuteSides, const std::vector<double> & faceNodeWeights, const std::vector<int> & sortedDomains);
 };
 
 class SubElement_Tet_10 : public SubElement {

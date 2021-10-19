@@ -1632,7 +1632,7 @@ SubElement_Tet_4::SubElement_Tet_4(
 { /* %TRACE% */  /* %TRACE% */
 }
 
-void SubElement_Tet_4::cut_face_intersection_point(CDMesh & mesh, const std::array<int,4> & permuteNodes, const std::array<int,4> & permuteSides, const std::vector<double> & faceNodeWeights, const std::vector<int> & sortedDomains)
+void SubElement_Tet_4::cut_face_intersection_point_with_permutation(CDMesh & mesh, const std::array<int,4> & permuteNodes, const std::array<int,4> & permuteSides, const std::vector<double> & faceNodeWeights, const std::vector<int> & sortedDomains)
 {
   const SubElementNode * cutNode = mesh.create_child_internal_or_face_node(my_owner,
       {my_nodes[permuteNodes[0]], my_nodes[permuteNodes[1]], my_nodes[permuteNodes[2]]},
@@ -1769,7 +1769,7 @@ SubElement_Tet_4::cut_face_interior_intersection_points(CDMesh & mesh, const Int
       if (!badCut)
       {
         ThrowRequireMsg(level < 8, "Face cut recursion level exceeded.");
-        cut_face_intersection_point(mesh, permuteNodes[iFace], permuteSides[iFace], faceNodeWeights, faceIntersection.sortedDomains);
+        cut_face_intersection_point_with_permutation(mesh, permuteNodes[iFace], permuteSides[iFace], faceNodeWeights, faceIntersection.sortedDomains);
         cut_face_interior_intersection_points(mesh, interface1, interface2, ++level);
         return;
       }

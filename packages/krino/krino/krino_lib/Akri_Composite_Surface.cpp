@@ -64,7 +64,7 @@ Composite_Surface::prepare_to_compute(const double time, const BoundingBox & poi
 }
 
 double
-Composite_Surface::point_signed_distance(const Vector3d &x, const double narrow_band, const double far_field_value) const
+Composite_Surface::truncated_point_signed_distance(const Vector3d &x, const double narrow_band, const double far_field_value) const
 { /* %TRACE% */  /* %TRACE% */
 
   if (my_composition_method == MINIMUM_SIGNED_DISTANCE)
@@ -73,7 +73,7 @@ Composite_Surface::point_signed_distance(const Vector3d &x, const double narrow_
     double dist = (narrow_band == 0.) ? std::numeric_limits<double>::max() : far_field_value;
     for ( auto&& surface : my_subsurfaces )
     {
-      dist = std::min(dist, surface->point_signed_distance(x, narrow_band, far_field_value));
+      dist = std::min(dist, surface->truncated_point_signed_distance(x, narrow_band, far_field_value));
     }
     return dist;
   }
@@ -84,7 +84,7 @@ Composite_Surface::point_signed_distance(const Vector3d &x, const double narrow_
     double dist = (narrow_band == 0.) ? -std::numeric_limits<double>::max() : far_field_value;
     for ( auto&& surface : my_subsurfaces )
     {
-      dist = std::max(dist, surface->point_signed_distance(x, narrow_band, far_field_value));
+      dist = std::max(dist, surface->truncated_point_signed_distance(x, narrow_band, far_field_value));
     }
     return dist;
   }

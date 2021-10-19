@@ -60,7 +60,7 @@ TEST(Plane_Cutting_Surface, random_edge_cuts)
     if (sign0 != sign1)
     {
       const double position = surf.interface_crossing_position(segment);
-      EXPECT_DOUBLE_EQ(position, (pt0[2] / (pt0[2] - pt1[2])) );
+      EXPECT_NEAR(position, (pt0[2] / (pt0[2] - pt1[2])), std::numeric_limits<double>::epsilon());
     }
     else
     {
@@ -96,7 +96,7 @@ TEST(Intersecting_Planes_Cutting_Surface, planar_with_random_edge_cuts)
     if (sign0 != sign1)
     {
       const double position = surf.interface_crossing_position(segment);
-      EXPECT_DOUBLE_EQ(position, (pt0[2] / (pt0[2] - pt1[2])) );
+      EXPECT_NEAR(position, (pt0[2] / (pt0[2] - pt1[2])), std::numeric_limits<double>::epsilon());
     }
     else
     {
@@ -148,8 +148,8 @@ TEST(Intersecting_Planes_Cutting_Surface, positive_dihedral_with_random_edge_cut
       const int case_id = ((pt0[2] > 0.5*pt0[1]) ? 1 : 0) + ((pt1[2] > 0.5*pt1[1]) ? 2 : 0);
       switch (case_id)
       {
-        case 0: EXPECT_FLOAT_EQ(position, pos1); break;
-        case 3: EXPECT_FLOAT_EQ(position, pos0); break;
+        case 0: EXPECT_NEAR(position, pos1, std::numeric_limits<float>::epsilon()); break;
+        case 3: EXPECT_NEAR(position, pos0, std::numeric_limits<float>::epsilon()); break;
       }
     }
     else
@@ -201,8 +201,8 @@ TEST(Intersecting_Planes_Cutting_Surface, negative_dihedral_with_random_edge_cut
       const int case_id = ((pt0[2] > 0.5*pt0[1]) ? 1 : 0) + ((pt1[2] > 0.5*pt1[1]) ? 2 : 0);
       switch (case_id)
       {
-        case 0: EXPECT_FLOAT_EQ(position, pos1); break;
-        case 3: EXPECT_FLOAT_EQ(position, pos0); break;
+        case 0: EXPECT_NEAR(position, pos1, std::numeric_limits<float>::epsilon()); break;
+        case 3: EXPECT_NEAR(position, pos0, std::numeric_limits<float>::epsilon()); break;
       }
     }
     else

@@ -531,11 +531,11 @@ STLSurface::read_file(const std::vector<BoundingBox> & proc_bboxes)
 
     if (my_is_ascii)
     {
-      my_reader.read("reading facets", [this, &batchSize, maxBatchSize](){batchSize = read_ascii_facets(maxBatchSize);});
+      my_reader.read("reading facets", [this, &batchSize](){batchSize = read_ascii_facets(maxBatchSize);});
     }
     else
     {
-      my_reader.read("reading facets", [this, &batchSize, &numBinaryFacets, maxBatchSize](){batchSize = read_binary_facets(maxBatchSize, numBinaryFacets);});
+      my_reader.read("reading facets", [this, &batchSize, &numBinaryFacets](){batchSize = read_binary_facets(maxBatchSize, numBinaryFacets);});
     }
 
     const unsigned localBatchSize = batchSize;
