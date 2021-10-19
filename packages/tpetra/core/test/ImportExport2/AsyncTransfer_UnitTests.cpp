@@ -479,6 +479,120 @@ namespace {
   };
 
 
+  template <typename Scalar, typename LO, typename GO>
+  class LowerTriangularCrsMatrixTransferFixture {
+  private:
+    using map_type = Map<LO, GO>;
+    using crs_type = CrsMatrix<Scalar, LO, GO>;
+
+  public:
+    LowerTriangularCrsMatrixTransferFixture(Teuchos::FancyOStream& o, bool& s)
+      : out(o),
+        success(s),
+        comm(getDefaultComm()),
+        numProcs(comm->getSize()),
+        myRank(comm->getRank())
+    { }
+
+    ~LowerTriangularCrsMatrixTransferFixture() { }
+
+    bool shouldSkipTest() {
+      return numProcs%2 != 0;
+    }
+
+    void printSkippedTestMessage() {
+      out << "This test is only meaningful if running with an even number of MPI processes." << endl;
+    }
+
+    void setup() {
+      setupMaps();
+      setupMatrices();
+    }
+
+    template <typename TransferMethod>
+    void performTransfer(const TransferMethod& transfer) {
+      transfer(sourceMat, targetMat);
+      targetMat->fillComplete();
+    }
+
+    void checkResults() {
+      using lids_type = typename crs_type::local_inds_host_view_type;
+      using vals_type = typename crs_type::values_host_view_type;
+
+      const RCP<const map_type> colMap = targetMat->getColMap();
+
+      for (GO globalRow=targetMap->getMinGlobalIndex(); globalRow<=targetMap->getMaxGlobalIndex(); ++globalRow) {
+        LO localRow = targetMap->getLocalElement(globalRow);
+        lids_type rowIndices;
+        vals_type rowValues;
+
+        targetMat->getLocalRowView(localRow, rowIndices, rowValues);
+        TEST_EQUALITY(rowIndices.extent(0), (size_t) globalRow);
+        TEST_EQUALITY(rowValues.extent(0), (size_t) globalRow);
+
+        Array<GO> indices(rowIndices.size());
+        Array<Scalar> values(rowValues.size());
+
+        for (decltype(rowIndices.size()) j=0; j<rowIndices.size(); ++j) {
+          indices[j] = colMap->getGlobalElement(rowIndices[j]);
+          values[j] = rowValues[j];
+        }
+        Tpetra::sort2(indices.begin(), indices.end(), values.begin());
+
+        for (decltype(rowIndices.size()) j=0; j<rowIndices.size(); ++j) {
+          TEST_EQUALITY(indices[j], as<GO>(j));
+          TEST_EQUALITY(values[j], as<Scalar>(j));
+        }
+      }
+    }
+
+  private:
+    void setupMaps() {
+      const GO indexBase = 0;
+      const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+      const size_t sourceNumLocalElements = (myRank%2 == 0) ? 3 : 5;
+      const size_t targetNumLocalElements = 4;
+
+      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+    }
+
+    void setupMatrices() {
+      sourceMat = rcp(new crs_type(sourceMap, 24, StaticProfile, getCrsMatrixParameterList()));
+      targetMat = rcp(new crs_type(targetMap, 24, StaticProfile, getCrsMatrixParameterList()));
+
+      Array<GO> cols(1);
+      Array<Scalar>  vals(1);
+      for (GO row = sourceMap->getMinGlobalIndex(); row <= sourceMap->getMaxGlobalIndex(); row++) {
+        if (row > 0) {
+          cols.resize(row);
+          vals.resize(row);
+          for (GO col=0; col<row; col++) {
+            cols[col] = as<GO>(col);
+            vals[col] = as<Scalar>(col);
+          }
+          sourceMat->insertGlobalValues(row, cols, vals);
+        }
+      }
+      sourceMat->fillComplete();
+    }
+
+    Teuchos::FancyOStream& out;
+    bool& success;
+
+    RCP<const Comm<int>> comm;
+    const int numProcs;
+    const int myRank;
+
+    RCP<const map_type> sourceMap;
+    RCP<const map_type> targetMap;
+
+    RCP<crs_type> sourceMat;
+    RCP<crs_type> targetMat;
+  };
+
+
   //
   // UNIT TESTS
   //
@@ -522,122 +636,15 @@ namespace {
     fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
   }
 
-
-  template <typename Scalar, typename LO, typename GO>
-  class CrsMatrixLowerTriangularTransferFixture {
-  private:
-    using map_type = Map<LO, GO>;
-    using crs_type = CrsMatrix<Scalar, LO, GO>;
-
-  public:
-    CrsMatrixLowerTriangularTransferFixture(Teuchos::FancyOStream& o, bool& s)
-      : out(o),
-        success(s),
-        comm(getDefaultComm()),
-        numProcs(comm->getSize()),
-        myRank(comm->getRank())
-    { }
-
-    ~CrsMatrixLowerTriangularTransferFixture() { }
-
-    bool shouldSkipTest() {
-      return numProcs%2 != 0;
-    }
-
-    void printSkippedTestMessage() {
-      out << "This test is only meaningful if running with an even number of MPI processes." << endl;
-    }
-
-    void setupMatrices() {
-      const GO indexBase = 0;
-      const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-
-      const size_t sourceNumLocalElements = (myRank%2 == 0) ? 3 : 5;
-      const size_t targetNumLocalElements = 4;
-
-      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
-      sourceMat = rcp(new crs_type(sourceMap, 24, StaticProfile, getCrsMatrixParameterList()));
-
-      Array<GO> cols(1);
-      Array<Scalar>  vals(1);
-      for (GO row = sourceMap->getMinGlobalIndex(); row <= sourceMap->getMaxGlobalIndex(); row++) {
-        if (row > 0) {
-          cols.resize(row);
-          vals.resize(row);
-          for (GO col=0; col<row; col++) {
-            cols[col] = as<GO>(col);
-            vals[col] = as<Scalar>(col);
-          }
-          sourceMat->insertGlobalValues(row, cols, vals);
-        }
-      }
-      sourceMat->fillComplete();
-
-      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
-      targetMat = rcp(new crs_type(targetMap, 24, StaticProfile, getCrsMatrixParameterList()));
-    }
-
-    template <typename TransferMethod>
-    void performTransfer(const TransferMethod& transfer) {
-      transfer(sourceMat, targetMat);
-      targetMat->fillComplete();
-    }
-
-    void checkResults() {
-      using lids_type = typename crs_type::local_inds_host_view_type;
-      using vals_type = typename crs_type::values_host_view_type;
-
-      const RCP<const map_type> colMap = targetMat->getColMap();
-
-      for (GO globalRow=targetMap->getMinGlobalIndex(); globalRow<=targetMap->getMaxGlobalIndex(); ++globalRow) {
-        LO localRow = targetMap->getLocalElement(globalRow);
-        lids_type rowIndices;
-        vals_type rowValues;
-
-        targetMat->getLocalRowView(localRow, rowIndices, rowValues);
-        TEST_EQUALITY(rowIndices.extent(0), (size_t) globalRow);
-        TEST_EQUALITY(rowValues.extent(0), (size_t) globalRow);
-
-        Array<GO> indices(rowIndices.size());
-        Array<Scalar> values(rowValues.size());
-
-        for (decltype (rowIndices.size()) j=0; j<rowIndices.size(); ++j) {
-          indices[j] = colMap->getGlobalElement(rowIndices[j]);
-          values[j] = rowValues[j];
-        }
-        Tpetra::sort2(indices.begin(), indices.end(), values.begin());
-
-        for (decltype (rowIndices.size()) j=0; j<rowIndices.size(); ++j) {
-          TEST_EQUALITY(indices[j], as<GO>(j));
-          TEST_EQUALITY(values[j], as<Scalar>(j));
-        }
-      }
-    }
-
-  private:
-    Teuchos::FancyOStream& out;
-    bool& success;
-
-    RCP<const Comm<int>> comm;
-    const int numProcs;
-    const int myRank;
-
-    RCP<const map_type> sourceMap;
-    RCP<const map_type> targetMap;
-
-    RCP<crs_type> sourceMat;
-    RCP<crs_type> targetMat;
-  };
-
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixTransfer, asyncImport_lowerTriangular, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LowerTriangularCrsMatrixTransfer, asyncImport, LO, GO, Scalar )
   {
-    CrsMatrixLowerTriangularTransferFixture<Scalar, LO, GO> fixture(out, success);
+    LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
       fixture.printSkippedTestMessage();
       return;
     }
 
-    fixture.setupMatrices();
+    fixture.setup();
     fixture.performTransfer(ForwardImport<char, LO, GO>());
     fixture.checkResults();
   }
@@ -650,7 +657,7 @@ namespace {
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorTransfer, asyncImport, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DiagonalCrsMatrixTransfer, asyncImport, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrixTransfer, asyncImport_lowerTriangular, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( LowerTriangularCrsMatrixTransfer, asyncImport, LO, GO, SC ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
