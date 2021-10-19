@@ -316,6 +316,28 @@ namespace {
     }
   };
 
+  template <typename Scalar, typename LO, typename GO>
+  class ReferenceExportMultiVector {
+  private:
+    using map_type = Map<LO, GO>;
+    using mv_type = MultiVector<Scalar, LO, GO>;
+
+  public:
+    RCP<mv_type> generateWithClassicalCodePath(RCP<mv_type> sourceMV, RCP<const map_type> targetMap) const {
+      RCP<const map_type> sourceMap = sourceMV->getMap();
+      Export<LO, GO> exporter(sourceMap, targetMap, getExportParameterList());
+      expertSetRemoteLIDsContiguous(exporter, false);
+      TEUCHOS_ASSERT(!exporter.areRemoteLIDsContiguous());
+
+      RCP<mv_type> referenceMV = rcp(new mv_type(targetMap, 1));
+      referenceMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+      referenceMV->doExport(*sourceMV, exporter, INSERT);
+      TEUCHOS_ASSERT(!referenceMV->importsAreAliased());
+
+      return referenceMV;
+    }
+  };
+
 
   template <typename Scalar, typename LO, typename GO>
   class DiagonalCrsMatrixTransferFixture {
@@ -356,7 +378,7 @@ namespace {
 
     template <typename ReferenceSolution>
     void checkResults(const ReferenceSolution& referenceSolution) {
-      RCP<const crs_type> referenceMat = referenceSolution.generateUsingAllInOneImport(sourceMat, targetMap);
+      RCP<const crs_type> referenceMat = referenceSolution.generateUsingAllInOne(sourceMat, targetMap);
       checkMatrixIsDiagonal(targetMat);
       checkMatrixIsDiagonal(referenceMat);
       compareMatrices(targetMat, referenceMat);
@@ -467,13 +489,31 @@ namespace {
     using crs_type = CrsMatrix<Scalar, LO, GO>;
 
   public:
-    RCP<crs_type> generateUsingAllInOneImport(RCP<crs_type> sourceMat, RCP<const map_type> targetMap) const {
+    RCP<crs_type> generateUsingAllInOne(RCP<crs_type> sourceMat, RCP<const map_type> targetMap) const {
       RCP<const map_type> sourceMap = sourceMat->getMap();
       Import<LO, GO> importer(sourceMap, targetMap, getImportParameterList());
 
       Teuchos::ParameterList dummy;
       RCP<crs_type> referenceMat = Tpetra::importAndFillCompleteCrsMatrix<crs_type>(
                                       sourceMat, importer, Teuchos::null, Teuchos::null, rcp(&dummy,false));
+      return referenceMat;
+    }
+  };
+
+  template <typename Scalar, typename LO, typename GO>
+  class ReferenceExportMatrix {
+  private:
+    using map_type = Map<LO, GO>;
+    using crs_type = CrsMatrix<Scalar, LO, GO>;
+
+  public:
+    RCP<crs_type> generateUsingAllInOne(RCP<crs_type> sourceMat, RCP<const map_type> targetMap) const {
+      RCP<const map_type> sourceMap = sourceMat->getMap();
+      Export<LO, GO> exporter(sourceMap, targetMap, getExportParameterList());
+
+      Teuchos::ParameterList dummy;
+      RCP<crs_type> referenceMat = Tpetra::exportAndFillCompleteCrsMatrix<crs_type>(
+                                      sourceMat, exporter, Teuchos::null, Teuchos::null, rcp(&dummy,false));
       return referenceMat;
     }
   };
@@ -671,7 +711,7 @@ namespace {
 
   public:
     void operator()(DistObjectRCP source, DistObjectRCP target) const {
-      Export<LO, GO> exporter(target->getMap(), source->getMap(), getImportParameterList());
+      Export<LO, GO> exporter(target->getMap(), source->getMap(), getExportParameterList());
       target->beginImport(*source, exporter, INSERT);
       target->endImport(*source, exporter, INSERT);
     }
@@ -730,6 +770,72 @@ namespace {
   }
 
 
+  template <typename Packet, typename LO, typename GO>
+  class ForwardExport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Export<LO, GO> exporter(source->getMap(), target->getMap(), getExportParameterList());
+      target->beginExport(*source, exporter, INSERT);
+      target->endExport(*source, exporter, INSERT);
+    }
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank0, LO, GO, Scalar )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup(0);
+    fixture.performTransfer(ForwardExport<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank1, LO, GO, Scalar )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup(1);
+    fixture.performTransfer(ForwardExport<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, DiagonalCrsMatrix, LO, GO, Scalar )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup();
+    fixture.performTransfer(ForwardExport<char, LO, GO>());
+    fixture.checkResults(ReferenceExportMatrix<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, LowerTriangularCrsMatrix, LO, GO, Scalar )
+  {
+    LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup();
+    fixture.performTransfer(ForwardExport<char, LO, GO>());
+    fixture.checkResults();
+  }
+
+
   //
   // INSTANTIATIONS
   //
@@ -743,6 +849,10 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, MultiVector_rank1, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, DiagonalCrsMatrix, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, LowerTriangularCrsMatrix, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, MultiVector_rank0, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, MultiVector_rank1, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, DiagonalCrsMatrix, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, LowerTriangularCrsMatrix, LO, GO, SC ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
