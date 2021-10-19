@@ -202,9 +202,8 @@ namespace {
   }
 
 
-
   //
-  // UNIT TESTS
+  // UNIT TEST FIXTURES
   //
 
 
@@ -234,20 +233,9 @@ namespace {
              "processes, but you ran it with only 1 process." << endl;
     }
 
-    void setupMultiVectors(int collectRank) {
-      const GO indexBase = 0;
-      const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-
-      const size_t sourceNumLocalElements = 3;
-      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
-      sourceMV = rcp(new mv_type(sourceMap, 1));
-      sourceMV->randomize();
-
-      const size_t totalElements = numProcs*sourceNumLocalElements;
-      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
-      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
-      targetMV = rcp(new mv_type(targetMap, 1));
-      targetMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    void setup(int collectRank) {
+      setupMaps(collectRank);
+      setupMultiVectors();
     }
 
     template <typename TransferMethod>
@@ -262,6 +250,26 @@ namespace {
     }
 
   private:
+    void setupMaps(int collectRank) {
+      const GO indexBase = 0;
+      const Tpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+
+      const size_t sourceNumLocalElements = 3;
+      const size_t totalElements = numProcs*sourceNumLocalElements;
+      const size_t targetNumLocalElements = (myRank == collectRank) ? totalElements : 0;
+
+      sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
+      targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
+    }
+
+    void setupMultiVectors() {
+      sourceMV = rcp(new mv_type(sourceMap, 1));
+      sourceMV->randomize();
+
+      targetMV = rcp(new mv_type(targetMap, 1));
+      targetMV->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    }
+
     void compareMultiVectors(RCP<const mv_type> resultMV, RCP<const mv_type> referenceMV) {
       auto data = resultMV->getLocalViewHost(Tpetra::Access::ReadOnly);
       auto referenceData = referenceMV->getLocalViewHost(Tpetra::Access::ReadOnly);
@@ -287,7 +295,7 @@ namespace {
   };
 
   template <typename Scalar, typename LO, typename GO>
-  class ReferenceImport {
+  class ReferenceImportMultiVector {
   private:
     using map_type = Map<LO, GO>;
     using mv_type = MultiVector<Scalar, LO, GO>;
@@ -307,6 +315,12 @@ namespace {
       return referenceMV;
     }
   };
+
+
+  //
+  // UNIT TESTS
+  //
+
 
   template <typename Packet, typename LO, typename GO>
   class ForwardImport {
@@ -328,9 +342,9 @@ namespace {
       return;
     }
 
-    fixture.setupMultiVectors(0);
+    fixture.setup(0);
     fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
-    fixture.checkResults(ReferenceImport<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
 
 
