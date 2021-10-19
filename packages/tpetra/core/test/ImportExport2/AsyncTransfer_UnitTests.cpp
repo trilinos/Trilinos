@@ -836,6 +836,72 @@ namespace {
   }
 
 
+  template <typename Packet, typename LO, typename GO>
+  class ReverseExport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Import<LO, GO> importer(target->getMap(), source->getMap(), getImportParameterList());
+      target->beginExport(*source, importer, INSERT);
+      target->endExport(*source, importer, INSERT);
+    }
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank0, LO, GO, Scalar )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup(0);
+    fixture.performTransfer(ReverseExport<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank1, LO, GO, Scalar )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup(1);
+    fixture.performTransfer(ReverseExport<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, DiagonalCrsMatrix, LO, GO, Scalar )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup();
+    fixture.performTransfer(ReverseExport<char, LO, GO>());
+    fixture.checkResults(ReferenceExportMatrix<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, LowerTriangularCrsMatrix, LO, GO, Scalar )
+  {
+    LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup();
+    fixture.performTransfer(ReverseExport<char, LO, GO>());
+    fixture.checkResults();
+  }
+
+
   //
   // INSTANTIATIONS
   //
@@ -853,6 +919,10 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, MultiVector_rank1, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, DiagonalCrsMatrix, LO, GO, SC ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, LowerTriangularCrsMatrix, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, MultiVector_rank0, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, MultiVector_rank1, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, DiagonalCrsMatrix, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, LowerTriangularCrsMatrix, LO, GO, SC ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
