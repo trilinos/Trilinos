@@ -2106,9 +2106,10 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     ParameterList belosList;
     belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
     belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+    //    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency",      1);
-    belosList.set("Output Style",          Belos::Brief);
+    belosList.set("Output Style",          1);
+    belosList.set ("Verbosity", 33);
     bool scaleResidualHist = true;
     if (!scaleResidualHist)
       belosList.set("Implicit Residual Scaling", "None");
