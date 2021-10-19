@@ -611,7 +611,7 @@ namespace {
     }
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVectorTransfer, asyncForwardImport, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank0, LO, GO, Scalar )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -624,7 +624,20 @@ namespace {
     fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DiagonalCrsMatrixTransfer, asyncForwardImport, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank1, LO, GO, Scalar )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+    if (fixture.shouldSkipTest()) {
+      fixture.printSkippedTestMessage();
+      return;
+    }
+
+    fixture.setup(1);
+    fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, DiagonalCrsMatrix, LO, GO, Scalar )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -637,7 +650,7 @@ namespace {
     fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( LowerTriangularCrsMatrixTransfer, asyncForwardImport, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, LowerTriangularCrsMatrix, LO, GO, Scalar )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -656,9 +669,10 @@ namespace {
   //
 
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVectorTransfer, asyncForwardImport, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DiagonalCrsMatrixTransfer, asyncForwardImport, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( LowerTriangularCrsMatrixTransfer, asyncForwardImport, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVector_rank0, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVector_rank1, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, DiagonalCrsMatrix, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, LowerTriangularCrsMatrix, LO, GO, SC ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
