@@ -546,8 +546,8 @@ namespace MueLu {
   notFlippedLeftBound = leftBound; 
   notFlippedRghtBound = rghtBound; 
 
-  if ((Teuchos::ScalarTraits<SC>::real(rsumTarget) >= Teuchos::ScalarTraits<SC>::real(leftBound*nEntries)) && 
-      (Teuchos::ScalarTraits<SC>::real(rsumTarget) <= Teuchos::ScalarTraits<SC>::real(rghtBound*nEntries)))
+  if ((Teuchos::ScalarTraits<SC>::real(rsumTarget) >= Teuchos::ScalarTraits<SC>::real(leftBound*as<Scalar>(nEntries))) && 
+      (Teuchos::ScalarTraits<SC>::real(rsumTarget) <= Teuchos::ScalarTraits<SC>::real(rghtBound*as<Scalar>(nEntries))))
     hasFeasibleSol = true; 
   else {
     hasFeasibleSol=false; 
@@ -558,7 +558,7 @@ namespace MueLu {
   // something large so that an if statement will be false
   aBigNumber = Teuchos::ScalarTraits<SC>::zero();
   for (LocalOrdinal i = 0; i < nEntries; i++) {
-    if ( Teuchos::ScalarTraits<SC>::magnitude(orig[i]) > aBigNumber) 
+    if ( Teuchos::ScalarTraits<SC>::magnitude(orig[i]) > Teuchos::ScalarTraits<SC>::magnitude(aBigNumber)) 
       aBigNumber = Teuchos::ScalarTraits<SC>::magnitude(orig[i]);
   }
   aBigNumber = aBigNumber+ (Teuchos::ScalarTraits<SC>::magnitude(leftBound) + Teuchos::ScalarTraits<SC>::magnitude(rghtBound))*as<Scalar>(100.0);
@@ -594,13 +594,13 @@ namespace MueLu {
   // compute how far the rowSum is off from the target row sum taking into account
   // numbers that have been shifted to satisfy bound constraint
 
-  rowSumDeviation = leftBound*closestToLeftBound + (nEntries-closestToRghtBound)*rghtBound - rsumTarget; 
+  rowSumDeviation = leftBound*as<Scalar>(closestToLeftBound) + as<Scalar>((nEntries-closestToRghtBound))*rghtBound - rsumTarget; 
   for (LocalOrdinal i=closestToLeftBound; i < closestToRghtBound; i++) rowSumDeviation += origSorted[i];
 
   // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
   // is not the case, flip the signs of everything so that rowSumDeviation is now positive. 
   // Later we will flip the data back to its original form.
-  if (rowSumDeviation < Teuchos::ScalarTraits<SC>::zero()) {
+  if (Teuchos::ScalarTraits<SC>::real(rowSumDeviation) < Teuchos::ScalarTraits<SC>::zero()) {
     flipped = true;
     temp = leftBound; leftBound = -rghtBound; rghtBound = temp; 
 
