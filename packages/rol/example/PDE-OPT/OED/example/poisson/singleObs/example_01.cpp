@@ -108,20 +108,22 @@ void solve(const ROL::Ptr<ROL::OED::Factory<Real>>    &factory,
   bool usePD = list.sublist("OED").sublist("R-Optimality").get("Use Primal-Dual Algorithm",false);
   if (type=="R" && usePD) {
     ROL::PrimalDualRisk<Real> solver(problem,osampler,list);
-    if (checkDeriv) {
-      factory->check(stream);
-      //solver.check(stream);
-      factory->reset();
-    }
+    // Commented out because check uses random vectors that do not respect bounds
+    //if (checkDeriv) {
+    //  factory->check(stream);
+    //  //solver.check(stream);
+    //  factory->reset();
+    //}
     solver.run(stream);
   }
   else {
     ROL::Solver<Real> solver(problem,list);
-    if (checkDeriv) {
-      factory->check(stream);
-      problem->check(true,stream);
-      factory->reset();
-    }
+    // Commented out because check uses random vectors that do not respect bounds
+    //if (checkDeriv) {
+    //  factory->check(stream);
+    //  problem->check(true,stream);
+    //  factory->reset();
+    //}
     solver.solve(stream);
   }
   stream << "  " << dtype << "-optimal design time:      "

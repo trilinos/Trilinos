@@ -45,7 +45,6 @@
 #define ROL_PRIMALDUALRISK_H
 
 #include "ROL_Solver.hpp"
-#include "ROL_StochasticProblem.hpp"
 #include "ROL_StochasticObjective.hpp"
 #include "ROL_PD_MeanSemiDeviation.hpp"
 #include "ROL_PD_MeanSemiDeviationFromTarget.hpp"
@@ -81,7 +80,6 @@ private:
   Real gtol_;
   Real ctol_;
   Real ltol_;
-  bool useRelTol_;
   // Penalty parameter information
   Real penaltyParam_;
   Real maxPen_;
@@ -94,7 +92,7 @@ private:
   Ptr<BoundConstraint<Real>>     pd_bound_;
   Ptr<Constraint<Real>>          pd_constraint_;
   Ptr<Constraint<Real>>          pd_linear_constraint_;
-  Ptr<StochasticProblem<Real>>   pd_problem_;
+  Ptr<Problem<Real>>             pd_problem_;
 
   int iter_, nfval_, ngrad_, ncval_;
   bool converged_;
@@ -112,7 +110,6 @@ public:
     print_     = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Print Subproblem Solve History",false);
     gtolmin_   = parlist.sublist("Status Test").get("Gradient Tolerance", 1e-8);
     ctolmin_   = parlist.sublist("Status Test").get("Constraint Tolerance", 1e-8);
-    useRelTol_ = parlist.sublist("Status Test").get("Use Relative Tolerances", false);
     ltolmin_   = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Dual Tolerance",1e-6);
     gtolmin_   = (gtolmin_ <= static_cast<Real>(0) ?     std::sqrt(ROL_EPSILON<Real>()) : gtolmin_);
     ctolmin_   = (ctolmin_ <= static_cast<Real>(0) ?     std::sqrt(ROL_EPSILON<Real>()) : ctolmin_);
@@ -190,38 +187,35 @@ public:
       message << ">>> " << name_ << " is not implemented!";
       throw Exception::NotImplemented(message.str());
     }
-    pd_problem_ = makePtr<StochasticProblem<Real>>(*input_);
-    pd_problem_->makeObjectiveStochastic(rvf_,*parlistptr,sampler_);
-//
-//    pd_vector_    = makePtr<RiskVector<Real>>(parlistptr,
-//                                              input_->getPrimalOptimizationVector());
-//    rvf_->setData(*sampler_, penaltyParam_);
-//    pd_objective_ = makePtr<StochasticObjective<Real>>(input_->getObjective(),
-//                                                       rvf_, sampler_, true);
-//    // Create risk bound constraint
-//    pd_bound_     = makePtr<RiskBoundConstraint<Real>>(parlistptr,
-//                                                       input_->getBoundConstraint());
-//    // Create riskless constraint
-//    pd_constraint_ = nullPtr;
-//    if (input_->getConstraint() != nullPtr) {
-//      pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
-//    }
-//    pd_linear_constraint_ = nullPtr;
-//    if (input_->getPolyhedralProjection() != nullPtr) {
-//      pd_linear_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getPolyhedralProjection()->getLinearConstraint());
-//    }
-//    // Build primal-dual subproblems
-//    pd_problem_ = makePtr<Problem<Real>>(pd_objective_, pd_vector_);
-//    if (pd_bound_->isActivated()) {
-//      pd_problem_->addBoundConstraint(pd_bound_);
-//    }
-//    if (pd_constraint_ != nullPtr) {
-//      pd_problem_->addConstraint("PD Constraint",pd_constraint_,input_->getMultiplierVector());
-//    }
-//    if (pd_linear_constraint_ != nullPtr) {
-//      pd_problem_->addLinearConstraint("PD Linear Constraint",pd_linear_constraint_,input_->getPolyhedralProjection()->getMultiplier());
-//      pd_problem_->setProjectionAlgorithm(parlist);
-//    }
+    pd_vector_    = makePtr<RiskVector<Real>>(parlistptr,
+                                              input_->getPrimalOptimizationVector());
+    rvf_->setData(*sampler_, penaltyParam_);
+    pd_objective_ = makePtr<StochasticObjective<Real>>(input_->getObjective(),
+                                                       rvf_, sampler_, true);
+    // Create risk bound constraint
+    pd_bound_     = makePtr<RiskBoundConstraint<Real>>(parlistptr,
+                                                       input_->getBoundConstraint());
+    // Create riskless constraint
+    pd_constraint_ = nullPtr;
+    if (input_->getConstraint() != nullPtr) {
+      pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
+    }
+    pd_linear_constraint_ = nullPtr;
+    if (input_->getPolyhedralProjection() != nullPtr) {
+      pd_linear_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getPolyhedralProjection()->getLinearConstraint());
+    }
+    // Build primal-dual subproblems
+    pd_problem_ = makePtr<Problem<Real>>(pd_objective_, pd_vector_);
+    if (pd_bound_->isActivated()) {
+      pd_problem_->addBoundConstraint(pd_bound_);
+    }
+    if (pd_constraint_ != nullPtr) {
+      pd_problem_->addConstraint("PD Constraint",pd_constraint_,input_->getMultiplierVector());
+    }
+    if (pd_linear_constraint_ != nullPtr) {
+      pd_problem_->addLinearConstraint("PD Linear Constraint",pd_linear_constraint_,input_->getPolyhedralProjection()->getMultiplier());
+      pd_problem_->setProjectionAlgorithm(parlist);
+    }
   }
 
   void check(std::ostream &outStream = std::cout) {
@@ -234,42 +228,6 @@ public:
     int spiter(0);
     iter_ = 0; converged_ = true; lnorm_ = ROL_INF<Real>();
     nfval_ = 0; ncval_ = 0; ngrad_ = 0;
-    // Compute initial gnorm and cnorm if using relative tolerances
-    pd_problem_->finalize(false,print_,outStream);
-    Real gnorm(1), cnorm(1);
-    if (useRelTol_) {
-      parlist_.sublist("Status Test").set("Use Relative Tolerances", false);
-      Real tol(std::sqrt(ROL_EPSILON<Real>()));
-      // Compute objective function gradient
-      Ptr<Vector<Real>> x = pd_problem_->getPrimalOptimizationVector()->clone();
-      Ptr<Vector<Real>> g = pd_problem_->getDualOptimizationVector()->clone();
-      x->set(*pd_problem_->getPrimalOptimizationVector());
-      pd_problem_->getObjective()->gradient(*g,*x,tol);
-      // Compute constraint value and Lagrangian gradient
-      if (pd_problem_->getConstraint() != nullPtr) {
-        Ptr<Vector<Real>> c = pd_problem_->getResidualVector()->clone();
-        pd_problem_->getConstraint()->value(*c,*x,tol);
-        Ptr<Vector<Real>> ajlam = g->clone();
-        pd_problem_->getConstraint()->applyAdjointJacobian(*ajlam,
-          *pd_problem_->getMultiplierVector(),*x,tol);
-        g->plus(*ajlam);
-        cnorm     = c->norm();
-        ctol_    *= cnorm;
-        ctolmin_ *= cnorm;
-      }
-      // Compute criticality measure
-      if (pd_problem_->getPolyhedralProjection() == nullPtr) {
-        gnorm = g->norm();
-      }
-      else {
-        x->axpy(-one,g->dual());
-        pd_problem_->getPolyhedralProjection()->project(*x);
-        x->axpy(-one,*pd_problem_->getPrimalOptimizationVector());
-        gnorm = x->norm();
-      }
-      gtol_    *= gnorm;
-      gtolmin_ *= gnorm;
-    }
     // Output
     printHeader(outStream);
     Ptr<Solver<Real>> solver;
@@ -310,8 +268,8 @@ public:
         }
       }
     }
-    //input_->getPrimalOptimizationVector()->set(
-    //  *dynamicPtrCast<RiskVector<Real>>(pd_problem_->getPrimalOptimizationVector())->getVector());
+    input_->getPrimalOptimizationVector()->set(
+      *dynamicPtrCast<RiskVector<Real>>(pd_problem_->getPrimalOptimizationVector())->getVector());
     // Output reason for termination
     if (iter_ >= maxit_) {
       outStream << "Maximum number of iterations exceeded" << std::endl;
