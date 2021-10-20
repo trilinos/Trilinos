@@ -96,8 +96,6 @@ KOKKOS_INLINE_FUNCTION
 T
 norm_1(Tensor<T, N> const & A)
 {
-  using KAT = Kokkos::ArithTraits<T>;
-
   Index const
   dimension = A.get_dimension();
 
@@ -114,7 +112,7 @@ norm_1(Tensor<T, N> const & A)
     for (Index i = 0; i < dimension; ++i) {
       T t = 0.0;
       for (Index j = 0; j < dimension; ++j) {
-        t += KAT::abs(A(j, i));
+        t += minitensor::abs(A(j, i));
       }
       v(i) = t;
     }
@@ -125,22 +123,22 @@ norm_1(Tensor<T, N> const & A)
     break;
 
   case 3:
-    v(0) = KAT::abs(A(0, 0)) + KAT::abs(A(1, 0)) + KAT::abs(A(2, 0));
-    v(1) = KAT::abs(A(0, 1)) + KAT::abs(A(1, 1)) + KAT::abs(A(2, 1));
-    v(2) = KAT::abs(A(0, 2)) + KAT::abs(A(1, 2)) + KAT::abs(A(2, 2));
+    v(0) = minitensor::abs(A(0, 0)) + minitensor::abs(A(1, 0)) + minitensor::abs(A(2, 0));
+    v(1) = minitensor::abs(A(0, 1)) + minitensor::abs(A(1, 1)) + minitensor::abs(A(2, 1));
+    v(2) = minitensor::abs(A(0, 2)) + minitensor::abs(A(1, 2)) + minitensor::abs(A(2, 2));
 
     s = max(max(v(0), v(1)), v(2));
     break;
 
   case 2:
-    v(0) = KAT::abs(A(0, 0)) + KAT::abs(A(1, 0));
-    v(1) = KAT::abs(A(0, 1)) + KAT::abs(A(1, 1));
+    v(0) = minitensor::abs(A(0, 0)) + minitensor::abs(A(1, 0));
+    v(1) = minitensor::abs(A(0, 1)) + minitensor::abs(A(1, 1));
 
     s = max(v(0), v(1));
     break;
 
   case 1:
-    s = KAT::abs(A(0, 0));
+    s = minitensor::abs(A(0, 0));
     break;
   }
 
@@ -156,8 +154,6 @@ KOKKOS_INLINE_FUNCTION
 T
 norm_infinity(Tensor<T, N> const & A)
 {
-  using KAT = Kokkos::ArithTraits<T>;
-
   Index const
   dimension = A.get_dimension();
 
@@ -172,7 +168,7 @@ norm_infinity(Tensor<T, N> const & A)
       for (Index i = 0; i < dimension; ++i) {
         T t = 0.0;
         for (Index j = 0; j < dimension; ++j) {
-          t += KAT::abs(A(i, j));
+          t += minitensor::abs(A(i, j));
         }
         v(i) = t;
       }
@@ -183,22 +179,22 @@ norm_infinity(Tensor<T, N> const & A)
       break;
 
     case 3:
-      v(0) = KAT::abs(A(0, 0)) + KAT::abs(A(0, 1)) + KAT::abs(A(0, 2));
-      v(1) = KAT::abs(A(1, 0)) + KAT::abs(A(1, 1)) + KAT::abs(A(1, 2));
-      v(2) = KAT::abs(A(2, 0)) + KAT::abs(A(2, 1)) + KAT::abs(A(2, 2));
+      v(0) = minitensor::abs(A(0, 0)) + minitensor::abs(A(0, 1)) + minitensor::abs(A(0, 2));
+      v(1) = minitensor::abs(A(1, 0)) + minitensor::abs(A(1, 1)) + minitensor::abs(A(1, 2));
+      v(2) = minitensor::abs(A(2, 0)) + minitensor::abs(A(2, 1)) + minitensor::abs(A(2, 2));
 
       s = max(max(v(0), v(1)), v(2));
       break;
 
     case 2:
-      v(0) = KAT::abs(A(0, 0)) + KAT::abs(A(0, 1));
-      v(1) = KAT::abs(A(1, 0)) + KAT::abs(A(1, 1));
+      v(0) = minitensor::abs(A(0, 0)) + minitensor::abs(A(0, 1));
+      v(1) = minitensor::abs(A(1, 0)) + minitensor::abs(A(1, 1));
 
       s = max(v(0), v(1));
       break;
 
     case 1:
-      s = KAT::abs(A(0, 0));
+      s = minitensor::abs(A(0, 0));
       break;
 
   }
