@@ -50,6 +50,14 @@
 namespace minitensor {
 
 //
+// abs function
+//
+template<typename T>
+KOKKOS_INLINE_FUNCTION
+T
+abs(T const & a);
+
+//
 //swap function
 //
 template<typename T>
@@ -63,7 +71,7 @@ swap(T & a, T & b);
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
-max(const T & a,const  T & b);
+max(T const & a, T const & b);
 
 //
 // max function
@@ -71,7 +79,7 @@ max(const T & a,const  T & b);
 template<typename T>
 KOKKOS_INLINE_FUNCTION
 T
-min(const T & a,const  T & b);
+min(T const & a,T const & b);
 
 ///
 /// Sign function

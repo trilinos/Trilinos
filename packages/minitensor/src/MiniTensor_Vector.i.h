@@ -803,8 +803,6 @@ KOKKOS_INLINE_FUNCTION
 T
 norm_infinity(Vector<T, N> const & u)
 {
-  using KAT = Kokkos::ArithTraits<T>;
-
   Index const
   dimension = u.get_dimension();
 
@@ -815,16 +813,16 @@ norm_infinity(Vector<T, N> const & u)
 
   default:
     for (Index i = 0; i < dimension; ++i) {
-      s = max(KAT::abs(u(i)), s);
+      s = max(minitensor::abs(u(i)), s);
     }
     break;
 
   case 3:
-    s = max(max(KAT::abs(u(0)), KAT::abs(u(1))), KAT::abs(u(2)));
+    s = max(max(minitensor::abs(u(0)), minitensor::abs(u(1))), minitensor::abs(u(2)));
     break;
 
   case 2:
-    s = max(KAT::abs(u(0)), KAT::abs(u(1)));
+    s = max(minitensor::abs(u(0)), minitensor::abs(u(1)));
     break;
   }
 
