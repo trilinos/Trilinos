@@ -344,17 +344,17 @@ bool TestKokkosMultiVecOneScalar(const Teuchos::RCP<OutputManager<ScalarType> > 
   // Test view to multivec:
   int numCols2 = 4;
   int numRows2 = 60;
-  Kokkos::View<ScalarType**> myView("View2MV", numRows2, numCols2);
+  Kokkos::View<ScalarType**, Kokkos::LayoutLeft> myView("View2MV", numRows2, numCols2);
   typename Kokkos::View<ScalarType**>::HostMirror myView_h("View2MV_host", numRows2, numCols2);
   Kokkos::deep_copy(myView, 42);
   Belos::KokkosMultiVec<ScalarType> myVec4( myView );
-  if ( myVec4.GetNumberVecs() != myView.extent(1) ) {
+  if ( myVec4.GetNumberVecs() != (int)myView.extent(1) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec returned wrong value "
       << "for GetNumberVecs()." << endl;
     return false;
   }
-  if ( myVec4.GetGlobalLength() != myView.extent(0) ) {
+  if ( myVec4.GetGlobalLength() != (int)myView.extent(0) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec returned wrong value "
       << "for GetGlobalLength()." << endl;
@@ -370,13 +370,13 @@ bool TestKokkosMultiVecOneScalar(const Teuchos::RCP<OutputManager<ScalarType> > 
   // Tesst view to multivec with shallow copy:
   Kokkos::deep_copy(myView, 100);
   Belos::KokkosMultiVec<ScalarType> myVec5( myView, false );
-  if ( myVec5.GetNumberVecs() != myView.extent(1) ) {
+  if ( myVec5.GetNumberVecs() != (int)myView.extent(1) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec shallow returned wrong value "
       << "for GetNumberVecs()." << endl;
     return false;
   }
-  if ( myVec5.GetGlobalLength() != myView.extent(0) ) {
+  if ( myVec5.GetGlobalLength() != (int)myView.extent(0) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec shallow returned wrong value "
       << "for GetGlobalLength()." << endl;
@@ -394,7 +394,7 @@ bool TestKokkosMultiVecOneScalar(const Teuchos::RCP<OutputManager<ScalarType> > 
   Kokkos::deep_copy(myView2, 0);
   std::vector<ScalarType> norms2(4);
   myVec5.MvNorm(norms2);
-  for(int i = 0; i < myView2.extent(1); i++){
+  for(int i = 0; i < (int)myView2.extent(1); i++){
     if( norms[i] != 0 ){
       outputMgr->stream(Warnings)
         << "*** ERROR *** KokkosMultiVec GetInternalViewNonConst returned wrong nrm2 value. "
@@ -416,13 +416,13 @@ bool TestKokkosMultiVecTwoScalar(const Teuchos::RCP<OutputManager<ScalarType1> >
   typename Kokkos::View<ScalarType2**>::HostMirror myViewST2_h("View2MV1_host", numRows, numCols);
   Kokkos::deep_copy(myViewST1, 42);
   Belos::KokkosMultiVec<ScalarType2> myVecST2A( myViewST1 );
-  if ( myVecST2A.GetNumberVecs() != myViewST1.extent(1) ) {
+  if ( myVecST2A.GetNumberVecs() != (int)myViewST1.extent(1) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec 2 scalar returned wrong value "
       << "for GetNumberVecs()." << endl;
     return false;
   }
-  if ( myVecST2A.GetGlobalLength() != myViewST1.extent(0) ) {
+  if ( myVecST2A.GetGlobalLength() != (int)myViewST1.extent(0) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec 2 scalar returned wrong value "
       << "for GetGlobalLength()." << endl;
@@ -441,13 +441,13 @@ bool TestKokkosMultiVecTwoScalar(const Teuchos::RCP<OutputManager<ScalarType1> >
   typename Kokkos::View<ScalarType1**>::HostMirror myViewST1_h("View2MV2_host", numRows, numCols);
   Kokkos::deep_copy(myViewST2, 56);
   Belos::KokkosMultiVec<ScalarType1> myVecST1A( myViewST2 );
-  if ( myVecST1A.GetNumberVecs() != myViewST2.extent(1) ) {
+  if ( myVecST1A.GetNumberVecs() != (int)myViewST2.extent(1) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec 2 scalar returned wrong value "
       << "for GetNumberVecs()." << endl;
     return false;
   }
-  if ( myVecST1A.GetGlobalLength() != myViewST2.extent(0) ) {
+  if ( myVecST1A.GetGlobalLength() != (int)myViewST2.extent(0) ) {
     outputMgr->stream(Warnings)
       << "*** ERROR *** KokkosMultiVec view to multivec 2 scalar returned wrong value "
       << "for GetGlobalLength()." << endl;
