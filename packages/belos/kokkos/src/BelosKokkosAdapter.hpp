@@ -154,7 +154,7 @@ public:
   KokkosMultiVec<ScalarType, Device> & operator=(const KokkosMultiVec<ScalarType, Device> & sourceVec) {
     int len = sourceVec.GetGlobalLength();
     int cols = sourceVec.GetNumberVecs();
-    if( len !=myView.extent(0) || cols != myView.extent(1) ){
+    if( len != (int)myView.extent(0) || cols != (int)myView.extent(1) ){
       Kokkos::resize(myView, len, cols);
     }
     Kokkos::deep_copy(myView,sourceVec.GetInternalViewConst());
@@ -173,7 +173,7 @@ public:
   KokkosMultiVec<ScalarType, Device> & operator=(const KokkosMultiVec<ScalarType2, Device> & sourceVec) {
     int len = sourceVec.GetGlobalLength();
     int cols = sourceVec.GetNumberVecs();
-    if( len !=myView.extent(0) || cols != myView.extent(1) ){
+    if( len != (int)myView.extent(0) || cols != (int)myView.extent(1) ){
       Kokkos::resize(myView, len, cols);
     }
     Kokkos::deep_copy(myView,sourceVec.GetInternalViewConst());
@@ -191,7 +191,7 @@ public:
   /// the KokkosMultiVec interface.)
   KokkosMultiVec<ScalarType, Device> (const ViewMatrixType & sourceView, bool makeCopy = true) { 
     if( makeCopy ){
-      if( sourceView.extent(0) !=myView.extent(0) || sourceView.extent(1) != myView.extent(1) ){
+      if( sourceView.extent(0) != myView.extent(0) || sourceView.extent(1) != myView.extent(1) ){
         Kokkos::resize(myView, sourceView.extent(0), sourceView.extent(1));
       }
       Kokkos::deep_copy(myView, sourceView);
@@ -544,7 +544,7 @@ public:
   void MvNorm ( std::vector<ScalarType>& normvec, NormType norm_type = TwoNorm ) const{
 
     //Put output vector in unmanaged Kokkos view:
-    UMHostViewVectorType normView_h(normvec.data() ,myView.extent(1));
+    UMHostViewVectorType normView_h(normvec.data(),myView.extent(1));
     ViewVectorType normView_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"Norm"),myView.extent(1));
 
     switch( norm_type ) { 
