@@ -337,7 +337,6 @@ namespace MueLu {
               throw std::runtime_error("Invalid non-serializable data on list");
           }
         }
-        // level->print(std::cout, MueLu::Debug);
       }
     }
   }
