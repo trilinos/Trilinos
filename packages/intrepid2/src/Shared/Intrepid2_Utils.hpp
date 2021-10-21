@@ -63,7 +63,17 @@
 
 namespace Intrepid2 {
 
-#if defined(KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION) && defined(KOKKOS_ENABLE_PRAGMA_IVDEP) && !defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) 
+#define INTREPID2_COMPILE_DEVICE_CODE
+#endif
+
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+#define INTREPID2_ENABLE_DEVICE
+#endif
+
+#if defined(KOKKOS_OPT_RANGE_AGGRESSIVE_VECTORIZATION) \
+  && defined(KOKKOS_ENABLE_PRAGMA_IVDEP) \
+  && !defined(INTREPID2_COMPILE_DEVICE_CODE)
 #define INTREPID2_USE_IVDEP
 #endif
 
@@ -86,7 +96,7 @@ namespace Intrepid2 {
     throw x(msg);                                                       \
   }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef INTREPID2_ENABLE_DEVICE
 #define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg)                              \
   if (test) {                                                                               \
     std::cout << "[Intrepid2] Error in file " << __FILE__ << ", line " << __LINE__ << "\n"; \
@@ -106,7 +116,7 @@ namespace Intrepid2 {
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 
-#ifndef KOKKOS_ENABLE_CUDA
+#ifndef INTREPID2_ENABLE_DEVICE
 #define INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(test, msg)                             \
   if (test) {                                                           \
     printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
@@ -715,7 +725,7 @@ namespace Intrepid2 {
   
   // define vector sizes for hierarchical parallelism
   const int VECTOR_SIZE = 1;
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && defined(KOKKOS_ENABLE_CUDA)
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) && defined(INTREPID2_ENABLE_DEVICE)
   const int FAD_VECTOR_SIZE = 32;
 #else
   const int FAD_VECTOR_SIZE = 1;

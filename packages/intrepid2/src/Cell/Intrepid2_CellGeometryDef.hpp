@@ -140,7 +140,7 @@ namespace Intrepid2
   numNodesPerCell_(cellGeometry.numNodesPerCell_)
   {
     // host-only registration with HostMemberLookup:
-#ifndef __CUDA_ARCH__
+#ifndef INTREPID2_COMPILE_DEVICE_CODE
     shards::CellTopology cellTopo = cellGeometry.cellTopology();
     BasisPtr basisForNodes = cellGeometry.basisForNodes();
     using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
@@ -153,7 +153,7 @@ namespace Intrepid2
   CellGeometry<PointScalar,spaceDim,DeviceType>::~CellGeometry()
   {
     // host-only deregistration with HostMemberLookup:
-#ifndef __CUDA_ARCH__
+#ifndef INTREPID2_COMPILE_DEVICE_CODE
     using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     HostMemberLookup::destructorCalled(this);
 #endif

@@ -70,6 +70,8 @@ namespace Intrepid2
   //! Default Kokkos::Device to use for tests; depends on platform
 #ifdef KOKKOS_ENABLE_CUDA
   using DefaultTestDeviceType = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
+#elif KOKKOS_ENABLE_HIP
+  using DefaultTestDeviceType = Kokkos::Device<Kokkos::HIP,Kokkos::HIPSpace>;
 #else
   using DefaultTestDeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
 #endif
