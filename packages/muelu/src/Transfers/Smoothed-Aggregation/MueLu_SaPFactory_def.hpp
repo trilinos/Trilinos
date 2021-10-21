@@ -400,7 +400,7 @@ namespace MueLu {
       if (nnz != 0) {
 
         vals = ArrayView<Scalar>(const_cast<SC*>(vals1.getRawPtr()), nnz);
-        Scalar rsumTarget = Teuchos::ScalarTraits<SC>::zero();
+        Scalar rsumTarget = zero;
         for (size_t j = 0; j < nnz; j++) rsumTarget += vals[j];
 
         if (nnz > as<size_t>(maxEntriesPerRow)) {
@@ -600,7 +600,7 @@ namespace MueLu {
   // the code that follow after this if statement assumes that rowSumDeviation is positive. If this
   // is not the case, flip the signs of everything so that rowSumDeviation is now positive. 
   // Later we will flip the data back to its original form.
-  if (Teuchos::ScalarTraits<SC>::real(rowSumDeviation) < Teuchos::ScalarTraits<SC>::zero()) {
+  if (Teuchos::ScalarTraits<SC>::real(rowSumDeviation) < Teuchos::ScalarTraits<SC>::real(Teuchos::ScalarTraits<SC>::zero())) {
     flipped = true;
     temp = leftBound; leftBound = -rghtBound; rghtBound = temp; 
 
