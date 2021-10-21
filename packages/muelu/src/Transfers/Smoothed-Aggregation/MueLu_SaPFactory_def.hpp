@@ -615,9 +615,9 @@ namespace MueLu {
   
     /* reverse bounds */
 
-    temp = closestToLeftBound; 
+    LocalOrdinal itemp = closestToLeftBound; 
     closestToLeftBound = nEntries-closestToRghtBound;
-    closestToRghtBound = nEntries-temp; 
+    closestToRghtBound = nEntries-itemp; 
     closestToLeftBoundDist = origSorted[closestToLeftBound] - leftBound;
     if (closestToRghtBound==nEntries) closestToRghtBoundDist= aBigNumber;
     else                              closestToRghtBoundDist= origSorted[closestToRghtBound] - rghtBound;
