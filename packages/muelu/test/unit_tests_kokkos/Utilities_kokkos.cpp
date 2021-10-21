@@ -401,7 +401,7 @@ namespace MueLuTests
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
-    using TST = Teuchos::ScalarTraits<Scalar>;
+    using Magnitude = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -410,14 +410,14 @@ namespace MueLuTests
     const auto numRows = A->getNodeNumRows();
     Kokkos::View<bool *, typename Node::device_type> dRows("", numRows);
 
-    Utils_Kokkos::ApplyRowSumCriterion(*A, Scalar(1.0), dRows);
+    Utils_Kokkos::ApplyRowSumCriterion(*A, Magnitude(1.0), dRows);
 
     for (size_t idx = 0; idx < dRows.extent(0); ++idx)
     {
       TEST_EQUALITY(dRows(idx), false);
     }
 
-    Utils_Kokkos::ApplyRowSumCriterion(*A, Scalar(-1.0), dRows);
+    Utils_Kokkos::ApplyRowSumCriterion(*A, Magnitude(-1.0), dRows);
 
     for (size_t idx = 0; idx < dRows.extent(0); ++idx)
     {
