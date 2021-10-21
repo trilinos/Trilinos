@@ -34,6 +34,7 @@
 
 #include "gtest/gtest.h"
 #include <stk_util/stk_config.h>
+#include <stk_util/parallel/Parallel.hpp>
 #include <Kokkos_Core.hpp>
 
 namespace ngp {
@@ -78,6 +79,8 @@ void test_device_class()
 
 TEST(NgpDevice, virtualFunction)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) GTEST_SKIP();
+
   test_device_class();
 }
 

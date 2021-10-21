@@ -40,7 +40,6 @@
 namespace {
 
 const stk::mesh::EntityRank nodeRank = stk::topology::NODE_RANK;
-const stk::mesh::EntityRank edgeRank = stk::topology::EDGE_RANK;
 const stk::mesh::EntityRank faceRank = stk::topology::FACE_RANK;
 const stk::mesh::EntityRank elemRank = stk::topology::ELEM_RANK;
 const stk::mesh::EntityRank constraintRank = stk::topology::CONSTRAINT_RANK;
