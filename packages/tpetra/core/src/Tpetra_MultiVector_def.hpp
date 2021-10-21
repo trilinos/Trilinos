@@ -322,7 +322,9 @@ namespace { // (anonymous)
   {
     // FIXME (mfh 15 Mar 2019) DualView doesn't have a stride
     // method yet, but its Views do.
-    size_t strides[WrappedOrNotDualViewType::t_dev::Rank];
+    // NOTE: dv.stride() returns a vector of length one
+    // more than its rank
+    size_t strides[WrappedOrNotDualViewType::t_dev::Rank+1];
     dv.stride(strides);
     const size_t LDA = strides[1];
     const size_t numRows = dv.extent (0);
