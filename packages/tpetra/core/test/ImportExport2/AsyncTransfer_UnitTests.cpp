@@ -111,11 +111,6 @@ namespace {
       transfer(sourceMV, targetMV);
     }
 
-    template <typename TransferMethod>
-    void checkTransferStatus(const TransferMethod& transfer) {
-      transfer(sourceMV, targetMV);
-    }
-
     template <typename ReferenceSolution>
     void checkResults(const ReferenceSolution& referenceSolution) {
       RCP<const mv_type> referenceMV = referenceSolution.generateWithClassicalCodePath(sourceMV, targetMap);
@@ -699,12 +694,12 @@ namespace {
 
 
   template <typename Packet, typename LO, typename GO>
-  class DefaultNoTransfer {
+  class CheckDefaultTransferStatus {
   private:
     using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
 
   public:
-    DefaultNoTransfer(Teuchos::FancyOStream& o, bool& s)
+    CheckDefaultTransferStatus(FancyOStream& o, bool& s)
       : out(o),
         success(s)
     { }
@@ -714,7 +709,7 @@ namespace {
     }
 
   private:
-    Teuchos::FancyOStream& out;
+    FancyOStream& out;
     bool& success;
   };
 
@@ -723,7 +718,58 @@ namespace {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
 
     fixture.setup(0);
-    fixture.checkTransferStatus(DefaultNoTransfer<Scalar, LO, GO>(out, success));
+    fixture.performTransfer(CheckDefaultTransferStatus<Scalar, LO, GO>(out, success));
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, CrsMatrix_defaultTrue, Scalar, LO, GO )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup();
+    fixture.performTransfer(CheckDefaultTransferStatus<char, LO, GO>(out, success));
+  }
+
+
+  template <typename Packet, typename LO, typename GO>
+  class CheckTransferArrivedForwardImport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckTransferArrivedForwardImport(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Import<LO, GO> importer(source->getMap(), target->getMap());
+      target->beginImport(*source, importer, INSERT);
+      while (!target->transferArrived());
+      target->endImport(*source, importer, INSERT);
+      TEST_ASSERT(target->transferArrived());
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_forwardImportTrue, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckTransferArrivedForwardImport<Scalar, LO, GO>(out, success));
+    fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, CrsMatrix_forwardImportTrue, Scalar, LO, GO )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup();
+    fixture.performTransfer(CheckTransferArrivedForwardImport<char, LO, GO>(out, success));
+    fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
   }
 
 
@@ -749,6 +795,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, DiagonalCrsMatrix, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, LowerTriangularCrsMatrix, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_defaultTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_defaultTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardImportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardImportTrue, SC, LO, GO ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
