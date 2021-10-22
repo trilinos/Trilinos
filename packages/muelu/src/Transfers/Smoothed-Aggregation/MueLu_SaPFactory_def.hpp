@@ -633,7 +633,7 @@ namespace MueLu {
 
   while ((Teuchos::ScalarTraits<SC>::magnitude(rowSumDeviation) > Teuchos::ScalarTraits<SC>::magnitude(as<Scalar>(1.e-10)*rsumTarget))){ // && ( (closestToLeftBound < nEntries ) || (closestToRghtBound < nEntries))) {
    if (closestToRghtBound !=  closestToLeftBound)
-        delta = rowSumDeviation/ (closestToRghtBound -  closestToLeftBound);
+        delta = rowSumDeviation/ as<Scalar>(closestToRghtBound -  closestToLeftBound);
    else delta = aBigNumber; 
 
    if (Teuchos::ScalarTraits<SC>::magnitude(closestToLeftBoundDist) <= Teuchos::ScalarTraits<SC>::magnitude(closestToRghtBoundDist)) {
