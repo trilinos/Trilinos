@@ -173,8 +173,8 @@ namespace Intrepid2 {
 
           typedef F_hgrad_eval<VectorType,ValueType,DeviceSpaceType> FunctorType;
 
-          using range_policy_type = Kokkos::Experimental::MDRangePolicy
-            < DeviceSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+          using range_policy_type = Kokkos::MDRangePolicy
+            < DeviceSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
           range_policy_type policy( {                0,         0 },
                                     { numCellsAdjusted, numPoints } );
 
