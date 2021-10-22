@@ -1225,6 +1225,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>sa: rowsumabs use automatic diagonal tolerance</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>If true, choose replacement tolerance based on matrix diagonal absolute value average.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>sa: rowsumabs diagonal replacement value</name>
       <type>double</type>
       <default>0.0</default>

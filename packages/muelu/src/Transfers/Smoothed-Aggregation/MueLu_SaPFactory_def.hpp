@@ -78,6 +78,7 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: max eigenvalue");
     SET_VALID_ENTRY("sa: rowsumabs diagonal replacement tolerance");
     SET_VALID_ENTRY("sa: rowsumabs diagonal replacement value");
+    SET_VALID_ENTRY("sa: rowsumabs use automatic diagonal tolerance");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -165,6 +166,7 @@ namespace MueLu {
     double dTol = pL.get<double>("sa: rowsumabs diagonal replacement tolerance");
     const Magnitude diagonalReplacementTolerance = (dTol == as<double>(-1) ? Teuchos::ScalarTraits<Scalar>::eps()*100 : as<Magnitude>(pL.get<double>("sa: rowsumabs diagonal replacement tolerance")));
     const SC diagonalReplacementValue =  as<SC>(pL.get<double>("sa: rowsumabs diagonal replacement value"));
+    const bool useAutomaticDiagTol =       pL.get<bool>("sa: rowsumabs use automatic diagonal tolerance");
 
     // Sanity checking
     TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && enforceConstraints,Exceptions::RuntimeError,
@@ -188,7 +190,8 @@ namespace MueLu {
             invDiag = Utilities::GetLumpedMatrixDiagonal(*A,returnReciprocal,
                                                         diagonalReplacementTolerance,
                                                         diagonalReplacementValue,
-                                                        replaceSingleEntryRowWithZero);
+                                                        replaceSingleEntryRowWithZero,
+                                                        useAutomaticDiagTol);
             TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
                                        "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
             lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);

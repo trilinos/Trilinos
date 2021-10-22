@@ -859,8 +859,13 @@ namespace MueLu {
         paramList.get<double>("chebyshev: rowsumabs diagonal replacement value",chebyReplaceVal);
         paramList.remove("chebyshev: rowsumabs diagonal replacement value");
       }
+      bool useAverageAbsDiagVal = false;
+      if (paramList.isParameter("chebyshev: rowsumabs use automatic diagonal tolerance")) {
+        paramList.get<double>("chebyshev: rowsumabs use automatic diagonal tolerance", useAverageAbsDiagVal);
+        paramList.remove("chebyshev: rowsumabs use automatic diagonal tolerance");
+      }
       if (doScale) {
-        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*currentA,true, chebyReplaceTol, chebyReplaceVal);
+        RCP<Vector> lumpedDiagonal = Utilities::GetLumpedMatrixDiagonal(*currentA,true, chebyReplaceTol, chebyReplaceVal, useAverageAbsDiagVal);
         const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& tmpVec = dynamic_cast<const Xpetra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&>(*lumpedDiagonal);
         paramList.set("chebyshev: operator inv diagonal",tmpVec.getTpetra_Vector());
       }

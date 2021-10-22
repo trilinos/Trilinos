@@ -183,9 +183,10 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Matrix const & A, const bool doReciprocal = false,
-                                                        Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100,
+                                                        Magnitude tol = Teuchos::ScalarTraits<Scalar>::zero(),
                                                         Scalar valReplacement = Teuchos::ScalarTraits<Scalar>::zero(),
-                                                        const bool replaceSingleEntryRowWithZero = false) {
+                                                        const bool replaceSingleEntryRowWithZero = false,
+                                                        const bool useAverageAbsDiagVal = false) {
 
       typedef Teuchos::ScalarTraits<Scalar> TST;
 
@@ -193,8 +194,6 @@ namespace MueLu {
       const Scalar zero = TST::zero();
       const Scalar one = TST::one();
       const Scalar two = one + one;
-
-tol = 0.;
 
       Teuchos::RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
 
@@ -210,7 +209,11 @@ tol = 0.;
 
         std::vector<int> nnzPerRow(rowMap->getNodeNumElements());
 
+        //FIXME 2021-10-22 JHU   If this is called with doReciprocal=false, what should the correct behavior be?  Currently,
+        //FIXME 2021-10-22 JHU   the diagonal entry is set to be the sum of the absolute values of the row entries.
+
         const Magnitude zeroMagn = TST::magnitude(zero);
+        Scalar avgAbsDiagVal = Teuchos::ScalarTraits<Scalar>::zero();
         for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
           nnzPerRow[i] = 0;
           rcpA->getLocalRowView(i, cols, vals);
@@ -221,8 +224,12 @@ tol = 0.;
             if (rowEntryMagn > zeroMagn)
               nnzPerRow[i]++;
             diagVals[i] += rowEntryMagn;
+            if (cols[j] == i)
+              avgAbsDiagVal += rowEntryMagn;
           }
         }
+        if (useAverageAbsDiagVal)
+          tol = 100 * Teuchos::ScalarTraits<Scalar>::eps() * avgAbsDiagVal / rowMap->getNodeNumElements();
         if (doReciprocal) {
           for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
             if (replaceSingleEntryRowWithZero && nnzPerRow[i] <= static_cast<int>(1))
