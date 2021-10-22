@@ -329,3 +329,7 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+if (WIN32)
+	target_link_libraries (ml PUBLIC ws2_32)
+endif ()
