@@ -178,13 +178,14 @@ namespace MueLuTests
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    auto diag = Utils_Kokkos::GetMatrixDiagonal(*A)->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto diag = Utils_Kokkos::GetMatrixDiagonal(*A);
+    auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
-    TEST_EQUALITY(diag.extent(0), A->getNodeNumRows());
+    TEST_EQUALITY(diagView.extent(0), A->getNodeNumRows());
 
-    for (size_t idx = 0; idx < diag.extent(0); ++idx)
+    for (size_t idx = 0; idx < diagView.extent(0); ++idx)
     {
-      TEST_EQUALITY(diag(idx, 0), Scalar(2));
+      TEST_EQUALITY(diagView(idx, 0), Scalar(2));
     }
 
   } //GetMatrixDiagonal
@@ -200,13 +201,14 @@ namespace MueLuTests
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    auto diag = Utils_Kokkos::GetMatrixDiagonalInverse(*A)->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto diag = Utils_Kokkos::GetMatrixDiagonalInverse(*A);
+    auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
-    TEST_EQUALITY(diag.extent(0), A->getNodeNumRows());
+    TEST_EQUALITY(diagView.extent(0), A->getNodeNumRows());
 
-    for (size_t idx = 0; idx < diag.extent(0); ++idx)
+    for (size_t idx = 0; idx < diagView.extent(0); ++idx)
     {
-      TEST_EQUALITY(diag(idx, 0), Kokkos::ArithTraits<Scalar>::one() / Scalar(2));
+      TEST_EQUALITY(diagView(idx, 0), Kokkos::ArithTraits<Scalar>::one() / Scalar(2));
     }
   } //GetMatrixDiagonalInverse
 
@@ -221,11 +223,12 @@ namespace MueLuTests
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    auto diag = Utils_Kokkos::GetMatrixOverlappedDiagonal(*A)->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto diag = Utils_Kokkos::GetMatrixOverlappedDiagonal(*A);
+    auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
 
-    for (size_t idx = 0; idx < diag.extent(0); ++idx)
+    for (size_t idx = 0; idx < diagView.extent(0); ++idx)
     {
-      TEST_EQUALITY(diag(idx, 0), Scalar(2));
+      TEST_EQUALITY(diagView(idx, 0), Scalar(2));
     }
   } //GetMatrixOverlappedDiagonal
 
