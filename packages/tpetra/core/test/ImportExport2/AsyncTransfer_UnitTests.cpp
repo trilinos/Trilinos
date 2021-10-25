@@ -101,15 +101,6 @@ namespace {
 
     ~MultiVectorTransferFixture() { }
 
-    bool shouldSkipTest() {
-      return numProcs < 2;
-    }
-
-    void printSkippedTestMessage() {
-      out << "This test is only meaningful if running with multiple MPI "
-             "processes, but you ran it with only 1 process." << endl;
-    }
-
     void setup(int collectRank) {
       setupMaps(collectRank);
       setupMultiVectors();
@@ -151,8 +142,8 @@ namespace {
       auto data = resultMV->getLocalViewHost(Tpetra::Access::ReadOnly);
       auto referenceData = referenceMV->getLocalViewHost(Tpetra::Access::ReadOnly);
 
-      for (GO globalRow = targetMap->getMinGlobalIndex(); globalRow <= targetMap->getMaxGlobalIndex(); ++globalRow) {
-        const LO localRow = targetMap->getLocalElement(globalRow);
+      TEST_EQUALITY(data.size(), referenceData.size());
+      for (LO localRow = 0; localRow < as<LO>(data.size()); localRow++) {
         TEST_EQUALITY(data(localRow, 0), referenceData(localRow, 0));
       }
     }
@@ -232,15 +223,6 @@ namespace {
     { }
 
     ~DiagonalCrsMatrixTransferFixture() { }
-
-    bool shouldSkipTest() {
-      return numProcs < 2;
-    }
-
-    void printSkippedTestMessage() {
-      out << "This test is only meaningful if running with multiple MPI "
-             "processes, but you ran it with only 1 process." << endl;
-    }
 
     void setup() {
       setupMaps();
@@ -413,14 +395,6 @@ namespace {
 
     ~LowerTriangularCrsMatrixTransferFixture() { }
 
-    bool shouldSkipTest() {
-      return numProcs%2 != 0;
-    }
-
-    void printSkippedTestMessage() {
-      out << "This test is only meaningful if running with an even number of MPI processes." << endl;
-    }
-
     void setup() {
       setupMaps();
       setupMatrices();
@@ -468,16 +442,20 @@ namespace {
       const GO indexBase = 0;
       const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
 
-      const size_t sourceNumLocalElements = (myRank%2 == 0) ? 3 : 5;
+      const size_t sourceNumLocalElements = isExtraRank() ? 4 : (myRank%2 == 0 ? 3 : 5);
       const size_t targetNumLocalElements = 4;
 
       sourceMap = rcp(new map_type(INVALID, sourceNumLocalElements, indexBase, comm));
       targetMap = rcp(new map_type(INVALID, targetNumLocalElements, indexBase, comm));
     }
 
+    bool isExtraRank() {
+      return numProcs%2 == 1 && myRank == numProcs-1;
+    }
+
     void setupMatrices() {
-      sourceMat = rcp(new crs_type(sourceMap, 24));
-      targetMat = rcp(new crs_type(targetMap, 24));
+      sourceMat = rcp(new crs_type(sourceMap, sourceMap->getGlobalNumElements()));
+      targetMat = rcp(new crs_type(targetMap, targetMap->getGlobalNumElements()));
 
       Array<GO> cols(1);
       Array<Scalar>  vals(1);
@@ -531,10 +509,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(0);
     fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
@@ -544,10 +518,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(1);
     fixture.performTransfer(ForwardImport<Scalar, LO, GO>());
@@ -557,10 +527,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ForwardImport<char, LO, GO>());
@@ -570,10 +536,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ForwardImport<char, LO, GO>());
@@ -597,10 +559,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(0);
     fixture.performTransfer(ReverseImport<Scalar, LO, GO>());
@@ -610,10 +568,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(1);
     fixture.performTransfer(ReverseImport<Scalar, LO, GO>());
@@ -623,10 +577,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ReverseImport<char, LO, GO>());
@@ -636,10 +586,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ReverseImport<char, LO, GO>());
@@ -663,10 +609,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(0);
     fixture.performTransfer(ForwardExport<Scalar, LO, GO>());
@@ -676,10 +618,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(1);
     fixture.performTransfer(ForwardExport<Scalar, LO, GO>());
@@ -689,10 +627,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ForwardExport<char, LO, GO>());
@@ -702,10 +636,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ForwardExport<char, LO, GO>());
@@ -729,10 +659,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(0);
     fixture.performTransfer(ReverseExport<Scalar, LO, GO>());
@@ -742,10 +668,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup(1);
     fixture.performTransfer(ReverseExport<Scalar, LO, GO>());
@@ -755,10 +677,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ReverseExport<char, LO, GO>());
@@ -768,10 +686,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
-    if (fixture.shouldSkipTest()) {
-      fixture.printSkippedTestMessage();
-      return;
-    }
 
     fixture.setup();
     fixture.performTransfer(ReverseExport<char, LO, GO>());
