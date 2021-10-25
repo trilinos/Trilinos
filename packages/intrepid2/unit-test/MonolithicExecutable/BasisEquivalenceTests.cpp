@@ -241,7 +241,36 @@ namespace
     using Scalar = WeightScalar;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis1.getBaseCellTopology().getKey();
-    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    
+    using Cubature       = Intrepid2::Cubature<DeviceType, PointScalar, WeightScalar>;
+    using CubatureTensor = Intrepid2::CubatureTensor<DeviceType, PointScalar, WeightScalar>;
+    using CubatureDirect = Intrepid2::CubatureDirect<DeviceType, PointScalar, WeightScalar>;
+    
+    Teuchos::RCP<Cubature> lineTopoQuadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(shards::Line<>::key, quadratureDegree);
+    Teuchos::RCP<Cubature> baseTopoQuadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    
+    Teuchos::RCP<Intrepid2::Cubature<DeviceType, PointScalar, WeightScalar>> quadrature;
+    
+   const int numTensorialExtrusions = basis1.getNumTensorialExtrusions();
+    if (numTensorialExtrusions == 0)
+    {
+      quadrature = baseTopoQuadrature;
+    }
+    else
+    {
+      const CubatureDirect* baseTopoQuadratureDirect = dynamic_cast<CubatureDirect*>(baseTopoQuadrature.get());
+      const CubatureDirect* lineTopoQuadratureDirect = dynamic_cast<CubatureDirect*>(lineTopoQuadrature.get());
+      
+      Teuchos::RCP<CubatureTensor> tensorCubature = Teuchos::rcp( new CubatureTensor(*baseTopoQuadratureDirect, *lineTopoQuadratureDirect));
+      
+      for (int d=1; d<numTensorialExtrusions; d++)
+      {
+        tensorCubature = Teuchos::rcp( new CubatureTensor(*tensorCubature, *lineTopoQuadratureDirect) );
+      }
+      
+      quadrature = tensorCubature;
+    }
+    
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis1.getBaseCellTopology().getDimension() + basis1.getNumTensorialExtrusions();
     auto points  = getView<PointScalar,DeviceType>( "quadrature points ref cell",  numRefPoints, spaceDim);
@@ -599,7 +628,7 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD )
   {
-    const int maxSpaceDim = 3;
+    const int maxSpaceDim = 4;
     const int maxDegreeForCardinalityTests = 2;
     
     using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;

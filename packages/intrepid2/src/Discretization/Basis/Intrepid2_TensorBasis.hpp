@@ -878,8 +878,8 @@ struct OperatorTensorDecomposition
       // are things we can do in this regard, which may become important for matrix-free computations wherein
       // basis values don't get stored but are computed dynamically.
       
-      int spaceDim1 = basis1_->getBaseCellTopology().getDimension();
-      int spaceDim2 = basis2_->getBaseCellTopology().getDimension();
+      int spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
+      int spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();
       
       int totalSpaceDim   = inputPoints.extent_int(1);
       
@@ -1146,6 +1146,8 @@ struct OperatorTensorDecomposition
       
       switch (operatorType)
       {
+        case OPERATOR_VALUE:
+        case OPERATOR_GRAD:
         case OPERATOR_D1:
         case OPERATOR_D2:
         case OPERATOR_D3:
