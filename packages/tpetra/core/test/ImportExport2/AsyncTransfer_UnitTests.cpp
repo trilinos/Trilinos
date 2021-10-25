@@ -743,9 +743,11 @@ namespace {
 
     void operator()(DistObjectRCP source, DistObjectRCP target) const {
       Import<LO, GO> importer(source->getMap(), target->getMap());
+
       target->beginImport(*source, importer, INSERT);
       while (!target->transferArrived());
       target->endImport(*source, importer, INSERT);
+
       TEST_ASSERT(target->transferArrived());
     }
 
@@ -770,6 +772,51 @@ namespace {
     fixture.setup();
     fixture.performTransfer(CheckTransferArrivedForwardImport<char, LO, GO>(out, success));
     fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
+  }
+
+
+  template <typename Packet, typename LO, typename GO>
+  class CheckTransferArrivedForwardExport {
+  private:
+    using DistObjectRCP = RCP<DistObject<Packet, LO, GO>>;
+
+  public:
+    CheckTransferArrivedForwardExport(FancyOStream& o, bool& s)
+      : out(o),
+        success(s)
+    { }
+
+    void operator()(DistObjectRCP source, DistObjectRCP target) const {
+      Export<LO, GO> exporter(source->getMap(), target->getMap());
+
+      target->beginExport(*source, exporter, INSERT);
+      while (!target->transferArrived());
+      target->endExport(*source, exporter, INSERT);
+
+      TEST_ASSERT(target->transferArrived());
+    }
+
+  private:
+    FancyOStream& out;
+    bool& success;
+  };
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, MultiVector_forwardExportTrue, Scalar, LO, GO )
+  {
+    MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup(0);
+    fixture.performTransfer(CheckTransferArrivedForwardExport<Scalar, LO, GO>(out, success));
+    fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( TransferArrived, CrsMatrix_forwardExportTrue, Scalar, LO, GO )
+  {
+    DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
+
+    fixture.setup();
+    fixture.performTransfer(CheckTransferArrivedForwardExport<char, LO, GO>(out, success));
+    fixture.checkResults(ReferenceExportMatrix<Scalar, LO, GO>());
   }
 
 
@@ -798,6 +845,8 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_defaultTrue, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardImportTrue, SC, LO, GO ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardImportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, MultiVector_forwardExportTrue, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TransferArrived, CrsMatrix_forwardExportTrue, SC, LO, GO ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
