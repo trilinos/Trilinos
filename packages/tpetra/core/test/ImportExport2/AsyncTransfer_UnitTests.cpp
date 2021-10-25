@@ -528,7 +528,7 @@ namespace {
     }
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank0, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -541,7 +541,7 @@ namespace {
     fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank1, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -554,7 +554,7 @@ namespace {
     fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, DiagonalCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -567,7 +567,7 @@ namespace {
     fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, LowerTriangularCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardImport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -594,7 +594,7 @@ namespace {
     }
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, MultiVector_rank0, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -607,7 +607,7 @@ namespace {
     fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, MultiVector_rank1, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -620,7 +620,7 @@ namespace {
     fixture.checkResults(ReferenceImportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, DiagonalCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -633,7 +633,7 @@ namespace {
     fixture.checkResults(ReferenceImportMatrix<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, LowerTriangularCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseImport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -660,7 +660,7 @@ namespace {
     }
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank0, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -673,7 +673,7 @@ namespace {
     fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank1, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -686,7 +686,7 @@ namespace {
     fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, DiagonalCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -699,7 +699,7 @@ namespace {
     fixture.checkResults(ReferenceExportMatrix<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, LowerTriangularCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncForwardExport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -726,7 +726,7 @@ namespace {
     }
   };
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank0, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank0, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -739,7 +739,7 @@ namespace {
     fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank1, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, MultiVector_rank1, Scalar, LO, GO )
   {
     MultiVectorTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -752,7 +752,7 @@ namespace {
     fixture.checkResults(ReferenceExportMultiVector<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, DiagonalCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, DiagonalCrsMatrix, Scalar, LO, GO )
   {
     DiagonalCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -765,7 +765,7 @@ namespace {
     fixture.checkResults(ReferenceExportMatrix<Scalar, LO, GO>());
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, LowerTriangularCrsMatrix, LO, GO, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( AsyncReverseExport, LowerTriangularCrsMatrix, Scalar, LO, GO )
   {
     LowerTriangularCrsMatrixTransferFixture<Scalar, LO, GO> fixture(out, success);
     if (fixture.shouldSkipTest()) {
@@ -784,22 +784,22 @@ namespace {
   //
 
 #define UNIT_TEST_GROUP_SC_LO_GO( SC, LO, GO )                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVector_rank0, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVector_rank1, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, DiagonalCrsMatrix, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, LowerTriangularCrsMatrix, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, MultiVector_rank0, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, MultiVector_rank1, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, DiagonalCrsMatrix, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, LowerTriangularCrsMatrix, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, MultiVector_rank0, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, MultiVector_rank1, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, DiagonalCrsMatrix, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, LowerTriangularCrsMatrix, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, MultiVector_rank0, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, MultiVector_rank1, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, DiagonalCrsMatrix, LO, GO, SC ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, LowerTriangularCrsMatrix, LO, GO, SC ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVector_rank0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, MultiVector_rank1, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, DiagonalCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardImport, LowerTriangularCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, MultiVector_rank0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, MultiVector_rank1, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, DiagonalCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseImport, LowerTriangularCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, MultiVector_rank0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, MultiVector_rank1, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, DiagonalCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncForwardExport, LowerTriangularCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, MultiVector_rank0, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, MultiVector_rank1, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, DiagonalCrsMatrix, SC, LO, GO ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( AsyncReverseExport, LowerTriangularCrsMatrix, SC, LO, GO ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
