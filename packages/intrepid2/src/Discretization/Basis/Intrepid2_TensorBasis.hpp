@@ -572,6 +572,8 @@ struct OperatorTensorDecomposition
     std::vector<BasisPtr> tensorComponents_;
     
     std::string name_; // name of the basis
+    
+    int numTensorialExtrusions_; // relative to cell topo returned by getBaseCellTopology().
   public:
     using DeviceType = typename BasisBase::DeviceType;
     using ExecutionSpace  = typename BasisBase::ExecutionSpace;
@@ -626,11 +628,20 @@ struct OperatorTensorDecomposition
       }
       
       // set cell topology
-      shards::CellTopology cellTopo1 = basis1->getBaseCellTopology();
-      shards::CellTopology cellTopo2 = basis2->getBaseCellTopology();
+      this->basisCellTopology_ = tensorComponents_[0]->getBaseCellTopology();
+      this->numTensorialExtrusions_ = tensorComponents_.size() - 1;
       
-      auto cellKey1 = basis1->getBaseCellTopology().getKey();
-      auto cellKey2 = basis2->getBaseCellTopology().getKey();
+      this->basisType_         = basis1_->getBasisType();
+      this->basisCoordinates_  = COORDINATES_CARTESIAN;
+    }
+    
+    void setShardsTopologyAndTags()
+    {
+      shards::CellTopology cellTopo1 = basis1_->getBaseCellTopology();
+      shards::CellTopology cellTopo2 = basis2_->getBaseCellTopology();
+      
+      auto cellKey1 = basis1_->getBaseCellTopology().getKey();
+      auto cellKey2 = basis2_->getBaseCellTopology().getKey();
       if ((cellKey1 == shards::Line<2>::key) && (cellKey2 == shards::Line<2>::key))
       {
         this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
@@ -645,8 +656,8 @@ struct OperatorTensorDecomposition
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Cell topology combination not yet supported");
       }
       
-      this->basisType_         = basis1->getBasisType();
-      this->basisCoordinates_  = COORDINATES_CARTESIAN;
+      // numTensorialExtrusions_ is relative to the basisCellTopology_; what we've just done is found a cell topology of the same spatial dimension as the extruded topology, so now numTensorialExtrusions_ should be 0.
+      numTensorialExtrusions_ = 0;
       
       // initialize tags
       {
@@ -742,6 +753,11 @@ struct OperatorTensorDecomposition
                                 posScOrd,
                                 posDfOrd);
       }
+    }
+    
+    virtual int getNumTensorialExtrusions() const override
+    {
+      return numTensorialExtrusions_;
     }
     
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element OperatorTensorDecomposition corresponds to a single TensorData entry; a multiple-element OperatorTensorDecomposition corresponds to a VectorData object with axialComponents = false.

@@ -243,9 +243,9 @@ namespace
     auto cellTopoKey = basis1.getBaseCellTopology().getKey();
     auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
-    const int spaceDim = basis1.getBaseCellTopology().getDimension();
-    auto points  = getView<PointScalar,DeviceType>( "quadrature points 1D ref cell",  numRefPoints, spaceDim);
-    auto weights = getView<WeightScalar,DeviceType>("quadrature weights 1D ref cell", numRefPoints);
+    const int spaceDim = basis1.getBaseCellTopology().getDimension() + basis1.getNumTensorialExtrusions();
+    auto points  = getView<PointScalar,DeviceType>( "quadrature points ref cell",  numRefPoints, spaceDim);
+    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
     auto pointsHost = getHostCopy(points);
@@ -595,6 +595,37 @@ namespace
     CnBasis cnBasis(polyOrder);
     C2Basis c2Basis;
     testBasisEquivalence<DefaultTestDeviceType>(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD )
+  {
+    const int maxSpaceDim = 3;
+    const int maxDegreeForCardinalityTests = 2;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-11; // 7e-13 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    const double absTol=1e-12; // 2e-14 is sharp on development setup for polyOrder=4; relaxing for potential architectural differences
+    
+    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
+    
+    const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+    for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+      {
+        out << "** spaceDim " << spaceDim << " **\n";
+        auto hierarchicalBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily>(polyDegree, spaceDim);
+        auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
+        testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      }
+    }
   }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalCnVersusNodalC2_HGRAD )

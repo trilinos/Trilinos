@@ -197,6 +197,52 @@ namespace Intrepid2
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported function space");
     }
   }
+
+/** \brief  Factory method for isotropic HGRAD bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology, and will not support tag lookups, at least in the current implementation of TensorBasis.
+      \param [in] polyOrder - the polynomial order of the basis.
+    \param [in] pointType - type of lattice used for creating the DoF coordinates.
+   */
+template<class BasisFamily>
+static typename BasisFamily::BasisPtr getHypercubeBasis_HGRAD(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+{
+  using Teuchos::rcp;
+  
+  using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+  using BasisPtr = typename BasisFamily::BasisPtr;
+  
+  BasisPtr lineBasis = getLineBasis<BasisFamily>(FUNCTION_SPACE_HGRAD, polyOrder);
+  BasisPtr tensorBasis = lineBasis;
+  
+  for (int d=1; d<spaceDim; d++)
+  {
+    tensorBasis = Teuchos::rcp(new Basis_TensorBasis<BasisBase>(tensorBasis, lineBasis, FUNCTION_SPACE_HGRAD));
+  }
+  
+  return tensorBasis;
+}
+
+/** \brief  Factory method for isotropic HVOL bases on a hypercube for the given family.  Note that this will return a Line<2> for its base cell topology, and will not support tag lookups, at least in the current implementation of TensorBasis.
+      \param [in] polyOrder - the polynomial order of the basis.
+    \param [in] pointType - type of lattice used for creating the DoF coordinates.
+   */
+template<class BasisFamily>
+static typename BasisFamily::BasisPtr getHypercubeBasis_HVOL(int polyOrder, int spaceDim, const EPointType pointType=POINTTYPE_DEFAULT)
+{
+  using Teuchos::rcp;
+  
+  using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
+  using BasisPtr = typename BasisFamily::BasisPtr;
+  
+  BasisPtr lineBasis = getLineBasis<BasisFamily>(FUNCTION_SPACE_HVOL, polyOrder);
+  BasisPtr tensorBasis = lineBasis;
+  
+  for (int d=1; d<spaceDim; d++)
+  {
+    tensorBasis = Teuchos::rcp(new Basis_TensorBasis<BasisBase>(tensorBasis, lineBasis, FUNCTION_SPACE_HVOL));
+  }
+  
+  return tensorBasis;
+}
   
   /** \brief  Factory method for potentially anisotropic hexahedron bases in the given family.
       \param [in] fs          - the function space for the basis.

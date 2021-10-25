@@ -200,7 +200,10 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
 
     /** \brief  Base topology of the cells for which the basis is defined. See
          the <a href="https://trilinos.org/packages/shards/">Shards</a> package
-         for definition of base cell topology.
+         for definition of base cell topology.  For TensorBasis subclasses, by default this the cell topology that is extruded (i.e., it is a lower-dimensional CellTopology than
+         the space on which the tensor basis is defined).  This allows tensor bases to be defined in higher dimensions than shards::CellTopology supports.  TensorBasis subclasses can
+         opt to use an equivalent shards CellTopology for basisCellTopology_, as well as using Intrepid2's tagging for tensor bases in dimensions up to 3, by calling
+         TensorBasis::setShardsTopologyAndTags().
     */
     shards::CellTopology basisCellTopology_;
 
@@ -762,6 +765,13 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
                                     ">>> ERROR (Basis::getDofOrdinal): Invalid DoF tag is found.");
 #endif
       return r_val;
+    }
+    
+    /** \brief returns the number of tensorial extrusions relative to the cell topology returned by getBaseCellTopology().  Base class returns 0; overridden by TensorBasis.
+     */
+    virtual int getNumTensorialExtrusions() const
+    {
+      return 0;
     }
 
     /** \brief DoF tag to ordinal data structure */

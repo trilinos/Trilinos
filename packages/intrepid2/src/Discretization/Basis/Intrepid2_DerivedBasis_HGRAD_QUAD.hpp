@@ -95,6 +95,8 @@ namespace Intrepid2
       order_x_= polyOrder_x;
       order_y_ = polyOrder_x;
       pointType_ = pointType;
+      
+      this->setShardsTopologyAndTags();
     }
 
     /** \brief  Constructor.

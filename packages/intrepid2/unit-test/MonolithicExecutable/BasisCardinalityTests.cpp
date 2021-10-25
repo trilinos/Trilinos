@@ -49,6 +49,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Intrepid2_HierarchicalBasisFamily.hpp"
+#include "Intrepid2_NodalBasisFamily.hpp"
 #include "Intrepid2_Types.hpp"
 
 #include "Intrepid2_TestUtils.hpp"
@@ -154,6 +155,67 @@ namespace
       for (auto testCase : cardinalityTestCases)
       {
         testHexBasisCardinality(fs, testCase[0], testCase[1], testCase[2], out, success);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisCardinality, Hypercube )
+  {
+    std::vector<Intrepid2::EFunctionSpace> functionSpaces = {FUNCTION_SPACE_HGRAD,FUNCTION_SPACE_HVOL};
+
+    const int maxSpaceDim = 7;
+    const int maxDegreeForCardinalityTests = 2;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    for (auto fs : functionSpaces)
+    {
+      if (fs == FUNCTION_SPACE_HGRAD)
+      {
+        out << "Testing HGRAD.\n";
+      }
+      else if (fs == FUNCTION_SPACE_HVOL)
+      {
+        out << "Testing HVOL.\n";
+      }
+      
+      const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+      for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
+      {
+        out << "** polyDegree " << polyDegree << " **\n";
+        for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+        {
+          out << "** spaceDim " << spaceDim << " **\n";
+          int expectedCardinality = 1;
+          for (int d=0; d<spaceDim; d++)
+          {
+            expectedCardinality *= (polyDegree + 1);
+          }
+          int expectedExtrusionCount = spaceDim - 1;
+          if (fs == FUNCTION_SPACE_HGRAD)
+          {
+            auto hierarchicalBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily>(polyDegree, spaceDim);
+            auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
+            
+            TEST_EQUALITY(expectedCardinality, hierarchicalBasis->getCardinality());
+            TEST_EQUALITY(expectedCardinality, nodalBasis->getCardinality());
+            
+            TEST_EQUALITY(expectedExtrusionCount, hierarchicalBasis->getNumTensorialExtrusions());
+            TEST_EQUALITY(expectedExtrusionCount, nodalBasis->getNumTensorialExtrusions());
+          }
+          else if (fs == FUNCTION_SPACE_HVOL)
+          {
+            auto hierarchicalBasis = getHypercubeBasis_HVOL<HierarchicalBasisFamily>(polyDegree, spaceDim);
+            auto nodalBasis        = getHypercubeBasis_HVOL<NodalBasisFamily>(polyDegree, spaceDim);
+            
+            TEST_EQUALITY(expectedCardinality, hierarchicalBasis->getCardinality());
+            TEST_EQUALITY(expectedCardinality, nodalBasis->getCardinality());
+            
+            TEST_EQUALITY(expectedExtrusionCount, hierarchicalBasis->getNumTensorialExtrusions());
+            TEST_EQUALITY(expectedExtrusionCount, nodalBasis->getNumTensorialExtrusions());
+          }
+        }
       }
     }
   }

@@ -109,6 +109,8 @@ namespace Intrepid2
       order_y_ = polyOrder_y;
       order_z_ = polyOrder_z;
       pointType_ = pointType;
+      
+      this->setShardsTopologyAndTags();
     }
 
     

@@ -110,6 +110,8 @@ namespace Intrepid2
       std::ostringstream basisName;
       basisName << "HVOL_HEX (" << this->TensorBasis::getName() << ")";
       name_ = basisName.str();
+      
+      this->setShardsTopologyAndTags();
     }
     
     /** \brief  Constructor.
