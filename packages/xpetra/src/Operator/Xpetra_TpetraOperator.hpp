@@ -119,11 +119,16 @@ namespace Xpetra {
     //! @name Xpetra specific
     //@{
 
+    TpetraOperator() { }
+
     //! TpetraOperator constructor to wrap a Tpetra::Operator object
     TpetraOperator(const Teuchos::RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > &op) : op_(op) { } //TODO removed const
 
     //! Gets the operator out
-    RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return op_;}
+    virtual RCP<Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator(){return op_;}
+
+    //! Gets the operator out
+    virtual RCP<const Tpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperatorConst() const {return op_;}
 
     //! Compute a residual R = B - (*this) * X
     void residual(const Xpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,

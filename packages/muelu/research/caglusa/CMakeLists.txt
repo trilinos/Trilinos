@@ -18,7 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(caglusa_cp
     SOURCE_FILES
-    hierarchical.xml aux.xml
+    hierarchical.xml muelu.xml aux.xml
     rowmap.mtx coeffmap.mtx ghosted_coeffmap.mtx
     Anear.mtx basismatrix.mtx kernelApproximations.mtx
     transfer0.mtx transfer1.mtx transfer2.mtx transfer3.mtx transfer4.mtx
