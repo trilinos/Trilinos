@@ -572,7 +572,9 @@ namespace Amesos2 {
       if (data_.options.Equil == SLUD::YES && data_.rowequ) {
         SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
         for(global_size_type j = 0; j < nrhs; ++j) {
-          for(size_t i = 0; i < local_len_rhs; ++i) bvals_[i + j*ld] *= data_.R[i];
+          for(size_t i = 0; i < local_len_rhs; ++i) {
+            bvals_[i + j*ld] *= data_.R[first_global_row_b + i];
+          }
         }
       }
 
@@ -624,7 +626,9 @@ namespace Amesos2 {
       if (data_.options.Equil == SLUD::YES && data_.colequ) {
         SLUD::int_t ld = as<SLUD::int_t>(local_len_rhs);
         for(global_size_type j = 0; j < nrhs; ++j) {
-          for(size_t i = 0; i < local_len_rhs; ++i) xvals_[i + j*ld] *= data_.C[i];
+          for(size_t i = 0; i < local_len_rhs; ++i) {
+            xvals_[i + j*ld] *= data_.C[first_global_row_b + i];
+          }
         }
       }
     }
