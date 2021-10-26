@@ -124,12 +124,15 @@ namespace Tpetra {
     IDNotPresent   /*!< At least one of the specified indices was not present in the Map */
   };
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /*! Allocation profile for matrix/graph entries */
   enum ProfileType {
     StaticProfile
   };
 
 #define TPETRA_DEFAULT_PROFILE_TYPE Tpetra::StaticProfile
+#endif
+
 /*! Optimize storage option */
   enum OptimizeOption {
     DoOptimizeStorage,   /*!< Indicates that storage should be optimized */
