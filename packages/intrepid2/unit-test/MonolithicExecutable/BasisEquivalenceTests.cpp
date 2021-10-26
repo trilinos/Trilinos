@@ -167,8 +167,8 @@ namespace
   
   //! Computes C := A*B or C := A^T*B
   //! B is allowed to be either a (rank-2) matrix, or a higher-rank object.  Either way, B's first (row) index should match A's column count.
-  template<class Rank2View>
-  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, Rank2View &B, Rank2View &C)
+  template<class Rank2View, class BFunctor, int rankB = 2>
+  void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, BFunctor &B, Rank2View &C)
   {
     using DeviceType = DefaultTestDeviceType;
     using Scalar = typename Rank2View::value_type;
@@ -185,11 +185,12 @@ namespace
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
     }
-    using ViewIteratorScalar = ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
+    using  ViewIteratorScalar = ViewIterator<Rank2View, Scalar>;
+    using     BIteratorScalar = FunctorIterator<BFunctor, Scalar, rankB>;
     Kokkos::parallel_for(N0, KOKKOS_LAMBDA(const int A_row_ordinal)
     {
-      ViewIteratorScalar B_viewIterator(B);
-      ViewIteratorScalar C_viewIterator(C);
+      BIteratorScalar     B_viewIterator(B);
+      ViewIteratorScalar  C_viewIterator(C);
       
       for (int B_col_ordinal=0; B_col_ordinal<N2; B_col_ordinal++)
       {
@@ -273,11 +274,15 @@ namespace
     
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis1.getBaseCellTopology().getDimension() + basis1.getNumTensorialExtrusions();
-    auto points  = getView<PointScalar,DeviceType>( "quadrature points ref cell",  numRefPoints, spaceDim);
-    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
+    
+    auto points  = quadrature->allocateCubaturePoints();
+    auto weights = quadrature->allocateCubatureWeights();
+    
     quadrature->getCubature(points, weights);
     
-    auto pointsHost = getHostCopy(points);
+    using HostExecSpace = Kokkos::HostSpace::execution_space;
+    TensorPoints<PointScalar,HostExecSpace> pointsHost(points);
+    
     out << "Points being tested:\n";
     for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
     {
@@ -294,8 +299,8 @@ namespace
     
     // set up a projection of basis2 onto basis1
     using Scalar = typename Basis1::OutputValueType;
-    auto basis1Values = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
-    auto basis2Values = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
+    auto basis1Values = basis1.allocateBasisValues(points, OPERATOR_VALUE);
+    auto basis2Values = basis2.allocateBasisValues(points, OPERATOR_VALUE);
     
     basis1.getValues(basis1Values, points, OPERATOR_VALUE);
     basis2.getValues(basis2Values, points, OPERATOR_VALUE);
@@ -436,13 +441,14 @@ namespace
     auto basis2ValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
     deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); // true: transpose
     
-    testViewFloatingEquality(basis2Values, basis2ValuesFromBasis1, relTol, absTol, out, success, "expected", "actual");
+    // TODO: rewrite this line with <View1,View,rank> template arguments (may need to be a bit clever -- basis2Values has fixed rank…)
+    testViewFloatingEquality(basis2ValuesFromBasis1, basis2Values, relTol, absTol, out, success, "actual", "expected");
     
     for (auto op : opsToTest)
     {
       out << "** Testing operator " << EOperatorToString(op) << " **\n";
-      auto basis1OpValues = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
-      auto basis2OpValues = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
+      auto basis1OpValues = basis2.allocateBasisValues(points, op);
+      auto basis2OpValues = basis2.allocateBasisValues(points, op);
       
       basis1.getValues(basis1OpValues, points, op);
       basis2.getValues(basis2OpValues, points, op);
@@ -451,7 +457,7 @@ namespace
       auto basis2OpValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
       deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1OpValues, basis2OpValuesFromBasis1); // true: transpose
       
-      testViewFloatingEquality(basis2OpValues, basis2OpValuesFromBasis1, relTol, absTol, out, success, "expected", "actual");
+      testViewFloatingEquality(basis2OpValuesFromBasis1, basis2OpValues, relTol, absTol, out, success, "actual", "expected");
     }
   }
   
