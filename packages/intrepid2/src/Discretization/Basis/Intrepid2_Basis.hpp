@@ -369,8 +369,8 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
     
     /** \brief Allocate BasisValues container suitable for passing to the getValues() variant that takes a TensorPoints container as argument.
      
-        The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have tensor-product structure
-        should override.  Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
+        The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have non-trivial tensor-product structure
+        should override.  The basic exact-sequence operators are supported (VALUE, GRAD, DIV, CURL), as are the Dn operators (OPERATOR_D1 through OPERATOR_D10).
      */
     virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const
     {

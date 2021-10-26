@@ -185,6 +185,7 @@ namespace
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
     }
+    TEUCHOS_TEST_FOR_EXCEPTION(getFunctorRank(B) != rankB, std::invalid_argument, "run-time rank of B does not match compile-time rank");
     using  ViewIteratorScalar = ViewIterator<Rank2View, Scalar>;
     using     BIteratorScalar = FunctorIterator<BFunctor, Scalar, rankB>;
     Kokkos::parallel_for(N0, KOKKOS_LAMBDA(const int A_row_ordinal)
@@ -441,7 +442,6 @@ namespace
     auto basis2ValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
     deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); // true: transpose
     
-    // TODO: rewrite this line with <View1,View,rank> template arguments (may need to be a bit clever -- basis2Values has fixed rank…)
     testViewFloatingEquality(basis2ValuesFromBasis1, basis2Values, relTol, absTol, out, success, "actual", "expected");
     
     for (auto op : opsToTest)
@@ -455,7 +455,17 @@ namespace
       
       // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
       auto basis2OpValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
-      deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1OpValues, basis2OpValuesFromBasis1); // true: transpose
+      int rankB = basis1OpValues.rank();
+      using ViewType = decltype(basis1Coefficients);
+      using BType    = decltype(basis1OpValues);
+      const bool transpose = true;
+      switch(rankB)
+      {
+        case 2: deviceGeneralizedMatrixMultiply<ViewType,BType,2>(basis1Coefficients, transpose, basis1OpValues, basis2OpValuesFromBasis1); break;
+        case 3: deviceGeneralizedMatrixMultiply<ViewType,BType,3>(basis1Coefficients, transpose, basis1OpValues, basis2OpValuesFromBasis1); break;
+        default:
+          TEUCHOS_TEST_FOR_EXCEPTION((rankB < 2) || (rankB > 3), std::invalid_argument, "Unhandled rank for basis1OpValues");
+      }
       
       testViewFloatingEquality(basis2OpValuesFromBasis1, basis2OpValues, relTol, absTol, out, success, "actual", "expected");
     }

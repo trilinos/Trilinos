@@ -781,14 +781,17 @@ struct OperatorTensorDecomposition
     
     /** \brief Allocate BasisValues container suitable for passing to the getValues() variant that takes a TensorPoints container as argument.
      
-        Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
+        The basic exact-sequence operators are supported (VALUE, GRAD, DIV, CURL), as are the Dn operators (OPERATOR_D1 through OPERATOR_D10).
      */
     virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const override
     {
-      const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
+      const bool operatorIsDk = (operatorType >= OPERATOR_D1) && (operatorType <= OPERATOR_D10);
+      const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV) || operatorIsDk;
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
       
       ordinal_type numBasisComponents = tensorComponents_.size();
+      
+      // TODO: figure out how to determine num vector components without getOperatorDecomposition().  May want to look at TensorBasis::getValues( OutputViewType, const PointViewType, const EOperator) to see about sizing/rank.
       OperatorTensorDecomposition opDecomposition = getOperatorDecomposition(operatorType);
       
       const ordinal_type numVectorComponents = opDecomposition.numVectorComponents();
