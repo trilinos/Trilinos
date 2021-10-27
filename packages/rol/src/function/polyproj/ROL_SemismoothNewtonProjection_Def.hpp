@@ -83,7 +83,7 @@ SemismoothNewtonProjection<Real>::SemismoothNewtonProjection(const Vector<Real> 
   dlam_  = mul.clone();
   
   ParameterList list;
-  list.sublist("General").sublist("Krylov").set("Type",               "CG");
+  list.sublist("General").sublist("Krylov").set("Type",               "Conjugate Gradients");
   list.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-6);
   list.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
   list.sublist("General").sublist("Krylov").set("Iteration Limit",    dim_);
