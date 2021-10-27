@@ -44,6 +44,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_RCP.hpp"
+#include "TpetraCore_config.h"
 
 namespace Tpetra {
 namespace Details {
@@ -62,9 +63,9 @@ enum EDistributorSendType {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
 #endif
-  DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
+  DISTRIBUTOR_SEND  // Use MPI_Send (Teuchos::send)
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
+  , DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
 #endif
 };
 
