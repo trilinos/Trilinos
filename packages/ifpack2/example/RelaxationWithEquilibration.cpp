@@ -880,8 +880,7 @@ gatherCrsMatrixAndMultiVector (LO& errCode,
   export_type exp (A.getRowMap (), rowMap_gathered);
   auto A_gathered =
     Teuchos::rcp (new crs_matrix_type (rowMap_gathered,
-                                       A.getGlobalMaxNumRowEntries (),
-                                       Tpetra::StaticProfile));
+                                       A.getGlobalMaxNumRowEntries ()));
   A_gathered->doExport (A, exp, Tpetra::INSERT);
   auto domainMap_gathered = computeGatherMap (A.getDomainMap (), Teuchos::null);
   auto rangeMap_gathered = computeGatherMap (A.getRangeMap (), Teuchos::null);

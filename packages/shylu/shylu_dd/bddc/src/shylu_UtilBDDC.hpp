@@ -262,7 +262,7 @@ namespace bddc {
 		  0, Comm));
     RCP<const Map> colMap =
       rcp(new Map(IGO, Teuchos::ArrayView<const GO>(proc), 0, Comm) );
-    CrsGraph nodeProcs(nodeMap, colMap, 1, Tpetra::StaticProfile);
+    CrsGraph nodeProcs(nodeMap, colMap, 1);
     std::vector<LO> zero(1, 0);
     for (LO i=0; i<numNode; i++) {
       nodeProcs.insertLocalIndices(i, Teuchos::ArrayView<LO>(zero));
@@ -315,7 +315,7 @@ namespace bddc {
 		  0, Comm));
     RCP<const Map> colMap =
       rcp(new Map(IGO, Teuchos::ArrayView<const GO>(proc), 0, Comm) );
-    CrsGraph nodeProcs(nodeMap, colMap, 1, Tpetra::StaticProfile);
+    CrsGraph nodeProcs(nodeMap, colMap, 1);
     std::vector<LO> zero(1, 0);
     for (LO i=0; i<numNode; i++) {
       nodeProcs.insertLocalIndices(i, Teuchos::ArrayView<LO>(zero));

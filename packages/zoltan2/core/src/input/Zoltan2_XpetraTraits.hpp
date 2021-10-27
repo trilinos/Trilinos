@@ -463,7 +463,7 @@ struct XpetraTraits<Tpetra::CrsGraph<lno_t, gno_t, node_t> >
     }
 
     // target graph
-    RCP<tgraph_t> G = rcp(new tgraph_t(tmap, nnz_size_t(), Tpetra::StaticProfile));
+    RCP<tgraph_t> G = rcp(new tgraph_t(tmap, nnz_size_t()));
 
     G->doImport(from, importer, Tpetra::INSERT);
     G->fillComplete();
