@@ -1,0 +1,18 @@
+<ParameterList name="MueLu">
+
+  <!-- ===========  GENERAL ================ -->
+  <Parameter        name="verbosity"                            type="string"   value="extreme"/>
+  <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/>
+
+  <!-- reduces setup cost for symmetric problems -->
+  <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+
+  <!-- ===========  SMOOTHING  =========== -->
+  <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
+  <ParameterList    name="smoother: params">
+    <Parameter      name="relaxation: sweeps"                   type="int"      value="2"/>>
+    <Parameter      name="relaxation: damping factor"           type="double"   value="0.666"/>
+    <Parameter      name="relaxation: type"                     type="string"   value="Jacobi"/>
+  </ParameterList>
+
+</ParameterList>
