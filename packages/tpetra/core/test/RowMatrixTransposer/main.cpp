@@ -132,8 +132,8 @@ main (int argc, char* argv[])
   }
 
   // Create a Tpetra::CrsMatrix using the Map, with a static allocation dictated by NumNz
-  crs_matrix_type A (map, NumNz (), Tpetra::StaticProfile);
-  crs_matrix_type AT(map, NumNz (), Tpetra::StaticProfile);
+  crs_matrix_type A (map, NumNz ());
+  crs_matrix_type AT(map, NumNz ());
   RCP< crs_matrix_type > TestMatrix = Teuchos::null;
 
   // We are done with NumNZ

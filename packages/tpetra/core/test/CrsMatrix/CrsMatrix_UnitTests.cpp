@@ -114,13 +114,12 @@ namespace { // (anonymous)
     {
       RCPMap map  = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm);
       MV mv(map,1);
-      zero = rcp( new MAT(map,0,TPETRA_DEFAULT_PROFILE_TYPE) );
+      zero = rcp( new MAT(map,0) );
       TEST_THROW(zero->apply(mv,mv), std::runtime_error);
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS)
       // throw exception because we required increased allocation
       TEST_THROW(zero->insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
 #   endif
-      TEST_ASSERT( zero->getProfileType() == TPETRA_DEFAULT_PROFILE_TYPE );
       zero->fillComplete();
     }
     STD_TESTS((*zero));
@@ -184,11 +183,10 @@ namespace { // (anonymous)
     GO base = numLocal*myImageID;
     RCP<Tpetra::RowMatrix<Scalar,LO,GO,Node> > eye;
     {
-      RCP<MAT> eye_crs = rcp(new MAT(map,numLocal,TPETRA_DEFAULT_PROFILE_TYPE));
+      RCP<MAT> eye_crs = rcp(new MAT(map,numLocal));
       for (size_t i=0; i<numLocal; ++i) {
         eye_crs->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<Scalar>(ST::one()));
       }
-      TEST_ASSERT( eye_crs->getProfileType() == TPETRA_DEFAULT_PROFILE_TYPE );
       eye_crs->fillComplete();
       eye = eye_crs;
     }

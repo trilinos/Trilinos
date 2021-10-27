@@ -97,7 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
   auto num_loc_rows = static_cast<LO>(4);
   const auto num_gbl_rows = Tpetra::global_size_t(num_loc_rows*comm->getSize());
   auto map1 = rcp(new map_type(num_gbl_rows, 0, comm));
-  auto A = rcp(new graph_type(map1, 1, Tpetra::StaticProfile));
+  auto A = rcp(new graph_type(map1, 1));
   for (LO loc_row=0; loc_row<num_loc_rows; loc_row++) {
     const auto gbl_row = map1->getGlobalElement(loc_row);
     A->insertGlobalIndices(gbl_row, tuple<GO>(gbl_row));
@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, PackThenUnpackAndCombine, LO, GO, NT
 
   // Off diagonal graph with half-bandwidth=1 and no diagonal entries
   out << "Building second graph" << endl;
-  auto B = rcp(new graph_type(map1, 2)); // could use StaticProfile
+  auto B = rcp(new graph_type(map1, 2)); 
   for (LO loc_row=0; loc_row<num_loc_rows; loc_row++) {
     const auto gbl_row = map1->getGlobalElement(loc_row);
     // B[0,0:1] = [-, 1]

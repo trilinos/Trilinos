@@ -361,8 +361,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO,Node>(INVALID,1,comm);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
     {
-      Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-      MAT matrix(map,map,1,pftype);
+      MAT matrix(map,map,1);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -395,8 +394,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       TEST_THROW( matrix.fillComplete(),        std::runtime_error );
     }
     {
-      Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-      MAT matrix(map,map,1,pftype);
+      MAT matrix(map,map,1);
       TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
       matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
@@ -605,8 +603,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     auto map = createContigMapWithNode<LO, GO, Node> (INVALID, 1, comm);
 
     // construct matrix
-    Tpetra::ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE;
-    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 1, pftype);
+    CrsMatrix<Scalar,LO,GO,Node> A (map, map, 1);
     A.insertLocalValues (0, tuple<LO> (0), tuple<Scalar> (STS::zero ()));
     A.fillComplete (map, map);
 
