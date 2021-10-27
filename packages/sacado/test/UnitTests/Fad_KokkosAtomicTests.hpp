@@ -261,13 +261,13 @@ bool testAtomic(const TagType& tag, Teuchos::FancyOStream& out)
 
   // Create and fill view
   ViewType v;
-  ViewType s0;
+  ScalarViewType s0;
 #if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
   v  = ViewType ("view", num_rows);
-  s0 = ViewType ("", 1);
+  s0 = ScalarViewType ("");
 #else
   v  = ViewType ("view", num_rows, fad_size+1);
-  s0 = ViewType ("", 1, fad_size+1);
+  s0 = ScalarViewType ("", fad_size+1);
 #endif
   host_view_type h_v = Kokkos::create_mirror_view(v);
   for (size_type i=0; i<num_rows; ++i)
@@ -298,10 +298,10 @@ bool testAtomic(const TagType& tag, Teuchos::FancyOStream& out)
   Kokkos::deep_copy(b, s0);
 
   for (size_type i=0; i<num_rows; ++i)
-    b(0) = tag.apply(b(0), h_v(i));
+    b() = tag.apply(b(), h_v(i));
 
   // Check
-  bool success = checkFads(b(0), hs(), out);
+  bool success = checkFads(b(), hs(), out);
 
   return success;
 }

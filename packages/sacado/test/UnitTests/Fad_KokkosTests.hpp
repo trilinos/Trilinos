@@ -239,7 +239,7 @@ struct ScalarAssignKernel {
 };
 
 // Kernel to assign a constant to a view
-template <typename ViewType>
+template <typename ViewType, typename ScalarViewType>
 struct ValueAssignKernel {
   typedef typename ViewType::execution_space execution_space;
   typedef typename ViewType::size_type size_type;
@@ -251,15 +251,15 @@ struct ValueAssignKernel {
   static const size_type stride = Kokkos::ViewScalarStride<ViewType>::stride;
 
   const ViewType m_v;
-  const ViewType m_s;
+  const ScalarViewType m_s;
 
-  ValueAssignKernel(const ViewType& v, const ViewType& s) :
+  ValueAssignKernel(const ViewType& v, const ScalarViewType& s) :
     m_v(v), m_s(s) {};
 
   // Multiply entries for row 'i' with a value
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type i) const {
-    local_scalar_type s = Sacado::partition_scalar<stride>(m_s(0));
+    local_scalar_type s = Sacado::partition_scalar<stride>(m_s());
     m_v(i) = s;
   }
 
@@ -272,7 +272,7 @@ struct ValueAssignKernel {
   }
 
   // Kernel launch
-  static void apply(const ViewType& v, const ViewType& s) {
+  static void apply(const ViewType& v, const ScalarViewType& s) {
     const size_type nrow = v.extent(0);
 
 #if defined (KOKKOS_ENABLE_CUDA) && defined (SACADO_VIEW_CUDA_HIERARCHICAL)
@@ -713,21 +713,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, ValueAssign, FadType, Layout, Device )
 {
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
+  typedef Kokkos::View<FadType,Layout,Device> ScalarViewType;
   typedef typename ViewType::size_type size_type;
   typedef typename ViewType::HostMirror host_view_type;
+  typedef typename ScalarViewType::HostMirror host_scalar_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type fad_size = global_fad_size;
 
   // Create and fill view
   ViewType v;
-  ViewType a;
+  ScalarViewType a;
 #if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
   v = ViewType ("view", num_rows);
-  a = ViewType ("fad", 1);
+  a = ScalarViewType ("fad");
 #else
   v = ViewType ("view", num_rows, fad_size+1);
-  a = ViewType ("fad", 1, fad_size+1);
+  a = ScalarViewType ("fad", fad_size+1);
 #endif
   typename ViewType::array_type va = v;
   Kokkos::deep_copy( va, 1.0 );
@@ -736,22 +738,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos::deep_copy(a, 2.3456);
 
   Kokkos::parallel_for(Kokkos::RangePolicy< Device>(0, fad_size), KOKKOS_LAMBDA(const int i) {
-    a(0).fastAccessDx(i) = 7.89 + i;
+    a().fastAccessDx(i) = 7.89 + i;
   });
 
-  ValueAssignKernel<ViewType>::apply( v, a );
+  ValueAssignKernel<ViewType, ScalarViewType>::apply( v, a );
 
   // Copy to host
   host_view_type hv = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(hv, v);
 
-  host_view_type ha = Kokkos::create_mirror_view(a);
+  host_scalar_view_type ha = Kokkos::create_mirror_view(a);
   Kokkos::deep_copy(ha, a);
 
   // Check
   success = true;
   for (size_type i=0; i<num_rows; ++i) {
-    success = success && checkFads(ha(0), hv(i), out);
+    success = success && checkFads(ha(), hv(i), out);
   }
 }
 
