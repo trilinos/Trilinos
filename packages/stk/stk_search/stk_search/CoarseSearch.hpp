@@ -81,18 +81,23 @@ void coarse_search(
 // are not sorted. If the caller needs this vector to be sorted, you must
 // call std::sort(intersections.begin(), intersections.end()) or similar.
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain,
-               std::vector<std::pair<RangeBox,RangeIdent> >   const& range,
-               SearchMethod                                          method,
-               stk::ParallelMachine                                  comm,
-               std::vector< std::pair< DomainIdent, RangeIdent> > &  intersections,
-               bool communicateRangeBoxInfo=true
-             )
+void coarse_search(std::vector<std::pair<DomainBox, DomainIdent>> const& domain,
+    std::vector<std::pair<RangeBox, RangeIdent>> const& range,
+    SearchMethod method,
+    stk::ParallelMachine comm,
+    std::vector<std::pair<DomainIdent, RangeIdent>>& intersections,
+    bool communicateRangeBoxInfo = true,
+    bool determineDomainAndRange = true)
 {
   switch( method )
   {
   case KDTREE:
-    coarse_search_kdtree_driver(domain,range,comm,intersections,communicateRangeBoxInfo);
+    if (determineDomainAndRange) {
+      coarse_search_kdtree_driver(domain,range,comm,intersections,communicateRangeBoxInfo);
+    }
+    else {
+      coarse_search_kdtree(domain,range,comm,intersections,communicateRangeBoxInfo);
+    }
     break;
   default:
     std::cerr << "coarse_search(..) interface used does not support SearchMethod " << method << std::endl;

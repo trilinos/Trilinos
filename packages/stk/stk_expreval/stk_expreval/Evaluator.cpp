@@ -149,6 +149,7 @@ public:
   Eval* m_owner;
 };
 
+KOKKOS_FUNCTION
 NgpNode::NgpNode()
   : m_opcode(OPCODE_UNDEFINED),
     m_data{{0.0}},

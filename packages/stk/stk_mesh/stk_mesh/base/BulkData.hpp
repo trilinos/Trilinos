@@ -62,6 +62,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
+#include "stk_mesh/base/SparseConnectivity.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
@@ -869,6 +870,9 @@ void get_entities(EntityRank rank, Selector const& selector, EntityVector& outpu
   void set_large_ids_flag(bool largeIds) { m_supportsLargeIds = largeIds; }
 
 protected: //functions
+  SparseConnectivity& get_sparse_connectivity() { return m_sparse_connectivity; }
+  const SparseConnectivity& get_sparse_connectivity() const { return m_sparse_connectivity; }
+
   Entity declare_entity( EntityRank ent_rank , EntityId ent_id);// Mod Mark
 
 
@@ -1581,6 +1585,7 @@ private: // data
   FieldDataManager *m_field_data_manager;
   mutable std::vector<SelectorBucketMap> m_selector_to_buckets_maps;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
+  SparseConnectivity m_sparse_connectivity;
   bool m_use_identifiers_for_resolving_sharing;
   std::string m_lastModificationDescription;
   stk::EmptyModificationSummary m_modSummary;
@@ -1604,9 +1609,11 @@ protected:
 inline unsigned
 BulkData::num_connectivity(Entity entity, EntityRank rank) const
 {
-  ThrowAssert(bucket_ptr(entity));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, rank);
+  if (rank == stk::topology::NODE_RANK) {
+    const MeshIndex &mesh_idx = mesh_index(entity);
+    return mesh_idx.bucket==nullptr ? 0 : mesh_idx.bucket->num_nodes(mesh_idx.bucket_ordinal);
+  }
+  return m_sparse_connectivity.num_connectivity(entity, rank);
 }
 
 inline unsigned
@@ -1631,8 +1638,11 @@ inline Entity const*
 BulkData::begin(Entity entity, EntityRank rank) const
 {
   ThrowAssert(is_valid_connectivity(entity, rank));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin(mesh_idx.bucket_ordinal, rank);
+  if (rank == stk::topology::NODE_RANK) {
+    const MeshIndex &mesh_idx = mesh_index(entity);
+    return mesh_idx.bucket->begin_nodes(mesh_idx.bucket_ordinal);
+  }
+  return m_sparse_connectivity.begin_connectivity(entity, rank);
 }
 
 inline Entity const*
@@ -1643,28 +1653,25 @@ BulkData::begin_nodes(Entity entity) const
   return mesh_idx.bucket->begin_nodes(mesh_idx.bucket_ordinal);
 }
 
-inline Entity const*
-BulkData::begin_edges(Entity entity) const
+inline
+Entity const* BulkData::begin_edges(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_edges(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_connectivity(entity, stk::topology::EDGE_RANK);
 }
 
-inline Entity const*
-BulkData::begin_faces(Entity entity) const
+inline
+Entity const* BulkData::begin_faces(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_faces(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_connectivity(entity, stk::topology::FACE_RANK);
 }
 
-inline Entity const*
-BulkData::begin_elements(Entity entity) const
+inline
+Entity const* BulkData::begin_elements(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_elements(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_connectivity(entity, stk::topology::ELEM_RANK);
 }
 
 inline ConnectivityOrdinal const*
@@ -1683,68 +1690,60 @@ BulkData::begin_node_ordinals(Entity entity) const
   return mesh_idx.bucket->begin_node_ordinals(mesh_idx.bucket_ordinal);
 }
 
-inline ConnectivityOrdinal const*
-BulkData::begin_edge_ordinals(Entity entity) const
+inline
+ConnectivityOrdinal const* BulkData::begin_edge_ordinals(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_edge_ordinals(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_ordinals(entity, stk::topology::EDGE_RANK);
 }
 
-inline ConnectivityOrdinal const*
-BulkData::begin_face_ordinals(Entity entity) const
+inline
+ConnectivityOrdinal const* BulkData::begin_face_ordinals(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_face_ordinals(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_ordinals(entity, stk::topology::FACE_RANK);
 }
 
-inline ConnectivityOrdinal const*
-BulkData::begin_element_ordinals(Entity entity) const
+inline
+ConnectivityOrdinal const* BulkData::begin_element_ordinals(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_element_ordinals(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_ordinals(entity, stk::topology::ELEM_RANK);
 }
 
 inline Permutation const*
 BulkData::begin_permutations(Entity entity, EntityRank rank) const
 {
   ThrowAssert(is_valid_connectivity(entity, rank));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_permutations(mesh_idx.bucket_ordinal, rank);
+  return m_sparse_connectivity.begin_permutations(entity, rank);
 }
 
-inline Permutation const*
-BulkData::begin_node_permutations(Entity entity) const
+inline
+Permutation const* BulkData::begin_node_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_node_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_permutations(entity, stk::topology::NODE_RANK);
 }
 
-inline Permutation const*
-BulkData::begin_edge_permutations(Entity entity) const
+inline
+Permutation const* BulkData::begin_edge_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_edge_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_permutations(entity, stk::topology::EDGE_RANK);
 }
 
-inline Permutation const*
-BulkData::begin_face_permutations(Entity entity) const
+inline
+Permutation const* BulkData::begin_face_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_face_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_permutations(entity, stk::topology::FACE_RANK);
 }
 
-inline Permutation const*
-BulkData::begin_element_permutations(Entity entity) const
+inline
+Permutation const* BulkData::begin_element_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->begin_element_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.begin_permutations(entity, stk::topology::ELEM_RANK);
 }
 
 inline unsigned
@@ -1755,36 +1754,36 @@ BulkData::num_nodes(Entity entity) const
   return mesh_idx.bucket->num_nodes(mesh_idx.bucket_ordinal);
 }
 
-inline unsigned
-BulkData::num_edges(Entity entity) const
+inline
+unsigned BulkData::num_edges(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->num_edges(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.num_connectivity(entity, stk::topology::EDGE_RANK);
 }
 
-inline unsigned
-BulkData::num_faces(Entity entity) const
+inline
+unsigned BulkData::num_faces(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->num_faces(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.num_connectivity(entity, stk::topology::FACE_RANK);
 }
 
-inline unsigned
-BulkData::num_elements(Entity entity) const
+inline
+unsigned BulkData::num_elements(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->num_elements(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.num_connectivity(entity, stk::topology::ELEM_RANK);
 }
 
 inline Entity const*
 BulkData::end(Entity entity, EntityRank rank) const
 {
   ThrowAssert(is_valid_connectivity(entity, rank));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end(mesh_idx.bucket_ordinal, rank);
+  if (rank == stk::topology::NODE_RANK) {
+    const MeshIndex &mesh_idx = mesh_index(entity);
+    return mesh_idx.bucket->end_nodes(mesh_idx.bucket_ordinal);
+  }
+  return m_sparse_connectivity.end_connectivity(entity, rank);
 }
 
 inline Entity const*
@@ -1795,28 +1794,25 @@ BulkData::end_nodes(Entity entity) const
   return mesh_idx.bucket->end_nodes(mesh_idx.bucket_ordinal);
 }
 
-inline Entity const*
-BulkData::end_edges(Entity entity) const
+inline
+Entity const* BulkData::end_edges(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_edges(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_connectivity(entity, stk::topology::EDGE_RANK);
 }
 
-inline Entity const*
-BulkData::end_faces(Entity entity) const
+inline
+Entity const* BulkData::end_faces(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_faces(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_connectivity(entity, stk::topology::FACE_RANK);
 }
 
-inline Entity const*
-BulkData::end_elements(Entity entity) const
+inline
+Entity const* BulkData::end_elements(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_elements(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_connectivity(entity, stk::topology::ELEMENT_RANK);
 }
 
 inline ConnectivityOrdinal const*
@@ -1835,75 +1831,67 @@ BulkData::end_node_ordinals(Entity entity) const
   return mesh_idx.bucket->end_node_ordinals(mesh_idx.bucket_ordinal);
 }
 
-inline ConnectivityOrdinal const*
-BulkData::end_edge_ordinals(Entity entity) const
+inline
+ConnectivityOrdinal const* BulkData::end_edge_ordinals(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_edge_ordinals(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_ordinals(entity, stk::topology::EDGE_RANK);
 }
 
-inline ConnectivityOrdinal const*
-BulkData::end_face_ordinals(Entity entity) const
+inline
+ConnectivityOrdinal const* BulkData::end_face_ordinals(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_face_ordinals(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_ordinals(entity, stk::topology::FACE_RANK);
 }
 
-inline ConnectivityOrdinal const*
-BulkData::end_element_ordinals(Entity entity) const
+inline
+ConnectivityOrdinal const* BulkData::end_element_ordinals(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_element_ordinals(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_ordinals(entity, stk::topology::ELEM_RANK);
 }
 
-inline Permutation const*
-BulkData::end_permutations(Entity entity, EntityRank rank) const
+inline
+Permutation const* BulkData::end_permutations(Entity entity, EntityRank rank) const
 {
   ThrowAssert(is_valid_connectivity(entity, rank));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_permutations(mesh_idx.bucket_ordinal, rank);
+  return m_sparse_connectivity.end_permutations(entity, rank);
 }
 
-inline Permutation const*
-BulkData::end_node_permutations(Entity entity) const
+inline
+Permutation const* BulkData::end_node_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::NODE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_node_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_permutations(entity, stk::topology::NODE_RANK);
 }
 
-inline Permutation const*
-BulkData::end_edge_permutations(Entity entity) const
+inline
+Permutation const* BulkData::end_edge_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::EDGE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_edge_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_permutations(entity, stk::topology::EDGE_RANK);
 }
 
-inline Permutation const*
-BulkData::end_face_permutations(Entity entity) const
+inline
+Permutation const* BulkData::end_face_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::FACE_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_face_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_permutations(entity, stk::topology::FACE_RANK);
 }
 
-inline Permutation const*
-BulkData::end_element_permutations(Entity entity) const
+inline
+Permutation const* BulkData::end_element_permutations(Entity entity) const
 {
   ThrowAssert(is_valid_connectivity(entity, stk::topology::ELEMENT_RANK));
-  const MeshIndex &mesh_idx = mesh_index(entity);
-  return mesh_idx.bucket->end_element_permutations(mesh_idx.bucket_ordinal);
+  return m_sparse_connectivity.end_permutations(entity, stk::topology::ELEM_RANK);
 }
 
-inline bool
-BulkData::has_permutation(Entity entity, EntityRank rank) const
+inline
+bool BulkData::has_permutation(Entity entity, EntityRank rank) const
 {
   ThrowAssert(bucket_ptr(entity));
-  return bucket(entity).has_permutation(rank);
+  return m_sparse_connectivity.has_permutation(entity_rank(entity), rank);
 }
 
 inline bool
@@ -1930,13 +1918,16 @@ BulkData::in_receive_ghost( EntityKey key ) const
 inline bool
 BulkData::in_receive_ghost( Entity entity ) const
 {
-  const std::vector<Ghosting*> & ghosts= ghostings();
-  for (size_t i=ghosts.size()-1;i>=AURA;--i)
-  {
-      if ( in_receive_ghost(*ghosts[i], entity) )
-          return true;
+  if (m_entitycomm[entity.local_offset()] == nullptr) {
+    return false;
   }
-  return false;
+
+  const int owner_rank = parallel_owner_rank(entity);
+  if (owner_rank == parallel_rank()) {
+    return false;
+  }
+
+  return m_entitycomm[entity.local_offset()]->isGhost;
 }
 
 inline bool

@@ -1,5 +1,6 @@
 #include "GraphEdgeData.hpp"
 #include "ElemElemGraphImpl.hpp"
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 
 namespace stk
@@ -9,43 +10,44 @@ namespace mesh
 
 void Graph::set_num_local_elements(size_t n)
 {
-    m_graphEdges.resize(n);
+    m_elemOffsets.resize(n+1);
 }
 
 void Graph::add_new_element()
 {
-    m_graphEdges.push_back(GraphEdgesForElement());
-    constexpr unsigned maxNumSides = 6;
-    m_graphEdges.back().reserve(maxNumSides);
+    if (m_elemOffsets.empty()) {
+      m_elemOffsets.assign(1, 0);
+    }
+    m_elemOffsets.push_back(m_graphEdges.size());
 }
 
 size_t Graph::get_num_elements_in_graph() const
 {
-    return m_graphEdges.size();
+    return m_elemOffsets.size() - 1;
 }
 
 size_t Graph::get_num_edges() const
 {
-    return m_numEdges;
+    return m_graphEdges.size();
 }
 
 size_t Graph::get_num_edges_for_element(impl::LocalId elem) const
 {
-    return m_graphEdges[elem].size();
+    return m_elemOffsets[elem+1] - m_elemOffsets[elem];
 }
 
 const GraphEdge & Graph::get_edge_for_element(impl::LocalId elem1, size_t index) const
 {
-    return m_graphEdges[elem1].get_edge_at_index(index);
+    return m_graphEdges[m_elemOffsets[elem1]+index];
 }
 
 void fill_graph_edges_for_elem_side(const GraphEdgesForElement &graphEdgesForElement, int side, std::vector<GraphEdge>& edges)
 {
     for(size_t i = 0; i < graphEdgesForElement.size(); ++i)
     {
-        if(graphEdgesForElement.get_edge_at_index(i).side1() == side)
+        if(graphEdgesForElement[i].side1() == side)
         {
-            edges.push_back(graphEdgesForElement.get_edge_at_index(i));
+            edges.push_back(graphEdgesForElement[i]);
         }
     }
 }
@@ -53,50 +55,93 @@ void fill_graph_edges_for_elem_side(const GraphEdgesForElement &graphEdgesForEle
 std::vector<GraphEdge> Graph::get_edges_for_element_side(impl::LocalId elem, int side) const
 {
     std::vector<GraphEdge> edges;
-    fill_graph_edges_for_elem_side(m_graphEdges[elem], side, edges);
+    fill_graph_edges_for_elem_side(get_edges_for_element(elem), side, edges);
     return edges;
 }
 
-const GraphEdgesForElement& Graph::get_edges_for_element(impl::LocalId elem) const
+GraphEdgesForElement Graph::get_edges_for_element(impl::LocalId elem) const
 {
-    return m_graphEdges[elem];
+    const unsigned begin = m_elemOffsets[elem];
+    const unsigned end = m_elemOffsets[elem+1];
+    return GraphEdgesForElement(&m_graphEdges[begin], &m_graphEdges[end]);
 }
 
-void Graph::reserve_edges(impl::LocalId localElemId, size_t numEdges)
+void Graph::set_offsets()
 {
-  m_graphEdges[localElemId].reserve(numEdges);
+  const unsigned numOffsets = m_elemOffsets.size();
+  m_elemOffsets.assign(std::max(1u, numOffsets), 0);
+
+  impl::LocalId prevElem = impl::INVALID_LOCAL_ID;
+  unsigned edgeCounter = 0;
+  for(const GraphEdge& edge : m_graphEdges) {
+    impl::LocalId elem1 = edge.elem1();
+    if (elem1 != prevElem) {
+      if (prevElem != impl::INVALID_LOCAL_ID) {
+        m_elemOffsets[prevElem] = edgeCounter;
+      }
+      edgeCounter = 0;
+      prevElem = elem1;
+    }
+    ++edgeCounter;
+  }
+
+  if (prevElem != impl::INVALID_LOCAL_ID) {
+    m_elemOffsets[prevElem] = edgeCounter;
+  }
+
+  unsigned edgeOffset = 0;
+  size_t numElems = m_elemOffsets.size()-1;
+  for(size_t i=0; i<numElems; ++i) {
+    unsigned count = m_elemOffsets[i];
+    m_elemOffsets[i] = edgeOffset;
+    edgeOffset += count;
+  }
+  m_elemOffsets.back() = edgeOffset;
 }
 
-void Graph::add_edge(const GraphEdge &graphEdge)
+using IterType = std::vector<GraphEdge>::iterator;
+
+void Graph::add_sorted_edges(const std::vector<GraphEdge>& graphEdges)
 {
-    m_graphEdges[graphEdge.elem1()].emplace_back(graphEdge);
-    ++m_numEdges;
+  ThrowAssertMsg(stk::util::is_sorted_and_unique(graphEdges, GraphEdgeLessByElem1()),"Input vector 'graphEdges' is expected to be sorted-and-unique");
+  if (!graphEdges.empty()) {
+    stk::util::insert_keep_sorted(graphEdges, m_graphEdges, GraphEdgeLessByElem1());
+    set_offsets();
+  }
 }
 
-void Graph::delete_edge_from_graph(impl::LocalId elem, int offset)
+void Graph::replace_sorted_edges(std::vector<GraphEdge>& graphEdges)
 {
-    m_graphEdges[elem].erase_at_index(offset);
-    --m_numEdges;
+  m_graphEdges.swap(graphEdges);
+  set_offsets();
 }
 
-void Graph::delete_edge(const GraphEdge &graphEdge)
+void Graph::delete_sorted_edges(const std::vector<GraphEdge>& edgesToDelete)
 {
-    const size_t numConnected = m_graphEdges[graphEdge.elem1()].size();
-    for(size_t i=0; i<numConnected; ++i)
-        if(m_graphEdges[graphEdge.elem1()].get_edge_at_index(i) == graphEdge)
-            delete_edge_from_graph(graphEdge.elem1(), i);
-}
+  for(const GraphEdge& edgeToDelete : edgesToDelete) {
+    impl::LocalId elem1 = edgeToDelete.elem1();
+    for(unsigned offset = m_elemOffsets[elem1]; offset < m_elemOffsets[elem1+1]; ++offset) {
+      GraphEdge& thisEdge = m_graphEdges[offset];
+      if (thisEdge == edgeToDelete) {
+        thisEdge.vertex1 = impl::INVALID_LOCAL_ID;
+      }
+    }
+  }
 
-void Graph::delete_all_edges(impl::LocalId elem)
-{
-    m_numEdges -= m_graphEdges[elem].size();
-    m_graphEdges[elem].clear();
+  if (!edgesToDelete.empty()) {
+    const unsigned offset = m_elemOffsets[edgesToDelete[0].elem1()];
+    m_graphEdges.erase(std::remove_if(m_graphEdges.begin()+offset, m_graphEdges.end(),
+                                      [](const GraphEdge& edge)
+                                      { return edge.vertex1 == impl::INVALID_LOCAL_ID; }),
+                       m_graphEdges.end());
+    set_offsets();
+  }
 }
 
 void Graph::clear()
 {
-    m_numEdges = 0;
     m_graphEdges.clear();
+    m_elemOffsets.clear();
 }
 
 impl::ParallelInfo& ParallelInfoForGraphEdges::get_parallel_info_for_graph_edge(const GraphEdge& graphEdge)

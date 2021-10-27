@@ -1,0 +1,12 @@
+BasedOnStyle: Google
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments: 'false'
+AlignConsecutiveDeclarations: 'false'
+AllowShortFunctionsOnASingleLine: 'Inline'
+BreakBeforeBraces: Linux
+ColumnLimit: '120'
+IndentWidth: '2'
+ReflowComments: 'true'
+SpaceAfterCStyleCast: 'true'
+BinPackParameters: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true

@@ -773,9 +773,33 @@ TEST_F(TestTextMesh, tooManyCoordinates)
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates), std::logic_error);
 }
 
-TEST_F(TestTextMesh, tooLittleData)
+TEST_F(TestTextMesh, tooLittleData_empty)
+{
+  std::string meshDesc = "";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_startsWithString)
+{
+  std::string meshDesc = "hi";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_noGlobalId)
+{
+  std::string meshDesc = "0 ";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_noTopology)
 {
   std::string meshDesc = "0,1,";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
+}
+
+TEST_F(TestTextMesh, tooLittleData_noNodes)
+{
+  std::string meshDesc = "0,1,HEX_8";
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
 }
 
@@ -825,6 +849,18 @@ TEST_F(TestTextMesh, spatialDimInconsistentWithMetaDataWithCoordinates)
   std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4";
   std::vector<double> coordinates = { 0,0, 1,0, 1,1, 0,1 };
   EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc, coordinates), std::logic_error);
+}
+
+TEST_F(TestTextMesh, endingWithNewlineIsOk)
+{
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8\n";
+  EXPECT_NO_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc));
+}
+
+TEST_F(TestTextMesh, stringAfterPartNameIsError)
+{
+  std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1,bogus\n";
+  EXPECT_THROW(stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc), std::logic_error);
 }
 
 TEST_F(TestTextMesh, particleHex)
