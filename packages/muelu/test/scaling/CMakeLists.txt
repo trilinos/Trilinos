@@ -118,7 +118,7 @@ TRIBITS_ADD_TEST(
 TRIBITS_ADD_TEST(
   Driver
   NAME Driver_anisotropic
-  ARGS "xml=anisotropic.xml --tol=1e-8"
+  ARGS "--xml=anisotropic.xml --tol=1e-6"
   NUM_MPI_PROCS 4
   COMM mpi # HAVE_MPI required
   )
