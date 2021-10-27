@@ -97,7 +97,7 @@ createNonsymmTridiagMatrix (const Teuchos::RCP<const Tpetra::Map<> >& rowMap,
     LO (rowMap->getNodeNumElements ());
   const GO gblMinGblInd = rowMap->getMinAllGlobalIndex ();
   const GO gblMaxGblInd = rowMap->getMaxAllGlobalIndex ();
-  auto A = rcp (new crs_matrix_type (rowMap, 3, Tpetra::StaticProfile));
+  auto A = rcp (new crs_matrix_type (rowMap, 3));
 
   const SC ONE = STS::one ();
   const SC TWO = ONE + ONE;

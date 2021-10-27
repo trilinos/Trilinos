@@ -1003,15 +1003,14 @@ namespace { // (anonymous)
       out << "Target matrix is correct!" << endl;
     }
 
-    const Tpetra::ProfileType pftypes[1] = {Tpetra::StaticProfile};
-    for (Tpetra::ProfileType profileType : pftypes) {
-      out << ">>> Target matrix is {StaticProfile, locally indexed}" << endl;
+    {
+      out << ">>> Target matrix is locally indexed" << endl;
       Teuchos::OSTab tab2 (out);
 
       const size_t maxNumEntPerRow = 10; // needs to be an upper bound
       RCP<CrsMatrixType> A_nonoverlapping =
         rcp (new CrsMatrixType (rowMap_nonoverlapping, colMap_expected,
-                                maxNumEntPerRow, profileType));
+                                maxNumEntPerRow));
       export_type exp (A_overlapping.getRowMap (), rowMap_nonoverlapping);
       A_nonoverlapping->doExport (A_overlapping, exp, Tpetra::ADD);
       A_nonoverlapping->fillComplete (domMap, ranMap);

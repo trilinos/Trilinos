@@ -119,8 +119,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Chebyshev, Issue234, SC)
   // For a diagonal matrix, we can use the row Map as the column Map.
   const size_t maxNumEntPerRow = 1;
   RCP<crs_matrix_type> A =
-    rcp (new crs_matrix_type (rowMap, colMap, maxNumEntPerRow,
-                              Tpetra::StaticProfile));
+    rcp (new crs_matrix_type (rowMap, colMap, maxNumEntPerRow));
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     A->insertLocalValues (lclRow, tuple (lclRow), tuple (ONE));
   }

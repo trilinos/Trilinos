@@ -80,7 +80,7 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
 
-    crs_matrix_type matrix (rowMap, 1, Tpetra::StaticProfile);
+    crs_matrix_type matrix (rowMap, 1);
 
     out << "Fill matrix by calling insertGlobalValues" << endl;
     if (rowMap->getNodeNumElements () != 0) {
@@ -232,7 +232,7 @@ namespace { // (anonymous)
     RCP<const map_type> rowMap =
       rcp (new map_type (gblNumRows, lclNumRows, indexBase, comm));
 
-    crs_matrix_type matrix (rowMap, 1, Tpetra::StaticProfile);
+    crs_matrix_type matrix (rowMap, 1);
 
     out << "Fill matrix by calling insertGlobalValues" << endl;
     if (rowMap->getNodeNumElements () != 0) {

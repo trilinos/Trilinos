@@ -288,18 +288,30 @@ namespace Tpetra {
     return Details::Behavior::verbose("CrsGraph");
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const size_t maxNumEntriesPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, maxNumEntriesPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const size_t maxNumEntriesPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , numAllocForAllRows_ (maxNumEntriesPerRow)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,maxNumEntriesPerRow,pftype,params): ";
+      "CrsGraph(rowMap,maxNumEntriesPerRow,params): ";
     staticAssertions ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
@@ -310,12 +322,25 @@ namespace Tpetra {
     checkInternalState ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const size_t maxNumEntriesPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, colMap, maxNumEntriesPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const size_t maxNumEntriesPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
@@ -323,7 +348,7 @@ namespace Tpetra {
     , numAllocForAllRows_ (maxNumEntriesPerRow)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,pftype,params): ";
+      "CrsGraph(rowMap,colMap,maxNumEntriesPerRow,params): ";
     staticAssertions ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       maxNumEntriesPerRow == Teuchos::OrdinalTraits<size_t>::invalid (),
@@ -334,18 +359,30 @@ namespace Tpetra {
     checkInternalState ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::ArrayView<const size_t>& numEntPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, numEntPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::ArrayView<const size_t>& numEntPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -388,11 +425,22 @@ namespace Tpetra {
 
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, numEntPerRow, params)
+  {}
+#endif
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
@@ -400,7 +448,7 @@ namespace Tpetra {
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -427,12 +475,25 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const ProfileType /* pftype */,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, colMap, numEntPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
@@ -441,7 +502,7 @@ namespace Tpetra {
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,colMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -468,20 +529,33 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const Teuchos::ArrayView<const size_t>& numEntPerRow,
             const ProfileType /* pftype */,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node> (
+                         rowMap, colMap, numEntPerRow, params)
+  {}
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::ArrayView<const size_t>& numEntPerRow,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
     , numAllocForAllRows_ (0)
   {
     const char tfecfFuncName[] =
-      "CrsGraph(rowMap,colMap,numEntPerRow,pftype,params): ";
+      "CrsGraph(rowMap,colMap,numEntPerRow,params): ";
     staticAssertions ();
 
     const size_t lclNumRows = rowMap.is_null () ?
@@ -921,13 +995,16 @@ namespace Tpetra {
     return isOpt;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  TPETRA_DEPRECATED
   ProfileType
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getProfileType () const
   {
     return StaticProfile;
   }
+#endif
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   global_size_t
@@ -3318,8 +3395,7 @@ namespace Tpetra {
     //    number of entries in each nonlocal row.
 
     RCP<crs_graph_type> nonlocalGraph =
-      rcp(new crs_graph_type(nonlocalRowMap, numEntPerNonlocalRow(),
-                             StaticProfile));
+      rcp(new crs_graph_type(nonlocalRowMap, numEntPerNonlocalRow()));
     {
       size_type curPos = 0;
       for (auto mapIter = this->nonlocals_.begin ();
@@ -7174,7 +7250,7 @@ namespace Tpetra {
     // If the user gave us a null destGraph, then construct the new
     // destination graph.  We will replace its column Map later.
     if (destGraph.is_null()) {
-      destGraph = rcp(new this_type(MyRowMap, 0, StaticProfile, graphparams));
+      destGraph = rcp(new this_type(MyRowMap, 0, graphparams));
     }
 
     /***************************************************/

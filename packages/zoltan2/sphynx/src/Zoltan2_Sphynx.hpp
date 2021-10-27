@@ -373,7 +373,7 @@ namespace Zoltan2 {
 	// Create the degree matrix with max row size set to 1
  	Teuchos::RCP<matrix_t> degMat(new matrix_t (graph_->getRowMap(), 
 						    graph_->getRowMap(), 
-						    1, Tpetra::StaticProfile));
+						    1));
 
 	scalar_t *val = new scalar_t[1];
 	lno_t *ind = new lno_t[1];

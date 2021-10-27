@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
       int NumMyElements    = diagonal.getMap()->getNodeNumElements();
       auto MyGlobalElements = diagonal.getMap()->getNodeElementList();
       Teuchos::ArrayRCP<ST> dd=diagonal.getDataNonConst();
-      RCP<CrsMatrix<ST> > invDiagMatrix = Teuchos::rcp(new CrsMatrix<ST>(A->getRowMap(), 1, Tpetra::StaticProfile));
+      RCP<CrsMatrix<ST> > invDiagMatrix = Teuchos::rcp(new CrsMatrix<ST>(A->getRowMap(), 1));
 
       for (Teuchos_Ordinal i=0; i<NumMyElements; ++i) {
         invDiagMatrix->insertGlobalValues(MyGlobalElements[i],

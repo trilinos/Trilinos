@@ -112,7 +112,7 @@ createTestMatrix (Teuchos::FancyOStream& out,
   // lets us use local indices.
   RCP<const map_type> colMap = rowMap;
   const size_t maxNumEntPerRow = 1;
-  RCP<MAT> A (new MAT (rowMap, colMap, maxNumEntPerRow, Tpetra::StaticProfile));
+  RCP<MAT> A (new MAT (rowMap, colMap, maxNumEntPerRow));
 
   if (rowMap->getNodeNumElements () != 0) {
     Teuchos::Array<SC> vals (1);
