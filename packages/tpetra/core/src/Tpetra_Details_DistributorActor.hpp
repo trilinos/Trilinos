@@ -373,16 +373,17 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     typedef typename ExpView::array_layout Layout;
     typedef typename ExpView::device_type Device;
     typedef typename ExpView::memory_traits Mem;
+
+    // This buffer is long enough for only one message at a time.
+    // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
+    // of sendType requested by user. 
+    // This code path formerly errored out with message:
+    //     Tpetra::Distributor::doPosts(3 args, Kokkos): 
+    //     The "send buffer" code path
+    //     doesn't currently work with nonblocking sends.
+    // Now, we opt to just do the communication in a way that works.
     Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray",
         plan.getMaxSendLength() * numPackets);
-
-    // FIXME (mfh 05 Mar 2013) This is broken for Isend (nonblocking
-    // sends), because the buffer is only long enough for one send.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(3 args, Kokkos): The \"send buffer\" code path "
-        "doesn't currently work with nonblocking sends.");
 
     for (size_t i = 0; i < numBlocks; ++i) {
       size_t p = i + procIndex;
@@ -401,16 +402,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         ImpView tmpSend =
           subview_offset(sendArray, size_t(0), plan.getLengthsTo()[p]*numPackets);
 
-        if (sendType == Details::DISTRIBUTOR_SEND) {
+        if (sendType == Details::DISTRIBUTOR_SEND ||
+            sendType == Details::DISTRIBUTOR_ISEND) {
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
               plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_ISEND) {
-          exports_view_type tmpSendBuf =
-            subview_offset (sendArray, size_t(0), plan.getLengthsTo()[p] * numPackets);
-          requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                tag, *plan.getComm()));
         }
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
         else if (sendType == Details::DISTRIBUTOR_RSEND) {
@@ -697,13 +693,17 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     typedef typename ExpView::array_layout Layout;
     typedef typename ExpView::device_type Device;
     typedef typename ExpView::memory_traits Mem;
-    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", maxNumPackets); // send buffer
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        sendType == Details::DISTRIBUTOR_ISEND,
-        std::logic_error,
-        "Tpetra::Distributor::doPosts(4-arg, Kokkos): "
-        "The \"send buffer\" code path may not necessarily work with nonblocking sends.");
+    // This buffer is long enough for only one message at a time.
+    // Thus, we use DISTRIBUTOR_SEND always in this case, regardless
+    // of sendType requested by user. 
+    // This code path formerly errored out with message:
+    //     Tpetra::Distributor::doPosts(4-arg, Kokkos): 
+    //     The "send buffer" code path
+    //     doesn't currently work with nonblocking sends.
+    // Now, we opt to just do the communication in a way that works.
+    Kokkos::View<Packet*,Layout,Device,Mem> sendArray ("sendArray", 
+                                                        maxNumPackets);
 
     Array<size_t> indicesOffsets (numExportPacketsPerLID.size(), 0);
     size_t ioffset = 0;
@@ -732,16 +732,11 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           ImpView tmpSend =
             subview_offset(sendArray, size_t(0), numPacketsTo_p);
 
-          if (sendType == Details::DISTRIBUTOR_SEND) {
+          if (sendType == Details::DISTRIBUTOR_SEND || 
+              sendType == Details::DISTRIBUTOR_ISEND) {
             send<int> (tmpSend,
                 as<int> (tmpSend.size ()),
                 plan.getProcsTo()[p], tag, *plan.getComm());
-          }
-          else if (sendType == Details::DISTRIBUTOR_ISEND) {
-            exports_view_type tmpSendBuf =
-              subview_offset (sendArray, size_t(0), numPacketsTo_p);
-            requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
-                  tag, *plan.getComm()));
           }
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
           else if (sendType == Details::DISTRIBUTOR_RSEND) {
