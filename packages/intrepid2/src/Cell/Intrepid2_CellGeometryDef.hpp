@@ -869,12 +869,15 @@ namespace Intrepid2
       const int numSubdivisions = numCellsPerGridCell(subdivisionStrategy_); // can be up to 6
       const int gridCellOrdinal = 0;
       auto hostPolicy = Kokkos::MDRangePolicy<HostExecSpace,Kokkos::Rank<2>>({0,0},{numSubdivisions,nodesPerCell});
+#if defined(INTREPID2_COMPILE_DEVICE_CODE)
+      /// do not compile host only code with device
+#else
       Kokkos::parallel_for("fill cellNodesHost", hostPolicy,
-      KOKKOS_LAMBDA (const int &subdivisionOrdinal, const int &nodeInCell) {
+      [=] (const int &subdivisionOrdinal, const int &nodeInCell) {
         auto node = gridCellNodeForSubdivisionNode(gridCellOrdinal, subdivisionOrdinal, nodeInCell);
         cellNodesHost(subdivisionOrdinal,nodeInCell) = node;
       });
-      
+#endif
       cellVariationType = (numSubdivisions == 1) ? CONSTANT : MODULAR;
     }
     else

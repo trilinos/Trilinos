@@ -63,7 +63,7 @@
 
 namespace Intrepid2 {
 
-#if defined(__CUDA_ARCH__) 
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) 
 #define INTREPID2_COMPILE_DEVICE_CODE
 #endif
 
@@ -96,6 +96,8 @@ namespace Intrepid2 {
     throw x(msg);                                                       \
   }
 
+  /// KK: device assert is disabled when NDEBUG is defined which behaves differently 
+  ///     from host test.
 #ifndef INTREPID2_ENABLE_DEVICE
 #define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg)                              \
   if (test) {                                                                               \
