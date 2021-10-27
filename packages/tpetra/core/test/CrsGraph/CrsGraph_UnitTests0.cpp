@@ -785,7 +785,8 @@ namespace { // (anonymous)
           out << "Calling globalAssemble()" << endl;
           ngraph.globalAssemble();
           TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
-                         numProcs == 1 );
+                         (numProcs == 1 ? 1 
+                                        : ngraph.getNumAllocatedEntriesInLocalRow(0) ));
           out << "Calling fillComplete(params)" << endl;
           ngraph.fillComplete (params);
 
