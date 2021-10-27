@@ -60,9 +60,13 @@ namespace Tpetra {
   {
     Teuchos::Array<std::string> sendTypes;
     sendTypes.push_back ("Isend");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     sendTypes.push_back ("Rsend");
+#endif
     sendTypes.push_back ("Send");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     sendTypes.push_back ("Ssend");
+#endif
     return sendTypes;
   }
 
@@ -203,15 +207,23 @@ namespace Tpetra {
     const std::string defaultSendType ("Send");
     Array<Details::EDistributorSendType> sendTypeEnums;
     sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
+#endif
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
+#endif
 
     RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
     plist->set ("Barrier between receives and sends", barrierBetween,
                 "Whether to execute a barrier between receives and sends in do"
-                "[Reverse]Posts().  Required for correctness when \"Send type\""
-                "=\"Rsend\", otherwise correct but not recommended.");
+                "[Reverse]Posts().  "
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+                "Required for correctness when \"Send type\""
+                "=\"Rsend\", otherwise "
+#endif
+                "Correct but not recommended.");
     setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
@@ -221,12 +233,15 @@ namespace Tpetra {
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
     plist->set ("Timer Label","","Label for Time Monitor output");
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
                 "tell whether a pointer points to host memory or CUDA device "
                 "memory.  You don't need to specify this option any more; "
                 "Tpetra assumes it is always true.  This is a very light "
                 "assumption on the MPI implementation, and in fact does not "
                 "actually involve hardware or system RDMA support.");
+#endif
 
     // mfh 24 Dec 2015: Tpetra no longer inherits from
     // Teuchos::VerboseObject, so it doesn't need the "VerboseObject"

@@ -190,14 +190,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   const Details::EDistributorSendType sendType = plan.getSendType();
   const bool doBarrier = plan.barrierBetweenRecvSend();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error,
-      "Tpetra::Distributor::doPosts(3 args, Kokkos): Ready-send version "
-      "requires a barrier between posting receives and posting ready sends.  "
-      "This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
-
   size_t selfReceiveOffset = 0;
 
   // MPI tag for nonblocking receives and blocking sends in this
@@ -278,11 +270,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
     Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts3KV_barrier_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
 
-    // If we are using ready sends (MPI_Rsend) below, we need to do
-    // a barrier before we post the ready sends.  This is because a
-    // ready send requires that its matching receive has already
-    // been posted before the send has been posted.  The only way to
-    // guarantee that in this case is to use a barrier.
     plan.getComm()->barrier ();
   }
 
@@ -337,6 +324,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 tag, *plan.getComm()));
         }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         else if (sendType == Details::DISTRIBUTOR_RSEND) {
           readySend<int> (tmpSend,
               as<int> (tmpSend.size ()),
@@ -346,7 +334,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           ssend<int> (tmpSend,
               as<int> (tmpSend.size ()),
               plan.getProcsTo()[p], tag, *plan.getComm());
-        } else {
+        }
+#endif
+        else {
           TEUCHOS_TEST_FOR_EXCEPTION(
               true,
               std::logic_error,
@@ -422,6 +412,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 tag, *plan.getComm()));
         }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
         else if (sendType == Details::DISTRIBUTOR_RSEND) {
           readySend<int> (tmpSend,
               as<int> (tmpSend.size ()),
@@ -432,6 +423,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
               as<int> (tmpSend.size ()),
               plan.getProcsTo()[p], tag, *plan.getComm());
         }
+#endif
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(
               true,
@@ -506,13 +498,6 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   // ParameterList set by setParameterList().
   const Details::EDistributorSendType sendType = plan.getSendType();
   const bool doBarrier = plan.barrierBetweenRecvSend();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
-      std::logic_error, "Tpetra::Distributor::doPosts(4 args, Kokkos): Ready-send "
-      "version requires a barrier between posting receives and posting ready "
-      "sends.  This should have been checked before.  "
-      "Please report this bug to the Tpetra developers.");
 
   const int myProcID = plan.getComm()->getRank ();
   size_t selfReceiveOffset = 0;
@@ -605,11 +590,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
 #ifdef HAVE_TPETRA_DISTRIBUTOR_TIMINGS
     Teuchos::TimeMonitor timeMonBarrier (*timer_doPosts4KV_barrier_);
 #endif // HAVE_TPETRA_DISTRIBUTOR_TIMINGS
-    // If we are using ready sends (MPI_Rsend) below, we need to do
-    // a barrier before we post the ready sends.  This is because a
-    // ready send requires that its matching receive has already
-    // been posted before the send has been posted.  The only way to
-    // guarantee that in this case is to use a barrier.
+
     plan.getComm()->barrier ();
   }
 
@@ -669,22 +650,24 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
               as<int> (tmpSend.size ()),
               plan.getProcsTo()[p], tag, *plan.getComm());
         }
-        else if (sendType == Details::DISTRIBUTOR_RSEND) {
-          readySend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
         else if (sendType == Details::DISTRIBUTOR_ISEND) {
           exports_view_type tmpSendBuf =
             subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 tag, *plan.getComm()));
         }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+        else if (sendType == Details::DISTRIBUTOR_RSEND) {
+          readySend<int> (tmpSend,
+              as<int> (tmpSend.size ()),
+              plan.getProcsTo()[p], tag, *plan.getComm());
+        }
         else if (sendType == Details::DISTRIBUTOR_SSEND) {
           ssend<int> (tmpSend,
               as<int> (tmpSend.size ()),
               plan.getProcsTo()[p], tag, *plan.getComm());
         }
+#endif
         else {
           TEUCHOS_TEST_FOR_EXCEPTION(
               true, std::logic_error,
@@ -749,8 +732,8 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           ImpView tmpSend =
             subview_offset(sendArray, size_t(0), numPacketsTo_p);
 
-          if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
+          if (sendType == Details::DISTRIBUTOR_SEND) {
+            send<int> (tmpSend,
                 as<int> (tmpSend.size ()),
                 plan.getProcsTo()[p], tag, *plan.getComm());
           }
@@ -760,16 +743,18 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
             requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                   tag, *plan.getComm()));
           }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+          else if (sendType == Details::DISTRIBUTOR_RSEND) {
+            readySend<int> (tmpSend,
+                as<int> (tmpSend.size ()),
+                plan.getProcsTo()[p], tag, *plan.getComm());
+          }
           else if (sendType == Details::DISTRIBUTOR_SSEND) {
             ssend<int> (tmpSend,
                 as<int> (tmpSend.size ()),
                 plan.getProcsTo()[p], tag, *plan.getComm());
           }
-          else { // if (sendType == Details::DISTRIBUTOR_SSEND)
-            send<int> (tmpSend,
-                as<int> (tmpSend.size ()),
-                plan.getProcsTo()[p], tag, *plan.getComm());
-          }
+#endif
         }
       }
       else { // "Sending" the message to myself

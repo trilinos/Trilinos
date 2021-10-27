@@ -51,15 +51,19 @@ DistributorSendTypeEnumToString (EDistributorSendType sendType)
   if (sendType == DISTRIBUTOR_ISEND) {
     return "Isend";
   }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   else if (sendType == DISTRIBUTOR_RSEND) {
     return "Rsend";
   }
+#endif
   else if (sendType == DISTRIBUTOR_SEND) {
     return "Send";
   }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   else if (sendType == DISTRIBUTOR_SSEND) {
     return "Ssend";
   }
+#endif
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
       "EDistributorSendType enum value " << sendType << ".");
@@ -878,6 +882,8 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     const Details::EDistributorSendType sendType =
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
     const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     {
       // mfh 03 May 2016: We keep this option only for backwards
       // compatibility, but it must always be true.  See discussion of
@@ -894,7 +900,9 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
          "Tpetra just assumes that the MPI implementation can tell whether a "
          "pointer points to host memory or CUDA device memory.");
     }
+#endif
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
     // Later, turn this into a validator so that it can be embedded in
@@ -907,6 +915,7 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
        "include the barrier if you use ready sends." << endl << "Ready sends "
        "require that their corresponding receives have already been posted, "
        "and the only way to guarantee that in general is with a barrier.");
+#endif
 
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
@@ -923,9 +932,13 @@ Teuchos::Array<std::string> distributorSendTypes()
 {
   Teuchos::Array<std::string> sendTypes;
   sendTypes.push_back ("Isend");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   sendTypes.push_back ("Rsend");
+#endif
   sendTypes.push_back ("Send");
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   sendTypes.push_back ("Ssend");
+#endif
   return sendTypes;
 }
 
@@ -945,15 +958,23 @@ DistributorPlan::getValidParameters() const
   const std::string defaultSendType ("Send");
   Array<Details::EDistributorSendType> sendTypeEnums;
   sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   sendTypeEnums.push_back (Details::DISTRIBUTOR_RSEND);
+#endif
   sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   sendTypeEnums.push_back (Details::DISTRIBUTOR_SSEND);
+#endif
 
   RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
   plist->set ("Barrier between receives and sends", barrierBetween,
       "Whether to execute a barrier between receives and sends in do"
-      "[Reverse]Posts().  Required for correctness when \"Send type\""
-      "=\"Rsend\", otherwise correct but not recommended.");
+      "[Reverse]Posts().  "
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+      "Required for correctness when \"Send type\""
+      "=\"Rsend\", otherwise "
+#endif
+      "Correct but not recommended.");
   setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
@@ -961,12 +982,15 @@ DistributorPlan::getValidParameters() const
       "MPI message tags for different code paths.  Highly recommended"
       " to avoid message collisions.");
   plist->set ("Timer Label","","Label for Time Monitor output");
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
       "tell whether a pointer points to host memory or CUDA device "
       "memory.  You don't need to specify this option any more; "
       "Tpetra assumes it is always true.  This is a very light "
       "assumption on the MPI implementation, and in fact does not "
       "actually involve hardware or system RDMA support.");
+#endif
 
   return Teuchos::rcp_const_cast<const ParameterList> (plist);
 }

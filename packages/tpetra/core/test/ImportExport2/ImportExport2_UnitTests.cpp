@@ -133,7 +133,7 @@ namespace {
     clp.setOption ("distributor-send-type", &distributorSendType,
                    "In MPI tests, the type of send operation that the Tpetra::"
                    "Distributor will use.  Valid values include \"Isend\", "
-                   "\"Rsend\", \"Send\", and \"Ssend\".");
+                   "and \"Send\".");
     clp.setOption ("barrier-between", "no-barrier-between", &barrierBetween,
                    "In MPI tests, whether Tpetra::Distributor will execute a "
                    "barrier between posting receives and posting sends.");
