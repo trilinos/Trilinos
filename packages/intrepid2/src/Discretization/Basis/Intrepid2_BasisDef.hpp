@@ -411,9 +411,10 @@ namespace Intrepid2 {
                                 const ordinal_type spaceDim) {
 
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 4) ),
+    INTREPID2_TEST_FOR_ABORT( !( (0 < spaceDim ) && (spaceDim < 8) ),
                                     ">>> ERROR (Intrepid2::getDkcardinality): Invalid space dimension");
     switch (operatorType) {
+        case OPERATOR_VALUE:
         case OPERATOR_GRAD:
         case OPERATOR_D1:
         case OPERATOR_D2:
@@ -434,8 +435,12 @@ namespace Intrepid2 {
     
     ordinal_type n = Intrepid2::getOperatorOrder(operatorType);
     return (spaceDim==1) ? 1 :
-           (spaceDim==2) ? n+1 :
-                          (n + 1) * (n + 2) / 2;
+           (spaceDim==2) ?  n + 1 :
+           (spaceDim==3) ? (n + 1) * (n + 2) / 2 :
+           (spaceDim==4) ? (n + 1) * (n + 2) * (n + 3) / 6 :
+           (spaceDim==5) ? (n + 1) * (n + 2) * (n + 3) * (n + 4) / 24 :
+           (spaceDim==6) ? (n + 1) * (n + 2) * (n + 3) * (n + 4) * (n + 5) / 120 :
+                           (n + 1) * (n + 2) * (n + 3) * (n + 4) * (n + 5) * (n + 6) / 720;
   }
 
   template<EOperator operatorType, ordinal_type spaceDim>

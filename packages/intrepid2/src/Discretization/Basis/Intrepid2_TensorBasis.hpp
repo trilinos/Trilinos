@@ -760,14 +760,130 @@ struct OperatorTensorDecomposition
       return numTensorialExtrusions_;
     }
     
+    /** \brief  Given "Dk" enumeration indices for the component bases, returns a Dk enumeration index for the composite basis.
+        \param [in] dkEnum1         - Dk enumeration index for first component basis
+        \param [in] operatorOrder1  - operator order for the first component basis
+        \param [in] dkEnum2         - Dk enumeration index for second component basis
+        \param [in] operatorOrder2  - operator order for the second component basis
+     
+        \return Dk enumeration index for the composite basis, corresponding to operator order operatorOrder1 + operatorOrder2.
+     */
+    ordinal_type getTensorDkEnumeration(ordinal_type dkEnum1, ordinal_type operatorOrder1,
+                                        ordinal_type dkEnum2, ordinal_type operatorOrder2) const
+    {
+      ordinal_type spaceDim1 = basis1_->getBaseCellTopology().getDimension();
+      ordinal_type spaceDim2 = basis2_->getBaseCellTopology().getDimension();
+      
+      // for now, we only support total spaceDim <= 3.  It would not be too hard to extend to support higher dimensions,
+      // but the support needs to be built out in e.g. shards::CellTopology for this, as well as our DkEnumeration, etc.
+      switch (spaceDim1)
+      {
+        case 1:
+          switch (spaceDim2)
+        {
+          case 1:
+            return getDkTensorIndex<1, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          case 2:
+            return getDkTensorIndex<1, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+        }
+        case 2:
+          switch (spaceDim2)
+        {
+          case 1:
+            return getDkTensorIndex<2, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+        }
+          //        case 3:
+          //          switch (spaceDim2)
+          //        {
+          //          case 1:
+          //            return getDkTensorIndex<3, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          //          case 2:
+          //            return getDkTensorIndex<3, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          //          case 3:
+          //            return getDkTensorIndex<3, 3>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
+          //          default:
+          //            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+          //        }
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
+      }
+    }
+    
     /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element OperatorTensorDecomposition corresponds to a single TensorData entry; a multiple-element OperatorTensorDecomposition corresponds to a VectorData object with axialComponents = false.
      
      Subclasses must override this method.
     */
     virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const
     {
-      INTREPID2_TEST_FOR_EXCEPTION(true, std::logic_error, "subclasses must override either getSimpleOperatorDecomposition() or getOperatorDecomposition()");
-      // (TensorBasis3 overrides getOperatorDecomposition()…)
+      const int spaceDim  = this->getBaseCellTopology().getDimension() + this->getNumTensorialExtrusions();
+      const int spaceDim1 = basis1_->getBaseCellTopology().getDimension() + basis1_->getNumTensorialExtrusions();
+      const int spaceDim2 = basis2_->getBaseCellTopology().getDimension() + basis2_->getNumTensorialExtrusions();
+      
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
+      
+      std::vector< std::vector<EOperator> > opsVALUE{{VALUE, VALUE}};
+      
+      std::vector< std::vector<EOperator> > ops(spaceDim);
+      
+      switch (operatorType)
+      {
+        case VALUE:
+          ops = opsVALUE;
+          break;
+        case OPERATOR_DIV:
+        case OPERATOR_CURL:
+          // DIV and CURL are multi-family bases; subclasses are required to override
+          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported operator type - TensorBasis subclass should override");
+          break;
+        case OPERATOR_GRAD:
+        case OPERATOR_D1:
+        case OPERATOR_D2:
+        case OPERATOR_D3:
+        case OPERATOR_D4:
+        case OPERATOR_D5:
+        case OPERATOR_D6:
+        case OPERATOR_D7:
+        case OPERATOR_D8:
+        case OPERATOR_D9:
+        case OPERATOR_D10:
+        case OPERATOR_Dn:
+        {
+          auto opOrder = getOperatorOrder(operatorType); // number of derivatives that we take in total
+          const int dkCardinality = getDkCardinality(operatorType, spaceDim);
+          
+          std::vector< std::vector<EOperator> > ops(dkCardinality);
+          
+          // the Dk enumeration happens in lexicographic order (reading from left to right: x, y, z, etc.)
+          // this governs the nesting order of the dkEnum1, dkEnum2 for loops below: dkEnum2 should increment fastest.
+          for (int derivativeCountComp2=0; derivativeCountComp2<=opOrder; derivativeCountComp2++)
+          {
+            int derivativeCountComp1=opOrder-derivativeCountComp2;
+            EOperator op1 = (derivativeCountComp1 == 0) ? OPERATOR_VALUE : EOperator(OPERATOR_D1 + (derivativeCountComp1 - 1));
+            EOperator op2 = (derivativeCountComp2 == 0) ? OPERATOR_VALUE : EOperator(OPERATOR_D1 + (derivativeCountComp2 - 1));
+            
+            int dkCardinality1 = (op1 != OPERATOR_VALUE) ? getDkCardinality(op1, spaceDim1) : 1;
+            int dkCardinality2 = (op2 != OPERATOR_VALUE) ? getDkCardinality(op2, spaceDim2) : 1;
+            
+            for (int dkEnum1=0; dkEnum1<dkCardinality1; dkEnum1++)
+            {
+              for (int dkEnum2=0; dkEnum2<dkCardinality2; dkEnum2++)
+              {
+                ordinal_type dkTensorIndex = getTensorDkEnumeration(dkEnum1, derivativeCountComp1, dkEnum2, derivativeCountComp2);
+                ops[dkTensorIndex] = std::vector<EOperator>{op1, op2};
+              }
+            }
+          }
+        }
+          break;
+      }
+      
+      std::vector<double> weights(ops.size(), 1.0);
+      return OperatorTensorDecomposition(ops, weights);
     }
     
     /** \brief Returns a full decomposition of the specified operator.  (Full meaning that all TensorBasis components are expanded into their non-TensorBasis components.)
@@ -794,7 +910,7 @@ struct OperatorTensorDecomposition
       // TODO: figure out how to determine num vector components without getOperatorDecomposition().  May want to look at TensorBasis::getValues( OutputViewType, const PointViewType, const EOperator) to see about sizing/rank.
       OperatorTensorDecomposition opDecomposition = getOperatorDecomposition(operatorType);
       
-      const ordinal_type numVectorComponents = opDecomposition.numVectorComponents();
+      ordinal_type numVectorComponents = opDecomposition.numVectorComponents();
       const bool useVectorData = numVectorComponents > 1;
       
       if (useVectorData)
@@ -987,59 +1103,6 @@ struct OperatorTensorDecomposition
     const char*
     getName() const override {
       return name_.c_str();
-    }
-    
-    /** \brief  Given "Dk" enumeration indices for the component bases, returns a Dk enumeration index for the composite basis.
-        \param [in] dkEnum1         - Dk enumeration index for first component basis
-        \param [in] operatorOrder1  - operator order for the first component basis
-        \param [in] dkEnum2         - Dk enumeration index for second component basis
-        \param [in] operatorOrder2  - operator order for the second component basis
-     
-        \return Dk enumeration index for the composite basis, corresponding to operator order operatorOrder1 + operatorOrder2.
-     */
-    ordinal_type getTensorDkEnumeration(ordinal_type dkEnum1, ordinal_type operatorOrder1,
-                                        ordinal_type dkEnum2, ordinal_type operatorOrder2) const
-    {
-      ordinal_type spaceDim1 = basis1_->getBaseCellTopology().getDimension();
-      ordinal_type spaceDim2 = basis2_->getBaseCellTopology().getDimension();
-      
-      // for now, we only support total spaceDim <= 3.  It would not be too hard to extend to support higher dimensions,
-      // but the support needs to be built out in e.g. shards::CellTopology for this, as well as our DkEnumeration, etc.
-      switch (spaceDim1)
-      {
-        case 1:
-          switch (spaceDim2)
-        {
-          case 1:
-            return getDkTensorIndex<1, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          case 2:
-            return getDkTensorIndex<1, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          default:
-            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
-        }
-        case 2:
-          switch (spaceDim2)
-        {
-          case 1:
-            return getDkTensorIndex<2, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          default:
-            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
-        }
-          //        case 3:
-          //          switch (spaceDim2)
-          //        {
-          //          case 1:
-          //            return getDkTensorIndex<3, 1>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          //          case 2:
-          //            return getDkTensorIndex<3, 2>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          //          case 3:
-          //            return getDkTensorIndex<3, 3>(dkEnum1, operatorOrder1, dkEnum2, operatorOrder2);
-          //          default:
-          //            INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
-          //        }
-        default:
-          INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported dimension combination");
-      }
     }
     
     std::vector<BasisPtr> getTensorBasisComponents() const
