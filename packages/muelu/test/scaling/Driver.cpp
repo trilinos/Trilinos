@@ -308,8 +308,19 @@ MueLu::MueLu_AMGX_initialize_plugins();
       if (paramList.isParameter(name))
         realParams.setEntry(name, paramList.getEntry(name));
     }
-  }
 
+    // Galeri updates (only works with Run1)
+    if(paramList.sublist("Run1").isSublist("Galeri")) {
+      ParameterList& moreParams = paramList.sublist("Run1").sublist("Galeri");
+      std::cout<<"*** moreParams ***"<<std::endl<<moreParams<<std::endl;
+      for (ParameterList::ConstIterator it = moreParams.begin(); it != moreParams.end(); it++) {
+        const std::string& name = moreParams.name(it);
+        if (moreParams.isParameter(name))
+          realParams.setEntry(name, moreParams.getEntry(name));
+      }
+    }
+  }
+  
 #ifdef HAVE_MPI
   // Generate the node-level communicator, if we want one
   Teuchos::RCP<const Teuchos::Comm<int> > nodeComm;
