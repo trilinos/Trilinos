@@ -5125,14 +5125,14 @@ namespace Tpetra {
                 if (isGloballyIndexed()) {
                   auto rowview = gblInds_wdv.getHostView(Access::ReadOnly);
                   for (size_t j=0; j < rowinfo.numEntries; ++j){ 
-                    GlobalOrdinal colgid = rowview[j] + rowinfo.offset1D;
+                    GlobalOrdinal colgid = rowview[j + rowinfo.offset1D];
                     out << colgid << " ";
                   }
                 }
                 else if (isLocallyIndexed()) {
                   auto rowview = lclIndsUnpacked_wdv.getHostView(Access::ReadOnly);
                   for (size_t j=0; j < rowinfo.numEntries; ++j) {
-                    LocalOrdinal collid = rowview[j] + rowinfo.offset1D;
+                    LocalOrdinal collid = rowview[j + rowinfo.offset1D];
                     out << colMap_->getGlobalElement(collid) << " ";
                   }
                 }
