@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,19 +30,23 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
-
-#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
-#include <stk_util/parallel/Parallel.hpp>
+//
 
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <vector>
-#include <iterator>
 #include <cstdlib>
-#include <sstream>
 #include <fstream>
+#include <iterator>
+#include <sstream>
+#include <stk_unit_test_utils/Search_UnitTestUtils.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <tuple>
+#include <vector>
+
+typedef stk::search::Point<double> Point;
+typedef stk::search::Box<double> StkBox;
+typedef std::vector< std::pair<StkBox,Ident> > BoxVector;
 
 namespace std {
 template <typename Ident, typename Proc>
@@ -52,52 +56,44 @@ std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<I
 }
 } // namespace std
 
-
 namespace {
 
 void expect_search_results(int num_procs, int proc_id, const SearchResults&  searchResults)
 {
-    if (num_procs == 1) {
-      ASSERT_EQ( searchResults.size(), 2u);
-      EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-      EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+  if (num_procs == 1) {
+    ASSERT_EQ(searchResults.size(), 2u);
+    EXPECT_EQ(searchResults[0], std::make_pair(Ident(0, 0), Ident(2, 0)));
+    EXPECT_EQ(searchResults[1], std::make_pair(Ident(1, 0), Ident(3, 0)));
+  } else {
+    if (proc_id == 0) {
+      ASSERT_EQ(searchResults.size(), 4u);
+      EXPECT_EQ(searchResults[0], std::make_pair(Ident(0, 0), Ident(2, 0)));
+      EXPECT_EQ(searchResults[1], std::make_pair(Ident(1, 0), Ident(3, 0)));
+      EXPECT_EQ(searchResults[2], std::make_pair(Ident(4, 1), Ident(2, 0)));
+      EXPECT_EQ(searchResults[3], std::make_pair(Ident(5, 1), Ident(3, 0)));
+    } else if (proc_id == num_procs - 1) {
+      ASSERT_EQ(searchResults.size(), 4u);
+      int prev = proc_id - 1;
+      EXPECT_EQ(searchResults[0], std::make_pair(Ident(proc_id * 4, proc_id), Ident(prev * 4 + 2, prev)));
+      EXPECT_EQ(searchResults[1], std::make_pair(Ident(proc_id * 4, proc_id), Ident(proc_id * 4 + 2, proc_id)));
+      EXPECT_EQ(searchResults[2], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(prev * 4 + 3, prev)));
+      EXPECT_EQ(searchResults[3], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(proc_id * 4 + 3, proc_id)));
+    } else {
+      ASSERT_EQ(searchResults.size(), 6u);
+      int prev = proc_id - 1;
+      int next = proc_id + 1;
+      EXPECT_EQ(searchResults[0], std::make_pair(Ident(proc_id * 4, proc_id), Ident(prev * 4 + 2, prev)));
+      EXPECT_EQ(searchResults[1], std::make_pair(Ident(proc_id * 4, proc_id), Ident(proc_id * 4 + 2, proc_id)));
+      EXPECT_EQ(searchResults[2], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(prev * 4 + 3, prev)));
+      EXPECT_EQ(searchResults[3], std::make_pair(Ident(proc_id * 4 + 1, proc_id), Ident(proc_id * 4 + 3, proc_id)));
+      EXPECT_EQ(searchResults[4], std::make_pair(Ident(next * 4, next), Ident(proc_id * 4 + 2, proc_id)));
+      EXPECT_EQ(searchResults[5], std::make_pair(Ident(next * 4 + 1, next), Ident(proc_id * 4 + 3, proc_id)));
     }
-    else {
-      if (proc_id == 0) {
-        ASSERT_EQ( searchResults.size(), 4u);
-        EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-        EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
-        EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
-        EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
-      }
-      else if (proc_id == num_procs - 1) {
-        ASSERT_EQ( searchResults.size(), 4u);
-        int prev = proc_id -1;
-        EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-        EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-        EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-        EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-      }
-      else {
-        ASSERT_EQ( searchResults.size(), 6u);
-        int prev = proc_id -1;
-        int next = proc_id + 1;
-        EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-        EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-        EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-        EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-        EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
-        EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
-      }
-    }
+  }
 }
 
-void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
+void test_coarse_search_for_algorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
-  typedef stk::search::Point<double> Point;
-  typedef stk::search::Box<double> StkBox;
-  typedef std::vector< std::pair<StkBox,Ident> > BoxVector;
-
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
 
@@ -130,7 +126,153 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   expect_search_results(num_procs, proc_id, searchResults);
 }
 
-void testCoarseSearchForAlgorithmUsingFloatAABoxes(stk::search::SearchMethod algorithm, MPI_Comm comm)
+std::pair<BoxVector, BoxVector> build_range_boxes_and_nested_domain_boxes(int num_procs, int proc_id, int sizeParam=1)
+{
+  BoxVector local_domain, local_range;
+
+  int startID = 0;
+  if (proc_id == 0) {
+    for (int i = 0; i < sizeParam; ++i) {
+      for (int j = 0; j < sizeParam; ++j, ++startID) {
+        StkBox box( Point(num_procs*i, num_procs*j, 0.0), Point(num_procs*(i+1), num_procs*(j+1), 1.0));
+        Ident id(startID, proc_id);
+        local_range.push_back(std::make_pair(box,id));
+      }
+    }
+  }
+
+  for (int procShift = 0; procShift < num_procs; ++procShift) {
+    for (int i = 0; i < sizeParam; ++i) {
+      for (int j = 0; j < sizeParam; ++j, ++startID) {
+        StkBox box( Point(procShift*sizeParam+i, sizeParam*proc_id+j, 0.0), Point(procShift*sizeParam+i+1.0, sizeParam*proc_id+j+1, 1.0));
+        Ident id(startID, proc_id);
+        local_domain.push_back(std::make_pair(box,id));
+      }
+    }
+  }
+
+  return std::make_pair(local_domain, local_range);
+
+}
+
+void expect_coarse_search_range_box_communication(int num_procs,
+    int proc_id,
+    const SearchResults& searchResultsCommunicateOn,
+    const SearchResults& searchResultsCommunicateOff)
+{
+  if (num_procs == 1) {
+    ASSERT_EQ(searchResultsCommunicateOn.size(), 1u);
+    ASSERT_EQ(searchResultsCommunicateOff.size(), 1u);
+    EXPECT_EQ(searchResultsCommunicateOn[0], std::make_pair(Ident(1, 0), Ident(0, 0)));
+    EXPECT_EQ(searchResultsCommunicateOff[0], std::make_pair(Ident(1, 0), Ident(0, 0)));
+  }
+
+  else {
+    bool onRangeBoxProc = (proc_id == 0);
+    if (onRangeBoxProc) {
+      ASSERT_GT(searchResultsCommunicateOn.size(), searchResultsCommunicateOff.size());
+      ASSERT_EQ(searchResultsCommunicateOn.size(), static_cast<size_t>(num_procs * num_procs));
+    } else {
+      ASSERT_EQ(searchResultsCommunicateOn.size(), static_cast<size_t>(num_procs));
+    }
+    ASSERT_EQ(searchResultsCommunicateOff.size(), static_cast<size_t>(num_procs));
+
+    for (auto searchResult : searchResultsCommunicateOff) {
+      EXPECT_EQ(searchResult.first.proc(), proc_id);
+    }
+  }
+}
+
+void test_coarse_search_range_box_communication(stk::search::SearchMethod algorithm, MPI_Comm comm)
+{
+
+  BoxVector local_domain, local_range;
+  int num_procs = stk::parallel_machine_size(comm);
+  int proc_id   = stk::parallel_machine_rank(comm);
+
+  std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id);  
+
+  SearchResults searchResultsCommunicateOn;
+  SearchResults searchResultsCommunicateOff;
+
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsCommunicateOn, true, false);
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsCommunicateOff, false, false);
+
+  expect_coarse_search_range_box_communication(num_procs, proc_id, searchResultsCommunicateOn, searchResultsCommunicateOff);
+}
+
+TEST(stk_search, coarse_search_range_box_communication)
+{
+  test_coarse_search_range_box_communication(stk::search::KDTREE, MPI_COMM_WORLD);
+}
+
+void test_coarse_search_determine_domain_and_range_communicate_on(stk::search::SearchMethod algorithm, MPI_Comm comm)
+{
+
+  BoxVector local_domain, local_range;
+  int num_procs = stk::parallel_machine_size(comm);
+  int proc_id   = stk::parallel_machine_rank(comm);
+
+  std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id);  
+
+  SearchResults searchResultsDetermineOn;
+  SearchResults searchResultsDetermineOff;
+
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsDetermineOn, true, true);
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsDetermineOff, true, false);
+
+  std::sort(searchResultsDetermineOn.begin(), searchResultsDetermineOn.end());
+  std::sort(searchResultsDetermineOff.begin(), searchResultsDetermineOff.end());
+
+  EXPECT_EQ(searchResultsDetermineOn, searchResultsDetermineOff);
+}
+
+TEST(stk_search, coarse_search_determine_domain_and_range_communicate_on)
+{
+  test_coarse_search_determine_domain_and_range_communicate_on(stk::search::KDTREE, MPI_COMM_WORLD);
+}
+
+void test_coarse_search_two_pass(stk::search::SearchMethod algorithm, MPI_Comm comm, int sizeParam)
+{
+  BoxVector local_domain, local_range, additional_domain;
+  int num_procs = stk::parallel_machine_size(comm);
+  int proc_id   = stk::parallel_machine_rank(comm);
+
+  std::tie(local_domain, local_range) = build_range_boxes_and_nested_domain_boxes(num_procs, proc_id, sizeParam);
+  if (proc_id == num_procs - 1) {
+    StkBox box( Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 1.0));
+    Ident id(local_domain.size(), proc_id);
+    additional_domain.push_back(std::make_pair(box,id));
+  }
+
+  SearchResults searchResultsPassOne;
+  SearchResults searchResultsPassTwo;
+  SearchResults searchResultsAllBoxes;
+
+  bool communicate = false;
+  bool determine = false;
+
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsPassOne, communicate, determine);
+  stk::search::coarse_search(additional_domain, local_range, algorithm, comm, searchResultsPassTwo, communicate, determine);
+
+  local_domain.insert(local_domain.end(), additional_domain.begin(), additional_domain.end());
+
+  stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResultsAllBoxes, communicate, determine);
+
+  searchResultsPassOne.insert(searchResultsPassOne.end(), searchResultsPassTwo.begin(), searchResultsPassTwo.end());
+
+  std::sort(searchResultsPassOne.begin(), searchResultsPassOne.end());
+  std::sort(searchResultsAllBoxes.begin(), searchResultsAllBoxes.end());
+
+  EXPECT_EQ(searchResultsPassOne, searchResultsAllBoxes);
+}
+
+TEST(stk_search, coarse_search_two_pass)
+{
+  test_coarse_search_two_pass(stk::search::KDTREE, MPI_COMM_WORLD, 2);
+}
+
+void test_coarse_search_for_algorithm_using_float_boxes(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
   int num_procs = stk::parallel_machine_size(comm);
   int proc_id   = stk::parallel_machine_rank(comm);
@@ -166,83 +308,70 @@ void testCoarseSearchForAlgorithmUsingFloatAABoxes(stk::search::SearchMethod alg
 
 TEST(stk_search, coarse_search_kdtree)
 {
-  testCoarseSearchForAlgorithm(stk::search::KDTREE, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm(stk::search::KDTREE, MPI_COMM_WORLD);
 }
 
 TEST(stk_search, coarse_search_kdtree_using_float_aa_boxes)
 {
-    testCoarseSearchForAlgorithmUsingFloatAABoxes(stk::search::KDTREE, MPI_COMM_WORLD);
+  test_coarse_search_for_algorithm_using_float_boxes(stk::search::KDTREE, MPI_COMM_WORLD);
 }
 
-void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
+void test_ident_proc_with_search(stk::search::SearchMethod searchMethod)
 {
-    MPI_Comm comm = MPI_COMM_WORLD;
-    int procId=-1;
-    MPI_Comm_rank(comm, &procId);
-    int numProcs = -1;
-    MPI_Comm_size(comm, &numProcs);
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int procId = -1;
+  MPI_Comm_rank(comm, &procId);
+  int numProcs = -1;
+  MPI_Comm_size(comm, &numProcs);
 
-    if ( numProcs != 1 )
-    {
-        FloatBox box1(0,0,0,1,1,1);
-        FloatBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
-        Ident id1(1, 0);
-        Ident id2(1, 1);
+  if (numProcs != 1) {
+    FloatBox box1(0, 0, 0, 1, 1, 1);
+    FloatBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
+    Ident id1(1, 0);
+    Ident id2(1, 1);
 
-        FloatBoxVector boxes;
-        if ( procId == 0 )
-        {
-          boxes.push_back(std::make_pair(box1, id1));
-        }
-        else if ( procId == 1 )
-        {
-          boxes.push_back(std::make_pair(box2, id2));
-        }
-
-        SearchResults searchResults;
-
-        coarse_search(boxes, boxes, searchMethod, comm, searchResults);
-
-        SearchResults goldResults;
-
-        Ident goldId1(1, 0);
-        Ident goldId2(1, 1);
-
-        if (procId == 0 )
-        {
-            goldResults.push_back(std::make_pair(goldId1, goldId1));
-            goldResults.push_back(std::make_pair(goldId1, goldId2));
-            goldResults.push_back(std::make_pair(goldId2, goldId1));
-            ASSERT_EQ(goldResults.size(), searchResults.size());
-        }
-        else if ( procId == 1 )
-        {
-            goldResults.push_back(std::make_pair(goldId1, goldId2));
-            goldResults.push_back(std::make_pair(goldId2, goldId1));
-            goldResults.push_back(std::make_pair(goldId2, goldId2));
-            ASSERT_EQ(3u, searchResults.size());
-        }
-
-        for (size_t i=0;i<goldResults.size();i++)
-        {
-            EXPECT_EQ(goldResults[i], searchResults[i]) << "Test comparison for proc " << procId << " failed for comparsion #" << i << std::endl;
-        }
+    FloatBoxVector boxes;
+    if (procId == 0) {
+      boxes.push_back(std::make_pair(box1, id1));
+    } else if (procId == 1) {
+      boxes.push_back(std::make_pair(box2, id2));
     }
+
+    SearchResults searchResults;
+
+    coarse_search(boxes, boxes, searchMethod, comm, searchResults);
+
+    SearchResults goldResults;
+
+    Ident goldId1(1, 0);
+    Ident goldId2(1, 1);
+
+    if (procId == 0) {
+      goldResults.push_back(std::make_pair(goldId1, goldId1));
+      goldResults.push_back(std::make_pair(goldId1, goldId2));
+      goldResults.push_back(std::make_pair(goldId2, goldId1));
+      ASSERT_EQ(goldResults.size(), searchResults.size());
+    } else if (procId == 1) {
+      goldResults.push_back(std::make_pair(goldId1, goldId2));
+      goldResults.push_back(std::make_pair(goldId2, goldId1));
+      goldResults.push_back(std::make_pair(goldId2, goldId2));
+      ASSERT_EQ(3u, searchResults.size());
+    }
+
+    for (size_t i = 0; i < goldResults.size(); i++) {
+      EXPECT_EQ(goldResults[i], searchResults[i])
+          << "Test comparison for proc " << procId << " failed for comparsion #" << i << std::endl;
+    }
+  }
 }
 
 TEST(stk_search, coarse_search_kdtree_ident_proc_switch)
 {
-    testIdentProcWithSearch(stk::search::KDTREE);
+  test_ident_proc_with_search(stk::search::KDTREE);
 }
 
-void testCoarseSearchOnePoint(stk::search::SearchMethod searchMethod)
+void test_coarse_search_one_point(stk::search::SearchMethod searchMethod)
 {
-    typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
-    typedef stk::search::Point<double> Point;
-    typedef stk::search::Box<double> StkBox;
-    typedef std::vector<std::pair<StkBox,Ident> > BoxVector;
-    typedef std::vector<std::pair<Ident,Ident> > SearchResults;
-
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     //int num_procs = stk::parallel_machine_size(comm);
     int proc_id   = stk::parallel_machine_rank(comm);
@@ -289,10 +418,10 @@ void testCoarseSearchOnePoint(stk::search::SearchMethod searchMethod)
 
 TEST(stk_search, coarse_search_one_point_KDTREE)
 {
-    testCoarseSearchOnePoint(stk::search::KDTREE);
+  test_coarse_search_one_point(stk::search::KDTREE);
 }
 
-void testCoarseSearchForDeterminingSharingAllAllCase(stk::search::SearchMethod searchMethod)
+void test_coarse_search_for_determining_sharing_all_all_case(stk::search::SearchMethod searchMethod)
 {
     const stk::ParallelMachine comm = MPI_COMM_WORLD;
     const int p_rank = stk::parallel_machine_rank(comm);
@@ -343,12 +472,11 @@ void testCoarseSearchForDeterminingSharingAllAllCase(stk::search::SearchMethod s
 
 TEST(CoarseSearch, forDeterminingSharingAllAllCase_KDTREE)
 {
-  testCoarseSearchForDeterminingSharingAllAllCase(stk::search::KDTREE);
+  test_coarse_search_for_determining_sharing_all_all_case(stk::search::KDTREE);
 }
 
-
-void testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::SearchMethod searchMethod,
-                                                             int numLoops = 1)
+void test_coarse_search_for_determining_sharing_linear_adjacent_case(
+    stk::search::SearchMethod searchMethod, int numLoops = 1)
 {
     const stk::ParallelMachine comm = MPI_COMM_WORLD;
     const int p_rank = stk::parallel_machine_rank(comm);
@@ -446,12 +574,12 @@ void testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::Search
 
 TEST(CoarseSearch, forDeterminingSharingLinearAdjacentCase_KDTREE)
 {
-  testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::KDTREE);
+  test_coarse_search_for_determining_sharing_linear_adjacent_case(stk::search::KDTREE);
 }
 
 TEST(CoarseSearchScaling, forDeterminingSharingLinearAdjacentCase_KDTREE)
 {
-  testCoarseSearchForDeterminingSharingLinearAdjacentCase(stk::search::KDTREE, 1000);
+  test_coarse_search_for_determining_sharing_linear_adjacent_case(stk::search::KDTREE, 1000);
 }
 
 } //namespace

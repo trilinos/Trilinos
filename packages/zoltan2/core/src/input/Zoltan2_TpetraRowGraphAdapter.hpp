@@ -545,7 +545,7 @@ RCP<User> TpetraRowGraphAdapter<User,UserCoord>::doMigration(
 
   // target graph
   RCP<tcrsgraph_t> G =
-    rcp(new tcrsgraph_t(tmap, nnz_size_t(), Tpetra::StaticProfile));
+    rcp(new tcrsgraph_t(tmap, nnz_size_t()));
 
   G->doImport(*pCrsGraphSrc, importer, Tpetra::INSERT);
   G->fillComplete();

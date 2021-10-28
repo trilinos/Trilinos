@@ -71,7 +71,17 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
      ( *graph->activeCrsGraph_!= fe_crs_graph_type::FE_ACTIVE_OWNED,std::runtime_error,
       "Input graph must be in FE_ACTIVE_OWNED mode when this constructor is called.");
 
-  activeCrsMatrix_     = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
+  bool start_owned = false;
+  if (! params.is_null ()) {
+    if (params->isParameter ("start owned")) {
+      start_owned = params->get<bool>("start owned", start_owned);
+    }
+  }
+  if(start_owned) {
+    activeCrsMatrix_  = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED));
+  } else {
+    activeCrsMatrix_  = Teuchos::rcp(new FEWhichActive(FE_ACTIVE_OWNED_PLUS_SHARED));
+  }
 
   // Make an "inactive" matrix, if we need to
   if(!graph->inactiveCrsGraph_.is_null() ) {

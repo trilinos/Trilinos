@@ -388,13 +388,13 @@ namespace MueLu {
         ArrayView<const LO>  columns;
         ArrayView<const SC>  values;
         Pe->getLocalRowView(i,columns,values);
-        // FIXME: This won't work on fancy nodes
-        ArrayView<SC> values_nc = Teuchos::av_const_cast<SC>(values);
+        Teuchos::Array<SC> newValues(values.size());
         for (LO j=0; j<(LO)values.size(); j++)
-          if ((values_nc[j] == one || values_nc[j] == neg_one))
-            values_nc[j] = zero;       
+          if ((values[j] == one || values[j] == neg_one))
+            newValues[j] = zero;
           else
-            values_nc[j] /= two;
+            newValues[j] = values[j] / two;
+        Pe->replaceLocalValues(i,columns,newValues());
       }//end for i < Ne
       Pe->fillComplete(Pe->getDomainMap(),Pe->getRangeMap());
     }

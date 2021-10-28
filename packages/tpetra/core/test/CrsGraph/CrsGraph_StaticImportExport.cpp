@@ -81,7 +81,7 @@ generate_crs_graph(const RCP<const Tpetra::Map<LO,GO,NT>>& map)
   using graph_type = Tpetra::CrsGraph<LO, GO, NT>;
 
   // Create a Tpetra::Matrix using the Map, with dynamic allocation.
-  auto A = rcp(new graph_type(map, 3, Tpetra::StaticProfile));
+  auto A = rcp(new graph_type(map, 3));
 
   // const size_t numMyElements = map->getNodeNumElements ();
   // The list of global elements owned by this MPI process.
@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, ImportToStaticGraph, LO, GO, NT)
     Tpetra::Details::Behavior::enable_verbose_behavior();
     // Make a new sparse graph whose row map is the global Map.
     out << prefix << "Creating empty graph from global map.\n";
-    B = rcp(new graph_type(global_map, 0, Tpetra::StaticProfile));
+    B = rcp(new graph_type(global_map, 0));
     out << prefix << "Empty graph from global map created.\n";
 
     // Redistribute the data, NOT in place, from graph A (which lives
@@ -259,7 +259,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, ImportToStaticGraphLocal, LO, GO, NT
     Tpetra::Details::Behavior::enable_verbose_behavior();
     // Make a new sparse graph whose row map is the global Map.
     out << prefix << "Creating empty graph from proc 0 map.\n";
-    auto B = graph_type(proc_zero_map, 0, Tpetra::StaticProfile);
+    auto B = graph_type(proc_zero_map, 0);
     out << prefix << "Empty graph from proc 0 map created.\n";
 
     // Redistribute the data, NOT in place, from graph A (which lives
@@ -276,12 +276,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(CrsGraph, ImportToStaticGraphLocal, LO, GO, NT
     using export_type = Tpetra::Export<LO,GO,NT>;
     export_type exporter1(proc_zero_map, global_map);
     comm->barrier();
-    auto B = graph_type(global_map, 0, Tpetra::StaticProfile);
+    auto B = graph_type(global_map, 0);
     B.doExport(*A, exporter1, Tpetra::INSERT);
     B.fillComplete();
 
     export_type exporter2(global_map, global_map);
-    auto C = graph_type(global_map, 0, Tpetra::StaticProfile);
+    auto C = graph_type(global_map, 0);
     C.doExport(B, exporter2, Tpetra::INSERT);
     C.fillComplete();
   }

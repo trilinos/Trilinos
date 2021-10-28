@@ -247,12 +247,12 @@ testTranspose (bool& success,
                          valsBuf.begin ());
 
           bool good = true;
-          for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-            if (lclColIndsBuf[lclRow] != lclRow) {
+          for (LO lclInd = 0; lclInd < lclNumRows; ++lclInd) {
+            if (lclColIndsBuf[lclInd] != lclInd) {
               good = false;
               break;
             }
-            else if (valsBuf[lclRow] != 1.0) {
+            else if (valsBuf[lclInd] != 1.0) {
               good = false;
               break;
             }
@@ -308,12 +308,12 @@ testTranspose (bool& success,
 
         if (success) {
           bool good = true;
-          for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-            if (lclColInds[lclRow] != lclRow) {
+          for (LO lclInd = 0; lclInd < lclNumRows; ++lclInd) {
+            if (lclColInds[lclInd] != lclInd) {
               good = false;
               break;
             }
-            else if (vals[lclRow] != 1.0) {
+            else if (vals[lclInd] != 1.0) {
               good = false;
               break;
             }

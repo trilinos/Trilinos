@@ -1137,7 +1137,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       n += A->getNodeMaxNumRowEntries();
 
       RCP<const map_type> rm = B->getRowMap();
-      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n, Tpetra::StaticProfile));
+      RCP<Matrix_t> E = rcp (new Matrix_t(rm, n));
       auto one = Teuchos::ScalarTraits<MT>::one();
       Tpetra::MatrixMatrix::Add(*B, BT, one, *E, one);
 

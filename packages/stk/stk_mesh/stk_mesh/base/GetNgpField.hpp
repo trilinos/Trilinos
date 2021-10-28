@@ -49,6 +49,7 @@ NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkFiel
   if (ngpField == nullptr) {
     ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, execSpace, true);
     impl::set_ngp_field(stkField, ngpField);
+    ngpField->clear_host_sync_state();
   }
   else {
     if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {

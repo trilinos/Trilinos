@@ -531,7 +531,7 @@
                   {
                     if (field_data[ipts])
                       {
-                        for (int isp = 0; isp < fieldDim; isp++)
+                        for (int isp = 0; isp < std::min(fieldDim,3); isp++)
                           {
                             c_p[isp] += field_data[ipts][isp]*spc[ipts][isp];
                           }
@@ -1488,7 +1488,7 @@
       stk::mesh::EntityRank db_rank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).rank();
 
       stk::mesh::EntityId element_id = m_eMesh.identifier(element);
-      stk::mesh::EntityId element_rank = m_eMesh.entity_rank(element);
+      stk::mesh::EntityRank element_rank = m_eMesh.entity_rank(element);
       bool should_put_in_id = (element_id < db_id);
       bool should_put_in_rank_gt = (element_rank > db_rank);
       bool should_put_in_rank_gte = (element_rank >= db_rank);
@@ -1560,7 +1560,7 @@
 
       // if empty or if my id is the smallest, make this element the owner
       stk::mesh::EntityId db_id = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).id();
-      stk::mesh::EntityId db_rank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).rank();
+      stk::mesh::EntityRank db_rank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).rank();
 
       bool should_put_in_id = (m_eMesh.identifier(element)  < db_id);
       bool should_put_in_rank_gt = (m_eMesh.entity_rank(element) > db_rank);
@@ -1603,7 +1603,7 @@
       stk::mesh::EntityRank db_rank = std::get<SDC_DATA_OWNING_ELEMENT_KEY>(nodeId_elementOwnerId).rank();
 
       stk::mesh::EntityId element_id = m_eMesh.identifier(element);
-      stk::mesh::EntityId element_rank = m_eMesh.entity_rank(element);
+      stk::mesh::EntityRank element_rank = m_eMesh.entity_rank(element);
       bool should_put_in_id = (element_id < db_id);
       bool should_put_in_rank_gt = (element_rank > db_rank);
       bool should_put_in_rank_gte = (element_rank >= db_rank);
@@ -2656,9 +2656,29 @@
       // set map values to new node id's
       unsigned inode=0;
 
-      for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter)
+      struct MySubDimCellCompare
+      {
+        bool
+        operator()(const SubDimCell_SDCEntityType& x, 
+                   const SubDimCell_SDCEntityType& y) const
         {
-          SubDimCellData& data = (*cell_iter).second;
+          MyEntityLess el = MyEntityLess(x.m_eMesh);
+          return std::lexicographical_compare(x.begin(), x.end(), 
+                                              y.begin(), y.end(), el);
+        }
+      } mySubDimCellCompare;
+      
+      typedef std::vector<SubDimCell_SDCEntityType> SubDimCellVector;
+      SubDimCellVector keys;
+      keys.reserve(m_cell_2_data_map.size());
+      for (SubDimCellToDataMap::iterator cell_iter = m_cell_2_data_map.begin(); cell_iter != m_cell_2_data_map.end(); ++cell_iter) {
+        keys.push_back((*cell_iter).first);
+      }
+      std::sort(keys.begin(), keys.end(), mySubDimCellCompare);
+      
+      for (SubDimCellVector::const_iterator cell_iter = keys.begin(); cell_iter != keys.end(); ++cell_iter)
+        {
+          SubDimCellData& data = m_cell_2_data_map[*cell_iter];
           NodeIdsOnSubDimEntityType& nodeIds_onSE = std::get<SDC_DATA_GLOBAL_NODE_IDS>(data);
           if (!nodeIds_onSE.size())
             continue;

@@ -96,8 +96,9 @@ public:
 #endif /* DOXYGEN_COMPILE */
 
 
+#ifndef STK_HIDE_DEPRECATED_CODE Delete this whole header after June 2021
   /** \brief  Construct with locally-submitted keys */
-  ParallelIndex( ParallelMachine comm, 
+STK_DEPRECATED  ParallelIndex( ParallelMachine comm, 
                  const std::vector<Key> & local )
     : m_comm( comm ), 
       m_key_proc(), 
@@ -117,6 +118,7 @@ public:
 
     sort_unique( m_key_proc );
   }
+#endif // STK_HIDE_DEPRECATED_CODE
 
   ~ParallelIndex()
   {}

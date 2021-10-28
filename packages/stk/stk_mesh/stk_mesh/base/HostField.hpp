@@ -68,8 +68,6 @@ public:
       synchronizedCount(0),
       asyncCopyState(impl::AsyncCopyState())
   {
-    needSyncToHost = std::make_shared<bool>(false);
-    needSyncToDevice = std::make_shared<bool>(false);
   }
 
   HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f, bool isFromGetUpdatedNgpField = false)
@@ -80,8 +78,6 @@ public:
       asyncCopyState(impl::AsyncCopyState())
   {
     field->template make_field_sync_debugger<StkDebugger>();
-    needSyncToHost = std::make_shared<bool>(false);
-    needSyncToDevice = std::make_shared<bool>(false);
     update_field();
   }
 
@@ -99,9 +95,7 @@ public:
 
   void update_field() override
   {
-    if (hostBulk->synchronized_count() != synchronizedCount) {
-      copy_host_to_device();
-    }
+    field->increment_num_syncs_to_device();
     synchronizedCount = hostBulk->synchronized_count();
   }
 
@@ -183,28 +177,27 @@ public:
                              });
   }
 
-  void modify_on_host() override { set_modify_on_host(); }
+  void modify_on_host() override { field->modify_on_host(); }
 
-  void modify_on_device() override { set_modify_on_device(); }
+  void modify_on_device() override { field->modify_on_device(); }
 
   void clear_sync_state() override
   {
-    *needSyncToHost = false;
-    *needSyncToDevice = false;
+    field->clear_sync_state();
   }
 
-  void modify_on_host(const Selector& selector) override { set_modify_on_host(); }
+  void modify_on_host(const Selector& selector) override { field->modify_on_host(selector); }
 
-  void modify_on_device(const Selector& selector) override { set_modify_on_device(); }
+  void modify_on_device(const Selector& selector) override { field->modify_on_device(selector); }
 
   void clear_host_sync_state() override
   {
-    *needSyncToDevice = false;
+    field->clear_host_sync_state();
   }
 
   void clear_device_sync_state() override
   {
-    *needSyncToHost = false;
+    field->clear_device_sync_state();
   }
 
   void sync_to_host() override
@@ -217,6 +210,7 @@ public:
   {
     if (need_sync_to_host()) {
       copy_device_to_host();
+      clear_device_sync_state();
     }
   }
 
@@ -233,6 +227,7 @@ public:
         update_field();
       }
       copy_host_to_device();
+      clear_host_sync_state();
     }
   }
 
@@ -244,10 +239,7 @@ public:
 
   void update_bucket_pointer_view() override { }
 
-  void swap(HostField<T> &other) {
-    needSyncToHost.swap(other.needSyncToHost);
-    needSyncToDevice.swap(other.needSyncToDevice);
-  }
+  void swap(HostField<T> &other) { }
 
   stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }
 
@@ -257,43 +249,32 @@ public:
   void debug_modification_end(size_t) override {}
   void debug_detect_device_field_modification() override {}
 
-protected:
-  bool need_sync_to_host() const { return *needSyncToHost; }
+  bool need_sync_to_host() const override { return field->need_sync_to_host(); }
 
-  bool need_sync_to_device() const { return *needSyncToDevice; }
+  bool need_sync_to_device() const override { return field->need_sync_to_device(); }
+
+  void notify_sync_debugger_clear_sync_state() override {}
+  void notify_sync_debugger_clear_host_sync_state() override {}
+  void notify_sync_debugger_clear_device_sync_state() override {}
 
 private:
-  void set_modify_on_host() {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequireMsg(*needSyncToHost == false, "field " << field->name());
-#endif
-    *needSyncToDevice = true;
-  }
 
   void set_modify_on_device() {
-#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
-    ThrowRequireMsg(*needSyncToDevice == false, "field " << field->name());
-#endif
-    *needSyncToHost = true;
+    field->modify_on_device();
   }
 
   void copy_host_to_device()
   {
     field->increment_num_syncs_to_device();
-    clear_sync_state();
   }
 
   void copy_device_to_host()
   {
     field->increment_num_syncs_to_host();
-    clear_sync_state();
   }
 
   const BulkData* hostBulk;
   const stk::mesh::FieldBase * field;
-
-  std::shared_ptr<bool> needSyncToHost;
-  std::shared_ptr<bool> needSyncToDevice;
 
   size_t synchronizedCount;
   impl::AsyncCopyState asyncCopyState;

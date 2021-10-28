@@ -102,7 +102,7 @@ namespace {
       "to be contiguous, but is not.");
 
     const size_t maxNumEntPerRow = 3;
-    graph_type graph (rowMap, maxNumEntPerRow, Tpetra::StaticProfile);
+    graph_type graph (rowMap, maxNumEntPerRow);
 
     // Make the usual tridiagonal graph.  Let the graph create its own
     // column Map.  We'll use that column Map to create a new column
@@ -561,7 +561,7 @@ namespace {
       "to be contiguous, but is not.");
 
     const size_t maxNumEntPerRow = 3;
-    graph_type graph (rowMap, maxNumEntPerRow, Tpetra::StaticProfile);
+    graph_type graph (rowMap, maxNumEntPerRow);
 
     // Make the usual tridiagonal graph.  Let the graph create its own
     // column Map.  We'll use that column Map to create a new column

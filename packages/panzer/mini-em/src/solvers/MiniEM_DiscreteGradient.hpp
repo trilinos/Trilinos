@@ -96,7 +96,7 @@ void addDiscreteGradientToRequestHandler(
     RCP<const map> domainmap = global_tloc->getMapForBlock(nBlockIndex);
     RCP<const map> rowmap    = global_tloc->getMapForBlock(eBlockIndex);
     RCP<const map> colmap    = ghosted_tloc->getMapForBlock(nBlockIndex);
-    RCP<matrix> grad_matrix = rcp(new matrix(rowmap, colmap, 2, Tpetra::StaticProfile));
+    RCP<matrix> grad_matrix = rcp(new matrix(rowmap, colmap, 2));
 
     RCP<const panzer::FieldPattern> field_pattern = blockedDOFMngr->getGeometricFieldPattern();
     shards::CellTopology cell_topology = field_pattern->getCellTopology();

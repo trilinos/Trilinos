@@ -1264,52 +1264,10 @@ void comm_sync_aura_send_recv(
   }
 }
 
-void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
-                             const EntityRank rank_of_orig_entity,
-                             const int share_proc,
-                             std::vector<EntityProc>& send)
-{
-  EntityRank rel_entity_rank = bulk_data.entity_rank(rel_entity);
-  ThrowAssert(rel_entity_rank > rank_of_orig_entity);
-
-  // If related entity is higher rank, I own it, and it is not
-  // already shared by proc, ghost it to the sharing processor.
-  if ( bulk_data.bucket(rel_entity).owned() && ! bulk_data.in_shared(rel_entity, share_proc) ) {
-
-    send.emplace_back(rel_entity,share_proc);
-
-    // There may be even higher-ranking entities that need to be ghosted, so we must recurse
-    const EntityRank end_rank = static_cast<EntityRank>(bulk_data.mesh_meta_data().entity_rank_count());
-    for (EntityRank irank = static_cast<EntityRank>(rel_entity_rank + 1); irank < end_rank; ++irank)
-    {
-      const int num_rels = bulk_data.num_connectivity(rel_entity, irank);
-      Entity const* rels     = bulk_data.begin(rel_entity, irank);
-
-      for (int r = 0; r < num_rels; ++r)
-      {
-        Entity const rel_of_rel_entity = rels[r];
-        if (bulk_data.is_valid(rel_of_rel_entity)) {
-          insert_upward_relations(bulk_data, rel_of_rel_entity, rel_entity_rank, share_proc, send);
-        }
-      }
-    }
-  }
-}
-
-EntityRank get_highest_upward_connected_rank(const BulkData& mesh, Entity entity)
-{
-  const EntityRank entityRank = mesh.entity_rank(entity);
-  EntityRank highestRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count()-1);
-  while(highestRank > entityRank && mesh.num_connectivity(entity, highestRank) == 0) {
-    highestRank = static_cast<EntityRank>(highestRank-1);
-  }
-  return highestRank;
-}
-
 void insert_upward_relations(const BulkData& bulk_data,
+                             const Connectivity& entityConnectivity,
                              const EntityProcMapping& entitySharing,
                              Entity rel_entity,
-                             const EntityRank rank_of_orig_entity,
                              const int share_proc,
                              EntityProcMapping& send)
 {
@@ -1321,13 +1279,8 @@ void insert_upward_relations(const BulkData& bulk_data,
 
     send.addEntityProc(rel_entity,share_proc);
 
-    const unsigned bucketOrd = idx.bucket_ordinal;
-    const EntityRank upwardRank = get_highest_upward_connected_rank(bulk_data, rel_entity);
-    const int numRels = bucket.num_connectivity(bucketOrd, upwardRank);
-    Entity const* rels     = bucket.begin(bucketOrd, upwardRank);
-
-    for (int r = 0; r < numRels; ++r) {
-      Entity const upwardEntity = rels[r];
+    PairIterEntity conn = entityConnectivity.get_highest_rank_connectivity(bulk_data.entity_rank(rel_entity));
+    for( Entity upwardEntity : conn) {
       if (bulk_data.is_valid(upwardEntity) && bulk_data.bucket(upwardEntity).owned()) {
         if (!entitySharing.find(upwardEntity, share_proc)) {
           send.addEntityProc(upwardEntity, share_proc);
