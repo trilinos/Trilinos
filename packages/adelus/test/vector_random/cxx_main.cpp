@@ -210,6 +210,17 @@ int main(int argc, char *argv[])
 #ifdef KOKKOS_ENABLE_CUDA
   int gpu_count;
   cudaGetDeviceCount ( &gpu_count );
+  if (nptile > gpu_count) {
+    if( rank == 0 ) {
+      std::cout << "Request more GPUs than the number of GPUs available "
+                << "to MPI processes (requested: " << nptile 
+                << " vs. available: " << gpu_count 
+                << "). Exit without test." << std::endl;
+    }
+    MPI_Finalize() ;
+    return 0;
+  }
+
   Kokkos::InitArguments args;
   args.num_threads = 0;
   args.num_numa    = 0;
