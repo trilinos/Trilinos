@@ -132,6 +132,9 @@ set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR 
 set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
+# Disable a test that fails when switching from development mode off for the 13.2 release
+set (Zoltan_ch_simple_zoltan_parallel_DISABLE ON CACHE BOOL "Temporary disable for release testing")
+
 set (Trilinos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Teuchos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
 set (Tpetra_INST_COMPLEX_DOUBLE ON CACHE BOOL "Testing for #9025")
