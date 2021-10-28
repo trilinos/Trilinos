@@ -181,6 +181,14 @@ namespace
     TEUCHOS_TEST_FOR_EXCEPTION(N2 != C.extent_int(1), std::invalid_argument, "C column count should match B column count");
     
     TEUCHOS_TEST_FOR_EXCEPTION(B.rank() != C.rank(), std::invalid_argument, "B's rank must match C's rank");
+    for (unsigned dim=0; dim<B.rank(); dim++)
+    {
+      {//DEBUGGING
+        std::cout << "B.extent_int(" << dim << ") = " << B.extent_int(dim) << ")" << std::endl;
+        std::cout << "C.extent_int(" << dim << ") = " << C.extent_int(dim) << ")" << std::endl;
+      }
+    }
+    
     for (unsigned dim=2; dim<B.rank(); dim++)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
@@ -447,7 +455,7 @@ namespace
     for (auto op : opsToTest)
     {
       out << "** Testing operator " << EOperatorToString(op) << " **\n";
-      auto basis1OpValues = basis2.allocateBasisValues(points, op);
+      auto basis1OpValues = basis1.allocateBasisValues(points, op);
       auto basis2OpValues = basis2.allocateBasisValues(points, op);
       
       basis1.getValues(basis1OpValues, points, op);

@@ -854,9 +854,9 @@ struct OperatorTensorDecomposition
         case OPERATOR_Dn:
         {
           auto opOrder = getOperatorOrder(operatorType); // number of derivatives that we take in total
-          const int dkCardinality = getDkCardinality(operatorType, spaceDim);
+          const int dkCardinality = getDkCardinality(operatorType, 2); // 2 because we have two tensor component bases, basis1_ and basis2_
           
-          std::vector< std::vector<EOperator> > ops(dkCardinality);
+          ops = std::vector< std::vector<EOperator> >(dkCardinality);
           
           // the Dk enumeration happens in lexicographic order (reading from left to right: x, y, z, etc.)
           // this governs the nesting order of the dkEnum1, dkEnum2 for loops below: dkEnum2 should increment fastest.
@@ -866,14 +866,14 @@ struct OperatorTensorDecomposition
             EOperator op1 = (derivativeCountComp1 == 0) ? OPERATOR_VALUE : EOperator(OPERATOR_D1 + (derivativeCountComp1 - 1));
             EOperator op2 = (derivativeCountComp2 == 0) ? OPERATOR_VALUE : EOperator(OPERATOR_D1 + (derivativeCountComp2 - 1));
             
-            int dkCardinality1 = (op1 != OPERATOR_VALUE) ? getDkCardinality(op1, spaceDim1) : 1;
-            int dkCardinality2 = (op2 != OPERATOR_VALUE) ? getDkCardinality(op2, spaceDim2) : 1;
+            int dkCardinality1 = getDkCardinality(op1, 1); // use dim = 1 because this is a "simple" decomposition -- full decomposition will expand within the dimensions of basis1_
+            int dkCardinality2 = getDkCardinality(op2, 1); // use dim = 1 because this is a "simple" decomposition -- full decomposition will expand within the dimensions of basis2_
             
             for (int dkEnum1=0; dkEnum1<dkCardinality1; dkEnum1++)
             {
               for (int dkEnum2=0; dkEnum2<dkCardinality2; dkEnum2++)
               {
-                ordinal_type dkTensorIndex = getTensorDkEnumeration(dkEnum1, derivativeCountComp1, dkEnum2, derivativeCountComp2);
+                ordinal_type dkTensorIndex = getDkTensorIndex<1, 1>(dkEnum1, derivativeCountComp1, dkEnum2, derivativeCountComp2);
                 ops[dkTensorIndex] = std::vector<EOperator>{op1, op2};
               }
             }
@@ -907,8 +907,9 @@ struct OperatorTensorDecomposition
       
       ordinal_type numBasisComponents = tensorComponents_.size();
       
-      // TODO: figure out how to determine num vector components without getOperatorDecomposition().  May want to look at TensorBasis::getValues( OutputViewType, const PointViewType, const EOperator) to see about sizing/rank.
       OperatorTensorDecomposition opDecomposition = getOperatorDecomposition(operatorType);
+      
+      // TODO: figure out whether the opDecomposition is really right for e.g. OPERATOR_D3 for GRAD_HEX.  We fail right now with an exception in VectorData; we assert that numVectorComponents <= Parameters::MaxTensorComponents.  If the assert is correct, maybe we should be using families instead of vector components here?  It looks to me like the VectorData assumption is that each component corresponds to one or more space dimensions.  It may also be that the data structures need revision to support the OPERATOR_Dn use case for n > 1.  (It _looks_ like what we have works for n = 1.)
       
       ordinal_type numVectorComponents = opDecomposition.numVectorComponents();
       const bool useVectorData = numVectorComponents > 1;

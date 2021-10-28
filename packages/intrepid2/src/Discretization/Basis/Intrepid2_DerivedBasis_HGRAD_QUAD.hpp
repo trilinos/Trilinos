@@ -112,36 +112,6 @@ namespace Intrepid2
       return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, than it needs orientations
     }
     
-    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
-    */
-    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
-    {
-      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
-      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
-      
-      if (operatorType == VALUE)
-      {
-        return OperatorTensorDecomposition(Intrepid2::OPERATOR_VALUE,Intrepid2::OPERATOR_VALUE);
-      }
-      else if (operatorType == GRAD)
-      {
-        // to evaluate gradient, we need both OP_VALUE and OP_GRAD (thanks to product rule)
-        // for 1D line x line, we will put derivative * value in first component, and value * derivative in second
-        
-        std::vector< std::vector<EOperator> > ops;
-        ops.push_back(std::vector<EOperator>{GRAD,  VALUE});
-        ops.push_back(std::vector<EOperator>{VALUE, GRAD});
-        
-        std::vector<double> weights(ops.size(), 1.0);
-        
-        return OperatorTensorDecomposition(ops, weights);
-      }
-      else
-      {
-        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
-      }
-    }
-    
     using BasisBase::getValues;
 
     /** \brief  Returns basis name
