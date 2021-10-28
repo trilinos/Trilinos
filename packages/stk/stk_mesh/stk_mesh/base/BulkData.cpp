@@ -100,6 +100,10 @@
 namespace stk {
 namespace mesh {
 
+namespace impl {
+int Counter::counter = 0;
+}
+
 // Static constant on BulkData:
 const uint16_t BulkData::orphaned_node_marking = 25000;
 
@@ -372,7 +376,6 @@ BulkData::BulkData(MetaData & mesh_meta_data,
         *this,
         mesh_meta_data.entity_rank_count(),
         bucket_capacity),
-    m_sparse_connectivity(mesh_meta_data.entity_rank_count()),
     m_use_identifiers_for_resolving_sharing(false),
     m_modSummary(*this),
     m_meshDiagnosticObserver(std::make_shared<stk::mesh::MeshDiagnosticObserver>(*this)),
@@ -549,11 +552,13 @@ void BulkData::mark_entity_and_upward_related_entities_as_modified(Entity entity
 
 size_t BulkData::count_relations(Entity entity) const
 {
+  const MeshIndex &mesh_idx = mesh_index(entity);
+
   const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
   size_t count = 0;
   for (EntityRank irank = stk::topology::BEGIN_RANK; irank < end_rank; ++irank)
   {
-    count += num_connectivity(entity, irank);
+    count += mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, irank);
   }
   return count;
 }
@@ -606,7 +611,6 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
   }
   else if (!m_deleted_entities.empty()) {
     new_local_offset = m_deleted_entities.front();
-    m_sparse_connectivity.get_connectivity(Entity(new_local_offset)).clear();
     m_deleted_entities.pop_front();
   }
 
@@ -622,7 +626,6 @@ Entity BulkData::generate_new_entity(unsigned preferred_offset)
     m_mark_entity.push_back(NOT_MARKED);
     m_closure_count.push_back(static_cast<uint16_t>(0));
     m_local_ids.push_back(stk::mesh::GetInvalidLocalId());
-    m_sparse_connectivity.update_size_of_entity_index_space(m_mesh_indexes.size());
 
 #ifdef SIERRA_MIGRATION
     if (m_add_fmwk_data) {
@@ -796,7 +799,6 @@ PARTVECTOR add_root_topology_part(const PARTVECTOR &parts, stk::mesh::Part &root
     PARTVECTOR initialParts(parts.size() + 1);
     initialParts = parts;
     initialParts.push_back(&rootTopoPart);
-    stk::util::sort_and_unique(initialParts, PartLess());
     return initialParts;
 }
 
@@ -1632,12 +1634,10 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 
 void BulkData::comm_procs(Entity entity, std::vector<int> & procs ) const
 {
-  procs.clear();
   ThrowAssertMsg(is_valid(entity),
                   "BulkData::comm_procs ERROR, input entity "<<entity_key(entity)<<" not a valid entity. Contact sierra-help@sandia.gov");
-  if (m_entitycomm[entity.local_offset()] != nullptr) {
-    impl::fill_sorted_procs(PairIterEntityComm(m_entitycomm[entity.local_offset()]->comm_map), procs);
-  }
+
+  impl::fill_sorted_procs(internal_entity_comm_map(entity), procs);
 }
 
 void BulkData::comm_shared_procs(EntityKey key, std::vector<int> & procs ) const
@@ -2299,7 +2299,7 @@ void BulkData::internal_declare_relation( Entity entity ,
 {
   require_ok_to_modify();
 
-  stk::mesh::EntityRank entityRank = entity_rank(entity);
+  stk::mesh::EntityRank erank = entity_rank(entity);
 
   OrdinalVector scratch2, scratch3;
 
@@ -2308,15 +2308,14 @@ void BulkData::internal_declare_relation( Entity entity ,
     Entity e = i->entity();
     const unsigned n = i->relation_ordinal();
     const Permutation permut = i->getPermutation();
-    const EntityRank eRank = entity_rank(e);
-    if ( eRank < entityRank ) {
+    if ( entity_rank(e) < erank ) {
       internal_declare_relation( entity , e , n, permut, ordinal_scratch, scratch2, scratch3);
     }
-    else if ( entityRank < eRank ) {
+    else if ( erank < entity_rank(e) ) {
       internal_declare_relation( e , entity , n, permut, ordinal_scratch, scratch2, scratch3);
     }
     else {
-      ThrowErrorMsg("declare_relation given entities of the same entity rank ("<<entityRank<<"). "
+      ThrowErrorMsg("declare_relation given entities of the same entity rank ("<<erank<<"). "
              <<entity_key(entity)<<"("<<bucket(entity).topology()<<") <--> "
              <<entity_key(e)<<"("<<bucket(e).topology()<<")");
     }
@@ -3477,8 +3476,6 @@ void BulkData::internal_change_ghosting( Ghosting & ghosting,
 
   std::vector<bool> ghostStatus(get_size_of_entity_index_space(), false);
 
-  m_entity_repo->clear_all_cache();
-
   stk::mesh::impl::comm_sync_aura_send_recv(*this, add_send,
                                             entityProcMapping, ghostStatus );
 
@@ -3667,22 +3664,25 @@ void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping
   // Iterate over all shared entities, ensure that upwardly related
   // entities to each shared entity will be ghosted to the sharing proc.
   Selector shared = mesh_meta_data().globally_shared_part();
-  const SparseConnectivity& sparseConnectivity = m_sparse_connectivity;
 
   std::vector<int> sharingProcs;
   impl::for_each_selected_entity_run_no_threads(*this, stk::topology::NODE_RANK, shared,
-    [&sendAuraEntityProcs, &sparseConnectivity, &entitySharing, &sharingProcs, &end_rank]
+    [&sendAuraEntityProcs, &entitySharing, &sharingProcs, &end_rank]
     (const BulkData& bulk, const MeshIndex& meshIndex) {
       const Bucket& bucket = *meshIndex.bucket;
       const unsigned bucketOrd = meshIndex.bucket_ordinal;
-      const Connectivity& connObject = sparseConnectivity.get_connectivity(bucket[bucketOrd]);
+      const EntityRank nextHigherRank = stk::topology::EDGE_RANK;
 
       bulk.comm_shared_procs(bucket[bucketOrd], sharingProcs);
-      PairIterEntity conn = connObject.get_connectivity(stk::topology::EDGE_RANK, end_rank);
-      for (Entity relEntity : conn) {
-        const Connectivity& relConnectivity = sparseConnectivity.get_connectivity(relEntity);
-        for (const int sharingProc : sharingProcs) {
-          stk::mesh::impl::insert_upward_relations(bulk, relConnectivity, entitySharing, relEntity, sharingProc, sendAuraEntityProcs);
+      for (const int sharingProc : sharingProcs) {
+
+        for (EntityRank higherRank = nextHigherRank; higherRank < end_rank; ++higherRank) {
+          const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
+          const Entity* rels     = bucket.begin(bucketOrd, higherRank);
+
+          for (unsigned r = 0; r < num_rels; ++r) {
+            stk::mesh::impl::insert_upward_relations(bulk, entitySharing, rels[r], stk::topology::NODE_RANK, sharingProc, sendAuraEntityProcs);
+          }
         }
       }
     }
@@ -3881,7 +3881,7 @@ void BulkData::change_connectivity_for_edge_or_face(stk::mesh::Entity side, cons
         if(bucket(elements[i]).owned())
         {
             stk::mesh::Bucket& bucket_edge = bucket(side);
-            bucket_edge.change_connected_nodes(bucket_ordinal(side), nodes.data());
+            bucket_edge.change_existing_connectivity(bucket_ordinal(side), nodes.data());
 
             stk::mesh::Permutation new_permutation = get_permutation(*this, elements[i], nodes);
             ThrowRequireWithSierraHelpMsg(new_permutation!=stk::mesh::INVALID_PERMUTATION);
@@ -4685,7 +4685,7 @@ void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt)
         m_bucket_repository.internal_default_sort_bucket_entities(should_sort_faces_by_node_ids());
     }
 
-    m_bucket_repository.sync_from_partitions();
+    m_bucket_repository.internal_modification_end();
 
     m_meshModification.set_sync_state_synchronized();
     m_add_node_sharing_called = false;
@@ -5083,8 +5083,12 @@ void BulkData::internal_update_all_sharing_procs()
 
     const EntityCommListInfoVector& all_comm = m_entity_comm_list;
     for (const EntityCommListInfo& info : all_comm) {
-      if (info.entity_comm != nullptr && info.entity_comm->isShared) {
-        const EntityRank rank = info.key.rank();
+      const Entity entity = info.entity;
+      const Bucket& bkt = bucket(entity);
+
+      if (bkt.shared() && info.entity_comm != nullptr) {
+        const EntityRank rank = bkt.entity_rank();
+
         const EntityCommInfoVector& commInfo = info.entity_comm->comm_map;
         const unsigned len = commInfo.size();
         unsigned i = 0;
@@ -6355,7 +6359,7 @@ void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)
     ThrowRequireMsg(in_synchronized_state(), "Error, sort_entities cannot be called from inside a modification cycle.");
     m_bucket_repository.internal_custom_sort_bucket_entities(sorter);
 
-    m_bucket_repository.sync_from_partitions();
+    m_bucket_repository.internal_modification_end();
 
     if(parallel_size() > 1)
         check_mesh_consistency();

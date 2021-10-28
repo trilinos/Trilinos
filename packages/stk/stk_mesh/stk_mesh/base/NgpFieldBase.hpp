@@ -32,13 +32,19 @@ public:
   virtual void clear_host_sync_state() = 0;
   virtual void clear_device_sync_state() = 0;
   virtual void sync_to_host() = 0;
-  virtual void sync_to_host(const stk::ngp::ExecSpace& execSpace) = 0;
+  virtual void sync_to_host(const stk::ngp::ExecSpace& newExecSpace) = 0;
+  virtual void sync_to_host(stk::ngp::ExecSpace&& newExecSpace) = 0;
   virtual void sync_to_device() = 0;
-  virtual void sync_to_device(const stk::ngp::ExecSpace& execSpace) = 0;
+  virtual void sync_to_device(const stk::ngp::ExecSpace& newExecSpace) = 0;
+  virtual void sync_to_device(stk::ngp::ExecSpace&& newExecSpace) = 0;
   virtual size_t synchronized_count() const = 0;
   virtual size_t num_syncs_to_host() const = 0;
   virtual size_t num_syncs_to_device() const = 0;
-  virtual void set_execution_space(const stk::ngp::ExecSpace& execSpace) = 0;
+  virtual stk::ngp::ExecSpace& get_execution_space() const = 0;
+  virtual void set_execution_space(const stk::ngp::ExecSpace& executionSpace) = 0;
+  virtual void set_execution_space(stk::ngp::ExecSpace&& executionSpace) = 0;
+  virtual void reset_execution_space() = 0;
+
   virtual void fence() = 0;
 
   virtual void debug_modification_begin() = 0;

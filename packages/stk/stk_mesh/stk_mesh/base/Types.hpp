@@ -236,9 +236,6 @@ typedef std::vector<EntityCommInfo> EntityCommInfoVector;
 typedef PairIter<  EntityCommInfoVector::const_iterator >  PairIterEntityComm ;
 
 #endif
-
-using PairIterEntity = PairIter<const Entity*>;
-
 /** \} */
 
 //----------------------------------------------------------------------

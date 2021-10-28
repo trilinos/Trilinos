@@ -59,11 +59,13 @@ struct EntityGhostData;
 //stk-mesh capabilities.
 //----------------------------------------------------------------------
 
+void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
+
+void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
+
 void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, EntityRank rank,
                                                   unsigned numNodes, const Entity* nodes,
                                                   std::vector<Entity>& elementsInCommon);
-
-void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
 
 template<class Pred>
 void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRank rank,
@@ -86,8 +88,6 @@ void find_entities_these_nodes_have_in_common_and(const BulkData& mesh, EntityRa
         remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
     }
 }
-
-void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector);
 
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes);
 
@@ -244,10 +244,15 @@ void comm_sync_aura_send_recv(
   EntityProcMapping& entityProcMapping,
   std::vector<bool>& ghostStatus );
 
+void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
+                             const EntityRank rank_of_orig_entity,
+                             const int share_proc,
+                             std::vector<EntityProc>& send);
+
 void insert_upward_relations(const BulkData& bulk_data,
-                             const Connectivity& entityConnectivity,
                              const EntityProcMapping& entitySharing,
                              Entity rel_entity,
+                             const EntityRank rank_of_orig_entity,
                              const int share_proc,
                              EntityProcMapping& send);
 

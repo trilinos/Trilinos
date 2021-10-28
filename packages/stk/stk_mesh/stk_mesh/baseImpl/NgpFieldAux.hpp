@@ -55,41 +55,6 @@ enum NgpFieldSyncMode {
   DEVICE_TO_HOST_ASYNC = 4
 };
 
-struct AsyncCopyState {
-
-  KOKKOS_FUNCTION
-  AsyncCopyState()
-  : execSpace(Kokkos::DefaultExecutionSpace()),
-    syncMode(INVALID)
-  {}
-
-  KOKKOS_FUNCTION
-  AsyncCopyState(const AsyncCopyState& state)
-  : execSpace(state.execSpace),
-    syncMode(state.syncMode)
-  {}
-
-  void set_state(const stk::ngp::ExecSpace& space, NgpFieldSyncMode mode)
-  {
-    execSpace = space;
-    syncMode = mode;
-  }
-
-  void set_execution_space(const stk::ngp::ExecSpace& space)
-  {
-    execSpace = space;
-  }
-
-  void reset_state()
-  {
-    execSpace = Kokkos::DefaultExecutionSpace();
-    syncMode = INVALID;
-  }
-
-  stk::ngp::ExecSpace execSpace;
-  NgpFieldSyncMode syncMode;
-};
-
 template <typename DeviceViewType, typename DeviceUnsignedViewType, typename ExecSpaceType>
 void transpose_from_pinned_and_mapped_memory(ExecSpaceType & execSpace,
                                              const FieldBase & stkField,

@@ -47,13 +47,35 @@ NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkFiel
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, execSpace, true);
+    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    ngpField->set_execution_space(execSpace);
     impl::set_ngp_field(stkField, ngpField);
     ngpField->clear_host_sync_state();
   }
   else {
     if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
       ngpField->set_execution_space(execSpace);
+      ngpField->update_field();
+    }
+  }
+
+  return dynamic_cast< NgpField<T, NgpDebugger>& >(*ngpField);
+}
+
+template <typename T, template <typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
+NgpField<T, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, stk::ngp::ExecSpace&& execSpace)
+{
+  NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
+
+  if (ngpField == nullptr) {
+    ngpField = new NgpField<T, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    ngpField->set_execution_space(std::forward<stk::ngp::ExecSpace>(execSpace));
+    impl::set_ngp_field(stkField, ngpField);
+    ngpField->clear_host_sync_state();
+  }
+  else {
+    if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
+      ngpField->set_execution_space(std::forward<stk::ngp::ExecSpace>(execSpace));
       ngpField->update_field();
     }
   }

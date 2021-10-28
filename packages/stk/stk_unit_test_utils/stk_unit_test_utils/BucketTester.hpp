@@ -49,7 +49,7 @@ public:
 
     void my_change_connected_nodes(unsigned bucket_ordinal, Entity* new_nodes)
     {
-        this->change_connected_nodes(bucket_ordinal, new_nodes);
+        this->change_existing_connectivity(bucket_ordinal, new_nodes);
     }
 
     void my_change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity,

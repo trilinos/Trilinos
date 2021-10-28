@@ -330,31 +330,25 @@ void DeviceMesh::fill_sparse_connectivities(const stk::mesh::BulkData& bulk_in)
       for(stk::mesh::EntityRank connectedRank=stk::topology::EDGE_RANK; connectedRank<endRank; connectedRank++)
       {
         const bool hasPermutation = stkBucket.has_permutation(connectedRank);
-        const bool hasConnections = totalNumConnectedEntities[rank][connectedRank] > 0;
         for(unsigned iEntity=0; iEntity<stkBucket.size(); ++iEntity)
         {
           myOffset = bucketEntityOffset + iEntity;
+          unsigned numConnected = stkBucket.num_connectivity(iEntity, connectedRank);
+          const stk::mesh::Entity* connectedEntities = stkBucket.begin(iEntity, connectedRank);
+          const stk::mesh::ConnectivityOrdinal* connectedOrdinals = stkBucket.begin_ordinals(iEntity, connectedRank);
+          const stk::mesh::Permutation* permutations = hasPermutation ? stkBucket.begin_permutations(iEntity, connectedRank) : nullptr;
 
           int entriesOffset = entriesOffsets[connectedRank];
           hostEntityConnectivityOffset[rank][connectedRank](myOffset) = entriesOffset;
-
-          if (hasConnections) {
-            unsigned numConnected = stkBucket.num_connectivity(iEntity, connectedRank);
-            if (numConnected > 0) {
-              const stk::mesh::Entity* connectedEntities = stkBucket.begin(iEntity, connectedRank);
-              const stk::mesh::ConnectivityOrdinal* connectedOrdinals = stkBucket.begin_ordinals(iEntity, connectedRank);
-              const stk::mesh::Permutation* permutations = hasPermutation ? stkBucket.begin_permutations(iEntity, connectedRank) : nullptr;
-              for(unsigned i=0; i<numConnected; ++i)
-              {
-                hostSparseConnectivity[rank][connectedRank](entriesOffset+i) = connectedEntities[i];
-                hostSparseConnectivityOrdinals[rank][connectedRank](entriesOffset+i) = connectedOrdinals[i];
-                if (hasPermutation) {
-                  hostSparsePermutations[rank][connectedRank](entriesOffset+i) = permutations[i];
-                }
-              }
+          for(unsigned i=0; i<numConnected; ++i)
+          {
+            hostSparseConnectivity[rank][connectedRank](entriesOffset+i) = connectedEntities[i];
+            hostSparseConnectivityOrdinals[rank][connectedRank](entriesOffset+i) = connectedOrdinals[i];
+            if (hasPermutation) {
+              hostSparsePermutations[rank][connectedRank](entriesOffset+i) = permutations[i];
             }
-            entriesOffsets[connectedRank] = entriesOffset + numConnected;
           }
+          entriesOffsets[connectedRank] = entriesOffset + numConnected;
         }
       }
     }
