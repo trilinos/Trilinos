@@ -312,7 +312,6 @@ MueLu::MueLu_AMGX_initialize_plugins();
     // Galeri updates (only works with Run1)
     if(paramList.sublist("Run1").isSublist("Galeri")) {
       ParameterList& moreParams = paramList.sublist("Run1").sublist("Galeri");
-      std::cout<<"*** moreParams ***"<<std::endl<<moreParams<<std::endl;
       for (ParameterList::ConstIterator it = moreParams.begin(); it != moreParams.end(); it++) {
         const std::string& name = moreParams.name(it);
         if (moreParams.isParameter(name))
