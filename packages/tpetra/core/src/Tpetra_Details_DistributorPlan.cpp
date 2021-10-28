@@ -902,23 +902,15 @@ void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList
     }
 #endif
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    // We check this property explicitly, since we haven't yet learned
-    // how to make a validator that can cross-check properties.
-    // Later, turn this into a validator so that it can be embedded in
-    // the valid ParameterList and used in Optika.
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (! barrierBetween && sendType == Details::DISTRIBUTOR_RSEND,
-       std::invalid_argument, "Tpetra::Distributor::setParameterList: " << endl
-       << "You specified \"Send type\"=\"Rsend\", but turned off the barrier "
-       "between receives and sends." << endl << "This is invalid; you must "
-       "include the barrier if you use ready sends." << endl << "Ready sends "
-       "require that their corresponding receives have already been posted, "
-       "and the only way to guarantee that in general is with a barrier.");
-#endif
-
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    if (sendType_ == Details::DISTRIBUTOR_RSEND ||
+        sendType_ == Details::DISTRIBUTOR_SSEND) {
+      // User requested a deprecated send type; change it back to default
+      sendType_ = Details::DISTRIBUTOR_SEND;
+    }
+#endif
     barrierBetweenRecvSend_ = barrierBetween;
     useDistinctTags_ = useDistinctTags;
 

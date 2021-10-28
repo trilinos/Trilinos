@@ -150,9 +150,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   using Teuchos::includesVerbLevel;
   using Teuchos::ireceive;
   using Teuchos::isend;
-  using Teuchos::readySend;
   using Teuchos::send;
-  using Teuchos::ssend;
   using Teuchos::TypeNameTraits;
   using Teuchos::typeName;
   using std::endl;
@@ -317,32 +315,12 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
               as<int> (tmpSend.size ()),
               plan.getProcsTo()[p], tag, *plan.getComm());
         }
-        else if (sendType == Details::DISTRIBUTOR_ISEND) {
+        else {  // DISTRIBUTOR_ISEND
           exports_view_type tmpSendBuf =
             subview_offset (exports, plan.getStartsTo()[p] * numPackets,
                 plan.getLengthsTo()[p] * numPackets);
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 tag, *plan.getComm()));
-        }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        else if (sendType == Details::DISTRIBUTOR_RSEND) {
-          readySend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_SSEND) {
-          ssend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-#endif
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
         }
       }
       else { // "Sending" the message to myself
@@ -402,32 +380,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         ImpView tmpSend =
           subview_offset(sendArray, size_t(0), plan.getLengthsTo()[p]*numPackets);
 
-        if (sendType == Details::DISTRIBUTOR_SEND ||
-            sendType == Details::DISTRIBUTOR_ISEND) {
-          send<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        else if (sendType == Details::DISTRIBUTOR_RSEND) {
-          readySend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_SSEND) {
-          ssend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-#endif
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true,
-              std::logic_error,
-              "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
-        }
+        send<int> (tmpSend,
+            as<int> (tmpSend.size ()),
+            plan.getProcsTo()[p], tag, *plan.getComm());
       }
       else { // "Sending" the message to myself
         selfNum = p;
@@ -459,9 +414,7 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
   using Teuchos::as;
   using Teuchos::ireceive;
   using Teuchos::isend;
-  using Teuchos::readySend;
   using Teuchos::send;
-  using Teuchos::ssend;
   using Teuchos::TypeNameTraits;
   using std::endl;
   using Kokkos::Compat::create_const_view;
@@ -641,35 +594,16 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
         exports_view_type tmpSend =
           subview_offset(exports, sendPacketOffsets[p], packetsPerSend[p]);
 
-        if (sendType == Details::DISTRIBUTOR_SEND) { // the default, so put it first
+        if (sendType == Details::DISTRIBUTOR_SEND) {
           send<int> (tmpSend,
               as<int> (tmpSend.size ()),
               plan.getProcsTo()[p], tag, *plan.getComm());
         }
-        else if (sendType == Details::DISTRIBUTOR_ISEND) {
+        else { // DISTRIBUTOR_ISEND
           exports_view_type tmpSendBuf =
             subview_offset (exports, sendPacketOffsets[p], packetsPerSend[p]);
           requests_.push_back (isend<int> (tmpSendBuf, plan.getProcsTo()[p],
                 tag, *plan.getComm()));
-        }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-        else if (sendType == Details::DISTRIBUTOR_RSEND) {
-          readySend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-        else if (sendType == Details::DISTRIBUTOR_SSEND) {
-          ssend<int> (tmpSend,
-              as<int> (tmpSend.size ()),
-              plan.getProcsTo()[p], tag, *plan.getComm());
-        }
-#endif
-        else {
-          TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error,
-              "Tpetra::Distributor::doPosts(4 args, Kokkos): "
-              "Invalid send type.  We should never get here.  "
-              "Please report this bug to the Tpetra developers.");
         }
       }
       else { // "Sending" the message to myself
@@ -732,24 +666,9 @@ void DistributorActor::doPosts(const DistributorPlan& plan,
           ImpView tmpSend =
             subview_offset(sendArray, size_t(0), numPacketsTo_p);
 
-          if (sendType == Details::DISTRIBUTOR_SEND || 
-              sendType == Details::DISTRIBUTOR_ISEND) {
-            send<int> (tmpSend,
-                as<int> (tmpSend.size ()),
-                plan.getProcsTo()[p], tag, *plan.getComm());
-          }
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-          else if (sendType == Details::DISTRIBUTOR_RSEND) {
-            readySend<int> (tmpSend,
-                as<int> (tmpSend.size ()),
-                plan.getProcsTo()[p], tag, *plan.getComm());
-          }
-          else if (sendType == Details::DISTRIBUTOR_SSEND) {
-            ssend<int> (tmpSend,
-                as<int> (tmpSend.size ()),
-                plan.getProcsTo()[p], tag, *plan.getComm());
-          }
-#endif
+          send<int> (tmpSend,
+              as<int> (tmpSend.size ()),
+              plan.getProcsTo()[p], tag, *plan.getComm());
         }
       }
       else { // "Sending" the message to myself

@@ -63,7 +63,7 @@ enum EDistributorSendType {
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   DISTRIBUTOR_RSEND, // Use MPI_Rsend (Teuchos::readySend)
 #endif
-  DISTRIBUTOR_SEND  // Use MPI_Send (Teuchos::send)
+  DISTRIBUTOR_SEND   // Use MPI_Send (Teuchos::send)
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   , DISTRIBUTOR_SSEND  // Use MPI_Ssend (Teuchos::ssend)
 #endif
