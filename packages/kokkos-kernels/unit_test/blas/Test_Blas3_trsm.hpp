@@ -30,8 +30,9 @@ namespace Test {
       A_(i,i) = A_(i,i)+10;
     }
   };
+
   template<class ViewTypeA, class ViewTypeB, class ViewTypeC, class ExecutionSpace>
-  struct VanillaGEMM {
+  struct trsm_VanillaGEMM {
     bool A_t, B_t, A_c, B_c;
     int N,K;
     ViewTypeA A;
@@ -78,9 +79,9 @@ namespace Test {
       });
     }
   };
-  //
-  //
-  //
+  
+  
+  
 
   template<class ViewTypeA, class ViewTypeB, class Device>
   void impl_test_trsm(const char* side, const char* uplo, const char* trans, const char* diag, 
@@ -140,28 +141,23 @@ namespace Test {
 
     Kokkos::deep_copy(A, h_A);
 
+    struct trsm_VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
     if (A_l){
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = (trans[0]!='N') && (trans[0]!='n'); vgemm.B_t = false;
       vgemm.A_c = (trans[0]=='C') || (trans[0]=='c'); vgemm.B_c = false;
-      vgemm.N = N;    vgemm.K = K;
-      vgemm.A = A;    vgemm.B = X0;
-      vgemm.C = B;
-      vgemm.alpha = alpha_trmm;
-      vgemm.beta = beta;
-      Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
+      vgemm.A = A;     vgemm.B = X0;
     }
     else {
-      struct VanillaGEMM<ViewTypeB,ViewTypeA,ViewTypeB,execution_space> vgemm;
       vgemm.A_t = false; vgemm.B_t = (trans[0]!='N') && (trans[0]!='n');
       vgemm.A_c = false; vgemm.B_c = (trans[0]=='C') || (trans[0]=='c');
-      vgemm.N = N;     vgemm.K = K;
       vgemm.A = X0;    vgemm.B = A;
-      vgemm.C = B;
-      vgemm.alpha = alpha_trmm;
-      vgemm.beta = beta;
-      Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
     }
+    vgemm.N = N;
+    vgemm.K = K;
+    vgemm.C = B;
+    vgemm.alpha = alpha_trmm;
+    vgemm.beta = beta;
+    Kokkos::parallel_for("KokkosBlas::Test::trsm_VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
     Kokkos::fence();
 
     KokkosBlas::trsm(side, uplo, trans, diag, alpha, A, B);

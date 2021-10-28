@@ -1,3 +1,6 @@
+#ifndef TEST_OPENMP_HPP
+#define TEST_OPENMP_HPP
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -19,3 +22,5 @@ protected:
 
 #define TestCategory openmp
 #define TestExecSpace Kokkos::OpenMP
+
+#endif // TEST_OPENMP_HPP

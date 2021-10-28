@@ -83,12 +83,11 @@ SerialTrsmInternalLeftLowerConj(const bool use_unit_diag,
     for (int p=0;p<m;++p) {
       const int iend = m-p-1, jend = n;
         
-      const ValueType
-        *KOKKOS_RESTRICT a21 = iend ? A+(p+1)*as0+p*as1 : NULL;
+      const ValueType *KOKKOS_RESTRICT a21 = A+(p+1)*as0+p*as1;
           
       ValueType
-        *KOKKOS_RESTRICT b1t =        B+p*bs0,
-        *KOKKOS_RESTRICT B2  = iend ? B+(p+1)*bs0 : NULL;
+        *KOKKOS_RESTRICT b1t = B+p*bs0,
+        *KOKKOS_RESTRICT B2  = B+(p+1)*bs0;
         
       if (!use_unit_diag) {
         const ValueType alpha11 = AT::conj(A[p*as0+p*as1]);

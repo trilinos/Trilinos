@@ -96,9 +96,6 @@ struct Parameters{
   // 0 - no flush
   // 1 - soft flush
   // 2 - hard flush with rand.
-  bool assume_sorted;
-  // For sparse matrix addition, whether to assume
-  // input matrix entries are sorted within rows.
   Parameters(){
 
     algorithm = 0;
@@ -140,8 +137,6 @@ struct Parameters{
     first_level_hash_cut_off = 0.50;
     compression_cut_off = 0.85;
     MaxColDenseAcc = 250000;
-
-    assume_sorted = false;
   }
 };
 }

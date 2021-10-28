@@ -1,3 +1,6 @@
+#ifndef TEST_THREADS_HPP
+#define TEST_THREADS_HPP
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -19,3 +22,5 @@ protected:
 
 #define TestCategory threads
 #define TestExecSpace Kokkos::Threads
+
+#endif // TEST_THREADS_HPP

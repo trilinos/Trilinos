@@ -58,7 +58,7 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
   using values_type  = typename CMatrix::values_type::non_const_type;
 
   row_map_type row_mapC(
-      Kokkos::ViewAllocateWithoutInitializing("non_const_lnow_row"),
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "non_const_lnow_row"),
       A.numRows() + 1);
   entries_type entriesC;
   values_type valuesC;
@@ -70,9 +70,9 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
 
   const size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size) {
-    entriesC = entries_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"),
+    entriesC = entries_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"),
                             c_nnz_size);
-    valuesC  = values_type(Kokkos::ViewAllocateWithoutInitializing("valuesC"),
+    valuesC  = values_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"),
                           c_nnz_size);
   }
 

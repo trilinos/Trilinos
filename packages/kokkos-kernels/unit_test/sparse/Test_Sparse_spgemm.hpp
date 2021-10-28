@@ -47,6 +47,7 @@
 #include <Kokkos_Core.hpp>
 
 #include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 #include <Kokkos_Concepts.hpp>
 #include <string>
 #include <stdexcept>
@@ -72,10 +73,13 @@ using namespace KokkosSparse::Experimental;
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
 
-#ifndef kokkos_complex_double
-#define kokkos_complex_double Kokkos::complex<double>
-#define kokkos_complex_float Kokkos::complex<float>
-#endif
+// #ifndef kokkos_complex_double
+// #define kokkos_complex_double Kokkos::complex<double>
+// #define kokkos_complex_float Kokkos::complex<float>
+// #endif
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test {
 
@@ -156,8 +160,8 @@ int run_spgemm_old_interface(crsMat_t input_mat, crsMat_t input_mat2, KokkosSpar
   );
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
-  entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-  valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+  entriesC = lno_nnz_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+  valuesC = scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
   spgemm_numeric(
       &kh,
       num_rows_1,
@@ -199,27 +203,6 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
   size_t nentries_reference = output_mat_reference.graph.entries.extent(0) ;
   size_t nvals_reference = output_mat_reference.values.extent(0);
 
-
-  lno_nnz_view_t h_ent_actual (Kokkos::ViewAllocateWithoutInitializing("h_ent_actual"), nentries_actual);
-  scalar_view_t h_vals_actual (Kokkos::ViewAllocateWithoutInitializing("h_vals_actual"), nvals_actual);
-
-
-  KokkosKernels::Impl::kk_sort_graph<typename graph_t::row_map_type,
-    typename graph_t::entries_type,
-    typename crsMat_t::values_type,
-    lno_nnz_view_t,
-    scalar_view_t,
-    typename device::execution_space
-    >(
-    output_mat_actual.graph.row_map, 
-    output_mat_actual.graph.entries, 
-    output_mat_actual.values,
-    h_ent_actual, h_vals_actual
-  );
-
-  lno_nnz_view_t h_ent_reference (Kokkos::ViewAllocateWithoutInitializing("h_ent_reference"), nentries_reference);
-  scalar_view_t h_vals_reference (Kokkos::ViewAllocateWithoutInitializing("h_vals_reference"), nvals_reference);
-
   if (nrows_actual != nrows_reference) { 
      std::cout << "nrows_actual:" << nrows_actual << " nrows_reference:" << nrows_reference << std::endl;
      return false;
@@ -233,19 +216,8 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
     return false;
   }
 
-  KokkosKernels::Impl::kk_sort_graph
-      <typename graph_t::row_map_type,
-      typename graph_t::entries_type,
-      typename crsMat_t::values_type,
-      lno_nnz_view_t,
-      scalar_view_t,
-      typename device::execution_space
-      >(
-      output_mat_reference.graph.row_map, 
-      output_mat_reference.graph.entries, 
-      output_mat_reference.values,
-      h_ent_reference, h_vals_reference
-    );
+  KokkosKernels::sort_crs_matrix(output_mat_actual);
+  KokkosKernels::sort_crs_matrix(output_mat_reference);
 
   bool is_identical = true;
   is_identical = KokkosKernels::Impl::kk_is_identical_view
@@ -263,12 +235,12 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
 
   is_identical = KokkosKernels::Impl::kk_is_identical_view
       <lno_nnz_view_t, lno_nnz_view_t, typename lno_nnz_view_t::value_type,
-      typename device::execution_space>(h_ent_actual, h_ent_reference, 0 );
+      typename device::execution_space>(output_mat_actual.graph.entries, output_mat_reference.graph.entries, 0 );
 
   if (!is_identical) {
     std::cout << "entries are different." << std::endl;
-    KokkosKernels::Impl::kk_print_1Dview(h_ent_actual);
-    KokkosKernels::Impl::kk_print_1Dview(h_ent_reference);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_actual.graph.entries);
+    KokkosKernels::Impl::kk_print_1Dview(output_mat_reference.graph.entries);
     return false;
   }
 
@@ -279,7 +251,7 @@ bool is_same_matrix(crsMat_t output_mat_actual, crsMat_t output_mat_reference){
 
   is_identical = KokkosKernels::Impl::kk_is_relatively_identical_view
       <scalar_view_t, scalar_view_t, eps_type,
-      typename device::execution_space>(h_vals_actual, h_vals_reference, eps);
+      typename device::execution_space>(output_mat_actual.values, output_mat_reference.values, eps);
 
   if (!is_identical) {
     std::cout << "values are different." << std::endl;
@@ -336,43 +308,39 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 #if !defined(KERNELS_HAVE_CUSPARSE) && !defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
       is_expected_to_fail = true;
 #endif
-      break;
+        break;
 
-    case SPGEMM_MKL:
-      algo = "SPGEMM_MKL";
-      //MKL requires scalar to be either float or double
-      if (!(std::is_same<float,scalar_t>::value || std::is_same<double,scalar_t>::value)){
-        is_expected_to_fail = true;
-      }
-      //mkl requires local ordinals to be int.
-      if (!(std::is_same<int,lno_t>::value)){
-        is_expected_to_fail = true;
-      }
-      //if size_type is larger than int, mkl casts it to int.
-      //it will fail if casting cause overflow.
-      if (input_mat.values.extent(0) > max_integer){
-        is_expected_to_fail = true;
-      }
+      case SPGEMM_MKL:
+        algo = "SPGEMM_MKL";
+        // MKL requires scalar to be either float or double
+        if (!(std::is_same<float, scalar_t>::value ||
+              std::is_same<double, scalar_t>::value)) {
+          is_expected_to_fail = true;
+        }
+        // mkl requires local ordinals to be int.
+        if (!(std::is_same<int, lno_t>::value)) {
+          is_expected_to_fail = true;
+        }
+        // if size_type is larger than int, mkl casts it to int.
+        // it will fail if casting cause overflow.
+        if (input_mat.values.extent(0) > max_integer) {
+          is_expected_to_fail = true;
+        }
 
-      if (!(Kokkos::Impl::SpaceAccessibility<typename Kokkos::HostSpace::execution_space, typename device::memory_space>::accessible)){
-        is_expected_to_fail = true;
-      }
-      break;
+        if (!(Kokkos::SpaceAccessibility<
+                typename Kokkos::HostSpace::execution_space,
+                typename device::memory_space>::accessible)) {
+          is_expected_to_fail = true;
+        }
+        break;
 
-    case SPGEMM_KK_MEMSPEED:
-      algo = "SPGEMM_KK_MEMSPEED";
-      break;
-    case SPGEMM_KK_SPEED:
-      algo = "SPGEMM_KK_SPEED";
-      break;
-    case SPGEMM_KK_MEMORY:
-      algo = "SPGEMM_KK_MEMORY";
-      break;
-    default:
-      algo = "!!! UNKNOWN ALGO !!!";
+      case SPGEMM_KK_MEMSPEED: algo = "SPGEMM_KK_MEMSPEED"; break;
+      case SPGEMM_KK_SPEED: algo = "SPGEMM_KK_SPEED"; break;
+      case SPGEMM_KK_MEMORY: algo = "SPGEMM_KK_MEMORY"; break;
+      default: algo = "!!! UNKNOWN ALGO !!!";
     }
 
-    Kokkos::Impl::Timer timer1;
+    Kokkos::Timer timer1;
     crsMat_t output_mat;
 
     bool failed = false;
@@ -591,4 +559,4 @@ TEST_F( TestCategory, sparse ## _ ## spgemm ## _ ## SCALAR ## _ ## ORDINAL ## _ 
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST

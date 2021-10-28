@@ -385,7 +385,7 @@ void iluk_numeric ( IlukHandle& thandle,
   //between kernel launches. If a mirror were used and level_ptr is in UVM space,
   //a fence would be required before each access since UVM views can share pages.
   Kokkos::View<nnz_lno_t*, Kokkos::HostSpace> level_ptr_h(
-      Kokkos::ViewAllocateWithoutInitializing("Host level pointers"),
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, "Host level pointers"),
       level_ptr.extent(0));
   Kokkos::deep_copy(level_ptr_h, level_ptr);
 

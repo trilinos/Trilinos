@@ -1,3 +1,9 @@
+// Note: Luc Berger-Vergiat 04/14/21
+//       Only include this test if compiling
+//       the cuda sparse tests and cuSPARSE
+//       is enabled.
+#if defined(TEST_CUDA_SPARSE_CPP) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
+
 #include<gtest/gtest.h>
 #include<Kokkos_Core.hpp>
 
@@ -23,3 +29,5 @@ void test_cusparse_safe_call() {
 TEST_F( TestCategory, sparse_cusparse_safe_call ) { \
 	test_cusparse_safe_call (); \
 }
+
+#endif // check for CUDA and cuSPARSE
