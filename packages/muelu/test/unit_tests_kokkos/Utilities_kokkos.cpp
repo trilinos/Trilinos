@@ -462,8 +462,6 @@ namespace MueLuTests
 
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
     TEST_THROW(Utils_Kokkos::MyOldScaleMatrix_Epetra(*A, arr, false, false), MueLu::Exceptions::RuntimeError);
-#else
-    TEST_THROW(Utils_Kokkos::MyOldScaleMatrix_Tpetra(*A, arr, false, false), MueLu::Exceptions::RuntimeError);
 #endif
 
   } //MyOldScaleMatrix
@@ -493,7 +491,7 @@ namespace MueLuTests
     {
       TEST_EQUALITY(dRowsOut(row), row % 2);
     }
-  } //MyOldScaleMatrix
+  } //ApplyOAZToMatrixRows
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -584,17 +582,23 @@ namespace MueLuTests
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    auto map = A->getMap();
 
     ParameterList params;
 
     auto coords = Utils_Kokkos::ExtractCoordinatesFromParameterList(params);
     TEST_EQUALITY(coords, Teuchos::null);
 
-    auto mvCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+    auto map = A->getMap();
+    auto mvCoords = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
     params.set("Coordinates", mvCoords);
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
     coords = Utils_Kokkos::ExtractCoordinatesFromParameterList(params);
     TEST_INEQUALITY(coords, Teuchos::null);
+#else
+    // When compiled with INST_INT_INT (Epetra) function will throw,
+    // as it expects "Coordinates" param to be of EpetraMultiVector type
+    TEST_THROW(Utils_Kokkos::ExtractCoordinatesFromParameterList(params), MueLu::Exceptions::RuntimeError);
+#endif
 
     auto comm = Parameters::getDefaultComm();
     TEST_NOTHROW(Utils_Kokkos::SetRandomSeed(*comm));
