@@ -1,5 +1,5 @@
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "Tacho_Internal.hpp"
 #include "Tacho_CommandLineParser.hpp"
@@ -38,7 +38,7 @@ int main (int argc, char *argv[]) {
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);
 
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   int r_val = 0;
 #if defined(KOKKOS_ENABLE_CUDA)
   {

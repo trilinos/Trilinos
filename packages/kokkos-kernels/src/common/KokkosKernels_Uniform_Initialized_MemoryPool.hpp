@@ -203,7 +203,7 @@ public:
     modular_num_chunks = num_chunks -1;
     overall_size = num_chunks * chunk_size;
     if (num_set_chunks > 0){
-    	data_view = data_view_t(Kokkos::ViewAllocateWithoutInitializing("pool data"), overall_size);
+    	data_view = data_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "pool data"), overall_size);
     }
     data = (data_view.data());
 

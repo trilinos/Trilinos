@@ -45,7 +45,7 @@
 #include "KokkosKernels_Utils.hpp"
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Atomic.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_Random.hpp>
 #include <Kokkos_MemoryTraits.hpp>
@@ -271,8 +271,8 @@ struct BalloonClustering
     Kokkos::deep_copy(vertClusters, (nnz_lno_t) numClusters);
     Kokkos::deep_copy(distances, numRows);
     BalloonFunctor funct(vertClusters, clusterCounts, distances, rowmap, colinds, pressure, clusterSize, randPool);
-    Kokkos::Impl::Timer globalTimer;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer globalTimer;
+    Kokkos::Timer timer;
     timer.reset();
     Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace, InitRootsTag>(0, numClusters), funct);
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE

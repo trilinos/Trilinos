@@ -1,5 +1,5 @@
 #include <Kokkos_Core.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 #include "Tacho_Internal.hpp"
 #include "Tacho_Solver.hpp"
@@ -57,7 +57,7 @@ int main (int argc, char *argv[]) {
 
   typedef Kokkos::TaskSchedulerMultiple<typename device_type::execution_space> scheduler_type;
 
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   int r_val = 0;
 #if defined(KOKKOS_ENABLE_CUDA)
   {

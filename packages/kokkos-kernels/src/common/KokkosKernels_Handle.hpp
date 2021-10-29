@@ -49,6 +49,7 @@
 #include "KokkosSparse_spadd_handle.hpp"
 #include "KokkosSparse_sptrsv_handle.hpp"
 #include "KokkosSparse_spiluk_handle.hpp"
+#include "KokkosKernels_default_types.hpp"
 
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
@@ -216,7 +217,7 @@ public:
   typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
-  typedef typename Kokkos::View<nnz_scalar_t **, Kokkos::LayoutLeft, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
+  typedef typename Kokkos::View<nnz_scalar_t **, default_layout, HandlePersistentMemorySpace> scalar_persistent_work_view2d_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
@@ -779,6 +780,10 @@ public:
   bool is_sptrsv_column_major () {
     return this->sptrsvHandle->is_column_major ();
   }
+
+  void set_sptrsv_trmm_on_device (bool trmm_on_device) {
+    this->sptrsvHandle->set_trmm_on_device (trmm_on_device);
+  }
 #endif
   void destroy_sptrsv_handle(){
     if (is_owner_of_the_sptrsv_handle && this->sptrsvHandle != nullptr)
@@ -807,7 +812,7 @@ public:
       this->spilukHandle = nullptr;
     }
   }
-  
+
 };    // end class KokkosKernelsHandle
 
 }

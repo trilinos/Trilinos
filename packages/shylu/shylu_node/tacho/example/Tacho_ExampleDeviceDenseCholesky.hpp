@@ -20,7 +20,7 @@ template<typename value_type>
 int driver_chol (const int m, const bool verbose) {
   int max_iter = 1;
 
-  Kokkos::Impl::Timer timer;
+  Kokkos::Timer timer;
   const bool detail = false;
 
   typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type device_type;

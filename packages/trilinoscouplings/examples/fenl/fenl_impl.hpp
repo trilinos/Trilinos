@@ -51,7 +51,7 @@
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
@@ -356,8 +356,8 @@ public:
       typedef DirichletComputation< FixtureType , LocalMatrixType > DirichletComputationType ;
       typedef ResponseComputation< FixtureType , LocalVectorType > ResponseComputationType ;
 
-      Kokkos::Impl::Timer wall_clock ;
-      Kokkos::Impl::Timer newton_clock ;
+      Kokkos::Timer wall_clock ;
+      Kokkos::Timer newton_clock ;
       newton_clock.reset();
 
       LocalMatrixType jacobian = g_jacobian.getLocalMatrixDevice();
@@ -753,7 +753,7 @@ Perf fenl(
 
   //------------------------------------
 
-  Kokkos::Impl::Timer wall_clock ;
+  Kokkos::Timer wall_clock ;
 
   Perf perf_stats = Perf() ;
 

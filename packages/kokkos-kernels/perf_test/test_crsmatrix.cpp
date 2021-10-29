@@ -54,7 +54,7 @@
 #include <Kokkos_MV.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <Kokkos_CrsMatrix.hpp>
-#include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_Timer.hpp>
 
 typedef Kokkos::DefaultExecutionSpace execution_space;
 
@@ -344,7 +344,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
         }
 
     LocalOrdinalType loop = 10;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
         for(LocalOrdinalType i=0;i<loop;i++)
 #ifdef NEWKERNEL
           KokkosSparse::spmv("N",1.0,A,x,0.0,y);
@@ -454,7 +454,7 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
                 total_sum += sum;
 
     int loop = 100;
-    Kokkos::Impl::Timer timer;
+    Kokkos::Timer timer;
 
         for(int i=0;i<loop;i++)
 #ifdef NEWKERNEL

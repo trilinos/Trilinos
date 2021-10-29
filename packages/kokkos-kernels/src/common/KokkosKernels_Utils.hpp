@@ -43,7 +43,7 @@
 */
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Atomic.hpp"
-#include "impl/Kokkos_Timer.hpp"
+#include "Kokkos_Timer.hpp"
 #include "Kokkos_MemoryTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_UnorderedMap.hpp"
@@ -731,7 +731,7 @@ void create_reverse_map(
 
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   reverse_map_xadj = reverse_array_type("Reverse Map Xadj", num_reverse_elements + 1);
-  reverse_map_adj = reverse_array_type(Kokkos::ViewAllocateWithoutInitializing("REVERSE_ADJ"), num_forward_elements);
+  reverse_map_adj = reverse_array_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "REVERSE_ADJ"), num_forward_elements);
 
 
 
@@ -770,7 +770,7 @@ void create_reverse_map(
   else
   //atomic implementation.
   {
-    reverse_array_type tmp_color_xadj (Kokkos::ViewAllocateWithoutInitializing("TMP_REVERSE_XADJ"), num_reverse_elements + 1);
+    reverse_array_type tmp_color_xadj (Kokkos::view_alloc(Kokkos::WithoutInitializing, "TMP_REVERSE_XADJ"), num_reverse_elements + 1);
 
     Reverse_Map_Init<forward_array_type, reverse_array_type> rmi(forward_map, reverse_map_xadj);
 
@@ -1036,8 +1036,8 @@ void symmetrize_and_get_lower_diagonal_edge_list(
   */
 
 
-  sym_srcs = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_srcs"), num_symmetric_edges);
-  sym_dsts_ = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_dsts_"), num_symmetric_edges);
+  sym_srcs = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_srcs"), num_symmetric_edges);
+  sym_dsts_ = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_dsts_"), num_symmetric_edges);
   MyExecSpace().fence();
   {
 
@@ -1142,9 +1142,9 @@ void symmetrize_graph_symbolic_hashmap(
   num_symmetric_edges = h_sym_edge_size(h_sym_edge_size.extent(0) - 1);
 
 
-  sym_adj = out_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_adj"), num_symmetric_edges);
+  sym_adj = out_lno_nnz_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_adj"), num_symmetric_edges);
   MyExecSpace().fence();
-  sym_xadj = out_lno_row_view_t(Kokkos::ViewAllocateWithoutInitializing("sym_xadj"), num_rows_to_symmetrize + 1);
+  sym_xadj = out_lno_row_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "sym_xadj"), num_rows_to_symmetrize + 1);
   Kokkos::deep_copy(sym_xadj, pre_pps_);
   {
 
@@ -1495,7 +1495,7 @@ void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row
   typedef typename InitScalar_t::team_policy_t tcp_t;
   int vector_size = 1;
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   Kokkos::parallel_for( "KokkosKernels::Common::InitViewWithScalar",  tcp_t(num_elements / chunk_size + 1 , team_size, vector_size), tm);
   MyExecSpace().fence();
 }

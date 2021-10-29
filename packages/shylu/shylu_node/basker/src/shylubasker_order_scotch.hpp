@@ -143,7 +143,7 @@ namespace BaskerNS
     #else
     using scotch_integral_type = int32_t; //NDE: make this depend on the scotch type
     #endif
-    Kokkos::Impl::Timer timer_scotch;
+    Kokkos::Timer timer_scotch;
 
     Int num_levels = num_domains; 
     Int num_doms   = pow(2.0, (double)(num_levels+1)) - 1;
@@ -173,7 +173,7 @@ namespace BaskerNS
         #if !defined(HAVE_SHYLU_NODEBASKER_METIS)
         BASKER_ASSERT(false, ">> BASKER ASSERT: METIS is not enabled <<");
         #else
-        Kokkos::Impl::Timer timer_metis;
+        Kokkos::Timer timer_metis;
         double time_metis = 0.0;
 
         //idx_t  metis_offset = btf_tabs(btf_tabs_offset-1);

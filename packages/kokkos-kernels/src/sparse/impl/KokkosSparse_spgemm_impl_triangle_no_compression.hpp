@@ -976,7 +976,7 @@ void KokkosSPGEMM
         " chunksize:" << accumulator_chunksize << std::endl;
   }
 
-  Kokkos::Impl::Timer timer1;
+  Kokkos::Timer timer1;
   pool_memory_space m_space(num_chunks, accumulator_chunksize, pool_init_val,  my_pool_type);
   MyExecSpace().fence();
   if (KOKKOSKERNELS_VERBOSE){
@@ -1106,7 +1106,7 @@ void KokkosSPGEMM
   }
   else {
     min_result_row_for_each_row = nnz_lno_persistent_work_view_t(
-          Kokkos::ViewAllocateWithoutInitializing("Min B Row for Each A Row"), this->a_row_cnt);
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "Min B Row for Each A Row"), this->a_row_cnt);
     maxNumRoughZeros = this->getMaxRoughRowNNZIntersection_p(
         a_row_cnt, entriesA.extent(0),
         p_rowmapA, p_entriesA,

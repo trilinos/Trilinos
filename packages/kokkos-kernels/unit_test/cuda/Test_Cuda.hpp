@@ -1,3 +1,6 @@
+#ifndef TEST_CUDA_HPP
+#define TEST_CUDA_HPP
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_config.h>
@@ -19,3 +22,5 @@ protected:
 
 #define TestCategory cuda
 #define TestExecSpace Kokkos::Cuda
+
+#endif // TEST_CUDA_HPP

@@ -72,9 +72,9 @@ and Bpos each contain the final index within C row where the A/B entry belongs
 // get C rowmap for sorted input
 template <typename size_type, typename ordinal_type, typename ARowPtrsT,
           typename BRowPtrsT, typename AColIndsT, typename BColIndsT,
-          typename CRowPtrsT>
-struct SortedCountEntries {
-  SortedCountEntries(ordinal_type nrows_,
+          typename CRowPtrsT, typename ExecSpace>
+struct SortedCountEntriesRange {
+  SortedCountEntriesRange(ordinal_type nrows_,
                      const typename ARowPtrsT::const_type& Arowptrs_,
                      const AColIndsT& Acolinds_,
                      const typename BRowPtrsT::const_type& Browptrs_,
@@ -112,12 +112,172 @@ struct SortedCountEntries {
     }
     Crowcounts(i) = numEntries;
   }
+
   ordinal_type nrows;
   const typename ARowPtrsT::const_type Arowptrs;
   const AColIndsT Acolinds;
   const typename BRowPtrsT::const_type Browptrs;
   const BColIndsT Bcolinds;
   CRowPtrsT Crowcounts;
+};
+
+template <typename size_type, typename ordinal_type, typename ARowPtrsT,
+          typename BRowPtrsT, typename AColIndsT, typename BColIndsT,
+          typename CRowPtrsT, typename ExecSpace>
+struct SortedCountEntriesTeam {
+  SortedCountEntriesTeam(ordinal_type nrows_,
+                     const typename ARowPtrsT::const_type& Arowptrs_,
+                     const AColIndsT& Acolinds_,
+                     const typename BRowPtrsT::const_type& Browptrs_,
+                     const BColIndsT& Bcolinds_, const CRowPtrsT& Crowcounts_)
+      : nrows(nrows_),
+        Arowptrs(Arowptrs_),
+        Acolinds(Acolinds_),
+        Browptrs(Browptrs_),
+        Bcolinds(Bcolinds_),
+        Crowcounts(Crowcounts_) {}
+
+  using TeamPol = Kokkos::TeamPolicy<ExecSpace>;
+  using TeamMem = typename TeamPol::member_type;
+
+  KOKKOS_INLINE_FUNCTION void longRowFallback(const ordinal_type i) const
+  {
+    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+
+    // count the union of nonzeros in Arow and Brow
+    size_type numEntries = 0;
+    size_type ai         = 0;
+    size_type bi         = 0;
+    size_type Arowstart  = Arowptrs(i);
+    size_type Arowlen    = Arowptrs(i + 1) - Arowstart;
+    size_type Browstart  = Browptrs(i);
+    size_type Browlen    = Browptrs(i + 1) - Browstart;
+    ordinal_type Acol = (Arowlen == 0) ? ORDINAL_MAX : Acolinds(Arowstart);
+    ordinal_type Bcol = (Browlen == 0) ? ORDINAL_MAX : Bcolinds(Browstart);
+    while (Acol != ORDINAL_MAX || Bcol != ORDINAL_MAX) {
+      ordinal_type Ccol = (Acol < Bcol) ? Acol : Bcol;
+      numEntries++;
+      //Eat all entries in both A and B which have this column
+      //This also results in Acol/Bcol being updated to following entries for next loop iter
+      while(Acol == Ccol)
+        Acol = (ai == Arowlen) ? ORDINAL_MAX : Acolinds(Arowstart + ai++);
+      while(Bcol == Ccol)
+        Bcol = (bi == Browlen) ? ORDINAL_MAX : Bcolinds(Browstart + bi++);
+    }
+    Crowcounts(i) = numEntries;
+  }
+
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMem t) const
+  {
+    ordinal_type i = t.league_rank() * t.team_size() + t.team_rank();
+    if(i >= nrows)
+      return;
+    ordinal_type* allScratch = (ordinal_type*) t.team_shmem().get_shmem(totalShared);
+    ordinal_type* scratch = allScratch + t.team_rank() * sharedPerThread;
+    ordinal_type Arowstart = Arowptrs(i);
+    ordinal_type Arowlen   = Arowptrs(i + 1) - Arowstart;
+    ordinal_type Browstart = Browptrs(i);
+    ordinal_type Browlen   = Browptrs(i + 1) - Browstart;
+    ordinal_type n = Arowlen + Browlen;
+    if(n > sharedPerThread)
+    {
+      //fall back to slow serial method
+      Kokkos::single(Kokkos::PerThread(t),
+      [&]()
+      {
+        longRowFallback(i);
+      });
+      return;
+    }
+    if(n == 0)
+    {
+      Kokkos::single(Kokkos::PerThread(t),
+      [&]()
+      {
+        Crowcounts(i) = 0;
+      });
+      return;
+    }
+    //Figure out the number of bitonic steps: ceil(log2(n))
+    ordinal_type npot = 1;
+    ordinal_type levels = 0;
+    while(npot < n)
+    {
+      levels++;
+      npot <<= 1;
+    }
+    //Copy A and B entries to scratch
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, Arowlen),
+    [&](ordinal_type j)
+    {
+      scratch[j] = Acolinds(Arowstart + j);
+    });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, Browlen),
+    [&](ordinal_type j)
+    {
+      scratch[npot - 1 - j] = Bcolinds(Browstart + j);
+    });
+    //Fill space between A and B with ORDINAL_MAX,
+    //to maintain a valid bitonic sequence of power-of-two length 
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, npot - n),
+    [&](ordinal_type j)
+    {
+      scratch[Arowlen + j] = Kokkos::ArithTraits<ordinal_type>::max();
+    });
+    // npot = 2^levels
+    for(ordinal_type level = 0; level < levels; level++)
+    {
+      // npot/2 pairs of items are compared in parallel
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, npot >> 1),
+        [&](const ordinal_type j)
+        {
+          ordinal_type boxSize = npot >> level;
+          //Which box contains this thread?
+          //box = (j / boxSize), and boxSize = 2^(levels-level), so
+          //box = j * 2^(level-levels) = j >> (levels - level)
+          ordinal_type boxID = (j * 2) >> (levels - level);
+          //boxStart = boxID * boxSize = boxID * 2^(levels-level)
+          //= boxID << (levels-level)
+          ordinal_type boxStart = boxID << (levels - level);
+          ordinal_type boxOffset = j - boxID * boxSize / 2;
+          ordinal_type elem1 = boxStart + boxOffset;
+          ordinal_type elem2 = elem1 + (boxSize >> 1);
+          if(scratch[elem2] < scratch[elem1])
+          {
+            ordinal_type temp = scratch[elem1];
+            scratch[elem1] = scratch[elem2];
+            scratch[elem2] = temp;
+          }
+        });
+    }
+    //Finally, count the number of distinct entries (this is #rising edges + 1)
+    ordinal_type risingEdges;
+    Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(t, n - 1),
+      [&](const ordinal_type j, ordinal_type& lcount)
+      {
+        if(scratch[j] != scratch[j + 1])
+          lcount++;
+      }, risingEdges);
+    Kokkos::single(Kokkos::PerThread(t),
+    [&]()
+    {
+      Crowcounts(i) = risingEdges + 1;
+    });
+  }
+
+  size_t team_shmem_size(int teamSize) const
+  {
+    return sharedPerThread * sizeof(ordinal_type) * teamSize;
+  }
+
+  ordinal_type nrows;
+  const typename ARowPtrsT::const_type Arowptrs;
+  const AColIndsT Acolinds;
+  const typename BRowPtrsT::const_type Browptrs;
+  const BColIndsT Bcolinds;
+  CRowPtrsT Crowcounts;
+  int sharedPerThread;  //Shared for each thread, measured in sizeof(ordinal_type)
+  int totalShared;      //Shared for whole team, measured in bytes
 };
 
 // get upper bound for C entries per row (assumes worst case, that entries in A
@@ -269,6 +429,92 @@ struct MergeEntriesFunctor {
   CcolindsT Bpos;
 };
 
+//Run SortedCountEntries: non-GPU, always uses the RangePolicy version.
+template <typename KernelHandle, typename alno_row_view_t_,
+          typename alno_nnz_view_t_, typename blno_row_view_t_,
+          typename blno_nnz_view_t_, typename clno_row_view_t_>
+void runSortedCountEntries(
+    const alno_row_view_t_& a_rowmap, const alno_nnz_view_t_& a_entries,
+    const blno_row_view_t_& b_rowmap, const blno_nnz_view_t_& b_entries,
+    const clno_row_view_t_& c_rowmap,
+    typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space<typename KernelHandle::SPADDHandleType::execution_space>()>::type* = nullptr)
+{
+  using size_type = typename KernelHandle::size_type;
+  using ordinal_type = typename KernelHandle::nnz_lno_t;
+  using execution_space = typename KernelHandle::SPADDHandleType::execution_space;
+  using range_type = Kokkos::RangePolicy<execution_space>;
+  auto nrows = c_rowmap.extent(0) - 1;
+  SortedCountEntriesRange<size_type, ordinal_type, alno_row_view_t_,
+    blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_,
+    clno_row_view_t_, execution_space>
+      countEntries(nrows, a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
+  Kokkos::parallel_for(
+      "KokkosSparse::SpAdd::Symbolic::InputSorted::CountEntries",
+      range_type(0, nrows), countEntries);
+}
+
+//Run SortedCountEntries: GPU, uses the TeamPolicy or RangePolicy depending
+//  on average nz per row (a runtime decision)
+template <typename KernelHandle, typename alno_row_view_t_,
+          typename alno_nnz_view_t_, typename blno_row_view_t_,
+          typename blno_nnz_view_t_, typename clno_row_view_t_>
+void runSortedCountEntries(
+    const alno_row_view_t_& a_rowmap, const alno_nnz_view_t_& a_entries,
+    const blno_row_view_t_& b_rowmap, const blno_nnz_view_t_& b_entries,
+    const clno_row_view_t_& c_rowmap,
+    typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space<typename KernelHandle::SPADDHandleType::execution_space>()>::type* = nullptr)
+{
+  using size_type = typename KernelHandle::size_type;
+  using ordinal_type = typename KernelHandle::nnz_lno_t;
+  using execution_space = typename KernelHandle::SPADDHandleType::execution_space;
+  using RangePol = Kokkos::RangePolicy<execution_space>;
+  using TeamPol = Kokkos::TeamPolicy<execution_space>;
+  auto nrows = c_rowmap.extent(0) - 1;
+  size_type c_est_nnz = 1.4 * (a_entries.extent(0) + b_entries.extent(0)) / nrows;
+  if(c_est_nnz <= 512)
+  {
+    //Convert c_est_nnz to a power of 2
+    size_type pot_est_nnz = 1;
+    while(pot_est_nnz < c_est_nnz)
+      pot_est_nnz *= 2;
+    //Estimate max number of uncompressed entries in each row of C
+    int vector_length = 1;
+    int vector_length_max = TeamPol::vector_length_max();
+    while(vector_length * 2 <= vector_length_max &&
+        (size_type) vector_length * 2 <= pot_est_nnz)
+    {
+      vector_length *= 2;
+    }
+    SortedCountEntriesTeam<size_type, ordinal_type, alno_row_view_t_,
+      blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_,
+      clno_row_view_t_, execution_space>
+        countEntries(nrows, a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
+    countEntries.sharedPerThread = pot_est_nnz;
+    //compute largest possible team size
+    TeamPol testPolicy(1, 1, vector_length);
+    testPolicy.set_scratch_size(0, Kokkos::PerThread(pot_est_nnz * sizeof(ordinal_type)));
+    int team_size = testPolicy.team_size_recommended(countEntries, Kokkos::ParallelForTag());
+    //construct real policy
+    int league_size = (nrows + team_size - 1) / team_size;
+    TeamPol policy(league_size, team_size, vector_length);
+    policy.set_scratch_size(0, Kokkos::PerThread(pot_est_nnz * sizeof(ordinal_type)));
+    countEntries.totalShared = countEntries.sharedPerThread * team_size * sizeof(ordinal_type);
+    Kokkos::parallel_for(
+        "KokkosSparse::SpAdd::Symbolic::InputSorted::CountEntries",
+        policy, countEntries);
+  }
+  else
+  {
+    SortedCountEntriesRange<size_type, ordinal_type, alno_row_view_t_,
+      blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_,
+      clno_row_view_t_, execution_space>
+        countEntries(nrows, a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
+    Kokkos::parallel_for(
+        "KokkosSparse::SpAdd::Symbolic::InputSorted::CountEntries",
+        RangePol(0, nrows), countEntries);
+  }
+}
+
 // Symbolic: count entries in each row in C to produce rowmap
 // kernel handle has information about whether it is sorted add or not.
 template <typename KernelHandle, typename alno_row_view_t_,
@@ -330,25 +576,22 @@ void spadd_symbolic(
   }
   ordinal_type nrows = a_rowmap.extent(0) - 1;
   typedef Kokkos::RangePolicy<execution_space, ordinal_type> range_type;
-  using NoInitialize = Kokkos::ViewAllocateWithoutInitializing;
   if (addHandle->is_input_sorted()) {
-    // call entry count functor to get entry counts per row
-    SortedCountEntries<size_type, ordinal_type, alno_row_view_t_,
-                       blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_,
-                       clno_row_view_t_>
-        countEntries(nrows, a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
-    Kokkos::parallel_for(
-        "KokkosSparse::SpAdd::Symbolic::InputSorted::CountEntries",
-        range_type(0, nrows), countEntries);
-    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<clno_row_view_t_,
-                                                          execution_space>(
-        nrows + 1, c_rowmap);
+    runSortedCountEntries
+      <KernelHandle, alno_row_view_t_, alno_nnz_view_t_,
+      blno_row_view_t_, blno_nnz_view_t_, clno_row_view_t_>
+        (a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap);
+    KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum
+      <clno_row_view_t_, execution_space>
+      (nrows + 1, c_rowmap);
   } else {
     // note: scoping individual parts of the process to free views sooner,
     // minimizing peak memory usage run the unsorted c_rowmap upper bound
     // functor (just adds together A and B entry counts row by row)
     clno_row_view_t_ c_rowmap_upperbound(
-        NoInitialize("C row counts upper bound"), nrows + 1);
+        Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                           "C row counts upper bound"),
+        nrows + 1);
     size_type c_nnz_upperbound = 0;
     {
       UnsortedEntriesUpperBound<size_type, ordinal_type, alno_row_view_t_,
@@ -364,9 +607,13 @@ void spadd_symbolic(
                         Kokkos::subview(c_rowmap_upperbound, nrows));
     }
     clno_nnz_view_t_ c_entries_uncompressed(
-        NoInitialize("C entries uncompressed"), c_nnz_upperbound);
-    clno_nnz_view_t_ ab_perm(NoInitialize("A and B permuted entry indices"),
-                             c_nnz_upperbound);
+        Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                           "C entries uncompressed"),
+        c_nnz_upperbound);
+    clno_nnz_view_t_ ab_perm(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                           "A and B permuted entry indices"),
+        c_nnz_upperbound);
     // compute the unmerged sum
     UnmergedSumFunctor<size_type, ordinal_type, alno_row_view_t_,
                        blno_row_view_t_, clno_row_view_t_, alno_nnz_view_t_,
@@ -377,13 +624,15 @@ void spadd_symbolic(
         "KokkosSparse::SpAdd:Symbolic::InputNotSorted::UnmergedSum",
         range_type(0, nrows), unmergedSum);
     // sort the unmerged sum
-    KokkosKernels::Impl::sort_crs_matrix<execution_space, clno_row_view_t_,
+    KokkosKernels::sort_crs_matrix<execution_space, clno_row_view_t_,
                                          clno_nnz_view_t_, clno_nnz_view_t_>(
         c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
-    clno_nnz_view_t_ a_pos(NoInitialize("A entry positions"),
-                           a_entries.extent(0));
-    clno_nnz_view_t_ b_pos(NoInitialize("B entry positions"),
-                           b_entries.extent(0));
+    clno_nnz_view_t_ a_pos(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "A entry positions"),
+        a_entries.extent(0));
+    clno_nnz_view_t_ b_pos(
+        Kokkos::view_alloc(Kokkos::WithoutInitializing, "B entry positions"),
+        b_entries.extent(0));
     // merge the entries and compute Apos/Bpos, as well as Crowcounts
     {
       MergeEntriesFunctor<size_type, ordinal_type, alno_row_view_t_,
@@ -575,8 +824,7 @@ void spadd_numeric(KernelHandle* kernel_handle, const alno_row_view_t_ a_rowmap,
   typedef typename KernelHandle::size_type size_type;
   typedef typename KernelHandle::nnz_lno_t ordinal_type;
   typedef typename KernelHandle::nnz_scalar_t scalar_type;
-  typedef
-      typename KernelHandle::SPADDHandleType::execution_space execution_space;
+  typedef typename KernelHandle::SPADDHandleType::execution_space execution_space;
   // Check that A/B/C data types match KernelHandle types, and that C data types
   // are nonconst (doesn't matter if A/B types are const)
   static_assert(SAME_TYPE(ascalar_t_, scalar_type),
@@ -664,13 +912,12 @@ template <typename KernelHandle, typename AMatrix, typename BMatrix,
           typename CMatrix>
 void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
                     CMatrix& C) {
-  using graph_type   = typename CMatrix::staticcrsgraph_type;
   using row_map_type = typename CMatrix::row_map_type::non_const_type;
   using entries_type = typename CMatrix::index_type::non_const_type;
   using values_type  = typename CMatrix::values_type::non_const_type;
 
   // Create the row_map of C, no need to initialize it
-  row_map_type row_mapC(Kokkos::ViewAllocateWithoutInitializing("row map"),
+  row_map_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "row map"),
                         A.numRows() + 1);
   KokkosSparse::Experimental::spadd_symbolic<
       KernelHandle, typename AMatrix::row_map_type::const_type,
@@ -684,17 +931,14 @@ void spadd_symbolic(KernelHandle* handle, const AMatrix& A, const BMatrix& B,
   // views so we can build a graph and then matrix C
   // and subsequently construct C.
   auto addHandle = handle->get_spadd_handle();
-  entries_type entriesC(Kokkos::ViewAllocateWithoutInitializing("entries"),
+  entries_type entriesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "entries"),
                         addHandle->get_c_nnz());
-  graph_type graphC(entriesC, row_mapC);
-  C = CMatrix("matrix", graphC);
-
   // Finally since we already have the number of nnz handy
   // we can go ahead and allocate C's values and set them.
-  values_type valuesC(Kokkos::ViewAllocateWithoutInitializing("values"),
+  values_type valuesC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "values"),
                       addHandle->get_c_nnz());
 
-  C.values = valuesC;
+  C = CMatrix("matrix", A.numRows(), A.numCols(), addHandle->get_c_nnz(), valuesC, row_mapC, entriesC);
 }
 
 // Symbolic: count entries in each row in C to produce rowmap

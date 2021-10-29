@@ -251,8 +251,8 @@ struct SPGEMM_NUMERIC<KernelHandle,
           );
       typename c_size_view_t_::value_type c_nnz_size = handle->get_spgemm_handle()->get_c_nnz();
       if (c_nnz_size){
-        entriesC = c_lno_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-        valuesC = c_scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+        entriesC = c_lno_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "entriesC"), c_nnz_size);
+        valuesC = c_scalar_view_t (Kokkos::view_alloc(Kokkos::WithoutInitializing, "valuesC"), c_nnz_size);
       }
       */
     }
