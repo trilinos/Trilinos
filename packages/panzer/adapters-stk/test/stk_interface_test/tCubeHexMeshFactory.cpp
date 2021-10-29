@@ -100,12 +100,12 @@ void edge_face_block_test_helper(Teuchos::FancyOStream &out,
    if (expected_edge_block_count == 1) {
       std::vector<stk::mesh::Entity> edges;
       mesh->getMyEdges(edges);
-      TEST_ASSERT(all_edge_blocks[0]->entity_count() == edges.size());
+      TEST_ASSERT(all_edge_blocks[0]->entity_count() == (int64_t)edges.size());
    }
    if (expected_face_block_count == 1) {
       std::vector<stk::mesh::Entity> faces;
       mesh->getMyFaces(faces);
-      TEST_ASSERT(all_face_blocks[0]->entity_count() == faces.size());
+      TEST_ASSERT(all_face_blocks[0]->entity_count() == (int64_t)faces.size());
    }
    }
 }

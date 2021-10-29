@@ -577,7 +577,7 @@ void STK_ExodusReaderFactory::createUniqueEdgeTopologyMap(STK_Interface & mesh, 
    const stk::topology elemBlockTopo = metaData->get_topology(*elemBlockPart);
 
    std::vector<stk::topology> edge_topologies;
-   for (int i=0;i<elemBlockTopo.num_edges();i++) {
+   for (unsigned i=0;i<elemBlockTopo.num_edges();i++) {
        edge_topologies.push_back(elemBlockTopo.edge_topology(i));
    }
    std::sort(edge_topologies.begin(), edge_topologies.end(), topo_less);
@@ -599,7 +599,7 @@ void STK_ExodusReaderFactory::createUniqueFaceTopologyMap(STK_Interface & mesh, 
    const stk::topology elemBlockTopo = metaData->get_topology(*elemBlockPart);
 
    std::vector<stk::topology> face_topologies;
-   for (int i=0;i<elemBlockTopo.num_faces();i++) {
+   for (unsigned i=0;i<elemBlockTopo.num_faces();i++) {
       face_topologies.push_back(elemBlockTopo.face_topology(i));
    }
    std::sort(face_topologies.begin(), face_topologies.end(), topo_less);
