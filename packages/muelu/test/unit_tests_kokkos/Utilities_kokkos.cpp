@@ -247,7 +247,7 @@ namespace MueLuTests
     auto vector = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
     auto vectorView = vector->getDeviceLocalView(Xpetra::Access::ReadOnly);
 
-    Kokkos::View<bool *> nonZeros("", vectorView.extent(0));
+    Kokkos::View<bool *, typename Node::device_type> nonZeros("", vectorView.extent(0));
     unsigned int result = 0;
 
     // Zero-ed out Vector
@@ -477,7 +477,7 @@ namespace MueLuTests
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-    Kokkos::View<bool *> dRowsIn("", A->getNodeNumRows());
+    Kokkos::View<bool *, typename Node::device_type> dRowsIn("", A->getNodeNumRows());
 
     Kokkos::parallel_for(
         "", dRowsIn.extent(0), KOKKOS_LAMBDA(const int index) {
@@ -578,6 +578,7 @@ namespace MueLuTests
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
+    using Magnitude = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -589,7 +590,7 @@ namespace MueLuTests
     TEST_EQUALITY(coords, Teuchos::null);
 
     auto map = A->getMap();
-    auto mvCoords = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+    auto mvCoords = Xpetra::MultiVectorFactory<Magnitude, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
     params.set("Coordinates", mvCoords);
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
     coords = Utils_Kokkos::ExtractCoordinatesFromParameterList(params);
