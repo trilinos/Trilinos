@@ -12,7 +12,10 @@ SET(HEADERS_NEED_IO
   GeneratedMeshToFile.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
+  TextMeshFixture.hpp
   TextMeshToFile.hpp
+  TextMeshUtils.hpp
+  TextMesh.hpp
   ioUtils.hpp
   )
 SET(SOURCES_NEED_IO
@@ -22,7 +25,9 @@ SET(SOURCES_NEED_IO
   GenerateALefRAMesh.cpp
   GeneratedMeshToFile.cpp
   ReadWriteSidesetTester.cpp
+  TextMeshFixture.cpp
   TextMeshToFile.cpp
+  TextMeshUtils.cpp
   TextMesh.cpp
   ioUtils.cpp
   meshCreationHelpers.cpp

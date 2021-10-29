@@ -487,6 +487,7 @@ class ParsedEval
   using NodeView = Kokkos::View<NgpNode*, stk::ngp::MemSpace>;
 
 public:
+  ParsedEval() = default;
   ParsedEval(Eval& eval); 
 
   KOKKOS_DEFAULTED_FUNCTION ParsedEval(const ParsedEval&) = default;
@@ -529,7 +530,6 @@ class DeviceVariableMap
   using VariableMapView = Kokkos::View<DeviceVariable*, stk::ngp::MemSpace>;
 
 public:
-
   KOKKOS_DEFAULTED_FUNCTION ~DeviceVariableMap() = default;
 
   KOKKOS_INLINE_FUNCTION

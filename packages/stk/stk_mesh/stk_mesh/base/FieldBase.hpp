@@ -264,6 +264,22 @@ public:
 
   void rotate_multistate_data();
 
+  stk::ngp::ExecSpace& get_execution_space() const {
+    return m_execSpace;
+  }
+
+  void set_execution_space(const stk::ngp::ExecSpace& executionSpace) const {
+    m_execSpace = executionSpace;
+  }
+
+  void set_execution_space(stk::ngp::ExecSpace&& executionSpace) const {
+    m_execSpace = std::move(executionSpace);
+  }
+
+  void reset_execution_space() const {
+    m_execSpace = Kokkos::DefaultExecutionSpace();
+  }
+
 private:
   template<class A>
     const A * declare_attribute_no_delete(const A * a) {
@@ -348,7 +364,8 @@ protected:
       m_numSyncsToHost(0),
       m_numSyncsToDevice(0),
       m_modifiedOnHost(false),
-      m_modifiedOnDevice(false)
+      m_modifiedOnDevice(false),
+      m_execSpace(Kokkos::DefaultExecutionSpace())
   {
     FieldBase * const pzero = nullptr ;
     const shards::ArrayDimTag * const dzero = nullptr ;
@@ -383,6 +400,7 @@ private:
   mutable size_t               m_numSyncsToDevice;
   mutable bool                 m_modifiedOnHost;
   mutable bool                 m_modifiedOnDevice;
+  mutable stk::ngp::ExecSpace  m_execSpace;
   mutable Teuchos::any m_stkFieldSyncDebugger;
 };
 
