@@ -9,12 +9,12 @@
 #ifndef Akri_CDFEM_Options_Parser_h
 #define Akri_CDFEM_Options_Parser_h
 
-namespace YAML { class Node; }
+namespace krino { namespace Parser { class Node; } }
 namespace krino { class RegionInterface; }
 
 namespace krino {
 namespace CDFEM_Options_Parser {
- void parse(const YAML::Node & node, RegionInterface & region);
+  void parse(const Parser::Node & node, RegionInterface & region);
 }
 }
 

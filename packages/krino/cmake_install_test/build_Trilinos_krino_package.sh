@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ "$#" -ne 1 ]; then
+    echo "Please provide the path to the output directory as the only argument."
+    exit 1
+fi
+
+
 function execute() {
   stdbuf -o0 -e0 echo "% $@" ;
   eval "$@" ;
@@ -28,12 +34,17 @@ function make_and_install()
     make install || exit_with_message "Failed installing $1"
 }
 
-function build_yaml()
+function pull_and_build_yaml()
 {
     productName=yaml
 
     cd_to_new_dir ${output_dir}/${productName}
-    execute tar -xzf ${sierra_proj}/TPLs_src/spack/spack_tpls/yaml-cpp/*.tar.gz
+    
+    execute git clone https://github.com/jbeder/yaml-cpp.git yaml-cpp
+    cd yaml-cpp
+    git checkout tags/yaml-cpp-0.6.3
+    cd ..
+    
     cd_to_new_dir ${productName}_build
 
     export CC=gcc
@@ -44,7 +55,7 @@ function build_yaml()
     unset CXX
 }
 
-function setup_trilinos_with_krino()
+function pull_Trilinos()
 {
     productName=trilinos
     
@@ -63,16 +74,9 @@ function setup_trilinos_with_krino()
       execute git pull
       execute cd ..
     fi
-    
-    if [ -d Trilinos/packages/krino ] ; then
-      execute rm -rf Trilinos/packages/krino;
-    fi
-    if [ ! -L Trilinos/packages/krino ] ; then
-      execute ln -s ${sierra_proj}/krino Trilinos/packages
-    fi   
 }
 
-function build_trilinos_with_krino()
+function build_krino_Trilinos_package()
 {
     productName=trilinos
 
@@ -82,31 +86,32 @@ function build_trilinos_with_krino()
     cd_to_new_dir ${productName}_build
 
     export TRILINOS_INSTALL_DIR=../${productName}_install
-    execute $sierra_proj/krino/cmake_install_test/run_cmake_krino_pull_request
+    
+    execute ../Trilinos/packages/krino/cmake_install_test/run_cmake_krino
     make_and_install $productName    
 }
 
 
 function setup_environment()
 {
-    source ${output_dir}/trilinos/Trilinos/cmake/std/sems/PullRequestGCC7.2.0TestingEnv.sh
-
-    # fixup for python 2
-    module unload sems-python/3.5.2
-    module load sems-python/2.7.9 
+    module purge
+    
+    # compiler environment
+    module load cde/dev/cmake/3.19.2
+    module load cde/dev/compiler/gcc/7.2.0
+    module load cde/dev/gcc/7.2.0/openmpi/4.0.5
+    
+    #TPLs
+    module load cde/dev/gcc/7.2.0/netlib-lapack/3.8.0
+    module load cde/dev/gcc/7.2.0/hdf5/1.10.6
+    module load cde/dev/gcc/7.2.0/netcdf-c/4.7.3
+    module load cde/dev/gcc/7.2.0/parallel-netcdf/1.12.1
+    module load cde/dev/gcc/7.2.0/metis/5.1.0
+    module load cde/dev/gcc/7.2.0/parmetis/4.0.3
 }
 
-function runTests()
-{
-    cd $1
-    ctest -j 16 || exit_with_message "$2 tests failed"
-    cd ../..
-}
+output_dir=$1
 
-sierra_proj=${SIERRA_PROJ:-${PWD}}
-output_dir=${OUTPUT_DIR:-${PWD}/../krino-cmake-testing}
-
-cuda_on_or_off=${CUDA:-OFF}
 build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
@@ -114,13 +119,8 @@ if [ ! -d ${output_dir} ] ; then
   execute mkdir ${output_dir}
 fi
 
-setup_trilinos_with_krino
+pull_Trilinos
 setup_environment
 
-build_trilinos_with_krino
-build_yaml
-build_trilinos_with_krino
-
-#runTests morph/morph_build "Morph"
-#runTests morph_and_sgm/morph_and_sgm_build "Morph and SGM"
-#runTests morphWithExe/morphWithExe_build "MorphWithExe"
+pull_and_build_yaml
+build_krino_Trilinos_package
