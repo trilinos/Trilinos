@@ -663,24 +663,25 @@ void DistributorPlan::computeReceives()
   // either be 0 or 1.
   {
     Array<int> toProcsFromMe (numProcs, 0);
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     bool counting_error = false;
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_TPETRA_DEBUG
     for (size_t i = 0; i < (numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0)); ++i) {
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
       if (toProcsFromMe[procIdsToSendTo_[i]] != 0) {
         counting_error = true;
       }
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_TPETRA_DEBUG
       toProcsFromMe[procIdsToSendTo_[i]] = 1;
     }
-#ifdef HAVE_TEUCHOS_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
+    // Note that SHARED_TEST_FOR_EXCEPTION does a global reduction
     SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
         "Tpetra::Distributor::computeReceives: There was an error on at least "
         "one process in counting the number of messages send by that process to "
         "the other processs.  Please report this bug to the Tpetra developers.",
         *comm_);
-#endif // HAVE_TEUCHOS_DEBUG
+#endif // HAVE_TPETRA_DEBUG
 
     // Compute the number of receives that this process needs to
     // post.  The number of receives includes any self sends (i.e.,
