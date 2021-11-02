@@ -43,5 +43,5 @@
 @FUNCTION: tribits_tpl_allow_pre_find_package() +
 @FUNCTION: tribits_tpl_find_include_dirs_and_libraries() +
 @FUNCTION: tribits_tpl_tentatively_enable() +
-@FUNCTION: tribits_verbose_print_var() +
 @FUNCTION: tribits_write_flexible_package_client_export_files() +
+@FUNCTION: tribits_verbose_print_var() +

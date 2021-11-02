@@ -165,7 +165,7 @@ function(tribits_configure_file  PACKAGE_NAME_CONFIG_FILE)
   endif()
 
   if (${PARENT_PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
-    append_string_var(${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
+    string(APPEND ${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS
       "\n#define ${PARENT_PACKAGE_NAME_UC}_HIDE_DEPRECATED_CODE")
   endif()
 
@@ -202,7 +202,9 @@ endfunction()
 #
 # @FUNCTION: tribits_add_library()
 #
-# Function used to add a CMake library and target using ``add_library()``.
+# Function used to add a CMake library and target using ``add_library()`` and
+# also the ALIAS target ``${PACKAGE_NAME}::<libname>`` (where ``<libname>`` is
+# the full CMake target name as returned from ``${<libTargetName>}``).
 #
 # Usage::
 #
@@ -333,7 +335,10 @@ endfunction()
 #     not be added.  In this case, the current include directories will be set
 #     in the global variable ``<libTargetName>_INCLUDE_DIR`` which will be
 #     used in `tribits_add_executable()`_ when a test-only library is linked
-#     in through its ``DEPLIBS`` argument.
+#     in through its ``DEPLIBS`` argument.  Also, the custom property
+#     ``TRIBITS_TESTONLY_LIB`` will be set to ``TRUE`` which will ensure that
+#     this library will not be added to the ``${PACKAGE_NAME}::all_libs``
+#     target.
 #
 #   ``NO_INSTALL_LIB_OR_HEADERS``
 #
@@ -575,7 +580,8 @@ function(tribits_add_library LIBRARY_NAME_IN)
 
     # Add whatever include directories have been defined so far
 
-    include_directories(AFTER ${${PACKAGE_NAME}_INCLUDE_DIRS})
+    #include_directories(AFTER ${${PACKAGE_NAME}_INCLUDE_DIRS})
+    # ToDo: #299: Remove the above once final cleanup is performed for #299.
 
     # Add whatever link directories have been added so far
 
@@ -626,7 +632,7 @@ function(tribits_add_library LIBRARY_NAME_IN)
       set(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${LIB}")
 
       # LIB_IN_SE_PKG?
-      list(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+      list(FIND ${PACKAGE_NAME}_LIBRARIES "${PACKAGE_NAME}::${PREFIXED_LIB}" FOUND_IDX)
       if (FOUND_IDX GREATER -1)
         set(LIB_IN_SE_PKG TRUE)
       else()
@@ -711,14 +717,15 @@ function(tribits_add_library LIBRARY_NAME_IN)
 
     foreach(IMPORTEDLIB ${PARSE_IMPORTEDLIBS})
       set(PREFIXED_LIB "${LIBRARY_NAME_PREFIX}${IMPORTEDLIB}")
-      list(FIND ${PACKAGE_NAME}_LIBRARIES ${PREFIXED_LIB} FOUND_IDX)
+      list(FIND ${PACKAGE_NAME}_LIBRARIES "${PACKAGE_NAME}::${PREFIXED_LIB}"
+        FOUND_IMPORTEDLIB_IN_LIBRARIES_IDX)
       if (${PREFIXED_LIB}_INCLUDE_DIRS)
         message(WARNING "WARNING: '${IMPORTEDLIB}' in IMPORTEDLIBS is a TESTONLY lib"
           " and it is illegal to pass in through IMPORTEDLIBS!"
           "  Such usage is deprecated (and this warning will soon become an error)!"
           "  Should '${IMPORTEDLIB}' instead be passed through DEPLIBS?")
         # ToDo: Turn the above to FATAL_ERROR after dropping deprecated code
-      elseif (FOUND_IDX GREATER -1)
+      elseif (FOUND_IMPORTEDLIB_IN_LIBRARIES_IDX GREATER -1)
         message(WARNING "WARNING: Lib '${IMPORTEDLIB}' in IMPORTEDLIBS is in"
         " this SE package and is *not* an external lib!"
         "  TriBITS takes care of linking against libs the current"
@@ -837,6 +844,11 @@ function(tribits_add_library LIBRARY_NAME_IN)
       set(${PARSE_ADDED_LIB_TARGET_NAME_OUT} ${LIBRARY_NAME} PARENT_SCOPE)
     endif()
 
+    if (PARSE_TESTONLY)
+      set_target_properties(${LIBRARY_NAME} PROPERTIES
+        TRIBITS_TESTONLY_LIB TRUE)
+    endif()
+
     set_property(
       TARGET ${LIBRARY_NAME}
       APPEND PROPERTY
@@ -912,6 +924,7 @@ function(tribits_add_library LIBRARY_NAME_IN)
       install(
         TARGETS ${LIBRARY_NAME}
         EXPORT ${PACKAGE_NAME}
+        INCLUDES DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
         RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}"
         LIBRARY DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
         ARCHIVE DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
@@ -936,7 +949,7 @@ function(tribits_add_library LIBRARY_NAME_IN)
 
       prepend_global_set(${PACKAGE_NAME}_INCLUDE_DIRS  ${INCLUDE_DIRS_CURRENT})
       prepend_global_set(${PACKAGE_NAME}_LIBRARY_DIRS  ${LIBRARY_DIRS_CURRENT})
-      prepend_global_set(${PACKAGE_NAME}_LIBRARIES  ${LIBRARY_NAME})
+      prepend_global_set(${PACKAGE_NAME}_LIBRARIES  ${PACKAGE_NAME}::${LIBRARY_NAME})
 
       remove_global_duplicates(${PACKAGE_NAME}_INCLUDE_DIRS)
       remove_global_duplicates(${PACKAGE_NAME}_LIBRARY_DIRS)
@@ -961,6 +974,26 @@ function(tribits_add_library LIBRARY_NAME_IN)
       endif()
 
     endif()
+
+    # Set INTERFACE_INCLUDE_DIRECTOIRES property for added library and must
+    # only do for the build interface (not the install interface).
+    set(buildInterfaceIncludeDirs)
+    foreach (includeDir IN LISTS ${PACKAGE_NAME}_INCLUDE_DIRS)
+      list(APPEND buildInterfaceIncludeDirs "$<BUILD_INTERFACE:${includeDir}>")
+    endforeach()
+    target_include_directories( ${LIBRARY_NAME} PUBLIC ${buildInterfaceIncludeDirs} )
+    # ToDo: #299: In the final refactoring, the list of include directories
+    # for this library should be extracted from the directory property
+    # INCLUDE_DIRECTORIES and then set INTERFACE instead of PUBLIC above.  The
+    # rest of the include directories from upstream packages should come from
+    # the targets that have their INTERFACE_INCLUDE_DIRECTORIES property set.
+
+    #
+    # Add ALIAS library <PackageName>::<libname>
+    #
+
+    add_library(${PACKAGE_NAME}::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
+
   endif() #if not in installation testing mode
 
   #
