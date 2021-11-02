@@ -408,7 +408,6 @@ void mkl_symbolic(
     typedef typename KernelHandle::HandleTempMemorySpace HandleTempMemorySpace;
     typedef typename Kokkos::View<int *, HandleTempMemorySpace> int_temp_work_view_t;
 
-  typedef typename KernelHandle::HandleExecSpace MyExecSpace;
   /*
       if (!(
           (Kokkos::SpaceAccessibility<typename
@@ -425,12 +424,6 @@ void mkl_symbolic(
      MKL\n"); return;
       }
   */
-  if (std::is_same<idx, int>::value) {
-    int *a_xadj = NULL;
-    int *b_xadj = NULL;
-    int_temp_work_view_t a_xadj_v, b_xadj_v;
-
-
     typedef typename KernelHandle::nnz_scalar_t value_type;
 
     
