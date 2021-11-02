@@ -4,7 +4,6 @@
 #            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
-#
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
 #
@@ -46,7 +45,7 @@
 #
 ##############################################################################
 
-${DEFINE_CMAKE_CURRENT_LIST_DIR_CODE_SNIPPET}
+include_guard()
 
 ## ---------------------------------------------------------------------------
 ## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build

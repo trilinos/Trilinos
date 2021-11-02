@@ -25,12 +25,12 @@ add_subdirectory(testlib)
 set(EXPECTED_B_DEPS)
 assert_defined(${PACKAGE_NAME}_ENABLE_WithSubpackagesA)
 if(${PACKAGE_NAME}_ENABLE_WithSubpackagesA)
-  set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} A no_deps")
+  set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} A headeronlytpl")
 endif()
 if(${PACKAGE_NAME}_ENABLE_InsertedPkg)
-  set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} InsertedPkg no_deps")
+  set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} InsertedPkg headeronlytpl")
 endif()
-set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} no_deps")
+set(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} headeronlytpl")
 
 tribits_add_advanced_test( test_of_b
   OVERALL_NUM_MPI_PROCS 1

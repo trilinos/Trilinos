@@ -394,7 +394,7 @@ macro(enable_only_modified_packages)
       file(STRINGS ${EXTRAREPO_MODIFIED_FILES_FILE_NAME} EXTRAREPO_MODIFIED_FILES_STR)
       set(EXTRAREPO_FILES_STR "")
       foreach(STR_LINE ${EXTRAREPO_MODIFIED_FILES_STR})
-        append_string_var(EXTRAREPO_FILES_STR "${EXTRAREPO_DIR}/${STR_LINE}\n")
+        string(APPEND EXTRAREPO_FILES_STR "${EXTRAREPO_DIR}/${STR_LINE}\n")
       endforeach()
       file(APPEND "${MODIFIED_FILES_FILE_NAME}" ${EXTRAREPO_FILES_STR})
 

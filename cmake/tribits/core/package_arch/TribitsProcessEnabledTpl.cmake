@@ -57,13 +57,13 @@ function(tribits_process_enabled_tpl  TPL_NAME)
   # Setup the processing string
   set(PROCESSING_MSG_STRING "Processing enabled TPL: ${TPL_NAME} (")
   if (TPL_${TPL_NAME}_ENABLING_PKG)
-    append_string_var(PROCESSING_MSG_STRING
+    string(APPEND PROCESSING_MSG_STRING
       "enabled by ${TPL_${TPL_NAME}_ENABLING_PKG}," )
   else()
-    append_string_var(PROCESSING_MSG_STRING
+    string(APPEND PROCESSING_MSG_STRING
       "enabled explicitly," )
   endif()
-    append_string_var(PROCESSING_MSG_STRING 
+    string(APPEND PROCESSING_MSG_STRING 
       " disable with -DTPL_ENABLE_${TPL_NAME}=OFF)" )
 
   # Print the processing header
