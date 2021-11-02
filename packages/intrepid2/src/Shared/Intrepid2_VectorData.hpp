@@ -50,6 +50,8 @@
 #ifndef Intrepid2_VectorData_h
 #define Intrepid2_VectorData_h
 
+#include <Kokkos_Vector.hpp>
+
 namespace Intrepid2 {
 /** \class Intrepid2::VectorData
     \brief Reference-space field values for a basis, designed to support typical vector-valued bases.
@@ -65,17 +67,16 @@ namespace Intrepid2 {
   class VectorData
   {
   public:
-    using VectorArray = Kokkos::Array< TensorData<Scalar,DeviceType>, Parameters::MaxTensorComponents>; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
+    using VectorArray = Kokkos::vector< TensorData<Scalar,DeviceType> >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
     using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
 
     FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
     bool axialComponents_; // if true, each entry in vectorComponents_ is an axial component vector; for 3D: (f1,0,0); (0,f2,0); (0,0,f3).  The 0s are represented by trivial/invalid TensorData objects.  In this case, numComponents_ == numFamilies_.
      
     int totalDimension_;
-    Kokkos::Array<int,Parameters::MaxTensorComponents> dimToComponent_;
-    Kokkos::Array<int,Parameters::MaxTensorComponents> dimToComponentDim_;
-    
-    Kokkos::Array<int,Parameters::MaxTensorComponents> numDimsForComponent_;
+    Kokkos::vector<int> dimToComponent_;
+    Kokkos::vector<int> dimToComponentDim_;
+    Kokkos::vector<int> numDimsForComponent_;
     
     Kokkos::Array<int,Parameters::MaxTensorComponents> familyFieldUpperBound_; // one higher than the end of family indicated
     
@@ -128,6 +129,8 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION(!validEntryFoundForFamily, std::invalid_argument, "Each family must have at least one valid TensorData entry");
       }
 
+      // do a pass through components to determine total component dim (totalDimension_) and size lookups appropriately
+      numDimsForComponent_ = Kokkos::vector<int>(numComponents_);
       int currentDim = 0;
       for (unsigned j=0; j<numComponents_; j++)
       {
@@ -141,11 +144,6 @@ namespace Intrepid2 {
             {
               validEntryFoundForComponent = true;
               numDimsForComponent = vectorComponents_[i][j].extent_int(2); // (F,P,D) container or (F,P) container
-              for (int dim=0; dim<numDimsForComponent; dim++)
-              {
-                dimToComponent_[currentDim+dim]    = j;
-                dimToComponentDim_[currentDim+dim] = dim;
-              }
             }
             else
             {
@@ -157,16 +155,29 @@ namespace Intrepid2 {
         {
           // assume that the component takes up exactly one space dim
           numDimsForComponent = 1;
-          dimToComponent_[currentDim]    = j;
-          dimToComponentDim_[currentDim] = 0;
         }
         
         numDimsForComponent_[j] = numDimsForComponent;
         
         currentDim += numDimsForComponent;
       }
-      numPoints_      = numPoints;
       totalDimension_ = currentDim;
+      
+      dimToComponent_    = Kokkos::vector<int>(totalDimension_);
+      dimToComponentDim_ = Kokkos::vector<int>(totalDimension_);
+      currentDim = 0;
+      for (unsigned j=0; j<numComponents_; j++)
+      {
+        bool validEntryFoundForComponent = false;
+        int numDimsForComponent = numDimsForComponent_[j];
+        for (int dim=0; dim<numDimsForComponent; dim++)
+        {
+          dimToComponent_[currentDim+dim]    = j;
+          dimToComponentDim_[currentDim+dim] = dim;
+        }
+        currentDim += numDimsForComponent;
+      }
+      numPoints_      = numPoints;
     }
   public:
     /**
@@ -182,9 +193,9 @@ namespace Intrepid2 {
     numComponents_(numComponents)
     {
       static_assert(numFamilies <= Parameters::MaxTensorComponents,   "numFamilies must be less than Parameters::MaxTensorComponents");
-      static_assert(numComponents <= Parameters::MaxTensorComponents, "numComponents must be less than Parameters::MaxTensorComponents");
       for (unsigned i=0; i<numFamilies; i++)
       {
+        vectorComponents_[i] = VectorArray(numComponents);
         for (unsigned j=0; j<numComponents; j++)
         {
           vectorComponents_[i][j] = vectorComponents[i][j];
@@ -210,9 +221,9 @@ namespace Intrepid2 {
       }
       
       INTREPID2_TEST_FOR_EXCEPTION(numFamilies_ > Parameters::MaxTensorComponents,   std::invalid_argument, "numFamilies must be less than Parameters::MaxTensorComponents");
-      INTREPID2_TEST_FOR_EXCEPTION(numComponents_ > Parameters::MaxTensorComponents, std::invalid_argument, "numComponents must be less than Parameters::MaxTensorComponents");
       for (unsigned i=0; i<numFamilies_; i++)
       {
+        vectorComponents_[i] = VectorArray(numComponents_);
         for (unsigned j=0; j<numComponents_; j++)
         {
           vectorComponents_[i][j] = vectorComponents[i][j];
@@ -237,6 +248,7 @@ namespace Intrepid2 {
         numComponents_ = numComponents;
         for (unsigned d=0; d<numComponents_; d++)
         {
+          vectorComponents_[d] = VectorArray(numComponents);
           vectorComponents_[d][d] = vectorComponents[d];
         }
       }
@@ -244,6 +256,7 @@ namespace Intrepid2 {
       {
         numFamilies_   = 1;
         numComponents_ = numComponents;
+        vectorComponents_[0] = VectorArray(numComponents);
         for (unsigned d=0; d<numComponents_; d++)
         {
           vectorComponents_[0][d] = vectorComponents[d];
@@ -267,12 +280,14 @@ namespace Intrepid2 {
         numFamilies_   = numComponents_;
         for (unsigned d=0; d<numComponents_; d++)
         {
+          vectorComponents_[d] = VectorArray(numComponents_);
           vectorComponents_[d][d] = vectorComponents[d];
         }
       }
       else
       {
         numFamilies_   = 1;
+        vectorComponents_[0] = VectorArray(numComponents_);
         for (unsigned d=0; d<numComponents_; d++)
         {
           vectorComponents_[0][d] = vectorComponents[d];
@@ -293,6 +308,7 @@ namespace Intrepid2 {
       {
         for (unsigned i=0; i<numFamilies_; i++)
         {
+          vectorComponents_[i] = VectorArray(numComponents_);
           for (unsigned j=0; j<numComponents_; j++)
           {
             vectorComponents_[i][j] = vectorData.getComponent(i, j);
@@ -313,6 +329,7 @@ namespace Intrepid2 {
       {
         for (unsigned i=0; i<numFamilies_; i++)
         {
+          vectorComponents_[i] = VectorArray(numComponents_);
           for (unsigned j=0; j<numComponents_; j++)
           {
             vectorComponents_[i][j] = vectorData.getComponent(i, j);
