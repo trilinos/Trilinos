@@ -126,20 +126,29 @@ namespace MueLuTests
     CreateDirchletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero);
 
     auto drows = Utils_Kokkos::DetectDirichletRows(*A);
-    TEST_EQUALITY(drows[localRowToZero], true);
-    TEST_EQUALITY(drows[localRowToZero - 1], false);
+    auto drowsHost = Kokkos::create_mirror_view(drows);
+    Kokkos::deep_copy(drowsHost, drows);
+
+    TEST_EQUALITY(drowsHost(localRowToZero), true);
+    TEST_EQUALITY(drowsHost(localRowToZero - 1), false);
 
     CreateDirchletRow<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, localRowToZero, Teuchos::as<Scalar>(0.25));
 
-    //row 5 should not be Dirichlet
+    // row 5 should not be Dirichlet
     drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.24));
-    TEST_EQUALITY(drows[localRowToZero], false);
-    TEST_EQUALITY(drows[localRowToZero - 1], false);
+    drowsHost = Kokkos::create_mirror_view(drows);
+    Kokkos::deep_copy(drowsHost, drows);
 
-    //row 5 should be Dirichlet
+    TEST_EQUALITY(drowsHost(localRowToZero), false);
+    TEST_EQUALITY(drowsHost(localRowToZero - 1), false);
+
+    // row 5 should be Dirichlet
     drows = Utils_Kokkos::DetectDirichletRows(*A, TST::magnitude(0.26));
-    TEST_EQUALITY(drows[localRowToZero], true);
-    TEST_EQUALITY(drows[localRowToZero - 1], false);
+    drowsHost = Kokkos::create_mirror_view(drows);
+    Kokkos::deep_copy(drowsHost, drows);
+
+    TEST_EQUALITY(drowsHost(localRowToZero), true);
+    TEST_EQUALITY(drowsHost(localRowToZero - 1), false);
   } //DetectDirichletRows
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, DetectDirichletCols, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -160,10 +169,13 @@ namespace MueLuTests
     auto drows = Utils_Kokkos::DetectDirichletRows(*A);
     auto dcols = Utils_Kokkos::DetectDirichletCols(*A, drows);
 
-    for (size_t col = 0; col < dcols.extent(0); ++col)
+    auto dcolsHost = Kokkos::create_mirror_view(dcols);
+    Kokkos::deep_copy(dcolsHost, dcols);
+
+    for (size_t col = 0; col < dcolsHost.extent(0); ++col)
     {
       const auto isDirchletCol = col >= 4 and col <= 6;
-      TEST_EQUALITY(dcols(col), isDirchletCol);
+      TEST_EQUALITY(dcolsHost(col), isDirchletCol);
     }
   } //DetectDirichletCols
 
@@ -241,6 +253,7 @@ namespace MueLuTests
     using TST = Teuchos::ScalarTraits<Scalar>;
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using RangeType = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
     auto map = A->getMap();
@@ -255,7 +268,7 @@ namespace MueLuTests
       Utils_Kokkos::FindNonZeros(vector->getDeviceLocalView(Xpetra::Access::ReadOnly), nonZeros);
 
       Kokkos::parallel_reduce(
-          "", nonZeros.extent(0),
+          "", RangeType(0, nonZeros.extent(0)),
           KOKKOS_LAMBDA(const int i, unsigned int &r) { r += static_cast<unsigned int>(nonZeros(i)); }, result);
 
       TEST_EQUALITY(result, 0);
@@ -268,7 +281,7 @@ namespace MueLuTests
       Utils_Kokkos::FindNonZeros(vector->getDeviceLocalView(Xpetra::Access::ReadOnly), nonZeros);
 
       Kokkos::parallel_reduce(
-          "", nonZeros.extent(0),
+          "", RangeType(0, nonZeros.extent(0)),
           KOKKOS_LAMBDA(const int i, unsigned int &r) { r += static_cast<unsigned int>(nonZeros(i)); }, result);
 
       TEST_EQUALITY(result, nonZeros.extent(0));
@@ -368,6 +381,7 @@ namespace MueLuTests
     using TST = Teuchos::ScalarTraits<Scalar>;
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using RangeType = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
 
@@ -375,7 +389,7 @@ namespace MueLuTests
     const auto colToZero = 2;
     Kokkos::View<bool *, typename Node::device_type> dCols("", numCols);
     Kokkos::parallel_for(
-        numCols, KOKKOS_LAMBDA(const int colIdx) {
+        RangeType(0, numCols), KOKKOS_LAMBDA(const int colIdx) {
           dCols(colIdx) = colIdx == colToZero;
         });
 
@@ -414,17 +428,20 @@ namespace MueLuTests
     Kokkos::View<bool *, typename Node::device_type> dRows("", numRows);
 
     Utils_Kokkos::ApplyRowSumCriterion(*A, Magnitude(1.0), dRows);
+    auto dRowsHost = Kokkos::create_mirror_view(dRows);
+    Kokkos::deep_copy(dRowsHost, dRows);
 
     for (size_t idx = 0; idx < dRows.extent(0); ++idx)
     {
-      TEST_EQUALITY(dRows(idx), false);
+      TEST_EQUALITY(dRowsHost(idx), false);
     }
 
     Utils_Kokkos::ApplyRowSumCriterion(*A, Magnitude(-1.0), dRows);
+    Kokkos::deep_copy(dRowsHost, dRows);
 
     for (size_t idx = 0; idx < dRows.extent(0); ++idx)
     {
-      TEST_EQUALITY(dRows(idx), true);
+      TEST_EQUALITY(dRowsHost(idx), true);
     }
   } //ApplyRowSumCriterion
 
@@ -475,21 +492,25 @@ namespace MueLuTests
     using TST = Teuchos::ScalarTraits<Scalar>;
     using Utils_Kokkos = MueLu::Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using RangeType = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
     auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
     Kokkos::View<bool *, typename Node::device_type> dRowsIn("", A->getNodeNumRows());
 
     Kokkos::parallel_for(
-        "", dRowsIn.extent(0), KOKKOS_LAMBDA(const int index) {
+        "", RangeType(0, dRowsIn.extent(0)), KOKKOS_LAMBDA(const int index) {
           dRowsIn(index) = index % 2;
         });
 
     Utils_Kokkos::ApplyOAZToMatrixRows(A, dRowsIn);
 
     auto dRowsOut = Utils_Kokkos::DetectDirichletRows(*A);
-    for (size_t row = 0; row < dRowsOut.extent(0); ++row)
+    auto dRowsOutHost = Kokkos::create_mirror_view(dRowsOut);
+    Kokkos::deep_copy(dRowsOutHost, dRowsOut);
+
+    for (size_t row = 0; row < dRowsOutHost.extent(0); ++row)
     {
-      TEST_EQUALITY(dRowsOut(row), row % 2);
+      TEST_EQUALITY(dRowsOutHost(row), row % 2);
     }
   } //ApplyOAZToMatrixRows
 
