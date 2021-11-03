@@ -10,6 +10,7 @@
 #include "GeneratedMeshToFile.hpp"
 #include "TextMeshToFile.hpp"
 #include "Ioss_Property.h"                           // for Property
+#include "Iotm_DatabaseIO.hpp"
 #include "mpi.h"                                     // for MPI_COMM_SELF, etc
 #include "stk_io/DatabasePurpose.hpp"
 #include "stk_io/StkMeshIoBroker.hpp"                // for StkMeshIoBroker
@@ -20,6 +21,7 @@
 #include "stk_mesh/base/Types.hpp"                   // for EntityRank, etc
 #include "stk_topology/topology.hpp"                 // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"
+
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
@@ -27,6 +29,10 @@ namespace stk
 {
 namespace unit_test_util
 {
+void initialize_stk_io_for_text_mesh()
+{
+  Iotm::IOFactory::factory();
+}
 
 void generated_mesh_to_file_in_serial(const std::string &meshSizeSpec, const std::string &fileName)
 {

@@ -32,18 +32,24 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stk_expreval/Variable.hpp>
-#include <stk_expreval/Evaluator.hpp>
+#ifndef PARSER_HPP
+#define PARSER_HPP
+
+#include "stk_expreval/Lexer.hpp"
 
 namespace stk {
 namespace expreval {
 
-VariableMap::Resolver &
-VariableMap::getDefaultResolver()
-{
-  static DefaultResolver default_resolver;
-  return default_resolver;
+class Node;
+class Eval;
+
+namespace Parser {
+
+Node *parseStatements(Eval & eval, LexemVector::const_iterator from, LexemVector::const_iterator to);
+
 }
 
-} // namespace expreval
-} // namespace stk
+}
+}
+
+#endif // PARSER_HPP

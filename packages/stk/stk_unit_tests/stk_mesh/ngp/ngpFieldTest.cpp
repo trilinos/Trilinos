@@ -438,11 +438,11 @@ public:
     const unsigned bucketCapacity = 2;
 
     setup_2hex_3block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::NgpField<int> ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
     modify_mesh_add_and_delete_bucket3(stkIntField, ngpIntField);
 
     ngpIntField.modify_on_host();
-    ngpIntField.update_field();
+    ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -453,11 +453,11 @@ public:
     const unsigned bucketCapacity = 2;
 
     setup_2hex_3block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::NgpField<int> ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
     modify_mesh_add_and_delete_bucket2(stkIntField, ngpIntField);
 
     ngpIntField.modify_on_host();
-    ngpIntField.update_field();
+    ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -468,11 +468,11 @@ public:
     const unsigned bucketCapacity = 2;
 
     setup_2hex_3block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::NgpField<int> ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
     modify_mesh_add_and_delete_bucket(stkIntField, ngpIntField);
 
     ngpIntField.modify_on_host();
-    ngpIntField.update_field();
+    ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -484,11 +484,11 @@ public:
     const unsigned bucketCapacity = 2;
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::NgpField<int> ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
     modify_mesh_delete_bucket_in_middle(stkIntField, ngpIntField);
 
     ngpIntField.modify_on_host();
-    ngpIntField.update_field();
+    ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -576,7 +576,7 @@ public:
     modify_mesh_add_bucket_in_middle(stkIntField, ngpIntField);
 
     ngpIntField.modify_on_host();
-    ngpIntField.update_field();
+    stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -586,7 +586,7 @@ public:
     modify_mesh_add_element(stkIntField, ngpIntField, bucketCapacity);
 
     ngpIntField.modify_on_host();
-    ngpIntField.update_field();
+    stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -597,14 +597,14 @@ public:
     const unsigned bucketCapacity = 2;
 
     setup_3hex_2block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::NgpField<int> ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
     check_field_data_on_device<int>(ngpIntField, stkIntField);
 
     modify_mesh_change_bucket_content(stkIntField, ngpIntField);
 
     ngpIntField.clear_sync_state();
     ngpIntField.modify_on_host();
-    ngpIntField.update_field();
+    ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     check_field_data_on_device<int>(ngpIntField, stkIntField);
   }
@@ -1292,8 +1292,6 @@ TEST_F(NgpFieldFixture, ModifyAndSync)
   stk::mesh::NgpField<int>& deviceNgpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
   stk::mesh::HostField<int> hostNgpIntField(get_bulk(), stkIntField);
 
-  expectedSyncsToDevice = 3;
-
   EXPECT_EQ(expectedSyncsToDevice, deviceNgpIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToDevice, hostNgpIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToHost, deviceNgpIntField.num_syncs_to_host());
@@ -1329,8 +1327,6 @@ TEST_F(NgpFieldFixture, UpdateNgpFieldAfterMeshMod_WithMostCurrentDataOnHost)
 
   stk::mesh::NgpField<int>& deviceNgpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
   stk::mesh::HostField<int> hostNgpIntField(get_bulk(), stkIntField);
-
-  expectedSyncsToDevice = 4;
 
   EXPECT_EQ(expectedSyncsToDevice, deviceNgpIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToDevice, hostNgpIntField.num_syncs_to_device());

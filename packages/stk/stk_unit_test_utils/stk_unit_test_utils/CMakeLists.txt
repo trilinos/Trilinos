@@ -9,6 +9,8 @@ SET(HEADERS_NEED_IO
   ElemGraphMultipleSharedSidesUtils.hpp
   BulkDataTester.hpp
   FaceCreationTestUtils.hpp
+  Iotm_DatabaseIO.hpp
+  Iotm_TextMesh.hpp
   GeneratedMeshToFile.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
@@ -24,6 +26,8 @@ SET(SOURCES_NEED_IO
   FaceTestingUtils.cpp
   GenerateALefRAMesh.cpp
   GeneratedMeshToFile.cpp
+  Iotm_DatabaseIO.cpp
+  Iotm_TextMesh.cpp
   ReadWriteSidesetTester.cpp
   TextMeshFixture.cpp
   TextMeshToFile.cpp

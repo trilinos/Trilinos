@@ -32,18 +32,68 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#ifndef DEVICEVARIABLE_HPP
+#define DEVICEVARIABLE_HPP
+
+#include <Kokkos_Core.hpp>
 #include <stk_expreval/Variable.hpp>
-#include <stk_expreval/Evaluator.hpp>
 
 namespace stk {
 namespace expreval {
 
-VariableMap::Resolver &
-VariableMap::getDefaultResolver()
+class DeviceVariable
 {
-  static DefaultResolver default_resolver;
-  return default_resolver;
+public:
+  KOKKOS_FUNCTION
+  DeviceVariable();
+
+  KOKKOS_FUNCTION
+  DeviceVariable(const Variable::Type variableType, int variableSize, int variableStride=1);
+
+  KOKKOS_DEFAULTED_FUNCTION
+  DeviceVariable(const DeviceVariable& deviceVariable) = default;
+
+  KOKKOS_DEFAULTED_FUNCTION
+  ~DeviceVariable() = default;
+
+  KOKKOS_FUNCTION
+  DeviceVariable& operator=(const DeviceVariable& deviceVariable);
+
+  KOKKOS_FUNCTION
+  double& getArrayValue(int index, Variable::ArrayOffset arrayOffsetType) const;
+
+  KOKKOS_FUNCTION
+  double getValue() const;
+
+  KOKKOS_FUNCTION
+  void bind(double& value_ref, int definedLength, int strideLength);
+
+  KOKKOS_FUNCTION
+  void bind(int& value_ref, int definedLength, int strideLength);
+
+  KOKKOS_FUNCTION
+  DeviceVariable& operator=(const double& value);
+
+  KOKKOS_FUNCTION
+  DeviceVariable& operator=(const int& value);
+
+private:
+  Variable::Type m_type;
+  int m_size;
+  int m_stride;
+
+  union {
+    double * m_doublePtr;
+    int * m_intPtr;
+  };
+
+  union {
+    double m_doubleValue;
+    int m_intValue;
+  };
+};
+
+}
 }
 
-} // namespace expreval
-} // namespace stk
+#endif // DEVICEVARIABLE_HPP
